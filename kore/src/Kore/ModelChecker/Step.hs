@@ -113,7 +113,7 @@ unroll = Unroll
 computeWeakNext :: [rewrite] -> Prim patt rewrite
 computeWeakNext = ComputeWeakNext
 
-type Transition = TransitionT (RewriteRule Object Variable) (StateT (Maybe ()) Simplifier)
+type Transition = TransitionT (RewriteRule Variable) (StateT (Maybe ()) Simplifier)
 
 transitionRule
     :: SmtMetadataTools StepperAttributes
@@ -122,7 +122,7 @@ transitionRule
     -- ^ Evaluates functions in patterns
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Prim (CommonModalPattern) (RewriteRule Object Variable)
+    -> Prim (CommonModalPattern) (RewriteRule Variable)
     -> CommonProofState Object
     -> Transition (CommonProofState Object)
 transitionRule
@@ -218,7 +218,7 @@ transitionRule
                  ]
 
     transitionComputeWeakNext
-        :: [RewriteRule Object Variable]
+        :: [RewriteRule Variable]
         -> CommonProofState Object
         -> Transition (CommonProofState Object)
     transitionComputeWeakNext _ Proven = return Proven
@@ -229,7 +229,7 @@ transitionRule
       = return (GoalLHS Pattern.bottom)
 
     transitionComputeWeakNextHelper
-        :: [RewriteRule Object Variable]
+        :: [RewriteRule Variable]
         -> (Pattern Variable)
         -> Transition (CommonProofState Object)
     transitionComputeWeakNextHelper _ config

@@ -538,7 +538,7 @@ applyRewriteRule
 
     -> Pattern variable
     -- ^ Configuration being rewritten.
-    -> RewriteRule Object variable
+    -> RewriteRule variable
     -- ^ Rewriting axiom
     -> unifier [Result variable]
 applyRewriteRule
@@ -750,7 +750,7 @@ applyRewriteRules
     -- ^ Map from symbol IDs to defined functions
     -> UnificationProcedure Object
 
-    -> [RewriteRule Object variable]
+    -> [RewriteRule variable]
     -- ^ Rewrite rules
     -> Pattern variable
     -- ^ Configuration being rewritten
@@ -886,7 +886,7 @@ sequenceRewriteRules
 
     -> Pattern variable
     -- ^ Configuration being rewritten
-    -> [RewriteRule Object variable]
+    -> [RewriteRule variable]
     -- ^ Rewrite rules
     -> unifier (Results variable)
 sequenceRewriteRules

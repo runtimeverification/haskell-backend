@@ -595,7 +595,7 @@ axiom
     :: TermLike Variable
     -> TermLike Variable
     -> Syntax.Predicate Variable
-    -> EqualityRule Object Variable
+    -> EqualityRule Variable
 axiom left right predicate =
     EqualityRule (RulePattern.rulePattern left right) { requires = predicate }
 

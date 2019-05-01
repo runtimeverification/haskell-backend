@@ -136,19 +136,19 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             (zip (fmap (Rule.RewriteRule . coerce) cls) [len..])
 
     addIndex
-        :: (Rule.RewriteRule Object Variable, Int)
-        -> Rule.RewriteRule Object Variable
+        :: (Rule.RewriteRule Variable, Int)
+        -> Rule.RewriteRule Variable
     addIndex (rw, n) =
         modifyAttribute (mapAttribute n (getAttribute rw)) rw
 
     modifyAttribute
         :: Attribute.Axiom
-        -> Rule.RewriteRule Object Variable
-        -> Rule.RewriteRule Object Variable
+        -> Rule.RewriteRule Variable
+        -> Rule.RewriteRule Variable
     modifyAttribute att (Rule.RewriteRule rp) =
         Rule.RewriteRule $ rp { Rule.attributes = att }
 
-    getAttribute :: Rule.RewriteRule Object Variable -> Attribute.Axiom
+    getAttribute :: Rule.RewriteRule Variable -> Attribute.Axiom
     getAttribute = Rule.attributes . Rule.getRewriteRule
 
     mapAttribute :: Int -> Attribute.Axiom -> Attribute.Axiom

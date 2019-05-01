@@ -61,7 +61,7 @@ import           Test.Tasty.HUnit.Extensions
 type ExecutionGraph a =
     Strategy.ExecutionGraph
         (a, StepProof Object Variable)
-        (RewriteRule Object Variable)
+        (RewriteRule Variable)
 
 test_onePathStrategy :: [TestTree]
 test_onePathStrategy =
@@ -397,7 +397,7 @@ test_onePathStrategy =
 simpleRewrite
     :: TermLike Variable
     -> TermLike Variable
-    -> RewriteRule Object Variable
+    -> RewriteRule Variable
 simpleRewrite left right =
     RewriteRule RulePattern
         { left = left
@@ -411,7 +411,7 @@ rewriteWithPredicate
     :: TermLike Variable
     -> TermLike Variable
     -> Syntax.Predicate Variable
-    -> RewriteRule Object Variable
+    -> RewriteRule Variable
 rewriteWithPredicate left right predicate =
     RewriteRule RulePattern
         { left = left
@@ -433,7 +433,7 @@ runSteps
     -> [Strategy
         (Prim
             (Pattern Variable)
-            (RewriteRule Object Variable)
+            (RewriteRule Variable)
         )
        ]
     -> IO a
@@ -461,8 +461,8 @@ runOnePathSteps
     -> Pattern Variable
     -- ^left-hand-side of unification
     -> TermLike Variable
-    -> [RewriteRule Object Variable]
-    -> [RewriteRule Object Variable]
+    -> [RewriteRule Variable]
+    -> [RewriteRule Variable]
     -> IO [CommonStrategyPattern]
 runOnePathSteps
     metadataTools

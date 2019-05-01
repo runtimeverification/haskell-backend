@@ -115,7 +115,7 @@ compareTo (Expect expected) (actual, _ignoredProof) =
 
 -- Isolate knowledge of `Object` in anticipation of its removal.
 -- Should these go in some common location?
-type RewriteRule' variable = RewriteRule Object variable
+type RewriteRule' variable = RewriteRule variable
 type TermLike' variable = TermLike variable
 type CommonTermLike' = TermLike Variable
 type Pattern' variable = Pattern variable
@@ -208,7 +208,7 @@ a1 = Variable (testId "#a1") mempty
 b1 = Variable (testId "#b1") mempty
 x1 = Variable (testId "#x1") mempty
 
-rewriteIdentity :: RewriteRule Meta Variable
+rewriteIdentity :: RewriteRule Variable
 rewriteIdentity =
     RewriteRule RulePattern
         { left = mkVar (x1 Mock.testSort)
@@ -218,7 +218,7 @@ rewriteIdentity =
         , attributes = def
         }
 
-rewriteImplies :: RewriteRule Meta Variable
+rewriteImplies :: RewriteRule Variable
 rewriteImplies =
     RewriteRule $ RulePattern
         { left = mkVar (x1 Mock.testSort)
@@ -428,7 +428,7 @@ metaSigma
     -> TermLike Variable
 metaSigma p1 p2 = mkApp Mock.testSort sigmaSymbol [p1, p2]
 
-axiomMetaSigmaId :: RewriteRule Meta Variable
+axiomMetaSigmaId :: RewriteRule Variable
 axiomMetaSigmaId =
     RewriteRule RulePattern
         { left =
@@ -494,7 +494,7 @@ runStep
     -- ^functions yielding metadata for pattern heads
     -> Pattern Variable
     -- ^left-hand-side of unification
-    -> [RewriteRule Object Variable]
+    -> [RewriteRule Variable]
     -> IO [(Pattern Variable, StepProof Object Variable)]
 runStep metadataTools configuration axioms =
     (<$>) pickFinal
@@ -517,7 +517,7 @@ runSteps
     -- ^functions yielding metadata for pattern heads
     -> Pattern Variable
     -- ^left-hand-side of unification
-    -> [RewriteRule Object Variable]
+    -> [RewriteRule Variable]
     -> IO (Pattern Variable, StepProof Object Variable)
 runSteps metadataTools configuration axioms =
     (<$>) pickLongest

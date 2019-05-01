@@ -348,7 +348,7 @@ showRule configNode = do
                 id
                 (showAxiomOrClaim (length axioms) ruleIndex)
   where
-    getRuleIndex :: RewriteRule Object Variable -> Attribute.RuleIndex
+    getRuleIndex :: RewriteRule Variable -> Attribute.RuleIndex
     getRuleIndex = Attribute.identifier . Rule.attributes . Rule.getRewriteRule
 
 -- | Shows the previous branching point.
@@ -702,7 +702,7 @@ recursiveForcedStep n graph node
           xs -> foldM (recursiveForcedStep $ n-1) graph' xs
 
 -- | Prints an unparsed rewrite rule along with its source location.
-printRewriteRule :: MonadWriter String m => RewriteRule level Variable -> m ()
+printRewriteRule :: MonadWriter String m => RewriteRule Variable -> m ()
 printRewriteRule rule = do
     putStrLn' $ unparseToString rule
     putStrLn'
@@ -712,7 +712,7 @@ printRewriteRule rule = do
         $ rule
   where
     extractSourceAndLocation
-        :: RewriteRule level Variable
+        :: RewriteRule Variable
         -> SourceLocation
     extractSourceAndLocation
         (RewriteRule (RulePattern{ Axiom.attributes })) =

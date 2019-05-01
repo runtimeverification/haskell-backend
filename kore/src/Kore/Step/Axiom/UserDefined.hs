@@ -59,7 +59,7 @@ equalityRuleEvaluator
         , Show variable
         , Unparse variable
         )
-    => EqualityRule Object Variable
+    => EqualityRule Variable
     -- ^ Axiom defining the current function.
     -> SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns

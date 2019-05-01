@@ -378,14 +378,14 @@ simpleAxiom left right =
 simpleClaim
     :: TermLike Variable
     -> TermLike Variable
-    -> OnePathRule Object Variable
+    -> OnePathRule Variable
 simpleClaim left right =
     OnePathRule . getRewriteRule $ simpleRewrite left right
 
 simpleTrustedClaim
     :: TermLike Variable
     -> TermLike Variable
-    -> OnePathRule Object Variable
+    -> OnePathRule Variable
 simpleTrustedClaim left right =
     OnePathRule
     $ RulePattern
@@ -400,7 +400,7 @@ simpleTrustedClaim left right =
 simpleRewrite
     :: TermLike Variable
     -> TermLike Variable
-    -> RewriteRule Object Variable
+    -> RewriteRule Variable
 simpleRewrite left right =
     RewriteRule RulePattern
         { left = left

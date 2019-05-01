@@ -105,13 +105,13 @@ type Config = Pattern Variable
 type Proof = StepProof Object Variable
 
 -- | Semantic rule used during execution.
-type Rewrite = RewriteRule Object Variable
+type Rewrite = RewriteRule Variable
 
 -- | Function rule used during execution.
-type Equality = EqualityRule Object Variable
+type Equality = EqualityRule Variable
 
 type ExecutionGraph =
-    Strategy.ExecutionGraph (Config, Proof) (RewriteRule Object Variable)
+    Strategy.ExecutionGraph (Config, Proof) (RewriteRule Variable)
 
 -- | A collection of rules and simplifiers used during execution.
 data Initialized =

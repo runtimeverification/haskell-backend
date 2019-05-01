@@ -254,7 +254,7 @@ test_unifyRule =
 applyRewriteRule_
     :: Pattern Variable
     -- ^ Configuration
-    -> RewriteRule Object Variable
+    -> RewriteRule Variable
     -- ^ Rewrite rule
     -> IO
         (Either
@@ -684,7 +684,7 @@ test_applyRewriteRule_ =
 applyRewriteRules
     :: Pattern Variable
     -- ^ Configuration
-    -> [RewriteRule Object Variable]
+    -> [RewriteRule Variable]
     -- ^ Rewrite rule
     -> IO
         (Either
@@ -1003,7 +1003,7 @@ test_applyRewriteRules =
         checkRemainders remainders actual
     ]
 
-axiomIfThen :: RewriteRule Object Variable
+axiomIfThen :: RewriteRule Variable
 axiomIfThen =
     RewriteRule RulePattern
         { left = Mock.functionalConstr20 Mock.a (mkVar Mock.y)
@@ -1013,7 +1013,7 @@ axiomIfThen =
         , attributes = def
         }
 
-axiomSignum :: RewriteRule Object Variable
+axiomSignum :: RewriteRule Variable
 axiomSignum =
     RewriteRule RulePattern
         { left = Mock.functionalConstr10 (mkVar Mock.y)
@@ -1023,7 +1023,7 @@ axiomSignum =
         , attributes = def
         }
 
-axiomCaseA :: RewriteRule Object Variable
+axiomCaseA :: RewriteRule Variable
 axiomCaseA =
     RewriteRule RulePattern
         { left =
@@ -1037,7 +1037,7 @@ axiomCaseA =
         , attributes = def
         }
 
-axiomCaseB :: RewriteRule Object Variable
+axiomCaseB :: RewriteRule Variable
 axiomCaseB =
     RewriteRule RulePattern
         { left =
@@ -1051,7 +1051,7 @@ axiomCaseB =
         , attributes = def
         }
 
-axiomsCase :: [RewriteRule Object Variable]
+axiomsCase :: [RewriteRule Variable]
 axiomsCase = [axiomCaseA, axiomCaseB]
 
 
@@ -1059,7 +1059,7 @@ axiomsCase = [axiomCaseA, axiomCaseB]
 sequenceRewriteRules
     :: Pattern Variable
     -- ^ Configuration
-    -> [RewriteRule Object Variable]
+    -> [RewriteRule Variable]
     -- ^ Rewrite rule
     -> IO
         (Either
@@ -1165,7 +1165,7 @@ test_sequenceRewriteRules =
         checkRemainders remainders actual
     ]
 
-axiomFunctionalSigma :: EqualityRule Object Variable
+axiomFunctionalSigma :: EqualityRule Variable
 axiomFunctionalSigma =
     EqualityRule RulePattern
         { left = Mock.functional10 (Mock.sigma x y)
@@ -1182,7 +1182,7 @@ axiomFunctionalSigma =
 sequenceMatchingRules
     :: Pattern Variable
     -- ^ Configuration
-    -> [EqualityRule Object Variable]
+    -> [EqualityRule Variable]
     -- ^ Rewrite rule
     -> IO
         (Either

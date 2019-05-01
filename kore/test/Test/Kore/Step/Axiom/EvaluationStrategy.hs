@@ -532,7 +532,7 @@ axiom
     :: TermLike Variable
     -> TermLike Variable
     -> Predicate Variable
-    -> EqualityRule Object Variable
+    -> EqualityRule Variable
 axiom left right predicate =
     EqualityRule RulePattern
         { left

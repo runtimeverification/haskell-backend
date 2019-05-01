@@ -84,7 +84,7 @@ acceptsMultipleResults OnlyOneResult = False
 that define it.
 -}
 definitionEvaluation
-    :: [EqualityRule Object Variable]
+    :: [EqualityRule Variable]
     -> BuiltinAndAxiomSimplifier Object
 definitionEvaluation rules =
     BuiltinAndAxiomSimplifier
@@ -100,7 +100,7 @@ See also: 'definitionEvaluation'
 
 -}
 totalDefinitionEvaluation
-    :: [EqualityRule Object Variable]
+    :: [EqualityRule Variable]
     -> BuiltinAndAxiomSimplifier Object
 totalDefinitionEvaluation rules =
     BuiltinAndAxiomSimplifier totalDefinitionEvaluationWorker
@@ -326,7 +326,7 @@ evaluateWithDefinitionAxioms
         , Show variable
         , Unparse variable
         )
-    => [EqualityRule Object Variable]
+    => [EqualityRule Variable]
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier Object
     -> TermLikeSimplifier Object

@@ -223,10 +223,10 @@ shouldStore =
 type ExecutionGraph =
     Strategy.ExecutionGraph
         (CommonStrategyPattern)
-        (RewriteRule Object Variable)
+        (RewriteRule Variable)
 
 type InnerGraph =
-    Gr (CommonStrategyPattern) (Seq (RewriteRule Object Variable))
+    Gr (CommonStrategyPattern) (Seq (RewriteRule Variable))
 
 -- | State for the rep.
 data ReplState claim level = ReplState
@@ -320,7 +320,7 @@ emptyExecutionGraph =
     Strategy.emptyExecutionGraph . extractConfig . RewriteRule . coerce
   where
     extractConfig
-        :: RewriteRule level Variable
+        :: RewriteRule Variable
         -> CommonStrategyPattern
     extractConfig (RewriteRule RulePattern { left, requires }) =
         RewritePattern $ Conditional left requires mempty
@@ -420,7 +420,7 @@ getRuleFor
     :: MonadState (ReplState claim level) m
     => Maybe Graph.Node
     -- ^ node index
-    -> m (Maybe (RewriteRule Object Variable))
+    -> m (Maybe (RewriteRule Variable))
 getRuleFor maybeNode = do
     targetNode <- getTargetNode maybeNode
     graph' <- getInnerGraph
@@ -428,8 +428,8 @@ getRuleFor maybeNode = do
   where
     getRewriteRule
         :: forall a b
-        .  [(a, b, Seq (RewriteRule Object Variable))]
-        -> Maybe (RewriteRule Object Variable)
+        .  [(a, b, Seq (RewriteRule Variable))]
+        -> Maybe (RewriteRule Variable)
     getRewriteRule =
         listToMaybe
         . join

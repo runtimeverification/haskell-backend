@@ -189,7 +189,7 @@ simplify = Simplify
 removeDestination :: patt -> Prim patt rewrite
 removeDestination = RemoveDestination
 
-type Transition = TransitionT (RewriteRule Object Variable) Simplifier
+type Transition = TransitionT (RewriteRule Variable) Simplifier
 
 {- | Transition rule for primitive strategies in 'Prim'.
 
@@ -233,10 +233,10 @@ transitionRule
     -- ^ Evaluates functions in patterns
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Prim (Pattern Variable) (RewriteRule Object Variable)
+    -> Prim (Pattern Variable) (RewriteRule Variable)
     -> (CommonStrategyPattern, StepProof Object Variable)
     -- ^ Configuration being rewritten and its accompanying proof
-    -> TransitionT (RewriteRule Object Variable) Simplifier
+    -> TransitionT (RewriteRule Variable) Simplifier
         (CommonStrategyPattern, StepProof Object Variable)
 transitionRule
     tools
@@ -284,9 +284,9 @@ transitionRule
                     )
 
     transitionApplyWithRemainders
-        :: [RewriteRule Object Variable]
+        :: [RewriteRule Variable]
         -> (CommonStrategyPattern, StepProof Object Variable)
-        -> TransitionT (RewriteRule Object Variable) Simplifier
+        -> TransitionT (RewriteRule Variable) Simplifier
             (CommonStrategyPattern, StepProof Object Variable)
     transitionApplyWithRemainders _ c@(Bottom, _) = return c
     transitionApplyWithRemainders _ c@(Stuck _, _) = return c
@@ -296,7 +296,7 @@ transitionRule
       = transitionMultiApplyWithRemainders rules (config, proof)
 
     transitionMultiApplyWithRemainders
-        :: [RewriteRule Object Variable]
+        :: [RewriteRule Variable]
         -> (Pattern Variable, StepProof Object Variable)
         -> Transition
             (CommonStrategyPattern, StepProof Object Variable)
@@ -344,7 +344,7 @@ transitionRule
         ->  ( CommonStrategyPattern
             , StepProof Object Variable
             )
-        -> TransitionT (RewriteRule Object Variable) Simplifier
+        -> TransitionT (RewriteRule Variable) Simplifier
             (CommonStrategyPattern, StepProof Object Variable)
     transitionRemoveDestination _ (Bottom, _) = empty
     transitionRemoveDestination _ (Stuck _, _) = empty

@@ -96,10 +96,10 @@ transitionRule
     -- ^ Evaluates functions in patterns
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
-    -> Prim (RewriteRule Object Variable)
+    -> Prim (RewriteRule Variable)
     -> (Pattern Variable, StepProof Object Variable)
     -- ^ Configuration being rewritten and its accompanying proof
-    -> TransitionT (RewriteRule Object Variable) Simplifier
+    -> TransitionT (RewriteRule Variable) Simplifier
         (Pattern Variable, StepProof Object Variable)
 transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
     \case
@@ -187,8 +187,8 @@ anyRewrite rewrites =
 heatingCooling
     :: (forall rewrite. [rewrite] -> Strategy (Prim rewrite))
     -- ^ 'allRewrites' or 'anyRewrite'
-    -> [RewriteRule Object Variable]
-    -> Strategy (Prim (RewriteRule Object Variable))
+    -> [RewriteRule Variable]
+    -> Strategy (Prim (RewriteRule Variable))
 heatingCooling rewriteStrategy rewrites =
     Strategy.sequence [Strategy.many heat, normal, Strategy.try cool]
   where

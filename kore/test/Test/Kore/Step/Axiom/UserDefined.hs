@@ -250,7 +250,7 @@ mockMetadataTools =
 
 evaluateWithAxiom
     :: SmtMetadataTools StepperAttributes
-    -> EqualityRule Object Variable
+    -> EqualityRule Variable
     -> TermLikeSimplifier Object
     -> TermLike Variable
     -> IO (CommonAttemptedAxiom Object)

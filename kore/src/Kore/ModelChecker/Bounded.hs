@@ -75,13 +75,13 @@ check
         -> [Strategy
             (Prim
                 (CommonModalPattern)
-                (RewriteRule Object Variable)
+                (RewriteRule Variable)
             )
            ]
         )
     -- ^ Creates a one-step strategy from a target pattern. See
     -- 'defaultStrategy'.
-    -> [(ImplicationRule Object Variable, Limit Natural)]
+    -> [(ImplicationRule Variable, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> Simplifier [CheckResult]
@@ -107,7 +107,7 @@ bmcStrategy
     -> [Strategy
         (Prim
             (CommonModalPattern)
-            (RewriteRule Object Variable)
+            (RewriteRule Variable)
         )
        ]
 bmcStrategy
@@ -115,7 +115,7 @@ bmcStrategy
     goal
   =  repeat (defaultOneStepStrategy goal rewrites)
   where
-    rewrites :: [RewriteRule Object Variable]
+    rewrites :: [RewriteRule Variable]
     rewrites = map unwrap axioms
       where
         unwrap (Axiom a) = a
@@ -130,11 +130,11 @@ checkClaim
         -> [Strategy
             (Prim
                 (CommonModalPattern)
-                (RewriteRule Object Variable)
+                (RewriteRule Variable)
             )
            ]
         )
-    -> (ImplicationRule Object Variable, Limit Natural)
+    -> (ImplicationRule Variable, Limit Natural)
     -> Simplifier CheckResult
 checkClaim
     metadataTools
@@ -164,7 +164,7 @@ checkClaim
         trace (show finalResult) (return finalResult)
   where
     transitionRule'
-        :: Prim (CommonModalPattern) (RewriteRule Object Variable)
+        :: Prim (CommonModalPattern) (RewriteRule Variable)
         -> (CommonProofState Object)
         -> ModelChecker.Transition (CommonProofState Object)
     transitionRule' =

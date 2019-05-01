@@ -128,7 +128,7 @@ isTrusted =
 {- | Wrapper for a rewrite rule that should be used as an axiom.
 -}
 newtype Axiom level = Axiom
-    { unAxiom :: RewriteRule level Variable
+    { unAxiom :: RewriteRule Variable
     }
 
 {- | Verifies a set of claims. When it verifies a certain claim, after the
@@ -152,13 +152,13 @@ verify
         -> [Strategy
             (Prim
                 (Pattern Variable)
-                (RewriteRule Object Variable)
+                (RewriteRule Variable)
             )
            ]
         )
     -- ^ Creates a one-step strategy from a target pattern. See
     -- 'defaultStrategy'.
-    -> [(RewriteRule Object Variable, Limit Natural)]
+    -> [(RewriteRule Variable, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT
@@ -200,7 +200,7 @@ defaultStrategy
     -> [Strategy
         (Prim
             (Pattern Variable)
-            (RewriteRule Object Variable)
+            (RewriteRule Variable)
         )
        ]
 defaultStrategy
@@ -216,11 +216,11 @@ defaultStrategy
             rewrites
         )
   where
-    rewrites :: [RewriteRule Object Variable]
+    rewrites :: [RewriteRule Variable]
     rewrites = map unwrap axioms
       where
         unwrap (Axiom a) = a
-    coinductiveRewrites :: [RewriteRule Object Variable]
+    coinductiveRewrites :: [RewriteRule Variable]
     coinductiveRewrites = map (RewriteRule . coerce) claims
 
 verifyClaim
@@ -233,11 +233,11 @@ verifyClaim
         -> [Strategy
             (Prim
                 (Pattern Variable)
-                (RewriteRule Object Variable)
+                (RewriteRule Variable)
             )
            ]
         )
-    -> (RewriteRule Object Variable, Limit Natural)
+    -> (RewriteRule Variable, Limit Natural)
     -> ExceptT
         (OrPattern Variable)
         Simplifier
@@ -274,9 +274,9 @@ verifyClaim
     Monad.unless (TopBottom.isBottom remainingNodes) (throwE remainingNodes)
   where
     transitionRule'
-        :: Prim (Pattern Variable) (RewriteRule Object Variable)
+        :: Prim (Pattern Variable) (RewriteRule Variable)
         -> (CommonStrategyPattern, StepProof Object Variable)
-        -> TransitionT (RewriteRule Object Variable) Simplifier
+        -> TransitionT (RewriteRule Variable) Simplifier
             (CommonStrategyPattern, StepProof Object Variable)
     transitionRule' =
         OnePath.transitionRule
@@ -310,14 +310,14 @@ verifyClaimStep
     -- ^ list of claims in the spec module
     -> [Axiom Object]
     -- ^ list of axioms in the main module
-    -> ExecutionGraph (CommonStrategyPattern) (RewriteRule Object Variable)
+    -> ExecutionGraph (CommonStrategyPattern) (RewriteRule Variable)
     -- ^ current execution graph
     -> Graph.Node
     -- ^ selected node in the graph
     -> Simplifier
         (ExecutionGraph
             (CommonStrategyPattern)
-            (RewriteRule Object Variable)
+            (RewriteRule Variable)
         )
 verifyClaimStep
     tools
@@ -336,9 +336,9 @@ verifyClaimStep
         node
   where
     transitionRule'
-        :: Prim (Pattern Variable) (RewriteRule Object Variable)
+        :: Prim (Pattern Variable) (RewriteRule Variable)
         -> CommonStrategyPattern
-        -> TransitionT (RewriteRule Object Variable) Simplifier
+        -> TransitionT (RewriteRule Variable) Simplifier
             (CommonStrategyPattern)
     transitionRule' =
         stripProof
@@ -350,7 +350,7 @@ verifyClaimStep
 
     strategy'
         :: Strategy
-            (Prim (Pattern Variable) (RewriteRule Object Variable))
+            (Prim (Pattern Variable) (RewriteRule Variable))
     strategy'
         | isRoot =
             onePathFirstStep targetPattern rewrites
@@ -360,7 +360,7 @@ verifyClaimStep
                 (RewriteRule . coerce <$> claims)
                 rewrites
 
-    rewrites :: [RewriteRule Object Variable]
+    rewrites :: [RewriteRule Variable]
     rewrites = coerce <$> axioms
 
     targetPattern :: Pattern Variable

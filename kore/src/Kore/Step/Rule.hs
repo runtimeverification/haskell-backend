@@ -110,23 +110,23 @@ rulePattern left right =
 
 {-  | Equality-based rule pattern.
 -}
-newtype EqualityRule level variable =
+newtype EqualityRule variable =
     EqualityRule { getEqualityRule :: RulePattern variable }
 
-deriving instance Eq variable => Eq (EqualityRule level variable)
-deriving instance Ord variable => Ord (EqualityRule level variable)
-deriving instance Show variable => Show (EqualityRule level variable)
+deriving instance Eq variable => Eq (EqualityRule variable)
+deriving instance Ord variable => Ord (EqualityRule variable)
+deriving instance Show variable => Show (EqualityRule variable)
 
 {-  | Rewrite-based rule pattern.
 -}
-newtype RewriteRule level variable =
+newtype RewriteRule variable =
     RewriteRule { getRewriteRule :: RulePattern variable }
 
-deriving instance Eq variable => Eq (RewriteRule level variable)
-deriving instance Ord variable => Ord (RewriteRule level variable)
-deriving instance Show variable => Show (RewriteRule level variable)
+deriving instance Eq variable => Eq (RewriteRule variable)
+deriving instance Ord variable => Ord (RewriteRule variable)
+deriving instance Show variable => Show (RewriteRule variable)
 
-instance (Unparse variable, Ord variable) => Unparse (RewriteRule level variable) where
+instance (Unparse variable, Ord variable) => Unparse (RewriteRule variable) where
     unparse (RewriteRule RulePattern { left, right, requires } ) =
         unparse
             $ Valid.mkImplies
@@ -140,12 +140,12 @@ instance (Unparse variable, Ord variable) => Unparse (RewriteRule level variable
 
 {-  | Implication-based pattern.
 -}
-newtype ImplicationRule level variable =
+newtype ImplicationRule variable =
     ImplicationRule { getImplicationRule :: RulePattern variable }
 
-deriving instance Eq variable => Eq (ImplicationRule level variable)
-deriving instance Ord variable => Ord (ImplicationRule level variable)
-deriving instance Show variable => Show (ImplicationRule level variable)
+deriving instance Eq variable => Eq (ImplicationRule variable)
+deriving instance Ord variable => Ord (ImplicationRule variable)
+deriving instance Show variable => Show (ImplicationRule variable)
 
 qualifiedAxiomOpToConstructor
     :: SymbolOrAlias
@@ -160,31 +160,31 @@ qualifiedAxiomOpToConstructor patternHead = case headName of
 
 {-  | One-Path-Claim rule pattern.
 -}
-newtype OnePathRule level variable =
+newtype OnePathRule variable =
     OnePathRule { getOnePathRule :: RulePattern variable }
 
-deriving instance Eq variable => Eq (OnePathRule level variable)
-deriving instance Ord variable => Ord (OnePathRule level variable)
-deriving instance Show variable => Show (OnePathRule level variable)
+deriving instance Eq variable => Eq (OnePathRule variable)
+deriving instance Ord variable => Ord (OnePathRule variable)
+deriving instance Show variable => Show (OnePathRule variable)
 
 {-  | All-Path-Claim rule pattern.
 -}
-newtype AllPathRule level variable =
+newtype AllPathRule variable =
     AllPathRule { getAllPathRule :: RulePattern variable }
 
-deriving instance Eq variable => Eq (AllPathRule level variable)
-deriving instance Ord variable => Ord (AllPathRule level variable)
-deriving instance Show variable => Show (AllPathRule level variable)
+deriving instance Eq variable => Eq (AllPathRule variable)
+deriving instance Ord variable => Ord (AllPathRule variable)
+deriving instance Show variable => Show (AllPathRule variable)
 
 {- | Sum type to distinguish rewrite axioms (used for stepping)
 from function axioms (used for functional simplification).
 --}
 data QualifiedAxiomPattern variable
-    = RewriteAxiomPattern (RewriteRule Object variable)
-    | FunctionAxiomPattern (EqualityRule Object variable)
-    | OnePathClaimPattern (OnePathRule Object variable)
-    | AllPathClaimPattern (AllPathRule Object variable)
-    | ImplicationAxiomPattern (ImplicationRule Object variable)
+    = RewriteAxiomPattern (RewriteRule variable)
+    | FunctionAxiomPattern (EqualityRule variable)
+    | OnePathClaimPattern (OnePathRule variable)
+    | AllPathClaimPattern (AllPathRule variable)
+    | ImplicationAxiomPattern (ImplicationRule variable)
     -- TODO(virgil): Rename the above since it applies to all sorts of axioms,
     -- not only to function-related ones.
 
@@ -220,7 +220,7 @@ isNormalRule RulePattern { attributes } =
 -- | Extracts all 'RewriteRule' axioms from a 'VerifiedModule'.
 extractRewriteAxioms
     :: VerifiedModule declAtts axiomAtts
-    -> [RewriteRule Object Variable]
+    -> [RewriteRule Variable]
 extractRewriteAxioms idxMod =
     mapMaybe (extractRewriteAxiomFrom. getIndexedSentence)
         (indexedModuleAxioms idxMod)
@@ -228,7 +228,7 @@ extractRewriteAxioms idxMod =
 extractRewriteAxiomFrom
     :: Verified.SentenceAxiom
     -- ^ Sentence to extract axiom pattern from
-    -> Maybe (RewriteRule Object Variable)
+    -> Maybe (RewriteRule Variable)
 extractRewriteAxiomFrom sentence =
     case fromSentenceAxiom sentence of
         Right (RewriteAxiomPattern axiomPat) -> Just axiomPat
@@ -238,7 +238,7 @@ extractRewriteAxiomFrom sentence =
 extractOnePathClaims
     :: VerifiedModule declAtts axiomAtts
     -- ^'IndexedModule' containing the definition
-    -> [(axiomAtts, OnePathRule Object Variable)]
+    -> [(axiomAtts, OnePathRule Variable)]
 extractOnePathClaims idxMod =
     mapMaybe
         ( sequence                             -- (a, Maybe b) -> Maybe (a,b)
@@ -249,7 +249,7 @@ extractOnePathClaims idxMod =
 extractOnePathClaimFrom
     :: Verified.SentenceClaim
     -- ^ Sentence to extract axiom pattern from
-    -> Maybe (OnePathRule Object Variable)
+    -> Maybe (OnePathRule Variable)
 extractOnePathClaimFrom sentence =
     case fromSentenceAxiom (getSentenceClaim sentence) of
         Right (OnePathClaimPattern claim) -> Just claim
@@ -259,7 +259,7 @@ extractOnePathClaimFrom sentence =
 extractAllPathClaims
     :: VerifiedModule declAtts axiomAtts
     -- ^'IndexedModule' containing the definition
-    -> [(axiomAtts, AllPathRule Object Variable)]
+    -> [(axiomAtts, AllPathRule Variable)]
 extractAllPathClaims idxMod =
     mapMaybe
         ( sequence                             -- (a, Maybe b) -> Maybe (a,b)
@@ -270,7 +270,7 @@ extractAllPathClaims idxMod =
 extractAllPathClaimFrom
     :: Verified.SentenceClaim
     -- ^ Sentence to extract axiom pattern from
-    -> Maybe (AllPathRule Object Variable)
+    -> Maybe (AllPathRule Variable)
 extractAllPathClaimFrom sentence =
     case fromSentenceAxiom (getSentenceClaim sentence) of
         Right (AllPathClaimPattern claim) -> Just claim
@@ -281,7 +281,7 @@ extractAllPathClaimFrom sentence =
 extractImplicationClaims
     :: VerifiedModule declAtts axiomAtts
     -- ^'IndexedModule' containing the definition
-    -> [(axiomAtts, ImplicationRule Object Variable)]
+    -> [(axiomAtts, ImplicationRule Variable)]
 extractImplicationClaims idxMod =
     mapMaybe
         ( sequence                               -- (a, Maybe b) -> Maybe (a,b)
@@ -292,7 +292,7 @@ extractImplicationClaims idxMod =
 extractImplicationClaimFrom
     :: Verified.SentenceClaim
     -- ^ Sentence to extract axiom pattern from
-    -> Maybe (ImplicationRule Object Variable)
+    -> Maybe (ImplicationRule Variable)
 extractImplicationClaimFrom sentence =
     case fromSentenceAxiom (getSentenceClaim sentence) of
         Right (ImplicationAxiomPattern axiomPat) -> Just axiomPat
