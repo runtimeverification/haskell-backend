@@ -1391,7 +1391,7 @@ instance EqualWithExplanation (Annotation.Null Object) where
 
 instance
     ( EqualWithExplanation variable, Show variable
-    ) => StructEqualWithExplanation (Valid variable level)
+    ) => StructEqualWithExplanation (Valid variable)
   where
     structFieldsWithNames expected@(Valid _ _) actual@(Valid _ _) =
         [ EqWrap
@@ -1407,7 +1407,7 @@ instance
 
 instance
     ( EqualWithExplanation variable, Show variable
-    ) => EqualWithExplanation (Valid variable level)
+    ) => EqualWithExplanation (Valid variable)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show

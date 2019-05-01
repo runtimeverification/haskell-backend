@@ -316,12 +316,10 @@ type CommonPurePattern domain =
     PurePattern domain Variable (Annotation.Null Object)
 
 -- | A concrete pure pattern (containing no variables) at level @level@.
-type ConcretePurePattern domain =
-    PurePattern domain Concrete (Valid Concrete Object)
+type ConcretePurePattern domain = PurePattern domain Concrete (Valid Concrete)
 
 -- | A pure pattern which has been parsed and verified.
-type VerifiedPurePattern domain =
-    PurePattern domain Variable (Valid Variable Object)
+type VerifiedPurePattern domain = PurePattern domain Variable (Valid Variable)
 
 {- | Use the provided traversal to replace all variables in a 'PurePattern'.
 

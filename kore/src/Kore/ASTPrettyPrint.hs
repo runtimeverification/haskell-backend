@@ -321,7 +321,7 @@ instance PrettyPrint a => PrettyPrint (Const a b) where
 instance PrettyPrint (Annotation.Null level) where
     prettyPrint _ Annotation.Null = "Null"
 
-instance PrettyPrint variable => PrettyPrint (Valid variable level) where
+instance PrettyPrint variable => PrettyPrint (Valid variable) where
     prettyPrint _ valid@(Valid _ _) =
         writeStructure
             "Valid"

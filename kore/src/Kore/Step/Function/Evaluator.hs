@@ -81,7 +81,7 @@ evaluateApplication
     -- ^ Aggregated children predicate and substitution.
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid variable Object)
+        (Valid variable)
         (TermLike variable)
     -- ^ The pattern to be evaluated
     -> Simplifier

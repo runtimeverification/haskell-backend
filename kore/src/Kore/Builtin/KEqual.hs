@@ -137,7 +137,7 @@ evalKEq
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid variable Object)
+        (Valid variable)
         (TermLike variable)
     -> Simplifier
         ( AttemptedAxiom variable
@@ -190,7 +190,7 @@ evalKIte
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid variable Object)
+        (Valid variable)
         (TermLike variable)
     -> Simplifier
         ( AttemptedAxiom variable

@@ -57,7 +57,7 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 type TermLike variable =
-    PurePattern Domain.Builtin variable (Valid variable Object)
+    PurePattern Domain.Builtin variable (Valid variable)
 
 freeVariables :: TermLike variable -> Set variable
 freeVariables termLike = Valid.freeVariables (extract termLike)

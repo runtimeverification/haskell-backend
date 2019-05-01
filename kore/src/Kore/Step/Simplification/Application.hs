@@ -48,7 +48,7 @@ type ExpandedApplication level variable =
         variable
         (CofreeF
             (Application SymbolOrAlias)
-            (Valid variable level)
+            (Valid variable)
             (TermLike variable)
         )
 
@@ -77,7 +77,7 @@ simplify
     -- ^ Map from axiom IDs to axiom evaluators
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid variable Object)
+        (Valid variable)
         (OrPattern variable)
     -> Simplifier
         ( OrPattern variable
@@ -129,7 +129,7 @@ makeAndEvaluateApplications
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Valid variable Object
+    -> Valid variable
     -> SymbolOrAlias
     -> [Pattern variable]
     -> Simplifier
@@ -168,7 +168,7 @@ makeAndEvaluateSymbolApplications
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Valid variable Object
+    -> Valid variable
     -> SymbolOrAlias
     -> [Pattern variable]
     -> Simplifier
@@ -246,7 +246,7 @@ makeExpandedApplication
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Valid variable Object
+    -> Valid variable
     -> SymbolOrAlias
     -> [Pattern variable]
     -> Simplifier

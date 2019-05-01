@@ -348,7 +348,7 @@ makeApplication
     -> [[Pattern variable]]
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid variable Object)
+        (Valid variable)
         (OrPattern variable)
 makeApplication patternSort symbol patterns =
     (:<)
@@ -374,7 +374,7 @@ evaluate
     -- ^ Map from axiom IDs to axiom evaluators
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid Variable Object)
+        (Valid Variable)
         (OrPattern Variable)
     -> IO (OrPattern Variable)
 evaluate

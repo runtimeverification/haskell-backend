@@ -223,7 +223,7 @@ applicationAxiomSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> CofreeF
             (Application SymbolOrAlias)
-            (Valid variable Object)
+            (Valid variable)
             (TermLike variable)
         -> Simplifier
             ( AttemptedAxiom variable

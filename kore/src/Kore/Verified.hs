@@ -21,8 +21,7 @@ import           Kore.AST.Pure hiding
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Syntax.Sentence as Syntax
 
-type Pattern =
-    PurePattern Domain.Builtin Variable (Valid (Variable) Object)
+type Pattern = PurePattern Domain.Builtin Variable (Valid Variable)
 
 type Sentence = Syntax.Sentence Pattern
 
