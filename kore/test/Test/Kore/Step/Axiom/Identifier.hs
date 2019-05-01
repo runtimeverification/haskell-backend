@@ -46,5 +46,5 @@ hasNoId input =
     testCase "AxiomId.extract evaluation"
         (assertEqualWithExplanation "has no id"
             Nothing
-            (AxiomIdentifier.extract input)
+            (AxiomIdentifier.extract input :: Maybe (AxiomIdentifier Object))
         )

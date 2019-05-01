@@ -521,9 +521,9 @@ sentenceAttributes =
 eraseSentenceAnnotations
     :: Functor domain
     => Sentence
-        (PurePattern Object domain variable erased)
+        (PurePattern domain variable erased)
     -> Sentence
-        (PurePattern Object domain variable (Annotation.Null Object))
+        (PurePattern domain variable (Annotation.Null Object))
 eraseSentenceAnnotations sentence = (<$) Annotation.Null <$> sentence
 
 class AsSentence sentenceType where

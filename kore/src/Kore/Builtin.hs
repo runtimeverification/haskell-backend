@@ -220,7 +220,7 @@ WARNING: This is not implemented for internal domain values. Use
 asMetaPattern
     :: Functor domain
     => Domain.Builtin child
-    -> PurePattern Meta domain Variable (Annotation.Null Meta)
+    -> PurePattern domain Variable (Annotation.Null Meta)
 asMetaPattern =
     \case
         Domain.BuiltinExternal ext ->

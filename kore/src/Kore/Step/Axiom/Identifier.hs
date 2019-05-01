@@ -54,7 +54,7 @@ Currently parameters of parameterized symbols are ignored.
 -}
 extract
     :: (Functor domain)
-    => PurePattern level domain variable annotation
+    => PurePattern domain variable annotation
     -> Maybe (AxiomIdentifier level)
 extract (App_ symbolOrAlias _children) =
     Just (Application (symbolOrAliasConstructor symbolOrAlias))

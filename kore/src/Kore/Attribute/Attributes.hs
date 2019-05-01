@@ -27,7 +27,7 @@ import           Kore.Unparser
 
 -- | A pure pattern which has only been parsed and lacks 'Valid' annotations.
 type ParsedPurePattern =
-    PurePattern Object Domain.Builtin Variable (Annotation.Null Object)
+    PurePattern Domain.Builtin Variable (Annotation.Null Object)
 
 type AttributePattern = ParsedPurePattern
 

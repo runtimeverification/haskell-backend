@@ -67,7 +67,7 @@ import Kore.Unparser
 
 -- * Helpers
 
-type Key = PurePattern Object Builtin Concrete (Valid Concrete Object)
+type Key = PurePattern Builtin Concrete (Valid Concrete Object)
 
 {- | Unparse a builtin collection type, given its symbols and children.
 

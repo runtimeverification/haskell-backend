@@ -545,9 +545,9 @@ instance
     , PrettyPrint child
     , PrettyPrint annotation
     , PrettyPrint (domain child)
-    , child ~ Cofree (Pattern level domain variable) annotation
+    , child ~ Cofree (Pattern Object domain variable) annotation
     ) =>
-    PrettyPrint (PurePattern level domain variable annotation)
+    PrettyPrint (PurePattern domain variable annotation)
   where
     prettyPrint _ purePattern =
         writeStructure "PurePattern"

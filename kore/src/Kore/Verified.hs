@@ -22,7 +22,7 @@ import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Syntax.Sentence as Syntax
 
 type Pattern =
-    PurePattern Object Domain.Builtin Variable (Valid (Variable) Object)
+    PurePattern Domain.Builtin Variable (Valid (Variable) Object)
 
 type Sentence = Syntax.Sentence Pattern
 
