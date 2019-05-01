@@ -64,7 +64,7 @@ data Conditional variable child =
     deriving (Foldable, Functor, Generic, Traversable)
 
 deriving instance
-    (Eq child, Eq variable) =>
+    (Eq child, Ord variable) =>
     Eq (Conditional variable child)
 
 deriving instance
@@ -322,7 +322,7 @@ toPredicate Conditional { predicate, substitution } =
 
 -}
 mapVariables
-    :: Ord variableTo
+    :: (Ord variableFrom, Ord variableTo)
     => ((variableFrom -> variableTo) -> termFrom -> termTo)
     -> (variableFrom -> variableTo)
     -> Conditional variableFrom termFrom

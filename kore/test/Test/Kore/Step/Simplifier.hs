@@ -62,8 +62,8 @@ mockSimplifierHelper
 mockSimplifierHelper unevaluatedConverter [] _ patt =
     return
         ( OrPattern.fromPatterns
-            [ convertExpandedVariables
-                (unevaluatedConverter (convertPatternVariables patt))
+            [ convertPatternVariables
+                (unevaluatedConverter (convertTermLikeVariables patt))
             ]
 
         )
@@ -72,8 +72,8 @@ mockSimplifierHelper
     ((patt, patts) : reminder)
     substitutionSimplifier
     unevaluatedPatt
-  | patt == convertPatternVariables unevaluatedPatt
-  = return $ OrPattern.fromPatterns $ map convertExpandedVariables patts
+  | patt == convertTermLikeVariables unevaluatedPatt
+  = return $ OrPattern.fromPatterns $ map convertPatternVariables patts
   | otherwise =
     mockSimplifierHelper
         unevaluatedConverter
@@ -81,21 +81,23 @@ mockSimplifierHelper
         substitutionSimplifier
         unevaluatedPatt
 
-convertPatternVariables
+convertTermLikeVariables
     ::  ( Ord variable0
         , SortedVariable variable
         , SortedVariable variable0
         )
     => TermLike variable
     -> TermLike variable0
-convertPatternVariables = TermLike.mapVariables (fromVariable . toVariable)
+convertTermLikeVariables =
+    TermLike.mapVariables (fromVariable . toVariable)
 
-convertExpandedVariables
-    ::  ( Ord variable0
+convertPatternVariables
+    ::  ( Ord variable
+        , Ord variable0
         , SortedVariable variable
         , SortedVariable variable0
         )
     => Pattern variable
     -> Pattern variable0
-convertExpandedVariables =
+convertPatternVariables =
     Pattern.mapVariables (fromVariable . toVariable)

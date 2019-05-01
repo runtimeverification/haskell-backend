@@ -69,7 +69,7 @@ freeVariables = Conditional.freeVariables TermLike.freeVariables
 in an Pattern.
 -}
 mapVariables
-    :: Ord variableTo
+    :: (Ord variableFrom, Ord variableTo)
     => (variableFrom -> variableTo)
     -> Pattern variableFrom
     -> Pattern variableTo
