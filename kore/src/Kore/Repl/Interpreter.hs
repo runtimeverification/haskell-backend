@@ -60,7 +60,6 @@ import           System.Process
 
 import           Kore.AST.Common
                  ( Pattern (..) )
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -101,7 +100,7 @@ import           Kore.Unparser
 -- _great care_ of evaluating the RWST to a StateT immediatly, and thus getting
 -- rid of the WriterT part of the stack. This happens in the implementation of
 -- 'replInterpreter'.
-type ReplM claim level a = RWST () String (ReplState claim) Simplifier a
+type ReplM claim a = RWST () String (ReplState claim) Simplifier a
 
 -- | Interprets a REPL command in a stateful Simplifier context.
 replInterpreter
@@ -145,7 +144,7 @@ replInterpreter printFn replCmd = do
     -- and updates the state, returning the writer output along with the
     -- monadic result.
     evaluateCommand
-        :: ReplM claim level Bool
+        :: ReplM claim Bool
         -> StateT (ReplState claim) Simplifier (String, Bool)
     evaluateCommand c = do
         st <- get
@@ -214,7 +213,7 @@ proveSteps
     :: Claim claim
     => Int
     -- ^ maximum number of steps to perform
-    -> ReplM claim level ()
+    -> ReplM claim ()
 proveSteps n = do
     result <- loopM performStepNoBranching (n, SingleResult n)
     case result of
@@ -232,7 +231,7 @@ proveStepsF
     :: Claim claim
     => Int
     -- ^ maximum number of steps to perform
-    -> ReplM claim level ()
+    -> ReplM claim ()
 proveStepsF n = do
     graph  <- Lens.use lensGraph
     node   <- Lens.use lensNode
@@ -256,7 +255,7 @@ selectNode i = do
 showConfig
     :: Maybe Int
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
-    -> ReplM claim level ()
+    -> ReplM claim ()
 showConfig configNode = do
     maybeConfig <- getConfigAt configNode
     case maybeConfig of
@@ -269,23 +268,23 @@ showConfig configNode = do
 -- | Shows current omit list if passed 'Nothing'. Adds/removes from the list
 -- depending on whether the string already exists in the list or not.
 omitCell
-    :: forall claim level
+    :: forall claim
     .  Maybe String
     -- ^ Nothing to show current list, @Just str@ to add/remove to list
-    -> ReplM claim level ()
+    -> ReplM claim ()
 omitCell =
     \case
         Nothing  -> showCells
         Just str -> addOrRemove str
   where
-    showCells :: ReplM claim level ()
+    showCells :: ReplM claim ()
     showCells = do
         omitList <- Lens.use lensOmit
         case omitList of
             [] -> putStrLn' "Omit list is currently empty."
             _  -> traverse_ putStrLn' omitList
 
-    addOrRemove :: String -> ReplM claim level ()
+    addOrRemove :: String -> ReplM claim ()
     addOrRemove str = lensOmit %= toggle str
 
     toggle :: String -> [String] -> [String]
@@ -295,7 +294,7 @@ omitCell =
 
 -- | Shows all leaf nodes identifiers which are either stuck or can be
 -- evaluated further.
-showLeafs :: forall claim level. ReplM claim level ()
+showLeafs :: forall claim. ReplM claim ()
 showLeafs = do
     leafsByType <- sortLeafsByType <$> getInnerGraph
     case foldMap showPair leafsByType of
@@ -354,7 +353,7 @@ showRule configNode = do
 showPrecBranch
     :: Maybe Int
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
-    -> ReplM claim level ()
+    -> ReplM claim ()
 showPrecBranch maybeNode = do
     graph <- getInnerGraph
     node' <- getTargetNode maybeNode
@@ -375,7 +374,7 @@ showPrecBranch maybeNode = do
 showChildren
     :: Maybe Int
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
-    -> ReplM claim level ()
+    -> ReplM claim ()
 showChildren maybeNode = do
     graph <- getInnerGraph
     node' <- getTargetNode maybeNode
@@ -452,14 +451,13 @@ labelDel lbl = do
 
 -- | Redirect command to specified file.
 redirect
-    :: forall level claim
-    .  level ~ Object
-    => Claim claim
+    :: forall claim
+    .  Claim claim
     => ReplCommand
     -- ^ command to redirect
     -> FilePath
     -- ^ file path
-    -> ReplM claim level ()
+    -> ReplM claim ()
 redirect cmd path = do
     get >>= runInterpreter >>= put
     putStrLn' "File created."
@@ -469,17 +467,16 @@ redirect cmd path = do
 
     runInterpreter
         :: ReplState claim
-        -> ReplM claim level (ReplState claim)
+        -> ReplM claim (ReplState claim)
     runInterpreter = lift . execStateT (replInterpreter redirectToFile cmd)
 
 -- | Attempt to use a specific axiom or claim to progress the current proof.
 tryAxiomClaim
-    :: forall level claim
-    .  level ~ Object
-    => Claim claim
+    :: forall claim
+    .  Claim claim
     => Either AxiomIndex ClaimIndex
     -- ^ tagged index in the axioms or claims list
-    -> ReplM claim level ()
+    -> ReplM claim ()
 tryAxiomClaim eac = do
     maybeAxiomOrClaim <- getAxiomOrClaimByIndex eac
     case maybeAxiomOrClaim of
@@ -507,7 +504,7 @@ tryAxiomClaim eac = do
     rightToList :: Either a b -> [b]
     rightToList = either (const []) pure
 
-    stuckToUnstuck :: [Graph.Node] -> ExecutionGraph -> ReplM claim level ()
+    stuckToUnstuck :: [Graph.Node] -> ExecutionGraph -> ReplM claim ()
     stuckToUnstuck nodes Strategy.ExecutionGraph{ graph } =
         updateInnerGraph $ Graph.gmap (stuckToRewrite nodes) graph
 
@@ -521,7 +518,7 @@ tryAxiomClaim eac = do
     showUnificationFailure
         :: Either (Axiom) claim
         -> Graph.Node
-        -> ReplM claim level ()
+        -> ReplM claim ()
     showUnificationFailure axiomOrClaim' node = do
         let first = extractLeftPattern axiomOrClaim'
         maybeSecond <- getConfigAt (Just node)
@@ -538,7 +535,7 @@ tryAxiomClaim eac = do
     unify
         :: TermLike Variable
         -> TermLike Variable
-        -> ReplM claim level ()
+        -> ReplM claim ()
     unify first second = do
         unifier <- Lens.use lensUnifier
         mdoc <-
@@ -604,16 +601,15 @@ saveSession path = do
 
 -- | Pipe result of command to specified program.
 pipe
-    :: forall level claim
-    .  level ~ Object
-    => Claim claim
+    :: forall claim
+    .  Claim claim
     => ReplCommand
     -- ^ command to pipe
     -> String
     -- ^ path to the program that will receive the command's output
     -> [String]
     -- ^ additional arguments to be passed to the program
-    -> ReplM claim level ()
+    -> ReplM claim ()
 pipe cmd file args = do
     exists <- liftIO $ findExecutable file
     case exists of
@@ -633,7 +629,7 @@ pipe cmd file args = do
     runInterpreter
         :: (String -> IO ())
         -> ReplState claim
-        -> ReplM claim level (ReplState claim)
+        -> ReplM claim (ReplState claim)
     runInterpreter io = lift . execStateT (replInterpreter io cmd)
 
     createProcess' exec =
@@ -642,21 +638,20 @@ pipe cmd file args = do
 
 -- | Appends output of a command to a file.
 appendTo
-    :: forall claim level
-    .  level ~ Object
-    => Claim claim
+    :: forall claim
+    .  Claim claim
     => ReplCommand
     -- ^ command
     -> FilePath
     -- ^ file to append to
-    -> ReplM claim level ()
+    -> ReplM claim ()
 appendTo cmd file = do
     get >>= runInterpreter >>= put
     putStrLn' $ "Appended output to \"" <> file <> "\"."
   where
     runInterpreter
         :: ReplState claim
-        -> ReplM claim level (ReplState claim)
+        -> ReplM claim (ReplState claim)
     runInterpreter = lift . execStateT (replInterpreter (appendFile file) cmd)
 
 
@@ -666,11 +661,11 @@ appendTo cmd file = do
 --
 -- See 'loopM' for details.
 performStepNoBranching
-    :: forall claim level
+    :: forall claim
     .  Claim claim
     => (Int, StepResult)
     -- ^ (current step, last result)
-    -> ReplM claim level (Either (Int, StepResult) (Int, StepResult))
+    -> ReplM claim (Either (Int, StepResult) (Int, StepResult))
 performStepNoBranching =
     \case
         -- Termination branch
@@ -689,7 +684,7 @@ recursiveForcedStep
     => Int
     -> ExecutionGraph
     -> Graph.Node
-    -> ReplM claim level ExecutionGraph
+    -> ReplM claim ExecutionGraph
 recursiveForcedStep n graph node
   | n == 0    = return graph
   | otherwise = do
