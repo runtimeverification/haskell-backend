@@ -133,7 +133,7 @@ evalKEq
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
         (Application SymbolOrAlias)
@@ -186,7 +186,7 @@ evalKIte
     => MetadataTools.SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
         (Application SymbolOrAlias)

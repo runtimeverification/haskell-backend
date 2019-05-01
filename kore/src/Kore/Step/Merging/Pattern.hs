@@ -50,7 +50,7 @@ mergeWithPredicate
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions in a pattern.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Predicate variable
     -- ^ Condition and substitution to add.
@@ -105,7 +105,7 @@ mergeWithEvaluatedCondition
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Pattern variable
     -> Predicate variable

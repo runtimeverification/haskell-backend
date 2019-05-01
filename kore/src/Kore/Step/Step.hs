@@ -112,7 +112,7 @@ newtype UnificationProcedure level =
         => SmtMetadataTools StepperAttributes
         -> PredicateSimplifier
         -> TermLikeSimplifier
-        -> BuiltinAndAxiomSimplifierMap level
+        -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
         -> TermLike variable
         -> unifier
@@ -189,7 +189,7 @@ unifyRule
     -> UnificationProcedure Object
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
 
     -> Pattern variable
     -- ^ Initial configuration
@@ -264,7 +264,7 @@ applyInitialConditions
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
 
     -> Predicate variable
     -- ^ Initial conditions
@@ -326,7 +326,7 @@ finalizeAppliedRule
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
 
     -> RulePattern variable
     -- ^ Applied rule
@@ -386,7 +386,7 @@ applyRemainder
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
 
     -> Pattern variable
     -- ^ Initial configuration
@@ -449,7 +449,7 @@ applyRule
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> UnificationProcedure Object
 
@@ -532,7 +532,7 @@ applyRewriteRule
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> UnificationProcedure Object
 
@@ -681,7 +681,7 @@ applyRulesInParallel
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> UnificationProcedure Object
 
@@ -746,7 +746,7 @@ applyRewriteRules
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> UnificationProcedure Object
 
@@ -792,7 +792,7 @@ sequenceRules
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> UnificationProcedure Object
 
@@ -880,7 +880,7 @@ sequenceRewriteRules
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> UnificationProcedure Object
 

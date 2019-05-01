@@ -231,7 +231,7 @@ transitionRule
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> Prim (Pattern Variable) (RewriteRule Variable)
     -> (CommonStrategyPattern, StepProof Object Variable)

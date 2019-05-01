@@ -73,7 +73,7 @@ simplify
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> CofreeF
         (Application SymbolOrAlias)
@@ -127,7 +127,7 @@ makeAndEvaluateApplications
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Valid variable Object
     -> SymbolOrAlias
@@ -166,7 +166,7 @@ makeAndEvaluateSymbolApplications
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Valid variable Object
     -> SymbolOrAlias
@@ -211,7 +211,7 @@ evaluateApplicationFunction
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> ExpandedApplication Object variable
     -- ^ The pattern to be evaluated
@@ -244,7 +244,7 @@ makeExpandedApplication
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Valid variable Object
     -> SymbolOrAlias

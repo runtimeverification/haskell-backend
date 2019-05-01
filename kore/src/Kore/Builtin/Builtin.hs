@@ -804,7 +804,7 @@ functionEvaluator impl =
         => SmtMetadataTools StepperAttributes
         -> PredicateSimplifier
         -> TermLikeSimplifier
-        -> BuiltinAndAxiomSimplifierMap level
+        -> BuiltinAndAxiomSimplifierMap
         -> CofreeF
             (Application SymbolOrAlias)
             (Valid variable Object)

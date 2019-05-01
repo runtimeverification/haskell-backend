@@ -146,7 +146,7 @@ verify
     -- ^ Simplifies normal patterns through, e.g., function evaluation
     -> PredicateSimplifier
     -- ^ Simplifies predicates
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     ->  (  Pattern Variable
         -> [Strategy
@@ -227,7 +227,7 @@ verifyClaim
     :: SmtMetadataTools StepperAttributes
     -> TermLikeSimplifier
     -> PredicateSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     ->  (  Pattern Variable
         -> [Strategy
@@ -303,7 +303,7 @@ verifyClaimStep
     => SmtMetadataTools StepperAttributes
     -> TermLikeSimplifier
     -> PredicateSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> claim
     -- ^ claim that is being proven
     -> [claim]

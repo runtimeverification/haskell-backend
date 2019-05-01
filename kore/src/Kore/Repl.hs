@@ -83,7 +83,7 @@ runRepl
     -- ^ pattern simplifier
     -> PredicateSimplifier
     -- ^ predicate simplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ builtin simplifier
     -> [Axiom Object]
     -- ^ list of axioms to used in the proof

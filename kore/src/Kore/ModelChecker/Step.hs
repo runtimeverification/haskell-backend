@@ -120,7 +120,7 @@ transitionRule
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> Prim (CommonModalPattern) (RewriteRule Variable)
     -> CommonProofState Object

@@ -116,7 +116,7 @@ termEquals
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> TermLike variable
     -> MaybeT
@@ -152,7 +152,7 @@ termEqualsAnd
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> TermLike variable
     -> MaybeT Simplifier (Pattern variable, SimplificationProof Object)
@@ -237,7 +237,7 @@ maybeTermEquals
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger Object variable unifier
     -> TermSimplifier Object variable unifier
     -- ^ Used to simplify subterm "and".
@@ -273,7 +273,7 @@ termUnification
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> TermLike variable
     -> unifier (Pattern variable, SimplificationProof Object)
@@ -329,7 +329,7 @@ termAnd
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> TermLike variable
     -> Simplifier (Pattern variable, SimplificationProof Object)
@@ -384,7 +384,7 @@ maybeTermAnd
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger Object variable unifier
     -> TermSimplifier Object variable unifier
     -- ^ Used to simplify subterm "and".
@@ -607,7 +607,7 @@ type TermTransformation level variable unifier =
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger level variable unifier
     -> TermSimplifier level variable unifier
     -> TermLike variable
@@ -618,7 +618,7 @@ type TermTransformationOld level variable unifier =
        SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap level
+    -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger level variable unifier
     -> TermSimplifier level variable unifier
     -> TermLike variable
@@ -640,7 +640,7 @@ maybeTransformTerm
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger Object variable unifier
     -> TermSimplifier Object variable unifier
     -- ^ Used to simplify subterm pairs.
@@ -782,7 +782,7 @@ bottomTermEquals
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> TermLike variable
     -> TermLike variable
@@ -846,7 +846,7 @@ termBottomEquals
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> TermLike variable
     -> TermLike variable
@@ -876,7 +876,7 @@ variableFunctionAndEquals
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> PredicateMerger Object variable unifier
     -> TermLike variable
@@ -986,7 +986,7 @@ functionVariableAndEquals
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> PredicateMerger Object variable unifier
     -> TermLike variable

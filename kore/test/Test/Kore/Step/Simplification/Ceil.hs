@@ -489,7 +489,7 @@ mockEvaluator
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> Simplifier
         (AttemptedAxiom Object variable, SimplificationProof Object)
@@ -542,7 +542,7 @@ makeEvaluate tools child =
 
 makeEvaluateWithAxioms
     :: SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> Pattern Variable
     -> IO (OrPattern Variable)

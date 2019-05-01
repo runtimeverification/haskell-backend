@@ -178,7 +178,7 @@ testMetadataTools = MetadataTools.build (constructorFunctions verifiedModule)
 testSubstitutionSimplifier :: PredicateSimplifier
 testSubstitutionSimplifier = Mock.substitutionSimplifier testMetadataTools
 
-evaluators :: BuiltinAndAxiomSimplifierMap Object
+evaluators :: BuiltinAndAxiomSimplifierMap
 evaluators = Builtin.koreEvaluators verifiedModule
 
 stepSimplifier :: TermLikeSimplifier

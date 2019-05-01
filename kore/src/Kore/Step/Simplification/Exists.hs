@@ -79,7 +79,7 @@ simplify
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Simplifies patterns.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Exists Sort variable (OrPattern variable)
     -> Simplifier
@@ -125,7 +125,7 @@ simplifyEvaluated
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Simplifies patterns.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> variable
     -> OrPattern variable
@@ -170,7 +170,7 @@ makeEvaluate
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Simplifies patterns.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> variable
     -> Pattern variable
@@ -233,7 +233,7 @@ makeEvaluateBoundLeft
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Simplifies patterns.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> variable  -- ^ quantified variable
     -> TermLike variable  -- ^ substituted term

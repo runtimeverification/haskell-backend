@@ -78,7 +78,7 @@ normalize
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> Conditional variable term
     -> BranchT Simplifier (Conditional variable term)
 normalize
@@ -126,7 +126,7 @@ normalizeExcept
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> Predicate variable
     -> BranchT unifier (Predicate variable)
 normalizeExcept
@@ -197,7 +197,7 @@ mergePredicatesAndSubstitutions
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> [Syntax.Predicate variable]
     -> [Substitution variable]
     -> Simplifier
@@ -251,7 +251,7 @@ mergePredicatesAndSubstitutionsExcept
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> [Syntax.Predicate variable]
     -> [Substitution variable]
     -> unifier
@@ -305,7 +305,7 @@ createPredicatesAndSubstitutionsMergerExcept
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger Object variable unifier
 createPredicatesAndSubstitutionsMergerExcept
     tools substitutionSimplifier simplifier axiomIdToSimplifier
@@ -340,7 +340,7 @@ createPredicatesAndSubstitutionsMerger
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger Object variable Simplifier
 createPredicatesAndSubstitutionsMerger
     tools substitutionSimplifier simplifier axiomIdToSimplifier
@@ -378,7 +378,7 @@ createLiftedPredicatesAndSubstitutionsMerger
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger Object variable unifier
 createLiftedPredicatesAndSubstitutionsMerger
     tools substitutionSimplifier simplifier axiomIdToSimplifier
@@ -412,7 +412,7 @@ normalizeSubstitutionAfterMerge
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> Predicate variable
     -> unifier
           ( Predicate variable

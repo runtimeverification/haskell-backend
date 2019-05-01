@@ -272,7 +272,7 @@ testIndexedModule =
                     (Map.lookup (ModuleName "test") indexedModules)
 
 testEvaluators
-    :: BuiltinAndAxiomSimplifierMap Object
+    :: BuiltinAndAxiomSimplifierMap
 testEvaluators =
     axiomPatternsToEvaluators $ extractEqualityAxioms testIndexedModule
 

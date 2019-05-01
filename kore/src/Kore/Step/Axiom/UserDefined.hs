@@ -67,7 +67,7 @@ equalityRuleEvaluator
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -- ^ The function on which to evaluate the current function.

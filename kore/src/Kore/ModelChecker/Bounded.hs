@@ -69,7 +69,7 @@ check
     -- ^ Simplifies normal patterns through, e.g., function evaluation
     -> PredicateSimplifier
     -- ^ Simplifies predicates
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     ->  (  CommonModalPattern
         -> [Strategy
@@ -124,7 +124,7 @@ checkClaim
     :: SmtMetadataTools StepperAttributes
     -> TermLikeSimplifier
     -> PredicateSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     ->  (  CommonModalPattern
         -> [Strategy

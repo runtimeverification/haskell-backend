@@ -18,7 +18,6 @@ import           Data.List
                  ( group )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -48,7 +47,7 @@ import           Kore.Variables.Fresh
 create
     :: SmtMetadataTools StepperAttributes
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> PredicateSimplifier
 create tools simplifier axiomIdToSimplifier =
     PredicateSimplifier
@@ -69,7 +68,7 @@ simplify
         )
     => SmtMetadataTools StepperAttributes
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Int
     -> Predicate variable

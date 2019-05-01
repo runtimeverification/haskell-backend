@@ -96,7 +96,7 @@ newtype BuiltinAndAxiomSimplifier level =
         => SmtMetadataTools StepperAttributes
         -> PredicateSimplifier
         -> TermLikeSimplifier
-        -> BuiltinAndAxiomSimplifierMap level
+        -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
         -> Simplifier
             ( AttemptedAxiom level variable
@@ -107,8 +107,8 @@ newtype BuiltinAndAxiomSimplifier level =
 {-|A type to abstract away the mapping from symbol identifiers to
 their corresponding evaluators.
 -}
-type BuiltinAndAxiomSimplifierMap level =
-    Map.Map (AxiomIdentifier level) (BuiltinAndAxiomSimplifier level)
+type BuiltinAndAxiomSimplifierMap =
+    Map.Map (AxiomIdentifier Object) (BuiltinAndAxiomSimplifier Object)
 
 {-| A type holding the result of applying an axiom to a pattern.
 -}
@@ -228,7 +228,7 @@ applicationAxiomSimplifier
         => SmtMetadataTools StepperAttributes
         -> PredicateSimplifier
         -> TermLikeSimplifier
-        -> BuiltinAndAxiomSimplifierMap Object
+        -> BuiltinAndAxiomSimplifierMap
         -> CofreeF
             (Application SymbolOrAlias)
             (Valid variable Object)
@@ -254,7 +254,7 @@ applicationAxiomSimplifier applicationSimplifier =
             => SmtMetadataTools StepperAttributes
             -> PredicateSimplifier
             -> TermLikeSimplifier
-            -> BuiltinAndAxiomSimplifierMap Object
+            -> BuiltinAndAxiomSimplifierMap
             -> TermLike variable
             -> Simplifier
                 ( AttemptedAxiom Object variable

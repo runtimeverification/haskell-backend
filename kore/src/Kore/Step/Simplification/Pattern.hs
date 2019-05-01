@@ -48,7 +48,7 @@ simplify
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions in patterns.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Pattern variable
     -> Simplifier
@@ -96,7 +96,7 @@ simplifyPredicate
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions in a pattern.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Pattern variable
     -- ^ The condition to be evaluated.

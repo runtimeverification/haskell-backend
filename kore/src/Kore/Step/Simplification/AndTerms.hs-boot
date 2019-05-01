@@ -32,7 +32,7 @@ termAnd
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> TermLike variable
     -> Simplifier (Pattern variable, SimplificationProof Object)
@@ -50,7 +50,7 @@ termUnification
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> TermLike variable
     -> unifier (Pattern variable, SimplificationProof Object)

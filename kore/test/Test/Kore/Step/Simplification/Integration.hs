@@ -409,7 +409,7 @@ evaluate tools patt =
 
 evaluateWithAxioms
     :: SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> Pattern Variable
     -> IO (OrPattern Variable)
 evaluateWithAxioms tools axioms patt =
@@ -425,13 +425,13 @@ evaluateWithAxioms tools axioms patt =
   where
     simplifier :: TermLikeSimplifier
     simplifier = Simplifier.create tools axiomIdToSimplifier
-    axiomIdToSimplifier :: BuiltinAndAxiomSimplifierMap Object
+    axiomIdToSimplifier :: BuiltinAndAxiomSimplifierMap
     axiomIdToSimplifier =
         Map.unionWith
             simplifierWithFallback
             builtinAxioms
             axioms
-    builtinAxioms :: BuiltinAndAxiomSimplifierMap Object
+    builtinAxioms :: BuiltinAndAxiomSimplifierMap
     builtinAxioms =
         Map.fromList
             [   ( AxiomIdentifier.Application Mock.concatMapId

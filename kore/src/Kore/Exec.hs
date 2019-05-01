@@ -119,7 +119,7 @@ data Initialized =
         { rewriteRules :: ![Rewrite]
         , simplifier :: !(TermLikeSimplifier)
         , substitutionSimplifier :: !(PredicateSimplifier)
-        , axiomIdToSimplifier :: !(BuiltinAndAxiomSimplifierMap Object)
+        , axiomIdToSimplifier :: !(BuiltinAndAxiomSimplifierMap)
         }
 
 -- | The products of execution: an execution graph, and assorted simplifiers.
@@ -128,7 +128,7 @@ data Execution =
         { metadataTools :: !(SmtMetadataTools StepperAttributes)
         , simplifier :: !(TermLikeSimplifier)
         , substitutionSimplifier :: !(PredicateSimplifier)
-        , axiomIdToSimplifier :: !(BuiltinAndAxiomSimplifierMap Object)
+        , axiomIdToSimplifier :: !(BuiltinAndAxiomSimplifierMap)
         , executionGraph :: !ExecutionGraph
         }
 
@@ -409,10 +409,10 @@ initialize verifiedModule tools =
             mapM (simplifyRewriteRule tools)
                 (extractRewriteAxioms verifiedModule)
         let
-            functionEvaluators :: BuiltinAndAxiomSimplifierMap Object
+            functionEvaluators :: BuiltinAndAxiomSimplifierMap
             functionEvaluators =
                 axiomPatternsToEvaluators functionAxioms
-            axiomIdToSimplifier :: BuiltinAndAxiomSimplifierMap Object
+            axiomIdToSimplifier :: BuiltinAndAxiomSimplifierMap
             axiomIdToSimplifier =
                 Map.unionWith
                     simplifierWithFallback

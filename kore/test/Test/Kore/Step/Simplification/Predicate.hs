@@ -285,7 +285,7 @@ mockMetadataTools =
         Mock.smtDeclarations
 
 runSimplifier
-    :: BuiltinAndAxiomSimplifierMap Object
+    :: BuiltinAndAxiomSimplifierMap
     -> Predicate Variable
     -> IO (OrPredicate Variable)
 runSimplifier patternSimplifierMap predicate =

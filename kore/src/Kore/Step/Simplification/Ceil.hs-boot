@@ -34,7 +34,7 @@ makeEvaluateTerm
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> TermLike variable
     -> Simplifier (OrPredicate variable, SimplificationProof Object)

@@ -625,7 +625,7 @@ mockEvaluator
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> Simplifier
         (AttemptedAxiom Object variable, SimplificationProof Object)
@@ -634,7 +634,7 @@ mockEvaluator evaluation _ _ _ _ _ =
 
 evaluate
     :: SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> TermLike Variable
     -> IO (Pattern Variable)
 evaluate metadataTools functionIdToEvaluator patt =

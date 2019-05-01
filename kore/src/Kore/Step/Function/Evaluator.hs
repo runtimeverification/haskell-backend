@@ -75,7 +75,7 @@ evaluateApplication
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Predicate variable
     -- ^ Aggregated children predicate and substitution.
@@ -154,7 +154,7 @@ evaluatePattern
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Predicate variable
     -- ^ Aggregated children predicate and substitution.
@@ -203,7 +203,7 @@ maybeEvaluatePattern
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Predicate variable
     -- ^ Aggregated children predicate and substitution.
@@ -357,7 +357,7 @@ reevaluateFunctions
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions in patterns.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Pattern variable
     -- ^ Function evaluation result.
@@ -412,7 +412,7 @@ mergeWithConditionAndSubstitution
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions in a pattern.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Predicate variable
     -- ^ Condition and substitution to add.
