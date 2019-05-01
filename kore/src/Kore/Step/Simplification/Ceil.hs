@@ -82,7 +82,7 @@ simplify
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
@@ -124,7 +124,7 @@ simplifyEvaluated
         , Unparse variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
@@ -158,7 +158,7 @@ makeEvaluate
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
@@ -185,7 +185,7 @@ makeEvaluateNonBoolCeil
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
@@ -237,7 +237,7 @@ makeEvaluateTerm
         , Unparse variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
@@ -332,7 +332,7 @@ makeEvaluateBuiltin
         , Show variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object

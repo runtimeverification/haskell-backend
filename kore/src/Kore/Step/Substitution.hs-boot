@@ -35,7 +35,7 @@ mergePredicatesAndSubstitutionsExcept
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> [Syntax.Predicate variable]

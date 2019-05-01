@@ -30,7 +30,7 @@ termAnd
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike variable
@@ -48,7 +48,7 @@ termUnification
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike variable

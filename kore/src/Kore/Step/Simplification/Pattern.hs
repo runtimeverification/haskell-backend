@@ -45,7 +45,7 @@ simplify
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -- ^ Evaluates functions in patterns.
     -> BuiltinAndAxiomSimplifierMap Object
@@ -93,7 +93,7 @@ simplifyPredicate
     => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -- ^ Evaluates functions in a pattern.
     -> BuiltinAndAxiomSimplifierMap Object

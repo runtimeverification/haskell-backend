@@ -130,7 +130,7 @@ evalKEq
         )
     => Bool
     -> MetadataTools.SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
@@ -184,7 +184,7 @@ evalKIte
         , SortedVariable variable
         )
     => MetadataTools.SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions

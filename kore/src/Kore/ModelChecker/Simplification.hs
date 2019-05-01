@@ -37,7 +37,7 @@ import           Kore.Variables.Fresh
 
 checkImplicationIsTop
     :: SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -- ^ Evaluates functions in patterns
     -> BuiltinAndAxiomSimplifierMap Object

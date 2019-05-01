@@ -287,7 +287,7 @@ newtype TermLikeSimplifier level =
             , Unparse variable
             , SortedVariable variable
             )
-        => PredicateSimplifier level
+        => PredicateSimplifier
         -> TermLike variable
         -> Predicate variable
         -> BranchT Simplifier (Pattern variable)
@@ -307,7 +307,7 @@ simplifyTerm
         , SortedVariable variable
         )
     => TermLikeSimplifier Object
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLike variable
     -> Simplifier
         ( OrPattern variable
@@ -337,7 +337,7 @@ simplifyConditionalTerm
         , SortedVariable variable
         )
     => TermLikeSimplifier Object
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLike variable
     -> Predicate variable
     -> BranchT Simplifier (Pattern variable)
@@ -357,7 +357,7 @@ termLikeSimplifier
             , Unparse variable
             , SortedVariable variable
             )
-        => PredicateSimplifier Object
+        => PredicateSimplifier
         -> TermLike variable
         -> Simplifier
             ( OrPattern variable
@@ -376,7 +376,7 @@ termLikeSimplifier simplifier =
             , Unparse variable
             , SortedVariable variable
             )
-        => PredicateSimplifier Object
+        => PredicateSimplifier
         -> TermLike variable
         -> Predicate variable
         -> BranchT Simplifier (Pattern variable)
@@ -395,7 +395,7 @@ termLikeSimplifier simplifier =
 'Predicate's. The minimal requirement from this function is
 that it applies the substitution on the predicate.
 -}
-newtype PredicateSimplifier level =
+newtype PredicateSimplifier =
     PredicateSimplifier
         { getPredicateSimplifier
             ::  forall variable

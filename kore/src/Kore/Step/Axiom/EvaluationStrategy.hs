@@ -114,7 +114,7 @@ totalDefinitionEvaluation rules =
             , Unparse variable
             )
         => SmtMetadataTools StepperAttributes
-        -> PredicateSimplifier Object
+        -> PredicateSimplifier
         -> TermLikeSimplifier Object
         -> BuiltinAndAxiomSimplifierMap Object
         -> TermLike variable
@@ -186,7 +186,7 @@ evaluateBuiltin
         )
     => BuiltinAndAxiomSimplifier Object
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
@@ -240,7 +240,7 @@ applyFirstSimplifierThatWorks
     => [BuiltinAndAxiomSimplifier Object]
     -> AcceptsMultipleResults
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators
@@ -328,7 +328,7 @@ evaluateWithDefinitionAxioms
         )
     => [EqualityRule Variable]
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from axiom IDs to axiom evaluators

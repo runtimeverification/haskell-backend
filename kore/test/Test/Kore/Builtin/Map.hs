@@ -509,5 +509,5 @@ mkIntVar :: Id -> TermLike Variable
 mkIntVar variableName =
     mkVar Variable { variableName, variableCounter = mempty, variableSort = intSort }
 
-mockSubstitutionSimplifier :: PredicateSimplifier level
+mockSubstitutionSimplifier :: PredicateSimplifier
 mockSubstitutionSimplifier = PredicateSimplifier return

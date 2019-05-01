@@ -100,7 +100,7 @@ simplifyAnds
         , MonadUnify unifierM
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> NonEmpty (TermLike variable)
@@ -177,7 +177,7 @@ solveGroupedSubstitution
        , unifier ~ unifierM variable
       )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> variable
@@ -230,7 +230,7 @@ normalizeSubstitutionDuplication
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> Substitution variable

@@ -114,7 +114,7 @@ termEquals
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike variable
@@ -150,7 +150,7 @@ termEqualsAnd
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike variable
@@ -235,7 +235,7 @@ maybeTermEquals
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> PredicateMerger Object variable unifier
@@ -271,7 +271,7 @@ termUnification
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike variable
@@ -327,7 +327,7 @@ termAnd
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike variable
@@ -382,7 +382,7 @@ maybeTermAnd
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> PredicateMerger Object variable unifier
@@ -605,7 +605,7 @@ All the @TermTransformationOld@s and similar functions defined in this module ca
 type TermTransformation level variable unifier =
        SimplificationType
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
+    -> PredicateSimplifier
     -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> PredicateMerger level variable unifier
@@ -616,7 +616,7 @@ type TermTransformation level variable unifier =
         (Pattern variable , SimplificationProof level)
 type TermTransformationOld level variable unifier =
        SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier level
+    -> PredicateSimplifier
     -> TermLikeSimplifier level
     -> BuiltinAndAxiomSimplifierMap level
     -> PredicateMerger level variable unifier
@@ -638,7 +638,7 @@ maybeTransformTerm
         )
     => [TermTransformationOld Object variable unifier]
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> PredicateMerger Object variable unifier
@@ -779,7 +779,7 @@ bottomTermEquals
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
@@ -843,7 +843,7 @@ termBottomEquals
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
@@ -873,7 +873,7 @@ variableFunctionAndEquals
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
@@ -983,7 +983,7 @@ functionVariableAndEquals
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object

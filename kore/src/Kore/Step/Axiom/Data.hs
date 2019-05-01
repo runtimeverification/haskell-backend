@@ -94,7 +94,7 @@ newtype BuiltinAndAxiomSimplifier level =
             , Unparse variable
             )
         => SmtMetadataTools StepperAttributes
-        -> PredicateSimplifier level
+        -> PredicateSimplifier
         -> TermLikeSimplifier level
         -> BuiltinAndAxiomSimplifierMap level
         -> TermLike variable
@@ -226,7 +226,7 @@ applicationAxiomSimplifier
             , Unparse variable
             )
         => SmtMetadataTools StepperAttributes
-        -> PredicateSimplifier Object
+        -> PredicateSimplifier
         -> TermLikeSimplifier Object
         -> BuiltinAndAxiomSimplifierMap Object
         -> CofreeF
@@ -252,7 +252,7 @@ applicationAxiomSimplifier applicationSimplifier =
                 , Unparse variable
                 )
             => SmtMetadataTools StepperAttributes
-            -> PredicateSimplifier Object
+            -> PredicateSimplifier
             -> TermLikeSimplifier Object
             -> BuiltinAndAxiomSimplifierMap Object
             -> TermLike variable

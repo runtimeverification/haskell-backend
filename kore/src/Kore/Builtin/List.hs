@@ -412,7 +412,7 @@ unifyEquals
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> (p -> p -> unifier (expanded, proof))
     -> p
     -> p

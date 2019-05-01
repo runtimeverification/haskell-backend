@@ -487,7 +487,7 @@ appliedMockEvaluator result =
 mockEvaluator
     :: AttemptedAxiom Object variable
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike variable

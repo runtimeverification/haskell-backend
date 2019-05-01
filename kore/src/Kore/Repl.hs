@@ -81,7 +81,7 @@ runRepl
     -- ^ tools required for the proof
     -> TermLikeSimplifier Object
     -- ^ pattern simplifier
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -- ^ predicate simplifier
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ builtin simplifier

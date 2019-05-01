@@ -144,7 +144,7 @@ verify
     :: SmtMetadataTools StepperAttributes
     -> TermLikeSimplifier Object
     -- ^ Simplifies normal patterns through, e.g., function evaluation
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -- ^ Simplifies predicates
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
@@ -226,7 +226,7 @@ defaultStrategy
 verifyClaim
     :: SmtMetadataTools StepperAttributes
     -> TermLikeSimplifier Object
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     ->  (  Pattern Variable
@@ -302,7 +302,7 @@ verifyClaimStep
     .  Claim claim
     => SmtMetadataTools StepperAttributes
     -> TermLikeSimplifier Object
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> BuiltinAndAxiomSimplifierMap Object
     -> claim
     -- ^ claim that is being proven

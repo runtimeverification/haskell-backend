@@ -67,7 +67,7 @@ check
     :: SmtMetadataTools StepperAttributes
     -> TermLikeSimplifier Object
     -- ^ Simplifies normal patterns through, e.g., function evaluation
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -- ^ Simplifies predicates
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
@@ -123,7 +123,7 @@ bmcStrategy
 checkClaim
     :: SmtMetadataTools StepperAttributes
     -> TermLikeSimplifier Object
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> BuiltinAndAxiomSimplifierMap Object
     -- ^ Map from symbol IDs to defined functions
     ->  (  CommonModalPattern

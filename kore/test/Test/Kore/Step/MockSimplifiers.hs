@@ -2,8 +2,6 @@ module Test.Kore.Step.MockSimplifiers where
 
 import qualified Data.Map as Map
 
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -25,7 +23,7 @@ import qualified Kore.Step.Simplification.Predicate as Predicate
 
 substitutionSimplifier
     :: SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
 substitutionSimplifier tools =
     Predicate.create
         tools

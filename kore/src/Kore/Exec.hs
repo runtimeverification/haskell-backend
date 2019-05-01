@@ -118,7 +118,7 @@ data Initialized =
     Initialized
         { rewriteRules :: ![Rewrite]
         , simplifier :: !(TermLikeSimplifier Object)
-        , substitutionSimplifier :: !(PredicateSimplifier Object)
+        , substitutionSimplifier :: !(PredicateSimplifier)
         , axiomIdToSimplifier :: !(BuiltinAndAxiomSimplifierMap Object)
         }
 
@@ -127,7 +127,7 @@ data Execution =
     Execution
         { metadataTools :: !(SmtMetadataTools StepperAttributes)
         , simplifier :: !(TermLikeSimplifier Object)
-        , substitutionSimplifier :: !(PredicateSimplifier Object)
+        , substitutionSimplifier :: !(PredicateSimplifier)
         , axiomIdToSimplifier :: !(BuiltinAndAxiomSimplifierMap Object)
         , executionGraph :: !ExecutionGraph
         }
@@ -425,7 +425,7 @@ initialize verifiedModule tools =
             simplifier :: TermLikeSimplifier Object
             simplifier = Simplifier.create tools axiomIdToSimplifier
             substitutionSimplifier
-                :: PredicateSimplifier Object
+                :: PredicateSimplifier
             substitutionSimplifier =
                 Predicate.create
                     tools simplifier axiomIdToSimplifier

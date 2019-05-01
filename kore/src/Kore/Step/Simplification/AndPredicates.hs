@@ -49,7 +49,7 @@ simplifyEvaluatedMultiPredicate
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> MultiAnd (OrPredicate variable)

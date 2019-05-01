@@ -623,7 +623,7 @@ mapVariables =
 mockEvaluator
     :: AttemptedAxiom Object variable
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
     -> TermLike variable
@@ -644,7 +644,7 @@ evaluate metadataTools functionIdToEvaluator patt =
     $ TermLike.simplify
         metadataTools substitutionSimplifier functionIdToEvaluator patt
   where
-    substitutionSimplifier :: PredicateSimplifier Object
+    substitutionSimplifier :: PredicateSimplifier
     substitutionSimplifier =
         Predicate.create
             metadataTools patternSimplifier functionIdToEvaluator

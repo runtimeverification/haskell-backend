@@ -117,7 +117,7 @@ type Transition = TransitionT (RewriteRule Variable) (StateT (Maybe ()) Simplifi
 
 transitionRule
     :: SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -- ^ Evaluates functions in patterns
     -> BuiltinAndAxiomSimplifierMap Object

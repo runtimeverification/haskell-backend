@@ -76,7 +76,7 @@ simplify
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -- ^ Simplifies patterns.
     -> BuiltinAndAxiomSimplifierMap Object
@@ -122,7 +122,7 @@ simplifyEvaluated
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -- ^ Simplifies patterns.
     -> BuiltinAndAxiomSimplifierMap Object
@@ -167,7 +167,7 @@ makeEvaluate
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -- ^ Simplifies patterns.
     -> BuiltinAndAxiomSimplifierMap Object
@@ -230,7 +230,7 @@ makeEvaluateBoundLeft
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -- ^ Simplifies patterns.
     -> BuiltinAndAxiomSimplifierMap Object

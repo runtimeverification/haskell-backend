@@ -77,7 +77,7 @@ mockSimplifierHelper
             , ([Pattern variable], SimplificationProof Object)
             )
         ]
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLike variable0
     -> Simplifier
         (OrPattern variable0, SimplificationProof Object)

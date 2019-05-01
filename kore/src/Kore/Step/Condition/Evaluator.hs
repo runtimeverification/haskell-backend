@@ -44,7 +44,7 @@ evaluate
         , Unparse variable
         , Given (SmtMetadataTools StepperAttributes)
         )
-    => PredicateSimplifier Object
+    => PredicateSimplifier
     -> TermLikeSimplifier Object
     -- ^ Evaluates functions in a pattern.
     -> Syntax.Predicate variable

@@ -564,7 +564,7 @@ evaluate metadataTools (BuiltinAndAxiomSimplifier simplifier) patt =
     $ simplifier
         metadataTools substitutionSimplifier patternSimplifier Map.empty patt
   where
-    substitutionSimplifier :: PredicateSimplifier Object
+    substitutionSimplifier :: PredicateSimplifier
     substitutionSimplifier =
         Predicate.create
             metadataTools

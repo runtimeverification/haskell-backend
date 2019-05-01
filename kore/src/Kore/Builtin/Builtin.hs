@@ -802,7 +802,7 @@ functionEvaluator impl =
     evaluator
         :: (Ord variable, Show variable)
         => SmtMetadataTools StepperAttributes
-        -> PredicateSimplifier level
+        -> PredicateSimplifier
         -> TermLikeSimplifier Object
         -> BuiltinAndAxiomSimplifierMap level
         -> CofreeF

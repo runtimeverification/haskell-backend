@@ -49,7 +49,7 @@ create
     :: SmtMetadataTools StepperAttributes
     -> TermLikeSimplifier Object
     -> BuiltinAndAxiomSimplifierMap Object
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
 create tools simplifier axiomIdToSimplifier =
     PredicateSimplifier
         (simplify tools simplifier axiomIdToSimplifier 0)
@@ -161,7 +161,7 @@ simplifyPartial
         , Unparse variable
         , SortedVariable variable
         )
-    => PredicateSimplifier Object
+    => PredicateSimplifier
     -> TermLikeSimplifier Object
     -> Syntax.Predicate variable
     -> BranchT Simplifier (Predicate variable)

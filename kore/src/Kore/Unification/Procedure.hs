@@ -63,7 +63,7 @@ unificationProcedure
         )
     => SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLikeSimplifier Object
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap Object
