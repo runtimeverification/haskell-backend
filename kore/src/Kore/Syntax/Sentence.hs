@@ -381,22 +381,15 @@ unparseAxiom2
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
  -}
-newtype SentenceClaim (sortParam :: *) (patternType :: *) =
+newtype SentenceClaim (patternType :: *) =
     SentenceClaim { getSentenceClaim :: SentenceAxiom patternType }
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
-instance
-    (Hashable sortParam, Hashable patternType) =>
-    Hashable (SentenceClaim sortParam patternType)
+instance Hashable patternType => Hashable (SentenceClaim patternType)
 
-instance
-    (NFData sortParam, NFData patternType) =>
-    NFData (SentenceClaim sortParam patternType)
+instance NFData patternType => NFData (SentenceClaim patternType)
 
-instance
-    (Unparse sortParam, Unparse patternType) =>
-    Unparse (SentenceClaim sortParam patternType)
-  where
+instance Unparse patternType => Unparse (SentenceClaim patternType) where
     unparse = unparseAxiom "claim" . getSentenceClaim
     unparse2 = unparseAxiom2 "claim" . getSentenceClaim
 
@@ -444,7 +437,7 @@ data Sentence (patternType :: *) where
         :: !(SentenceAxiom patternType)
         -> Sentence patternType
     SentenceClaimSentence
-        :: !(SentenceClaim SortVariable patternType)
+        :: !(SentenceClaim patternType)
         -> Sentence patternType
     SentenceSortSentence
         :: !(SentenceSort patternType)

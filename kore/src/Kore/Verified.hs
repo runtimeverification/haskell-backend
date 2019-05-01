@@ -31,7 +31,7 @@ type SentenceAlias = AST.SentenceAlias Pattern
 
 type SentenceAxiom = AST.SentenceAxiom Pattern
 
-type SentenceClaim = Syntax.SentenceClaim SortVariable Pattern
+type SentenceClaim = Syntax.SentenceClaim Pattern
 
 type SentenceHook = AST.SentenceHook Pattern
 

@@ -117,7 +117,7 @@ data IndexedModule param pat declAtts axiomAtts =
     , indexedModuleSortDescriptions
         :: !(Map.Map Id (Attribute.Sort, SentenceSort pat))
     , indexedModuleAxioms :: ![(axiomAtts, SentenceAxiom pat)]
-    , indexedModuleClaims :: ![(axiomAtts, SentenceClaim param pat)]
+    , indexedModuleClaims :: ![(axiomAtts, SentenceClaim pat)]
     , indexedModuleAttributes :: !(declAtts, Attributes)
     , indexedModuleImports
         :: ![( declAtts

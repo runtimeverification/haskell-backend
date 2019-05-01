@@ -128,10 +128,10 @@ instance With (SentenceAxiom patt) Attribute where
 instance With (SentenceAxiom patt) [Attribute] where
     with = foldl' with
 
-instance With (SentenceClaim sort patt) Attribute where
+instance With (SentenceClaim patt) Attribute where
     with a b = SentenceClaim (with (getSentenceClaim a) b)
 
-instance With (SentenceClaim sort patt) [Attribute] where
+instance With (SentenceClaim patt) [Attribute] where
     with a b = SentenceClaim (with (getSentenceClaim a) b)
 
 instance With (SentenceImport patt) Attribute where

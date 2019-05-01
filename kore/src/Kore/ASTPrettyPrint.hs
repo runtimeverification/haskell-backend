@@ -612,9 +612,7 @@ instance
                 "sentenceAxiomAttributes" (sentenceImportAttributes sa)
             ]
 
-instance
-    ( PrettyPrint sortParam , PrettyPrint patternType ) =>
-    PrettyPrint (SentenceClaim sortParam patternType)
+instance PrettyPrint patternType => PrettyPrint (SentenceClaim patternType)
   where
     prettyPrint _ sentence@(SentenceClaim _) =
         writeStructure "SentenceClaim"

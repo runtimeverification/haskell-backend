@@ -116,7 +116,7 @@ withSentenceAxiomContext _ = withContext "axiom declaration"
 {- | Identify and locate the given claim declaration in the error context.
  -}
 withSentenceClaimContext
-    :: SentenceClaim sortParam patternType
+    :: SentenceClaim patternType
     -> Either (Error e) a
     -> Either (Error e) a
 withSentenceClaimContext _ = withContext "claim declaration"
