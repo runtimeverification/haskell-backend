@@ -61,11 +61,6 @@ import           Data.Hashable
                  ( Hashable (..) )
 import           Data.Maybe
                  ( catMaybes )
-import           Data.String
-                 ( IsString )
-import           Data.Text
-                 ( Text )
-import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Data.Void
                  ( Void )
@@ -79,60 +74,6 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Syntax.Sentence
 import           Kore.Unparser
 
-
-{-|'ModuleName' corresponds to the @module-name@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
--}
-newtype ModuleName = ModuleName { getModuleName :: Text }
-    deriving (Eq, Generic, IsString, Ord, Show)
-
-instance Hashable ModuleName
-
-instance NFData ModuleName
-
-instance Unparse ModuleName where
-    unparse = Pretty.pretty . getModuleName
-    unparse2 = Pretty.pretty . getModuleName
-
-
-getModuleNameForError :: ModuleName -> String
-getModuleNameForError = Text.unpack . getModuleName
-
-{-|'SentenceImport' corresponds to the @import-declaration@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
--}
--- TODO (thomas.tuegel): Even though the parameters are unused, they must stay
--- to satisfy the functional dependencies on 'AsSentence' below. Because they
--- are phantom, every use of 'asSentence' for a 'SentenceImport' will require a
--- type ascription. We should refactor the class so this is not necessary and
--- remove the parameters.
-data SentenceImport (patternType :: *) =
-    SentenceImport
-        { sentenceImportModuleName :: !ModuleName
-        , sentenceImportAttributes :: !Attributes
-        }
-    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
-
-instance Hashable (SentenceImport pat)
-
-instance NFData (SentenceImport pat)
-
-instance Unparse (SentenceImport patternType) where
-    unparse
-        SentenceImport { sentenceImportModuleName, sentenceImportAttributes }
-      =
-        Pretty.fillSep
-            [ "import", unparse sentenceImportModuleName
-            , unparse sentenceImportAttributes
-            ]
-
-    unparse2
-        SentenceImport { sentenceImportModuleName, sentenceImportAttributes }
-      =
-        Pretty.fillSep
-            [ "import", unparse2 sentenceImportModuleName
-            , unparse2 sentenceImportAttributes
-            ]
 
 {-|'SentenceSort' corresponds to the @sort-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
