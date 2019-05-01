@@ -7,13 +7,13 @@ import qualified Data.Map.Strict as Map
 import           Data.Proxy
 
 import           Kore.AST.Pure as Pure
-import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.Attribute.Overload
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import           Kore.Step.Axiom.Registry
+import           Kore.Syntax.Definition
 
 import           Test.Kore
 import           Test.Kore.Attribute.Parser

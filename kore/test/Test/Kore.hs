@@ -43,7 +43,6 @@ import qualified Data.Text as Text
 
 import qualified Kore.AST.Common as Common
 import qualified Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Logger.Output as Logger
@@ -61,7 +60,7 @@ import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.TermLike as TermLike
 import           Kore.Syntax
-import           Kore.Syntax.Sentence
+import           Kore.Syntax.Definition
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}

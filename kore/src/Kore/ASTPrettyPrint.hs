@@ -29,7 +29,6 @@ import           Numeric.Natural
 import           Data.Sup
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import qualified Kore.Builtin.Error as Builtin
 import qualified Kore.Domain.Builtin as Domain
@@ -38,7 +37,7 @@ import           Kore.Proof.Functional
 import           Kore.Step.Conditional
 import qualified Kore.Step.Pattern as Step
                  ( Pattern )
-import           Kore.Syntax.Sentence
+import           Kore.Syntax.Definition
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution

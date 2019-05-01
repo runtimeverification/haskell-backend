@@ -18,7 +18,6 @@ import           Data.Text
 import qualified Data.Text as Text
 
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.AST.Valid as Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Null as Attribute
@@ -34,6 +33,7 @@ import           Kore.Step.Rule hiding
 import qualified Kore.Step.Rule as Rule
 import           Kore.Step.TermLike hiding
                  ( freeVariables )
+import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 import           Test.Kore

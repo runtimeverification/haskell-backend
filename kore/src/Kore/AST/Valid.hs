@@ -104,8 +104,8 @@ import           GHC.Stack
 import           Kore.Annotation.Valid as Valid
 import           Kore.AST.Lens
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.Domain.Class
+import           Kore.Syntax.Definition
 import           Kore.Unparser
                  ( Unparse, renderDefault, unparseToString )
 import qualified Kore.Unparser as Unparse

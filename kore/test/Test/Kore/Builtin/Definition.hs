@@ -7,7 +7,6 @@ import           Data.Text
                  ( Text )
 
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Attribute.Constructor
 import           Kore.Attribute.Functional
@@ -21,6 +20,7 @@ import qualified Kore.Attribute.Sort.Unit as Sort
 import qualified Kore.Builtin.Set as Set
 import           Kore.Domain.Builtin
 import           Kore.Step.TermLike
+import           Kore.Syntax.Definition
 
 import Test.Kore
 

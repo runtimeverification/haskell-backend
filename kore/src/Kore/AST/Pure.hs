@@ -10,7 +10,6 @@ module Kore.AST.Pure
     ( PurePattern (..)
     , CommonPurePattern
     , ConcretePurePattern
-    , ParsedPurePattern
     , VerifiedPurePattern
     , asPurePattern
     , fromPurePattern
@@ -326,10 +325,6 @@ type CommonPurePattern level domain =
 -- | A concrete pure pattern (containing no variables) at level @level@.
 type ConcretePurePattern level domain =
     PurePattern level domain Concrete (Valid Concrete level)
-
--- | A pure pattern which has only been parsed and lacks 'Valid' annotations.
-type ParsedPurePattern level domain =
-    PurePattern level domain Variable (Annotation.Null level)
 
 -- | A pure pattern which has been parsed and verified.
 type VerifiedPurePattern level domain =

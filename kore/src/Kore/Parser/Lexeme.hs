@@ -72,12 +72,12 @@ import qualified Text.Megaparsec as Parser
 import qualified Text.Megaparsec.Char as Parser
 import qualified Text.Megaparsec.Char.Lexer as L
 
-import           Kore.AST.Sentence
 import qualified Kore.Parser.CharDict as CharDict
 import           Kore.Parser.CharSet as CharSet
 import           Kore.Parser.ParserUtils as ParserUtils
 import           Kore.Sort
 import           Kore.Syntax.CharLiteral
+import           Kore.Syntax.Definition
 import           Kore.Syntax.StringLiteral
 
 sourcePosToFileLocation :: SourcePos -> FileLocation

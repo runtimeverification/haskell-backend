@@ -6,9 +6,9 @@ import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
 import Kore.AST.Pure
-import Kore.AST.Sentence
 import Kore.ASTHelpers
 import Kore.Error
+import Kore.Syntax.Definition
 
 import Test.Kore
 

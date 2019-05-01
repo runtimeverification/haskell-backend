@@ -22,13 +22,13 @@ import           Data.Proxy
                  ( Proxy )
 
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.ASTVerifier.Error
 import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule )
+import           Kore.Syntax.Definition
 
 {-| Whether we should verify attributes and, when verifying, the module with
 declarations visible in these atributes. -}

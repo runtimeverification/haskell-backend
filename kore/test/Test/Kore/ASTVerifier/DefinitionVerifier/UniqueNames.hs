@@ -6,8 +6,8 @@ import Test.Tasty
        ( TestTree )
 
 import Kore.AST.Pure
-import Kore.AST.Sentence
 import Kore.Error
+import Kore.Syntax.Definition
 
 import Test.Kore.ASTVerifier.DefinitionVerifier
 

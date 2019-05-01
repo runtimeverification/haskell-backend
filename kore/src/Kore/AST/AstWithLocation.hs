@@ -15,9 +15,9 @@ module Kore.AST.AstWithLocation
 import qualified Control.Lens as Lens
 
 import Kore.AST.Common
-import Kore.AST.Sentence
 import Kore.Domain.Class
 import Kore.Syntax
+import Kore.Syntax.Definition
 
 {-| 'AstWithLocation' should be implemented by all AST terms that have
 an 'AstLocation'.

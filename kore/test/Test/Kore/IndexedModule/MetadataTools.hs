@@ -12,7 +12,6 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
@@ -30,6 +29,7 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
 import           Kore.Step.TermLike
+import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 import Test.Kore

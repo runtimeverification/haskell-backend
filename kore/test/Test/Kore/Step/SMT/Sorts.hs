@@ -5,9 +5,6 @@ import Test.Tasty
 import Data.Text
        ( Text )
 
-import           Kore.AST.Sentence
-import qualified Kore.AST.Sentence as SentenceImport
-                 ( SentenceImport (..) )
 import qualified Kore.Builtin.Int as Int
 import           Kore.Parser
                  ( ParsedPattern )
@@ -17,6 +14,9 @@ import           Kore.Step.SMT.Encoder
                  ( encodeName )
 import qualified Kore.Step.SMT.Representation.All as Representation
                  ( build )
+import           Kore.Syntax.Definition
+import qualified Kore.Syntax.Sentence as SentenceImport
+                 ( SentenceImport (..) )
 import qualified SMT
 
 import           Test.Kore.Step.SMT.Builders

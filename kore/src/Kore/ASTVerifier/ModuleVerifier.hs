@@ -17,13 +17,13 @@ import           Data.Text
                  ( Text )
 
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
 import qualified Kore.ASTVerifier.SentenceVerifier as SentenceVerifier
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
+import           Kore.Syntax.Definition
 import           Kore.Unparser
 import qualified Kore.Verified as Verified
 

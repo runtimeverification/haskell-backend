@@ -22,7 +22,6 @@ import           Data.Maybe
                  ( fromMaybe, mapMaybe )
 
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.Attribute.Axiom
                  ( Assoc (Assoc), Comm (Comm), Idem (Idem), Unit (Unit) )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -48,6 +47,7 @@ import           Kore.Step.Rule
                  QualifiedAxiomPattern (AllPathClaimPattern, FunctionAxiomPattern, ImplicationAxiomPattern, OnePathClaimPattern, RewriteAxiomPattern),
                  RulePattern (RulePattern) )
 import qualified Kore.Step.Rule as Rule
+import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 {- | Create a mapping from symbol identifiers to their defining axioms.

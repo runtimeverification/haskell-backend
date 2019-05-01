@@ -14,8 +14,6 @@ import           Numeric.Natural
                  ( Natural )
 
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
-                 ( ModuleName (..) )
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  verifyAndIndexDefinition )
@@ -38,6 +36,8 @@ import           Kore.Step
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.TermLike
+import           Kore.Syntax.Module
+                 ( ModuleName (..) )
 import qualified SMT
 
 import           System.Directory

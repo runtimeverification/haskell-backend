@@ -18,6 +18,9 @@ module Kore.Syntax.Sentence
     , Sentence (..)
     , sentenceAttributes
     , eraseSentenceAnnotations
+    -- * Injections and projections
+    , AsSentence (..)
+    , SentenceSymbolOrAlias (..)
     -- * Type synonyms
     , PureSentenceSymbol
     , PureSentenceAlias
@@ -26,7 +29,16 @@ module Kore.Syntax.Sentence
     , PureSentenceHook
     , PureSentence
     , PureModule
+    , ParsedSentenceAlias
+    , ParsedSentenceSymbol
+    , ParsedSentenceImport
+    , ParsedSentenceAxiom
+    , ParsedSentenceSort
+    , ParsedSentenceHook
+    , ParsedSentence
+    , ParsedModule
     -- * Re-exports
+    , module Kore.Attribute.Attributes
     , module Kore.Syntax.Module
     ) where
 
@@ -43,7 +55,7 @@ import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.MetaOrObject
                  ( Object )
 import           Kore.AST.Pure
-                 ( ParsedPurePattern, PurePattern )
+                 ( PurePattern )
 import           Kore.Attribute.Attributes
 import           Kore.Sort
 import           Kore.Syntax.Application
@@ -514,26 +526,100 @@ eraseSentenceAnnotations
         (PurePattern Object domain variable (Annotation.Null Object))
 eraseSentenceAnnotations sentence = (<$) Annotation.Null <$> sentence
 
+class AsSentence sentenceType where
+    asSentence :: sentenceType patternType -> Sentence patternType
+
+instance AsSentence SentenceAlias where
+    asSentence = SentenceAliasSentence
+
+instance AsSentence SentenceSymbol where
+    asSentence = SentenceSymbolSentence
+
+instance AsSentence SentenceImport where
+    asSentence = SentenceImportSentence
+
+instance AsSentence SentenceAxiom where
+    asSentence = SentenceAxiomSentence
+
+instance AsSentence SentenceSort where
+    asSentence = SentenceSortSentence
+
+instance AsSentence SentenceHook where
+    asSentence = SentenceHookSentence
+
+class SentenceSymbolOrAlias (sentence :: * -> *) where
+    getSentenceSymbolOrAliasConstructor
+        :: sentence patternType -> Id
+    getSentenceSymbolOrAliasSortParams
+        :: sentence patternType -> [SortVariable]
+    getSentenceSymbolOrAliasArgumentSorts
+        :: sentence patternType -> [Sort]
+    getSentenceSymbolOrAliasResultSort
+        :: sentence patternType -> Sort
+    getSentenceSymbolOrAliasAttributes
+        :: sentence patternType -> Attributes
+    getSentenceSymbolOrAliasSentenceName
+        :: sentence patternType -> String
+    getSentenceSymbolOrAliasHead
+        :: sentence patternType
+        -> [Sort]
+        -> SymbolOrAlias
+    getSentenceSymbolOrAliasHead sentence sortParameters = SymbolOrAlias
+        { symbolOrAliasConstructor =
+            getSentenceSymbolOrAliasConstructor sentence
+        , symbolOrAliasParams = sortParameters
+        }
+
+instance SentenceSymbolOrAlias SentenceAlias where
+    getSentenceSymbolOrAliasConstructor = aliasConstructor . sentenceAliasAlias
+    getSentenceSymbolOrAliasSortParams = aliasParams . sentenceAliasAlias
+    getSentenceSymbolOrAliasArgumentSorts = sentenceAliasSorts
+    getSentenceSymbolOrAliasResultSort = sentenceAliasResultSort
+    getSentenceSymbolOrAliasAttributes = sentenceAliasAttributes
+    getSentenceSymbolOrAliasSentenceName _ = "alias"
+
+instance SentenceSymbolOrAlias SentenceSymbol where
+    getSentenceSymbolOrAliasConstructor =
+        symbolConstructor . sentenceSymbolSymbol
+    getSentenceSymbolOrAliasSortParams = symbolParams . sentenceSymbolSymbol
+    getSentenceSymbolOrAliasArgumentSorts = sentenceSymbolSorts
+    getSentenceSymbolOrAliasResultSort = sentenceSymbolResultSort
+    getSentenceSymbolOrAliasAttributes = sentenceSymbolAttributes
+    getSentenceSymbolOrAliasSentenceName _ = "symbol"
+
 -- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
-type PureSentenceAxiom domain =
-    SentenceAxiom (ParsedPurePattern Object domain)
+type PureSentenceAxiom = SentenceAxiom ParsedPurePattern
 
 -- |'PureSentenceAlias' is the pure (fixed-@level@) version of 'SentenceAlias'
-type PureSentenceAlias domain = SentenceAlias (ParsedPurePattern Object domain)
+type PureSentenceAlias = SentenceAlias ParsedPurePattern
 
 -- |'PureSentenceSymbol' is the pure (fixed-@level@) version of 'SentenceSymbol'
-type PureSentenceSymbol domain =
-    SentenceSymbol (ParsedPurePattern Object domain)
+type PureSentenceSymbol = SentenceSymbol ParsedPurePattern
 
 -- |'PureSentenceImport' is the pure (fixed-@level@) version of 'SentenceImport'
-type PureSentenceImport level domain =
-    SentenceImport (ParsedPurePattern level domain)
+type PureSentenceImport = SentenceImport ParsedPurePattern
 
 -- | 'PureSentenceHook' is the pure (fixed-@level@) version of 'SentenceHook'.
-type PureSentenceHook domain = SentenceHook (ParsedPurePattern Object domain)
+type PureSentenceHook = SentenceHook ParsedPurePattern
 
 -- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
-type PureSentence domain = Sentence (ParsedPurePattern Object domain)
+type PureSentence = Sentence ParsedPurePattern
 
 -- |'PureModule' is the pure (fixed-@level@) version of 'Module'
-type PureModule level domain = Module (PureSentence domain)
+type PureModule = Module PureSentence
+
+type ParsedSentenceSort = SentenceSort ParsedPurePattern
+
+type ParsedSentenceSymbol = SentenceSymbol ParsedPurePattern
+
+type ParsedSentenceAlias = SentenceAlias ParsedPurePattern
+
+type ParsedSentenceImport = SentenceImport ParsedPurePattern
+
+type ParsedSentenceAxiom = SentenceAxiom ParsedPurePattern
+
+type ParsedSentenceHook = SentenceHook ParsedPurePattern
+
+type ParsedSentence = Sentence ParsedPurePattern
+
+type ParsedModule = Module ParsedSentence

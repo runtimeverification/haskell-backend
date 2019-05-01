@@ -23,7 +23,6 @@ import           Data.Text
                  ( Text )
 
 import qualified Kore.AST.Pure as AST
-import           Kore.AST.Sentence
 import           Kore.AST.Valid hiding
                  ( V )
 import           Kore.Attribute.Constructor
@@ -47,6 +46,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.TermLike
+import           Kore.Syntax.Definition
 import           Kore.Unification.Data
 import           Kore.Unification.Error
 import           Kore.Unification.Procedure

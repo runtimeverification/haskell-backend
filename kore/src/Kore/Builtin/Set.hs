@@ -69,7 +69,6 @@ import qualified Data.Text as Text
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
@@ -97,6 +96,7 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), SimplificationProof (..),
                  SimplificationType, TermLikeSimplifier )
 import           Kore.Step.TermLike
+import           Kore.Syntax.Definition
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify

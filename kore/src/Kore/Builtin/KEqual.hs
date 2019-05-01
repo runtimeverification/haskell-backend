@@ -34,8 +34,6 @@ import           Data.Text
                  ( Text )
 
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
-                 ( SentenceSymbol (..) )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -58,6 +56,8 @@ import           Kore.Step.Simplification.Data
                  TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Or as Or
 import           Kore.Step.TermLike
+import           Kore.Syntax.Definition
+                 ( SentenceSymbol (..) )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )

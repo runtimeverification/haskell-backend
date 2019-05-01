@@ -48,17 +48,16 @@ import qualified Text.Megaparsec.Char as Parser
                  ( char )
 
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Parser.Lexeme
 import           Kore.Parser.ParserUtils
                  ( Parser )
 import qualified Kore.Parser.ParserUtils as ParserUtils
-import           Kore.Syntax.Sentence
+import           Kore.Syntax.Definition
 import           Kore.Unparser
                  ( unparseToString )
 
-type ParsedPattern = ParsedPurePattern Object Domain.Builtin
+type ParsedPattern = ParsedPurePattern
 
 asParsedPattern
     :: (Pattern Object Domain.Builtin Variable) ParsedPattern

@@ -7,28 +7,6 @@ import           Data.List
                  ( foldl' )
 import qualified Data.Map.Strict as Map
 
-import           Kore.AST.Sentence
-                 ( Attributes (Attributes), Definition (Definition),
-                 Module (Module),
-                 Sentence (SentenceAliasSentence, SentenceAxiomSentence, SentenceClaimSentence, SentenceHookSentence, SentenceImportSentence, SentenceSortSentence, SentenceSymbolSentence),
-                 SentenceAlias (SentenceAlias), SentenceAxiom (SentenceAxiom),
-                 SentenceHook (SentenceHookedSort, SentenceHookedSymbol),
-                 SentenceImport (SentenceImport), SentenceSort (SentenceSort),
-                 SentenceSymbol (SentenceSymbol) )
-import qualified Kore.AST.Sentence as Definition
-                 ( Definition (..) )
-import qualified Kore.AST.Sentence as Module
-                 ( Module (..) )
-import qualified Kore.AST.Sentence as SentenceAxiom
-                 ( SentenceAxiom (..) )
-import qualified Kore.AST.Sentence as SentenceAlias
-                 ( SentenceAlias (..) )
-import qualified Kore.AST.Sentence as SentenceImport
-                 ( SentenceImport (..) )
-import qualified Kore.AST.Sentence as SentenceSort
-                 ( SentenceSort (..) )
-import qualified Kore.AST.Sentence as SentenceSymbol
-                 ( SentenceSymbol (..) )
 import           Kore.Attribute.Attributes
                  ( AttributePattern )
 import qualified Kore.Sort as Kore
@@ -48,9 +26,31 @@ import qualified Kore.Step.SMT.AST as AST.Symbol
                  ( Symbol (..) )
 import qualified Kore.Step.SMT.AST as AST.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
+import           Kore.Syntax.Definition
+                 ( Attributes (Attributes), Definition (Definition),
+                 Module (Module),
+                 Sentence (SentenceAliasSentence, SentenceAxiomSentence, SentenceClaimSentence, SentenceHookSentence, SentenceImportSentence, SentenceSortSentence, SentenceSymbolSentence),
+                 SentenceAlias (SentenceAlias), SentenceAxiom (SentenceAxiom),
+                 SentenceHook (SentenceHookedSort, SentenceHookedSymbol),
+                 SentenceImport (SentenceImport), SentenceSort (SentenceSort),
+                 SentenceSymbol (SentenceSymbol) )
+import qualified Kore.Syntax.Definition as Definition
+                 ( Definition (..) )
 import qualified Kore.Syntax.Id as Kore
                  ( Id )
+import qualified Kore.Syntax.Module as Module
+                 ( Module (..) )
 import           Kore.Syntax.Sentence
+import qualified Kore.Syntax.Sentence as SentenceAxiom
+                 ( SentenceAxiom (..) )
+import qualified Kore.Syntax.Sentence as SentenceAlias
+                 ( SentenceAlias (..) )
+import qualified Kore.Syntax.Sentence as SentenceImport
+                 ( SentenceImport (..) )
+import qualified Kore.Syntax.Sentence as SentenceSort
+                 ( SentenceSort (..) )
+import qualified Kore.Syntax.Sentence as SentenceSymbol
+                 ( SentenceSymbol (..) )
 import qualified SMT.AST as AST
                  ( Constructor (Constructor), ConstructorArgument,
                  DataTypeDeclaration (DataTypeDeclaration) )

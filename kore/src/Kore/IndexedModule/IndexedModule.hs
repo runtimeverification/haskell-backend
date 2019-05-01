@@ -69,7 +69,6 @@ import           GHC.Generics
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Error
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Null as Attribute
 import           Kore.Attribute.Parser
@@ -83,7 +82,7 @@ import qualified Kore.Attribute.Symbol.Symbol as Attribute
 import           Kore.Error
 import           Kore.Parser
                  ( ParsedPattern )
-import           Kore.Syntax.Sentence
+import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 type SortDescription level dom =

@@ -29,8 +29,8 @@ import           Data.Text
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Pure hiding
                  ( substituteSortVariables )
-import           Kore.AST.Sentence
 import           Kore.Error
+import           Kore.Syntax.Definition
 import           Kore.Variables.Free
 
 

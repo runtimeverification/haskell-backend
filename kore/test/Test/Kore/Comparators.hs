@@ -26,7 +26,6 @@ import qualified Kore.AllPath as AllPath
 import qualified Kore.Annotation.Null as Annotation
 import           Kore.Annotation.Valid
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Location as Attribute
 import qualified Kore.Attribute.Source as Attribute
@@ -73,6 +72,7 @@ import qualified Kore.Step.SMT.AST as SMT.SymbolReference
 import qualified Kore.Step.SMT.AST as SMT.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
 import           Kore.Step.TermLike
+import           Kore.Syntax.Definition
 import qualified Kore.Syntax.SetVariable as SetVariable
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution

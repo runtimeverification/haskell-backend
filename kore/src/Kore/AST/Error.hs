@@ -27,9 +27,8 @@ import Data.List
 
 import Kore.AST.AstWithLocation
 import Kore.AST.Pure
-import Kore.AST.Sentence
 import Kore.Error
-import Kore.Syntax.Sentence
+import Kore.Syntax.Definition
 
 {-|'koreFailWithLocations' produces an error result with a context containing
 the provided locations. -}

@@ -14,7 +14,6 @@ import           Options.Applicative
                  metavar, progDesc, str, strOption, value )
 
 import           Kore.AST.ApplicativeKore
-import           Kore.AST.Sentence
 import           Kore.ASTPrettyPrint
                  ( prettyPrintToString )
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -30,6 +29,7 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule, toVerifiedDefinition )
 import           Kore.Parser
                  ( ParsedPattern, parseKoreDefinition, parseKorePattern )
+import           Kore.Syntax.Definition
 import           Kore.Unparser as Unparser
 
 import GlobalMain

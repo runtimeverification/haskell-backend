@@ -44,7 +44,6 @@ import           Data.Text.Prettyprint.Doc
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.AST.Valid hiding
                  ( freeVariables )
 import qualified Kore.AST.Valid as Valid
@@ -58,7 +57,7 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.TermLike
                  ( TermLike )
 import qualified Kore.Step.TermLike as TermLike
-import           Kore.Syntax.Sentence
+import           Kore.Syntax.Definition
 import           Kore.Unparser
                  ( Unparse, unparse, unparse2 )
 import           Kore.Variables.Fresh

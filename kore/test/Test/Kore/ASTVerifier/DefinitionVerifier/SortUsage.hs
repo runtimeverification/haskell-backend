@@ -13,12 +13,12 @@ import           Data.Maybe
 import qualified Data.Text as Text
 
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.AST.Valid
                  ( mkTop )
 import           Kore.Error
 import           Kore.IndexedModule.Error
                  ( noSort )
+import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 import Test.Kore

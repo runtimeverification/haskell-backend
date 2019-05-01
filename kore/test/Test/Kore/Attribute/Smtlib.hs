@@ -7,7 +7,6 @@ import qualified Data.Text as Text
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.AST.Sentence
 import Kore.Attribute.Parser
 import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib

@@ -4,6 +4,7 @@ License     : NCSA
  -}
 module Kore.Attribute.Attributes
     ( Attributes (..)
+    , ParsedPurePattern
     , AttributePattern
     , asAttributePattern
     , attributePattern
@@ -18,11 +19,17 @@ import           Data.Hashable
                  ( Hashable )
 import qualified GHC.Generics as GHC
 
+import qualified Kore.Annotation.Null as Annotation
+                 ( Null )
 import           Kore.AST.Pure
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Unparser
 
-type AttributePattern = ParsedPurePattern Object Domain.Builtin
+-- | A pure pattern which has only been parsed and lacks 'Valid' annotations.
+type ParsedPurePattern =
+    PurePattern Object Domain.Builtin Variable (Annotation.Null Object)
+
+type AttributePattern = ParsedPurePattern
 
 asAttributePattern
     :: (Pattern Object Domain.Builtin Variable) AttributePattern

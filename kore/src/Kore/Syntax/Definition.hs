@@ -7,6 +7,7 @@ module Kore.Syntax.Definition
     ( Definition (..)
     -- * Type synonyms
     , PureDefinition
+    , ParsedDefinition
     -- * Re-exports
     , module Kore.Syntax.Sentence
     ) where
@@ -55,4 +56,6 @@ instance Unparse sentence => Unparse (Definition sentence) where
             (unparse2 definitionAttributes : map unparse2 definitionModules)
 
 -- |'PureDefinition' is the pure (fixed-@level@) version of 'Definition'
-type PureDefinition level domain = Definition (PureSentence domain)
+type PureDefinition = Definition PureSentence
+
+type ParsedDefinition = Definition ParsedSentence

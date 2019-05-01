@@ -91,9 +91,6 @@ import qualified Text.Megaparsec as Parsec
 import qualified Kore.AST.Common as Common
                  ( Pattern (..) )
 import qualified Kore.AST.Error as Kore.Error
-import           Kore.AST.Sentence
-                 ( ParsedSentenceSort, ParsedSentenceSymbol, SentenceSort (..),
-                 SentenceSymbol (..) )
 import           Kore.AST.Valid
 import qualified Kore.ASTVerifier.AttributesVerifier as Verifier.Attributes
 import           Kore.ASTVerifier.Error
@@ -141,6 +138,9 @@ import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import           Kore.Step.TermLike as TermLike
 import           Kore.Syntax.Application
+import           Kore.Syntax.Definition
+                 ( ParsedSentenceSort, ParsedSentenceSymbol, SentenceSort (..),
+                 SentenceSymbol (..) )
 import           Kore.Syntax.DomainValue
 import           Kore.Unparser
 import qualified Kore.Verified as Verified

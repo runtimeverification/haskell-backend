@@ -14,7 +14,6 @@ import           Data.Proxy
 import qualified Kore.AST.Common as Common
 import           Kore.AST.Pure
                  ( groundHead )
-import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
@@ -48,6 +47,7 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.TermLike
 import           Kore.Syntax.Application
+import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 import qualified SMT
 

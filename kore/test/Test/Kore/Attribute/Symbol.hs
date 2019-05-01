@@ -12,7 +12,7 @@ import           Data.Function
                  ( (&) )
 
 import Kore.AST.Pure
-import Kore.AST.Sentence
+import Kore.Attribute.Attributes
        ( Attributes (..) )
 import Kore.Attribute.Hook
 import Kore.Attribute.Parser

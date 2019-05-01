@@ -10,7 +10,6 @@ import           Data.Text
                  ( Text )
 
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTPrettyPrint
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -21,6 +20,7 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Step.TermLike hiding
                  ( freeVariables )
+import           Kore.Syntax.Definition
 import           Kore.Unparser
                  ( unparseToString )
 import qualified Kore.Verified as Verified

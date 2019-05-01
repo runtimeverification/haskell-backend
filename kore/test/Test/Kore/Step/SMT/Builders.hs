@@ -22,17 +22,6 @@ import qualified Data.Map.Strict as Map
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Sentence
-import qualified Kore.AST.Sentence as Definition
-                 ( Definition (..) )
-import qualified Kore.AST.Sentence as Module
-                 ( Module (..) )
-import qualified Kore.AST.Sentence as SentenceSort
-                 ( SentenceSort (..) )
-import qualified Kore.AST.Sentence as SentenceSymbol
-                 ( SentenceSymbol (..) )
-import qualified Kore.AST.Sentence as Symbol
-                 ( Symbol (..) )
 import           Kore.ASTVerifier.AttributesVerifier
                  ( AttributesVerification (DoNotVerifyAttributes) )
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -59,6 +48,17 @@ import           Kore.Sort
                  ( Sort (SortActualSort), SortActual (SortActual) )
 import qualified Kore.Sort as SortActual
                  ( SortActual (..) )
+import           Kore.Syntax.Definition
+import qualified Kore.Syntax.Definition as Definition
+                 ( Definition (..) )
+import qualified Kore.Syntax.Module as Module
+                 ( Module (..) )
+import qualified Kore.Syntax.Sentence as SentenceSort
+                 ( SentenceSort (..) )
+import qualified Kore.Syntax.Sentence as SentenceSymbol
+                 ( SentenceSymbol (..) )
+import qualified Kore.Syntax.Sentence as Symbol
+                 ( Symbol (..) )
 
 import Test.Kore
        ( testId )

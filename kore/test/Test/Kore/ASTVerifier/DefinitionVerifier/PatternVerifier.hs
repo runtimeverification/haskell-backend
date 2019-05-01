@@ -13,7 +13,6 @@ import qualified Data.Set as Set
 
 import           Kore.AST.AstWithLocation
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Hook as Attribute.Hook
@@ -23,6 +22,7 @@ import           Kore.IndexedModule.Error
                  ( noSort )
 import           Kore.Step.TermLike hiding
                  ( freeVariables )
+import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 import           Test.Kore
