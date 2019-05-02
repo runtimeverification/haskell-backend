@@ -21,6 +21,8 @@ import qualified Kore.IndexedModule.MetadataTools as HeadType
 import qualified Kore.Step.Pattern as Conditional
 import           Kore.Step.TermLike
                  ( TermLike )
+import           Kore.Syntax.PatternF
+                 ( groundHead )
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution

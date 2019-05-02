@@ -34,7 +34,7 @@ type ParsedPurePattern = PurePattern Domain.Builtin Variable Attribute.Null
 type AttributePattern = ParsedPurePattern
 
 asAttributePattern
-    :: (Pattern Domain.Builtin Variable) AttributePattern
+    :: (PatternF Domain.Builtin Variable) AttributePattern
     -> AttributePattern
 asAttributePattern = asPurePattern . (mempty :<)
 

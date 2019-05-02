@@ -458,7 +458,7 @@ instance
     ( PrettyPrint child
     , PrettyPrint (domain child)
     , PrettyPrint variable
-    ) => PrettyPrint (Pattern domain variable child)
+    ) => PrettyPrint (PatternF domain variable child)
   where
     prettyPrint flags (AndPattern p) =
         writeOneFieldStruct flags "AndPattern" p
@@ -533,7 +533,7 @@ instance
     , PrettyPrint child
     , PrettyPrint annotation
     , PrettyPrint (domain child)
-    , child ~ Cofree (Pattern domain variable) annotation
+    , child ~ Cofree (PatternF domain variable) annotation
     ) =>
     PrettyPrint (PurePattern domain variable annotation)
   where

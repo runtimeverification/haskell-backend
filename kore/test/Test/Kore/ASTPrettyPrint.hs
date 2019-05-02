@@ -51,6 +51,6 @@ test_astPrettyPrint =
     ]
 
 prettyPrintPattern
-    :: Pattern Domain.Builtin Variable ParsedPattern
+    :: PatternF Domain.Builtin Variable ParsedPattern
     -> String
 prettyPrintPattern = prettyPrintToString

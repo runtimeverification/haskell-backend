@@ -18,7 +18,7 @@ import Kore.Domain.Class
 import Kore.Syntax
 import Kore.Syntax.Definition
 import Kore.Syntax.PatternF
-       ( Pattern (..) )
+       ( PatternF (..) )
 
 {-| 'AstWithLocation' should be implemented by all AST terms that have
 an 'AstLocation'.
@@ -85,7 +85,7 @@ instance AstWithLocation Symbol where
 
 instance
     (Domain domain, AstWithLocation variable) =>
-    AstWithLocation (Pattern domain variable child)
+    AstWithLocation (PatternF domain variable child)
   where
     locationFromAst =
         \case

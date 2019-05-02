@@ -20,12 +20,9 @@ module Kore.AST.Pure
     , isConcrete
     , fromConcretePurePattern
     , castVoidDomainValues
-    -- * Pure pattern heads
-    , groundHead
-    , constant
     -- * Re-exports
     , Base, CofreeF (..)
-    , Pattern (..)
+    , PatternF (..)
     , module Control.Comonad
     , module Kore.Syntax
     ) where
@@ -50,8 +47,6 @@ import           Data.Functor.Identity
 import           Data.Hashable
                  ( Hashable (..) )
 import           Data.Maybe
-import           Data.Text
-                 ( Text )
 import           Data.Void
                  ( Void )
 import           GHC.Generics
@@ -62,7 +57,7 @@ import           Kore.Annotation.Valid
 import qualified Kore.Attribute.Null as Attribute
 import           Kore.Syntax
 import           Kore.Syntax.PatternF
-                 ( Pattern (..) )
+                 ( PatternF (..) )
 import qualified Kore.Syntax.PatternF as PatternF
 import           Kore.TopBottom
                  ( TopBottom (..) )
@@ -85,7 +80,7 @@ newtype PurePattern
     (annotation :: *)
   =
     PurePattern
-        { getPurePattern :: Cofree (Pattern domain variable) annotation }
+        { getPurePattern :: Cofree (PatternF domain variable) annotation }
     deriving (Foldable, Functor, Generic, Traversable)
 
 instance
@@ -118,7 +113,7 @@ deriving instance
     ( Show annotation
     , Show variable
     , Show1 domain
-    , child ~ Cofree (Pattern domain variable) annotation
+    , child ~ Cofree (PatternF domain variable) annotation
     ) =>
     Show (PurePattern domain variable annotation)
 
@@ -158,7 +153,7 @@ instance
 
 
 type instance Base (PurePattern domain variable annotation) =
-    CofreeF (Pattern domain variable) annotation
+    CofreeF (PatternF domain variable) annotation
 
 -- This instance implements all class functions for the PurePattern newtype
 -- because the their implementations for the inner type may be specialized.
@@ -271,7 +266,7 @@ instance
 instance
     Functor domain =>
     ComonadCofree
-        (Pattern domain variable)
+        (PatternF domain variable)
         (PurePattern domain variable)
   where
     unwrap = \(PurePattern fixed) -> PurePattern <$> unwrap fixed
@@ -431,28 +426,3 @@ castVoidDomainValues
     => PurePattern (Const Void) variable annotation
     -> PurePattern domain variable annotation
 castVoidDomainValues = mapDomainValues (\case {})
-
--- |Given an 'Id', 'groundHead' produces the head of an 'Application'
--- corresponding to that argument.
-groundHead :: Text -> AstLocation -> SymbolOrAlias
-groundHead ctor location = SymbolOrAlias
-    { symbolOrAliasConstructor = Id
-        { getId = ctor
-        , idLocation = location
-        }
-    , symbolOrAliasParams = []
-    }
-
--- |Given a head and a list of children, produces an 'ApplicationPattern'
---  applying the given head to the children
-apply :: SymbolOrAlias -> [child] -> Pattern domain variable child
-apply patternHead patterns = ApplicationPattern Application
-    { applicationSymbolOrAlias = patternHead
-    , applicationChildren = patterns
-    }
-
--- |Applies the given head to the empty list of children to obtain a
--- constant 'ApplicationPattern'
-constant
-    :: SymbolOrAlias -> Pattern domain variable child
-constant patternHead = apply patternHead []

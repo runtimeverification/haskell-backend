@@ -61,7 +61,7 @@ verifyAttributes _ DoNotVerifyAttributes =
 
 verifyAttributePattern
     :: MonadError (Error VerifyError) m
-    => Pattern domain variable (PurePattern domain variable annotation)
+    => PatternF domain variable (PurePattern domain variable annotation)
     -> m VerifySuccess
 verifyAttributePattern pat =
     case pat of

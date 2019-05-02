@@ -51,7 +51,7 @@ import           Kore.Step.TermLike
                  ( TermLike )
 import           Kore.Syntax.Application
 import           Kore.Syntax.PatternF
-                 ( Pattern (..) )
+                 ( PatternF (..) )
 import           Kore.Syntax.Variable
                  ( SortedVariable, Variable (..) )
 import           Kore.Unparser

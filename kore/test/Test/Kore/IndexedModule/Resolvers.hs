@@ -25,6 +25,8 @@ import           Kore.IndexedModule.Resolvers
 import           Kore.Step.TermLike hiding
                  ( freeVariables )
 import           Kore.Syntax.Definition
+import           Kore.Syntax.PatternF
+                 ( groundHead )
 import qualified Kore.Verified as Verified
 
 import Test.Kore

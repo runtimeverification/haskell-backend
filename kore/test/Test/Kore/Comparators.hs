@@ -116,7 +116,7 @@ instance
     , Eq variable
     , Show variable
     )
-    => SumEqualWithExplanation (Pattern domain variable child)
+    => SumEqualWithExplanation (PatternF domain variable child)
   where
     sumConstructorPair (AndPattern a1) (AndPattern a2) =
         SumConstructorSameWithArguments (EqWrap "AndPattern" a1 a2)
@@ -260,7 +260,7 @@ instance
     , Show variable
     , Show1 domain
     , Eq1 domain
-    ) => EqualWithExplanation (Pattern domain variable child)
+    ) => EqualWithExplanation (PatternF domain variable child)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
@@ -275,7 +275,7 @@ instance
     , Show annotation
     , Eq annotation
     , EqualWithExplanation annotation
-    , EqualWithExplanation (domain (Cofree (Pattern domain variable) annotation))
+    , EqualWithExplanation (domain (Cofree (PatternF domain variable) annotation))
     ) =>
     EqualWithExplanation (PurePattern domain variable annotation)
   where
@@ -292,7 +292,7 @@ instance
     , Show annotation
     , Eq annotation
     , EqualWithExplanation annotation
-    , EqualWithExplanation (domain (Cofree (Pattern domain variable) annotation))
+    , EqualWithExplanation (domain (Cofree (PatternF domain variable) annotation))
     ) =>
     WrapperEqualWithExplanation (PurePattern domain variable annotation)
   where

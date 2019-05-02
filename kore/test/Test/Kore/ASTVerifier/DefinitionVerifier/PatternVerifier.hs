@@ -36,7 +36,7 @@ data PatternRestrict
 
 data TestPattern = TestPattern
     { testPatternPattern
-        :: !(Pattern Domain.Builtin Variable (TermLike Variable))
+        :: !(PatternF Domain.Builtin Variable (TermLike Variable))
     , testPatternSort       :: !Sort
     , testPatternErrorStack :: !ErrorStack
     }
@@ -754,7 +754,7 @@ dummyVariableAndSentences (NamePrefix namePrefix) =
 
 successTestsForObjectPattern
     :: String
-    -> Pattern Domain.Builtin Variable (TermLike Variable)
+    -> PatternF Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
@@ -798,7 +798,7 @@ successTestsForObjectPattern
 
 successTestsForMetaPattern
     :: String
-    -> Pattern Domain.Builtin Variable (TermLike Variable)
+    -> PatternF Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
@@ -839,7 +839,7 @@ failureTestsForObjectPattern
     => String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> Pattern Domain.Builtin Variable (TermLike Variable)
+    -> PatternF Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
@@ -895,7 +895,7 @@ failureTestsForMetaPattern
     => String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> Pattern Domain.Builtin Variable (TermLike Variable)
+    -> PatternF Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
@@ -938,7 +938,7 @@ failureTestsForMetaPattern
             patternRestrict
 
 genericPatternInAllContexts
-    :: Pattern Domain.Builtin Variable (TermLike Variable)
+    :: PatternF Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
@@ -1004,7 +1004,7 @@ genericPatternInAllContexts
             }
 
 objectPatternInAllContexts
-    :: Pattern Domain.Builtin Variable (TermLike Variable)
+    :: PatternF Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
@@ -1121,8 +1121,8 @@ patternsInAllContexts
                 }
 
 genericPatternInPatterns
-    :: Pattern Domain.Builtin Variable (TermLike Variable)
-    -> Pattern Domain.Builtin Variable (TermLike Variable)
+    :: PatternF Domain.Builtin Variable (TermLike Variable)
+    -> PatternF Domain.Builtin Variable (TermLike Variable)
     -> OperandSort
     -> Helpers.ResultSort
     -> VariableOfDeclaredSort
@@ -1192,14 +1192,14 @@ genericPatternInPatterns
             }
 
 objectPatternInPatterns
-    :: Pattern Domain.Builtin Variable (TermLike Variable)
-    -> Pattern Domain.Builtin Variable (TermLike Variable)
+    :: PatternF Domain.Builtin Variable (TermLike Variable)
+    -> PatternF Domain.Builtin Variable (TermLike Variable)
     -> OperandSort
     -> [TestPattern]
 objectPatternInPatterns = patternInUnquantifiedObjectPatterns
 
 patternInQuantifiedPatterns
-    :: Pattern Domain.Builtin Variable (TermLike Variable)
+    :: PatternF Domain.Builtin Variable (TermLike Variable)
     -> Sort
     -> Variable
     -> [TestPattern]
@@ -1246,8 +1246,8 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
     testedKorePattern = asPurePattern (valid :< testedPattern)
 
 patternInUnquantifiedGenericPatterns
-    :: Pattern Domain.Builtin Variable (TermLike Variable)
-    -> Pattern Domain.Builtin Variable (TermLike Variable)
+    :: PatternF Domain.Builtin Variable (TermLike Variable)
+    -> PatternF Domain.Builtin Variable (TermLike Variable)
     -> OperandSort
     -> Helpers.ResultSort
     -> [TestPattern]
@@ -1411,8 +1411,8 @@ patternInUnquantifiedGenericPatterns
     testedUnifiedPattern = asPurePattern (valid :< testedPattern)
 
 patternInUnquantifiedObjectPatterns
-    :: Pattern Domain.Builtin Variable (TermLike Variable)
-    -> Pattern Domain.Builtin Variable (TermLike Variable)
+    :: PatternF Domain.Builtin Variable (TermLike Variable)
+    -> PatternF Domain.Builtin Variable (TermLike Variable)
     -> OperandSort
     -> [TestPattern]
 patternInUnquantifiedObjectPatterns

@@ -26,7 +26,7 @@ import qualified Data.Set as Set
 
 import Kore.AST.Pure
 import Kore.Syntax.PatternF
-       ( Pattern (..) )
+       ( PatternF (..) )
 
 -- | The free variables of a pure pattern.
 freePureVariables
@@ -94,10 +94,8 @@ free variables as a synthetic attribute.
 
  -}
 synthetic
-    ::  ( Foldable domain
-        , Ord variable
-        )
-    => CofreeF (Pattern domain variable) a (Set.Set variable)
+    :: (Foldable domain, Ord variable)
+    => CofreeF (PatternF domain variable) a (Set.Set variable)
     -> Set.Set variable
 synthetic (_ :< patternHead) =
     case patternHead of

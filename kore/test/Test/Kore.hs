@@ -61,7 +61,7 @@ import           Kore.Step.TermLike as TermLike
 import           Kore.Syntax
 import           Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
-                 ( Pattern (..) )
+                 ( PatternF (..) )
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}
@@ -347,7 +347,7 @@ topGen = topBottomGen Top
 patternGen
     :: (Sort -> Gen child)
     -> Sort
-    -> Gen (Syntax.Pattern dom Variable child)
+    -> Gen (Syntax.PatternF dom Variable child)
 patternGen childGen patternSort =
     Gen.frequency
         [ (1, Syntax.AndPattern <$> andGen childGen patternSort)

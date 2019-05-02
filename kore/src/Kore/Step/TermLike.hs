@@ -48,14 +48,13 @@ import qualified Kore.Substitute as Substitute
 import           Kore.Syntax.Exists
 import           Kore.Syntax.Forall
 import           Kore.Syntax.PatternF
-                 ( Pattern (..) )
+                 ( PatternF (..) )
 import qualified Kore.Syntax.PatternF as PatternF
 import qualified Kore.Syntax.Variable as Variable
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
-type TermLike variable =
-    PurePattern Domain.Builtin variable (Valid variable)
+type TermLike variable = PurePattern Domain.Builtin variable (Valid variable)
 
 freeVariables :: TermLike variable -> Set variable
 freeVariables termLike = Valid.freeVariables (extract termLike)

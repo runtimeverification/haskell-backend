@@ -266,7 +266,7 @@ verifyNoPatterns
 verifyNoPatterns _ = koreFail "Unexpected pattern."
 
 verifyObjectPattern
-    ::  ( base ~ Pattern Domain.Builtin Variable
+    ::  ( base ~ PatternF Domain.Builtin Variable
         , valid ~ Valid Variable
         )
     => base (PatternVerifier Verified.Pattern)
@@ -277,7 +277,7 @@ verifyObjectPattern pat =
     patternName = patternNameForContext pat
 
 verifyPatternHead
-    ::  ( base ~ Pattern Domain.Builtin Variable
+    ::  ( base ~ PatternF Domain.Builtin Variable
         , valid ~ Valid Variable
         )
     => base (PatternVerifier Verified.Pattern)
@@ -739,7 +739,7 @@ checkVariable var vars =
             <+> unparse var
             <> Pretty.dot
 
-patternNameForContext :: Pattern dom Variable p -> String
+patternNameForContext :: PatternF dom Variable p -> String
 patternNameForContext (AndPattern _) = "\\and"
 patternNameForContext (ApplicationPattern application) =
     "symbol or alias '"

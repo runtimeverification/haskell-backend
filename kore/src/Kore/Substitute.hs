@@ -23,7 +23,7 @@ import qualified Data.Set as Set
 
 import Kore.AST.Pure
 import Kore.Syntax.PatternF
-       ( Pattern (..) )
+       ( PatternF (..) )
 import Kore.Variables.Fresh
 
 {- | Traverse the pattern from the top down and apply substitutions.

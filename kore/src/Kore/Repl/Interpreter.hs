@@ -90,7 +90,7 @@ import           Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
                  ( Id (..) )
 import           Kore.Syntax.PatternF
-                 ( Pattern (..) )
+                 ( PatternF (..) )
 import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unparser

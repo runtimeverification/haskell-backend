@@ -33,7 +33,7 @@ import           GHC.Generics
 
 import           Kore.Annotation.Valid
 import           Kore.AST.Pure
-                 ( CofreeF (..), Pattern (..) )
+                 ( CofreeF (..), PatternF (..) )
 import qualified Kore.AST.Pure as Pattern
 import           Kore.Attribute.Symbol
                  ( StepperAttributes, isConstructor_, isSortInjection_ )

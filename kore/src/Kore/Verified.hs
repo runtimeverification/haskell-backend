@@ -16,8 +16,7 @@ module Kore.Verified
 
 import           Kore.Annotation.Valid
                  ( Valid )
-import           Kore.AST.Pure hiding
-                 ( Pattern )
+import           Kore.AST.Pure
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Syntax.Sentence as Syntax
 

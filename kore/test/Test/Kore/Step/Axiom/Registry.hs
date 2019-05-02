@@ -11,8 +11,6 @@ import           Data.Maybe
 import           Data.Proxy
                  ( Proxy (..) )
 
-import           Kore.AST.Pure
-                 ( groundHead )
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
@@ -44,6 +42,8 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.TermLike
 import           Kore.Syntax.Definition
+import           Kore.Syntax.PatternF
+                 ( groundHead )
 import qualified Kore.Verified as Verified
 import qualified SMT
 
