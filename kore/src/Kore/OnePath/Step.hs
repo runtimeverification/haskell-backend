@@ -30,7 +30,6 @@ import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
 
-import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -46,8 +45,6 @@ import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Pattern
                  ( Pattern )
 import qualified Kore.Step.Pattern as Pattern
-import           Kore.Step.Proof
-                 ( StepProof )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
@@ -231,10 +228,9 @@ transitionRule
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> Prim (Pattern Variable) (RewriteRule Variable)
-    -> (CommonStrategyPattern, StepProof Object Variable)
+    -> CommonStrategyPattern
     -- ^ Configuration being rewritten and its accompanying proof
-    -> TransitionT (RewriteRule Variable) Simplifier
-        (CommonStrategyPattern, StepProof Object Variable)
+    -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
 transitionRule
     tools
     substitutionSimplifier
@@ -252,13 +248,13 @@ transitionRule
         ApplyWithRemainders a -> transitionApplyWithRemainders a expandedPattern
         RemoveDestination d -> transitionRemoveDestination d expandedPattern
   where
-    transitionSimplify (RewritePattern config, proof) =
-        applySimplify RewritePattern (config, proof)
-    transitionSimplify (Stuck config, proof) =
-        applySimplify Stuck (config, proof)
-    transitionSimplify c@(Bottom, _) = return c
+    transitionSimplify (RewritePattern config) =
+        applySimplify RewritePattern config
+    transitionSimplify (Stuck config) =
+        applySimplify Stuck config
+    transitionSimplify c@Bottom = return c
 
-    applySimplify wrapper (config, proof) = do
+    applySimplify wrapper config = do
         configs <-
             Monad.Trans.lift
             $ Pattern.simplify
@@ -268,30 +264,28 @@ transitionRule
                 axiomIdToSimplifier
                 config
         let
-            prove config' = (config', proof)
             -- Filter out ⊥ patterns
             nonEmptyConfigs = MultiOr.filterOr configs
         if null nonEmptyConfigs
-            then return (Bottom, proof)
-            else Foldable.asum (pure . prove . wrapper <$> nonEmptyConfigs)
+            then return Bottom
+            else Foldable.asum (pure . wrapper <$> nonEmptyConfigs)
 
     transitionApplyWithRemainders
         :: [RewriteRule Variable]
-        -> (CommonStrategyPattern, StepProof Object Variable)
-        -> TransitionT (RewriteRule Variable) Simplifier
-            (CommonStrategyPattern, StepProof Object Variable)
-    transitionApplyWithRemainders _ c@(Bottom, _) = return c
-    transitionApplyWithRemainders _ c@(Stuck _, _) = return c
-    transitionApplyWithRemainders rules (RewritePattern config, proof) =
-        transitionMultiApplyWithRemainders rules (config, proof)
+        -> CommonStrategyPattern
+        -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
+    transitionApplyWithRemainders _ c@Bottom = return c
+    transitionApplyWithRemainders _ c@(Stuck _) = return c
+    transitionApplyWithRemainders rules (RewritePattern config) =
+        transitionMultiApplyWithRemainders rules config
 
     transitionMultiApplyWithRemainders
         :: [RewriteRule Variable]
-        -> (Pattern Variable, StepProof Object Variable)
-        -> Transition (CommonStrategyPattern, StepProof Object Variable)
-    transitionMultiApplyWithRemainders _ (config, _)
-        | Pattern.isBottom config = empty
-    transitionMultiApplyWithRemainders rules (config, proof) = do
+        -> Pattern Variable
+        -> Transition CommonStrategyPattern
+    transitionMultiApplyWithRemainders rules config
+      | Pattern.isBottom config = empty
+      | otherwise = do
         result <-
             Monad.Trans.lift
             $ Monad.Unify.runUnifier
@@ -315,27 +309,21 @@ transitionRule
                 ]
             Right results -> do
                 let
-                    withProof :: forall x. x -> (x, StepProof Object Variable)
-                    withProof x = (x, proof)
                     mapRules =
                         Result.mapRules
                         $ RewriteRule
                         . Step.unwrapRule
                         . Step.withoutUnification
-                    mapConfigs =
-                        Result.mapConfigs
-                            (withProof . RewritePattern)
-                            (withProof . Stuck)
+                    mapConfigs = Result.mapConfigs RewritePattern Stuck
                 Result.transitionResults (mapConfigs $ mapRules results)
 
     transitionRemoveDestination
         :: Pattern Variable
-        -> (CommonStrategyPattern, StepProof Object Variable)
-        -> TransitionT (RewriteRule Variable) Simplifier
-            (CommonStrategyPattern, StepProof Object Variable)
-    transitionRemoveDestination _ (Bottom, _) = empty
-    transitionRemoveDestination _ (Stuck _, _) = empty
-    transitionRemoveDestination destination (RewritePattern patt, proof1) = do
+        -> CommonStrategyPattern
+        -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
+    transitionRemoveDestination _ Bottom = empty
+    transitionRemoveDestination _ (Stuck _) = empty
+    transitionRemoveDestination destination (RewritePattern patt) = do
         let
             removal = removalPredicate destination patt
             result = patt `Conditional.andPredicate` removal
@@ -347,11 +335,10 @@ transitionRule
                 simplifier
                 axiomIdToSimplifier
                 result
-        let prove c = (c, proof1)
-            nonEmpty = MultiOr.filterOr orResult
+        let nonEmpty = MultiOr.filterOr orResult
         if null nonEmpty
-            then return (Bottom, proof1)
-            else Foldable.asum (pure . prove . RewritePattern <$> nonEmpty)
+            then return Bottom
+            else Foldable.asum (pure . RewritePattern <$> nonEmpty)
 
 {- | The predicate to remove the destination from the present configuration.
  -}

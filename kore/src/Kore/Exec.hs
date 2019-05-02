@@ -32,8 +32,6 @@ import           System.Exit
 
 import           Data.Limit
                  ( Limit (..) )
-import           Kore.AST.MetaOrObject
-                 ( Object (..) )
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
@@ -73,8 +71,6 @@ import           Kore.Step.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Predicate as Predicate
-import           Kore.Step.Proof
-                 ( StepProof )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), OnePathRule (..),
@@ -100,34 +96,30 @@ import qualified Kore.Unification.Substitution as Substitution
 -- | Configuration used in symbolic execution.
 type Config = Pattern Variable
 
--- | Proof returned by symbolic execution.
-type Proof = StepProof Object Variable
-
 -- | Semantic rule used during execution.
 type Rewrite = RewriteRule Variable
 
 -- | Function rule used during execution.
 type Equality = EqualityRule Variable
 
-type ExecutionGraph =
-    Strategy.ExecutionGraph (Config, Proof) (RewriteRule Variable)
+type ExecutionGraph = Strategy.ExecutionGraph Config (RewriteRule Variable)
 
 -- | A collection of rules and simplifiers used during execution.
 data Initialized =
     Initialized
         { rewriteRules :: ![Rewrite]
-        , simplifier :: !(TermLikeSimplifier)
-        , substitutionSimplifier :: !(PredicateSimplifier)
-        , axiomIdToSimplifier :: !(BuiltinAndAxiomSimplifierMap)
+        , simplifier :: !TermLikeSimplifier
+        , substitutionSimplifier :: !PredicateSimplifier
+        , axiomIdToSimplifier :: !BuiltinAndAxiomSimplifierMap
         }
 
 -- | The products of execution: an execution graph, and assorted simplifiers.
 data Execution =
     Execution
         { metadataTools :: !(SmtMetadataTools StepperAttributes)
-        , simplifier :: !(TermLikeSimplifier)
-        , substitutionSimplifier :: !(PredicateSimplifier)
-        , axiomIdToSimplifier :: !(BuiltinAndAxiomSimplifierMap)
+        , simplifier :: !TermLikeSimplifier
+        , substitutionSimplifier :: !PredicateSimplifier
+        , axiomIdToSimplifier :: !BuiltinAndAxiomSimplifierMap
         , executionGraph :: !ExecutionGraph
         }
 
@@ -144,7 +136,7 @@ exec indexedModule strategy purePattern = do
     execution <- execute indexedModule strategy purePattern
     let
         Execution { executionGraph } = execution
-        (finalConfig, _) = pickLongest executionGraph
+        finalConfig = pickLongest executionGraph
     return (forceSort patternSort $ Pattern.toMLPattern finalConfig)
   where
     Valid { patternSort } = extract purePattern
@@ -192,7 +184,7 @@ search verifiedModule strategy purePattern searchPattern searchConfig = do
         Execution { simplifier, substitutionSimplifier } = execution
         Execution { axiomIdToSimplifier } = execution
         Execution { executionGraph } = execution
-        match target (config, _proof) =
+        match target config =
             Search.matchWith
                 metadataTools
                 substitutionSimplifier
@@ -384,7 +376,7 @@ execute verifiedModule strategy inputPattern
                     axiomIdToSimplifier
                 )
                 (strategy rewriteRules)
-                (pat, mempty)
+                pat
     executionGraph <- runStrategy' initialPattern
     return Execution
         { metadataTools

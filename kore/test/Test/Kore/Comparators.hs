@@ -47,7 +47,6 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import           Kore.Step.Pattern
                  ( Conditional (..) )
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
-import           Kore.Step.Proof
 import           Kore.Step.Representation.MultiOr
 import           Kore.Step.Rule
                  ( RulePattern (..) )
@@ -347,58 +346,6 @@ instance
   where
     compareWithExplanation (a1 :< fb1) (a2 :< fb2) =
         compareWithExplanation fb1 fb2 <|> compareWithExplanation a1 a2
-    printWithExplanation = show
-
-instance
-    ( Eq variable, Show variable
-    , EqualWithExplanation variable
-    , EqualWithExplanation (TermLike variable)
-    )
-    => SumEqualWithExplanation (StepProof Object variable)
-  where
-    sumConstructorPair (StepProof a1) (StepProof a2) =
-        SumConstructorSameWithArguments (EqWrap "StepProofCombined" a1 a2)
-
-instance
-    ( Eq variable, Show variable
-    , EqualWithExplanation variable
-    , EqualWithExplanation (TermLike variable)
-    )
-    => SumEqualWithExplanation (StepProofAtom Object variable)
-  where
-    sumConstructorPair (StepProofUnification a1) (StepProofUnification a2) =
-        SumConstructorSameWithArguments (EqWrap "StepProofUnification" a1 a2)
-    sumConstructorPair a1@(StepProofUnification _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair
-        (StepProofVariableRenamings a1) (StepProofVariableRenamings a2)
-      =
-        SumConstructorSameWithArguments
-            (EqWrap "StepProofVariableRenamings" a1 a2)
-    sumConstructorPair a1@(StepProofVariableRenamings _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-instance
-    ( Eq variable, Show variable
-    , EqualWithExplanation variable
-    , EqualWithExplanation (TermLike variable)
-    )
-    => EqualWithExplanation (StepProofAtom Object variable)
-  where
-    compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
-
-instance
-    ( Eq variable, Show variable
-    , EqualWithExplanation variable
-    , EqualWithExplanation (TermLike variable)
-    )
-    => EqualWithExplanation (StepProof Object variable)
-  where
-    compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
 instance (Show child, EqualWithExplanation child)
@@ -949,31 +896,6 @@ instance
     => EqualWithExplanation (UnificationProof Object variable)
   where
     compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
-
-instance
-    (EqualWithExplanation variable, Show variable)
-    => StructEqualWithExplanation (VariableRenaming Object variable)
-  where
-    structFieldsWithNames
-        expected@(VariableRenaming _ _)
-        actual@(VariableRenaming _ _)
-      = [ EqWrap
-            "variableRenamingOriginal = "
-            (variableRenamingOriginal expected)
-            (variableRenamingOriginal actual)
-        , EqWrap
-            "variableRenamingRenamed = "
-            (variableRenamingRenamed expected)
-            (variableRenamingRenamed actual)
-        ]
-    structConstructorName _ = "VariableRenaming"
-
-instance
-    (EqualWithExplanation variable, Show variable)
-    => EqualWithExplanation (VariableRenaming Object variable)
-  where
-    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance

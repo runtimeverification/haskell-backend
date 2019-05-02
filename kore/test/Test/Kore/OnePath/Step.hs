@@ -20,7 +20,6 @@ import           Numeric.Natural
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
-import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
@@ -32,8 +31,6 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Pattern as Pattern
-import           Kore.Step.Proof
-                 ( StepProof )
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
@@ -60,7 +57,7 @@ import           Test.Tasty.HUnit.Extensions
 
 type ExecutionGraph a =
     Strategy.ExecutionGraph
-        (a, StepProof Object Variable)
+        (a)
         (RewriteRule Variable)
 
 test_onePathStrategy :: [TestTree]
@@ -428,12 +425,7 @@ runSteps
     -> (ExecutionGraph b -> a)
     -> Pattern Variable
     -- ^left-hand-side of unification
-    -> [Strategy
-        (Prim
-            (Pattern Variable)
-            (RewriteRule Variable)
-        )
-       ]
+    -> [Strategy (Prim (Pattern Variable) (RewriteRule Variable))]
     -> IO a
 runSteps metadataTools graphFilter picker configuration strategy =
     (<$>) picker
@@ -448,7 +440,7 @@ runSteps metadataTools graphFilter picker configuration strategy =
             Map.empty
         )
         strategy
-        (RewritePattern configuration, mempty)
+        (RewritePattern configuration)
   where
     simplifier = Simplifier.create metadataTools Map.empty
 
@@ -486,6 +478,6 @@ runOnePathSteps
                 )
             )
         )
-    return (sort $ nub (map fst result))
+    return (sort $ nub result)
   where
     expandedTarget = Pattern.fromTermLike target

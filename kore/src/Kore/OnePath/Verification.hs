@@ -28,10 +28,7 @@ import           Data.Limit
                  ( Limit )
 import qualified Data.Limit as Limit
 import           Data.Maybe
-import           Data.Profunctor
-                 ( dimap )
 
-import           Kore.AST.MetaOrObject
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -55,8 +52,6 @@ import           Kore.Step.Pattern
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Pattern as Conditional
                  ( Conditional (..) )
-import           Kore.Step.Proof
-                 ( StepProof )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
@@ -230,18 +225,10 @@ verifyClaim
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     ->  (  Pattern Variable
-        -> [Strategy
-            (Prim
-                (Pattern Variable)
-                (RewriteRule Variable)
-            )
-           ]
+        -> [Strategy (Prim (Pattern Variable) (RewriteRule Variable))]
         )
     -> (RewriteRule Variable, Limit Natural)
-    -> ExceptT
-        (OrPattern Variable)
-        Simplifier
-        ()
+    -> ExceptT (OrPattern Variable) Simplifier ()
 verifyClaim
     metadataTools
     simplifier
@@ -266,18 +253,18 @@ verifyClaim
             StrategyPattern.RewritePattern
                 Conditional
                     {term = left, predicate = requires, substitution = mempty}
-    executionGraph <- Monad.Trans.lift $ runStrategy
-        transitionRule'
-        strategy
-        ( startPattern, mempty )
+    executionGraph <-
+        Monad.Trans.lift $ runStrategy
+            transitionRule'
+            strategy
+            startPattern
     let remainingNodes = unprovenNodes executionGraph
     Monad.unless (TopBottom.isBottom remainingNodes) (throwE remainingNodes)
   where
     transitionRule'
         :: Prim (Pattern Variable) (RewriteRule Variable)
-        -> (CommonStrategyPattern, StepProof Object Variable)
-        -> TransitionT (RewriteRule Variable) Simplifier
-            (CommonStrategyPattern, StepProof Object Variable)
+        -> CommonStrategyPattern
+        -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
     transitionRule' =
         OnePath.transitionRule
             metadataTools
@@ -287,12 +274,12 @@ verifyClaim
 
 -- | Find all final nodes of the execution graph that did not reach the goal
 unprovenNodes
-    :: ExecutionGraph (StrategyPattern.StrategyPattern term, b) rule
+    :: ExecutionGraph (StrategyPattern.StrategyPattern term) rule
     -> MultiOr.MultiOr term
 unprovenNodes executionGraph =
     MultiOr.MultiOr
     $ mapMaybe StrategyPattern.extractUnproven
-    $ fst <$> pickFinal executionGraph
+    $ pickFinal executionGraph
 
 -- | Attempts to perform a single proof step, starting at the configuration
 -- in the execution graph designated by the provided node. Re-constructs the
@@ -341,12 +328,11 @@ verifyClaimStep
         -> TransitionT (RewriteRule Variable) Simplifier
             (CommonStrategyPattern)
     transitionRule' =
-        stripProof
-            $ OnePath.transitionRule
-                tools
-                predicateSimplifier
-                simplifier
-                axiomIdToSimplifier
+        OnePath.transitionRule
+            tools
+            predicateSimplifier
+            simplifier
+            axiomIdToSimplifier
 
     strategy'
         :: Strategy
@@ -372,12 +358,3 @@ verifyClaimStep
 
     isRoot :: Bool
     isRoot = node == root
-
-    -- Given a default proof, pass it as a default to the transitionRule and
-    -- discard the proof part of its result.
-    stripProof
-        :: forall prim strategy f proof
-        .  (Functor f, Monoid proof)
-        => (prim -> (strategy, proof) -> f (strategy, proof))
-        -> prim -> strategy -> f strategy
-    stripProof fn prim = dimap (\a -> (a, mempty)) (fmap fst) (fn prim)

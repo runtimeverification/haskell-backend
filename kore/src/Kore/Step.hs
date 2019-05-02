@@ -33,7 +33,6 @@ import           GHC.Stack
 import           Numeric.Natural
                  ( Natural )
 
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -42,8 +41,6 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Pattern
                  ( Pattern )
-import           Kore.Step.Proof
-                 ( StepProof (..) )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern, isCoolingRule,
@@ -97,16 +94,15 @@ transitionRule
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> Prim (RewriteRule Variable)
-    -> (Pattern Variable, StepProof Object Variable)
+    -> Pattern Variable
     -- ^ Configuration being rewritten and its accompanying proof
-    -> TransitionT (RewriteRule Variable) Simplifier
-        (Pattern Variable, StepProof Object Variable)
+    -> TransitionT (RewriteRule Variable) Simplifier (Pattern Variable)
 transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
     \case
         Simplify -> transitionSimplify
         Rewrite a -> transitionRewrite a
   where
-    transitionSimplify (config, proof) =
+    transitionSimplify config =
         do
             configs <-
                 Monad.Trans.lift
@@ -117,11 +113,10 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                     axiomIdToSimplifier
                     config
             let
-                prove config' = (config', proof)
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = MultiOr.filterOr configs
-            (Foldable.asum . fmap pure) (prove <$> nonEmptyConfigs)
-    transitionRewrite rule (config, proof) = do
+            Foldable.asum (pure <$> nonEmptyConfigs)
+    transitionRewrite rule config = do
         Transition.addRule rule
         result <-
             Monad.Trans.lift
@@ -144,10 +139,7 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                     , "Un-implemented unification case; aborting execution."
                     ]
             Right results ->
-                (Foldable.asum . fmap pure)
-                    (withProof <$> Step.gatherResults results)
-              where
-                withProof result' = (result', proof)
+                Foldable.asum (pure <$> Step.gatherResults results)
 
 
 {- | A strategy that applies all the rewrites in parallel.
