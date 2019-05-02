@@ -44,15 +44,15 @@ substitute
         )
     => Lens.Lens' attribute (Set variable)
     -- ^ Lens into free variables of the pattern
-    -> Map variable (PurePattern domain variable attribute)
+    -> Map variable (Pattern domain variable attribute)
     -- ^ Substitution
-    -> PurePattern domain variable attribute
+    -> Pattern domain variable attribute
     -- ^ Original pattern
-    -> PurePattern domain variable attribute
+    -> Pattern domain variable attribute
 substitute lensFreeVariables = \subst -> substituteWorker (Map.map Right subst)
   where
     extractFreeVariables
-        :: PurePattern domain variable attribute
+        :: Pattern domain variable attribute
         -> Set variable
     extractFreeVariables = Lens.view lensFreeVariables . extract
 

@@ -5,7 +5,7 @@ License     : NCSA
  -}
 module Kore.Attribute.Attributes
     ( Attributes (..)
-    , ParsedPurePattern
+    , ParsedPattern
     , AttributePattern
     , asAttributePattern
     , attributePattern
@@ -30,14 +30,14 @@ import           Kore.Syntax
 import           Kore.Unparser
 
 -- | A pure pattern which has only been parsed.
-type ParsedPurePattern = PurePattern Domain.Builtin Variable Attribute.Null
+type ParsedPattern = Pattern Domain.Builtin Variable Attribute.Null
 
-type AttributePattern = ParsedPurePattern
+type AttributePattern = ParsedPattern
 
 asAttributePattern
     :: (PatternF Domain.Builtin Variable) AttributePattern
     -> AttributePattern
-asAttributePattern = asPurePattern . (mempty :<)
+asAttributePattern = asPattern . (mempty :<)
 
 -- | An 'AttributePattern' of the attribute symbol applied to its arguments.
 attributePattern

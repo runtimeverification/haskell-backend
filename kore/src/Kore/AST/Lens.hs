@@ -27,12 +27,12 @@ patternLens
     -> (Sort -> f Sort)
     -- ^ Result sorts, and operand sorts when the two are equal
     -> (variable1 -> f variable2)  -- ^ Variables
-    ->  (  PurePattern domain variable1 annotation
-        -> f (PurePattern domain variable2 annotation)
+    ->  (  Pattern domain variable1 annotation
+        -> f (Pattern domain variable2 annotation)
         )
         -- ^ Children
-    ->  (  PurePattern domain variable1 annotation
-        -> f (PurePattern domain variable2 annotation)
+    ->  (  Pattern domain variable1 annotation
+        -> f (Pattern domain variable2 annotation)
         )
 patternLens
     lensOperandSort   -- input sort
@@ -86,8 +86,8 @@ patternLens
             <*> lensChild ceilChild
 
     patternLensDomain
-        :: domain (PurePattern domain variable1 annotation)
-        -> f (domain (PurePattern domain variable2 annotation))
+        :: domain (Pattern domain variable1 annotation)
+        -> f (domain (Pattern domain variable2 annotation))
     patternLensDomain =
         lensDomainValue patternLensDomainValue
       where
@@ -205,7 +205,7 @@ patternLens
 -- | The sort returned by a top-level constructor.
 resultSort
     :: (Domain domain, Traversable domain)
-    => Traversal' (PurePattern domain variable annotation) Sort
+    => Traversal' (Pattern domain variable annotation) Sort
 resultSort = \f -> patternLens pure f pure pure
 
 -- | All sub-expressions which are 'Pattern's.
@@ -213,19 +213,19 @@ resultSort = \f -> patternLens pure f pure pure
 allChildren
     :: (Domain domain, Traversable domain)
     => Traversal'
-        (PurePattern domain variable annotation)
-        (PurePattern domain variable annotation)
+        (Pattern domain variable annotation)
+        (Pattern domain variable annotation)
 allChildren = patternLens pure pure pure
 
 -- | Applies a function at an `[Int]` path.
 localInPattern
     :: (Domain domain, Traversable domain)
     => [Int]
-    ->  (  PurePattern domain variable annotation
-        -> PurePattern domain variable annotation
+    ->  (  Pattern domain variable annotation
+        -> Pattern domain variable annotation
         )
-    -> PurePattern domain variable annotation
-    -> PurePattern domain variable annotation
+    -> Pattern domain variable annotation
+    -> Pattern domain variable annotation
 localInPattern path f pat = pat & inPath path %~ f
 
 -- | Takes an `[Int]` representing a path, and returns a lens to that position.
@@ -234,11 +234,11 @@ localInPattern path f pat = pat & inPath path %~ f
 inPath
     :: (Applicative f, Domain domain, Traversable domain)
     => [Int]
-    ->  (  PurePattern domain variable annotation
-        -> f (PurePattern domain variable annotation)
+    ->  (  Pattern domain variable annotation
+        -> f (Pattern domain variable annotation)
         )
-    ->  (  PurePattern domain variable annotation
-        -> f (PurePattern domain variable annotation)
+    ->  (  Pattern domain variable annotation
+        -> f (Pattern domain variable annotation)
         )
 inPath []       = id --aka the identity lens
 inPath (n : ns) = partsOf allChildren . ix n . inPath ns
@@ -256,7 +256,7 @@ inPath (n : ns) = partsOf allChildren . ix n . inPath ns
 -- are synonymous. But don't quote me on this.
 isObviouslyPredicate
     :: Functor domain
-    => PurePattern domain variable annotation
+    => Pattern domain variable annotation
     -> Bool
 isObviouslyPredicate (Recursive.project -> _ :< pat) =
     case pat of

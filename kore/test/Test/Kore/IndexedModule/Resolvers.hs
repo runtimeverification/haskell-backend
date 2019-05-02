@@ -232,7 +232,7 @@ test_resolvers =
                                     }
                             top' = TopF Top { topSort = objectS1 }
                         in
-                            asPurePattern (valid :< top')
+                            asPattern (valid :< top')
                     , sentenceAliasResultSort = objectS1
                     }
                 )
@@ -269,7 +269,7 @@ test_resolvers =
                             freeVariables = Set.empty
                         top' = TopF Top { topSort = stringMetaSort }
                     in
-                        asPurePattern (valid :< top')
+                        asPattern (valid :< top')
                 , sentenceAliasResultSort = stringMetaSort
                 }
             ))

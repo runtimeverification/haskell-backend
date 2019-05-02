@@ -600,7 +600,7 @@ objectAliasSentenceWithArguments a b c =
         a
         b
         c
-        (asPurePattern $ valid :< top')
+        (asPattern $ valid :< top')
   where
     top' = TopF Top { topSort = b }
     valid =
@@ -690,7 +690,7 @@ simpleExistsPattern quantifiedVariable resultSort =
 simpleExistsUnifiedPattern
     :: VariableName -> Sort -> TermLike Variable
 simpleExistsUnifiedPattern name sort =
-    asPurePattern $ valid :< simpleExistsPattern (variable name sort) sort
+    asPattern $ valid :< simpleExistsPattern (variable name sort) sort
   where
     valid = Attribute.Pattern { patternSort = sort, freeVariables = Set.empty }
 

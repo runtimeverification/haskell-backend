@@ -53,7 +53,7 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
                  simplifyTerm )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import           Kore.Syntax
+import           Kore.Syntax.Application
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -61,8 +61,7 @@ import           Kore.Variables.Fresh
 -}
 evaluateApplication
     ::  forall variable.
-        ( Ord variable
-        , Show variable
+        ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
@@ -111,18 +110,18 @@ evaluateApplication
             simplifier
             axiomIdToEvaluator
             childrenPredicate
-            appPurePattern
+            appPattern
             unchanged
 
     Application { applicationSymbolOrAlias = appHead } = afterInj
     SymbolOrAlias { symbolOrAliasConstructor = symbolId } = appHead
 
-    appPurePattern =
+    appPattern =
         Recursive.embed (valid :< ApplicationF afterInj)
 
     unchangedPatt =
         Conditional
-            { term         = appPurePattern
+            { term         = appPattern
             , predicate    = predicate
             , substitution = substitution
             }

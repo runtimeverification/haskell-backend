@@ -50,6 +50,8 @@ import           Kore.Internal.TermLike
 import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT
                  ( resolve )
+import           Kore.Syntax.Pattern
+                 ( asConcretePattern )
 import qualified SMT.AST as SMT
 import qualified SMT.SimpleSMT as SMT
 
@@ -530,7 +532,7 @@ a :: Ord variable => TermLike variable
 a = mkApp testSort aSymbol []
 
 aConcrete :: TermLike Concrete
-aConcrete = let Just r = asConcretePurePattern a in r
+aConcrete = let Just r = asConcretePattern a in r
 
 aSort0 :: Ord variable => TermLike variable
 aSort0 = mkApp testSort0 aSort0Symbol []
@@ -551,7 +553,7 @@ b :: Ord variable => TermLike variable
 b = mkApp testSort bSymbol []
 
 bConcrete :: TermLike Concrete
-bConcrete = let Just r = asConcretePurePattern b in r
+bConcrete = let Just r = asConcretePattern b in r
 
 bSort0 :: Ord variable => TermLike variable
 bSort0 = mkApp testSort0 bSort0Symbol []

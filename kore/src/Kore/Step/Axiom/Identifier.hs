@@ -31,7 +31,7 @@ import Kore.Syntax.Application
 import Kore.Syntax.Id
        ( Id (..) )
 import Kore.Syntax.Pattern
-       ( PurePattern )
+       ( Pattern )
 
 {-| Identifer for the left-hand-side of axioms and for the terms with which
 these can be identified.
@@ -54,7 +54,7 @@ Currently parameters of parameterized symbols are ignored.
 -}
 extract
     :: (Functor domain)
-    => PurePattern domain variable annotation
+    => Pattern domain variable annotation
     -> Maybe (AxiomIdentifier)
 extract (App_ symbolOrAlias _children) =
     Just (Application (symbolOrAliasConstructor symbolOrAlias))

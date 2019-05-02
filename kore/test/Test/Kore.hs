@@ -17,7 +17,7 @@ module Test.Kore
     , sortVariable
     , sortVariableSort
     , termLikeGen
-    , expandedPatternGen
+    , internalPatternGen
     , orPatternGen
     , predicateGen
     , predicateChildGen
@@ -45,7 +45,9 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Pattern as Internal
+                 ( Pattern )
+import qualified Kore.Internal.Pattern as Internal.Pattern
 import           Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger.Output as Logger
                  ( emptyLogger )
@@ -734,10 +736,10 @@ sortActual name sorts =
         , sortActualSorts = sorts
         }
 
-expandedPatternGen :: Gen (Pattern Variable)
-expandedPatternGen =
-    Pattern.fromTermLike <$> (termLikeChildGen =<< sortGen)
+internalPatternGen :: Gen (Internal.Pattern Variable)
+internalPatternGen =
+    Internal.Pattern.fromTermLike <$> (termLikeChildGen =<< sortGen)
 
 orPatternGen :: Gen (OrPattern Variable)
 orPatternGen =
-    OrPattern.fromPatterns <$> Gen.list (Range.linear 0 64) expandedPatternGen
+    OrPattern.fromPatterns <$> Gen.list (Range.linear 0 64) internalPatternGen

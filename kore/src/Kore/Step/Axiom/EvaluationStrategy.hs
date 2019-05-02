@@ -54,7 +54,7 @@ import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
 import           Kore.Syntax.Pattern
-                 ( asConcretePurePattern )
+                 ( asConcretePattern )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse, unparse )
@@ -213,7 +213,7 @@ evaluateBuiltin
             return (AttemptedAxiom.NotApplicable)
         AttemptedAxiom.Applied _ -> return (result)
   where
-    isPattConcrete = isJust (asConcretePurePattern patt)
+    isPattConcrete = isJust (asConcretePattern patt)
     isValue pat = isJust $
         Value.fromConcreteStepPattern tools =<< asConcreteStepPattern pat
     -- TODO(virgil): Send this from outside.

@@ -53,7 +53,7 @@ testPatternUnifiedPattern :: TestPattern -> TermLike Variable
 testPatternUnifiedPattern
     TestPattern { testPatternPattern, testPatternSort }
   =
-    asPurePattern (valid :< testPatternPattern)
+    asPattern (valid :< testPatternPattern)
   where
     valid =
         Attribute.Pattern
@@ -108,7 +108,7 @@ test_patternVerifier =
                             }
                     pattern' = simpleExistsPattern objectVariable' objectSort
                 in
-                    asPurePattern (valid :< pattern')
+                    asPattern (valid :< pattern')
             }
         )
         (NamePrefix "dummy")
@@ -162,7 +162,7 @@ test_patternVerifier =
             { existsSort = objectSort
             , existsVariable = objectVariable'
             , existsChild =
-                asPurePattern
+                asPattern
                     ((:<)
                         Attribute.Pattern
                             { patternSort = objectSortVariableSort
@@ -1155,7 +1155,7 @@ genericPatternInPatterns
         [ TestPattern
             { testPatternPattern = ApplicationF Application
                 { applicationSymbolOrAlias = symbol
-                , applicationChildren = [asPurePattern (valid :< testedPattern)]
+                , applicationChildren = [asPattern (valid :< testedPattern)]
                 }
             , testPatternSort = testedSort
             , testPatternErrorStack =
@@ -1168,7 +1168,7 @@ genericPatternInPatterns
         , TestPattern
             { testPatternPattern = ApplicationF Application
                 { applicationSymbolOrAlias = alias
-                , applicationChildren = [asPurePattern (valid :< testedPattern)]
+                , applicationChildren = [asPattern (valid :< testedPattern)]
                 }
             , testPatternSort = testedSort
             , testPatternErrorStack =
@@ -1238,7 +1238,7 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
                 Foldable.foldl' Set.union Set.empty
                     (Attribute.freeVariables . extract <$> testedPattern)
             }
-    testedKorePattern = asPurePattern (valid :< testedPattern)
+    testedKorePattern = asPattern (valid :< testedPattern)
 
 patternInUnquantifiedGenericPatterns
     :: PatternF Domain.Builtin Variable (TermLike Variable)
@@ -1399,8 +1399,8 @@ patternInUnquantifiedGenericPatterns
                 Foldable.foldl' Set.union Set.empty
                     (Attribute.freeVariables . extract <$> testedPattern)
             }
-    anotherUnifiedPattern = asPurePattern (valid :< anotherPattern)
-    testedUnifiedPattern = asPurePattern (valid :< testedPattern)
+    anotherUnifiedPattern = asPattern (valid :< anotherPattern)
+    testedUnifiedPattern = asPattern (valid :< testedPattern)
 
 patternInUnquantifiedObjectPatterns
     :: PatternF Domain.Builtin Variable (TermLike Variable)
@@ -1448,8 +1448,8 @@ patternInUnquantifiedObjectPatterns
                 Foldable.foldl' Set.union Set.empty
                     (Attribute.freeVariables . extract <$> testedPattern)
             }
-    anotherUnifiedPattern = asPurePattern (valid :< anotherPattern)
-    testedUnifiedPattern = asPurePattern (valid :< testedPattern)
+    anotherUnifiedPattern = asPattern (valid :< anotherPattern)
+    testedUnifiedPattern = asPattern (valid :< testedPattern)
 
 testsForUnifiedPatternInTopLevelContext
     :: NamePrefix

@@ -66,6 +66,7 @@ import           Kore.Step.Axiom.Identifier
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Syntax.DomainValue
+import           Kore.Syntax.Pattern
 
 {- | The default type of builtin domain values.
  -}
@@ -220,7 +221,7 @@ WARNING: This is not implemented for internal domain values. Use
 asMetaPattern
     :: Functor domain
     => Domain.Builtin child
-    -> PurePattern domain Variable Attribute.Null
+    -> Pattern domain Variable Attribute.Null
 asMetaPattern =
     \case
         Domain.BuiltinExternal ext ->

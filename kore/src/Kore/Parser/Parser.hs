@@ -54,12 +54,10 @@ import           Kore.Syntax.Definition
 import           Kore.Unparser
                  ( unparseToString )
 
-type ParsedPattern = ParsedPurePattern
-
 asParsedPattern
     :: (PatternF Domain.Builtin Variable) ParsedPattern
     -> ParsedPattern
-asParsedPattern patternBase = asPurePattern (mempty :< patternBase)
+asParsedPattern patternBase = asPattern (mempty :< patternBase)
 
 {-|'sortVariableParser' parses either an @object-sort-variable@, or a
 @meta-sort-variable@.
@@ -648,7 +646,7 @@ builtinDomainParser _ = do
     return (Domain.BuiltinExternal external)
   where
     stringLiteralPatternParser =
-        asPurePattern . (mempty :<) . StringLiteralF
+        asPattern . (mempty :<) . StringLiteralF
         <$> stringLiteralParser
 
 {-|'korePatternParser' parses an unifiedPattern
@@ -1014,6 +1012,6 @@ leveledPatternParser patternParser domainValueParser = do
 purePatternParser :: Parser ParsedPattern
 purePatternParser = do
     patternHead <- leveledPatternParser childParser builtinDomainParser
-    return $ asPurePattern (mempty :< patternHead)
+    return $ asPattern (mempty :< patternHead)
   where
     childParser = purePatternParser

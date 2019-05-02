@@ -57,7 +57,7 @@ import           Kore.Sort
 import           Kore.Syntax.Application
 import           Kore.Syntax.Module
 import           Kore.Syntax.Pattern
-                 ( PurePattern )
+                 ( Pattern )
 import           Kore.Syntax.Variable
 import           Kore.Unparser
 
@@ -518,8 +518,8 @@ sentenceAttributes =
 -- | Erase the pattern annotations within a 'Sentence'.
 eraseSentenceAnnotations
     :: Functor domain
-    => Sentence (PurePattern domain variable erased)
-    -> Sentence (PurePattern domain variable Attribute.Null)
+    => Sentence (Pattern domain variable erased)
+    -> Sentence (Pattern domain variable Attribute.Null)
 eraseSentenceAnnotations sentence = (<$) Attribute.Null <$> sentence
 
 class AsSentence sentenceType where
@@ -584,38 +584,38 @@ instance SentenceSymbolOrAlias SentenceSymbol where
     getSentenceSymbolOrAliasSentenceName _ = "symbol"
 
 -- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
-type PureSentenceAxiom = SentenceAxiom ParsedPurePattern
+type PureSentenceAxiom = SentenceAxiom ParsedPattern
 
 -- |'PureSentenceAlias' is the pure (fixed-@level@) version of 'SentenceAlias'
-type PureSentenceAlias = SentenceAlias ParsedPurePattern
+type PureSentenceAlias = SentenceAlias ParsedPattern
 
 -- |'PureSentenceSymbol' is the pure (fixed-@level@) version of 'SentenceSymbol'
-type PureSentenceSymbol = SentenceSymbol ParsedPurePattern
+type PureSentenceSymbol = SentenceSymbol ParsedPattern
 
 -- |'PureSentenceImport' is the pure (fixed-@level@) version of 'SentenceImport'
-type PureSentenceImport = SentenceImport ParsedPurePattern
+type PureSentenceImport = SentenceImport ParsedPattern
 
 -- | 'PureSentenceHook' is the pure (fixed-@level@) version of 'SentenceHook'.
-type PureSentenceHook = SentenceHook ParsedPurePattern
+type PureSentenceHook = SentenceHook ParsedPattern
 
 -- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
-type PureSentence = Sentence ParsedPurePattern
+type PureSentence = Sentence ParsedPattern
 
 -- |'PureModule' is the pure (fixed-@level@) version of 'Module'
 type PureModule = Module PureSentence
 
-type ParsedSentenceSort = SentenceSort ParsedPurePattern
+type ParsedSentenceSort = SentenceSort ParsedPattern
 
-type ParsedSentenceSymbol = SentenceSymbol ParsedPurePattern
+type ParsedSentenceSymbol = SentenceSymbol ParsedPattern
 
-type ParsedSentenceAlias = SentenceAlias ParsedPurePattern
+type ParsedSentenceAlias = SentenceAlias ParsedPattern
 
-type ParsedSentenceImport = SentenceImport ParsedPurePattern
+type ParsedSentenceImport = SentenceImport ParsedPattern
 
-type ParsedSentenceAxiom = SentenceAxiom ParsedPurePattern
+type ParsedSentenceAxiom = SentenceAxiom ParsedPattern
 
-type ParsedSentenceHook = SentenceHook ParsedPurePattern
+type ParsedSentenceHook = SentenceHook ParsedPattern
 
-type ParsedSentence = Sentence ParsedPurePattern
+type ParsedSentence = Sentence ParsedPattern
 
 type ParsedModule = Module ParsedSentence

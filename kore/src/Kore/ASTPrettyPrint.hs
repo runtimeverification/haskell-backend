@@ -532,11 +532,11 @@ instance
     , PrettyPrint (domain child)
     , child ~ Cofree (PatternF domain variable) annotation
     ) =>
-    PrettyPrint (PurePattern domain variable annotation)
+    PrettyPrint (Pattern domain variable annotation)
   where
     prettyPrint _ purePattern =
-        writeStructure "PurePattern"
-            [ writeFieldOneLine "getPurePattern" getPurePattern purePattern ]
+        writeStructure "Pattern"
+            [ writeFieldOneLine "getPattern" getPattern purePattern ]
 
 instance PrettyPrint Attributes
   where

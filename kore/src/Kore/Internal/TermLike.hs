@@ -90,10 +90,11 @@ module Kore.Internal.TermLike
     , SymbolOrAlias (..)
     , SortedVariable (..)
     , Id (..)
-    , CofreeF (..)
+    , CofreeF (..), Comonad (..)
     , Variable (..)
     , Concrete
-    , module Kore.Syntax.Pattern
+    , eraseAnnotations
+    , module PatternF
     , module Kore.Sort
     ) where
 
@@ -131,8 +132,6 @@ import qualified Kore.Substitute as Substitute
 import           Kore.Syntax hiding
                  ( mapVariables, traverseVariables )
 import           Kore.Syntax.Definition
-import           Kore.Syntax.Pattern hiding
-                 ( mapVariables, traverseVariables )
 import qualified Kore.Syntax.PatternF as PatternF
 import qualified Kore.Syntax.Variable as Variable
 import           Kore.Unparser
@@ -141,7 +140,7 @@ import qualified Kore.Unparser as Unparse
 import           Kore.Variables.Fresh
 
 type TermLike variable =
-    PurePattern Domain.Builtin variable (Attribute.Pattern variable)
+    Pattern Domain.Builtin variable (Attribute.Pattern variable)
 
 freeVariables :: TermLike variable -> Set variable
 freeVariables termLike = Attribute.freeVariables (extract termLike)
@@ -526,7 +525,7 @@ mkAnd
 mkAnd = makeSortsAgree mkAndWorker
   where
     mkAndWorker andFirst andSecond andSort =
-        asPurePattern (valid :< AndF and')
+        asPattern (valid :< AndF and')
       where
         valid =
             Attribute.Pattern
@@ -557,7 +556,7 @@ mkApp
     -- ^ Application arguments
     -> TermLike variable
 mkApp resultSort applicationSymbolOrAlias applicationChildren =
-    asPurePattern (valid :< ApplicationF application)
+    asPattern (valid :< ApplicationF application)
   where
     valid =
         Attribute.Pattern
@@ -733,7 +732,7 @@ See also: 'mkBottom_'
  -}
 mkBottom :: Sort -> TermLike variable
 mkBottom bottomSort =
-    asPurePattern (valid :< BottomF bottom)
+    asPattern (valid :< BottomF bottom)
   where
     valid =
         Attribute.Pattern
@@ -760,7 +759,7 @@ See also: 'mkCeil_'
  -}
 mkCeil :: Sort -> TermLike variable -> TermLike variable
 mkCeil ceilResultSort ceilChild =
-    asPurePattern (valid :< CeilF ceil)
+    asPattern (valid :< CeilF ceil)
   where
     ceilOperandSort = termLikeSort ceilChild
     valid =
@@ -788,7 +787,7 @@ mkDomainValue
     => Domain.Builtin (TermLike variable)
     -> TermLike variable
 mkDomainValue domain =
-    asPurePattern (valid :< DomainValueF domain)
+    asPattern (valid :< DomainValueF domain)
   where
     valid =
         Attribute.Pattern
@@ -813,7 +812,7 @@ mkEquals equalsResultSort =
     makeSortsAgree mkEquals'Worker
   where
     mkEquals'Worker equalsFirst equalsSecond equalsOperandSort =
-        asPurePattern (valid :< EqualsF equals)
+        asPattern (valid :< EqualsF equals)
       where
         valid =
             Attribute.Pattern
@@ -856,7 +855,7 @@ mkExists
     -> TermLike variable
     -> TermLike variable
 mkExists existsVariable existsChild =
-    asPurePattern (valid :< ExistsF exists)
+    asPattern (valid :< ExistsF exists)
   where
     valid =
         Attribute.Pattern
@@ -877,7 +876,7 @@ mkFloor
     -> TermLike variable
     -> TermLike variable
 mkFloor floorResultSort floorChild =
-    asPurePattern (valid :< FloorF floor')
+    asPattern (valid :< FloorF floor')
   where
     valid =
         Attribute.Pattern
@@ -906,7 +905,7 @@ mkForall
     -> TermLike variable
     -> TermLike variable
 mkForall forallVariable forallChild =
-    asPurePattern (valid :< ForallF forall)
+    asPattern (valid :< ForallF forall)
   where
     valid =
         Attribute.Pattern
@@ -928,7 +927,7 @@ mkIff
 mkIff = makeSortsAgree mkIffWorker
   where
     mkIffWorker iffFirst iffSecond iffSort =
-        asPurePattern (valid :< IffF iff')
+        asPattern (valid :< IffF iff')
       where
         valid =
             Attribute.Pattern
@@ -949,7 +948,7 @@ mkImplies
 mkImplies = makeSortsAgree mkImpliesWorker
   where
     mkImpliesWorker impliesFirst impliesSecond impliesSort =
-        asPurePattern (valid :< ImpliesF implies')
+        asPattern (valid :< ImpliesF implies')
       where
         valid =
             Attribute.Pattern
@@ -974,7 +973,7 @@ mkIn
 mkIn inResultSort = makeSortsAgree mkInWorker
   where
     mkInWorker inContainedChild inContainingChild inOperandSort =
-        asPurePattern (valid :< InF in')
+        asPattern (valid :< InF in')
       where
         valid =
             Attribute.Pattern
@@ -1010,7 +1009,7 @@ mkIn_ = mkIn predicateSort
  -}
 mkNext :: TermLike variable -> TermLike variable
 mkNext nextChild =
-    asPurePattern (valid :< NextF next)
+    asPattern (valid :< NextF next)
   where
     valid =
         Attribute.Pattern
@@ -1024,7 +1023,7 @@ mkNext nextChild =
  -}
 mkNot :: TermLike variable -> TermLike variable
 mkNot notChild =
-    asPurePattern (valid :< NotF not')
+    asPattern (valid :< NotF not')
   where
     valid =
         Attribute.Pattern
@@ -1044,7 +1043,7 @@ mkOr
 mkOr = makeSortsAgree mkOrWorker
   where
     mkOrWorker orFirst orSecond orSort =
-        asPurePattern (valid :< OrF or')
+        asPattern (valid :< OrF or')
       where
         valid =
             Attribute.Pattern
@@ -1065,7 +1064,7 @@ mkRewrites
 mkRewrites = makeSortsAgree mkRewritesWorker
   where
     mkRewritesWorker rewritesFirst rewritesSecond rewritesSort =
-        asPurePattern (valid :< RewritesF rewrites')
+        asPattern (valid :< RewritesF rewrites')
       where
         valid =
             Attribute.Pattern
@@ -1083,7 +1082,7 @@ See also: 'mkTop_'
  -}
 mkTop :: Sort -> TermLike variable
 mkTop topSort =
-    asPurePattern (valid :< TopF top)
+    asPattern (valid :< TopF top)
   where
     valid =
         Attribute.Pattern
@@ -1106,7 +1105,7 @@ mkTop_ = mkTop predicateSort
 {- | Construct a variable pattern.
  -}
 mkVar :: SortedVariable variable => variable -> TermLike variable
-mkVar var = asPurePattern (validVar var :< VariableF var)
+mkVar var = asPattern (validVar var :< VariableF var)
 
 validVar
     :: SortedVariable variable
@@ -1122,7 +1121,7 @@ validVar var =
  -}
 mkSetVar :: SortedVariable variable => variable -> TermLike variable
 mkSetVar var =
-    asPurePattern (validVar var :< SetVariableF (SetVariable var))
+    asPattern (validVar var :< SetVariableF (SetVariable var))
 
 {- | Construct a 'StringLiteral' pattern.
  -}
@@ -1131,9 +1130,9 @@ mkStringLiteral
         , valid ~ Attribute.Pattern variable
         )
     => Text
-    -> PurePattern domain variable valid
+    -> Pattern domain variable valid
 mkStringLiteral string =
-    asPurePattern (valid :< StringLiteralF stringLiteral)
+    asPattern (valid :< StringLiteralF stringLiteral)
   where
     valid =
         Attribute.Pattern
@@ -1149,9 +1148,9 @@ mkCharLiteral
         , valid ~ Attribute.Pattern variable
         )
     => Char
-    -> PurePattern domain variable valid
+    -> Pattern domain variable valid
 mkCharLiteral char =
-    asPurePattern (valid :< CharLiteralF charLiteral)
+    asPattern (valid :< CharLiteralF charLiteral)
   where
     valid = Attribute.Pattern { patternSort = charMetaSort, freeVariables = Set.empty }
     charLiteral = CharLiteral char
@@ -1161,9 +1160,9 @@ mkInhabitant
         , valid ~ Attribute.Pattern variable
         )
     => Sort
-    -> PurePattern domain variable valid
+    -> Pattern domain variable valid
 mkInhabitant sort =
-    asPurePattern (valid :< InhabitantF sort)
+    asPattern (valid :< InhabitantF sort)
   where
     valid =
         Attribute.Pattern
@@ -1199,7 +1198,7 @@ symS x s =
  -}
 mkAxiom
     ::  ( valid ~ Attribute.Pattern variable
-        , patternType ~ PurePattern domain variable valid
+        , patternType ~ Pattern domain variable valid
         )
     => [SortVariable]
     -> patternType
@@ -1218,7 +1217,7 @@ See also: 'mkAxiom'
  -}
 mkAxiom_
     ::  ( valid ~ Attribute.Pattern variable
-        , patternType ~ PurePattern domain variable valid
+        , patternType ~ Pattern domain variable valid
         )
     => patternType
     -> SentenceAxiom patternType
@@ -1228,7 +1227,7 @@ mkAxiom_ = mkAxiom []
  -}
 mkSymbol
     ::  ( valid ~ Attribute.Pattern variable
-        , patternType ~ PurePattern domain variable valid
+        , patternType ~ Pattern domain variable valid
         , sortParam ~ SortVariable
         )
     => Id
@@ -1255,7 +1254,7 @@ See also: 'mkSymbol'
  -}
 mkSymbol_
     ::  ( valid ~ Attribute.Pattern variable
-        , patternType ~ PurePattern domain variable valid
+        , patternType ~ Pattern domain variable valid
         , sortParam ~ SortVariable
         )
     => Id
@@ -1268,7 +1267,7 @@ mkSymbol_ symbolConstructor = mkSymbol symbolConstructor []
  -}
 mkAlias
     ::  ( valid ~ Attribute.Pattern variable
-        , patternType ~ PurePattern domain Variable valid
+        , patternType ~ Pattern domain Variable valid
         , sortParam ~ SortVariable
         )
     => Id
@@ -1309,7 +1308,7 @@ See also: 'mkAlias'
  -}
 mkAlias_
     ::  ( valid ~ Attribute.Pattern variable
-        , patternType ~ PurePattern domain Variable valid
+        , patternType ~ Pattern domain Variable valid
         , sortParam ~ SortVariable
         )
     => Id
@@ -1322,130 +1321,130 @@ mkAlias_ aliasConstructor = mkAlias aliasConstructor []
 pattern And_
     :: Functor dom
     => Sort
-    -> PurePattern dom var annotation
-    -> PurePattern dom var annotation
-    -> PurePattern dom var annotation
+    -> Pattern dom var annotation
+    -> Pattern dom var annotation
+    -> Pattern dom var annotation
 
 pattern App_
     :: Functor dom
     => SymbolOrAlias
-    -> [PurePattern dom var annotation]
-    -> PurePattern dom var annotation
+    -> [Pattern dom var annotation]
+    -> Pattern dom var annotation
 
 pattern Bottom_
     :: Functor dom
     => Sort
-    -> PurePattern dom var annotation
+    -> Pattern dom var annotation
 
 pattern Ceil_
     :: Functor dom
     => Sort
     -> Sort
-    -> PurePattern dom var annotation
-    -> PurePattern dom var annotation
+    -> Pattern dom var annotation
+    -> Pattern dom var annotation
 
 pattern DV_
   :: Domain dom
   => Sort
-  -> dom (PurePattern dom var annotation)
-  -> PurePattern dom var annotation
+  -> dom (Pattern dom var annotation)
+  -> Pattern dom var annotation
 
 pattern Equals_
     :: Functor dom
     => Sort
     -> Sort
-    -> PurePattern dom var annotation
-    -> PurePattern dom var annotation
-    -> PurePattern dom var annotation
+    -> Pattern dom var annotation
+    -> Pattern dom var annotation
+    -> Pattern dom var annotation
 
 pattern Exists_
     :: Functor dom
     => Sort
     -> var
-    -> PurePattern dom var annotation
-    -> PurePattern dom var annotation
+    -> Pattern dom var annotation
+    -> Pattern dom var annotation
 
 pattern Floor_
     :: Functor dom
     => Sort
     -> Sort
-    -> PurePattern dom var annotation
-    -> PurePattern dom var annotation
+    -> Pattern dom var annotation
+    -> Pattern dom var annotation
 
 pattern Forall_
     :: Functor dom
     => Sort
     -> var
-    -> PurePattern dom var annotation
-    -> PurePattern dom var annotation
+    -> Pattern dom var annotation
+    -> Pattern dom var annotation
 
 pattern Iff_
     :: Functor dom
     => Sort
-    -> PurePattern dom var annotation
-    -> PurePattern dom var annotation
-    -> PurePattern dom var annotation
+    -> Pattern dom var annotation
+    -> Pattern dom var annotation
+    -> Pattern dom var annotation
 
 pattern Implies_
     :: Functor dom
     => Sort
-    -> PurePattern dom var annotation
-    -> PurePattern dom var annotation
-    -> PurePattern dom var annotation
+    -> Pattern dom var annotation
+    -> Pattern dom var annotation
+    -> Pattern dom var annotation
 
 pattern In_
     :: Functor dom
     => Sort
     -> Sort
-    -> PurePattern dom var annotation
-    -> PurePattern dom var annotation
-    -> PurePattern dom var annotation
+    -> Pattern dom var annotation
+    -> Pattern dom var annotation
+    -> Pattern dom var annotation
 
 pattern Next_
     :: Functor dom
     => Sort
-    -> PurePattern dom var annotation
-    -> PurePattern dom var annotation
+    -> Pattern dom var annotation
+    -> Pattern dom var annotation
 
 pattern Not_
     :: Functor dom
     => Sort
-    -> PurePattern dom var annotation
-    -> PurePattern dom var annotation
+    -> Pattern dom var annotation
+    -> Pattern dom var annotation
 
 pattern Or_
     :: Functor dom
     => Sort
-    -> PurePattern dom var annotation
-    -> PurePattern dom var annotation
-    -> PurePattern dom var annotation
+    -> Pattern dom var annotation
+    -> Pattern dom var annotation
+    -> Pattern dom var annotation
 
 pattern Rewrites_
   :: Functor dom
   => Sort
-  -> PurePattern dom var annotation
-  -> PurePattern dom var annotation
-  -> PurePattern dom var annotation
+  -> Pattern dom var annotation
+  -> Pattern dom var annotation
+  -> Pattern dom var annotation
 
 pattern Top_
     :: Functor dom
     => Sort
-    -> PurePattern dom var annotation
+    -> Pattern dom var annotation
 
 pattern Var_
     :: Functor dom
     => var
-    -> PurePattern dom var annotation
+    -> Pattern dom var annotation
 
 pattern StringLiteral_
   :: Functor dom
   => Text
-  -> PurePattern dom var annotation
+  -> Pattern dom var annotation
 
 pattern CharLiteral_
   :: Functor dom
   => Char
-  -> PurePattern dom var annotation
+  -> Pattern dom var annotation
 
 -- No way to make multiline pragma?
 -- NOTE: If you add a case to the AST type, add another synonym here.
@@ -1555,7 +1554,7 @@ pattern Var_ variable <-
 pattern V
     :: Functor dom
     => var
-    -> PurePattern dom var annotation
+    -> Pattern dom var annotation
 pattern V x <- Var_ x
 
 pattern StringLiteral_ str <-

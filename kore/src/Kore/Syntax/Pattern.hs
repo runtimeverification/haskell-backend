@@ -4,18 +4,18 @@ License     : NCSA
 
 -}
 module Kore.Syntax.Pattern
-    ( PurePattern (..)
-    , CommonPurePattern
-    , ConcretePurePattern
-    , VerifiedPurePattern
-    , asPurePattern
-    , fromPurePattern
+    ( Pattern (..)
+    , CommonPattern
+    , ConcretePattern
+    , VerifiedPattern
+    , asPattern
+    , fromPattern
     , eraseAnnotations
     , traverseVariables
     , mapVariables
-    , asConcretePurePattern
+    , asConcretePattern
     , isConcrete
-    , fromConcretePurePattern
+    , fromConcretePattern
     , castVoidDomainValues
     -- * Re-exports
     , Base, CofreeF (..)
@@ -69,21 +69,21 @@ import           Kore.Unparser
 @var@ is the family of variable types, parameterized by level.
 
 @ann@ is the type of annotations decorating each node of the abstract syntax
-tree. @PurePattern@ is a 'Traversable' 'Comonad' over the type of annotations.
+tree. @Pattern@ is a 'Traversable' 'Comonad' over the type of annotations.
 
 -}
-newtype PurePattern
+newtype Pattern
     (domain :: * -> *)
     (variable :: *)
     (annotation :: *)
   =
-    PurePattern
-        { getPurePattern :: Cofree (PatternF domain variable) annotation }
+    Pattern
+        { getPattern :: Cofree (PatternF domain variable) annotation }
     deriving (Foldable, Functor, Generic, Traversable)
 
 instance
     ( Eq variable , Eq1 domain, Functor domain ) =>
-    Eq (PurePattern domain variable annotation)
+    Eq (Pattern domain variable annotation)
   where
     (==) = eqWorker
       where
@@ -96,7 +96,7 @@ instance
 
 instance
     ( Ord variable , Ord1 domain, Functor domain ) =>
-    Ord (PurePattern domain variable annotation)
+    Ord (Pattern domain variable annotation)
   where
     compare = compareWorker
       where
@@ -113,15 +113,15 @@ deriving instance
     , Show1 domain
     , child ~ Cofree (PatternF domain variable) annotation
     ) =>
-    Show (PurePattern domain variable annotation)
+    Show (Pattern domain variable annotation)
 
 instance
     ( Functor domain
     , Hashable variable
     , Hashable (domain child)
-    , child ~ PurePattern domain variable annotation
+    , child ~ Pattern domain variable annotation
     ) =>
-    Hashable (PurePattern domain variable annotation)
+    Hashable (Pattern domain variable annotation)
   where
     hashWithSalt salt (Recursive.project -> _ :< pat) = hashWithSalt salt pat
     {-# INLINE hashWithSalt #-}
@@ -131,9 +131,9 @@ instance
     , NFData annotation
     , NFData variable
     , NFData (domain child)
-    , child ~ PurePattern domain variable annotation
+    , child ~ Pattern domain variable annotation
     ) =>
-    NFData (PurePattern domain variable annotation)
+    NFData (Pattern domain variable annotation)
   where
     rnf (Recursive.project -> annotation :< pat) =
         rnf annotation `seq` rnf pat `seq` ()
@@ -142,60 +142,60 @@ instance
     ( Functor domain
     , Unparse variable
     , Unparse (domain self)
-    , self ~ PurePattern domain variable annotation
+    , self ~ Pattern domain variable annotation
     ) =>
-    Unparse (PurePattern domain variable annotation)
+    Unparse (Pattern domain variable annotation)
   where
     unparse (Recursive.project -> _ :< pat) = unparse pat
     unparse2 (Recursive.project -> _ :< pat) = unparse2 pat
 
 
-type instance Base (PurePattern domain variable annotation) =
+type instance Base (Pattern domain variable annotation) =
     CofreeF (PatternF domain variable) annotation
 
--- This instance implements all class functions for the PurePattern newtype
+-- This instance implements all class functions for the Pattern newtype
 -- because the their implementations for the inner type may be specialized.
 instance
     Functor domain =>
-    Recursive (PurePattern domain variable annotation)
+    Recursive (Pattern domain variable annotation)
   where
-    project = \(PurePattern embedded) ->
+    project = \(Pattern embedded) ->
         case Recursive.project embedded of
-            Compose (Identity projected) -> PurePattern <$> projected
+            Compose (Identity projected) -> Pattern <$> projected
     {-# INLINE project #-}
 
     -- This specialization is particularly important: The default implementation
     -- of 'cata' in terms of 'project' would involve an extra call to 'fmap' at
     -- every level of the tree due to the implementation of 'project' above.
-    cata alg = \(PurePattern fixed) ->
+    cata alg = \(Pattern fixed) ->
         Recursive.cata
             (\(Compose (Identity base)) -> alg base)
             fixed
     {-# INLINE cata #-}
 
-    para alg = \(PurePattern fixed) ->
+    para alg = \(Pattern fixed) ->
         Recursive.para
             (\(Compose (Identity base)) ->
-                 alg (Bifunctor.first PurePattern <$> base)
+                 alg (Bifunctor.first Pattern <$> base)
             )
             fixed
     {-# INLINE para #-}
 
-    gpara dist alg = \(PurePattern fixed) ->
+    gpara dist alg = \(Pattern fixed) ->
         Recursive.gpara
             (\(Compose (Identity base)) -> Compose . Identity <$> dist base)
-            (\(Compose (Identity base)) -> alg (Env.local PurePattern <$> base))
+            (\(Compose (Identity base)) -> alg (Env.local Pattern <$> base))
             fixed
     {-# INLINE gpara #-}
 
-    prepro pre alg = \(PurePattern fixed) ->
+    prepro pre alg = \(Pattern fixed) ->
         Recursive.prepro
             (\(Compose (Identity base)) -> (Compose . Identity) (pre base))
             (\(Compose (Identity base)) -> alg base)
             fixed
     {-# INLINE prepro #-}
 
-    gprepro dist pre alg = \(PurePattern fixed) ->
+    gprepro dist pre alg = \(Pattern fixed) ->
         Recursive.gprepro
             (\(Compose (Identity base)) -> Compose . Identity <$> dist base)
             (\(Compose (Identity base)) -> (Compose . Identity) (pre base))
@@ -203,34 +203,34 @@ instance
             fixed
     {-# INLINE gprepro #-}
 
--- This instance implements all class functions for the PurePattern newtype
+-- This instance implements all class functions for the Pattern newtype
 -- because the their implementations for the inner type may be specialized.
 instance
     Functor domain =>
-    Corecursive (PurePattern domain variable annotation)
+    Corecursive (Pattern domain variable annotation)
   where
     embed = \projected ->
-        (PurePattern . Recursive.embed . Compose . Identity)
-            (getPurePattern <$> projected)
+        (Pattern . Recursive.embed . Compose . Identity)
+            (getPattern <$> projected)
     {-# INLINE embed #-}
 
-    ana coalg = PurePattern . ana0
+    ana coalg = Pattern . ana0
       where
         ana0 =
             Recursive.ana (Compose . Identity . coalg)
     {-# INLINE ana #-}
 
-    apo coalg = PurePattern . apo0
+    apo coalg = Pattern . apo0
       where
         apo0 =
             Recursive.apo
                 (\a ->
                      (Compose . Identity)
-                        (Bifunctor.first getPurePattern <$> coalg a)
+                        (Bifunctor.first getPattern <$> coalg a)
                 )
     {-# INLINE apo #-}
 
-    postpro post coalg = PurePattern . postpro0
+    postpro post coalg = Pattern . postpro0
       where
         postpro0 =
             Recursive.postpro
@@ -238,7 +238,7 @@ instance
                 (Compose . Identity . coalg)
     {-# INLINE postpro #-}
 
-    gpostpro dist post coalg = PurePattern . gpostpro0
+    gpostpro dist post coalg = Pattern . gpostpro0
       where
         gpostpro0 =
             Recursive.gpostpro
@@ -247,72 +247,72 @@ instance
                 (Compose . Identity . coalg)
     {-# INLINE gpostpro #-}
 
--- This instance implements all class functions for the PurePattern newtype
+-- This instance implements all class functions for the Pattern newtype
 -- because the their implementations for the inner type may be specialized.
 instance
     Functor domain =>
-    Comonad (PurePattern domain variable)
+    Comonad (Pattern domain variable)
   where
-    extract = \(PurePattern fixed) -> extract fixed
+    extract = \(Pattern fixed) -> extract fixed
     {-# INLINE extract #-}
-    duplicate = \(PurePattern fixed) -> PurePattern (extend PurePattern fixed)
+    duplicate = \(Pattern fixed) -> Pattern (extend Pattern fixed)
     {-# INLINE duplicate #-}
-    extend extending = \(PurePattern fixed) ->
-        PurePattern (extend (extending . PurePattern) fixed)
+    extend extending = \(Pattern fixed) ->
+        Pattern (extend (extending . Pattern) fixed)
     {-# INLINE extend #-}
 
 instance
     Functor domain =>
     ComonadCofree
         (PatternF domain variable)
-        (PurePattern domain variable)
+        (Pattern domain variable)
   where
-    unwrap = \(PurePattern fixed) -> PurePattern <$> unwrap fixed
+    unwrap = \(Pattern fixed) -> Pattern <$> unwrap fixed
     {-# INLINE unwrap #-}
 
 instance Functor domain
-    => TopBottom (PurePattern domain variable annotation)
+    => TopBottom (Pattern domain variable annotation)
   where
     isTop (Recursive.project -> _ :< TopF Top {}) = True
     isTop _ = False
     isBottom (Recursive.project -> _ :< BottomF Bottom {}) = True
     isBottom _ = False
 
-fromPurePattern
+fromPattern
     :: Functor domain
-    => PurePattern domain variable annotation
+    => Pattern domain variable annotation
     -> Base
-        (PurePattern domain variable annotation)
-        (PurePattern domain variable annotation)
-fromPurePattern = Recursive.project
+        (Pattern domain variable annotation)
+        (Pattern domain variable annotation)
+fromPattern = Recursive.project
 
-asPurePattern
+asPattern
     :: Functor domain
     => Base
-        (PurePattern domain variable annotation)
-        (PurePattern domain variable annotation)
-    -> PurePattern domain variable annotation
-asPurePattern = Recursive.embed
+        (Pattern domain variable annotation)
+        (Pattern domain variable annotation)
+    -> Pattern domain variable annotation
+asPattern = Recursive.embed
 
--- | Erase the annotations from any 'PurePattern'.
+-- | Erase the annotations from any 'Pattern'.
 eraseAnnotations
     :: Functor domain
-    => PurePattern domain variable erased
-    -> PurePattern domain variable Attribute.Null
+    => Pattern domain variable erased
+    -> Pattern domain variable Attribute.Null
 eraseAnnotations = (<$) Attribute.Null
 
 -- | A pure pattern at level @level@ with variables in the common 'Variable'.
-type CommonPurePattern domain = PurePattern domain Variable Attribute.Null
+type CommonPattern domain = Pattern domain Variable Attribute.Null
 
 -- | A concrete pure pattern (containing no variables) at level @level@.
-type ConcretePurePattern domain =
-    PurePattern domain Concrete (Attribute.Pattern Concrete)
+type ConcretePattern domain =
+    Pattern domain Concrete (Attribute.Pattern Concrete)
 
 -- | A pure pattern which has been parsed and verified.
-type VerifiedPurePattern domain =
-    PurePattern domain Variable (Attribute.Pattern Variable)
+type VerifiedPattern domain =
+    Pattern domain Variable (Attribute.Pattern Variable)
 
-{- | Use the provided traversal to replace all variables in a 'PurePattern'.
+{- | Use the provided traversal to replace all variables in a 'Pattern'.
 
 @traverseVariables@ is strict, i.e. its argument is fully evaluated before it
 returns. When composing multiple transformations with @traverseVariables@, the
@@ -326,22 +326,22 @@ traverseVariables
     ::  forall m variable1 variable2 domain annotation.
         (Monad m, Traversable domain)
     => (variable1 -> m variable2)
-    -> PurePattern domain variable1 annotation
-    -> m (PurePattern domain variable2 annotation)
+    -> Pattern domain variable1 annotation
+    -> m (Pattern domain variable2 annotation)
 traverseVariables traversing =
     Recursive.fold traverseVariablesWorker
   where
     traverseVariablesWorker
         :: Base
-            (PurePattern domain variable1 annotation)
-            (m (PurePattern domain variable2 annotation))
-        -> m (PurePattern domain variable2 annotation)
+            (Pattern domain variable1 annotation)
+            (m (Pattern domain variable2 annotation))
+        -> m (Pattern domain variable2 annotation)
     traverseVariablesWorker (a :< pat) =
         reannotate <$> (PatternF.traverseVariables traversing =<< sequence pat)
       where
         reannotate pat' = Recursive.embed (a :< pat')
 
-{- | Use the provided mapping to replace all variables in a 'PurePattern'.
+{- | Use the provided mapping to replace all variables in a 'Pattern'.
 
 @mapVariables@ is lazy: it descends into its argument only as the result is
 demanded. Intermediate allocation from composing multiple transformations with
@@ -353,21 +353,21 @@ See also: 'traverseVariables'
 mapVariables
     :: Functor domain
     => (variable1 -> variable2)
-    -> PurePattern domain variable1 annotation
-    -> PurePattern domain variable2 annotation
+    -> Pattern domain variable1 annotation
+    -> Pattern domain variable2 annotation
 mapVariables mapping =
     Recursive.ana (mapVariablesWorker . Recursive.project)
   where
     mapVariablesWorker (a :< pat) =
         a :< PatternF.mapVariables mapping pat
 
--- | Use the provided mapping to replace all domain values in a 'PurePattern'.
+-- | Use the provided mapping to replace all domain values in a 'Pattern'.
 mapDomainValues
     ::  forall domain1 domain2 variable annotation.
         (Functor domain1, Functor domain2)
     => (forall child. domain1 child -> domain2 child)
-    -> PurePattern domain1 variable annotation
-    -> PurePattern domain2 variable annotation
+    -> Pattern domain1 variable annotation
+    -> Pattern domain2 variable annotation
 mapDomainValues mapping =
     -- Using 'Recursive.unfold' so that the pattern will unfold lazily.
     -- Lazy unfolding allows composing multiple tree transformations without
@@ -377,43 +377,43 @@ mapDomainValues mapping =
     mapDomainValuesWorker (a :< pat) =
         a :< PatternF.mapDomainValues mapping pat
 
-{- | Construct a 'ConcretePurePattern' from a 'PurePattern'.
+{- | Construct a 'ConcretePattern' from a 'Pattern'.
 
-A concrete pattern contains no variables, so @asConcretePurePattern@ is
+A concrete pattern contains no variables, so @asConcretePattern@ is
 fully polymorphic on the variable type in the pure pattern. If the argument
 contains any variables, the result is @Nothing@.
 
-@asConcretePurePattern@ is strict, i.e. it traverses its argument entirely,
+@asConcretePattern@ is strict, i.e. it traverses its argument entirely,
 because the entire tree must be traversed to inspect for variables before
 deciding if the result is @Nothing@ or @Just _@.
 
  -}
-asConcretePurePattern
+asConcretePattern
     :: forall domain variable annotation . Traversable domain
-    => PurePattern domain variable annotation
-    -> Maybe (PurePattern domain Concrete annotation)
-asConcretePurePattern = traverseVariables (\case { _ -> Nothing })
+    => Pattern domain variable annotation
+    -> Maybe (Pattern domain Concrete annotation)
+asConcretePattern = traverseVariables (\case { _ -> Nothing })
 
 isConcrete
     :: forall domain variable annotation . Traversable domain
-    => PurePattern domain variable annotation
+    => Pattern domain variable annotation
     -> Bool
-isConcrete = isJust . asConcretePurePattern
+isConcrete = isJust . asConcretePattern
 
-{- | Construct a 'PurePattern' from a 'ConcretePurePattern'.
+{- | Construct a 'Pattern' from a 'ConcretePattern'.
 
 The concrete pattern contains no variables, so the result is fully
 polymorphic in the variable type.
 
-@fromConcretePurePattern@ unfolds the resulting syntax tree lazily, so it
+@fromConcretePattern@ unfolds the resulting syntax tree lazily, so it
 composes with other tree transformations without allocating intermediates.
 
  -}
-fromConcretePurePattern
+fromConcretePattern
     :: forall domain variable annotation. Functor domain
-    => PurePattern domain Concrete annotation
-    -> PurePattern domain variable annotation
-fromConcretePurePattern = mapVariables (\case {})
+    => Pattern domain Concrete annotation
+    -> Pattern domain variable annotation
+fromConcretePattern = mapVariables (\case {})
 
 {- | Cast a pure pattern with @'Const' 'Void'@ domain values into any domain.
 
@@ -423,6 +423,6 @@ trivially because it must contain no domain values.
  -}
 castVoidDomainValues
     :: Functor domain
-    => PurePattern (Const Void) variable annotation
-    -> PurePattern domain variable annotation
+    => Pattern (Const Void) variable annotation
+    -> Pattern domain variable annotation
 castVoidDomainValues = mapDomainValues (\case {})

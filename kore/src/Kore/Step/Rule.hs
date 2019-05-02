@@ -313,7 +313,7 @@ fromSentenceAxiom sentenceAxiom = do
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 
-@patternToAxiomPattern@ returns an error if the given 'CommonPurePattern' does
+@patternToAxiomPattern@ returns an error if the given 'CommonPattern' does
 not encode a normal rewrite or function axiom.
 -}
 patternToAxiomPattern

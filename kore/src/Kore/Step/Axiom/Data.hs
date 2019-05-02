@@ -48,7 +48,7 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Syntax.Application
 import           Kore.Syntax.Pattern
-                 ( fromPurePattern )
+                 ( fromPattern )
 import           Kore.Syntax.PatternF
                  ( PatternF (..) )
 import           Kore.Syntax.Variable
@@ -247,7 +247,7 @@ applicationAxiomSimplifier applicationSimplifier =
         axiomIdToSimplifier
         patt
       =
-        case fromPurePattern patt of
+        case fromPattern patt of
             (valid :< ApplicationF p) ->
                 applicationSimplifier
                     tools

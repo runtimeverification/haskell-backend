@@ -330,7 +330,7 @@ mainWithOptions
                         specDefIndexedModule <-
                             mainModule specMainModule specDefIndexedModules
                         return (Just (specDefIndexedModule, bmc))
-        maybePurePattern <- case patternFileName of
+        maybePattern <- case patternFileName of
             Nothing -> return Nothing
             Just fileName ->
                 Just
@@ -351,7 +351,7 @@ mainWithOptions
                             let
                                 purePattern = fromMaybe
                                     (error "Missing: --pattern PATTERN_FILE")
-                                    maybePurePattern
+                                    maybePattern
                             case searchParameters of
                                 Nothing -> do
                                     pat <-

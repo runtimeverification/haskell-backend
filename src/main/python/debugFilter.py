@@ -347,14 +347,14 @@ def cleanStringDomainValue(line):
     while line.find(
             ["CofreeT ", "Identity ", " :< DomainValueF ",
                 "DomainValue ", " domainValueChild = BuiltinPattern ",
-                "PurePattern ", "getPurePattern = CofreeT ", "Identity ",
+                "Pattern ", "getPattern = CofreeT ", "Identity ",
                 "Null :< StringLiteralF "], it):
         dv = it.element().getSubnode(
             ["Identity ", ":< DomainValueF ", "DomainValue "]
         )
         sort = dv.getSubnode(["domainValueSort"])
         value = dv.getSubnode(
-            ["domainValueChild", "PurePattern", "getPurePattern",
+            ["domainValueChild", "Pattern", "getPattern",
                 "Identity", "StringLiteralF", "StringLiteral",
                 "getStringLiteral"
             ]

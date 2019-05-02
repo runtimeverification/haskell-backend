@@ -266,7 +266,7 @@ instance
     printWithExplanation = show
 
 instance
-    ( Show (PurePattern domain variable annotation)
+    ( Show (Pattern domain variable annotation)
     , Show1 domain
     , Eq1 domain
     , Show variable
@@ -277,13 +277,13 @@ instance
     , EqualWithExplanation annotation
     , EqualWithExplanation (domain (Cofree (PatternF domain variable) annotation))
     ) =>
-    EqualWithExplanation (PurePattern domain variable annotation)
+    EqualWithExplanation (Pattern domain variable annotation)
   where
-    compareWithExplanation a@(PurePattern _) = wrapperCompareWithExplanation a
+    compareWithExplanation a@(Pattern _) = wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance
-    ( Show (PurePattern domain variable annotation)
+    ( Show (Pattern domain variable annotation)
     , Show1 domain
     , Eq1 domain
     , Show variable
@@ -294,14 +294,14 @@ instance
     , EqualWithExplanation annotation
     , EqualWithExplanation (domain (Cofree (PatternF domain variable) annotation))
     ) =>
-    WrapperEqualWithExplanation (PurePattern domain variable annotation)
+    WrapperEqualWithExplanation (Pattern domain variable annotation)
   where
     wrapperField expected actual =
         EqWrap
-            "getPurePattern = "
-            (getPurePattern expected)
-            (getPurePattern actual)
-    wrapperConstructorName _ = "PurePattern"
+            "getPattern = "
+            (getPattern expected)
+            (getPattern actual)
+    wrapperConstructorName _ = "Pattern"
 
 instance
     ( Show (CofreeT f w a)

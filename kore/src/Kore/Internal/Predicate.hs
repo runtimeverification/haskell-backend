@@ -10,7 +10,7 @@ module Kore.Internal.Predicate
     , bottom
     , topPredicate
     , bottomPredicate
-    , fromPurePattern
+    , fromPattern
     , Conditional.fromPredicate
     , Conditional.fromSubstitution
     , toPredicate

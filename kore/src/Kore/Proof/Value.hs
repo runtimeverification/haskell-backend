@@ -91,7 +91,7 @@ eraseSortInjection (Recursive.project -> ann :< value) =
 
 {- | Embed the normalized pattern head if its children are normal values.
 
-    See also: 'fromConcretePurePattern'.
+    See also: 'fromConcretePattern'.
 
  -}
 fromPattern

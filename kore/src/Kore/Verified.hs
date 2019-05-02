@@ -22,7 +22,7 @@ import qualified Kore.Syntax.Sentence as Syntax
 import           Kore.Syntax.Variable
 
 type Pattern =
-    Syntax.PurePattern Domain.Builtin Variable (Attribute.Pattern Variable)
+    Syntax.Pattern Domain.Builtin Variable (Attribute.Pattern Variable)
 
 type Sentence = Syntax.Sentence Pattern
 
