@@ -47,11 +47,11 @@ import           Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Pattern, Predicate )
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
                  ( TermLike )
 import           Kore.Logger
 import qualified Kore.Step.Conditional as Conditional
-import qualified Kore.Step.Predicate as Predicate
 import           Kore.Syntax.Variable
                  ( SortedVariable )
 import           Kore.Unparser

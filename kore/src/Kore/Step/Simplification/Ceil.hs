@@ -34,6 +34,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeTruePredicate )
@@ -46,7 +47,6 @@ import qualified Kore.Step.Function.Evaluator as Axiom
 import           Kore.Step.OrPredicate
                  ( OrPredicate )
 import qualified Kore.Step.OrPredicate as OrPredicate
-import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.RecursiveAttributes
                  ( isTotalPattern )
 import qualified Kore.Step.Representation.MultiAnd as MultiAnd

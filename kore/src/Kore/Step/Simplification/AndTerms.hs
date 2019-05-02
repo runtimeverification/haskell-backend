@@ -48,6 +48,7 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeEqualsPredicate,
@@ -59,7 +60,6 @@ import           Kore.Step.OrPredicate
 import qualified Kore.Step.OrPredicate as OrPredicate
 import           Kore.Step.PatternAttributes
                  ( isConstructorLikeTop )
-import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr

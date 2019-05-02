@@ -3,7 +3,7 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
 -}
-module Kore.Step.Predicate
+module Kore.Internal.Predicate
     ( Predicate
     , eraseConditionalTerm
     , top
@@ -15,7 +15,7 @@ module Kore.Step.Predicate
     , Conditional.fromSubstitution
     , toPredicate
     , freeVariables
-    , Kore.Step.Predicate.mapVariables
+    , Kore.Internal.Predicate.mapVariables
     -- * Re-exports
     , Conditional (..)
     ) where

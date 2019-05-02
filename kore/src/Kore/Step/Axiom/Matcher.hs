@@ -28,6 +28,9 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Predicate as Conditional
+                 ( Conditional (..), Predicate )
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
@@ -37,9 +40,6 @@ import qualified Kore.Step.Merging.OrPattern as OrPattern
 import           Kore.Step.OrPredicate
                  ( OrPredicate )
 import qualified Kore.Step.OrPredicate as OrPredicate
-import           Kore.Step.Predicate as Conditional
-                 ( Conditional (..), Predicate )
-import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import           Kore.Step.Representation.MultiOr

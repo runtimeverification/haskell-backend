@@ -16,13 +16,13 @@ module Kore.Step.OrPredicate
 
 import qualified Data.Foldable as Foldable
 
+import           Kore.Internal.Predicate
+                 ( Predicate )
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Step.Predicate
-                 ( Predicate )
-import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr

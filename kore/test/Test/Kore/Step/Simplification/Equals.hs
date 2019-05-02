@@ -21,6 +21,9 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Conditional
+import           Kore.Internal.Predicate
+                 ( Conditional (..), Predicate )
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( pattern PredicateFalse, makeAndPredicate, makeCeilPredicate,
@@ -29,9 +32,6 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import           Kore.Step.OrPredicate
                  ( OrPredicate )
-import           Kore.Step.Predicate
-                 ( Conditional (..), Predicate )
-import qualified Kore.Step.Predicate as Predicate
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
