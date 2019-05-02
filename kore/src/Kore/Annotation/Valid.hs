@@ -28,7 +28,7 @@ import Kore.Sort
 
 {- | @Valid@ is a pattern annotation of facts collected during verification.
  -}
-data Valid variable level =
+data Valid variable =
     Valid
         { patternSort :: !Sort
         -- ^ The sort determined by the verifier.
@@ -37,9 +37,9 @@ data Valid variable level =
         }
     deriving (Eq, Generic, Ord, Show)
 
-instance NFData variable => NFData (Valid variable level)
+instance NFData variable => NFData (Valid variable)
 
-instance Hashable variable => Hashable (Valid variable level) where
+instance Hashable variable => Hashable (Valid variable) where
     hashWithSalt salt Valid { patternSort, freeVariables } =
         flip hashWithSalt patternSort
         $ flip hashWithSalt (Set.toList freeVariables)
@@ -53,7 +53,7 @@ See also: 'traverseVariables'
 mapVariables
     :: Ord variable2
     => (variable1 -> variable2)
-    -> Valid variable1 level -> Valid variable2 level
+    -> Valid variable1 -> Valid variable2
 mapVariables mapping valid =
     valid { freeVariables = Set.map mapping freeVariables }
   where
@@ -65,11 +65,11 @@ See also: 'mapVariables'
 
  -}
 traverseVariables
-    ::  forall m level variable1 variable2.
+    ::  forall m variable1 variable2.
         (Monad m, Ord variable2)
     => (variable1 -> m variable2)
-    -> Valid variable1 level
-    -> m (Valid variable2 level)
+    -> Valid variable1
+    -> m (Valid variable2)
 traverseVariables traversing valid@Valid { freeVariables } =
     (\freeVariables' -> valid { freeVariables = Set.fromList freeVariables' })
         <$> traverse traversing (Set.toList freeVariables)
@@ -79,7 +79,7 @@ traverseVariables traversing valid@Valid { freeVariables } =
 deleteFreeVariable
     :: Ord variable
     => variable
-    -> Valid variable level
-    -> Valid variable level
+    -> Valid variable
+    -> Valid variable
 deleteFreeVariable variable valid@Valid { freeVariables } =
     valid { freeVariables = Set.delete variable freeVariables }

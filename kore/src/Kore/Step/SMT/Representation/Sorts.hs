@@ -18,12 +18,6 @@ import           Data.Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
-import           Kore.AST.Sentence
-                 ( SentenceAxiom (SentenceAxiom), SentenceSort (SentenceSort) )
-import qualified Kore.AST.Sentence as SentenceSort
-                 ( SentenceSort (..) )
-import qualified Kore.AST.Sentence as SentenceAxiom
-                 ( SentenceAxiom (..) )
 import           Kore.AST.Valid
                  ( pattern App_, pattern Bottom_, pattern Exists_, pattern Or_,
                  pattern Var_ )
@@ -61,6 +55,12 @@ import           Kore.Syntax.Application as SymbolOrAlias
                  ( SymbolOrAlias (..) )
 import           Kore.Syntax.Id
                  ( Id )
+import           Kore.Syntax.Sentence
+                 ( SentenceAxiom (SentenceAxiom), SentenceSort (SentenceSort) )
+import qualified Kore.Syntax.Sentence as SentenceSort
+                 ( SentenceSort (..) )
+import qualified Kore.Syntax.Sentence as SentenceAxiom
+                 ( SentenceAxiom (..) )
 import           Kore.Syntax.Variable
                  ( Variable (Variable) )
 import qualified Kore.Syntax.Variable as Variable

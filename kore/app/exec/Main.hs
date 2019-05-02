@@ -22,7 +22,6 @@ import System.IO
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
-import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
@@ -49,6 +48,7 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.SMT.Lemma
 import           Kore.Step.TermLike
+import           Kore.Syntax.Definition
 import           Kore.Unparser
                  ( unparse )
 import qualified SMT
@@ -412,7 +412,7 @@ mainPatternParseAndVerify indexedModule patternFileName =
 mainParseSearchPattern
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -> String
-    -> IO (Pattern Object Variable)
+    -> IO (Pattern Variable)
 mainParseSearchPattern indexedModule patternFileName = do
     purePattern <- mainPatternParseAndVerify indexedModule patternFileName
     case purePattern of

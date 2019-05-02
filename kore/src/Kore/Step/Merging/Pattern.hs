@@ -10,7 +10,6 @@ module Kore.Step.Merging.Pattern
 
 import Data.Reflection
 
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -21,10 +20,9 @@ import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.Pattern
                  ( Conditional (..), Pattern, Predicate )
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier,
-                 SimplificationProof (SimplificationProof), Simplifier,
-                 TermLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Substitution
                  ( PredicateMerger (PredicateMerger),
                  mergePredicatesAndSubstitutions )
@@ -47,16 +45,16 @@ mergeWithPredicate
     => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions in a pattern.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate Object variable
+    -> Predicate variable
     -- ^ Condition and substitution to add.
-    -> Pattern Object variable
+    -> Pattern variable
     -- ^ pattern to which the above should be added.
-    -> Simplifier (Pattern Object variable, SimplificationProof Object)
+    -> Simplifier (Pattern variable)
 mergeWithPredicate
     tools
     substitutionSimplifier
@@ -71,21 +69,18 @@ mergeWithPredicate
         , substitution = pattSubstitution
         }
   = do
-    (   Conditional
-            { predicate = mergedCondition
-            , substitution = mergedSubstitution
-            }
-        , _proof ) <-
-            mergePredicatesAndSubstitutions
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                [pattPredicate, conditionToMerge]
-                [pattSubstitution, substitutionToMerge]
-    (evaluatedCondition, _) <-
-        Predicate.evaluate
-            substitutionSimplifier simplifier mergedCondition
+    merged <-
+        mergePredicatesAndSubstitutions
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            [pattPredicate, conditionToMerge]
+            [pattSubstitution, substitutionToMerge]
+    let Conditional { predicate = mergedCondition } = merged
+    evaluatedCondition <-
+        Predicate.evaluate substitutionSimplifier simplifier mergedCondition
+    let Conditional { substitution = mergedSubstitution } = merged
     mergeWithEvaluatedCondition
         tools
         substitutionSimplifier
@@ -102,14 +97,14 @@ mergeWithEvaluatedCondition
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern Object variable
-    -> Predicate Object variable
-    -> Simplifier (Pattern Object variable, SimplificationProof Object)
+    -> Pattern variable
+    -> Predicate variable
+    -> Simplifier (Pattern variable)
 mergeWithEvaluatedCondition
     tools
     substitutionSimplifier
@@ -122,26 +117,14 @@ mergeWithEvaluatedCondition
     Conditional
         { predicate = predPredicate, substitution = predSubstitution }
   = do
-    (   Conditional
-            { predicate = mergedPredicate
-            , substitution = mergedSubstitution
-            }
-        , _proof
-        ) <- mergePredicatesAndSubstitutions
+    merged <- mergePredicatesAndSubstitutions
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
             [predPredicate]
             [pattSubstitution, predSubstitution]
-    return
-        ( Conditional
-            { term = pattTerm
-            , predicate = mergedPredicate
-            , substitution = mergedSubstitution
-            }
-        , SimplificationProof
-        )
+    return $ Pattern.withCondition pattTerm merged
 
 {-| Ands the given predicate/substitution with the given pattern.
 
@@ -156,10 +139,10 @@ mergeWithPredicateAssumesEvaluated
         , SortedVariable variable
         , Unparse variable
         )
-    => PredicateMerger Object variable m
-    -> Predicate Object variable
-    -> Conditional Object variable term
-    -> m (Conditional Object variable term, SimplificationProof Object)
+    => PredicateMerger variable m
+    -> Predicate variable
+    -> Conditional variable term
+    -> m (Conditional variable term)
 mergeWithPredicateAssumesEvaluated
     (PredicateMerger substitutionMerger)
     Conditional
@@ -173,19 +156,8 @@ mergeWithPredicateAssumesEvaluated
         , substitution = pattSubstitution
         }  -- The predicate was already included in the Predicate
   = do
-    Conditional
-        { term = ()
-        , predicate = mergedPredicate
-        , substitution = mergedSubstitution
-        } <-
-            substitutionMerger
-                [pattPredicate, predPredicate]
-                [pattSubstitution, predSubstitution]
-    return
-        ( Conditional
-            { term = pattTerm
-            , predicate = mergedPredicate
-            , substitution = mergedSubstitution
-            }
-        , SimplificationProof
-        )
+    merged <-
+        substitutionMerger
+            [pattPredicate, predPredicate]
+            [pattSubstitution, predSubstitution]
+    return $ Pattern.withCondition pattTerm merged

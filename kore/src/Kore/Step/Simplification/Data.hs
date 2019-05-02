@@ -21,7 +21,6 @@ module Kore.Step.Simplification.Data
     , termLikeSimplifier
     , simplifyTerm
     , simplifyConditionalTerm
-    , SimplificationProof (..)
     , SimplificationType (..)
     , Environment (..)
     ) where
@@ -37,17 +36,12 @@ import           Control.Monad.State.Class
                  ( MonadState )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
-import           Data.Hashable
-                 ( Hashable )
 import           Data.Typeable
-import           GHC.Generics
-                 ( Generic )
 import           GHC.Stack
                  ( HasCallStack )
 
 import           Control.Monad.Catch
                  ( Exception, MonadCatch, MonadThrow, catch, throwM )
-import           Kore.AST.MetaOrObject
 import           Kore.Logger
 import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.OrPattern
@@ -72,14 +66,6 @@ import           SMT.SimpleSMT
 This type is used to distinguish between the two in the common code.
 -}
 data SimplificationType = And | Equals
-
-{-| 'SimplificationProof' is a placeholder for proofs showing that the
-simplification of a MetaMLPattern was correct.
--}
-data SimplificationProof level = SimplificationProof
-    deriving (Eq, Generic, Show)
-
-instance Hashable (SimplificationProof level)
 
 -- * Branching
 
@@ -278,7 +264,7 @@ evalSimplifier logger (Simplifier simpl) =
 
 {-| Wraps a function that evaluates Kore functions on TermLikes.
 -}
-newtype TermLikeSimplifier level =
+newtype TermLikeSimplifier =
     TermLikeSimplifier
         ( forall variable
         .   ( FreshVariable variable
@@ -287,10 +273,10 @@ newtype TermLikeSimplifier level =
             , Unparse variable
             , SortedVariable variable
             )
-        => PredicateSimplifier level
+        => PredicateSimplifier
         -> TermLike variable
-        -> Predicate level variable
-        -> BranchT Simplifier (Pattern level variable)
+        -> Predicate variable
+        -> BranchT Simplifier (Pattern variable)
         )
 
 {- | Use a 'TermLikeSimplifier' to simplify a pattern.
@@ -306,13 +292,10 @@ simplifyTerm
         , Unparse variable
         , SortedVariable variable
         )
-    => TermLikeSimplifier Object
-    -> PredicateSimplifier Object
+    => TermLikeSimplifier
+    -> PredicateSimplifier
     -> TermLike variable
-    -> Simplifier
-        ( OrPattern Object variable
-        , SimplificationProof Object
-        )
+    -> Simplifier (OrPattern variable)
 simplifyTerm
     (TermLikeSimplifier simplify)
     predicateSimplifier
@@ -323,7 +306,7 @@ simplifyTerm
             predicateSimplifier
             termLike
             Predicate.top
-    return (OrPattern.fromPatterns results, SimplificationProof)
+    return (OrPattern.fromPatterns results)
 
 
 {- | Use a 'TermLikeSimplifier' to simplify a pattern subject to conditions.
@@ -336,11 +319,11 @@ simplifyConditionalTerm
         , Unparse variable
         , SortedVariable variable
         )
-    => TermLikeSimplifier Object
-    -> PredicateSimplifier Object
+    => TermLikeSimplifier
+    -> PredicateSimplifier
     -> TermLike variable
-    -> Predicate Object variable
-    -> BranchT Simplifier (Pattern Object variable)
+    -> Predicate variable
+    -> BranchT Simplifier (Pattern variable)
 simplifyConditionalTerm (TermLikeSimplifier simplify) = simplify
 
 {- | Construct a 'TermLikeSimplifier' from a term simplifier.
@@ -357,14 +340,11 @@ termLikeSimplifier
             , Unparse variable
             , SortedVariable variable
             )
-        => PredicateSimplifier Object
+        => PredicateSimplifier
         -> TermLike variable
-        -> Simplifier
-            ( OrPattern Object variable
-            , SimplificationProof Object
-            )
+        -> Simplifier (OrPattern variable)
         )
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
 termLikeSimplifier simplifier =
     TermLikeSimplifier termLikeSimplifierWorker
   where
@@ -376,16 +356,16 @@ termLikeSimplifier simplifier =
             , Unparse variable
             , SortedVariable variable
             )
-        => PredicateSimplifier Object
+        => PredicateSimplifier
         -> TermLike variable
-        -> Predicate Object variable
-        -> BranchT Simplifier (Pattern Object variable)
+        -> Predicate variable
+        -> BranchT Simplifier (Pattern variable)
     termLikeSimplifierWorker
         predicateSimplifier
         termLike
         initialCondition
       = do
-        (results, _) <-
+        results <-
             Monad.Trans.lift
             $ simplifier predicateSimplifier termLike
         result <- scatter results
@@ -395,7 +375,7 @@ termLikeSimplifier simplifier =
 'Predicate's. The minimal requirement from this function is
 that it applies the substitution on the predicate.
 -}
-newtype PredicateSimplifier level =
+newtype PredicateSimplifier =
     PredicateSimplifier
         { getPredicateSimplifier
             ::  forall variable
@@ -405,6 +385,6 @@ newtype PredicateSimplifier level =
                 , Unparse variable
                 , SortedVariable variable
                 )
-            => Predicate level variable
-            -> BranchT Simplifier (Predicate level variable)
+            => Predicate variable
+            -> BranchT Simplifier (Predicate variable)
         }

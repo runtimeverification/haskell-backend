@@ -194,7 +194,7 @@ asPattern
     :: Ord variable
     => Sort  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
-    -> Pattern Object variable
+    -> Pattern variable
 asPattern resultSort = Pattern.fromTermLike . asInternal resultSort
 
 {- | @builtinFunctions@ are builtin functions on the 'Bool' sort.

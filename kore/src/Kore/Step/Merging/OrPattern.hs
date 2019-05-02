@@ -10,7 +10,6 @@ module Kore.Step.Merging.OrPattern
 
 import Data.Reflection
 
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -24,11 +23,8 @@ import           Kore.Step.Pattern
                  ( Conditional, Predicate )
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Substitution
                  ( PredicateMerger )
 import           Kore.Syntax.Variable
@@ -51,17 +47,16 @@ mergeWithPredicate
     => SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions in a pattern.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate Object variable
+    -> Predicate variable
     -- ^ Predicate to add.
-    -> OrPattern Object variable
+    -> OrPattern variable
     -- ^ Pattern to which the condition should be added.
-    -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+    -> Simplifier (OrPattern variable)
 mergeWithPredicate
     tools
     substitutionSimplifier
@@ -69,18 +64,16 @@ mergeWithPredicate
     axiomIdToSimplifier
     toMerge
     patt
-  = do
-    (evaluated, _proofs) <-
-        MultiOr.traverseWithPairs
-            (give tools $ Pattern.mergeWithPredicate
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                toMerge
-            )
-            patt
-    return (evaluated, SimplificationProof)
+  =
+    traverse
+        (give tools $ Pattern.mergeWithPredicate
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            toMerge
+        )
+        patt
 
 {-| Ands the given predicate/substitution with the given 'MultiOr'.
 
@@ -96,23 +89,12 @@ mergeWithPredicateAssumesEvaluated
         , TopBottom term
         , Unparse variable
         )
-    => PredicateMerger Object variable m
-    -> Predicate Object variable
+    => PredicateMerger variable m
+    -> Predicate variable
     -- ^ Predicate to add.
-    -> MultiOr (Conditional Object variable term)
+    -> MultiOr (Conditional variable term)
     -- ^ Pattern to which the condition should be added.
-    -> m
-        (MultiOr (Conditional Object variable term), SimplificationProof Object)
-mergeWithPredicateAssumesEvaluated
-    substitutionMerger
-    toMerge
-    patt
-  = do
-    (evaluated, _proofs) <-
-        MultiOr.traverseWithPairs
-            (Pattern.mergeWithPredicateAssumesEvaluated
-                    substitutionMerger
-                    toMerge
-            )
-            patt
-    return (evaluated, SimplificationProof)
+    -> m (MultiOr (Conditional variable term))
+mergeWithPredicateAssumesEvaluated substitutionMerger toMerge =
+    traverse
+        (Pattern.mergeWithPredicateAssumesEvaluated substitutionMerger toMerge)

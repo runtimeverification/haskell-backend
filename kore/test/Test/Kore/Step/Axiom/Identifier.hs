@@ -5,8 +5,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.AST.Valid
                  ( mkAnd, mkCeil_ )
 import           Kore.Step.Axiom.Identifier
@@ -33,7 +31,7 @@ test_axiomIdentifier =
     , hasNoId $ mkAnd (Mock.f Mock.a) (Mock.g Mock.a)
     ]
 
-hasId :: TermLike Variable -> AxiomIdentifier Object -> TestTree
+hasId :: TermLike Variable -> AxiomIdentifier -> TestTree
 hasId input expected =
     testCase "AxiomId.extract evaluation"
         (assertEqualWithExplanation "has id"
@@ -46,5 +44,5 @@ hasNoId input =
     testCase "AxiomId.extract evaluation"
         (assertEqualWithExplanation "has no id"
             Nothing
-            (AxiomIdentifier.extract input)
+            (AxiomIdentifier.extract input :: Maybe (AxiomIdentifier))
         )

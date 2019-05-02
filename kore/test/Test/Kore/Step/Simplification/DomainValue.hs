@@ -114,8 +114,6 @@ mockMetadataTools =
 
 evaluate
     :: SmtMetadataTools attrs
-    -> Domain.Builtin (OrPattern Object Variable)
-    -> OrPattern Object Variable
-evaluate tools domainValue =
-    case simplify tools domainValue of
-        (result, _proof) -> result
+    -> Domain.Builtin (OrPattern Variable)
+    -> OrPattern Variable
+evaluate = simplify

@@ -69,7 +69,6 @@ import qualified Data.Text as Text
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
@@ -94,9 +93,10 @@ import           Kore.Step.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier (..), SimplificationProof (..),
-                 SimplificationType, TermLikeSimplifier )
+                 ( PredicateSimplifier (..), SimplificationType,
+                 TermLikeSimplifier )
 import           Kore.Step.TermLike
+import           Kore.Syntax.Definition
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -208,7 +208,7 @@ returnSet
     => SmtMetadataTools attrs
     -> Sort
     -> Builtin
-    -> m (AttemptedAxiom Object variable)
+    -> m (AttemptedAxiom variable)
 returnSet tools resultSort set =
     Builtin.appliedFunction
     $ Pattern.fromTermLike
@@ -425,7 +425,7 @@ asPattern
         )
     => Sort
     -> Builtin
-    -> Pattern Object variable
+    -> Pattern variable
 asPattern resultSort =
     Pattern.fromTermLike . asInternal tools resultSort
   where
@@ -503,28 +503,25 @@ isSymbolUnit = Builtin.isSymbol "SET.unit"
     reject the definition.
  -}
 unifyEquals
-    :: forall variable unifier unifierM p expanded proof.
-        ( SortedVariable variable
+    ::  forall variable unifier unifierM
+    .   ( SortedVariable variable
         , Unparse variable
         , Show variable
         , FreshVariable variable
-        , p ~ TermLike variable
-        , expanded ~ Pattern Object variable
-        , proof ~ SimplificationProof Object
         , unifier ~ unifierM variable
         , MonadUnify unifierM
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> (p -> p -> unifier (expanded, proof))
-    -> p
-    -> p
-    -> MaybeT unifier (expanded, proof)
+    -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
 unifyEquals
     simplificationType
     tools
@@ -540,18 +537,18 @@ unifyEquals
     hookTools = StepperAttributes.hook <$> tools
 
     -- | Given a collection 't' of 'Conditional' values, propagate all the
-    -- predicates to the top Object, returning a 'Conditional' collection.
+    -- predicates to the top, returning a 'Conditional' collection.
     propagatePredicates
         :: Traversable t
-        => t (Conditional Object variable a)
-        -> Conditional Object variable (t a)
+        => t (Conditional variable a)
+        -> Conditional variable (t a)
     propagatePredicates = sequenceA
 
     -- | Unify the two argument patterns.
     unifyEquals0
         :: TermLike variable
         -> TermLike variable
-        -> MaybeT unifier (expanded, proof)
+        -> MaybeT unifier (Pattern variable)
     unifyEquals0
         (DV_ _ (Domain.BuiltinSet builtin1))
         (DV_ _ (Domain.BuiltinSet builtin2))
@@ -603,24 +600,22 @@ unifyEquals
         -- Note that x can be a proper symbolic pattern (not just a variable)
         -- TODO(traiansf): move it from where once the otherwise is not needed
         unifyEqualsSelect
-            :: Domain.InternalSet          -- ^ concrete set
-            -> SymbolOrAlias        -- ^ 'element' symbol
-            -> p                           -- ^ key
-            -> TermLike variable -- ^ framing variable
-            -> unifier (expanded, proof)
+            :: Domain.InternalSet  -- ^ concrete set
+            -> SymbolOrAlias       -- ^ 'element' symbol
+            -> TermLike variable   -- ^ key
+            -> TermLike variable   -- ^ framing variable
+            -> unifier (Pattern variable)
         unifyEqualsSelect builtin1' _ key2 set2
           | set1 == Set.empty = bottomWithExplanation
           | otherwise = case Set.toList set1 of
             [fromConcreteStepPattern -> key1] ->
                 Reflection.give tools $ do
                     let emptySetPat = asInternal tools sort1 Set.empty
-                    (elemUnifier, _proof) <-
-                        unifyEqualsChildren key1 key2
+                    elemUnifier <- unifyEqualsChildren key1 key2
                     -- error when subunification problem returns partial result.
                     -- More details at 'errorIfIncompletelyUnified'.
                     errorIfIncompletelyUnified key1 key2 elemUnifier
-                    (setUnifier, _proof) <-
-                        unifyEqualsChildren emptySetPat set2
+                    setUnifier <- unifyEqualsChildren emptySetPat set2
                     -- error when subunification problem returns partial result
                     -- More details at 'errorIfIncompletelyUnified'.
                     errorIfIncompletelyUnified emptySetPat set2 setUnifier
@@ -628,7 +623,7 @@ unifyEquals
                     -- substitutions from unifying the element
                     -- and framing variable.
                     let result = pure dv1 <* elemUnifier <* setUnifier
-                    return (result, SimplificationProof)
+                    return (result)
             _ -> Builtin.unifyEqualsUnsolved simplificationType dv1 app2
           where
             Domain.InternalSet
@@ -642,13 +637,11 @@ unifyEquals
 
     -- | Unify two concrete sets
     unifyEqualsConcrete
-        :: Object ~ Object
-        => Domain.InternalSet
+        :: Domain.InternalSet
         -> Domain.InternalSet
-        -> unifier (expanded, proof)
+        -> unifier (Pattern variable)
     unifyEqualsConcrete builtin1 builtin2
-      | set1 == set2 =
-        return (unified, SimplificationProof)
+      | set1 == set2 = return unified
       | otherwise = bottomWithExplanation
       where
         Domain.InternalSet { builtinSetSort } = builtin1
@@ -663,19 +656,17 @@ unifyEquals
         :: Domain.InternalSet  -- ^ concrete set
         -> Domain.InternalSet -- ^ framed concrete set
         -> TermLike variable  -- ^ framing variable
-        -> unifier (expanded, proof)
+        -> unifier (Pattern variable)
     unifyEqualsFramed builtin1 builtin2 var
       | Set.isSubsetOf set2 set1 =
         Reflection.give tools $ do
-            (remainder, _) <-
+            remainder <-
                 unifyEqualsChildren var
                 $ asInternal tools builtinSetSort
                 $ Set.difference set1 set2
-            let result =
-                    -- Return the concrete set, but capture any predicates and
-                    -- substitutions from unifying the framing variable.
-                    asPattern builtinSetSort set1 <* remainder
-            return (result, SimplificationProof)
+            -- Return the concrete set, but capture any predicates and
+            -- substitutions from unifying the framing variable.
+            return $ asPattern builtinSetSort set1 <* remainder
 
       | otherwise = bottomWithExplanation
       where
@@ -686,17 +677,17 @@ unifyEquals
     unifyEqualsElement
         :: Domain.InternalSet  -- ^ concrete set
         -> SymbolOrAlias  -- ^ 'element' symbol
-        -> p  -- ^ key
-        -> unifier (expanded, proof)
+        -> TermLike variable  -- ^ key
+        -> unifier (Pattern variable)
     unifyEqualsElement builtin1 element' key2 =
         case Set.toList set1 of
             [fromConcreteStepPattern -> key1] ->
                 do
-                    (key, _) <- unifyEqualsChildren key1 key2
+                    key <- unifyEqualsChildren key1 key2
                     let result =
                             mkApp builtinSetSort element'
                                 <$> propagatePredicates [key]
-                    return (result, SimplificationProof)
+                    return result
             _ -> bottomWithExplanation
       where
         Domain.InternalSet { builtinSetSort } = builtin1
@@ -706,7 +697,7 @@ unifyEquals
             "Cannot unify sets with different sizes."
             first
             second
-        return (Pattern.bottom, SimplificationProof)
+        return Pattern.bottom
 
 -- Setup: we are unifying against a concrete (no variables) pattern
 -- If the unification problem is completely solved, we expect that
@@ -727,7 +718,7 @@ errorIfIncompletelyUnified
         )
     => TermLike variable
     -> TermLike variable
-    -> Pattern Object variable
+    -> Pattern variable
     -> m ()
 errorIfIncompletelyUnified expected patt unifiedPattern =
     Monad.when (term unifiedPattern /= expected)

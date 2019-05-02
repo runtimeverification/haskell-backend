@@ -59,7 +59,6 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
@@ -82,6 +81,7 @@ import           Kore.Step.Pattern
 import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
 import           Kore.Step.TermLike
+import           Kore.Syntax.Definition
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -180,7 +180,7 @@ returnList
     => SmtMetadataTools StepperAttributes
     -> Sort
     -> Builtin variable
-    -> m (AttemptedAxiom Object variable)
+    -> m (AttemptedAxiom variable)
 returnList tools builtinListSort builtinListChild =
     Builtin.appliedFunction
     $ Reflection.give tools
@@ -202,10 +202,10 @@ evalGet =
     evalGet0
         :: Ord variable
         => SmtMetadataTools StepperAttributes
-        -> TermLikeSimplifier Object
+        -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom Object variable)
+        -> Simplifier (AttemptedAxiom variable)
     evalGet0 _ _ _ = \arguments ->
         Builtin.getAttemptedAxiom
         (do
@@ -250,10 +250,10 @@ evalConcat =
     evalConcat0
         :: Ord variable
         => SmtMetadataTools StepperAttributes
-        -> TermLikeSimplifier Object
+        -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom Object variable)
+        -> Simplifier (AttemptedAxiom variable)
     evalConcat0 tools _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom
         (do
@@ -350,7 +350,7 @@ asPattern
         )
     => Sort
     -> Builtin variable
-    -> Pattern Object variable
+    -> Pattern variable
 asPattern resultSort =
     Pattern.fromTermLike . asInternal tools resultSort
   where
@@ -399,24 +399,21 @@ isSymbolUnit = Builtin.isSymbol unitKey
     reject the definition.
  -}
 unifyEquals
-    :: forall variable unifier unifierM p expanded proof.
+    :: forall variable unifier unifierM.
         ( Show variable
         , Unparse variable
         , SortedVariable variable
         , FreshVariable variable
-        , p ~ TermLike variable
-        , expanded ~ Pattern Object variable
-        , proof ~ SimplificationProof Object
         , unifier ~ unifierM variable
         , MonadUnify unifierM
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> (p -> p -> unifier (expanded, proof))
-    -> p
-    -> p
-    -> MaybeT unifier (expanded, proof)
+    -> PredicateSimplifier
+    -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
 unifyEquals
     simplificationType
     tools
@@ -431,17 +428,14 @@ unifyEquals
 
     propagatePredicates
         :: Traversable t
-        => t (Conditional Object variable a)
-        -> Conditional Object variable (t a)
+        => t (Conditional variable a)
+        -> Conditional variable (t a)
     propagatePredicates = sequenceA
-
-    discardProofs :: Seq (expanded, proof) -> Seq expanded
-    discardProofs = (<$>) fst
 
     unifyEquals0
         :: TermLike variable
         -> TermLike variable
-        -> MaybeT unifier (expanded, proof)
+        -> MaybeT unifier (Pattern variable)
 
     unifyEquals0 dv1@(DV_ _ (Domain.BuiltinList builtin1)) =
         \case
@@ -478,30 +472,28 @@ unifyEquals
             _ -> empty
 
     unifyEqualsConcrete
-        :: Domain.InternalList p
-        -> Domain.InternalList p
-        -> unifier (expanded, proof)
+        :: Domain.InternalList (TermLike variable)
+        -> Domain.InternalList (TermLike variable)
+        -> unifier (Pattern variable)
     unifyEqualsConcrete builtin1 builtin2
       | Seq.length list1 /= Seq.length list2 = bottomWithExplanation
       | otherwise =
         Reflection.give tools $ do
-            unified <-
-                sequence $ Seq.zipWith simplifyChild list1 list2
+            unified <- sequence $ Seq.zipWith simplifyChild list1 list2
             let
-                propagatedUnified =
-                    (propagatePredicates . discardProofs) unified
+                propagatedUnified = propagatePredicates unified
                 result = asInternal tools builtinListSort <$> propagatedUnified
-            return (result, SimplificationProof)
+            return result
       where
         Domain.InternalList { builtinListSort } = builtin1
         Domain.InternalList { builtinListChild = list1 } = builtin1
         Domain.InternalList { builtinListChild = list2 } = builtin2
 
     unifyEqualsFramedRight
-        :: Domain.InternalList p
-        -> Domain.InternalList p
-        -> p
-        -> unifier (expanded, proof)
+        :: Domain.InternalList (TermLike variable)
+        -> Domain.InternalList (TermLike variable)
+        -> TermLike variable
+        -> unifier (Pattern variable)
     unifyEqualsFramedRight
         builtin1
         builtin2
@@ -509,16 +501,16 @@ unifyEquals
       | Seq.length prefix2 > Seq.length list1 = bottomWithExplanation
       | otherwise =
         do
-            (prefixUnified, _) <-
+            prefixUnified <-
                 unifyEqualsConcrete
                     builtin1 { Domain.builtinListChild = prefix1 }
                     builtin2
-            (suffixUnified, _) <- simplifyChild frame2 listSuffix1
+            suffixUnified <- simplifyChild frame2 listSuffix1
             let result =
                     pure (mkDomainValue internal1)
                     <* prefixUnified
                     <* suffixUnified
-            return (result, SimplificationProof)
+            return result
       where
         internal1 = Domain.BuiltinList builtin1
         Domain.InternalList { builtinListSort } = builtin1
@@ -530,10 +522,10 @@ unifyEquals
         listSuffix1 = asInternal tools builtinListSort suffix1
 
     unifyEqualsFramedLeft
-        :: Domain.InternalList p
-        -> p
-        -> Domain.InternalList p
-        -> unifier (expanded, proof)
+        :: Domain.InternalList (TermLike variable)
+        -> TermLike variable
+        -> Domain.InternalList (TermLike variable)
+        -> unifier (Pattern variable)
     unifyEqualsFramedLeft
         builtin1
         frame2
@@ -541,8 +533,8 @@ unifyEquals
       | Seq.length suffix2 > Seq.length list1 = bottomWithExplanation
       | otherwise =
         do
-            (prefixUnified, _) <- simplifyChild frame2 listPrefix1
-            (suffixUnified, _) <-
+            prefixUnified <- simplifyChild frame2 listPrefix1
+            suffixUnified <-
                 unifyEqualsConcrete
                     builtin1 { Domain.builtinListChild = suffix1 }
                     builtin2
@@ -550,7 +542,7 @@ unifyEquals
                     pure (mkDomainValue internal1)
                     <* prefixUnified
                     <* suffixUnified
-            return (result, SimplificationProof)
+            return result
       where
         internal1 = Domain.BuiltinList builtin1
         Domain.InternalList { builtinListSort } = builtin1
@@ -565,7 +557,7 @@ unifyEquals
             "Cannot unify lists of different length."
             first
             second
-        return (Pattern.bottom, SimplificationProof)
+        return Pattern.bottom
 
 concatKey :: IsString s => s
 concatKey = "LIST.concat"

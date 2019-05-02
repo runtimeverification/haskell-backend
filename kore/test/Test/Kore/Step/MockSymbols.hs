@@ -28,7 +28,6 @@ import           Data.Text
                  ( Text )
 
 import           Data.Sup
-import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
                  ( asConcretePurePattern )
 import           Kore.AST.Valid
@@ -1294,7 +1293,7 @@ sortAttributesMapping =
         )
     ]
 
-headSortsMapping :: [(SymbolOrAlias, ApplicationSorts Object)]
+headSortsMapping :: [(SymbolOrAlias, ApplicationSorts)]
 headSortsMapping =
     [   ( aSymbol
         , ApplicationSorts

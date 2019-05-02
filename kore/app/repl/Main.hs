@@ -13,14 +13,14 @@ import Options.Applicative
 
 import Data.Limit
        ( Limit (..) )
-import Kore.AST.Sentence
-       ( ModuleName (..) )
 import Kore.Exec
        ( proveWithRepl )
 import Kore.Logger.Output
        ( emptyLogger )
 import Kore.Step.Simplification.Data
        ( evalSimplifier )
+import Kore.Syntax.Module
+       ( ModuleName (..) )
 
 import           GlobalMain
 import qualified SMT as SMT

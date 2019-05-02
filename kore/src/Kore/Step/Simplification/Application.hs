@@ -27,15 +27,14 @@ import           Kore.Step.Function.Evaluator
                  ( evaluateApplication )
 import           Kore.Step.OrPattern
                  ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
                  ( Conditional (..), Pattern )
-import           Kore.Step.Pattern as Pattern
-                 ( Conditional (..) )
+import qualified Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( fullCrossProduct, traverseFlattenWithPairsGeneric )
+                 ( fullCrossProduct )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Step.TermLike
@@ -43,13 +42,12 @@ import           Kore.Syntax.Application
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
-type ExpandedApplication level variable =
+type ExpandedApplication variable =
     Conditional
-        level
         variable
         (CofreeF
             (Application SymbolOrAlias)
-            (Valid variable level)
+            (Valid variable)
             (TermLike variable)
         )
 
@@ -71,19 +69,16 @@ simplify
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid variable Object)
-        (OrPattern Object variable)
-    -> Simplifier
-        ( OrPattern Object variable
-        , SimplificationProof Object
-        )
+        (Valid variable)
+        (OrPattern variable)
+    -> Simplifier (OrPattern variable)
 simplify
     tools
     substitutionSimplifier
@@ -91,12 +86,8 @@ simplify
     axiomIdToEvaluator
     (valid :< app)
   = do
-    let
-        -- The "Propagation Or" inference rule together with
-        -- "Propagation Bottom" for the case when a child or is empty.
-        orDistributedChildren = MultiOr.fullCrossProduct children
-    (unflattenedOr, _proofs) <-
-        MultiOr.traverseFlattenWithPairsGeneric
+    evaluated <-
+        traverse
             (makeAndEvaluateApplications
                 tools
                 substitutionSimplifier
@@ -105,11 +96,10 @@ simplify
                 valid
                 symbol
             )
-            orDistributedChildren
-    return
-        ( unflattenedOr
-        , SimplificationProof
-        )
+            -- The "Propagation Or" inference rule together with
+            -- "Propagation Bottom" for the case when a child or is empty.
+            (MultiOr.fullCrossProduct children)
+    return (OrPattern.flatten evaluated)
   where
     Application
         { applicationSymbolOrAlias = symbol
@@ -125,16 +115,15 @@ makeAndEvaluateApplications
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Valid variable Object
+    -> Valid variable
     -> SymbolOrAlias
-    -> [Pattern Object variable]
-    -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+    -> [Pattern variable]
+    -> Simplifier (OrPattern variable)
 makeAndEvaluateApplications
     tools
     substitutionSimplifier
@@ -164,16 +153,15 @@ makeAndEvaluateSymbolApplications
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Valid variable Object
+    -> Valid variable
     -> SymbolOrAlias
-    -> [Pattern Object variable]
-    -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+    -> [Pattern variable]
+    -> Simplifier (OrPattern variable)
 makeAndEvaluateSymbolApplications
     tools
     substitutionSimplifier
@@ -183,7 +171,7 @@ makeAndEvaluateSymbolApplications
     symbol
     children
   = do
-    (expandedApplication, _proof) <-
+    expandedApplication <-
         makeExpandedApplication
             tools
             substitutionSimplifier
@@ -192,14 +180,12 @@ makeAndEvaluateSymbolApplications
             valid
             symbol
             children
-    (functionApplication, _proof) <-
-        evaluateApplicationFunction
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToEvaluator
-            expandedApplication
-    return (functionApplication, SimplificationProof)
+    evaluateApplicationFunction
+        tools
+        substitutionSimplifier
+        simplifier
+        axiomIdToEvaluator
+        expandedApplication
 
 evaluateApplicationFunction
     ::  ( Ord variable
@@ -209,15 +195,14 @@ evaluateApplicationFunction
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> ExpandedApplication Object variable
+    -> ExpandedApplication variable
     -- ^ The pattern to be evaluated
-    -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+    -> Simplifier (OrPattern variable)
 evaluateApplicationFunction
     tools
     substitutionSimplifier
@@ -242,16 +227,15 @@ makeExpandedApplication
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Valid variable Object
+    -> Valid variable
     -> SymbolOrAlias
-    -> [Pattern Object variable]
-    -> Simplifier
-        (ExpandedApplication Object variable, SimplificationProof Object)
+    -> [Pattern variable]
+    -> Simplifier (ExpandedApplication variable)
 makeExpandedApplication
     tools
     substitutionSimplifier
@@ -261,29 +245,17 @@ makeExpandedApplication
     symbol
     children
   = do
-    (   Conditional
-            { predicate = mergedPredicate
-            , substitution = mergedSubstitution
-            }
-        , _proof) <-
-            mergePredicatesAndSubstitutions
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToEvaluator
-                (map Pattern.predicate children)
-                (map Pattern.substitution children)
-    return
-        ( Conditional
-            { term =
-                (:<) valid
-                    Application
-                        { applicationSymbolOrAlias = symbol
-                        , applicationChildren =
-                            map Pattern.term children
-                        }
-            , predicate = mergedPredicate
-            , substitution = mergedSubstitution
-            }
-        , SimplificationProof
-        )
+    merged <-
+        mergePredicatesAndSubstitutions
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToEvaluator
+            (map Pattern.predicate children)
+            (map Pattern.substitution children)
+    let term =
+            valid :< Application
+                { applicationSymbolOrAlias = symbol
+                , applicationChildren = Pattern.term <$> children
+                }
+    return $ Pattern.withCondition term merged

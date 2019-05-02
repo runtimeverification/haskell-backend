@@ -285,9 +285,9 @@ mockMetadataTools =
         Mock.smtDeclarations
 
 runSimplifier
-    :: BuiltinAndAxiomSimplifierMap Object
-    -> Predicate Object Variable
-    -> IO (OrPredicate Object Variable)
+    :: BuiltinAndAxiomSimplifierMap
+    -> Predicate Variable
+    -> IO (OrPredicate Variable)
 runSimplifier patternSimplifierMap predicate =
     fmap MultiOr.make
     $ SMT.runSMT SMT.defaultConfig
@@ -302,8 +302,8 @@ runSimplifier patternSimplifierMap predicate =
             patternSimplifierMap
 
 simplificationEvaluator
-    :: [BuiltinAndAxiomSimplifier Object]
-    -> BuiltinAndAxiomSimplifier Object
+    :: [BuiltinAndAxiomSimplifier]
+    -> BuiltinAndAxiomSimplifier
 simplificationEvaluator = firstFullEvaluation
 
 makeEvaluator
@@ -313,7 +313,7 @@ makeEvaluator
             )
         => [(TermLike variable, TermLike variable)]
         )
-    -> BuiltinAndAxiomSimplifier Object
+    -> BuiltinAndAxiomSimplifier
 makeEvaluator mapping =
     BuiltinAndAxiomSimplifier
         $ const $ const $ const $ const $ simpleEvaluator mapping
@@ -324,19 +324,13 @@ simpleEvaluator
         )
     => [(TermLike variable, TermLike variable)]
     -> TermLike variable
-    -> Simplifier
-        ( AttemptedAxiom Object variable
-        , SimplificationProof Object
-        )
-simpleEvaluator [] _ = return (NotApplicable, SimplificationProof)
+    -> Simplifier (AttemptedAxiom variable)
+simpleEvaluator [] _ = return NotApplicable
 simpleEvaluator ((from, to) : ps) patt
   | from == patt =
-    return
-        ( Applied AttemptedAxiomResults
-            { results = OrPattern.fromTermLike to
-            , remainders = MultiOr.make []
-            }
-        , SimplificationProof
-        )
+    return $ Applied AttemptedAxiomResults
+        { results = OrPattern.fromTermLike to
+        , remainders = OrPattern.bottom
+        }
   | otherwise =
     simpleEvaluator ps patt

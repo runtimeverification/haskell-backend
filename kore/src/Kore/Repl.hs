@@ -37,7 +37,6 @@ import           System.IO
 import           Text.Megaparsec
                  ( parseMaybe )
 
-import           Kore.AST.MetaOrObject
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -79,13 +78,13 @@ runRepl
     => Claim claim
     => SmtMetadataTools StepperAttributes
     -- ^ tools required for the proof
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -- ^ pattern simplifier
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -- ^ predicate simplifier
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ builtin simplifier
-    -> [Axiom Object]
+    -> [Axiom]
     -- ^ list of axioms to used in the proof
     -> [claim]
     -- ^ list of claims to be proven
@@ -96,14 +95,14 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     evalStateT (whileM repl0) state
 
   where
-    repl0 :: StateT (ReplState claim Object) Simplifier Bool
+    repl0 :: StateT (ReplState claim) Simplifier Bool
     repl0 = do
         str <- prompt
         let command = maybe ShowUsage id $ parseMaybe commandParser str
         when (shouldStore command) $ lensCommands Lens.%= (Seq.|> str)
         replInterpreter putStrLn command
 
-    state :: ReplState claim Object
+    state :: ReplState claim
     state =
         ReplState
             { axioms   = addIndexesToAxioms axioms'
@@ -121,8 +120,8 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             }
 
     addIndexesToAxioms
-        :: [Axiom Object]
-        -> [Axiom Object]
+        :: [Axiom]
+        -> [Axiom]
     addIndexesToAxioms axs =
         fmap (Axiom . addIndex) (zip (fmap unAxiom axs) [0..])
 
@@ -136,19 +135,19 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             (zip (fmap (Rule.RewriteRule . coerce) cls) [len..])
 
     addIndex
-        :: (Rule.RewriteRule Object Variable, Int)
-        -> Rule.RewriteRule Object Variable
+        :: (Rule.RewriteRule Variable, Int)
+        -> Rule.RewriteRule Variable
     addIndex (rw, n) =
         modifyAttribute (mapAttribute n (getAttribute rw)) rw
 
     modifyAttribute
         :: Attribute.Axiom
-        -> Rule.RewriteRule Object Variable
-        -> Rule.RewriteRule Object Variable
+        -> Rule.RewriteRule Variable
+        -> Rule.RewriteRule Variable
     modifyAttribute att (Rule.RewriteRule rp) =
         Rule.RewriteRule $ rp { Rule.attributes = att }
 
-    getAttribute :: Rule.RewriteRule Object Variable -> Attribute.Axiom
+    getAttribute :: Rule.RewriteRule Variable -> Attribute.Axiom
     getAttribute = Rule.attributes . Rule.getRewriteRule
 
     mapAttribute :: Int -> Attribute.Axiom -> Attribute.Axiom
@@ -167,7 +166,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     stepper0
         :: claim
         -> [claim]
-        -> [Axiom Object]
+        -> [Axiom]
         -> ExecutionGraph
         -> Graph.Node
         -> Simplifier ExecutionGraph
@@ -211,7 +210,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
         liftIO $
             putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
-    prompt :: MonadIO m => MonadState (ReplState claim Object) m => m String
+    prompt :: MonadIO m => MonadState (ReplState claim) m => m String
     prompt = do
         node <- Lens.use lensNode
         liftIO $ do

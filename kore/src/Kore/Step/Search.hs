@@ -15,7 +15,7 @@ module Kore.Step.Search
 import Control.Error
        ( MaybeT (..) )
 import Control.Error.Util
-       ( hushT, nothing )
+       ( hushT )
 import Control.Monad.Trans.Class
        ( lift )
 import Data.Maybe
@@ -28,7 +28,6 @@ import Numeric.Natural
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -42,8 +41,6 @@ import           Kore.Step.OrPredicate
 import           Kore.Step.Pattern
                  ( Pattern, Predicate )
 import qualified Kore.Step.Pattern as Conditional
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Strategy as Strategy
@@ -52,11 +49,8 @@ import           Kore.Step.Substitution
 import           Kore.Syntax.Variable
                  ( SortedVariable )
 import           Kore.TopBottom
-                 ( TopBottom (..) )
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
-import           Kore.Unification.Unifier
-                 ( UnificationProof (..) )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -130,33 +124,30 @@ matchWith
         , Unparse variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
-    -> Pattern Object variable
-    -> Pattern Object variable
-    -> MaybeT Simplifier (OrPredicate Object variable)
+    -> Pattern variable
+    -> Pattern variable
+    -> MaybeT Simplifier (OrPredicate variable)
 matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
-    (unifier, _proof) <-
-        hushT . Monad.Unify.getUnifier $
-            unificationProcedure
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                t1
-                t2
+    unifier <-
+        hushT . Monad.Unify.getUnifier
+        $ unificationProcedure
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            t1
+            t2
     let
         mergeAndEvaluate
-            :: Predicate Object variable
-            -> Simplifier
-                ( Predicate Object variable
-                , UnificationProof Object variable
-                )
+            :: Predicate variable
+            -> Simplifier (Predicate variable)
         mergeAndEvaluate predSubst = do
-            (merged, _proof) <-
+            merged <-
                 mergePredicatesAndSubstitutions
                     tools
                     substitutionSimplifier
@@ -167,7 +158,7 @@ matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
                     , Conditional.predicate e2
                     ]
                     [ Conditional.substitution predSubst]
-            (evaluated, _proof) <-
+            evaluated <-
                 give tools
                 $ Predicate.evaluate substitutionSimplifier simplifier
                 $ Conditional.predicate merged
@@ -181,11 +172,9 @@ matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
                 [ Conditional.substitution merged
                 , Conditional.substitution evaluated
                 ]
-    (result, _proof) <-
-        lift $ MultiOr.traverseWithPairs mergeAndEvaluate unifier
-    if isBottom result
-        then nothing
-        else return result
+    result <- lift $ traverse mergeAndEvaluate unifier
+    guardAgainstBottom result
+    return result
   where
     t1 = Conditional.term e1
     t2 = Conditional.term e2

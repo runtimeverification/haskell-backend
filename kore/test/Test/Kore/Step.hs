@@ -1,5 +1,4 @@
-module Test.Kore.Step
-where
+module Test.Kore.Step where
 
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -23,8 +22,6 @@ import           Kore.Predicate.Predicate
 import           Kore.Sort
 import           Kore.Step
 import           Kore.Step.Pattern as Pattern
-import           Kore.Step.Proof
-                 ( StepProof )
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
@@ -91,7 +88,7 @@ applyStrategy testName start axioms expected =
 
         {- API Helpers -}
 
-takeSteps :: (Start, [Axiom]) -> IO (Actual, Proof)
+takeSteps :: (Start, [Axiom]) -> IO Actual
 takeSteps (Start start, wrappedAxioms) =
     (<$>) pickLongest
     $ SMT.runSMT SMT.defaultConfig
@@ -102,50 +99,37 @@ takeSteps (Start start, wrappedAxioms) =
         Strategy.runStrategy
             mockTransitionRule
             (repeat $ allRewrites axioms)
-            (pure configuration, mempty)
+            (pure configuration)
 
 compareTo
     :: HasCallStack
-    => Expect -> (Actual, Proof) -> IO ()
-compareTo (Expect expected) (actual, _ignoredProof) =
+    => Expect -> Actual -> IO ()
+compareTo (Expect expected) actual =
     assertEqualWithExplanation "" (pure expected) actual
 
 
     {- Types used in this file -}
 
--- Isolate knowledge of `Object` in anticipation of its removal.
--- Should these go in some common location?
-type RewriteRule' variable = RewriteRule Object variable
-type TermLike' variable = TermLike variable
-type CommonTermLike' = TermLike Variable
-type Pattern' variable = Pattern Object variable
-type CommonPattern' = Pattern Object Variable
-type Sort' = Sort
-type StepProof' variable = StepProof Object variable
+type CommonTermLike = TermLike Variable
+type CommonPattern = Pattern Variable
 
 -- Test types
-type TestPattern = CommonTermLike'
+type TestPattern = CommonTermLike
 newtype Start = Start TestPattern
-newtype Axiom = Axiom
-    { unAxiom :: RewriteRule' Variable }
+newtype Axiom = Axiom { unAxiom :: RewriteRule Variable }
 newtype Expect = Expect TestPattern
 
-type Actual = Pattern' Variable
-type Proof = StepProof' Variable
-
+type Actual = Pattern Variable
 
 -- Useful constant values
 
-anySort :: Sort'
+anySort :: Sort
 anySort = sort "irrelevant"
 
 mockTransitionRule
-    :: Prim (RewriteRule' Variable)
-    -> (CommonPattern', StepProof' Variable)
-    -> Strategy.TransitionT
-            (RewriteRule' Variable)
-            Simplifier
-            (CommonPattern', StepProof' Variable)
+    :: Prim (RewriteRule Variable)
+    -> CommonPattern
+    -> Strategy.TransitionT (RewriteRule Variable) Simplifier CommonPattern
 mockTransitionRule =
     transitionRule
         metadataTools
@@ -155,8 +139,7 @@ mockTransitionRule =
   where
     metadataTools = mockMetadataTools
     simplifier = Simplifier.create metadataTools Map.empty
-    substitutionSimplifier =
-        Mock.substitutionSimplifier metadataTools
+    substitutionSimplifier = Mock.substitutionSimplifier metadataTools
 
 -- Builders -- should these find a better home?
 
@@ -176,14 +159,14 @@ var name =
     mkVar $ (Variable (testId name) mempty) anySort
 -- can the above be more abstract?
 
-sort :: Text -> Sort'
+sort :: Text -> Sort
 sort name =
     SortActualSort $ SortActual
       { sortActualName = testId name
       , sortActualSorts = []
       }
 
-rewritesTo :: TestPattern -> TestPattern -> RewriteRule' Variable
+rewritesTo :: TestPattern -> TestPattern -> RewriteRule Variable
 rewritesTo left right =
     RewriteRule $ RulePattern
         { left
@@ -208,7 +191,7 @@ a1 = Variable (testId "#a1") mempty
 b1 = Variable (testId "#b1") mempty
 x1 = Variable (testId "#x1") mempty
 
-rewriteIdentity :: RewriteRule Meta Variable
+rewriteIdentity :: RewriteRule Variable
 rewriteIdentity =
     RewriteRule RulePattern
         { left = mkVar (x1 Mock.testSort)
@@ -218,7 +201,7 @@ rewriteIdentity =
         , attributes = def
         }
 
-rewriteImplies :: RewriteRule Meta Variable
+rewriteImplies :: RewriteRule Variable
 rewriteImplies =
     RewriteRule $ RulePattern
         { left = mkVar (x1 Mock.testSort)
@@ -231,22 +214,16 @@ rewriteImplies =
         , attributes = def
         }
 
-expectTwoAxioms :: [(Pattern Meta Variable, StepProof Meta Variable)]
+expectTwoAxioms :: [Pattern Variable]
 expectTwoAxioms =
-    [   ( pure (mkVar $ v1 Mock.testSort), mempty )
-    ,   ( Conditional
-            { term =
-                mkImplies
-                    (mkVar $ v1 Mock.testSort)
-                    (mkVar $ v1 Mock.testSort)
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        , mempty
-        )
+    [ pure (mkVar $ v1 Mock.testSort)
+    , Pattern.fromTermLike
+        $ mkImplies
+            (mkVar $ v1 Mock.testSort)
+            (mkVar $ v1 Mock.testSort)
     ]
 
-actualTwoAxioms :: IO [(Pattern Object Variable, StepProof Meta Variable)]
+actualTwoAxioms :: IO [Pattern Variable]
 actualTwoAxioms =
     runStep
         mockMetadataTools
@@ -259,7 +236,7 @@ actualTwoAxioms =
         , rewriteImplies
         ]
 
-initialFailSimple :: Pattern Meta Variable
+initialFailSimple :: Pattern Variable
 initialFailSimple =
     Conditional
         { term =
@@ -270,10 +247,10 @@ initialFailSimple =
         , substitution = mempty
         }
 
-expectFailSimple :: [(Pattern Object Variable, StepProof Meta Variable)]
-expectFailSimple = [ (initialFailSimple, mempty) ]
+expectFailSimple :: [Pattern Variable]
+expectFailSimple = [initialFailSimple]
 
-actualFailSimple :: IO [(Pattern Object Variable, StepProof Meta Variable)]
+actualFailSimple :: IO [Pattern Variable]
 actualFailSimple =
     runStep
         mockMetadataTools
@@ -291,7 +268,7 @@ actualFailSimple =
             }
         ]
 
-initialFailCycle :: Pattern Meta Variable
+initialFailCycle :: Pattern Variable
 initialFailCycle =
     Conditional
         { term =
@@ -302,10 +279,10 @@ initialFailCycle =
         , substitution = mempty
         }
 
-expectFailCycle :: [(Pattern Object Variable, StepProof Meta Variable)]
-expectFailCycle = [ (initialFailCycle, mempty) ]
+expectFailCycle :: [Pattern Variable]
+expectFailCycle = [initialFailCycle]
 
-actualFailCycle :: IO [(Pattern Object Variable, StepProof Meta Variable)]
+actualFailCycle :: IO [Pattern Variable]
 actualFailCycle =
     runStep
         mockMetadataTools
@@ -323,7 +300,7 @@ actualFailCycle =
             }
         ]
 
-initialIdentity :: Pattern Meta Variable
+initialIdentity :: Pattern Variable
 initialIdentity =
     Conditional
         { term = mkVar (v1 Mock.testSort)
@@ -331,10 +308,10 @@ initialIdentity =
         , substitution = mempty
         }
 
-expectIdentity :: [(Pattern Object Variable, StepProof Meta Variable)]
-expectIdentity = [ (initialIdentity, mempty) ]
+expectIdentity :: [Pattern Variable]
+expectIdentity = [initialIdentity]
 
-actualIdentity :: IO [(Pattern Object Variable, StepProof Meta Variable)]
+actualIdentity :: IO [Pattern Variable]
 actualIdentity =
     runStep
         mockMetadataTools
@@ -376,8 +353,7 @@ test_unificationError =
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected unification error"
 
-actualUnificationError
-    :: IO [(Pattern Object Variable, StepProof Meta Variable)]
+actualUnificationError :: IO [Pattern Variable]
 actualUnificationError =
     runStep
         mockMetadataTools
@@ -428,7 +404,7 @@ metaSigma
     -> TermLike Variable
 metaSigma p1 p2 = mkApp Mock.testSort sigmaSymbol [p1, p2]
 
-axiomMetaSigmaId :: RewriteRule Meta Variable
+axiomMetaSigmaId :: RewriteRule Variable
 axiomMetaSigmaId =
     RewriteRule RulePattern
         { left =
@@ -492,10 +468,10 @@ metaI p = mkApp Mock.testSort iSymbol [p]
 runStep
     :: SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    -> Pattern Object Variable
+    -> Pattern Variable
     -- ^left-hand-side of unification
-    -> [RewriteRule Object Variable]
-    -> IO [(Pattern Object Variable, StepProof Object Variable)]
+    -> [RewriteRule Variable]
+    -> IO [Pattern Variable]
 runStep metadataTools configuration axioms =
     (<$>) pickFinal
     $ SMT.runSMT SMT.defaultConfig
@@ -508,17 +484,17 @@ runStep metadataTools configuration axioms =
             Map.empty
         )
         [allRewrites axioms]
-        (configuration, mempty)
+        configuration
   where
     simplifier = Simplifier.create metadataTools Map.empty
 
 runSteps
     :: SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    -> Pattern Object Variable
+    -> Pattern Variable
     -- ^left-hand-side of unification
-    -> [RewriteRule Object Variable]
-    -> IO (Pattern Object Variable, StepProof Object Variable)
+    -> [RewriteRule Variable]
+    -> IO (Pattern Variable)
 runSteps metadataTools configuration axioms =
     (<$>) pickLongest
     $ SMT.runSMT SMT.defaultConfig
@@ -531,6 +507,6 @@ runSteps metadataTools configuration axioms =
             Map.empty
         )
         (repeat $ allRewrites axioms)
-        (configuration, mempty)
+        configuration
   where
     simplifier = Simplifier.create metadataTools Map.empty

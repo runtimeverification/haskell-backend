@@ -20,7 +20,6 @@ import           Numeric.Natural
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
-import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
@@ -32,8 +31,6 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Pattern as Pattern
-import           Kore.Step.Proof
-                 ( StepProof )
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
@@ -60,8 +57,8 @@ import           Test.Tasty.HUnit.Extensions
 
 type ExecutionGraph a =
     Strategy.ExecutionGraph
-        (a, StepProof Object Variable)
-        (RewriteRule Object Variable)
+        (a)
+        (RewriteRule Variable)
 
 test_onePathStrategy :: [TestTree]
 test_onePathStrategy =
@@ -94,9 +91,7 @@ test_onePathStrategy =
             Mock.a
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
-        assertEqualWithExplanation ""
-            Bottom
-            _actual
+        assertEqualWithExplanation "" Bottom _actual
 
         -- Target: d
         -- Coinductive axiom: a => b
@@ -397,7 +392,7 @@ test_onePathStrategy =
 simpleRewrite
     :: TermLike Variable
     -> TermLike Variable
-    -> RewriteRule Object Variable
+    -> RewriteRule Variable
 simpleRewrite left right =
     RewriteRule RulePattern
         { left = left
@@ -411,7 +406,7 @@ rewriteWithPredicate
     :: TermLike Variable
     -> TermLike Variable
     -> Syntax.Predicate Variable
-    -> RewriteRule Object Variable
+    -> RewriteRule Variable
 rewriteWithPredicate left right predicate =
     RewriteRule RulePattern
         { left = left
@@ -424,18 +419,13 @@ rewriteWithPredicate left right predicate =
 runSteps
     :: SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    ->  (  ExecutionGraph (CommonStrategyPattern Object)
+    ->  (  ExecutionGraph (CommonStrategyPattern)
         -> Maybe (ExecutionGraph b)
         )
     -> (ExecutionGraph b -> a)
-    -> Pattern Object Variable
+    -> Pattern Variable
     -- ^left-hand-side of unification
-    -> [Strategy
-        (Prim
-            (Pattern Object Variable)
-            (RewriteRule Object Variable)
-        )
-       ]
+    -> [Strategy (Prim (Pattern Variable) (RewriteRule Variable))]
     -> IO a
 runSteps metadataTools graphFilter picker configuration strategy =
     (<$>) picker
@@ -450,7 +440,7 @@ runSteps metadataTools graphFilter picker configuration strategy =
             Map.empty
         )
         strategy
-        (RewritePattern configuration, mempty)
+        (RewritePattern configuration)
   where
     simplifier = Simplifier.create metadataTools Map.empty
 
@@ -458,12 +448,12 @@ runOnePathSteps
     :: SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> Limit Natural
-    -> Pattern Object Variable
+    -> Pattern Variable
     -- ^left-hand-side of unification
     -> TermLike Variable
-    -> [RewriteRule Object Variable]
-    -> [RewriteRule Object Variable]
-    -> IO [CommonStrategyPattern Object]
+    -> [RewriteRule Variable]
+    -> [RewriteRule Variable]
+    -> IO [CommonStrategyPattern]
 runOnePathSteps
     metadataTools
     stepLimit
@@ -488,6 +478,6 @@ runOnePathSteps
                 )
             )
         )
-    return (sort $ nub (map fst result))
+    return (sort $ nub result)
   where
     expandedTarget = Pattern.fromTermLike target

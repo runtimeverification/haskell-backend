@@ -186,7 +186,7 @@ test_substitutionNormalization =
 runNormalizeSubstitution
     :: [(Variable, TermLike Variable)]
     -> Either
-        (SubstitutionError Object Variable)
+        (SubstitutionError Variable)
         [(Variable, TermLike Variable)]
 runNormalizeSubstitution substitution =
     fmap (Substitution.unwrap . Conditional.substitution)
@@ -196,7 +196,7 @@ runNormalizeSubstitution substitution =
 runNormalizeSubstitutionObject
     :: [(Variable, TermLike Variable)]
     -> Either
-        (SubstitutionError Object Variable)
+        (SubstitutionError Variable)
         [(Variable, TermLike Variable)]
 runNormalizeSubstitutionObject substitution =
     fmap (Substitution.unwrap . Conditional.substitution)

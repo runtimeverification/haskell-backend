@@ -11,10 +11,10 @@ import Options.Applicative
 import System.IO
        ( stdout )
 
-import Kore.AST.Sentence
-       ( ParsedDefinition )
 import Kore.Parser
        ( parseKoreDefinition )
+import Kore.Syntax.Definition
+       ( ParsedDefinition )
 import Kore.Unparser
 
 import GlobalMain

@@ -16,7 +16,7 @@ objectVariable = Variable
     }
 
 objectVariablePattern
-    :: Pattern Object Domain.Builtin Variable ParsedPattern
+    :: Pattern Domain.Builtin Variable ParsedPattern
 objectVariablePattern = VariablePattern objectVariable
 
 objectVariableUnifiedPattern :: ParsedPattern
@@ -32,7 +32,7 @@ metaVariable = Variable
     , variableCounter = mempty
     }
 
-metaVariablePattern :: Pattern Meta Domain.Builtin Variable ParsedPattern
+metaVariablePattern :: Pattern Domain.Builtin Variable ParsedPattern
 metaVariablePattern = VariablePattern metaVariable
 
 metaVariableUnifiedPattern :: ParsedPattern

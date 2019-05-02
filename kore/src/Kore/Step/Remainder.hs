@@ -49,7 +49,7 @@ remainder
         , Unparse variable
         , SortedVariable variable
         )
-    => MultiOr (Predicate Object (Target variable))
+    => MultiOr (Predicate (Target variable))
     -> Syntax.Predicate variable
 remainder results =
     mkMultiAndPredicate $ mkNotExists conditions
@@ -113,7 +113,7 @@ unificationConditions
         , Unparse variable
         , SortedVariable variable
         )
-    => Predicate Object (Target variable)
+    => Predicate (Target variable)
     -- ^ Unification solution
     -> MultiAnd (Syntax.Predicate (Target variable))
 unificationConditions Conditional { predicate, substitution } =
