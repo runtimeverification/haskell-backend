@@ -32,7 +32,7 @@ data FunctionError
 {-| An error explaining why a pattern is not composed of functional heads and
 things like StringLiteral, DomainValue and variables.
 -}
-data FunctionalError level
+data FunctionalError
     = NonFunctionalHead SymbolOrAlias
     -- ^ The pattern was the application of a non-functional head to something
     | NonFunctionalPattern

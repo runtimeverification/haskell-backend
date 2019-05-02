@@ -1139,7 +1139,7 @@ instance EqualWithExplanation (PatternAttributesError.FunctionError)
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (PatternAttributesError.FunctionalError Object)
+instance EqualWithExplanation (PatternAttributesError.FunctionalError)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show

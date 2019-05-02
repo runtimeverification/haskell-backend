@@ -72,7 +72,7 @@ mapFunctionalProofVariables mapper = Lens.over functionalProofVars mapper
 isFunctionalPattern
     :: SmtMetadataTools StepperAttributes
     -> TermLike variable
-    -> Either (FunctionalError Object) [FunctionalProof variable]
+    -> Either (FunctionalError) [FunctionalProof variable]
 isFunctionalPattern tools =
     provePattern (checkFunctionalHead tools)
 
@@ -149,7 +149,7 @@ checkFunctionalHead
     :: SmtMetadataTools StepperAttributes
     -> Recursive.Base (TermLike variable) a
     -> Either
-        (FunctionalError Object)
+        (FunctionalError)
         (PartialPatternProof (FunctionalProof variable))
 checkFunctionalHead tools base@(_ :< pattern') =
     case pattern' of
