@@ -14,7 +14,6 @@ module Kore.Attribute.Label
 import Data.Text
        ( Text )
 
-import Kore.AST.Common as Common
 import Kore.Attribute.Parser as Parser
 
 -- | @Label@ represents the @overload@ attribute for symbols.
@@ -48,9 +47,7 @@ labelSymbol =
 
 -- | Kore pattern representing the @overload@ attribute.
 labelAttribute :: Text -> AttributePattern
-labelAttribute label =
-    attributePattern labelSymbol
-        [ (asAttributePattern . StringLiteralPattern) (StringLiteral label) ]
+labelAttribute label = attributePattern labelSymbol [attributeString label]
 
 instance ParseAttributes Label where
     parseAttribute = withApplication' parseApplication

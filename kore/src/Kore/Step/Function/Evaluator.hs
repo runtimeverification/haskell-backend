@@ -22,7 +22,6 @@ import           Data.Reflection
                  ( give )
 import qualified Data.Text as Text
 
-import qualified Kore.AST.Common as Common
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( Hook (..), StepperAttributes, isSortInjection_ )
@@ -56,6 +55,7 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.TermLike
 import           Kore.Syntax.Application
 import           Kore.Syntax.Id
+import qualified Kore.Syntax.PatternF as Syntax
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -120,7 +120,7 @@ evaluateApplication
     SymbolOrAlias { symbolOrAliasConstructor = symbolId } = appHead
 
     appPurePattern =
-        Recursive.embed (valid :< Common.ApplicationPattern afterInj)
+        Recursive.embed (valid :< Syntax.ApplicationPattern afterInj)
 
     unchangedPatt =
         Conditional

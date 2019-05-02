@@ -43,6 +43,7 @@ module Kore.Attribute.Parser
     , asAttributePattern
     , attributePattern
     , attributePattern_
+    , attributeString
     , Default (..)
     , StringLiteral (StringLiteral)
     , Generic

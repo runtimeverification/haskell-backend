@@ -10,7 +10,6 @@ module Kore.Step.Simplification.TermLike
 
 import qualified Data.Functor.Foldable as Recursive
 
-import qualified Kore.AST.Common as Common
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -68,6 +67,7 @@ import qualified Kore.Step.Simplification.Top as Top
                  ( simplify )
 import qualified Kore.Step.Simplification.Variable as Variable
                  ( simplify )
+import qualified Kore.Syntax.PatternF as Syntax
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -145,10 +145,10 @@ simplifyInternal
     halfSimplified <- traverse simplifyTerm' patt
     -- TODO: Remove fst
     case halfSimplified of
-        Common.AndPattern p ->
+        Syntax.AndPattern p ->
             And.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Common.ApplicationPattern p ->
+        Syntax.ApplicationPattern p ->
             --  TODO: Re-evaluate outside of the application and stop passing
             -- the simplifier.
             Application.simplify
@@ -157,40 +157,40 @@ simplifyInternal
                 simplifier
                 axiomIdToEvaluator
                 (valid :< p)
-        Common.BottomPattern p -> return $ Bottom.simplify p
-        Common.CeilPattern p ->
+        Syntax.BottomPattern p -> return $ Bottom.simplify p
+        Syntax.CeilPattern p ->
             Ceil.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Common.DomainValuePattern p -> return $ DomainValue.simplify tools p
-        Common.EqualsPattern p ->
+        Syntax.DomainValuePattern p -> return $ DomainValue.simplify tools p
+        Syntax.EqualsPattern p ->
             Equals.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Common.ExistsPattern p ->
+        Syntax.ExistsPattern p ->
             Exists.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Common.FloorPattern p -> return $ Floor.simplify p
-        Common.ForallPattern p -> return $ Forall.simplify p
-        Common.IffPattern p ->
+        Syntax.FloorPattern p -> return $ Floor.simplify p
+        Syntax.ForallPattern p -> return $ Forall.simplify p
+        Syntax.IffPattern p ->
             Iff.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Common.ImpliesPattern p ->
+        Syntax.ImpliesPattern p ->
             Implies.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Common.InPattern p ->
+        Syntax.InPattern p ->
             In.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Common.InhabitantPattern s -> return $ Inhabitant.simplify s
+        Syntax.InhabitantPattern s -> return $ Inhabitant.simplify s
         -- TODO(virgil): Move next up through patterns.
-        Common.NextPattern p -> return $ Next.simplify p
-        Common.NotPattern p ->
+        Syntax.NextPattern p -> return $ Next.simplify p
+        Syntax.NotPattern p ->
             Not.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Common.OrPattern p -> return $ Or.simplify p
-        Common.RewritesPattern p -> return $ Rewrites.simplify p
-        Common.StringLiteralPattern p -> return $ StringLiteral.simplify p
-        Common.CharLiteralPattern p -> return $ CharLiteral.simplify p
-        Common.TopPattern p -> return $ Top.simplify p
-        Common.VariablePattern p -> return $ Variable.simplify p
-        Common.SetVariablePattern p -> return $ SetVariable.simplify p
+        Syntax.OrPattern p -> return $ Or.simplify p
+        Syntax.RewritesPattern p -> return $ Rewrites.simplify p
+        Syntax.StringLiteralPattern p -> return $ StringLiteral.simplify p
+        Syntax.CharLiteralPattern p -> return $ CharLiteral.simplify p
+        Syntax.TopPattern p -> return $ Top.simplify p
+        Syntax.VariablePattern p -> return $ Variable.simplify p
+        Syntax.SetVariablePattern p -> return $ SetVariable.simplify p
   where
     simplifyTerm' = simplifyTerm simplifier substitutionSimplifier

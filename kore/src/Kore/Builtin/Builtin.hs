@@ -88,8 +88,6 @@ import           Text.Megaparsec
                  ( Parsec )
 import qualified Text.Megaparsec as Parsec
 
-import qualified Kore.AST.Common as Common
-                 ( Pattern (..) )
 import qualified Kore.AST.Error as Kore.Error
 import           Kore.AST.Valid
 import qualified Kore.ASTVerifier.AttributesVerifier as Verifier.Attributes
@@ -142,6 +140,7 @@ import           Kore.Syntax.Definition
                  ( ParsedSentenceSort, ParsedSentenceSymbol, SentenceSort (..),
                  SentenceSymbol (..) )
 import           Kore.Syntax.DomainValue
+import qualified Kore.Syntax.PatternF as Syntax
 import           Kore.Unparser
 import qualified Kore.Verified as Verified
 
@@ -673,7 +672,7 @@ unaryOperator
         -> Simplifier (AttemptedAxiom variable)
     unaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
-            [Common.DomainValuePattern a] -> do
+            [Syntax.DomainValuePattern a] -> do
                 -- Apply the operator to a domain value
                 let r = op (get a)
                 (appliedFunction . asPattern resultSort) r
@@ -726,7 +725,7 @@ binaryOperator
         -> Simplifier (AttemptedAxiom variable)
     binaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
-            [Common.DomainValuePattern a, Common.DomainValuePattern b] -> do
+            [Syntax.DomainValuePattern a, Syntax.DomainValuePattern b] -> do
                 -- Apply the operator to two domain values
                 let r = op (get a) (get b)
                 (appliedFunction . asPattern resultSort) r
@@ -779,7 +778,7 @@ ternaryOperator
         -> Simplifier (AttemptedAxiom variable)
     ternaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
-            [Common.DomainValuePattern a, Common.DomainValuePattern b, Common.DomainValuePattern c] -> do
+            [Syntax.DomainValuePattern a, Syntax.DomainValuePattern b, Syntax.DomainValuePattern c] -> do
                 -- Apply the operator to three domain values
                 let r = op (get a) (get b) (get c)
                 (appliedFunction . asPattern resultSort) r

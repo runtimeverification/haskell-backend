@@ -37,9 +37,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Kore.Annotation.Valid
                  ( Valid )
 import qualified Kore.Annotation.Valid as Valid
-import           Kore.AST.Common
-                 ( Pattern (..) )
-import qualified Kore.AST.Common as Base
 import           Kore.AST.Pure
                  ( And, Application, Bottom, Ceil, CofreeF (..), Concrete,
                  DomainValue, Equals, Exists, Floor, Forall, Id (..), Iff,
@@ -50,6 +47,9 @@ import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Substitute as Substitute
 import           Kore.Syntax.Exists
 import           Kore.Syntax.Forall
+import           Kore.Syntax.PatternF
+                 ( Pattern (..) )
+import qualified Kore.Syntax.PatternF as PatternF
 import qualified Kore.Syntax.Variable as Variable
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -113,7 +113,7 @@ mapVariables mapping =
     Recursive.unfold (mapVariablesWorker . Recursive.project)
   where
     mapVariablesWorker (valid :< pat) =
-        Valid.mapVariables mapping valid :< Base.mapVariables mapping pat
+        Valid.mapVariables mapping valid :< PatternF.mapVariables mapping pat
 
 {- | Use the provided traversal to replace all variables in a 'TermLike'.
 
@@ -143,7 +143,7 @@ traverseVariables traversing =
         projected =
             (:<)
                 <$> Valid.traverseVariables traversing valid
-                <*> (Base.traverseVariables traversing =<< sequence pat)
+                <*> (PatternF.traverseVariables traversing =<< sequence pat)
 
 {- | Construct a 'ConcreteStepPattern' from a 'TermLike'.
 
@@ -303,5 +303,5 @@ externalizeFreshVariables termLike =
                                 }
                     return (ForallPattern forall')
                 _ ->
-                    Base.traverseVariables lookupVariable patt >>= sequence
+                    PatternF.traverseVariables lookupVariable patt >>= sequence
         (return . Recursive.embed) (valid' :< patt')

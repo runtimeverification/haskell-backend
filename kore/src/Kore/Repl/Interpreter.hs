@@ -58,8 +58,6 @@ import           System.Process
                  ( StdStream (CreatePipe), createProcess, proc, std_in,
                  std_out )
 
-import           Kore.AST.Common
-                 ( Pattern (..) )
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -91,6 +89,8 @@ import           Kore.Step.TermLike
 import           Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
                  ( Id (..) )
+import           Kore.Syntax.PatternF
+                 ( Pattern (..) )
 import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unparser

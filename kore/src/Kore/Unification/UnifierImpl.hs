@@ -21,7 +21,6 @@ import           Data.List
 import           Data.List.NonEmpty
                  ( NonEmpty (..) )
 
-import qualified Kore.AST.Common as Common
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Predicate.Predicate as Predicate
@@ -38,6 +37,7 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.TermLike
                  ( TermLike )
 import           Kore.Syntax.And
+import qualified Kore.Syntax.PatternF as Syntax
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -85,7 +85,7 @@ simplifyAnds
         -> unifier (Pattern variable)
     simplifyAnds' intermediate pat =
         case Cofree.tailF (Recursive.project pat) of
-            Common.AndPattern And { andFirst = lhs, andSecond = rhs } ->
+            Syntax.AndPattern And { andFirst = lhs, andSecond = rhs } ->
                 foldM simplifyAnds' intermediate [lhs, rhs]
             _ -> do
                 result <-
@@ -122,9 +122,9 @@ groupSubstitutionByVariable
 groupSubstitutionByVariable =
     groupBy ((==) `on` fst) . sortBy (compare `on` fst) . map sortRenaming
   where
-    sortRenaming (var, Recursive.project -> ann :< Common.VariablePattern var')
+    sortRenaming (var, Recursive.project -> ann :< Syntax.VariablePattern var')
         | var' < var =
-          (var', Recursive.embed (ann :< Common.VariablePattern var))
+          (var', Recursive.embed (ann :< Syntax.VariablePattern var))
     sortRenaming eq = eq
 
 -- simplifies x = t1 /\ x = t2 /\ ... /\ x = tn by transforming it into

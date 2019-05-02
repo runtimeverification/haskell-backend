@@ -25,8 +25,8 @@ module Kore.AST.Pure
     , constant
     -- * Re-exports
     , Base, CofreeF (..)
+    , Pattern (..)
     , module Control.Comonad
-    , module Kore.AST.Common
     , module Kore.Syntax
     ) where
 
@@ -59,12 +59,11 @@ import           GHC.Generics
 
 import           Kore.Annotation.Valid
                  ( Valid (..) )
-import           Kore.AST.Common hiding
-                 ( castVoidDomainValues, mapDomainValues, mapVariables,
-                 traverseVariables )
-import qualified Kore.AST.Common as Head
 import qualified Kore.Attribute.Null as Attribute
 import           Kore.Syntax
+import           Kore.Syntax.PatternF
+                 ( Pattern (..) )
+import qualified Kore.Syntax.PatternF as PatternF
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser
@@ -343,7 +342,7 @@ traverseVariables traversing =
             (m (PurePattern domain variable2 annotation))
         -> m (PurePattern domain variable2 annotation)
     traverseVariablesWorker (a :< pat) =
-        reannotate <$> (Head.traverseVariables traversing =<< sequence pat)
+        reannotate <$> (PatternF.traverseVariables traversing =<< sequence pat)
       where
         reannotate pat' = Recursive.embed (a :< pat')
 
@@ -365,7 +364,7 @@ mapVariables mapping =
     Recursive.ana (mapVariablesWorker . Recursive.project)
   where
     mapVariablesWorker (a :< pat) =
-        a :< Head.mapVariables mapping pat
+        a :< PatternF.mapVariables mapping pat
 
 -- | Use the provided mapping to replace all domain values in a 'PurePattern'.
 mapDomainValues
@@ -381,7 +380,7 @@ mapDomainValues mapping =
     Recursive.unfold (mapDomainValuesWorker . Recursive.project)
   where
     mapDomainValuesWorker (a :< pat) =
-        a :< Head.mapDomainValues mapping pat
+        a :< PatternF.mapDomainValues mapping pat
 
 {- | Construct a 'ConcretePurePattern' from a 'PurePattern'.
 

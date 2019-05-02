@@ -30,8 +30,6 @@ import qualified Data.Map.Strict as Map
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Common
-                 ( Pattern (..) )
 import           Kore.AST.Pure
                  ( fromPurePattern )
 import           Kore.AST.Valid
@@ -52,6 +50,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.TermLike
                  ( TermLike )
 import           Kore.Syntax.Application
+import           Kore.Syntax.PatternF
+                 ( Pattern (..) )
 import           Kore.Syntax.Variable
                  ( SortedVariable, Variable (..) )
 import           Kore.Unparser

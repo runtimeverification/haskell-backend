@@ -21,9 +21,9 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
-import Kore.AST.Common
-       ( Pattern (..) )
 import Kore.AST.Pure
+import Kore.Syntax.PatternF
+       ( Pattern (..) )
 import Kore.Variables.Fresh
 
 {- | Traverse the pattern from the top down and apply substitutions.

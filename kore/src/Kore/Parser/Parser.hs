@@ -43,6 +43,7 @@ import           Text.Megaparsec
 import qualified Text.Megaparsec.Char as Parser
                  ( char )
 
+import           Kore.AST.Common
 import           Kore.AST.Pure
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Parser.Lexeme

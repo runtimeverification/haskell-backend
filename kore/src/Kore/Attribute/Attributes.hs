@@ -9,6 +9,7 @@ module Kore.Attribute.Attributes
     , asAttributePattern
     , attributePattern
     , attributePattern_
+    , attributeString
     ) where
 
 import           Control.DeepSeq
@@ -17,6 +18,8 @@ import           Data.Default
                  ( Default (..) )
 import           Data.Hashable
                  ( Hashable )
+import           Data.Text
+                 ( Text )
 import qualified GHC.Generics as GHC
 
 import           Kore.AST.Pure
@@ -50,6 +53,10 @@ attributePattern_
     -> AttributePattern
 attributePattern_ applicationSymbolOrAlias =
     attributePattern applicationSymbolOrAlias []
+
+attributeString :: Text -> AttributePattern
+attributeString literal =
+    (asAttributePattern . StringLiteralPattern) (StringLiteral literal)
 
 {-|'Attributes' corresponds to the @attributes@ Kore syntactic declaration.
 It is parameterized by the types of Patterns, @pat@.

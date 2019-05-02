@@ -41,7 +41,6 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import qualified Kore.AST.Common as Common
 import qualified Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
@@ -61,6 +60,8 @@ import           Kore.Step.Pattern as Pattern
 import           Kore.Step.TermLike as TermLike
 import           Kore.Syntax
 import           Kore.Syntax.Definition
+import qualified Kore.Syntax.PatternF as Syntax
+                 ( Pattern (..) )
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}
@@ -346,24 +347,24 @@ topGen = topBottomGen Top
 patternGen
     :: (Sort -> Gen child)
     -> Sort
-    -> Gen (Common.Pattern dom Variable child)
+    -> Gen (Syntax.Pattern dom Variable child)
 patternGen childGen patternSort =
     Gen.frequency
-        [ (1, Common.AndPattern <$> andGen childGen patternSort)
-        , (1, Common.ApplicationPattern <$> applicationGen childGen patternSort)
-        , (1, Common.BottomPattern <$> bottomGen patternSort)
-        , (1, Common.CeilPattern <$> ceilGen childGen patternSort)
-        , (1, Common.EqualsPattern <$> equalsGen childGen patternSort)
-        , (1, Common.ExistsPattern <$> existsGen childGen patternSort)
-        , (1, Common.FloorPattern <$> floorGen childGen patternSort)
-        , (1, Common.ForallPattern <$> forallGen childGen patternSort)
-        , (1, Common.IffPattern <$> iffGen childGen patternSort)
-        , (1, Common.ImpliesPattern <$> impliesGen childGen patternSort)
-        , (1, Common.InPattern <$> inGen childGen patternSort)
-        , (1, Common.NotPattern <$> notGen childGen patternSort)
-        , (1, Common.OrPattern <$> orGen childGen patternSort)
-        , (1, Common.TopPattern <$> topGen patternSort)
-        , (5, Common.VariablePattern <$> variableGen patternSort)
+        [ (1, Syntax.AndPattern <$> andGen childGen patternSort)
+        , (1, Syntax.ApplicationPattern <$> applicationGen childGen patternSort)
+        , (1, Syntax.BottomPattern <$> bottomGen patternSort)
+        , (1, Syntax.CeilPattern <$> ceilGen childGen patternSort)
+        , (1, Syntax.EqualsPattern <$> equalsGen childGen patternSort)
+        , (1, Syntax.ExistsPattern <$> existsGen childGen patternSort)
+        , (1, Syntax.FloorPattern <$> floorGen childGen patternSort)
+        , (1, Syntax.ForallPattern <$> forallGen childGen patternSort)
+        , (1, Syntax.IffPattern <$> iffGen childGen patternSort)
+        , (1, Syntax.ImpliesPattern <$> impliesGen childGen patternSort)
+        , (1, Syntax.InPattern <$> inGen childGen patternSort)
+        , (1, Syntax.NotPattern <$> notGen childGen patternSort)
+        , (1, Syntax.OrPattern <$> orGen childGen patternSort)
+        , (1, Syntax.TopPattern <$> topGen patternSort)
+        , (5, Syntax.VariablePattern <$> variableGen patternSort)
         ]
 
 termLikeGen :: Hedgehog.Gen (TermLike Variable)
@@ -494,30 +495,30 @@ korePatternChildGen patternSort' =
 
     korePatternGenStringLiteral :: Gen ParsedPattern
     korePatternGenStringLiteral =
-        asParsedPattern . Common.StringLiteralPattern <$> stringLiteralGen
+        asParsedPattern . Syntax.StringLiteralPattern <$> stringLiteralGen
 
     korePatternGenCharLiteral :: Gen ParsedPattern
     korePatternGenCharLiteral =
-        asParsedPattern . Common.CharLiteralPattern <$> charLiteralGen
+        asParsedPattern . Syntax.CharLiteralPattern <$> charLiteralGen
 
     korePatternGenDomainValue :: Gen ParsedPattern
     korePatternGenDomainValue =
-        asParsedPattern . Common.DomainValuePattern
+        asParsedPattern . Syntax.DomainValuePattern
             <$> genBuiltinExternal patternSort'
 
     korePatternGenNext :: Gen ParsedPattern
     korePatternGenNext =
-        asParsedPattern . Common.NextPattern
+        asParsedPattern . Syntax.NextPattern
             <$> nextGen korePatternChildGen patternSort'
 
     korePatternGenRewrites :: Gen ParsedPattern
     korePatternGenRewrites =
-        asParsedPattern . Common.RewritesPattern
+        asParsedPattern . Syntax.RewritesPattern
             <$> rewritesGen korePatternChildGen patternSort'
 
     korePatternGenVariable :: Gen ParsedPattern
     korePatternGenVariable =
-        asParsedPattern . Common.VariablePattern <$> variableGen patternSort'
+        asParsedPattern . Syntax.VariablePattern <$> variableGen patternSort'
 
 korePatternUnifiedGen :: Gen ParsedPattern
 korePatternUnifiedGen = korePatternChildGen =<< sortGen

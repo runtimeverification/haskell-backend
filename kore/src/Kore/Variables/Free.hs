@@ -25,6 +25,8 @@ import           Data.Set
 import qualified Data.Set as Set
 
 import Kore.AST.Pure
+import Kore.Syntax.PatternF
+       ( Pattern (..) )
 
 -- | The free variables of a pure pattern.
 freePureVariables

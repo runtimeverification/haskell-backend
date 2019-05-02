@@ -11,7 +11,6 @@ import           Data.Maybe
 import           Data.Proxy
                  ( Proxy (..) )
 
-import qualified Kore.AST.Common as Common
 import           Kore.AST.Pure
                  ( groundHead )
 import           Kore.AST.Valid
@@ -44,7 +43,6 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.TermLike
-import           Kore.Syntax.Application
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 import qualified SMT
@@ -196,26 +194,18 @@ testDef =
             SentenceAxiom
                 { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes =
-                    Attributes
-                        [ asParsedPattern
-                            (Common.ApplicationPattern Application
-                                { applicationSymbolOrAlias =
-                                    simplificationSymbol
-                                , applicationChildren = []
-                                }
-                            )
-                        ]
+                    Attributes [ attributePattern_ simplificationSymbol ]
                 , sentenceAxiomPattern =
-                        (mkImplies
-                            (mkTop sortVarS)
-                            (mkAnd
-                                (mkEquals sortVarS
-                                    (mkApp sortS fHead [])
-                                    (mkApp sortS gHead [])
-                                )
-                                (mkTop sortVarS)
+                    mkImplies
+                        (mkTop sortVarS)
+                        (mkAnd
+                            (mkEquals sortVarS
+                                (mkApp sortS fHead [])
+                                (mkApp sortS gHead [])
                             )
-                        :: TermLike Variable)
+                            (mkTop sortVarS)
+                        )
+                    :: TermLike Variable
                 }
         , SentenceAxiomSentence
             SentenceAxiom

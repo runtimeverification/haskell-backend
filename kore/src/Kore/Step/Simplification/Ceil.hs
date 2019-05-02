@@ -19,7 +19,6 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
 
-import qualified Kore.AST.Common as Common
 import           Kore.AST.Valid
                  ( pattern Top_, mkCeil_, mkTop_ )
 import           Kore.Attribute.Symbol
@@ -60,6 +59,7 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.TermLike
 import           Kore.Syntax.Application
 import           Kore.Syntax.Ceil
+import qualified Kore.Syntax.PatternF as Syntax
 import           Kore.TopBottom
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -245,7 +245,7 @@ makeEvaluateTerm
   | isTotalPattern tools term = return OrPredicate.top
   | otherwise =
     case projected of
-        Common.ApplicationPattern app
+        Syntax.ApplicationPattern app
           | StepperAttributes.isTotal headAttributes -> do
             simplifiedChildren <- mapM
                 (makeEvaluateTerm
@@ -263,7 +263,7 @@ makeEvaluateTerm
             Application { applicationSymbolOrAlias = patternHead } = app
             Application { applicationChildren = children } = app
             headAttributes = MetadataTools.symAttributes tools patternHead
-        Common.DomainValuePattern child ->
+        Syntax.DomainValuePattern child ->
             makeEvaluateBuiltin
                 tools
                 substitutionSimplifier
@@ -326,7 +326,7 @@ makeEvaluateBuiltin
     (Domain.BuiltinExternal Domain.External { domainValueChild = p })
   =
     case Recursive.project p of
-        _ :< Common.StringLiteralPattern _ ->
+        _ :< Syntax.StringLiteralPattern _ ->
             -- This should be the only kind of Domain.BuiltinExternal, and it
             -- should be valid and functional if this has passed verification.
             return OrPredicate.top
