@@ -51,7 +51,7 @@ simplify Floor { floorChild = child } =
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Floor Object) (Valid Object) (OrPattern variable)
+> CofreeF (Floor Sort) (Valid variable) (OrPattern variable)
 
 instead of an 'OrPattern' argument. The type of 'makeEvaluateFloor'
 may be changed analogously. The 'Valid' annotation will eventually cache

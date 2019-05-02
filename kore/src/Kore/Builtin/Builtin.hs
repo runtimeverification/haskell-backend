@@ -618,7 +618,7 @@ parseString parser lit =
   See also: 'Pattern'
  -}
 appliedFunction
-    :: (Monad m, Ord variable, level ~ Object)
+    :: (Monad m, Ord variable)
     => Pattern variable
     -> m (AttemptedAxiom variable)
 appliedFunction epat =
@@ -665,7 +665,7 @@ unaryOperator
     get :: Domain.Builtin (TermLike variable) -> a
     get = extractVal ctx
     unaryOperator0
-        :: (Ord variable, level ~ Object)
+        :: Ord variable
         => SmtMetadataTools StepperAttributes
         -> TermLikeSimplifier
         -> Sort
@@ -718,7 +718,7 @@ binaryOperator
     get :: Domain.Builtin (TermLike variable) -> a
     get = extractVal ctx
     binaryOperator0
-        :: (Ord variable, level ~ Object)
+        :: Ord variable
         => SmtMetadataTools StepperAttributes
         -> TermLikeSimplifier
         -> Sort
@@ -771,7 +771,7 @@ ternaryOperator
     get :: Domain.Builtin (TermLike variable) -> a
     get = extractVal ctx
     ternaryOperator0
-        :: (Ord variable, level ~ Object)
+        :: Ord variable
         => SmtMetadataTools StepperAttributes
         -> TermLikeSimplifier
         -> Sort

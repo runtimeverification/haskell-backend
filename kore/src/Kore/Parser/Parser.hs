@@ -539,9 +539,7 @@ koreMLConstructorParser = do
                     patternType
 
 {-|'leveledMLConstructorParser' is similar to 'koreMLConstructorParser'
-in that it parses a pattern starting with @\@.  However, it only parses
-patterns types which can belong to both 'Meta' and 'Object' categories, and
-returns an object of the 'Pattern' type.
+in that it parses a pattern starting with @\@.
 
 BNF definitions (here cat ranges over meta and object):
 

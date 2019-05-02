@@ -500,17 +500,17 @@ korePatternChildGen patternSort' =
     korePatternGenCharLiteral =
         asParsedPattern . Common.CharLiteralPattern <$> charLiteralGen
 
-    korePatternGenDomainValue :: Object ~ Object => Gen ParsedPattern
+    korePatternGenDomainValue :: Gen ParsedPattern
     korePatternGenDomainValue =
         asParsedPattern . Common.DomainValuePattern
             <$> genBuiltinExternal patternSort'
 
-    korePatternGenNext :: Object ~ Object => Gen ParsedPattern
+    korePatternGenNext :: Gen ParsedPattern
     korePatternGenNext =
         asParsedPattern . Common.NextPattern
             <$> nextGen korePatternChildGen patternSort'
 
-    korePatternGenRewrites :: Object ~ Object => Gen ParsedPattern
+    korePatternGenRewrites :: Gen ParsedPattern
     korePatternGenRewrites =
         asParsedPattern . Common.RewritesPattern
             <$> rewritesGen korePatternChildGen patternSort'

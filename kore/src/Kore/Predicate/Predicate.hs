@@ -201,8 +201,6 @@ makeMultipleOrPredicate =
 simplification.
 -}
 makeAndPredicate
-    -- TODO(virgil): Group these constraints in a class
-    -- or, even better, a type (like ShowMetaOrObject in MetaOrObject).
     ::  ( SortedVariable variable
         , Ord variable
         , Unparse variable

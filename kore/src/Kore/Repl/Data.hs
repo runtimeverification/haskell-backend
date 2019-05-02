@@ -64,8 +64,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Exts
                  ( toList )
 
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.OnePath.Step
                  ( CommonStrategyPattern, StrategyPattern (..) )
 import           Kore.OnePath.Verification
@@ -401,8 +399,7 @@ getTargetNode maybeNode = do
 
 -- | Get the configuration at selected node (or current node for 'Nothing').
 getConfigAt
-    :: level ~ Object
-    => MonadState (ReplState claim) m
+    :: MonadState (ReplState claim) m
     => Maybe Graph.Node
     -> m (Maybe (Graph.Node, CommonStrategyPattern))
 getConfigAt maybeNode = do

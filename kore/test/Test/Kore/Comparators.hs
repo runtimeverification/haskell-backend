@@ -110,7 +110,6 @@ instance EqualWithExplanation Natural where
 instance
     ( EqualWithExplanation child
     , Eq child
-    , Eq Object
     , Show child
     , Eq1 domain
     , Show1 domain
@@ -256,7 +255,7 @@ instance
 
 instance
     ( EqualWithExplanation child
-    , Eq child, Eq Object, Eq variable
+    , Eq child, Eq variable
     , Show child
     , EqualWithExplanation variable
     , EqualWithExplanation (domain child)
@@ -277,7 +276,6 @@ instance
     , EqualWithExplanation variable
     , Show annotation
     , Eq annotation
-    , Eq Object
     , EqualWithExplanation annotation
     , EqualWithExplanation (domain (Cofree (Pattern domain variable) annotation))
     ) =>
@@ -295,7 +293,6 @@ instance
     , EqualWithExplanation variable
     , Show annotation
     , Eq annotation
-    , Eq Object
     , EqualWithExplanation annotation
     , EqualWithExplanation (domain (Cofree (Pattern domain variable) annotation))
     ) =>
@@ -353,8 +350,7 @@ instance
     printWithExplanation = show
 
 instance
-    ( Eq Object, Show Object
-    , Eq variable, Show variable
+    ( Eq variable, Show variable
     , EqualWithExplanation variable
     , EqualWithExplanation (TermLike variable)
     )
@@ -364,8 +360,7 @@ instance
         SumConstructorSameWithArguments (EqWrap "StepProofCombined" a1 a2)
 
 instance
-    ( Eq Object, Show Object
-    , Eq variable, Show variable
+    ( Eq variable, Show variable
     , EqualWithExplanation variable
     , EqualWithExplanation (TermLike variable)
     )
@@ -387,8 +382,7 @@ instance
             (printWithExplanation a1) (printWithExplanation a2)
 
 instance
-    ( Eq Object, Show Object
-    , Eq variable, Show variable
+    ( Eq variable, Show variable
     , EqualWithExplanation variable
     , EqualWithExplanation (TermLike variable)
     )
@@ -398,8 +392,7 @@ instance
     printWithExplanation = show
 
 instance
-    ( Eq Object, Show Object
-    , Eq variable, Show variable
+    ( Eq variable, Show variable
     , EqualWithExplanation variable
     , EqualWithExplanation (TermLike variable)
     )
@@ -894,8 +887,7 @@ instance
     printWithExplanation = show
 
 instance
-    ( Eq Object, Eq variable
-    , Show Object, Show variable
+    ( Eq variable, Show variable
     , EqualWithExplanation variable
     , EqualWithExplanation (TermLike variable)
     )
@@ -950,8 +942,7 @@ instance
             (printWithExplanation a1) (printWithExplanation a2)
 
 instance
-    ( Eq Object, Eq variable
-    , Show Object, Show variable
+    ( Eq variable, Show variable
     , EqualWithExplanation variable
     , EqualWithExplanation (TermLike variable)
     )
@@ -1009,10 +1000,7 @@ instance
     printWithExplanation = show
 
 instance
-    ( Show Object, Show variable
-    , Eq Object, Eq variable
-    , EqualWithExplanation variable
-    )
+    ( Show variable , Eq variable , EqualWithExplanation variable )
     => EqualWithExplanation (Substitution variable)
   where
     compareWithExplanation = sumCompareWithExplanation
@@ -1146,10 +1134,7 @@ instance
             (printWithExplanation b)
 
 instance
-    ( EqualWithExplanation variable
-    , Show Object, Show variable
-    , Eq Object, Eq variable
-    )
+    ( EqualWithExplanation variable , Show variable , Eq variable )
     => SumEqualWithExplanation (Substitution variable)
   where
     sumConstructorPair s1 s2
@@ -1170,8 +1155,7 @@ instance
         s2Inner = Substitution.unwrap s2
 
 instance
-    ( Show Object, Show variable, Show child
-    , Eq Object, Eq variable
+    ( Show variable, Show child , Eq variable
     , EqualWithExplanation variable
     , EqualWithExplanation child
     , EqualWithExplanation (TermLike variable)
@@ -1223,8 +1207,8 @@ instance
     printWithExplanation = show
 
 instance
-    ( Show Object, Show variable
-    , Eq Object, Eq variable
+    ( Show variable
+    , Eq variable
     , EqualWithExplanation variable
     )
     => StructEqualWithExplanation (AttemptedAxiomResults variable)
@@ -1245,19 +1229,14 @@ instance
     structConstructorName _ = "AttemptedAxiomResults"
 
 instance
-    ( Show Object, Show variable
-    , Eq Object, Eq variable
-    , EqualWithExplanation variable
-    )
+    ( Show variable , Eq variable , EqualWithExplanation variable )
     => EqualWithExplanation (AttemptedAxiomResults variable)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance
-    ( Show Object, Show variable
-    , Eq Object, Eq variable
-    , EqualWithExplanation variable
+    ( Show variable , Eq variable , EqualWithExplanation variable
     , EqualWithExplanation (TermLike variable)
     )
     => SumEqualWithExplanation (AttemptedAxiom variable)
@@ -1281,9 +1260,7 @@ instance
             (printWithExplanation a1) (printWithExplanation a2)
 
 instance
-    ( Show Object, Show variable
-    , Eq Object, Eq variable
-    , EqualWithExplanation variable
+    ( Show variable , Eq variable , EqualWithExplanation variable
     , EqualWithExplanation (TermLike variable)
     )
     => EqualWithExplanation (AttemptedAxiom variable)

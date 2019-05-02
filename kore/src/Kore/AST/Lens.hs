@@ -86,8 +86,7 @@ patternLens
             <*> lensChild ceilChild
 
     patternLensDomain
-        :: level ~ Object
-        => domain (PurePattern domain variable1 annotation)
+        :: domain (PurePattern domain variable1 annotation)
         -> f (domain (PurePattern domain variable2 annotation))
     patternLensDomain =
         lensDomainValue patternLensDomainValue

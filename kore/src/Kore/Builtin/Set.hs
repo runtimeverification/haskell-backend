@@ -537,7 +537,7 @@ unifyEquals
     hookTools = StepperAttributes.hook <$> tools
 
     -- | Given a collection 't' of 'Conditional' values, propagate all the
-    -- predicates to the top Object, returning a 'Conditional' collection.
+    -- predicates to the top, returning a 'Conditional' collection.
     propagatePredicates
         :: Traversable t
         => t (Conditional variable a)
@@ -637,8 +637,7 @@ unifyEquals
 
     -- | Unify two concrete sets
     unifyEqualsConcrete
-        :: Object ~ Object
-        => Domain.InternalSet
+        :: Domain.InternalSet
         -> Domain.InternalSet
         -> unifier (Pattern variable)
     unifyEqualsConcrete builtin1 builtin2

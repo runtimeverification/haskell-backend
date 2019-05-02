@@ -76,7 +76,7 @@ simplifyEvaluated
 One way to preserve the required sort annotations is to make `simplifyEvaluated`
 take an argument of type
 ``` haskell
-CofreeF (Or Sort) (Valid Object) (OrPattern variable)
+CofreeF (Or Sort) (Valid variable) (OrPattern variable)
 ```
 instead of two `OrPattern` arguments. The type of `makeEvaluate` may
 be changed analogously. The `Valid` annotation will eventually cache

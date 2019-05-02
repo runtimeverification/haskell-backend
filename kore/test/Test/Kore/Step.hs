@@ -113,39 +113,32 @@ compareTo (Expect expected) (actual, _ignoredProof) =
 
     {- Types used in this file -}
 
--- Isolate knowledge of `Object` in anticipation of its removal.
--- Should these go in some common location?
-type RewriteRule' variable = RewriteRule variable
-type TermLike' variable = TermLike variable
-type CommonTermLike' = TermLike Variable
-type Pattern' variable = Pattern variable
-type CommonPattern' = Pattern Variable
-type Sort' = Sort
+type CommonTermLike = TermLike Variable
+type CommonPattern = Pattern Variable
 type StepProof' variable = StepProof Object variable
 
 -- Test types
-type TestPattern = CommonTermLike'
+type TestPattern = CommonTermLike
 newtype Start = Start TestPattern
-newtype Axiom = Axiom
-    { unAxiom :: RewriteRule' Variable }
+newtype Axiom = Axiom { unAxiom :: RewriteRule Variable }
 newtype Expect = Expect TestPattern
 
-type Actual = Pattern' Variable
+type Actual = Pattern Variable
 type Proof = StepProof' Variable
 
 
 -- Useful constant values
 
-anySort :: Sort'
+anySort :: Sort
 anySort = sort "irrelevant"
 
 mockTransitionRule
-    :: Prim (RewriteRule' Variable)
-    -> (CommonPattern', StepProof' Variable)
+    :: Prim (RewriteRule Variable)
+    -> (CommonPattern, StepProof' Variable)
     -> Strategy.TransitionT
-            (RewriteRule' Variable)
+            (RewriteRule Variable)
             Simplifier
-            (CommonPattern', StepProof' Variable)
+            (CommonPattern, StepProof' Variable)
 mockTransitionRule =
     transitionRule
         metadataTools
@@ -176,14 +169,14 @@ var name =
     mkVar $ (Variable (testId name) mempty) anySort
 -- can the above be more abstract?
 
-sort :: Text -> Sort'
+sort :: Text -> Sort
 sort name =
     SortActualSort $ SortActual
       { sortActualName = testId name
       , sortActualSorts = []
       }
 
-rewritesTo :: TestPattern -> TestPattern -> RewriteRule' Variable
+rewritesTo :: TestPattern -> TestPattern -> RewriteRule Variable
 rewritesTo left right =
     RewriteRule $ RulePattern
         { left

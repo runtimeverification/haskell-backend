@@ -79,7 +79,7 @@ simplify
 One way to preserve the required sort annotations is to make
 'simplifyEvaluatedIn' take an argument of type
 
-> CofreeF (In Sort) (Valid Object) (OrPattern variable)
+> CofreeF (In Sort) (Valid variable) (OrPattern variable)
 
 instead of two 'OrPattern' arguments. The type of 'makeEvaluateIn' may
 be changed analogously. The 'Valid' annotation will eventually cache information
