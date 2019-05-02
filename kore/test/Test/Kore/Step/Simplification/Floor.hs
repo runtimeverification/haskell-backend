@@ -21,7 +21,6 @@ import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Floor
                  ( makeEvaluateFloor, simplify )
 import           Kore.Step.TermLike
-import           Kore.Syntax.Floor
 import qualified Kore.Unification.Substitution as Substitution
 
 import Test.Kore

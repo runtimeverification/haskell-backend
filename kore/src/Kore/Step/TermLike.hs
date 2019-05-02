@@ -5,7 +5,7 @@ License     : NCSA
 
 module Kore.Step.TermLike
     ( TermLike
-    , module Kore.AST.Pure
+    , module Kore.Syntax
     , freeVariables
     , hasFreeVariable
     , withoutFreeVariable
@@ -37,18 +37,10 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Kore.Annotation.Valid
                  ( Valid )
 import qualified Kore.Annotation.Valid as Valid
-import           Kore.AST.Pure
-                 ( And, Application, Bottom, Ceil, CofreeF (..), Concrete,
-                 DomainValue, Equals, Exists, Floor, Forall, Id (..), Iff,
-                 Implies, In, Next, Not, Or, PurePattern, Rewrites, Sort,
-                 SortActual, SortVariable, SortedVariable (..),
-                 SymbolOrAlias (..), Top, Variable (..) )
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Substitute as Substitute
-import           Kore.Syntax.Exists
-import           Kore.Syntax.Forall
-import           Kore.Syntax.PatternF
-                 ( PatternF (..) )
+import           Kore.Syntax hiding
+                 ( mapVariables, traverseVariables )
 import qualified Kore.Syntax.PatternF as PatternF
 import qualified Kore.Syntax.Variable as Variable
 import           Kore.Unparser

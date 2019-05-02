@@ -16,10 +16,8 @@ import Data.Text
 
 import Kore.AST.Lens
        ( resultSort )
-import Kore.AST.Pure
 import Kore.AST.Valid
 import Kore.Step.TermLike
-       ( TermLike )
 
 test_sortAgreement :: TestTree
 test_sortAgreement = testGroup "Sort agreement"

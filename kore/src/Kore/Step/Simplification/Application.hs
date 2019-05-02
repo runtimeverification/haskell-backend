@@ -38,7 +38,6 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Step.TermLike
-import           Kore.Syntax.Application
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 

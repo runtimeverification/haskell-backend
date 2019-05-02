@@ -60,9 +60,9 @@ import           GHC.Generics
 import Control.Lens.TH.Rules
        ( makeLenses )
 import Kore.Annotation.Valid
-import Kore.AST.Pure
 import Kore.Domain.Class
 import Kore.Domain.External
+import Kore.Syntax
 import Kore.Unparser
 
 -- * Helpers

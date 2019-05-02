@@ -60,13 +60,14 @@ import           GHC.Generics
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Error
                  ( Error, koreFail )
+import           Kore.Sort
 import           Kore.Step.TermLike
                  ( TermLike )
 import qualified Kore.Step.TermLike as TermLike
+import           Kore.Syntax
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unification.Substitution

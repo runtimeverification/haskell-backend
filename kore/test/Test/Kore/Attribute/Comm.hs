@@ -3,8 +3,8 @@ module Test.Kore.Attribute.Comm where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.AST.Pure
 import Kore.Attribute.Comm
+import Kore.Syntax.Pattern
 
 import Test.Kore.Attribute.Parser
 

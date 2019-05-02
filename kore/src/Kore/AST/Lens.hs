@@ -17,8 +17,8 @@ import           Control.Lens hiding
                  ( (:<) )
 import qualified Data.Functor.Foldable as Recursive
 
-import Kore.AST.Pure
 import Kore.Domain.Class
+import Kore.Syntax
 
 patternLens
     ::  forall f domain variable1 variable2 annotation

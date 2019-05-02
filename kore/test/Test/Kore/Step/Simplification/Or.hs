@@ -24,7 +24,6 @@ import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Or
                  ( simplify, simplifyEvaluated )
 import           Kore.Step.TermLike
-import           Kore.Syntax.Or
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution

@@ -9,7 +9,6 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.ASTPrettyPrint
 import           Kore.ASTVerifier.DefinitionVerifier

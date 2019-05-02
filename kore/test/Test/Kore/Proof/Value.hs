@@ -3,7 +3,6 @@ module Test.Kore.Proof.Value where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import qualified Kore.Builtin.Int as Builtin.Int

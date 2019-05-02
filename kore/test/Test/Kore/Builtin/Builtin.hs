@@ -21,7 +21,6 @@ import qualified Data.Set as Set
 import           GHC.Stack
                  ( HasCallStack )
 
-import qualified Kore.AST.Pure as AST
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.ASTVerifier.Error
@@ -53,6 +52,7 @@ import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Step.Step as Step
 import           Kore.Step.TermLike
 import           Kore.Syntax.Definition
+import qualified Kore.Syntax.Pattern as AST
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Procedure as Unification

@@ -10,7 +10,6 @@ import Test.Tasty.HUnit
 import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 
-import qualified Kore.AST.Pure as AST
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -42,7 +41,6 @@ import           Kore.Step.Simplification.Equals
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.TermLike
-import           Kore.Syntax.Equals
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import qualified SMT
@@ -404,14 +402,14 @@ test_equalsSimplification_TermLike =
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
                     }
                 )
             )
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
                     }
                 )
             )
@@ -423,14 +421,14 @@ test_equalsSimplification_TermLike =
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
                     }
                 )
             )
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "b"
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "b"
                     }
                 )
             )
@@ -442,14 +440,14 @@ test_equalsSimplification_TermLike =
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
                     }
                 )
             )
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort2
-                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
                     }
                 )
             )

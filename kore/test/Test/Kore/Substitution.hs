@@ -1,7 +1,7 @@
 module Test.Kore.Substitution where
 
-import           Kore.AST.Pure
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Syntax
 
 import Test.Kore
 

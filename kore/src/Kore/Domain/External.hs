@@ -31,8 +31,8 @@ import GHC.Generics
 
 import Control.Lens.TH.Rules
        ( makeLenses )
-import Kore.AST.Pure
 import Kore.Domain.Class
+import Kore.Syntax
 import Kore.Unparser
 
 data External child =

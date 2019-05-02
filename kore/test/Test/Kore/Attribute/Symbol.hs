@@ -11,7 +11,6 @@ import           Data.Default
 import           Data.Function
                  ( (&) )
 
-import Kore.AST.Pure
 import Kore.Attribute.Attributes
        ( Attributes (..) )
 import Kore.Attribute.Hook
@@ -19,6 +18,7 @@ import Kore.Attribute.Parser
 import Kore.Attribute.Symbol
 import Kore.Error
        ( Error )
+import Kore.Syntax.Pattern
 
 import Test.Kore.Comparators ()
 

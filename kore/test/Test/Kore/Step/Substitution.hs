@@ -10,7 +10,6 @@ import Test.Tasty.HUnit
 
 import qualified Data.Map as Map
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -29,7 +28,6 @@ import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutionsExcept )
 import qualified Kore.Step.Substitution as Substitution
 import           Kore.Step.TermLike
-                 ( TermLike )
 import           Kore.Unification.Error
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify

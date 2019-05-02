@@ -18,7 +18,6 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-import qualified Kore.AST.Pure as AST
 import           Kore.AST.Valid hiding
                  ( V )
 import           Kore.Attribute.Constructor
@@ -43,6 +42,7 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.TermLike
 import           Kore.Syntax.Definition
+import qualified Kore.Syntax.Pattern as AST
 import           Kore.Unification.Error
 import           Kore.Unification.Procedure
 import qualified Kore.Unification.Substitution as Substitution

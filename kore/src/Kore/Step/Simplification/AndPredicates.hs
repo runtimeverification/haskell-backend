@@ -11,7 +11,6 @@ module Kore.Step.Simplification.AndPredicates
     ( simplifyEvaluatedMultiPredicate
     ) where
 
-import           Kore.AST.Pure
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools

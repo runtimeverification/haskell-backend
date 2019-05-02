@@ -1,12 +1,9 @@
 {-|
-Module      : Kore.AST.Pure
-Description : Kore patterns specialized to a specific level
-Copyright   : (c) Runtime Verification, 2018
+Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-Maintainer  : traian.serbanuta@runtimeverification.com
 
 -}
-module Kore.AST.Pure
+module Kore.Syntax.Pattern
     ( PurePattern (..)
     , CommonPurePattern
     , ConcretePurePattern
@@ -24,7 +21,6 @@ module Kore.AST.Pure
     , Base, CofreeF (..)
     , PatternF (..)
     , module Control.Comonad
-    , module Kore.Syntax
     ) where
 
 import           Control.Comonad
@@ -55,10 +51,12 @@ import           GHC.Generics
 import           Kore.Annotation.Valid
                  ( Valid (..) )
 import qualified Kore.Attribute.Null as Attribute
-import           Kore.Syntax
+import           Kore.Syntax.Bottom
 import           Kore.Syntax.PatternF
                  ( PatternF (..) )
 import qualified Kore.Syntax.PatternF as PatternF
+import           Kore.Syntax.Top
+import           Kore.Syntax.Variable
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser

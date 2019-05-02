@@ -33,7 +33,6 @@ import           Data.String
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )

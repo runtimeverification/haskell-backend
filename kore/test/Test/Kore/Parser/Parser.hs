@@ -6,10 +6,10 @@ import Test.Tasty
 import Data.Text
        ( Text )
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Parser.Parser
+import           Kore.Syntax
 import           Kore.Syntax.Definition
 
 import Test.Kore hiding
@@ -443,9 +443,7 @@ domainValuePatternParserTests =
             $ mkDomainValue
             $ Domain.BuiltinExternal Domain.External
                 { domainValueSort = sortVariableSort "s1"
-                , domainValueChild =
-                    Kore.AST.Pure.eraseAnnotations
-                    $ mkStringLiteral "a"
+                , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
                 }
         , FailureWithoutMessage
             [ ""
@@ -938,8 +936,7 @@ sentenceAliasParserTests =
                         $ Domain.BuiltinExternal Domain.External
                             { domainValueSort = resultSort
                             , domainValueChild =
-                                Kore.AST.Pure.eraseAnnotations
-                                $ mkStringLiteral "f"
+                                eraseAnnotations $ mkStringLiteral "f"
                             }
                     , sentenceAliasAttributes = Attributes []
                     }

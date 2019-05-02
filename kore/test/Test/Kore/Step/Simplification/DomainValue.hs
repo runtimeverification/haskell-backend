@@ -10,7 +10,6 @@ import Test.Tasty.HUnit
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -27,6 +26,7 @@ import           Kore.Step.Pattern
 import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.DomainValue
                  ( simplify )
+import           Kore.Syntax
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock

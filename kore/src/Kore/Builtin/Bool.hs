@@ -52,7 +52,6 @@ import qualified Data.Text as Text
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Parsec
 
-import qualified Kore.AST.Pure as AST
 import           Kore.AST.Valid
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
@@ -60,6 +59,7 @@ import qualified Kore.Error
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.TermLike
                  ( TermLike )
+import qualified Kore.Syntax.Pattern as AST
 
 {- | Builtin name of the @Bool@ sort.
  -}

@@ -32,16 +32,16 @@ import           GHC.Generics
                  ( Generic )
 
 import           Kore.Annotation.Valid
-import           Kore.AST.Pure
-                 ( CofreeF (..), PatternF (..) )
-import qualified Kore.AST.Pure as Pattern
 import           Kore.Attribute.Symbol
                  ( StepperAttributes, isConstructor_, isSortInjection_ )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.TermLike
                  ( Concrete, TermLike )
+import qualified Kore.Syntax as Syntax
 import           Kore.Syntax.Application
+import           Kore.Syntax.Pattern
+                 ( CofreeF (..), PatternF (..) )
 
 {- | Proof (by construction) that a pattern is a normalized value.
 
@@ -100,7 +100,7 @@ fromPattern
 fromPattern tools (ann :< pat) =
     case pat of
         ApplicationF
-            appP@Pattern.Application
+            appP@Syntax.Application
                 { applicationSymbolOrAlias = symbolOrAlias }
           | isConstructor symbolOrAlias ->
             -- The constructor application is normal if all its children are

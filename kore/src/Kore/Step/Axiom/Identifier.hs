@@ -24,14 +24,14 @@ module Kore.Step.Axiom.Identifier
     , extract
     ) where
 
-import Kore.AST.Pure
-       ( PurePattern )
 import Kore.AST.Valid
        ( pattern App_, pattern Ceil_ )
 import Kore.Syntax.Application
        ( SymbolOrAlias (..) )
 import Kore.Syntax.Id
        ( Id (..) )
+import Kore.Syntax.Pattern
+       ( PurePattern )
 
 {-| Identifer for the left-hand-side of axioms and for the terms with which
 these can be identified.

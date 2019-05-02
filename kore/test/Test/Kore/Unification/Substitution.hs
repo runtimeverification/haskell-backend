@@ -12,10 +12,8 @@ import Test.Terse
 import Prelude hiding
        ( null )
 
-import Kore.AST.Pure hiding
+import Kore.Step.TermLike hiding
        ( mapVariables )
-import Kore.Step.TermLike
-       ( TermLike )
 import Kore.TopBottom
        ( isBottom, isTop )
 import Kore.Unification.Substitution

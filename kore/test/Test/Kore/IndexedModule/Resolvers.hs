@@ -11,7 +11,6 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 import           Kore.Annotation.Valid
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.ASTHelpers
 import           Kore.ASTVerifier.DefinitionVerifier

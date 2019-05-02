@@ -19,7 +19,6 @@ import qualified Data.Map as Map
 import           Numeric.Natural
                  ( Natural )
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol

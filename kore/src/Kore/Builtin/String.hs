@@ -64,7 +64,6 @@ import           Numeric
                  ( readOct )
 import qualified Text.Megaparsec as Parsec
 
-import qualified Kore.AST.Pure as AST
 import           Kore.AST.Valid
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
@@ -74,6 +73,7 @@ import           Kore.Step.Pattern
                  ( Pattern )
 import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.TermLike
+import qualified Kore.Syntax.Pattern as AST
 
 {- | Builtin name of the @String@ sort.
  -}

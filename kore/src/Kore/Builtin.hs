@@ -38,7 +38,6 @@ import           Data.Semigroup
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Pure
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Hook
                  ( Hook (..) )

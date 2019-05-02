@@ -12,7 +12,6 @@ import qualified Data.List as List
 import qualified Data.Set as Set
 
 import           Kore.AST.AstWithLocation
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Hook as Attribute.Hook
@@ -23,6 +22,7 @@ import           Kore.IndexedModule.Error
 import           Kore.Step.TermLike hiding
                  ( freeVariables )
 import           Kore.Syntax.Definition
+import           Kore.Syntax.Pattern
 import qualified Kore.Verified as Verified
 
 import           Test.Kore
@@ -504,7 +504,7 @@ test_patternVerifier =
             Domain.External
                 { domainValueSort = intSort
                 , domainValueChild =
-                    Kore.AST.Pure.eraseAnnotations
+                    Kore.Syntax.Pattern.eraseAnnotations
                     $ mkStringLiteral "abcd"  -- Not a decimal integer
                 }
         )
@@ -519,7 +519,7 @@ test_patternVerifier =
             Domain.External
                 { domainValueSort = intSort
                 , domainValueChild =
-                    Kore.AST.Pure.eraseAnnotations
+                    Kore.Syntax.Pattern.eraseAnnotations
                     $ mkStringLiteral "-256"
                 }
         )
@@ -534,7 +534,7 @@ test_patternVerifier =
             Domain.External
                 { domainValueSort = intSort
                 , domainValueChild =
-                    Kore.AST.Pure.eraseAnnotations
+                    Kore.Syntax.Pattern.eraseAnnotations
                     $ mkStringLiteral "1024"
                 }
         )
@@ -549,7 +549,7 @@ test_patternVerifier =
             Domain.External
                 { domainValueSort = intSort
                 , domainValueChild =
-                    Kore.AST.Pure.eraseAnnotations
+                    Kore.Syntax.Pattern.eraseAnnotations
                     $ mkStringLiteral "+128"
                 }
         )
@@ -577,7 +577,7 @@ test_patternVerifier =
             Domain.External
                 { domainValueSort = boolSort
                 , domainValueChild =
-                    Kore.AST.Pure.eraseAnnotations
+                    Kore.Syntax.Pattern.eraseAnnotations
                     $ mkStringLiteral "untrue"  -- Not a BOOL.Bool
                 }
         )
@@ -592,7 +592,7 @@ test_patternVerifier =
             Domain.External
                 { domainValueSort = boolSort
                 , domainValueChild =
-                    Kore.AST.Pure.eraseAnnotations
+                    Kore.Syntax.Pattern.eraseAnnotations
                     $ mkStringLiteral "true"
                 }
         )
@@ -607,7 +607,7 @@ test_patternVerifier =
             Domain.External
                 { domainValueSort = boolSort
                 , domainValueChild =
-                    Kore.AST.Pure.eraseAnnotations
+                    Kore.Syntax.Pattern.eraseAnnotations
                     $ mkStringLiteral "false"
                 }
         )

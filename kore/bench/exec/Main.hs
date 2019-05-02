@@ -13,7 +13,6 @@ import qualified Data.Set as Set
 import           Numeric.Natural
                  ( Natural )
 
-import           Kore.AST.Pure
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  verifyAndIndexDefinition )
@@ -38,6 +37,7 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.TermLike
 import           Kore.Syntax.Module
                  ( ModuleName (..) )
+import           Kore.Syntax.Pattern
 import qualified SMT
 
 import           System.Directory

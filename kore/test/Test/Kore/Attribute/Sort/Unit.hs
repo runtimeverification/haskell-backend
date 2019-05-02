@@ -3,9 +3,9 @@ module Test.Kore.Attribute.Sort.Unit where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.AST.Pure
 import Kore.Attribute.Sort.Unit
 import Kore.Syntax.Definition
+import Kore.Syntax.Pattern
 
 import Test.Kore.Attribute.Parser
 

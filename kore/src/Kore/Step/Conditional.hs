@@ -28,10 +28,10 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Pure
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Syntax
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unification.Substitution

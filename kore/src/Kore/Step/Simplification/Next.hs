@@ -11,12 +11,12 @@ module Kore.Step.Simplification.Next
     ( simplify
     ) where
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
 import qualified Kore.Step.Pattern as Pattern
+import           Kore.Syntax
 import           Kore.Unparser
 
 -- TODO: Move Next up in the other simplifiers or something similar. Note

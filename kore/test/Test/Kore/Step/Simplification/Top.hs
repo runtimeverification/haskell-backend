@@ -7,13 +7,13 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Kore.AST.Pure
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
 import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Top
                  ( simplify )
+import           Kore.Syntax
 
 import Test.Kore.Comparators ()
 import Test.Kore.Step.MockSymbols

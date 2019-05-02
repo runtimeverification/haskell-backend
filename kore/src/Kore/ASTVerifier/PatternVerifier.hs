@@ -45,7 +45,6 @@ import           Kore.Annotation.Valid
                  ( Valid (..) )
 import qualified Kore.Annotation.Valid as Valid
 import           Kore.AST.Error
-import           Kore.AST.Pure
 import           Kore.ASTHelpers
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.SortVerifier
@@ -57,6 +56,7 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
 import           Kore.Parser
                  ( ParsedPattern )
+import           Kore.Syntax
 import           Kore.Syntax.Definition
 import           Kore.Unparser
 import qualified Kore.Variables.Free as Variables

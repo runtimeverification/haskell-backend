@@ -73,8 +73,6 @@ import           GHC.Generics
 
 import           Kore.AST.Common
 import qualified Kore.AST.Error as Kore.Error
-import           Kore.AST.Pure hiding
-                 ( getStringLiteral )
 import           Kore.Attribute.Attributes
 import qualified Kore.Attribute.Null as Attribute
                  ( Null )
@@ -85,6 +83,7 @@ import           Kore.Error
 import qualified Kore.Error
 import           Kore.Sort
 import           Kore.Syntax.Application
+import           Kore.Syntax.Pattern
 import           Kore.Syntax.StringLiteral
                  ( StringLiteral (StringLiteral) )
 import           SMT.SimpleSMT

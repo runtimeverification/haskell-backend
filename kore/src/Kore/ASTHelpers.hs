@@ -26,10 +26,10 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Pure hiding
-                 ( substituteSortVariables )
 import qualified Kore.Attribute.Null as Attribute
 import           Kore.Error
+import           Kore.Syntax hiding
+                 ( substituteSortVariables )
 import           Kore.Syntax.Definition
 import           Kore.Variables.Free
 

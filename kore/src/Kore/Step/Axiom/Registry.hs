@@ -21,7 +21,6 @@ import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe, mapMaybe )
 
-import           Kore.AST.Pure
 import           Kore.Attribute.Axiom
                  ( Assoc (Assoc), Comm (Comm), Idem (Idem), Unit (Unit) )
 import qualified Kore.Attribute.Axiom as Attribute

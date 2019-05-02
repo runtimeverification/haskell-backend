@@ -87,7 +87,6 @@ import           GHC.Integer.Logarithms
                  ( integerLog2# )
 import qualified Text.Megaparsec.Char.Lexer as Parsec
 
-import qualified Kore.AST.Pure as AST
 import           Kore.AST.Valid
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
@@ -95,6 +94,7 @@ import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.TermLike as TermLike
+import qualified Kore.Syntax.Pattern as AST
 
 {- | Builtin name of the @Int@ sort.
  -}

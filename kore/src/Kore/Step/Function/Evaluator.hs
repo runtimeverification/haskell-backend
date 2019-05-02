@@ -53,9 +53,6 @@ import           Kore.Step.Simplification.Data
                  simplifyTerm )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.TermLike
-import           Kore.Syntax.Application
-import           Kore.Syntax.Id
-import qualified Kore.Syntax.PatternF as Syntax
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -120,7 +117,7 @@ evaluateApplication
     SymbolOrAlias { symbolOrAliasConstructor = symbolId } = appHead
 
     appPurePattern =
-        Recursive.embed (valid :< Syntax.ApplicationF afterInj)
+        Recursive.embed (valid :< ApplicationF afterInj)
 
     unchangedPatt =
         Conditional

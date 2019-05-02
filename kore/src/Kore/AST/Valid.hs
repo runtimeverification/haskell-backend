@@ -103,8 +103,8 @@ import           GHC.Stack
 
 import           Kore.Annotation.Valid as Valid
 import           Kore.AST.Lens
-import           Kore.AST.Pure
 import           Kore.Domain.Class
+import           Kore.Syntax
 import           Kore.Syntax.Definition
 import           Kore.Unparser
                  ( Unparse, renderDefault, unparseToString )

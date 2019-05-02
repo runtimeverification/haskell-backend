@@ -3,8 +3,8 @@ module Test.Kore.Attribute.ProductionID where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.AST.Pure
 import Kore.Attribute.ProductionID
+import Kore.Syntax.Pattern
 
 import Test.Kore.Attribute.Parser
 

@@ -9,7 +9,6 @@ import           Data.Foldable
                  ( traverse_ )
 import qualified Data.Set as Set
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate as Predicate
 import           Kore.Step.TermLike

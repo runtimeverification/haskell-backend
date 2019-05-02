@@ -41,7 +41,6 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import qualified Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Logger.Output as Logger
@@ -58,7 +57,6 @@ import           Kore.Step.OrPattern
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.TermLike as TermLike
-import           Kore.Syntax
 import           Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
                  ( PatternF (..) )
@@ -306,7 +304,7 @@ genExternal :: Sort -> Gen (Domain.External child)
 genExternal domainValueSort =
     Domain.External
         domainValueSort
-        . Kore.AST.Pure.eraseAnnotations
+        . TermLike.eraseAnnotations
         . mkStringLiteral
         . getStringLiteral
         <$> stringLiteralGen

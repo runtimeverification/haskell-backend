@@ -1,6 +1,7 @@
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
+
  -}
 module Kore.Attribute.Attributes
     ( Attributes (..)
@@ -22,10 +23,10 @@ import           Data.Text
                  ( Text )
 import qualified GHC.Generics as GHC
 
-import           Kore.AST.Pure
 import qualified Kore.Attribute.Null as Attribute
                  ( Null )
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Syntax
 import           Kore.Unparser
 
 -- | A pure pattern which has only been parsed.

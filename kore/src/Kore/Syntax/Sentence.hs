@@ -50,14 +50,14 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Pure
-                 ( PurePattern )
 import           Kore.Attribute.Attributes
 import qualified Kore.Attribute.Null as Attribute
                  ( Null (..) )
 import           Kore.Sort
 import           Kore.Syntax.Application
 import           Kore.Syntax.Module
+import           Kore.Syntax.Pattern
+                 ( PurePattern )
 import           Kore.Syntax.Variable
 import           Kore.Unparser
 

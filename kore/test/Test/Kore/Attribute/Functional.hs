@@ -3,8 +3,8 @@ module Test.Kore.Attribute.Functional where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.AST.Pure
 import Kore.Attribute.Functional
+import Kore.Syntax.Pattern
 
 import Test.Kore.Attribute.Parser
 

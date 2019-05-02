@@ -3,8 +3,8 @@ module Test.Kore.Attribute.Simplification where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.AST.Pure
 import Kore.Attribute.Simplification
+import Kore.Syntax.Pattern
 
 import Test.Kore.Attribute.Parser
 

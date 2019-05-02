@@ -26,7 +26,6 @@ import           Data.Set
 import qualified Data.Set as Set
 
 import           Data.Graph.TopologicalSort
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes, isNonSimplifiable_ )
@@ -40,6 +39,7 @@ import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.TermLike
                  ( TermLike )
 import qualified Kore.Step.TermLike as TermLike
+import           Kore.Syntax
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution

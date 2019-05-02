@@ -27,7 +27,6 @@ import           Data.Void
 import           Numeric.Natural
 
 import           Data.Sup
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin.Error as Builtin
@@ -37,6 +36,7 @@ import           Kore.Proof.Functional
 import           Kore.Step.Conditional
 import qualified Kore.Step.Pattern as Step
                  ( Pattern )
+import           Kore.Syntax
 import           Kore.Syntax.Definition
 import           Kore.Unification.Substitution
                  ( Substitution )

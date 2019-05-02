@@ -30,8 +30,6 @@ import qualified Data.Map.Strict as Map
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Pure
-                 ( fromPurePattern )
 import           Kore.AST.Valid
                  ( Valid )
 import           Kore.Attribute.Symbol
@@ -50,6 +48,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.TermLike
                  ( TermLike )
 import           Kore.Syntax.Application
+import           Kore.Syntax.Pattern
+                 ( fromPurePattern )
 import           Kore.Syntax.PatternF
                  ( PatternF (..) )
 import           Kore.Syntax.Variable

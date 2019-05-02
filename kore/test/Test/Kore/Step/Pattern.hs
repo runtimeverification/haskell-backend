@@ -11,7 +11,6 @@ import qualified Data.Set as Set
 import           Data.Text.Prettyprint.Doc
                  ( Pretty (..) )
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid hiding
                  ( V )
 import           Kore.Predicate.Predicate

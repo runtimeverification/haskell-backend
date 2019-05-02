@@ -16,11 +16,12 @@ module Kore.Verified
 
 import           Kore.Annotation.Valid
                  ( Valid )
-import           Kore.AST.Pure
 import qualified Kore.Domain.Builtin as Domain
+import qualified Kore.Syntax.Pattern as Syntax
 import qualified Kore.Syntax.Sentence as Syntax
+import           Kore.Syntax.Variable
 
-type Pattern = PurePattern Domain.Builtin Variable (Valid Variable)
+type Pattern = Syntax.PurePattern Domain.Builtin Variable (Valid Variable)
 
 type Sentence = Syntax.Sentence Pattern
 

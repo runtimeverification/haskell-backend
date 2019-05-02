@@ -11,11 +11,11 @@ module Kore.Step.Simplification.SetVariable
     ( simplify
     ) where
 
-import           Kore.AST.Pure
 import           Kore.AST.Valid
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
+import           Kore.Syntax
 
 {-| 'simplify' simplifies a 'Variable' pattern, which means returning
 an or containing a term made of that variable.

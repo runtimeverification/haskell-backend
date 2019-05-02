@@ -3,8 +3,8 @@ module Test.Kore.Attribute.Subsort where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.AST.Pure
 import Kore.Attribute.Subsort
+import Kore.Syntax.Pattern
 
 import Test.Kore
        ( sortActual )

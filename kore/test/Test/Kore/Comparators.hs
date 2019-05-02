@@ -24,7 +24,6 @@ import           Numeric.Natural
 
 import qualified Kore.AllPath as AllPath
 import           Kore.Annotation.Valid
-import           Kore.AST.Pure
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Location as Attribute
 import qualified Kore.Attribute.Null as Attribute

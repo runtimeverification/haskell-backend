@@ -29,7 +29,6 @@ import qualified Data.Functor.Foldable as Recursive
 import           Data.Reflection
                  ( give )
 
-import           Kore.AST.Pure
 import           Kore.Attribute.Symbol
 import           Kore.Builtin.Attributes
                  ( isConstructorModulo_ )

@@ -5,9 +5,9 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import           Kore.AST.Pure
 import           Kore.ASTPrettyPrint
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Syntax
 
 import Test.Kore
 

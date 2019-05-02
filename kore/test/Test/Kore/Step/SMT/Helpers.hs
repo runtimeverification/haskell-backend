@@ -32,8 +32,6 @@ import GHC.Stack
 import Numeric.Natural
        ( Natural )
 
-import           Kore.AST.Pure
-                 ( eraseAnnotations )
 import           Kore.AST.Valid
                  ( mkApp, mkBottom, mkExists, mkOr, mkVar )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -55,6 +53,8 @@ import           Kore.Syntax.Application
 import           Kore.Syntax.Application as SymbolOrAlias
                  ( SymbolOrAlias (..) )
 import           Kore.Syntax.Definition
+import           Kore.Syntax.Pattern
+                 ( eraseAnnotations )
 import qualified Kore.Syntax.Sentence as SentenceAxiom
                  ( SentenceAxiom (..) )
 import           Kore.Syntax.Variable
