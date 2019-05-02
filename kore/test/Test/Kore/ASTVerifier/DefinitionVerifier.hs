@@ -648,8 +648,8 @@ simpleSort sortName =
 objectVariableSort :: Text -> Sort
 objectVariableSort name = sortVariableSort name
 
-unifiedSortVariable :: Object -> SortVariableName -> SortVariable
-unifiedSortVariable _x (SortVariableName name) = sortVariable name
+namedSortVariable :: SortVariableName -> SortVariable
+namedSortVariable (SortVariableName name) = sortVariable name
 
 stringUnifiedPattern :: Text -> TermLike Variable
 stringUnifiedPattern s = (mkStringLiteral s)

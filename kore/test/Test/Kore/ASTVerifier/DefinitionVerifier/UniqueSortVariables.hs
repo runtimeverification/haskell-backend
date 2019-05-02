@@ -265,22 +265,22 @@ test_uniqueSortVariables =
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
                 (stringUnifiedPattern "hello")
-                [ unifiedSortVariable Object (SortVariableName "sv") ]
+                [ namedSortVariable (SortVariableName "sv") ]
             ]
         )
     , expectSuccess "Axiom with one meta sort parameter"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
                 (stringUnifiedPattern "hello")
-                [ unifiedSortVariable Meta (SortVariableName "#sv") ]
+                [ namedSortVariable (SortVariableName "#sv") ]
             ]
         )
     , expectSuccess "Axiom with two object sort parameters"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
                 (stringUnifiedPattern "hello")
-                [ unifiedSortVariable Object (SortVariableName "sv1")
-                , unifiedSortVariable Object (SortVariableName "sv2")
+                [ namedSortVariable (SortVariableName "sv1")
+                , namedSortVariable (SortVariableName "sv2")
                 ]
             ]
         )
@@ -288,8 +288,8 @@ test_uniqueSortVariables =
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
                 (stringUnifiedPattern "hello")
-                [ unifiedSortVariable Meta (SortVariableName "#sv1")
-                , unifiedSortVariable Meta (SortVariableName "#sv2")
+                [ namedSortVariable (SortVariableName "#sv1")
+                , namedSortVariable (SortVariableName "#sv2")
                 ]
             ]
         )
@@ -297,8 +297,8 @@ test_uniqueSortVariables =
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
                 (stringUnifiedPattern "hello")
-                [ unifiedSortVariable Object (SortVariableName "sv")
-                , unifiedSortVariable Meta (SortVariableName "#sv")
+                [ namedSortVariable (SortVariableName "sv")
+                , namedSortVariable (SortVariableName "#sv")
                 ]
             ]
         )
@@ -408,8 +408,8 @@ test_uniqueSortVariables =
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
                 (stringUnifiedPattern "hello")
-                [ unifiedSortVariable Object (SortVariableName "sv")
-                , unifiedSortVariable Object (SortVariableName "sv")
+                [ namedSortVariable (SortVariableName "sv")
+                , namedSortVariable (SortVariableName "sv")
                 ]
             ]
         )
@@ -422,8 +422,8 @@ test_uniqueSortVariables =
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
                 (stringUnifiedPattern "hello")
-                [ unifiedSortVariable Meta (SortVariableName "#sv")
-                , unifiedSortVariable Meta (SortVariableName "#sv")
+                [ namedSortVariable (SortVariableName "#sv")
+                , namedSortVariable (SortVariableName "#sv")
                 ]
             ]
         )

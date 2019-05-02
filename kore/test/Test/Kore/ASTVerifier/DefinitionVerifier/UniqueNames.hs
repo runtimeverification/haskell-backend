@@ -79,7 +79,7 @@ test_uniqueNames =
         (simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
                 (unifiedVariablePattern (VariableName "#a") charMetaSort)
-                [unifiedSortVariable Meta (SortVariableName "#a")]
+                [namedSortVariable (SortVariableName "#a")]
             ]
         )
     , expectFailureWithError "Definition with two identical sort names."
