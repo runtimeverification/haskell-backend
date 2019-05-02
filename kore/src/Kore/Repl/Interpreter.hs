@@ -770,21 +770,30 @@ showDotGraph len =
         . Graph.graphToDot (graphParams len)
 
 saveDotGraph :: Int -> InnerGraph -> FilePath -> IO ()
-saveDotGraph len gr file =
+saveDotGraph len gr =
     void
-    $ Graph.runGraphviz (Graph.graphToDot (graphParams len) gr) Graph.Jpeg file
+    . Graph.runGraphviz
+        (Graph.graphToDot (graphParams len) gr) Graph.Jpeg
 
+graphParams
+    :: Int
+    -> Graph.GraphvizParams
+         Graph.Node
+         (CommonStrategyPattern Object)
+         (Seq (RewriteRule Object Variable))
+         ()
+         (CommonStrategyPattern Object)
 graphParams len = Graph.nonClusteredParams
     { Graph.fmtEdge = \(_, _, l) ->
         [Graph.textLabel (ruleIndex l len)]
     }
   where
-    ruleIndex lbl len =
+    ruleIndex lbl ln =
         case listToMaybe . toList $ lbl of
             Nothing -> "Simpl/RD"
             Just rule ->
                 maybe "Unknown" Text.Lazy.pack
-                    . showAxiomOrClaim len
+                    . showAxiomOrClaim ln
                     . Attribute.identifier
                     . Rule.attributes
                     . Rule.getRewriteRule
