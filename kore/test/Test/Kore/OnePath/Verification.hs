@@ -68,7 +68,7 @@ test_onePathVerification =
             [simpleAxiom Mock.a Mock.b]
             [simpleClaim Mock.a Mock.b]
         assertEqualWithExplanation ""
-            (Left $ OrPattern.fromPatterns [Pattern.fromTermLike Mock.a])
+            (Left $ OrPattern.fromTermLike Mock.a)
             actual
     , testCase "Runs one step" $ do
         -- Axiom: a => b
@@ -85,7 +85,7 @@ test_onePathVerification =
             [simpleAxiom Mock.a Mock.b]
             [simpleClaim Mock.a Mock.b]
         assertEqualWithExplanation ""
-            (Left $ OrPattern.fromPatterns [Pattern.fromTermLike Mock.b])
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "Returns multiple results" $ do
         -- Axiom: a => b or c
@@ -124,7 +124,7 @@ test_onePathVerification =
             , simpleClaim Mock.a Mock.b
             ]
         assertEqualWithExplanation ""
-            (Left $ OrPattern.fromPatterns [Pattern.fromTermLike Mock.a])
+            (Left $ OrPattern.fromTermLike Mock.a)
             actual
     , testCase "Verifies one claim multiple steps" $ do
         -- Axiom: a => b
@@ -190,15 +190,14 @@ test_onePathVerification =
             ]
             [simpleClaim (Mock.functionalConstr10 (mkVar Mock.x)) Mock.b]
         assertEqualWithExplanation ""
-            (Left $ OrPattern.fromPatterns
-                [ Conditional
+            (Left $ OrPattern.fromPattern
+                Conditional
                     { term = Mock.functionalConstr11 (mkVar Mock.x)
                     , predicate =
                         makeNotPredicate
                             (makeEqualsPredicate (mkVar Mock.x) Mock.a)
                     , substitution = mempty
                     }
-                ]
             )
             actual
     , testCase "Verifies two claims" $ do
@@ -239,7 +238,7 @@ test_onePathVerification =
             , simpleClaim Mock.d Mock.e
             ]
         assertEqualWithExplanation ""
-            (Left $ OrPattern.fromPatterns [Pattern.fromTermLike Mock.c])
+            (Left $ OrPattern.fromTermLike Mock.c)
             actual
     , testCase "fails second of two claims" $ do
         -- Axiom: a => b
@@ -259,7 +258,7 @@ test_onePathVerification =
             , simpleClaim Mock.d Mock.c
             ]
         assertEqualWithExplanation ""
-            (Left $ OrPattern.fromPatterns [Pattern.fromTermLike Mock.e])
+            (Left $ OrPattern.fromTermLike Mock.e)
             actual
     , testCase "second proves first but fails" $ do
         -- Axiom: a => b
@@ -277,7 +276,7 @@ test_onePathVerification =
             , simpleClaim Mock.b Mock.c
             ]
         assertEqualWithExplanation ""
-            (Left $ OrPattern.fromPatterns [Pattern.fromTermLike Mock.b])
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "first proves second but fails" $ do
         -- Axiom: a => b
@@ -295,7 +294,7 @@ test_onePathVerification =
             , simpleClaim Mock.a Mock.d
             ]
         assertEqualWithExplanation ""
-            (Left $ OrPattern.fromPatterns [Pattern.fromTermLike Mock.b])
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "trusted second proves first" $ do
         -- Axiom: a => b
@@ -354,7 +353,7 @@ test_onePathVerification =
             , simpleClaim Mock.b Mock.e
             ]
         assertEqualWithExplanation ""
-            (Left $ OrPattern.fromPatterns [Pattern.fromTermLike Mock.e])
+            (Left $ OrPattern.fromTermLike Mock.e)
             actual
     ]
   where
