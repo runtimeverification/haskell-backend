@@ -197,7 +197,7 @@ testSubsorts =
             DoNotVerifyAttributes
             Builtin.koreVerifiers
             testSubsortDefinition
-    meta :: MetadataTools Object () Attribute.Null
+    meta :: MetadataTools () Attribute.Null
     meta =
         extractMetadataTools
             (moduleIndex Map.! testObjectModuleName)
