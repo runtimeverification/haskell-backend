@@ -36,12 +36,8 @@ import           Control.Arrow
                  ( (&&&) )
 import           Control.Monad
                  ( unless, void )
-import           Data.Functor.Const
-                 ( Const )
 import           Data.Maybe
                  ( isJust )
-import           Data.Void
-                 ( Void )
 import           Text.Megaparsec
                  ( some )
 import qualified Text.Megaparsec.Char as Parser
@@ -654,9 +650,6 @@ builtinDomainParser _ = do
     stringLiteralPatternParser =
         asPurePattern . (mempty :<) . StringLiteralPattern
         <$> stringLiteralParser
-
-noDomainParser :: Parser child -> Parser (Const Void child)
-noDomainParser _ = unsupportedPatternType Meta DomainValuePatternType
 
 {-|'korePatternParser' parses an unifiedPattern
 

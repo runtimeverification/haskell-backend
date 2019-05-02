@@ -5,7 +5,6 @@ License     : NCSA
 
 module Kore.Step.TermLike
     ( TermLike
-    , module Kore.AST.MetaOrObject
     , module Kore.AST.Pure
     , freeVariables
     , hasFreeVariable
@@ -41,7 +40,6 @@ import qualified Kore.Annotation.Valid as Valid
 import           Kore.AST.Common
                  ( Pattern (..) )
 import qualified Kore.AST.Common as Base
-import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
                  ( And, Application, Bottom, Ceil, CofreeF (..), Concrete,
                  DomainValue, Equals, Exists, Floor, Forall, Id (..), Iff,

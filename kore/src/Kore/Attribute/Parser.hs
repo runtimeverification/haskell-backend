@@ -48,7 +48,6 @@ module Kore.Attribute.Parser
     , Generic
     , NFData
     , module Kore.AST.Common
-    , module Kore.AST.MetaOrObject
     , module Kore.Sort
     , module Kore.Syntax.Application
     ) where
@@ -73,7 +72,6 @@ import           GHC.Generics
 
 import           Kore.AST.Common
 import qualified Kore.AST.Error as Kore.Error
-import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure hiding
                  ( getStringLiteral )
 import           Kore.Attribute.Attributes

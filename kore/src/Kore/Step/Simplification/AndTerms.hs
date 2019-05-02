@@ -1077,7 +1077,7 @@ sortInjectionAndEqualsAssumesDifferentHeads
   where
     applyInjection sort injectionHead term = mkApp sort injectionHead [term]
 
-data SortInjectionMatch level variable =
+data SortInjectionMatch variable =
     SortInjectionMatch
         { injectionHead :: !SymbolOrAlias
         , sort :: !Sort
@@ -1085,10 +1085,10 @@ data SortInjectionMatch level variable =
         , secondChild :: !(TermLike variable)
         }
 
-data SortInjectionSimplification level variable
+data SortInjectionSimplification variable
   = NotInjection
   | NotMatching
-  | Matching !(SortInjectionMatch level variable)
+  | Matching !(SortInjectionMatch variable)
 
 simplifySortInjections
     :: forall variable
@@ -1096,7 +1096,7 @@ simplifySortInjections
     => SmtMetadataTools StepperAttributes
     -> TermLike variable
     -> TermLike variable
-    -> Maybe (SortInjectionSimplification Object variable)
+    -> Maybe (SortInjectionSimplification variable)
 simplifySortInjections
     tools
     (App_
@@ -1154,7 +1154,7 @@ simplifySortInjections
 
         when src1 is a subsort of src2.
      -}
-    mergeFirstIntoSecond ::  SortInjectionSimplification Object variable
+    mergeFirstIntoSecond ::  SortInjectionSimplification variable
     mergeFirstIntoSecond =
         Matching SortInjectionMatch
             { injectionHead = SymbolOrAlias
@@ -1175,7 +1175,7 @@ simplifySortInjections
 
         when src2 is a subsort of src1.
      -}
-    mergeSecondIntoFirst :: SortInjectionSimplification Object variable
+    mergeSecondIntoFirst :: SortInjectionSimplification variable
     mergeSecondIntoFirst =
         Matching SortInjectionMatch
             { injectionHead = SymbolOrAlias

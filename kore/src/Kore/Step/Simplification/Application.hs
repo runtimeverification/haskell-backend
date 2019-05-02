@@ -42,7 +42,7 @@ import           Kore.Syntax.Application
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
-type ExpandedApplication level variable =
+type ExpandedApplication variable =
     Conditional
         variable
         (CofreeF
@@ -200,7 +200,7 @@ evaluateApplicationFunction
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> ExpandedApplication Object variable
+    -> ExpandedApplication variable
     -- ^ The pattern to be evaluated
     -> Simplifier (OrPattern variable)
 evaluateApplicationFunction
@@ -235,7 +235,7 @@ makeExpandedApplication
     -> Valid variable
     -> SymbolOrAlias
     -> [Pattern variable]
-    -> Simplifier (ExpandedApplication Object variable)
+    -> Simplifier (ExpandedApplication variable)
 makeExpandedApplication
     tools
     substitutionSimplifier

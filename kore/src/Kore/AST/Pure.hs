@@ -27,7 +27,6 @@ module Kore.AST.Pure
     , Base, CofreeF (..)
     , module Control.Comonad
     , module Kore.AST.Common
-    , module Kore.AST.MetaOrObject
     , module Kore.Syntax
     ) where
 
@@ -64,7 +63,6 @@ import           Kore.AST.Common hiding
                  ( castVoidDomainValues, mapDomainValues, mapVariables,
                  traverseVariables )
 import qualified Kore.AST.Common as Head
-import           Kore.AST.MetaOrObject
 import qualified Kore.Attribute.Null as Attribute
 import           Kore.Syntax
 import           Kore.TopBottom
