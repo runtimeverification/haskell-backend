@@ -35,3 +35,4 @@ tags
 /haskell_documentation
 .stack-work-test
 test-results.xml
+.directory
