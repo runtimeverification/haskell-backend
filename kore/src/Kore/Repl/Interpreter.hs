@@ -17,7 +17,7 @@ import           Control.Lens
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import           Control.Monad
-                 ( foldM )
+                 ( foldM, void )
 import           Control.Monad.Extra
                  ( loop, loopM )
 import           Control.Monad.IO.Class
@@ -116,7 +116,7 @@ replInterpreter printFn replCmd = do
                 ShowClaim c        -> showClaim c        $> True
                 ShowAxiom a        -> showAxiom a        $> True
                 Prove i            -> prove i            $> True
-                ShowGraph          -> showGraph          $> True
+                ShowGraph mfile    -> showGraph mfile    $> True
                 ProveSteps n       -> proveSteps n       $> True
                 ProveStepsF n      -> proveStepsF n      $> True
                 SelectNode i       -> selectNode i       $> True
@@ -201,12 +201,16 @@ prove index = do
 
 showGraph
     :: MonadIO m
-    => MonadState (ReplState claim) m
+    => Maybe FilePath
+    -> MonadState (ReplState claim) m
     => m ()
-showGraph = do
+showGraph mfile = do
     graph <- getInnerGraph
     axioms <- Lens.use lensAxioms
-    liftIO $ showDotGraph (length axioms) graph
+    liftIO $ maybe
+            (showDotGraph (length axioms) graph)
+            (saveDotGraph (length axioms) graph)
+            mfile
 
 -- | Executes 'n' prove steps, or until branching occurs.
 proveSteps
@@ -757,18 +761,33 @@ printNotFound = putStrLn' "Variable or index not found"
 showDotGraph :: Int -> InnerGraph -> IO ()
 showDotGraph len =
     (flip Graph.runGraphvizCanvas') Graph.Xlib
-        . Graph.graphToDot params
+        . Graph.graphToDot (graphParams len)
+
+saveDotGraph :: Int -> InnerGraph -> FilePath -> IO ()
+saveDotGraph len gr =
+    void
+    . Graph.runGraphviz
+        (Graph.graphToDot (graphParams len) gr) Graph.Jpeg
+
+graphParams
+    :: Int
+    -> Graph.GraphvizParams
+         Graph.Node
+         CommonStrategyPattern
+         (Seq (RewriteRule Variable))
+         ()
+         CommonStrategyPattern
+graphParams len = Graph.nonClusteredParams
+    { Graph.fmtEdge = \(_, _, l) ->
+        [Graph.textLabel (ruleIndex l len)]
+    }
   where
-    params = Graph.nonClusteredParams
-        { Graph.fmtEdge = \(_, _, l) ->
-            [Graph.textLabel (ruleIndex l)]
-        }
-    ruleIndex lbl =
+    ruleIndex lbl ln =
         case listToMaybe . toList $ lbl of
             Nothing -> "Simpl/RD"
             Just rule ->
                 maybe "Unknown" Text.Lazy.pack
-                    . showAxiomOrClaim len
+                    . showAxiomOrClaim ln
                     . Attribute.identifier
                     . Rule.attributes
                     . Rule.getRewriteRule

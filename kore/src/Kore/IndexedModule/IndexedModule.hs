@@ -54,6 +54,7 @@ import qualified Control.Monad.State.Strict as Monad.State
 import           Data.Bifunctor
 import           Data.Default as Default
 import qualified Data.Foldable as Foldable
+import qualified Data.List as List
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
@@ -397,6 +398,7 @@ the module is already in the 'IndexedModule' map.
 indexModuleIfNeeded
     ::  ( ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
+        , Ord sentence
         , sentence ~ Sentence patternType
         , indexed ~ IndexedModule patternType declAttrs axiomAttrs
         )
@@ -408,16 +410,12 @@ indexModuleIfNeeded
     -- ^ Map containing all modules that were already indexed.
     -> Module sentence
     -- ^ Module to be indexed
-    -> Either
-        (Error IndexModuleError)
-        (Map.Map ModuleName indexed)
+    -> Either (Error IndexModuleError) (Map.Map ModuleName indexed)
     -- ^ If the module was indexed succesfully, the map returned on 'Right'
     -- contains everything that the provided 'IndexedModule' map contained,
     -- plus the current module, plus all the modules that were indexed when
     -- resolving imports.
-indexModuleIfNeeded
-    implicitModule nameToModule indexedModules koreModule
-  =
+indexModuleIfNeeded implicitModule nameToModule indexedModules koreModule =
     fst <$>
         internalIndexModuleIfNeeded
             implicitModule Set.empty nameToModule indexedModules koreModule
@@ -425,6 +423,7 @@ indexModuleIfNeeded
 internalIndexModuleIfNeeded
     ::  ( ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
+        , Ord sentence
         , sentence ~ Sentence patternType
         , indexed ~ IndexedModule patternType declAttrs axiomAttrs
         )
@@ -456,13 +455,15 @@ internalIndexModuleIfNeeded
                                     (parsedModuleAtts, moduleAtts)
                                 }
                             )
-                    (newIndex, newModule) <- foldM
-                        (indexModuleKoreSentence
-                            implicitModule
-                            importingModulesWithCurrentOne
-                            nameToModule)
-                        indexedModulesAndStartingIndexedModule
-                        (moduleSentences koreModule)
+                    (newIndex, newModule) <-
+                        foldM
+                            (indexModuleSentence
+                                implicitModule
+                                importingModulesWithCurrentOne
+                                nameToModule
+                            )
+                            indexedModulesAndStartingIndexedModule
+                            (List.sort $ moduleSentences koreModule)
                     -- Parse subsorts to fail now if subsort attributes are
                     -- malformed, so indexedModuleSubsorts can appear total
                     -- TODO: consider making subsorts an IndexedModule field
@@ -477,23 +478,10 @@ internalIndexModuleIfNeeded
     koreModuleName = moduleName koreModule
     importingModulesWithCurrentOne = Set.insert koreModuleName importingModules
 
-indexModuleKoreSentence
-    ::  ( ParseAttributes declAttrs
-        , ParseAttributes axiomAttrs
-        , sentence ~ Sentence patternType
-        , indexed ~ IndexedModule patternType declAttrs axiomAttrs
-        )
-    => Maybe (ImplicitIndexedModule patternType declAttrs axiomAttrs)
-    -> Set.Set ModuleName
-    -> Map.Map ModuleName (Module sentence)
-    -> (Map.Map ModuleName indexed, indexed)
-    -> sentence
-    -> Either (Error IndexModuleError) (Map.Map ModuleName indexed, indexed)
-indexModuleKoreSentence = indexModuleSentence
-
 indexModuleSentence
     ::  ( ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
+        , Ord sentence
         , sentence ~ Sentence patternType
         , indexed ~ IndexedModule patternType declAttrs axiomAttrs
         )
@@ -686,6 +674,7 @@ indexModuleSentence
 indexImportedModule
     ::  ( ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
+        , Ord sentence
         , sentence ~ Sentence patternType
         , indexed ~ IndexedModule patternType declAttrs axiomAttrs
         )
