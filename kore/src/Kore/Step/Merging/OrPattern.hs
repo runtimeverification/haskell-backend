@@ -14,6 +14,8 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.MultiOr
+                 ( MultiOr )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import           Kore.Internal.Pattern
@@ -21,8 +23,6 @@ import           Kore.Internal.Pattern
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.Pattern as Pattern
-import           Kore.Step.Representation.MultiOr
-                 ( MultiOr )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Substitution

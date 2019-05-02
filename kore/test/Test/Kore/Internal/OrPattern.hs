@@ -4,8 +4,8 @@ import           Hedgehog
                  ( Property, (===) )
 import qualified Hedgehog
 
+import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 
 import Test.Kore
 

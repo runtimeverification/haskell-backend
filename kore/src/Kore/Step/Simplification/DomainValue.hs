@@ -16,10 +16,10 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Internal.Conditional
                  ( Conditional )
+import           Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import           Kore.Internal.TermLike
-import           Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Unparser
 
 {-| 'simplify' simplifies a 'DomainValue' pattern, which means returning

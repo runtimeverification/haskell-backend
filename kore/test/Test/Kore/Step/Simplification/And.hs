@@ -11,6 +11,8 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.MultiOr
+                 ( MultiOr (MultiOr) )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -19,8 +21,6 @@ import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeFalsePredicate, makeTruePredicate )
-import           Kore.Step.Representation.MultiOr
-                 ( MultiOr (MultiOr) )
 import           Kore.Step.Simplification.And
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier, gather )

@@ -28,6 +28,10 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.MultiOr
+                 ( MultiOr )
+import qualified Kore.Internal.MultiOr as MultiOr
+                 ( extractPatterns, filterOr, fullCrossProduct, make )
 import           Kore.Internal.OrPredicate
                  ( OrPredicate )
 import qualified Kore.Internal.OrPredicate as OrPredicate
@@ -42,10 +46,6 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Merging.OrPattern as OrPattern
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
-import           Kore.Step.Representation.MultiOr
-                 ( MultiOr )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( extractPatterns, filterOr, fullCrossProduct, make )
 import           Kore.Step.Simplification.AndTerms
                  ( SortInjectionMatch (SortInjectionMatch),
                  simplifySortInjections )

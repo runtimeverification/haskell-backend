@@ -28,7 +28,7 @@ import           Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
+import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.TermLike
 import           Kore.Syntax.Or
 import           Kore.Unparser

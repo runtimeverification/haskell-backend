@@ -1,5 +1,5 @@
 {-|
-Module      : Kore.Step.Representation.MultiOr
+Module      : Kore.Internal.MultiOr
 Description : Data structures and functions for manipulating
               Or with any number of children.
 Copyright   : (c) Runtime Verification, 2019
@@ -8,7 +8,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Step.Representation.MultiOr
+module Kore.Internal.MultiOr
     ( MultiOr (..)
     , crossProductGeneric
     , crossProductGenericF
