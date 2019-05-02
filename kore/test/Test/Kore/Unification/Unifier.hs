@@ -230,7 +230,7 @@ unificationSubstitution = map trans
         )
 
 unificationResult
-    :: UnificationResultTerm Object
+    :: UnificationResultTerm
     -> Substitution
     -> Syntax.Predicate Variable
     -> Pattern Variable
@@ -242,13 +242,13 @@ unificationResult (UnificationResultTerm term) sub predicate =
         }
 
 newtype UnificationTerm = UnificationTerm (TermLike Variable)
-newtype UnificationResultTerm level = UnificationResultTerm (TermLike Variable)
+newtype UnificationResultTerm = UnificationResultTerm (TermLike Variable)
 
 andSimplifySuccess
     :: HasCallStack
     => UnificationTerm
     -> UnificationTerm
-    -> UnificationResultTerm Object
+    -> UnificationResultTerm
     -> Substitution
     -> Syntax.Predicate Variable
     -> Assertion
