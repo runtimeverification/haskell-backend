@@ -83,7 +83,7 @@ import           Kore.Parser
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
-type SortDescription level dom =
+type SortDescription dom =
     SentenceSort (PurePattern dom Variable Attribute.Null)
 
 data IndexModuleError
@@ -731,8 +731,7 @@ parseAttributes
     :: ParseAttributes a
     => Attributes
     -> Either (Error IndexModuleError) a
-parseAttributes =
-    Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
+parseAttributes = Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
 
 {- | Retrieve those object-level symbol sentences that are hooked.
 

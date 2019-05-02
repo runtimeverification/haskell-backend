@@ -22,7 +22,7 @@ import Kore.Syntax.Definition
 {-|'verifySort' verifies the welformedness of a Kore 'Sort'. -}
 verifySort
     :: MonadError (Error VerifyError) m
-    => (Id -> m (SortDescription Object dom))
+    => (Id -> m (SortDescription dom))
     -- ^ Provides a sortMetaSorts description.
     -> Set.Set SortVariable
     -- ^ Sort variables visible here.
@@ -61,10 +61,10 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort)
 
 verifySortMatchesDeclaration
     :: MonadError (Error VerifyError) m
-    => (Id -> m (SortDescription Object dom))
+    => (Id -> m (SortDescription dom))
     -> Set.Set SortVariable
     -> SortActual
-    -> SortDescription Object dom
+    -> SortDescription dom
     -> m VerifySuccess
 verifySortMatchesDeclaration
     findSortDescription declaredSortVariables sort sortDescription

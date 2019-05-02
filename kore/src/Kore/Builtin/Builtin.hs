@@ -149,7 +149,7 @@ type Parser = Parsec Void Text
 
 type Function = BuiltinAndAxiomSimplifier
 
-type HookedSortDescription = SortDescription Object Domain.Builtin
+type HookedSortDescription = SortDescription Domain.Builtin
 
 -- | Verify a sort declaration.
 type SortDeclVerifier =
