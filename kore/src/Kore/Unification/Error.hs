@@ -11,7 +11,6 @@ module Kore.Unification.Error
     ( SubstitutionError (..)
     , UnificationError (..)
     , UnificationOrSubstitutionError (..)
-    , ClashReason (..)
     , mapSubstitutionErrorVariables
     , substitutionErrorVariables
     , substitutionToUnifyOrSubError
@@ -58,7 +57,7 @@ instance Pretty UnificationError where
     pretty (UnsupportedSymbolic err) = Pretty.unAnnotate err
 
 -- |@ClashReason@ describes the head of a pattern involved in a clash.
-data ClashReason level
+data ClashReason
     = HeadClash SymbolOrAlias
     | DomainValueClash String
     | SortInjectionClash Sort Sort

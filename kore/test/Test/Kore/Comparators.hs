@@ -792,11 +792,6 @@ instance EqualWithExplanation UnificationError
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (ClashReason Object)
-  where
-    compareWithExplanation = rawCompareWithExplanation
-    printWithExplanation = show
-
 instance (Show variable, EqualWithExplanation variable)
     => SumEqualWithExplanation (SubstitutionError variable)
   where

@@ -41,9 +41,8 @@ import           Kore.Syntax.Definition
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.Unifier
 import           Kore.Unparser
-                 ( escapeCharT, escapeString, escapeStringT )
+                 ( escapeCharT, escapeStringT )
 
 {-# ANN module ("HLint: ignore Use record patterns" :: String) #-}
 {-
@@ -92,17 +91,6 @@ writeOneFieldStruct
     => Flags -> String -> a -> Doc ann
 writeOneFieldStruct flags name content =
     writeOneFieldStructK flags name (prettyPrint NeedsParentheses content)
-
-writeTwoFieldStruct
-    :: (PrettyPrint a, PrettyPrint b)
-    => Flags -> String -> a -> b -> Doc ann
-writeTwoFieldStruct flags name contenta contentb =
-    writeOneFieldStructK
-        flags
-        name
-        (   prettyPrint NeedsParentheses contenta
-        <+> prettyPrint NeedsParentheses contentb
-        )
 
 writeThreeFieldStruct
     :: (PrettyPrint a, PrettyPrint b, PrettyPrint c)
@@ -707,19 +695,6 @@ instance (PrettyPrint a, PrettyPrint b) => PrettyPrint (a, b) where
                 [ prettyPrint MaySkipParentheses x
                 , prettyPrint MaySkipParentheses y
                 ])
-
--- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
-instance  PrettyPrint (ClashReason level) where
-    prettyPrint flags (DomainValueClash h) =
-        betweenParentheses
-            flags
-            ("DomainValueClash "
-            <> dquotes (fromString (escapeString h))
-            )
-    prettyPrint flags (HeadClash h) =
-        writeOneFieldStruct flags "HeadClash" h
-    prettyPrint flags (SortInjectionClash s1 s2) =
-        writeTwoFieldStruct flags "SortInjectionClash" s1 s2
 
 instance PrettyPrint variable => PrettyPrint (FunctionalProof level variable)
   where
