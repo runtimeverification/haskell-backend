@@ -110,7 +110,7 @@ data ReplCommand
     -- ^ Show the nth axiom.
     | Prove !Int
     -- ^ Drop the current proof state and re-initialize for the nth claim.
-    | ShowGraph
+    | ShowGraph !(Maybe FilePath)
     -- ^ Show the current execution graph.
     | ProveSteps !Int
     -- ^ Do n proof steps from current node.
@@ -161,7 +161,8 @@ helpText =
     \axiom <n>                             shows the nth axiom\n\
     \prove <n>                             initializes proof mode for the nth \
                                            \claim\n\
-    \graph                                 shows the current proof graph (*)\n\
+    \graph [file]                          shows the current proof graph (*)\n\
+                                           \ (saves image if file argument is given)\n\
     \step [n]                              attempts to run 'n' proof steps at\
                                            \the current node (n=1 by default)\n\
     \stepf [n]                             attempts to run 'n' proof steps at\
@@ -209,7 +210,7 @@ shouldStore =
         Help             -> False
         ShowClaim _      -> False
         ShowAxiom _      -> False
-        ShowGraph        -> False
+        ShowGraph _      -> False
         ShowConfig _     -> False
         ShowLeafs        -> False
         ShowRule _       -> False
