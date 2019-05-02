@@ -14,6 +14,8 @@ import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
 import           Kore.Internal.Predicate
                  ( Conditional (..), Predicate )
 import qualified Kore.Internal.Predicate as Conditional
@@ -25,8 +27,6 @@ import           Kore.Step.Axiom.EvaluationStrategy
                  ( firstFullEvaluation )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data hiding
                  ( runSimplifier )

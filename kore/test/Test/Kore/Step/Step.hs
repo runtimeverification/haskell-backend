@@ -22,6 +22,8 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
 import           Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
@@ -31,8 +33,6 @@ import           Kore.Predicate.Predicate as Predicate
                  makeTruePredicate )
 import qualified Kore.Step.Axiom.Matcher as Matcher
 import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr

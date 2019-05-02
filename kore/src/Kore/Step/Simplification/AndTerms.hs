@@ -45,6 +45,9 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
+import qualified Kore.Internal.OrPredicate as OrPredicate
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Internal.Pattern as Pattern
@@ -55,9 +58,6 @@ import           Kore.Predicate.Predicate
                  makeNotPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
-import qualified Kore.Step.OrPredicate as OrPredicate
 import           Kore.Step.PatternAttributes
                  ( isConstructorLikeTop )
 import           Kore.Step.RecursiveAttributes

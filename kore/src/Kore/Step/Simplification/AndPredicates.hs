@@ -15,14 +15,14 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
 import           Kore.Internal.Pattern
                  ( Predicate )
 import qualified Kore.Internal.Pattern as Pattern
                  ( Conditional (..) )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
 import           Kore.Step.Representation.MultiAnd
                  ( MultiAnd )
 import qualified Kore.Step.Representation.MultiAnd as MultiAnd

@@ -31,6 +31,9 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
+import qualified Kore.Internal.OrPredicate as OrPredicate
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
@@ -44,9 +47,6 @@ import           Kore.Step.Conditional
                  ( Conditional (..) )
 import qualified Kore.Step.Function.Evaluator as Axiom
                  ( evaluatePattern )
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
-import qualified Kore.Step.OrPredicate as OrPredicate
 import           Kore.Step.RecursiveAttributes
                  ( isTotalPattern )
 import qualified Kore.Step.Representation.MultiAnd as MultiAnd

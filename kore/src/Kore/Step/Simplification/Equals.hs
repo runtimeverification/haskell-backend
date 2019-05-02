@@ -30,6 +30,9 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
+import qualified Kore.Internal.OrPredicate as OrPredicate
 import           Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
@@ -38,9 +41,6 @@ import           Kore.Predicate.Predicate
                  makeEqualsPredicate, makeNotPredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
-import qualified Kore.Step.OrPredicate as OrPredicate
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr

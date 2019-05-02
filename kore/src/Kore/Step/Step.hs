@@ -51,6 +51,8 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Predicate
                  ( Predicate )
@@ -64,8 +66,6 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.Conditional
                  ( Conditional (Conditional) )
 import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
 import qualified Kore.Step.Remainder as Remainder
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )

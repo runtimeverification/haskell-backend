@@ -8,7 +8,7 @@ import Kore.IndexedModule.MetadataTools
        ( SmtMetadataTools )
 import Kore.Step.Axiom.Data
        ( BuiltinAndAxiomSimplifierMap )
-import Kore.Step.OrPredicate
+import Kore.Internal.OrPredicate
        ( OrPredicate )
 import Kore.Step.Simplification.Data
        ( PredicateSimplifier, Simplifier, TermLikeSimplifier )

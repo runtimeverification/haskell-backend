@@ -18,6 +18,8 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Conditional
@@ -30,8 +32,6 @@ import           Kore.Predicate.Predicate
                  makeEqualsPredicate, makeIffPredicate, makeImpliesPredicate,
                  makeMultipleAndPredicate, makeNotPredicate, makeOrPredicate,
                  makeTruePredicate )
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )

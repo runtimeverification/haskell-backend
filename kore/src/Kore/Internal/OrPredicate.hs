@@ -3,7 +3,7 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 
 -}
-module Kore.Step.OrPredicate
+module Kore.Internal.OrPredicate
     ( OrPredicate
     , fromPredicates
     , fromPredicate

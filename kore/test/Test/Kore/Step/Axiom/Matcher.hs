@@ -18,6 +18,8 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
 import           Kore.Internal.Predicate
                  ( Conditional (..) )
 import qualified Kore.Internal.Predicate as Conditional
@@ -27,8 +29,6 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification, unificationWithAppMatchOnTop )
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( make )
 import           Kore.Step.Simplification.Data
