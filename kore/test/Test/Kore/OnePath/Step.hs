@@ -23,6 +23,9 @@ import qualified Data.Limit as Limit
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
+import           Kore.Internal.TermLike
+                 ( TermLike )
 import           Kore.OnePath.Step
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeNotPredicate,
@@ -40,9 +43,6 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.Strategy
                  ( Strategy, pickFinal, runStrategy )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Step.TermLike
-import           Kore.Step.TermLike
-                 ( TermLike )
 import           Kore.Syntax.Variable
                  ( Variable (..) )
 import qualified Kore.Unification.Substitution as Substitution

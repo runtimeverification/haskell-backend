@@ -36,11 +36,11 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
+import           Kore.Internal.TermLike
 import           Kore.Proof.Functional
 import           Kore.Step.PatternAttributesError
                  ( ConstructorLikeError (..), FunctionError (..),
                  FunctionalError (..), TotalError (..) )
-import           Kore.Step.TermLike
 import           Kore.Syntax
 
 functionalProofVars

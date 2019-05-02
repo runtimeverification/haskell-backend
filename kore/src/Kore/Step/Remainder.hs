@@ -14,6 +14,7 @@ import           Control.Applicative
 import qualified Data.Foldable as Foldable
 import qualified Data.Set as Set
 
+import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
@@ -27,7 +28,6 @@ import           Kore.Step.Representation.MultiAnd
 import qualified Kore.Step.Representation.MultiAnd as MultiAnd
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
-import           Kore.Step.TermLike
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution

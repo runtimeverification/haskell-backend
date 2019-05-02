@@ -37,6 +37,8 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
+                 ( TermLike )
 import           Kore.ModelChecker.Simplification
                  ( checkImplicationIsTop )
 import           Kore.Step.Axiom.Data
@@ -56,8 +58,6 @@ import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Step.TermLike
-                 ( TermLike )
 import           Kore.Syntax.Variable
                  ( Variable )
 import qualified Kore.Unification.Procedure as Unification

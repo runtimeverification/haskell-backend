@@ -6,7 +6,7 @@ import Test.Tasty
        ( TestTree )
 
 import           Kore.Error
-import           Kore.Step.TermLike
+import           Kore.Internal.TermLike
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 

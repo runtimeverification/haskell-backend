@@ -17,6 +17,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
@@ -33,7 +34,6 @@ import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Application
 import           Kore.Step.Simplification.Data
                  ( TermLikeSimplifier, evalSimplifier )
-import           Kore.Step.TermLike as TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
                  ( Unparse )

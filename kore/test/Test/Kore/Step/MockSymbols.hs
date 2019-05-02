@@ -46,11 +46,10 @@ import           Kore.IndexedModule.MetadataTools
                  ( HeadType )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
-import           Kore.Sort
+import           Kore.Internal.TermLike
 import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT
                  ( resolve )
-import           Kore.Step.TermLike
 import qualified SMT.AST as SMT
 import qualified SMT.SimpleSMT as SMT
 

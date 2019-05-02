@@ -63,6 +63,8 @@ import           Kore.Attribute.Axiom
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom (..), RuleIndex (..), sourceLocation )
 import           Kore.Attribute.RuleIndex
+import           Kore.Internal.TermLike
+                 ( TermLike )
 import           Kore.OnePath.Step
                  ( CommonStrategyPattern, StrategyPattern (..),
                  StrategyPatternTransformer (StrategyPatternTransformer),
@@ -84,8 +86,6 @@ import qualified Kore.Step.Rule as Axiom
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Step.TermLike
-                 ( TermLike )
 import           Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
                  ( Id (..) )

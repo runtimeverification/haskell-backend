@@ -29,6 +29,7 @@ import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiomResults (AttemptedAxiomResults),
                  BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap )
@@ -52,7 +53,6 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
                  simplifyTerm )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import           Kore.Step.TermLike
 import           Kore.Syntax
 import           Kore.Unparser
 import           Kore.Variables.Fresh

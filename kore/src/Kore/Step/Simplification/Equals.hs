@@ -27,6 +27,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeAndPredicate,
                  makeEqualsPredicate, makeNotPredicate )
@@ -59,7 +60,6 @@ import qualified Kore.Step.Simplification.Not as Not
                  ( simplifyEvaluated )
 import qualified Kore.Step.Simplification.Or as Or
                  ( simplifyEvaluated )
-import           Kore.Step.TermLike
 import           Kore.Syntax.Equals
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser

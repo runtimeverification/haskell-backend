@@ -11,7 +11,7 @@ import GHC.Stack
 import           Kore.Error
 import           Kore.IndexedModule.Error
                  ( noSort )
-import           Kore.Step.TermLike
+import           Kore.Internal.TermLike
 import           Kore.Syntax.Application
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified

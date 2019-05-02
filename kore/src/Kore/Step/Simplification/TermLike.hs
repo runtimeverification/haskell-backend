@@ -14,6 +14,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.OrPattern
@@ -67,7 +68,6 @@ import qualified Kore.Step.Simplification.Top as Top
                  ( simplify )
 import qualified Kore.Step.Simplification.Variable as Variable
                  ( simplify )
-import           Kore.Step.TermLike
 import qualified Kore.Syntax.PatternF as Syntax
 import           Kore.Unparser
 import           Kore.Variables.Fresh

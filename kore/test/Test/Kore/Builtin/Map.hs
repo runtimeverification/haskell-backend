@@ -25,6 +25,7 @@ import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.Map as Map
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Pattern
 import qualified Kore.Step.Pattern as Pattern
@@ -32,7 +33,6 @@ import           Kore.Step.Representation.MultiOr
                  ( MultiOr (..) )
 import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
-import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore

@@ -12,6 +12,7 @@ import qualified Data.Map as Map
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, makeEqualsPredicate,
                  makeNotPredicate, makeTruePredicate )
@@ -41,7 +42,6 @@ import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 

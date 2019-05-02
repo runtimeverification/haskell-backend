@@ -10,7 +10,7 @@ import qualified Data.Text as Text
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.String as String
 import           Kore.IndexedModule.MetadataTools
-import           Kore.Step.TermLike
+import           Kore.Internal.TermLike
 
 import           Test.Kore.Builtin.Builtin
 import           Test.Kore.Builtin.Definition

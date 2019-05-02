@@ -24,14 +24,14 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
+import           Kore.Internal.TermLike hiding
+                 ( freeVariables )
 import           Kore.Parser.Parser
 import           Kore.Parser.ParserUtils
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Rule hiding
                  ( freeVariables )
 import qualified Kore.Step.Rule as Rule
-import           Kore.Step.TermLike hiding
-                 ( freeVariables )
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 

@@ -10,8 +10,8 @@ import           Kore.IndexedModule.MetadataTools
                  ( HeadType, SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
+import           Kore.Internal.TermLike
 import qualified Kore.Proof.Value as Value
-import           Kore.Step.TermLike
 
 import           Test.Kore
 import           Test.Kore.Builtin.Definition

@@ -14,6 +14,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Predicate
                  ( Conditional (..), Predicate )
@@ -26,7 +27,6 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutionsExcept )
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.Step.TermLike
 import           Kore.Unification.Error
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify

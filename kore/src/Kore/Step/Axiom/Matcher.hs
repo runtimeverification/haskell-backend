@@ -28,6 +28,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Axiom.Data
@@ -59,7 +60,6 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMergerExcept,
                  mergePredicatesAndSubstitutionsExcept )
-import           Kore.Step.TermLike
 import           Kore.Unification.Error
                  ( UnificationError (..) )
 import           Kore.Unification.Procedure

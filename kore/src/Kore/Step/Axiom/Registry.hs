@@ -29,6 +29,7 @@ import           Kore.Attribute.Simplification
                  ( Simplification (..) )
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.IndexedModule
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifier (..) )
 import           Kore.Step.Axiom.EvaluationStrategy
@@ -45,7 +46,6 @@ import           Kore.Step.Rule
                  QualifiedAxiomPattern (AllPathClaimPattern, FunctionAxiomPattern, ImplicationAxiomPattern, OnePathClaimPattern, RewriteAxiomPattern),
                  RulePattern (RulePattern) )
 import qualified Kore.Step.Rule as Rule
-import           Kore.Step.TermLike
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 

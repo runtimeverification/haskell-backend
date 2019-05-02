@@ -12,7 +12,7 @@ import Test.Terse
 import Prelude hiding
        ( null )
 
-import Kore.Step.TermLike hiding
+import Kore.Internal.TermLike hiding
        ( mapVariables )
 import Kore.TopBottom
        ( isBottom, isTop )

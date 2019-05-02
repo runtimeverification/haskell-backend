@@ -113,10 +113,10 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
+import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate )
 import qualified Kore.Proof.Value as Value
-import           Kore.Sort
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..),
                  AttemptedAxiomResults (AttemptedAxiomResults),
@@ -134,7 +134,6 @@ import           Kore.Step.Simplification.Data
                  TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
-import           Kore.Step.TermLike as TermLike
 import           Kore.Syntax.Application
 import           Kore.Syntax.Definition
 import           Kore.Syntax.DomainValue

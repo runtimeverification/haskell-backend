@@ -15,6 +15,7 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.OrPattern
@@ -25,7 +26,6 @@ import           Kore.Step.Pattern
 import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.DomainValue
                  ( simplify )
-import           Kore.Step.TermLike
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock

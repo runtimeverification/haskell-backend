@@ -42,7 +42,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
-import           Kore.Step.TermLike
+import           Kore.Internal.TermLike
 import           Kore.Syntax.Application
                  ( SymbolOrAlias (SymbolOrAlias) )
 import           Kore.Syntax.Application as SymbolOrAlias

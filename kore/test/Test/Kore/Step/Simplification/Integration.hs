@@ -19,6 +19,7 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Builtin.Map as Map
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
@@ -43,7 +44,6 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 

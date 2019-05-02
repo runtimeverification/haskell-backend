@@ -20,7 +20,7 @@ import           Kore.Error
 import           Kore.IndexedModule.Error as Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
-import           Kore.Step.TermLike hiding
+import           Kore.Internal.TermLike hiding
                  ( freeVariables )
 import           Kore.Syntax
 import           Kore.Syntax.Definition

@@ -68,10 +68,10 @@ import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Internal.TermLike
 import           Kore.Step.Pattern
                  ( Pattern )
 import qualified Kore.Step.Pattern as Pattern
-import           Kore.Step.TermLike
 import qualified Kore.Syntax.Pattern as AST
 
 {- | Builtin name of the @String@ sort.

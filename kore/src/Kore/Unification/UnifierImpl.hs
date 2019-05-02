@@ -23,6 +23,7 @@ import           Data.List.NonEmpty
 
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
+import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse, makeAndPredicate )
 import           Kore.Step.Axiom.Data
@@ -34,7 +35,6 @@ import           Kore.Step.Predicate
 import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), TermLikeSimplifier )
-import           Kore.Step.TermLike
 import           Kore.Syntax.And
 import qualified Kore.Syntax.PatternF as Syntax
 import           Kore.Unification.Substitution

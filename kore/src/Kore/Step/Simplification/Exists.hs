@@ -21,6 +21,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike as Pattern
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
@@ -36,7 +37,6 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.Step.TermLike as Pattern
 import           Kore.Syntax.Exists
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Substitution

@@ -12,11 +12,11 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeExistsPredicate,
                  makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Sort
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
@@ -26,7 +26,6 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Exists as Exists
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.TermLike
 import           Kore.Syntax.Exists
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT

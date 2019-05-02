@@ -49,11 +49,10 @@ import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
+import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Sort
-import           Kore.Step.TermLike as TermLike
 import           Kore.Syntax.Definition
 import           Kore.Unparser
                  ( Unparse, unparse, unparse2 )

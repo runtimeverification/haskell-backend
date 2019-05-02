@@ -34,6 +34,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
+import           Kore.Internal.TermLike
 import           Kore.Parser
                  ( parseKorePattern )
 import qualified Kore.Predicate.Predicate as Predicate
@@ -49,7 +50,6 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Step.Step as Step
-import           Kore.Step.TermLike
 import           Kore.Syntax.Definition
 import qualified Kore.Syntax.Pattern as AST
 import           Kore.Unification.Error

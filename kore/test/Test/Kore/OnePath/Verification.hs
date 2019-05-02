@@ -23,6 +23,9 @@ import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
+import           Kore.Internal.TermLike
+                 ( TermLike )
 import qualified Kore.OnePath.Verification as OnePath
 import qualified Kore.OnePath.Verification as Claim
 import           Kore.Predicate.Predicate
@@ -43,9 +46,6 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Step.TermLike
-import           Kore.Step.TermLike
-                 ( TermLike )
 import qualified SMT
 
 import           Test.Kore

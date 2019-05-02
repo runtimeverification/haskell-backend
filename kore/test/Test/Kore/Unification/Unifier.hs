@@ -28,18 +28,17 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
+import           Kore.Internal.TermLike hiding
+                 ( V )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
-import           Kore.Sort
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Step.TermLike hiding
-                 ( V )
 import           Kore.Syntax.Definition
 import qualified Kore.Syntax.Pattern as AST
 import           Kore.Unification.Error

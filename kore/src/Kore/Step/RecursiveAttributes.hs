@@ -20,7 +20,7 @@ import Kore.Attribute.Symbol
        ( StepperAttributes, isFunction, isFunctional, isTotal )
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools (..), SmtMetadataTools )
-import Kore.Step.TermLike
+import Kore.Internal.TermLike
 import Kore.Syntax.Application
 
 recursivelyCheckHeadProperty

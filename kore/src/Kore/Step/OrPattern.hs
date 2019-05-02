@@ -19,6 +19,7 @@ module Kore.Step.OrPattern
 
 import qualified Data.Foldable as Foldable
 
+import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Pattern
@@ -27,7 +28,6 @@ import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.TermLike
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser

@@ -15,6 +15,7 @@ import Data.Reflection
 
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
+import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
@@ -24,7 +25,6 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
                  simplifyTerm )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-import           Kore.Step.TermLike
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )

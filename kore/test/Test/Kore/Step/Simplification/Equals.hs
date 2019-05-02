@@ -15,12 +15,12 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( pattern PredicateFalse, makeAndPredicate, makeCeilPredicate,
                  makeEqualsPredicate, makeIffPredicate, makeImpliesPredicate,
                  makeMultipleAndPredicate, makeNotPredicate, makeOrPredicate,
                  makeTruePredicate )
-import           Kore.Sort
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
@@ -39,7 +39,6 @@ import           Kore.Step.Simplification.Equals
                  ( makeEvaluate, makeEvaluateTermsToPredicate, simplify )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.TermLike
 import           Kore.Syntax.Equals
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser

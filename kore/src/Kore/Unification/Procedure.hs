@@ -15,6 +15,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.OrPattern as OrPattern
@@ -32,7 +33,6 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, TermLikeSimplifier )
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMerger )
-import           Kore.Step.TermLike
 import           Kore.Syntax.Variable
                  ( SortedVariable )
 import           Kore.Unification.Unify

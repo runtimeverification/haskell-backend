@@ -28,6 +28,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
@@ -54,7 +55,6 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Simplification.AndPredicates as And
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
-import           Kore.Step.TermLike
 import           Kore.Syntax.Application
 import           Kore.Syntax.Ceil
 import qualified Kore.Syntax.PatternF as Syntax

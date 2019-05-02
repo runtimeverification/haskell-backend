@@ -29,7 +29,7 @@ import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.TermLike
+import           Kore.Internal.TermLike
 import           Kore.Syntax.Or
 import           Kore.Unparser
 \end{code}

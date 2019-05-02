@@ -20,6 +20,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
 import           Kore.ModelChecker.Step
                  ( CommonModalPattern, CommonProofState, ModalPattern (..),
                  Prim (..), defaultOneStepStrategy )
@@ -43,7 +44,6 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Strategy
                  ( Strategy, pickFinal, runStrategy )
-import           Kore.Step.TermLike
 import           Kore.Syntax.Application
                  ( SymbolOrAlias (..) )
 import           Kore.Syntax.Id

@@ -4,7 +4,7 @@ License     : NCSA
 
 -}
 
-module Kore.Step.TermLike
+module Kore.Internal.TermLike
     ( TermLike
     , freeVariables
     , termLikeSort

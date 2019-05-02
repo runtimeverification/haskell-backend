@@ -11,13 +11,13 @@ import qualified Data.Set as Set
 import           Data.Text.Prettyprint.Doc
                  ( Pretty (..) )
 
+import           Kore.Internal.TermLike hiding
+                 ( V )
 import           Kore.Predicate.Predicate
                  ( Predicate, makeEqualsPredicate, makeFalsePredicate,
                  makeTruePredicate )
 import           Kore.Step.Pattern as Pattern
                  ( Conditional (..), allVariables, mapVariables, toMLPattern )
-import           Kore.Step.TermLike hiding
-                 ( V )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 

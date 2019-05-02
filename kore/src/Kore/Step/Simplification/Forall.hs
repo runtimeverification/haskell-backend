@@ -12,11 +12,11 @@ module Kore.Step.Simplification.Forall
     , makeEvaluate
     ) where
 
+import           Kore.Internal.TermLike
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import           Kore.Step.TermLike
 import           Kore.Syntax.Forall
 import           Kore.Unparser
 

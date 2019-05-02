@@ -48,6 +48,7 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Log
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
@@ -76,7 +77,6 @@ import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.Step.TermLike as TermLike
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Error
                  ( UnificationError (..) )

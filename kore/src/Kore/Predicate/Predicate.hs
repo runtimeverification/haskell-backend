@@ -62,10 +62,10 @@ import           GHC.Stack
 
 import           Kore.Error
                  ( Error, koreFail )
-import           Kore.Sort
-import           Kore.Step.TermLike
+import           Kore.Internal.TermLike
                  ( TermLike )
-import qualified Kore.Step.TermLike as TermLike
+import qualified Kore.Internal.TermLike as TermLike
+import           Kore.Sort
 import           Kore.Syntax
 import           Kore.TopBottom
                  ( TopBottom (..) )

@@ -15,6 +15,7 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
 import           Kore.Logger.Output as Logger
                  ( emptyLogger )
 import           Kore.Predicate.Predicate
@@ -42,7 +43,6 @@ import           Kore.Step.Simplification.Data
                  evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.TermLike
 import           Kore.Syntax.Ceil
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh

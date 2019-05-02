@@ -28,6 +28,7 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom,
                  AttemptedAxiomResults (AttemptedAxiomResults),
@@ -52,7 +53,6 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
-import           Kore.Step.TermLike
 import           Kore.Syntax.Pattern
                  ( asConcretePurePattern )
 import qualified Kore.Unification.Unify as Monad.Unify

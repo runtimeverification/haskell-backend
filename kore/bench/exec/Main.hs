@@ -26,6 +26,7 @@ import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule,
                  makeIndexedModuleAttributesNull, mapIndexedModulePatterns )
+import           Kore.Internal.TermLike
 import           Kore.Logger.Output
                  ( emptyLogger )
 import           Kore.Parser
@@ -34,7 +35,6 @@ import           Kore.Step
                  ( anyRewrite )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
-import           Kore.Step.TermLike
 import           Kore.Syntax.Module
                  ( ModuleName (..) )
 import           Kore.Syntax.Pattern

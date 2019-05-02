@@ -15,7 +15,7 @@ import qualified Data.Text as Text
 import           Kore.Error
 import           Kore.IndexedModule.Error
                  ( noSort )
-import           Kore.Step.TermLike
+import           Kore.Internal.TermLike
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 

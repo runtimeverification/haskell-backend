@@ -39,12 +39,12 @@ import qualified Kore.Builtin.Int as Int
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule, recursiveIndexedModuleAxioms,
                  recursiveIndexedModuleSortDescriptions )
+import           Kore.Internal.TermLike
 import           Kore.Sort
                  ( Sort (SortActualSort), SortActual (SortActual) )
 import qualified Kore.Sort as SortActual
                  ( SortActual (..) )
 import qualified Kore.Step.SMT.AST as AST
-import           Kore.Step.TermLike
 import           Kore.Syntax.Id
                  ( Id )
 import           Kore.Syntax.Sentence

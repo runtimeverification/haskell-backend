@@ -60,11 +60,11 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import           Kore.Step.TermLike
 import           Kore.Syntax.DomainValue
 
 {- | The default type of builtin domain values.

@@ -12,6 +12,7 @@ import qualified Data.Map.Strict as Map
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeIffPredicate, makeTruePredicate )
@@ -24,7 +25,6 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate, simplify )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Step.TermLike
 import           Kore.Syntax.Iff
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT

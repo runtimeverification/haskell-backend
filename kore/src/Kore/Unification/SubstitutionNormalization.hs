@@ -31,14 +31,14 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes, isNonSimplifiable_ )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
+                 ( TermLike )
+import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Predicate
                  ( Conditional (..), Predicate )
 import qualified Kore.Step.Predicate as Predicate
-import           Kore.Step.TermLike
-                 ( TermLike )
-import qualified Kore.Step.TermLike as TermLike
 import           Kore.Syntax
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )

@@ -18,6 +18,8 @@ import qualified Data.Foldable as Foldable
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike hiding
+                 ( mkAnd )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeNotPredicate, makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
@@ -31,8 +33,6 @@ import qualified Kore.Step.Simplification.And as And
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
                  gather )
-import           Kore.Step.TermLike hiding
-                 ( mkAnd )
 import           Kore.Syntax.Not
 import           Kore.Unparser
 import           Kore.Variables.Fresh

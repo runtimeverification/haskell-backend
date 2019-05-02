@@ -35,6 +35,8 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
+                 ( TermLike )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import           Kore.Step.OrPattern
@@ -44,8 +46,6 @@ import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( merge )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
-import           Kore.Step.TermLike
-                 ( TermLike )
 import           Kore.Syntax.Application
 import           Kore.Syntax.Pattern
                  ( fromPurePattern )

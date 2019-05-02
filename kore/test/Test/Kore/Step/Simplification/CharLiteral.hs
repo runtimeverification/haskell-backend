@@ -7,12 +7,12 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import           Kore.Internal.TermLike
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Simplification.CharLiteral
                  ( simplify )
-import           Kore.Step.TermLike
 import           Kore.Syntax.CharLiteral
 
 import Test.Kore.Comparators ()

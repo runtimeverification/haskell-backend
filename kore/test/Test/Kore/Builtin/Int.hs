@@ -22,9 +22,9 @@ import           GHC.Integer.Logarithms
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Int as Int
 import           Kore.IndexedModule.MetadataTools
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
 import           Kore.Step.Pattern
-import           Kore.Step.TermLike
 
 import           Test.Kore
 import qualified Test.Kore.Builtin.Bool as Test.Bool

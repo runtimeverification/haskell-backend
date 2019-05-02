@@ -17,7 +17,7 @@ import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
-import           Kore.Step.TermLike hiding
+import           Kore.Internal.TermLike hiding
                  ( freeVariables )
 import           Kore.Syntax
 import           Kore.Syntax.Definition

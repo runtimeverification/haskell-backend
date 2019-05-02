@@ -19,7 +19,7 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.IndexedModule.Error
                  ( noSort )
-import           Kore.Step.TermLike hiding
+import           Kore.Internal.TermLike hiding
                  ( freeVariables )
 import           Kore.Syntax
 import           Kore.Syntax.Definition

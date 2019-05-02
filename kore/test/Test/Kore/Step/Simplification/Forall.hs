@@ -7,16 +7,15 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeTruePredicate )
-import           Kore.Sort
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Simplification.Forall as Forall
                  ( makeEvaluate, simplify )
-import           Kore.Step.TermLike
 import           Kore.Syntax.Forall
 import qualified Kore.Unification.Substitution as Substitution
 

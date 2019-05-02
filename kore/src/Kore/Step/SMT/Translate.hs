@@ -41,10 +41,10 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import           Kore.IndexedModule.MetadataTools
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
 import           Kore.Step.SMT.Resolvers
                  ( translateSymbol )
-import           Kore.Step.TermLike
 import           Kore.Syntax
 import           Kore.Unparser
 import           SMT

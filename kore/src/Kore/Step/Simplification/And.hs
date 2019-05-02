@@ -26,6 +26,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Conditional
@@ -41,7 +42,6 @@ import           Kore.Step.Simplification.Data
                  ( BranchT, PredicateSimplifier, Simplifier,
                  TermLikeSimplifier, gather, scatter )
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.Step.TermLike
 import           Kore.Syntax.And
 import           Kore.Unparser
 import           Kore.Variables.Fresh

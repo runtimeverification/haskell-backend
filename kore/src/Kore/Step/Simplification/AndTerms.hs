@@ -45,6 +45,7 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeEqualsPredicate,
                  makeNotPredicate, makeTruePredicate )
@@ -71,7 +72,6 @@ import           Kore.Step.Substitution
                  ( PredicateMerger (PredicateMerger),
                  createLiftedPredicatesAndSubstitutionsMerger,
                  createPredicatesAndSubstitutionsMergerExcept )
-import           Kore.Step.TermLike
 import           Kore.TopBottom
 import           Kore.Unification.Error
                  ( UnificationError (..) )

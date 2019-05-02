@@ -9,7 +9,7 @@ import qualified Kore.Variables.Free as Variables.Free
 
 import Test.Kore
 
--- | Check that the smart constructors in "Kore.Step.TermLike" produce the same free
+-- | Check that the smart constructors in "Kore.Internal.TermLike" produce the same free
 -- variables as 'Variables.Free.freePureVariables'.
 hprop_freeVariables :: Property
 hprop_freeVariables = property $ do

@@ -37,7 +37,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes, isConstructor_, isSortInjection_ )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-import           Kore.Step.TermLike
+import           Kore.Internal.TermLike
                  ( Concrete, TermLike )
 import qualified Kore.Syntax as Syntax
 import           Kore.Syntax.Application

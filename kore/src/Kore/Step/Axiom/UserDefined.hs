@@ -18,6 +18,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import           Kore.Step.Axiom.Data as AttemptedAxiomResults
@@ -38,7 +39,6 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.Step
                  ( UnificationProcedure (..) )
 import qualified Kore.Step.Step as Step
-import           Kore.Step.TermLike
 import qualified Kore.Syntax.Pattern as Pure
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser

@@ -7,6 +7,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.OrPattern
@@ -16,7 +17,6 @@ import           Kore.Step.Pattern
                  ( Conditional (..) )
 import           Kore.Step.Simplification.StringLiteral
                  ( simplify )
-import           Kore.Step.TermLike
 import           Kore.Syntax.StringLiteral
 
 import Test.Kore.Comparators ()

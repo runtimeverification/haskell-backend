@@ -25,7 +25,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
-import           Kore.Sort
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
@@ -39,7 +39,6 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.TermLike
 import           Kore.Syntax.Definition
 import           Kore.Syntax.PatternF
                  ( groundHead )

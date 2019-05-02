@@ -7,8 +7,8 @@ import Data.Text
        ( Text )
 
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Internal.TermLike
 import           Kore.Parser.Parser
-import           Kore.Step.TermLike
 import           Kore.Syntax
 import           Kore.Syntax.Definition
 

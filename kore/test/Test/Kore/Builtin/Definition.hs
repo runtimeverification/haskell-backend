@@ -17,8 +17,7 @@ import qualified Kore.Attribute.Sort.Element as Sort
 import qualified Kore.Attribute.Sort.Unit as Sort
 import qualified Kore.Builtin.Set as Set
 import           Kore.Domain.Builtin
-import           Kore.Sort
-import           Kore.Step.TermLike
+import           Kore.Internal.TermLike
 import           Kore.Syntax.Definition
 
 import Test.Kore

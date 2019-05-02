@@ -9,9 +9,9 @@ import           Data.Proxy
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.Attribute.Overload
 import qualified Kore.Builtin as Builtin
+import           Kore.Internal.TermLike
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import           Kore.Step.Axiom.Registry
-import           Kore.Step.TermLike
 import           Kore.Syntax.Definition
 import           Kore.Syntax.Pattern as Pure
 

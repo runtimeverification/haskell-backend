@@ -12,7 +12,7 @@ import Kore.Step.OrPredicate
        ( OrPredicate )
 import Kore.Step.Simplification.Data
        ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
-import Kore.Step.TermLike
+import Kore.Internal.TermLike
        ( TermLike )
 import Kore.Syntax.Variable
        ( SortedVariable )

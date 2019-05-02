@@ -12,12 +12,12 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
 import           Kore.Proof.Functional
 import           Kore.Step.PatternAttributes
 import           Kore.Step.PatternAttributesError
                  ( ConstructorLikeError (..), FunctionError (..),
                  FunctionalError (..) )
-import           Kore.Step.TermLike
 import           Kore.Syntax.CharLiteral
 import           Kore.Syntax.StringLiteral
 

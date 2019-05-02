@@ -46,6 +46,7 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
 import           Kore.IndexedModule.Resolvers
                  ( resolveSymbol )
+import           Kore.Internal.TermLike
 import qualified Kore.Logger as Log
 import qualified Kore.ModelChecker.Bounded as Bounded
 import           Kore.OnePath.Verification
@@ -89,7 +90,6 @@ import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 
 -- | Configuration used in symbolic execution.

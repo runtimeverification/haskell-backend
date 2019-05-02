@@ -42,6 +42,7 @@ import           Kore.Builtin.Builtin
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
+import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), AttemptedAxiomResults (..),
@@ -53,7 +54,6 @@ import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Or as Or
-import           Kore.Step.TermLike
 import           Kore.Syntax.Application
 import           Kore.Syntax.Definition
                  ( SentenceSymbol (..) )

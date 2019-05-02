@@ -20,8 +20,8 @@ import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.List as List
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
 import           Kore.Step.Pattern as Pattern
-import           Kore.Step.TermLike
 
 import           Test.Kore
                  ( testId )

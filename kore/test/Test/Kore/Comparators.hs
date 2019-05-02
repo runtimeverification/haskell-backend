@@ -30,6 +30,7 @@ import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Source as Attribute
 import           Kore.Domain.Builtin
 import           Kore.Error
+import           Kore.Internal.TermLike
 import           Kore.OnePath.Step
                  ( StrategyPattern )
 import           Kore.OnePath.Step as StrategyPattern
@@ -67,7 +68,6 @@ import qualified Kore.Step.SMT.AST as SMT.SymbolReference
                  ( SymbolReference (..) )
 import qualified Kore.Step.SMT.AST as SMT.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
-import           Kore.Step.TermLike
 import           Kore.Syntax
 import           Kore.Syntax.Definition
 import qualified Kore.Syntax.SetVariable as SetVariable

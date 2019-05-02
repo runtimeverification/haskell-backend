@@ -1,4 +1,4 @@
-module Test.Kore.Step.TermLike where
+module Test.Kore.Internal.TermLike where
 
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -9,11 +9,9 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-
 import Data.Sup
 import Kore.AST.Lens
-import Kore.Sort
-import Kore.Step.TermLike
+import Kore.Internal.TermLike
 import Kore.Variables.Fresh
 
 import           Test.Kore.Comparators ()

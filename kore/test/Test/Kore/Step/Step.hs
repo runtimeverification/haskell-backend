@@ -19,6 +19,7 @@ import qualified Data.Set as Set
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate as Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeExistsPredicate, makeFalsePredicate, makeNotPredicate,
@@ -46,7 +47,6 @@ import           Kore.Step.Step hiding
                  ( applyInitialConditions, applyRewriteRule, applyRewriteRules,
                  applyRule, sequenceRewriteRules, unifyRule )
 import qualified Kore.Step.Step as Step
-import           Kore.Step.TermLike
 import           Kore.Unification.Error
                  ( SubstitutionError (..),
                  UnificationOrSubstitutionError (..) )
