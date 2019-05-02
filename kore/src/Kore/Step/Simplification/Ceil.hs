@@ -305,8 +305,7 @@ makeEvaluateTerm
 -}
 makeEvaluateBuiltin
     :: forall variable .
-        ( Object ~ Object
-        , FreshVariable variable
+        ( FreshVariable variable
         , SortedVariable variable
         , Unparse variable
         , Show variable
