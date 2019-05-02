@@ -88,7 +88,7 @@ import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
 
 data SimplificationTarget = AndT | EqualsT | BothT
 
-type TermSimplifier level variable m =
+type TermSimplifier variable m =
     TermLike variable -> TermLike variable -> m (Pattern variable)
 
 {- | Simplify an equality relation of two patterns.
@@ -230,7 +230,7 @@ maybeTermEquals
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger variable unifier
-    -> TermSimplifier Object variable unifier
+    -> TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
     -> TermLike variable
@@ -368,7 +368,7 @@ maybeTermAnd
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger variable unifier
-    -> TermSimplifier Object variable unifier
+    -> TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
     -> TermLike variable
@@ -524,7 +524,7 @@ andEqualsFunctions =
     addT
         ::  (  SmtMetadataTools StepperAttributes
             -> PredicateMerger variable unifier
-            -> TermSimplifier Object variable unifier
+            -> TermSimplifier variable unifier
             -> TermLike variable
             -> TermLike variable
             -> MaybeT unifier (Pattern variable)
@@ -590,7 +590,7 @@ type TermTransformation level variable unifier =
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger variable unifier
-    -> TermSimplifier level variable unifier
+    -> TermSimplifier variable unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
@@ -601,7 +601,7 @@ type TermTransformationOld level variable unifier =
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger variable unifier
-    -> TermSimplifier level variable unifier
+    -> TermSimplifier variable unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
@@ -622,7 +622,7 @@ maybeTransformTerm
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger variable unifier
-    -> TermSimplifier Object variable unifier
+    -> TermSimplifier variable unifier
     -- ^ Used to simplify subterm pairs.
     -> TermLike variable
     -> TermLike variable
@@ -976,7 +976,7 @@ equalInjectiveHeadsAndEquals
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateMerger variable unifier
-    -> TermSimplifier Object variable unifier
+    -> TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
     -> TermLike variable
@@ -1031,7 +1031,7 @@ sortInjectionAndEqualsAssumesDifferentHeads
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> TermSimplifier Object variable unifier
+    -> TermSimplifier variable unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
