@@ -34,6 +34,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
+import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import           Kore.Internal.TermLike
@@ -41,7 +42,6 @@ import           Kore.Parser
                  ( parseKorePattern )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
-import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import           Kore.Step.Rule

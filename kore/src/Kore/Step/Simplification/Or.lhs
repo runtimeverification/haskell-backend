@@ -25,8 +25,8 @@ import           Kore.Predicate.Predicate
                  ( makeOrPredicate )
 import           Kore.Step.Conditional as Conditional
 import           Kore.Internal.Pattern as Pattern
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.OrPattern
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Internal.TermLike

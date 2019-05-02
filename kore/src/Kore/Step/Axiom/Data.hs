@@ -35,13 +35,13 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.TermLike
                  ( TermLike )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( merge )
 import           Kore.Step.Simplification.Data

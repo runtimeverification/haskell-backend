@@ -11,10 +11,10 @@ module Kore.Step.Simplification.StringLiteral
     ( simplify
     ) where
 
-import           Kore.Internal.TermLike
-import           Kore.Step.OrPattern
+import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.TermLike
 import           Kore.Syntax.StringLiteral
 
 {-| 'simplify' simplifies a 'StringLiteral' pattern, which means returning

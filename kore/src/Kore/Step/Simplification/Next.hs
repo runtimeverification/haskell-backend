@@ -11,11 +11,11 @@ module Kore.Step.Simplification.Next
     ( simplify
     ) where
 
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Syntax.Next
 import           Kore.Unparser
 

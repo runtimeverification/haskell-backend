@@ -12,6 +12,7 @@ import qualified Data.Map as Map
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
                  ( Conditional (Conditional) )
 import qualified Kore.Internal.Pattern as Pattern
@@ -30,7 +31,6 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
 import           Kore.Step.Axiom.EvaluationStrategy
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
-import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Rule

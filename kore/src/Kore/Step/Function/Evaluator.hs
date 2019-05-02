@@ -29,6 +29,9 @@ import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern, Predicate )
 import           Kore.Internal.TermLike
@@ -44,9 +47,6 @@ import           Kore.Step.Axiom.Identifier
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( extract )
 import qualified Kore.Step.Merging.OrPattern as OrPattern
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( flatten, merge )
 import           Kore.Step.Simplification.Data

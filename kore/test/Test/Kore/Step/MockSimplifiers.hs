@@ -6,6 +6,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (Conditional) )
 import qualified Kore.Internal.Pattern as Pattern
@@ -13,7 +14,6 @@ import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Predicate
                  ( wrapPredicate )
-import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), termLikeSimplifier )
 import qualified Kore.Step.Simplification.Predicate as Predicate

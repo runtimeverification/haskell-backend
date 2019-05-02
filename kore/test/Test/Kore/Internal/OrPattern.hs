@@ -1,10 +1,10 @@
-module Test.Kore.Step.OrPattern where
+module Test.Kore.Internal.OrPattern where
 
 import           Hedgehog
                  ( Property, (===) )
 import qualified Hedgehog
 
-import qualified Kore.Step.OrPattern as OrPattern
+import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 
 import Test.Kore

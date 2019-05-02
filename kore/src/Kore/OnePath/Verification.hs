@@ -36,6 +36,8 @@ import qualified Kore.Attribute.Trusted as Trusted
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
 import           Kore.Internal.Pattern
                  ( Conditional (Conditional), Pattern )
 import           Kore.Internal.Pattern as Pattern
@@ -50,8 +52,6 @@ import qualified Kore.OnePath.Step as OnePath
                  ( transitionRule )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )

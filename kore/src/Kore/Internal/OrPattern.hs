@@ -3,7 +3,7 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
 -}
-module Kore.Step.OrPattern
+module Kore.Internal.OrPattern
     ( OrPattern
     , fromPatterns
     , fromPattern

@@ -12,6 +12,7 @@ import           Data.Sup
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
@@ -29,7 +30,6 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
-import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
 import           Kore.Step.Rule as RulePattern
