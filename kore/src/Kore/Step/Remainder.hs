@@ -16,6 +16,9 @@ import qualified Data.Set as Set
 
 import           Kore.Internal.Conditional
                  ( Conditional (Conditional) )
+import           Kore.Internal.MultiAnd
+                 ( MultiAnd )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import           Kore.Internal.MultiOr
                  ( MultiOr )
 import qualified Kore.Internal.Pattern as Pattern
@@ -25,9 +28,6 @@ import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Step.Representation.MultiAnd
-                 ( MultiAnd )
-import qualified Kore.Step.Representation.MultiAnd as MultiAnd
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution

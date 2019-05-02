@@ -30,6 +30,8 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
+import qualified Kore.Internal.MultiAnd as MultiAnd
+                 ( make )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -50,8 +52,6 @@ import qualified Kore.Step.Function.Evaluator as Axiom
                  ( evaluatePattern )
 import           Kore.Step.RecursiveAttributes
                  ( isTotalPattern )
-import qualified Kore.Step.Representation.MultiAnd as MultiAnd
-                 ( make )
 import qualified Kore.Step.Simplification.AndPredicates as And
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
