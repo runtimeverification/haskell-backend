@@ -13,6 +13,7 @@ module Kore.Repl.Data
     , helpText
     , ExecutionGraph
     , AxiomIndex (..), ClaimIndex (..)
+    , ReplNode (..)
     , ReplState (..)
     , InnerGraph
     , lensAxioms, lensClaims, lensClaim
@@ -63,6 +64,7 @@ import           Data.Text.Prettyprint.Doc
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Exts
                  ( toList )
+import           GHC.Natural
 
 import           Kore.AST.MetaOrObject
                  ( Object )
@@ -97,6 +99,10 @@ newtype ClaimIndex = ClaimIndex
     { unClaimIndex :: Int
     } deriving (Eq, Show)
 
+newtype ReplNode = ReplNode
+    { unReplNode :: Graph.Node
+    } deriving (Eq, Show)
+
 -- | List of available commands for the Repl. Note that we are always in a proof
 -- state. We pick the first available Claim when we initialize the state.
 data ReplCommand
@@ -104,19 +110,19 @@ data ReplCommand
     -- ^ This is the default action in case parsing all others fail.
     | Help
     -- ^ Shows the help message.
-    | ShowClaim !Int
+    | ShowClaim !ClaimIndex
     -- ^ Show the nth claim.
-    | ShowAxiom !Int
+    | ShowAxiom !AxiomIndex
     -- ^ Show the nth axiom.
-    | Prove !Int
+    | Prove !ClaimIndex
     -- ^ Drop the current proof state and re-initialize for the nth claim.
     | ShowGraph
     -- ^ Show the current execution graph.
-    | ProveSteps !Int
+    | ProveSteps !Natural
     -- ^ Do n proof steps from current node.
-    | ProveStepsF !Int
+    | ProveStepsF !Natural
     -- ^ Do n proof steps (through branchings) from the current node.
-    | SelectNode !Int
+    | SelectNode !ReplNode
     -- ^ Select a different node in the graph.
     | ShowConfig !(Maybe Int)
     -- ^ Show the configuration from the current node.

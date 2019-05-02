@@ -2,6 +2,7 @@ module Test.Kore.Repl.Parser
     ( test_replParser
     ) where
 
+import GHC.Natural
 import Test.Tasty
        ( TestTree, testGroup )
 
@@ -53,27 +54,27 @@ helpTests =
 
 claimTests :: [ParserTest ReplCommand]
 claimTests =
-    [ "claim 0"  `parsesTo_` ShowClaim 0
-    , "claim 0 " `parsesTo_` ShowClaim 0
-    , "claim 5"  `parsesTo_` ShowClaim 5
+    [ "claim 0"  `parsesTo_` ShowClaim (ClaimIndex 0)
+    , "claim 0 " `parsesTo_` ShowClaim (ClaimIndex 0)
+    , "claim 5"  `parsesTo_` ShowClaim (ClaimIndex 5)
     , "claim"    `fails`     "needs parameters"
     , "claim -5" `fails`     "no negative numbers"
     ]
 
 axiomTests :: [ParserTest ReplCommand]
 axiomTests =
-    [ "axiom 0"  `parsesTo_` ShowAxiom 0
-    , "axiom 0 " `parsesTo_` ShowAxiom 0
-    , "axiom 5"  `parsesTo_` ShowAxiom 5
+    [ "axiom 0"  `parsesTo_` ShowAxiom (AxiomIndex 0)
+    , "axiom 0 " `parsesTo_` ShowAxiom (AxiomIndex 0)
+    , "axiom 5"  `parsesTo_` ShowAxiom (AxiomIndex 5)
     , "axiom"    `fails`     "needs parameters"
     , "axiom -5" `fails`     "no negative numbers"
     ]
 
 proveTests :: [ParserTest ReplCommand]
 proveTests =
-    [ "prove 0"  `parsesTo_` Prove 0
-    , "prove 0 " `parsesTo_` Prove 0
-    , "prove 5"  `parsesTo_` Prove 5
+    [ "prove 0"  `parsesTo_` Prove (ClaimIndex 0)
+    , "prove 0 " `parsesTo_` Prove (ClaimIndex 0)
+    , "prove 5"  `parsesTo_` Prove (ClaimIndex 5)
     , "prove"    `fails`     "needs parameters"
     , "prove -5" `fails`     "no negative numbers"
     ]
@@ -104,8 +105,8 @@ stepfTests =
 
 selectTests :: [ParserTest ReplCommand]
 selectTests =
-    [ "select 5"  `parsesTo_` SelectNode 5
-    , "select 5 " `parsesTo_` SelectNode 5
+    [ "select 5"  `parsesTo_` SelectNode (ReplNode 5)
+    , "select 5 " `parsesTo_` SelectNode (ReplNode 5)
     , "select -5" `fails`     "no negative numbers"
     ]
 
@@ -193,8 +194,8 @@ redirectTests =
     [ "config > file"     `parsesTo_` Redirect (ShowConfig Nothing)  "file"
     , "config 5 > file"   `parsesTo_` Redirect (ShowConfig (Just 5)) "file"
     , "config 5 > file"   `parsesTo_` Redirect (ShowConfig (Just 5)) "file"
-    , "claim 3 > cf"      `parsesTo_` Redirect (ShowClaim 3) "cf"
-    , "claim 3 > \"c f\"" `parsesTo_` Redirect (ShowClaim 3) "c f"
+    , "claim 3 > cf"      `parsesTo_` Redirect (ShowClaim (ClaimIndex 3)) "cf"
+    , "claim 3 > \"c f\"" `parsesTo_` Redirect (ShowClaim (ClaimIndex 3)) "c f"
     , "config 5 > "       `fails`     "no file name"
     ]
 
@@ -216,12 +217,12 @@ pipeTests =
     pipeConfig mi s xs =
         Pipe (ShowConfig mi) s xs
     pipeStep
-        :: Int
+        :: Natural
         -> String
         -> [String]
         -> ReplCommand
-    pipeStep i s xs =
-        Pipe (ProveSteps i) s xs
+    pipeStep n s xs =
+        Pipe (ProveSteps n) s xs
 
 
 pipeRedirectTests :: [ParserTest ReplCommand]

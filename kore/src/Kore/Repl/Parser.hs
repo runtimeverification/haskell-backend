@@ -21,7 +21,7 @@ import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import Kore.Repl.Data
-       ( AxiomIndex (..), ClaimIndex (..), ReplCommand (..) )
+       ( AxiomIndex (..), ClaimIndex (..), ReplCommand (..), ReplNode (..) )
 
 type Parser = Parsec String String
 
@@ -78,13 +78,13 @@ help :: Parser ReplCommand
 help = const Help <$$> literal "help"
 
 showClaim :: Parser ReplCommand
-showClaim = ShowClaim <$$> literal "claim" *> decimal
+showClaim = ShowClaim . ClaimIndex <$$> literal "claim" *> decimal
 
 showAxiom :: Parser ReplCommand
-showAxiom = ShowAxiom <$$> literal "axiom" *> decimal
+showAxiom = ShowAxiom . AxiomIndex <$$> literal "axiom" *> decimal
 
 prove :: Parser ReplCommand
-prove = Prove <$$> literal "prove" *> decimal
+prove = Prove . ClaimIndex <$$> literal "prove" *> decimal
 
 showGraph :: Parser ReplCommand
 showGraph = const ShowGraph <$$> literal "graph"
@@ -96,7 +96,7 @@ proveStepsF :: Parser ReplCommand
 proveStepsF = ProveStepsF <$$> literal "stepf" *> option 1 L.decimal <* Char.space
 
 selectNode :: Parser ReplCommand
-selectNode = SelectNode <$$> literal "select" *> decimal
+selectNode = SelectNode . ReplNode <$$> literal "select" *> decimal
 
 showConfig :: Parser ReplCommand
 showConfig = ShowConfig <$$> literal "config" *> maybeDecimal

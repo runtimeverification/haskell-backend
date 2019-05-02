@@ -52,6 +52,7 @@ import           GHC.Exts
                  ( toList )
 import           GHC.IO.Handle
                  ( hGetContents, hPutStr )
+import           GHC.Natural
 import           System.Directory
                  ( findExecutable )
 import           System.Process
@@ -164,22 +165,21 @@ showClaim
     :: Claim claim
     => MonadState (ReplState claim level) m
     => MonadWriter String m
-    => Int
-    -- ^ index in the claims list
+    => ClaimIndex
     -> m ()
-showClaim index = do
-    claim <- getClaimByIndex index
+showClaim cindex = do
+    claim <- getClaimByIndex . unClaimIndex $ cindex
     maybe printNotFound (printRewriteRule .RewriteRule . coerce) $ claim
 
 -- | Prints an axiom using an index in the axioms list.
 showAxiom
     :: MonadState (ReplState claim level) m
     => MonadWriter String m
-    => Int
+    => AxiomIndex
     -- ^ index in the axioms list
     -> m ()
-showAxiom index = do
-    axiom <- getAxiomByIndex index
+showAxiom aindex = do
+    axiom <- getAxiomByIndex . unAxiomIndex $ aindex
     maybe printNotFound (printRewriteRule . unAxiom) $ axiom
 
 -- | Changes the currently focused proof, using an index in the claims list.
@@ -188,11 +188,11 @@ prove
     .  Claim claim
     => MonadState (ReplState claim level) m
     => MonadWriter String m
-    => Int
+    => ClaimIndex
     -- ^ index in the claims list
     -> m ()
-prove index = do
-    claim' <- getClaimByIndex index
+prove cindex = do
+    claim' <- getClaimByIndex . unClaimIndex $ cindex
     maybe printNotFound initProof claim'
   where
     initProof :: claim -> m ()
@@ -212,17 +212,18 @@ showGraph = do
 -- | Executes 'n' prove steps, or until branching occurs.
 proveSteps
     :: Claim claim
-    => Int
+    => Natural
     -- ^ maximum number of steps to perform
     -> ReplM claim level ()
 proveSteps n = do
-    result <- loopM performStepNoBranching (n, SingleResult n)
+    let i = naturalToInt n
+    result <- loopM performStepNoBranching (i, SingleResult i)
     case result of
         (0, SingleResult _) -> pure ()
         (done, res) ->
             putStrLn'
                 $ "Stopped after "
-                <> show (n - done - 1)
+                <> show (i - done - 1)
                 <> " step(s) due to "
                 <> show res
 
@@ -230,24 +231,25 @@ proveSteps n = do
 -- than 'n' steps if the proof is stuck or completed in less than 'n' steps.
 proveStepsF
     :: Claim claim
-    => Int
+    => Natural
     -- ^ maximum number of steps to perform
     -> ReplM claim level ()
 proveStepsF n = do
     graph  <- Lens.use lensGraph
     node   <- Lens.use lensNode
-    graph' <- recursiveForcedStep n graph node
+    graph' <- recursiveForcedStep (naturalToInt n) graph node
     lensGraph .= graph'
 
 -- | Focuses the node with id equals to 'n'.
 selectNode
     :: MonadState (ReplState claim level) m
     => MonadWriter String m
-    => Int
+    => ReplNode
     -- ^ node identifier
     -> m ()
-selectNode i = do
+selectNode rnode = do
     graph <- getInnerGraph
+    let i = unReplNode rnode
     if i `elem` Graph.nodes graph
         then lensNode .= i
         else putStrLn' "Invalid node!"
@@ -407,7 +409,7 @@ label =
     gotoLabel :: String -> m ()
     gotoLabel l = do
         labels <- Lens.use lensLabels
-        selectNode $ maybe (-1) id (Map.lookup l labels)
+        selectNode $ maybe (ReplNode $ -1) ReplNode (Map.lookup l labels)
 
     acc :: String -> Graph.Node -> String -> String
     acc key node res =
