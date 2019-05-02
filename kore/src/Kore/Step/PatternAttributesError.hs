@@ -51,7 +51,7 @@ data ConstructorLikeError
 {-| An error explaining why a pattern is not composed of total heads and
 things like StringLiteral, DomainValue and variables.
 -}
-data TotalError level
+data TotalError
     = NonTotalHead SymbolOrAlias
     -- ^ The pattern was the application of a non-total head to something
     | NonTotalPattern

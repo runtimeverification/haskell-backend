@@ -43,8 +43,7 @@ import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Predicate
                  ( Predicate )
 import           Kore.Step.TermLike
-                 ( CofreeF (..), Object, Sort, SortedVariable, TermLike,
-                 Variable )
+                 ( CofreeF (..), Sort, SortedVariable, TermLike, Variable )
 import qualified Kore.Step.TermLike as TermLike
 import           Kore.TopBottom
                  ( TopBottom (..) )
