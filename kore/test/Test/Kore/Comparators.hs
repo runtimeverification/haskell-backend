@@ -1044,7 +1044,6 @@ instance
 
 instance
     ( EqualWithExplanation variable
-    , Eq Object, Show Object
     , Eq variable, Show variable
     )
     => EqualWithExplanation (Predicate variable)

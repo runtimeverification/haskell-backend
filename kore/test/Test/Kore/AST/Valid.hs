@@ -52,11 +52,6 @@ test_sortAgreement = testGroup "Sort agreement"
         sortAgreementManySimplePatterns
     ]
 
--- subAlphaRename2Solution :: TermLike Variable
--- subAlphaRename2Solution = dummyEnvironment @Object $
---   subst (mkVar $ var "a") (mkVar $ var "b") $
---   mkExists (var "b0") (mkVar $ var "b")
-
 -- the a : X forces bottom : X
 sortAgreement1 :: TermLike Variable
 sortAgreement1 =
