@@ -21,7 +21,6 @@ import           Control.Comonad.Trans.Cofree
                  ( Cofree )
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Deriving as Deriving
-import           Data.Functor.Classes
 import           Data.Functor.Compose
 import           Data.Functor.Foldable
                  ( Base, Corecursive, Recursive )
@@ -34,7 +33,7 @@ import           GHC.Generics
 
 import           Kore.Annotation.Valid
 import           Kore.AST.Pure
-                 ( CofreeF (..), Object, Pattern (..) )
+                 ( CofreeF (..), Pattern (..) )
 import qualified Kore.AST.Pure as Pattern
 import           Kore.Attribute.Symbol
                  ( StepperAttributes, isConstructor_, isSortInjection_ )
@@ -49,53 +48,40 @@ import           Kore.Syntax.Application
     A normal pattern head is either a constructor (or a constructor-like domain
     value), a sort injection, or a domain value.
  -}
-data ValueF level child where
-    Constructor :: !(Application SymbolOrAlias child) -> ValueF level child
-    SortInjection :: !(Application SymbolOrAlias child) -> ValueF level child
-    DomainValue :: !(Domain.Builtin child) -> ValueF Object child
+data ValueF child
+    = Constructor !(Application SymbolOrAlias child)
+    | SortInjection !(Application SymbolOrAlias child)
+    | DomainValue !(Domain.Builtin child)
+    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
-deriving instance Eq child => Eq (ValueF level child)
-deriving instance Ord child => Ord (ValueF level child)
-deriving instance Show child => Show (ValueF level child)
+Deriving.deriveEq1 ''ValueF
+Deriving.deriveOrd1 ''ValueF
+Deriving.deriveShow1 ''ValueF
 
-deriving instance Functor (ValueF level)
-deriving instance Foldable (ValueF level)
-deriving instance Traversable (ValueF level)
-
-$(return [])
-
-instance Eq1 (ValueF level) where
-    liftEq = $(Deriving.makeLiftEq ''ValueF)
-
-instance Ord1 (ValueF level) where
-    liftCompare = $(Deriving.makeLiftCompare ''ValueF)
-
-instance Show1 (ValueF level) where
-    liftShowsPrec = $(Deriving.makeLiftShowsPrec ''ValueF)
-
-newtype Value (level :: *) =
-    Value { getValue :: Cofree (ValueF level) (Valid Concrete) }
+newtype Value =
+    Value { getValue :: Cofree ValueF (Valid Concrete) }
     deriving (Eq, Generic, Ord, Show)
 
-type instance Base (Value level) = CofreeF (ValueF level) (Valid Concrete)
+type instance Base Value = CofreeF ValueF (Valid Concrete)
 
-instance Recursive (Value level) where
+instance Recursive Value where
     project (Value embedded) =
         case Recursive.project embedded of
             Compose (Identity projected) -> Value <$> projected
 
-instance Corecursive (Value level) where
+instance Corecursive Value where
     embed projected =
         (Value . Recursive.embed . Compose . Identity)
             (getValue <$> projected)
 
 {- | Project a sort injection head to @Nothing@.
 
-    Used in 'fromPattern' to ensure that the children of a sort injection are
-    not sort injections, i.e. that the triangle axiom for sort injections has
-    been fully applied.
+Used in 'fromPattern' to ensure that the children of a sort injection are
+not sort injections, i.e. that the triangle axiom for sort injections has
+been fully applied.
+
  -}
-eraseSortInjection :: Value level -> Maybe (Value level)
+eraseSortInjection :: Value -> Maybe Value
 eraseSortInjection (Recursive.project -> ann :< value) =
     case value of
         Constructor _ -> (Just . Recursive.embed) (ann :< value)
@@ -109,8 +95,8 @@ eraseSortInjection (Recursive.project -> ann :< value) =
  -}
 fromPattern
     :: SmtMetadataTools StepperAttributes
-    -> Base (TermLike Concrete) (Maybe (Value Object))
-    -> Maybe (Value Object)
+    -> Base (TermLike Concrete) (Maybe Value)
+    -> Maybe Value
 fromPattern tools (ann :< pat) =
     case pat of
         ApplicationPattern
@@ -150,13 +136,13 @@ See also: 'fromPattern'
 fromConcreteStepPattern
     :: SmtMetadataTools StepperAttributes
     -> TermLike Concrete
-    -> Maybe (Value Object)
+    -> Maybe Value
 fromConcreteStepPattern tools =
     Recursive.fold (fromPattern tools)
 
 {- | Project a 'Value' to a concrete 'Pattern' head.
  -}
-asPattern :: Value Object -> Base (TermLike Concrete) (Value Object)
+asPattern :: Value -> Base (TermLike Concrete) Value
 asPattern (Recursive.project -> ann :< val) =
     case val of
         Constructor appP -> ann :< ApplicationPattern appP
@@ -165,5 +151,5 @@ asPattern (Recursive.project -> ann :< val) =
 
 {- | View a normalized value as a 'ConcreteStepPattern'.
  -}
-asConcreteStepPattern :: Value Object -> TermLike Concrete
+asConcreteStepPattern :: Value -> TermLike Concrete
 asConcreteStepPattern = Recursive.unfold asPattern
