@@ -146,7 +146,7 @@ newtype VariableName = VariableName Text
 newtype NamePrefix = NamePrefix Text
 newtype OperandSort level = OperandSort Sort
 newtype ResultSort level = ResultSort Sort
-newtype DeclaredSort level = DeclaredSort Sort
+newtype DeclaredSort = DeclaredSort Sort
 newtype TestedPatternSort level = TestedPatternSort Sort
 newtype SortVariablesThatMustBeDeclared level =
     SortVariablesThatMustBeDeclared [SortVariable]
