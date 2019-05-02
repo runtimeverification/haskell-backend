@@ -26,7 +26,6 @@ module Kore.IndexedModule.IndexedModule
     , mapIndexedModulePatterns
     , indexedModuleRawSentences
     , indexModuleIfNeeded
-    , metaNameForObjectSort
     , SortDescription
     , getIndexedSentence
     , hookedObjectSymbolSentences
@@ -721,9 +720,6 @@ indexImportedModule
                 nameToModule
                 indexedModules
                 koreModule
-
-metaNameForObjectSort :: String -> String
-metaNameForObjectSort name = "#`" ++ name
 
 {- | Parse attributes in the context of indexing a module.
 
