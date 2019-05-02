@@ -48,6 +48,7 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Log
 import qualified Kore.Predicate.Predicate as Syntax
@@ -62,7 +63,6 @@ import           Kore.Step.OrPattern
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.OrPredicate
                  ( OrPredicate )
-import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Predicate
                  ( Predicate )
 import qualified Kore.Step.Predicate as Predicate

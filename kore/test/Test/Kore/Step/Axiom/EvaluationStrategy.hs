@@ -12,6 +12,10 @@ import qualified Data.Map as Map
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Pattern as Pattern
+                 ( Conditional (Conditional) )
+import qualified Kore.Internal.Pattern as Pattern
+                 ( Conditional (..) )
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, makeEqualsPredicate,
@@ -27,10 +31,6 @@ import           Kore.Step.Axiom.EvaluationStrategy
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
 import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
-                 ( Conditional (Conditional) )
-import qualified Kore.Step.Pattern as Pattern
-                 ( Conditional (..) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Rule

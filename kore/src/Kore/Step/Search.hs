@@ -32,15 +32,15 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Pattern
+                 ( Pattern, Predicate )
+import qualified Kore.Internal.Pattern as Conditional
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.OrPredicate
                  ( OrPredicate )
-import           Kore.Step.Pattern
-                 ( Pattern, Predicate )
-import qualified Kore.Step.Pattern as Conditional
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Strategy as Strategy

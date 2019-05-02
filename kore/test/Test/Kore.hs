@@ -42,6 +42,7 @@ import           Data.Text
 import qualified Data.Text as Text
 
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger.Output as Logger
                  ( emptyLogger )
@@ -54,7 +55,6 @@ import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
 import           Kore.Syntax
 import           Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax

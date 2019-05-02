@@ -28,6 +28,9 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
+import           Kore.Internal.Pattern
+                 ( Pattern )
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom,
@@ -40,9 +43,6 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiom
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
 import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
-                 ( Pattern )
-import qualified Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns )
 import           Kore.Step.Rule

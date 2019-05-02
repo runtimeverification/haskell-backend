@@ -23,6 +23,7 @@ import qualified Data.Limit as Limit
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Internal.TermLike
                  ( TermLike )
@@ -32,7 +33,6 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
-import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern

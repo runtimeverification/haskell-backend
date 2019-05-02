@@ -13,6 +13,9 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Pattern
+                 ( Conditional (..), Pattern )
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Condition.Evaluator as Predicate
@@ -20,9 +23,6 @@ import qualified Kore.Step.Condition.Evaluator as Predicate
 import qualified Kore.Step.Merging.Pattern as Pattern
 import           Kore.Step.OrPattern
                  ( OrPattern )
-import           Kore.Step.Pattern
-                 ( Conditional (..), Pattern )
-import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
                  simplifyTerm )

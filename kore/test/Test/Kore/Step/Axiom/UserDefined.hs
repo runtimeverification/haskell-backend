@@ -16,6 +16,8 @@ import           Kore.Attribute.Axiom.Concrete
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Pattern as Pattern
+                 ( Conditional (..), Pattern, bottom )
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeFalsePredicate, makeNotPredicate,
@@ -30,8 +32,6 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
 import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
-                 ( Conditional (..), Pattern, bottom )
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern

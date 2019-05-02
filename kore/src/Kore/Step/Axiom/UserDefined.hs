@@ -18,6 +18,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
@@ -28,7 +29,6 @@ import           Kore.Step.Axiom.Data
                  BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification )
-import qualified Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (..) )

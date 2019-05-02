@@ -30,6 +30,8 @@ import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Source as Attribute
 import           Kore.Domain.Builtin
 import           Kore.Error
+import           Kore.Internal.Pattern
+                 ( Conditional (..) )
 import           Kore.Internal.TermLike
 import           Kore.OnePath.Step
                  ( StrategyPattern )
@@ -44,8 +46,6 @@ import           Kore.Step.Axiom.Data as AttemptedAxiomResults
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import           Kore.Step.Pattern
-                 ( Conditional (..) )
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
 import           Kore.Step.Representation.MultiOr
 import           Kore.Step.Rule

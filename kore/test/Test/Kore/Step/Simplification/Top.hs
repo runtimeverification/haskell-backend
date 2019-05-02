@@ -7,10 +7,10 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
-import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Top
                  ( simplify )
 import           Kore.Syntax

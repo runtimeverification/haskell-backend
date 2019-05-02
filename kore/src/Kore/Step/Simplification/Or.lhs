@@ -24,7 +24,7 @@ import qualified Data.Function as Function
 import           Kore.Predicate.Predicate
                  ( makeOrPredicate )
 import           Kore.Step.Conditional as Conditional
-import           Kore.Step.Pattern as Pattern
+import           Kore.Internal.Pattern as Pattern
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.OrPattern
                  ( OrPattern )

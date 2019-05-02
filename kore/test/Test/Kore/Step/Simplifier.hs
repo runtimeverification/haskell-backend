@@ -3,15 +3,15 @@ module Test.Kore.Step.Simplifier
     , mockPredicateSimplifier
     ) where
 
+import           Kore.Internal.Pattern
+                 ( Conditional (..), Pattern )
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( wrapPredicate )
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
-                 ( Conditional (..), Pattern )
-import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
                  termLikeSimplifier )

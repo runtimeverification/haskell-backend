@@ -15,6 +15,9 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Pattern
+                 ( Pattern )
+import qualified Kore.Internal.Pattern as Conditional
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( pattern PredicateFalse, makeAndPredicate, makeCeilPredicate,
@@ -26,9 +29,6 @@ import           Kore.Step.OrPattern
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.OrPredicate
                  ( OrPredicate )
-import           Kore.Step.Pattern
-                 ( Pattern )
-import qualified Kore.Step.Pattern as Conditional
 import           Kore.Step.Predicate
                  ( Conditional (..), Predicate )
 import qualified Kore.Step.Predicate as Predicate

@@ -4,22 +4,22 @@ License     : NCSA
 
 Representation of program configurations as conditional patterns.
 -}
-module Kore.Step.Pattern
+module Kore.Internal.Pattern
     ( Pattern
     , fromPredicate
     , toPredicate
-    , Kore.Step.Pattern.allVariables
+    , Kore.Internal.Pattern.allVariables
     , bottom
     , bottomOf
     , isBottom
     , isTop
-    , Kore.Step.Pattern.mapVariables
+    , Kore.Internal.Pattern.mapVariables
     , toMLPattern
     , toStepPattern
     , top
     , topOf
     , fromTermLike
-    , Kore.Step.Pattern.freeVariables
+    , Kore.Internal.Pattern.freeVariables
     -- * Re-exports
     , Conditional (..)
     , Conditional.withCondition

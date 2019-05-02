@@ -16,11 +16,11 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
+import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step
-import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern

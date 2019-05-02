@@ -7,13 +7,13 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Next
                  ( simplify )
 import           Kore.Syntax.Next

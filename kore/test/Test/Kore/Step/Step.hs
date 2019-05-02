@@ -19,6 +19,7 @@ import qualified Data.Set as Set
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate as Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
@@ -31,7 +32,6 @@ import           Kore.Step.OrPattern
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.OrPredicate
                  ( OrPredicate )
-import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )

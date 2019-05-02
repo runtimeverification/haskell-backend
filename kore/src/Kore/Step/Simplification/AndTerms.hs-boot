@@ -6,7 +6,7 @@ import Kore.IndexedModule.MetadataTools
        ( SmtMetadataTools )
 import Kore.Step.Axiom.Data
        ( BuiltinAndAxiomSimplifierMap )
-import Kore.Step.Pattern
+import Kore.Internal.Pattern
        ( Pattern )
 import Kore.Step.Simplification.Data
        ( PredicateSimplifier, Simplifier, TermLikeSimplifier )

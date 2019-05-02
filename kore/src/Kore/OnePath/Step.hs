@@ -35,6 +35,9 @@ import           Kore.Attribute.Symbol
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Pattern
+                 ( Pattern )
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate )
@@ -42,9 +45,6 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.Pattern
-                 ( Pattern )
-import qualified Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule

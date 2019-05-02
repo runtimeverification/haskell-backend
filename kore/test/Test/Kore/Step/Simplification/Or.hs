@@ -11,6 +11,7 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
@@ -20,7 +21,6 @@ import qualified Kore.Predicate.Predicate as Syntax
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Or
                  ( simplify, simplifyEvaluated )
 import           Kore.Syntax.Or

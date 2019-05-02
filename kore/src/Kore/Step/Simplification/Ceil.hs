@@ -28,6 +28,9 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
+import           Kore.Internal.Pattern
+                 ( Pattern )
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeTruePredicate )
@@ -43,9 +46,6 @@ import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.OrPredicate
                  ( OrPredicate )
 import qualified Kore.Step.OrPredicate as OrPredicate
-import           Kore.Step.Pattern
-                 ( Pattern )
-import qualified Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.RecursiveAttributes
                  ( isTotalPattern )

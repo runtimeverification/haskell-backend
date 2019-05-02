@@ -15,15 +15,15 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Pattern
+                 ( Conditional (..) )
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
-                 ( Conditional (..) )
-import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.DomainValue
                  ( simplify )
 

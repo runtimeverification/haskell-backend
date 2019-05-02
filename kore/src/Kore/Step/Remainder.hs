@@ -14,13 +14,13 @@ import           Control.Applicative
 import qualified Data.Foldable as Foldable
 import qualified Data.Set as Set
 
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Conditional
                  ( Conditional (Conditional) )
-import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Predicate
                  ( Predicate )
 import           Kore.Step.Representation.MultiAnd

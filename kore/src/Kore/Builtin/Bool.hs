@@ -55,8 +55,8 @@ import qualified Text.Megaparsec.Char as Parsec
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
+import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-import           Kore.Step.Pattern as Pattern
 
 {- | Builtin name of the @Bool@ sort.
  -}

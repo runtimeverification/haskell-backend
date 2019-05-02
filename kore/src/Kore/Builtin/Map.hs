@@ -81,12 +81,12 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
+import           Kore.Internal.Pattern
+                 ( Conditional (..), Pattern )
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
-                 ( Conditional (..), Pattern )
-import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
 import           Kore.Syntax.Definition
 import           Kore.Unification.Unify

@@ -42,6 +42,8 @@ import           Kore.Builtin.Builtin
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
+import           Kore.Internal.Pattern
+                 ( Conditional (..) )
 import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
@@ -49,8 +51,6 @@ import           Kore.Step.Axiom.Data
                  BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier,
                  notApplicableAxiomEvaluator, purePatternAxiomEvaluator )
 import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
-                 ( Conditional (..) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Or as Or

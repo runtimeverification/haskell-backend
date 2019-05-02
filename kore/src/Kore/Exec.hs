@@ -46,6 +46,9 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
 import           Kore.IndexedModule.Resolvers
                  ( resolveSymbol )
+import           Kore.Internal.Pattern
+                 ( Conditional (..), Pattern )
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import qualified Kore.Logger as Log
 import qualified Kore.ModelChecker.Bounded as Bounded
@@ -68,9 +71,6 @@ import           Kore.Step.Axiom.Registry
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
-                 ( Conditional (..), Pattern )
-import qualified Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Predicate as Predicate
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule

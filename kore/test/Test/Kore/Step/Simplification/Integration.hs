@@ -19,6 +19,7 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Builtin.Map as Map
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeTruePredicate )
@@ -32,7 +33,6 @@ import           Kore.Step.Axiom.Registry
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern

@@ -17,10 +17,10 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeFalsePredicate, makeTruePredicate )
-import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.AndTerms
                  ( termAnd, termUnification )
 import           Kore.Step.Simplification.Data

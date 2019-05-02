@@ -8,7 +8,7 @@ import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
+import           Kore.Internal.Pattern
                  ( Predicate )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, TermLikeSimplifier )

@@ -21,6 +21,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike as Pattern
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Axiom.Data
@@ -29,7 +30,6 @@ import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Simplification.Data
                  ( BranchT, PredicateSimplifier, Simplifier,

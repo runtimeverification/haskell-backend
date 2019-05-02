@@ -23,6 +23,11 @@ import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Pattern
+                 ( Conditional (Conditional) )
+import           Kore.Internal.Pattern as Conditional
+                 ( Conditional (..) )
+import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Internal.TermLike
                  ( TermLike )
@@ -33,11 +38,6 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
-                 ( Conditional (Conditional) )
-import           Kore.Step.Pattern as Conditional
-                 ( Conditional (..) )
-import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Rule
                  ( OnePathRule (..), RewriteRule (..),
                  RulePattern (RulePattern) )

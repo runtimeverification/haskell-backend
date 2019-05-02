@@ -91,8 +91,8 @@ import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
+import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike as TermLike
-import           Kore.Step.Pattern as Pattern
 import qualified Kore.Syntax.Pattern as AST
 
 {- | Builtin name of the @Int@ sort.

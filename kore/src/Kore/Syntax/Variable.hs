@@ -85,7 +85,7 @@ illegalVariableCounter =
 {- | Reset 'variableCounter' so that a 'Variable' may be unparsed.
 
 @externalizeFreshVariable@ is not injective and is unsafe if used with
-'mapVariables'. See 'Kore.Step.Pattern.externalizeFreshVariables' instead.
+'mapVariables'. See 'Kore.Internal.Pattern.externalizeFreshVariables' instead.
 
  -}
 externalizeFreshVariable :: Variable -> Variable

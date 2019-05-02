@@ -14,8 +14,8 @@ import           Test.Tasty.HUnit
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-import qualified Kore.Step.Pattern as Pattern
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin

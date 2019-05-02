@@ -55,7 +55,7 @@ If any of the variables to rename occurs in the set of avoided variables, it
 will be mapped to a fresh name in the result. Every fresh name in the result
 will also be unique among the fresh names.
 
-To use @refreshVariables@ with 'Kore.Step.Pattern.substitute', map the result
+To use @refreshVariables@ with 'Kore.Internal.Pattern.substitute', map the result
 with 'Kore.Internal.TermLike.mkVar':
 
 @

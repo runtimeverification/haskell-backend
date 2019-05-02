@@ -31,6 +31,8 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
+import           Kore.Internal.Pattern
+                 ( Conditional (..), Pattern )
 import           Kore.Internal.TermLike
 import           Kore.Logger.Output
                  ( KoreLogOptions (..), parseKoreLogOptions, withLogger )
@@ -39,8 +41,6 @@ import           Kore.Parser
 import           Kore.Predicate.Predicate
                  ( makePredicate )
 import           Kore.Step
-import           Kore.Step.Pattern
-                 ( Conditional (..), Pattern )
 import           Kore.Step.Search
                  ( SearchType (..) )
 import qualified Kore.Step.Search as Search

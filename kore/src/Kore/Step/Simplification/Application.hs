@@ -21,6 +21,9 @@ import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
+import           Kore.Internal.Pattern
+                 ( Conditional (..), Pattern )
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
@@ -29,9 +32,6 @@ import           Kore.Step.Function.Evaluator
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
-                 ( Conditional (..), Pattern )
-import qualified Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( fullCrossProduct )
 import           Kore.Step.Simplification.Data

@@ -63,6 +63,8 @@ import           Kore.Attribute.Axiom
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom (..), RuleIndex (..), sourceLocation )
 import           Kore.Attribute.RuleIndex
+import           Kore.Internal.Pattern
+                 ( Conditional (..) )
 import           Kore.Internal.TermLike
                  ( TermLike )
 import           Kore.OnePath.Step
@@ -76,8 +78,6 @@ import           Kore.OnePath.Verification
 import           Kore.OnePath.Verification
                  ( Claim )
 import           Kore.Repl.Data
-import           Kore.Step.Pattern
-                 ( Conditional (..) )
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
 import qualified Kore.Step.Rule as Rule
