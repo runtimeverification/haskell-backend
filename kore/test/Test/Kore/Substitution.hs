@@ -17,7 +17,7 @@ objectVariable = Variable
 
 objectVariablePattern
     :: PatternF Domain.Builtin Variable ParsedPattern
-objectVariablePattern = VariablePattern objectVariable
+objectVariablePattern = VariableF objectVariable
 
 objectVariableUnifiedPattern :: ParsedPattern
 objectVariableUnifiedPattern = asParsedPattern objectVariablePattern
@@ -33,13 +33,13 @@ metaVariable = Variable
     }
 
 metaVariablePattern :: PatternF Domain.Builtin Variable ParsedPattern
-metaVariablePattern = VariablePattern metaVariable
+metaVariablePattern = VariableF metaVariable
 
 metaVariableUnifiedPattern :: ParsedPattern
 metaVariableUnifiedPattern = asParsedPattern metaVariablePattern
 
 objectTopPattern :: ParsedPattern
-objectTopPattern = asParsedPattern $ TopPattern $ Top objectSort
+objectTopPattern = asParsedPattern $ TopF $ Top objectSort
 
 objectBottomPattern :: ParsedPattern
-objectBottomPattern = asParsedPattern $ BottomPattern $ Bottom objectSort
+objectBottomPattern = asParsedPattern $ BottomF $ Bottom objectSort

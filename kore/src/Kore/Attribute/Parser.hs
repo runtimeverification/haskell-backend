@@ -158,7 +158,7 @@ withApplication
     -> Parser attrs
 withApplication ident go kore =
     case Recursive.project kore of
-        _ :< ApplicationPattern app
+        _ :< ApplicationF app
           | symbolOrAliasConstructor == ident -> \attrs ->
             Kore.Error.withLocationAndContext
                 symbol
@@ -238,7 +238,7 @@ getTwoArguments =
 getSymbolOrAlias :: AttributePattern -> Parser SymbolOrAlias
 getSymbolOrAlias kore =
     case Recursive.project kore of
-        _ :< ApplicationPattern app
+        _ :< ApplicationF app
           | [] <- applicationChildren -> return symbol
           | otherwise ->
             Kore.Error.withLocationAndContext
@@ -255,7 +255,7 @@ getSymbolOrAlias kore =
 getStringLiteral :: AttributePattern -> Parser StringLiteral
 getStringLiteral kore =
     case Recursive.project kore of
-        _ :< StringLiteralPattern lit -> return lit
+        _ :< StringLiteralF lit -> return lit
         _ -> Kore.Error.koreFail "expected string literal pattern"
 
 {- | Parse an 'SExpr' for the @smtlib@ attribute.

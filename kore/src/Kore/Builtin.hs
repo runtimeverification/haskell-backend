@@ -196,7 +196,7 @@ externalizePattern =
         ->  Base (TermLike variable) (TermLike variable)
     externalizePatternWorker (Recursive.project -> original@(_ :< pat)) =
         case pat of
-            DomainValuePattern domain ->
+            DomainValueF domain ->
                 case domain of
                     Domain.BuiltinExternal _ -> original
                     Domain.BuiltinMap  builtin ->

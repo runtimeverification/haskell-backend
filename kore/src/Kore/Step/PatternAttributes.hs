@@ -137,11 +137,11 @@ isPreconstructedPattern
     -> Either err (PartialPatternProof (FunctionalProof variable))
 isPreconstructedPattern err (_ :< pattern') =
     case pattern' of
-        DomainValuePattern domain ->
+        DomainValueF domain ->
             (Right . Descend) (FunctionalDomainValue $ () <$ domain)
-        StringLiteralPattern str ->
+        StringLiteralF str ->
             Right (DoNotDescend (FunctionalStringLiteral str))
-        CharLiteralPattern char ->
+        CharLiteralF char ->
             Right (DoNotDescend (FunctionalCharLiteral char))
         _ -> Left err
 
@@ -153,9 +153,9 @@ checkFunctionalHead
         (PartialPatternProof (FunctionalProof variable))
 checkFunctionalHead tools base@(_ :< pattern') =
     case pattern' of
-        VariablePattern v ->
+        VariableF v ->
             Right (DoNotDescend (FunctionalVariable v))
-        ApplicationPattern ap
+        ApplicationF ap
           | give tools isFunctional_ patternHead ->
             return (Descend (FunctionalHead patternHead))
           | give tools isSortInjection_ patternHead ->
@@ -178,7 +178,7 @@ isConstructorLikeTop
     -> Bool
 isConstructorLikeTop tools base@(_ :< pattern') =
     case pattern' of
-        ApplicationPattern ap ->
+        ApplicationF ap ->
             give tools isConstructor_ patternHead
           where
             patternHead = applicationSymbolOrAlias ap
@@ -192,7 +192,7 @@ checkConstructorLikeHead
         (PartialPatternProof ConstructorLikeProof)
 checkConstructorLikeHead tools base@(_ :< pattern') =
     case pattern' of
-        ApplicationPattern Application {applicationSymbolOrAlias}
+        ApplicationF Application {applicationSymbolOrAlias}
           | isConstructor || isSortInjection ->
             return (Descend ConstructorLikeProof)
           where
@@ -200,7 +200,7 @@ checkConstructorLikeHead tools base@(_ :< pattern') =
                 give tools
                     ((,) <$> isConstructor_ <*> isSortInjection_)
                     applicationSymbolOrAlias
-        VariablePattern _ ->
+        VariableF _ ->
             return (Descend ConstructorLikeProof)
         _ | Right _ <- isPreconstructedPattern undefined base ->
             return (DoNotDescend ConstructorLikeProof)
@@ -218,7 +218,7 @@ checkConstructorModuloLikeHead tools base@(_ :< pattern') =
         r@(Right _) -> r
         Left _ ->
             case pattern' of
-                ApplicationPattern Application {applicationSymbolOrAlias}
+                ApplicationF Application {applicationSymbolOrAlias}
                   | isConstructorModulo -> return (Descend ConstructorLikeProof)
                   where
                     isConstructorModulo =
@@ -243,7 +243,7 @@ checkFunctionHead
         (PartialPatternProof (FunctionProof variable))
 checkFunctionHead tools base@(_ :< pattern') =
     case pattern' of
-        ApplicationPattern ap
+        ApplicationF ap
           | give tools isFunction_ patternHead ->
             Right (Descend (FunctionHead patternHead))
           where
@@ -263,7 +263,7 @@ checkTotalHead
         (PartialPatternProof (TotalProof variable))
 checkTotalHead tools base@(_ :< pattern') =
     case pattern' of
-        ApplicationPattern ap
+        ApplicationF ap
           | isTotal (MetadataTools.symAttributes tools patternHead) ->
             Right (Descend (TotalHead patternHead))
           where

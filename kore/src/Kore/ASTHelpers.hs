@@ -128,7 +128,7 @@ wrapAndQuantify
     -> PurePattern domain Variable Attribute.Null
 wrapAndQuantify s p var =
     asPurePattern
-        (mempty :< ForallPattern Forall
+        (mempty :< ForallF Forall
             { forallSort = s
             , forallVariable = var
             , forallChild = p

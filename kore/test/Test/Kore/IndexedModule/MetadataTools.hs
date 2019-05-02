@@ -233,7 +233,7 @@ testSubsortModule =
           (SentenceAxiom
               { sentenceAxiomParameters = [sortVariable "R"]
               , sentenceAxiomPattern =
-                  asParsedPattern $ TopPattern (Top sortVarR)
+                  asParsedPattern $ TopF (Top sortVarR)
               , sentenceAxiomAttributes = Attributes
                   [subsortAttribute subSort superSort]
               })

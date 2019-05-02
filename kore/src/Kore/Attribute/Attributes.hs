@@ -44,7 +44,7 @@ attributePattern
     -> [AttributePattern]  -- ^ arguments
     -> AttributePattern
 attributePattern applicationSymbolOrAlias applicationChildren =
-    (asAttributePattern . ApplicationPattern)
+    (asAttributePattern . ApplicationF)
         Application { applicationSymbolOrAlias, applicationChildren }
 
 -- | An 'AttributePattern' of the attribute symbol applied to no arguments.
@@ -56,7 +56,7 @@ attributePattern_ applicationSymbolOrAlias =
 
 attributeString :: Text -> AttributePattern
 attributeString literal =
-    (asAttributePattern . StringLiteralPattern) (StringLiteral literal)
+    (asAttributePattern . StringLiteralF) (StringLiteral literal)
 
 {-|'Attributes' corresponds to the @attributes@ Kore syntactic declaration.
 It is parameterized by the types of Patterns, @pat@.

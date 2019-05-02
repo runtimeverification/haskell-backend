@@ -156,9 +156,9 @@ pattern PredicateFalse :: Predicate variable
 pattern PredicateTrue :: Predicate variable
 
 pattern PredicateFalse
-    <- GenericPredicate (Recursive.project -> _ :< BottomPattern _)
+    <- GenericPredicate (Recursive.project -> _ :< BottomF _)
 pattern PredicateTrue
-    <- GenericPredicate (Recursive.project -> _ :< TopPattern _)
+    <- GenericPredicate (Recursive.project -> _ :< TopF _)
 
 {-|'isFalse' checks whether a predicate is obviously bottom.
 -}
@@ -424,17 +424,17 @@ makePredicate = Recursive.elgot makePredicateBottomUp makePredicateTopDown
     makePredicateBottomUp (_ :< patE) = do
         pat <- sequence patE
         case pat of
-            TopPattern _ -> return makeTruePredicate
-            BottomPattern _ -> return makeFalsePredicate
-            AndPattern p -> return $ makeAndPredicate (andFirst p) (andSecond p)
-            OrPattern p -> return $ makeOrPredicate (orFirst p) (orSecond p)
-            IffPattern p -> return $ makeIffPredicate (iffFirst p) (iffSecond p)
-            ImpliesPattern p -> return $
+            TopF _ -> return makeTruePredicate
+            BottomF _ -> return makeFalsePredicate
+            AndF p -> return $ makeAndPredicate (andFirst p) (andSecond p)
+            OrF p -> return $ makeOrPredicate (orFirst p) (orSecond p)
+            IffF p -> return $ makeIffPredicate (iffFirst p) (iffSecond p)
+            ImpliesF p -> return $
                 makeImpliesPredicate (impliesFirst p) (impliesSecond p)
-            NotPattern p -> return $ makeNotPredicate (notChild p)
-            ExistsPattern p -> return $
+            NotF p -> return $ makeNotPredicate (notChild p)
+            ExistsF p -> return $
                 makeExistsPredicate (existsVariable p) (existsChild p)
-            ForallPattern p -> return $
+            ForallF p -> return $
                 makeForallPredicate (forallVariable p) (forallChild p)
             p -> koreFail
                 ("Cannot translate to predicate: " ++ show p)
@@ -445,13 +445,13 @@ makePredicate = Recursive.elgot makePredicateBottomUp makePredicateTopDown
             (Base (TermLike variable) (TermLike variable))
     makePredicateTopDown (Recursive.project -> projected@(_ :< pat)) =
         case pat of
-            CeilPattern Ceil { ceilChild } ->
+            CeilF Ceil { ceilChild } ->
                 (Left . pure) (makeCeilPredicate ceilChild)
-            FloorPattern Floor { floorChild } ->
+            FloorF Floor { floorChild } ->
                 (Left . pure) (makeFloorPredicate floorChild)
-            EqualsPattern Equals { equalsFirst, equalsSecond } ->
+            EqualsF Equals { equalsFirst, equalsSecond } ->
                 (Left . pure) (makeEqualsPredicate equalsFirst equalsSecond)
-            InPattern In { inContainedChild, inContainingChild } ->
+            InF In { inContainedChild, inContainingChild } ->
                 (Left . pure)
                     (makeInPredicate inContainedChild inContainingChild)
             _ -> Right projected

@@ -65,7 +65,7 @@ verifyAttributePattern
     -> m VerifySuccess
 verifyAttributePattern pat =
     case pat of
-        ApplicationPattern _ -> verifySuccess
+        ApplicationF _ -> verifySuccess
         _ ->
             koreFail "Non-application attributes are not supported"
 

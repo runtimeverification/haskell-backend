@@ -158,8 +158,8 @@ normalizeSortedSubstitution
     substitution
   =
     case Cofree.tailF (Recursive.project varPattern) of
-        BottomPattern _ -> return Predicate.bottom
-        VariablePattern var'
+        BottomF _ -> return Predicate.bottom
+        VariableF var'
           | var == var' ->
             normalizeSortedSubstitution unprocessed result substitution
         _ -> do
@@ -184,7 +184,7 @@ getDependencies
     -> Set variable
 getDependencies interesting var (Recursive.project -> valid :< patternHead) =
     case patternHead of
-        VariablePattern v | v == var -> Set.empty
+        VariableF v | v == var -> Set.empty
         _ -> Set.intersection interesting freeVars
   where
     Valid { freeVariables = freeVars } = valid
@@ -209,7 +209,7 @@ getNonSimplifiableDependencies
     tools interesting var p@(Recursive.project -> _ :< h)
   =
     case h of
-        VariablePattern v | v == var -> Set.empty
+        VariableF v | v == var -> Set.empty
         _ -> Recursive.fold (nonSimplifiableAbove tools interesting) p
 
 nonSimplifiableAbove
@@ -220,11 +220,11 @@ nonSimplifiableAbove
     -> Set variable
 nonSimplifiableAbove tools interesting p =
     case Cofree.tailF p of
-        VariablePattern v ->
+        VariableF v ->
             if v `Set.member` interesting then Set.singleton v else Set.empty
-        ExistsPattern Exists {existsVariable = v} -> Set.delete v dependencies
-        ForallPattern Forall {forallVariable = v} -> Set.delete v dependencies
-        ApplicationPattern Application { applicationSymbolOrAlias } ->
+        ExistsF Exists {existsVariable = v} -> Set.delete v dependencies
+        ForallF Forall {forallVariable = v} -> Set.delete v dependencies
+        ApplicationF Application { applicationSymbolOrAlias } ->
             if give tools $ isNonSimplifiable_ applicationSymbolOrAlias
                 then dependencies
                 else Set.empty

@@ -48,14 +48,14 @@ freePureVariables root =
 
     freePureVariables1 recursive =
         case Cofree.tailF (Recursive.project recursive) of
-            VariablePattern v -> unlessM (isBound v) (recordFree v)
-            ExistsPattern Exists { existsVariable, existsChild } ->
+            VariableF v -> unlessM (isBound v) (recordFree v)
+            ExistsF Exists { existsVariable, existsChild } ->
                 Monad.RWS.local
                     -- record the bound variable
                     (Set.insert existsVariable)
                     -- descend into the bound pattern
                     (freePureVariables1 existsChild)
-            ForallPattern Forall { forallVariable, forallChild } ->
+            ForallF Forall { forallVariable, forallChild } ->
                 Monad.RWS.local
                     -- record the bound variable
                     (Set.insert forallVariable)
@@ -71,10 +71,10 @@ pureMergeVariables
     -> Set.Set variable
 pureMergeVariables base =
     case Cofree.tailF base of
-        VariablePattern v -> Set.singleton v
-        ExistsPattern Exists { existsVariable, existsChild } ->
+        VariableF v -> Set.singleton v
+        ExistsF Exists { existsVariable, existsChild } ->
             Set.insert existsVariable existsChild
-        ForallPattern Forall { forallVariable, forallChild } ->
+        ForallF Forall { forallVariable, forallChild } ->
             Set.insert forallVariable forallChild
         p -> Foldable.foldl' Set.union Set.empty p
 
@@ -99,11 +99,11 @@ synthetic
     -> Set.Set variable
 synthetic (_ :< patternHead) =
     case patternHead of
-        ExistsPattern Exists { existsVariable, existsChild } ->
+        ExistsF Exists { existsVariable, existsChild } ->
             Set.delete existsVariable existsChild
-        ForallPattern Forall { forallVariable, forallChild } ->
+        ForallF Forall { forallVariable, forallChild } ->
             Set.delete forallVariable forallChild
-        VariablePattern variable ->
+        VariableF variable ->
             Set.singleton variable
         _ -> Foldable.foldl' Set.union Set.empty patternHead
 

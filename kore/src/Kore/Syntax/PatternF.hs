@@ -59,28 +59,28 @@ import Kore.Unparser
 
 -}
 data PatternF domain variable child
-    = AndPattern           !(And Sort child)
-    | ApplicationPattern   !(Application SymbolOrAlias child)
-    | BottomPattern        !(Bottom Sort child)
-    | CeilPattern          !(Ceil Sort child)
-    | DomainValuePattern   !(domain child)
-    | EqualsPattern        !(Equals Sort child)
-    | ExistsPattern        !(Exists Sort variable child)
-    | FloorPattern         !(Floor Sort child)
-    | ForallPattern        !(Forall Sort variable child)
-    | IffPattern           !(Iff Sort child)
-    | ImpliesPattern       !(Implies Sort child)
-    | InPattern            !(In Sort child)
-    | NextPattern          !(Next Sort child)
-    | NotPattern           !(Not Sort child)
-    | OrPattern            !(Or Sort child)
-    | RewritesPattern      !(Rewrites Sort child)
-    | StringLiteralPattern !StringLiteral
-    | CharLiteralPattern   !CharLiteral
-    | TopPattern           !(Top Sort child)
-    | VariablePattern      !variable
-    | InhabitantPattern    !Sort
-    | SetVariablePattern   !(SetVariable variable)
+    = AndF           !(And Sort child)
+    | ApplicationF   !(Application SymbolOrAlias child)
+    | BottomF        !(Bottom Sort child)
+    | CeilF          !(Ceil Sort child)
+    | DomainValueF   !(domain child)
+    | EqualsF        !(Equals Sort child)
+    | ExistsF        !(Exists Sort variable child)
+    | FloorF         !(Floor Sort child)
+    | ForallF        !(Forall Sort variable child)
+    | IffF           !(Iff Sort child)
+    | ImpliesF       !(Implies Sort child)
+    | InF            !(In Sort child)
+    | NextF          !(Next Sort child)
+    | NotF           !(Not Sort child)
+    | OrF            !(Or Sort child)
+    | RewritesF      !(Rewrites Sort child)
+    | StringLiteralF !StringLiteral
+    | CharLiteralF   !CharLiteral
+    | TopF           !(Top Sort child)
+    | VariableF      !variable
+    | InhabitantF    !Sort
+    | SetVariableF   !(SetVariable variable)
     deriving (Foldable, Functor, Generic, Traversable)
 
 Deriving.deriveEq1 ''PatternF
@@ -131,53 +131,53 @@ instance
   where
     unparse =
         \case
-            AndPattern p           -> unparse p
-            ApplicationPattern p   -> unparse p
-            BottomPattern p        -> unparse p
-            CeilPattern p          -> unparse p
-            DomainValuePattern p   -> unparse p
-            EqualsPattern p        -> unparse p
-            ExistsPattern p        -> unparse p
-            FloorPattern p         -> unparse p
-            ForallPattern p        -> unparse p
-            IffPattern p           -> unparse p
-            ImpliesPattern p       -> unparse p
-            InPattern p            -> unparse p
-            NextPattern p          -> unparse p
-            NotPattern p           -> unparse p
-            OrPattern p            -> unparse p
-            RewritesPattern p      -> unparse p
-            StringLiteralPattern p -> unparse p
-            CharLiteralPattern p   -> unparse p
-            TopPattern p           -> unparse p
-            VariablePattern p      -> unparse p
-            InhabitantPattern s          -> unparse s
-            SetVariablePattern p   -> unparse p
+            AndF p           -> unparse p
+            ApplicationF p   -> unparse p
+            BottomF p        -> unparse p
+            CeilF p          -> unparse p
+            DomainValueF p   -> unparse p
+            EqualsF p        -> unparse p
+            ExistsF p        -> unparse p
+            FloorF p         -> unparse p
+            ForallF p        -> unparse p
+            IffF p           -> unparse p
+            ImpliesF p       -> unparse p
+            InF p            -> unparse p
+            NextF p          -> unparse p
+            NotF p           -> unparse p
+            OrF p            -> unparse p
+            RewritesF p      -> unparse p
+            StringLiteralF p -> unparse p
+            CharLiteralF p   -> unparse p
+            TopF p           -> unparse p
+            VariableF p      -> unparse p
+            InhabitantF s          -> unparse s
+            SetVariableF p   -> unparse p
 
     unparse2 =
         \case
-            AndPattern p           -> unparse2 p
-            ApplicationPattern p   -> unparse2 p
-            BottomPattern p        -> unparse2 p
-            CeilPattern p          -> unparse2 p
-            DomainValuePattern p   -> unparse2 p
-            EqualsPattern p        -> unparse2 p
-            ExistsPattern p        -> unparse2 p
-            FloorPattern p         -> unparse2 p
-            ForallPattern p        -> unparse2 p
-            IffPattern p           -> unparse2 p
-            ImpliesPattern p       -> unparse2 p
-            InPattern p            -> unparse2 p
-            NextPattern p          -> unparse2 p
-            NotPattern p           -> unparse2 p
-            OrPattern p            -> unparse2 p
-            RewritesPattern p      -> unparse2 p
-            StringLiteralPattern p -> unparse2 p
-            CharLiteralPattern p   -> unparse2 p
-            TopPattern p           -> unparse2 p
-            VariablePattern p      -> unparse2 p
-            InhabitantPattern s          -> unparse s
-            SetVariablePattern p   -> unparse p
+            AndF p           -> unparse2 p
+            ApplicationF p   -> unparse2 p
+            BottomF p        -> unparse2 p
+            CeilF p          -> unparse2 p
+            DomainValueF p   -> unparse2 p
+            EqualsF p        -> unparse2 p
+            ExistsF p        -> unparse2 p
+            FloorF p         -> unparse2 p
+            ForallF p        -> unparse2 p
+            IffF p           -> unparse2 p
+            ImpliesF p       -> unparse2 p
+            InF p            -> unparse2 p
+            NextF p          -> unparse2 p
+            NotF p           -> unparse2 p
+            OrF p            -> unparse2 p
+            RewritesF p      -> unparse2 p
+            StringLiteralF p -> unparse2 p
+            CharLiteralF p   -> unparse2 p
+            TopF p           -> unparse2 p
+            VariableF p      -> unparse2 p
+            InhabitantF s          -> unparse s
+            SetVariableF p   -> unparse p
 
 {- | Use the provided mapping to replace all variables in a 'PatternF' head.
 
@@ -207,30 +207,30 @@ traverseVariables
 traverseVariables traversing =
     \case
         -- Non-trivial cases
-        ExistsPattern any0 -> ExistsPattern <$> traverseVariablesExists any0
-        ForallPattern all0 -> ForallPattern <$> traverseVariablesForall all0
-        VariablePattern variable -> VariablePattern <$> traversing variable
-        InhabitantPattern s -> pure (InhabitantPattern s)
-        SetVariablePattern (SetVariable variable)
-            -> SetVariablePattern . SetVariable <$> traversing variable
+        ExistsF any0 -> ExistsF <$> traverseVariablesExists any0
+        ForallF all0 -> ForallF <$> traverseVariablesForall all0
+        VariableF variable -> VariableF <$> traversing variable
+        InhabitantF s -> pure (InhabitantF s)
+        SetVariableF (SetVariable variable)
+            -> SetVariableF . SetVariable <$> traversing variable
         -- Trivial cases
-        AndPattern andP -> pure (AndPattern andP)
-        ApplicationPattern appP -> pure (ApplicationPattern appP)
-        BottomPattern botP -> pure (BottomPattern botP)
-        CeilPattern ceilP -> pure (CeilPattern ceilP)
-        DomainValuePattern dvP -> pure (DomainValuePattern dvP)
-        EqualsPattern eqP -> pure (EqualsPattern eqP)
-        FloorPattern flrP -> pure (FloorPattern flrP)
-        IffPattern iffP -> pure (IffPattern iffP)
-        ImpliesPattern impP -> pure (ImpliesPattern impP)
-        InPattern inP -> pure (InPattern inP)
-        NextPattern nxtP -> pure (NextPattern nxtP)
-        NotPattern notP -> pure (NotPattern notP)
-        OrPattern orP -> pure (OrPattern orP)
-        RewritesPattern rewP -> pure (RewritesPattern rewP)
-        StringLiteralPattern strP -> pure (StringLiteralPattern strP)
-        CharLiteralPattern charP -> pure (CharLiteralPattern charP)
-        TopPattern topP -> pure (TopPattern topP)
+        AndF andP -> pure (AndF andP)
+        ApplicationF appP -> pure (ApplicationF appP)
+        BottomF botP -> pure (BottomF botP)
+        CeilF ceilP -> pure (CeilF ceilP)
+        DomainValueF dvP -> pure (DomainValueF dvP)
+        EqualsF eqP -> pure (EqualsF eqP)
+        FloorF flrP -> pure (FloorF flrP)
+        IffF iffP -> pure (IffF iffP)
+        ImpliesF impP -> pure (ImpliesF impP)
+        InF inP -> pure (InF inP)
+        NextF nxtP -> pure (NextF nxtP)
+        NotF notP -> pure (NotF notP)
+        OrF orP -> pure (OrF orP)
+        RewritesF rewP -> pure (RewritesF rewP)
+        StringLiteralF strP -> pure (StringLiteralF strP)
+        CharLiteralF charP -> pure (CharLiteralF charP)
+        TopF topP -> pure (TopF topP)
   where
     traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
         Exists existsSort <$> traversing existsVariable <*> pure existsChild
@@ -245,29 +245,29 @@ mapDomainValues
 mapDomainValues mapping =
     \case
         -- Non-trivial case
-        DomainValuePattern domainP -> DomainValuePattern (mapping domainP)
-        InhabitantPattern s -> InhabitantPattern s
+        DomainValueF domainP -> DomainValueF (mapping domainP)
+        InhabitantF s -> InhabitantF s
         -- Trivial cases
-        AndPattern andP -> AndPattern andP
-        ApplicationPattern appP -> ApplicationPattern appP
-        BottomPattern botP -> BottomPattern botP
-        CeilPattern ceilP -> CeilPattern ceilP
-        EqualsPattern eqP -> EqualsPattern eqP
-        ExistsPattern existsP -> ExistsPattern existsP
-        FloorPattern flrP -> FloorPattern flrP
-        ForallPattern forallP -> ForallPattern forallP
-        IffPattern iffP -> IffPattern iffP
-        ImpliesPattern impP -> ImpliesPattern impP
-        InPattern inP -> InPattern inP
-        NextPattern nextP -> NextPattern nextP
-        NotPattern notP -> NotPattern notP
-        OrPattern orP -> OrPattern orP
-        RewritesPattern rewP -> RewritesPattern rewP
-        StringLiteralPattern strP -> StringLiteralPattern strP
-        CharLiteralPattern charP -> CharLiteralPattern charP
-        TopPattern topP -> TopPattern topP
-        VariablePattern varP -> VariablePattern varP
-        SetVariablePattern varP -> SetVariablePattern varP
+        AndF andP -> AndF andP
+        ApplicationF appP -> ApplicationF appP
+        BottomF botP -> BottomF botP
+        CeilF ceilP -> CeilF ceilP
+        EqualsF eqP -> EqualsF eqP
+        ExistsF existsP -> ExistsF existsP
+        FloorF flrP -> FloorF flrP
+        ForallF forallP -> ForallF forallP
+        IffF iffP -> IffF iffP
+        ImpliesF impP -> ImpliesF impP
+        InF inP -> InF inP
+        NextF nextP -> NextF nextP
+        NotF notP -> NotF notP
+        OrF orP -> OrF orP
+        RewritesF rewP -> RewritesF rewP
+        StringLiteralF strP -> StringLiteralF strP
+        CharLiteralF charP -> CharLiteralF charP
+        TopF topP -> TopF topP
+        VariableF varP -> VariableF varP
+        SetVariableF varP -> SetVariableF varP
 
 {- | Cast a 'PatternF' head with @'Const' 'Void'@ domain values into any domain.
 
@@ -291,15 +291,15 @@ groundHead ctor location = SymbolOrAlias
     , symbolOrAliasParams = []
     }
 
--- | Given a head and a list of children, produces an 'ApplicationPattern'
+-- | Given a head and a list of children, produces an 'ApplicationF'
 --  applying the given head to the children
 apply :: SymbolOrAlias -> [child] -> PatternF domain variable child
-apply patternHead patterns = ApplicationPattern Application
+apply patternHead patterns = ApplicationF Application
     { applicationSymbolOrAlias = patternHead
     , applicationChildren = patterns
     }
 
 -- |Applies the given head to the empty list of children to obtain a
--- constant 'ApplicationPattern'
+-- constant 'ApplicationF'
 constant :: SymbolOrAlias -> PatternF domain variable child
 constant patternHead = apply patternHead []

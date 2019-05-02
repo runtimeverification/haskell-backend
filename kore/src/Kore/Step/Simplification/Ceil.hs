@@ -245,7 +245,7 @@ makeEvaluateTerm
   | isTotalPattern tools term = return OrPredicate.top
   | otherwise =
     case projected of
-        Syntax.ApplicationPattern app
+        Syntax.ApplicationF app
           | StepperAttributes.isTotal headAttributes -> do
             simplifiedChildren <- mapM
                 (makeEvaluateTerm
@@ -263,7 +263,7 @@ makeEvaluateTerm
             Application { applicationSymbolOrAlias = patternHead } = app
             Application { applicationChildren = children } = app
             headAttributes = MetadataTools.symAttributes tools patternHead
-        Syntax.DomainValuePattern child ->
+        Syntax.DomainValueF child ->
             makeEvaluateBuiltin
                 tools
                 substitutionSimplifier
@@ -326,7 +326,7 @@ makeEvaluateBuiltin
     (Domain.BuiltinExternal Domain.External { domainValueChild = p })
   =
     case Recursive.project p of
-        _ :< Syntax.StringLiteralPattern _ ->
+        _ :< Syntax.StringLiteralF _ ->
             -- This should be the only kind of Domain.BuiltinExternal, and it
             -- should be valid and functional if this has passed verification.
             return OrPredicate.top

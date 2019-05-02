@@ -83,37 +83,37 @@ translatePredicate translateUninterpreted predicate =
     translatePredicatePattern pat =
         case Cofree.tailF (Recursive.project pat) of
             -- Logical connectives: translate as connectives
-            AndPattern and' -> translatePredicateAnd and'
-            BottomPattern _ -> return (SMT.bool False)
-            EqualsPattern eq ->
+            AndF and' -> translatePredicateAnd and'
+            BottomF _ -> return (SMT.bool False)
+            EqualsF eq ->
                 -- Equality of predicates and builtins can be translated to
                 -- equality in the SMT solver, but other patterns must remain
                 -- uninterpreted.
                     translatePredicateEquals eq
                 <|> translateUninterpreted SMT.tBool pat
-            IffPattern iff -> translatePredicateIff iff
-            ImpliesPattern implies -> translatePredicateImplies implies
-            NotPattern not' -> translatePredicateNot not'
-            OrPattern or' -> translatePredicateOr or'
-            TopPattern _ -> return (SMT.bool True)
+            IffF iff -> translatePredicateIff iff
+            ImpliesF implies -> translatePredicateImplies implies
+            NotF not' -> translatePredicateNot not'
+            OrF or' -> translatePredicateOr or'
+            TopF _ -> return (SMT.bool True)
 
             -- Uninterpreted: translate as variables
-            CeilPattern _ -> translateUninterpreted SMT.tBool pat
-            ExistsPattern _ -> translateUninterpreted SMT.tBool pat
-            FloorPattern _ -> translateUninterpreted SMT.tBool pat
-            ForallPattern _ -> translateUninterpreted SMT.tBool pat
-            InPattern _ -> translateUninterpreted SMT.tBool pat
+            CeilF _ -> translateUninterpreted SMT.tBool pat
+            ExistsF _ -> translateUninterpreted SMT.tBool pat
+            FloorF _ -> translateUninterpreted SMT.tBool pat
+            ForallF _ -> translateUninterpreted SMT.tBool pat
+            InF _ -> translateUninterpreted SMT.tBool pat
 
             -- Invalid: no translation, should not occur in predicates
-            ApplicationPattern _ -> empty
-            DomainValuePattern _ -> empty
-            NextPattern _ -> empty
-            RewritesPattern _ -> empty
-            VariablePattern _ -> empty
-            SetVariablePattern _ -> empty
-            StringLiteralPattern _ -> empty
-            CharLiteralPattern _ -> empty
-            InhabitantPattern _ -> empty
+            ApplicationF _ -> empty
+            DomainValueF _ -> empty
+            NextF _ -> empty
+            RewritesF _ -> empty
+            VariableF _ -> empty
+            SetVariableF _ -> empty
+            StringLiteralF _ -> empty
+            CharLiteralF _ -> empty
+            InhabitantF _ -> empty
 
     translatePredicateAnd And { andFirst, andSecond } =
         SMT.and
@@ -168,11 +168,11 @@ translatePredicate translateUninterpreted predicate =
         -> Translator p SExpr
     translateInt pat =
         case Cofree.tailF (Recursive.project pat) of
-            VariablePattern _ -> translateUninterpreted SMT.tInt pat
-            DomainValuePattern dv ->
+            VariableF _ -> translateUninterpreted SMT.tInt pat
+            DomainValueF dv ->
                 return $ SMT.int $ Builtin.Int.extractIntDomainValue
                     "while translating dv to SMT.int" dv
-            ApplicationPattern app ->
+            ApplicationF app ->
                 (<|>)
                     (translateApplication app)
                     (translateUninterpreted SMT.tInt pat)
@@ -188,16 +188,16 @@ translatePredicate translateUninterpreted predicate =
         -> Translator p SExpr
     translateBool pat =
         case Cofree.tailF (Recursive.project pat) of
-            VariablePattern _ -> translateUninterpreted SMT.tBool pat
-            DomainValuePattern dv ->
+            VariableF _ -> translateUninterpreted SMT.tBool pat
+            DomainValueF dv ->
                 return $ SMT.bool $ Builtin.Bool.extractBoolDomainValue
                     "while translating dv to SMT.bool" dv
-            NotPattern Not { notChild } ->
+            NotF Not { notChild } ->
                 -- \not is equivalent to BOOL.not for functional patterns.
                 -- The following is safe because non-functional patterns
                 -- will fail to translate.
                 SMT.not <$> translateBool notChild
-            ApplicationPattern app ->
+            ApplicationF app ->
                 (<|>)
                     (translateApplication app)
                     (translateUninterpreted SMT.tBool pat)
@@ -239,7 +239,7 @@ translatePredicate translateUninterpreted predicate =
               | builtinSort == Builtin.Bool.sort -> translateBool pat
               | builtinSort == Builtin.Int.sort -> translateInt pat
             _ -> case Cofree.tailF $ Recursive.project pat of
-                    ApplicationPattern app ->
+                    ApplicationF app ->
                         translateApplication app
                     _ -> empty
       where

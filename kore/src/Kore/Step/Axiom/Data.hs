@@ -252,7 +252,7 @@ applicationAxiomSimplifier applicationSimplifier =
         patt
       =
         case fromPurePattern patt of
-            (valid :< ApplicationPattern p) ->
+            (valid :< ApplicationF p) ->
                 applicationSimplifier
                     tools
                     substitutionSimplifier

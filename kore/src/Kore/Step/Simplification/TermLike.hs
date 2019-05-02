@@ -145,10 +145,10 @@ simplifyInternal
     halfSimplified <- traverse simplifyTerm' patt
     -- TODO: Remove fst
     case halfSimplified of
-        Syntax.AndPattern p ->
+        Syntax.AndF p ->
             And.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Syntax.ApplicationPattern p ->
+        Syntax.ApplicationF p ->
             --  TODO: Re-evaluate outside of the application and stop passing
             -- the simplifier.
             Application.simplify
@@ -157,40 +157,40 @@ simplifyInternal
                 simplifier
                 axiomIdToEvaluator
                 (valid :< p)
-        Syntax.BottomPattern p -> return $ Bottom.simplify p
-        Syntax.CeilPattern p ->
+        Syntax.BottomF p -> return $ Bottom.simplify p
+        Syntax.CeilF p ->
             Ceil.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Syntax.DomainValuePattern p -> return $ DomainValue.simplify tools p
-        Syntax.EqualsPattern p ->
+        Syntax.DomainValueF p -> return $ DomainValue.simplify tools p
+        Syntax.EqualsF p ->
             Equals.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Syntax.ExistsPattern p ->
+        Syntax.ExistsF p ->
             Exists.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Syntax.FloorPattern p -> return $ Floor.simplify p
-        Syntax.ForallPattern p -> return $ Forall.simplify p
-        Syntax.IffPattern p ->
+        Syntax.FloorF p -> return $ Floor.simplify p
+        Syntax.ForallF p -> return $ Forall.simplify p
+        Syntax.IffF p ->
             Iff.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Syntax.ImpliesPattern p ->
+        Syntax.ImpliesF p ->
             Implies.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Syntax.InPattern p ->
+        Syntax.InF p ->
             In.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Syntax.InhabitantPattern s -> return $ Inhabitant.simplify s
+        Syntax.InhabitantF s -> return $ Inhabitant.simplify s
         -- TODO(virgil): Move next up through patterns.
-        Syntax.NextPattern p -> return $ Next.simplify p
-        Syntax.NotPattern p ->
+        Syntax.NextF p -> return $ Next.simplify p
+        Syntax.NotF p ->
             Not.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Syntax.OrPattern p -> return $ Or.simplify p
-        Syntax.RewritesPattern p -> return $ Rewrites.simplify p
-        Syntax.StringLiteralPattern p -> return $ StringLiteral.simplify p
-        Syntax.CharLiteralPattern p -> return $ CharLiteral.simplify p
-        Syntax.TopPattern p -> return $ Top.simplify p
-        Syntax.VariablePattern p -> return $ Variable.simplify p
-        Syntax.SetVariablePattern p -> return $ SetVariable.simplify p
+        Syntax.OrF p -> return $ Or.simplify p
+        Syntax.RewritesF p -> return $ Rewrites.simplify p
+        Syntax.StringLiteralF p -> return $ StringLiteral.simplify p
+        Syntax.CharLiteralF p -> return $ CharLiteral.simplify p
+        Syntax.TopF p -> return $ Top.simplify p
+        Syntax.VariableF p -> return $ Variable.simplify p
+        Syntax.SetVariableF p -> return $ SetVariable.simplify p
   where
     simplifyTerm' = simplifyTerm simplifier substitutionSimplifier

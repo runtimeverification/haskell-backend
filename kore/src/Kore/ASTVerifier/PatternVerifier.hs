@@ -284,53 +284,53 @@ verifyPatternHead
     -> PatternVerifier (CofreeF base valid Verified.Pattern)
 verifyPatternHead =
     \case
-        AndPattern and' ->
-            transCofreeF AndPattern <$> verifyAnd and'
-        ApplicationPattern app ->
-            transCofreeF ApplicationPattern <$> verifyApplication app
-        BottomPattern bottom ->
-            transCofreeF BottomPattern <$> verifyBottom bottom
-        CeilPattern ceil' ->
-            transCofreeF CeilPattern <$> verifyCeil ceil'
-        DomainValuePattern dv ->
-            transCofreeF DomainValuePattern <$> verifyDomainValue dv
-        EqualsPattern equals' ->
-            transCofreeF EqualsPattern <$> verifyEquals equals'
-        ExistsPattern exists ->
-            transCofreeF ExistsPattern <$> verifyExists exists
-        FloorPattern floor' ->
-            transCofreeF FloorPattern <$> verifyFloor floor'
-        ForallPattern forall' ->
-            transCofreeF ForallPattern <$> verifyForall forall'
-        IffPattern iff ->
-            transCofreeF IffPattern <$> verifyIff iff
-        ImpliesPattern implies ->
-            transCofreeF ImpliesPattern <$> verifyImplies implies
-        InPattern in' ->
-            transCofreeF InPattern <$> verifyIn in'
-        NextPattern next ->
-            transCofreeF NextPattern <$> verifyNext next
-        NotPattern not' ->
-            transCofreeF NotPattern <$> verifyNot not'
-        OrPattern or' ->
-            transCofreeF OrPattern <$> verifyOr or'
-        RewritesPattern rewrites ->
-            transCofreeF RewritesPattern <$> verifyRewrites rewrites
-        StringLiteralPattern str ->
-            transCofreeF (StringLiteralPattern . getConst)
+        AndF and' ->
+            transCofreeF AndF <$> verifyAnd and'
+        ApplicationF app ->
+            transCofreeF ApplicationF <$> verifyApplication app
+        BottomF bottom ->
+            transCofreeF BottomF <$> verifyBottom bottom
+        CeilF ceil' ->
+            transCofreeF CeilF <$> verifyCeil ceil'
+        DomainValueF dv ->
+            transCofreeF DomainValueF <$> verifyDomainValue dv
+        EqualsF equals' ->
+            transCofreeF EqualsF <$> verifyEquals equals'
+        ExistsF exists ->
+            transCofreeF ExistsF <$> verifyExists exists
+        FloorF floor' ->
+            transCofreeF FloorF <$> verifyFloor floor'
+        ForallF forall' ->
+            transCofreeF ForallF <$> verifyForall forall'
+        IffF iff ->
+            transCofreeF IffF <$> verifyIff iff
+        ImpliesF implies ->
+            transCofreeF ImpliesF <$> verifyImplies implies
+        InF in' ->
+            transCofreeF InF <$> verifyIn in'
+        NextF next ->
+            transCofreeF NextF <$> verifyNext next
+        NotF not' ->
+            transCofreeF NotF <$> verifyNot not'
+        OrF or' ->
+            transCofreeF OrF <$> verifyOr or'
+        RewritesF rewrites ->
+            transCofreeF RewritesF <$> verifyRewrites rewrites
+        StringLiteralF str ->
+            transCofreeF (StringLiteralF . getConst)
                 <$> verifyStringLiteral str
-        CharLiteralPattern char ->
-            transCofreeF (CharLiteralPattern . getConst)
+        CharLiteralF char ->
+            transCofreeF (CharLiteralF . getConst)
                 <$> verifyCharLiteral char
-        TopPattern top ->
-            transCofreeF TopPattern <$> verifyTop top
-        VariablePattern var ->
-            transCofreeF (VariablePattern . getConst)
+        TopF top ->
+            transCofreeF TopF <$> verifyTop top
+        VariableF var ->
+            transCofreeF (VariableF . getConst)
                 <$> verifyVariable var
-        InhabitantPattern _ ->
+        InhabitantF _ ->
             koreFail "Unexpected pattern."
-        SetVariablePattern (SetVariable var) ->
-            transCofreeF (SetVariablePattern . SetVariable . getConst)
+        SetVariableF (SetVariable var) ->
+            transCofreeF (SetVariableF . SetVariable . getConst)
                 <$> verifyVariable var
   where
     transCofreeF fg (a :< fb) = a :< fg fb
@@ -740,39 +740,39 @@ checkVariable var vars =
             <> Pretty.dot
 
 patternNameForContext :: PatternF dom Variable p -> String
-patternNameForContext (AndPattern _) = "\\and"
-patternNameForContext (ApplicationPattern application) =
+patternNameForContext (AndF _) = "\\and"
+patternNameForContext (ApplicationF application) =
     "symbol or alias '"
     ++ getIdForError
         (symbolOrAliasConstructor (applicationSymbolOrAlias application))
     ++ "'"
-patternNameForContext (BottomPattern _) = "\\bottom"
-patternNameForContext (CeilPattern _) = "\\ceil"
-patternNameForContext (DomainValuePattern _) = "\\dv"
-patternNameForContext (EqualsPattern _) = "\\equals"
-patternNameForContext (ExistsPattern exists) =
+patternNameForContext (BottomF _) = "\\bottom"
+patternNameForContext (CeilF _) = "\\ceil"
+patternNameForContext (DomainValueF _) = "\\dv"
+patternNameForContext (EqualsF _) = "\\equals"
+patternNameForContext (ExistsF exists) =
     "\\exists '"
     ++ variableNameForContext (existsVariable exists)
     ++ "'"
-patternNameForContext (FloorPattern _) = "\\floor"
-patternNameForContext (ForallPattern forall) =
+patternNameForContext (FloorF _) = "\\floor"
+patternNameForContext (ForallF forall) =
     "\\forall '"
     ++ variableNameForContext (forallVariable forall)
     ++ "'"
-patternNameForContext (IffPattern _) = "\\iff"
-patternNameForContext (ImpliesPattern _) = "\\implies"
-patternNameForContext (InPattern _) = "\\in"
-patternNameForContext (NextPattern _) = "\\next"
-patternNameForContext (NotPattern _) = "\\not"
-patternNameForContext (OrPattern _) = "\\or"
-patternNameForContext (RewritesPattern _) = "\\rewrites"
-patternNameForContext (StringLiteralPattern _) = "<string>"
-patternNameForContext (CharLiteralPattern _) = "<char>"
-patternNameForContext (TopPattern _) = "\\top"
-patternNameForContext (VariablePattern variable) =
+patternNameForContext (IffF _) = "\\iff"
+patternNameForContext (ImpliesF _) = "\\implies"
+patternNameForContext (InF _) = "\\in"
+patternNameForContext (NextF _) = "\\next"
+patternNameForContext (NotF _) = "\\not"
+patternNameForContext (OrF _) = "\\or"
+patternNameForContext (RewritesF _) = "\\rewrites"
+patternNameForContext (StringLiteralF _) = "<string>"
+patternNameForContext (CharLiteralF _) = "<char>"
+patternNameForContext (TopF _) = "\\top"
+patternNameForContext (VariableF variable) =
     "variable '" ++ variableNameForContext variable ++ "'"
-patternNameForContext (InhabitantPattern _) = "\\inh"
-patternNameForContext (SetVariablePattern (SetVariable variable)) =
+patternNameForContext (InhabitantF _) = "\\inh"
+patternNameForContext (SetVariableF (SetVariable variable)) =
     "set variable '" ++ variableNameForContext variable ++ "'"
 
 variableNameForContext :: Variable -> String

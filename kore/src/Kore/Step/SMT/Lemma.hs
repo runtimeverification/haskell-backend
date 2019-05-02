@@ -93,7 +93,7 @@ translateUninterpreted t pat | isVariable pat =
   where
     isVariable p =
         case Cofree.tailF $ Recursive.project p of
-            VariablePattern _ -> True
+            VariableF _ -> True
             _ -> False
     lookupPattern = do
         result <- State.gets $ Map.lookup pat

@@ -460,50 +460,50 @@ instance
     , PrettyPrint variable
     ) => PrettyPrint (PatternF domain variable child)
   where
-    prettyPrint flags (AndPattern p) =
-        writeOneFieldStruct flags "AndPattern" p
-    prettyPrint flags (ApplicationPattern p)   =
-        writeOneFieldStruct flags "ApplicationPattern" p
-    prettyPrint flags (BottomPattern p)        =
-        writeOneFieldStruct flags "BottomPattern" p
-    prettyPrint flags (CeilPattern p)          =
-        writeOneFieldStruct flags "CeilPattern" p
-    prettyPrint flags (DomainValuePattern p)          =
-        writeOneFieldStruct flags "DomainValuePattern" p
-    prettyPrint flags (EqualsPattern p)        =
-        writeOneFieldStruct flags "EqualsPattern" p
-    prettyPrint flags (ExistsPattern p)        =
-        writeOneFieldStruct flags "ExistsPattern" p
-    prettyPrint flags (FloorPattern p)         =
-        writeOneFieldStruct flags "FloorPattern" p
-    prettyPrint flags (ForallPattern p)        =
-        writeOneFieldStruct flags "ForallPattern" p
-    prettyPrint flags (IffPattern p)           =
-        writeOneFieldStruct flags "IffPattern" p
-    prettyPrint flags (ImpliesPattern p)       =
-        writeOneFieldStruct flags "ImpliesPattern" p
-    prettyPrint flags (InPattern p)            =
-        writeOneFieldStruct flags "InPattern" p
-    prettyPrint flags (NextPattern p)          =
-        writeOneFieldStruct flags "NextPattern" p
-    prettyPrint flags (NotPattern p)           =
-        writeOneFieldStruct flags "NotPattern" p
-    prettyPrint flags (OrPattern p)            =
-        writeOneFieldStruct flags "OrPattern" p
-    prettyPrint flags (RewritesPattern p)      =
-        writeOneFieldStruct flags "RewritesPattern" p
-    prettyPrint flags (StringLiteralPattern p) =
-        writeOneFieldStruct flags "StringLiteralPattern" p
-    prettyPrint flags (CharLiteralPattern p) =
-        writeOneFieldStruct flags "CharLiteralPattern" p
-    prettyPrint flags (TopPattern p)           =
-        writeOneFieldStruct flags "TopPattern" p
-    prettyPrint flags (VariablePattern p)      =
-        writeOneFieldStruct flags "VariablePattern" p
-    prettyPrint flags (InhabitantPattern s)          =
-        writeOneFieldStruct flags "InhabitantPattern" s
-    prettyPrint flags (SetVariablePattern p)      =
-        writeOneFieldStruct flags "SetVariablePattern" p
+    prettyPrint flags (AndF p) =
+        writeOneFieldStruct flags "AndF" p
+    prettyPrint flags (ApplicationF p)   =
+        writeOneFieldStruct flags "ApplicationF" p
+    prettyPrint flags (BottomF p)        =
+        writeOneFieldStruct flags "BottomF" p
+    prettyPrint flags (CeilF p)          =
+        writeOneFieldStruct flags "CeilF" p
+    prettyPrint flags (DomainValueF p)          =
+        writeOneFieldStruct flags "DomainValueF" p
+    prettyPrint flags (EqualsF p)        =
+        writeOneFieldStruct flags "EqualsF" p
+    prettyPrint flags (ExistsF p)        =
+        writeOneFieldStruct flags "ExistsF" p
+    prettyPrint flags (FloorF p)         =
+        writeOneFieldStruct flags "FloorF" p
+    prettyPrint flags (ForallF p)        =
+        writeOneFieldStruct flags "ForallF" p
+    prettyPrint flags (IffF p)           =
+        writeOneFieldStruct flags "IffF" p
+    prettyPrint flags (ImpliesF p)       =
+        writeOneFieldStruct flags "ImpliesF" p
+    prettyPrint flags (InF p)            =
+        writeOneFieldStruct flags "InF" p
+    prettyPrint flags (NextF p)          =
+        writeOneFieldStruct flags "NextF" p
+    prettyPrint flags (NotF p)           =
+        writeOneFieldStruct flags "NotF" p
+    prettyPrint flags (OrF p)            =
+        writeOneFieldStruct flags "OrF" p
+    prettyPrint flags (RewritesF p)      =
+        writeOneFieldStruct flags "RewritesF" p
+    prettyPrint flags (StringLiteralF p) =
+        writeOneFieldStruct flags "StringLiteralF" p
+    prettyPrint flags (CharLiteralF p) =
+        writeOneFieldStruct flags "CharLiteralF" p
+    prettyPrint flags (TopF p)           =
+        writeOneFieldStruct flags "TopF" p
+    prettyPrint flags (VariableF p)      =
+        writeOneFieldStruct flags "VariableF" p
+    prettyPrint flags (InhabitantF s)          =
+        writeOneFieldStruct flags "InhabitantF" s
+    prettyPrint flags (SetVariableF p)      =
+        writeOneFieldStruct flags "SetVariableF" p
 
 instance
     ( self ~ CofreeT f w a

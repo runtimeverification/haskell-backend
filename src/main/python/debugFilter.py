@@ -266,15 +266,15 @@ def cleanIdLocation(line):
         iterator.element().removeSubnode(["idLocation"])
 
 def cleanApplication(line):
-    """Removes the redundant parts of ApplicationPattern patterns.
+    """Removes the redundant parts of ApplicationF patterns.
 
     The result will look something like
     "symbol"[arg1, arg2, ...](phi1, phi2, ....)
     """
     it = Iterator(line)
-    while line.find(["CofreeT ", "Identity ", " :< ApplicationPattern"], it):
+    while line.find(["CofreeT ", "Identity ", " :< ApplicationF"], it):
         app = it.element().getSubnode(
-            ["Identity ", "ApplicationPattern", "Application"])
+            ["Identity ", "ApplicationF", "Application"])
         symbol = app.getSubnode(["applicationSymbolOrAlias"])
         children = app.getSubnode(["applicationChildren"])
         name = symbol.getSubnode(["symbolOrAliasConstructor", "getId"])
@@ -345,17 +345,17 @@ def cleanStringDomainValue(line):
     """Cleans string domain values"""
     it = Iterator(line)
     while line.find(
-            ["CofreeT ", "Identity ", " :< DomainValuePattern ",
+            ["CofreeT ", "Identity ", " :< DomainValueF ",
                 "DomainValue ", " domainValueChild = BuiltinPattern ",
                 "PurePattern ", "getPurePattern = CofreeT ", "Identity ",
-                "Null :< StringLiteralPattern "], it):
+                "Null :< StringLiteralF "], it):
         dv = it.element().getSubnode(
-            ["Identity ", ":< DomainValuePattern ", "DomainValue "]
+            ["Identity ", ":< DomainValueF ", "DomainValue "]
         )
         sort = dv.getSubnode(["domainValueSort"])
         value = dv.getSubnode(
             ["domainValueChild", "PurePattern", "getPurePattern",
-                "Identity", "StringLiteralPattern", "StringLiteral",
+                "Identity", "StringLiteralF", "StringLiteral",
                 "getStringLiteral"
             ]
         )
@@ -378,14 +378,14 @@ def cleanStepProof(line):
 def cleanBottom(line):
     """Rewrites bottom patterns."""
     it = Iterator(line)
-    while line.find(["CofreeT ", "Identity ", " :< BottomPattern "], it):
+    while line.find(["CofreeT ", "Identity ", " :< BottomF "], it):
         it.element().replaceWith(Structure("⊥", []))
     return line
 
 def cleanTop(line):
     """Rewrites top patterns."""
     it = Iterator(line)
-    while line.find(["CofreeT ", "Identity ", " :< TopPattern "], it):
+    while line.find(["CofreeT ", "Identity ", " :< TopF "], it):
         it.element().replaceWith(Structure("T", []))
     return line
 
@@ -402,8 +402,8 @@ def cleanStandardPattern(name, line):
 def cleanVariablePattern(line):
     """Simplifies the Cofree part of variables."""
     it = Iterator(line)
-    while line.find(["CofreeT ", "Identity ", " :< VariablePattern "], it):
-        node = it.element().getSubnode(["Identity ", ":< VariablePattern "])
+    while line.find(["CofreeT ", "Identity ", " :< VariableF "], it):
+        node = it.element().getSubnode(["Identity ", ":< VariableF "])
         it.element().replaceWith(Structure("Variable ", [node.child(0)]))
     return line
 

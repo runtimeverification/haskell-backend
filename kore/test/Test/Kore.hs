@@ -350,21 +350,21 @@ patternGen
     -> Gen (Syntax.PatternF dom Variable child)
 patternGen childGen patternSort =
     Gen.frequency
-        [ (1, Syntax.AndPattern <$> andGen childGen patternSort)
-        , (1, Syntax.ApplicationPattern <$> applicationGen childGen patternSort)
-        , (1, Syntax.BottomPattern <$> bottomGen patternSort)
-        , (1, Syntax.CeilPattern <$> ceilGen childGen patternSort)
-        , (1, Syntax.EqualsPattern <$> equalsGen childGen patternSort)
-        , (1, Syntax.ExistsPattern <$> existsGen childGen patternSort)
-        , (1, Syntax.FloorPattern <$> floorGen childGen patternSort)
-        , (1, Syntax.ForallPattern <$> forallGen childGen patternSort)
-        , (1, Syntax.IffPattern <$> iffGen childGen patternSort)
-        , (1, Syntax.ImpliesPattern <$> impliesGen childGen patternSort)
-        , (1, Syntax.InPattern <$> inGen childGen patternSort)
-        , (1, Syntax.NotPattern <$> notGen childGen patternSort)
-        , (1, Syntax.OrPattern <$> orGen childGen patternSort)
-        , (1, Syntax.TopPattern <$> topGen patternSort)
-        , (5, Syntax.VariablePattern <$> variableGen patternSort)
+        [ (1, Syntax.AndF <$> andGen childGen patternSort)
+        , (1, Syntax.ApplicationF <$> applicationGen childGen patternSort)
+        , (1, Syntax.BottomF <$> bottomGen patternSort)
+        , (1, Syntax.CeilF <$> ceilGen childGen patternSort)
+        , (1, Syntax.EqualsF <$> equalsGen childGen patternSort)
+        , (1, Syntax.ExistsF <$> existsGen childGen patternSort)
+        , (1, Syntax.FloorF <$> floorGen childGen patternSort)
+        , (1, Syntax.ForallF <$> forallGen childGen patternSort)
+        , (1, Syntax.IffF <$> iffGen childGen patternSort)
+        , (1, Syntax.ImpliesF <$> impliesGen childGen patternSort)
+        , (1, Syntax.InF <$> inGen childGen patternSort)
+        , (1, Syntax.NotF <$> notGen childGen patternSort)
+        , (1, Syntax.OrF <$> orGen childGen patternSort)
+        , (1, Syntax.TopF <$> topGen patternSort)
+        , (5, Syntax.VariableF <$> variableGen patternSort)
         ]
 
 termLikeGen :: Hedgehog.Gen (TermLike Variable)
@@ -495,30 +495,30 @@ korePatternChildGen patternSort' =
 
     korePatternGenStringLiteral :: Gen ParsedPattern
     korePatternGenStringLiteral =
-        asParsedPattern . Syntax.StringLiteralPattern <$> stringLiteralGen
+        asParsedPattern . Syntax.StringLiteralF <$> stringLiteralGen
 
     korePatternGenCharLiteral :: Gen ParsedPattern
     korePatternGenCharLiteral =
-        asParsedPattern . Syntax.CharLiteralPattern <$> charLiteralGen
+        asParsedPattern . Syntax.CharLiteralF <$> charLiteralGen
 
     korePatternGenDomainValue :: Gen ParsedPattern
     korePatternGenDomainValue =
-        asParsedPattern . Syntax.DomainValuePattern
+        asParsedPattern . Syntax.DomainValueF
             <$> genBuiltinExternal patternSort'
 
     korePatternGenNext :: Gen ParsedPattern
     korePatternGenNext =
-        asParsedPattern . Syntax.NextPattern
+        asParsedPattern . Syntax.NextF
             <$> nextGen korePatternChildGen patternSort'
 
     korePatternGenRewrites :: Gen ParsedPattern
     korePatternGenRewrites =
-        asParsedPattern . Syntax.RewritesPattern
+        asParsedPattern . Syntax.RewritesF
             <$> rewritesGen korePatternChildGen patternSort'
 
     korePatternGenVariable :: Gen ParsedPattern
     korePatternGenVariable =
-        asParsedPattern . Syntax.VariablePattern <$> variableGen patternSort'
+        asParsedPattern . Syntax.VariableF <$> variableGen patternSort'
 
 korePatternUnifiedGen :: Gen ParsedPattern
 korePatternUnifiedGen = korePatternChildGen =<< sortGen

@@ -275,9 +275,9 @@ instance
 instance Functor domain
     => TopBottom (PurePattern domain variable annotation)
   where
-    isTop (Recursive.project -> _ :< TopPattern Top {}) = True
+    isTop (Recursive.project -> _ :< TopF Top {}) = True
     isTop _ = False
-    isBottom (Recursive.project -> _ :< BottomPattern Bottom {}) = True
+    isBottom (Recursive.project -> _ :< BottomF Bottom {}) = True
     isBottom _ = False
 
 fromPurePattern

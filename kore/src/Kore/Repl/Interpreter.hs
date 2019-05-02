@@ -735,10 +735,10 @@ unparseStrategy omitList =
     hide =
         Recursive.unfold $ \termLike ->
             case Recursive.project termLike of
-                ann :< ApplicationPattern app
+                ann :< ApplicationF app
                   | shouldBeExcluded (applicationSymbolOrAlias app) ->
                     -- Do not display children
-                    ann :< ApplicationPattern (withoutChildren app)
+                    ann :< ApplicationF (withoutChildren app)
                 projected -> projected
 
     withoutChildren app = app { applicationChildren = [] }

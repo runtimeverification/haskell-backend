@@ -99,7 +99,7 @@ fromPattern
     -> Maybe Value
 fromPattern tools (ann :< pat) =
     case pat of
-        ApplicationPattern
+        ApplicationF
             appP@Pattern.Application
                 { applicationSymbolOrAlias = symbolOrAlias }
           | isConstructor symbolOrAlias ->
@@ -111,7 +111,7 @@ fromPattern tools (ann :< pat) =
             -- normal and none are sort injections.
             Recursive.embed . (ann :<) . SortInjection
                 <$> traverse (>>= eraseSortInjection) appP
-        DomainValuePattern dvP ->
+        DomainValueF dvP ->
             -- A domain value is not technically a constructor, but it is
             -- constructor-like for builtin domains, at least from the
             -- perspective of normalization.
@@ -145,9 +145,9 @@ fromConcreteStepPattern tools =
 asPattern :: Value -> Base (TermLike Concrete) Value
 asPattern (Recursive.project -> ann :< val) =
     case val of
-        Constructor appP -> ann :< ApplicationPattern appP
-        SortInjection appP -> ann :< ApplicationPattern appP
-        DomainValue dvP -> ann :< DomainValuePattern dvP
+        Constructor appP -> ann :< ApplicationF appP
+        SortInjection appP -> ann :< ApplicationF appP
+        DomainValue dvP -> ann :< DomainValueF dvP
 
 {- | View a normalized value as a 'ConcreteStepPattern'.
  -}

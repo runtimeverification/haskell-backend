@@ -89,38 +89,38 @@ instance
   where
     locationFromAst =
         \case
-            AndPattern And { andSort } -> locationFromAst andSort
-            ApplicationPattern Application { applicationSymbolOrAlias } ->
+            AndF And { andSort } -> locationFromAst andSort
+            ApplicationF Application { applicationSymbolOrAlias } ->
                 locationFromAst applicationSymbolOrAlias
-            BottomPattern Bottom { bottomSort } -> locationFromAst bottomSort
-            CeilPattern Ceil { ceilResultSort } ->
+            BottomF Bottom { bottomSort } -> locationFromAst bottomSort
+            CeilF Ceil { ceilResultSort } ->
                 locationFromAst ceilResultSort
-            DomainValuePattern domain ->
+            DomainValueF domain ->
                 locationFromAst
                 $ domainValueSort
                 $ Lens.view lensDomainValue domain
-            EqualsPattern Equals { equalsResultSort } ->
+            EqualsF Equals { equalsResultSort } ->
                 locationFromAst equalsResultSort
-            ExistsPattern Exists { existsSort } -> locationFromAst existsSort
-            FloorPattern Floor { floorResultSort } ->
+            ExistsF Exists { existsSort } -> locationFromAst existsSort
+            FloorF Floor { floorResultSort } ->
                 locationFromAst floorResultSort
-            ForallPattern Forall { forallSort } -> locationFromAst forallSort
-            IffPattern Iff { iffSort } -> locationFromAst iffSort
-            ImpliesPattern Implies { impliesSort } ->
+            ForallF Forall { forallSort } -> locationFromAst forallSort
+            IffF Iff { iffSort } -> locationFromAst iffSort
+            ImpliesF Implies { impliesSort } ->
                 locationFromAst impliesSort
-            InPattern In { inResultSort } ->
+            InF In { inResultSort } ->
                 locationFromAst inResultSort
-            NextPattern Next { nextSort } -> locationFromAst nextSort
-            NotPattern Not { notSort } -> locationFromAst notSort
-            OrPattern Or { orSort } -> locationFromAst orSort
-            RewritesPattern Rewrites { rewritesSort } ->
+            NextF Next { nextSort } -> locationFromAst nextSort
+            NotF Not { notSort } -> locationFromAst notSort
+            OrF Or { orSort } -> locationFromAst orSort
+            RewritesF Rewrites { rewritesSort } ->
                 locationFromAst rewritesSort
-            StringLiteralPattern _ -> AstLocationUnknown
-            CharLiteralPattern _ -> AstLocationUnknown
-            TopPattern Top { topSort } -> locationFromAst topSort
-            VariablePattern variable -> locationFromAst variable
-            InhabitantPattern s -> locationFromAst s
-            SetVariablePattern (SetVariable variable) ->
+            StringLiteralF _ -> AstLocationUnknown
+            CharLiteralF _ -> AstLocationUnknown
+            TopF Top { topSort } -> locationFromAst topSort
+            VariableF variable -> locationFromAst variable
+            InhabitantF s -> locationFromAst s
+            SetVariableF (SetVariable variable) ->
                 locationFromAst variable
 
     updateAstLocation = undefined

@@ -29,7 +29,7 @@ parse = parseAttributes . Attributes
 
 testAttribute :: AttributePattern
 testAttribute =
-    (asAttributePattern . ApplicationPattern)
+    (asAttributePattern . ApplicationF)
         Application
             { applicationSymbolOrAlias =
                 SymbolOrAlias
@@ -41,7 +41,7 @@ testAttribute =
 
 badHookAttribute :: AttributePattern
 badHookAttribute =
-    (asAttributePattern . ApplicationPattern)
+    (asAttributePattern . ApplicationF)
         Application
             { applicationSymbolOrAlias = hookSymbol :: SymbolOrAlias
             , applicationChildren = []

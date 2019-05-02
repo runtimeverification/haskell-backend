@@ -38,7 +38,7 @@ module Kore.AST.Valid
     , mkCharLiteral
     , mkSort
     , mkSortVariable
-    , mkInhabitantPattern
+    , mkInhabitant
     , varS
     , symS
     -- * Predicate constructors
@@ -148,71 +148,71 @@ forceSort forcedSort = Recursive.apo forceSortWorker
         forceSortWorkerPredicate =
             case pattern' of
                 -- Predicates: Force sort and stop.
-                BottomPattern bottom' ->
-                    BottomPattern bottom' { bottomSort = forcedSort }
-                TopPattern top' ->
-                    TopPattern top' { topSort = forcedSort }
-                CeilPattern ceil' ->
-                    CeilPattern (Left <$> ceil'')
+                BottomF bottom' ->
+                    BottomF bottom' { bottomSort = forcedSort }
+                TopF top' ->
+                    TopF top' { topSort = forcedSort }
+                CeilF ceil' ->
+                    CeilF (Left <$> ceil'')
                   where
                     ceil'' = ceil' { ceilResultSort = forcedSort }
-                FloorPattern floor' ->
-                    FloorPattern (Left <$> floor'')
+                FloorF floor' ->
+                    FloorF (Left <$> floor'')
                   where
                     floor'' = floor' { floorResultSort = forcedSort }
-                EqualsPattern equals' ->
-                    EqualsPattern (Left <$> equals'')
+                EqualsF equals' ->
+                    EqualsF (Left <$> equals'')
                   where
                     equals'' = equals' { equalsResultSort = forcedSort }
-                InPattern in' ->
-                    InPattern (Left <$> in'')
+                InF in' ->
+                    InF (Left <$> in'')
                   where
                     in'' = in' { inResultSort = forcedSort }
                 -- Connectives: Force sort and recurse.
-                AndPattern and' ->
-                    AndPattern (Right <$> and'')
+                AndF and' ->
+                    AndF (Right <$> and'')
                   where
                     and'' = and' { andSort = forcedSort }
-                OrPattern or' ->
-                    OrPattern (Right <$> or'')
+                OrF or' ->
+                    OrF (Right <$> or'')
                   where
                     or'' = or' { orSort = forcedSort }
-                IffPattern iff' ->
-                    IffPattern (Right <$> iff'')
+                IffF iff' ->
+                    IffF (Right <$> iff'')
                   where
                     iff'' = iff' { iffSort = forcedSort }
-                ImpliesPattern implies' ->
-                    ImpliesPattern (Right <$> implies'')
+                ImpliesF implies' ->
+                    ImpliesF (Right <$> implies'')
                   where
                     implies'' = implies' { impliesSort = forcedSort }
-                NotPattern not' ->
-                    NotPattern (Right <$> not'')
+                NotF not' ->
+                    NotF (Right <$> not'')
                   where
                     not'' = not' { notSort = forcedSort }
-                NextPattern next' ->
-                    NextPattern (Right <$> next'')
+                NextF next' ->
+                    NextF (Right <$> next'')
                   where
                     next'' = next' { nextSort = forcedSort }
-                RewritesPattern rewrites' ->
-                    RewritesPattern (Right <$> rewrites'')
+                RewritesF rewrites' ->
+                    RewritesF (Right <$> rewrites'')
                   where
                     rewrites'' = rewrites' { rewritesSort = forcedSort }
-                ExistsPattern exists' ->
-                    ExistsPattern (Right <$> exists'')
+                ExistsF exists' ->
+                    ExistsF (Right <$> exists'')
                   where
                     exists'' = exists' { existsSort = forcedSort }
-                ForallPattern forall' ->
-                    ForallPattern (Right <$> forall'')
+                ForallF forall' ->
+                    ForallF (Right <$> forall'')
                   where
                     forall'' = forall' { forallSort = forcedSort }
                 -- Rigid: These patterns should never have sort _PREDICATE{}.
-                ApplicationPattern _ -> illSorted
-                DomainValuePattern _ -> illSorted
-                CharLiteralPattern _ -> illSorted
-                StringLiteralPattern _ -> illSorted
-                VariablePattern _ -> illSorted
-                InhabitantPattern _ -> illSorted
-                SetVariablePattern _ -> illSorted
+                ApplicationF _ -> illSorted
+                DomainValueF _ -> illSorted
+                CharLiteralF _ -> illSorted
+                StringLiteralF _ -> illSorted
+                VariableF _ -> illSorted
+                InhabitantF _ -> illSorted
+                SetVariableF _ -> illSorted
 
 {- | Call the argument function with two patterns whose sorts agree.
 
@@ -273,7 +273,7 @@ mkAnd
 mkAnd = makeSortsAgree mkAndWorker
   where
     mkAndWorker andFirst andSecond andSort =
-        asPurePattern (valid :< AndPattern and')
+        asPurePattern (valid :< AndF and')
       where
         valid = Valid { patternSort = andSort, freeVariables }
         and' = And { andSort, andFirst, andSecond }
@@ -307,7 +307,7 @@ mkApp
     -- ^ Application arguments
     -> pattern'
 mkApp patternSort applicationSymbolOrAlias applicationChildren =
-    asPurePattern (valid :< ApplicationPattern application)
+    asPurePattern (valid :< ApplicationF application)
   where
     valid = Valid { patternSort, freeVariables }
     application = Application { applicationSymbolOrAlias, applicationChildren }
@@ -496,7 +496,7 @@ mkBottom
     => Sort
     -> PurePattern domain variable valid
 mkBottom bottomSort =
-    asPurePattern (valid :< BottomPattern bottom)
+    asPurePattern (valid :< BottomF bottom)
   where
     valid = Valid { patternSort = bottomSort, freeVariables = Set.empty }
     bottom = Bottom { bottomSort }
@@ -530,7 +530,7 @@ mkCeil
     -> pattern'
     -> pattern'
 mkCeil ceilResultSort ceilChild =
-    asPurePattern (valid :< CeilPattern ceil)
+    asPurePattern (valid :< CeilF ceil)
   where
     Valid { patternSort = ceilOperandSort, freeVariables } = extract ceilChild
     valid = Valid { patternSort = ceilResultSort, freeVariables }
@@ -565,7 +565,7 @@ mkDomainValue
     => domain pattern'
     -> pattern'
 mkDomainValue domain =
-    asPurePattern (valid :< DomainValuePattern domain)
+    asPurePattern (valid :< DomainValueF domain)
   where
     freeVariables =
         (Set.unions . toList)
@@ -593,7 +593,7 @@ mkEquals equalsResultSort =
     makeSortsAgree mkEquals'Worker
   where
     mkEquals'Worker equalsFirst equalsSecond equalsOperandSort =
-        asPurePattern (valid :< EqualsPattern equals)
+        asPurePattern (valid :< EqualsF equals)
       where
         valid = Valid { patternSort = equalsResultSort, freeVariables }
         freeVariables =
@@ -641,7 +641,7 @@ mkExists
     -> pattern'
     -> pattern'
 mkExists existsVariable existsChild =
-    asPurePattern (valid :< ExistsPattern exists)
+    asPurePattern (valid :< ExistsF exists)
   where
     freeVariables =
         Set.delete existsVariable freeVariablesChild
@@ -665,7 +665,7 @@ mkFloor
     -> pattern'
     -> pattern'
 mkFloor floorResultSort floorChild =
-    asPurePattern (valid :< FloorPattern floor')
+    asPurePattern (valid :< FloorF floor')
   where
     valid = Valid { patternSort = floorResultSort, freeVariables }
     Valid { patternSort = floorOperandSort, freeVariables } = extract floorChild
@@ -700,7 +700,7 @@ mkForall
     -> pattern'
     -> pattern'
 mkForall forallVariable forallChild =
-    asPurePattern (valid :< ForallPattern forall)
+    asPurePattern (valid :< ForallF forall)
   where
     valid = Valid { patternSort = forallSort, freeVariables }
     forallSort = getSort forallChild
@@ -726,7 +726,7 @@ mkIff
 mkIff = makeSortsAgree mkIffWorker
   where
     mkIffWorker iffFirst iffSecond iffSort =
-        asPurePattern (valid :< IffPattern iff')
+        asPurePattern (valid :< IffF iff')
       where
         valid = Valid { patternSort = iffSort, freeVariables }
         freeVariables =
@@ -752,7 +752,7 @@ mkImplies
 mkImplies = makeSortsAgree mkImpliesWorker
   where
     mkImpliesWorker impliesFirst impliesSecond impliesSort =
-        asPurePattern (valid :< ImpliesPattern implies')
+        asPurePattern (valid :< ImpliesF implies')
       where
         valid = Valid { patternSort = impliesSort, freeVariables }
         freeVariables =
@@ -782,7 +782,7 @@ mkIn
 mkIn inResultSort = makeSortsAgree mkInWorker
   where
     mkInWorker inContainedChild inContainingChild inOperandSort =
-        asPurePattern (valid :< InPattern in')
+        asPurePattern (valid :< InF in')
       where
         valid = Valid { patternSort = inResultSort, freeVariables }
         freeVariables =
@@ -828,7 +828,7 @@ mkNext
     => pattern'
     -> pattern'
 mkNext nextChild =
-    asPurePattern (valid :< NextPattern next)
+    asPurePattern (valid :< NextF next)
   where
     valid = Valid { patternSort = nextSort, freeVariables }
     Valid { patternSort = nextSort, freeVariables } = extract nextChild
@@ -844,7 +844,7 @@ mkNot
     => pattern'
     -> pattern'
 mkNot notChild =
-    asPurePattern (valid :< NotPattern not')
+    asPurePattern (valid :< NotF not')
   where
     valid = Valid { patternSort = notSort, freeVariables }
     Valid { patternSort = notSort, freeVariables } = extract notChild
@@ -866,7 +866,7 @@ mkOr
 mkOr = makeSortsAgree mkOrWorker
   where
     mkOrWorker orFirst orSecond orSort =
-        asPurePattern (valid :< OrPattern or')
+        asPurePattern (valid :< OrF or')
       where
         valid = Valid { patternSort = orSort, freeVariables }
         freeVariables =
@@ -892,7 +892,7 @@ mkRewrites
 mkRewrites = makeSortsAgree mkRewritesWorker
   where
     mkRewritesWorker rewritesFirst rewritesSecond rewritesSort =
-        asPurePattern (valid :< RewritesPattern rewrites')
+        asPurePattern (valid :< RewritesF rewrites')
       where
         valid = Valid { patternSort = rewritesSort, freeVariables }
         freeVariables =
@@ -914,7 +914,7 @@ mkTop
     => Sort
     -> PurePattern domain variable valid
 mkTop topSort =
-    asPurePattern (valid :< TopPattern top)
+    asPurePattern (valid :< TopF top)
   where
     valid = Valid { patternSort = topSort, freeVariables = Set.empty }
     top = Top { topSort }
@@ -944,7 +944,7 @@ mkVar
     => variable
     -> PurePattern domain variable valid
 mkVar var =
-    asPurePattern (validVar var :< VariablePattern var)
+    asPurePattern (validVar var :< VariableF var)
 
 validVar
     :: SortedVariable variable
@@ -965,7 +965,7 @@ mkSetVar
     => variable
     -> PurePattern domain variable valid
 mkSetVar var =
-    asPurePattern (validVar var :< SetVariablePattern (SetVariable var))
+    asPurePattern (validVar var :< SetVariableF (SetVariable var))
 
 {- | Construct a 'StringLiteral' pattern.
  -}
@@ -976,7 +976,7 @@ mkStringLiteral
     => Text
     -> PurePattern domain variable valid
 mkStringLiteral string =
-    asPurePattern (valid :< StringLiteralPattern stringLiteral)
+    asPurePattern (valid :< StringLiteralF stringLiteral)
   where
     valid = Valid { patternSort = stringMetaSort, freeVariables = Set.empty}
     stringLiteral = StringLiteral string
@@ -990,19 +990,19 @@ mkCharLiteral
     => Char
     -> PurePattern domain variable valid
 mkCharLiteral char =
-    asPurePattern (valid :< CharLiteralPattern charLiteral)
+    asPurePattern (valid :< CharLiteralF charLiteral)
   where
     valid = Valid { patternSort = charMetaSort, freeVariables = Set.empty }
     charLiteral = CharLiteral char
 
-mkInhabitantPattern
+mkInhabitant
     ::  ( Functor domain
         , valid ~ Valid variable
         )
     => Sort
     -> PurePattern domain variable valid
-mkInhabitantPattern s =
-    asPurePattern (valid :< InhabitantPattern s)
+mkInhabitant s =
+    asPurePattern (valid :< InhabitantF s)
   where
     freeVariables = Set.empty
     patternSort = s
@@ -1289,26 +1289,26 @@ pattern CharLiteral_
 {-# COMPLETE And_, App_, Bottom_, Ceil_, DV_, Equals_, Exists_, Floor_, Forall_, Iff_, Implies_, In_, Next_, Not_, Or_, Rewrites_, Top_, Var_, StringLiteral_, CharLiteral_ #-}
 
 pattern And_ andSort andFirst andSecond <-
-    (Recursive.project -> _ :< AndPattern And { andSort, andFirst, andSecond })
+    (Recursive.project -> _ :< AndF And { andSort, andFirst, andSecond })
 
 pattern App_ applicationSymbolOrAlias applicationChildren <-
     (Recursive.project ->
-        _ :< ApplicationPattern Application
+        _ :< ApplicationF Application
             { applicationSymbolOrAlias
             , applicationChildren
             }
     )
 
 pattern Bottom_ bottomSort <-
-    (Recursive.project -> _ :< BottomPattern Bottom { bottomSort })
+    (Recursive.project -> _ :< BottomF Bottom { bottomSort })
 
 pattern Ceil_ ceilOperandSort ceilResultSort ceilChild <-
     (Recursive.project ->
-        _ :< CeilPattern Ceil { ceilOperandSort, ceilResultSort, ceilChild }
+        _ :< CeilF Ceil { ceilOperandSort, ceilResultSort, ceilChild }
     )
 
 pattern DV_ domainValueSort domainValueChild <-
-    (Recursive.project -> _ :< DomainValuePattern
+    (Recursive.project -> _ :< DomainValueF
         (Lens.view lensDomainValue ->
             DomainValue { domainValueSort, domainValueChild }
         )
@@ -1316,7 +1316,7 @@ pattern DV_ domainValueSort domainValueChild <-
 
 pattern Equals_ equalsOperandSort equalsResultSort equalsFirst equalsSecond <-
     (Recursive.project ->
-        _ :< EqualsPattern Equals
+        _ :< EqualsF Equals
             { equalsOperandSort
             , equalsResultSort
             , equalsFirst
@@ -1326,12 +1326,12 @@ pattern Equals_ equalsOperandSort equalsResultSort equalsFirst equalsSecond <-
 
 pattern Exists_ existsSort existsVariable existsChild <-
     (Recursive.project ->
-        _ :< ExistsPattern Exists { existsSort, existsVariable, existsChild }
+        _ :< ExistsF Exists { existsSort, existsVariable, existsChild }
     )
 
 pattern Floor_ floorOperandSort floorResultSort floorChild <-
     (Recursive.project ->
-        _ :< FloorPattern Floor
+        _ :< FloorF Floor
             { floorOperandSort
             , floorResultSort
             , floorChild
@@ -1340,22 +1340,22 @@ pattern Floor_ floorOperandSort floorResultSort floorChild <-
 
 pattern Forall_ forallSort forallVariable forallChild <-
     (Recursive.project ->
-        _ :< ForallPattern Forall { forallSort, forallVariable, forallChild }
+        _ :< ForallF Forall { forallSort, forallVariable, forallChild }
     )
 
 pattern Iff_ iffSort iffFirst iffSecond <-
     (Recursive.project ->
-        _ :< IffPattern Iff { iffSort, iffFirst, iffSecond }
+        _ :< IffF Iff { iffSort, iffFirst, iffSecond }
     )
 
 pattern Implies_ impliesSort impliesFirst impliesSecond <-
     (Recursive.project ->
-        _ :< ImpliesPattern Implies { impliesSort, impliesFirst, impliesSecond }
+        _ :< ImpliesF Implies { impliesSort, impliesFirst, impliesSecond }
     )
 
 pattern In_ inOperandSort inResultSort inFirst inSecond <-
     (Recursive.project ->
-        _ :< InPattern In
+        _ :< InF In
             { inOperandSort
             , inResultSort
             , inContainedChild = inFirst
@@ -1365,18 +1365,18 @@ pattern In_ inOperandSort inResultSort inFirst inSecond <-
 
 pattern Next_ nextSort nextChild <-
     (Recursive.project ->
-        _ :< NextPattern Next { nextSort, nextChild })
+        _ :< NextF Next { nextSort, nextChild })
 
 pattern Not_ notSort notChild <-
     (Recursive.project ->
-        _ :< NotPattern Not { notSort, notChild })
+        _ :< NotF Not { notSort, notChild })
 
 pattern Or_ orSort orFirst orSecond <-
-    (Recursive.project -> _ :< OrPattern Or { orSort, orFirst, orSecond })
+    (Recursive.project -> _ :< OrF Or { orSort, orFirst, orSecond })
 
 pattern Rewrites_ rewritesSort rewritesFirst rewritesSecond <-
     (Recursive.project ->
-        _ :< RewritesPattern Rewrites
+        _ :< RewritesF Rewrites
             { rewritesSort
             , rewritesFirst
             , rewritesSecond
@@ -1384,10 +1384,10 @@ pattern Rewrites_ rewritesSort rewritesFirst rewritesSecond <-
     )
 
 pattern Top_ topSort <-
-    (Recursive.project -> _ :< TopPattern Top { topSort })
+    (Recursive.project -> _ :< TopF Top { topSort })
 
 pattern Var_ variable <-
-    (Recursive.project -> _ :< VariablePattern variable)
+    (Recursive.project -> _ :< VariableF variable)
 
 pattern V
     :: Functor dom
@@ -1396,7 +1396,7 @@ pattern V
 pattern V x <- Var_ x
 
 pattern StringLiteral_ str <-
-    (Recursive.project -> _ :< StringLiteralPattern (StringLiteral str))
+    (Recursive.project -> _ :< StringLiteralF (StringLiteral str))
 
 pattern CharLiteral_ char <-
-    (Recursive.project -> _ :< CharLiteralPattern (CharLiteral char))
+    (Recursive.project -> _ :< CharLiteralF (CharLiteral char))

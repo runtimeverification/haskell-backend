@@ -275,7 +275,7 @@ externalizeFreshVariables termLike =
         let freeVariables' = Valid.freeVariables valid'
         patt' <-
             case patt of
-                ExistsPattern exists -> do
+                ExistsF exists -> do
                     let Exists { existsVariable, existsChild } = exists
                     (existsVariable', existsChild') <-
                         underBinder
@@ -287,8 +287,8 @@ externalizeFreshVariables termLike =
                                 { existsVariable = existsVariable'
                                 , existsChild = existsChild'
                                 }
-                    return (ExistsPattern exists')
-                ForallPattern forall -> do
+                    return (ExistsF exists')
+                ForallF forall -> do
                     let Forall { forallVariable, forallChild } = forall
                     (forallVariable', forallChild') <-
                         underBinder
@@ -300,7 +300,7 @@ externalizeFreshVariables termLike =
                                 { forallVariable = forallVariable'
                                 , forallChild = forallChild'
                                 }
-                    return (ForallPattern forall')
+                    return (ForallF forall')
                 _ ->
                     PatternF.traverseVariables lookupVariable patt >>= sequence
         (return . Recursive.embed) (valid' :< patt')

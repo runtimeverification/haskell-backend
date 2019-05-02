@@ -85,7 +85,7 @@ simplifyAnds
         -> unifier (Pattern variable)
     simplifyAnds' intermediate pat =
         case Cofree.tailF (Recursive.project pat) of
-            Syntax.AndPattern And { andFirst = lhs, andSecond = rhs } ->
+            Syntax.AndF And { andFirst = lhs, andSecond = rhs } ->
                 foldM simplifyAnds' intermediate [lhs, rhs]
             _ -> do
                 result <-
@@ -122,9 +122,9 @@ groupSubstitutionByVariable
 groupSubstitutionByVariable =
     groupBy ((==) `on` fst) . sortBy (compare `on` fst) . map sortRenaming
   where
-    sortRenaming (var, Recursive.project -> ann :< Syntax.VariablePattern var')
+    sortRenaming (var, Recursive.project -> ann :< Syntax.VariableF var')
         | var' < var =
-          (var', Recursive.embed (ann :< Syntax.VariablePattern var))
+          (var', Recursive.embed (ann :< Syntax.VariableF var))
     sortRenaming eq = eq
 
 -- simplifies x = t1 /\ x = t2 /\ ... /\ x = tn by transforming it into

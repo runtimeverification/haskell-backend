@@ -73,7 +73,7 @@ testMainModuleName = ModuleName "TEST-MAIN-MODULE"
 
 strictAttribute :: ParsedPattern
 strictAttribute =
-    (asParsedPattern . ApplicationPattern)
+    (asParsedPattern . ApplicationF)
         Application
             { applicationSymbolOrAlias = groundHead "strict" AstLocationTest
             , applicationChildren = []
@@ -230,7 +230,7 @@ test_resolvers =
                               where
                                 patternSort = objectS1
                                 freeVariables = Set.empty
-                            top' = TopPattern Top { topSort = objectS1 }
+                            top' = TopF Top { topSort = objectS1 }
                         in
                             asPurePattern (valid :< top')
                     , sentenceAliasResultSort = objectS1
@@ -267,7 +267,7 @@ test_resolvers =
                           where
                             patternSort = stringMetaSort
                             freeVariables = Set.empty
-                        top' = TopPattern Top { topSort = stringMetaSort }
+                        top' = TopF Top { topSort = stringMetaSort }
                     in
                         asPurePattern (valid :< top')
                 , sentenceAliasResultSort = stringMetaSort

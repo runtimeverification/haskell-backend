@@ -15,8 +15,8 @@ test_astPrettyPrint :: [TestTree]
 test_astPrettyPrint =
     [ testCase "Char literal"
         (assertEqual ""
-            "CharLiteralPattern (CharLiteral 'a')"
-            (prettyPrintPattern (CharLiteralPattern (CharLiteral 'a')))
+            "CharLiteralF (CharLiteral 'a')"
+            (prettyPrintPattern (CharLiteralF (CharLiteral 'a')))
         )
     , testCase "Object unified variable"
         (assertEqual ""

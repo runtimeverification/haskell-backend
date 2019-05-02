@@ -602,7 +602,7 @@ objectAliasSentenceWithArguments a b c =
         c
         (asPurePattern $ valid :< top')
   where
-    top' = TopPattern Top { topSort = b }
+    top' = TopF Top { topSort = b }
     valid = Valid { patternSort = b, freeVariables = Set.empty }
 
 aliasSentenceWithArguments
@@ -668,7 +668,7 @@ unifiedVariable name sort =
 
 variablePattern :: VariableName -> Sort -> PatternF domain Variable p
 variablePattern name sort =
-    VariablePattern (variable name sort)
+    VariableF (variable name sort)
 
 unifiedVariablePattern :: VariableName -> Sort -> TermLike Variable
 unifiedVariablePattern name patternSort =
@@ -682,7 +682,7 @@ simpleExistsPattern
     -> Sort
     -> PatternF domain Variable (TermLike Variable)
 simpleExistsPattern quantifiedVariable resultSort =
-    ExistsPattern Exists
+    ExistsF Exists
         { existsSort = resultSort
         , existsVariable = quantifiedVariable
         , existsChild = mkVar quantifiedVariable
@@ -736,7 +736,7 @@ applicationPatternWithChildren
     -> [child]
     -> PatternF dom v child
 applicationPatternWithChildren (SymbolName name) unifiedPatterns =
-    ApplicationPattern Application
+    ApplicationF Application
         { applicationSymbolOrAlias = SymbolOrAlias
             { symbolOrAliasConstructor = testId name
             , symbolOrAliasParams = []

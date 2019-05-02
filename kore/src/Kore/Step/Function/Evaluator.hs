@@ -120,7 +120,7 @@ evaluateApplication
     SymbolOrAlias { symbolOrAliasConstructor = symbolId } = appHead
 
     appPurePattern =
-        Recursive.embed (valid :< Syntax.ApplicationPattern afterInj)
+        Recursive.embed (valid :< Syntax.ApplicationF afterInj)
 
     unchangedPatt =
         Conditional

@@ -20,4 +20,4 @@ simplify
     :: (Ord variable, SortedVariable variable)
     => Sort
     -> OrPattern variable
-simplify s = OrPattern.fromTermLike $ mkInhabitantPattern s
+simplify s = OrPattern.fromTermLike $ mkInhabitant s

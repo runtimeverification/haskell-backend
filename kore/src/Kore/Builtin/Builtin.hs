@@ -672,7 +672,7 @@ unaryOperator
         -> Simplifier (AttemptedAxiom variable)
     unaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
-            [Syntax.DomainValuePattern a] -> do
+            [Syntax.DomainValueF a] -> do
                 -- Apply the operator to a domain value
                 let r = op (get a)
                 (appliedFunction . asPattern resultSort) r
@@ -725,7 +725,7 @@ binaryOperator
         -> Simplifier (AttemptedAxiom variable)
     binaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
-            [Syntax.DomainValuePattern a, Syntax.DomainValuePattern b] -> do
+            [Syntax.DomainValueF a, Syntax.DomainValueF b] -> do
                 -- Apply the operator to two domain values
                 let r = op (get a) (get b)
                 (appliedFunction . asPattern resultSort) r
@@ -778,7 +778,7 @@ ternaryOperator
         -> Simplifier (AttemptedAxiom variable)
     ternaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
-            [Syntax.DomainValuePattern a, Syntax.DomainValuePattern b, Syntax.DomainValuePattern c] -> do
+            [Syntax.DomainValueF a, Syntax.DomainValueF b, Syntax.DomainValueF c] -> do
                 -- Apply the operator to three domain values
                 let r = op (get a) (get b) (get c)
                 (appliedFunction . asPattern resultSort) r

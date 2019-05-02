@@ -196,7 +196,7 @@ evalKIte _ _ _ _ (_ :< app) =
         -> Maybe Bool
     evaluate (Recursive.project -> _ :< pat) =
         case pat of
-            DomainValuePattern dv ->
+            DomainValueF dv ->
                 Just (Bool.extractBoolDomainValue iteKey dv)
             _ -> Nothing
 

@@ -98,7 +98,7 @@ test_patternVerifier =
             , "(<test data>)"
             ]
         )
-        (ExistsPattern Exists
+        (ExistsF Exists
             { existsSort = anotherSort
             , existsVariable = anotherVariable
             , existsChild =
@@ -127,7 +127,7 @@ test_patternVerifier =
             , "(<test data>, <test data>)"
             ]
         )
-        (ExistsPattern Exists
+        (ExistsF Exists
             { existsSort = objectSort
             , existsVariable = objectVariable'
             , existsChild = (mkVar anotherVariable)
@@ -159,7 +159,7 @@ test_patternVerifier =
             , "(<test data>)"
             ]
         )
-        (ExistsPattern Exists
+        (ExistsF Exists
             { existsSort = objectSort
             , existsVariable = objectVariable'
             , existsChild =
@@ -363,7 +363,7 @@ test_patternVerifier =
         (ExpectedErrorMessage
             "Application uses less sorts than the declaration.")
         (ErrorStack ["symbol or alias 'ObjectSymbol' (<test data>)"])
-        (ApplicationPattern Application
+        (ApplicationF Application
             { applicationSymbolOrAlias = SymbolOrAlias
                 { symbolOrAliasConstructor = testId oneSortSymbolRawName
                 , symbolOrAliasParams = []
@@ -387,7 +387,7 @@ test_patternVerifier =
         (ExpectedErrorMessage
             "Application uses more sorts than the declaration.")
         (ErrorStack ["symbol or alias 'ObjectSymbol' (<test data>)"])
-        (ApplicationPattern Application
+        (ApplicationF Application
             { applicationSymbolOrAlias = SymbolOrAlias
                 { symbolOrAliasConstructor = testId oneSortSymbolRawName
                 , symbolOrAliasParams = [objectSort, objectSort]
@@ -408,7 +408,7 @@ test_patternVerifier =
         ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Object pattern - unquantified variable"
-        (VariablePattern objectVariable')
+        (VariableF objectVariable')
         (NamePrefix "dummy")
         (TestedPatternSort objectSort)
         (SortVariablesThatMustBeDeclared [])
@@ -416,7 +416,7 @@ test_patternVerifier =
         [ objectSortSentence, anotherSortSentence ]
         NeedsInternalDefinitions
     , successTestsForMetaPattern "Meta pattern - unquantified variable"
-        (VariablePattern metaVariable')
+        (VariableF metaVariable')
         (NamePrefix "#dummy")
         (TestedPatternSort metaSort1)
         (SortVariablesThatMustBeDeclared [])
@@ -426,7 +426,7 @@ test_patternVerifier =
         []
         NeedsInternalDefinitions
     , successTestsForMetaPattern "Simple string pattern"
-        (StringLiteralPattern (StringLiteral "MetaString"))
+        (StringLiteralF (StringLiteral "MetaString"))
         (NamePrefix "#dummy")
         (TestedPatternSort stringMetaSort)
         (SortVariablesThatMustBeDeclared [])
@@ -438,7 +438,7 @@ test_patternVerifier =
         -- at least in some cases.
         NeedsInternalDefinitions
     , successTestsForMetaPattern "Simple char pattern"
-        (CharLiteralPattern (CharLiteral 'c'))
+        (CharLiteralF (CharLiteral 'c'))
         (NamePrefix "#dummy")
         (TestedPatternSort charMetaSort)
         (SortVariablesThatMustBeDeclared [])
@@ -455,7 +455,7 @@ test_patternVerifier =
         (ErrorStack
             [ "(<test data>, <implicitly defined entity>)" ]
         )
-        (StringLiteralPattern (StringLiteral "MetaString"))
+        (StringLiteralF (StringLiteral "MetaString"))
         (NamePrefix "#dummy")
         (TestedPatternSort (updateAstLocation charMetaSort AstLocationTest))
         (SortVariablesThatMustBeDeclared [])
@@ -467,7 +467,7 @@ test_patternVerifier =
         -- at least in some cases.
         NeedsSortedParent
     , successTestsForObjectPattern "Bottom pattern"
-        (BottomPattern Bottom {bottomSort = objectSort})
+        (BottomF Bottom {bottomSort = objectSort})
         (NamePrefix "dummy")
         (TestedPatternSort objectSort)
         (SortVariablesThatMustBeDeclared [])
@@ -477,7 +477,7 @@ test_patternVerifier =
         ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Top pattern"
-        (TopPattern Top {topSort = objectSort})
+        (TopF Top {topSort = objectSort})
         (NamePrefix "dummy")
         (TestedPatternSort objectSort)
         (SortVariablesThatMustBeDeclared [])
@@ -500,7 +500,7 @@ test_patternVerifier =
             , "While parsing domain value"
             ]
         )
-        (DomainValuePattern $ Domain.BuiltinExternal
+        (DomainValueF $ Domain.BuiltinExternal
             Domain.External
                 { domainValueSort = intSort
                 , domainValueChild =
@@ -515,7 +515,7 @@ test_patternVerifier =
         [ asSentence intSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - INT.Int - Negative"
-        (DomainValuePattern $ Domain.BuiltinExternal
+        (DomainValueF $ Domain.BuiltinExternal
             Domain.External
                 { domainValueSort = intSort
                 , domainValueChild =
@@ -530,7 +530,7 @@ test_patternVerifier =
         [ asSentence intSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - INT.Int - Positive (unsigned)"
-        (DomainValuePattern $ Domain.BuiltinExternal
+        (DomainValueF $ Domain.BuiltinExternal
             Domain.External
                 { domainValueSort = intSort
                 , domainValueChild =
@@ -545,7 +545,7 @@ test_patternVerifier =
         [ asSentence intSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - INT.Int - Positive (signed)"
-        (DomainValuePattern $ Domain.BuiltinExternal
+        (DomainValueF $ Domain.BuiltinExternal
             Domain.External
                 { domainValueSort = intSort
                 , domainValueChild =
@@ -573,7 +573,7 @@ test_patternVerifier =
             , "While parsing domain value"
             ]
         )
-        (DomainValuePattern $ Domain.BuiltinExternal
+        (DomainValueF $ Domain.BuiltinExternal
             Domain.External
                 { domainValueSort = boolSort
                 , domainValueChild =
@@ -588,7 +588,7 @@ test_patternVerifier =
         [ asSentence boolSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - BOOL.Bool - true"
-        (DomainValuePattern $ Domain.BuiltinExternal
+        (DomainValueF $ Domain.BuiltinExternal
             Domain.External
                 { domainValueSort = boolSort
                 , domainValueChild =
@@ -603,7 +603,7 @@ test_patternVerifier =
         [ asSentence boolSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - BOOL.Bool - false"
-        (DomainValuePattern $ Domain.BuiltinExternal
+        (DomainValueF $ Domain.BuiltinExternal
             Domain.External
                 { domainValueSort = boolSort
                 , domainValueChild =
@@ -979,7 +979,7 @@ genericPatternInAllContexts
             (aliasFromSort testedSort)
             patternRestrict
     anotherPattern =
-        ExistsPattern Exists
+        ExistsF Exists
             { existsSort = testedSort
             , existsVariable = anotherVariable
             , existsChild = (mkVar anotherVariable)
@@ -1032,7 +1032,7 @@ objectPatternInAllContexts
             anotherPattern
             (OperandSort testedSort)
     anotherPattern =
-        ExistsPattern Exists
+        ExistsF Exists
             { existsSort = testedSort
             , existsVariable = anotherVariable
             , existsChild = (mkVar anotherVariable)
@@ -1154,7 +1154,7 @@ genericPatternInPatterns
             ]
     ++
         [ TestPattern
-            { testPatternPattern = ApplicationPattern Application
+            { testPatternPattern = ApplicationF Application
                 { applicationSymbolOrAlias = symbol
                 , applicationChildren = [asPurePattern (valid :< testedPattern)]
                 }
@@ -1167,7 +1167,7 @@ genericPatternInPatterns
                     ]
             }
         , TestPattern
-            { testPatternPattern = ApplicationPattern Application
+            { testPatternPattern = ApplicationF Application
                 { applicationSymbolOrAlias = alias
                 , applicationChildren = [asPurePattern (valid :< testedPattern)]
                 }
@@ -1205,7 +1205,7 @@ patternInQuantifiedPatterns
     -> [TestPattern]
 patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
     [ TestPattern
-        { testPatternPattern = ExistsPattern Exists
+        { testPatternPattern = ExistsF Exists
             { existsSort = testedSort
             , existsVariable = quantifiedVariable
             , existsChild = testedKorePattern
@@ -1219,7 +1219,7 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
                 ]
         }
     , TestPattern
-        { testPatternPattern = ForallPattern Forall
+        { testPatternPattern = ForallF Forall
             { forallSort = testedSort
             , forallVariable = quantifiedVariable
             , forallChild = testedKorePattern
@@ -1258,7 +1258,7 @@ patternInUnquantifiedGenericPatterns
     (Helpers.ResultSort resultSort)
   =
     [ TestPattern
-        { testPatternPattern = AndPattern And
+        { testPatternPattern = AndF And
             { andSort = testedSort
             , andFirst = testedUnifiedPattern
             , andSecond = anotherUnifiedPattern
@@ -1267,7 +1267,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\and (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = AndPattern And
+        { testPatternPattern = AndF And
             { andSort = testedSort
             , andFirst = anotherUnifiedPattern
             , andSecond = testedUnifiedPattern
@@ -1276,7 +1276,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\and (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = CeilPattern Ceil
+        { testPatternPattern = CeilF Ceil
             { ceilOperandSort = testedSort
             , ceilResultSort = resultSort
             , ceilChild = testedUnifiedPattern
@@ -1285,7 +1285,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\ceil (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = EqualsPattern Equals
+        { testPatternPattern = EqualsF Equals
             { equalsOperandSort = testedSort
             , equalsResultSort = resultSort
             , equalsFirst = testedUnifiedPattern
@@ -1295,7 +1295,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\equals (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = EqualsPattern Equals
+        { testPatternPattern = EqualsF Equals
             { equalsOperandSort = testedSort
             , equalsResultSort = resultSort
             , equalsFirst = anotherUnifiedPattern
@@ -1305,7 +1305,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\equals (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = FloorPattern Floor
+        { testPatternPattern = FloorF Floor
             { floorOperandSort = testedSort
             , floorResultSort = resultSort
             , floorChild = testedUnifiedPattern
@@ -1314,7 +1314,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\floor (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = IffPattern Iff
+        { testPatternPattern = IffF Iff
             { iffSort = testedSort
             , iffFirst = testedUnifiedPattern
             , iffSecond = anotherUnifiedPattern
@@ -1323,7 +1323,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\iff (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = IffPattern Iff
+        { testPatternPattern = IffF Iff
             { iffSort = testedSort
             , iffFirst = anotherUnifiedPattern
             , iffSecond = testedUnifiedPattern
@@ -1332,7 +1332,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\iff (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = ImpliesPattern Implies
+        { testPatternPattern = ImpliesF Implies
             { impliesSort = testedSort
             , impliesFirst = testedUnifiedPattern
             , impliesSecond = anotherUnifiedPattern
@@ -1341,7 +1341,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\implies (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = ImpliesPattern Implies
+        { testPatternPattern = ImpliesF Implies
             { impliesSort = testedSort
             , impliesFirst = anotherUnifiedPattern
             , impliesSecond = testedUnifiedPattern
@@ -1350,7 +1350,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\implies (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = InPattern In
+        { testPatternPattern = InF In
             { inOperandSort = testedSort
             , inResultSort = resultSort
             , inContainedChild = testedUnifiedPattern
@@ -1360,7 +1360,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\in (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = InPattern In
+        { testPatternPattern = InF In
             { inOperandSort = testedSort
             , inResultSort = resultSort
             , inContainedChild = anotherUnifiedPattern
@@ -1370,7 +1370,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\in (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = NotPattern Not
+        { testPatternPattern = NotF Not
             { notSort = testedSort
             , notChild = testedUnifiedPattern
             }
@@ -1378,7 +1378,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\not (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = OrPattern Or
+        { testPatternPattern = OrF Or
             { orSort = testedSort
             , orFirst = testedUnifiedPattern
             , orSecond = anotherUnifiedPattern
@@ -1387,7 +1387,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\or (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = OrPattern Or
+        { testPatternPattern = OrF Or
             { orSort = testedSort
             , orFirst = anotherUnifiedPattern
             , orSecond = testedUnifiedPattern
@@ -1421,7 +1421,7 @@ patternInUnquantifiedObjectPatterns
     (OperandSort testedSort)
   =
     [ TestPattern
-        { testPatternPattern = NextPattern Next
+        { testPatternPattern = NextF Next
             { nextSort = testedSort
             , nextChild = testedUnifiedPattern
             }
@@ -1429,7 +1429,7 @@ patternInUnquantifiedObjectPatterns
         , testPatternErrorStack = ErrorStack ["\\next (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = RewritesPattern Rewrites
+        { testPatternPattern = RewritesF Rewrites
             { rewritesSort = testedSort
             , rewritesFirst = testedUnifiedPattern
             , rewritesSecond = anotherUnifiedPattern
@@ -1438,7 +1438,7 @@ patternInUnquantifiedObjectPatterns
         , testPatternErrorStack = ErrorStack ["\\rewrites (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = RewritesPattern Rewrites
+        { testPatternPattern = RewritesF Rewrites
             { rewritesSort = testedSort
             , rewritesFirst = anotherUnifiedPattern
             , rewritesSecond = testedUnifiedPattern

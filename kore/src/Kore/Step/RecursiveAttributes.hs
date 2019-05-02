@@ -35,17 +35,17 @@ recursivelyCheckHeadProperty prop MetadataTools { symAttributes } =
     checkProperty (_ :< pat) =
         case pat of
             -- Trivial cases
-            VariablePattern _ -> True
-            StringLiteralPattern _ -> True
-            CharLiteralPattern _ -> True
+            VariableF _ -> True
+            StringLiteralF _ -> True
+            CharLiteralF _ -> True
             -- Recursive cases
-            ApplicationPattern app
+            ApplicationF app
               | prop attrs -> and app
               | otherwise -> False
               where
                 Application { applicationSymbolOrAlias } = app
                 attrs = symAttributes applicationSymbolOrAlias
-            DomainValuePattern dv -> and dv
+            DomainValueF dv -> and dv
             _ -> False
 
 isFunctionalPattern, isFunctionPattern, isTotalPattern
