@@ -39,8 +39,6 @@ import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import qualified Data.Reflection as Reflection
-import           Data.Semigroup
-                 ( Semigroup (..) )
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -98,7 +96,7 @@ import qualified Kore.Variables.Target as Target
 -- | Wraps functions such as 'unificationProcedure' and
 -- 'Kore.Step.Axiom.Matcher.matchAsUnification' to be used in
 -- 'stepWithRule'.
-newtype UnificationProcedure level =
+newtype UnificationProcedure =
     UnificationProcedure
         ( forall variable unifier unifierM
         .   ( SortedVariable variable
@@ -117,7 +115,7 @@ newtype UnificationProcedure level =
         -> TermLike variable
         -> unifier
             ( OrPredicate variable
-            , UnificationProof level variable
+            , UnificationProof Object variable
             )
         )
 
@@ -186,7 +184,7 @@ unifyRule
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> UnificationProcedure Object
+    -> UnificationProcedure
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
@@ -451,7 +449,7 @@ applyRule
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
-    -> UnificationProcedure Object
+    -> UnificationProcedure
 
     -> Pattern variable
     -- ^ Configuration being rewritten.
@@ -534,7 +532,7 @@ applyRewriteRule
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
-    -> UnificationProcedure Object
+    -> UnificationProcedure
 
     -> Pattern variable
     -- ^ Configuration being rewritten.
@@ -683,7 +681,7 @@ applyRulesInParallel
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
-    -> UnificationProcedure Object
+    -> UnificationProcedure
 
     -> [RulePattern variable]
     -- ^ Rewrite rules
@@ -748,7 +746,7 @@ applyRewriteRules
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
-    -> UnificationProcedure Object
+    -> UnificationProcedure
 
     -> [RewriteRule variable]
     -- ^ Rewrite rules
@@ -794,7 +792,7 @@ sequenceRules
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
-    -> UnificationProcedure Object
+    -> UnificationProcedure
 
     -> Pattern variable
     -- ^ Configuration being rewritten
@@ -882,7 +880,7 @@ sequenceRewriteRules
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
-    -> UnificationProcedure Object
+    -> UnificationProcedure
 
     -> Pattern variable
     -- ^ Configuration being rewritten
