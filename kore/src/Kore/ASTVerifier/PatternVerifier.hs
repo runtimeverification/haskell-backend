@@ -646,7 +646,7 @@ verifyVariableDeclaration Variable { variableSort } = do
 
 verifySymbolOrAlias
     :: SymbolOrAlias
-    -> PatternVerifier (ApplicationSorts Object)
+    -> PatternVerifier ApplicationSorts
 verifySymbolOrAlias symbolOrAlias = do
     trySymbol <- catchError (Right <$> lookupSymbol) (return . Left)
     tryAlias <- catchError (Right <$> lookupAlias) (return . Left)
@@ -671,7 +671,7 @@ applicationSortsFromSymbolOrAliasSentence
     :: SentenceSymbolOrAlias sentence
     => SymbolOrAlias
     -> sentence pat
-    -> PatternVerifier (ApplicationSorts Object)
+    -> PatternVerifier ApplicationSorts
 applicationSortsFromSymbolOrAliasSentence symbolOrAlias sentence = do
     Context { declaredSortVariables } <- Reader.ask
     mapM_

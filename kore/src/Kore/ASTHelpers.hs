@@ -34,7 +34,7 @@ import           Kore.Syntax.Definition
 import           Kore.Variables.Free
 
 
-data ApplicationSorts level = ApplicationSorts
+data ApplicationSorts = ApplicationSorts
     { applicationSortsOperands :: ![Sort]
     , applicationSortsResult   :: !Sort
     }
@@ -47,7 +47,7 @@ symbolOrAliasSorts
     :: (SentenceSymbolOrAlias sentence, MonadError (Error e) m)
     => [Sort]
     -> sentence pat
-    -> m (ApplicationSorts Object)
+    -> m ApplicationSorts
 symbolOrAliasSorts params sentence = do
     variableToSort <-
         pairVariablesToSorts

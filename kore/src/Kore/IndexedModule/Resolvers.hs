@@ -78,13 +78,13 @@ getHeadApplicationSorts
     :: IndexedModule patternType declAtts axiomAtts
     -- ^ Module representing an indexed definition
     -> SymbolOrAlias     -- ^the head we want to find sorts for
-    -> ApplicationSorts Object
+    -> ApplicationSorts
 getHeadApplicationSorts m patternHead =
     applyToHeadSentence sentenceSorts m patternHead
   where
     sentenceSorts
         :: SentenceSymbolOrAlias sentence
-        => [Sort] -> sentence pat -> ApplicationSorts Object
+        => [Sort] -> sentence pat -> ApplicationSorts
     sentenceSorts sortParameters sentence =
         assertRight $ symbolOrAliasSorts sortParameters sentence
 

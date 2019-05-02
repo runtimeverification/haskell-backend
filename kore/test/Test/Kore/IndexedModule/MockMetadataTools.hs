@@ -15,8 +15,6 @@ import qualified Data.Set as Set
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import           Kore.ASTHelpers
                  ( ApplicationSorts )
 import           Kore.Attribute.Constructor
@@ -42,7 +40,7 @@ makeMetadataTools
     -> [(SymbolOrAlias, HeadType)]
     -> [(Sort, Attribute.Sort)]
     -> [(Sort, Sort)]
-    -> [(SymbolOrAlias, ApplicationSorts Object)]
+    -> [(SymbolOrAlias, ApplicationSorts)]
     -> SMT.AST.SmtDeclarations
     -> SmtMetadataTools StepperAttributes
 makeMetadataTools attr headTypes sortTypes isSubsortOf sorts declarations =

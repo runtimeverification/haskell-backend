@@ -50,7 +50,7 @@ data MetadataTools level smt attributes = MetadataTools
        including when @a@ equals @b@. -}
     , subsorts :: Sort -> Set Sort
     -- ^ get the subsorts for a sort
-    , applicationSorts :: SymbolOrAlias -> ApplicationSorts level
+    , applicationSorts :: SymbolOrAlias -> ApplicationSorts
     -- ^ Sorts for a specific symbol application.
     , smtData :: smt
     -- ^ The SMT data for the given module.
