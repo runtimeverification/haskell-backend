@@ -13,16 +13,10 @@ module Kore.Step.Simplification.Forall
     ) where
 
 import           Kore.AST.Valid
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( fmapWithPairs )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 import           Kore.Syntax.Forall
 import           Kore.Unparser
 
@@ -50,9 +44,7 @@ simplify
         , Unparse variable
         )
     => Forall Sort variable (OrPattern variable)
-    ->  ( OrPattern variable
-        , SimplificationProof Object
-        )
+    -> OrPattern variable
 simplify
     Forall { forallVariable = variable, forallChild = child }
   =
@@ -79,18 +71,11 @@ simplifyEvaluated
         )
     => variable
     -> OrPattern variable
-    -> (OrPattern variable, SimplificationProof Object)
+    -> OrPattern variable
 simplifyEvaluated variable simplified
-  | OrPattern.isTrue simplified = (simplified, SimplificationProof)
-  | OrPattern.isFalse simplified = (simplified, SimplificationProof)
-  | otherwise =
-    let
-        (patt, _proofs) =
-            MultiOr.fmapWithPairs (makeEvaluate variable) simplified
-      in
-        ( patt
-        , SimplificationProof
-        )
+  | OrPattern.isTrue simplified  = simplified
+  | OrPattern.isFalse simplified = simplified
+  | otherwise                    = makeEvaluate variable <$> simplified
 
 {-| evaluates an 'Forall' given its two 'Pattern' children.
 
@@ -104,21 +89,9 @@ makeEvaluate
         )
     => variable
     -> Pattern variable
-    -> (Pattern variable, SimplificationProof Object)
+    -> Pattern variable
 makeEvaluate variable patt
-  | Pattern.isTop patt =
-    (Pattern.top, SimplificationProof)
-  | Pattern.isBottom patt =
-    ( Pattern.bottom
-    , SimplificationProof
-    )
+  | Pattern.isTop patt    = Pattern.top
+  | Pattern.isBottom patt = Pattern.bottom
   | otherwise =
-    ( Conditional
-        { term = mkForall
-            variable
-            (Pattern.toMLPattern patt)
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
-    , SimplificationProof
-    )
+    Pattern.fromTermLike $ mkForall variable $ Pattern.toMLPattern patt

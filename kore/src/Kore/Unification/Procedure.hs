@@ -22,6 +22,7 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Merging.OrPattern as OrPattern
 import           Kore.Step.OrPredicate
                  ( OrPredicate )
+import qualified Kore.Step.OrPredicate as OrPredicate
 import           Kore.Step.Pattern
                  ( Conditional (..) )
 import qualified Kore.Step.Pattern as Conditional
@@ -89,19 +90,18 @@ unificationProcedure
                 axiomIdToSimplifier
                 p1
                 p2
-    (pat@Conditional { term, predicate, substitution }, _) <- getUnifiedTerm
+    pat@Conditional { term, predicate, substitution } <- getUnifiedTerm
     if Conditional.isBottom pat
-        then return
-            (MultiOr.make [], EmptyUnificationProof)
+        then return (OrPredicate.bottom, EmptyUnificationProof)
         else Monad.Unify.liftSimplifier $ do
-            (orCeil, _proof) <-
+            orCeil <-
                 Ceil.makeEvaluateTerm
                     tools
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplifier
                     term
-            (result, _proof) <-
+            result <-
                 OrPattern.mergeWithPredicateAssumesEvaluated
                     (createPredicatesAndSubstitutionsMerger
                         tools

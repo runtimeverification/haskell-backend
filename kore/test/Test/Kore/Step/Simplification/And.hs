@@ -415,12 +415,9 @@ findSort :: [Pattern Variable] -> Sort
 findSort [] = testSort
 findSort ( Conditional {term} : _ ) = getSort term
 
-evaluate
-    :: And Sort (OrPattern Variable)
-    -> IO (OrPattern Variable)
+evaluate :: And Sort (OrPattern Variable) -> IO (OrPattern Variable)
 evaluate patt =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ simplify
         mockMetadataTools

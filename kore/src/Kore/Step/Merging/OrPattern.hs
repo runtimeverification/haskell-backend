@@ -24,11 +24,8 @@ import           Kore.Step.Pattern
                  ( Conditional, Predicate )
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( traverseWithPairs )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Substitution
                  ( PredicateMerger )
 import           Kore.Syntax.Variable
@@ -60,8 +57,7 @@ mergeWithPredicate
     -- ^ Predicate to add.
     -> OrPattern variable
     -- ^ Pattern to which the condition should be added.
-    -> Simplifier
-        (OrPattern variable, SimplificationProof Object)
+    -> Simplifier (OrPattern variable)
 mergeWithPredicate
     tools
     substitutionSimplifier
@@ -69,18 +65,16 @@ mergeWithPredicate
     axiomIdToSimplifier
     toMerge
     patt
-  = do
-    (evaluated, _proofs) <-
-        MultiOr.traverseWithPairs
-            (give tools $ Pattern.mergeWithPredicate
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                toMerge
-            )
-            patt
-    return (evaluated, SimplificationProof)
+  =
+    traverse
+        (give tools $ Pattern.mergeWithPredicate
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            toMerge
+        )
+        patt
 
 {-| Ands the given predicate/substitution with the given 'MultiOr'.
 
@@ -101,18 +95,7 @@ mergeWithPredicateAssumesEvaluated
     -- ^ Predicate to add.
     -> MultiOr (Conditional variable term)
     -- ^ Pattern to which the condition should be added.
-    -> m
-        (MultiOr (Conditional variable term), SimplificationProof Object)
-mergeWithPredicateAssumesEvaluated
-    substitutionMerger
-    toMerge
-    patt
-  = do
-    (evaluated, _proofs) <-
-        MultiOr.traverseWithPairs
-            (Pattern.mergeWithPredicateAssumesEvaluated
-                    substitutionMerger
-                    toMerge
-            )
-            patt
-    return (evaluated, SimplificationProof)
+    -> m (MultiOr (Conditional variable term))
+mergeWithPredicateAssumesEvaluated substitutionMerger toMerge =
+    traverse
+        (Pattern.mergeWithPredicateAssumesEvaluated substitutionMerger toMerge)

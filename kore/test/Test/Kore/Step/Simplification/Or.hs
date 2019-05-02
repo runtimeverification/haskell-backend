@@ -21,8 +21,6 @@ import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 import           Kore.Step.Simplification.Or
                  ( simplify, simplifyEvaluated )
 import           Kore.Step.TermLike
@@ -243,10 +241,16 @@ becomes
   => (TestConfig, TestConfig)
   -> [Pattern Variable]
   -> TestTree
-becomes (orChild -> or1, orChild -> or2) (OrPattern.fromPatterns . List.sort -> expected) =
+becomes
+    (orChild -> or1, orChild -> or2)
+    (OrPattern.fromPatterns . List.sort -> expected)
+  =
     actual_expected_name_intention
-        (simplifyEvaluated (OrPattern.fromPatterns [or1]) (OrPattern.fromPatterns [or2]))
-        (expected, SimplificationProof)
+        (simplifyEvaluated
+            (OrPattern.fromPattern or1)
+            (OrPattern.fromPattern or2)
+        )
+        expected
         "or becomes"
         (stateIntention
             [ prettyOr or1 or2
@@ -262,8 +266,11 @@ simplifiesTo
     -> TestTree
 simplifiesTo (orChild -> or1, orChild -> or2) (orChild -> simplified) =
     actual_expected_name_intention
-        (simplifyEvaluated (OrPattern.fromPatterns [or1]) (OrPattern.fromPatterns [or2]))
-        (OrPattern.fromPatterns [simplified], SimplificationProof)
+        (simplifyEvaluated
+            (OrPattern.fromPattern or1)
+            (OrPattern.fromPattern or2)
+        )
+        (OrPattern.fromPattern simplified)
         "or does simplify"
         (stateIntention
             [ prettyOr or1 or2
@@ -278,8 +285,11 @@ doesNotSimplify
     -> TestTree
 doesNotSimplify (orChild -> or1, orChild -> or2) =
     actual_expected_name_intention
-        (simplifyEvaluated (OrPattern.fromPatterns [or1]) (OrPattern.fromPatterns [or2]))
-        (OrPattern.fromPatterns $ List.sort [or1, or2], SimplificationProof)
+        (simplifyEvaluated
+            (OrPattern.fromPattern or1)
+            (OrPattern.fromPattern or2)
+        )
+        (OrPattern.fromPatterns $ List.sort [or1, or2])
         "or does not simplify"
         (stateIntention
             [ prettyOr or1 or2

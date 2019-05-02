@@ -21,10 +21,9 @@ import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.Pattern
                  ( Conditional (..), Pattern, Predicate )
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier,
-                 SimplificationProof (SimplificationProof), Simplifier,
-                 TermLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Substitution
                  ( PredicateMerger (PredicateMerger),
                  mergePredicatesAndSubstitutions )
@@ -56,7 +55,7 @@ mergeWithPredicate
     -- ^ Condition and substitution to add.
     -> Pattern variable
     -- ^ pattern to which the above should be added.
-    -> Simplifier (Pattern variable, SimplificationProof Object)
+    -> Simplifier (Pattern variable)
 mergeWithPredicate
     tools
     substitutionSimplifier
@@ -83,9 +82,8 @@ mergeWithPredicate
                 axiomIdToSimplifier
                 [pattPredicate, conditionToMerge]
                 [pattSubstitution, substitutionToMerge]
-    (evaluatedCondition, _) <-
-        Predicate.evaluate
-            substitutionSimplifier simplifier mergedCondition
+    evaluatedCondition <-
+        Predicate.evaluate substitutionSimplifier simplifier mergedCondition
     mergeWithEvaluatedCondition
         tools
         substitutionSimplifier
@@ -109,7 +107,7 @@ mergeWithEvaluatedCondition
     -- ^ Map from axiom IDs to axiom evaluators
     -> Pattern variable
     -> Predicate variable
-    -> Simplifier (Pattern variable, SimplificationProof Object)
+    -> Simplifier (Pattern variable)
 mergeWithEvaluatedCondition
     tools
     substitutionSimplifier
@@ -140,7 +138,7 @@ mergeWithEvaluatedCondition
             , predicate = mergedPredicate
             , substitution = mergedSubstitution
             }
-        , SimplificationProof
+
         )
 
 {-| Ands the given predicate/substitution with the given pattern.
@@ -159,7 +157,7 @@ mergeWithPredicateAssumesEvaluated
     => PredicateMerger Object variable m
     -> Predicate variable
     -> Conditional variable term
-    -> m (Conditional variable term, SimplificationProof Object)
+    -> m (Conditional variable term)
 mergeWithPredicateAssumesEvaluated
     (PredicateMerger substitutionMerger)
     Conditional
@@ -173,19 +171,8 @@ mergeWithPredicateAssumesEvaluated
         , substitution = pattSubstitution
         }  -- The predicate was already included in the Predicate
   = do
-    Conditional
-        { term = ()
-        , predicate = mergedPredicate
-        , substitution = mergedSubstitution
-        } <-
-            substitutionMerger
-                [pattPredicate, predPredicate]
-                [pattSubstitution, predSubstitution]
-    return
-        ( Conditional
-            { term = pattTerm
-            , predicate = mergedPredicate
-            , substitution = mergedSubstitution
-            }
-        , SimplificationProof
-        )
+    merged <-
+        substitutionMerger
+            [pattPredicate, predPredicate]
+            [pattSubstitution, predSubstitution]
+    return $ Pattern.withCondition pattTerm merged

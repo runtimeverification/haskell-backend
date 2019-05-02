@@ -413,15 +413,14 @@ evaluateWithAxioms
     -> Pattern Variable
     -> IO (OrPattern Variable)
 evaluateWithAxioms tools axioms patt =
-    (<$>) fst
-        $ SMT.runSMT SMT.defaultConfig
-        $ evalSimplifier emptyLogger
-        $ Pattern.simplify
-            tools
-            (Predicate.create tools simplifier axiomIdToSimplifier)
-            simplifier
-            axiomIdToSimplifier
-            patt
+    SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier emptyLogger
+    $ Pattern.simplify
+        tools
+        (Predicate.create tools simplifier axiomIdToSimplifier)
+        simplifier
+        axiomIdToSimplifier
+        patt
   where
     simplifier :: TermLikeSimplifier
     simplifier = Simplifier.create tools axiomIdToSimplifier

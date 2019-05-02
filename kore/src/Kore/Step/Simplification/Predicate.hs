@@ -27,8 +27,10 @@ import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Pattern
                  ( Conditional (..), Predicate )
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
@@ -169,7 +171,7 @@ simplifyPartial
     termSimplifier
     predicate
   = do
-    (patternOr, _proof) <-
+    patternOr <-
         Monad.Trans.lift
         $ simplifyTerm'
         $ Syntax.unwrapPredicate predicate
@@ -178,8 +180,9 @@ simplifyPartial
     scatter (eraseTerm <$> patternOr)
   where
     simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
-    eraseTerm conditional@Conditional { term }
-      | TopBottom.isTop term = conditional { term = () }
+    eraseTerm conditional
+      | TopBottom.isTop (Pattern.term conditional)
+      = Conditional.withoutTerm conditional
       | otherwise =
         (error . show . Pretty.vsep)
             [ "Expecting a \\top term, but found:"

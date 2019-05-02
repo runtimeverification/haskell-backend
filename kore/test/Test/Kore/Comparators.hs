@@ -51,8 +51,6 @@ import           Kore.Step.Proof
 import           Kore.Step.Representation.MultiOr
 import           Kore.Step.Rule
                  ( RulePattern (..) )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof )
 import qualified Kore.Step.SMT.AST as SMT
                  ( Declarations (Declarations), Encodable,
                  IndirectSymbolDeclaration (IndirectSymbolDeclaration),
@@ -385,15 +383,6 @@ instance
         SumConstructorSameWithArguments
             (EqWrap "StepProofVariableRenamings" a1 a2)
     sumConstructorPair a1@(StepProofVariableRenamings _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair
-        (StepProofSimplification a1)
-        (StepProofSimplification a2)
-      =
-        SumConstructorSameWithArguments (EqWrap "StepProofSimplification" a1 a2)
-    sumConstructorPair a1@(StepProofSimplification _) a2 =
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
@@ -1300,11 +1289,6 @@ instance
     => EqualWithExplanation (AttemptedAxiom variable)
   where
     compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
-
-instance EqualWithExplanation (SimplificationProof Object)
-  where
-    compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
 instance

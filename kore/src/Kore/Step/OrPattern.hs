@@ -14,6 +14,7 @@ module Kore.Step.OrPattern
     , isTrue
     , toExpandedPattern
     , toTermLike
+    , MultiOr.flatten
     ) where
 
 import qualified Data.Foldable as Foldable

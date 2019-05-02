@@ -16,7 +16,6 @@ import           Data.Limit
 import qualified Data.Limit as Limit
 import           Debug.Trace
 
-import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -151,7 +150,7 @@ checkClaim
                 Limit.takeWithin
                     stepLimit
                     (strategyBuilder goalPattern)
-            startState :: CommonProofState Object
+            startState :: CommonProofState
             startState =
                 ProofState.GoalLHS
                     Conditional
@@ -165,8 +164,8 @@ checkClaim
   where
     transitionRule'
         :: Prim (CommonModalPattern) (RewriteRule Variable)
-        -> (CommonProofState Object)
-        -> ModelChecker.Transition (CommonProofState Object)
+        -> (CommonProofState)
+        -> ModelChecker.Transition (CommonProofState)
     transitionRule' =
         ModelChecker.transitionRule
             metadataTools
@@ -175,7 +174,7 @@ checkClaim
             axiomIdToSimplifier
 
     checkFinalNodes
-        :: [CommonProofState Object]
+        :: [CommonProofState]
         -> CheckResult
     checkFinalNodes nodes
       = Foldable.foldl' checkFinalNodesHelper Proved nodes

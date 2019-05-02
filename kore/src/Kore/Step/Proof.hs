@@ -12,7 +12,6 @@ module Kore.Step.Proof
     , StepProofAtom (..)
     , VariableRenaming (..)
     , stepProof
-    , simplificationProof
     , stepProofSumName
     ) where
 
@@ -24,8 +23,6 @@ import qualified Data.Sequence as Seq
 import           GHC.Generics
                  ( Generic )
 
-import Kore.Step.Simplification.Data
-       ( SimplificationProof )
 import Kore.Unification.Data
        ( UnificationProof )
 
@@ -51,9 +48,6 @@ instance Monoid (StepProof level variable) where
 stepProof :: StepProofAtom level variable -> StepProof level variable
 stepProof atom = StepProof (Seq.singleton atom)
 
-simplificationProof :: SimplificationProof level -> StepProof level variable
-simplificationProof = stepProof . StepProofSimplification
-
 {- | The smallest unit of a 'StepProof'.
 
   @StepProofAtom@ encapsulates the separate proofs resulting from unification,
@@ -65,8 +59,6 @@ data StepProofAtom level variable
     -- ^ Proof for a unification that happened during the step.
     | StepProofVariableRenamings [VariableRenaming level variable]
     -- ^ Proof for the remanings that happened during ther proof.
-    | StepProofSimplification !(SimplificationProof level)
-    -- ^ Proof for the simplification part of a step.
     deriving Generic
 
 deriving instance Eq variable => Eq (StepProofAtom level variable)
@@ -78,7 +70,6 @@ instance Hashable variable => Hashable (StepProofAtom level variable)
 stepProofSumName :: StepProofAtom variable level -> String
 stepProofSumName (StepProofUnification _)       = "StepProofUnification"
 stepProofSumName (StepProofVariableRenamings _) = "StepProofVariableRenamings"
-stepProofSumName (StepProofSimplification _)    = "StepProofSimplification"
 
 {-| 'VariableRenaming' represents a renaming of a variable.
 -}

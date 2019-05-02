@@ -64,12 +64,13 @@ checkImplicationIsTop
                                 )
                 result = Conditional
                             { term = resultTerm, predicate = Predicate.makeTruePredicate, substitution = mempty}
-            (orResult, _) <- Pattern.simplify
-                                tools
-                                predicateSimplifier
-                                patternSimplifier
-                                axiomSimplifers
-                                result
+            orResult <-
+                Pattern.simplify
+                    tools
+                    predicateSimplifier
+                    patternSimplifier
+                    axiomSimplifers
+                    result
             return (isBottom orResult)
         _ -> (error . show . Pretty.vsep)
              [ "Not implemented error:"

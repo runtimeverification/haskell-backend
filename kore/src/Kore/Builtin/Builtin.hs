@@ -132,8 +132,8 @@ import           Kore.Step.Pattern
 import           Kore.Step.Pattern as Pattern
                  ( top )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..),
-                 SimplificationType, Simplifier, TermLikeSimplifier )
+                 ( PredicateSimplifier, SimplificationType, Simplifier,
+                 TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import           Kore.Step.TermLike as TermLike
@@ -256,7 +256,7 @@ notImplemented :: Function
 notImplemented =
     BuiltinAndAxiomSimplifier notImplemented0
   where
-    notImplemented0 _ _ _ _ _ = pure (NotApplicable, SimplificationProof)
+    notImplemented0 _ _ _ _ _ = pure NotApplicable
 
 {- | Verify a builtin sort declaration.
 
@@ -809,13 +809,9 @@ functionEvaluator impl =
             (Application SymbolOrAlias)
             (Valid variable)
             (TermLike variable)
-        -> Simplifier
-            ( AttemptedAxiom variable
-            , SimplificationProof Object
-            )
-    evaluator tools _ simplifier _axiomIdToSimplifier (valid :< app) = do
-        attempt <- impl tools simplifier resultSort applicationChildren
-        return (attempt, SimplificationProof)
+        -> Simplifier (AttemptedAxiom variable)
+    evaluator tools _ simplifier _axiomIdToSimplifier (valid :< app) =
+        impl tools simplifier resultSort applicationChildren
       where
         Application { applicationChildren } = app
         Valid { patternSort = resultSort } = valid
@@ -956,24 +952,16 @@ unifyEqualsUnsolved
         , SortedVariable variable
         , Show variable
         , Unparse variable
-        , level ~ Object
-        , expanded ~ Pattern variable
-        , patt ~ TermLike variable
-        , proof ~ SimplificationProof level
         )
     => SimplificationType
-    -> patt
-    -> patt
-    -> m (expanded, proof)
+    -> TermLike variable
+    -> TermLike variable
+    -> m (Pattern variable)
 unifyEqualsUnsolved SimplificationType.And a b =
     let
         unified = mkAnd a b
         predicate = makeCeilPredicate unified
-        expanded = (pure unified) { predicate }
     in
-        return (expanded, SimplificationProof)
+        return (pure unified) { predicate }
 unifyEqualsUnsolved SimplificationType.Equals a b =
-    return
-        ( Pattern.top {predicate = makeEqualsPredicate a b}
-        , SimplificationProof
-        )
+    return Pattern.top {predicate = makeEqualsPredicate a b}

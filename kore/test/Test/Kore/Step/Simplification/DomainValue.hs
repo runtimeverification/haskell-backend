@@ -116,6 +116,4 @@ evaluate
     :: SmtMetadataTools attrs
     -> Domain.Builtin (OrPattern Variable)
     -> OrPattern Variable
-evaluate tools domainValue =
-    case simplify tools domainValue of
-        (result, _proof) -> result
+evaluate = simplify

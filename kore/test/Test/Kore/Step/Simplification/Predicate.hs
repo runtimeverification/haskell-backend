@@ -324,19 +324,13 @@ simpleEvaluator
         )
     => [(TermLike variable, TermLike variable)]
     -> TermLike variable
-    -> Simplifier
-        ( AttemptedAxiom variable
-        , SimplificationProof Object
-        )
-simpleEvaluator [] _ = return (NotApplicable, SimplificationProof)
+    -> Simplifier (AttemptedAxiom variable)
+simpleEvaluator [] _ = return NotApplicable
 simpleEvaluator ((from, to) : ps) patt
   | from == patt =
-    return
-        ( Applied AttemptedAxiomResults
-            { results = OrPattern.fromTermLike to
-            , remainders = MultiOr.make []
-            }
-        , SimplificationProof
-        )
+    return $ Applied AttemptedAxiomResults
+        { results = OrPattern.fromTermLike to
+        , remainders = OrPattern.bottom
+        }
   | otherwise =
     simpleEvaluator ps patt

@@ -29,9 +29,5 @@ test_topSimplification =
         )
     ]
 
-evaluate
-    :: Top Sort (OrPattern Variable)
-    -> OrPattern Variable
-evaluate top =
-    case simplify top of
-        (result, _proof) -> result
+evaluate :: Top Sort (OrPattern Variable) -> OrPattern Variable
+evaluate = simplify

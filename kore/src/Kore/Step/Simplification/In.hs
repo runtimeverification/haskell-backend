@@ -24,15 +24,12 @@ import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import           Kore.Step.Representation.MultiOr
-                 ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( crossProductGeneric, flatten )
+                 ( crossProductGeneric )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplifyEvaluated )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Syntax.In
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -63,10 +60,7 @@ simplify
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> In Sort (OrPattern variable)
-    -> Simplifier
-        ( OrPattern variable
-        , SimplificationProof Object
-        )
+    -> Simplifier (OrPattern variable)
 simplify
     tools
     substitutionSimplifier
@@ -108,14 +102,11 @@ simplifyEvaluatedIn
     -- ^ Map from symbol IDs to defined functions
     -> OrPattern variable
     -> OrPattern variable
-    -> Simplifier
-        (OrPattern variable, SimplificationProof Object)
+    -> Simplifier (OrPattern variable)
 simplifyEvaluatedIn
     tools substitutionSimplifier simplifier axiomIdToSimplifier first second
-  | OrPattern.isFalse first =
-    return (OrPattern.fromPatterns [], SimplificationProof)
-  | OrPattern.isFalse second =
-    return (OrPattern.fromPatterns [], SimplificationProof)
+  | OrPattern.isFalse first  = return OrPattern.bottom
+  | OrPattern.isFalse second = return OrPattern.bottom
 
   | OrPattern.isTrue first =
     Ceil.simplifyEvaluated
@@ -126,13 +117,6 @@ simplifyEvaluatedIn
 
   | otherwise = do
     let
-        crossProduct
-            :: MultiOr
-                (Simplifier
-                    ( OrPattern variable
-                    , SimplificationProof Object
-                    )
-                )
         crossProduct =
             MultiOr.crossProductGeneric
                 (makeEvaluateIn
@@ -140,27 +124,7 @@ simplifyEvaluatedIn
                 )
                 first
                 second
-    orOfOrProof <- sequence crossProduct
-    let
-        orOfOr :: MultiOr (OrPattern variable)
-        orOfOr = fmap dropProof orOfOrProof
-    -- TODO: It's not obvious at all when filtering occurs and when it doesn't.
-    return (MultiOr.flatten orOfOr, SimplificationProof)
-  where
-    dropProof
-        :: (OrPattern variable, SimplificationProof Object)
-        -> OrPattern variable
-    dropProof = fst
-
-    {-
-    ( MultiOr.flatten
-        -- TODO: Remove fst.
-        (fst <$> MultiOr.crossProductGeneric
-            (makeEvaluateIn tools substitutionSimplifier) first second
-        )
-    , SimplificationProof
-    )
-    -}
+    OrPattern.flatten <$> sequence crossProduct
 
 makeEvaluateIn
     ::  ( FreshVariable variable
@@ -177,8 +141,7 @@ makeEvaluateIn
     -- ^ Map from symbol IDs to defined functions
     -> Pattern variable
     -> Pattern variable
-    -> Simplifier
-        (OrPattern variable, SimplificationProof Object)
+    -> Simplifier (OrPattern variable)
 makeEvaluateIn
     tools substitutionSimplifier simplifier axiomIdToSimplifier first second
   | Pattern.isTop first =
@@ -188,7 +151,7 @@ makeEvaluateIn
     Ceil.makeEvaluate
         tools substitutionSimplifier simplifier axiomIdToSimplifier first
   | Pattern.isBottom first || Pattern.isBottom second =
-    return (OrPattern.fromPatterns [], SimplificationProof)
+    return OrPattern.bottom
   | otherwise = return $ makeEvaluateNonBoolIn first second
 
 makeEvaluateNonBoolIn
@@ -199,18 +162,14 @@ makeEvaluateNonBoolIn
         )
     => Pattern variable
     -> Pattern variable
-    -> (OrPattern variable, SimplificationProof Object)
+    -> OrPattern variable
 makeEvaluateNonBoolIn patt1 patt2 =
-    ( OrPattern.fromPatterns
-        [ Conditional
-            { term = mkTop_
-            , predicate =
-                makeInPredicate
-                    -- TODO: Wrap in 'contained' and 'container'.
-                    (Pattern.toMLPattern patt1)
-                    (Pattern.toMLPattern patt2)
-            , substitution = mempty
-            }
-        ]
-    , SimplificationProof
-    )
+    OrPattern.fromPattern Conditional
+        { term = mkTop_
+        , predicate =
+            makeInPredicate
+                -- TODO: Wrap in 'contained' and 'container'.
+                (Pattern.toMLPattern patt1)
+                (Pattern.toMLPattern patt2)
+        , substitution = mempty
+        }

@@ -167,7 +167,7 @@ matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
                     , Conditional.predicate e2
                     ]
                     [ Conditional.substitution predSubst]
-            (evaluated, _proof) <-
+            evaluated <-
                 give tools
                 $ Predicate.evaluate substitutionSimplifier simplifier
                 $ Conditional.predicate merged

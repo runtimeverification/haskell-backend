@@ -21,7 +21,6 @@ module Kore.Step.Simplification.Data
     , termLikeSimplifier
     , simplifyTerm
     , simplifyConditionalTerm
-    , SimplificationProof (..)
     , SimplificationType (..)
     , Environment (..)
     ) where
@@ -37,17 +36,12 @@ import           Control.Monad.State.Class
                  ( MonadState )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
-import           Data.Hashable
-                 ( Hashable )
 import           Data.Typeable
-import           GHC.Generics
-                 ( Generic )
 import           GHC.Stack
                  ( HasCallStack )
 
 import           Control.Monad.Catch
                  ( Exception, MonadCatch, MonadThrow, catch, throwM )
-import           Kore.AST.MetaOrObject
 import           Kore.Logger
 import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.OrPattern
@@ -72,14 +66,6 @@ import           SMT.SimpleSMT
 This type is used to distinguish between the two in the common code.
 -}
 data SimplificationType = And | Equals
-
-{-| 'SimplificationProof' is a placeholder for proofs showing that the
-simplification of a MetaMLPattern was correct.
--}
-data SimplificationProof level = SimplificationProof
-    deriving (Eq, Generic, Show)
-
-instance Hashable (SimplificationProof level)
 
 -- * Branching
 
@@ -309,10 +295,7 @@ simplifyTerm
     => TermLikeSimplifier
     -> PredicateSimplifier
     -> TermLike variable
-    -> Simplifier
-        ( OrPattern variable
-        , SimplificationProof Object
-        )
+    -> Simplifier (OrPattern variable)
 simplifyTerm
     (TermLikeSimplifier simplify)
     predicateSimplifier
@@ -323,7 +306,7 @@ simplifyTerm
             predicateSimplifier
             termLike
             Predicate.top
-    return (OrPattern.fromPatterns results, SimplificationProof)
+    return (OrPattern.fromPatterns results)
 
 
 {- | Use a 'TermLikeSimplifier' to simplify a pattern subject to conditions.
@@ -359,10 +342,7 @@ termLikeSimplifier
             )
         => PredicateSimplifier
         -> TermLike variable
-        -> Simplifier
-            ( OrPattern variable
-            , SimplificationProof Object
-            )
+        -> Simplifier (OrPattern variable)
         )
     -> TermLikeSimplifier
 termLikeSimplifier simplifier =
@@ -385,7 +365,7 @@ termLikeSimplifier simplifier =
         termLike
         initialCondition
       = do
-        (results, _) <-
+        results <-
             Monad.Trans.lift
             $ simplifier predicateSimplifier termLike
         result <- scatter results

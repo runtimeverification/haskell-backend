@@ -995,8 +995,7 @@ evaluateOr
     -> Equals Sort (OrPattern Variable)
     -> IO (OrPattern Variable)
 evaluateOr tools equals =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ simplify
         tools
@@ -1018,8 +1017,7 @@ evaluateGeneric
     -> Pattern Variable
     -> IO (OrPattern Variable)
 evaluateGeneric tools first second =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ makeEvaluate
         tools
@@ -1035,8 +1033,7 @@ evaluateTermsGeneric
     -> TermLike Variable
     -> IO (OrPredicate Variable)
 evaluateTermsGeneric tools first second =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ makeEvaluateTermsToPredicate
         tools

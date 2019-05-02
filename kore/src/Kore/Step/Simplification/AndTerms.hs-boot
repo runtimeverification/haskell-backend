@@ -1,6 +1,5 @@
 module Kore.Step.Simplification.AndTerms where
 
-import Kore.AST.MetaOrObject
 import Kore.Attribute.Symbol
        ( StepperAttributes )
 import Kore.IndexedModule.MetadataTools
@@ -10,8 +9,7 @@ import Kore.Step.Axiom.Data
 import Kore.Step.Pattern
        ( Pattern )
 import Kore.Step.Simplification.Data
-       ( PredicateSimplifier, SimplificationProof, Simplifier,
-       TermLikeSimplifier )
+       ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import Kore.Step.TermLike
        ( TermLike )
 import Kore.Syntax.Variable
@@ -35,7 +33,7 @@ termAnd
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> TermLike variable
-    -> Simplifier (Pattern variable, SimplificationProof Object)
+    -> Simplifier (Pattern variable)
 
 termUnification
     :: forall variable unifier unifierM .
@@ -53,4 +51,4 @@ termUnification
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> TermLike variable
-    -> unifier (Pattern variable, SimplificationProof Object)
+    -> unifier (Pattern variable)

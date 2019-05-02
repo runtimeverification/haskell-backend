@@ -33,7 +33,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Debug.Trace
 import           GHC.Generics
 
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -97,7 +96,7 @@ data ProofState patt
   deriving (Show, Eq, Ord, Generic)
 
 -- | A 'ProofState' instantiated to 'Pattern Variable' for convenience.
-type CommonProofState level = ProofState (Pattern Variable)
+type CommonProofState = ProofState (Pattern Variable)
 
 instance Hashable patt => Hashable (ProofState patt)
 
@@ -123,8 +122,8 @@ transitionRule
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> Prim (CommonModalPattern) (RewriteRule Variable)
-    -> CommonProofState Object
-    -> Transition (CommonProofState Object)
+    -> CommonProofState
+    -> Transition CommonProofState
 transitionRule
     tools
     predicateSimplifier
@@ -142,15 +141,15 @@ transitionRule
         ComputeWeakNext rewrites -> transitionComputeWeakNext rewrites proofState
   where
     transitionCheckProofState
-        :: CommonProofState Object
-        -> Transition (CommonProofState Object )
+        :: CommonProofState
+        -> Transition CommonProofState
     transitionCheckProofState Proven = empty
     transitionCheckProofState Unprovable = empty
     transitionCheckProofState ps = return ps
 
     transitionSimplify
-        :: CommonProofState Object
-        -> Transition (CommonProofState Object )
+        :: CommonProofState
+        -> Transition CommonProofState
     transitionSimplify Proven = return Proven
     transitionSimplify Unprovable = return Unprovable
     transitionSimplify (GoalLHS config) =
@@ -160,7 +159,7 @@ transitionRule
 
     applySimplify wrapper config =
         do
-            (configs, _) <-
+            configs <-
                 Monad.Trans.lift . Monad.Trans.lift
                 $ Pattern.simplify
                     tools
@@ -173,12 +172,12 @@ transitionRule
                 nonEmptyConfigs = MultiOr.filterOr configs
             if null nonEmptyConfigs
                 then return Proven
-                else Foldable.asum (pure <$> map wrapper (Foldable.toList nonEmptyConfigs))
+                else Foldable.asum (pure . wrapper <$> nonEmptyConfigs)
 
     transitionUnroll
         :: CommonModalPattern
-        -> CommonProofState Object
-        -> Transition (CommonProofState Object )
+        -> CommonProofState
+        -> Transition CommonProofState
     transitionUnroll _ Proven = empty
     transitionUnroll _ Unprovable = empty
     transitionUnroll goalrhs (GoalLHS config)
@@ -219,8 +218,8 @@ transitionRule
 
     transitionComputeWeakNext
         :: [RewriteRule Variable]
-        -> CommonProofState Object
-        -> Transition (CommonProofState Object)
+        -> CommonProofState
+        -> Transition CommonProofState
     transitionComputeWeakNext _ Proven = return Proven
     transitionComputeWeakNext _ Unprovable = return Unprovable
     transitionComputeWeakNext rules (GoalLHS config)
@@ -230,8 +229,8 @@ transitionRule
 
     transitionComputeWeakNextHelper
         :: [RewriteRule Variable]
-        -> (Pattern Variable)
-        -> Transition (CommonProofState Object)
+        -> Pattern Variable
+        -> Transition CommonProofState
     transitionComputeWeakNextHelper _ config
         | Pattern.isBottom config = return Proven
     transitionComputeWeakNextHelper rules config = do

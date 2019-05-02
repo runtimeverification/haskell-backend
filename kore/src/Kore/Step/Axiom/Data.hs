@@ -32,7 +32,6 @@ import           GHC.Generics
 
 import           Kore.AST.Common
                  ( Pattern (..) )
-import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
                  ( fromPurePattern )
 import           Kore.AST.Valid
@@ -49,8 +48,7 @@ import qualified Kore.Step.OrPattern as OrPattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( merge )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.TermLike
                  ( TermLike )
 import           Kore.Syntax.Application
@@ -96,17 +94,14 @@ newtype BuiltinAndAxiomSimplifier =
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
-        -> Simplifier
-            ( AttemptedAxiom variable
-            , SimplificationProof Object
-            )
+        -> Simplifier (AttemptedAxiom variable)
         )
 
 {-|A type to abstract away the mapping from symbol identifiers to
 their corresponding evaluators.
 -}
 type BuiltinAndAxiomSimplifierMap =
-    Map.Map (AxiomIdentifier) (BuiltinAndAxiomSimplifier)
+    Map.Map AxiomIdentifier BuiltinAndAxiomSimplifier
 
 {-| A type holding the result of applying an axiom to a pattern.
 -}
@@ -179,30 +174,29 @@ hasRemainders NotApplicable = False
  -}
 exceptNotApplicable
     :: Functor m
-    => ExceptT e m (AttemptedAxiom variable, SimplificationProof Object)
-    ->           m (AttemptedAxiom variable, SimplificationProof Object)
+    => ExceptT e m (AttemptedAxiom variable)
+    ->           m (AttemptedAxiom variable)
 exceptNotApplicable =
     fmap (either (const notApplicable) id) . runExceptT
   where
-    notApplicable = (NotApplicable, SimplificationProof)
+    notApplicable = NotApplicable
 
 -- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
-notApplicableAxiomEvaluator
-    :: Simplifier (AttemptedAxiom variable, SimplificationProof Object)
-notApplicableAxiomEvaluator = pure (NotApplicable, SimplificationProof)
+notApplicableAxiomEvaluator :: Simplifier (AttemptedAxiom variable)
+notApplicableAxiomEvaluator = pure NotApplicable
 
 -- |Yields a pure 'Simplifier' which produces a given 'TermLike'
 purePatternAxiomEvaluator
     :: Ord variable
     => TermLike variable
-    -> Simplifier (AttemptedAxiom variable, SimplificationProof Object)
+    -> Simplifier (AttemptedAxiom variable)
 purePatternAxiomEvaluator p =
     pure
         ( Applied AttemptedAxiomResults
             { results = OrPattern.fromTermLike p
             , remainders = OrPattern.fromPatterns []
             }
-        , SimplificationProof
+
         )
 
 {-| Creates an 'BuiltinAndAxiomSimplifier' from a similar function that takes an
@@ -227,7 +221,7 @@ applicationAxiomSimplifier
             (TermLike variable)
         -> Simplifier
             ( AttemptedAxiom variable
-            , SimplificationProof Object
+
             )
         )
     -> BuiltinAndAxiomSimplifier
@@ -248,10 +242,7 @@ applicationAxiomSimplifier applicationSimplifier =
             -> TermLikeSimplifier
             -> BuiltinAndAxiomSimplifierMap
             -> TermLike variable
-            -> Simplifier
-                ( AttemptedAxiom variable
-                , SimplificationProof Object
-                )
+            -> Simplifier (AttemptedAxiom variable)
         )
     helper
         tools

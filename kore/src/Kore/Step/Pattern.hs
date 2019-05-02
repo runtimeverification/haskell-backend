@@ -22,6 +22,7 @@ module Kore.Step.Pattern
     , Kore.Step.Pattern.freeVariables
     -- * Re-exports
     , Conditional (..)
+    , Conditional.withCondition
     , Predicate
     , module Kore.Step.TermLike
     ) where

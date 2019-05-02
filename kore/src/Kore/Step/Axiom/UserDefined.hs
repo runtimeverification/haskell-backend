@@ -36,8 +36,7 @@ import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.Step
                  ( UnificationProcedure (..) )
@@ -71,8 +70,7 @@ equalityRuleEvaluator
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -- ^ The function on which to evaluate the current function.
-    -> Simplifier
-        (AttemptedAxiom variable, SimplificationProof Object)
+    -> Simplifier (AttemptedAxiom variable)
 equalityRuleEvaluator
     (EqualityRule rule)
     tools
@@ -88,15 +86,10 @@ equalityRuleEvaluator
   | otherwise = do
     result <- applyRule patt rule
     case result of
-        Left _ ->
-            notApplicable
-        Right results ->
-            (,)
-                <$> (AttemptedAxiom.Applied <$> simplifyResults results)
-                <*> pure SimplificationProof
+        Left _        -> notApplicable
+        Right results -> AttemptedAxiom.Applied <$> simplifyResults results
   where
-    notApplicable =
-        return (AttemptedAxiom.NotApplicable, SimplificationProof)
+    notApplicable = return AttemptedAxiom.NotApplicable
 
     unificationProcedure = UnificationProcedure matchAsUnification
 
@@ -115,15 +108,13 @@ equalityRuleEvaluator
         MultiOr.filterOr
         <$> traverse simplifyPattern unsimplified
 
-    simplifyPattern config = do
-        (config', _) <-
-            Pattern.simplifyPredicate
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                config
-        return config'
+    simplifyPattern config =
+        Pattern.simplifyPredicate
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            config
 
     simplifyResults
         :: Step.Results variable

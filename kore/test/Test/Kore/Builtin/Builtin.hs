@@ -183,27 +183,20 @@ evaluators = Builtin.koreEvaluators verifiedModule
 
 stepSimplifier :: TermLikeSimplifier
 stepSimplifier =
-    termLikeSimplifier
-        (\_ p ->
-            return
-                ( OrPattern.fromPatterns
-                    [ Conditional
-                        { term = mkTop_
-                        , predicate = Predicate.wrapPredicate p
-                        , substitution = mempty
-                        }
-                    ]
-                , SimplificationProof
-                )
-        )
+    termLikeSimplifier $ \_ p ->
+        return $ OrPattern.fromPattern
+            Conditional
+                { term = mkTop_
+                , predicate = Predicate.wrapPredicate p
+                , substitution = mempty
+                }
 
 evaluate
     :: MonadSMT m
     => TermLike Variable
     -> m (Pattern Variable)
 evaluate =
-    (<$>) fst
-    . liftSMT
+    liftSMT
     . evalSimplifier emptyLogger
     . TermLike.simplify
         testMetadataTools

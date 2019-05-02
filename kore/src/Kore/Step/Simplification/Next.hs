@@ -13,16 +13,10 @@ module Kore.Step.Simplification.Next
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
-                 ( Conditional (..) )
 import qualified Kore.Step.Pattern as Pattern
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 import           Kore.Unparser
 
 -- TODO: Move Next up in the other simplifiers or something similar. Note
@@ -40,13 +34,8 @@ simplify
         , Unparse variable
         )
     => Next Sort (OrPattern variable)
-    ->  ( OrPattern variable
-        , SimplificationProof Object
-        )
-simplify
-    Next { nextChild = child }
-  =
-    simplifyEvaluated child
+    -> OrPattern variable
+simplify Next { nextChild = child } = simplifyEvaluated child
 
 simplifyEvaluated
     ::  ( SortedVariable variable
@@ -55,17 +44,9 @@ simplifyEvaluated
         , Unparse variable
         )
     => OrPattern variable
-    -> (OrPattern variable, SimplificationProof Object)
+    -> OrPattern variable
 simplifyEvaluated simplified =
-    ( OrPattern.fromPatterns
-        [ Conditional
-            { term =
-                mkNext
-                $ Pattern.toMLPattern
-                $ OrPattern.toExpandedPattern simplified
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-        ]
-    , SimplificationProof
-    )
+    OrPattern.fromTermLike
+    $ mkNext
+    $ Pattern.toMLPattern
+    $ OrPattern.toExpandedPattern simplified

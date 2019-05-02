@@ -745,17 +745,11 @@ simplifyPattern (UnificationTerm term) = do
                 (Simplifier.create tools functionRegistry)
                 functionRegistry
                 expandedPattern
-        case
-            MultiOr.extractPatterns
-                (fst simplifiedPatterns) of
+        case MultiOr.extractPatterns simplifiedPatterns of
             [] -> return Pattern.bottom
             (config : _) -> return config
     functionRegistry = Map.empty
-    expandedPattern = Conditional
-        { term
-        , predicate = Syntax.Predicate.makeTruePredicate
-        , substitution = mempty
-        }
+    expandedPattern = Pattern.fromTermLike term
 
 makeEqualsPredicate
     :: TermLike Variable

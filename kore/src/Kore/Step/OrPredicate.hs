@@ -7,6 +7,8 @@ module Kore.Step.OrPredicate
     ( OrPredicate
     , fromPredicates
     , fromPredicate
+    , bottom
+    , top
     , isFalse
     , isTrue
     , toPredicate
@@ -19,6 +21,7 @@ import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Predicate
                  ( Predicate )
+import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
@@ -47,6 +50,26 @@ fromPredicates
     => f (Predicate variable)
     -> OrPredicate variable
 fromPredicates = MultiOr.make . Foldable.toList
+
+{- | @\\bottom@
+
+@
+'isFalse' bottom == True
+@
+
+ -}
+bottom :: Ord variable => OrPredicate variable
+bottom = fromPredicates []
+
+{- | @\\top@
+
+@
+'isTrue' top == True
+@
+
+ -}
+top :: Ord variable => OrPredicate variable
+top = fromPredicate Predicate.top
 
 {-| 'isFalse' checks if the 'OrPredicate' is composed only of bottom items.
 -}

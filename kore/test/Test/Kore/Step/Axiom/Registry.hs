@@ -29,8 +29,6 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
 import           Kore.Sort
 import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -319,7 +317,7 @@ test_functionRegistry =
         )
     , testCase "Checking that evaluator simplifies correctly" $ do
         let expect = mkApp sortS sHead []
-        (simplified, _) <-
+        simplified <-
             SMT.runSMT SMT.defaultConfig
             $ evalSimplifier emptyLogger
             $ Pattern.simplify
@@ -334,12 +332,5 @@ test_functionRegistry =
         assertEqual "" expect actual
     ]
   where
-    makePattern
-        :: TermLike Variable
-        -> Pattern Variable
-    makePattern pat =
-        Conditional
-        { term = pat
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
+    makePattern :: TermLike Variable -> Pattern Variable
+    makePattern = Pattern.fromTermLike

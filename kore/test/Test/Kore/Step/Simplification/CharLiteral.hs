@@ -9,13 +9,9 @@ import Test.Tasty.HUnit
 
 import           Kore.AST.Pure
 import           Kore.AST.Valid
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
-                 ( Conditional (..) )
 import           Kore.Step.Simplification.CharLiteral
                  ( simplify )
 
@@ -26,21 +22,10 @@ test_charLiteralSimplification :: [TestTree]
 test_charLiteralSimplification =
     [ testCase "CharLiteral evaluates to CharLiteral"
         (assertEqualWithExplanation ""
-            (OrPattern.fromPatterns
-                [ Conditional
-                    { term = mkCharLiteral 'a'
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-                ]
-            )
-            (evaluate
-                (CharLiteral 'a')
-            )
+            (OrPattern.fromTermLike $ mkCharLiteral 'a')
+            (evaluate (CharLiteral 'a'))
         )
     ]
 
 evaluate :: CharLiteral -> OrPattern Variable
-evaluate charLiteral =
-    case simplify charLiteral of
-        (result, _proof) -> result
+evaluate = simplify

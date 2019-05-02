@@ -126,7 +126,7 @@ simplifyAnds
             Common.AndPattern And { andFirst = lhs, andSecond = rhs } ->
                 foldM simplifyAnds' intermediate [lhs, rhs]
             _ -> do
-                (result, _) <-
+                result <-
                     termUnification
                         tools
                         substitutionSimplifier

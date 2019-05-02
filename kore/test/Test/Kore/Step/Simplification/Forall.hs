@@ -247,15 +247,8 @@ makeForall variable patterns =
 testSort :: Sort
 testSort = Mock.testSort
 
-evaluate
-    :: Forall Sort Variable (OrPattern Variable)
-    -> OrPattern Variable
-evaluate forall =
-    fst $ Forall.simplify forall
+evaluate :: Forall Sort Variable (OrPattern Variable) -> OrPattern Variable
+evaluate = Forall.simplify
 
-makeEvaluate
-    :: Variable
-    -> Pattern Variable
-    -> Pattern Variable
-makeEvaluate variable child =
-    fst $ Forall.makeEvaluate variable child
+makeEvaluate :: Variable -> Pattern Variable -> Pattern Variable
+makeEvaluate = Forall.makeEvaluate

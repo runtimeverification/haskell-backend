@@ -65,8 +65,7 @@ evaluate
     :: Syntax.Predicate Variable
     -> PropertyT SMT (Predicate Variable)
 evaluate predicate =
-    (<$>) fst
-    $ give testMetadataTools
+    give testMetadataTools
     $ Trans.lift
     $ evalSimplifier emptyLogger
     $ Evaluator.evaluate
@@ -74,11 +73,7 @@ evaluate predicate =
         (mockSimplifier noSimplification)
         predicate
 
-noSimplification
-    ::  [   ( TermLike Variable
-            , ([Pattern Variable], SimplificationProof level)
-            )
-        ]
+noSimplification :: [(TermLike Variable, [Pattern Variable])]
 noSimplification = []
 
 -- ----------------------------------------------------------------

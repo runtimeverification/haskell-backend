@@ -87,8 +87,7 @@ import           Kore.Step.Search
                  ( searchGraph )
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier (..), SimplificationProof (..),
-                 Simplifier, TermLikeSimplifier )
+                 ( PredicateSimplifier (..), Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -362,7 +361,7 @@ execute verifiedModule strategy inputPattern
         Initialized { simplifier } = initialized
         Initialized { substitutionSimplifier } = initialized
         Initialized { axiomIdToSimplifier } = initialized
-    (simplifiedPatterns, _) <-
+    simplifiedPatterns <-
         Pattern.simplify
             metadataTools
             substitutionSimplifier
@@ -474,7 +473,7 @@ simplifyRulePattern
     -> Simplifier (RulePattern Variable)
 simplifyRulePattern tools rulePattern = do
     let RulePattern { left } = rulePattern
-    (simplifiedLeft, _proof) <- simplifyPattern tools left
+    simplifiedLeft <- simplifyPattern tools left
     case MultiOr.extractPatterns simplifiedLeft of
         [ Conditional { term, predicate, substitution } ]
           | PredicateTrue <- predicate -> do
@@ -507,8 +506,7 @@ simplifyRulePattern tools rulePattern = do
 simplifyPattern
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
-    -> Simplifier
-        (OrPattern Variable, SimplificationProof Object)
+    -> Simplifier (OrPattern Variable)
 simplifyPattern tools =
     Pattern.simplify
         tools

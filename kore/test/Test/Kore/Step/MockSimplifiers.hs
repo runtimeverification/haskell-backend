@@ -15,9 +15,7 @@ import           Kore.Step.Pattern
 import qualified Kore.Step.Pattern as Pattern
                  ( Conditional (..) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier (..),
-                 SimplificationProof (SimplificationProof),
-                 termLikeSimplifier )
+                 ( PredicateSimplifier (..), termLikeSimplifier )
 import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
 
@@ -27,18 +25,12 @@ substitutionSimplifier
 substitutionSimplifier tools =
     Predicate.create
         tools
-        (termLikeSimplifier
-            (\_ p ->
-                return
-                    ( OrPattern.fromPatterns
-                        [ Conditional
-                            { term = mkTop_
-                            , predicate = Predicate.wrapPredicate p
-                            , substitution = mempty
-                            }
-                        ]
-                    , SimplificationProof
-                    )
-            )
+        (termLikeSimplifier $ \_ p ->
+            return $ OrPattern.fromPattern
+                Conditional
+                    { term = mkTop_
+                    , predicate = Predicate.wrapPredicate p
+                    , substitution = mempty
+                    }
         )
         Map.empty

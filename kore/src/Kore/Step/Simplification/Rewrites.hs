@@ -16,8 +16,6 @@ import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 import           Kore.Syntax.Rewrites
 import           Kore.Unparser
 
@@ -34,9 +32,7 @@ simplify
         , Unparse variable
         )
     => Rewrites Sort (OrPattern variable)
-    ->  ( OrPattern variable
-        , SimplificationProof Object
-        )
+    -> OrPattern variable
 simplify
     Rewrites
         { rewritesFirst = first
@@ -66,7 +62,7 @@ simplifyEvaluatedRewrites
         )
     => OrPattern variable
     -> OrPattern variable
-    -> (OrPattern variable, SimplificationProof Object)
+    -> OrPattern variable
 simplifyEvaluatedRewrites first second =
     makeEvaluateRewrites
         (OrPattern.toExpandedPattern first)
@@ -80,12 +76,9 @@ makeEvaluateRewrites
         )
     => Pattern variable
     -> Pattern variable
-    -> (OrPattern variable, SimplificationProof Object)
+    -> OrPattern variable
 makeEvaluateRewrites first second =
-    ( OrPattern.fromPattern
-        $ Pattern.fromTermLike
-        $ mkRewrites
-            (Pattern.toMLPattern first)
-            (Pattern.toMLPattern second)
-    , SimplificationProof
-    )
+    OrPattern.fromTermLike
+    $ mkRewrites
+        (Pattern.toMLPattern first)
+        (Pattern.toMLPattern second)

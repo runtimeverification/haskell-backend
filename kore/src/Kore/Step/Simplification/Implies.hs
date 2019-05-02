@@ -25,8 +25,7 @@ import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
                  ( makeEvaluate, simplifyEvaluated )
 import           Kore.Syntax.Implies
@@ -58,8 +57,7 @@ simplify
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> Implies Sort (OrPattern variable)
-    -> Simplifier
-        (OrPattern variable , SimplificationProof Object)
+    -> Simplifier (OrPattern variable)
 simplify
     tools
     predicateSimplifier
@@ -107,8 +105,7 @@ simplifyEvaluated
     -> BuiltinAndAxiomSimplifierMap
     -> OrPattern variable
     -> OrPattern variable
-    -> Simplifier
-        (OrPattern variable, SimplificationProof Object)
+    -> Simplifier (OrPattern variable)
 simplifyEvaluated
     tools
     predicateSimplifier
@@ -116,24 +113,19 @@ simplifyEvaluated
     axiomSimplifiers
     first
     second
-  | OrPattern.isTrue first =
-    return (second, SimplificationProof)
-  | OrPattern.isFalse first =
-    return (OrPattern.fromPatterns [Pattern.top], SimplificationProof)
-  | OrPattern.isTrue second =
-    return (OrPattern.fromPatterns [Pattern.top], SimplificationProof)
-  | OrPattern.isFalse second = do
-    result <-
-        Not.simplifyEvaluated
-            tools
-            predicateSimplifier
-            termSimplifier
-            axiomSimplifiers
-            first
-    return (result, SimplificationProof)
+  | OrPattern.isTrue first   = return second
+  | OrPattern.isFalse first  = return OrPattern.top
+  | OrPattern.isTrue second  = return OrPattern.top
+  | OrPattern.isFalse second =
+    Not.simplifyEvaluated
+        tools
+        predicateSimplifier
+        termSimplifier
+        axiomSimplifiers
+        first
   | otherwise = do
     results <- traverse (simplifyEvaluateHalfImplies' first) second
-    return (MultiOr.flatten results, SimplificationProof)
+    return (MultiOr.flatten results)
   where
     simplifyEvaluateHalfImplies' =
         simplifyEvaluateHalfImplies

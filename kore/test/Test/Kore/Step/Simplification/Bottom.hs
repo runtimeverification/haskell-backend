@@ -26,18 +26,10 @@ test_bottomSimplification :: [TestTree]
 test_bottomSimplification =
     [ testCase "Bottom evaluates to bottom"
         (assertEqualWithExplanation ""
-            (OrPattern.fromPatterns
-                [ Pattern.bottom ]
-            )
-            (evaluate
-                Bottom { bottomSort = Mock.testSort }
-            )
+            (OrPattern.fromPatterns [ Pattern.bottom ])
+            (evaluate Bottom { bottomSort = Mock.testSort })
         )
     ]
 
-evaluate
-    :: Bottom Sort (OrPattern Variable)
-    -> OrPattern Variable
-evaluate bottom =
-    case simplify bottom of
-        (result, _proof) -> result
+evaluate :: Bottom Sort (OrPattern Variable) -> OrPattern Variable
+evaluate = simplify

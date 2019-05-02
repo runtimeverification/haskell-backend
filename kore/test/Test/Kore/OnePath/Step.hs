@@ -94,9 +94,7 @@ test_onePathStrategy =
             Mock.a
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
-        assertEqualWithExplanation ""
-            Bottom
-            _actual
+        assertEqualWithExplanation "" Bottom _actual
 
         -- Target: d
         -- Coinductive axiom: a => b

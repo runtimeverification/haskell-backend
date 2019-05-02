@@ -44,7 +44,6 @@ import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( extractPatterns, make, merge )
 import qualified Kore.Step.Simplification.And as And
                  ( simplifyEvaluated )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
@@ -52,8 +51,7 @@ import qualified Kore.Step.Simplification.AndTerms as AndTerms
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate )
 import qualified Kore.Step.Simplification.Implies as Implies
@@ -156,10 +154,7 @@ simplify
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> Equals Sort (OrPattern variable)
-    -> Simplifier
-        ( OrPattern variable
-        , SimplificationProof Object
-        )
+    -> Simplifier (OrPattern variable)
 simplify
     tools
     substitutionSimplifier
@@ -205,8 +200,7 @@ simplifyEvaluated
     -- ^ Map from symbol IDs to defined functions
     -> OrPattern variable
     -> OrPattern variable
-    -> Simplifier
-        (OrPattern variable, SimplificationProof Object)
+    -> Simplifier (OrPattern variable)
 simplifyEvaluated
     tools
     substitutionSimplifier
@@ -214,8 +208,7 @@ simplifyEvaluated
     axiomIdToSimplfier
     first
     second
-  | first == second =
-    return (OrPattern.fromPatterns [Pattern.top], SimplificationProof)
+  | first == second = return OrPattern.top
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
   | otherwise =
     case ( firstPatterns, secondPatterns )
@@ -275,8 +268,7 @@ makeEvaluateFunctionalOr
     -- ^ Map from symbol IDs to defined functions
     -> Pattern variable
     -> [Pattern variable]
-    -> Simplifier
-        (OrPattern variable, SimplificationProof Object)
+    -> Simplifier (OrPattern variable)
 makeEvaluateFunctionalOr
     tools
     substitutionSimplifier
@@ -285,7 +277,7 @@ makeEvaluateFunctionalOr
     first
     seconds
   = do
-    (firstCeil, _proof0) <-
+    firstCeil <-
         Ceil.makeEvaluate
             tools
             substitutionSimplifier
@@ -307,7 +299,7 @@ makeEvaluateFunctionalOr
             simplifier
             axiomIdToSimplfier
             firstCeil
-    let (secondCeils, _proofs) = unzip secondCeilsWithProofs
+    let secondCeils = secondCeilsWithProofs
     secondNotCeils <-
         Traversable.for secondCeils
         $ Not.simplifyEvaluated
@@ -315,20 +307,14 @@ makeEvaluateFunctionalOr
             substitutionSimplifier
             simplifier
             axiomIdToSimplfier
-    let oneNotBottom =
-            foldl'
-                (dropProofFold Or.simplifyEvaluated)
-                (OrPattern.fromPatterns [])
-                secondCeils
+    let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
     allAreBottom <-
         foldM
-            (dropProofFoldM
-                (And.simplifyEvaluated
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplfier
-                )
+            (And.simplifyEvaluated
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplfier
             )
             (OrPattern.fromPatterns [Pattern.top])
             (firstNotCeil : secondNotCeils)
@@ -336,36 +322,23 @@ makeEvaluateFunctionalOr
         mapM
             (makeEvaluateEqualsIfSecondNotBottom first)
             (zip seconds secondCeils)
-    oneIsNotBottomEquals <- foldM
-        (dropProofFoldM
+    oneIsNotBottomEquals <-
+        foldM
             (And.simplifyEvaluated
                 tools substitutionSimplifier simplifier axiomIdToSimplfier
             )
-        )
         firstCeil
         (oneNotBottom : firstEqualsSeconds)
     return
         ( MultiOr.merge allAreBottom oneIsNotBottomEquals
-        , SimplificationProof
+
         )
   where
-    dropProof :: (a, SimplificationProof Object) -> a
-    dropProof = fst
-    dropProofFold :: (a -> b -> (a, SimplificationProof Object)) -> a -> b -> a
-    dropProofFold f x y = dropProof (f x y)
-    dropProofM :: Simplifier (a, SimplificationProof Object) -> Simplifier a
-    dropProofM = fmap dropProof
-    dropProofFoldM
-        :: (a -> b -> Simplifier (a, SimplificationProof Object))
-        -> a
-        -> b
-        -> Simplifier a
-    dropProofFoldM f x y = dropProofM (f x y)
     makeEvaluateEqualsIfSecondNotBottom
         Conditional {term = firstTerm}
         (Conditional {term = secondTerm}, secondCeil)
       = do
-        (equality, _) <-
+        equality <-
             makeEvaluateTermsAssumesNoBottom
                 tools
                 substitutionSimplifier
@@ -373,7 +346,7 @@ makeEvaluateFunctionalOr
                 axiomIdToSimplfier
                 firstTerm
                 secondTerm
-        (result, _) <-
+        result <-
             Implies.simplifyEvaluated
                 tools
                 substitutionSimplifier
@@ -402,8 +375,7 @@ makeEvaluate
     -- ^ Map from symbol IDs to defined functions
     -> Pattern variable
     -> Pattern variable
-    -> Simplifier
-        (OrPattern variable, SimplificationProof Object)
+    -> Simplifier (OrPattern variable)
 makeEvaluate
     _
     _
@@ -414,7 +386,7 @@ makeEvaluate
     second@Conditional
         { term = Top_ _ }
   =
-    return (Iff.makeEvaluate first second, SimplificationProof)
+    return (Iff.makeEvaluate first second)
 makeEvaluate
     tools
     substitutionSimplifier
@@ -431,7 +403,7 @@ makeEvaluate
         , substitution = (Substitution.unwrap -> [])
         }
   = do
-    (result, _proof) <-
+    result <-
         makeEvaluateTermsToPredicate
             tools
             substitutionSimplifier
@@ -439,28 +411,24 @@ makeEvaluate
             axiomIdToSimplfier
             firstTerm
             secondTerm
-    return
-        ( fmap Pattern.fromPredicate result
-        , SimplificationProof
-        )
+    return (Pattern.fromPredicate <$> result)
+
 makeEvaluate
     tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplfier
-    first@Conditional
-        { term = firstTerm }
-    second@Conditional
-        { term = secondTerm }
+    first@Conditional { term = firstTerm }
+    second@Conditional { term = secondTerm }
   = do
-    (firstCeil, _proof1) <-
+    firstCeil <-
         Ceil.makeEvaluate
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplfier
             first { term = if termsAreEqual then mkTop_ else firstTerm }
-    (secondCeil, _proof2) <-
+    secondCeil <-
         Ceil.makeEvaluate
             tools
             substitutionSimplifier
@@ -481,7 +449,7 @@ makeEvaluate
             simplifier
             axiomIdToSimplfier
             secondCeil
-    (termEquality, _proof) <-
+    termEquality <-
         makeEvaluateTermsAssumesNoBottom
             tools
             substitutionSimplifier
@@ -489,7 +457,7 @@ makeEvaluate
             axiomIdToSimplfier
             firstTerm
             secondTerm
-    (negationAnd, _proof) <-
+    negationAnd <-
         And.simplifyEvaluated
             tools
             substitutionSimplifier
@@ -497,7 +465,7 @@ makeEvaluate
             axiomIdToSimplfier
             firstCeilNegation
             secondCeilNegation
-    (ceilAnd, _proof) <-
+    ceilAnd <-
         And.simplifyEvaluated
             tools
             substitutionSimplifier
@@ -505,7 +473,7 @@ makeEvaluate
             axiomIdToSimplfier
             firstCeil
             secondCeil
-    (equalityAnd, _proof) <-
+    equalityAnd <-
         And.simplifyEvaluated
             tools
             substitutionSimplifier
@@ -513,8 +481,7 @@ makeEvaluate
             axiomIdToSimplfier
             termEquality
             ceilAnd
-    let (finalOr, _proof) = Or.simplifyEvaluated equalityAnd negationAnd
-    return (finalOr, SimplificationProof)
+    return $ Or.simplifyEvaluated equalityAnd negationAnd
   where
     termsAreEqual = firstTerm == secondTerm
 
@@ -535,8 +502,7 @@ makeEvaluateTermsAssumesNoBottom
     -- ^ Map from symbol IDs to defined functions
     -> TermLike variable
     -> TermLike variable
-    -> Simplifier
-        (OrPattern variable, SimplificationProof Object)
+    -> Simplifier (OrPattern variable)
 makeEvaluateTermsAssumesNoBottom
     tools
     substitutionSimplifier
@@ -557,15 +523,12 @@ makeEvaluateTermsAssumesNoBottom
     (return . fromMaybe def) result
   where
     def =
-        (OrPattern.fromPatterns
-            [ Conditional
+        OrPattern.fromPattern
+            Conditional
                 { term = mkTop_
                 , predicate = makeEqualsPredicate firstTerm secondTerm
                 , substitution = mempty
                 }
-            ]
-        , SimplificationProof
-        )
 
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
@@ -585,8 +548,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
     -- ^ Map from symbol IDs to defined functions
     -> TermLike variable
     -> TermLike variable
-    -> MaybeT Simplifier
-        (OrPattern variable, SimplificationProof Object)
+    -> MaybeT Simplifier (OrPattern variable)
 makeEvaluateTermsAssumesNoBottomMaybe
     tools
     substitutionSimplifier
@@ -595,7 +557,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
     first
     second
   = do
-    (result, _proof) <-
+    result <-
         AndTerms.termEquals
             tools
             substitutionSimplifier
@@ -603,10 +565,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
             axiomIdToSimplfier
             first
             second
-    return
-        ( fmap Pattern.fromPredicate result
-        , SimplificationProof
-        )
+    return (Pattern.fromPredicate <$> result)
 
 {-| Combines two terms with 'Equals' into a predicate-substitution.
 
@@ -633,15 +592,10 @@ makeEvaluateTermsToPredicate
     -- ^ Map from symbol IDs to defined functions
     -> TermLike variable
     -> TermLike variable
-    -> Simplifier
-        (OrPredicate variable, SimplificationProof Object)
+    -> Simplifier (OrPredicate variable)
 makeEvaluateTermsToPredicate
     tools substitutionSimplifier simplifier axiomIdToSimplfier first second
-  | first == second =
-    return
-        ( MultiOr.make [Predicate.top]
-        , SimplificationProof
-        )
+  | first == second = return OrPredicate.top
   | otherwise = do
     result <-
         runMaybeT
@@ -655,24 +609,18 @@ makeEvaluateTermsToPredicate
     case result of
         Nothing ->
             return
-                ( MultiOr.make
-                    [ Conditional
-                        { term = ()
-                        , predicate = makeEqualsPredicate first second
-                        , substitution = mempty
-                        }
-                    ]
-                , SimplificationProof
-                )
-        Just (predicatedOr, _proof) -> do
-            (firstCeilOr, _proof1) <-
+                $ OrPredicate.fromPredicate
+                $ Predicate.fromPredicate
+                $ makeEqualsPredicate first second
+        Just predicatedOr -> do
+            firstCeilOr <-
                 Ceil.makeEvaluateTerm
                     tools
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplfier
                     first
-            (secondCeilOr, _proof2) <-
+            secondCeilOr <-
                 Ceil.makeEvaluateTerm
                     tools
                     substitutionSimplifier
@@ -698,16 +646,8 @@ makeEvaluateTermsToPredicate
                 secondCeilNegation = makeNotPredicate secondCeil
                 ceilNegationAnd =
                     makeAndPredicate firstCeilNegation secondCeilNegation
-            return
-                ( MultiOr.merge
-                    predicatedOr
-                    (MultiOr.make
-                        [ Conditional
-                            { term = ()
-                            , predicate = ceilNegationAnd
-                            , substitution = mempty
-                            }
-                        ]
-                    )
-                , SimplificationProof
+            return $ MultiOr.merge
+                predicatedOr
+                (OrPredicate.fromPredicate
+                    $ Predicate.fromPredicate ceilNegationAnd
                 )

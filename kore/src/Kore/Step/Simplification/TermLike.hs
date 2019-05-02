@@ -32,8 +32,8 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
 import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
                  ( simplify )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier, simplifyTerm, termLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
+                 simplifyTerm, termLikeSimplifier )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
                  ( simplify )
 import qualified Kore.Step.Simplification.Equals as Equals
@@ -89,14 +89,10 @@ simplify
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
-    -> Simplifier
-        ( Pattern variable
-        , SimplificationProof Object
-        )
+    -> Simplifier (Pattern variable)
 simplify tools substitutionSimplifier axiomIdToEvaluator patt = do
-    (orPatt, proof) <-
-        simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt
-    return (OrPattern.toExpandedPattern orPatt, proof)
+    orPatt <- simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt
+    return (OrPattern.toExpandedPattern orPatt)
 
 {-|'simplifyToOr' simplifies a TermLike variable, returning an
 'OrPattern'.
@@ -113,10 +109,7 @@ simplifyToOr
     -- ^ Map from axiom IDs to axiom evaluators
     -> PredicateSimplifier
     -> TermLike variable
-    -> Simplifier
-        ( OrPattern variable
-        , SimplificationProof Object
-        )
+    -> Simplifier (OrPattern variable)
 simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt =
     simplifyInternal
         tools
@@ -141,10 +134,7 @@ simplifyInternal
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Recursive.Base (TermLike variable) (TermLike variable)
-    -> Simplifier
-        ( OrPattern variable
-        , SimplificationProof Object
-        )
+    -> Simplifier (OrPattern variable)
 simplifyInternal
     tools
     substitutionSimplifier
@@ -154,7 +144,7 @@ simplifyInternal
   = do
     halfSimplified <- traverse simplifyTerm' patt
     -- TODO: Remove fst
-    case fmap fst halfSimplified of
+    case halfSimplified of
         Common.AndPattern p ->
             And.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
@@ -193,7 +183,7 @@ simplifyInternal
         -- TODO(virgil): Move next up through patterns.
         Common.NextPattern p -> return $ Next.simplify p
         Common.NotPattern p ->
-            fmap withProof $ Not.simplify
+            Not.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
         Common.OrPattern p -> return $ Or.simplify p
         Common.RewritesPattern p -> return $ Rewrites.simplify p
@@ -204,4 +194,3 @@ simplifyInternal
         Common.SetVariablePattern p -> return $ SetVariable.simplify p
   where
     simplifyTerm' = simplifyTerm simplifier substitutionSimplifier
-    withProof a = (a, SimplificationProof)

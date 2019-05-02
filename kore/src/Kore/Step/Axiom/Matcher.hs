@@ -678,14 +678,14 @@ matchVariableFunction
   | not (var `Map.member` quantifiedVariables)
     && isFunctionPattern tools second
   = Monad.Trans.lift $ do
-    (ceilOr, _proof) <- Monad.Unify.liftSimplifier $
+    ceilOr <- Monad.Unify.liftSimplifier $
         Ceil.makeEvaluateTerm
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
             second
-    (result, _proof) <-
+    result <-
         OrPattern.mergeWithPredicateAssumesEvaluated
             (createPredicatesAndSubstitutionsMergerExcept
                 tools

@@ -33,8 +33,7 @@ import           Kore.Step.Representation.MultiOr
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( fullCrossProduct )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Unparser
@@ -53,8 +52,7 @@ simplifyEvaluatedMultiPredicate
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> MultiAnd (OrPredicate variable)
-    -> Simplifier
-        (OrPredicate variable, SimplificationProof Object)
+    -> Simplifier (OrPredicate variable)
 simplifyEvaluatedMultiPredicate
     tools
     substitutionSimplifier
@@ -67,15 +65,9 @@ simplifyEvaluatedMultiPredicate
         crossProduct =
             MultiOr.fullCrossProduct
                 (MultiAnd.extractPatterns predicates)
-    result <- traverse andPredicates crossProduct
-    return
-        ( result
-        , SimplificationProof
-        )
+    traverse andPredicates crossProduct
   where
-    andPredicates
-        :: [Predicate variable]
-        -> Simplifier (Predicate variable)
+    andPredicates :: [Predicate variable] -> Simplifier (Predicate variable)
     andPredicates predicates0 = do
         (result, _proof) <- mergePredicatesAndSubstitutions
             tools

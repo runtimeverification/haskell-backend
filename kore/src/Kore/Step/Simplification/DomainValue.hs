@@ -21,8 +21,6 @@ import           Kore.Step.Conditional
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import           Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 import           Kore.Step.TermLike
                  ( TermLike )
 import           Kore.Unparser
@@ -38,15 +36,11 @@ simplify
        )
     => SmtMetadataTools attrs
     -> Domain.Builtin (OrPattern variable)
-    -> (OrPattern variable, SimplificationProof Object)
+    -> OrPattern variable
 simplify _ builtin =
-    ( MultiOr.filterOr
-        (do
-            child <- simplifyBuiltin builtin
-            return (mkDomainValue <$> child)
-        )
-    , SimplificationProof
-    )
+    MultiOr.filterOr $ do
+        child <- simplifyBuiltin builtin
+        return (mkDomainValue <$> child)
 
 simplifyBuiltin
     :: ( Ord variable
@@ -55,8 +49,7 @@ simplifyBuiltin
        , SortedVariable variable
        )
     => Domain.Builtin (OrPattern variable)
-    -> MultiOr
-        (Conditional variable (Domain.Builtin (TermLike variable)))
+    -> MultiOr (Conditional variable (Domain.Builtin (TermLike variable)))
 simplifyBuiltin =
     \case
         Domain.BuiltinExternal _ext -> do

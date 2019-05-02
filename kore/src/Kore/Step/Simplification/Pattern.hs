@@ -9,7 +9,6 @@ module Kore.Step.Simplification.Pattern
     ) where
 
 import           Data.Reflection
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -23,11 +22,10 @@ import           Kore.Step.OrPattern
                  ( OrPattern )
 import           Kore.Step.Pattern
                  ( Conditional (..), Pattern )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( traverseWithPairs )
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier, simplifyTerm )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
+                 simplifyTerm )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Syntax.Variable
@@ -51,10 +49,7 @@ simplify
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Pattern variable
-    -> Simplifier
-        ( OrPattern variable
-        , SimplificationProof Object
-        )
+    -> Simplifier (OrPattern variable)
 simplify
     tools
     substitutionSimplifier
@@ -62,22 +57,20 @@ simplify
     axiomIdToSimplifier
     Conditional {term, predicate, substitution}
   = do
-    (simplifiedTerm, _) <- simplifyTerm' term
-    (simplifiedPatt, _) <-
-        MultiOr.traverseWithPairs
-            (give tools $ Pattern.mergeWithPredicate
-                tools
-                substitutionSimplifier
-                termSimplifier
-                axiomIdToSimplifier
-                Conditional
-                    { term = ()
-                    , predicate
-                    , substitution
-                    }
-            )
-            simplifiedTerm
-    return (simplifiedPatt, SimplificationProof)
+    simplifiedTerm <- simplifyTerm' term
+    traverse
+        (give tools $ Pattern.mergeWithPredicate
+            tools
+            substitutionSimplifier
+            termSimplifier
+            axiomIdToSimplifier
+            Conditional
+                { term = ()
+                , predicate
+                , substitution
+                }
+        )
+        simplifiedTerm
   where
     simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
 
@@ -100,7 +93,7 @@ simplifyPredicate
     -- ^ Map from axiom IDs to axiom evaluators
     -> Pattern variable
     -- ^ The condition to be evaluated.
-    -> Simplifier (Pattern variable, SimplificationProof Object)
+    -> Simplifier (Pattern variable)
 simplifyPredicate
     tools
     substitutionSimplifier
@@ -108,12 +101,12 @@ simplifyPredicate
     axiomIdToSimplifier
     Conditional {term, predicate, substitution}
   = do
-    (evaluated, _proof) <-
+    evaluated <-
         give tools
-            $ Predicate.evaluate
-                substitutionSimplifier
-                simplifier
-                predicate
+        $ Predicate.evaluate
+            substitutionSimplifier
+            simplifier
+            predicate
     let Conditional { predicate = evaluatedPredicate } = evaluated
         Conditional { substitution = evaluatedSubstitution } = evaluated
     (merged, _proof) <-
@@ -124,14 +117,5 @@ simplifyPredicate
             axiomIdToSimplifier
             [evaluatedPredicate]
             [substitution, evaluatedSubstitution]
-    let Conditional { predicate = mergedPredicate } = merged
-        Conditional { substitution = mergedSubstitution } = merged
     -- TODO(virgil): Do I need to re-evaluate the predicate?
-    return
-        ( Conditional
-            { term = term
-            , predicate = mergedPredicate
-            , substitution = mergedSubstitution
-            }
-        , SimplificationProof
-        )
+    return $ Pattern.withCondition term merged

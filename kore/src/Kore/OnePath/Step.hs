@@ -26,8 +26,6 @@ import           Control.Applicative
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import           Data.Hashable
-import           Data.Semigroup
-                 ( (<>) )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
@@ -50,7 +48,6 @@ import           Kore.Step.Pattern
 import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Proof
                  ( StepProof )
-import qualified Kore.Step.Proof as Step.Proof
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
@@ -261,27 +258,22 @@ transitionRule
         applySimplify Stuck (config, proof)
     transitionSimplify c@(Bottom, _) = return c
 
-    applySimplify wrapper (config, proof) =
-        do
-            (configs, proof') <-
-                Monad.Trans.lift
-                $ Pattern.simplify
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-                    config
-            let
-                proof'' = proof <> Step.Proof.simplificationProof proof'
-                prove config' = (config', proof'')
-                -- Filter out ⊥ patterns
-                nonEmptyConfigs = MultiOr.filterOr configs
-            if null nonEmptyConfigs
-                then return (Bottom, proof'')
-                else Foldable.asum
-                    (   pure . prove
-                    <$> map wrapper (Foldable.toList nonEmptyConfigs)
-                    )
+    applySimplify wrapper (config, proof) = do
+        configs <-
+            Monad.Trans.lift
+            $ Pattern.simplify
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+                config
+        let
+            prove config' = (config', proof)
+            -- Filter out ⊥ patterns
+            nonEmptyConfigs = MultiOr.filterOr configs
+        if null nonEmptyConfigs
+            then return (Bottom, proof)
+            else Foldable.asum (pure . prove . wrapper <$> nonEmptyConfigs)
 
     transitionApplyWithRemainders
         :: [RewriteRule Variable]
@@ -290,16 +282,13 @@ transitionRule
             (CommonStrategyPattern, StepProof Object Variable)
     transitionApplyWithRemainders _ c@(Bottom, _) = return c
     transitionApplyWithRemainders _ c@(Stuck _, _) = return c
-    transitionApplyWithRemainders
-        rules
-        (RewritePattern config, proof)
-      = transitionMultiApplyWithRemainders rules (config, proof)
+    transitionApplyWithRemainders rules (RewritePattern config, proof) =
+        transitionMultiApplyWithRemainders rules (config, proof)
 
     transitionMultiApplyWithRemainders
         :: [RewriteRule Variable]
         -> (Pattern Variable, StepProof Object Variable)
-        -> Transition
-            (CommonStrategyPattern, StepProof Object Variable)
+        -> Transition (CommonStrategyPattern, StepProof Object Variable)
     transitionMultiApplyWithRemainders _ (config, _)
         | Pattern.isBottom config = empty
     transitionMultiApplyWithRemainders rules (config, proof) = do
@@ -341,9 +330,7 @@ transitionRule
 
     transitionRemoveDestination
         :: Pattern Variable
-        ->  ( CommonStrategyPattern
-            , StepProof Object Variable
-            )
+        -> (CommonStrategyPattern, StepProof Object Variable)
         -> TransitionT (RewriteRule Variable) Simplifier
             (CommonStrategyPattern, StepProof Object Variable)
     transitionRemoveDestination _ (Bottom, _) = empty
@@ -352,7 +339,7 @@ transitionRule
         let
             removal = removalPredicate destination patt
             result = patt `Conditional.andPredicate` removal
-        (orResult, proof) <-
+        orResult <-
             Monad.Trans.lift
             $ Pattern.simplify
                 tools
@@ -360,19 +347,11 @@ transitionRule
                 simplifier
                 axiomIdToSimplifier
                 result
-        let
-            finalProof = proof1 <> Step.Proof.simplificationProof proof
-            patternsWithProofs =
-                map
-                    (\p ->
-                        ( RewritePattern p
-                        , finalProof
-                        )
-                    )
-                    (MultiOr.extractPatterns orResult)
-        if null patternsWithProofs
-            then return (Bottom, finalProof)
-            else Foldable.asum (pure <$> patternsWithProofs)
+        let prove c = (c, proof1)
+            nonEmpty = MultiOr.filterOr orResult
+        if null nonEmpty
+            then return (Bottom, proof1)
+            else Foldable.asum (pure . prove . RewritePattern <$> nonEmpty)
 
 {- | The predicate to remove the destination from the present configuration.
  -}

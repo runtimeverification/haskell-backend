@@ -2,7 +2,6 @@ module Kore.Step.Simplification.Ceil
     ( makeEvaluateTerm
     ) where
 
-import Kore.AST.MetaOrObject
 import Kore.Attribute.Symbol
        ( StepperAttributes )
 import Kore.IndexedModule.MetadataTools
@@ -12,8 +11,7 @@ import Kore.Step.Axiom.Data
 import Kore.Step.OrPredicate
        ( OrPredicate )
 import Kore.Step.Simplification.Data
-       ( PredicateSimplifier, SimplificationProof, Simplifier,
-       TermLikeSimplifier )
+       ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import Kore.Step.TermLike
        ( TermLike )
 import Kore.Syntax.Variable
@@ -37,4 +35,4 @@ makeEvaluateTerm
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> TermLike variable
-    -> Simplifier (OrPredicate variable, SimplificationProof Object)
+    -> Simplifier (OrPredicate variable)

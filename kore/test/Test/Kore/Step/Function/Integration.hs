@@ -35,8 +35,8 @@ import           Kore.Step.Rule
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..), rulePattern )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier (..), SimplificationProof (..),
-                 Simplifier, TermLikeSimplifier, evalSimplifier )
+                 ( PredicateSimplifier (..), Simplifier, TermLikeSimplifier,
+                 evalSimplifier )
 import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -627,10 +627,8 @@ mockEvaluator
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
-    -> Simplifier
-        (AttemptedAxiom variable, SimplificationProof Object)
-mockEvaluator evaluation _ _ _ _ _ =
-    return (evaluation, SimplificationProof)
+    -> Simplifier (AttemptedAxiom variable)
+mockEvaluator evaluation _ _ _ _ _ = return evaluation
 
 evaluate
     :: SmtMetadataTools StepperAttributes
@@ -638,8 +636,7 @@ evaluate
     -> TermLike Variable
     -> IO (Pattern Variable)
 evaluate metadataTools functionIdToEvaluator patt =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ TermLike.simplify
         metadataTools substitutionSimplifier functionIdToEvaluator patt

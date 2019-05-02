@@ -166,15 +166,8 @@ makeFloor patterns =
         , floorChild       = OrPattern.fromPatterns patterns
         }
 
-evaluate
-    :: Floor Sort (OrPattern Variable)
-    -> OrPattern Variable
-evaluate floor' =
-    case simplify floor' of
-        (result, _proof) -> result
-
+evaluate :: Floor Sort (OrPattern Variable) -> OrPattern Variable
+evaluate = simplify
 
 makeEvaluate :: Pattern Variable -> OrPattern Variable
-makeEvaluate child =
-    case makeEvaluateFloor child of
-        (result, _proof) -> result
+makeEvaluate = makeEvaluateFloor

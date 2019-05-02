@@ -108,7 +108,7 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
   where
     transitionSimplify (config, proof) =
         do
-            (configs, _) <-
+            configs <-
                 Monad.Trans.lift
                 $ Pattern.simplify
                     tools

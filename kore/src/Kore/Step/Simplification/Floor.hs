@@ -21,8 +21,6 @@ import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 import           Kore.Syntax.Floor
 import           Kore.Unparser
 
@@ -44,7 +42,7 @@ simplify
         , Ord variable
         )
     => Floor Sort (OrPattern variable)
-    -> (OrPattern variable, SimplificationProof Object)
+    -> OrPattern variable
 simplify Floor { floorChild = child } =
     simplifyEvaluatedFloor child
 
@@ -68,7 +66,7 @@ simplifyEvaluatedFloor
         , Unparse variable
         )
     => OrPattern variable
-    -> (OrPattern variable, SimplificationProof Object)
+    -> OrPattern variable
 simplifyEvaluatedFloor child =
     case MultiOr.extractPatterns child of
         [childP] -> makeEvaluateFloor childP
@@ -87,14 +85,11 @@ makeEvaluateFloor
         , Unparse variable
         )
     => Pattern variable
-    -> (OrPattern variable, SimplificationProof Object)
+    -> OrPattern variable
 makeEvaluateFloor child
-  | Pattern.isTop child =
-    (OrPattern.fromPatterns [Pattern.top], SimplificationProof)
-  | Pattern.isBottom child =
-    (OrPattern.fromPatterns [Pattern.bottom], SimplificationProof)
-  | otherwise =
-    makeEvaluateNonBoolFloor child
+  | Pattern.isTop child    = OrPattern.top
+  | Pattern.isBottom child = OrPattern.bottom
+  | otherwise              = makeEvaluateNonBoolFloor child
 
 makeEvaluateNonBoolFloor
     ::  ( SortedVariable variable
@@ -103,24 +98,16 @@ makeEvaluateNonBoolFloor
         , Unparse variable
         )
     => Pattern variable
-    -> (OrPattern variable, SimplificationProof Object)
-makeEvaluateNonBoolFloor
-    patt@Conditional { term = Top_ _ }
-  =
-    ( OrPattern.fromPatterns [patt]
-    , SimplificationProof
-    )
+    -> OrPattern variable
+makeEvaluateNonBoolFloor patt@Conditional { term = Top_ _ } =
+    OrPattern.fromPattern patt
 -- TODO(virgil): Also evaluate functional patterns to bottom for non-singleton
 -- sorts, and maybe other cases also
 makeEvaluateNonBoolFloor
     Conditional {term, predicate, substitution}
   =
-    ( OrPattern.fromPatterns
-        [ Conditional
-            { term = mkTop_
-            , predicate = makeAndPredicate (makeFloorPredicate term) predicate
-            , substitution = substitution
-            }
-        ]
-    , SimplificationProof
-    )
+    OrPattern.fromPattern Conditional
+        { term = mkTop_
+        , predicate = makeAndPredicate (makeFloorPredicate term) predicate
+        , substitution = substitution
+        }

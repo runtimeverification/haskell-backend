@@ -36,8 +36,7 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier (..),
-                 SimplificationProof (SimplificationProof), TermLikeSimplifier,
+                 ( PredicateSimplifier (..), TermLikeSimplifier,
                  evalSimplifier )
 import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
@@ -507,10 +506,8 @@ test_builtinEvaluation =
 
 failingEvaluator :: BuiltinAndAxiomSimplifier
 failingEvaluator =
-    BuiltinAndAxiomSimplifier
-        (const $ const $ const $ const $ const $
-            return (AttemptedAxiom.NotApplicable, SimplificationProof)
-        )
+    BuiltinAndAxiomSimplifier $ \_ _ _ _ _ ->
+        return AttemptedAxiom.NotApplicable
 
 axiomEvaluator
     :: TermLike Variable
@@ -557,17 +554,13 @@ evaluate
     -> TermLike Variable
     -> IO (CommonAttemptedAxiom)
 evaluate metadataTools (BuiltinAndAxiomSimplifier simplifier) patt =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ simplifier
         metadataTools substitutionSimplifier patternSimplifier Map.empty patt
   where
     substitutionSimplifier :: PredicateSimplifier
     substitutionSimplifier =
-        Predicate.create
-            metadataTools
-            patternSimplifier
-            Map.empty
+        Predicate.create metadataTools patternSimplifier Map.empty
     patternSimplifier :: TermLikeSimplifier
     patternSimplifier = Simplifier.create metadataTools Map.empty

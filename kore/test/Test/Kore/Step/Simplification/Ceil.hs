@@ -40,9 +40,8 @@ import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplify )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier,
-                 SimplificationProof (SimplificationProof), Simplifier,
-                 TermLikeSimplifier, evalSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
+                 evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.TermLike
@@ -491,10 +490,9 @@ mockEvaluator
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
-    -> Simplifier
-        (AttemptedAxiom variable, SimplificationProof Object)
+    -> Simplifier (AttemptedAxiom variable)
 mockEvaluator evaluation _ _ _ _ _ =
-    return (evaluation, SimplificationProof)
+    return evaluation
 
 mapVariables
     ::  ( FreshVariable variable
@@ -523,8 +521,7 @@ evaluate
     -> Ceil Sort (OrPattern Variable)
     -> IO (OrPattern Variable)
 evaluate tools ceil =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ Ceil.simplify
         tools
@@ -547,8 +544,7 @@ makeEvaluateWithAxioms
     -> Pattern Variable
     -> IO (OrPattern Variable)
 makeEvaluateWithAxioms tools axiomIdToSimplifier child =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ Ceil.makeEvaluate
         tools

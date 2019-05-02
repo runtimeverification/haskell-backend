@@ -280,8 +280,7 @@ simplify
     -> Exists Sort Variable (OrPattern Variable)
     -> IO (OrPattern Variable)
 simplify tools exists =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ Exists.simplify
         tools
@@ -296,8 +295,7 @@ makeEvaluate
     -> Pattern Variable
     -> IO (OrPattern Variable)
 makeEvaluate tools variable child =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ Exists.makeEvaluate
         tools

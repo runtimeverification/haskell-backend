@@ -201,8 +201,7 @@ simplify
     :: Iff Sort (OrPattern Variable)
     -> IO (OrPattern Variable)
 simplify iff0 =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ Iff.simplify
         mockMetadataTools

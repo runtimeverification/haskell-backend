@@ -48,10 +48,10 @@ import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
                  ( Conditional (..), Pattern, Predicate )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( flatten, merge, traverseWithPairs )
+                 ( flatten, merge )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier, simplifyTerm )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
+                 simplifyTerm )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.TermLike
 import           Kore.Syntax.Application
@@ -84,8 +84,7 @@ evaluateApplication
         (Valid variable)
         (TermLike variable)
     -- ^ The pattern to be evaluated
-    -> Simplifier
-        (OrPattern variable, SimplificationProof Object)
+    -> Simplifier (OrPattern variable)
 evaluateApplication
     tools
     substitutionSimplifier
@@ -105,7 +104,7 @@ evaluateApplication
             return unchanged
         Just evaluatedPattSimplifier -> evaluatedPattSimplifier
   where
-    (afterInj, _proof) = evaluateSortInjection tools app
+    afterInj = evaluateSortInjection tools app
 
     maybeEvaluatedPattSimplifier =
         maybeEvaluatePattern
@@ -115,7 +114,7 @@ evaluateApplication
             axiomIdToEvaluator
             childrenPredicate
             appPurePattern
-            unchangedOr
+            unchanged
 
     Application { applicationSymbolOrAlias = appHead } = afterInj
     SymbolOrAlias { symbolOrAliasConstructor = symbolId } = appHead
@@ -132,8 +131,7 @@ evaluateApplication
       where
         Conditional { term = (), predicate, substitution } =
             childrenPredicate
-    unchangedOr = OrPattern.fromPattern unchangedPatt
-    unchanged = (unchangedOr, SimplificationProof)
+    unchanged = OrPattern.fromPattern unchangedPatt
 
     getAppHookString =
         Text.unpack <$> (getHook . Attribute.hook . symAttributes tools) appHead
@@ -163,7 +161,7 @@ evaluatePattern
     -> OrPattern variable
     -- ^ The default value
     -> Simplifier
-        (OrPattern variable, SimplificationProof Object)
+        (OrPattern variable)
 evaluatePattern
     tools
     substitutionSimplifier
@@ -174,7 +172,7 @@ evaluatePattern
     defaultValue
   =
     fromMaybe
-        (return (defaultValue, SimplificationProof))
+        (return defaultValue)
         (maybeEvaluatePattern
             tools
             substitutionSimplifier
@@ -211,10 +209,7 @@ maybeEvaluatePattern
     -- ^ The pattern to be evaluated
     -> OrPattern variable
     -- ^ The default value
-    -> Maybe
-        (Simplifier
-            (OrPattern variable, SimplificationProof Object)
-        )
+    -> Maybe (Simplifier (OrPattern variable))
 maybeEvaluatePattern
     tools
     substitutionSimplifier
@@ -232,7 +227,7 @@ maybeEvaluatePattern
                 D_Function_evaluatePattern
                 [ debugArg "axiomIdentifier" identifier ]
             $ do
-                (result, proof) <-
+                result <-
                     evaluator
                         tools
                         substitutionSimplifier
@@ -254,27 +249,26 @@ maybeEvaluatePattern
                                     , remainders = orRemainders
                                     }
                                 )
-                (merged, _proof) <- mergeWithConditionAndSubstitution
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToEvaluator
-                    childrenPredicate
-                    (flattened, proof)
+                merged <-
+                    mergeWithConditionAndSubstitution
+                        tools
+                        substitutionSimplifier
+                        simplifier
+                        axiomIdToEvaluator
+                        childrenPredicate
+                        flattened
                 case merged of
-                    AttemptedAxiom.NotApplicable ->
-                        return (defaultValue, SimplificationProof)
-                    AttemptedAxiom.Applied AttemptedAxiomResults
-                        { results, remainders } ->
-                            return
-                                ( MultiOr.merge results remainders
-                                , SimplificationProof
-                                )
+                    AttemptedAxiom.NotApplicable -> return defaultValue
+                    AttemptedAxiom.Applied attemptResults ->
+                        return $ MultiOr.merge results remainders
+                      where
+                        AttemptedAxiomResults { results, remainders } =
+                            attemptResults
   where
-    identifier :: Maybe (AxiomIdentifier)
+    identifier :: Maybe AxiomIdentifier
     identifier = AxiomIdentifier.extract patt
 
-    maybeEvaluator :: Maybe (BuiltinAndAxiomSimplifier)
+    maybeEvaluator :: Maybe BuiltinAndAxiomSimplifier
     maybeEvaluator = do
         identifier' <- identifier
         Map.lookup identifier' axiomIdToEvaluator
@@ -286,34 +280,29 @@ maybeEvaluatePattern
             , substitution = substitution
             }
       where
-        Conditional { term = (), predicate, substitution } =
-            childrenPredicate
+        Conditional { term = (), predicate, substitution } = childrenPredicate
 
-    simplifyIfNeeded
-        :: Pattern variable
-        -> Simplifier (OrPattern variable)
-    simplifyIfNeeded toSimplify =
-        if toSimplify == unchangedPatt
-            then return (OrPattern.fromPattern unchangedPatt)
-            else
-                reevaluateFunctions
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToEvaluator
-                    toSimplify
+    simplifyIfNeeded :: Pattern variable -> Simplifier (OrPattern variable)
+    simplifyIfNeeded toSimplify
+      | toSimplify == unchangedPatt =
+        return (OrPattern.fromPattern unchangedPatt)
+      | otherwise =
+        reevaluateFunctions
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToEvaluator
+            toSimplify
 
 evaluateSortInjection
     :: Ord variable
     => SmtMetadataTools StepperAttributes
     -> Application SymbolOrAlias (TermLike variable)
-    ->  ( Application SymbolOrAlias (TermLike variable)
-        , SimplificationProof Object
-        )
+    -> Application SymbolOrAlias (TermLike variable)
 evaluateSortInjection tools ap
   | give tools isSortInjection_ apHead
   = case apChild of
-    (App_ apHeadChild grandChildren)
+    App_ apHeadChild grandChildren
       | give tools isSortInjection_ apHeadChild ->
         let
             [fromSort', toSort'] = symbolOrAliasParams apHeadChild
@@ -322,22 +311,20 @@ evaluateSortInjection tools ap
         in
             assert (toSort' == fromSort) $
                 ( resultApp
-                , SimplificationProof
+
                 )
-    _ -> (ap, SimplificationProof)
-  | otherwise = (ap, SimplificationProof)
+    _ -> ap
+  | otherwise = ap
   where
     apHead = applicationSymbolOrAlias ap
     [fromSort, _] = symbolOrAliasParams apHead
     [apChild] = applicationChildren ap
-    updateSortInjectionSource head1 fromSort1 =
-        \children ->
-            ( Application
-                { applicationSymbolOrAlias =
-                    head1 { symbolOrAliasParams = [fromSort1, toSort1] }
-                , applicationChildren = children
-                }
-            )
+    updateSortInjectionSource head1 fromSort1 children =
+        Application
+            { applicationSymbolOrAlias =
+                head1 { symbolOrAliasParams = [fromSort1, toSort1] }
+            , applicationChildren = children
+            }
       where
         [_, toSort1] = symbolOrAliasParams head1
 
@@ -373,8 +360,8 @@ reevaluateFunctions
         , substitution = rewrittenSubstitution
         }
   = do
-    (pattOr , _proof) <- simplifyTerm' rewrittenPattern
-    (mergedPatt, _proof) <-
+    pattOr <- simplifyTerm' rewrittenPattern
+    mergedPatt <-
         OrPattern.mergeWithPredicate
             tools
             substitutionSimplifier
@@ -386,16 +373,14 @@ reevaluateFunctions
                 , substitution = rewrittenSubstitution
                 }
             pattOr
-    (evaluatedPatt, _) <-
-        MultiOr.traverseWithPairs
-            (Pattern.simplifyPredicate
-                tools
-                substitutionSimplifier
-                termSimplifier
-                axiomIdToEvaluator
-            )
-            mergedPatt
-    return evaluatedPatt
+    traverse
+        (Pattern.simplifyPredicate
+            tools
+            substitutionSimplifier
+            termSimplifier
+            axiomIdToEvaluator
+        )
+        mergedPatt
   where
     simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
 
@@ -416,24 +401,20 @@ mergeWithConditionAndSubstitution
     -- ^ Map from axiom IDs to axiom evaluators
     -> Predicate variable
     -- ^ Condition and substitution to add.
-    -> (AttemptedAxiom variable, SimplificationProof Object)
+    -> (AttemptedAxiom variable)
     -- ^ AttemptedAxiom to which the condition should be added.
-    -> Simplifier (AttemptedAxiom variable, SimplificationProof Object)
-mergeWithConditionAndSubstitution
-    _ _ _ _ _ (AttemptedAxiom.NotApplicable, _proof)
-  =
-    return (AttemptedAxiom.NotApplicable, SimplificationProof)
+    -> Simplifier (AttemptedAxiom variable)
+mergeWithConditionAndSubstitution _ _ _ _ _ AttemptedAxiom.NotApplicable =
+    return AttemptedAxiom.NotApplicable
 mergeWithConditionAndSubstitution
     tools
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
     toMerge
-    ( AttemptedAxiom.Applied AttemptedAxiomResults { results, remainders }
-    , _proof
-    )
+    (AttemptedAxiom.Applied AttemptedAxiomResults { results, remainders })
   = do
-    (evaluatedResults, _proof) <-
+    evaluatedResults <-
         OrPattern.mergeWithPredicate
             tools
             substitutionSimplifier
@@ -441,7 +422,7 @@ mergeWithConditionAndSubstitution
             axiomIdToEvaluator
             toMerge
             results
-    (evaluatedRemainders, _proof) <-
+    evaluatedRemainders <-
         OrPattern.mergeWithPredicate
             tools
             substitutionSimplifier
@@ -449,8 +430,7 @@ mergeWithConditionAndSubstitution
             axiomIdToEvaluator
             toMerge
             remainders
-    return
-        ( AttemptedAxiom.Applied AttemptedAxiomResults
-            { results = evaluatedResults, remainders = evaluatedRemainders }
-        , SimplificationProof
-        )
+    return $ AttemptedAxiom.Applied AttemptedAxiomResults
+        { results = evaluatedResults
+        , remainders = evaluatedRemainders
+        }

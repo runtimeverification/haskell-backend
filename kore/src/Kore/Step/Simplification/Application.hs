@@ -27,15 +27,14 @@ import           Kore.Step.Function.Evaluator
                  ( evaluateApplication )
 import           Kore.Step.OrPattern
                  ( OrPattern )
+import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
                  ( Conditional (..), Pattern )
-import           Kore.Step.Pattern as Pattern
-                 ( Conditional (..) )
+import qualified Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( fullCrossProduct, traverseFlattenWithPairsGeneric )
+                 ( fullCrossProduct )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Step.TermLike
@@ -79,10 +78,7 @@ simplify
         (Application SymbolOrAlias)
         (Valid variable)
         (OrPattern variable)
-    -> Simplifier
-        ( OrPattern variable
-        , SimplificationProof Object
-        )
+    -> Simplifier (OrPattern variable)
 simplify
     tools
     substitutionSimplifier
@@ -90,12 +86,8 @@ simplify
     axiomIdToEvaluator
     (valid :< app)
   = do
-    let
-        -- The "Propagation Or" inference rule together with
-        -- "Propagation Bottom" for the case when a child or is empty.
-        orDistributedChildren = MultiOr.fullCrossProduct children
-    (unflattenedOr, _proofs) <-
-        MultiOr.traverseFlattenWithPairsGeneric
+    evaluated <-
+        traverse
             (makeAndEvaluateApplications
                 tools
                 substitutionSimplifier
@@ -104,11 +96,10 @@ simplify
                 valid
                 symbol
             )
-            orDistributedChildren
-    return
-        ( unflattenedOr
-        , SimplificationProof
-        )
+            -- The "Propagation Or" inference rule together with
+            -- "Propagation Bottom" for the case when a child or is empty.
+            (MultiOr.fullCrossProduct children)
+    return (OrPattern.flatten evaluated)
   where
     Application
         { applicationSymbolOrAlias = symbol
@@ -132,8 +123,7 @@ makeAndEvaluateApplications
     -> Valid variable
     -> SymbolOrAlias
     -> [Pattern variable]
-    -> Simplifier
-        (OrPattern variable, SimplificationProof Object)
+    -> Simplifier (OrPattern variable)
 makeAndEvaluateApplications
     tools
     substitutionSimplifier
@@ -171,8 +161,7 @@ makeAndEvaluateSymbolApplications
     -> Valid variable
     -> SymbolOrAlias
     -> [Pattern variable]
-    -> Simplifier
-        (OrPattern variable, SimplificationProof Object)
+    -> Simplifier (OrPattern variable)
 makeAndEvaluateSymbolApplications
     tools
     substitutionSimplifier
@@ -182,7 +171,7 @@ makeAndEvaluateSymbolApplications
     symbol
     children
   = do
-    (expandedApplication, _proof) <-
+    expandedApplication <-
         makeExpandedApplication
             tools
             substitutionSimplifier
@@ -191,14 +180,12 @@ makeAndEvaluateSymbolApplications
             valid
             symbol
             children
-    (functionApplication, _proof) <-
-        evaluateApplicationFunction
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToEvaluator
-            expandedApplication
-    return (functionApplication, SimplificationProof)
+    evaluateApplicationFunction
+        tools
+        substitutionSimplifier
+        simplifier
+        axiomIdToEvaluator
+        expandedApplication
 
 evaluateApplicationFunction
     ::  ( Ord variable
@@ -215,8 +202,7 @@ evaluateApplicationFunction
     -- ^ Map from axiom IDs to axiom evaluators
     -> ExpandedApplication Object variable
     -- ^ The pattern to be evaluated
-    -> Simplifier
-        (OrPattern variable, SimplificationProof Object)
+    -> Simplifier (OrPattern variable)
 evaluateApplicationFunction
     tools
     substitutionSimplifier
@@ -249,8 +235,7 @@ makeExpandedApplication
     -> Valid variable
     -> SymbolOrAlias
     -> [Pattern variable]
-    -> Simplifier
-        (ExpandedApplication Object variable, SimplificationProof Object)
+    -> Simplifier (ExpandedApplication Object variable)
 makeExpandedApplication
     tools
     substitutionSimplifier
@@ -260,29 +245,20 @@ makeExpandedApplication
     symbol
     children
   = do
-    (   Conditional
-            { predicate = mergedPredicate
-            , substitution = mergedSubstitution
-            }
-        , _proof) <-
-            mergePredicatesAndSubstitutions
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToEvaluator
-                (map Pattern.predicate children)
-                (map Pattern.substitution children)
-    return
-        ( Conditional
-            { term =
-                (:<) valid
-                    Application
-                        { applicationSymbolOrAlias = symbol
-                        , applicationChildren =
-                            map Pattern.term children
-                        }
-            , predicate = mergedPredicate
-            , substitution = mergedSubstitution
-            }
-        , SimplificationProof
+    (merged, _proof) <-
+        mergePredicatesAndSubstitutions
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToEvaluator
+            (map Pattern.predicate children)
+            (map Pattern.substitution children)
+    return $ Pattern.withCondition
+        ((:<) valid
+            Application
+                { applicationSymbolOrAlias = symbol
+                , applicationChildren =
+                    map Pattern.term children
+                }
         )
+        merged
