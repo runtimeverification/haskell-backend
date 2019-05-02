@@ -19,6 +19,7 @@ import qualified Data.Set as Set
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -32,7 +33,6 @@ import           Kore.Predicate.Predicate as Predicate
                  makeExistsPredicate, makeFalsePredicate, makeNotPredicate,
                  makeTruePredicate )
 import qualified Kore.Step.Axiom.Matcher as Matcher
-import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr

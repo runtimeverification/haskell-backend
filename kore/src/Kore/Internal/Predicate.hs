@@ -24,12 +24,12 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
+import           Kore.Internal.Conditional
+                 ( Conditional (..) )
+import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Step.Conditional
-                 ( Conditional (..) )
-import qualified Kore.Step.Conditional as Conditional
 import           Kore.Syntax
 import           Kore.Unparser
 

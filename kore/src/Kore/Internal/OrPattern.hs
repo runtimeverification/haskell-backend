@@ -19,12 +19,12 @@ module Kore.Internal.OrPattern
 
 import qualified Data.Foldable as Foldable
 
+import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Representation.MultiOr
                  ( MultiOr )
 import qualified Kore.Step.Representation.MultiOr as MultiOr

@@ -23,6 +23,7 @@ import           Data.List.NonEmpty
 
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
+import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Predicate
                  ( Conditional (..), Predicate )
@@ -32,7 +33,6 @@ import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse, makeAndPredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), TermLikeSimplifier )
 import           Kore.Syntax.And

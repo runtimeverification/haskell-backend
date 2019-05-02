@@ -31,11 +31,11 @@ import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Builtin.Error as Builtin
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Internal.Conditional
 import qualified Kore.Internal.Pattern as Step
                  ( Pattern )
 import           Kore.Predicate.Predicate
 import           Kore.Proof.Functional
-import           Kore.Step.Conditional
 import           Kore.Syntax
 import           Kore.Syntax.Definition
 import           Kore.Unification.Substitution
