@@ -2,8 +2,8 @@ module Test.Kore.Variables.Free where
 
 import Hedgehog
 
-import qualified Kore.Annotation as Annotation
-import qualified Kore.Attribute.Pattern as Attribute.Pattern
+import qualified Kore.Attribute.Pattern as Attribute
+import qualified Kore.Attribute.Synthetic as Attribute
 import qualified Kore.Variables.Free as Variables.Free
 
 import Test.Kore
@@ -14,5 +14,5 @@ hprop_synthetic :: Property
 hprop_synthetic = property $ do
     termLike <- forAll termLikeGen
     (===)
-        (Annotation.synthesize Variables.Free.synthetic termLike)
-        (Attribute.Pattern.freeVariables <$> termLike)
+        (Attribute.synthesize Variables.Free.synthetic termLike)
+        (Attribute.freeVariables <$> termLike)
