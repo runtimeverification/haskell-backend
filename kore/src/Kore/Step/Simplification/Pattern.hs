@@ -109,7 +109,7 @@ simplifyPredicate
             predicate
     let Conditional { predicate = evaluatedPredicate } = evaluated
         Conditional { substitution = evaluatedSubstitution } = evaluated
-    (merged, _proof) <-
+    merged <-
         mergePredicatesAndSubstitutions
             tools
             substitutionSimplifier

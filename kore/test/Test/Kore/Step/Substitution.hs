@@ -333,7 +333,6 @@ merge s1 s2 =
     runSMT
     $ evalSimplifier emptyLogger
     $ Monad.Unify.runUnifier
-    $ fmap fst
     $ mergePredicatesAndSubstitutionsExcept
         mockMetadataTools
         (Mock.substitutionSimplifier mockMetadataTools)

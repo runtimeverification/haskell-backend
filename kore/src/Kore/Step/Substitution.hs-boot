@@ -1,6 +1,5 @@
 module Kore.Step.Substitution where
 
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -15,8 +14,6 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, TermLikeSimplifier )
 import           Kore.Syntax.Variable
                  ( SortedVariable )
-import           Kore.Unification.Data
-                 ( UnificationProof )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import           Kore.Unification.Unify
@@ -40,7 +37,4 @@ mergePredicatesAndSubstitutionsExcept
     -> BuiltinAndAxiomSimplifierMap
     -> [Syntax.Predicate variable]
     -> [Substitution variable]
-    -> unifier
-        ( Predicate variable
-        , UnificationProof Object variable
-        )
+    -> unifier (Predicate variable)

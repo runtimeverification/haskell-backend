@@ -11,11 +11,8 @@ Portability : portable
 module Kore.Unification.Unifier
     ( module UnifierImpl
     , module Error
-    , module Data
     ) where
 
-import Kore.Unification.Data as Data
-       ( UnificationProof (..) )
 import Kore.Unification.Error as Error
        ( ClashReason (..), UnificationError (..) )
 import Kore.Unification.UnifierImpl as UnifierImpl

@@ -27,7 +27,6 @@ import qualified Data.Map as Map
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
@@ -43,8 +42,6 @@ import           Kore.Step.Simplification.Data
 import           Kore.Syntax.Variable
                  ( SortedVariable )
 import qualified Kore.TopBottom as TopBottom
-import           Kore.Unification.Data
-                 ( UnificationProof (EmptyUnificationProof) )
 import           Kore.Unification.Error
                  ( substitutionToUnifyOrSubError )
 import           Kore.Unification.Substitution
@@ -138,7 +135,7 @@ normalizeExcept
   = do
     -- The intermediate steps do not need to be checked for \bottom because we
     -- use guardAgainstBottom at the end.
-    (deduplicated, _) <- normalizeSubstitutionDuplication' substitution
+    deduplicated <- normalizeSubstitutionDuplication' substitution
     let
         Conditional { substitution = preDeduplicatedSubstitution } = deduplicated
         Conditional { predicate = deduplicatedPredicate } = deduplicated
@@ -202,7 +199,7 @@ mergePredicatesAndSubstitutions
     -> [Substitution variable]
     -> Simplifier
         ( Predicate variable
-        , UnificationProof Object variable
+
         )
 mergePredicatesAndSubstitutions
     tools
@@ -229,14 +226,7 @@ mergePredicatesAndSubstitutions
                         ++ map Syntax.Predicate.fromSubstitution substitutions
                         )
             in
-                return
-                    ( Conditional
-                        { term = ()
-                        , predicate = mergedPredicate
-                        , substitution = mempty
-                        }
-                    , EmptyUnificationProof
-                    )
+                return $ Predicate.fromPredicate mergedPredicate
         Right r -> return r
 
 mergePredicatesAndSubstitutionsExcept
@@ -256,7 +246,7 @@ mergePredicatesAndSubstitutionsExcept
     -> [Substitution variable]
     -> unifier
         ( Predicate variable
-        , UnificationProof Object variable
+
         )
 mergePredicatesAndSubstitutionsExcept
     tools
@@ -269,25 +259,16 @@ mergePredicatesAndSubstitutionsExcept
     let
         mergedSubstitution = Foldable.fold substitutions
         mergedPredicate = Syntax.Predicate.makeMultipleAndPredicate predicates
-    (Conditional {predicate, substitution}, _proof) <-
-        normalizeSubstitutionAfterMerge
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            Conditional
-                { term = ()
-                , predicate = mergedPredicate
-                , substitution = mergedSubstitution
-                }
-    return
-        (Conditional
+    normalizeSubstitutionAfterMerge
+        tools
+        substitutionSimplifier
+        simplifier
+        axiomIdToSimplifier
+        Conditional
             { term = ()
-            , predicate = predicate
-            , substitution = substitution
+            , predicate = mergedPredicate
+            , substitution = mergedSubstitution
             }
-        , EmptyUnificationProof
-        )
 
 {-| Creates a 'PredicateMerger' that returns errors on unifications it
 can't handle.
@@ -316,15 +297,14 @@ createPredicatesAndSubstitutionsMergerExcept
         :: [Syntax.Predicate variable]
         -> [Substitution variable]
         -> unifier (Predicate variable)
-    worker predicates substitutions = do
-        (merged, _proof) <- mergePredicatesAndSubstitutionsExcept
+    worker predicates substitutions =
+        mergePredicatesAndSubstitutionsExcept
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
             predicates
             substitutions
-        return merged
 
 {-| Creates a 'PredicateMerger' that creates predicates for
 unifications it can't handle.
@@ -351,15 +331,14 @@ createPredicatesAndSubstitutionsMerger
         :: [Syntax.Predicate variable]
         -> [Substitution variable]
         -> Simplifier (Predicate variable)
-    worker predicates substitutions = do
-        (merged, _proof) <- mergePredicatesAndSubstitutions
+    worker predicates substitutions =
+        mergePredicatesAndSubstitutions
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
             predicates
             substitutions
-        return merged
 
 {-| Creates a 'PredicateMerger' that creates predicates for
 unifications it can't handle and whose result is in any monad transformer
@@ -389,15 +368,15 @@ createLiftedPredicatesAndSubstitutionsMerger
         :: [Syntax.Predicate variable]
         -> [Substitution variable]
         -> unifier (Predicate variable)
-    worker predicates substitutions = Monad.Unify.liftSimplifier $ do
-        (merged, _proof) <- mergePredicatesAndSubstitutions
+    worker predicates substitutions =
+        Monad.Unify.liftSimplifier
+        $ mergePredicatesAndSubstitutions
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
             predicates
             substitutions
-        return merged
 
 normalizeSubstitutionAfterMerge
     ::  ( Ord variable
@@ -416,7 +395,7 @@ normalizeSubstitutionAfterMerge
     -> Predicate variable
     -> unifier
           ( Predicate variable
-          , UnificationProof Object variable
+
           )
 normalizeSubstitutionAfterMerge
     tools
@@ -434,9 +413,6 @@ normalizeSubstitutionAfterMerge
             axiomIdToSimplifier
             predicate
     case Foldable.toList results of
-        [] -> return
-            ( Predicate.bottom
-            , EmptyUnificationProof
-            )
-        [normal] -> return (normal, EmptyUnificationProof)
+        [] -> return Predicate.bottom
+        [normal] -> return normal
         _ -> error "Not implemented: branching during normalization"

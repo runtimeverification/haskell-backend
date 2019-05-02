@@ -68,12 +68,11 @@ simplifyEvaluatedMultiPredicate
     traverse andPredicates crossProduct
   where
     andPredicates :: [Predicate variable] -> Simplifier (Predicate variable)
-    andPredicates predicates0 = do
-        (result, _proof) <- mergePredicatesAndSubstitutions
+    andPredicates predicates0 =
+        mergePredicatesAndSubstitutions
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSubstitution
             (map Pattern.predicate predicates0)
             (map Pattern.substitution predicates0)
-        return result

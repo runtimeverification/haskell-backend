@@ -79,8 +79,6 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Substitution as Substitution
 import           Kore.Step.TermLike as TermLike
 import qualified Kore.TopBottom as TopBottom
-import           Kore.Unification.Data
-                 ( UnificationProof )
 import           Kore.Unification.Error
                  ( UnificationError (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -115,7 +113,7 @@ newtype UnificationProcedure =
         -> TermLike variable
         -> unifier
             ( OrPredicate variable
-            , UnificationProof Object variable
+
             )
         )
 
@@ -226,7 +224,7 @@ unifyRule
         -> TermLike variable
         -> BranchT unifier (Conditional variable ())
     unifyPatterns pat1 pat2 = do
-        (unifiers, _) <-
+        unifiers <-
             Monad.Trans.lift
             $ unificationProcedure
                 metadataTools

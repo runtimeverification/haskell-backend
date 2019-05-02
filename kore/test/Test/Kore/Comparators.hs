@@ -75,7 +75,6 @@ import           Kore.Unification.Error
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.Unifier
 import           Kore.Variables.Target
 import qualified SMT.AST as SMT
                  ( Constructor (Constructor),
@@ -831,71 +830,6 @@ instance
     => EqualWithExplanation (FunctionProof Object variable)
   where
     compareWithExplanation = rawCompareWithExplanation
-    printWithExplanation = show
-
-instance
-    ( Eq variable, Show variable
-    , EqualWithExplanation variable
-    , EqualWithExplanation (TermLike variable)
-    )
-    => SumEqualWithExplanation (UnificationProof Object variable)
-  where
-    sumConstructorPair EmptyUnificationProof EmptyUnificationProof =
-        SumConstructorSameNoArguments
-    sumConstructorPair a1@EmptyUnificationProof a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair
-        (CombinedUnificationProof a1) (CombinedUnificationProof a2)
-      =
-        SumConstructorSameWithArguments
-            (EqWrap "CombinedUnificationProof" a1 a2)
-    sumConstructorPair a1@(CombinedUnificationProof _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair (ConjunctionIdempotency a1) (ConjunctionIdempotency a2) =
-        SumConstructorSameWithArguments (EqWrap "ConjunctionIdempotency" a1 a2)
-    sumConstructorPair a1@(ConjunctionIdempotency _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair
-        (Proposition_5_24_3 a1 a2 a3) (Proposition_5_24_3 b1 b2 b3)
-      =
-        SumConstructorSameWithArguments
-            (EqWrap "Proposition_5_24_3" (a1, a2, a3) (b1, b2, b3))
-    sumConstructorPair a1@(Proposition_5_24_3 _ _ _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair
-        (AndDistributionAndConstraintLifting a1 a2)
-        (AndDistributionAndConstraintLifting b1 b2) =
-            SumConstructorSameWithArguments
-                (EqWrap "AndDistributionAndConstraintLifting" (a1, a2) (b1, b2))
-    sumConstructorPair a1@(AndDistributionAndConstraintLifting _ _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair
-        (SubstitutionMerge a1 a2 a3) (SubstitutionMerge b1 b2 b3)
-      =
-        SumConstructorSameWithArguments
-            (EqWrap "SubstitutionMerge" (a1, a2, a3) (b1, b2, b3))
-    sumConstructorPair a1@(SubstitutionMerge _ _ _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-instance
-    ( Eq variable, Show variable
-    , EqualWithExplanation variable
-    , EqualWithExplanation (TermLike variable)
-    )
-    => EqualWithExplanation (UnificationProof Object variable)
-  where
-    compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
 instance

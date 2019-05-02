@@ -245,7 +245,7 @@ makeExpandedApplication
     symbol
     children
   = do
-    (merged, _proof) <-
+    merged <-
         mergePredicatesAndSubstitutions
             tools
             substitutionSimplifier
@@ -253,12 +253,9 @@ makeExpandedApplication
             axiomIdToEvaluator
             (map Pattern.predicate children)
             (map Pattern.substitution children)
-    return $ Pattern.withCondition
-        ((:<) valid
-            Application
+    let term =
+            valid :< Application
                 { applicationSymbolOrAlias = symbol
-                , applicationChildren =
-                    map Pattern.term children
+                , applicationChildren = Pattern.term <$> children
                 }
-        )
-        merged
+    return $ Pattern.withCondition term merged

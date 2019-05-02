@@ -709,26 +709,6 @@ instance (PrettyPrint a, PrettyPrint b) => PrettyPrint (a, b) where
                 ])
 
 -- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
--- TODO: when refactoring these, consider removing `writeThreeFieldStruct`
-instance PrettyPrint variable => PrettyPrint (UnificationProof level variable)
-  where
-    prettyPrint _ EmptyUnificationProof = "EmptyUnificationProof"
-    prettyPrint flags (CombinedUnificationProof p) =
-        writeOneFieldStruct flags "CombinedUnificationProof" p
-    prettyPrint flags (ConjunctionIdempotency p) =
-        writeOneFieldStruct flags "ConjunctionIdempotency" p
-    prettyPrint flags (AndDistributionAndConstraintLifting patternHead proofs) =
-        writeTwoFieldStruct
-            flags
-            "AndDistributionAndConstraintLifting"
-            patternHead
-            proofs
-    prettyPrint flags (Proposition_5_24_3 funProof var pat) =
-        writeThreeFieldStruct flags "Proposition_5_24_3" funProof var pat
-    prettyPrint flags (SubstitutionMerge var pat1 pat2) =
-        writeThreeFieldStruct flags "SubstitutionMerge" var pat1 pat2
-
--- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
 instance  PrettyPrint (ClashReason level) where
     prettyPrint flags (DomainValueClash h) =
         betweenParentheses

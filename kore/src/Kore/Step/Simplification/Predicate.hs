@@ -110,7 +110,7 @@ simplify
                     -- variables are not among substitution's variables.
                     assertDistinctVariables
                         (substitution <> simplifiedSubstitution)
-                    (mergedPredicate, _proof) <-
+                    mergedPredicate <-
                         Monad.Trans.lift
                         $ mergePredicatesAndSubstitutions
                             tools

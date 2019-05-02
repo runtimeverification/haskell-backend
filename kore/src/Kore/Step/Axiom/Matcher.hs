@@ -37,6 +37,7 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Merging.OrPattern as OrPattern
 import           Kore.Step.OrPredicate
                  ( OrPredicate )
+import qualified Kore.Step.OrPredicate as OrPredicate
 import           Kore.Step.Predicate as Conditional
                  ( Conditional (..), Predicate )
 import qualified Kore.Step.Predicate as Predicate
@@ -66,8 +67,6 @@ import           Kore.Unification.Error
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.Unifier
-                 ( UnificationProof (..) )
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -108,7 +107,7 @@ matchAsUnification
     -> TermLike variable
     -> unifier
         ( OrPredicate variable
-        , UnificationProof Object variable
+
         )
 matchAsUnification
     tools
@@ -119,9 +118,7 @@ matchAsUnification
     second
   = do
     result <- runMaybeT matchResult
-    case result of
-        Nothing -> Monad.Unify.throwUnificationError UnsupportedPatterns
-        Just r -> return (r, EmptyUnificationProof)
+    maybe (Monad.Unify.throwUnificationError UnsupportedPatterns) return result
   where
     matchResult =
         match
@@ -151,7 +148,7 @@ unificationWithAppMatchOnTop
     -> TermLike variable
     -> unifier
         ( OrPredicate variable
-        , UnificationProof Object variable
+
         )
 unificationWithAppMatchOnTop
     tools
@@ -563,19 +560,15 @@ matchJoin
     let
         crossProduct :: MultiOr [Predicate variable]
         crossProduct = MultiOr.fullCrossProduct matched
-        merge
-            :: [Predicate variable]
-            -> unifier
-                (Predicate variable)
-        merge items = do
-            (result, _proof) <- mergePredicatesAndSubstitutionsExcept
+        merge :: [Predicate variable] -> unifier (Predicate variable)
+        merge items =
+            mergePredicatesAndSubstitutionsExcept
                 tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
                 (map Conditional.predicate items)
                 (map Conditional.substitution items)
-            return result
     MultiOr.filterOr <$> traverse (lift . merge) crossProduct
 
 unifyJoin
@@ -596,12 +589,12 @@ unifyJoin
     -> [(TermLike variable, TermLike variable)]
     -> unifier
         ( OrPredicate variable
-        , UnificationProof Object variable
+
         )
 unifyJoin
     tools substitutionSimplifier simplifier axiomIdToSimplifier patterns
   = do
-    matchedWithProofs <-
+    matched <-
         traverse
             (uncurry $
                 unificationProcedure
@@ -612,26 +605,22 @@ unifyJoin
             )
             patterns
     let
-        matched :: [OrPredicate variable]
-        (matched, _proof) = unzip matchedWithProofs
         crossProduct :: MultiOr [Predicate variable]
         crossProduct = MultiOr.fullCrossProduct matched
         merge
             :: [Predicate variable]
             -> unifier
                 (Predicate variable)
-        merge items = do
-            (result, _proof) <- mergePredicatesAndSubstitutionsExcept
+        merge items =
+            mergePredicatesAndSubstitutionsExcept
                 tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
                 (map Conditional.predicate items)
                 (map Conditional.substitution items)
-            return result
     mergedItems <- mapM merge (MultiOr.extractPatterns crossProduct)
-    return
-        ( MultiOr.make mergedItems , EmptyUnificationProof )
+    return (OrPredicate.fromPredicates mergedItems)
 
 -- Note that we can't match variables to stuff which can have more than one
 -- value, because if we take the axiom

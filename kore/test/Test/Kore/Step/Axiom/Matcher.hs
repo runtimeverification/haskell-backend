@@ -39,8 +39,6 @@ import           Kore.Step.TermLike
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.Unifier
-                 ( UnificationProof )
 import qualified Kore.Unification.Unify as Monad.Unify
 import qualified SMT
 
@@ -902,7 +900,7 @@ unificationWithMatch
     -> TermLike Variable
     -> IO (Maybe (OrPredicate Variable))
 unificationWithMatch tools first second = do
-    eitherResult <- SMT.runSMT SMT.defaultConfig
+    result <- SMT.runSMT SMT.defaultConfig
         $ evalSimplifier emptyLogger
         $ Monad.Unify.runUnifier
         $ unificationWithAppMatchOnTop
@@ -912,27 +910,22 @@ unificationWithMatch tools first second = do
             Map.empty
             first
             second
-    case eitherResult of
-        Left _err -> return Nothing
-        Right (result, _proof) -> return (Just result)
+    return $ either (const Nothing) Just result
 
 match
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
     -> IO (Maybe (OrPredicate Variable))
-match tools first second =
-    matchAsEither >>= return . \case
-        Left _err -> Nothing
-        Right (result, _) -> Just result
+match tools first second = do
+    result <- matchAsEither
+    return $ either (const Nothing) Just result
   where
     matchAsEither
         :: IO
             (Either
                 (UnificationOrSubstitutionError Object Variable)
-                ( OrPredicate Variable
-                , UnificationProof Object Variable
-                )
+                (OrPredicate Variable)
             )
     matchAsEither =
         SMT.runSMT SMT.defaultConfig
@@ -942,9 +935,7 @@ match tools first second =
         :: ExceptT
             (UnificationOrSubstitutionError Object Variable)
             Simplifier
-            ( OrPredicate Variable
-            , UnificationProof Object Variable
-            )
+            (OrPredicate Variable)
     matchResult =
         Monad.Unify.getUnifier $ matchAsUnification
             tools

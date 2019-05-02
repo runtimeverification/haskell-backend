@@ -69,20 +69,18 @@ mergeWithPredicate
         , substitution = pattSubstitution
         }
   = do
-    (   Conditional
-            { predicate = mergedCondition
-            , substitution = mergedSubstitution
-            }
-        , _proof ) <-
-            mergePredicatesAndSubstitutions
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                [pattPredicate, conditionToMerge]
-                [pattSubstitution, substitutionToMerge]
+    merged <-
+        mergePredicatesAndSubstitutions
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            [pattPredicate, conditionToMerge]
+            [pattSubstitution, substitutionToMerge]
+    let Conditional { predicate = mergedCondition } = merged
     evaluatedCondition <-
         Predicate.evaluate substitutionSimplifier simplifier mergedCondition
+    let Conditional { substitution = mergedSubstitution } = merged
     mergeWithEvaluatedCondition
         tools
         substitutionSimplifier
@@ -119,26 +117,14 @@ mergeWithEvaluatedCondition
     Conditional
         { predicate = predPredicate, substitution = predSubstitution }
   = do
-    (   Conditional
-            { predicate = mergedPredicate
-            , substitution = mergedSubstitution
-            }
-        , _proof
-        ) <- mergePredicatesAndSubstitutions
+    merged <- mergePredicatesAndSubstitutions
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
             [predPredicate]
             [pattSubstitution, predSubstitution]
-    return
-        ( Conditional
-            { term = pattTerm
-            , predicate = mergedPredicate
-            , substitution = mergedSubstitution
-            }
-
-        )
+    return $ Pattern.withCondition pattTerm merged
 
 {-| Ands the given predicate/substitution with the given pattern.
 
