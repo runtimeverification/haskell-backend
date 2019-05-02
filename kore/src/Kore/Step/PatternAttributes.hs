@@ -82,7 +82,7 @@ isFunctionalPattern tools =
 isTotalPattern
     :: SmtMetadataTools StepperAttributes
     -> TermLike variable
-    -> Either (TotalError Object) [TotalProof Object variable]
+    -> Either (TotalError Object) [TotalProof variable]
 isTotalPattern tools =
     provePattern (checkTotalHead tools)
 
@@ -260,7 +260,7 @@ checkTotalHead
     -> Recursive.Base (TermLike variable) a
     -> Either
         (TotalError Object)
-        (PartialPatternProof (TotalProof Object variable))
+        (PartialPatternProof (TotalProof variable))
 checkTotalHead tools base@(_ :< pattern') =
     case pattern' of
         ApplicationPattern ap

@@ -77,15 +77,15 @@ deriving instance Show variable => Show (FunctionProof variable)
 -- Hence, a proof that a pattern is total is a list of 'TotalProof'.
 -- TODO: replace this datastructures with proper ones representing
 -- both hypotheses and conclusions in the proof object.
-data TotalProof level variable
+data TotalProof variable
     = TotalProofFunctional (FunctionalProof variable)
     -- ^A functional component is also total.
     | TotalHead SymbolOrAlias
     -- ^Head of a total symbol.
 
-deriving instance Eq variable => Eq (TotalProof level variable)
-deriving instance Ord variable => Ord (TotalProof level variable)
-deriving instance Show variable => Show (TotalProof level variable)
+deriving instance Eq variable => Eq (TotalProof variable)
+deriving instance Ord variable => Ord (TotalProof variable)
+deriving instance Show variable => Show (TotalProof variable)
 
 -- |Used for providing arguments that a pattern is made of constructor-like
 -- elements.
