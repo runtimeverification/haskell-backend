@@ -757,7 +757,7 @@ successTestsForObjectPattern
     -> Pattern Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort Object
-    -> SortVariablesThatMustBeDeclared Object
+    -> SortVariablesThatMustBeDeclared
     -> DeclaredSort
     -> [Verified.Sentence]
     -> PatternRestrict
@@ -801,8 +801,8 @@ successTestsForMetaPattern
     -> Pattern Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort Meta
-    -> SortVariablesThatMustBeDeclared Meta
-    -> SortVariablesThatMustBeDeclared Object
+    -> SortVariablesThatMustBeDeclared
+    -> SortVariablesThatMustBeDeclared
     -> DeclaredSort
     -> VariableOfDeclaredSort
     -> [Verified.Sentence]
@@ -842,7 +842,7 @@ failureTestsForObjectPattern
     -> Pattern Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort Object
-    -> SortVariablesThatMustBeDeclared Object
+    -> SortVariablesThatMustBeDeclared
     -> DeclaredSort
     -> [Verified.Sentence]
     -> PatternRestrict
@@ -898,8 +898,8 @@ failureTestsForMetaPattern
     -> Pattern Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort Meta
-    -> SortVariablesThatMustBeDeclared Meta
-    -> SortVariablesThatMustBeDeclared Object
+    -> SortVariablesThatMustBeDeclared
+    -> SortVariablesThatMustBeDeclared
     -> DeclaredSort
     -> VariableOfDeclaredSort
     -> [Verified.Sentence]
@@ -941,8 +941,8 @@ genericPatternInAllContexts
     :: Pattern Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort Object
-    -> SortVariablesThatMustBeDeclared Object
-    -> SortVariablesThatMustBeDeclared Object
+    -> SortVariablesThatMustBeDeclared
+    -> SortVariablesThatMustBeDeclared
     -> DeclaredSort
     -> VariableOfDeclaredSort
     -> [Verified.Sentence]
@@ -1007,7 +1007,7 @@ objectPatternInAllContexts
     :: Pattern Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
     -> TestedPatternSort Object
-    -> SortVariablesThatMustBeDeclared Object
+    -> SortVariablesThatMustBeDeclared
     -> DeclaredSort
     -> [Verified.Sentence]
     -> PatternRestrict
@@ -1047,8 +1047,8 @@ objectPatternInAllContexts
 patternsInAllContexts
     :: [TestPattern]
     -> NamePrefix
-    -> SortVariablesThatMustBeDeclared Object
-    -> SortVariablesThatMustBeDeclared Object
+    -> SortVariablesThatMustBeDeclared
+    -> SortVariablesThatMustBeDeclared
     -> DeclaredSort
     -> [Verified.Sentence]
     -> PatternRestrict
@@ -1465,8 +1465,8 @@ patternInUnquantifiedObjectPatterns
 testsForUnifiedPatternInTopLevelContext
     :: NamePrefix
     -> DeclaredSort
-    -> SortVariablesThatMustBeDeclared Object
-    -> SortVariablesThatMustBeDeclared Object
+    -> SortVariablesThatMustBeDeclared
+    -> SortVariablesThatMustBeDeclared
     -> [Verified.Sentence]
     -> PatternRestrict
     -> [TestPattern -> TestData]
@@ -1484,7 +1484,7 @@ testsForUnifiedPatternInTopLevelContext
 testsForUnifiedPatternInTopLevelGenericContext
     :: NamePrefix
     -> DeclaredSort
-    -> SortVariablesThatMustBeDeclared Object
+    -> SortVariablesThatMustBeDeclared
     -> [Verified.Sentence]
     -> PatternRestrict
     -> [TestPattern -> TestData]

@@ -325,7 +325,7 @@ successTestsForMetaSort
     :: CommonDescription
     -> SuccessConfiguration
     -> TestedSort Meta
-    -> SortActualThatIsDeclared Meta
+    -> SortActualThatIsDeclared
     -> NamePrefix
     -> TestTree
 successTestsForMetaSort
@@ -355,7 +355,7 @@ failureTestsForMetaSort
     -> ExpectedErrorMessage
     -> ErrorStack
     -> TestedSort Meta
-    -> SortActualThatIsDeclared Meta
+    -> SortActualThatIsDeclared
     -> NamePrefix
     -> TestTree
 failureTestsForMetaSort
@@ -421,7 +421,7 @@ expectFailureWithErrorFlaggedTests FailureConfigurationSkipAll _ _ _ =
 flaggedObjectTestsForSort
     :: TestConfiguration
     -> TestedSort Object
-    -> SortActualThatIsDeclared Object
+    -> SortActualThatIsDeclared
     -> NamePrefix
     -> [FlaggedTestData]
 flaggedObjectTestsForSort
@@ -449,7 +449,7 @@ flaggedObjectTestsForSort
 flaggedMetaTestsForSort
     :: TestConfiguration
     -> TestedSort Meta
-    -> SortActualThatIsDeclared Meta
+    -> SortActualThatIsDeclared
     -> NamePrefix
     -> [FlaggedTestData]
 flaggedMetaTestsForSort
@@ -497,12 +497,12 @@ applyOneTestConfiguration testConfiguration flaggedTestData =
             (fst configurationWithFlags)
 
 newtype TestedSort level = TestedSort Sort
-newtype SortActualThatIsDeclared level =
+newtype SortActualThatIsDeclared =
     SortActualThatIsDeclared SortActual
 
 unfilteredTestExamplesForSort
     :: TestedSort level
-    -> SortActualThatIsDeclared level
+    -> SortActualThatIsDeclared
     -> [SortVariable]
     -> NamePrefix
     -> (Verified.SentenceAlias -> Verified.Sentence)
@@ -696,7 +696,7 @@ unfilteredTestExamplesForSort
 
 unfilteredTestExamplesForObjectSort
     :: TestedSort Object
-    -> SortActualThatIsDeclared Object
+    -> SortActualThatIsDeclared
     -> [SortVariable]
     -> NamePrefix
     -> [FlaggedTestData]
