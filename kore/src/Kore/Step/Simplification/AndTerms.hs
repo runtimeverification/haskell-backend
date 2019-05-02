@@ -385,7 +385,7 @@ andFunctions
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => [TermTransformationOld Object variable unifier]
+    => [TermTransformationOld variable unifier]
 andFunctions =
     map (forAnd . snd) (filter appliesToAnd andEqualsFunctions)
   where
@@ -395,8 +395,8 @@ andFunctions =
     appliesToAnd (BothT, _) = True
 
     forAnd
-        :: TermTransformation Object variable unifier
-        -> TermTransformationOld Object variable unifier
+        :: TermTransformation variable unifier
+        -> TermTransformationOld variable unifier
     forAnd f = f SimplificationType.And
 
 equalsFunctions
@@ -409,7 +409,7 @@ equalsFunctions
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => [TermTransformationOld Object variable unifier]
+    => [TermTransformationOld variable unifier]
 equalsFunctions =
     map (forEquals . snd) (filter appliesToEquals andEqualsFunctions)
   where
@@ -419,8 +419,8 @@ equalsFunctions =
     appliesToEquals (BothT, _) = True
 
     forEquals
-        :: TermTransformation Object variable unifier
-        -> TermTransformationOld Object variable unifier
+        :: TermTransformation variable unifier
+        -> TermTransformationOld variable unifier
     forEquals f = f SimplificationType.Equals
 
 andEqualsFunctions
@@ -434,7 +434,7 @@ andEqualsFunctions
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => [(SimplificationTarget, TermTransformation Object variable unifier)]
+    => [(SimplificationTarget, TermTransformation variable unifier)]
 andEqualsFunctions =
     [ (AndT,    liftET boolAnd)
     , (BothT,   liftET equalAndEquals)
@@ -529,7 +529,7 @@ andEqualsFunctions =
             -> TermLike variable
             -> MaybeT unifier (Pattern variable)
             )
-        -> TermTransformation Object variable unifier
+        -> TermTransformation variable unifier
     addT
         f
         _simplificationType
@@ -583,7 +583,7 @@ All the @TermTransformationOld@s and similar functions defined in this module ca
 'empty' unless given patterns matching their unification case.
 
  -}
-type TermTransformation level variable unifier =
+type TermTransformation variable unifier =
        SimplificationType
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -595,7 +595,7 @@ type TermTransformation level variable unifier =
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 
-type TermTransformationOld level variable unifier =
+type TermTransformationOld variable unifier =
        SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
@@ -616,7 +616,7 @@ maybeTransformTerm
         , MonadUnify unifierM
         , unifier ~ unifierM variable
         )
-    => [TermTransformationOld Object variable unifier]
+    => [TermTransformationOld variable unifier]
     -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
@@ -696,7 +696,7 @@ transformerLiftOld
         -> TermLike variable
         -> Maybe (Pattern variable)
         )
-    -> TermTransformationOld Object variable unifier
+    -> TermTransformationOld variable unifier
 transformerLiftOld
     transformation
     tools
