@@ -756,7 +756,7 @@ successTestsForObjectPattern
     :: String
     -> Pattern Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
-    -> TestedPatternSort Object
+    -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
     -> DeclaredSort
     -> [Verified.Sentence]
@@ -800,7 +800,7 @@ successTestsForMetaPattern
     :: String
     -> Pattern Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
-    -> TestedPatternSort Meta
+    -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
     -> SortVariablesThatMustBeDeclared
     -> DeclaredSort
@@ -841,7 +841,7 @@ failureTestsForObjectPattern
     -> ErrorStack
     -> Pattern Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
-    -> TestedPatternSort Object
+    -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
     -> DeclaredSort
     -> [Verified.Sentence]
@@ -897,7 +897,7 @@ failureTestsForMetaPattern
     -> ErrorStack
     -> Pattern Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
-    -> TestedPatternSort Meta
+    -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
     -> SortVariablesThatMustBeDeclared
     -> DeclaredSort
@@ -940,7 +940,7 @@ failureTestsForMetaPattern
 genericPatternInAllContexts
     :: Pattern Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
-    -> TestedPatternSort Object
+    -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
     -> SortVariablesThatMustBeDeclared
     -> DeclaredSort
@@ -1006,7 +1006,7 @@ genericPatternInAllContexts
 objectPatternInAllContexts
     :: Pattern Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
-    -> TestedPatternSort Object
+    -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
     -> DeclaredSort
     -> [Verified.Sentence]
@@ -1123,8 +1123,8 @@ patternsInAllContexts
 genericPatternInPatterns
     :: Pattern Domain.Builtin Variable (TermLike Variable)
     -> Pattern Domain.Builtin Variable (TermLike Variable)
-    -> OperandSort Object
-    -> Helpers.ResultSort Object
+    -> OperandSort
+    -> Helpers.ResultSort
     -> VariableOfDeclaredSort
     -> SymbolOrAlias
     -> SymbolOrAlias
@@ -1194,7 +1194,7 @@ genericPatternInPatterns
 objectPatternInPatterns
     :: Pattern Domain.Builtin Variable (TermLike Variable)
     -> Pattern Domain.Builtin Variable (TermLike Variable)
-    -> OperandSort Object
+    -> OperandSort
     -> [TestPattern]
 objectPatternInPatterns = patternInUnquantifiedObjectPatterns
 
@@ -1248,8 +1248,8 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
 patternInUnquantifiedGenericPatterns
     :: Pattern Domain.Builtin Variable (TermLike Variable)
     -> Pattern Domain.Builtin Variable (TermLike Variable)
-    -> OperandSort Object
-    -> Helpers.ResultSort Object
+    -> OperandSort
+    -> Helpers.ResultSort
     -> [TestPattern]
 patternInUnquantifiedGenericPatterns
     testedPattern
@@ -1413,7 +1413,7 @@ patternInUnquantifiedGenericPatterns
 patternInUnquantifiedObjectPatterns
     :: Pattern Domain.Builtin Variable (TermLike Variable)
     -> Pattern Domain.Builtin Variable (TermLike Variable)
-    -> OperandSort Object
+    -> OperandSort
     -> [TestPattern]
 patternInUnquantifiedObjectPatterns
     testedPattern

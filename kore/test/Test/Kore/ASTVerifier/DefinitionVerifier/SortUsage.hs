@@ -251,7 +251,7 @@ testsForObjectSort
     -> FailureConfiguration
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> TestedSort Object
+    -> TestedSort
     -> NamePrefix
     -> TestTree
 testsForObjectSort
@@ -324,7 +324,7 @@ addSentenceToTestConfiguration
 successTestsForMetaSort
     :: CommonDescription
     -> SuccessConfiguration
-    -> TestedSort Meta
+    -> TestedSort
     -> SortActualThatIsDeclared
     -> NamePrefix
     -> TestTree
@@ -354,7 +354,7 @@ failureTestsForMetaSort
     -> FailureConfiguration
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> TestedSort Meta
+    -> TestedSort
     -> SortActualThatIsDeclared
     -> NamePrefix
     -> TestTree
@@ -420,7 +420,7 @@ expectFailureWithErrorFlaggedTests FailureConfigurationSkipAll _ _ _ =
 
 flaggedObjectTestsForSort
     :: TestConfiguration
-    -> TestedSort Object
+    -> TestedSort
     -> SortActualThatIsDeclared
     -> NamePrefix
     -> [FlaggedTestData]
@@ -448,7 +448,7 @@ flaggedObjectTestsForSort
 
 flaggedMetaTestsForSort
     :: TestConfiguration
-    -> TestedSort Meta
+    -> TestedSort
     -> SortActualThatIsDeclared
     -> NamePrefix
     -> [FlaggedTestData]
@@ -496,12 +496,12 @@ applyOneTestConfiguration testConfiguration flaggedTestData =
             (`elem` flaggedTestDataFlags flaggedTestData)
             (fst configurationWithFlags)
 
-newtype TestedSort level = TestedSort Sort
+newtype TestedSort = TestedSort Sort
 newtype SortActualThatIsDeclared =
     SortActualThatIsDeclared SortActual
 
 unfilteredTestExamplesForSort
-    :: TestedSort level
+    :: TestedSort
     -> SortActualThatIsDeclared
     -> [SortVariable]
     -> NamePrefix
@@ -695,7 +695,7 @@ unfilteredTestExamplesForSort
     defaultErrorMessage = "Replace this with a real error message."
 
 unfilteredTestExamplesForObjectSort
-    :: TestedSort Object
+    :: TestedSort
     -> SortActualThatIsDeclared
     -> [SortVariable]
     -> NamePrefix

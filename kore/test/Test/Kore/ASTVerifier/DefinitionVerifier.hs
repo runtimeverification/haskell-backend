@@ -144,10 +144,10 @@ newtype SortName = SortName Text
 newtype SortVariableName = SortVariableName Text
 newtype VariableName = VariableName Text
 newtype NamePrefix = NamePrefix Text
-newtype OperandSort level = OperandSort Sort
-newtype ResultSort level = ResultSort Sort
+newtype OperandSort = OperandSort Sort
+newtype ResultSort = ResultSort Sort
 newtype DeclaredSort = DeclaredSort Sort
-newtype TestedPatternSort level = TestedPatternSort Sort
+newtype TestedPatternSort = TestedPatternSort Sort
 newtype SortVariablesThatMustBeDeclared =
     SortVariablesThatMustBeDeclared [SortVariable]
 
@@ -705,8 +705,8 @@ simpleExistsUnifiedPatternWithType = simpleExistsUnifiedPattern
 
 simpleExistsEqualsUnifiedPattern
     :: VariableName
-    -> OperandSort level
-    -> ResultSort level
+    -> OperandSort
+    -> ResultSort
     -> TermLike Variable
 simpleExistsEqualsUnifiedPattern
     (VariableName name)
