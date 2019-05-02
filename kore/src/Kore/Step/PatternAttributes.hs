@@ -45,8 +45,8 @@ import           Kore.Step.TermLike
 
 functionalProofVars
     :: Prism
-         (FunctionalProof Object variableFrom)
-         (FunctionalProof Object variableTo)
+         (FunctionalProof variableFrom)
+         (FunctionalProof variableTo)
          variableFrom
          variableTo
 functionalProofVars = Lens.prism FunctionalVariable isVar
@@ -62,8 +62,8 @@ using the provided mapping.
 -}
 mapFunctionalProofVariables
     :: (variableFrom -> variableTo)
-    -> FunctionalProof Object variableFrom
-    -> FunctionalProof Object variableTo
+    -> FunctionalProof variableFrom
+    -> FunctionalProof variableTo
 mapFunctionalProofVariables mapper = Lens.over functionalProofVars mapper
 
 {-| Checks whether a pattern is functional or not and, if it is, returns a proof
@@ -72,7 +72,7 @@ mapFunctionalProofVariables mapper = Lens.over functionalProofVars mapper
 isFunctionalPattern
     :: SmtMetadataTools StepperAttributes
     -> TermLike variable
-    -> Either (FunctionalError Object) [FunctionalProof Object variable]
+    -> Either (FunctionalError Object) [FunctionalProof variable]
 isFunctionalPattern tools =
     provePattern (checkFunctionalHead tools)
 
@@ -134,7 +134,7 @@ provePattern levelProver =
 isPreconstructedPattern
     :: err
     -> Recursive.Base (TermLike variable) pat
-    -> Either err (PartialPatternProof (FunctionalProof Object variable))
+    -> Either err (PartialPatternProof (FunctionalProof variable))
 isPreconstructedPattern err (_ :< pattern') =
     case pattern' of
         DomainValuePattern domain ->
@@ -150,7 +150,7 @@ checkFunctionalHead
     -> Recursive.Base (TermLike variable) a
     -> Either
         (FunctionalError Object)
-        (PartialPatternProof (FunctionalProof Object variable))
+        (PartialPatternProof (FunctionalProof variable))
 checkFunctionalHead tools base@(_ :< pattern') =
     case pattern' of
         VariablePattern v ->

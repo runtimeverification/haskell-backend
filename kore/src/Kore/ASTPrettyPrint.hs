@@ -696,7 +696,7 @@ instance (PrettyPrint a, PrettyPrint b) => PrettyPrint (a, b) where
                 , prettyPrint MaySkipParentheses y
                 ])
 
-instance PrettyPrint variable => PrettyPrint (FunctionalProof level variable)
+instance PrettyPrint variable => PrettyPrint (FunctionalProof variable)
   where
     prettyPrint flags (FunctionalVariable v) =
         writeOneFieldStruct flags "FunctionalVariable" v

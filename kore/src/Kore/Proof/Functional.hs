@@ -19,8 +19,6 @@ import Data.Hashable
 import GHC.Generics
        ( Generic )
 
-import           Kore.AST.MetaOrObject
-                 ( Object )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Syntax.Application
                  ( SymbolOrAlias )
@@ -33,7 +31,7 @@ import           Kore.Syntax.StringLiteral
 -- Hence, a proof that a pattern is functional is a list of 'FunctionalProof'.
 -- TODO: replace this datastructures with proper ones representing
 -- both hypotheses and conclusions in the proof object.
-data FunctionalProof level variable
+data FunctionalProof variable
     = FunctionalVariable variable
     -- ^Variables are functional as per Corollary 5.19
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
@@ -50,11 +48,11 @@ data FunctionalProof level variable
     -- ^A char literal is a functional constructor without arguments.
   deriving Generic
 
-deriving instance Eq variable => Eq (FunctionalProof level variable)
-deriving instance Ord variable => Ord (FunctionalProof level variable)
-deriving instance Show variable => Show (FunctionalProof level variable)
+deriving instance Eq variable => Eq (FunctionalProof variable)
+deriving instance Ord variable => Ord (FunctionalProof variable)
+deriving instance Show variable => Show (FunctionalProof variable)
 
-instance Hashable variable => Hashable (FunctionalProof level variable)
+instance Hashable variable => Hashable (FunctionalProof variable)
 
 -- |'FunctionProof' is used for providing arguments that a pattern is
 -- function-like.  Currently we only support arguments stating that a
@@ -64,7 +62,7 @@ instance Hashable variable => Hashable (FunctionalProof level variable)
 -- TODO: replace this datastructures with proper ones representing
 -- both hypotheses and conclusions in the proof object.
 data FunctionProof level variable
-    = FunctionProofFunctional (FunctionalProof Object variable)
+    = FunctionProofFunctional (FunctionalProof variable)
     -- ^ A functional component is also function-like.
     | FunctionHead SymbolOrAlias
     -- ^Head of a partial function.
@@ -80,7 +78,7 @@ deriving instance Show variable => Show (FunctionProof level variable)
 -- TODO: replace this datastructures with proper ones representing
 -- both hypotheses and conclusions in the proof object.
 data TotalProof level variable
-    = TotalProofFunctional (FunctionalProof Object variable)
+    = TotalProofFunctional (FunctionalProof variable)
     -- ^A functional component is also total.
     | TotalHead SymbolOrAlias
     -- ^Head of a total symbol.
@@ -96,8 +94,8 @@ data ConstructorLikeProof = ConstructorLikeProof
 
 mapVariables
     :: (variable1 -> variable2)
-    -> FunctionalProof Object variable1
-    -> FunctionalProof Object variable2
+    -> FunctionalProof variable1
+    -> FunctionalProof variable2
 mapVariables mapping =
     \case
         FunctionalVariable variable -> FunctionalVariable (mapping variable)
