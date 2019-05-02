@@ -69,7 +69,6 @@ import qualified Data.Text as Text
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
 import           Kore.Attribute.Symbol

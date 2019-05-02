@@ -5,11 +5,11 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Kore.AST.Valid
-                 ( mkAnd, mkCeil_ )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+import           Kore.Step.TermLike
+                 ( mkAnd, mkCeil_ )
 import           Kore.Step.TermLike
                  ( TermLike )
 import           Kore.Syntax.Variable

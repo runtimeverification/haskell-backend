@@ -54,6 +54,7 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Or as Or
 import           Kore.Step.TermLike
+import           Kore.Syntax.Application
 import           Kore.Syntax.Definition
                  ( SentenceSymbol (..) )
 import           Kore.Unparser
@@ -144,20 +145,20 @@ evalKEq true _ _ _ _ (valid :< app) =
         _ -> Builtin.wrongArity (if true then eqKey else neqKey)
   where
     false = not true
-    patternSort = Attribute.patternSort valid
+    sort = Attribute.patternSort valid
     Application { applicationChildren } = app
     evalEq t1 t2 = do
         let expr = Or.simplifyEvaluated
                 (OrPattern.fromPattern
                     (Conditional
-                        (Bool.asInternal patternSort true)
+                        (Bool.asInternal sort true)
                         (Predicate.makeEqualsPredicate t1 t2)
                         mempty
                     )
                 )
                 (OrPattern.fromPattern
                     (Conditional
-                        (Bool.asInternal patternSort false)
+                        (Bool.asInternal sort false)
                         ( Predicate.makeNotPredicate $
                             Predicate.makeEqualsPredicate t1 t2
                         )

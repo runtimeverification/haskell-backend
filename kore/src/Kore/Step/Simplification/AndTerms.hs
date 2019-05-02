@@ -35,7 +35,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Prelude hiding
                  ( concat )
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( SortInjection (..), StepperAttributes )
 import qualified Kore.Attribute.Symbol as Attribute
@@ -996,7 +995,7 @@ equalInjectiveHeadsAndEquals
         return merged
             { term =
                 mkApp
-                    (getSort firstPattern)
+                    (termLikeSort firstPattern)
                     firstHead
                     (Pattern.term <$> children)
             }

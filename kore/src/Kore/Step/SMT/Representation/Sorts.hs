@@ -18,9 +18,6 @@ import           Data.Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
-import           Kore.AST.Valid
-                 ( pattern App_, pattern Bottom_, pattern Exists_, pattern Or_,
-                 pattern Var_ )
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom )
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
@@ -48,11 +45,6 @@ import qualified Kore.Sort as SortActual
                  ( SortActual (..) )
 import qualified Kore.Step.SMT.AST as AST
 import           Kore.Step.TermLike
-                 ( TermLike )
-import           Kore.Syntax.Application
-                 ( SymbolOrAlias (SymbolOrAlias) )
-import           Kore.Syntax.Application as SymbolOrAlias
-                 ( SymbolOrAlias (..) )
 import           Kore.Syntax.Id
                  ( Id )
 import           Kore.Syntax.Sentence
@@ -61,9 +53,6 @@ import qualified Kore.Syntax.Sentence as SentenceSort
                  ( SentenceSort (..) )
 import qualified Kore.Syntax.Sentence as SentenceAxiom
                  ( SentenceAxiom (..) )
-import           Kore.Syntax.Variable
-                 ( Variable (Variable) )
-import qualified Kore.Syntax.Variable as Variable
 import           Kore.Unparser
                  ( unparseToString )
 import qualified Kore.Verified as Verified

@@ -41,6 +41,7 @@ import           Kore.Step.PatternAttributesError
                  ( ConstructorLikeError (..), FunctionError (..),
                  FunctionalError (..), TotalError (..) )
 import           Kore.Step.TermLike
+import           Kore.Syntax
 
 functionalProofVars
     :: Prism

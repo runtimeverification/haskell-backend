@@ -24,7 +24,7 @@ module Kore.Step.Axiom.Identifier
     , extract
     ) where
 
-import Kore.AST.Valid
+import Kore.Step.TermLike
        ( pattern App_, pattern Ceil_ )
 import Kore.Syntax.Application
        ( SymbolOrAlias (..) )

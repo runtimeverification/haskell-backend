@@ -3,7 +3,6 @@ module Test.Kore.Step.Simplifier
     , mockPredicateSimplifier
     ) where
 
-import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( wrapPredicate )
 import           Kore.Step.OrPattern
@@ -15,9 +14,7 @@ import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
                  termLikeSimplifier )
-import           Kore.Step.TermLike
-                 ( TermLike )
-import qualified Kore.Step.TermLike as TermLike
+import           Kore.Step.TermLike as TermLike
 import           Kore.Syntax.Variable
                  ( SortedVariable (..) )
 import           Kore.Variables.Fresh

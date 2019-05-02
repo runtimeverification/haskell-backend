@@ -19,7 +19,6 @@ import           GHC.Integer.GMP.Internals
 import           GHC.Integer.Logarithms
                  ( integerLog2# )
 
-import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Int as Int
 import           Kore.IndexedModule.MetadataTools

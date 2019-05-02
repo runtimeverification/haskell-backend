@@ -21,6 +21,7 @@ import Kore.Attribute.Symbol
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools (..), SmtMetadataTools )
 import Kore.Step.TermLike
+import Kore.Syntax.Application
 
 recursivelyCheckHeadProperty
     :: forall variable

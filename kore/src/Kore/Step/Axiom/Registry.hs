@@ -40,12 +40,12 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( extract )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
-import           Kore.Step.Pattern
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule),
                  QualifiedAxiomPattern (AllPathClaimPattern, FunctionAxiomPattern, ImplicationAxiomPattern, OnePathClaimPattern, RewriteAxiomPattern),
                  RulePattern (RulePattern) )
 import qualified Kore.Step.Rule as Rule
+import           Kore.Step.TermLike
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 

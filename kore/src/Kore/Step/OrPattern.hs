@@ -19,7 +19,6 @@ module Kore.Step.OrPattern
 
 import qualified Data.Foldable as Foldable
 
-import           Kore.AST.Valid
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Pattern

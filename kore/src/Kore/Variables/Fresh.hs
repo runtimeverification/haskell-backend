@@ -56,11 +56,11 @@ will be mapped to a fresh name in the result. Every fresh name in the result
 will also be unique among the fresh names.
 
 To use @refreshVariables@ with 'Kore.Step.Pattern.substitute', map the result
-with 'Kore.AST.Valid.mkVar':
+with 'Kore.Step.TermLike.mkVar':
 
 @
 'Kore.Step.TermLike.substitute'
-    ('Kore.AST.Valid.mkVar' \<$\> refreshVariables avoid rename)
+    ('Kore.Step.TermLike.mkVar' \<$\> refreshVariables avoid rename)
     :: 'Kore.Step.TermLike TermLike' Variable
     -> 'Kore.Step.TermLike TermLike' Variable
 @

@@ -11,7 +11,6 @@ import           Data.List
                  ( sort )
 import qualified Data.Map as Map
 
-import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Axiom.Concrete
 import           Kore.Attribute.Symbol

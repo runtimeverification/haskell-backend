@@ -19,8 +19,6 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
 
-import           Kore.AST.Valid
-                 ( pattern Top_, mkCeil_, mkTop_ )
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Attribute.Symbol as StepperAttributes
@@ -57,6 +55,8 @@ import qualified Kore.Step.Simplification.AndPredicates as And
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.TermLike
+import           Kore.Syntax.Application
+import           Kore.Syntax.Ceil
 import qualified Kore.Syntax.PatternF as Syntax
 import           Kore.TopBottom
 import           Kore.Unparser

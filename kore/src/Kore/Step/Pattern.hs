@@ -24,7 +24,6 @@ module Kore.Step.Pattern
     , Conditional (..)
     , Conditional.withCondition
     , Predicate
-    , module Kore.Step.TermLike
     ) where
 
 import           Data.Set
@@ -33,7 +32,6 @@ import qualified Data.Set as Set
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.Valid
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
@@ -42,9 +40,7 @@ import           Kore.Step.Conditional
 import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Predicate
                  ( Predicate )
-import           Kore.Step.TermLike
-                 ( CofreeF (..), Sort, SortedVariable, TermLike, Variable )
-import qualified Kore.Step.TermLike as TermLike
+import           Kore.Step.TermLike as TermLike
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -143,14 +139,13 @@ toStepPattern
         -> TermLike variable
     simpleAnd pattern' predicate'
       | isTop predicate'    = pattern'
-      | isBottom predicate' = mkBottom patternSort
+      | isBottom predicate' = mkBottom sort
       | isTop pattern'      = predicateTermLike
       | isBottom pattern'   = pattern'
       | otherwise           = mkAnd pattern' predicateTermLike
       where
-        predicateTermLike =
-            Syntax.Predicate.fromPredicate patternSort predicate'
-        patternSort = getSort pattern'
+        predicateTermLike = Syntax.Predicate.fromPredicate sort predicate'
+        sort = termLikeSort pattern'
 
 toMLPattern
     ::  forall variable.

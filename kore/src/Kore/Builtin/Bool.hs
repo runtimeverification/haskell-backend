@@ -52,14 +52,11 @@ import qualified Data.Text as Text
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Parsec
 
-import           Kore.AST.Valid
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.TermLike
-                 ( TermLike )
-import qualified Kore.Syntax.Pattern as AST
 
 {- | Builtin name of the @Bool@ sort.
  -}
@@ -181,7 +178,7 @@ asTermLike builtin =
     (mkDomainValue . Domain.BuiltinExternal)
         Domain.External
             { domainValueSort = builtinBoolSort
-            , domainValueChild = AST.eraseAnnotations $ mkStringLiteral literal
+            , domainValueChild = eraseAnnotations $ mkStringLiteral literal
             }
   where
     Domain.InternalBool { builtinBoolSort } = builtin

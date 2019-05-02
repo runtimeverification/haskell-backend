@@ -29,8 +29,8 @@ import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
+import           Kore.Step.TermLike
 import           Kore.Syntax.Or
-                 ( Or(..) )
 import           Kore.Unparser
 \end{code}
 

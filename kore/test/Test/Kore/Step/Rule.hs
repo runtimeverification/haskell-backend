@@ -17,7 +17,6 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Valid as Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
@@ -210,16 +209,17 @@ axiomPatternsIntegrationTests =
                             \        )\n\
                             \    )\n\
                             \[]"
-                    let valid = Attribute.Pattern { patternSort, freeVariables }
-                          where
-                            patternSort = sortTCell
-                            freeVariables =
-                                Set.fromList
-                                    [ Variable "VarI1" mempty sortAInt
-                                    , Variable "VarI2" mempty sortAInt
-                                    , Variable "VarDotVar1" mempty sortK
-                                    , Variable "VarDotVar0" mempty sortStateCell
-                                    ]
+                    let valid =
+                            Attribute.Pattern
+                                { patternSort = sortTCell
+                                , freeVariables =
+                                    Set.fromList
+                                        [ varS "VarI1" sortAInt
+                                        , varS "VarI2" sortAInt
+                                        , varS "VarDotVar1" sortK
+                                        , varS "VarDotVar0" sortStateCell
+                                        ]
+                                }
                     Rule.fromSentence ((<$) valid <$> parsed)
                 )
             )

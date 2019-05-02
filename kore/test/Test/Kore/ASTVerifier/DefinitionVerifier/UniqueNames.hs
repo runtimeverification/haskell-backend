@@ -78,7 +78,7 @@ test_uniqueNames =
     -}
         (simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
-                (unifiedVariablePattern (VariableName "#a") charMetaSort)
+                (variableTermLike (VariableName "#a") charMetaSort)
                 [namedSortVariable (SortVariableName "#a")]
             ]
         )

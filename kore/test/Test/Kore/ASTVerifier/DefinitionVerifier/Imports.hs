@@ -8,11 +8,11 @@ import Test.Tasty
 import GHC.Stack
        ( HasCallStack )
 
-import           Kore.AST.Valid
 import           Kore.Error
 import           Kore.IndexedModule.Error
                  ( noSort )
-import           Kore.Syntax
+import           Kore.Step.TermLike
+import           Kore.Syntax.Application
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 

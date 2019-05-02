@@ -60,7 +60,6 @@ import           GHC.Generics
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.Valid
 import           Kore.Error
                  ( Error, koreFail )
 import           Kore.Sort
@@ -146,7 +145,7 @@ fromPredicate
     => Sort  -- ^ Sort of resulting pattern
     -> Predicate variable
     -> TermLike variable
-fromPredicate sort (GenericPredicate p) = forceSort sort p
+fromPredicate sort (GenericPredicate p) = TermLike.forceSort sort p
 
 {-|'PredicateFalse' is a pattern for matching 'bottom' predicates.
 -}
@@ -216,7 +215,7 @@ makeAndPredicate first PredicateTrue = first
 makeAndPredicate p@(GenericPredicate first) (GenericPredicate second)
   | first == second = p
   | otherwise =
-    GenericPredicate (mkAnd first second)
+    GenericPredicate (TermLike.mkAnd first second)
 
 {-| 'makeOrPredicate' combines two Predicates with an 'or', doing
 some simplification.
@@ -237,7 +236,7 @@ makeOrPredicate first PredicateFalse = first
 makeOrPredicate p@(GenericPredicate first) (GenericPredicate second)
   | first == second = p
   | otherwise =
-    GenericPredicate (mkOr first second)
+    GenericPredicate (TermLike.mkOr first second)
 
 {-| 'makeImpliesPredicate' combines two Predicates into an
 implication, doing some simplification.
@@ -256,7 +255,7 @@ makeImpliesPredicate _ t@PredicateTrue = t
 makeImpliesPredicate PredicateTrue second = second
 makeImpliesPredicate first PredicateFalse = makeNotPredicate first
 makeImpliesPredicate (GenericPredicate first) (GenericPredicate second) =
-    GenericPredicate $ mkImplies first second
+    GenericPredicate $ TermLike.mkImplies first second
 
 {-| 'makeIffPredicate' combines two evaluated with an 'iff', doing
 some simplification.
@@ -275,7 +274,7 @@ makeIffPredicate PredicateTrue second = second
 makeIffPredicate first PredicateFalse = makeNotPredicate first
 makeIffPredicate first PredicateTrue = first
 makeIffPredicate (GenericPredicate first) (GenericPredicate second) =
-    GenericPredicate $ mkIff first second
+    GenericPredicate $ TermLike.mkIff first second
 
 {-| 'makeNotPredicate' negates an evaluated Predicate, doing some
 simplification.
@@ -291,7 +290,7 @@ makeNotPredicate
 makeNotPredicate PredicateFalse = makeTruePredicate
 makeNotPredicate PredicateTrue  = makeFalsePredicate
 makeNotPredicate (GenericPredicate predicate) =
-    GenericPredicate $ mkNot predicate
+    GenericPredicate $ TermLike.mkNot predicate
 
 {-| 'makeEqualsPredicate' combines two patterns with equals, producing a
 predicate.
@@ -306,7 +305,7 @@ makeEqualsPredicate
     -> TermLike variable
     -> Predicate variable
 makeEqualsPredicate first second =
-    GenericPredicate $ mkEquals_ first second
+    GenericPredicate $ TermLike.mkEquals_ first second
 
 {-| 'makeInPredicate' combines two patterns with 'in', producing a
 predicate.
@@ -321,7 +320,7 @@ makeInPredicate
     -> TermLike variable
     -> Predicate variable
 makeInPredicate first second =
-    GenericPredicate $ mkIn_ first second
+    GenericPredicate $ TermLike.mkIn_ first second
 
 {-| 'makeCeilPredicate' takes the 'ceil' of a pattern, producing a
 predicate.
@@ -334,7 +333,7 @@ makeCeilPredicate
     => TermLike variable
     -> Predicate variable
 makeCeilPredicate patt =
-    GenericPredicate $ mkCeil_ patt
+    GenericPredicate $ TermLike.mkCeil_ patt
 
 {-| 'makeFloorPredicate' takes the 'floor' of a pattern, producing a
 predicate.
@@ -347,7 +346,7 @@ makeFloorPredicate
     => TermLike variable
     -> Predicate variable
 makeFloorPredicate patt =
-    GenericPredicate $ mkFloor_ patt
+    GenericPredicate $ TermLike.mkFloor_ patt
 
 {-| Existential quantification for the given variable in the given predicate.
 -}
@@ -363,7 +362,7 @@ makeExistsPredicate
 makeExistsPredicate _ p@PredicateFalse = p
 makeExistsPredicate _ t@PredicateTrue = t
 makeExistsPredicate v (GenericPredicate p) =
-    GenericPredicate $ mkExists v p
+    GenericPredicate $ TermLike.mkExists v p
 
 {- | Existentially-quantify the given variables over the predicate.
  -}
@@ -394,17 +393,17 @@ makeForallPredicate
 makeForallPredicate _ p@PredicateFalse = p
 makeForallPredicate _ t@PredicateTrue = t
 makeForallPredicate v (GenericPredicate p) =
-    GenericPredicate $ mkForall v p
+    GenericPredicate $ TermLike.mkForall v p
 
 {-| 'makeTruePredicate' produces a predicate wrapping a 'top'.
 -}
 makeTruePredicate :: Predicate variable
-makeTruePredicate = GenericPredicate mkTop_
+makeTruePredicate = GenericPredicate TermLike.mkTop_
 
 {-| 'makeFalsePredicate' produces a predicate wrapping a 'bottom'.
 -}
 makeFalsePredicate :: Predicate variable
-makeFalsePredicate = GenericPredicate mkBottom_
+makeFalsePredicate = GenericPredicate TermLike.mkBottom_
 
 makePredicate
     :: forall variable e.
@@ -514,7 +513,7 @@ singleSubstitutionToPredicate
     => (variable, TermLike variable)
     -> Predicate variable
 singleSubstitutionToPredicate (var, patt) =
-    makeEqualsPredicate (mkVar var) patt
+    makeEqualsPredicate (TermLike.mkVar var) patt
 
 {- | @fromSubstitution@ constructs a 'Predicate' equivalent to 'Substitution'.
 

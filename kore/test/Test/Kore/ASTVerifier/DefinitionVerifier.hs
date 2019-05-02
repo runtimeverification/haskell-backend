@@ -9,7 +9,6 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Valid
 import           Kore.ASTPrettyPrint
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.ASTVerifier.Error
@@ -20,6 +19,7 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Step.TermLike hiding
                  ( freeVariables )
+import           Kore.Syntax
 import           Kore.Syntax.Definition
 import           Kore.Unparser
                  ( unparseToString )
@@ -671,15 +671,10 @@ unifiedVariable name sort =
     variable name sort
 
 variablePattern :: VariableName -> Sort -> PatternF domain Variable p
-variablePattern name sort =
-    VariableF (variable name sort)
+variablePattern name sort = VariableF (variable name sort)
 
-unifiedVariablePattern :: VariableName -> Sort -> TermLike Variable
-unifiedVariablePattern name patternSort =
-    asPurePattern (valid :< variablePattern name patternSort)
-  where
-    freeVariables = Set.singleton (variable name patternSort)
-    valid = Attribute.Pattern { patternSort, freeVariables }
+variableTermLike :: VariableName -> Sort -> TermLike Variable
+variableTermLike name sort = mkVar (variable name sort)
 
 simpleExistsPattern
     :: Variable

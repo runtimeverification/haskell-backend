@@ -19,7 +19,6 @@ import qualified Data.Map as Map
 import           Numeric.Natural
                  ( Natural )
 
-import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
@@ -44,6 +43,7 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
+import           Kore.Step.TermLike
 import           Kore.Step.TermLike
                  ( TermLike )
 import qualified SMT

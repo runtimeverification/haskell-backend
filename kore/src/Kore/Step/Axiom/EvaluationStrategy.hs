@@ -23,8 +23,6 @@ import           Data.Maybe
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.Valid
-                 ( pattern App_ )
 import           Kore.Attribute.Symbol
                  ( Hook (..), StepperAttributes )
 import qualified Kore.Attribute.Symbol as Attribute
@@ -55,10 +53,8 @@ import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.TermLike
-                 ( TermLike, asConcreteStepPattern )
 import           Kore.Syntax.Pattern
                  ( asConcretePurePattern )
-import           Kore.Syntax.Variable
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse, unparse )

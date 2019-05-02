@@ -34,7 +34,6 @@ import           Data.Map.Strict
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Hook
 import           Kore.Attribute.Smtlib
 import qualified Kore.Attribute.Sort as Attribute
@@ -46,6 +45,7 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.SMT.Resolvers
                  ( translateSymbol )
 import           Kore.Step.TermLike
+import           Kore.Syntax
 import           Kore.Unparser
 import           SMT
                  ( SExpr (..), SMT )
@@ -223,7 +223,7 @@ translatePredicate translateUninterpreted predicate =
             applicationChildren
         return $ shortenSExpr (applySExpr sexpr children)
       where
-        applicationChildrenSorts = getSort <$> applicationChildren
+        applicationChildrenSorts = termLikeSort <$> applicationChildren
 
     translatePattern
         ::  ( Given (SmtMetadataTools StepperAttributes)

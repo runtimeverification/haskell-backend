@@ -16,7 +16,6 @@ import           Data.Limit
 import qualified Data.Limit as Limit
 import           Debug.Trace
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -44,6 +43,7 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Strategy
                  ( Strategy, pickFinal, runStrategy )
+import           Kore.Step.TermLike
 import           Kore.Syntax.Application
                  ( SymbolOrAlias (..) )
 import           Kore.Syntax.Id

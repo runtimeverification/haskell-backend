@@ -43,7 +43,6 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import qualified Kore.AST.Valid as Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
@@ -643,13 +642,13 @@ checkSubstitutionCoverage tools initial unified final
     -- A constructor-like pattern consists of constructor applications and
     -- variables only.
     isConstructorLikePattern p
-      | Valid.App_ symbolOrAlias children <- p =
+      | App_ symbolOrAlias children <- p =
         isConstructor symbolOrAlias && all isConstructorLikePattern children
-      | Valid.Var_ _ <- p = True
+      | Var_ _ <- p = True
       | otherwise = False
     isConstructor = Reflection.give tools Attribute.Symbol.isConstructor_
     isSortInjectionPattern p
-      | Valid.App_ symbolOrAlias _ <- p = isSortInjection symbolOrAlias
+      | App_ symbolOrAlias _ <- p = isSortInjection symbolOrAlias
       | otherwise = False
     isSortInjection = Reflection.give tools Attribute.Symbol.isSortInjection_
     isValidSymbolic (x, t) =

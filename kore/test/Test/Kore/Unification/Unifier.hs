@@ -18,8 +18,6 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Valid hiding
-                 ( V )
 import           Kore.Attribute.Constructor
 import           Kore.Attribute.Function
 import           Kore.Attribute.Functional
@@ -40,7 +38,8 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Step.TermLike
+import           Kore.Step.TermLike hiding
+                 ( V )
 import           Kore.Syntax.Definition
 import qualified Kore.Syntax.Pattern as AST
 import           Kore.Unification.Error
@@ -64,7 +63,7 @@ applyInj
 applyInj sortTo pat =
     applySymbol symbolInj [sortFrom, sortTo] [pat]
   where
-    sortFrom = getSort pat
+    sortFrom = termLikeSort pat
 
 s1, s2, s3, s4 :: Sort
 s1 = simpleSort (SortName "s1")
@@ -225,7 +224,11 @@ unificationSubstitution
 unificationSubstitution = map trans
   where
     trans (v, p) =
-        ( Variable { variableSort = getSort p, variableName = testId v, variableCounter = mempty }
+        ( Variable
+            { variableSort = termLikeSort p
+            , variableName = testId v
+            , variableCounter = mempty
+            }
         , p
         )
 

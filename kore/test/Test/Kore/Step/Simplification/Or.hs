@@ -11,7 +11,6 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
                  makeOrPredicate, makeTruePredicate, substitutionToPredicate )
@@ -24,6 +23,7 @@ import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Or
                  ( simplify, simplifyEvaluated )
 import           Kore.Step.TermLike
+import           Kore.Syntax.Or
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -305,7 +305,7 @@ prettyOr
 prettyOr orFirst orSecond =
     Unparser.unparse Or { orSort, orFirst, orSecond }
   where
-    orSort = getSort (Pattern.term orFirst)
+    orSort = termLikeSort (Pattern.term orFirst)
 
 stateIntention :: [Pretty.Doc ann] -> String
 stateIntention actualAndSoOn =

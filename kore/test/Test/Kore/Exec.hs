@@ -23,7 +23,6 @@ import           Data.Text
 import           System.Exit
                  ( ExitCode (..) )
 
-import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  verifyAndIndexDefinition )

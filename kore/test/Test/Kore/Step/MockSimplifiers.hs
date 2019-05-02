@@ -2,7 +2,6 @@ module Test.Kore.Step.MockSimplifiers where
 
 import qualified Data.Map as Map
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -18,6 +17,7 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), termLikeSimplifier )
 import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
+import           Kore.Step.TermLike
 
 substitutionSimplifier
     :: SmtMetadataTools StepperAttributes

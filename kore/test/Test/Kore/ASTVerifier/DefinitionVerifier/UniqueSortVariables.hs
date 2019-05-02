@@ -5,9 +5,8 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.UniqueSortVariables
 import Test.Tasty
        ( TestTree )
 
-import           Kore.AST.Valid
 import           Kore.Error
-import           Kore.Syntax
+import           Kore.Step.TermLike
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 

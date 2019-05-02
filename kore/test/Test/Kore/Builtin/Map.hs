@@ -17,7 +17,6 @@ import qualified Data.Set as Set
 import           Prelude hiding
                  ( concatMap )
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
 import           Kore.Attribute.Symbol

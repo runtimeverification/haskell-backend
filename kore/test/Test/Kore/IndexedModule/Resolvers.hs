@@ -10,7 +10,6 @@ import           Data.Map
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-import           Kore.AST.Valid
 import           Kore.ASTHelpers
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Null as Attribute
@@ -23,6 +22,7 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
 import           Kore.Step.TermLike hiding
                  ( freeVariables )
+import           Kore.Syntax
 import           Kore.Syntax.Definition
 import           Kore.Syntax.PatternF
                  ( groundHead )
@@ -226,10 +226,10 @@ test_resolvers =
                     , sentenceAliasRightPattern =
                         let
                             valid =
-                                Attribute.Pattern { patternSort, freeVariables }
-                              where
-                                patternSort = objectS1
-                                freeVariables = Set.empty
+                                Attribute.Pattern
+                                    { patternSort = objectS1
+                                    , freeVariables = Set.empty
+                                    }
                             top' = TopF Top { topSort = objectS1 }
                         in
                             asPurePattern (valid :< top')

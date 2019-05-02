@@ -11,11 +11,11 @@ module Kore.Step.Simplification.Rewrites
     ( simplify
     ) where
 
-import           Kore.AST.Valid
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
+import           Kore.Step.TermLike
 import           Kore.Syntax.Rewrites
 import           Kore.Unparser
 

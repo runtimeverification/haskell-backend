@@ -15,8 +15,6 @@ module Kore.Step.Simplification.Not
 
 import qualified Data.Foldable as Foldable
 
-import           Kore.AST.Valid hiding
-                 ( mkAnd )
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
@@ -33,6 +31,8 @@ import qualified Kore.Step.Simplification.And as And
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
                  gather )
+import           Kore.Step.TermLike hiding
+                 ( mkAnd )
 import           Kore.Syntax.Not
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -144,7 +144,7 @@ makeEvaluate Conditional { term, predicate, substitution } =
             , substitution = mempty
             }
         , Conditional
-            { term = mkTop (getSort term)
+            { term = mkTop (termLikeSort term)
             , predicate =
                 makeNotPredicate
                 $ makeAndPredicate predicate
@@ -165,6 +165,6 @@ makeTermNot
 -- not ceil = floor not
 -- not forall = exists not
 makeTermNot term
-  | isBottom term = mkTop    (getSort term)
-  | isTop term    = mkBottom (getSort term)
+  | isBottom term = mkTop    (termLikeSort term)
+  | isTop term    = mkBottom (termLikeSort term)
   | otherwise = mkNot term

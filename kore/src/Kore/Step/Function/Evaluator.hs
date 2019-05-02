@@ -22,7 +22,6 @@ import           Data.Reflection
                  ( give )
 import qualified Data.Text as Text
 
-import           Kore.AST.Valid
 import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Attribute.Symbol
                  ( Hook (..), StepperAttributes, isSortInjection_ )
@@ -54,6 +53,7 @@ import           Kore.Step.Simplification.Data
                  simplifyTerm )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.TermLike
+import           Kore.Syntax
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 

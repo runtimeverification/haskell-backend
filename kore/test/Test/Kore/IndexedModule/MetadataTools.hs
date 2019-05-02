@@ -11,7 +11,6 @@ import           Data.Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
-import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Constructor
@@ -29,6 +28,7 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
 import           Kore.Step.TermLike
 import           Kore.Syntax.Definition
+import           Kore.Syntax.Top
 import qualified Kore.Verified as Verified
 
 import Test.Kore

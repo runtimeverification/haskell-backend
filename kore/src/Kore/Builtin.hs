@@ -65,6 +65,7 @@ import           Kore.Step.Axiom.Identifier
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.TermLike
+import           Kore.Syntax.DomainValue
 
 {- | The default type of builtin domain values.
  -}

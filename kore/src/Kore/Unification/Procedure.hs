@@ -11,7 +11,6 @@ module Kore.Unification.Procedure
     ( unificationProcedure
     ) where
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -106,5 +105,5 @@ unificationProcedure
                     }
                 orCeil
   where
-      p1Sort = getSort p1
-      p2Sort = getSort p2
+      p1Sort = termLikeSort p1
+      p2Sort = termLikeSort p2

@@ -8,7 +8,6 @@ import           Test.Terse
 
 import qualified Data.Text as Text
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Bool

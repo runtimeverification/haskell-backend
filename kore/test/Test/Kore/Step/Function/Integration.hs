@@ -9,7 +9,6 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 
 import           Data.Sup
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
@@ -44,8 +43,6 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
                  ( simplify )
 import           Kore.Step.TermLike
-import           Kore.Syntax.Variable
-                 ( SortedVariable (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
 import qualified SMT

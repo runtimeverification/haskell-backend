@@ -12,7 +12,6 @@ import           Data.Sequence
                  ( Seq )
 import qualified Data.Sequence as Seq
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
 import           Kore.Attribute.Symbol
@@ -21,8 +20,7 @@ import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.List as List
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
-import           Kore.Step.Pattern
-import qualified Kore.Step.Pattern as Pattern
+import           Kore.Step.Pattern as Pattern
 import           Kore.Step.TermLike
 
 import           Test.Kore

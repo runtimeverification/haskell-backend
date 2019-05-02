@@ -35,7 +35,6 @@ import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), TermLikeSimplifier )
 import           Kore.Step.TermLike
-                 ( TermLike )
 import           Kore.Syntax.And
 import qualified Kore.Syntax.PatternF as Syntax
 import           Kore.Unification.Substitution

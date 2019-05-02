@@ -11,7 +11,6 @@ import qualified Data.Set as Set
 
 import           Data.Text
                  ( Text )
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )

@@ -7,7 +7,6 @@ import Test.Tasty.HUnit
 
 import qualified Data.Map as Map
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -26,6 +25,7 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier, gather )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -413,7 +413,7 @@ makeAnd first second =
 
 findSort :: [Pattern Variable] -> Sort
 findSort [] = testSort
-findSort ( Conditional {term} : _ ) = getSort term
+findSort ( Conditional {term} : _ ) = termLikeSort term
 
 evaluate :: And Sort (OrPattern Variable) -> IO (OrPattern Variable)
 evaluate patt =

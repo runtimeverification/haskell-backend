@@ -11,7 +11,6 @@ import qualified Data.Default as Default
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )

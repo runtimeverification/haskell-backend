@@ -22,7 +22,6 @@ import System.IO
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
-import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
 import           Kore.Error
@@ -47,6 +46,7 @@ import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.SMT.Lemma
+import           Kore.Step.TermLike
 import           Kore.Step.TermLike
 import           Kore.Syntax.Definition
 import           Kore.Unparser

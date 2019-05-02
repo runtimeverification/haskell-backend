@@ -28,7 +28,6 @@ import           Data.Text
                  ( Text )
 
 import           Data.Sup
-import           Kore.AST.Valid
 import           Kore.ASTHelpers
                  ( ApplicationSorts (ApplicationSorts) )
 import qualified Kore.ASTHelpers as ApplicationSorts
@@ -51,8 +50,7 @@ import           Kore.Sort
 import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT
                  ( resolve )
-import           Kore.Step.TermLike hiding
-                 ( topSort )
+import           Kore.Step.TermLike
 import qualified SMT.AST as SMT
 import qualified SMT.SimpleSMT as SMT
 

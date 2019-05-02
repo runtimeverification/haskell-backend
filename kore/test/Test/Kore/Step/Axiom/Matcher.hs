@@ -13,7 +13,6 @@ import           Control.Monad.Except
                  ( ExceptT, runExceptT )
 import qualified Data.Map as Map
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Domain.Builtin as Domain

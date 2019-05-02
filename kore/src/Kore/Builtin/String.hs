@@ -64,7 +64,6 @@ import           Numeric
                  ( readOct )
 import qualified Text.Megaparsec as Parsec
 
-import           Kore.AST.Valid
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int

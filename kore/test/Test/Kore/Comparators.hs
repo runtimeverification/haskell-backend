@@ -68,6 +68,7 @@ import qualified Kore.Step.SMT.AST as SMT.SymbolReference
 import qualified Kore.Step.SMT.AST as SMT.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
 import           Kore.Step.TermLike
+import           Kore.Syntax
 import           Kore.Syntax.Definition
 import qualified Kore.Syntax.SetVariable as SetVariable
 import           Kore.Unification.Error
