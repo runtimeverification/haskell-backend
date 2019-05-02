@@ -822,7 +822,7 @@ instance
     ( Eq variable
     , Show variable
     )
-    => EqualWithExplanation (FunctionProof Object variable)
+    => EqualWithExplanation (FunctionProof variable)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show

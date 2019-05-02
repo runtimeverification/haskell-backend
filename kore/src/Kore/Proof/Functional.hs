@@ -61,15 +61,15 @@ instance Hashable variable => Hashable (FunctionalProof variable)
 -- Hence, a proof that a pattern is function-like is a list of 'FunctionProof'.
 -- TODO: replace this datastructures with proper ones representing
 -- both hypotheses and conclusions in the proof object.
-data FunctionProof level variable
+data FunctionProof variable
     = FunctionProofFunctional (FunctionalProof variable)
     -- ^ A functional component is also function-like.
     | FunctionHead SymbolOrAlias
     -- ^Head of a partial function.
 
-deriving instance Eq variable => Eq (FunctionProof level variable)
-deriving instance Ord variable => Ord (FunctionProof level variable)
-deriving instance Show variable => Show (FunctionProof level variable)
+deriving instance Eq variable => Eq (FunctionProof variable)
+deriving instance Ord variable => Ord (FunctionProof variable)
+deriving instance Show variable => Show (FunctionProof variable)
 
 -- |'TotalProof' is used for providing arguments that a pattern is
 -- total/not bottom.  Currently we only support arguments stating that a

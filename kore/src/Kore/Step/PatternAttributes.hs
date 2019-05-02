@@ -231,7 +231,7 @@ checkConstructorModuloLikeHead tools base@(_ :< pattern') =
 isFunctionPattern
     :: SmtMetadataTools StepperAttributes
     -> TermLike variable
-    -> Either (FunctionError Object) [FunctionProof Object variable]
+    -> Either (FunctionError Object) [FunctionProof variable]
 isFunctionPattern tools =
     provePattern (checkFunctionHead tools)
 
@@ -240,7 +240,7 @@ checkFunctionHead
     -> Recursive.Base (TermLike variable) a
     -> Either
         (FunctionError Object)
-        (PartialPatternProof (FunctionProof Object variable))
+        (PartialPatternProof (FunctionProof variable))
 checkFunctionHead tools base@(_ :< pattern') =
     case pattern' of
         ApplicationPattern ap
