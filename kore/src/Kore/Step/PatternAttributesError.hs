@@ -21,7 +21,7 @@ import Kore.Syntax.Application
 {-| An error explaining why a pattern is not composed of function heads and
 things like StringLiteral, DomainValue and variables.
 -}
-data FunctionError level
+data FunctionError
     = NonFunctionHead SymbolOrAlias
     -- ^ The pattern was the application of a non-function head to something
     | NonFunctionPattern

@@ -1134,7 +1134,7 @@ instance
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (PatternAttributesError.FunctionError Object)
+instance EqualWithExplanation (PatternAttributesError.FunctionError)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
