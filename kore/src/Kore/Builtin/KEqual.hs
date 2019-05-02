@@ -33,7 +33,7 @@ import           Data.String
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Valid
+import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Builtin.Bool as Bool
@@ -135,7 +135,7 @@ evalKEq
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid variable)
+        (Attribute.Pattern variable)
         (TermLike variable)
     -> Simplifier (AttemptedAxiom variable)
 evalKEq true _ _ _ _ (valid :< app) =
@@ -144,7 +144,7 @@ evalKEq true _ _ _ _ (valid :< app) =
         _ -> Builtin.wrongArity (if true then eqKey else neqKey)
   where
     false = not true
-    Valid { patternSort } = valid
+    patternSort = Attribute.patternSort valid
     Application { applicationChildren } = app
     evalEq t1 t2 = do
         let expr = Or.simplifyEvaluated
@@ -181,7 +181,7 @@ evalKIte
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid variable)
+        (Attribute.Pattern variable)
         (TermLike variable)
     -> Simplifier (AttemptedAxiom variable)
 evalKIte _ _ _ _ (_ :< app) =

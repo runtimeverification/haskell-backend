@@ -34,9 +34,9 @@ import           Data.Set
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.Annotation.Valid
-                 ( Valid )
-import qualified Kore.Annotation.Valid as Valid
+import qualified Kore.Attribute.Pattern as Attribute
+                 ( Pattern )
+import qualified Kore.Attribute.Pattern as Attribute.Pattern
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Substitute as Substitute
 import           Kore.Syntax hiding
@@ -46,10 +46,11 @@ import qualified Kore.Syntax.Variable as Variable
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
-type TermLike variable = PurePattern Domain.Builtin variable (Valid variable)
+type TermLike variable =
+    PurePattern Domain.Builtin variable (Attribute.Pattern variable)
 
 freeVariables :: TermLike variable -> Set variable
-freeVariables termLike = Valid.freeVariables (extract termLike)
+freeVariables termLike = Attribute.Pattern.freeVariables (extract termLike)
 
 hasFreeVariable
     :: Ord variable
@@ -104,7 +105,8 @@ mapVariables mapping =
     Recursive.unfold (mapVariablesWorker . Recursive.project)
   where
     mapVariablesWorker (valid :< pat) =
-        Valid.mapVariables mapping valid :< PatternF.mapVariables mapping pat
+        Attribute.Pattern.mapVariables mapping valid
+        :< PatternF.mapVariables mapping pat
 
 {- | Use the provided traversal to replace all variables in a 'TermLike'.
 
@@ -133,7 +135,7 @@ traverseVariables traversing =
       where
         projected =
             (:<)
-                <$> Valid.traverseVariables traversing valid
+                <$> Attribute.Pattern.traverseVariables traversing valid
                 <*> (PatternF.traverseVariables traversing =<< sequence pat)
 
 {- | Construct a 'ConcreteStepPattern' from a 'TermLike'.
@@ -186,8 +188,9 @@ substitute
     -> TermLike variable
 substitute = Substitute.substitute (Lens.lens getFreeVariables setFreeVariables)
   where
-    getFreeVariables = Valid.freeVariables
-    setFreeVariables valid freeVars = valid { Valid.freeVariables = freeVars }
+    getFreeVariables = Attribute.Pattern.freeVariables
+    setFreeVariables valid freeVars =
+        valid { Attribute.Pattern.freeVariables = freeVars }
 
 {- | Reset the 'variableCounter' of all 'Variables'.
 
@@ -263,8 +266,8 @@ externalizeFreshVariables termLike =
                 (TermLike Variable)
             )
     externalizeFreshVariablesWorker (valid :< patt) = do
-        valid' <- Valid.traverseVariables lookupVariable valid
-        let freeVariables' = Valid.freeVariables valid'
+        valid' <- Attribute.Pattern.traverseVariables lookupVariable valid
+        let freeVariables' = Attribute.Pattern.freeVariables valid'
         patt' <-
             case patt of
                 ExistsF exists -> do

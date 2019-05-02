@@ -27,8 +27,8 @@ import           Data.Void
 import           Numeric.Natural
 
 import           Data.Sup
-import           Kore.AST.Valid
 import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Builtin.Error as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Predicate.Predicate
@@ -309,15 +309,12 @@ instance PrettyPrint a => PrettyPrint (Const a b) where
 instance PrettyPrint Attribute.Null where
     prettyPrint _ Attribute.Null = "Null"
 
-instance PrettyPrint variable => PrettyPrint (Valid variable) where
-    prettyPrint _ valid@(Valid _ _) =
+instance PrettyPrint variable => PrettyPrint (Attribute.Pattern variable) where
+    prettyPrint _ valid@(Attribute.Pattern _ _) =
         writeStructure
-            "Valid"
-            [ writeFieldOneLine "patternSort" patternSort valid
-            , writeFieldNewLine
-                "freeVariables"
-                Kore.AST.Valid.freeVariables
-                valid
+            "Pattern"
+            [ writeFieldOneLine "patternSort" Attribute.patternSort valid
+            , writeFieldNewLine "freeVariables" Attribute.freeVariables valid
             ]
 
 instance PrettyPrint child => PrettyPrint (Domain.Builtin child) where

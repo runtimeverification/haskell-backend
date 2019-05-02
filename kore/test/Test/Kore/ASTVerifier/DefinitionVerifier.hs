@@ -14,6 +14,7 @@ import           Kore.ASTPrettyPrint
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
@@ -602,7 +603,11 @@ objectAliasSentenceWithArguments a b c =
         (asPurePattern $ valid :< top')
   where
     top' = TopF Top { topSort = b }
-    valid = Valid { patternSort = b, freeVariables = Set.empty }
+    valid =
+        Attribute.Pattern
+            { Attribute.patternSort = b
+            , Attribute.freeVariables = Set.empty
+            }
 
 aliasSentenceWithArguments
     :: AliasName
@@ -674,7 +679,7 @@ unifiedVariablePattern name patternSort =
     asPurePattern (valid :< variablePattern name patternSort)
   where
     freeVariables = Set.singleton (variable name patternSort)
-    valid = Valid { patternSort, freeVariables }
+    valid = Attribute.Pattern { patternSort, freeVariables }
 
 simpleExistsPattern
     :: Variable
@@ -692,7 +697,7 @@ simpleExistsUnifiedPattern
 simpleExistsUnifiedPattern name sort =
     asPurePattern $ valid :< simpleExistsPattern (variable name sort) sort
   where
-    valid = Valid { patternSort = sort, freeVariables = Set.empty }
+    valid = Attribute.Pattern { patternSort = sort, freeVariables = Set.empty }
 
 simpleExistsObjectUnifiedPattern
     :: VariableName -> Sort -> TermLike Variable

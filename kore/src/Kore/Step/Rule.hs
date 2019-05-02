@@ -43,11 +43,10 @@ import           Data.Text.Prettyprint.Doc
                  ( Pretty )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.Valid hiding
-                 ( freeVariables )
-import qualified Kore.AST.Valid as Valid
+import           Kore.AST.Valid as Valid
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
+import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Predicate.Predicate
@@ -405,7 +404,7 @@ mkRewriteAxiom lhs rhs requires =
             (mkAnd (mkTop patternSort) rhs)
         )
   where
-    Valid { patternSort } = extract lhs
+    Attribute.Pattern { Attribute.patternSort = patternSort } = extract lhs
 
 {- | Construct a 'VerifiedKoreSentence' corresponding to 'EqualityRule'.
 
@@ -468,8 +467,8 @@ freeVariables
     -> Set variable
 freeVariables RulePattern { left, right, requires } =
     Set.unions
-        [ (Valid.freeVariables . extract) left
-        , (Valid.freeVariables . extract) right
+        [ (Attribute.freeVariables . extract) left
+        , (Attribute.freeVariables . extract) right
         , Predicate.freeVariables requires
         ]
 

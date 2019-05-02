@@ -46,10 +46,10 @@ simplify
 One way to preserve the required sort annotations is to make
 'simplifyEvaluatedRewrites' take an argument of type
 
-> CofreeF (Or Sort) (Valid variable) (OrPattern variable)
+> CofreeF (Or Sort) (Attribute.Pattern variable) (OrPattern variable)
 
 instead of two 'OrPattern' arguments. The type of
-'makeEvaluateRewrites' may be changed analogously. The 'Valid' annotation will
+'makeEvaluateRewrites' may be changed analogously. The 'Attribute.Pattern' annotation will
 eventually cache information besides the pattern sort, which will make it even
 more useful to carry around.
 

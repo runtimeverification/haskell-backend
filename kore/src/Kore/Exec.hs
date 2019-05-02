@@ -34,6 +34,7 @@ import           Data.Limit
                  ( Limit (..) )
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Builtin as Builtin
@@ -138,7 +139,7 @@ exec indexedModule strategy purePattern = do
         finalConfig = pickLongest executionGraph
     return (forceSort patternSort $ Pattern.toMLPattern finalConfig)
   where
-    Valid { patternSort } = extract purePattern
+    patternSort = Attribute.patternSort $ extract purePattern
 
 -- | Project the value of the exit cell, if it is present.
 execGetExitCode
@@ -201,7 +202,7 @@ search verifiedModule strategy purePattern searchPattern searchConfig = do
                 (Predicate.toPredicate <$> solutions)
     return (forceSort patternSort $ unwrapPredicate orPredicate)
   where
-    Valid { patternSort } = extract purePattern
+    patternSort = Attribute.patternSort $ extract purePattern
 
 
 -- | Proving a spec given as a module containing rules to be proven
@@ -365,7 +366,7 @@ execute verifiedModule strategy inputPattern
                 [] -> Pattern.bottomOf patternSort
                 (config : _) -> config
           where
-            Valid { patternSort } = extract inputPattern
+            patternSort = Attribute.patternSort $ extract inputPattern
         runStrategy' pat =
             runStrategy
                 (transitionRule

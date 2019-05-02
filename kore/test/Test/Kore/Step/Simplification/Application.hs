@@ -12,8 +12,7 @@ import           Data.Ord
 import qualified Data.Set as Set
 
 import           Data.Sup
-import qualified Kore.Annotation.Valid as Valid
-import           Kore.AST.Valid
+import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -334,7 +333,7 @@ makeApplication
     -> [[Pattern variable]]
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid variable)
+        (Attribute.Pattern variable)
         (OrPattern variable)
 makeApplication patternSort symbol patterns =
     (:<)
@@ -346,7 +345,7 @@ makeApplication patternSort symbol patterns =
   where
     termFreeVariables = TermLike.freeVariables . Pattern.term
     valid =
-        Valid
+        Attribute.Pattern
             { patternSort
             , freeVariables =
                 Set.unions (Set.unions . map termFreeVariables <$> patterns)
@@ -360,7 +359,7 @@ evaluate
     -- ^ Map from axiom IDs to axiom evaluators
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid Variable)
+        (Attribute.Pattern Variable)
         (OrPattern Variable)
     -> IO (OrPattern Variable)
 evaluate tools simplifier axiomIdToEvaluator application =

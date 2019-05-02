@@ -31,7 +31,8 @@ import           Data.Reflection
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.Annotation.Valid
+import qualified Kore.Attribute.Pattern as Attribute
+                 ( Pattern (..) )
 import           Kore.Attribute.Symbol
                  ( StepperAttributes, isConstructor_, isSortInjection_ )
 import qualified Kore.Domain.Builtin as Domain
@@ -59,10 +60,10 @@ Deriving.deriveOrd1 ''ValueF
 Deriving.deriveShow1 ''ValueF
 
 newtype Value =
-    Value { getValue :: Cofree ValueF (Valid Concrete) }
+    Value { getValue :: Cofree ValueF (Attribute.Pattern Concrete) }
     deriving (Eq, Generic, Ord, Show)
 
-type instance Base Value = CofreeF ValueF (Valid Concrete)
+type instance Base Value = CofreeF ValueF (Attribute.Pattern Concrete)
 
 instance Recursive Value where
     project (Value embedded) =

@@ -51,10 +51,10 @@ simplify Floor { floorChild = child } =
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Floor Sort) (Valid variable) (OrPattern variable)
+> CofreeF (Floor Sort) (Attribute.Pattern variable) (OrPattern variable)
 
 instead of an 'OrPattern' argument. The type of 'makeEvaluateFloor'
-may be changed analogously. The 'Valid' annotation will eventually cache
+may be changed analogously. The 'Attribute.Pattern' annotation will eventually cache
 information besides the pattern sort, which will make it even more useful to
 carry around.
 

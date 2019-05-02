@@ -15,6 +15,7 @@ import           Kore.AST.AstWithLocation
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Hook as Attribute.Hook
+import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.IndexedModule.Error
@@ -56,13 +57,11 @@ testPatternUnifiedPattern
     asPurePattern (valid :< testPatternPattern)
   where
     valid =
-        Valid
+        Attribute.Pattern
             { patternSort = testPatternSort
             , freeVariables =
-                Foldable.foldl'
-                    Set.union
-                    Set.empty
-                    (freeVariables . extract <$> testPatternPattern)
+                Foldable.foldl' Set.union Set.empty
+                    (Attribute.freeVariables . extract <$> testPatternPattern)
             }
 
 test_patternVerifier :: [TestTree]
@@ -103,7 +102,7 @@ test_patternVerifier =
             , existsVariable = anotherVariable
             , existsChild =
                 let
-                    valid = Valid { patternSort, freeVariables }
+                    valid = Attribute.Pattern { patternSort, freeVariables }
                       where
                         patternSort = objectSort
                         freeVariables = Set.empty
@@ -165,7 +164,7 @@ test_patternVerifier =
             , existsChild =
                 asPurePattern
                     ((:<)
-                        Valid
+                        Attribute.Pattern
                             { patternSort = objectSortVariableSort
                             , freeVariables = Set.empty
                             }
@@ -1182,13 +1181,11 @@ genericPatternInPatterns
         ]
   where
     valid =
-        Valid
+        Attribute.Pattern
             { patternSort = testedSort
             , freeVariables =
-                Foldable.foldl'
-                    Set.union
-                    Set.empty
-                    (freeVariables . extract <$> testedPattern)
+                Foldable.foldl' Set.union Set.empty
+                    (Attribute.freeVariables . extract <$> testedPattern)
             }
 
 objectPatternInPatterns
@@ -1235,13 +1232,11 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
     ]
   where
     valid =
-        Valid
+        Attribute.Pattern
             { patternSort = testedSort
             , freeVariables =
-                Foldable.foldl'
-                    Set.union
-                    Set.empty
-                    (freeVariables . extract <$> testedPattern)
+                Foldable.foldl' Set.union Set.empty
+                    (Attribute.freeVariables . extract <$> testedPattern)
             }
     testedKorePattern = asPurePattern (valid :< testedPattern)
 
@@ -1398,15 +1393,12 @@ patternInUnquantifiedGenericPatterns
     ]
   where
     valid =
-        Valid
+        Attribute.Pattern
             { patternSort = testedSort
             , freeVariables =
-                Foldable.foldl'
-                    Set.union
-                    Set.empty
-                    (unifiedFreeVariables . extract <$> testedPattern)
+                Foldable.foldl' Set.union Set.empty
+                    (Attribute.freeVariables . extract <$> testedPattern)
             }
-    unifiedFreeVariables = freeVariables
     anotherUnifiedPattern = asPurePattern (valid :< anotherPattern)
     testedUnifiedPattern = asPurePattern (valid :< testedPattern)
 
@@ -1450,15 +1442,12 @@ patternInUnquantifiedObjectPatterns
     ]
   where
     valid =
-        Valid
+        Attribute.Pattern
             { patternSort = testedSort
             , freeVariables =
-                Foldable.foldl'
-                    Set.union
-                    Set.empty
-                    (unifiedFreeVariables . extract <$> testedPattern)
+                Foldable.foldl' Set.union Set.empty
+                    (Attribute.freeVariables . extract <$> testedPattern)
             }
-    unifiedFreeVariables = freeVariables
     anotherUnifiedPattern = asPurePattern (valid :< anotherPattern)
     testedUnifiedPattern = asPurePattern (valid :< testedPattern)
 

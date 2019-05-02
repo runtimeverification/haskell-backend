@@ -10,11 +10,11 @@ import           Data.Map
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-import           Kore.Annotation.Valid
 import           Kore.AST.Valid
 import           Kore.ASTHelpers
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
@@ -225,7 +225,8 @@ test_resolvers =
                             }
                     , sentenceAliasRightPattern =
                         let
-                            valid = Valid { patternSort, freeVariables }
+                            valid =
+                                Attribute.Pattern { patternSort, freeVariables }
                               where
                                 patternSort = objectS1
                                 freeVariables = Set.empty
@@ -262,7 +263,7 @@ test_resolvers =
                         }
                 , sentenceAliasRightPattern =
                     let
-                        valid = Valid { patternSort, freeVariables }
+                        valid = Attribute.Pattern { patternSort, freeVariables }
                           where
                             patternSort = stringMetaSort
                             freeVariables = Set.empty

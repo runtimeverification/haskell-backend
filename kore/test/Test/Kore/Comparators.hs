@@ -23,10 +23,10 @@ import           Numeric.Natural
                  ( Natural )
 
 import qualified Kore.AllPath as AllPath
-import           Kore.Annotation.Valid
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Location as Attribute
 import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Source as Attribute
 import           Kore.Domain.Builtin
 import           Kore.Error
@@ -1201,23 +1201,23 @@ instance EqualWithExplanation Attribute.Null where
 
 instance
     ( EqualWithExplanation variable, Show variable
-    ) => StructEqualWithExplanation (Valid variable)
+    ) => StructEqualWithExplanation (Attribute.Pattern variable)
   where
-    structFieldsWithNames expected@(Valid _ _) actual@(Valid _ _) =
+    structFieldsWithNames expected@(Attribute.Pattern _ _) actual@(Attribute.Pattern _ _) =
         [ EqWrap
             "patternSort = "
-            (patternSort expected)
-            (patternSort actual)
+            (Attribute.patternSort expected)
+            (Attribute.patternSort actual)
         , EqWrap
             "freeVariables = "
-            (Kore.Annotation.Valid.freeVariables expected)
-            (Kore.Annotation.Valid.freeVariables actual)
+            (Attribute.freeVariables expected)
+            (Attribute.freeVariables actual)
         ]
-    structConstructorName _ = "Valid"
+    structConstructorName _ = "Pattern"
 
 instance
     ( EqualWithExplanation variable, Show variable
-    ) => EqualWithExplanation (Valid variable)
+    ) => EqualWithExplanation (Attribute.Pattern variable)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show

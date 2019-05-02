@@ -23,6 +23,7 @@ import           Data.Reflection
 import qualified Data.Text as Text
 
 import           Kore.AST.Valid
+import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Attribute.Symbol
                  ( Hook (..), StepperAttributes, isSortInjection_ )
 import qualified Kore.Attribute.Symbol as Attribute
@@ -78,7 +79,7 @@ evaluateApplication
     -- ^ Aggregated children predicate and substitution.
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid variable)
+        (Attribute.Pattern variable)
         (TermLike variable)
     -- ^ The pattern to be evaluated
     -> Simplifier (OrPattern variable)

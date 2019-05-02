@@ -20,6 +20,7 @@ import qualified Data.Text as Text
 import           Kore.AST.Valid as Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
@@ -209,7 +210,7 @@ axiomPatternsIntegrationTests =
                             \        )\n\
                             \    )\n\
                             \[]"
-                    let valid = Valid { patternSort, freeVariables }
+                    let valid = Attribute.Pattern { patternSort, freeVariables }
                           where
                             patternSort = sortTCell
                             freeVariables =
@@ -308,7 +309,7 @@ applyInj
 applyInj sortTo child =
     applySymbol symbolInj [sortFrom, sortTo] [child]
   where
-    Valid { patternSort = sortFrom } = extract child
+    Attribute.Pattern { patternSort = sortFrom } = extract child
 
 symbolSentenceInj :: Sentence (TermLike Variable)
 symbolSentenceInj = asSentence symbolInj

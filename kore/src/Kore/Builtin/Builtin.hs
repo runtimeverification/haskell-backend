@@ -96,6 +96,7 @@ import           Kore.ASTVerifier.Error
 import           Kore.Attribute.Hook
                  ( Hook (..) )
 import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
 import qualified Kore.Attribute.Sort.Element as Attribute.Sort
@@ -804,14 +805,14 @@ functionEvaluator impl =
         -> BuiltinAndAxiomSimplifierMap
         -> CofreeF
             (Application SymbolOrAlias)
-            (Valid variable)
+            (Attribute.Pattern variable)
             (TermLike variable)
         -> Simplifier (AttemptedAxiom variable)
     evaluator tools _ simplifier _axiomIdToSimplifier (valid :< app) =
         impl tools simplifier resultSort applicationChildren
       where
         Application { applicationChildren } = app
-        Valid { patternSort = resultSort } = valid
+        Attribute.Pattern { Attribute.patternSort = resultSort } = valid
 
 {- | Run a parser on a verified domain value.
 

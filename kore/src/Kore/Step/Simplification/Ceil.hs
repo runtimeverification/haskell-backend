@@ -57,8 +57,6 @@ import qualified Kore.Step.Simplification.AndPredicates as And
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.TermLike
-import           Kore.Syntax.Application
-import           Kore.Syntax.Ceil
 import qualified Kore.Syntax.PatternF as Syntax
 import           Kore.TopBottom
 import           Kore.Unparser
@@ -106,10 +104,10 @@ for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Ceil Sort) (Valid variable) (OrPattern variable)
+> CofreeF (Ceil Sort) (Attribute.Pattern variable) (OrPattern variable)
 
 instead of an 'OrPattern' argument. The type of 'makeEvaluate' may
-be changed analogously. The 'Valid' annotation will eventually cache information
+be changed analogously. The 'Attribute.Pattern' annotation will eventually cache information
 besides the pattern sort, which will make it even more useful to carry around.
 
 -}

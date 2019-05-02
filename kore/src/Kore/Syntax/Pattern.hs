@@ -48,9 +48,9 @@ import           Data.Void
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.Annotation.Valid
-                 ( Valid (..) )
 import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Pattern as Attribute
+                 ( Pattern )
 import           Kore.Syntax.Bottom
 import           Kore.Syntax.PatternF
                  ( PatternF (..) )
@@ -305,10 +305,12 @@ eraseAnnotations = (<$) Attribute.Null
 type CommonPurePattern domain = PurePattern domain Variable Attribute.Null
 
 -- | A concrete pure pattern (containing no variables) at level @level@.
-type ConcretePurePattern domain = PurePattern domain Concrete (Valid Concrete)
+type ConcretePurePattern domain =
+    PurePattern domain Concrete (Attribute.Pattern Concrete)
 
 -- | A pure pattern which has been parsed and verified.
-type VerifiedPurePattern domain = PurePattern domain Variable (Valid Variable)
+type VerifiedPurePattern domain =
+    PurePattern domain Variable (Attribute.Pattern Variable)
 
 {- | Use the provided traversal to replace all variables in a 'PurePattern'.
 

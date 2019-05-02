@@ -26,7 +26,7 @@ import           Data.Set
 import qualified Data.Set as Set
 
 import           Data.Graph.TopologicalSort
-import           Kore.AST.Valid
+import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes, isNonSimplifiable_ )
 import           Kore.IndexedModule.MetadataTools
@@ -187,7 +187,7 @@ getDependencies interesting var (Recursive.project -> valid :< patternHead) =
         VariableF v | v == var -> Set.empty
         _ -> Set.intersection interesting freeVars
   where
-    Valid { freeVariables = freeVars } = valid
+    Attribute.Pattern { Attribute.freeVariables = freeVars } = valid
 
 {- | Calculate the dependencies of a substitution that have only
      non-simplifiable symbols above.

@@ -59,7 +59,6 @@ import           GHC.Generics
 
 import Control.Lens.TH.Rules
        ( makeLenses )
-import Kore.Annotation.Valid
 import Kore.Domain.Class
 import Kore.Domain.External
 import Kore.Syntax
@@ -67,7 +66,7 @@ import Kore.Unparser
 
 -- * Helpers
 
-type Key = PurePattern Builtin Concrete (Valid Concrete)
+type Key = ConcretePurePattern Builtin
 
 {- | Unparse a builtin collection type, given its symbols and children.
 

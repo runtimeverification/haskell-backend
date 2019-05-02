@@ -30,8 +30,7 @@ import qualified Data.Map.Strict as Map
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Valid
-                 ( Valid )
+import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -217,12 +216,9 @@ applicationAxiomSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> CofreeF
             (Application SymbolOrAlias)
-            (Valid variable)
+            (Attribute.Pattern variable)
             (TermLike variable)
-        -> Simplifier
-            ( AttemptedAxiom variable
-
-            )
+        -> Simplifier (AttemptedAxiom variable)
         )
     -> BuiltinAndAxiomSimplifier
 applicationAxiomSimplifier applicationSimplifier =
