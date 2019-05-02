@@ -80,7 +80,7 @@ mockMetadataTools =
 
 evalUnifier
     :: BranchT (Unifier Variable) a
-    -> IO (Either (UnificationOrSubstitutionError Object Variable) [a])
+    -> IO (Either (UnificationOrSubstitutionError Variable) [a])
 evalUnifier =
     SMT.runSMT SMT.defaultConfig
     . evalSimplifier emptyLogger
@@ -92,7 +92,7 @@ applyInitialConditions
     -> Predicate Variable
     -> IO
         (Either
-            (UnificationOrSubstitutionError Object Variable)
+            (UnificationOrSubstitutionError Variable)
             [OrPredicate Variable]
         )
 applyInitialConditions initial unification =
@@ -173,7 +173,7 @@ unifyRule
     -> RulePattern Variable
     -> IO
         (Either
-            (UnificationOrSubstitutionError Object Variable)
+            (UnificationOrSubstitutionError Variable)
             [Conditional Variable (RulePattern Variable)]
         )
 unifyRule initial rule =
@@ -258,7 +258,7 @@ applyRewriteRule_
     -- ^ Rewrite rule
     -> IO
         (Either
-            (UnificationOrSubstitutionError Object Variable)
+            (UnificationOrSubstitutionError Variable)
             [OrPattern Variable]
         )
 applyRewriteRule_ initial rule = do
@@ -688,7 +688,7 @@ applyRewriteRules
     -- ^ Rewrite rule
     -> IO
         (Either
-            (UnificationOrSubstitutionError Object Variable)
+            (UnificationOrSubstitutionError Variable)
             (Step.Results Variable))
 applyRewriteRules initial rules =
     SMT.runSMT SMT.defaultConfig
@@ -1063,7 +1063,7 @@ sequenceRewriteRules
     -- ^ Rewrite rule
     -> IO
         (Either
-             (UnificationOrSubstitutionError Object Variable)
+             (UnificationOrSubstitutionError Variable)
              (Results Variable))
 sequenceRewriteRules initial rules =
     SMT.runSMT SMT.defaultConfig
@@ -1186,7 +1186,7 @@ sequenceMatchingRules
     -- ^ Rewrite rule
     -> IO
         (Either
-            (UnificationOrSubstitutionError Object Variable)
+            (UnificationOrSubstitutionError Variable)
             (Step.Results Variable))
 sequenceMatchingRules initial rules =
     SMT.runSMT SMT.defaultConfig

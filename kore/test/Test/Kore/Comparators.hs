@@ -798,7 +798,7 @@ instance EqualWithExplanation (ClashReason Object)
     printWithExplanation = show
 
 instance (Show variable, EqualWithExplanation variable)
-    => SumEqualWithExplanation (SubstitutionError Object variable)
+    => SumEqualWithExplanation (SubstitutionError variable)
   where
     sumConstructorPair
         (NonCtorCircularVariableDependency a1)
@@ -809,7 +809,7 @@ instance (Show variable, EqualWithExplanation variable)
 
 
 instance (Show variable, EqualWithExplanation variable)
-    => EqualWithExplanation (SubstitutionError Object variable)
+    => EqualWithExplanation (SubstitutionError variable)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
@@ -1152,7 +1152,7 @@ instance EqualWithExplanation (PatternAttributesError.FunctionalError Object)
 
 instance
     (EqualWithExplanation variable, Show variable)
-    => SumEqualWithExplanation (UnificationOrSubstitutionError Object variable)
+    => SumEqualWithExplanation (UnificationOrSubstitutionError variable)
   where
     sumConstructorPair (UnificationError a1) (UnificationError a2) =
         SumConstructorSameWithArguments (EqWrap "UnificationError" a1 a2)
@@ -1168,7 +1168,7 @@ instance
 
 instance
     (EqualWithExplanation variable, Show variable)
-    => EqualWithExplanation (UnificationOrSubstitutionError Object variable)
+    => EqualWithExplanation (UnificationOrSubstitutionError variable)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show

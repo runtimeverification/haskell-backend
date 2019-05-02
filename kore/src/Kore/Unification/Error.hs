@@ -29,14 +29,14 @@ import Kore.Syntax.Application
 import Kore.Unparser
 
 -- | Hack sum-type to wrap unification and substitution errors
-data UnificationOrSubstitutionError level variable
+data UnificationOrSubstitutionError variable
     = UnificationError UnificationError
-    | SubstitutionError (SubstitutionError level variable)
+    | SubstitutionError (SubstitutionError variable)
     deriving (Eq, Show)
 
 instance
     Unparse variable =>
-    Pretty (UnificationOrSubstitutionError level variable)
+    Pretty (UnificationOrSubstitutionError variable)
   where
     pretty (UnificationError  err) = Pretty.pretty err
     pretty (SubstitutionError err) = Pretty.pretty err
@@ -67,14 +67,14 @@ data ClashReason level
 {-| 'SubstitutionError' specifies the various error cases related to
 substitutions.
 -}
-newtype SubstitutionError level variable
+newtype SubstitutionError variable
     = NonCtorCircularVariableDependency [variable]
     -- ^the circularity path may pass through non-constructors: maybe solvable.
     deriving (Eq, Show)
 
 instance
     Unparse variable =>
-    Pretty (SubstitutionError level variable)
+    Pretty (SubstitutionError variable)
   where
     pretty (NonCtorCircularVariableDependency vars) =
         Pretty.vsep
@@ -87,7 +87,7 @@ instance
 -}
 substitutionErrorVariables
     :: Ord variable
-    => SubstitutionError level variable
+    => SubstitutionError variable
     -> Set.Set variable
 substitutionErrorVariables (NonCtorCircularVariableDependency variables) =
     Set.fromList variables
@@ -97,29 +97,29 @@ substitutionErrorVariables (NonCtorCircularVariableDependency variables) =
 -}
 mapSubstitutionErrorVariables
     :: (variableFrom -> variableTo)
-    -> SubstitutionError level variableFrom
-    -> SubstitutionError level variableTo
+    -> SubstitutionError variableFrom
+    -> SubstitutionError variableTo
 mapSubstitutionErrorVariables mapper
     (NonCtorCircularVariableDependency variables) =
         NonCtorCircularVariableDependency (map mapper variables)
 
 -- Trivially promote substitution errors to sum-type errors
 substitutionToUnifyOrSubError
-    :: SubstitutionError level variable
-    -> UnificationOrSubstitutionError level variable
+    :: SubstitutionError variable
+    -> UnificationOrSubstitutionError variable
 substitutionToUnifyOrSubError = SubstitutionError
 
 -- Trivially promote unification errors to sum-type errors
 unificationToUnifyOrSubError
     :: UnificationError
-    -> UnificationOrSubstitutionError level variable
+    -> UnificationOrSubstitutionError variable
 unificationToUnifyOrSubError = UnificationError
 
 -- | Map variable type of an 'UnificationOrSubstitutionError'.
 mapUnificationOrSubstitutionErrorVariables
     :: (variableFrom -> variableTo)
-    -> UnificationOrSubstitutionError level variableFrom
-    -> UnificationOrSubstitutionError level variableTo
+    -> UnificationOrSubstitutionError variableFrom
+    -> UnificationOrSubstitutionError variableTo
 mapUnificationOrSubstitutionErrorVariables f =
     \case
         SubstitutionError sub ->

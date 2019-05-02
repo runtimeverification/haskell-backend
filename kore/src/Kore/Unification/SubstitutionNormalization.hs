@@ -66,7 +66,7 @@ normalizeSubstitution
     => SmtMetadataTools StepperAttributes
     -> Map variable (TermLike variable)
     -> ExceptT
-        (SubstitutionError Object variable)
+        (SubstitutionError variable)
         m
         (Predicate variable)
 normalizeSubstitution tools substitution =
@@ -93,7 +93,7 @@ normalizeSubstitution tools substitution =
     -- Non-simplifiable cycles are returned as Right Nothing.
     topologicalSortConverted
         :: Either
-            (SubstitutionError Object variable)
+            (SubstitutionError variable)
             (Maybe [variable])
     topologicalSortConverted =
         case topologicalSort (Set.toList <$> allDependencies) of

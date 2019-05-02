@@ -326,7 +326,7 @@ merge
     -> [(Variable, TermLike Variable)]
     -> IO
         (Either
-            ( UnificationOrSubstitutionError Object Variable )
+            ( UnificationOrSubstitutionError Variable )
             ( Predicate Variable )
         )
 merge s1 s2 =
@@ -357,7 +357,7 @@ normalize predicated =
 
 normalizeExcept
     :: Conditional Variable ()
-    -> IO (Either (UnificationOrSubstitutionError Object Variable) (MultiOr (Conditional Variable ())))
+    -> IO (Either (UnificationOrSubstitutionError Variable) (MultiOr (Conditional Variable ())))
 normalizeExcept predicated =
     runSMT
     $ evalSimplifier emptyLogger

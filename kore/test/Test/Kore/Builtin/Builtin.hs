@@ -217,7 +217,7 @@ runStep
     -- ^ axiom
     -> IO
         (Either
-            (UnificationOrSubstitutionError Object Variable)
+            (UnificationOrSubstitutionError Variable)
             (MultiOr (Pattern Variable))
         )
 runStep configuration axiom = do
@@ -231,7 +231,7 @@ runStepResult
     -- ^ axiom
     -> IO
         (Either
-            (UnificationOrSubstitutionError Object Variable)
+            (UnificationOrSubstitutionError Variable)
             (Step.Results Variable)
         )
 runStepResult configuration axiom =
@@ -258,7 +258,7 @@ runStepWith
     -- ^ axiom
     -> IO
         (Either
-            (UnificationOrSubstitutionError Object Variable)
+            (UnificationOrSubstitutionError Variable)
             (MultiOr (Pattern Variable))
         )
 runStepWith solver configuration axiom = do
@@ -273,7 +273,7 @@ runStepResultWith
     -- ^ axiom
     -> IO
         (Either
-            (UnificationOrSubstitutionError Object Variable)
+            (UnificationOrSubstitutionError Variable)
             (Step.Results Variable)
         )
 runStepResultWith solver configuration axiom =

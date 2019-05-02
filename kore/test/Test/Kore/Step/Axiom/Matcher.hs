@@ -924,7 +924,7 @@ match tools first second = do
     matchAsEither
         :: IO
             (Either
-                (UnificationOrSubstitutionError Object Variable)
+                (UnificationOrSubstitutionError Variable)
                 (OrPredicate Variable)
             )
     matchAsEither =
@@ -933,7 +933,7 @@ match tools first second = do
             $ runExceptT matchResult
     matchResult
         :: ExceptT
-            (UnificationOrSubstitutionError Object Variable)
+            (UnificationOrSubstitutionError Variable)
             Simplifier
             (OrPredicate Variable)
     matchResult =
