@@ -211,8 +211,8 @@ tools = MetadataTools
     }
 
 unificationProblem
-    :: UnificationTerm Object
-    -> UnificationTerm Object
+    :: UnificationTerm
+    -> UnificationTerm
     -> TermLike Variable
 unificationProblem (UnificationTerm term1) (UnificationTerm term2) =
     mkAnd term1 term2
@@ -241,13 +241,13 @@ unificationResult (UnificationResultTerm term) sub predicate =
         , substitution = Substitution.unsafeWrap $ unificationSubstitution sub
         }
 
-newtype UnificationTerm level = UnificationTerm (TermLike Variable)
+newtype UnificationTerm = UnificationTerm (TermLike Variable)
 newtype UnificationResultTerm level = UnificationResultTerm (TermLike Variable)
 
 andSimplifySuccess
     :: HasCallStack
-    => UnificationTerm Object
-    -> UnificationTerm Object
+    => UnificationTerm
+    -> UnificationTerm
     -> UnificationResultTerm Object
     -> Substitution
     -> Syntax.Predicate Variable
@@ -268,8 +268,8 @@ andSimplifySuccess term1 term2 resultTerm subst predicate = do
 
 andSimplifyFailure
     :: HasCallStack
-    => UnificationTerm Object
-    -> UnificationTerm Object
+    => UnificationTerm
+    -> UnificationTerm
     -> UnificationError
     -> Assertion
 andSimplifyFailure term1 term2 err = do
@@ -289,8 +289,8 @@ andSimplifyFailure term1 term2 err = do
 andSimplifyException
     :: HasCallStack
     => String
-    -> UnificationTerm Object
-    -> UnificationTerm Object
+    -> UnificationTerm
+    -> UnificationTerm
     -> String
     -> TestTree
 andSimplifyException message term1 term2 exceptionMessage =
@@ -319,8 +319,8 @@ andSimplifyException message term1 term2 exceptionMessage =
 unificationProcedureSuccess
     :: HasCallStack
     => TestName
-    -> UnificationTerm Object
-    -> UnificationTerm Object
+    -> UnificationTerm
+    -> UnificationTerm
     -> [(Substitution, Syntax.Predicate Variable)]
     -> TestTree
 unificationProcedureSuccess
@@ -682,7 +682,7 @@ injUnificationTests =
             Syntax.Predicate.makeFalsePredicate
     ]
 
-simplifyPattern :: UnificationTerm Object -> IO (UnificationTerm Object)
+simplifyPattern :: UnificationTerm -> IO (UnificationTerm)
 simplifyPattern (UnificationTerm term) = do
     Conditional { term = term' } <- runSMT $ evalSimplifier emptyLogger simplifier
     return $ UnificationTerm term'
