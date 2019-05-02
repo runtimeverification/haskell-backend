@@ -229,7 +229,7 @@ maybeTermEquals
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
-    -> PredicateMerger Object variable unifier
+    -> PredicateMerger variable unifier
     -> TermSimplifier Object variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
@@ -367,7 +367,7 @@ maybeTermAnd
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
-    -> PredicateMerger Object variable unifier
+    -> PredicateMerger variable unifier
     -> TermSimplifier Object variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
@@ -523,7 +523,7 @@ andEqualsFunctions =
       = f tools
     addT
         ::  (  SmtMetadataTools StepperAttributes
-            -> PredicateMerger Object variable unifier
+            -> PredicateMerger variable unifier
             -> TermSimplifier Object variable unifier
             -> TermLike variable
             -> TermLike variable
@@ -589,7 +589,7 @@ type TermTransformation level variable unifier =
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
-    -> PredicateMerger level variable unifier
+    -> PredicateMerger variable unifier
     -> TermSimplifier level variable unifier
     -> TermLike variable
     -> TermLike variable
@@ -600,7 +600,7 @@ type TermTransformationOld level variable unifier =
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
-    -> PredicateMerger level variable unifier
+    -> PredicateMerger variable unifier
     -> TermSimplifier level variable unifier
     -> TermLike variable
     -> TermLike variable
@@ -621,7 +621,7 @@ maybeTransformTerm
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
-    -> PredicateMerger Object variable unifier
+    -> PredicateMerger variable unifier
     -> TermSimplifier Object variable unifier
     -- ^ Used to simplify subterm pairs.
     -> TermLike variable
@@ -840,7 +840,7 @@ variableFunctionAndEquals
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
-    -> PredicateMerger Object variable unifier
+    -> PredicateMerger variable unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
@@ -934,7 +934,7 @@ functionVariableAndEquals
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
-    -> PredicateMerger Object variable unifier
+    -> PredicateMerger variable unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
@@ -975,7 +975,7 @@ equalInjectiveHeadsAndEquals
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateMerger Object variable unifier
+    -> PredicateMerger variable unifier
     -> TermSimplifier Object variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable

@@ -10,7 +10,6 @@ module Kore.Step.Merging.Pattern
 
 import Data.Reflection
 
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -154,7 +153,7 @@ mergeWithPredicateAssumesEvaluated
         , SortedVariable variable
         , Unparse variable
         )
-    => PredicateMerger Object variable m
+    => PredicateMerger variable m
     -> Predicate variable
     -> Conditional variable term
     -> m (Conditional variable term)

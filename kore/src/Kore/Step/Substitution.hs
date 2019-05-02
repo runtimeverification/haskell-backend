@@ -60,7 +60,7 @@ import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
-newtype PredicateMerger level variable m =
+newtype PredicateMerger variable m =
     PredicateMerger
     (  [Syntax.Predicate variable]
     -> [Substitution variable]
@@ -306,7 +306,7 @@ createPredicatesAndSubstitutionsMergerExcept
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
-    -> PredicateMerger Object variable unifier
+    -> PredicateMerger variable unifier
 createPredicatesAndSubstitutionsMergerExcept
     tools substitutionSimplifier simplifier axiomIdToSimplifier
   =
@@ -341,7 +341,7 @@ createPredicatesAndSubstitutionsMerger
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
-    -> PredicateMerger Object variable Simplifier
+    -> PredicateMerger variable Simplifier
 createPredicatesAndSubstitutionsMerger
     tools substitutionSimplifier simplifier axiomIdToSimplifier
   =
@@ -379,7 +379,7 @@ createLiftedPredicatesAndSubstitutionsMerger
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
-    -> PredicateMerger Object variable unifier
+    -> PredicateMerger variable unifier
 createLiftedPredicatesAndSubstitutionsMerger
     tools substitutionSimplifier simplifier axiomIdToSimplifier
   =

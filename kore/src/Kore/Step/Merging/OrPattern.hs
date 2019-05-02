@@ -10,7 +10,6 @@ module Kore.Step.Merging.OrPattern
 
 import Data.Reflection
 
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -90,7 +89,7 @@ mergeWithPredicateAssumesEvaluated
         , TopBottom term
         , Unparse variable
         )
-    => PredicateMerger Object variable m
+    => PredicateMerger variable m
     -> Predicate variable
     -- ^ Predicate to add.
     -> MultiOr (Conditional variable term)
