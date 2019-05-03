@@ -52,7 +52,7 @@ import           GHC.Exts
                  ( toList )
 import           GHC.IO.Handle
                  ( hGetContents, hPutStr )
-import           GHC.Natural
+import           Numeric.Natural
 import           System.Directory
                  ( findExecutable )
 import           System.Process
@@ -216,14 +216,14 @@ proveSteps
     -- ^ maximum number of steps to perform
     -> ReplM claim level ()
 proveSteps n = do
-    let i = naturalToInt n
-    result <- loopM performStepNoBranching (i, SingleResult i)
+    let node = ReplNode . fromEnum $ n
+    result <- loopM performStepNoBranching (n, SingleResult node)
     case result of
-        (0, SingleResult _) -> pure ()
+        (n, SingleResult _) -> pure ()
         (done, res) ->
             putStrLn'
                 $ "Stopped after "
-                <> show (i - done - 1)
+                <> show (n - done - 1)
                 <> " step(s) due to "
                 <> show res
 
@@ -237,7 +237,7 @@ proveStepsF
 proveStepsF n = do
     graph  <- Lens.use lensGraph
     node   <- Lens.use lensNode
-    graph' <- recursiveForcedStep (naturalToInt n) graph node
+    graph' <- recursiveForcedStep n graph node
     lensGraph .= graph'
 
 -- | Focuses the node with id equals to 'n'.
@@ -251,13 +251,13 @@ selectNode rnode = do
     graph <- getInnerGraph
     let i = unReplNode rnode
     if i `elem` Graph.nodes graph
-        then lensNode .= i
+        then lensNode .= rnode
         else putStrLn' "Invalid node!"
 
 -- | Shows configuration at node 'n', or current node if 'Nothing' is passed.
 showConfig
     :: level ~ Object
-    => Maybe Int
+    => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM claim level ()
 showConfig configNode = do
@@ -335,7 +335,7 @@ showLeafs = do
 showRule
     :: MonadState (ReplState claim level) m
     => MonadWriter String m
-    => Maybe Int
+    => Maybe ReplNode
     -> m ()
 showRule configNode = do
     maybeRule <- getRuleFor configNode
@@ -355,7 +355,7 @@ showRule configNode = do
 
 -- | Shows the previous branching point.
 showPrecBranch
-    :: Maybe Int
+    :: Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM claim level ()
 showPrecBranch maybeNode = do
@@ -363,7 +363,7 @@ showPrecBranch maybeNode = do
     node' <- getTargetNode maybeNode
     case node' of
         Nothing -> putStrLn' "Invalid node!"
-        Just node -> putStrLn' . show $ loop (loopCond graph) node
+        Just node -> putStrLn' . show $ loop (loopCond graph) (unReplNode node)
   where
     -- "Left n" means continue looping with value being n
     -- "Right n" means "stop and return n"
@@ -376,7 +376,7 @@ showPrecBranch maybeNode = do
 
 -- | Shows the next node(s) for the selected node.
 showChildren
-    :: Maybe Int
+    :: Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM claim level ()
 showChildren maybeNode = do
@@ -384,7 +384,7 @@ showChildren maybeNode = do
     node' <- getTargetNode maybeNode
     case node' of
         Nothing -> putStrLn' "Invalid node!"
-        Just node -> putStrLn' . show . Graph.suc graph $ node
+        Just node -> putStrLn' . show . Graph.suc graph $ unReplNode node
 
 -- | Shows existing labels or go to an existing label.
 label
@@ -409,11 +409,11 @@ label =
     gotoLabel :: String -> m ()
     gotoLabel l = do
         labels <- Lens.use lensLabels
-        selectNode $ maybe (ReplNode $ -1) ReplNode (Map.lookup l labels)
+        selectNode $ maybe (ReplNode $ -1) id (Map.lookup l labels)
 
-    acc :: String -> Graph.Node -> String -> String
+    acc :: String -> ReplNode -> String -> String
     acc key node res =
-        res <> "\n  " <> key <> ": " <> show node
+        res <> "\n  " <> key <> ": " <> show (unReplNode node)
 
 -- | Adds label for selected node.
 labelAdd
@@ -421,7 +421,7 @@ labelAdd
     => MonadWriter String m
     => String
     -- ^ label
-    -> Maybe Int
+    -> Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> m ()
 labelAdd lbl maybeNode = do
@@ -510,9 +510,9 @@ tryAxiomClaim eac = do
     rightToList :: Either a b -> [b]
     rightToList = either (const []) pure
 
-    stuckToUnstuck :: [Graph.Node] -> ExecutionGraph -> ReplM claim level ()
+    stuckToUnstuck :: [ReplNode] -> ExecutionGraph -> ReplM claim level ()
     stuckToUnstuck nodes Strategy.ExecutionGraph{ graph } =
-        updateInnerGraph $ Graph.gmap (stuckToRewrite nodes) graph
+        updateInnerGraph $ Graph.gmap (stuckToRewrite $ fmap unReplNode nodes) graph
 
     stuckToRewrite xs ct@(to, n, lab, from)
         | n `elem` xs =
@@ -523,7 +523,7 @@ tryAxiomClaim eac = do
 
     showUnificationFailure
         :: Either (Axiom level) claim
-        -> Graph.Node
+        -> ReplNode
         -> ReplM claim level ()
     showUnificationFailure axiomOrClaim' node = do
         let first = extractLeftPattern axiomOrClaim'
@@ -560,24 +560,25 @@ clear
     :: forall level m claim
     .  MonadState (ReplState claim level) m
     => MonadWriter String m
-    => Maybe Int
+    => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> m ()
 clear =
     \case
         Nothing -> Just <$> Lens.use lensNode >>= clear
         Just node
-          | node == 0 -> putStrLn' "Cannot clear initial node (0)."
+          | unReplNode node == 0 -> putStrLn' "Cannot clear initial node (0)."
           | otherwise -> clear0 node
   where
-    clear0 :: Int -> m ()
-    clear0 node = do
+    clear0 :: ReplNode -> m ()
+    clear0 rnode = do
         graph <- getInnerGraph
+        let node = unReplNode rnode
         let
             nodesToBeRemoved = collect (next graph) node
             graph' = Graph.delNodes nodesToBeRemoved graph
         updateInnerGraph graph'
-        lensNode .= prevNode graph' node
+        lensNode .= ReplNode (prevNode graph' node)
         putStrLn' $ "Removed " <> show (length nodesToBeRemoved) <> " node(s)."
 
     next :: InnerGraph -> Graph.Node -> [Graph.Node]
@@ -671,9 +672,9 @@ appendTo cmd file = do
 performStepNoBranching
     :: forall claim level
     .  Claim claim
-    => (Int, StepResult)
+    => (Natural, StepResult)
     -- ^ (current step, last result)
-    -> ReplM claim level (Either (Int, StepResult) (Int, StepResult))
+    -> ReplM claim level (Either (Natural, StepResult) (Natural, StepResult))
 performStepNoBranching =
     \case
         -- Termination branch
@@ -689,9 +690,9 @@ performStepNoBranching =
 -- 'performStepNoBranching'.
 recursiveForcedStep
     :: Claim claim
-    => Int
+    => Natural
     -> ExecutionGraph
-    -> Graph.Node
+    -> ReplNode
     -> ReplM claim level ExecutionGraph
 recursiveForcedStep n graph node
   | n == 0    = return graph
@@ -699,9 +700,9 @@ recursiveForcedStep n graph node
       ReplState { claims , axioms , claim , stepper } <- get
       graph'@Strategy.ExecutionGraph { graph = gr } <-
           lift $ stepper claim claims axioms graph node
-      case (Graph.suc gr node) of
+      case Graph.suc gr (unReplNode node) of
           [] -> return graph'
-          xs -> foldM (recursiveForcedStep $ n-1) graph' xs
+          xs -> foldM (recursiveForcedStep $ n-1) graph' (fmap ReplNode xs)
 
 -- | Prints an unparsed rewrite rule along with its source location.
 printRewriteRule :: MonadWriter String m => RewriteRule level Variable -> m ()

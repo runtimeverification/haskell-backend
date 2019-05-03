@@ -114,7 +114,7 @@ configTests :: [ParserTest ReplCommand]
 configTests =
     [ "config"    `parsesTo_` ShowConfig Nothing
     , "config "   `parsesTo_` ShowConfig Nothing
-    , "config 5"  `parsesTo_` ShowConfig (Just 5)
+    , "config 5"  `parsesTo_` ShowConfig (Just (ReplNode 5))
     , "config -5" `fails`     "no negative numbers"
     ]
 
@@ -139,7 +139,7 @@ precBranchTests :: [ParserTest ReplCommand]
 precBranchTests =
     [ "prec-branch"    `parsesTo_` ShowPrecBranch Nothing
     , "prec-branch "   `parsesTo_` ShowPrecBranch Nothing
-    , "prec-branch 5"  `parsesTo_` ShowPrecBranch (Just 5)
+    , "prec-branch 5"  `parsesTo_` ShowPrecBranch (Just (ReplNode 5))
     , "prec-branch -5" `fails`     "no negative numbers"
     ]
 
@@ -147,7 +147,7 @@ childrenTests :: [ParserTest ReplCommand]
 childrenTests =
     [ "children"    `parsesTo_` ShowChildren Nothing
     , "children "   `parsesTo_` ShowChildren Nothing
-    , "children 5"  `parsesTo_` ShowChildren (Just 5)
+    , "children 5"  `parsesTo_` ShowChildren (Just (ReplNode 5))
     , "children -5" `fails`     "no negative numbers"
     ]
 
@@ -160,8 +160,8 @@ labelTests =
     , "label +label"    `parsesTo_` LabelAdd "label" Nothing
     , "label +1ab31"    `parsesTo_` LabelAdd "1ab31" Nothing
     , "label +-"        `parsesTo_` LabelAdd "-" Nothing
-    , "label +label 5"  `parsesTo_` LabelAdd "label" (Just 5)
-    , "label +1ab31 5"  `parsesTo_` LabelAdd "1ab31" (Just 5)
+    , "label +label 5"  `parsesTo_` LabelAdd "label" (Just (ReplNode 5))
+    , "label +1ab31 5"  `parsesTo_` LabelAdd "1ab31" (Just (ReplNode 5))
     , "label -label"    `parsesTo_` LabelDel "label"
     , "label -1ab31"    `parsesTo_` LabelDel "1ab31"
     , "label +label -5" `fails`     "no negative numbers"
@@ -192,8 +192,8 @@ exitTests =
 redirectTests :: [ParserTest ReplCommand]
 redirectTests =
     [ "config > file"     `parsesTo_` Redirect (ShowConfig Nothing)  "file"
-    , "config 5 > file"   `parsesTo_` Redirect (ShowConfig (Just 5)) "file"
-    , "config 5 > file"   `parsesTo_` Redirect (ShowConfig (Just 5)) "file"
+    , "config 5 > file"   `parsesTo_` Redirect (ShowConfig (Just (ReplNode 5))) "file"
+    , "config 5 > file"   `parsesTo_` Redirect (ShowConfig (Just (ReplNode 5))) "file"
     , "claim 3 > cf"      `parsesTo_` Redirect (ShowClaim (ClaimIndex 3)) "cf"
     , "claim 3 > \"c f\"" `parsesTo_` Redirect (ShowClaim (ClaimIndex 3)) "c f"
     , "config 5 > "       `fails`     "no file name"
@@ -202,20 +202,20 @@ redirectTests =
 pipeTests :: [ParserTest ReplCommand]
 pipeTests =
     [ "config | script"                     `parsesTo_` pipeConfig Nothing "script" []
-    , "config 5 | script"                   `parsesTo_` pipeConfig (Just 5) "script" []
-    , "config 5 | script \"arg1\" \"arg2\"" `parsesTo_` pipeConfig (Just 5) "script" ["arg1", "arg2"]
+    , "config 5 | script"                   `parsesTo_` pipeConfig (Just (ReplNode 5)) "script" []
+    , "config 5 | script \"arg1\" \"arg2\"" `parsesTo_` pipeConfig (Just (ReplNode 5)) "script" ["arg1", "arg2"]
     , "step 5 | script"                     `parsesTo_` pipeStep 5 "script" []
     , "step 5 | \"s c ri p t\""             `parsesTo_` pipeStep 5 "s c ri p t" []
     , "config 5 | "                         `fails`     "no script name"
     ]
   where
     pipeConfig
-        :: Maybe Int
+        :: Maybe ReplNode
         -> String
         -> [String]
         -> ReplCommand
-    pipeConfig mi s xs =
-        Pipe (ShowConfig mi) s xs
+    pipeConfig mrnode s xs =
+        Pipe (ShowConfig mrnode) s xs
     pipeStep
         :: Natural
         -> String
@@ -229,20 +229,20 @@ pipeRedirectTests :: [ParserTest ReplCommand]
 pipeRedirectTests =
     [ "config | script > file"                          `parsesTo_` pipeRedirectConfig Nothing "script" [] "file"
     , "config | \"s cript\" \"arg 1\" arg2 > \"f ile\"" `parsesTo_` pipeRedirectConfig Nothing "s cript" ["arg 1", "arg2"] "f ile"
-    , "config 5 | script \"a r g 1\" arg2 > file"       `parsesTo_` pipeRedirectConfig (Just 5) "script" ["a r g 1", "arg2"] "file"
+    , "config 5 | script \"a r g 1\" arg2 > file"       `parsesTo_` pipeRedirectConfig (Just (ReplNode 5)) "script" ["a r g 1", "arg2"] "file"
     , "config 5 | > "                                   `fails`     "no script or file name"
     , "config 5 | script > "                            `fails`     "no file name"
     , "config 5 | > file"                               `fails`     "no script name"
     ]
   where
     pipeRedirectConfig
-        :: Maybe Int
+        :: Maybe ReplNode
         -> String
         -> [String]
         -> String
         -> ReplCommand
-    pipeRedirectConfig mi s xs file =
-        Redirect (Pipe (ShowConfig mi) s xs) file
+    pipeRedirectConfig mrnode s xs file =
+        Redirect (Pipe (ShowConfig mrnode) s xs) file
 
 appendTests :: [ParserTest ReplCommand]
 appendTests =
@@ -254,26 +254,26 @@ appendTests =
 pipeAppendTests :: [ParserTest ReplCommand]
 pipeAppendTests =
     [ "config | script >> file"                           `parsesTo_` pipeAppendConfig Nothing "script" [] "file"
-    , "config 5 | \"sc ript\" arg1 \"a rg\" >> \"f ile\"" `parsesTo_` pipeAppendConfig (Just 5) "sc ript" ["arg1", "a rg"] "f ile"
+    , "config 5 | \"sc ript\" arg1 \"a rg\" >> \"f ile\"" `parsesTo_` pipeAppendConfig (Just (ReplNode 5)) "sc ript" ["arg1", "a rg"] "f ile"
     , "config | > >> file"                                `fails` "incorrect script name"
     , "config | s >> "                                    `fails` "no file name"
     ]
   where
     pipeAppendConfig
-        :: Maybe Int
+        :: Maybe ReplNode
         -> String
         -> [String]
         -> String
         -> ReplCommand
-    pipeAppendConfig mi s xs file =
-        AppendTo (Pipe (ShowConfig mi) s xs) file
+    pipeAppendConfig mrnode s xs file =
+        AppendTo (Pipe (ShowConfig mrnode) s xs) file
 
 ruleTests :: [ParserTest ReplCommand]
 ruleTests =
     [ "rule"    `parsesTo_` ShowRule Nothing
     , "rule "   `parsesTo_` ShowRule Nothing
-    , "rule 5"  `parsesTo_` ShowRule (Just 5)
-    , "rule 5 " `parsesTo_` ShowRule (Just 5)
+    , "rule 5"  `parsesTo_` ShowRule (Just (ReplNode 5))
+    , "rule 5 " `parsesTo_` ShowRule (Just (ReplNode 5))
     , "rule -5" `fails`     "no negative numbers"
     ]
 
@@ -281,8 +281,8 @@ clearTests :: [ParserTest ReplCommand]
 clearTests =
     [ "clear"    `parsesTo_` Clear Nothing
     , "clear "   `parsesTo_` Clear Nothing
-    , "clear 5"  `parsesTo_` Clear (Just 5)
-    , "clear 5 " `parsesTo_` Clear (Just 5)
+    , "clear 5"  `parsesTo_` Clear (Just (ReplNode 5))
+    , "clear 5 " `parsesTo_` Clear (Just (ReplNode 5))
     , "clear -5" `fails`     "no negative numbers"
     ]
 

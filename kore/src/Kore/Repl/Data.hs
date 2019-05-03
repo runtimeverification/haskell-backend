@@ -64,7 +64,7 @@ import           Data.Text.Prettyprint.Doc
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Exts
                  ( toList )
-import           GHC.Natural
+import           Numeric.Natural
 
 import           Kore.AST.MetaOrObject
                  ( Object )
@@ -124,21 +124,21 @@ data ReplCommand
     -- ^ Do n proof steps (through branchings) from the current node.
     | SelectNode !ReplNode
     -- ^ Select a different node in the graph.
-    | ShowConfig !(Maybe Int)
+    | ShowConfig !(Maybe ReplNode)
     -- ^ Show the configuration from the current node.
     | OmitCell !(Maybe String)
     -- ^ Adds or removes cell to omit list, or shows current omit list.
     | ShowLeafs
     -- ^ Show leafs which can continue evaluation and leafs which are stuck
-    | ShowRule !(Maybe Int)
+    | ShowRule !(Maybe ReplNode)
     -- ^ Show the rule(s) that got us to this configuration.
-    | ShowPrecBranch !(Maybe Int)
+    | ShowPrecBranch !(Maybe ReplNode)
     -- ^ Show the first preceding branch.
-    | ShowChildren !(Maybe Int)
+    | ShowChildren !(Maybe ReplNode)
     -- ^ Show direct children of node.
     | Label !(Maybe String)
     -- ^ Show all node labels or jump to a label.
-    | LabelAdd !String !(Maybe Int)
+    | LabelAdd !String !(Maybe ReplNode)
     -- ^ Add a label to a node.
     | LabelDel !String
     -- ^ Remove a label.
@@ -146,7 +146,7 @@ data ReplCommand
     -- ^ Prints the output of the inner command to the file.
     | Try !(Either AxiomIndex ClaimIndex)
     -- ^ Attempt to apply axiom or claim to current node.
-    | Clear !(Maybe Int)
+    | Clear !(Maybe ReplNode)
     -- ^ Remove child nodes from graph.
     | Pipe ReplCommand !String ![String]
     -- ^ Pipes a repl command into an external script.
@@ -244,7 +244,7 @@ data ReplState claim level = ReplState
     -- ^ Currently focused claim in the repl
     , graph    :: ExecutionGraph
     -- ^ Execution graph for the current proof; initialized with root = claim
-    , node     :: Graph.Node
+    , node     :: ReplNode
     -- ^ Currently selected node in the graph; initialized with node = root
     , commands :: Seq String
     -- ^ All commands evaluated by the current repl session
@@ -257,7 +257,7 @@ data ReplState claim level = ReplState
         -> [claim]
         -> [Axiom level]
         -> ExecutionGraph
-        -> Graph.Node
+        -> ReplNode
         -> Simplifier ExecutionGraph
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , unifier
@@ -267,7 +267,7 @@ data ReplState claim level = ReplState
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
     --   failures
-    , labels  :: Map String Graph.Node
+    , labels  :: Map String ReplNode
     -- ^ Map from labels to nodes
     }
 
@@ -369,7 +369,7 @@ initializeProofFor claim =
     modify (\st -> st
         { graph  = emptyExecutionGraph claim
         , claim  = claim
-        , node   = 0
+        , node   = ReplNode 0
         , labels = Map.empty
         })
 
@@ -394,43 +394,43 @@ updateInnerGraph ig = lensGraph Lens.%= updateInnerGraph0 ig
 -- part of the execution graph.
 getTargetNode
     :: MonadState (ReplState claim level) m
-    => Maybe Graph.Node
+    => Maybe ReplNode
     -- ^ node index
-    -> m (Maybe Graph.Node)
+    -> m (Maybe ReplNode)
 getTargetNode maybeNode = do
     currentNode <- Lens.use lensNode
-    let node' = maybe currentNode id maybeNode
+    let node' = unReplNode $ maybe currentNode id maybeNode
     graph <- getInnerGraph
     if node' `elem` Graph.nodes graph
-       then pure $ Just node'
+       then pure . Just . ReplNode $ node'
        else pure $ Nothing
 
 -- | Get the configuration at selected node (or current node for 'Nothing').
 getConfigAt
     :: level ~ Object
     => MonadState (ReplState claim level) m
-    => Maybe Graph.Node
-    -> m (Maybe (Graph.Node, CommonStrategyPattern level))
+    => Maybe ReplNode
+    -> m (Maybe (ReplNode, CommonStrategyPattern level))
 getConfigAt maybeNode = do
     node' <- getTargetNode maybeNode
     case node' of
         Nothing -> pure $ Nothing
         Just n -> do
             graph' <- getInnerGraph
-            pure $ Just (n, getLabel graph' n)
+            pure $ Just (n, getLabel graph' (unReplNode n))
   where
     getLabel gr n = Graph.lab' . Graph.context gr $ n
 
 -- | Get the rule used to reach selected node.
 getRuleFor
     :: MonadState (ReplState claim level) m
-    => Maybe Graph.Node
+    => Maybe ReplNode
     -- ^ node index
     -> m (Maybe (RewriteRule Object Variable))
 getRuleFor maybeNode = do
     targetNode <- getTargetNode maybeNode
     graph' <- getInnerGraph
-    pure $ targetNode >>= getRewriteRule . Graph.inn graph'
+    pure $ fmap unReplNode targetNode >>= getRewriteRule . Graph.inn graph'
   where
     getRewriteRule
         :: forall a b
@@ -448,9 +448,9 @@ getRuleFor maybeNode = do
 data StepResult
     = NoResult
     -- ^ reached end of proof on current branch
-    | SingleResult Graph.Node
+    | SingleResult ReplNode
     -- ^ single follow-up configuration
-    | BranchResult [Graph.Node]
+    | BranchResult [ReplNode]
     -- ^ configuration branched
     deriving (Show)
 
@@ -479,13 +479,13 @@ runStepper'
     => Claim claim
     => [claim]
     -> [Axiom level]
-    -> Graph.Node
+    -> ReplNode
     -> m Simplifier (ExecutionGraph, StepResult)
 runStepper' claims axioms node = do
     ReplState { claim, graph, stepper } <- get
     gr@Strategy.ExecutionGraph { graph = innerGraph } <-
         Monad.Trans.lift $ stepper claim claims axioms graph node
-    pure . (,) gr $ case Graph.suc innerGraph node of
+    pure . (,) gr $ case Graph.suc innerGraph (unReplNode node) of
         []       -> NoResult
-        [single] -> SingleResult single
-        nodes    -> BranchResult nodes
+        [single] -> SingleResult $ ReplNode single
+        nodes    -> BranchResult $ fmap ReplNode nodes

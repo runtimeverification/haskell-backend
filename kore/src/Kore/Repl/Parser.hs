@@ -99,7 +99,9 @@ selectNode :: Parser ReplCommand
 selectNode = SelectNode . ReplNode <$$> literal "select" *> decimal
 
 showConfig :: Parser ReplCommand
-showConfig = ShowConfig <$$> literal "config" *> maybeDecimal
+showConfig = do
+    dec <- literal "config" *> maybeDecimal
+    return $ ShowConfig (fmap ReplNode dec)
 
 omitCell :: Parser ReplCommand
 omitCell = OmitCell <$$> literal "omit" *> maybeWord
@@ -108,20 +110,30 @@ showLeafs :: Parser ReplCommand
 showLeafs = const ShowLeafs <$$> literal "leafs"
 
 showRule :: Parser ReplCommand
-showRule = ShowRule <$$> literal "rule" *> maybeDecimal
+showRule = do
+    dec <- literal "rule" *> maybeDecimal
+    return $ ShowRule (fmap ReplNode dec)
 
 showPrecBranch :: Parser ReplCommand
-showPrecBranch = ShowPrecBranch <$$> literal "prec-branch" *> maybeDecimal
+showPrecBranch = do
+    dec <- literal "prec-branch" *> maybeDecimal
+    return $ ShowPrecBranch (fmap ReplNode dec)
 
 showChildren :: Parser ReplCommand
-showChildren = ShowChildren <$$> literal "children" *> maybeDecimal
+showChildren = do
+    dec <- literal "children" *> maybeDecimal
+    return $ ShowChildren (fmap ReplNode dec)
 
 label :: Parser ReplCommand
 label = Label <$$> literal "label" *> maybeWord
 
 labelAdd :: Parser ReplCommand
-labelAdd =
-    LabelAdd <$$> literal "label" *> literal "+" *> word <**> maybeDecimal
+labelAdd = do
+    literal "label"
+    literal "+"
+    w <- word
+    dec <- maybeDecimal
+    return $ LabelAdd w (fmap ReplNode dec)
 
 labelDel :: Parser ReplCommand
 labelDel = LabelDel <$$> literal "label" *> literal "-" *> word
@@ -140,7 +152,9 @@ claimIndex :: Parser ClaimIndex
 claimIndex = ClaimIndex <$$> Char.string "c" *> decimal
 
 clear :: Parser ReplCommand
-clear = Clear <$$> literal "clear" *> maybeDecimal
+clear = do
+    dec <- literal "clear" *> maybeDecimal
+    return $ Clear (fmap ReplNode dec)
 
 saveSession :: Parser ReplCommand
 saveSession =
