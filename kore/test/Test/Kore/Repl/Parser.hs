@@ -2,7 +2,7 @@ module Test.Kore.Repl.Parser
     ( test_replParser
     ) where
 
-import GHC.Natural
+import Numeric.Natural
 import Test.Tasty
        ( TestTree, testGroup )
 
