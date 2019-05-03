@@ -13,11 +13,11 @@ import           Control.Monad.Trans.Except
 import           Data.Text.Prettyprint.Doc
                  ( Doc )
 
+import           Kore.Internal.TermLike
+                 ( TermLike )
 import qualified Kore.Logger as Log
 import           Kore.Step.Simplification.Data
                  ( Environment (..), Simplifier )
-import           Kore.Internal.TermLike
-                 ( TermLike )
 import           Kore.Unification.Error
 import           Kore.Unparser
                  ( Unparse )
