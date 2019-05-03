@@ -21,8 +21,6 @@ import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 import           Kore.Step.Simplification.Or
                  ( simplify, simplifyEvaluated )
 import           Kore.Step.TermLike
@@ -131,16 +129,16 @@ test_simplify =
             (simplifyEvaluated          orPattern1 orPattern2 )
         ]
   where
-    orPattern1 :: OrPattern Object Variable
+    orPattern1 :: OrPattern Variable
     orPattern1 = wrapInOrPattern (tM, pM, sM)
 
-    orPattern2 :: OrPattern Object Variable
+    orPattern2 :: OrPattern Variable
     orPattern2 = wrapInOrPattern (tm, pm, sm)
 
     binaryOr
-      :: OrPattern Object Variable
-      -> OrPattern Object Variable
-      -> Or Sort (OrPattern Object Variable)
+      :: OrPattern Variable
+      -> OrPattern Variable
+      -> Or Sort (OrPattern Variable)
     binaryOr orFirst orSecond =
         Or { orSort = Mock.testSort, orFirst, orSecond }
 
@@ -159,7 +157,7 @@ Key for variable names:
             named `pm` and `pM` are expected to be unequal.
 -}
 
-{- | Short-hand for: @Pattern Object Variable@
+{- | Short-hand for: @Pattern Variable@
 
 See also: 'orChild'
  -}
@@ -241,12 +239,18 @@ test_valueProperties =
 becomes
   :: HasCallStack
   => (TestConfig, TestConfig)
-  -> [Pattern Object Variable]
+  -> [Pattern Variable]
   -> TestTree
-becomes (orChild -> or1, orChild -> or2) (OrPattern.fromPatterns . List.sort -> expected) =
+becomes
+    (orChild -> or1, orChild -> or2)
+    (OrPattern.fromPatterns . List.sort -> expected)
+  =
     actual_expected_name_intention
-        (simplifyEvaluated (OrPattern.fromPatterns [or1]) (OrPattern.fromPatterns [or2]))
-        (expected, SimplificationProof)
+        (simplifyEvaluated
+            (OrPattern.fromPattern or1)
+            (OrPattern.fromPattern or2)
+        )
+        expected
         "or becomes"
         (stateIntention
             [ prettyOr or1 or2
@@ -262,8 +266,11 @@ simplifiesTo
     -> TestTree
 simplifiesTo (orChild -> or1, orChild -> or2) (orChild -> simplified) =
     actual_expected_name_intention
-        (simplifyEvaluated (OrPattern.fromPatterns [or1]) (OrPattern.fromPatterns [or2]))
-        (OrPattern.fromPatterns [simplified], SimplificationProof)
+        (simplifyEvaluated
+            (OrPattern.fromPattern or1)
+            (OrPattern.fromPattern or2)
+        )
+        (OrPattern.fromPattern simplified)
         "or does simplify"
         (stateIntention
             [ prettyOr or1 or2
@@ -278,8 +285,11 @@ doesNotSimplify
     -> TestTree
 doesNotSimplify (orChild -> or1, orChild -> or2) =
     actual_expected_name_intention
-        (simplifyEvaluated (OrPattern.fromPatterns [or1]) (OrPattern.fromPatterns [or2]))
-        (OrPattern.fromPatterns $ List.sort [or1, or2], SimplificationProof)
+        (simplifyEvaluated
+            (OrPattern.fromPattern or1)
+            (OrPattern.fromPattern or2)
+        )
+        (OrPattern.fromPatterns $ List.sort [or1, or2])
         "or does not simplify"
         (stateIntention
             [ prettyOr or1 or2
@@ -290,8 +300,8 @@ doesNotSimplify (orChild -> or1, orChild -> or2) =
 -- * Support Functions
 
 prettyOr
-    :: Pattern Object Variable
-    -> Pattern Object Variable
+    :: Pattern Variable
+    -> Pattern Variable
     -> Pretty.Doc a
 prettyOr orFirst orSecond =
     Unparser.unparse Or { orSort, orFirst, orSecond }
@@ -304,7 +314,7 @@ stateIntention actualAndSoOn =
 
 orChild
     :: (TestTerm, TestPredicate, TestSubstitution)
-    -> Pattern Object Variable
+    -> Pattern Variable
 orChild (term, predicate, substitution) =
     Conditional { term, predicate, substitution }
 
@@ -312,5 +322,5 @@ orChild (term, predicate, substitution) =
 -- during conversion of a Conditional into an OrPattern
 wrapInOrPattern
     :: (TestTerm, TestPredicate, TestSubstitution)
-    -> OrPattern Object Variable
+    -> OrPattern Variable
 wrapInOrPattern tuple = OrPattern.fromPatterns [orChild tuple]

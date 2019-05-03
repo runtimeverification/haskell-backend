@@ -326,14 +326,13 @@ merge
     -> [(Variable, TermLike Variable)]
     -> IO
         (Either
-            ( UnificationOrSubstitutionError Object Variable )
-            ( Predicate Object Variable )
+            ( UnificationOrSubstitutionError Variable )
+            ( Predicate Variable )
         )
 merge s1 s2 =
     runSMT
     $ evalSimplifier emptyLogger
     $ Monad.Unify.runUnifier
-    $ fmap fst
     $ mergePredicatesAndSubstitutionsExcept
         mockMetadataTools
         (Mock.substitutionSimplifier mockMetadataTools)
@@ -343,8 +342,8 @@ merge s1 s2 =
         $ Substitution.wrap <$> [s1, s2]
 
 normalize
-    :: Conditional Object Variable term
-    -> IO [Conditional Object Variable term]
+    :: Conditional Variable term
+    -> IO [Conditional Variable term]
 normalize predicated =
     runSMT
     $ evalSimplifier emptyLogger
@@ -357,8 +356,8 @@ normalize predicated =
         predicated
 
 normalizeExcept
-    :: Conditional Object Variable ()
-    -> IO (Either (UnificationOrSubstitutionError Object Variable) (MultiOr (Conditional Object Variable ())))
+    :: Conditional Variable ()
+    -> IO (Either (UnificationOrSubstitutionError Variable) (MultiOr (Conditional Variable ())))
 normalizeExcept predicated =
     runSMT
     $ evalSimplifier emptyLogger

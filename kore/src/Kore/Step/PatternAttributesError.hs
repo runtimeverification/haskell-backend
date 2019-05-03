@@ -21,7 +21,7 @@ import Kore.Syntax.Application
 {-| An error explaining why a pattern is not composed of function heads and
 things like StringLiteral, DomainValue and variables.
 -}
-data FunctionError level
+data FunctionError
     = NonFunctionHead SymbolOrAlias
     -- ^ The pattern was the application of a non-function head to something
     | NonFunctionPattern
@@ -32,7 +32,7 @@ data FunctionError level
 {-| An error explaining why a pattern is not composed of functional heads and
 things like StringLiteral, DomainValue and variables.
 -}
-data FunctionalError level
+data FunctionalError
     = NonFunctionalHead SymbolOrAlias
     -- ^ The pattern was the application of a non-functional head to something
     | NonFunctionalPattern
@@ -51,7 +51,7 @@ data ConstructorLikeError
 {-| An error explaining why a pattern is not composed of total heads and
 things like StringLiteral, DomainValue and variables.
 -}
-data TotalError level
+data TotalError
     = NonTotalHead SymbolOrAlias
     -- ^ The pattern was the application of a non-total head to something
     | NonTotalPattern

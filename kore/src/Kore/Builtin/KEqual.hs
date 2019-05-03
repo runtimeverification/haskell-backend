@@ -34,8 +34,6 @@ import           Data.Text
                  ( Text )
 
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
-                 ( SentenceSymbol (..) )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -54,10 +52,11 @@ import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern
                  ( Conditional (..) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Or as Or
 import           Kore.Step.TermLike
+import           Kore.Syntax.Definition
+                 ( SentenceSymbol (..) )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -130,19 +129,16 @@ evalKEq
         )
     => Bool
     -> MetadataTools.SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid variable Object)
+        (Valid variable)
         (TermLike variable)
-    -> Simplifier
-        ( AttemptedAxiom Object variable
-        , SimplificationProof Object
-        )
+    -> Simplifier (AttemptedAxiom variable)
 evalKEq true _ _ _ _ (valid :< app) =
     case applicationChildren of
         [t1, t2] -> evalEq t1 t2
@@ -152,31 +148,27 @@ evalKEq true _ _ _ _ (valid :< app) =
     Valid { patternSort } = valid
     Application { applicationChildren } = app
     evalEq t1 t2 = do
-        let (expr, _proof) = Or.simplifyEvaluated
-                (OrPattern.fromPatterns
-                    [ Conditional
+        let expr = Or.simplifyEvaluated
+                (OrPattern.fromPattern
+                    (Conditional
                         (Bool.asInternal patternSort true)
                         (Predicate.makeEqualsPredicate t1 t2)
                         mempty
-                    ]
+                    )
                 )
-                (OrPattern.fromPatterns
-                    [ Conditional
+                (OrPattern.fromPattern
+                    (Conditional
                         (Bool.asInternal patternSort false)
                         ( Predicate.makeNotPredicate $
                             Predicate.makeEqualsPredicate t1 t2
                         )
                         mempty
-                    ]
+                    )
                 )
-        pure
-            ( Applied AttemptedAxiomResults
-                { results = expr
-                , remainders = OrPattern.fromPatterns []
-                }
-            , SimplificationProof
-            )
-
+        pure $ Applied AttemptedAxiomResults
+            { results = expr
+            , remainders = OrPattern.bottom
+            }
 
 evalKIte
     ::  forall variable
@@ -184,18 +176,15 @@ evalKIte
         , SortedVariable variable
         )
     => MetadataTools.SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid variable Object)
+        (Valid variable)
         (TermLike variable)
-    -> Simplifier
-        ( AttemptedAxiom Object variable
-        , SimplificationProof Object
-        )
+    -> Simplifier (AttemptedAxiom variable)
 evalKIte _ _ _ _ (_ :< app) =
     case app of
         Application { applicationChildren = [expr, t1, t2] } ->

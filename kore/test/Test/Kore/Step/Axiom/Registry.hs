@@ -14,7 +14,6 @@ import           Data.Proxy
 import qualified Kore.AST.Common as Common
 import           Kore.AST.Pure
                  ( groundHead )
-import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
@@ -30,8 +29,6 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
 import           Kore.Sort
 import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -48,6 +45,7 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.TermLike
 import           Kore.Syntax.Application
+import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 import qualified SMT
 
@@ -272,7 +270,7 @@ testIndexedModule =
                     (Map.lookup (ModuleName "test") indexedModules)
 
 testEvaluators
-    :: BuiltinAndAxiomSimplifierMap Object
+    :: BuiltinAndAxiomSimplifierMap
 testEvaluators =
     axiomPatternsToEvaluators $ extractEqualityAxioms testIndexedModule
 
@@ -319,7 +317,7 @@ test_functionRegistry =
         )
     , testCase "Checking that evaluator simplifies correctly" $ do
         let expect = mkApp sortS sHead []
-        (simplified, _) <-
+        simplified <-
             SMT.runSMT SMT.defaultConfig
             $ evalSimplifier emptyLogger
             $ Pattern.simplify
@@ -334,12 +332,5 @@ test_functionRegistry =
         assertEqual "" expect actual
     ]
   where
-    makePattern
-        :: TermLike Variable
-        -> Pattern Object Variable
-    makePattern pat =
-        Conditional
-        { term = pat
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
+    makePattern :: TermLike Variable -> Pattern Variable
+    makePattern = Pattern.fromTermLike

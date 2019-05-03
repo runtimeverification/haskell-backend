@@ -66,9 +66,9 @@ normalizeSubstitution
     => SmtMetadataTools StepperAttributes
     -> Map variable (TermLike variable)
     -> ExceptT
-        (SubstitutionError Object variable)
+        (SubstitutionError variable)
         m
-        (Predicate Object variable)
+        (Predicate variable)
 normalizeSubstitution tools substitution =
     ExceptT . sequence . fmap maybeToBottom $ topologicalSortConverted
 
@@ -93,7 +93,7 @@ normalizeSubstitution tools substitution =
     -- Non-simplifiable cycles are returned as Right Nothing.
     topologicalSortConverted
         :: Either
-            (SubstitutionError Object variable)
+            (SubstitutionError variable)
             (Maybe [variable])
     topologicalSortConverted =
         case topologicalSort (Set.toList <$> allDependencies) of
@@ -115,13 +115,13 @@ normalizeSubstitution tools substitution =
 
     normalizeSortedSubstitution'
         :: [variable]
-        -> m (Predicate Object variable)
+        -> m (Predicate variable)
     normalizeSortedSubstitution' s =
         normalizeSortedSubstitution (sortedSubstitution s) mempty mempty
 
     maybeToBottom
         :: Maybe [variable]
-        -> m (Predicate Object variable)
+        -> m (Predicate variable)
     maybeToBottom = maybe
         (return Predicate.bottom)
         normalizeSortedSubstitution'
@@ -145,7 +145,7 @@ normalizeSortedSubstitution
     => [(variable, TermLike variable)]
     -> [(variable, TermLike variable)]
     -> [(variable, TermLike variable)]
-    -> m (Predicate Object variable)
+    -> m (Predicate variable)
 normalizeSortedSubstitution [] result _ =
     return Conditional
         { term = ()

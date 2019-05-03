@@ -33,8 +33,7 @@ import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Application
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..), TermLikeSimplifier,
-                 evalSimplifier )
+                 ( TermLikeSimplifier, evalSimplifier )
 import           Kore.Step.TermLike as TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
@@ -123,24 +122,17 @@ test_applicationSimplification =
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.fId)
                     (simplificationEvaluator
-                        [ BuiltinAndAxiomSimplifier
-                            (const $ const $ const $ const $ const $ return
-                                ( AttemptedAxiom.Applied AttemptedAxiomResults
+                        [ BuiltinAndAxiomSimplifier $ \_ _ _ _ _ ->
+                            return $ AttemptedAxiom.Applied
+                                AttemptedAxiomResults
                                     { results =
-                                        OrPattern.fromPatterns [gOfAExpanded]
-                                    , remainders = OrPattern.fromPatterns []
+                                        OrPattern.fromPattern gOfAExpanded
+                                    , remainders = OrPattern.bottom
                                     }
-                                , SimplificationProof
-                                )
-                            )
                         ]
                     )
                 )
-                (makeApplication
-                    testSort
-                    Mock.fSymbol
-                    [[aExpanded]]
-                )
+                (makeApplication testSort Mock.fSymbol [[aExpanded]])
         assertEqualWithExplanation "" expect actual
 
     , testGroup "Combines child predicates and substitutions"
@@ -235,7 +227,7 @@ test_applicationSimplification =
                             , SortedVariable variable
                             , Unparse variable
                             )
-                        => AttemptedAxiom Object variable
+                        => AttemptedAxiom variable
                     result = AttemptedAxiom.Applied AttemptedAxiomResults
                         { results = OrPattern.fromPatterns
                             [ Conditional
@@ -254,10 +246,8 @@ test_applicationSimplification =
                         (Map.singleton
                             (AxiomIdentifier.Application Mock.sigmaId)
                             (simplificationEvaluator
-                                [ BuiltinAndAxiomSimplifier
-                                    (const $ const $ const $ const $ const $
-                                        return (result, SimplificationProof)
-                                    )
+                                [ BuiltinAndAxiomSimplifier $ \_ _ _ _ _ ->
+                                    return result
                                 ]
                             )
                         )
@@ -313,7 +303,7 @@ test_applicationSimplification =
         , substitution = mempty
         }
 
-    gOfAExpanded :: Ord variable => Pattern Object variable
+    gOfAExpanded :: Ord variable => Pattern variable
     gOfAExpanded = Conditional
         { term = gOfA
         , predicate = makeTruePredicate
@@ -329,27 +319,23 @@ test_applicationSimplification =
             Mock.headSortsMapping
             Mock.smtDeclarations
 
-    noSimplification
-        ::  [   ( TermLike Variable
-                , ([Pattern level Variable], SimplificationProof level)
-                )
-            ]
+    noSimplification :: [(TermLike Variable, [Pattern Variable])]
     noSimplification = []
 
 simplificationEvaluator
-    :: [BuiltinAndAxiomSimplifier Object]
-    -> BuiltinAndAxiomSimplifier Object
+    :: [BuiltinAndAxiomSimplifier]
+    -> BuiltinAndAxiomSimplifier
 simplificationEvaluator = firstFullEvaluation
 
 makeApplication
     :: (Ord variable, Show variable, HasCallStack)
     => Sort
     -> SymbolOrAlias
-    -> [[Pattern Object variable]]
+    -> [[Pattern variable]]
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid variable Object)
-        (OrPattern Object variable)
+        (Valid variable)
+        (OrPattern variable)
 makeApplication patternSort symbol patterns =
     (:<)
         valid
@@ -368,23 +354,17 @@ makeApplication patternSort symbol patterns =
 
 evaluate
     :: SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid Variable Object)
-        (OrPattern Object Variable)
-    -> IO (OrPattern Object Variable)
-evaluate
-    tools
-    simplifier
-    axiomIdToEvaluator
-    application
-  =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+        (Valid Variable)
+        (OrPattern Variable)
+    -> IO (OrPattern Variable)
+evaluate tools simplifier axiomIdToEvaluator application =
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ simplify
         tools

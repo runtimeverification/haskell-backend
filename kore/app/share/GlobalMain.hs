@@ -51,8 +51,6 @@ import           System.IO
                  ( hPutStrLn, stderr )
 
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
-                 ( ModuleName (..), ParsedDefinition, getModuleNameForError )
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  defaultAttributesVerification,
@@ -67,6 +65,8 @@ import           Kore.IndexedModule.IndexedModule
                  makeIndexedModuleAttributesNull, mapIndexedModulePatterns )
 import           Kore.Parser
                  ( ParsedPattern, parseKoreDefinition )
+import           Kore.Syntax.Definition
+                 ( ModuleName (..), ParsedDefinition, getModuleNameForError )
 import qualified Kore.Verified as Verified
 import qualified Paths_kore as MetaData
                  ( version )

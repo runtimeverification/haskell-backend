@@ -45,8 +45,8 @@ import           Kore.Step.TermLike
 
 functionalProofVars
     :: Prism
-         (FunctionalProof Object variableFrom)
-         (FunctionalProof Object variableTo)
+         (FunctionalProof variableFrom)
+         (FunctionalProof variableTo)
          variableFrom
          variableTo
 functionalProofVars = Lens.prism FunctionalVariable isVar
@@ -62,8 +62,8 @@ using the provided mapping.
 -}
 mapFunctionalProofVariables
     :: (variableFrom -> variableTo)
-    -> FunctionalProof Object variableFrom
-    -> FunctionalProof Object variableTo
+    -> FunctionalProof variableFrom
+    -> FunctionalProof variableTo
 mapFunctionalProofVariables mapper = Lens.over functionalProofVars mapper
 
 {-| Checks whether a pattern is functional or not and, if it is, returns a proof
@@ -72,7 +72,7 @@ mapFunctionalProofVariables mapper = Lens.over functionalProofVars mapper
 isFunctionalPattern
     :: SmtMetadataTools StepperAttributes
     -> TermLike variable
-    -> Either (FunctionalError Object) [FunctionalProof Object variable]
+    -> Either (FunctionalError) [FunctionalProof variable]
 isFunctionalPattern tools =
     provePattern (checkFunctionalHead tools)
 
@@ -82,7 +82,7 @@ isFunctionalPattern tools =
 isTotalPattern
     :: SmtMetadataTools StepperAttributes
     -> TermLike variable
-    -> Either (TotalError Object) [TotalProof Object variable]
+    -> Either (TotalError) [TotalProof variable]
 isTotalPattern tools =
     provePattern (checkTotalHead tools)
 
@@ -134,7 +134,7 @@ provePattern levelProver =
 isPreconstructedPattern
     :: err
     -> Recursive.Base (TermLike variable) pat
-    -> Either err (PartialPatternProof (FunctionalProof Object variable))
+    -> Either err (PartialPatternProof (FunctionalProof variable))
 isPreconstructedPattern err (_ :< pattern') =
     case pattern' of
         DomainValuePattern domain ->
@@ -149,8 +149,8 @@ checkFunctionalHead
     :: SmtMetadataTools StepperAttributes
     -> Recursive.Base (TermLike variable) a
     -> Either
-        (FunctionalError Object)
-        (PartialPatternProof (FunctionalProof Object variable))
+        (FunctionalError)
+        (PartialPatternProof (FunctionalProof variable))
 checkFunctionalHead tools base@(_ :< pattern') =
     case pattern' of
         VariablePattern v ->
@@ -231,7 +231,7 @@ checkConstructorModuloLikeHead tools base@(_ :< pattern') =
 isFunctionPattern
     :: SmtMetadataTools StepperAttributes
     -> TermLike variable
-    -> Either (FunctionError Object) [FunctionProof Object variable]
+    -> Either (FunctionError) [FunctionProof variable]
 isFunctionPattern tools =
     provePattern (checkFunctionHead tools)
 
@@ -239,8 +239,8 @@ checkFunctionHead
     :: SmtMetadataTools StepperAttributes
     -> Recursive.Base (TermLike variable) a
     -> Either
-        (FunctionError Object)
-        (PartialPatternProof (FunctionProof Object variable))
+        (FunctionError)
+        (PartialPatternProof (FunctionProof variable))
 checkFunctionHead tools base@(_ :< pattern') =
     case pattern' of
         ApplicationPattern ap
@@ -259,8 +259,8 @@ checkTotalHead
     :: SmtMetadataTools StepperAttributes
     -> Recursive.Base (TermLike variable) a
     -> Either
-        (TotalError Object)
-        (PartialPatternProof (TotalProof Object variable))
+        (TotalError)
+        (PartialPatternProof (TotalProof variable))
 checkTotalHead tools base@(_ :< pattern') =
     case pattern' of
         ApplicationPattern ap

@@ -9,7 +9,6 @@ import           Data.Default
                  ( def )
 import qualified Data.Map as Map
 
-import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
@@ -37,8 +36,7 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier (..),
-                 SimplificationProof (SimplificationProof), TermLikeSimplifier,
+                 ( PredicateSimplifier (..), TermLikeSimplifier,
                  evalSimplifier )
 import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
@@ -506,17 +504,15 @@ test_builtinEvaluation =
         )
     ]
 
-failingEvaluator :: BuiltinAndAxiomSimplifier Object
+failingEvaluator :: BuiltinAndAxiomSimplifier
 failingEvaluator =
-    BuiltinAndAxiomSimplifier
-        (const $ const $ const $ const $ const $
-            return (AttemptedAxiom.NotApplicable, SimplificationProof)
-        )
+    BuiltinAndAxiomSimplifier $ \_ _ _ _ _ ->
+        return AttemptedAxiom.NotApplicable
 
 axiomEvaluator
     :: TermLike Variable
     -> TermLike Variable
-    -> BuiltinAndAxiomSimplifier Object
+    -> BuiltinAndAxiomSimplifier
 axiomEvaluator left right =
     BuiltinAndAxiomSimplifier
         (equalityRuleEvaluator (axiom left right makeTruePredicate))
@@ -524,7 +520,7 @@ axiomEvaluator left right =
 axiomEvaluatorWithRemainder
     :: TermLike Variable
     -> TermLike Variable
-    -> BuiltinAndAxiomSimplifier Object
+    -> BuiltinAndAxiomSimplifier
 axiomEvaluatorWithRemainder left right =
     definitionEvaluation [axiom left right makeTruePredicate]
 
@@ -532,7 +528,7 @@ axiom
     :: TermLike Variable
     -> TermLike Variable
     -> Predicate Variable
-    -> EqualityRule Object Variable
+    -> EqualityRule Variable
 axiom left right predicate =
     EqualityRule RulePattern
         { left
@@ -554,21 +550,17 @@ mockMetadataTools =
 
 evaluate
     :: SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifier Object
+    -> BuiltinAndAxiomSimplifier
     -> TermLike Variable
-    -> IO (CommonAttemptedAxiom Object)
+    -> IO (CommonAttemptedAxiom)
 evaluate metadataTools (BuiltinAndAxiomSimplifier simplifier) patt =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ simplifier
         metadataTools substitutionSimplifier patternSimplifier Map.empty patt
   where
-    substitutionSimplifier :: PredicateSimplifier Object
+    substitutionSimplifier :: PredicateSimplifier
     substitutionSimplifier =
-        Predicate.create
-            metadataTools
-            patternSimplifier
-            Map.empty
-    patternSimplifier :: TermLikeSimplifier Object
+        Predicate.create metadataTools patternSimplifier Map.empty
+    patternSimplifier :: TermLikeSimplifier
     patternSimplifier = Simplifier.create metadataTools Map.empty

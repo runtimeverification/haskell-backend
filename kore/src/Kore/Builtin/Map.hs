@@ -65,7 +65,6 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
@@ -90,6 +89,7 @@ import           Kore.Step.Pattern
 import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
 import           Kore.Step.TermLike
+import           Kore.Syntax.Definition
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -198,7 +198,7 @@ returnMap
     => SmtMetadataTools attrs
     -> Sort
     -> Builtin variable
-    -> m (AttemptedAxiom Object variable)
+    -> m (AttemptedAxiom variable)
 returnMap tools resultSort map' =
     Builtin.appliedFunction
     $ Pattern.fromTermLike
@@ -426,7 +426,7 @@ asPattern
         )
     => Sort
     -> Builtin variable
-    -> Pattern Object variable
+    -> Pattern variable
 asPattern resultSort =
     Pattern.fromTermLike . asInternal tools resultSort
   where
@@ -543,28 +543,25 @@ make progress toward simplification. We introduce special cases when @x₁@ and/
  -}
 -- TODO (thomas.tuegel): Handle the case of two framed maps.
 unifyEquals
-    :: forall variable unifierM unifier p expanded proof .
-        ( SortedVariable variable
+    ::  forall variable unifierM unifier
+    .   ( SortedVariable variable
         , FreshVariable variable
         , Show variable
         , Unparse variable
-        , p ~ TermLike variable
-        , expanded ~ Pattern Object variable
-        , proof ~ SimplificationProof Object
         , unifier ~ unifierM variable
         , MonadUnify unifierM
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> (p -> p -> unifier (expanded, proof))
-    -> p
-    -> p
-    -> MaybeT unifier (expanded, proof)
+    -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
 unifyEquals
     simplificationType
     tools
@@ -579,23 +576,19 @@ unifyEquals
   where
     hookTools = StepperAttributes.hook <$> tools
 
-    -- | Discard the proofs in a collection of proven expanded patterns.
-    discardProofs :: Map k (expanded, proof) -> Map k expanded
-    discardProofs = Map.map fst
-
     -- | Given a collection 't' of 'Conditional' values, propagate all the
-    -- predicates to the top Object, returning a 'Conditional' collection.
+    -- predicates to the top, returning a 'Conditional' collection.
     propagatePredicates
         :: Traversable t
-        => t (Conditional Object variable a)
-        -> Conditional Object variable (t a)
+        => t (Conditional variable a)
+        -> Conditional variable (t a)
     propagatePredicates = sequenceA
 
     -- | Unify the two argument patterns.
     unifyEquals0
         :: TermLike variable
         -> TermLike variable
-        -> MaybeT unifier (expanded, proof)
+        -> MaybeT unifier (Pattern variable)
 
     unifyEquals0 dv1@(DV_ _ (Domain.BuiltinMap builtin1)) =
         \case
@@ -652,7 +645,7 @@ unifyEquals
     unifyEqualsConcrete
         :: Domain.InternalMap (TermLike variable)
         -> Domain.InternalMap (TermLike variable)
-        -> unifier (expanded, proof)
+        -> unifier (Pattern variable)
     unifyEqualsConcrete builtin1 builtin2 = do
         intersect <-
             sequence (Map.intersectionWith unifyEqualsChildren map1 map2)
@@ -665,14 +658,14 @@ unifyEquals
               | not (Map.null remainder2) = bottomWithExplanation
               | otherwise =
                 return $ asInternal tools builtinMapSort
-                    <$> (propagatePredicates . discardProofs) intersect
+                    <$> propagatePredicates intersect
               where
                 -- Elements of map1 missing from map2
                 remainder1 = Map.difference map1 map2
                 -- Elements of map2 missing from map1
                 remainder2 = Map.difference map2 map1
 
-        (,) <$> result <*> pure SimplificationProof
+        result
       where
         Domain.InternalMap { builtinMapSort } = builtin1
         Domain.InternalMap { builtinMapChild = map1 } = builtin1
@@ -683,19 +676,18 @@ unifyEquals
         :: Domain.InternalMap (TermLike variable)  -- ^ concrete map
         -> Domain.InternalMap (TermLike variable)  -- ^ framed map
         -> TermLike variable  -- ^ framing variable
-        -> unifier (expanded, proof)
+        -> unifier (Pattern variable)
     unifyEqualsFramed1 builtin1 builtin2 x = do
         intersect <-
             sequence (Map.intersectionWith unifyEqualsChildren map1 map2)
         -- The framing variable unifies with the remainder of map1.
         let remainder1 = Map.difference map1 map2
         -- The framing part of the unification result.
-        (frame, _) <- unifyEqualsChildren x (asBuiltinMap remainder1)
+        frame <- unifyEqualsChildren x (asBuiltinMap remainder1)
         let
             -- The concrete part of the unification result.
-            concrete :: Pattern Object variable
-            concrete =
-                asBuiltinMap <$> (propagatePredicates . discardProofs) intersect
+            concrete :: Pattern variable
+            concrete = asBuiltinMap <$> propagatePredicates intersect
 
             result
               | not (Map.null remainder2) = bottomWithExplanation
@@ -708,7 +700,7 @@ unifyEquals
                 -- Elements of map2 missing from map1
                 remainder2 = Map.difference map2 map1
 
-        (,) <$> result <*> pure SimplificationProof
+        result
       where
         Domain.InternalMap { builtinMapSort } = builtin1
         Domain.InternalMap { builtinMapChild = map1 } = builtin1
@@ -720,27 +712,26 @@ unifyEquals
         -> SymbolOrAlias  -- ^ 'element' symbol
         -> TermLike variable  -- ^ key
         -> TermLike variable  -- ^ value
-        -> unifier (expanded, proof)
+        -> unifier (Pattern variable)
     unifyEqualsElement builtin1 element' key2 value2 =
         case Map.toList map1 of
             [(fromConcreteStepPattern -> key1, value1)] ->
                 do
-                    (key, _) <- unifyEqualsChildren key1 key2
-                    (value, _) <- unifyEqualsChildren value1 value2
+                    key <- unifyEqualsChildren key1 key2
+                    value <- unifyEqualsChildren value1 value2
                     let result =
                             mkApp builtinMapSort element'
                             <$> propagatePredicates [key, value]
-                    return (result, SimplificationProof)
-            _ -> withProof bottomWithExplanation
+                    return result
+            _ -> bottomWithExplanation
             -- Cannot unify a non-element Map with an element Map
       where
         Domain.InternalMap { builtinMapSort } = builtin1
         Domain.InternalMap { builtinMapChild = map1 } = builtin1
+
     bottomWithExplanation = do
         Monad.Unify.explainBottom
             "Cannot unify a non-element map with an element map."
             first
             second
         return Pattern.bottom
-    withProof :: Applicative f => f a -> f (a, proof)
-    withProof fa = (,) <$> fa <*> pure SimplificationProof

@@ -104,8 +104,8 @@ import           GHC.Stack
 import           Kore.Annotation.Valid as Valid
 import           Kore.AST.Lens
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.Domain.Class
+import           Kore.Syntax.Definition
 import           Kore.Unparser
                  ( Unparse, renderDefault, unparseToString )
 import qualified Kore.Unparser as Unparse
@@ -113,7 +113,7 @@ import qualified Kore.Unparser as Unparse
 -- | Get the 'Sort' of a 'PurePattern' from the 'Valid' annotation.
 getSort
     :: Functor domain
-    => PurePattern level domain variable (Valid variable level)
+    => PurePattern domain variable (Valid variable)
     -> Sort
 getSort (extract -> Valid { patternSort }) = patternSort
 
@@ -122,8 +122,8 @@ forceSort
     ::  ( Traversable domain
         , Unparse pattern'
         , HasCallStack
-        , valid ~ Valid variable level
-        , pattern' ~ PurePattern level domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         )
     => Sort
     -> pattern'
@@ -227,8 +227,8 @@ makeSortsAgree
     ::  ( Traversable domain
         , Unparse pattern'
         , HasCallStack
-        , valid ~ Valid variable level
-        , pattern' ~ PurePattern level domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         )
     => (pattern' -> pattern' -> Sort -> a)
     -> pattern'
@@ -247,9 +247,9 @@ makeSortsAgree withPatterns = \pattern1 pattern2 ->
 
 getRigidSort
     ::  ( Traversable domain
-        , valid ~ Valid variable level
+        , valid ~ Valid variable
         )
-    => PurePattern level domain variable valid
+    => PurePattern domain variable valid
     -> Maybe Sort
 getRigidSort pattern' =
     case getSort pattern' of
@@ -264,8 +264,8 @@ mkAnd
         , Traversable domain
         , Unparse pattern'
         , HasCallStack
-        , valid ~ Valid variable level
-        , pattern' ~ PurePattern level domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         )
     => pattern'
     -> pattern'
@@ -296,8 +296,8 @@ See also: 'applyAlias', 'applySymbol'
 mkApp
     ::  ( Functor domain
         , Ord variable
-        , valid ~ Valid variable level
-        , pattern' ~ PurePattern level domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         )
     => Sort
     -- ^ Result sort
@@ -347,10 +347,10 @@ applyAlias
         , Ord variable
         , Unparse pattern'
         , HasCallStack
-        , valid ~ Valid variable level
-        , pattern' ~ PurePattern level domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         )
-    => SentenceAlias level pattern'
+    => SentenceAlias pattern'
     -- ^ 'Alias' declaration
     -> [Sort]
     -- ^ 'Alias' sort parameters
@@ -402,10 +402,10 @@ applyAlias_
     ::  ( Traversable domain
         , Ord variable
         , Unparse pattern'
-        , valid ~ Valid variable level
-        , pattern' ~ PurePattern level domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         )
-    => SentenceAlias level pattern'
+    => SentenceAlias pattern'
     -> [pattern']
     -> pattern'
 applyAlias_ sentence = applyAlias sentence []
@@ -421,10 +421,10 @@ applySymbol
     ::  ( Traversable domain
         , Ord variable
         , Unparse pattern'
-        , valid ~ Valid variable level
-        , pattern' ~ PurePattern level domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         )
-    => SentenceSymbol level pattern''
+    => SentenceSymbol pattern''
     -- ^ 'Symbol' declaration
     -> [Sort]
     -- ^ 'Symbol' sort parameters
@@ -476,10 +476,10 @@ applySymbol_
     ::  ( Traversable domain
         , Ord variable
         , Unparse pattern'
-        , valid ~ Valid variable level
-        , pattern' ~ PurePattern level domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         )
-    => SentenceSymbol level pattern''
+    => SentenceSymbol pattern''
     -> [pattern']
     -> pattern'
 applySymbol_ sentence = applySymbol sentence []
@@ -491,10 +491,10 @@ See also: 'mkBottom_'
  -}
 mkBottom
     ::  ( Functor domain
-        , valid ~ Valid variable level
+        , valid ~ Valid variable
         )
     => Sort
-    -> PurePattern level domain variable valid
+    -> PurePattern domain variable valid
 mkBottom bottomSort =
     asPurePattern (valid :< BottomPattern bottom)
   where
@@ -511,9 +511,9 @@ See also: 'mkBottom'
  -}
 mkBottom_
     ::  ( Functor domain
-        , valid ~ Valid variable level
+        , valid ~ Valid variable
         )
-    => PurePattern level domain variable valid
+    => PurePattern domain variable valid
 mkBottom_ = mkBottom predicateSort
 
 {- | Construct a 'Ceil' pattern in the given sort.
@@ -523,8 +523,8 @@ See also: 'mkCeil_'
  -}
 mkCeil
     ::  ( Functor domain
-        , valid ~ Valid variable level
-        , pattern' ~ PurePattern level domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         )
     => Sort
     -> pattern'
@@ -546,8 +546,8 @@ See also: 'mkCeil'
  -}
 mkCeil_
     :: ( Functor domain
-       , valid ~ Valid variable level
-       , pattern' ~ PurePattern level domain variable valid
+       , valid ~ Valid variable
+       , pattern' ~ PurePattern domain variable valid
        )
     => pattern'
     -> pattern'
@@ -559,8 +559,8 @@ mkDomainValue
     ::  ( Foldable domain
         , Domain domain
         , Ord variable
-        , valid ~ Valid variable Object
-        , pattern' ~ PurePattern Object domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         )
     => domain pattern'
     -> pattern'
@@ -581,8 +581,8 @@ See also: 'mkEquals_'
 mkEquals
     ::  ( Ord variable
         , Traversable domain
-        , valid ~ Valid variable level
-        , pattern' ~ PurePattern level domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         , Unparse pattern'
         )
     => Sort
@@ -620,8 +620,8 @@ See also: 'mkEquals'
 mkEquals_
     ::  ( Ord variable
         , Traversable domain
-        , valid ~ Valid variable level
-        , pattern' ~ PurePattern level domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         , Unparse pattern'
         )
     => pattern'
@@ -634,8 +634,8 @@ mkEquals_ = mkEquals predicateSort
 mkExists
     ::  ( Ord variable
         , Traversable domain
-        , valid ~ Valid variable level
-        , pattern' ~ PurePattern level domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         )
     => variable
     -> pattern'
@@ -658,8 +658,8 @@ See also: 'mkFloor_'
  -}
 mkFloor
     ::  ( Traversable domain
-        , valid ~ Valid variable level
-        , pattern' ~ PurePattern level domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         )
     => Sort
     -> pattern'
@@ -681,8 +681,8 @@ See also: 'mkFloor'
  -}
 mkFloor_
     ::  ( Traversable domain
-        , valid ~ Valid variable level
-        , pattern' ~ PurePattern level domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         )
     => pattern'
     -> pattern'
@@ -693,8 +693,8 @@ mkFloor_ = mkFloor predicateSort
 mkForall
     ::  ( Ord variable
         , Traversable domain
-        , valid ~ Valid variable level
-        , pattern' ~ PurePattern level domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         )
     => variable
     -> pattern'
@@ -717,8 +717,8 @@ mkIff
         , Traversable domain
         , Unparse pattern'
         , HasCallStack
-        , valid ~ Valid variable level
-        , pattern' ~ PurePattern level domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         )
     => pattern'
     -> pattern'
@@ -743,8 +743,8 @@ mkImplies
         , Traversable domain
         , Unparse pattern'
         , HasCallStack
-        , valid ~ Valid variable level
-        , pattern' ~ PurePattern level domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         )
     => pattern'
     -> pattern'
@@ -772,8 +772,8 @@ mkIn
         , Traversable domain
         , Unparse pattern'
         , HasCallStack
-        , valid ~ Valid variable level
-        , pattern' ~ PurePattern level domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         )
     => Sort
     -> pattern'
@@ -809,8 +809,8 @@ See also: 'mkIn'
 mkIn_
     ::  ( Ord variable
         , Traversable domain
-        , valid ~ Valid variable level
-        , pattern' ~ PurePattern level domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         , Unparse pattern'
         )
     => pattern'
@@ -822,8 +822,8 @@ mkIn_ = mkIn predicateSort
  -}
 mkNext
     ::  ( Traversable domain
-        , valid ~ Valid variable Object
-        , pattern' ~ PurePattern Object domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         )
     => pattern'
     -> pattern'
@@ -838,8 +838,8 @@ mkNext nextChild =
  -}
 mkNot
     ::  ( Traversable domain
-        , valid ~ Valid variable level
-        , pattern' ~ PurePattern level domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         )
     => pattern'
     -> pattern'
@@ -857,8 +857,8 @@ mkOr
         , Traversable domain
         , Unparse pattern'
         , HasCallStack
-        , valid ~ Valid variable level
-        , pattern' ~ PurePattern level domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         )
     => pattern'
     -> pattern'
@@ -883,8 +883,8 @@ mkRewrites
         , Traversable domain
         , Unparse pattern'
         , HasCallStack
-        , valid ~ Valid variable Object
-        , pattern' ~ PurePattern Object domain variable valid
+        , valid ~ Valid variable
+        , pattern' ~ PurePattern domain variable valid
         )
     => pattern'
     -> pattern'
@@ -909,10 +909,10 @@ See also: 'mkTop_'
  -}
 mkTop
     ::  ( Functor domain
-        , valid ~ Valid variable level
+        , valid ~ Valid variable
         )
     => Sort
-    -> PurePattern level domain variable valid
+    -> PurePattern domain variable valid
 mkTop topSort =
     asPurePattern (valid :< TopPattern top)
   where
@@ -929,9 +929,9 @@ See also: 'mkTop'
  -}
 mkTop_
     ::  ( Functor domain
-        , valid ~ Valid variable level
+        , valid ~ Valid variable
         )
-    => PurePattern level domain variable valid
+    => PurePattern domain variable valid
 mkTop_ = mkTop predicateSort
 
 {- | Construct a variable pattern.
@@ -939,17 +939,17 @@ mkTop_ = mkTop predicateSort
 mkVar
     ::  ( Functor domain
         , SortedVariable variable
-        , valid ~ Valid variable level
+        , valid ~ Valid variable
         )
     => variable
-    -> PurePattern level domain variable valid
+    -> PurePattern domain variable valid
 mkVar var =
     asPurePattern (validVar var :< VariablePattern var)
 
 validVar
     :: SortedVariable variable
     => variable
-    -> Valid variable level
+    -> Valid variable
 validVar var = Valid { patternSort, freeVariables }
   where
     patternSort = sortedVariableSort var
@@ -960,10 +960,10 @@ validVar var = Valid { patternSort, freeVariables }
 mkSetVar
     ::  ( Functor domain
         , SortedVariable variable
-        , valid ~ Valid variable level
+        , valid ~ Valid variable
         )
     => variable
-    -> PurePattern level domain variable valid
+    -> PurePattern domain variable valid
 mkSetVar var =
     asPurePattern (validVar var :< SetVariablePattern (SetVariable var))
 
@@ -971,10 +971,10 @@ mkSetVar var =
  -}
 mkStringLiteral
     ::  ( Functor domain
-        , valid ~ Valid variable Meta
+        , valid ~ Valid variable
         )
     => Text
-    -> PurePattern Meta domain variable valid
+    -> PurePattern domain variable valid
 mkStringLiteral string =
     asPurePattern (valid :< StringLiteralPattern stringLiteral)
   where
@@ -985,10 +985,10 @@ mkStringLiteral string =
  -}
 mkCharLiteral
     ::  ( Functor domain
-        , valid ~ Valid variable Meta
+        , valid ~ Valid variable
         )
     => Char
-    -> PurePattern Meta domain variable valid
+    -> PurePattern domain variable valid
 mkCharLiteral char =
     asPurePattern (valid :< CharLiteralPattern charLiteral)
   where
@@ -997,10 +997,10 @@ mkCharLiteral char =
 
 mkInhabitantPattern
     ::  ( Functor domain
-        , valid ~ Valid variable level
+        , valid ~ Valid variable
         )
     => Sort
-    -> PurePattern level domain variable valid
+    -> PurePattern domain variable valid
 mkInhabitantPattern s =
     asPurePattern (valid :< InhabitantPattern s)
   where
@@ -1035,12 +1035,12 @@ symS x s =
 {- | Construct an axiom declaration with the given parameters and pattern.
  -}
 mkAxiom
-    ::  ( valid ~ Valid variable level
-        , patternType ~ PurePattern level domain variable valid
+    ::  ( valid ~ Valid variable
+        , patternType ~ PurePattern domain variable valid
         )
-    => [sortParam]
+    => [SortVariable]
     -> patternType
-    -> SentenceAxiom sortParam patternType
+    -> SentenceAxiom patternType
 mkAxiom sentenceAxiomParameters sentenceAxiomPattern =
     SentenceAxiom
         { sentenceAxiomParameters
@@ -1054,25 +1054,25 @@ See also: 'mkAxiom'
 
  -}
 mkAxiom_
-    ::  ( valid ~ Valid variable level
-        , patternType ~ PurePattern level domain variable valid
+    ::  ( valid ~ Valid variable
+        , patternType ~ PurePattern domain variable valid
         )
     => patternType
-    -> SentenceAxiom sortParam patternType
+    -> SentenceAxiom patternType
 mkAxiom_ = mkAxiom []
 
 {- | Construct a symbol declaration with the given parameters and sorts.
  -}
 mkSymbol
-    ::  ( valid ~ Valid variable level
-        , patternType ~ PurePattern level domain variable valid
+    ::  ( valid ~ Valid variable
+        , patternType ~ PurePattern domain variable valid
         , sortParam ~ SortVariable
         )
     => Id
     -> [sortParam]
     -> [Sort]
     -> Sort
-    -> SentenceSymbol level patternType
+    -> SentenceSymbol patternType
 mkSymbol symbolConstructor symbolParams argumentSorts resultSort' =
     SentenceSymbol
         { sentenceSymbolSymbol =
@@ -1091,21 +1091,21 @@ See also: 'mkSymbol'
 
  -}
 mkSymbol_
-    ::  ( valid ~ Valid variable level
-        , patternType ~ PurePattern level domain variable valid
+    ::  ( valid ~ Valid variable
+        , patternType ~ PurePattern domain variable valid
         , sortParam ~ SortVariable
         )
     => Id
     -> [Sort]
     -> Sort
-    -> SentenceSymbol level patternType
+    -> SentenceSymbol patternType
 mkSymbol_ symbolConstructor = mkSymbol symbolConstructor []
 
 {- | Construct an alias declaration with the given parameters and sorts.
  -}
 mkAlias
-    ::  ( valid ~ Valid variable level
-        , patternType ~ PurePattern level domain Variable valid
+    ::  ( valid ~ Valid variable
+        , patternType ~ PurePattern domain Variable valid
         , sortParam ~ SortVariable
         )
     => Id
@@ -1113,7 +1113,7 @@ mkAlias
     -> Sort
     -> [Variable]
     -> patternType
-    -> SentenceAlias level patternType
+    -> SentenceAlias patternType
 mkAlias aliasConstructor aliasParams resultSort' arguments right =
     SentenceAlias
         { sentenceAliasAlias =
@@ -1145,144 +1145,144 @@ See also: 'mkAlias'
 
  -}
 mkAlias_
-    ::  ( valid ~ Valid variable level
-        , patternType ~ PurePattern level domain Variable valid
+    ::  ( valid ~ Valid variable
+        , patternType ~ PurePattern domain Variable valid
         , sortParam ~ SortVariable
         )
     => Id
     -> Sort
     -> [Variable]
     -> patternType
-    -> SentenceAlias level patternType
+    -> SentenceAlias patternType
 mkAlias_ aliasConstructor = mkAlias aliasConstructor []
 
 pattern And_
     :: Functor dom
     => Sort
-    -> PurePattern level dom var annotation
-    -> PurePattern level dom var annotation
-    -> PurePattern level dom var annotation
+    -> PurePattern dom var annotation
+    -> PurePattern dom var annotation
+    -> PurePattern dom var annotation
 
 pattern App_
     :: Functor dom
     => SymbolOrAlias
-    -> [PurePattern level dom var annotation]
-    -> PurePattern level dom var annotation
+    -> [PurePattern dom var annotation]
+    -> PurePattern dom var annotation
 
 pattern Bottom_
     :: Functor dom
     => Sort
-    -> PurePattern level dom var annotation
+    -> PurePattern dom var annotation
 
 pattern Ceil_
     :: Functor dom
     => Sort
     -> Sort
-    -> PurePattern level dom var annotation
-    -> PurePattern level dom var annotation
+    -> PurePattern dom var annotation
+    -> PurePattern dom var annotation
 
 pattern DV_
   :: Domain dom
   => Sort
-  -> dom (PurePattern Object dom var annotation)
-  -> PurePattern Object dom var annotation
+  -> dom (PurePattern dom var annotation)
+  -> PurePattern dom var annotation
 
 pattern Equals_
     :: Functor dom
     => Sort
     -> Sort
-    -> PurePattern level dom var annotation
-    -> PurePattern level dom var annotation
-    -> PurePattern level dom var annotation
+    -> PurePattern dom var annotation
+    -> PurePattern dom var annotation
+    -> PurePattern dom var annotation
 
 pattern Exists_
     :: Functor dom
     => Sort
     -> var
-    -> PurePattern level dom var annotation
-    -> PurePattern level dom var annotation
+    -> PurePattern dom var annotation
+    -> PurePattern dom var annotation
 
 pattern Floor_
     :: Functor dom
     => Sort
     -> Sort
-    -> PurePattern level dom var annotation
-    -> PurePattern level dom var annotation
+    -> PurePattern dom var annotation
+    -> PurePattern dom var annotation
 
 pattern Forall_
     :: Functor dom
     => Sort
     -> var
-    -> PurePattern level dom var annotation
-    -> PurePattern level dom var annotation
+    -> PurePattern dom var annotation
+    -> PurePattern dom var annotation
 
 pattern Iff_
     :: Functor dom
     => Sort
-    -> PurePattern level dom var annotation
-    -> PurePattern level dom var annotation
-    -> PurePattern level dom var annotation
+    -> PurePattern dom var annotation
+    -> PurePattern dom var annotation
+    -> PurePattern dom var annotation
 
 pattern Implies_
     :: Functor dom
     => Sort
-    -> PurePattern level dom var annotation
-    -> PurePattern level dom var annotation
-    -> PurePattern level dom var annotation
+    -> PurePattern dom var annotation
+    -> PurePattern dom var annotation
+    -> PurePattern dom var annotation
 
 pattern In_
     :: Functor dom
     => Sort
     -> Sort
-    -> PurePattern level dom var annotation
-    -> PurePattern level dom var annotation
-    -> PurePattern level dom var annotation
+    -> PurePattern dom var annotation
+    -> PurePattern dom var annotation
+    -> PurePattern dom var annotation
 
 pattern Next_
     :: Functor dom
     => Sort
-    -> PurePattern level dom var annotation
-    -> PurePattern level dom var annotation
+    -> PurePattern dom var annotation
+    -> PurePattern dom var annotation
 
 pattern Not_
     :: Functor dom
     => Sort
-    -> PurePattern level dom var annotation
-    -> PurePattern level dom var annotation
+    -> PurePattern dom var annotation
+    -> PurePattern dom var annotation
 
 pattern Or_
     :: Functor dom
     => Sort
-    -> PurePattern level dom var annotation
-    -> PurePattern level dom var annotation
-    -> PurePattern level dom var annotation
+    -> PurePattern dom var annotation
+    -> PurePattern dom var annotation
+    -> PurePattern dom var annotation
 
 pattern Rewrites_
   :: Functor dom
   => Sort
-  -> PurePattern level dom var annotation
-  -> PurePattern level dom var annotation
-  -> PurePattern level dom var annotation
+  -> PurePattern dom var annotation
+  -> PurePattern dom var annotation
+  -> PurePattern dom var annotation
 
 pattern Top_
     :: Functor dom
     => Sort
-    -> PurePattern level dom var annotation
+    -> PurePattern dom var annotation
 
 pattern Var_
     :: Functor dom
     => var
-    -> PurePattern level dom var annotation
+    -> PurePattern dom var annotation
 
 pattern StringLiteral_
   :: Functor dom
   => Text
-  -> PurePattern level dom var annotation
+  -> PurePattern dom var annotation
 
 pattern CharLiteral_
   :: Functor dom
   => Char
-  -> PurePattern level dom var annotation
+  -> PurePattern dom var annotation
 
 -- No way to make multiline pragma?
 -- NOTE: If you add a case to the AST type, add another synonym here.
@@ -1392,7 +1392,7 @@ pattern Var_ variable <-
 pattern V
     :: Functor dom
     => var
-    -> PurePattern level dom var annotation
+    -> PurePattern dom var annotation
 pattern V x <- Var_ x
 
 pattern StringLiteral_ str <-

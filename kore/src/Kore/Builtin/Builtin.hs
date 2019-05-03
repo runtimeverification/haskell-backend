@@ -91,9 +91,6 @@ import qualified Text.Megaparsec as Parsec
 import qualified Kore.AST.Common as Common
                  ( Pattern (..) )
 import qualified Kore.AST.Error as Kore.Error
-import           Kore.AST.Sentence
-                 ( ParsedSentenceSort, ParsedSentenceSymbol, SentenceSort (..),
-                 SentenceSymbol (..) )
 import           Kore.AST.Valid
 import qualified Kore.ASTVerifier.AttributesVerifier as Verifier.Attributes
 import           Kore.ASTVerifier.Error
@@ -135,21 +132,24 @@ import           Kore.Step.Pattern
 import           Kore.Step.Pattern as Pattern
                  ( top )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..),
-                 SimplificationType, Simplifier, TermLikeSimplifier )
+                 ( PredicateSimplifier, SimplificationType, Simplifier,
+                 TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import           Kore.Step.TermLike as TermLike
 import           Kore.Syntax.Application
+import           Kore.Syntax.Definition
+                 ( ParsedSentenceSort, ParsedSentenceSymbol, SentenceSort (..),
+                 SentenceSymbol (..) )
 import           Kore.Syntax.DomainValue
 import           Kore.Unparser
 import qualified Kore.Verified as Verified
 
 type Parser = Parsec Void Text
 
-type Function = BuiltinAndAxiomSimplifier Object
+type Function = BuiltinAndAxiomSimplifier
 
-type HookedSortDescription = SortDescription Object Domain.Builtin
+type HookedSortDescription = SortDescription Domain.Builtin
 
 -- | Verify a sort declaration.
 type SortDeclVerifier =
@@ -256,7 +256,7 @@ notImplemented :: Function
 notImplemented =
     BuiltinAndAxiomSimplifier notImplemented0
   where
-    notImplemented0 _ _ _ _ _ = pure (NotApplicable, SimplificationProof)
+    notImplemented0 _ _ _ _ _ = pure NotApplicable
 
 {- | Verify a builtin sort declaration.
 
@@ -618,9 +618,9 @@ parseString parser lit =
   See also: 'Pattern'
  -}
 appliedFunction
-    :: (Monad m, Ord variable, level ~ Object)
-    => Pattern level variable
-    -> m (AttemptedAxiom level variable)
+    :: (Monad m, Ord variable)
+    => Pattern variable
+    -> m (AttemptedAxiom variable)
 appliedFunction epat =
     return $ Applied AttemptedAxiomResults
         { results = OrPattern.fromPattern epat
@@ -646,7 +646,7 @@ unaryOperator
     -- ^ Parse operand
     ->  (   forall variable.
             Ord variable
-        => Sort -> b -> Pattern Object variable
+        => Sort -> b -> Pattern variable
         )
     -- ^ Render result as pattern with given sort
     -> Text
@@ -665,12 +665,12 @@ unaryOperator
     get :: Domain.Builtin (TermLike variable) -> a
     get = extractVal ctx
     unaryOperator0
-        :: (Ord variable, level ~ Object)
+        :: Ord variable
         => SmtMetadataTools StepperAttributes
-        -> TermLikeSimplifier level
+        -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom level variable)
+        -> Simplifier (AttemptedAxiom variable)
     unaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [Common.DomainValuePattern a] -> do
@@ -699,7 +699,7 @@ binaryOperator
         )
     -- ^ Extract domain value
     ->  (  forall variable . Ord variable
-        => Sort -> b -> Pattern Object variable
+        => Sort -> b -> Pattern variable
         )
     -- ^ Render result as pattern with given sort
     -> Text
@@ -718,12 +718,12 @@ binaryOperator
     get :: Domain.Builtin (TermLike variable) -> a
     get = extractVal ctx
     binaryOperator0
-        :: (Ord variable, level ~ Object)
+        :: Ord variable
         => SmtMetadataTools StepperAttributes
-        -> TermLikeSimplifier level
+        -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom level variable)
+        -> Simplifier (AttemptedAxiom variable)
     binaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [Common.DomainValuePattern a, Common.DomainValuePattern b] -> do
@@ -752,7 +752,7 @@ ternaryOperator
         )
     -- ^ Extract domain value
     ->  (  forall variable. Ord variable
-        => Sort -> b -> Pattern Object variable
+        => Sort -> b -> Pattern variable
         )
     -- ^ Render result as pattern with given sort
     -> Text
@@ -771,12 +771,12 @@ ternaryOperator
     get :: Domain.Builtin (TermLike variable) -> a
     get = extractVal ctx
     ternaryOperator0
-        :: (Ord variable, level ~ Object)
+        :: Ord variable
         => SmtMetadataTools StepperAttributes
-        -> TermLikeSimplifier level
+        -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom level variable)
+        -> Simplifier (AttemptedAxiom variable)
     ternaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [Common.DomainValuePattern a, Common.DomainValuePattern b, Common.DomainValuePattern c] -> do
@@ -790,10 +790,10 @@ type FunctionImplementation
     = forall variable
         .  Ord variable
         => SmtMetadataTools StepperAttributes
-        -> TermLikeSimplifier Object
+        -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom Object variable)
+        -> Simplifier (AttemptedAxiom variable)
 
 functionEvaluator :: FunctionImplementation -> Function
 functionEvaluator impl =
@@ -802,20 +802,16 @@ functionEvaluator impl =
     evaluator
         :: (Ord variable, Show variable)
         => SmtMetadataTools StepperAttributes
-        -> PredicateSimplifier level
-        -> TermLikeSimplifier Object
-        -> BuiltinAndAxiomSimplifierMap level
+        -> PredicateSimplifier
+        -> TermLikeSimplifier
+        -> BuiltinAndAxiomSimplifierMap
         -> CofreeF
             (Application SymbolOrAlias)
-            (Valid variable Object)
+            (Valid variable)
             (TermLike variable)
-        -> Simplifier
-            ( AttemptedAxiom Object variable
-            , SimplificationProof Object
-            )
-    evaluator tools _ simplifier _axiomIdToSimplifier (valid :< app) = do
-        attempt <- impl tools simplifier resultSort applicationChildren
-        return (attempt, SimplificationProof)
+        -> Simplifier (AttemptedAxiom variable)
+    evaluator tools _ simplifier _axiomIdToSimplifier (valid :< app) =
+        impl tools simplifier resultSort applicationChildren
       where
         Application { applicationChildren } = app
         Valid { patternSort = resultSort } = valid
@@ -944,8 +940,8 @@ expectNormalConcreteTerm tools purePattern =
  -}
 getAttemptedAxiom
     :: Monad m
-    => MaybeT m (AttemptedAxiom level variable)
-    -> m (AttemptedAxiom level variable)
+    => MaybeT m (AttemptedAxiom variable)
+    -> m (AttemptedAxiom variable)
 getAttemptedAxiom attempt =
     fromMaybe NotApplicable <$> runMaybeT attempt
 
@@ -956,24 +952,16 @@ unifyEqualsUnsolved
         , SortedVariable variable
         , Show variable
         , Unparse variable
-        , level ~ Object
-        , expanded ~ Pattern level variable
-        , patt ~ TermLike variable
-        , proof ~ SimplificationProof level
         )
     => SimplificationType
-    -> patt
-    -> patt
-    -> m (expanded, proof)
+    -> TermLike variable
+    -> TermLike variable
+    -> m (Pattern variable)
 unifyEqualsUnsolved SimplificationType.And a b =
     let
         unified = mkAnd a b
         predicate = makeCeilPredicate unified
-        expanded = (pure unified) { predicate }
     in
-        return (expanded, SimplificationProof)
+        return (pure unified) { predicate }
 unifyEqualsUnsolved SimplificationType.Equals a b =
-    return
-        ( Pattern.top {predicate = makeEqualsPredicate a b}
-        , SimplificationProof
-        )
+    return Pattern.top {predicate = makeEqualsPredicate a b}

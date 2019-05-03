@@ -21,8 +21,6 @@ import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
                  ( extractPatterns )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 import           Kore.Syntax.Floor
 import           Kore.Unparser
 
@@ -43,8 +41,8 @@ simplify
         , Show variable
         , Ord variable
         )
-    => Floor Sort (OrPattern Object variable)
-    -> (OrPattern Object variable, SimplificationProof Object)
+    => Floor Sort (OrPattern variable)
+    -> OrPattern variable
 simplify Floor { floorChild = child } =
     simplifyEvaluatedFloor child
 
@@ -53,7 +51,7 @@ simplify Floor { floorChild = child } =
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Floor Object) (Valid Object) (OrPattern Object variable)
+> CofreeF (Floor Sort) (Valid variable) (OrPattern variable)
 
 instead of an 'OrPattern' argument. The type of 'makeEvaluateFloor'
 may be changed analogously. The 'Valid' annotation will eventually cache
@@ -67,8 +65,8 @@ simplifyEvaluatedFloor
         , Ord variable
         , Unparse variable
         )
-    => OrPattern Object variable
-    -> (OrPattern Object variable, SimplificationProof Object)
+    => OrPattern variable
+    -> OrPattern variable
 simplifyEvaluatedFloor child =
     case MultiOr.extractPatterns child of
         [childP] -> makeEvaluateFloor childP
@@ -86,15 +84,12 @@ makeEvaluateFloor
         , Ord variable
         , Unparse variable
         )
-    => Pattern Object variable
-    -> (OrPattern Object variable, SimplificationProof Object)
+    => Pattern variable
+    -> OrPattern variable
 makeEvaluateFloor child
-  | Pattern.isTop child =
-    (OrPattern.fromPatterns [Pattern.top], SimplificationProof)
-  | Pattern.isBottom child =
-    (OrPattern.fromPatterns [Pattern.bottom], SimplificationProof)
-  | otherwise =
-    makeEvaluateNonBoolFloor child
+  | Pattern.isTop child    = OrPattern.top
+  | Pattern.isBottom child = OrPattern.bottom
+  | otherwise              = makeEvaluateNonBoolFloor child
 
 makeEvaluateNonBoolFloor
     ::  ( SortedVariable variable
@@ -102,25 +97,17 @@ makeEvaluateNonBoolFloor
         , Ord variable
         , Unparse variable
         )
-    => Pattern Object variable
-    -> (OrPattern Object variable, SimplificationProof Object)
-makeEvaluateNonBoolFloor
-    patt@Conditional { term = Top_ _ }
-  =
-    ( OrPattern.fromPatterns [patt]
-    , SimplificationProof
-    )
+    => Pattern variable
+    -> OrPattern variable
+makeEvaluateNonBoolFloor patt@Conditional { term = Top_ _ } =
+    OrPattern.fromPattern patt
 -- TODO(virgil): Also evaluate functional patterns to bottom for non-singleton
 -- sorts, and maybe other cases also
 makeEvaluateNonBoolFloor
     Conditional {term, predicate, substitution}
   =
-    ( OrPattern.fromPatterns
-        [ Conditional
-            { term = mkTop_
-            , predicate = makeAndPredicate (makeFloorPredicate term) predicate
-            , substitution = substitution
-            }
-        ]
-    , SimplificationProof
-    )
+    OrPattern.fromPattern Conditional
+        { term = mkTop_
+        , predicate = makeAndPredicate (makeFloorPredicate term) predicate
+        , substitution = substitution
+        }

@@ -40,9 +40,8 @@ import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplify )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier,
-                 SimplificationProof (SimplificationProof), Simplifier,
-                 TermLikeSimplifier, evalSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
+                 evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.TermLike
@@ -112,7 +111,7 @@ test_ceilSimplification =
         (do
             -- ceil(top) = top
             actual1 <- makeEvaluate mockMetadataTools
-                (Pattern.top :: Pattern Object Variable)
+                (Pattern.top :: Pattern Variable)
             assertEqualWithExplanation "ceil(top)"
                 (OrPattern.fromPatterns
                     [ Pattern.top ]
@@ -120,7 +119,7 @@ test_ceilSimplification =
                 actual1
             -- ceil(bottom) = bottom
             actual2 <- makeEvaluate mockMetadataTools
-                (Pattern.bottom :: Pattern Object Variable)
+                (Pattern.bottom :: Pattern Variable)
             assertEqualWithExplanation "ceil(bottom)"
                 (OrPattern.fromPatterns
                     []
@@ -474,7 +473,7 @@ test_ceilSimplification =
         let Just r = asConcreteStepPattern p in r
 
 appliedMockEvaluator
-    :: Pattern Object Variable -> BuiltinAndAxiomSimplifier Object
+    :: Pattern Variable -> BuiltinAndAxiomSimplifier
 appliedMockEvaluator result =
     BuiltinAndAxiomSimplifier
     $ mockEvaluator
@@ -485,32 +484,31 @@ appliedMockEvaluator result =
         }
 
 mockEvaluator
-    :: AttemptedAxiom Object variable
+    :: AttemptedAxiom variable
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
-    -> Simplifier
-        (AttemptedAxiom Object variable, SimplificationProof Object)
+    -> Simplifier (AttemptedAxiom variable)
 mockEvaluator evaluation _ _ _ _ _ =
-    return (evaluation, SimplificationProof)
+    return evaluation
 
 mapVariables
     ::  ( FreshVariable variable
         , SortedVariable variable
         , Ord variable
         )
-    => Pattern Object Variable
-    -> Pattern Object variable
+    => Pattern Variable
+    -> Pattern variable
 mapVariables =
     Pattern.mapVariables $ \v ->
         fromVariable v { variableCounter = Just (Sup.Element 1) }
 
 makeCeil
     :: Ord variable
-    => [Pattern Object variable]
-    -> Ceil Sort (OrPattern Object variable)
+    => [Pattern variable]
+    -> Ceil Sort (OrPattern variable)
 makeCeil patterns =
     Ceil
         { ceilOperandSort = testSort
@@ -520,11 +518,10 @@ makeCeil patterns =
 
 evaluate
     :: SmtMetadataTools StepperAttributes
-    -> Ceil Sort (OrPattern Object Variable)
-    -> IO (OrPattern Object Variable)
+    -> Ceil Sort (OrPattern Variable)
+    -> IO (OrPattern Variable)
 evaluate tools ceil =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ Ceil.simplify
         tools
@@ -535,20 +532,19 @@ evaluate tools ceil =
 
 makeEvaluate
     :: SmtMetadataTools StepperAttributes
-    -> Pattern Object Variable
-    -> IO (OrPattern Object Variable)
+    -> Pattern Variable
+    -> IO (OrPattern Variable)
 makeEvaluate tools child =
     makeEvaluateWithAxioms tools Map.empty child
 
 makeEvaluateWithAxioms
     :: SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
-    -> Pattern Object Variable
-    -> IO (OrPattern Object Variable)
+    -> Pattern Variable
+    -> IO (OrPattern Variable)
 makeEvaluateWithAxioms tools axiomIdToSimplifier child =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ Ceil.makeEvaluate
         tools

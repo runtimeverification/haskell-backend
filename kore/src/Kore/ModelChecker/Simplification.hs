@@ -10,7 +10,6 @@ module Kore.ModelChecker.Simplification
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.MetaOrObject
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -37,12 +36,12 @@ import           Kore.Variables.Fresh
 
 checkImplicationIsTop
     :: SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
-    -> Pattern Object Variable
+    -> Pattern Variable
     -> TermLike Variable
     -> Simplifier Bool
 checkImplicationIsTop
@@ -65,12 +64,13 @@ checkImplicationIsTop
                                 )
                 result = Conditional
                             { term = resultTerm, predicate = Predicate.makeTruePredicate, substitution = mempty}
-            (orResult, _) <- Pattern.simplify
-                                tools
-                                predicateSimplifier
-                                patternSimplifier
-                                axiomSimplifers
-                                result
+            orResult <-
+                Pattern.simplify
+                    tools
+                    predicateSimplifier
+                    patternSimplifier
+                    axiomSimplifers
+                    result
             return (isBottom orResult)
         _ -> (error . show . Pretty.vsep)
              [ "Not implemented error:"

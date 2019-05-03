@@ -217,7 +217,7 @@ asInternal =
 asPattern
     :: Foldable f
     => f (TermLike Variable)
-    -> Pattern Object Variable
+    -> Pattern Variable
 asPattern =
     Reflection.give testMetadataTools List.asPattern listSort
     . Seq.fromList

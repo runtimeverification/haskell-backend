@@ -23,7 +23,6 @@ import           System.Directory
 import           System.FilePath
                  ( addExtension, splitFileName, (</>) )
 
-import           Kore.AST.Sentence
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Builtin as Builtin
 import           Kore.Error

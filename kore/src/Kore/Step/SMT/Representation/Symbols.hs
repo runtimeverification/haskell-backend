@@ -14,12 +14,6 @@ import qualified Data.Map as Map
 import           Data.Maybe
                  ( mapMaybe )
 
-import           Kore.AST.Sentence
-                 ( SentenceSymbol (SentenceSymbol, sentenceSymbolResultSort, sentenceSymbolSorts, sentenceSymbolSymbol) )
-import qualified Kore.AST.Sentence as Sentence
-                 ( Symbol (Symbol) )
-import qualified Kore.AST.Sentence as Sentence.Symbol
-                 ( Symbol (..) )
 import qualified Kore.Attribute.Constructor as Attribute
                  ( Constructor (Constructor, isConstructor) )
 import qualified Kore.Attribute.Functional as Attribute
@@ -39,6 +33,12 @@ import           Kore.Sort
 import qualified Kore.Step.SMT.AST as AST
 import           Kore.Syntax.Id
                  ( Id )
+import           Kore.Syntax.Sentence
+                 ( SentenceSymbol (SentenceSymbol, sentenceSymbolResultSort, sentenceSymbolSorts, sentenceSymbolSymbol) )
+import qualified Kore.Syntax.Sentence as Sentence
+                 ( Symbol (Symbol) )
+import qualified Kore.Syntax.Sentence as Sentence.Symbol
+                 ( Symbol (..) )
 import           Kore.Unparser
                  ( unparseToString )
 import qualified Kore.Verified as Verified
@@ -52,15 +52,8 @@ related attributes).
 All references to other sorts and symbols are left unresolved.
 -}
 buildRepresentations
-    :: forall indexedModule param axiom
-    .   ( indexedModule ~
-            IndexedModule
-                param
-                Verified.Pattern
-                Attribute.Symbol
-                axiom
-        )
-    => indexedModule
+    :: forall axiom
+    .  IndexedModule Verified.Pattern Attribute.Symbol axiom
     -> AST.UnresolvedDeclarations
 buildRepresentations indexedModule =
     listToDeclarations builtinDeclarations

@@ -18,7 +18,6 @@ import           Data.List
                  ( group )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -28,8 +27,10 @@ import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Pattern
                  ( Conditional (..), Predicate )
+import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
@@ -47,9 +48,9 @@ import           Kore.Variables.Fresh
 -}
 create
     :: SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
-    -> PredicateSimplifier Object
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
+    -> PredicateSimplifier
 create tools simplifier axiomIdToSimplifier =
     PredicateSimplifier
         (simplify tools simplifier axiomIdToSimplifier 0)
@@ -68,12 +69,12 @@ simplify
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Int
-    -> Predicate Object variable
-    -> BranchT Simplifier (Predicate Object variable)
+    -> Predicate variable
+    -> BranchT Simplifier (Predicate variable)
 simplify
     tools
     simplifier
@@ -109,7 +110,7 @@ simplify
                     -- variables are not among substitution's variables.
                     assertDistinctVariables
                         (substitution <> simplifiedSubstitution)
-                    (mergedPredicate, _proof) <-
+                    mergedPredicate <-
                         Monad.Trans.lift
                         $ mergePredicatesAndSubstitutions
                             tools
@@ -161,16 +162,16 @@ simplifyPartial
         , Unparse variable
         , SortedVariable variable
         )
-    => PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    => PredicateSimplifier
+    -> TermLikeSimplifier
     -> Syntax.Predicate variable
-    -> BranchT Simplifier (Predicate Object variable)
+    -> BranchT Simplifier (Predicate variable)
 simplifyPartial
     substitutionSimplifier
     termSimplifier
     predicate
   = do
-    (patternOr, _proof) <-
+    patternOr <-
         Monad.Trans.lift
         $ simplifyTerm'
         $ Syntax.unwrapPredicate predicate
@@ -179,8 +180,9 @@ simplifyPartial
     scatter (eraseTerm <$> patternOr)
   where
     simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
-    eraseTerm conditional@Conditional { term }
-      | TopBottom.isTop term = conditional { term = () }
+    eraseTerm conditional
+      | TopBottom.isTop (Pattern.term conditional)
+      = Conditional.withoutTerm conditional
       | otherwise =
         (error . show . Pretty.vsep)
             [ "Expecting a \\top term, but found:"

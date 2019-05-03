@@ -22,6 +22,7 @@ module Kore.Step.Pattern
     , Kore.Step.Pattern.freeVariables
     -- * Re-exports
     , Conditional (..)
+    , Conditional.withCondition
     , Predicate
     , module Kore.Step.TermLike
     ) where
@@ -42,8 +43,7 @@ import qualified Kore.Step.Conditional as Conditional
 import           Kore.Step.Predicate
                  ( Predicate )
 import           Kore.Step.TermLike
-                 ( CofreeF (..), Object, Sort, SortedVariable, TermLike,
-                 Variable )
+                 ( CofreeF (..), Sort, SortedVariable, TermLike, Variable )
 import qualified Kore.Step.TermLike as TermLike
 import           Kore.TopBottom
                  ( TopBottom (..) )
@@ -58,15 +58,14 @@ The form of @Pattern@ is intended to be a convenient representation of a
 program configuration for Kore execution.
 
  -}
-type Pattern level variable =
-    Conditional level variable (TermLike variable)
+type Pattern variable = Conditional variable (TermLike variable)
 
-fromPredicate :: Predicate Object variable -> Pattern Object variable
+fromPredicate :: Predicate variable -> Pattern variable
 fromPredicate = (<$) mkTop_
 
 freeVariables
     :: Ord variable
-    => Pattern Object variable
+    => Pattern variable
     -> Set variable
 freeVariables = Conditional.freeVariables TermLike.freeVariables
 
@@ -76,8 +75,8 @@ in an Pattern.
 mapVariables
     :: Ord variableTo
     => (variableFrom -> variableTo)
-    -> Pattern Object variableFrom
-    -> Pattern Object variableTo
+    -> Pattern variableFrom
+    -> Pattern variableTo
 mapVariables
     variableMapper
     Conditional { term, predicate, substitution }
@@ -94,7 +93,7 @@ from an Pattern.
 -}
 allVariables
     :: (Ord variable, Unparse variable)
-    => Pattern Object variable
+    => Pattern variable
     -> Set.Set variable
 allVariables
     Conditional { term, predicate, substitution }
@@ -129,7 +128,7 @@ toStepPattern
         , Unparse variable
         , HasCallStack
         )
-    => Pattern Object variable -> TermLike variable
+    => Pattern variable -> TermLike variable
 toStepPattern
     Conditional { term, predicate, substitution }
   =
@@ -161,13 +160,13 @@ toMLPattern
         , Unparse variable
         , HasCallStack
         )
-    => Pattern Object variable -> TermLike variable
+    => Pattern variable -> TermLike variable
 toMLPattern = toStepPattern
 
 {-|'bottom' is an expanded pattern that has a bottom condition and that
 should become Bottom when transformed to a ML pattern.
 -}
-bottom :: Ord variable => Pattern Object variable
+bottom :: Ord variable => Pattern variable
 bottom =
     Conditional
         { term      = mkBottom_
@@ -180,7 +179,7 @@ bottom =
 The 'predicate' is set to 'makeFalsePredicate'.
 
  -}
-bottomOf :: Ord variable => Sort -> Pattern Object variable
+bottomOf :: Ord variable => Sort -> Pattern variable
 bottomOf resultSort =
     Conditional
         { term      = mkBottom resultSort
@@ -191,7 +190,7 @@ bottomOf resultSort =
 {-|'top' is an expanded pattern that has a top condition and that
 should become Top when transformed to a ML pattern.
 -}
-top :: Ord variable => Pattern Object variable
+top :: Ord variable => Pattern variable
 top =
     Conditional
         { term      = mkTop_
@@ -201,7 +200,7 @@ top =
 
 {- | An 'Pattern' where the 'term' is 'Top' of the given 'Sort'.
  -}
-topOf :: Ord variable => Sort -> Pattern Object variable
+topOf :: Ord variable => Sort -> Pattern variable
 topOf resultSort =
     Conditional
         { term      = mkTop resultSort
@@ -220,7 +219,7 @@ See also: 'makeTruePredicate', 'pure'
 fromTermLike
     :: Ord variable
     => TermLike variable
-    -> Pattern Object variable
+    -> Pattern variable
 fromTermLike term
   | isBottom term = bottom
   | otherwise =
@@ -236,6 +235,6 @@ toPredicate
         , Show variable
         , Unparse variable
         )
-    => Pattern Object variable
+    => Pattern variable
     -> Syntax.Predicate variable
 toPredicate = Conditional.toPredicate

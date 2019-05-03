@@ -81,8 +81,11 @@ proveTests =
 
 graphTests :: [ParserTest ReplCommand]
 graphTests =
-    [ "graph"  `parsesTo_` ShowGraph
-    , "graph " `parsesTo_` ShowGraph
+    [ "graph"           `parsesTo_` ShowGraph Nothing
+    , "graph "          `parsesTo_` ShowGraph Nothing
+    , "graph file"      `parsesTo_` ShowGraph (Just "file")
+    , "graph \"f ile\"" `parsesTo_` ShowGraph (Just "f ile")
+    , "graph f ile"     `fails`     "graph doesn't take 2 args"
     ]
 
 stepTests :: [ParserTest ReplCommand]
@@ -227,12 +230,15 @@ pipeTests =
 
 pipeRedirectTests :: [ParserTest ReplCommand]
 pipeRedirectTests =
-    [ "config | script > file"                          `parsesTo_` pipeRedirectConfig Nothing "script" [] "file"
-    , "config | \"s cript\" \"arg 1\" arg2 > \"f ile\"" `parsesTo_` pipeRedirectConfig Nothing "s cript" ["arg 1", "arg2"] "f ile"
-    , "config 5 | script \"a r g 1\" arg2 > file"       `parsesTo_` pipeRedirectConfig (Just (ReplNode 5)) "script" ["a r g 1", "arg2"] "file"
-    , "config 5 | > "                                   `fails`     "no script or file name"
-    , "config 5 | script > "                            `fails`     "no file name"
-    , "config 5 | > file"                               `fails`     "no script name"
+    [ "config | script > file"
+        `parsesTo_` pipeRedirectConfig Nothing "script" [] "file"
+    , "config | \"s cript\" \"arg 1\" arg2 > \"f ile\""
+        `parsesTo_` pipeRedirectConfig Nothing "s cript" ["arg 1", "arg2"] "f ile"
+    , "config 5 | script \"a r g 1\" arg2 > file"
+        `parsesTo_` pipeRedirectConfig (Just (ReplNode 5)) "script" ["a r g 1", "arg2"] "file"
+    , "config 5 | > "        `fails`     "no script or file name"
+    , "config 5 | script > " `fails`     "no file name"
+    , "config 5 | > file"    `fails`     "no script name"
     ]
   where
     pipeRedirectConfig
@@ -253,10 +259,12 @@ appendTests =
 
 pipeAppendTests :: [ParserTest ReplCommand]
 pipeAppendTests =
-    [ "config | script >> file"                           `parsesTo_` pipeAppendConfig Nothing "script" [] "file"
-    , "config 5 | \"sc ript\" arg1 \"a rg\" >> \"f ile\"" `parsesTo_` pipeAppendConfig (Just (ReplNode 5)) "sc ript" ["arg1", "a rg"] "f ile"
-    , "config | > >> file"                                `fails` "incorrect script name"
-    , "config | s >> "                                    `fails` "no file name"
+    [ "config | script >> file"
+        `parsesTo_` pipeAppendConfig Nothing "script" [] "file"
+    , "config 5 | \"sc ript\" arg1 \"a rg\" >> \"f ile\""
+        `parsesTo_` pipeAppendConfig (Just (ReplNode 5)) "sc ript" ["arg1", "a rg"] "f ile"
+    , "config | > >> file" `fails` "incorrect script name"
+    , "config | s >> "     `fails` "no file name"
     ]
   where
     pipeAppendConfig

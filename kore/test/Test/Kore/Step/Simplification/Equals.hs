@@ -855,7 +855,7 @@ test_equalsSimplification_TermLike =
 assertTermEquals
     :: HasCallStack
     => SmtMetadataTools StepperAttributes
-    -> Predicate Object Variable
+    -> Predicate Variable
     -> TermLike Variable
     -> TermLike Variable
     -> IO ()
@@ -864,7 +864,7 @@ assertTermEquals = assertTermEqualsGeneric
 assertTermEqualsGeneric
     :: HasCallStack
     => SmtMetadataTools StepperAttributes
-    -> Predicate Object Variable
+    -> Predicate Variable
     -> TermLike Variable
     -> TermLike Variable
     -> Assertion
@@ -875,7 +875,7 @@ assertTermEqualsGeneric tools expectPure =
 assertTermEqualsMulti
     :: HasCallStack
     => SmtMetadataTools StepperAttributes
-    -> [Predicate Object Variable]
+    -> [Predicate Variable]
     -> TermLike Variable
     -> TermLike Variable
     -> IO ()
@@ -884,7 +884,7 @@ assertTermEqualsMulti = assertTermEqualsMultiGeneric
 assertTermEqualsMultiGeneric
     :: HasCallStack
     => SmtMetadataTools StepperAttributes
-    -> [Predicate Object Variable]
+    -> [Predicate Variable]
     -> TermLike Variable
     -> TermLike Variable
     -> Assertion
@@ -907,7 +907,7 @@ assertTermEqualsMultiGeneric tools expectPure first second = do
         (MultiOr.make expectPure)
         actualPure
   where
-    termToPattern :: TermLike Variable -> Pattern Object Variable
+    termToPattern :: TermLike Variable -> Pattern Variable
     termToPattern (Bottom_ _) =
         Conditional.bottom
     termToPattern term =
@@ -916,7 +916,7 @@ assertTermEqualsMultiGeneric tools expectPure first second = do
             , predicate = makeTruePredicate
             , substitution = mempty
             }
-    predSubstToPattern :: Predicate Object Variable -> Pattern Object Variable
+    predSubstToPattern :: Predicate Variable -> Pattern Variable
     predSubstToPattern
         Conditional {predicate = PredicateFalse}
       =
@@ -992,11 +992,10 @@ testSort2 =
 
 evaluateOr
     :: SmtMetadataTools StepperAttributes
-    -> Equals Sort (OrPattern Object Variable)
-    -> IO (OrPattern Object Variable)
+    -> Equals Sort (OrPattern Variable)
+    -> IO (OrPattern Variable)
 evaluateOr tools equals =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ simplify
         tools
@@ -1007,19 +1006,18 @@ evaluateOr tools equals =
 
 evaluate
     :: SmtMetadataTools StepperAttributes
-    -> Pattern Object Variable
-    -> Pattern Object Variable
-    -> IO (OrPattern Object Variable)
+    -> Pattern Variable
+    -> Pattern Variable
+    -> IO (OrPattern Variable)
 evaluate = evaluateGeneric
 
 evaluateGeneric
     :: SmtMetadataTools StepperAttributes
-    -> Pattern Object Variable
-    -> Pattern Object Variable
-    -> IO (OrPattern Object Variable)
+    -> Pattern Variable
+    -> Pattern Variable
+    -> IO (OrPattern Variable)
 evaluateGeneric tools first second =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ makeEvaluate
         tools
@@ -1033,10 +1031,9 @@ evaluateTermsGeneric
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (OrPredicate Object Variable)
+    -> IO (OrPredicate Variable)
 evaluateTermsGeneric tools first second =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ makeEvaluateTermsToPredicate
         tools

@@ -57,7 +57,7 @@ asInternal :: Bool -> TermLike Variable
 asInternal = Bool.asInternal boolSort
 
 -- | Specialize 'Bool.asPattern' to the builtin sort 'boolSort'.
-asPattern :: Bool -> Pattern Object Variable
+asPattern :: Bool -> Pattern Variable
 asPattern = Bool.asPattern boolSort
 
 -- | Test a binary operator hooked to the given symbol.
@@ -117,7 +117,7 @@ test_simplification =
 
         becomes :: HasCallStack
                 => TermLike Variable
-                -> Pattern Object Variable
+                -> Pattern Variable
                 -> TestTree
         becomes makerInput =
             wrapped_maker_expected withSolver

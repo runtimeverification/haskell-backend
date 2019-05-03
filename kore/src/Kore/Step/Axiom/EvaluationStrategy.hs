@@ -23,7 +23,6 @@ import           Data.Maybe
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
                  ( asConcretePurePattern )
 import           Kore.AST.Valid
@@ -53,8 +52,7 @@ import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
@@ -84,8 +82,8 @@ acceptsMultipleResults OnlyOneResult = False
 that define it.
 -}
 definitionEvaluation
-    :: [EqualityRule Object Variable]
-    -> BuiltinAndAxiomSimplifier Object
+    :: [EqualityRule Variable]
+    -> BuiltinAndAxiomSimplifier
 definitionEvaluation rules =
     BuiltinAndAxiomSimplifier
         (evaluateWithDefinitionAxioms rules)
@@ -100,8 +98,8 @@ See also: 'definitionEvaluation'
 
 -}
 totalDefinitionEvaluation
-    :: [EqualityRule Object Variable]
-    -> BuiltinAndAxiomSimplifier Object
+    :: [EqualityRule Variable]
+    -> BuiltinAndAxiomSimplifier
 totalDefinitionEvaluation rules =
     BuiltinAndAxiomSimplifier totalDefinitionEvaluationWorker
   where
@@ -114,14 +112,11 @@ totalDefinitionEvaluation rules =
             , Unparse variable
             )
         => SmtMetadataTools StepperAttributes
-        -> PredicateSimplifier Object
-        -> TermLikeSimplifier Object
-        -> BuiltinAndAxiomSimplifierMap Object
+        -> PredicateSimplifier
+        -> TermLikeSimplifier
+        -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
-        -> Simplifier
-            ( AttemptedAxiom Object variable
-            , SimplificationProof Object
-            )
+        -> Simplifier (AttemptedAxiom variable)
     totalDefinitionEvaluationWorker
         tools
         predicateSimplifier
@@ -129,10 +124,10 @@ totalDefinitionEvaluation rules =
         axiomSimplifiers
         term
       = do
-        (result, proof) <- evaluate term
+        result <- evaluate term
         if AttemptedAxiom.hasRemainders result
-            then return (AttemptedAxiom.NotApplicable, proof)
-            else return (result, proof)
+            then return AttemptedAxiom.NotApplicable
+            else return result
       where
         evaluate =
             evaluateWithDefinitionAxioms
@@ -149,8 +144,8 @@ If that result contains more than one pattern, or it contains a reminder,
 the evaluation fails with 'error' (may change in the future).
 -}
 firstFullEvaluation
-    :: [BuiltinAndAxiomSimplifier Object]
-    -> BuiltinAndAxiomSimplifier Object
+    :: [BuiltinAndAxiomSimplifier]
+    -> BuiltinAndAxiomSimplifier
 firstFullEvaluation simplifiers =
     BuiltinAndAxiomSimplifier
         (applyFirstSimplifierThatWorks simplifiers OnlyOneResult)
@@ -159,9 +154,9 @@ firstFullEvaluation simplifiers =
 returns Applicable, otherwise returns the result of the second.
 -}
 simplifierWithFallback
-    :: BuiltinAndAxiomSimplifier Object
-    -> BuiltinAndAxiomSimplifier Object
-    -> BuiltinAndAxiomSimplifier Object
+    :: BuiltinAndAxiomSimplifier
+    -> BuiltinAndAxiomSimplifier
+    -> BuiltinAndAxiomSimplifier
 simplifierWithFallback first second =
     BuiltinAndAxiomSimplifier
         (applyFirstSimplifierThatWorks [first, second] WithMultipleResults)
@@ -170,8 +165,8 @@ simplifierWithFallback first second =
 on concrete patterns.
 -}
 builtinEvaluation
-    :: BuiltinAndAxiomSimplifier Object
-    -> BuiltinAndAxiomSimplifier Object
+    :: BuiltinAndAxiomSimplifier
+    -> BuiltinAndAxiomSimplifier
 builtinEvaluation evaluator =
     BuiltinAndAxiomSimplifier (evaluateBuiltin evaluator)
 
@@ -184,14 +179,14 @@ evaluateBuiltin
         , Show variable
         , Unparse variable
         )
-    => BuiltinAndAxiomSimplifier Object
+    => BuiltinAndAxiomSimplifier
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
-    -> Simplifier (AttemptedAxiom Object variable, SimplificationProof Object)
+    -> Simplifier (AttemptedAxiom variable)
 evaluateBuiltin
     (BuiltinAndAxiomSimplifier builtinEvaluator)
     tools
@@ -200,7 +195,7 @@ evaluateBuiltin
     axiomIdToSimplifier
     patt
   = do
-    (result, _proof) <-
+    result <-
         builtinEvaluator
             tools
             substitutionSimplifier
@@ -219,8 +214,8 @@ evaluateBuiltin
                 ++ show patt
                 )
           | otherwise ->
-            return (AttemptedAxiom.NotApplicable, SimplificationProof)
-        AttemptedAxiom.Applied _ -> return (result, SimplificationProof)
+            return (AttemptedAxiom.NotApplicable)
+        AttemptedAxiom.Applied _ -> return (result)
   where
     isPattConcrete = isJust (asConcretePurePattern patt)
     isValue pat = isJust $
@@ -237,21 +232,18 @@ applyFirstSimplifierThatWorks
         , Show variable
         , Unparse variable
         )
-    => [BuiltinAndAxiomSimplifier Object]
+    => [BuiltinAndAxiomSimplifier]
     -> AcceptsMultipleResults
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> Simplifier
-        (AttemptedAxiom Object variable, SimplificationProof Object)
+        (AttemptedAxiom variable)
 applyFirstSimplifierThatWorks [] _ _ _ _ _ _ =
-    return
-        ( AttemptedAxiom.NotApplicable
-        , SimplificationProof
-        )
+    return AttemptedAxiom.NotApplicable
 applyFirstSimplifierThatWorks
     (BuiltinAndAxiomSimplifier evaluator : evaluators)
     multipleResults
@@ -261,7 +253,7 @@ applyFirstSimplifierThatWorks
     axiomIdToSimplifier
     patt
   = do
-    (applicationResult, _proof) <-
+    applicationResult <-
         evaluator
             tools substitutionSimplifier simplifier axiomIdToSimplifier patt
 
@@ -307,7 +299,7 @@ applyFirstSimplifierThatWorks
                             (unparse <$> Foldable.toList orRemainders)
                         ]
                     )
-                return (applicationResult, SimplificationProof)
+                return applicationResult
         AttemptedAxiom.NotApplicable ->
             applyFirstSimplifierThatWorks
                 evaluators
@@ -326,15 +318,14 @@ evaluateWithDefinitionAxioms
         , Show variable
         , Unparse variable
         )
-    => [EqualityRule Object Variable]
+    => [EqualityRule Variable]
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
-    -> Simplifier
-        (AttemptedAxiom Object variable, SimplificationProof Object)
+    -> Simplifier (AttemptedAxiom variable)
 evaluateWithDefinitionAxioms
     definitionRules
     tools
@@ -347,7 +338,7 @@ evaluateWithDefinitionAxioms
     let
         -- TODO (thomas.tuegel): Figure out how to get the initial conditions
         -- and apply them here, to remove remainder branches sooner.
-        expanded :: Pattern Object variable
+        expanded :: Pattern variable
         expanded = Pattern.fromTermLike patt
 
     let unwrapEqualityRule =
@@ -363,10 +354,7 @@ evaluateWithDefinitionAxioms
             expanded
             (map unwrapEqualityRule definitionRules)
 
-    return
-        ( AttemptedAxiom.Applied AttemptedAxiomResults
-            { results = Step.gatherResults result
-            , remainders = Step.remainders result
-            }
-        , SimplificationProof
-        )
+    return $ AttemptedAxiom.Applied AttemptedAxiomResults
+        { results = Step.gatherResults result
+        , remainders = Step.remainders result
+        }

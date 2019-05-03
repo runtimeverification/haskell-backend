@@ -59,10 +59,10 @@ To use @refreshVariables@ with 'Kore.Step.Pattern.substitute', map the result
 with 'Kore.AST.Valid.mkVar':
 
 @
-'Kore.Step.Pattern.substitute'
+'Kore.Step.TermLike.substitute'
     ('Kore.AST.Valid.mkVar' \<$\> refreshVariables avoid rename)
-    :: 'Kore.Step.Pattern.StepPattern' Object Variable
-    -> 'Kore.Step.Pattern.StepPattern' Object Variable
+    :: 'Kore.Step.TermLike TermLike' Variable
+    -> 'Kore.Step.TermLike TermLike' Variable
 @
 
  -}

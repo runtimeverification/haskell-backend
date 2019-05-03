@@ -793,24 +793,22 @@ simplifyUnify
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Pattern Object Variable, Maybe (Pattern Object Variable))
+    -> IO (Pattern Variable, Maybe (Pattern Variable))
 simplifyUnify tools first second =
     (,)
         <$> simplify tools first second
         <*> unify tools first second
 
-
 unify
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (Pattern Object Variable))
+    -> IO (Maybe (Pattern Variable))
 unify tools first second =
     SMT.runSMT SMT.defaultConfig
-        $ evalSimplifier emptyLogger
-        $ runMaybeT
-        $ (<$>) fst
-        $ unification
+    $ evalSimplifier emptyLogger
+    $ runMaybeT
+    $ unification
   where
     substitutionSimplifier = Mock.substitutionSimplifier tools
     unification =
@@ -829,10 +827,9 @@ simplify
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Pattern Object Variable)
+    -> IO (Pattern Variable)
 simplify tools first second =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ termAnd
         tools

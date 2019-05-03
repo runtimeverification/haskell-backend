@@ -87,7 +87,7 @@ prove :: Parser ReplCommand
 prove = Prove . ClaimIndex <$$> literal "prove" *> decimal
 
 showGraph :: Parser ReplCommand
-showGraph = const ShowGraph <$$> literal "graph"
+showGraph = ShowGraph <$$> literal "graph" *> optional (quotedOrWordWithout "")
 
 proveSteps :: Parser ReplCommand
 proveSteps = ProveSteps <$$> literal "step" *> option 1 L.decimal <* Char.space

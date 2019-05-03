@@ -12,7 +12,6 @@ import qualified Data.Set as Set
 
 import           Kore.Annotation.Valid
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTHelpers
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -25,6 +24,7 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
 import           Kore.Step.TermLike hiding
                  ( freeVariables )
+import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 import Test.Kore
@@ -33,11 +33,11 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 objectS1 :: Sort
 objectS1 = simpleSort (SortName "s1")
 
-objectA :: SentenceSymbol Object (TermLike Variable)
+objectA :: SentenceSymbol (TermLike Variable)
 objectA = mkSymbol_ (testId "a") [] objectS1
 
 -- Two variations on a constructor axiom for 'objectA'.
-axiomA, axiomA' :: SentenceAxiom SortVariable (TermLike Variable)
+axiomA, axiomA' :: SentenceAxiom (TermLike Variable)
 axiomA = mkAxiom_ $ applySymbol_ objectA []
 axiomA' =
     mkAxiom [sortVariableR]
@@ -48,13 +48,13 @@ axiomA' =
     sortVariableR = SortVariable (testId "R")
     sortR = SortVariableSort sortVariableR
 
-objectB :: SentenceAlias Object (TermLike Variable)
+objectB :: SentenceAlias (TermLike Variable)
 objectB = mkAlias_ (testId "b") objectS1 [] $ mkTop objectS1
 
-metaA :: SentenceSymbol Meta (TermLike Variable)
+metaA :: SentenceSymbol (TermLike Variable)
 metaA = mkSymbol_ (testId "#a") [] stringMetaSort
 
-metaB :: SentenceAlias Meta (TermLike Variable)
+metaB :: SentenceAlias (TermLike Variable)
 metaB = mkAlias_ (testId "#b") stringMetaSort [] $ mkTop stringMetaSort
 
 testObjectModuleName :: ModuleName

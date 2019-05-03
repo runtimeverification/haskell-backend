@@ -43,7 +43,6 @@ import qualified Data.Text as Text
 
 import qualified Kore.AST.Common as Common
 import qualified Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Logger.Output as Logger
@@ -61,6 +60,7 @@ import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.TermLike as TermLike
 import           Kore.Syntax
+import           Kore.Syntax.Definition
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}
@@ -139,8 +139,8 @@ charGen =
 
 symbolOrAliasDeclarationRawGen
     :: MonadGen m
-    => (Id -> [SortVariable] -> s Object)
-    -> m (s Object)
+    => (Id -> [SortVariable] -> result)
+    -> m result
 symbolOrAliasDeclarationRawGen constructor =
     constructor
         <$> Gen.small idGen
@@ -152,10 +152,10 @@ symbolOrAliasGen =
         <$> Gen.small idGen
         <*> couple (Gen.small sortGen)
 
-symbolGen :: MonadGen m => m (Symbol Object)
+symbolGen :: MonadGen m => m Symbol
 symbolGen = symbolOrAliasDeclarationRawGen Symbol
 
-aliasGen :: MonadGen m => m (Alias Object)
+aliasGen :: MonadGen m => m Alias
 aliasGen = symbolOrAliasDeclarationRawGen Alias
 
 sortVariableGen :: MonadGen m => m SortVariable
@@ -346,7 +346,7 @@ topGen = topBottomGen Top
 patternGen
     :: (Sort -> Gen child)
     -> Sort
-    -> Gen (Common.Pattern Object dom Variable child)
+    -> Gen (Common.Pattern dom Variable child)
 patternGen childGen patternSort =
     Gen.frequency
         [ (1, Common.AndPattern <$> andGen childGen patternSort)
@@ -500,17 +500,17 @@ korePatternChildGen patternSort' =
     korePatternGenCharLiteral =
         asParsedPattern . Common.CharLiteralPattern <$> charLiteralGen
 
-    korePatternGenDomainValue :: Object ~ Object => Gen ParsedPattern
+    korePatternGenDomainValue :: Gen ParsedPattern
     korePatternGenDomainValue =
         asParsedPattern . Common.DomainValuePattern
             <$> genBuiltinExternal patternSort'
 
-    korePatternGenNext :: Object ~ Object => Gen ParsedPattern
+    korePatternGenNext :: Gen ParsedPattern
     korePatternGenNext =
         asParsedPattern . Common.NextPattern
             <$> nextGen korePatternChildGen patternSort'
 
-    korePatternGenRewrites :: Object ~ Object => Gen ParsedPattern
+    korePatternGenRewrites :: Gen ParsedPattern
     korePatternGenRewrites =
         asParsedPattern . Common.RewritesPattern
             <$> rewritesGen korePatternChildGen patternSort'
@@ -596,7 +596,7 @@ predicateChildGen childGen patternSort' =
 
 sentenceAliasGen
     :: (Sort -> Gen patternType)
-    -> Gen (SentenceAlias Object patternType)
+    -> Gen (SentenceAlias patternType)
 sentenceAliasGen patGen =
     Gen.small sentenceAliasGenWorker
   where
@@ -631,7 +631,7 @@ sentenceAliasGen patGen =
                 , sentenceAliasAttributes
                 }
 
-sentenceSymbolGen :: Gen (SentenceSymbol Object patternType)
+sentenceSymbolGen :: Gen (SentenceSymbol patternType)
 sentenceSymbolGen = do
     sentenceSymbolSymbol <- symbolGen
     let Symbol { symbolParams } = sentenceSymbolSymbol
@@ -654,7 +654,7 @@ sentenceImportGen =
 
 sentenceAxiomGen
    :: Gen patternType
-   -> Gen (SentenceAxiom SortVariable patternType)
+   -> Gen (SentenceAxiom patternType)
 sentenceAxiomGen patGen = do
     sentenceAxiomParameters <- couple sortVariableGen
     Reader.local (addSortVariables sentenceAxiomParameters) $ do
@@ -668,7 +668,7 @@ sentenceAxiomGen patGen = do
 
 sentenceSortGen
     :: forall patternType
-    .  Gen (SentenceSort Object patternType)
+    .  Gen (SentenceSort patternType)
 sentenceSortGen = do
     sentenceSortName <- idGen
     sentenceSortParameters <- couple sortVariableGen
@@ -690,7 +690,8 @@ koreSentenceGen =
         , SentenceImportSentence
             <$> sentenceImportGen
         , SentenceAxiomSentence <$> sentenceAxiomGen korePatternUnifiedGen
-        , SentenceClaimSentence <$> sentenceAxiomGen korePatternUnifiedGen
+        , SentenceClaimSentence . SentenceClaim
+            <$> sentenceAxiomGen korePatternUnifiedGen
         , SentenceSortSentence <$> sentenceSortGen
         , (SentenceHookSentence . SentenceHookedSort) <$> sentenceSortGen
         , (SentenceHookSentence . SentenceHookedSymbol) <$> sentenceSymbolGen
@@ -735,10 +736,10 @@ sortActual name sorts =
         , sortActualSorts = sorts
         }
 
-expandedPatternGen :: Gen (Pattern Object Variable)
+expandedPatternGen :: Gen (Pattern Variable)
 expandedPatternGen =
     Pattern.fromTermLike <$> (termLikeChildGen =<< sortGen)
 
-orPatternGen :: Gen (OrPattern Object Variable)
+orPatternGen :: Gen (OrPattern Variable)
 orPatternGen =
     OrPattern.fromPatterns <$> Gen.list (Range.linear 0 64) expandedPatternGen

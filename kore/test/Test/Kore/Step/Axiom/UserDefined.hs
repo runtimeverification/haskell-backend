@@ -37,8 +37,7 @@ import           Kore.Step.Rule
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..), TermLikeSimplifier,
-                 evalSimplifier )
+                 ( TermLikeSimplifier, evalSimplifier )
 import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
@@ -162,7 +161,7 @@ test_userDefinedFunction =
                 )
                 (mockSimplifier
                     -- Evaluate Top to Bottom.
-                    (asSimplification [ (mkTop_, ([], SimplificationProof)) ])
+                    (asSimplification [ (mkTop_, []) ])
                 )
                 (Mock.functionalConstr10 (mkVar Mock.x))
         assertEqualWithExplanation "" expect actual
@@ -219,23 +218,13 @@ test_userDefinedFunction =
     -- TODO: Add a test for the stepper giving up
     ]
 
-noSimplification
-    ::  [   ( TermLike Variable
-            , ([Pattern level Variable], SimplificationProof level)
-            )
-        ]
+noSimplification :: [(TermLike Variable, [Pattern Variable])]
 noSimplification = []
 
 
 asSimplification
-    ::  [   ( TermLike Variable
-            , ([Pattern level Variable], SimplificationProof level)
-            )
-        ]
-    ->  [   ( TermLike Variable
-            , ([Pattern level Variable], SimplificationProof level)
-            )
-        ]
+    :: [(TermLike Variable, [Pattern Variable])]
+    -> [(TermLike Variable, [Pattern Variable])]
 asSimplification = id
 
 mockMetadataTools :: SmtMetadataTools StepperAttributes
@@ -250,10 +239,10 @@ mockMetadataTools =
 
 evaluateWithAxiom
     :: SmtMetadataTools StepperAttributes
-    -> EqualityRule Object Variable
-    -> TermLikeSimplifier Object
+    -> EqualityRule Variable
+    -> TermLikeSimplifier
     -> TermLike Variable
-    -> IO (CommonAttemptedAxiom Object)
+    -> IO (CommonAttemptedAxiom)
 evaluateWithAxiom
     metadataTools
     axiom
@@ -263,8 +252,7 @@ evaluateWithAxiom
     results <- evaluated
     return (normalizeResult results)
   where
-    normalizeResult
-        :: CommonAttemptedAxiom Object -> CommonAttemptedAxiom Object
+    normalizeResult :: CommonAttemptedAxiom -> CommonAttemptedAxiom
     normalizeResult =
         \case
             AttemptedAxiom.Applied AttemptedAxiomResults
@@ -281,10 +269,9 @@ evaluateWithAxiom
             , predicate = predicate
             , substitution = Substitution.modify sort substitution
             }
-    evaluated :: IO (CommonAttemptedAxiom Object)
+    evaluated :: IO CommonAttemptedAxiom
     evaluated =
-        (<$>) fst
-        $ SMT.runSMT SMT.defaultConfig
+        SMT.runSMT SMT.defaultConfig
         $ evalSimplifier emptyLogger
         $ equalityRuleEvaluator
             axiom

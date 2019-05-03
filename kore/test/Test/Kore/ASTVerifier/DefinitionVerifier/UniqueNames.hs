@@ -6,8 +6,8 @@ import Test.Tasty
        ( TestTree )
 
 import Kore.AST.Pure
-import Kore.AST.Sentence
 import Kore.Error
+import Kore.Syntax.Definition
 
 import Test.Kore.ASTVerifier.DefinitionVerifier
 
@@ -79,7 +79,7 @@ test_uniqueNames =
         (simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
                 (unifiedVariablePattern (VariableName "#a") charMetaSort)
-                [unifiedSortVariable Meta (SortVariableName "#a")]
+                [namedSortVariable (SortVariableName "#a")]
             ]
         )
     , expectFailureWithError "Definition with two identical sort names."

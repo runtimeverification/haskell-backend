@@ -22,7 +22,6 @@ import           Data.Maybe
                  ( fromMaybe, mapMaybe )
 
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.Attribute.Axiom
                  ( Assoc (Assoc), Comm (Comm), Idem (Idem), Unit (Unit) )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -48,6 +47,7 @@ import           Kore.Step.Rule
                  QualifiedAxiomPattern (AllPathClaimPattern, FunctionAxiomPattern, ImplicationAxiomPattern, OnePathClaimPattern, RewriteAxiomPattern),
                  RulePattern (RulePattern) )
 import qualified Kore.Step.Rule as Rule
+import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 {- | Create a mapping from symbol identifiers to their defining axioms.
@@ -55,7 +55,7 @@ import qualified Kore.Verified as Verified
  -}
 extractEqualityAxioms
     :: VerifiedModule StepperAttributes Attribute.Axiom
-    -> Map (AxiomIdentifier Object) [EqualityRule Object Variable]
+    -> Map (AxiomIdentifier) [EqualityRule Variable]
 extractEqualityAxioms =
     \imod ->
         Foldable.foldl'
@@ -65,9 +65,9 @@ extractEqualityAxioms =
   where
     -- | Update the map of function axioms with all the axioms in one module.
     extractModuleAxioms
-        :: Map (AxiomIdentifier Object) [EqualityRule Object Variable]
+        :: Map (AxiomIdentifier) [EqualityRule Variable]
         -> VerifiedModule StepperAttributes Attribute.Axiom
-        -> Map (AxiomIdentifier Object) [EqualityRule Object Variable]
+        -> Map (AxiomIdentifier) [EqualityRule Variable]
     extractModuleAxioms axioms imod =
         Foldable.foldl' extractSentenceAxiom axioms sentences
       where
@@ -77,9 +77,9 @@ extractEqualityAxioms =
     -- axioms with it. The map is returned unmodified in case the sentence is
     -- not a function axiom.
     extractSentenceAxiom
-        :: Map (AxiomIdentifier Object) [EqualityRule Object Variable]
+        :: Map (AxiomIdentifier) [EqualityRule Variable]
         -> (attrs, Verified.SentenceAxiom)
-        -> Map (AxiomIdentifier Object) [EqualityRule Object Variable]
+        -> Map (AxiomIdentifier) [EqualityRule Variable]
     extractSentenceAxiom axioms (_, sentence) =
         let
             namedAxiom = axiomToIdAxiomPatternPair sentence
@@ -88,15 +88,15 @@ extractEqualityAxioms =
 
     -- | Update the map of function axioms by inserting the axiom at the key.
     insertAxiom
-        :: Map (AxiomIdentifier Object) [EqualityRule Object Variable]
-        -> (AxiomIdentifier Object, EqualityRule Object Variable)
-        -> Map (AxiomIdentifier Object) [EqualityRule Object Variable]
+        :: Map (AxiomIdentifier) [EqualityRule Variable]
+        -> (AxiomIdentifier, EqualityRule Variable)
+        -> Map (AxiomIdentifier) [EqualityRule Variable]
     insertAxiom axioms (name, patt) =
         Map.alter (Just . (patt :) . fromMaybe []) name axioms
 
 axiomToIdAxiomPatternPair
-    :: SentenceAxiom SortVariable (TermLike Variable)
-    -> Maybe (AxiomIdentifier Object, EqualityRule Object Variable)
+    :: SentenceAxiom (TermLike Variable)
+    -> Maybe (AxiomIdentifier, EqualityRule Variable)
 axiomToIdAxiomPatternPair axiom =
     case Rule.fromSentenceAxiom axiom of
         Left _ -> Nothing
@@ -113,14 +113,14 @@ axiomToIdAxiomPatternPair axiom =
 -- |Converts a registry of 'RulePattern's to one of
 -- 'BuiltinAndAxiomSimplifier's
 axiomPatternsToEvaluators
-    :: Map.Map (AxiomIdentifier Object) [EqualityRule Object Variable]
-    -> Map.Map (AxiomIdentifier Object) (BuiltinAndAxiomSimplifier Object)
+    :: Map.Map (AxiomIdentifier) [EqualityRule Variable]
+    -> Map.Map (AxiomIdentifier) (BuiltinAndAxiomSimplifier)
 axiomPatternsToEvaluators =
     Map.fromAscList . mapMaybe equalitiesToEvaluators . Map.toAscList
   where
     equalitiesToEvaluators
-        :: (AxiomIdentifier Object, [EqualityRule Object Variable])
-        -> Maybe (AxiomIdentifier Object, BuiltinAndAxiomSimplifier Object)
+        :: (AxiomIdentifier, [EqualityRule Variable])
+        -> Maybe (AxiomIdentifier, BuiltinAndAxiomSimplifier)
     equalitiesToEvaluators
         (symbolId, filter (not . ignoreEqualityRule) -> equalities)
       =
@@ -131,7 +131,7 @@ axiomPatternsToEvaluators =
             (Just sEvaluator, Just dEvaluator) ->
                 Just (symbolId, simplifierWithFallback sEvaluator dEvaluator)
       where
-        simplifications, evaluations :: [EqualityRule Object Variable]
+        simplifications, evaluations :: [EqualityRule Variable]
         (simplifications, evaluations) =
             partition isSimplificationRule equalities
           where
@@ -140,12 +140,12 @@ axiomPatternsToEvaluators =
               where
                 Simplification { isSimplification } =
                     Attribute.simplification attributes
-        simplification :: [BuiltinAndAxiomSimplifier Object]
+        simplification :: [BuiltinAndAxiomSimplifier]
         simplification = mkSimplifier <$> simplifications
           where
             mkSimplifier
-                :: EqualityRule Object Variable
-                -> BuiltinAndAxiomSimplifier Object
+                :: EqualityRule Variable
+                -> BuiltinAndAxiomSimplifier
             mkSimplifier simpl =
                 BuiltinAndAxiomSimplifier $ equalityRuleEvaluator simpl
         simplificationEvaluator =
@@ -164,7 +164,7 @@ used as an evaluator, such as if it is an associativity or commutativity
 axiom; this is determined by checking the 'AxiomPatternAttributes'.
 
  -}
-ignoreEqualityRule :: EqualityRule Object Variable -> Bool
+ignoreEqualityRule :: EqualityRule Variable -> Bool
 ignoreEqualityRule (EqualityRule RulePattern { attributes })
     | isAssoc = True
     | isComm = True
