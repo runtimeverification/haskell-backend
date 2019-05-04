@@ -140,61 +140,60 @@ Here, `\exists` is the name of the notation, whose arity is 2. The two placehold
 
 Another noticeable fact about `\exists` is its _binding behavior_; that is, it binds all free occurrences of the variable `X` in `P`. Binding behavior is important when using _substitution_, which is also defined as a notation and we will discuss about it later. In short, substitution is the so-called _capture-avoiding-substitution_, meaning that bound variables are renamed automatically to prevent unintended variable capture. The binding behavior of `\exists X P` means that its first argument `X` may be renamed in substitution. Finally, note that we put the `binder` attribute along with the declaration, so that the backends do not need to reverse engineer the information from the declaration. 
 
-# ===== DO NOT REVIEW =====
+#### Notations with `assoc` attribute
 
-#### (Left/right-)associative notations
+Some _binary notations_ are _associative_. One typical example is `\or`. It is inconvenient to write a disjunction of multiple patterns using the binary notation `\or`. Instead, we want to abbreviate `\or (\or (\or a b) c) d` as `\or a b c d`. This is achieved by using the `assoc` attribute in notation declarations. 
 
-Sometimes, it is convenient to define _volatile notations_ with an arbitrarily number of arguments. For example, `\or P1 P2 ... Pn` for any `n >= 2`. We achieve this by defining a binary notation `\or P Q` and specify that this notation is _(left/right-)associative_. 
+Specifically speaking, if `foo` is a binary notation, then we can use the `left-assoc` (or `right-assoc`) to specify that `foo` is left (or right) associative. Therefore,
 
-```
-notation \or P Q = \implies (\neg P) Q
-left-assoc-notation \or
-```
+|                   | [left-assoc]                  | [right-assoc]                 |
+| ----------------- | ----------------------------- | ----------------------------- |
+| `foo a1 a2`       | `foo a1 a2`                   | `foo a1 a2`                   |
+| `foo a1 a2 a3`    | `foo (foo a1 a2) a3`          | `foo a1 (foo a2 a3)`          |
+| `foo a1 a2 a3 a4` | `foo (foo (foo a1 a2) a3) a4` | `foo a1 (foo a2 (foo a3 a4))` |
+| etc.              | etc.                          | etc.                          |
 
-The line `left-assoc-notation \or` tells the verifier to accept patterns of the form `\or P1 P2 ... Pn`, and desugar it (if required), uniquely, to `(\or ... (\or P1 P2) ... Pn)`. Note that there is nothing related to the semantics; it is merely a notation about the syntax.
+_Remark._ The attributes `left-assoc` and `right-assoc` do not carry semantic meaning. They carry only syntactic meaning. Specifically speaking, they tell the _verifier_ to accept patterns of the form `foo a1 a2 a3`, even if `foo` has been declared to have arity 2. Without these attributes, the verifier will reject the pattern `foo a1 a2 a3` because it is not wellformed.
 
-Similarly, we can define volatile `\and` as
-
-```
-notation \and P Q = \neg (\or (\neg P) (\neg Q))
-left-assoc-notation \and
-```
-
-Volatile `\forall` can be defined as
+As an example, here is the declaration of `\or` using `left-assoc` attribute:
 
 ```
-right-assoc-notation \forall
+notation \or P Q = \implies (\neg P) Q [left-assoc]
 ```
 
-which tells the verifier to accept patterns of the form `\forall X1 X2 ... Xn P` and desugar it (if required), uniquely, to `(\forall X1 ... (\forall Xn P) ...)`.
+Another neat example is the declaration of `\exists` that allows multiple binders:
+
+```
+notation \exists X P = \neg (\forall X (\neg P)) [binder, right-assoc]
+```
+
+Here, the `right-assoc` attribute tells the verifier to accept patterns of the form `\exists X1 X2 ... Xn P` as a notation of the pattern `(\exists X1 ... (\exists Xn P) ...)`.
+
+___QUESTION.___ How to do the same thing for `\forall`? Note that unlike `\exists`, `\forall` is one of the primitive construct that takes exactly one binder, as specified by the AppKore syntax. Can we declare:
+
+```
+notation \forall X P = \forall X P [binder, right-assoc]  // try to make \forall valatile
+```
+
+Note that `\forall` now also appears on the right hand side. This is not intended, because we want to forbid recursive notations. 
 
 #### Hooked notations
 
-A more advanced example of notations is _substitution_. We want to define `\subst X P Q` as a notation that represents the pattern obtained by substituting all free occurrences of `X` in `P` for `Q`, where alpha-renaming happens explicitly to prevent variable capturing. However, substitution is _different_ from the other notations that we have seen in previous sections. It is impossible to define it _in the logic_. (TODO:: Say why). However, it is also necessary in defining other common notations, such as the greatest fixpoint binder `\nu`, the dual of `\mu`. 
+Some notations are not definable in the logic. One such examples is _capture-avoiding substitution_. Specifically, we want to define `\subst X P Q` as a notation that represents the pattern obtained by substituting all free occurrences of `X` in `P` for `Q`, where alpha-renaming happens explicitly to prevent unintended variable capturing. 
 
-Our solution is to allow _hooked notations_. Hooked notations are notations _without explicit definitions_. Instead, _backends_ of AppKore must provide implementation of these notations. As example, `\subst` can be defined as follows:
+To achieve this, we use _hooked notations_. Hooked notations are notations that do not have an explicit definition in their declarations. Instead, the backends should provide proper implementation of hooked notations. 
+
+As an example, `\subst` can be defined as follows:
 
 ```
 hooked-notation \subst X P Q [required, desugar]
 ```
 
-What the declaration says is that `\subst` expects three arguments, and the precise definition of `\subst` is given by AppKore backends, which is _required_. The attribute `desugar` specifies that `\subst` always desugars to its definitions. 
+What the declaration says is that `\subst` expects three arguments, and the precise definition of `\subst` is given by the backends. The `required` attribute specifies that an implementation of `\subst` is required for all AppKore backends. The attribute `desugar` specifies that `\subst` should always be desugared (during runtime).
 
-Hooked notations can be used to define many important notations that cannot be properly defined _in the logic_. 
+## Builtin modules
 
-#### Sentences
-
-```
-
-```
-
-## Parser and Verifier
-
-It takes two process to fully parse an AppKore definition. The _parser_ simply parse the definition by the above grammar, without distinguishing element variables from symbols. After that, the _verifier_ reads the symbol declarations and figure out what are element variables and what are symbols. Those identifiers that have been declared as a symbol (see below) are symbols, and the rest identifiers are element variables. Note that set variables always start with a "#" so there is no chance to confuse them with the other identifiers.
-
-_Verifier_ is also responsible for checking _notation definitions_, which we introduce below. Intuitively, all derived constructs are defined as notations (i.e., aliases), and the verifier should check that all notation definitions are _well-founded_ and any pattern written with notations can be unique desugared to a vanilla pattern without any notations/aliases in finitely many steps. All notations have correct number of arguments, etc.
-
-## Builtin AppKore definitions
+We present some builtin modules. There modules define all the basic derived constructs in AML. They will be implicitly imported by all AppKore modules.
 
 ### Basic derived constructs
 
@@ -202,20 +201,16 @@ _Verifier_ is also responsible for checking _notation definitions_, which we int
 module BASIC-DERIVED-CONSTRUCTS
   hooked-notation \subst X P Q                                  [required, desugar]
   notation \neg P = \implies P \bot                             []
-  notation \or P Q = \implies (\neg P) Q                        []
-  left-assoc-notation \or                                       []
-  notation \and P Q = \neg (\or (\neg P) (\neg Q))              []
-  left-assoc-notation \and                                      []
+  notation \or P Q = \implies (\neg P) Q                        [left-assoc]
+  notation \and P Q = \neg (\or (\neg P) (\neg Q))              [left-assoc]
   notation \iff P Q = \and (\implies P Q) (\implies Q P)        []
   notation \top = \neg \bot                                     []
-  notation \exists X P = \neg \forall X \neg P                  []
-  notation \nu X P = \neg \mu X (\neg (\subst X (\neg X) P))    []
-  right-assoc-notation \forall                                  []
-  right-assoc-notation \exists                                  []
-  right-assoc-notation \mu                                      []
-  right-assoc-notation \nu                                      []
+  notation \exists X P = \neg \forall X \neg P                  [binder, right-assoc]
+  notation \nu X P = \neg \mu X (\neg (\subst X (\neg X) P))    [binder, right-assoc]
 endmodule
 ```
+
+___QUESTION.___ Suppose we want to write `\iff a b c` as a notation of `\and (\iff a b) (\iff b c)`, what should we do?
 
 ### Definedness
 
@@ -245,6 +240,45 @@ module INHABITANT
   notation \nuIn X S P = \nu X (\and P (\inh S))                      []
 endmodule
 ```
+
+## AppKore verifier
+
+It takes two processes to fully parse an AppKore module. The _parser_ simply parses it following the grammar. Note that the grammar does not distinguish element variables from symbols and notations. Therefore, we need the second process, where a _verifier_ analyzes the module and figures out which are element variables, which are symbols, and which are notations. In addition, the verifier checks if the module is wellformed. 
+
+#### Identifier analysis
+
+In the grammar of AppKore, we use identifiers for element variables, symbols, and notations. The parser does not distinguish them. The verifier needs to. This process is called _identifier analysis_. 
+
+Process `Identifier Analysis` is:
+
+1. If an identifier `id` has been declared as a symbol (or a hooked symbol) in the current module, or a module that is imported by the current module, then `id` is a symbol (or a hooked symbol); 
+2. If an identifier `id` has been declared as a notation (or a hooked notation) in the current module, or a module that is imported by the current module, then `id` is a notation (or a hooked notation);
+3. Otherwise, `id` is an element variable.
+
+We use the term _current scope_ to mean the current module or a module that is imported by the current module.
+
+#### Wellformedness conditions about (hooked) notations
+
+In a notation declaration `notation foo X1 ... Xn = P [...]` or a hooked notation declaration `hooked-notation foo X1 ... Xn [...]`,  we require that:
+
+1. `foo,X1,...,Xn` are distinct identifiers;
+2. `foo` has not been declared in the current scope;
+3. `P` doesn't contain `foo` (for notations);
+4. `P` doesn't contain free variables (except placeholders `X1,...,Xn`) (for notations);
+5. If `left-assoc` or `right-assoc` is one of the attributes, then `n` is 2;
+6. `left-assoc` and `right-assoc` cannot both be attributes;
+
+In a module, we require that:
+
+1. There is no cyclic (hooked) notation declarations;
+
+#### Wellformedness conditions about patterns
+
+We require that:
+
+1. All notations have the right number of arguments;
+
+#### Wellformedness conditions about modules
 
 ## Translation from FullKore to AppKore (DO NOT REVIEW)
 **[Rule App-1].** Translating applications (with `>=1` argument patterns)
@@ -307,29 +341,3 @@ X:S => x:S  // element variables are lower cases
 ```
 \equals{S,R}(P,Q) => \equals P Q
 ```
-
-
-
-## AppKore parser and unparser
-
-The following two Haskell functions are needed:
-
-```
-unparse2 : HaskellKore -> ApplicativeKore
-parse2   : ApplicativeKore -> HaskellKore
-```
-
-Using these two functions, we can translate any full Kore definitions to applicative Kore definitions by the following translation function:
-
-```
-tr : FullKore -> ApplicativeKore
-tr(def.fullkore) = unparse2(parse(def.fullkore))
-```
-
-We require that `unparse2` and `parse2` satisfy the following property:
-
-```
-parse(def.fullkore) = parse2(tr(def.fullkore))
-```
-
-## 
