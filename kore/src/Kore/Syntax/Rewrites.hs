@@ -15,9 +15,10 @@ import           Control.DeepSeq
 import qualified Data.Deriving as Deriving
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
 
@@ -33,7 +34,7 @@ data Rewrites sort child = Rewrites
     , rewritesFirst  :: child
     , rewritesSecond :: child
     }
-    deriving (Eq, Functor, Foldable, Generic, Ord, Show, Traversable)
+    deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
 
 Deriving.deriveEq1 ''Rewrites
 Deriving.deriveOrd1 ''Rewrites
@@ -42,6 +43,12 @@ Deriving.deriveShow1 ''Rewrites
 instance (Hashable sort, Hashable child) => Hashable (Rewrites sort child)
 
 instance (NFData sort, NFData child) => NFData (Rewrites sort child)
+
+instance SOP.Generic (Rewrites sort child)
+
+instance SOP.HasDatatypeInfo (Rewrites sort child)
+
+instance (Debug sort, Debug child) => Debug (Rewrites sort child)
 
 instance Unparse child => Unparse (Rewrites Sort child) where
     unparse Rewrites { rewritesSort, rewritesFirst, rewritesSecond } =

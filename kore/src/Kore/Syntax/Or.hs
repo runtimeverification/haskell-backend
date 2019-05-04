@@ -13,12 +13,12 @@ module Kore.Syntax.Or
 import           Control.DeepSeq
                  ( NFData (..) )
 import qualified Data.Deriving as Deriving
-import           Data.Functor.Classes
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
 
@@ -34,24 +34,21 @@ data Or sort child = Or
     , orFirst  :: child
     , orSecond :: child
     }
-    deriving (Functor, Foldable, Traversable, Generic)
+    deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
 
 Deriving.deriveEq1 ''Or
 Deriving.deriveOrd1 ''Or
 Deriving.deriveShow1 ''Or
 
-instance (Eq sort, Eq child) => Eq (Or sort child) where
-    (==) = eq1
-
-instance (Ord sort, Ord child) => Ord (Or sort child) where
-    compare = compare1
-
-instance (Show sort, Show child) => Show (Or sort child) where
-    showsPrec = showsPrec1
-
 instance (Hashable sort, Hashable child) => Hashable (Or sort child)
 
 instance (NFData sort, NFData child) => NFData (Or sort child)
+
+instance SOP.Generic (Or sort child)
+
+instance SOP.HasDatatypeInfo (Or sort child)
+
+instance (Debug sort, Debug child) => Debug (Or sort child)
 
 instance Unparse child => Unparse (Or Sort child) where
     unparse Or { orSort, orFirst, orSecond } =

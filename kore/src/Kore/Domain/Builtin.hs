@@ -59,6 +59,7 @@ import qualified GHC.Generics as GHC
 
 import Control.Lens.TH.Rules
        ( makeLenses )
+import Kore.Debug
 import Kore.Domain.Class
 import Kore.Domain.External
 import Kore.Syntax
@@ -117,6 +118,12 @@ instance Hashable child => Hashable (InternalMap child) where
 
 instance NFData child => NFData (InternalMap child)
 
+instance SOP.Generic (InternalMap child)
+
+instance SOP.HasDatatypeInfo (InternalMap child)
+
+instance Debug child => Debug (InternalMap child)
+
 instance Unparse child => Unparse (InternalMap child) where
     unparse builtinMap =
         unparseCollection
@@ -168,6 +175,12 @@ instance Ord child => Ord (InternalList child) where
 
 instance Show child => Show (InternalList child) where
     showsPrec = showsPrec1
+
+instance SOP.Generic (InternalList child)
+
+instance SOP.HasDatatypeInfo (InternalList child)
+
+instance Debug child => Debug (InternalList child)
 
 instance Hashable child => Hashable (InternalList child) where
     hashWithSalt salt builtin =
@@ -224,6 +237,12 @@ instance Hashable InternalSet where
 
 instance NFData InternalSet
 
+instance SOP.Generic InternalSet
+
+instance SOP.HasDatatypeInfo InternalSet
+
+instance Debug InternalSet
+
 instance Unparse InternalSet where
     unparse builtinSet =
         unparseCollection
@@ -264,6 +283,12 @@ instance Hashable InternalInt
 
 instance NFData InternalInt
 
+instance SOP.Generic InternalInt
+
+instance SOP.HasDatatypeInfo InternalInt
+
+instance Debug InternalInt
+
 instance Unparse InternalInt where
     unparse InternalInt { builtinIntSort, builtinIntValue } =
         "\\dv"
@@ -289,6 +314,12 @@ data InternalBool =
 instance Hashable InternalBool
 
 instance NFData InternalBool
+
+instance SOP.Generic InternalBool
+
+instance SOP.HasDatatypeInfo InternalBool
+
+instance Debug InternalBool
 
 instance Unparse InternalBool where
     unparse InternalBool { builtinBoolSort, builtinBoolValue } =
@@ -327,6 +358,10 @@ deriving instance Ord child => Ord (Builtin child)
 deriving instance Show child => Show (Builtin child)
 
 instance SOP.Generic (Builtin child)
+
+instance SOP.HasDatatypeInfo (Builtin child)
+
+instance Debug child => Debug (Builtin child)
 
 instance Hashable child => Hashable (Builtin child)
 

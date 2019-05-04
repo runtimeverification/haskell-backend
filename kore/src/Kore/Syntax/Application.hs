@@ -27,9 +27,10 @@ import qualified Data.Deriving as Deriving
 import           Data.Functor.Classes
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
 
@@ -41,11 +42,17 @@ data SymbolOrAlias = SymbolOrAlias
     { symbolOrAliasConstructor :: !Id
     , symbolOrAliasParams      :: ![Sort]
     }
-    deriving (Show, Eq, Ord, Generic)
+    deriving (Show, Eq, Ord, GHC.Generic)
 
 instance Hashable SymbolOrAlias
 
 instance NFData SymbolOrAlias
+
+instance SOP.Generic SymbolOrAlias
+
+instance SOP.HasDatatypeInfo SymbolOrAlias
+
+instance Debug SymbolOrAlias
 
 instance Unparse SymbolOrAlias where
     unparse
@@ -80,7 +87,7 @@ data Application head child = Application
     { applicationSymbolOrAlias :: !head
     , applicationChildren      :: [child]
     }
-    deriving (Functor, Foldable, Traversable, Generic)
+    deriving (Functor, Foldable, Traversable, GHC.Generic)
 
 Deriving.deriveEq1 ''Application
 Deriving.deriveOrd1 ''Application
@@ -98,6 +105,12 @@ instance (Show head, Show child) => Show (Application head child) where
 instance (Hashable head, Hashable child) => Hashable (Application head child)
 
 instance (NFData head, NFData child) => NFData (Application head child)
+
+instance SOP.Generic (Application head child)
+
+instance SOP.HasDatatypeInfo (Application head child)
+
+instance (Debug head, Debug child) => Debug (Application head child)
 
 instance Unparse child => Unparse (Application SymbolOrAlias child) where
     unparse Application { applicationSymbolOrAlias, applicationChildren } =
