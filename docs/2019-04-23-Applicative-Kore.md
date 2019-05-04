@@ -1,83 +1,146 @@
 # Applicative Kore
 
-Applicative matching mu-logic (AML) is the fragment of matching mu-logic that contains only one universal sort for everything, one binary symbol called _application_, and some constants. 
+_Applicative matching mu-logic_ (AML) is the applicative/functional fragment of matching mu-logic. AML is unsorted. It has a simple syntax that consists of variables, constants, propositional connectives, FOL binders, fixpoint binders, and application. 
 
-Applicative Kore (AppKore) is a language that is used to write AML theories. We refer to the existing Kore for full ML as full Kore.
+_Applicative Kore_ (AppKore) is the language to write AML theories. We call the existing Kore language for full ML as _FullKore_.
 
-## AppKore syntax
+## AppKore parser
 
 ### Keywords
 
+AppKore has the following keywords:
+
 ```
-module import axiom symbol endmodule
-notation assoc assoc-left assoc-right
+module import axiom symbol notation hooked-symbol hooked-notation endmodule
 ```
 
 ### Identifiers
 
+_Identifiers_ in AppKore are used as the names of variables, constants, notations, and modules. 
+
 ```
-<id> ::= ...   // TBD. Ideally, it should allow anything except those starting with a #.
-               // For example, X, X1, X2, X_1, _1, _2, ...
-               //              x, x1, x2, x_1, Xx, XX, ...
-               //              Int, Nat, List, plus, mult, ...
-               //              \and, \or, \iff, \equals, \ceil, ...
-               //              _+_, _plus_, Nat+Nat:Nat, ...
-               //              "abc", "ABC", "\n", "\"", "", ...
-               //              1, 2, -1, -2, 0, 0xF, ...
+<id> ::= ...   // The precise regular expression is to be defined.
+               // Ideally, it should allow anything except those starting with a "#".
+               // Some examples: X, X1, X2, X_1, _1, _2, ...
+               //                x, x1, x2, x_1, Xx, XX, ...
+               //                Int, Nat, List, plus, mult, ...
+               //                \and, \or, \iff, \equals, \ceil, ...
+               //                _+_, _plus_, Nat+Nat:Nat, ...
+               //                "abc", "ABC", "\n", "\"", "", ...
+               //                1, 2, -1, -2, 0, 0xF, ...
 <sharp-id> ::= // "#", or "#" followed by <id> (no space between them)
 ```
+
+_Remark._ There are some conventions in using identifiers. For example, module names are often all in capital letters; constants that represent _sorts_ are often capital in their first letters (such as _Nat, Int_); constants that represent _functions/predicates_ are often all in lower case (such as _plus, mult_). We can enforce these conventions and embed them into the syntax of AppKore, but for now, these are merely conventions. 
 
 ### Patterns
 
 ```
 <atom-pattern> ::=
-| <id>        // can be either <element-variable> or <symbol>, decided by verifier
-| <sharp-id>  // <set-variable>
-| "\bottom"
-| "(" <pattern> ")"
+| <id>                // can mean either an element variable, 
+                      // or a constant, or a notation (alias);
+                      // this has to be decided later by the *verifier*
+| <sharp-id>          // a set variable
+| "\bottom"           // the bottom
+| "(" <pattern> ")"   // parentheses used for grouping
 
 <app-pattern> ::=
 | <atom-pattern>
-| <app-pattern> <atom-pattern> // i.e., application is right associative
+| <app-pattern> <atom-pattern> // a b c is parsed as ((a b) c)
 
 <pattern> ::=
-| "\implies" <atom-pattern> <atom-pattern>
-| "\forall" <element-variable> <atom-pattern>
-| "\mu" <set-variable> <atom-pattern>
+| "\implies" <atom-pattern> <atom-pattern>     // implication
+| "\forall" <element-variable> <atom-pattern>  // FOL binders
+| "\mu" <set-variable> <atom-pattern>          // fixpoint binders
+
+<element-variable> ::= <id>
+<set-variable>     ::= <sharp-id>
 ```
 
 Some examples:
 
 ```
-\implies a        ... ... not wellformed; not enough argument
+\implies a        ... ... not wellformed: too few arguments
 \implies a b      ... ... wellformed
-\implies a b c    ... ... not wellformed; too many arguments
-\implies (a b) c  ... ... wellformed; (a b) is an application
+\implies a b c    ... ... not wellformed: too many arguments
+\implies (a b) c  ... ... wellformed
 ```
 
-It takes two process to fully parse an AppKore definition. The _parser_ simply parse the definition by the above grammar, without distinguishing element variables from symbols. After that, the _verifier_ reads the symbol declarations and figure out what are element variables and what are symbols. Those identifiers that have been declared as a symbol (see below) are symbols, and the rest identifiers are element variables. Note that set variables always start with a "#" so there is no chance to confuse them with the other identifiers.
+### Sentences and modules
 
-_Verifier_ is also responsible for checking _notation definitions_, which we introduce below. Intuitively, all derived constructs are defined as notations (i.e., aliases), and the verifier should check that all notation definitions are _well-founded_ and any pattern written with notations can be unique desugared to a vanilla pattern without any notations/aliases in finitely many steps. All notations have correct number of arguments, etc.
+An AppKore module consisting of a sequence of _sentences_. _Import sentence_ imports a module; _symbol sentence_ declares a constant symbol; _notation sentence_ declares a notation (a.k.a. alias); _axiom sentence_ specifies a pattern as an axiom of the module; a _hooked symbol sentence_ declares a constant symbol whose semantics is not given by the axioms, but given by the implementation; a _hooked notation sentence_ declares a notation whose definition is not given in the declaration, but given by the implementation. 
 
-### Notation definition examples
+Each sentence/module is associated with zero, one, or more _attributes_. Attributes provide information and hints for the backends but cannot carry _additional_ semantic meaning. 
 
-The main principle of _notations_ (a.k.a., _aliases_) is that they must be able to translate/desugar to the primitive patterns in a unique way.
+```
+<sentence> ::=
+| <import-sentence>
+| <symbol-sentence>
+| <notation-sentence>
+| <axiom-sentence>
+| <hooked-symbol-sentence>
+| <hooked-notation-sentence>
+
+<import-sentence> ::= "import" <id> <attribute>
+<symbol-sentence> ::= "symbol" <id> <attribute>
+<notation-sentence> ::= "notation" <id> <ids> "=" <pattern> <attribute>
+<axiom-sentence> ::= "axiom" <pattern> <attribute>
+<hooked-symbol-sentence> ::= "hooked-symbol" <id> <attribute>
+<hooked-notation-sentence> ::= "hooked-notation" <id> <ids> <attribute>
+
+<module> ::= "module" <id> <sentences> "endmodule" <attribute>
+
+<ids> ::= "" | <id> | <id> <ids>
+<attribute> ::= "[" "]" | "[" <id> <comma-ids> "]"
+<comma-ids> ::= "" | "," <id> <comma-ids> 
+<sentences> ::= "" | <sentence> <sentences>
+```
+
+## Some remarks on notations
+
+AppKore allows the users to define notations (a.k.a. aliases). The __main principle of notations__ is that they can be desugared in a unique and well-founded way. Notations differ from symbols in many aspects, even though they share the same syntax in the AppKore grammar shown above. In the following, we illustrate some of the main differences between notations and symbols by examples. These differences will taken into consideration by no the parser, but the verifier, which we discuss later.
+
+The purpose of this section is to show some examples of notations. 
 
 #### Basic notations
 
-A (basic) notation definition has the following form:
+A basic notation declaration has the following form:
 
 ```
-notation foo X1 X2 ... Xn = <pattern>
+notation foo X1 X2 ... Xn = P []
 ```
 
-where `foo` is a notation expecting `n` arguments where `n` is called its arity. Using this syntax, we can define many derived constructs in AppKore. For example,
+Here,  `foo` is the name of the notation; `n` is the _arity_ of `foo`; `X1`,...,`Xn` are _placeholders_ which may appear in pattern `P`. We require that `foo` does not appear in `P`; that is, we forbid recursive notation declarations. We require that `foo`,`X1`,...,`Xn` are all different identifiers. More of such _wellformedness conditions_ will be discussed in detail in the __AppKore Verifier__ section. 
+
+As an example, _negation_ can be defined as a notation using implication and bottom, both of which are primitive logic constructs in AppKore. 
 
 ```
-notation \neg P = \implies P \bottom
+notation \neg P = \implies P \bottom []
 ```
 
-By default, we keep the notations instead of desugaring them immediately. 
+Then, `\neg` is a notation that takes 2 arguments. Therefore:
+
+```
+\neg       ... ... not wellformed (captured by verifier, not parser) 
+\neg a     ... ... wellformed
+\neg a b   ... ... not wellformed (captured by verifier, not parser)
+```
+
+_Remark._ For most cases in practice, backends may not want to desugar notations but simply keep the notations as they are.
+
+#### Notations with binders
+
+As an example, consider the following notation declaration of the `exists`-binder defined in the usual way:
+
+```
+notation \exists X P = \neg (\forall X (\neg P)) [binder]
+```
+
+Here, `\exists` is the name of the notation, whose arity is 2. The two placeholders are `X` and `P`. In usual cases, placeholders are _metavariables over patterns_. However, in the above example, `X` is not a metavariable over patterns, but a _metavariable over element variables_. This can be told by analyzing the body of the declaration, `\neg (\forall X (\neg P))`. Since `X` occurs as the first argument of `\forall`, it must be of the nonterminal `<element-variable>`, and thus `X` ranges over element variables instead of all patterns. 
+
+Another noticeable fact about `\exists` is its _binding behavior_; that is, it binds all free occurrences of the variable `X` in `P`. Binding behavior is important when using _substitution_, which is also defined as a notation and we will discuss about it later. In short, substitution is the so-called _capture-avoiding-substitution_, meaning that bound variables are renamed automatically to prevent unintended variable capture. The binding behavior of `\exists X P` means that its first argument `X` may be renamed in substitution. Finally, note that we put the `binder` attribute along with the declaration, so that the backends do not need to reverse engineer the information from the declaration. 
+
+# ===== DO NOT REVIEW =====
 
 #### (Left/right-)associative notations
 
@@ -122,29 +185,14 @@ Hooked notations can be used to define many important notations that cannot be p
 #### Sentences
 
 ```
-<sentence> ::=
-| <import-sentence>
-| <symbol-sentence>
-| <hooked-symbol-sentence>
-| <notation-sentence>
-| <assoc-notation-sentence>
-| <hooked-notation-sentence>
-| <axiom-sentence>
 
-<import-sentence> ::= "import" <id> <attribute>
-<symbol-sentence> ::= "symbol" <id> <attribute>
-<hooked-symbol-sentence> ::= "hooked-symbol" <id> <attribute>
-<notation-sentence> ::= "notation" <id> <ids> "=" <pattern> <attribute>
-<assoc-notation-sentence> ::= 
-| "left-assoc-notation" <id> <attribute>
-| "right-assic-notation" <id> <attribute>
-<hooked-notation-sentence> ::= "hooked-notation" <id> <ids> <attribute>
-<axiom-sentence> ::= "axiom" <pattern>
-
-<ids> ::= "" | <id> | <id> <ids>
-<attribute> ::= "[" "]" | "[" <id> <comma-ids> "]"
-<comma-ids> ::= "" | "," <id> <comma-ids> 
 ```
+
+## Parser and Verifier
+
+It takes two process to fully parse an AppKore definition. The _parser_ simply parse the definition by the above grammar, without distinguishing element variables from symbols. After that, the _verifier_ reads the symbol declarations and figure out what are element variables and what are symbols. Those identifiers that have been declared as a symbol (see below) are symbols, and the rest identifiers are element variables. Note that set variables always start with a "#" so there is no chance to confuse them with the other identifiers.
+
+_Verifier_ is also responsible for checking _notation definitions_, which we introduce below. Intuitively, all derived constructs are defined as notations (i.e., aliases), and the verifier should check that all notation definitions are _well-founded_ and any pattern written with notations can be unique desugared to a vanilla pattern without any notations/aliases in finitely many steps. All notations have correct number of arguments, etc.
 
 ## Builtin AppKore definitions
 
