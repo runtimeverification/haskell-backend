@@ -5,7 +5,6 @@ License     : NCSA
 
 module Kore.Step.TermLike
     ( TermLike
-    , module Kore.AST.MetaOrObject
     , module Kore.AST.Pure
     , freeVariables
     , hasFreeVariable
@@ -39,9 +38,8 @@ import           Kore.Annotation.Valid
                  ( Valid )
 import qualified Kore.Annotation.Valid as Valid
 import           Kore.AST.Common
-                 ( Exists (..), Forall (..), Pattern (..) )
+                 ( Pattern (..) )
 import qualified Kore.AST.Common as Base
-import           Kore.AST.MetaOrObject
 import           Kore.AST.Pure
                  ( And, Application, Bottom, Ceil, CofreeF (..), Concrete,
                  DomainValue, Equals, Exists, Floor, Forall, Id (..), Iff,
@@ -50,12 +48,14 @@ import           Kore.AST.Pure
                  SymbolOrAlias (..), Top, Variable (..) )
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Substitute as Substitute
+import           Kore.Syntax.Exists
+import           Kore.Syntax.Forall
 import qualified Kore.Syntax.Variable as Variable
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 type TermLike variable =
-    PurePattern Object Domain.Builtin variable (Valid variable Object)
+    PurePattern Domain.Builtin variable (Valid variable)
 
 freeVariables :: TermLike variable -> Set variable
 freeVariables termLike = Valid.freeVariables (extract termLike)

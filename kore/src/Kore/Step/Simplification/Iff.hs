@@ -13,8 +13,6 @@ module Kore.Step.Simplification.Iff
     , simplifyEvaluated
     ) where
 
-import           Kore.AST.Common
-                 ( Iff (..) )
 import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
@@ -28,10 +26,10 @@ import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
                  ( makeEvaluate, simplifyEvaluated )
+import           Kore.Syntax.Iff
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -50,31 +48,25 @@ simplify
         , Unparse variable
         )
     => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
-    -> Iff Object (OrPattern Object variable)
-    -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
+    -> Iff Sort (OrPattern variable)
+    -> Simplifier (OrPattern variable)
 simplify
     tools
     predicateSimplifier
     termSimplifier
     axiomSimplifiers
-    Iff
-        { iffFirst = first
-        , iffSecond = second
-        }
+    Iff { iffFirst = first, iffSecond = second }
   =
-    fmap withProof $ simplifyEvaluated
+    simplifyEvaluated
         tools
         predicateSimplifier
         termSimplifier
         axiomSimplifiers
         first
         second
-  where
-    withProof a = (a, SimplificationProof)
 
 {-| evaluates an 'Iff' given its two 'OrPattern' children.
 
@@ -85,7 +77,7 @@ See 'simplify' for detailed documentation.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Iff Object) (Valid Object) (OrPattern Object variable)
+> CofreeF (Iff Sort) (Valid variable) (OrPattern variable)
 
 instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
@@ -100,12 +92,12 @@ simplifyEvaluated
         , Unparse variable
         )
     => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
-    -> OrPattern Object variable
-    -> OrPattern Object variable
-    -> Simplifier (OrPattern Object variable)
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
+    -> OrPattern variable
+    -> OrPattern variable
+    -> Simplifier (OrPattern variable)
 simplifyEvaluated
     tools
     predicateSimplifier
@@ -150,9 +142,9 @@ makeEvaluate
         , Show variable
         , Unparse variable
         )
-    => Pattern Object variable
-    -> Pattern Object variable
-    -> OrPattern Object variable
+    => Pattern variable
+    -> Pattern variable
+    -> OrPattern variable
 makeEvaluate first second
   | Pattern.isTop first = OrPattern.fromPatterns [second]
   | Pattern.isBottom first = Not.makeEvaluate second
@@ -166,9 +158,9 @@ makeEvaluateNonBoolIff
         , Show variable
         , Unparse variable
         )
-    => Pattern Object variable
-    -> Pattern Object variable
-    -> OrPattern Object variable
+    => Pattern variable
+    -> Pattern variable
+    -> OrPattern variable
 makeEvaluateNonBoolIff
     patt1@Conditional
         { term = firstTerm

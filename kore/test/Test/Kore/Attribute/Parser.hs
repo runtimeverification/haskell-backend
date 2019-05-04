@@ -9,7 +9,7 @@ import Test.Tasty.HUnit
 import Data.Either
        ( isLeft )
 
-import Kore.AST.Sentence
+import Kore.Attribute.Attributes
        ( Attributes (..) )
 import Kore.Attribute.Parser
 

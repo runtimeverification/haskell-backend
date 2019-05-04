@@ -7,8 +7,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Kore.AST.Common
-                 ( Forall (..) )
 import           Kore.AST.Valid
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeTruePredicate )
@@ -19,6 +17,7 @@ import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Simplification.Forall as Forall
                  ( makeEvaluate, simplify )
+import           Kore.Syntax.Forall
 import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore.Comparators ()
@@ -82,14 +81,14 @@ test_forallSimplification =
                 Pattern.top
                 (makeEvaluate
                     Mock.x
-                    (Pattern.top :: Pattern Object Variable)
+                    (Pattern.top :: Pattern Variable)
                 )
             -- forall(bottom) = bottom
             assertEqualWithExplanation "forall(bottom)"
                 Pattern.bottom
                 (makeEvaluate
                     Mock.x
-                    (Pattern.bottom :: Pattern Object Variable)
+                    (Pattern.bottom :: Pattern Variable)
                 )
         )
     , testCase "forall applies substitution if possible"
@@ -236,8 +235,8 @@ test_forallSimplification =
 makeForall
     :: Ord variable
     => variable
-    -> [Pattern Object variable]
-    -> Forall Object variable (OrPattern Object variable)
+    -> [Pattern variable]
+    -> Forall Sort variable (OrPattern variable)
 makeForall variable patterns =
     Forall
         { forallSort = testSort
@@ -248,15 +247,8 @@ makeForall variable patterns =
 testSort :: Sort
 testSort = Mock.testSort
 
-evaluate
-    :: Forall Object Variable (OrPattern Object Variable)
-    -> OrPattern Object Variable
-evaluate forall =
-    fst $ Forall.simplify forall
+evaluate :: Forall Sort Variable (OrPattern Variable) -> OrPattern Variable
+evaluate = Forall.simplify
 
-makeEvaluate
-    :: Variable
-    -> Pattern Object Variable
-    -> Pattern Object Variable
-makeEvaluate variable child =
-    fst $ Forall.makeEvaluate variable child
+makeEvaluate :: Variable -> Pattern Variable -> Pattern Variable
+makeEvaluate = Forall.makeEvaluate

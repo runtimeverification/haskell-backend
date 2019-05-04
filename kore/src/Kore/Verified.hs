@@ -7,6 +7,7 @@ module Kore.Verified
     , Sentence
     , SentenceAlias
     , SentenceAxiom
+    , SentenceClaim
     , SentenceHook
     , SentenceImport
     , SentenceSort
@@ -17,22 +18,23 @@ import           Kore.Annotation.Valid
                  ( Valid )
 import           Kore.AST.Pure hiding
                  ( Pattern )
-import qualified Kore.AST.Sentence as AST
 import qualified Kore.Domain.Builtin as Domain
+import qualified Kore.Syntax.Sentence as Syntax
 
-type Pattern =
-    PurePattern Object Domain.Builtin Variable (Valid (Variable) Object)
+type Pattern = PurePattern Domain.Builtin Variable (Valid Variable)
 
-type Sentence = AST.Sentence Object SortVariable Pattern
+type Sentence = Syntax.Sentence Pattern
 
-type SentenceAlias = AST.SentenceAlias Object Pattern
+type SentenceAlias = Syntax.SentenceAlias Pattern
 
-type SentenceAxiom = AST.SentenceAxiom SortVariable Pattern
+type SentenceAxiom = Syntax.SentenceAxiom Pattern
 
-type SentenceHook = AST.SentenceHook Pattern
+type SentenceClaim = Syntax.SentenceClaim Pattern
 
-type SentenceImport = AST.SentenceImport Pattern
+type SentenceHook = Syntax.SentenceHook Pattern
 
-type SentenceSort = AST.SentenceSort Object Pattern
+type SentenceImport = Syntax.SentenceImport Pattern
 
-type SentenceSymbol = AST.SentenceSymbol Object Pattern
+type SentenceSort = Syntax.SentenceSort Pattern
+
+type SentenceSymbol = Syntax.SentenceSymbol Pattern

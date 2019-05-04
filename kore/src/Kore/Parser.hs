@@ -32,13 +32,13 @@ module Kore.Parser
     , ParsedDefinition
     ) where
 
-import           Kore.AST.Sentence
 import           Kore.Parser.Lexeme
                  ( skipWhitespace )
 import           Kore.Parser.Parser
                  ( ParsedPattern )
 import qualified Kore.Parser.Parser as Parser
 import           Kore.Parser.ParserUtils
+import           Kore.Syntax.Definition
 
 {-|'koreParser' is a parser for Kore.
 The input must contain a full valid Kore defininition and nothing else.

@@ -17,23 +17,23 @@ import           Data.Text
                  ( Text )
 
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
 import qualified Kore.ASTVerifier.SentenceVerifier as SentenceVerifier
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
+import           Kore.Syntax.Definition
 import           Kore.Unparser
 import qualified Kore.Verified as Verified
 
 {-|'verifyUniqueNames' verifies that names defined in a module are unique both
 within the module and outside, using the provided name set. -}
 verifyUniqueNames
-    :: (Unparse param, Unparse pat)
+    :: Unparse pat
     => Map.Map Text AstLocation
     -- ^ Names that are already defined.
-    -> Module (Sentence Object param pat)
+    -> Module (Sentence pat)
     -> Either (Error VerifyError) (Map.Map Text AstLocation)
     -- ^ On success returns the names that were previously defined together with
     -- the names defined in the given 'Module'.

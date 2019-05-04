@@ -12,19 +12,12 @@ module Kore.Step.Simplification.Forall
     , makeEvaluate
     ) where
 
-import           Kore.AST.Common
-                 ( Forall (..) )
 import           Kore.AST.Valid
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( fmapWithPairs )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
+import           Kore.Syntax.Forall
 import           Kore.Unparser
 
 -- TODO: Move Forall up in the other simplifiers or something similar. Note
@@ -50,10 +43,8 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => Forall Object variable (OrPattern Object variable)
-    ->  ( OrPattern Object variable
-        , SimplificationProof Object
-        )
+    => Forall Sort variable (OrPattern variable)
+    -> OrPattern variable
 simplify
     Forall { forallVariable = variable, forallChild = child }
   =
@@ -64,7 +55,7 @@ simplify
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Forall Object) (Valid Object) (OrPattern Object variable)
+> CofreeF (Forall Sort) (Valid variable) (OrPattern variable)
 
 instead of a 'variable' and an 'OrPattern' argument. The type of
 'makeEvaluate' may be changed analogously. The 'Valid' annotation will
@@ -79,19 +70,12 @@ simplifyEvaluated
         , Unparse variable
         )
     => variable
-    -> OrPattern Object variable
-    -> (OrPattern Object variable, SimplificationProof Object)
+    -> OrPattern variable
+    -> OrPattern variable
 simplifyEvaluated variable simplified
-  | OrPattern.isTrue simplified = (simplified, SimplificationProof)
-  | OrPattern.isFalse simplified = (simplified, SimplificationProof)
-  | otherwise =
-    let
-        (patt, _proofs) =
-            MultiOr.fmapWithPairs (makeEvaluate variable) simplified
-      in
-        ( patt
-        , SimplificationProof
-        )
+  | OrPattern.isTrue simplified  = simplified
+  | OrPattern.isFalse simplified = simplified
+  | otherwise                    = makeEvaluate variable <$> simplified
 
 {-| evaluates an 'Forall' given its two 'Pattern' children.
 
@@ -104,22 +88,10 @@ makeEvaluate
         , Unparse variable
         )
     => variable
-    -> Pattern Object variable
-    -> (Pattern Object variable, SimplificationProof Object)
+    -> Pattern variable
+    -> Pattern variable
 makeEvaluate variable patt
-  | Pattern.isTop patt =
-    (Pattern.top, SimplificationProof)
-  | Pattern.isBottom patt =
-    ( Pattern.bottom
-    , SimplificationProof
-    )
+  | Pattern.isTop patt    = Pattern.top
+  | Pattern.isBottom patt = Pattern.bottom
   | otherwise =
-    ( Conditional
-        { term = mkForall
-            variable
-            (Pattern.toMLPattern patt)
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
-    , SimplificationProof
-    )
+    Pattern.fromTermLike $ mkForall variable $ Pattern.toMLPattern patt

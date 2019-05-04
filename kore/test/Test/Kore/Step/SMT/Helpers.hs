@@ -34,9 +34,6 @@ import Numeric.Natural
 
 import           Kore.AST.Pure
                  ( eraseAnnotations )
-import           Kore.AST.Sentence
-import qualified Kore.AST.Sentence as SentenceAxiom
-                 ( SentenceAxiom (..) )
 import           Kore.AST.Valid
                  ( mkApp, mkBottom, mkExists, mkOr, mkVar )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -57,6 +54,9 @@ import           Kore.Syntax.Application
                  ( SymbolOrAlias (SymbolOrAlias) )
 import           Kore.Syntax.Application as SymbolOrAlias
                  ( SymbolOrAlias (..) )
+import           Kore.Syntax.Definition
+import qualified Kore.Syntax.Sentence as SentenceAxiom
+                 ( SentenceAxiom (..) )
 import           Kore.Syntax.Variable
                  ( Variable (Variable) )
 import qualified Kore.Syntax.Variable as Variable

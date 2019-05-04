@@ -27,10 +27,9 @@ import           Data.Void
 import           Numeric.Natural
 
 import           Data.Sup
-import qualified Kore.Annotation.Null as Annotation
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.AST.Valid
+import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin.Error as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Predicate.Predicate
@@ -38,14 +37,12 @@ import           Kore.Proof.Functional
 import           Kore.Step.Conditional
 import qualified Kore.Step.Pattern as Step
                  ( Pattern )
-import           Kore.Syntax.CharLiteral
-import           Kore.Syntax.StringLiteral
+import           Kore.Syntax.Definition
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.Unifier
 import           Kore.Unparser
-                 ( escapeCharT, escapeString, escapeStringT )
+                 ( escapeCharT, escapeStringT )
 
 {-# ANN module ("HLint: ignore Use record patterns" :: String) #-}
 {-
@@ -94,17 +91,6 @@ writeOneFieldStruct
     => Flags -> String -> a -> Doc ann
 writeOneFieldStruct flags name content =
     writeOneFieldStructK flags name (prettyPrint NeedsParentheses content)
-
-writeTwoFieldStruct
-    :: (PrettyPrint a, PrettyPrint b)
-    => Flags -> String -> a -> b -> Doc ann
-writeTwoFieldStruct flags name contenta contentb =
-    writeOneFieldStructK
-        flags
-        name
-        (   prettyPrint NeedsParentheses contenta
-        <+> prettyPrint NeedsParentheses contentb
-        )
 
 writeThreeFieldStruct
     :: (PrettyPrint a, PrettyPrint b, PrettyPrint c)
@@ -246,14 +232,14 @@ instance  PrettyPrint SymbolOrAlias where
             , writeListField "symbolOrAliasParams" symbolOrAliasParams s
             ]
 
-instance  PrettyPrint (Alias level) where
+instance  PrettyPrint Alias where
     prettyPrint _ s@(Alias _ _) =
         writeStructure "Alias"
             [ writeFieldOneLine "aliasConstructor" aliasConstructor s
             , writeListField "aliasParams" aliasParams s
             ]
 
-instance  PrettyPrint (Symbol level) where
+instance  PrettyPrint Symbol where
     prettyPrint _ s@(Symbol _ _) =
         writeStructure "Symbol"
             [ writeFieldOneLine "symbolConstructor" symbolConstructor s
@@ -320,10 +306,10 @@ instance PrettyPrint child => PrettyPrint (Ceil Sort child) where
 instance PrettyPrint a => PrettyPrint (Const a b) where
     prettyPrint flags (Const a) = writeOneFieldStruct flags "Const" a
 
-instance PrettyPrint (Annotation.Null level) where
-    prettyPrint _ Annotation.Null = "Null"
+instance PrettyPrint Attribute.Null where
+    prettyPrint _ Attribute.Null = "Null"
 
-instance PrettyPrint variable => PrettyPrint (Valid variable level) where
+instance PrettyPrint variable => PrettyPrint (Valid variable) where
     prettyPrint _ valid@(Valid _ _) =
         writeStructure
             "Valid"
@@ -350,10 +336,7 @@ instance PrettyPrint child => PrettyPrint (Domain.External child) where
             , writeFieldNewLine "domainValueChild" Domain.domainValueChild p
             ]
 
-instance
-    ( PrettyPrint child
-    , PrettyPrint (domain child)
-    ) => PrettyPrint (DomainValue level domain child) where
+instance PrettyPrint child => PrettyPrint (DomainValue Sort child) where
     prettyPrint _ p@(DomainValue _ _) =
         writeStructure
             "DomainValue"
@@ -361,7 +344,7 @@ instance
             , writeFieldNewLine "domainValueChild" domainValueChild p
             ]
 
-instance PrettyPrint child => PrettyPrint (Equals level child) where
+instance PrettyPrint child => PrettyPrint (Equals Sort child) where
     prettyPrint _ p@(Equals _ _ _ _) =
         writeStructure
             "Equals"
@@ -374,7 +357,7 @@ instance PrettyPrint child => PrettyPrint (Equals level child) where
 instance
     ( PrettyPrint child
     , PrettyPrint variable
-    ) => PrettyPrint (Exists level variable child)
+    ) => PrettyPrint (Exists Sort variable child)
   where
     prettyPrint _ p@(Exists _ _ _) =
         writeStructure
@@ -396,7 +379,7 @@ instance PrettyPrint child => PrettyPrint (Floor Sort child) where
 instance
     ( PrettyPrint child
     , PrettyPrint variable
-    ) => PrettyPrint (Forall level variable child) where
+    ) => PrettyPrint (Forall Sort variable child) where
     prettyPrint _ p@(Forall _ _ _) =
         writeStructure
             "Forall"
@@ -405,7 +388,7 @@ instance
             , writeFieldNewLine "forallChild" forallChild p
             ]
 
-instance PrettyPrint child => PrettyPrint (Iff level child) where
+instance PrettyPrint child => PrettyPrint (Iff Sort child) where
     prettyPrint _ p@(Iff _ _ _) =
         writeStructure
             "Iff"
@@ -414,7 +397,7 @@ instance PrettyPrint child => PrettyPrint (Iff level child) where
             , writeFieldNewLine "iffSecond" iffSecond p
             ]
 
-instance PrettyPrint child => PrettyPrint (Implies level child) where
+instance PrettyPrint child => PrettyPrint (Implies Sort child) where
     prettyPrint _ p@(Implies _ _ _) =
         writeStructure
             "Implies"
@@ -423,7 +406,7 @@ instance PrettyPrint child => PrettyPrint (Implies level child) where
             , writeFieldNewLine "impliesSecond" impliesSecond p
             ]
 
-instance PrettyPrint child => PrettyPrint (In level child) where
+instance PrettyPrint child => PrettyPrint (In Sort child) where
     prettyPrint _ p@(In _ _ _ _) =
         writeStructure
             "In"
@@ -433,7 +416,7 @@ instance PrettyPrint child => PrettyPrint (In level child) where
             , writeFieldNewLine "inContainingChild" inContainingChild p
             ]
 
-instance PrettyPrint child => PrettyPrint (Next level child) where
+instance PrettyPrint child => PrettyPrint (Next Sort child) where
     prettyPrint _ p@(Next _ _) =
         writeStructure
             "Next"
@@ -441,7 +424,7 @@ instance PrettyPrint child => PrettyPrint (Next level child) where
             , writeFieldNewLine "nextChild" nextChild p
             ]
 
-instance PrettyPrint child => PrettyPrint (Not level child) where
+instance PrettyPrint child => PrettyPrint (Not Sort child) where
     prettyPrint _ p@(Not _ _) =
         writeStructure
             "Not"
@@ -458,7 +441,7 @@ instance PrettyPrint child => PrettyPrint (Or Sort child) where
             , writeFieldNewLine "orSecond" orSecond p
             ]
 
-instance PrettyPrint child => PrettyPrint (Rewrites level child) where
+instance PrettyPrint child => PrettyPrint (Rewrites Sort child) where
     prettyPrint _ p@(Rewrites _ _ _) =
         writeStructure
             "Rewrites"
@@ -475,7 +458,7 @@ instance
     ( PrettyPrint child
     , PrettyPrint (domain child)
     , PrettyPrint variable
-    ) => PrettyPrint (Pattern level domain variable child)
+    ) => PrettyPrint (Pattern domain variable child)
   where
     prettyPrint flags (AndPattern p) =
         writeOneFieldStruct flags "AndPattern" p
@@ -550,9 +533,9 @@ instance
     , PrettyPrint child
     , PrettyPrint annotation
     , PrettyPrint (domain child)
-    , child ~ Cofree (Pattern level domain variable) annotation
+    , child ~ Cofree (Pattern domain variable) annotation
     ) =>
-    PrettyPrint (PurePattern level domain variable annotation)
+    PrettyPrint (PurePattern domain variable annotation)
   where
     prettyPrint _ purePattern =
         writeStructure "PurePattern"
@@ -566,7 +549,7 @@ instance PrettyPrint Attributes
 
 instance
     PrettyPrint patternType
-    => PrettyPrint (SentenceAlias level patternType)
+    => PrettyPrint (SentenceAlias patternType)
   where
     prettyPrint _ sa@(SentenceAlias _ _ _ _ _ _) =
         writeStructure
@@ -591,7 +574,7 @@ instance
 
 instance
     PrettyPrint patternType
-    => PrettyPrint (SentenceSymbol level patternType)
+    => PrettyPrint (SentenceSymbol patternType)
   where
     prettyPrint _ sa@(SentenceSymbol _ _ _ _) =
         writeStructure
@@ -616,10 +599,13 @@ instance
                 "sentenceAxiomAttributes" (sentenceImportAttributes sa)
             ]
 
-instance
-    ( PrettyPrint sortParam
-    , PrettyPrint patternType
-    ) => PrettyPrint (SentenceAxiom sortParam patternType)
+instance PrettyPrint patternType => PrettyPrint (SentenceClaim patternType)
+  where
+    prettyPrint _ sentence@(SentenceClaim _) =
+        writeStructure "SentenceClaim"
+            [ writeFieldNewLine "getSentenceClaim" getSentenceClaim sentence ]
+
+instance PrettyPrint patternType => PrettyPrint (SentenceAxiom patternType)
   where
     prettyPrint _ sa@(SentenceAxiom _ _ _) =
         writeStructure
@@ -634,7 +620,7 @@ instance
 
 instance
     PrettyPrint patternType
-    => PrettyPrint (SentenceSort level patternType)
+    => PrettyPrint (SentenceSort patternType)
   where
     prettyPrint _ sa@(SentenceSort _ _ _) =
         writeStructure
@@ -652,11 +638,7 @@ instance PrettyPrint patternType => PrettyPrint (SentenceHook patternType) where
     prettyPrint flags (SentenceHookedSort s)         =
         writeOneFieldStruct flags "SentenceHookedSort" s
 
-instance
-    ( PrettyPrint sortParam
-    , PrettyPrint patternType
-    ) => PrettyPrint (Sentence level sortParam patternType)
-  where
+instance PrettyPrint patternType => PrettyPrint (Sentence patternType) where
     prettyPrint flags (SentenceAliasSentence s)    =
         writeOneFieldStruct flags "SentenceAliasSentence" s
     prettyPrint flags (SentenceSymbolSentence s)   =
@@ -714,40 +696,7 @@ instance (PrettyPrint a, PrettyPrint b) => PrettyPrint (a, b) where
                 , prettyPrint MaySkipParentheses y
                 ])
 
--- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
--- TODO: when refactoring these, consider removing `writeThreeFieldStruct`
-instance PrettyPrint variable => PrettyPrint (UnificationProof level variable)
-  where
-    prettyPrint _ EmptyUnificationProof = "EmptyUnificationProof"
-    prettyPrint flags (CombinedUnificationProof p) =
-        writeOneFieldStruct flags "CombinedUnificationProof" p
-    prettyPrint flags (ConjunctionIdempotency p) =
-        writeOneFieldStruct flags "ConjunctionIdempotency" p
-    prettyPrint flags (AndDistributionAndConstraintLifting patternHead proofs) =
-        writeTwoFieldStruct
-            flags
-            "AndDistributionAndConstraintLifting"
-            patternHead
-            proofs
-    prettyPrint flags (Proposition_5_24_3 funProof var pat) =
-        writeThreeFieldStruct flags "Proposition_5_24_3" funProof var pat
-    prettyPrint flags (SubstitutionMerge var pat1 pat2) =
-        writeThreeFieldStruct flags "SubstitutionMerge" var pat1 pat2
-
--- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
-instance  PrettyPrint (ClashReason level) where
-    prettyPrint flags (DomainValueClash h) =
-        betweenParentheses
-            flags
-            ("DomainValueClash "
-            <> dquotes (fromString (escapeString h))
-            )
-    prettyPrint flags (HeadClash h) =
-        writeOneFieldStruct flags "HeadClash" h
-    prettyPrint flags (SortInjectionClash s1 s2) =
-        writeTwoFieldStruct flags "SortInjectionClash" s1 s2
-
-instance PrettyPrint variable => PrettyPrint (FunctionalProof level variable)
+instance PrettyPrint variable => PrettyPrint (FunctionalProof variable)
   where
     prettyPrint flags (FunctionalVariable v) =
         writeOneFieldStruct flags "FunctionalVariable" v
@@ -767,6 +716,6 @@ instance PrettyPrint variable => PrettyPrint (Predicate variable) where
 instance PrettyPrint variable => PrettyPrint (Substitution variable) where
       prettyPrint flags = prettyPrint flags . Substitution.unwrap
 
-instance PrettyPrint variable => PrettyPrint (Step.Pattern level variable) where
+instance PrettyPrint variable => PrettyPrint (Step.Pattern variable) where
     prettyPrint flags (Conditional t p s) =
         writeThreeFieldStruct flags "Conditional" t p s

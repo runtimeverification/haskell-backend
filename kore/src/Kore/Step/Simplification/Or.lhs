@@ -29,8 +29,6 @@ import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
 import           Kore.Syntax.Or
                  ( Or(..) )
 import           Kore.Unparser
@@ -48,22 +46,15 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => Or Sort (OrPattern Object variable)
-    ->  ( OrPattern Object variable
-        , SimplificationProof Object
-        )
+    => Or Sort (OrPattern variable)
+    -> OrPattern variable
 \end{code}
 
 `simplify` is a driver responsible for breaking down an `\or` pattern and
 simplifying its children.
 
 \begin{code}
-simplify
-    Or
-        { orFirst = first
-        , orSecond = second
-        }
-  =
+simplify Or { orFirst = first, orSecond = second } =
     simplifyEvaluated first second
 
 {-| simplifies an 'Or' given its two 'OrPattern' children.
@@ -76,18 +67,16 @@ simplifyEvaluated
         , Show variable
         , Unparse variable
         )
-    => OrPattern Object variable
-    -> OrPattern Object variable
-    ->  ( OrPattern Object variable
-        , SimplificationProof Object
-        )
+    => OrPattern variable
+    -> OrPattern variable
+    -> OrPattern variable
 \end{code}
 
 **TODO** (virgil): Preserve pattern sorts under simplification.
 One way to preserve the required sort annotations is to make `simplifyEvaluated`
 take an argument of type
 ``` haskell
-CofreeF (Or Sort) (Valid Object) (OrPattern Object variable)
+CofreeF (Or Sort) (Valid variable) (OrPattern variable)
 ```
 instead of two `OrPattern` arguments. The type of `makeEvaluate` may
 be changed analogously. The `Valid` annotation will eventually cache
@@ -102,13 +91,11 @@ simplifyEvaluated first second
 
   | (head1 : tail1) <- MultiOr.extractPatterns first
   , (head2 : tail2) <- MultiOr.extractPatterns second
-  , Just (result, proof) <- simplifySinglePatterns head1 head2
-  = (OrPattern.fromPatterns $ result : (tail1 ++ tail2), proof)
+  , Just result <- simplifySinglePatterns head1 head2
+  = OrPattern.fromPatterns $ result : (tail1 ++ tail2)
 
   | otherwise =
-    ( MultiOr.merge first second
-    , SimplificationProof
-    )
+    MultiOr.merge first second
 
   where
     simplifySinglePatterns first' second' =
@@ -130,11 +117,11 @@ disjoinPredicates
         , Show variable
         , Unparse variable
         )
-    => Pattern Object variable
+    => Pattern variable
     -- ^ Configuration
-    -> Pattern Object variable
+    -> Pattern variable
     -- ^ Disjunction
-    -> Maybe (Pattern Object variable, SimplificationProof Object)
+    -> Maybe (Pattern variable)
 \end{code}
 
 When two configurations have the same substitution, it may be possible to
@@ -191,7 +178,7 @@ disjoinPredicates
         , substitution = substitution2
         }
 
-  | term1         == term2
+  | term1 == term2
   =
     let result
           | substitution1 == substitution2 =
@@ -222,7 +209,7 @@ configuration. Nevertheless, this simplification is required by
                         predicated2
                 , substitution = mempty
                 }
-    in Just (result, SimplificationProof)
+    in Just result
 
   | otherwise =
     Nothing
@@ -239,11 +226,11 @@ topAnnihilates
         , Show variable
         , Unparse variable
         )
-    => Pattern Object variable
+    => Pattern variable
     -- ^ Configuration
-    -> Pattern Object variable
+    -> Pattern variable
     -- ^ Disjunction
-    -> Maybe (Pattern Object variable, SimplificationProof Object)
+    -> Maybe (Pattern variable)
 \end{code}
 
 `⊤` is the annihilator of `∨`; when two configurations have the same
@@ -286,12 +273,12 @@ topAnnihilates
   | isTop term1
   , predicate1    == predicate2
   , substitution1 == substitution2
-  = Just (predicated1, SimplificationProof)
+  = Just predicated1
 
   | isTop term2
   , predicate1    == predicate2
   , substitution1 == substitution2
-  = Just (predicated2, SimplificationProof)
+  = Just predicated2
 
   | otherwise =
     Nothing

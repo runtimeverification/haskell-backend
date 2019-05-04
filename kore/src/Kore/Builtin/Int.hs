@@ -319,14 +319,14 @@ asPattern
     :: Ord variable
     => Sort  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
-    -> Pattern Object variable
+    -> Pattern variable
 asPattern resultSort = Pattern.fromTermLike . asInternal resultSort
 
 asPartialPattern
     :: Ord variable
     => Sort  -- ^ resulting sort
     -> Maybe Integer  -- ^ builtin value to render
-    -> Pattern Object variable
+    -> Pattern variable
 asPartialPattern resultSort =
     maybe Pattern.bottom (asPattern resultSort)
 

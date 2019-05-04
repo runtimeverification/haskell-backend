@@ -22,7 +22,7 @@ import           Data.Set
 import qualified Data.Set as Set
 
 import Kore.AST.Common
-       ( Exists (..), Forall (..), Pattern (..) )
+       ( Pattern (..) )
 import Kore.AST.Pure
 import Kore.Variables.Fresh
 
@@ -38,7 +38,7 @@ may appear in the right-hand side of any substitution, but this is not checked.
 -- TODO (thomas.tuegel): In the future, patterns may have other types of
 -- attributes which need to be re-synthesized after substitution.
 substitute
-    ::  forall level domain variable attribute.
+    ::  forall domain variable attribute.
         ( FreshVariable variable
         , Ord variable
         , SortedVariable variable
@@ -46,15 +46,15 @@ substitute
         )
     => Lens.Lens' attribute (Set variable)
     -- ^ Lens into free variables of the pattern
-    -> Map variable (PurePattern level domain variable attribute)
+    -> Map variable (PurePattern domain variable attribute)
     -- ^ Substitution
-    -> PurePattern level domain variable attribute
+    -> PurePattern domain variable attribute
     -- ^ Original pattern
-    -> PurePattern level domain variable attribute
+    -> PurePattern domain variable attribute
 substitute lensFreeVariables = \subst -> substituteWorker (Map.map Right subst)
   where
     extractFreeVariables
-        :: PurePattern level domain variable attribute
+        :: PurePattern domain variable attribute
         -> Set variable
     extractFreeVariables = Lens.view lensFreeVariables . extract
 

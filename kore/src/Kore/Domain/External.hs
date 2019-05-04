@@ -38,7 +38,7 @@ import Kore.Unparser
 data External child =
     External
         { domainValueSort :: Sort
-        , domainValueChild :: CommonPurePattern Meta (Const Void)
+        , domainValueChild :: CommonPurePattern (Const Void)
         }
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
@@ -70,9 +70,9 @@ instance Domain External where
             External { domainValueSort } = external
         getExternal
             :: forall child
-            .  DomainValue Object External child
+            .  DomainValue Sort (External child)
             -> External child
         getExternal DomainValue { domainValueSort, domainValueChild } =
             domainValueChild { domainValueSort } :: External child
 
-type CommonExternalPattern level = CommonPurePattern level External
+type CommonExternalPattern = CommonPurePattern External

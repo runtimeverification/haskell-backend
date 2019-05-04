@@ -4,6 +4,7 @@ License     : NCSA
  -}
 module Kore.Attribute.Attributes
     ( Attributes (..)
+    , ParsedPurePattern
     , AttributePattern
     , asAttributePattern
     , attributePattern
@@ -19,13 +20,18 @@ import           Data.Hashable
 import qualified GHC.Generics as GHC
 
 import           Kore.AST.Pure
+import qualified Kore.Attribute.Null as Attribute
+                 ( Null )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Unparser
 
-type AttributePattern = ParsedPurePattern Object Domain.Builtin
+-- | A pure pattern which has only been parsed.
+type ParsedPurePattern = PurePattern Domain.Builtin Variable Attribute.Null
+
+type AttributePattern = ParsedPurePattern
 
 asAttributePattern
-    :: (Pattern Object Domain.Builtin Variable) AttributePattern
+    :: (Pattern Domain.Builtin Variable) AttributePattern
     -> AttributePattern
 asAttributePattern = asPurePattern . (mempty :<)
 

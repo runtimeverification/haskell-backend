@@ -15,8 +15,6 @@ module Kore.Step.Simplification.Not
 
 import qualified Data.Foldable as Foldable
 
-import           Kore.AST.Common
-                 ( Not (..) )
 import           Kore.AST.Valid hiding
                  ( mkAnd )
 import qualified Kore.Attribute.Symbol as Attribute
@@ -35,6 +33,7 @@ import qualified Kore.Step.Simplification.And as And
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
                  gather )
+import           Kore.Syntax.Not
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -56,11 +55,11 @@ simplify
         , Unparse variable
         )
     => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
-    -> Not Object (OrPattern Object variable)
-    -> Simplifier (OrPattern Object variable)
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
+    -> Not Sort (OrPattern variable)
+    -> Simplifier (OrPattern variable)
 simplify
     tools
     predicateSimplifier
@@ -85,7 +84,7 @@ See 'simplify' for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Not Object) (Valid Object) (OrPattern Object variable)
+> CofreeF (Not Sort) (Valid variable) (OrPattern variable)
 
 instead of an 'OrPattern' argument. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
@@ -100,11 +99,11 @@ simplifyEvaluated
         , Unparse variable
         )
     => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
-    -> OrPattern Object variable
-    -> Simplifier (OrPattern Object variable)
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
+    -> OrPattern variable
+    -> Simplifier (OrPattern variable)
 simplifyEvaluated
     tools
     predicateSimplifier
@@ -135,8 +134,8 @@ makeEvaluate
         , Show variable
         , Unparse variable
         )
-    => Pattern Object variable
-    -> OrPattern Object variable
+    => Pattern variable
+    -> OrPattern variable
 makeEvaluate Conditional { term, predicate, substitution } =
     OrPattern.fromPatterns
         [ Conditional

@@ -8,7 +8,6 @@ import Test.Tasty.HUnit
 import           Kore.AST.Pure
 import           Kore.ASTPrettyPrint
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Syntax.CharLiteral
 
 import Test.Kore
 
@@ -52,6 +51,6 @@ test_astPrettyPrint =
     ]
 
 prettyPrintPattern
-    :: Pattern Object Domain.Builtin Variable ParsedPattern
+    :: Pattern Domain.Builtin Variable ParsedPattern
     -> String
 prettyPrintPattern = prettyPrintToString

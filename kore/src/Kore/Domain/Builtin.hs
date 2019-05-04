@@ -67,7 +67,7 @@ import Kore.Unparser
 
 -- * Helpers
 
-type Key = PurePattern Object Builtin Concrete (Valid Concrete Object)
+type Key = PurePattern Builtin Concrete (Valid Concrete)
 
 {- | Unparse a builtin collection type, given its symbols and children.
 
@@ -375,7 +375,7 @@ instance Domain Builtin where
                 BuiltinSet InternalSet { builtinSetSort } -> builtinSetSort
         getBuiltin
             :: forall child
-            .  DomainValue Object Builtin child
+            .  DomainValue Sort (Builtin child)
             -> Builtin child
         getBuiltin DomainValue { domainValueSort, domainValueChild } =
             case domainValueChild of

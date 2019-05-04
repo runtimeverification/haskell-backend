@@ -36,31 +36,27 @@ import           Control.Arrow
                  ( (&&&) )
 import           Control.Monad
                  ( unless, void )
-import           Data.Functor.Const
-                 ( Const )
 import           Data.Maybe
                  ( isJust )
-import           Data.Void
-                 ( Void )
 import           Text.Megaparsec
                  ( some )
 import qualified Text.Megaparsec.Char as Parser
                  ( char )
 
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Parser.Lexeme
 import           Kore.Parser.ParserUtils
                  ( Parser )
 import qualified Kore.Parser.ParserUtils as ParserUtils
+import           Kore.Syntax.Definition
 import           Kore.Unparser
                  ( unparseToString )
 
-type ParsedPattern = ParsedPurePattern Object Domain.Builtin
+type ParsedPattern = ParsedPurePattern
 
 asParsedPattern
-    :: (Pattern Object Domain.Builtin Variable) ParsedPattern
+    :: (Pattern Domain.Builtin Variable) ParsedPattern
     -> ParsedPattern
 asParsedPattern patternBase = asPurePattern (mempty :< patternBase)
 
@@ -141,8 +137,8 @@ BNF definitions:
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 symbolOrAliasDeclarationRawParser
-    :: (Id -> [SortVariable] -> m Object)  -- ^ Element constructor.
-    -> Parser (m Object)
+    :: (Id -> [SortVariable] -> result)  -- ^ Element constructor.
+    -> Parser result
 symbolOrAliasDeclarationRawParser constructor = do
     headConstructor <- idParser
     symbolOrAliasDeclarationRemainderRawParser (constructor headConstructor)
@@ -160,8 +156,8 @@ BNF fragments:
 Always starts with @{@.
 -}
 symbolOrAliasDeclarationRemainderRawParser
-    :: ([SortVariable] -> m Object)  -- ^ Element constructor.
-    -> Parser (m Object)
+    :: ([SortVariable] -> result)  -- ^ Element constructor.
+    -> Parser result
 symbolOrAliasDeclarationRemainderRawParser constructor =
     constructor <$> inCurlyBracesListParser sortVariableParser
 
@@ -177,14 +173,14 @@ BNF definitions:
 
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
-aliasParser :: Parser (Alias Object)
+aliasParser :: Parser Alias
 aliasParser = symbolOrAliasDeclarationRawParser Alias
 
 
 {-|'symbolParser' is the same as 'aliasParser', but it interprets the head
 as a symbol one.
 -}
-symbolParser :: Parser (Symbol Object)
+symbolParser :: Parser Symbol
 symbolParser = symbolOrAliasDeclarationRawParser Symbol
 
 {-|'unaryOperatorRemainderParser' parses the part after an unary operator's
@@ -203,9 +199,9 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 unaryOperatorRemainderParser
     :: Parser child
-    -> (Sort -> child -> m Object child)
+    -> (Sort -> child -> result)
     -- ^ Element constructor.
-    -> Parser (m Object child)
+    -> Parser result
 unaryOperatorRemainderParser childParser constructor =
     constructor
     <$> inCurlyBracesRemainderParser sortParser
@@ -251,9 +247,9 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 existsForallRemainderParser
     :: Parser child
-    -> (Sort -> Variable -> child -> m Object Variable child)
+    -> (Sort -> Variable -> child -> m child)
     -- ^ Element constructor.
-    -> Parser (m Object Variable child)
+    -> Parser (m child)
 existsForallRemainderParser childParser constructor = do
     sort <- inCurlyBracesRemainderParser sortParser
     (variable, qChild) <- parenPairParser variableParser childParser
@@ -299,9 +295,9 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 equalsInRemainderParser
     :: Parser child
-    -> (Sort -> Sort -> child -> child -> m Object child)
+    -> (Sort -> Sort -> child -> child -> m child)
     -- ^ Element constructor.
-    -> Parser (m Object child)
+    -> Parser (m child)
 equalsInRemainderParser childParser constructor = do
     (sort1, sort2) <- curlyPairRemainderParser sortParser
     (child1, child2) <- parenPairParser childParser childParser
@@ -347,7 +343,7 @@ Always starts with @{@.
 symbolOrAliasPatternRemainderParser
     :: Parser child
     -> Id  -- ^ The already parsed prefix.
-    -> Parser (Pattern Object domain Variable child)
+    -> Parser (Pattern domain Variable child)
 symbolOrAliasPatternRemainderParser childParser identifier =
     ApplicationPattern
     <$> (   Application
@@ -421,7 +417,7 @@ BNF definitions:
 variableOrTermPatternParser
     :: Parser child
     -> Bool  -- ^ Whether it can be a Set Variable
-    -> Parser (Pattern Object domain Variable child)
+    -> Parser (Pattern domain Variable child)
 variableOrTermPatternParser childParser isSetVar = do
     identifier <- idParser
     c <- ParserUtils.peekChar'
@@ -539,9 +535,7 @@ koreMLConstructorParser = do
                     patternType
 
 {-|'leveledMLConstructorParser' is similar to 'koreMLConstructorParser'
-in that it parses a pattern starting with @\@.  However, it only parses
-patterns types which can belong to both 'Meta' and 'Object' categories, and
-returns an object of the 'Pattern' type.
+in that it parses a pattern starting with @\@.
 
 BNF definitions (here cat ranges over meta and object):
 
@@ -566,7 +560,7 @@ leveledMLConstructorParser
     :: Functor domain
     => Parser child
     -> (Parser child -> Parser (domain child))
-    -> Parser (Pattern Object domain Variable child)
+    -> Parser (Pattern domain Variable child)
 leveledMLConstructorParser childParser domainValueParser = do
     void (Parser.char '\\')
     keywordBasedParsers
@@ -604,7 +598,7 @@ mlConstructorRemainderParser
     => Parser child
     -> (Parser child -> Parser (domain child))
     -> MLPatternType
-    -> Parser (Pattern Object domain Variable child)
+    -> Parser (Pattern domain Variable child)
 mlConstructorRemainderParser childParser domainValueParser patternType =
     case patternType of
         AndPatternType -> AndPattern <$>
@@ -656,9 +650,6 @@ builtinDomainParser _ = do
     stringLiteralPatternParser =
         asPurePattern . (mempty :<) . StringLiteralPattern
         <$> stringLiteralParser
-
-noDomainParser :: Parser child -> Parser (Const Void child)
-noDomainParser _ = unsupportedPatternType Meta DomainValuePatternType
 
 {-|'korePatternParser' parses an unifiedPattern
 
@@ -828,7 +819,7 @@ koreSentenceParser :: Parser ParsedSentence
 koreSentenceParser = keywordBasedParsers
     [ ( "alias", sentenceConstructorRemainderParser AliasSentenceType )
     , ( "axiom", axiomSentenceRemainderParser SentenceAxiomSentence )
-    , ( "claim", axiomSentenceRemainderParser SentenceClaimSentence )
+    , ( "claim", claimSentenceRemainderParser SentenceClaimSentence )
     , ( "sort", sentenceSortRemainderParser )
     , ( "symbol", sentenceConstructorRemainderParser SymbolSentenceType )
     , ( "import", importSentenceRemainderParser )
@@ -902,7 +893,7 @@ BNF fragment example:
 
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
-aliasSentenceRemainderParser :: Parser (SentenceAlias Object ParsedPattern)
+aliasSentenceRemainderParser :: Parser (SentenceAlias ParsedPattern)
 aliasSentenceRemainderParser = do
     aliasSymbol <- aliasParser
     sorts <- inParenthesesListParser sortParser
@@ -932,6 +923,7 @@ importSentenceRemainderParser =
           <$> moduleNameParser
           <*> attributesParser
         )
+
 {-|'axiomSentenceRemainderParser' parses the part after the starting
 'axiom' keyword of an axiom-declaration and constructs it.
 
@@ -944,12 +936,26 @@ BNF example:
 Always starts with @{@.
 -}
 axiomSentenceRemainderParser
-    ::  (  SentenceAxiom SortVariable ParsedPattern
-        -> Sentence Meta SortVariable ParsedPattern
-        )
+    :: ( SentenceAxiom ParsedPattern -> Sentence ParsedPattern )
     -> Parser ParsedSentence
 axiomSentenceRemainderParser ctor =
   ctor
+  <$> ( SentenceAxiom
+        <$> inCurlyBracesListParser sortVariableParser
+        <*> korePatternParser
+        <*> attributesParser
+      )
+
+{-|'claimSentenceRemainderParser' parses the part after the starting
+'claim' keyword of an claim declaration and constructs it.
+
+Always starts with @{@.
+-}
+claimSentenceRemainderParser
+    :: ( SentenceClaim ParsedPattern -> Sentence ParsedPattern )
+    -> Parser ParsedSentence
+claimSentenceRemainderParser ctor =
+  ctor . SentenceClaim
   <$> ( SentenceAxiom
         <$> inCurlyBracesListParser sortVariableParser
         <*> korePatternParser
@@ -996,7 +1002,7 @@ leveledPatternParser
     :: Functor domain
     => Parser child
     -> (Parser child -> Parser (domain child))
-    -> Parser (Pattern Object domain Variable child)
+    -> Parser (Pattern domain Variable child)
 leveledPatternParser patternParser domainValueParser = do
     c <- ParserUtils.peekChar'
     case c of

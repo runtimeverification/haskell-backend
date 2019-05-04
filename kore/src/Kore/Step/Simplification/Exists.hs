@@ -17,8 +17,6 @@ import qualified Data.Map.Strict as Map
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.Common
-                 ( Exists (..) )
 import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -33,14 +31,14 @@ import           Kore.Step.OrPattern
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Predicate as Predicate
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
-                 ( BranchT, PredicateSimplifier, SimplificationProof (..),
-                 Simplifier, TermLikeSimplifier, gather, scatter )
+                 ( BranchT, PredicateSimplifier, Simplifier,
+                 TermLikeSimplifier, gather, scatter )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Substitution as Substitution
 import           Kore.Step.TermLike as Pattern
+import           Kore.Syntax.Exists
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -77,16 +75,13 @@ simplify
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Simplifies patterns.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Exists Object variable (OrPattern Object variable)
-    -> Simplifier
-        ( OrPattern Object variable
-        , SimplificationProof Object
-        )
+    -> Exists Sort variable (OrPattern variable)
+    -> Simplifier (OrPattern variable)
 simplify
     tools
     substitutionSimplifier
@@ -107,7 +102,7 @@ simplify
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Exists Object) (Valid Object) (OrPattern Object variable)
+> CofreeF (Exists Sort) (Valid variable) (OrPattern variable)
 
 instead of a 'variable' and an 'OrPattern' argument. The type of
 'makeEvaluate' may be changed analogously. The 'Valid' annotation will
@@ -123,15 +118,14 @@ simplifyEvaluated
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Simplifies patterns.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> variable
-    -> OrPattern Object variable
-    -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+    -> OrPattern variable
+    -> Simplifier (OrPattern variable)
 simplifyEvaluated
     tools
     substitutionSimplifier
@@ -139,13 +133,11 @@ simplifyEvaluated
     axiomIdToSimplifier
     variable
     simplified
-  | OrPattern.isTrue simplified =
-    return (simplified, SimplificationProof)
-  | OrPattern.isFalse simplified =
-    return (simplified, SimplificationProof)
+  | OrPattern.isTrue simplified  = return simplified
+  | OrPattern.isFalse simplified = return simplified
   | otherwise = do
-    (evaluated, _proofs) <-
-        MultiOr.traverseFlattenWithPairs
+    evaluated <-
+        traverse
             (makeEvaluate
                 tools
                 substitutionSimplifier
@@ -154,7 +146,7 @@ simplifyEvaluated
                 variable
             )
             simplified
-    return ( evaluated, SimplificationProof )
+    return (OrPattern.flatten evaluated)
 
 {-| evaluates an 'Exists' given its two 'Pattern' children.
 
@@ -168,15 +160,14 @@ makeEvaluate
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Simplifies patterns.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> variable
-    -> Pattern Object variable
-    -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+    -> Pattern variable
+    -> Simplifier (OrPattern variable)
 makeEvaluate
     tools
     substitutionSimplifier
@@ -184,7 +175,7 @@ makeEvaluate
     axiomIdToSimplifier
     variable
     original
-  = fmap (withProof . OrPattern.fromPatterns) $ gather $ do
+  = fmap OrPattern.fromPatterns $ gather $ do
     normalized <- normalize original
     let Conditional { substitution = normalizedSubstitution } = normalized
     case splitSubstitution variable normalizedSubstitution of
@@ -203,7 +194,6 @@ makeEvaluate
                 freeSubstitution
                 normalized { substitution = boundSubstitution }
   where
-    withProof a = (a, SimplificationProof)
     normalize =
         Substitution.normalize
             tools
@@ -231,15 +221,15 @@ makeEvaluateBoundLeft
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Simplifies patterns.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> variable  -- ^ quantified variable
     -> TermLike variable  -- ^ substituted term
-    -> Pattern Object variable
-    -> BranchT Simplifier (Pattern Object variable)
+    -> Pattern variable
+    -> BranchT Simplifier (Pattern variable)
 makeEvaluateBoundLeft
     tools
     substitutionSimplifier
@@ -260,7 +250,7 @@ makeEvaluateBoundLeft
                         Syntax.Predicate.substitute boundSubstitution
                         $ Conditional.predicate normalized
                     }
-        (results, _proof) <- Monad.Trans.lift $ simplify' substituted
+        results <- Monad.Trans.lift $ simplify' substituted
         scatter results
   where
     simplify' =
@@ -288,8 +278,8 @@ makeEvaluateBoundRight
         )
     => variable  -- ^ variable to be quantified
     -> Substitution variable  -- ^ free substitution
-    -> Pattern Object variable  -- ^ pattern to quantify
-    -> BranchT Simplifier (Pattern Object variable)
+    -> Pattern variable  -- ^ pattern to quantify
+    -> BranchT Simplifier (Pattern variable)
 makeEvaluateBoundRight
     variable
     freeSubstitution
@@ -346,31 +336,19 @@ quantifyPattern
         , SortedVariable variable
         )
     => variable
-    -> Pattern Object variable
-    -> Pattern Object variable
-quantifyPattern variable Conditional { term, predicate, substitution }
-  | quantifyTerm, quantifyPredicate =
-      Conditional
-        { term =
-            mkExists variable
-            $ mkAnd term
-            $ Syntax.Predicate.unwrapPredicate predicate'
-        , predicate = Syntax.Predicate.makeTruePredicate
-        , substitution = mempty
-        }
-  | quantifyTerm =
-      Conditional
-        { term = mkExists variable term
-        , predicate
-        , substitution
-        }
+    -> Pattern variable
+    -> Pattern variable
+quantifyPattern variable original@Conditional { term, predicate, substitution }
+  | quantifyTerm, quantifyPredicate
+  = Pattern.fromTermLike
+    $ mkExists variable
+    $ mkAnd term (Syntax.Predicate.unwrapPredicate predicate')
+  | quantifyTerm = mkExists variable <$> original
   | quantifyPredicate =
-      Conditional
-        { term
-        , predicate = Syntax.Predicate.makeExistsPredicate variable predicate'
-        , substitution = mempty
-        }
-  | otherwise = Conditional { term, predicate, substitution }
+    Conditional.withCondition term
+    $ Predicate.fromPredicate
+    $ Syntax.Predicate.makeExistsPredicate variable predicate'
+  | otherwise = original
   where
     quantifyTerm = Pattern.hasFreeVariable variable term
     predicate' =

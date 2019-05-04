@@ -6,7 +6,9 @@ License     : NCSA
 
 {-# LANGUAGE TemplateHaskell #-}
 
-module Kore.Syntax.Ceil where
+module Kore.Syntax.Ceil
+    ( Ceil (..)
+    ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )

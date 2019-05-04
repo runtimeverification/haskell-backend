@@ -63,10 +63,9 @@ test_andNegation =
 
 evaluate
     :: Syntax.Predicate Variable
-    -> PropertyT SMT (Predicate Object Variable)
+    -> PropertyT SMT (Predicate Variable)
 evaluate predicate =
-    (<$>) fst
-    $ give testMetadataTools
+    give testMetadataTools
     $ Trans.lift
     $ evalSimplifier emptyLogger
     $ Evaluator.evaluate
@@ -74,11 +73,7 @@ evaluate predicate =
         (mockSimplifier noSimplification)
         predicate
 
-noSimplification
-    ::  [   ( TermLike Variable
-            , ([Pattern level Variable], SimplificationProof level)
-            )
-        ]
+noSimplification :: [(TermLike Variable, [Pattern Variable])]
 noSimplification = []
 
 -- ----------------------------------------------------------------

@@ -23,12 +23,11 @@ import           Numeric.Natural
                  ( Natural )
 
 import qualified Kore.AllPath as AllPath
-import qualified Kore.Annotation.Null as Annotation
 import           Kore.Annotation.Valid
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Location as Attribute
+import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Source as Attribute
 import           Kore.Domain.Builtin
 import           Kore.Error
@@ -48,12 +47,9 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import           Kore.Step.Pattern
                  ( Conditional (..) )
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
-import           Kore.Step.Proof
 import           Kore.Step.Representation.MultiOr
 import           Kore.Step.Rule
                  ( RulePattern (..) )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof )
 import qualified Kore.Step.SMT.AST as SMT
                  ( Declarations (Declarations), Encodable,
                  IndirectSymbolDeclaration (IndirectSymbolDeclaration),
@@ -73,16 +69,12 @@ import qualified Kore.Step.SMT.AST as SMT.SymbolReference
 import qualified Kore.Step.SMT.AST as SMT.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
 import           Kore.Step.TermLike
-import           Kore.Syntax.CharLiteral
-import           Kore.Syntax.SetVariable
-                 ( SetVariable )
+import           Kore.Syntax.Definition
 import qualified Kore.Syntax.SetVariable as SetVariable
-import           Kore.Syntax.StringLiteral
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.Unifier
 import           Kore.Variables.Target
 import qualified SMT.AST as SMT
                  ( Constructor (Constructor),
@@ -116,7 +108,6 @@ instance EqualWithExplanation Natural where
 instance
     ( EqualWithExplanation child
     , Eq child
-    , Eq Object
     , Show child
     , Eq1 domain
     , Show1 domain
@@ -125,7 +116,7 @@ instance
     , Eq variable
     , Show variable
     )
-    => SumEqualWithExplanation (Pattern Object domain variable child)
+    => SumEqualWithExplanation (Pattern domain variable child)
   where
     sumConstructorPair (AndPattern a1) (AndPattern a2) =
         SumConstructorSameWithArguments (EqWrap "AndPattern" a1 a2)
@@ -262,20 +253,20 @@ instance
 
 instance
     ( EqualWithExplanation child
-    , Eq child, Eq Object, Eq variable
+    , Eq child, Eq variable
     , Show child
     , EqualWithExplanation variable
     , EqualWithExplanation (domain child)
     , Show variable
     , Show1 domain
     , Eq1 domain
-    ) => EqualWithExplanation (Pattern Object domain variable child)
+    ) => EqualWithExplanation (Pattern domain variable child)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
 instance
-    ( Show (PurePattern Object domain variable annotation)
+    ( Show (PurePattern domain variable annotation)
     , Show1 domain
     , Eq1 domain
     , Show variable
@@ -283,17 +274,16 @@ instance
     , EqualWithExplanation variable
     , Show annotation
     , Eq annotation
-    , Eq Object
     , EqualWithExplanation annotation
-    , EqualWithExplanation (domain (Cofree (Pattern Object domain variable) annotation))
+    , EqualWithExplanation (domain (Cofree (Pattern domain variable) annotation))
     ) =>
-    EqualWithExplanation (PurePattern Object domain variable annotation)
+    EqualWithExplanation (PurePattern domain variable annotation)
   where
     compareWithExplanation a@(PurePattern _) = wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance
-    ( Show (PurePattern Object domain variable annotation)
+    ( Show (PurePattern domain variable annotation)
     , Show1 domain
     , Eq1 domain
     , Show variable
@@ -301,11 +291,10 @@ instance
     , EqualWithExplanation variable
     , Show annotation
     , Eq annotation
-    , Eq Object
     , EqualWithExplanation annotation
-    , EqualWithExplanation (domain (Cofree (Pattern Object domain variable) annotation))
+    , EqualWithExplanation (domain (Cofree (Pattern domain variable) annotation))
     ) =>
-    WrapperEqualWithExplanation (PurePattern Object domain variable annotation)
+    WrapperEqualWithExplanation (PurePattern domain variable annotation)
   where
     wrapperField expected actual =
         EqWrap
@@ -356,71 +345,6 @@ instance
   where
     compareWithExplanation (a1 :< fb1) (a2 :< fb2) =
         compareWithExplanation fb1 fb2 <|> compareWithExplanation a1 a2
-    printWithExplanation = show
-
-instance
-    ( Eq Object, Show Object
-    , Eq variable, Show variable
-    , EqualWithExplanation variable
-    , EqualWithExplanation (TermLike variable)
-    )
-    => SumEqualWithExplanation (StepProof Object variable)
-  where
-    sumConstructorPair (StepProof a1) (StepProof a2) =
-        SumConstructorSameWithArguments (EqWrap "StepProofCombined" a1 a2)
-
-instance
-    ( Eq Object, Show Object
-    , Eq variable, Show variable
-    , EqualWithExplanation variable
-    , EqualWithExplanation (TermLike variable)
-    )
-    => SumEqualWithExplanation (StepProofAtom Object variable)
-  where
-    sumConstructorPair (StepProofUnification a1) (StepProofUnification a2) =
-        SumConstructorSameWithArguments (EqWrap "StepProofUnification" a1 a2)
-    sumConstructorPair a1@(StepProofUnification _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair
-        (StepProofVariableRenamings a1) (StepProofVariableRenamings a2)
-      =
-        SumConstructorSameWithArguments
-            (EqWrap "StepProofVariableRenamings" a1 a2)
-    sumConstructorPair a1@(StepProofVariableRenamings _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair
-        (StepProofSimplification a1)
-        (StepProofSimplification a2)
-      =
-        SumConstructorSameWithArguments (EqWrap "StepProofSimplification" a1 a2)
-    sumConstructorPair a1@(StepProofSimplification _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-instance
-    ( Eq Object, Show Object
-    , Eq variable, Show variable
-    , EqualWithExplanation variable
-    , EqualWithExplanation (TermLike variable)
-    )
-    => EqualWithExplanation (StepProofAtom Object variable)
-  where
-    compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
-
-instance
-    ( Eq Object, Show Object
-    , Eq variable, Show variable
-    , EqualWithExplanation variable
-    , EqualWithExplanation (TermLike variable)
-    )
-    => EqualWithExplanation (StepProof Object variable)
-  where
-    compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
 instance (Show child, EqualWithExplanation child)
@@ -506,14 +430,14 @@ instance (EqualWithExplanation child, Show child)
     printWithExplanation = show
 
 instance
-    (Eq child, Show child, Eq1 domain, Show1 domain) =>
-    EqualWithExplanation (DomainValue Object domain child)
+    (Eq child, Show child) =>
+    EqualWithExplanation (DomainValue Sort child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
 instance (Show child, EqualWithExplanation child)
-    => StructEqualWithExplanation (Equals Object child)
+    => StructEqualWithExplanation (Equals Sort child)
   where
     structFieldsWithNames
         expected@(Equals _ _ _ _)
@@ -538,7 +462,7 @@ instance (Show child, EqualWithExplanation child)
     structConstructorName _ = "Equals"
 
 instance (Show child, EqualWithExplanation child)
-    => EqualWithExplanation (Equals Object child)
+    => EqualWithExplanation (Equals Sort child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
@@ -551,7 +475,7 @@ instance
     , EqualWithExplanation child
     , EqualWithExplanation variable
     )
-    => StructEqualWithExplanation (Exists Object variable child)
+    => StructEqualWithExplanation (Exists Sort variable child)
   where
     structFieldsWithNames
         expected@(Exists _ _ _)
@@ -577,7 +501,7 @@ instance
     , EqualWithExplanation variable
     , Eq variable
     , Show variable
-    ) => EqualWithExplanation (Exists Object variable child)
+    ) => EqualWithExplanation (Exists Sort variable child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
@@ -616,7 +540,7 @@ instance
     , EqualWithExplanation child
     , EqualWithExplanation variable
     )
-    => StructEqualWithExplanation (Forall Object variable child)
+    => StructEqualWithExplanation (Forall Sort variable child)
   where
     structFieldsWithNames
         expected@(Forall _ _ _)
@@ -642,7 +566,7 @@ instance
     , EqualWithExplanation variable
     , Eq variable
     , Show variable
-    ) => EqualWithExplanation (Forall Object variable child)
+    ) => EqualWithExplanation (Forall Sort variable child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
@@ -652,7 +576,7 @@ instance
     , Show child
     , EqualWithExplanation child
     )
-    => StructEqualWithExplanation (Iff Object child)
+    => StructEqualWithExplanation (Iff Sort child)
   where
     structFieldsWithNames
         expected@(Iff _ _ _)
@@ -675,32 +599,34 @@ instance
     ( EqualWithExplanation child
     , Eq child
     , Show child
-    ) => EqualWithExplanation (Iff Object child)
+    ) => EqualWithExplanation (Iff Sort child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (Implies Object child)
+    => EqualWithExplanation (Implies Sort child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
+
 instance
     (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (In Object child)
+    => EqualWithExplanation (In Sort child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
+
 instance
     (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (Next Object child)
+    => EqualWithExplanation (Next Sort child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
 instance (Show child, Eq child, EqualWithExplanation child)
   =>
-    StructEqualWithExplanation (Not Object child)
+    StructEqualWithExplanation (Not Sort child)
   where
     structFieldsWithNames
         expected@(Not _ _)
@@ -717,7 +643,7 @@ instance (Show child, Eq child, EqualWithExplanation child)
     structConstructorName _ = "Not"
 instance
     (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (Not Object child)
+    => EqualWithExplanation (Not Sort child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
@@ -752,7 +678,7 @@ instance
 
 instance
     (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (Rewrites Object child)
+    => EqualWithExplanation (Rewrites Sort child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
@@ -866,13 +792,8 @@ instance EqualWithExplanation UnificationError
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (ClashReason Object)
-  where
-    compareWithExplanation = rawCompareWithExplanation
-    printWithExplanation = show
-
 instance (Show variable, EqualWithExplanation variable)
-    => SumEqualWithExplanation (SubstitutionError Object variable)
+    => SumEqualWithExplanation (SubstitutionError variable)
   where
     sumConstructorPair
         (NonCtorCircularVariableDependency a1)
@@ -883,7 +804,7 @@ instance (Show variable, EqualWithExplanation variable)
 
 
 instance (Show variable, EqualWithExplanation variable)
-    => EqualWithExplanation (SubstitutionError Object variable)
+    => EqualWithExplanation (SubstitutionError variable)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
@@ -892,7 +813,7 @@ instance
     ( Eq variable
     , Show variable
     )
-    => EqualWithExplanation (FunctionalProof Object variable)
+    => EqualWithExplanation (FunctionalProof variable)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
@@ -901,101 +822,9 @@ instance
     ( Eq variable
     , Show variable
     )
-    => EqualWithExplanation (FunctionProof Object variable)
+    => EqualWithExplanation (FunctionProof variable)
   where
     compareWithExplanation = rawCompareWithExplanation
-    printWithExplanation = show
-
-instance
-    ( Eq Object, Eq variable
-    , Show Object, Show variable
-    , EqualWithExplanation variable
-    , EqualWithExplanation (TermLike variable)
-    )
-    => SumEqualWithExplanation (UnificationProof Object variable)
-  where
-    sumConstructorPair EmptyUnificationProof EmptyUnificationProof =
-        SumConstructorSameNoArguments
-    sumConstructorPair a1@EmptyUnificationProof a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair
-        (CombinedUnificationProof a1) (CombinedUnificationProof a2)
-      =
-        SumConstructorSameWithArguments
-            (EqWrap "CombinedUnificationProof" a1 a2)
-    sumConstructorPair a1@(CombinedUnificationProof _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair (ConjunctionIdempotency a1) (ConjunctionIdempotency a2) =
-        SumConstructorSameWithArguments (EqWrap "ConjunctionIdempotency" a1 a2)
-    sumConstructorPair a1@(ConjunctionIdempotency _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair
-        (Proposition_5_24_3 a1 a2 a3) (Proposition_5_24_3 b1 b2 b3)
-      =
-        SumConstructorSameWithArguments
-            (EqWrap "Proposition_5_24_3" (a1, a2, a3) (b1, b2, b3))
-    sumConstructorPair a1@(Proposition_5_24_3 _ _ _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair
-        (AndDistributionAndConstraintLifting a1 a2)
-        (AndDistributionAndConstraintLifting b1 b2) =
-            SumConstructorSameWithArguments
-                (EqWrap "AndDistributionAndConstraintLifting" (a1, a2) (b1, b2))
-    sumConstructorPair a1@(AndDistributionAndConstraintLifting _ _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair
-        (SubstitutionMerge a1 a2 a3) (SubstitutionMerge b1 b2 b3)
-      =
-        SumConstructorSameWithArguments
-            (EqWrap "SubstitutionMerge" (a1, a2, a3) (b1, b2, b3))
-    sumConstructorPair a1@(SubstitutionMerge _ _ _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-instance
-    ( Eq Object, Eq variable
-    , Show Object, Show variable
-    , EqualWithExplanation variable
-    , EqualWithExplanation (TermLike variable)
-    )
-    => EqualWithExplanation (UnificationProof Object variable)
-  where
-    compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
-
-instance
-    (EqualWithExplanation variable, Show variable)
-    => StructEqualWithExplanation (VariableRenaming Object variable)
-  where
-    structFieldsWithNames
-        expected@(VariableRenaming _ _)
-        actual@(VariableRenaming _ _)
-      = [ EqWrap
-            "variableRenamingOriginal = "
-            (variableRenamingOriginal expected)
-            (variableRenamingOriginal actual)
-        , EqWrap
-            "variableRenamingRenamed = "
-            (variableRenamingRenamed expected)
-            (variableRenamingRenamed actual)
-        ]
-    structConstructorName _ = "VariableRenaming"
-
-instance
-    (EqualWithExplanation variable, Show variable)
-    => EqualWithExplanation (VariableRenaming Object variable)
-  where
-    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance
@@ -1022,10 +851,7 @@ instance
     printWithExplanation = show
 
 instance
-    ( Show Object, Show variable
-    , Eq Object, Eq variable
-    , EqualWithExplanation variable
-    )
+    ( Show variable , Eq variable , EqualWithExplanation variable )
     => EqualWithExplanation (Substitution variable)
   where
     compareWithExplanation = sumCompareWithExplanation
@@ -1159,10 +985,7 @@ instance
             (printWithExplanation b)
 
 instance
-    ( EqualWithExplanation variable
-    , Show Object, Show variable
-    , Eq Object, Eq variable
-    )
+    ( EqualWithExplanation variable , Show variable , Eq variable )
     => SumEqualWithExplanation (Substitution variable)
   where
     sumConstructorPair s1 s2
@@ -1183,13 +1006,12 @@ instance
         s2Inner = Substitution.unwrap s2
 
 instance
-    ( Show Object, Show variable, Show child
-    , Eq Object, Eq variable
+    ( Show variable, Show child , Eq variable
     , EqualWithExplanation variable
     , EqualWithExplanation child
     , EqualWithExplanation (TermLike variable)
     )
-    => StructEqualWithExplanation (Conditional Object variable child)
+    => StructEqualWithExplanation (Conditional variable child)
   where
     structFieldsWithNames
         expected@(Conditional _ _ _) actual@(Conditional _ _ _)
@@ -1210,20 +1032,18 @@ instance
     structConstructorName _ = "Conditional"
 
 instance
-    ( Show Object, Show variable, Show child
-    , Eq Object, Eq variable
+    ( Show variable, Show child , Eq variable
     , EqualWithExplanation variable
     , EqualWithExplanation child
     , EqualWithExplanation (TermLike variable)
     )
-    => EqualWithExplanation (Conditional Object variable child)
+    => EqualWithExplanation (Conditional variable child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance
     ( EqualWithExplanation variable
-    , Eq Object, Show Object
     , Eq variable, Show variable
     )
     => EqualWithExplanation (Predicate variable)
@@ -1237,11 +1057,11 @@ instance
     printWithExplanation = show
 
 instance
-    ( Show Object, Show variable
-    , Eq Object, Eq variable
+    ( Show variable
+    , Eq variable
     , EqualWithExplanation variable
     )
-    => StructEqualWithExplanation (AttemptedAxiomResults Object variable)
+    => StructEqualWithExplanation (AttemptedAxiomResults variable)
   where
     structFieldsWithNames
         expected@(AttemptedAxiomResults _ _)
@@ -1259,22 +1079,17 @@ instance
     structConstructorName _ = "AttemptedAxiomResults"
 
 instance
-    ( Show Object, Show variable
-    , Eq Object, Eq variable
-    , EqualWithExplanation variable
-    )
-    => EqualWithExplanation (AttemptedAxiomResults Object variable)
+    ( Show variable , Eq variable , EqualWithExplanation variable )
+    => EqualWithExplanation (AttemptedAxiomResults variable)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance
-    ( Show Object, Show variable
-    , Eq Object, Eq variable
-    , EqualWithExplanation variable
+    ( Show variable , Eq variable , EqualWithExplanation variable
     , EqualWithExplanation (TermLike variable)
     )
-    => SumEqualWithExplanation (AttemptedAxiom Object variable)
+    => SumEqualWithExplanation (AttemptedAxiom variable)
   where
     sumConstructorPair
         AttemptedAxiom.NotApplicable
@@ -1295,19 +1110,12 @@ instance
             (printWithExplanation a1) (printWithExplanation a2)
 
 instance
-    ( Show Object, Show variable
-    , Eq Object, Eq variable
-    , EqualWithExplanation variable
+    ( Show variable , Eq variable , EqualWithExplanation variable
     , EqualWithExplanation (TermLike variable)
     )
-    => EqualWithExplanation (AttemptedAxiom Object variable)
+    => EqualWithExplanation (AttemptedAxiom variable)
   where
     compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
-
-instance EqualWithExplanation (SimplificationProof Object)
-  where
-    compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
 instance
@@ -1326,19 +1134,19 @@ instance
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (PatternAttributesError.FunctionError Object)
+instance EqualWithExplanation (PatternAttributesError.FunctionError)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (PatternAttributesError.FunctionalError Object)
+instance EqualWithExplanation (PatternAttributesError.FunctionalError)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
 instance
     (EqualWithExplanation variable, Show variable)
-    => SumEqualWithExplanation (UnificationOrSubstitutionError Object variable)
+    => SumEqualWithExplanation (UnificationOrSubstitutionError variable)
   where
     sumConstructorPair (UnificationError a1) (UnificationError a2) =
         SumConstructorSameWithArguments (EqWrap "UnificationError" a1 a2)
@@ -1354,7 +1162,7 @@ instance
 
 instance
     (EqualWithExplanation variable, Show variable)
-    => EqualWithExplanation (UnificationOrSubstitutionError Object variable)
+    => EqualWithExplanation (UnificationOrSubstitutionError variable)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
@@ -1388,13 +1196,13 @@ instance
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (Annotation.Null Object) where
+instance EqualWithExplanation Attribute.Null where
     compareWithExplanation _ _ = Nothing
     printWithExplanation = show
 
 instance
     ( EqualWithExplanation variable, Show variable
-    ) => StructEqualWithExplanation (Valid variable level)
+    ) => StructEqualWithExplanation (Valid variable)
   where
     structFieldsWithNames expected@(Valid _ _) actual@(Valid _ _) =
         [ EqWrap
@@ -1410,7 +1218,7 @@ instance
 
 instance
     ( EqualWithExplanation variable, Show variable
-    ) => EqualWithExplanation (Valid variable level)
+    ) => EqualWithExplanation (Valid variable)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
@@ -1426,7 +1234,7 @@ instance EqualWithExplanation ConstructorLikeProof
     printWithExplanation = show
 
 
-instance SumEqualWithExplanation (AxiomIdentifier Object)
+instance SumEqualWithExplanation (AxiomIdentifier)
   where
     sumConstructorPair
         (AxiomIdentifier.Application p1) (AxiomIdentifier.Application p2)
@@ -1441,7 +1249,7 @@ instance SumEqualWithExplanation (AxiomIdentifier Object)
             (printWithExplanation p1)
             (printWithExplanation p2)
 
-instance EqualWithExplanation (AxiomIdentifier Object)
+instance EqualWithExplanation (AxiomIdentifier)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
@@ -1451,7 +1259,7 @@ instance
     , Show variable
     , EqualWithExplanation variable
     ) =>
-    EqualWithExplanation (RulePattern Object variable)
+    EqualWithExplanation (RulePattern variable)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
@@ -1461,7 +1269,7 @@ instance
     , Show variable
     , EqualWithExplanation variable
     ) =>
-    StructEqualWithExplanation (RulePattern Object variable)
+    StructEqualWithExplanation (RulePattern variable)
   where
     structConstructorName _ = "RulePattern"
     structFieldsWithNames
@@ -1712,11 +1520,11 @@ instance
 
 -- For: Alias
 
-instance EqualWithExplanation (Alias Object) where
+instance EqualWithExplanation Alias where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance StructEqualWithExplanation (Alias Object) where
+instance StructEqualWithExplanation Alias where
     structConstructorName _ = "Alias"
     structFieldsWithNames expect@(Alias _ _) actual@(Alias _ _) =
         map (\f -> f expect actual)

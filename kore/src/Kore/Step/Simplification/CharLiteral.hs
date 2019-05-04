@@ -17,9 +17,6 @@ import           Kore.Step.OrPattern
                  ( OrPattern )
 import qualified Kore.Step.OrPattern as OrPattern
 import qualified Kore.Step.Pattern as Pattern
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
-import           Kore.Syntax.CharLiteral
 
 {-| 'simplify' simplifies a 'CharLiteral' pattern, which means returning
 an or containing a term made of that literal.
@@ -27,8 +24,6 @@ an or containing a term made of that literal.
 simplify
     :: Ord variable
     => CharLiteral
-    -> (OrPattern Meta variable, SimplificationProof Meta)
+    -> OrPattern variable
 simplify (CharLiteral char) =
-    ( OrPattern.fromPattern $ Pattern.fromTermLike $ mkCharLiteral char
-    , SimplificationProof
-    )
+    OrPattern.fromPattern $ Pattern.fromTermLike $ mkCharLiteral char

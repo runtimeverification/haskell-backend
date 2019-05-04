@@ -15,18 +15,9 @@ module Kore.AST.AstWithLocation
 import qualified Control.Lens as Lens
 
 import Kore.AST.Common
-import Kore.AST.Sentence
 import Kore.Domain.Class
-import Kore.Sort
-import Kore.Syntax.And
-import Kore.Syntax.Application
-import Kore.Syntax.Bottom
-import Kore.Syntax.Ceil
-import Kore.Syntax.Floor
-import Kore.Syntax.Or
-import Kore.Syntax.SetVariable
-import Kore.Syntax.Top
-import Kore.Syntax.Variable
+import Kore.Syntax
+import Kore.Syntax.Definition
 
 {-| 'AstWithLocation' should be implemented by all AST terms that have
 an 'AstLocation'.
@@ -73,7 +64,7 @@ instance AstWithLocation Variable where
     updateAstLocation var loc =
         var {variableName = updateAstLocation (variableName var) loc}
 
-instance AstWithLocation (Alias level) where
+instance AstWithLocation Alias where
     locationFromAst = locationFromAst . aliasConstructor
     updateAstLocation al loc =
         al { aliasConstructor = updateAstLocation (aliasConstructor al) loc }
@@ -86,14 +77,14 @@ instance AstWithLocation SymbolOrAlias where
                 updateAstLocation (symbolOrAliasConstructor sal) loc
             }
 
-instance AstWithLocation (Symbol level) where
+instance AstWithLocation Symbol where
     locationFromAst = locationFromAst . symbolConstructor
     updateAstLocation s loc =
         s { symbolConstructor = updateAstLocation (symbolConstructor s) loc }
 
 instance
     (Domain domain, AstWithLocation variable) =>
-    AstWithLocation (Pattern level domain variable child)
+    AstWithLocation (Pattern domain variable child)
   where
     locationFromAst =
         \case

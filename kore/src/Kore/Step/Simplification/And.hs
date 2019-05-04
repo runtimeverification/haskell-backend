@@ -39,8 +39,8 @@ import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
                  ( termAnd )
 import           Kore.Step.Simplification.Data
-                 ( BranchT, PredicateSimplifier, SimplificationProof (..),
-                 Simplifier, TermLikeSimplifier, gather, scatter )
+                 ( BranchT, PredicateSimplifier, Simplifier,
+                 TermLikeSimplifier, gather, scatter )
 import qualified Kore.Step.Substitution as Substitution
 import           Kore.Syntax.And
 import           Kore.Unparser
@@ -90,16 +90,13 @@ simplify
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> And Sort (OrPattern Object variable)
-    -> Simplifier
-        ( OrPattern Object variable
-        , SimplificationProof Object
-        )
+    -> And Sort (OrPattern variable)
+    -> Simplifier (OrPattern variable)
 simplify
     tools
     substitutionSimplifier
@@ -127,7 +124,7 @@ See 'simplify' for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (And Sort) (Valid Object) (OrPattern Object variable)
+> CofreeF (And Sort) (Valid variable) (OrPattern variable)
 
 instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
 be changed analogously. The 'Valid' annotation will eventually cache information
@@ -142,15 +139,14 @@ simplifyEvaluated
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> OrPattern Object variable
-    -> OrPattern Object variable
-    -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+    -> OrPattern variable
+    -> OrPattern variable
+    -> Simplifier (OrPattern variable)
 simplifyEvaluated
     tools
     substitutionSimplifier
@@ -158,15 +154,11 @@ simplifyEvaluated
     axiomIdToSimplifier
     first
     second
-  | OrPattern.isFalse first =
-    return (OrPattern.fromPatterns [], SimplificationProof)
-  | OrPattern.isFalse second =
-    return (OrPattern.fromPatterns [], SimplificationProof)
-
-  | OrPattern.isTrue first = return (second, SimplificationProof)
-  | OrPattern.isTrue second = return (first, SimplificationProof)
-
-  | otherwise = do
+  | OrPattern.isFalse first  = return OrPattern.bottom
+  | OrPattern.isFalse second = return OrPattern.bottom
+  | OrPattern.isTrue first   = return second
+  | OrPattern.isTrue second  = return first
+  | otherwise                = do
     result <-
         gather $ do
             first1 <- scatter first
@@ -178,7 +170,7 @@ simplifyEvaluated
                 axiomIdToSimplifier
                 first1
                 second1
-    return (OrPattern.fromPatterns result, SimplificationProof)
+    return (OrPattern.fromPatterns result)
 
 {-|'makeEvaluate' simplifies an 'And' of 'Pattern's.
 
@@ -193,14 +185,14 @@ makeEvaluate
         , HasCallStack
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern Object variable
-    -> Pattern Object variable
-    -> BranchT Simplifier (Pattern Object variable)
+    -> Pattern variable
+    -> Pattern variable
+    -> BranchT Simplifier (Pattern variable)
 makeEvaluate
     tools substitutionSimplifier simplifier axiomIdToSimplifier first second
   | Pattern.isBottom first || Pattern.isBottom second = empty
@@ -224,14 +216,14 @@ makeEvaluateNonBool
         , HasCallStack
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern Object variable
-    -> Pattern Object variable
-    -> BranchT Simplifier (Pattern Object variable)
+    -> Pattern variable
+    -> Pattern variable
+    -> BranchT Simplifier (Pattern variable)
 makeEvaluateNonBool
     tools
     substitutionSimplifier
@@ -240,7 +232,7 @@ makeEvaluateNonBool
     first@Conditional { term = firstTerm }
     second@Conditional { term = secondTerm }
   = do
-    (terms, _proof) <-
+    terms <-
         Monad.Trans.lift $ makeTermAnd
             tools
             substitutionSimplifier
@@ -287,12 +279,12 @@ makeTermAnd
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> TermLike variable
-    -> Simplifier (Pattern Object variable, SimplificationProof Object)
+    -> Simplifier (Pattern variable)
 makeTermAnd = AndTerms.termAnd

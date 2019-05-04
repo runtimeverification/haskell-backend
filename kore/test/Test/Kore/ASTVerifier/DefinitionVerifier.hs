@@ -10,7 +10,6 @@ import           Data.Text
                  ( Text )
 
 import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import           Kore.ASTPrettyPrint
 import           Kore.ASTVerifier.DefinitionVerifier
@@ -21,6 +20,7 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Step.TermLike hiding
                  ( freeVariables )
+import           Kore.Syntax.Definition
 import           Kore.Unparser
                  ( unparseToString )
 import qualified Kore.Verified as Verified
@@ -144,11 +144,11 @@ newtype SortName = SortName Text
 newtype SortVariableName = SortVariableName Text
 newtype VariableName = VariableName Text
 newtype NamePrefix = NamePrefix Text
-newtype OperandSort level = OperandSort Sort
-newtype ResultSort level = ResultSort Sort
-newtype DeclaredSort level = DeclaredSort Sort
-newtype TestedPatternSort level = TestedPatternSort Sort
-newtype SortVariablesThatMustBeDeclared level =
+newtype OperandSort = OperandSort Sort
+newtype ResultSort = ResultSort Sort
+newtype DeclaredSort = DeclaredSort Sort
+newtype TestedPatternSort = TestedPatternSort Sort
+newtype SortVariablesThatMustBeDeclared =
     SortVariablesThatMustBeDeclared [SortVariable]
 
 simpleDefinitionFromSentences
@@ -648,8 +648,8 @@ simpleSort sortName =
 objectVariableSort :: Text -> Sort
 objectVariableSort name = sortVariableSort name
 
-unifiedSortVariable :: Object -> SortVariableName -> SortVariable
-unifiedSortVariable _x (SortVariableName name) = sortVariable name
+namedSortVariable :: SortVariableName -> SortVariable
+namedSortVariable (SortVariableName name) = sortVariable name
 
 stringUnifiedPattern :: Text -> TermLike Variable
 stringUnifiedPattern s = (mkStringLiteral s)
@@ -666,7 +666,7 @@ unifiedVariable :: VariableName -> Sort -> Variable
 unifiedVariable name sort =
     variable name sort
 
-variablePattern :: VariableName -> Sort -> Pattern level domain Variable p
+variablePattern :: VariableName -> Sort -> Pattern domain Variable p
 variablePattern name sort =
     VariablePattern (variable name sort)
 
@@ -680,7 +680,7 @@ unifiedVariablePattern name patternSort =
 simpleExistsPattern
     :: Variable
     -> Sort
-    -> Pattern level domain Variable (TermLike Variable)
+    -> Pattern domain Variable (TermLike Variable)
 simpleExistsPattern quantifiedVariable resultSort =
     ExistsPattern Exists
         { existsSort = resultSort
@@ -705,8 +705,8 @@ simpleExistsUnifiedPatternWithType = simpleExistsUnifiedPattern
 
 simpleExistsEqualsUnifiedPattern
     :: VariableName
-    -> OperandSort level
-    -> ResultSort level
+    -> OperandSort
+    -> ResultSort
     -> TermLike Variable
 simpleExistsEqualsUnifiedPattern
     (VariableName name)
@@ -729,12 +729,12 @@ applicationObjectUnifiedPatternWithChildren
 applicationObjectUnifiedPatternWithChildren name unifiedPatterns =
     asParsedPattern
         ( applicationPatternWithChildren name unifiedPatterns
-        :: Pattern Meta Domain.Builtin Variable ParsedPattern)
+        :: Pattern Domain.Builtin Variable ParsedPattern)
 
 applicationPatternWithChildren
     :: SymbolName
     -> [child]
-    -> Pattern level dom v child
+    -> Pattern dom v child
 applicationPatternWithChildren (SymbolName name) unifiedPatterns =
     ApplicationPattern Application
         { applicationSymbolOrAlias = SymbolOrAlias

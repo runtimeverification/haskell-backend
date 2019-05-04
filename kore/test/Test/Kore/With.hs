@@ -7,28 +7,6 @@ import           Data.List
                  ( foldl' )
 import qualified Data.Map.Strict as Map
 
-import           Kore.AST.Sentence
-                 ( Attributes (Attributes), Definition (Definition),
-                 Module (Module),
-                 Sentence (SentenceAliasSentence, SentenceAxiomSentence, SentenceClaimSentence, SentenceHookSentence, SentenceImportSentence, SentenceSortSentence, SentenceSymbolSentence),
-                 SentenceAlias (SentenceAlias), SentenceAxiom (SentenceAxiom),
-                 SentenceHook (SentenceHookedSort, SentenceHookedSymbol),
-                 SentenceImport (SentenceImport), SentenceSort (SentenceSort),
-                 SentenceSymbol (SentenceSymbol) )
-import qualified Kore.AST.Sentence as Definition
-                 ( Definition (..) )
-import qualified Kore.AST.Sentence as Module
-                 ( Module (..) )
-import qualified Kore.AST.Sentence as SentenceAxiom
-                 ( SentenceAxiom (..) )
-import qualified Kore.AST.Sentence as SentenceAlias
-                 ( SentenceAlias (..) )
-import qualified Kore.AST.Sentence as SentenceImport
-                 ( SentenceImport (..) )
-import qualified Kore.AST.Sentence as SentenceSort
-                 ( SentenceSort (..) )
-import qualified Kore.AST.Sentence as SentenceSymbol
-                 ( SentenceSymbol (..) )
 import           Kore.Attribute.Attributes
                  ( AttributePattern )
 import qualified Kore.Sort as Kore
@@ -48,8 +26,31 @@ import qualified Kore.Step.SMT.AST as AST.Symbol
                  ( Symbol (..) )
 import qualified Kore.Step.SMT.AST as AST.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
+import           Kore.Syntax.Definition
+                 ( Attributes (Attributes), Definition (Definition),
+                 Module (Module),
+                 Sentence (SentenceAliasSentence, SentenceAxiomSentence, SentenceClaimSentence, SentenceHookSentence, SentenceImportSentence, SentenceSortSentence, SentenceSymbolSentence),
+                 SentenceAlias (SentenceAlias), SentenceAxiom (SentenceAxiom),
+                 SentenceHook (SentenceHookedSort, SentenceHookedSymbol),
+                 SentenceImport (SentenceImport), SentenceSort (SentenceSort),
+                 SentenceSymbol (SentenceSymbol) )
+import qualified Kore.Syntax.Definition as Definition
+                 ( Definition (..) )
 import qualified Kore.Syntax.Id as Kore
                  ( Id )
+import qualified Kore.Syntax.Module as Module
+                 ( Module (..) )
+import           Kore.Syntax.Sentence
+import qualified Kore.Syntax.Sentence as SentenceAxiom
+                 ( SentenceAxiom (..) )
+import qualified Kore.Syntax.Sentence as SentenceAlias
+                 ( SentenceAlias (..) )
+import qualified Kore.Syntax.Sentence as SentenceImport
+                 ( SentenceImport (..) )
+import qualified Kore.Syntax.Sentence as SentenceSort
+                 ( SentenceSort (..) )
+import qualified Kore.Syntax.Sentence as SentenceSymbol
+                 ( SentenceSymbol (..) )
 import qualified SMT.AST as AST
                  ( Constructor (Constructor), ConstructorArgument,
                  DataTypeDeclaration (DataTypeDeclaration) )
@@ -86,7 +87,7 @@ instance With (Definition sentence) Attribute where
 instance With (Definition sentence) [Attribute] where
     with = foldl' with
 
-instance With (Sentence level sort patt) Attribute where
+instance With (Sentence patt) Attribute where
     (SentenceAliasSentence s) `with` attribute =
         SentenceAliasSentence (s `with` attribute)
     (SentenceSymbolSentence s) `with` attribute =
@@ -104,28 +105,34 @@ instance With (Sentence level sort patt) Attribute where
     (SentenceHookSentence (SentenceHookedSymbol s)) `with` attribute =
         SentenceHookSentence (SentenceHookedSymbol (s `with` attribute))
 
-instance With (Sentence level sort patt) [Attribute] where
+instance With (Sentence patt) [Attribute] where
     with = foldl' with
 
-instance With (SentenceAlias level patt) Attribute where
+instance With (SentenceAlias patt) Attribute where
     s@SentenceAlias {sentenceAliasAttributes} `with` attribute =
         s
             { SentenceAlias.sentenceAliasAttributes =
                 sentenceAliasAttributes `with` attribute
             }
 
-instance With (SentenceAlias level patt) [Attribute] where
+instance With (SentenceAlias patt) [Attribute] where
     with = foldl' with
 
-instance With (SentenceAxiom sort patt) Attribute where
+instance With (SentenceAxiom patt) Attribute where
     s@SentenceAxiom {sentenceAxiomAttributes} `with` attribute =
         s
             { SentenceAxiom.sentenceAxiomAttributes =
                 sentenceAxiomAttributes `with` attribute
             }
 
-instance With (SentenceAxiom sort patt) [Attribute] where
+instance With (SentenceAxiom patt) [Attribute] where
     with = foldl' with
+
+instance With (SentenceClaim patt) Attribute where
+    with a b = SentenceClaim (with (getSentenceClaim a) b)
+
+instance With (SentenceClaim patt) [Attribute] where
+    with a b = SentenceClaim (with (getSentenceClaim a) b)
 
 instance With (SentenceImport patt) Attribute where
     s@SentenceImport {sentenceImportAttributes} `with` attribute =
@@ -137,24 +144,24 @@ instance With (SentenceImport patt) Attribute where
 instance With (SentenceImport patt) [Attribute] where
     with = foldl' with
 
-instance With (SentenceSymbol level patt) Attribute where
+instance With (SentenceSymbol patt) Attribute where
     s@SentenceSymbol {sentenceSymbolAttributes} `with` attribute =
         s
             { SentenceSymbol.sentenceSymbolAttributes =
                 sentenceSymbolAttributes `with` attribute
             }
 
-instance With (SentenceSymbol level patt) [Attribute] where
+instance With (SentenceSymbol patt) [Attribute] where
     with = foldl' with
 
-instance With (SentenceSort level patt) Attribute where
+instance With (SentenceSort patt) Attribute where
     s@SentenceSort {sentenceSortAttributes} `with` attribute =
         s
             { SentenceSort.sentenceSortAttributes =
                 sentenceSortAttributes `with` attribute
             }
 
-instance With (SentenceSort level patt) [Attribute] where
+instance With (SentenceSort patt) [Attribute] where
     with = foldl' with
 
 instance With Attributes Attribute where

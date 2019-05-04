@@ -13,12 +13,10 @@ import           Test.Tasty.HUnit
                  ( assertEqual, testCase )
 
 import Kore.AST.Pure
-import Kore.AST.Sentence
 import Kore.Parser.Lexeme
 import Kore.Parser.Parser
 import Kore.Parser.ParserUtils
-import Kore.Syntax.CharLiteral
-import Kore.Syntax.StringLiteral
+import Kore.Syntax.Definition
 import Kore.Unparser
 
 import Test.Kore

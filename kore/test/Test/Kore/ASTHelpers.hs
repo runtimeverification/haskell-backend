@@ -6,9 +6,9 @@ import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
 import Kore.AST.Pure
-import Kore.AST.Sentence
 import Kore.ASTHelpers
 import Kore.Error
+import Kore.Syntax.Definition
 
 import Test.Kore
 
@@ -67,7 +67,7 @@ test_symbolOrAliasSorts =
     , testCase "sort variable not found"
         (assertEqual "Expecting error"
             (koreFail "Sort variable not found: 'sv'."
-                :: Either (Error e) (ApplicationSorts Object))
+                :: Either (Error e) ApplicationSorts)
             (symbolOrAliasSorts
                 [simpleSortActual]
                 (symbolSentence
@@ -77,7 +77,7 @@ test_symbolOrAliasSorts =
     , testCase "more sorts than the declaration"
         (assertEqual "Expecting error"
             (koreFail "Application uses more sorts than the declaration."
-                :: Either (Error e) (ApplicationSorts Object))
+                :: Either (Error e) ApplicationSorts)
             (symbolOrAliasSorts
                 [simpleSortActual, simpleSortActual]
                 (symbolSentence
@@ -87,7 +87,7 @@ test_symbolOrAliasSorts =
     , testCase "less sorts than the declaration"
         (assertEqual "Expecting error"
             (koreFail "Application uses less sorts than the declaration."
-                :: Either (Error e) (ApplicationSorts Object))
+                :: Either (Error e) ApplicationSorts)
             (symbolOrAliasSorts
                 []
                 (symbolSentence
@@ -103,8 +103,7 @@ test_symbolOrAliasSorts =
     complexSortActualParam = sortActual "sa" [sortVariableSort']
     complexSortActualSort = sortActual "sa" [simpleSortActual]
 
-applicationSorts
-    :: [Sort] -> Sort -> Either b (ApplicationSorts level)
+applicationSorts :: [Sort] -> Sort -> Either b ApplicationSorts
 applicationSorts operandSorts resultSort =
     Right ApplicationSorts
         { applicationSortsOperands = operandSorts

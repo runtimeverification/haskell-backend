@@ -3,9 +3,9 @@ module Test.Kore.Parser.Lexeme (test_koreLexeme) where
 import Test.Tasty
        ( TestTree, testGroup )
 
-import Kore.AST.Sentence
 import Kore.Parser.Lexeme
 import Kore.Syntax.CharLiteral
+import Kore.Syntax.Definition
 import Kore.Syntax.StringLiteral
 
 import Test.Kore

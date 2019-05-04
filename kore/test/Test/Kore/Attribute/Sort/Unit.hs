@@ -4,8 +4,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Kore.AST.Pure
-import Kore.AST.Sentence
 import Kore.Attribute.Sort.Unit
+import Kore.Syntax.Definition
 
 import Test.Kore.Attribute.Parser
 

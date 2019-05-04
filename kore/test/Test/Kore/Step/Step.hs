@@ -80,7 +80,7 @@ mockMetadataTools =
 
 evalUnifier
     :: BranchT (Unifier Variable) a
-    -> IO (Either (UnificationOrSubstitutionError Object Variable) [a])
+    -> IO (Either (UnificationOrSubstitutionError Variable) [a])
 evalUnifier =
     SMT.runSMT SMT.defaultConfig
     . evalSimplifier emptyLogger
@@ -88,12 +88,12 @@ evalUnifier =
     . gather
 
 applyInitialConditions
-    :: Predicate Object Variable
-    -> Predicate Object Variable
+    :: Predicate Variable
+    -> Predicate Variable
     -> IO
         (Either
-            (UnificationOrSubstitutionError Object Variable)
-            [OrPredicate Object Variable]
+            (UnificationOrSubstitutionError Variable)
+            [OrPredicate Variable]
         )
 applyInitialConditions initial unification =
     (fmap . fmap) Foldable.toList
@@ -169,12 +169,12 @@ test_applyInitialConditions =
     ]
 
 unifyRule
-    :: Pattern Object Variable
-    -> RulePattern Object Variable
+    :: Pattern Variable
+    -> RulePattern Variable
     -> IO
         (Either
-            (UnificationOrSubstitutionError Object Variable)
-            [Conditional Object Variable (RulePattern Object Variable)]
+            (UnificationOrSubstitutionError Variable)
+            [Conditional Variable (RulePattern Variable)]
         )
 unifyRule initial rule =
     evalUnifier
@@ -252,14 +252,14 @@ test_unifyRule =
 
 -- | Apply the 'RewriteRule' to the configuration, but discard remainders.
 applyRewriteRule_
-    :: Pattern Object Variable
+    :: Pattern Variable
     -- ^ Configuration
-    -> RewriteRule Object Variable
+    -> RewriteRule Variable
     -- ^ Rewrite rule
     -> IO
         (Either
-            (UnificationOrSubstitutionError Object Variable)
-            [OrPattern Object Variable]
+            (UnificationOrSubstitutionError Variable)
+            [OrPattern Variable]
         )
 applyRewriteRule_ initial rule = do
     result <- applyRewriteRules initial [rule]
@@ -682,13 +682,13 @@ test_applyRewriteRule_ =
 
 -- | Apply the 'RewriteRule's to the configuration.
 applyRewriteRules
-    :: Pattern Object Variable
+    :: Pattern Variable
     -- ^ Configuration
-    -> [RewriteRule Object Variable]
+    -> [RewriteRule Variable]
     -- ^ Rewrite rule
     -> IO
         (Either
-            (UnificationOrSubstitutionError Object Variable)
+            (UnificationOrSubstitutionError Variable)
             (Step.Results Variable))
 applyRewriteRules initial rules =
     SMT.runSMT SMT.defaultConfig
@@ -719,7 +719,7 @@ applyRewriteRules initial rules =
 
 checkResults
     :: HasCallStack
-    => MultiOr (Pattern Object Variable)
+    => MultiOr (Pattern Variable)
     -> Step.Results Variable
     -> Assertion
 checkResults expect actual =
@@ -729,7 +729,7 @@ checkResults expect actual =
 
 checkRemainders
     :: HasCallStack
-    => MultiOr (Pattern Object Variable)
+    => MultiOr (Pattern Variable)
     -> Step.Results Variable
     -> Assertion
 checkRemainders expect actual =
@@ -1003,7 +1003,7 @@ test_applyRewriteRules =
         checkRemainders remainders actual
     ]
 
-axiomIfThen :: RewriteRule Object Variable
+axiomIfThen :: RewriteRule Variable
 axiomIfThen =
     RewriteRule RulePattern
         { left = Mock.functionalConstr20 Mock.a (mkVar Mock.y)
@@ -1013,7 +1013,7 @@ axiomIfThen =
         , attributes = def
         }
 
-axiomSignum :: RewriteRule Object Variable
+axiomSignum :: RewriteRule Variable
 axiomSignum =
     RewriteRule RulePattern
         { left = Mock.functionalConstr10 (mkVar Mock.y)
@@ -1023,7 +1023,7 @@ axiomSignum =
         , attributes = def
         }
 
-axiomCaseA :: RewriteRule Object Variable
+axiomCaseA :: RewriteRule Variable
 axiomCaseA =
     RewriteRule RulePattern
         { left =
@@ -1037,7 +1037,7 @@ axiomCaseA =
         , attributes = def
         }
 
-axiomCaseB :: RewriteRule Object Variable
+axiomCaseB :: RewriteRule Variable
 axiomCaseB =
     RewriteRule RulePattern
         { left =
@@ -1051,19 +1051,19 @@ axiomCaseB =
         , attributes = def
         }
 
-axiomsCase :: [RewriteRule Object Variable]
+axiomsCase :: [RewriteRule Variable]
 axiomsCase = [axiomCaseA, axiomCaseB]
 
 
 -- | Apply the 'RewriteRule's to the configuration in sequence.
 sequenceRewriteRules
-    :: Pattern Object Variable
+    :: Pattern Variable
     -- ^ Configuration
-    -> [RewriteRule Object Variable]
+    -> [RewriteRule Variable]
     -- ^ Rewrite rule
     -> IO
         (Either
-             (UnificationOrSubstitutionError Object Variable)
+             (UnificationOrSubstitutionError Variable)
              (Results Variable))
 sequenceRewriteRules initial rules =
     SMT.runSMT SMT.defaultConfig
@@ -1165,7 +1165,7 @@ test_sequenceRewriteRules =
         checkRemainders remainders actual
     ]
 
-axiomFunctionalSigma :: EqualityRule Object Variable
+axiomFunctionalSigma :: EqualityRule Variable
 axiomFunctionalSigma =
     EqualityRule RulePattern
         { left = Mock.functional10 (Mock.sigma x y)
@@ -1180,13 +1180,13 @@ axiomFunctionalSigma =
 
 -- | Apply the 'RewriteRule's to the configuration in sequence.
 sequenceMatchingRules
-    :: Pattern Object Variable
+    :: Pattern Variable
     -- ^ Configuration
-    -> [EqualityRule Object Variable]
+    -> [EqualityRule Variable]
     -- ^ Rewrite rule
     -> IO
         (Either
-            (UnificationOrSubstitutionError Object Variable)
+            (UnificationOrSubstitutionError Variable)
             (Step.Results Variable))
 sequenceMatchingRules initial rules =
     SMT.runSMT SMT.defaultConfig

@@ -43,7 +43,6 @@ import qualified Data.Text as Text
 
 import qualified Kore.AST.Common as Common
 import qualified Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Logger.Output as Logger
@@ -60,15 +59,8 @@ import           Kore.Step.OrPattern
 import qualified Kore.Step.OrPattern as OrPattern
 import           Kore.Step.Pattern as Pattern
 import           Kore.Step.TermLike as TermLike
-import           Kore.Syntax.And
-import           Kore.Syntax.Application
-import           Kore.Syntax.Bottom
-import           Kore.Syntax.Ceil
-import           Kore.Syntax.CharLiteral
-import           Kore.Syntax.Floor
-import           Kore.Syntax.Or
-import           Kore.Syntax.StringLiteral
-import           Kore.Syntax.Top
+import           Kore.Syntax
+import           Kore.Syntax.Definition
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}
@@ -147,8 +139,8 @@ charGen =
 
 symbolOrAliasDeclarationRawGen
     :: MonadGen m
-    => (Id -> [SortVariable] -> s Object)
-    -> m (s Object)
+    => (Id -> [SortVariable] -> result)
+    -> m result
 symbolOrAliasDeclarationRawGen constructor =
     constructor
         <$> Gen.small idGen
@@ -160,10 +152,10 @@ symbolOrAliasGen =
         <$> Gen.small idGen
         <*> couple (Gen.small sortGen)
 
-symbolGen :: MonadGen m => m (Symbol Object)
+symbolGen :: MonadGen m => m Symbol
 symbolGen = symbolOrAliasDeclarationRawGen Symbol
 
-aliasGen :: MonadGen m => m (Alias Object)
+aliasGen :: MonadGen m => m Alias
 aliasGen = symbolOrAliasDeclarationRawGen Alias
 
 sortVariableGen :: MonadGen m => m SortVariable
@@ -216,10 +208,10 @@ variableGen patternSort = do
 
 unaryOperatorGen
     :: MonadGen m
-    => (Sort -> child -> b Object child)
+    => (Sort -> child -> result)
     -> (Sort -> m child)
     -> Sort
-    -> m (b Object child)
+    -> m result
 unaryOperatorGen constructor childGen patternSort =
     constructor patternSort <$> Gen.small (childGen patternSort)
 
@@ -243,10 +235,10 @@ ceilFloorGen constructor childGen resultSort = do
     constructor resultSort operandSort <$> Gen.small (childGen operandSort)
 
 equalsInGen
-    :: (Sort -> Sort -> child -> child -> c Object child)
+    :: (Sort -> Sort -> child -> child -> c child)
     -> (Sort -> Gen child)
     -> Sort
-    -> Gen (c Object child)
+    -> Gen (c child)
 equalsInGen constructor childGen resultSort = do
     operandSort <- Gen.small sortGen
     constructor resultSort operandSort
@@ -254,10 +246,10 @@ equalsInGen constructor childGen resultSort = do
         <*> Gen.small (childGen operandSort)
 
 existsForallGen
-    :: (Sort -> Variable -> child -> q Object Variable child)
+    :: (Sort -> Variable -> child -> q child)
     -> (Sort -> Gen child)
     -> Sort
-    -> Gen (q Object Variable child)
+    -> Gen (q child)
 existsForallGen constructor childGen patternSort = do
     varSort <- Gen.small sortGen
     var <- Gen.small (variableGen varSort)
@@ -285,11 +277,8 @@ bottomGen = topBottomGen Bottom
 ceilGen :: (Sort -> Gen child) -> Sort -> Gen (Ceil Sort child)
 ceilGen = ceilFloorGen Ceil
 
-equalsGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Equals Object child)
-equalsGen = equalsInGen Common.Equals
+equalsGen :: (Sort -> Gen child) -> Sort -> Gen (Equals Sort child)
+equalsGen = equalsInGen Equals
 
 genBuiltinExternal :: Sort -> Gen (Domain.Builtin child)
 genBuiltinExternal domainValueSort =
@@ -321,59 +310,35 @@ genExternal domainValueSort =
         . getStringLiteral
         <$> stringLiteralGen
 
-existsGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Exists Object Variable child)
-existsGen = existsForallGen Common.Exists
+existsGen :: (Sort -> Gen child) -> Sort -> Gen (Exists Sort Variable child)
+existsGen = existsForallGen Exists
 
 floorGen :: (Sort -> Gen child) -> Sort -> Gen (Floor Sort child)
 floorGen = ceilFloorGen Floor
 
-forallGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Forall Object Variable child)
-forallGen = existsForallGen Common.Forall
+forallGen :: (Sort -> Gen child) -> Sort -> Gen (Forall Sort Variable child)
+forallGen = existsForallGen Forall
 
-iffGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Iff Object child)
-iffGen = binaryOperatorGen Common.Iff
+iffGen :: (Sort -> Gen child) -> Sort -> Gen (Iff Sort child)
+iffGen = binaryOperatorGen Iff
 
-impliesGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Implies Object child)
-impliesGen = binaryOperatorGen Common.Implies
+impliesGen :: (Sort -> Gen child) -> Sort -> Gen (Implies Sort child)
+impliesGen = binaryOperatorGen Implies
 
-inGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (In Object child)
-inGen = equalsInGen Common.In
+inGen :: (Sort -> Gen child) -> Sort -> Gen (In Sort child)
+inGen = equalsInGen In
 
-nextGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Next Object child)
-nextGen = unaryOperatorGen Common.Next
+nextGen :: (Sort -> Gen child) -> Sort -> Gen (Next Sort child)
+nextGen = unaryOperatorGen Next
 
-notGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Not Object child)
-notGen = unaryOperatorGen Common.Not
+notGen :: (Sort -> Gen child) -> Sort -> Gen (Not Sort child)
+notGen = unaryOperatorGen Not
 
 orGen :: (Sort -> Gen child) -> Sort -> Gen (Or Sort child)
 orGen = binaryOperatorGen Or
 
-rewritesGen
-    :: (Sort -> Gen child)
-    -> Sort
-    -> Gen (Rewrites Object child)
-rewritesGen = binaryOperatorGen Common.Rewrites
+rewritesGen :: (Sort -> Gen child) -> Sort -> Gen (Rewrites Sort child)
+rewritesGen = binaryOperatorGen Rewrites
 
 topGen :: Sort -> Gen (Top Sort child)
 topGen = topBottomGen Top
@@ -381,7 +346,7 @@ topGen = topBottomGen Top
 patternGen
     :: (Sort -> Gen child)
     -> Sort
-    -> Gen (Common.Pattern Object dom Variable child)
+    -> Gen (Common.Pattern dom Variable child)
 patternGen childGen patternSort =
     Gen.frequency
         [ (1, Common.AndPattern <$> andGen childGen patternSort)
@@ -535,17 +500,17 @@ korePatternChildGen patternSort' =
     korePatternGenCharLiteral =
         asParsedPattern . Common.CharLiteralPattern <$> charLiteralGen
 
-    korePatternGenDomainValue :: Object ~ Object => Gen ParsedPattern
+    korePatternGenDomainValue :: Gen ParsedPattern
     korePatternGenDomainValue =
         asParsedPattern . Common.DomainValuePattern
             <$> genBuiltinExternal patternSort'
 
-    korePatternGenNext :: Object ~ Object => Gen ParsedPattern
+    korePatternGenNext :: Gen ParsedPattern
     korePatternGenNext =
         asParsedPattern . Common.NextPattern
             <$> nextGen korePatternChildGen patternSort'
 
-    korePatternGenRewrites :: Object ~ Object => Gen ParsedPattern
+    korePatternGenRewrites :: Gen ParsedPattern
     korePatternGenRewrites =
         asParsedPattern . Common.RewritesPattern
             <$> rewritesGen korePatternChildGen patternSort'
@@ -631,7 +596,7 @@ predicateChildGen childGen patternSort' =
 
 sentenceAliasGen
     :: (Sort -> Gen patternType)
-    -> Gen (SentenceAlias Object patternType)
+    -> Gen (SentenceAlias patternType)
 sentenceAliasGen patGen =
     Gen.small sentenceAliasGenWorker
   where
@@ -666,7 +631,7 @@ sentenceAliasGen patGen =
                 , sentenceAliasAttributes
                 }
 
-sentenceSymbolGen :: Gen (SentenceSymbol Object patternType)
+sentenceSymbolGen :: Gen (SentenceSymbol patternType)
 sentenceSymbolGen = do
     sentenceSymbolSymbol <- symbolGen
     let Symbol { symbolParams } = sentenceSymbolSymbol
@@ -689,7 +654,7 @@ sentenceImportGen =
 
 sentenceAxiomGen
    :: Gen patternType
-   -> Gen (SentenceAxiom SortVariable patternType)
+   -> Gen (SentenceAxiom patternType)
 sentenceAxiomGen patGen = do
     sentenceAxiomParameters <- couple sortVariableGen
     Reader.local (addSortVariables sentenceAxiomParameters) $ do
@@ -703,7 +668,7 @@ sentenceAxiomGen patGen = do
 
 sentenceSortGen
     :: forall patternType
-    .  Gen (SentenceSort Object patternType)
+    .  Gen (SentenceSort patternType)
 sentenceSortGen = do
     sentenceSortName <- idGen
     sentenceSortParameters <- couple sortVariableGen
@@ -725,7 +690,8 @@ koreSentenceGen =
         , SentenceImportSentence
             <$> sentenceImportGen
         , SentenceAxiomSentence <$> sentenceAxiomGen korePatternUnifiedGen
-        , SentenceClaimSentence <$> sentenceAxiomGen korePatternUnifiedGen
+        , SentenceClaimSentence . SentenceClaim
+            <$> sentenceAxiomGen korePatternUnifiedGen
         , SentenceSortSentence <$> sentenceSortGen
         , (SentenceHookSentence . SentenceHookedSort) <$> sentenceSortGen
         , (SentenceHookSentence . SentenceHookedSymbol) <$> sentenceSymbolGen
@@ -770,10 +736,10 @@ sortActual name sorts =
         , sortActualSorts = sorts
         }
 
-expandedPatternGen :: Gen (Pattern Object Variable)
+expandedPatternGen :: Gen (Pattern Variable)
 expandedPatternGen =
     Pattern.fromTermLike <$> (termLikeChildGen =<< sortGen)
 
-orPatternGen :: Gen (OrPattern Object Variable)
+orPatternGen :: Gen (OrPattern Variable)
 orPatternGen =
     OrPattern.fromPatterns <$> Gen.list (Range.linear 0 64) expandedPatternGen
