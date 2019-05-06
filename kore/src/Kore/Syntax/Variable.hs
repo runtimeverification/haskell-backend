@@ -52,11 +52,11 @@ data Variable = Variable
     }
     deriving (Show, Eq, Ord, Generic)
 
-instance Hashable (Variable)
+instance Hashable Variable
 
-instance NFData (Variable)
+instance NFData Variable
 
-instance Unparse (Variable) where
+instance Unparse Variable where
     unparse Variable { variableName, variableCounter, variableSort } =
         unparse variableName
         <> Pretty.pretty variableCounter
