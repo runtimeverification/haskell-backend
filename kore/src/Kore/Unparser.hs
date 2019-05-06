@@ -69,11 +69,6 @@ class Unparse p where
     -- | Render a type from abstract to concrete Applicative Kore syntax.
     unparse2 :: p -> Doc ann
 
-    -- special unparser only for binding variables
-    unparse2BindingVariables :: p -> Doc ann
-    -- default implementation of unparse2BindingVariables
-    unparse2BindingVariables = unparse2
-
 instance Unparse a => Unparse (Const a child) where
     unparse (Const a) = unparse a
     unparse2 (Const a) = unparse2 a

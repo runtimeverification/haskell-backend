@@ -139,9 +139,7 @@ the resulting pattern into a particular sort.
 
  -}
 fromPredicate
-    :: ( Unparse variable
-       , HasCallStack
-       )
+    :: (SortedVariable variable, Unparse variable, HasCallStack)
     => Sort  -- ^ Sort of resulting pattern
     -> Predicate variable
     -> TermLike variable
@@ -155,10 +153,8 @@ pattern PredicateFalse :: Predicate variable
 -}
 pattern PredicateTrue :: Predicate variable
 
-pattern PredicateFalse
-    <- GenericPredicate (Recursive.project -> _ :< BottomF _)
-pattern PredicateTrue
-    <- GenericPredicate (Recursive.project -> _ :< TopF _)
+pattern PredicateFalse <- GenericPredicate (Recursive.project -> _ :< BottomF _)
+pattern PredicateTrue  <- GenericPredicate (Recursive.project -> _ :< TopF _)
 
 {-|'isFalse' checks whether a predicate is obviously bottom.
 -}

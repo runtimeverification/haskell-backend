@@ -53,6 +53,7 @@ import Kore.Syntax.Rewrites
 import Kore.Syntax.SetVariable
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
+import Kore.Syntax.Variable
 import Kore.Unparser
 
 {- | 'PatternF' is the 'Base' functor of Kore patterns
@@ -119,7 +120,9 @@ instance
     NFData (PatternF domain variable child)
 
 instance
-    (Unparse child, Unparse (domain child), Unparse variable) =>
+    ( SortedVariable variable, Unparse variable
+    , Unparse child, Unparse (domain child)
+    ) =>
     Unparse (PatternF domain variable child)
   where
     unparse = unparseGeneric
