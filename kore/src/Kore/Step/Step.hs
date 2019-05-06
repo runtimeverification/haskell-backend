@@ -38,14 +38,12 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
-import qualified Data.Reflection as Reflection
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
-import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Internal.Conditional
@@ -78,8 +76,6 @@ import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Substitution as Substitution
 import qualified Kore.TopBottom as TopBottom
-import           Kore.Unification.Error
-                 ( UnificationError (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
                  ( MonadUnify )
@@ -110,10 +106,7 @@ newtype UnificationProcedure =
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
         -> TermLike variable
-        -> unifier
-            ( OrPredicate variable
-
-            )
+        -> unifier (OrPredicate variable)
         )
 
 {- | A @UnifiedRule@ has been renamed and unified with a configuration.
@@ -481,7 +474,6 @@ applyRule
         let
             checkSubstitutionCoverage' =
                 checkSubstitutionCoverage
-                    metadataTools
                     initial'
                     unifiedRule
         result <- traverse checkSubstitutionCoverage' final
@@ -578,35 +570,15 @@ checkSubstitutionCoverage
         , MonadUnify unifierM
         , unifier ~ unifierM (Target variable)
         )
-    => SmtMetadataTools StepperAttributes
-    -> Pattern (Target variable)
+    => Pattern (Target variable)
     -- ^ Initial configuration
     -> UnifiedRule (Target variable)
     -- ^ Unified rule
     -> Pattern (Target variable)
     -- ^ Configuration after applying rule
     -> BranchT unifier (Pattern variable)
-checkSubstitutionCoverage tools initial unified final
-  | isCoveringSubstitution || isAcceptable = return (unwrapConfiguration final)
-  | isSymbolic =
-    -- The substitution does not cover all the variables on the left-hand side
-    -- of the rule, but this was not unexpected because the initial
-    -- configuration was symbolic. This case is not yet supported, but it is not
-    -- a fatal error.
-    Monad.Trans.lift
-    $ Monad.Unify.throwUnificationError
-    $ UnsupportedSymbolic $ Pretty.vsep
-        [ "While applying axiom:"
-        , Pretty.indent 4 (Pretty.pretty axiom)
-        , "from the initial configuration:"
-        , Pretty.indent 4 (unparse initial)
-        , "Expected unification:"
-        , Pretty.indent 4 (unparse unification)
-        , "to cover all the variables:"
-        , (Pretty.indent 4 . Pretty.sep)
-            (unparse <$> Set.toAscList leftAxiomVariables)
-        , "in the left-hand side of the axiom."
-        ]
+checkSubstitutionCoverage initial unified final
+  | isCoveringSubstitution || isSymbolic = return (unwrapConfiguration final)
   | otherwise =
     -- The substitution does not cover all the variables on the left-hand side
     -- of the rule *and* we did not generate a substitution for a symbolic
@@ -627,7 +599,6 @@ checkSubstitutionCoverage tools initial unified final
         ]
   where
     Conditional { term = axiom } = unified
-    unification = Conditional.toPredicate (Conditional.withoutTerm unified)
     leftAxiomVariables =
         TermLike.freeVariables leftAxiom
       where
@@ -638,23 +609,6 @@ checkSubstitutionCoverage tools initial unified final
     isCoveringSubstitution =
         Set.isSubsetOf leftAxiomVariables substitutionVariables
     isSymbolic = Foldable.any Target.isNonTarget substitutionVariables
-    isAcceptable = all isValidSymbolic (Map.toList subst)
-    -- A constructor-like pattern consists of constructor applications and
-    -- variables only.
-    isConstructorLikePattern p
-      | App_ symbolOrAlias children <- p =
-        isConstructor symbolOrAlias && all isConstructorLikePattern children
-      | Var_ _ <- p = True
-      | otherwise = False
-    isConstructor = Reflection.give tools Attribute.Symbol.isConstructor_
-    isSortInjectionPattern p
-      | App_ symbolOrAlias _ <- p = isSortInjection symbolOrAlias
-      | otherwise = False
-    isSortInjection = Reflection.give tools Attribute.Symbol.isSortInjection_
-    isValidSymbolic (x, t) =
-        Target.isTarget x
-        || isConstructorLikePattern t
-        || isSortInjectionPattern t
 
 {- | Apply the given rules to the initial configuration in parallel.
 
@@ -832,7 +786,7 @@ sequenceRules
     sequenceRules1
         :: Results variable
         -> RulePattern variable
-        -> unifier(Results variable)
+        -> unifier (Results variable)
     sequenceRules1 results rule = do
         results' <- traverse (applyRule' rule) (Step.remainders results)
         return (Step.withoutRemainders results <> Foldable.fold results')
