@@ -32,39 +32,30 @@ import           Kore.Unparser
 -- 'MonadUnify' chooses its error/left type to 'UnificationOrSubstitutionError'
 -- and provides functions to throw these errors. The point of this is to be able
 -- to display information about unification failures through 'explainFailure'.
-class (forall variable. Monad (unifier variable)) => MonadUnify unifier where
+class Monad unifier => MonadUnify unifier where
     throwSubstitutionError
-        :: SubstitutionError variable
-        -> unifier variable a
+        :: SubstitutionError
+        -> unifier a
 
     throwUnificationError
         :: UnificationError
-        -> unifier variable a
+        -> unifier a
 
     -- TODO: Abstract this through implementing 'MonadSimplify'.
-    liftSimplifier :: Simplifier a -> unifier variable a
-
-    mapVariable
-        :: (variable -> variable')
-        -> unifier variable a
-        -> unifier variable' a
+    liftSimplifier :: Simplifier a -> unifier a
 
     explainBottom
         :: Unparse variable
         => Doc ()
         -> TermLike variable
         -> TermLike variable
-        -> unifier variable ()
+        -> unifier ()
     explainBottom _ _ _ = pure ()
 
 -- | 'Unifier' is the default concrete implementation of a 'MonadUnify'.
 -- See also: 'fromExceptT' and 'runUnifier' for common usages.
-newtype Unifier variable a = Unifier
-    { getUnifier ::
-            ExceptT
-                (UnificationOrSubstitutionError variable)
-                Simplifier
-                a
+newtype Unifier a = Unifier
+    { getUnifier :: ExceptT UnificationOrSubstitutionError Simplifier a
     } deriving (Applicative, Functor, Monad)
 
 instance MonadUnify Unifier where
@@ -74,14 +65,11 @@ instance MonadUnify Unifier where
 
     liftSimplifier = Unifier . Monad.Trans.lift
 
-    mapVariable f (Unifier e) =
-        Unifier $ withExceptT (mapUnificationOrSubstitutionErrorVariables f) e
-
-instance MonadReader Environment (Unifier variable) where
+instance MonadReader Environment Unifier where
     ask = liftSimplifier ask
     local f (Unifier ma) = Unifier $ local f ma
 
-instance Log.WithLog Log.LogMessage (Unifier variable) where
+instance Log.WithLog Log.LogMessage Unifier where
     askLogAction = do
         Log.LogAction logger <- liftSimplifier $ logger <$> ask
         return $ Log.LogAction (\msg -> liftSimplifier $ logger msg)
@@ -91,8 +79,8 @@ instance Log.WithLog Log.LogMessage (Unifier variable) where
 -- | Lift an 'ExceptT' to a 'MonadUnify'.
 fromExceptT
     :: MonadUnify unifier
-    => ExceptT (UnificationOrSubstitutionError variable) Simplifier a
-    -> unifier variable a
+    => ExceptT UnificationOrSubstitutionError Simplifier a
+    -> unifier a
 fromExceptT e = do
     result <- liftSimplifier $ runExceptT e
     case result of
@@ -101,6 +89,6 @@ fromExceptT e = do
         Right a                    -> pure a
 
 runUnifier
-    :: Unifier variable a
-    -> Simplifier (Either (UnificationOrSubstitutionError variable) a)
+    :: Unifier a
+    -> Simplifier (Either UnificationOrSubstitutionError a)
 runUnifier = runExceptT . getUnifier

@@ -43,6 +43,7 @@ import           Kore.Syntax
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 {-| 'normalizeSubstitution' transforms a substitution into an equivalent one
@@ -62,13 +63,11 @@ normalizeSubstitution
         , FreshVariable variable
         , SortedVariable variable
         , Show variable
+        , Unparse variable
         )
     => SmtMetadataTools StepperAttributes
     -> Map variable (TermLike variable)
-    -> ExceptT
-        (SubstitutionError variable)
-        m
-        (Predicate variable)
+    -> ExceptT SubstitutionError m (Predicate variable)
 normalizeSubstitution tools substitution =
     ExceptT . sequence . fmap maybeToBottom $ topologicalSortConverted
 
@@ -91,10 +90,7 @@ normalizeSubstitution tools substitution =
     -- | Do a `topologicalSort` of variables using the `dependencies` Map.
     -- Topological cycles with non-ctors are returned as Left errors.
     -- Non-simplifiable cycles are returned as Right Nothing.
-    topologicalSortConverted
-        :: Either
-            (SubstitutionError variable)
-            (Maybe [variable])
+    topologicalSortConverted :: Either SubstitutionError (Maybe [variable])
     topologicalSortConverted =
         case topologicalSort (Set.toList <$> allDependencies) of
             Left (ToplogicalSortCycles vars) ->

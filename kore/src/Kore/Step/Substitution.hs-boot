@@ -28,8 +28,7 @@ mergePredicatesAndSubstitutionsExcept
         , Ord variable
         , Unparse variable
         , FreshVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier

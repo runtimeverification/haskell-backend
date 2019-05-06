@@ -189,7 +189,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     unifier0
         :: TermLike Variable
         -> TermLike Variable
-        -> UnifierWithExplanation Variable ()
+        -> UnifierWithExplanation ()
     unifier0 first second =
         () <$ unificationProcedure
             tools

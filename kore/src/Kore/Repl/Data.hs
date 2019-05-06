@@ -256,7 +256,7 @@ data ReplState claim = ReplState
     , unifier
         :: TermLike Variable
         -> TermLike Variable
-        -> UnifierWithExplanation Variable ()
+        -> UnifierWithExplanation ()
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
     --   failures
@@ -267,8 +267,8 @@ data ReplState claim = ReplState
 
 -- | Unifier that stores the first 'explainBottom'.
 -- See 'runUnifierWithExplanation'.
-newtype UnifierWithExplanation variable a = UnifierWithExplanation
-    { getUnifier :: AccumT (First (Doc ())) (Unifier variable) a
+newtype UnifierWithExplanation a = UnifierWithExplanation
+    { getUnifier :: AccumT (First (Doc ())) Unifier a
     } deriving (Applicative, Functor, Monad)
 
 instance MonadUnify UnifierWithExplanation where
@@ -287,10 +287,6 @@ instance MonadUnify UnifierWithExplanation where
             . Monad.Trans.lift
             . Monad.Unify.liftSimplifier
 
-    mapVariable f (UnifierWithExplanation u) =
-        UnifierWithExplanation
-            $ Monad.Accum.mapAccumT (Monad.Unify.mapVariable f) u
-
     explainBottom info first second =
         UnifierWithExplanation . Monad.Accum.add . First . Just $ Pretty.vsep
             [ info
@@ -301,7 +297,7 @@ instance MonadUnify UnifierWithExplanation where
             ]
 
 runUnifierWithExplanation
-    :: UnifierWithExplanation variable a
+    :: UnifierWithExplanation a
     -> Simplifier (Maybe (Doc ()))
 runUnifierWithExplanation (UnifierWithExplanation accum)
     = fmap join

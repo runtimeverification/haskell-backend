@@ -398,13 +398,12 @@ isSymbolUnit = Builtin.isSymbol unitKey
     reject the definition.
  -}
 unifyEquals
-    :: forall variable unifier unifierM.
-        ( Show variable
+    ::  forall variable unifier
+    .   ( Show variable
         , Unparse variable
         , SortedVariable variable
         , FreshVariable variable
-        , unifier ~ unifierM variable
-        , MonadUnify unifierM
+        , MonadUnify unifier
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
