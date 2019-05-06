@@ -1010,8 +1010,7 @@ sortInjectionAndEqualsAssumesDifferentHeads
     .   ( Ord variable
         , SortedVariable variable
         , Unparse variable
-        , MonadUnify unifier
-        )
+        , MonadUnify unifier )
     => SmtMetadataTools StepperAttributes
     -> TermSimplifier variable unifier
     -> TermLike variable
