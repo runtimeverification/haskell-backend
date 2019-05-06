@@ -168,7 +168,7 @@ showClaim
     -> m ()
 showClaim cindex = do
     claim <- getClaimByIndex . unClaimIndex $ cindex
-    maybe printNotFound (printRewriteRule .RewriteRule . coerce) $ claim
+    maybe printNotFound (printRewriteRule . RewriteRule . coerce) $ claim
 
 -- | Prints an axiom using an index in the axioms list.
 showAxiom
@@ -222,13 +222,23 @@ proveSteps n = do
     let node = ReplNode . fromEnum $ n
     result <- loopM performStepNoBranching (n, SingleResult node)
     case result of
-        (n, SingleResult _) -> pure ()
+        (0, SingleResult _) -> pure ()
         (done, res) ->
             putStrLn'
                 $ "Stopped after "
                 <> show (n - done - 1)
                 <> " step(s) due to "
-                <> show res
+                <> showResult res
+  where
+    showResult :: StepResult -> String
+    showResult =
+        \case
+            NoResult ->
+                "reaching end of proof on current branch."
+            SingleResult _ -> ""
+            BranchResult xs ->
+                "branching on "
+                <> show (fmap unReplNode xs)
 
 -- | Executes 'n' prove steps, distributing over branches. It will perform less
 -- than 'n' steps if the proof is stuck or completed in less than 'n' steps.
@@ -266,7 +276,7 @@ showConfig configNode = do
     maybeConfig <- getConfigAt configNode
     case maybeConfig of
         Nothing -> putStrLn' "Invalid node!"
-        Just (node, config) -> do
+        Just (ReplNode node, config) -> do
             omit <- Lens.use lensOmit
             putStrLn' $ "Config at node " <> show node <> " is:"
             putStrLn' $ unparseStrategy omit config
