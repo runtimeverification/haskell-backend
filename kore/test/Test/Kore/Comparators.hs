@@ -757,38 +757,30 @@ instance EqualWithExplanation Sort where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
-instance StructEqualWithExplanation SymbolOrAlias
-    where
-      structFieldsWithNames
-          expected@(SymbolOrAlias _ _)
-          actual@(SymbolOrAlias _ _)
-        = [ EqWrap
-              "symbolOrAliasConstructor = "
-              (symbolOrAliasConstructor expected)
-              (symbolOrAliasConstructor actual)
-          , EqWrap
-              "symbolOrAliasParams = "
-              (symbolOrAliasParams expected)
-              (symbolOrAliasParams actual)
-          ]
-      structConstructorName _ = "SymbolOrAlias"
-instance EqualWithExplanation SymbolOrAlias
-  where
+instance StructEqualWithExplanation SymbolOrAlias where
+    structFieldsWithNames
+        expected@(SymbolOrAlias _ _)
+        actual@(SymbolOrAlias _ _)
+      = [ EqWrap
+            "symbolOrAliasConstructor = "
+            (symbolOrAliasConstructor expected)
+            (symbolOrAliasConstructor actual)
+        , EqWrap
+            "symbolOrAliasParams = "
+            (symbolOrAliasParams expected)
+            (symbolOrAliasParams actual)
+        ]
+    structConstructorName _ = "SymbolOrAlias"
+
+instance EqualWithExplanation SymbolOrAlias where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance SumEqualWithExplanation UnificationError
-  where
+instance SumEqualWithExplanation UnificationError where
     sumConstructorPair UnsupportedPatterns UnsupportedPatterns =
         SumConstructorSameNoArguments
-    sumConstructorPair (UnsupportedSymbolic a) (UnsupportedSymbolic b) =
-        SumConstructorSameWithArguments
-        $ EqWrap "UnsupportedSymbolic" (show a) (show b)
-    sumConstructorPair a b =
-        Function.on SumConstructorDifferent printWithExplanation a b
 
-instance EqualWithExplanation UnificationError
-  where
+instance EqualWithExplanation UnificationError where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
