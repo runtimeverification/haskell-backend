@@ -37,7 +37,6 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Syntax.Module
                  ( ModuleName (..) )
-import           Kore.Syntax.Pattern
 import qualified SMT
 
 import           System.Directory
