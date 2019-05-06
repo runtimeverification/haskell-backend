@@ -21,7 +21,6 @@ import           Control.Comonad.Trans.Cofree
                  ( Cofree )
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Deriving as Deriving
-import           Data.Functor.Classes
 import           Data.Functor.Compose
 import           Data.Functor.Foldable
                  ( Base, Corecursive, Recursive )
@@ -32,71 +31,58 @@ import           Data.Reflection
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.Annotation.Valid
-import           Kore.AST.Pure
-                 ( CofreeF (..), Object, Pattern (..) )
-import qualified Kore.AST.Pure as Pattern
+import qualified Kore.Attribute.Pattern as Attribute
+                 ( Pattern (..) )
 import           Kore.Attribute.Symbol
                  ( StepperAttributes, isConstructor_, isSortInjection_ )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-import           Kore.Step.TermLike
+import           Kore.Internal.TermLike
                  ( Concrete, TermLike )
+import qualified Kore.Syntax as Syntax
 import           Kore.Syntax.Application
+import           Kore.Syntax.Pattern
+                 ( CofreeF (..), PatternF (..) )
 
 {- | Proof (by construction) that a pattern is a normalized value.
 
     A normal pattern head is either a constructor (or a constructor-like domain
     value), a sort injection, or a domain value.
  -}
-data ValueF level child where
-    Constructor :: !(Application SymbolOrAlias child) -> ValueF level child
-    SortInjection :: !(Application SymbolOrAlias child) -> ValueF level child
-    DomainValue :: !(Domain.Builtin child) -> ValueF Object child
+data ValueF child
+    = Constructor !(Application SymbolOrAlias child)
+    | SortInjection !(Application SymbolOrAlias child)
+    | DomainValue !(Domain.Builtin child)
+    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
-deriving instance Eq child => Eq (ValueF level child)
-deriving instance Ord child => Ord (ValueF level child)
-deriving instance Show child => Show (ValueF level child)
+Deriving.deriveEq1 ''ValueF
+Deriving.deriveOrd1 ''ValueF
+Deriving.deriveShow1 ''ValueF
 
-deriving instance Functor (ValueF level)
-deriving instance Foldable (ValueF level)
-deriving instance Traversable (ValueF level)
-
-$(return [])
-
-instance Eq1 (ValueF level) where
-    liftEq = $(Deriving.makeLiftEq ''ValueF)
-
-instance Ord1 (ValueF level) where
-    liftCompare = $(Deriving.makeLiftCompare ''ValueF)
-
-instance Show1 (ValueF level) where
-    liftShowsPrec = $(Deriving.makeLiftShowsPrec ''ValueF)
-
-newtype Value (level :: *) =
-    Value { getValue :: Cofree (ValueF level) (Valid Concrete level) }
+newtype Value =
+    Value { getValue :: Cofree ValueF (Attribute.Pattern Concrete) }
     deriving (Eq, Generic, Ord, Show)
 
-type instance Base (Value level) =
-    CofreeF (ValueF level) (Valid Concrete level)
+type instance Base Value = CofreeF ValueF (Attribute.Pattern Concrete)
 
-instance Recursive (Value level) where
+instance Recursive Value where
     project (Value embedded) =
         case Recursive.project embedded of
             Compose (Identity projected) -> Value <$> projected
 
-instance Corecursive (Value level) where
+instance Corecursive Value where
     embed projected =
         (Value . Recursive.embed . Compose . Identity)
             (getValue <$> projected)
 
 {- | Project a sort injection head to @Nothing@.
 
-    Used in 'fromPattern' to ensure that the children of a sort injection are
-    not sort injections, i.e. that the triangle axiom for sort injections has
-    been fully applied.
+Used in 'fromPattern' to ensure that the children of a sort injection are
+not sort injections, i.e. that the triangle axiom for sort injections has
+been fully applied.
+
  -}
-eraseSortInjection :: Value level -> Maybe (Value level)
+eraseSortInjection :: Value -> Maybe Value
 eraseSortInjection (Recursive.project -> ann :< value) =
     case value of
         Constructor _ -> (Just . Recursive.embed) (ann :< value)
@@ -105,17 +91,17 @@ eraseSortInjection (Recursive.project -> ann :< value) =
 
 {- | Embed the normalized pattern head if its children are normal values.
 
-    See also: 'fromConcretePurePattern'.
+    See also: 'fromConcretePattern'.
 
  -}
 fromPattern
     :: SmtMetadataTools StepperAttributes
-    -> Base (TermLike Concrete) (Maybe (Value Object))
-    -> Maybe (Value Object)
+    -> Base (TermLike Concrete) (Maybe Value)
+    -> Maybe Value
 fromPattern tools (ann :< pat) =
     case pat of
-        ApplicationPattern
-            appP@Pattern.Application
+        ApplicationF
+            appP@Syntax.Application
                 { applicationSymbolOrAlias = symbolOrAlias }
           | isConstructor symbolOrAlias ->
             -- The constructor application is normal if all its children are
@@ -126,7 +112,7 @@ fromPattern tools (ann :< pat) =
             -- normal and none are sort injections.
             Recursive.embed . (ann :<) . SortInjection
                 <$> traverse (>>= eraseSortInjection) appP
-        DomainValuePattern dvP ->
+        DomainValueF dvP ->
             -- A domain value is not technically a constructor, but it is
             -- constructor-like for builtin domains, at least from the
             -- perspective of normalization.
@@ -151,20 +137,20 @@ See also: 'fromPattern'
 fromConcreteStepPattern
     :: SmtMetadataTools StepperAttributes
     -> TermLike Concrete
-    -> Maybe (Value Object)
+    -> Maybe Value
 fromConcreteStepPattern tools =
     Recursive.fold (fromPattern tools)
 
 {- | Project a 'Value' to a concrete 'Pattern' head.
  -}
-asPattern :: Value Object -> Base (TermLike Concrete) (Value Object)
+asPattern :: Value -> Base (TermLike Concrete) Value
 asPattern (Recursive.project -> ann :< val) =
     case val of
-        Constructor appP -> ann :< ApplicationPattern appP
-        SortInjection appP -> ann :< ApplicationPattern appP
-        DomainValue dvP -> ann :< DomainValuePattern dvP
+        Constructor appP -> ann :< ApplicationF appP
+        SortInjection appP -> ann :< ApplicationF appP
+        DomainValue dvP -> ann :< DomainValueF dvP
 
 {- | View a normalized value as a 'ConcreteStepPattern'.
  -}
-asConcreteStepPattern :: Value Object -> TermLike Concrete
+asConcreteStepPattern :: Value -> TermLike Concrete
 asConcreteStepPattern = Recursive.unfold asPattern

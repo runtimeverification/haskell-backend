@@ -26,8 +26,6 @@ import           Data.Proxy
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Pure as AST.Pure
-import           Kore.AST.Sentence
 import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.ModuleVerifier
@@ -37,6 +35,8 @@ import           Kore.Attribute.Parser
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
+import           Kore.Syntax as Syntax
+import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 {-|'verifyDefinition' verifies the welformedness of a Kore 'Definition'.
@@ -267,8 +267,8 @@ extractSingleModuleNameFromDefinition definition =
 
 findModule
     :: ModuleName
-    -> Map.Map ModuleName (IndexedModule param pat declAtts axiomAtts)
-    -> Either (Error VerifyError) (IndexedModule param pat declAtts axiomAtts)
+    -> Map.Map ModuleName (IndexedModule pat declAtts axiomAtts)
+    -> Either (Error VerifyError) (IndexedModule pat declAtts axiomAtts)
 findModule name modules =
     case Map.lookup name modules of
         Just a -> return a

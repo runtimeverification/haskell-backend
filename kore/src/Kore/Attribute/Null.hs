@@ -19,15 +19,22 @@ module Kore.Attribute.Null
     ( Null (..)
     ) where
 
+import Control.DeepSeq
+       ( NFData )
 import Data.Default
-
-import Kore.Attribute.Parser
+import GHC.Generics
+       ( Generic )
 
 data Null = Null
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Generic, Ord, Show)
+
+instance NFData Null
 
 instance Default Null where
     def = Null
 
-instance ParseAttributes Null where
-    parseAttribute _ Null = return Null
+instance Semigroup Null where
+    (<>) _ _ = Null
+
+instance Monoid Null where
+    mempty = Null

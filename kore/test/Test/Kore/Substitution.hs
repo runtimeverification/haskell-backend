@@ -1,7 +1,7 @@
 module Test.Kore.Substitution where
 
-import           Kore.AST.Pure
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Syntax
 
 import Test.Kore
 
@@ -16,8 +16,8 @@ objectVariable = Variable
     }
 
 objectVariablePattern
-    :: Pattern Object Domain.Builtin Variable ParsedPattern
-objectVariablePattern = VariablePattern objectVariable
+    :: PatternF Domain.Builtin Variable ParsedPattern
+objectVariablePattern = VariableF objectVariable
 
 objectVariableUnifiedPattern :: ParsedPattern
 objectVariableUnifiedPattern = asParsedPattern objectVariablePattern
@@ -32,14 +32,14 @@ metaVariable = Variable
     , variableCounter = mempty
     }
 
-metaVariablePattern :: Pattern Meta Domain.Builtin Variable ParsedPattern
-metaVariablePattern = VariablePattern metaVariable
+metaVariablePattern :: PatternF Domain.Builtin Variable ParsedPattern
+metaVariablePattern = VariableF metaVariable
 
 metaVariableUnifiedPattern :: ParsedPattern
 metaVariableUnifiedPattern = asParsedPattern metaVariablePattern
 
 objectTopPattern :: ParsedPattern
-objectTopPattern = asParsedPattern $ TopPattern $ Top objectSort
+objectTopPattern = asParsedPattern $ TopF $ Top objectSort
 
 objectBottomPattern :: ParsedPattern
-objectBottomPattern = asParsedPattern $ BottomPattern $ Bottom objectSort
+objectBottomPattern = asParsedPattern $ BottomF $ Bottom objectSort

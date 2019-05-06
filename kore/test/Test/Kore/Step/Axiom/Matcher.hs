@@ -13,34 +13,30 @@ import           Control.Monad.Except
                  ( ExceptT, runExceptT )
 import qualified Data.Map as Map
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.MultiOr as MultiOr
+                 ( make )
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
+import           Kore.Internal.Predicate
+                 ( Conditional (..) )
+import qualified Kore.Internal.Predicate as Conditional
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification, unificationWithAppMatchOnTop )
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
-import           Kore.Step.Predicate
-                 ( Conditional (..) )
-import qualified Kore.Step.Predicate as Conditional
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.TermLike
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.Unifier
-                 ( UnificationProof )
 import qualified Kore.Unification.Unify as Monad.Unify
 import qualified SMT
 
@@ -886,23 +882,23 @@ matchDefinition
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (OrPredicate Object Variable))
+    -> IO (Maybe (OrPredicate Variable))
 matchDefinition = match
 
 matchSimplification
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (OrPredicate Object Variable))
+    -> IO (Maybe (OrPredicate Variable))
 matchSimplification = match
 
 unificationWithMatch
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (OrPredicate Object Variable))
+    -> IO (Maybe (OrPredicate Variable))
 unificationWithMatch tools first second = do
-    eitherResult <- SMT.runSMT SMT.defaultConfig
+    result <- SMT.runSMT SMT.defaultConfig
         $ evalSimplifier emptyLogger
         $ Monad.Unify.runUnifier
         $ unificationWithAppMatchOnTop
@@ -912,27 +908,22 @@ unificationWithMatch tools first second = do
             Map.empty
             first
             second
-    case eitherResult of
-        Left _err -> return Nothing
-        Right (result, _proof) -> return (Just result)
+    return $ either (const Nothing) Just result
 
 match
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (OrPredicate Object Variable))
-match tools first second =
-    matchAsEither >>= return . \case
-        Left _err -> Nothing
-        Right (result, _) -> Just result
+    -> IO (Maybe (OrPredicate Variable))
+match tools first second = do
+    result <- matchAsEither
+    return $ either (const Nothing) Just result
   where
     matchAsEither
         :: IO
             (Either
-                (UnificationOrSubstitutionError Object Variable)
-                ( OrPredicate Object Variable
-                , UnificationProof Object Variable
-                )
+                (UnificationOrSubstitutionError Variable)
+                (OrPredicate Variable)
             )
     matchAsEither =
         SMT.runSMT SMT.defaultConfig
@@ -940,11 +931,9 @@ match tools first second =
             $ runExceptT matchResult
     matchResult
         :: ExceptT
-            (UnificationOrSubstitutionError Object Variable)
+            (UnificationOrSubstitutionError Variable)
             Simplifier
-            ( OrPredicate Object Variable
-            , UnificationProof Object Variable
-            )
+            (OrPredicate Variable)
     matchResult =
         Monad.Unify.getUnifier $ matchAsUnification
             tools

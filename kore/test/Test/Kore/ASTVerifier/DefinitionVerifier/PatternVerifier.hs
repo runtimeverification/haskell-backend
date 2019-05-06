@@ -12,17 +12,17 @@ import qualified Data.List as List
 import qualified Data.Set as Set
 
 import           Kore.AST.AstWithLocation
-import           Kore.AST.Pure
-import           Kore.AST.Sentence
-import           Kore.AST.Valid
 import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Hook as Attribute.Hook
+import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.IndexedModule.Error
                  ( noSort )
-import           Kore.Step.TermLike hiding
+import           Kore.Internal.TermLike hiding
                  ( freeVariables )
+import           Kore.Syntax
+import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 import           Test.Kore
@@ -34,35 +34,33 @@ data PatternRestrict
     = NeedsInternalDefinitions
     | NeedsSortedParent
 
-data TestPattern level = TestPattern
+data TestPattern = TestPattern
     { testPatternPattern
-        :: !(Pattern level Domain.Builtin Variable (TermLike Variable))
+        :: !(PatternF Domain.Builtin Variable (TermLike Variable))
     , testPatternSort       :: !Sort
     , testPatternErrorStack :: !ErrorStack
     }
 
-newtype VariableOfDeclaredSort level = VariableOfDeclaredSort (Variable)
+newtype VariableOfDeclaredSort = VariableOfDeclaredSort (Variable)
 
-testPatternErrorStackStrings :: TestPattern Object -> [String]
+testPatternErrorStackStrings :: TestPattern -> [String]
 testPatternErrorStackStrings
     TestPattern {testPatternErrorStack = ErrorStack strings}
   =
     strings
 
-testPatternUnifiedPattern :: TestPattern Object -> TermLike Variable
+testPatternUnifiedPattern :: TestPattern -> TermLike Variable
 testPatternUnifiedPattern
     TestPattern { testPatternPattern, testPatternSort }
   =
-    asPurePattern (valid :< testPatternPattern)
+    asPattern (valid :< testPatternPattern)
   where
     valid =
-        Valid
+        Attribute.Pattern
             { patternSort = testPatternSort
             , freeVariables =
-                Foldable.foldl'
-                    Set.union
-                    Set.empty
-                    (freeVariables . extract <$> testPatternPattern)
+                Foldable.foldl' Set.union Set.empty
+                    (Attribute.freeVariables . extract <$> testPatternPattern)
             }
 
 test_patternVerifier :: [TestTree]
@@ -98,18 +96,19 @@ test_patternVerifier =
             , "(<test data>)"
             ]
         )
-        (ExistsPattern Exists
+        (ExistsF Exists
             { existsSort = anotherSort
             , existsVariable = anotherVariable
             , existsChild =
                 let
-                    valid = Valid { patternSort, freeVariables }
-                      where
-                        patternSort = objectSort
-                        freeVariables = Set.empty
+                    valid =
+                        Attribute.Pattern
+                            { patternSort = objectSort
+                            , freeVariables = Set.empty
+                            }
                     pattern' = simpleExistsPattern objectVariable' objectSort
                 in
-                    asPurePattern (valid :< pattern')
+                    asPattern (valid :< pattern')
             }
         )
         (NamePrefix "dummy")
@@ -127,7 +126,7 @@ test_patternVerifier =
             , "(<test data>, <test data>)"
             ]
         )
-        (ExistsPattern Exists
+        (ExistsF Exists
             { existsSort = objectSort
             , existsVariable = objectVariable'
             , existsChild = (mkVar anotherVariable)
@@ -159,13 +158,13 @@ test_patternVerifier =
             , "(<test data>)"
             ]
         )
-        (ExistsPattern Exists
+        (ExistsF Exists
             { existsSort = objectSort
             , existsVariable = objectVariable'
             , existsChild =
-                asPurePattern
+                asPattern
                     ((:<)
-                        Valid
+                        Attribute.Pattern
                             { patternSort = objectSortVariableSort
                             , freeVariables = Set.empty
                             }
@@ -363,7 +362,7 @@ test_patternVerifier =
         (ExpectedErrorMessage
             "Application uses less sorts than the declaration.")
         (ErrorStack ["symbol or alias 'ObjectSymbol' (<test data>)"])
-        (ApplicationPattern Application
+        (ApplicationF Application
             { applicationSymbolOrAlias = SymbolOrAlias
                 { symbolOrAliasConstructor = testId oneSortSymbolRawName
                 , symbolOrAliasParams = []
@@ -387,7 +386,7 @@ test_patternVerifier =
         (ExpectedErrorMessage
             "Application uses more sorts than the declaration.")
         (ErrorStack ["symbol or alias 'ObjectSymbol' (<test data>)"])
-        (ApplicationPattern Application
+        (ApplicationF Application
             { applicationSymbolOrAlias = SymbolOrAlias
                 { symbolOrAliasConstructor = testId oneSortSymbolRawName
                 , symbolOrAliasParams = [objectSort, objectSort]
@@ -408,7 +407,7 @@ test_patternVerifier =
         ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Object pattern - unquantified variable"
-        (VariablePattern objectVariable')
+        (VariableF objectVariable')
         (NamePrefix "dummy")
         (TestedPatternSort objectSort)
         (SortVariablesThatMustBeDeclared [])
@@ -416,7 +415,7 @@ test_patternVerifier =
         [ objectSortSentence, anotherSortSentence ]
         NeedsInternalDefinitions
     , successTestsForMetaPattern "Meta pattern - unquantified variable"
-        (VariablePattern metaVariable')
+        (VariableF metaVariable')
         (NamePrefix "#dummy")
         (TestedPatternSort metaSort1)
         (SortVariablesThatMustBeDeclared [])
@@ -426,7 +425,7 @@ test_patternVerifier =
         []
         NeedsInternalDefinitions
     , successTestsForMetaPattern "Simple string pattern"
-        (StringLiteralPattern (StringLiteral "MetaString"))
+        (StringLiteralF (StringLiteral "MetaString"))
         (NamePrefix "#dummy")
         (TestedPatternSort stringMetaSort)
         (SortVariablesThatMustBeDeclared [])
@@ -438,7 +437,7 @@ test_patternVerifier =
         -- at least in some cases.
         NeedsInternalDefinitions
     , successTestsForMetaPattern "Simple char pattern"
-        (CharLiteralPattern (CharLiteral 'c'))
+        (CharLiteralF (CharLiteral 'c'))
         (NamePrefix "#dummy")
         (TestedPatternSort charMetaSort)
         (SortVariablesThatMustBeDeclared [])
@@ -455,7 +454,7 @@ test_patternVerifier =
         (ErrorStack
             [ "(<test data>, <implicitly defined entity>)" ]
         )
-        (StringLiteralPattern (StringLiteral "MetaString"))
+        (StringLiteralF (StringLiteral "MetaString"))
         (NamePrefix "#dummy")
         (TestedPatternSort (updateAstLocation charMetaSort AstLocationTest))
         (SortVariablesThatMustBeDeclared [])
@@ -467,7 +466,7 @@ test_patternVerifier =
         -- at least in some cases.
         NeedsSortedParent
     , successTestsForObjectPattern "Bottom pattern"
-        (BottomPattern Bottom {bottomSort = objectSort})
+        (BottomF Bottom {bottomSort = objectSort})
         (NamePrefix "dummy")
         (TestedPatternSort objectSort)
         (SortVariablesThatMustBeDeclared [])
@@ -477,7 +476,7 @@ test_patternVerifier =
         ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Top pattern"
-        (TopPattern Top {topSort = objectSort})
+        (TopF Top {topSort = objectSort})
         (NamePrefix "dummy")
         (TestedPatternSort objectSort)
         (SortVariablesThatMustBeDeclared [])
@@ -500,11 +499,11 @@ test_patternVerifier =
             , "While parsing domain value"
             ]
         )
-        (DomainValuePattern $ Domain.BuiltinExternal
+        (DomainValueF $ Domain.BuiltinExternal
             Domain.External
                 { domainValueSort = intSort
                 , domainValueChild =
-                    Kore.AST.Pure.eraseAnnotations
+                    eraseAnnotations
                     $ mkStringLiteral "abcd"  -- Not a decimal integer
                 }
         )
@@ -515,11 +514,11 @@ test_patternVerifier =
         [ asSentence intSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - INT.Int - Negative"
-        (DomainValuePattern $ Domain.BuiltinExternal
+        (DomainValueF $ Domain.BuiltinExternal
             Domain.External
                 { domainValueSort = intSort
                 , domainValueChild =
-                    Kore.AST.Pure.eraseAnnotations
+                    eraseAnnotations
                     $ mkStringLiteral "-256"
                 }
         )
@@ -530,11 +529,11 @@ test_patternVerifier =
         [ asSentence intSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - INT.Int - Positive (unsigned)"
-        (DomainValuePattern $ Domain.BuiltinExternal
+        (DomainValueF $ Domain.BuiltinExternal
             Domain.External
                 { domainValueSort = intSort
                 , domainValueChild =
-                    Kore.AST.Pure.eraseAnnotations
+                    eraseAnnotations
                     $ mkStringLiteral "1024"
                 }
         )
@@ -545,11 +544,11 @@ test_patternVerifier =
         [ asSentence intSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - INT.Int - Positive (signed)"
-        (DomainValuePattern $ Domain.BuiltinExternal
+        (DomainValueF $ Domain.BuiltinExternal
             Domain.External
                 { domainValueSort = intSort
                 , domainValueChild =
-                    Kore.AST.Pure.eraseAnnotations
+                    eraseAnnotations
                     $ mkStringLiteral "+128"
                 }
         )
@@ -573,11 +572,11 @@ test_patternVerifier =
             , "While parsing domain value"
             ]
         )
-        (DomainValuePattern $ Domain.BuiltinExternal
+        (DomainValueF $ Domain.BuiltinExternal
             Domain.External
                 { domainValueSort = boolSort
                 , domainValueChild =
-                    Kore.AST.Pure.eraseAnnotations
+                    eraseAnnotations
                     $ mkStringLiteral "untrue"  -- Not a BOOL.Bool
                 }
         )
@@ -588,11 +587,11 @@ test_patternVerifier =
         [ asSentence boolSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - BOOL.Bool - true"
-        (DomainValuePattern $ Domain.BuiltinExternal
+        (DomainValueF $ Domain.BuiltinExternal
             Domain.External
                 { domainValueSort = boolSort
                 , domainValueChild =
-                    Kore.AST.Pure.eraseAnnotations
+                    eraseAnnotations
                     $ mkStringLiteral "true"
                 }
         )
@@ -603,11 +602,11 @@ test_patternVerifier =
         [ asSentence boolSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - BOOL.Bool - false"
-        (DomainValuePattern $ Domain.BuiltinExternal
+        (DomainValueF $ Domain.BuiltinExternal
             Domain.External
                 { domainValueSort = boolSort
                 , domainValueChild =
-                    Kore.AST.Pure.eraseAnnotations
+                    eraseAnnotations
                     $ mkStringLiteral "false"
                 }
         )
@@ -754,11 +753,11 @@ dummyVariableAndSentences (NamePrefix namePrefix) =
 
 successTestsForObjectPattern
     :: String
-    -> Pattern Object Domain.Builtin Variable (TermLike Variable)
+    -> PatternF Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
-    -> TestedPatternSort Object
-    -> SortVariablesThatMustBeDeclared Object
-    -> DeclaredSort Object
+    -> TestedPatternSort
+    -> SortVariablesThatMustBeDeclared
+    -> DeclaredSort
     -> [Verified.Sentence]
     -> PatternRestrict
     -> TestTree
@@ -798,13 +797,13 @@ successTestsForObjectPattern
 
 successTestsForMetaPattern
     :: String
-    -> Pattern Meta Domain.Builtin Variable (TermLike Variable)
+    -> PatternF Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
-    -> TestedPatternSort Meta
-    -> SortVariablesThatMustBeDeclared Meta
-    -> SortVariablesThatMustBeDeclared Object
-    -> DeclaredSort Meta
-    -> VariableOfDeclaredSort Meta
+    -> TestedPatternSort
+    -> SortVariablesThatMustBeDeclared
+    -> SortVariablesThatMustBeDeclared
+    -> DeclaredSort
+    -> VariableOfDeclaredSort
     -> [Verified.Sentence]
     -> PatternRestrict
     -> TestTree
@@ -839,11 +838,11 @@ failureTestsForObjectPattern
     => String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> Pattern Object Domain.Builtin Variable (TermLike Variable)
+    -> PatternF Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
-    -> TestedPatternSort Object
-    -> SortVariablesThatMustBeDeclared Object
-    -> DeclaredSort Object
+    -> TestedPatternSort
+    -> SortVariablesThatMustBeDeclared
+    -> DeclaredSort
     -> [Verified.Sentence]
     -> PatternRestrict
     -> TestTree
@@ -895,13 +894,13 @@ failureTestsForMetaPattern
     => String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> Pattern Meta Domain.Builtin Variable (TermLike Variable)
+    -> PatternF Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
-    -> TestedPatternSort Meta
-    -> SortVariablesThatMustBeDeclared Meta
-    -> SortVariablesThatMustBeDeclared Object
-    -> DeclaredSort Meta
-    -> VariableOfDeclaredSort Meta
+    -> TestedPatternSort
+    -> SortVariablesThatMustBeDeclared
+    -> SortVariablesThatMustBeDeclared
+    -> DeclaredSort
+    -> VariableOfDeclaredSort
     -> [Verified.Sentence]
     -> PatternRestrict
     -> TestTree
@@ -938,13 +937,13 @@ failureTestsForMetaPattern
             patternRestrict
 
 genericPatternInAllContexts
-    :: Pattern Object Domain.Builtin Variable (TermLike Variable)
+    :: PatternF Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
-    -> TestedPatternSort Object
-    -> SortVariablesThatMustBeDeclared Object
-    -> SortVariablesThatMustBeDeclared Object
-    -> DeclaredSort Object
-    -> VariableOfDeclaredSort Object
+    -> TestedPatternSort
+    -> SortVariablesThatMustBeDeclared
+    -> SortVariablesThatMustBeDeclared
+    -> DeclaredSort
+    -> VariableOfDeclaredSort
     -> [Verified.Sentence]
     -> PatternRestrict
     -> [TestData]
@@ -979,7 +978,7 @@ genericPatternInAllContexts
             (aliasFromSort testedSort)
             patternRestrict
     anotherPattern =
-        ExistsPattern Exists
+        ExistsF Exists
             { existsSort = testedSort
             , existsVariable = anotherVariable
             , existsChild = (mkVar anotherVariable)
@@ -1004,11 +1003,11 @@ genericPatternInAllContexts
             }
 
 objectPatternInAllContexts
-    :: Pattern Object Domain.Builtin Variable (TermLike Variable)
+    :: PatternF Domain.Builtin Variable (TermLike Variable)
     -> NamePrefix
-    -> TestedPatternSort Object
-    -> SortVariablesThatMustBeDeclared Object
-    -> DeclaredSort Object
+    -> TestedPatternSort
+    -> SortVariablesThatMustBeDeclared
+    -> DeclaredSort
     -> [Verified.Sentence]
     -> PatternRestrict
     -> [TestData]
@@ -1032,7 +1031,7 @@ objectPatternInAllContexts
             anotherPattern
             (OperandSort testedSort)
     anotherPattern =
-        ExistsPattern Exists
+        ExistsF Exists
             { existsSort = testedSort
             , existsVariable = anotherVariable
             , existsChild = (mkVar anotherVariable)
@@ -1045,11 +1044,11 @@ objectPatternInAllContexts
             }
 
 patternsInAllContexts
-    :: [TestPattern Object]
+    :: [TestPattern]
     -> NamePrefix
-    -> SortVariablesThatMustBeDeclared Object
-    -> SortVariablesThatMustBeDeclared Object
-    -> DeclaredSort Object
+    -> SortVariablesThatMustBeDeclared
+    -> SortVariablesThatMustBeDeclared
+    -> DeclaredSort
     -> [Verified.Sentence]
     -> PatternRestrict
     -> [TestData]
@@ -1121,15 +1120,15 @@ patternsInAllContexts
                 }
 
 genericPatternInPatterns
-    :: Pattern Object Domain.Builtin Variable (TermLike Variable)
-    -> Pattern Object Domain.Builtin Variable (TermLike Variable)
-    -> OperandSort Object
-    -> Helpers.ResultSort Object
-    -> VariableOfDeclaredSort Object
+    :: PatternF Domain.Builtin Variable (TermLike Variable)
+    -> PatternF Domain.Builtin Variable (TermLike Variable)
+    -> OperandSort
+    -> Helpers.ResultSort
+    -> VariableOfDeclaredSort
     -> SymbolOrAlias
     -> SymbolOrAlias
     -> PatternRestrict
-    -> [TestPattern Object]
+    -> [TestPattern]
 genericPatternInPatterns
     testedPattern
     anotherPattern
@@ -1154,9 +1153,9 @@ genericPatternInPatterns
             ]
     ++
         [ TestPattern
-            { testPatternPattern = ApplicationPattern Application
+            { testPatternPattern = ApplicationF Application
                 { applicationSymbolOrAlias = symbol
-                , applicationChildren = [asPurePattern (valid :< testedPattern)]
+                , applicationChildren = [asPattern (valid :< testedPattern)]
                 }
             , testPatternSort = testedSort
             , testPatternErrorStack =
@@ -1167,9 +1166,9 @@ genericPatternInPatterns
                     ]
             }
         , TestPattern
-            { testPatternPattern = ApplicationPattern Application
+            { testPatternPattern = ApplicationF Application
                 { applicationSymbolOrAlias = alias
-                , applicationChildren = [asPurePattern (valid :< testedPattern)]
+                , applicationChildren = [asPattern (valid :< testedPattern)]
                 }
             , testPatternSort = testedSort
             , testPatternErrorStack =
@@ -1182,30 +1181,28 @@ genericPatternInPatterns
         ]
   where
     valid =
-        Valid
+        Attribute.Pattern
             { patternSort = testedSort
             , freeVariables =
-                Foldable.foldl'
-                    Set.union
-                    Set.empty
-                    (freeVariables . extract <$> testedPattern)
+                Foldable.foldl' Set.union Set.empty
+                    (Attribute.freeVariables . extract <$> testedPattern)
             }
 
 objectPatternInPatterns
-    :: Pattern Object Domain.Builtin Variable (TermLike Variable)
-    -> Pattern Object Domain.Builtin Variable (TermLike Variable)
-    -> OperandSort Object
-    -> [TestPattern Object]
+    :: PatternF Domain.Builtin Variable (TermLike Variable)
+    -> PatternF Domain.Builtin Variable (TermLike Variable)
+    -> OperandSort
+    -> [TestPattern]
 objectPatternInPatterns = patternInUnquantifiedObjectPatterns
 
 patternInQuantifiedPatterns
-    :: Pattern Object Domain.Builtin Variable (TermLike Variable)
+    :: PatternF Domain.Builtin Variable (TermLike Variable)
     -> Sort
     -> Variable
-    -> [TestPattern Object]
+    -> [TestPattern]
 patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
     [ TestPattern
-        { testPatternPattern = ExistsPattern Exists
+        { testPatternPattern = ExistsF Exists
             { existsSort = testedSort
             , existsVariable = quantifiedVariable
             , existsChild = testedKorePattern
@@ -1219,7 +1216,7 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
                 ]
         }
     , TestPattern
-        { testPatternPattern = ForallPattern Forall
+        { testPatternPattern = ForallF Forall
             { forallSort = testedSort
             , forallVariable = quantifiedVariable
             , forallChild = testedKorePattern
@@ -1235,22 +1232,20 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
     ]
   where
     valid =
-        Valid
+        Attribute.Pattern
             { patternSort = testedSort
             , freeVariables =
-                Foldable.foldl'
-                    Set.union
-                    Set.empty
-                    (freeVariables . extract <$> testedPattern)
+                Foldable.foldl' Set.union Set.empty
+                    (Attribute.freeVariables . extract <$> testedPattern)
             }
-    testedKorePattern = asPurePattern (valid :< testedPattern)
+    testedKorePattern = asPattern (valid :< testedPattern)
 
 patternInUnquantifiedGenericPatterns
-    :: Pattern Object Domain.Builtin Variable (TermLike Variable)
-    -> Pattern Object Domain.Builtin Variable (TermLike Variable)
-    -> OperandSort Object
-    -> Helpers.ResultSort Object
-    -> [TestPattern Object]
+    :: PatternF Domain.Builtin Variable (TermLike Variable)
+    -> PatternF Domain.Builtin Variable (TermLike Variable)
+    -> OperandSort
+    -> Helpers.ResultSort
+    -> [TestPattern]
 patternInUnquantifiedGenericPatterns
     testedPattern
     anotherPattern
@@ -1258,7 +1253,7 @@ patternInUnquantifiedGenericPatterns
     (Helpers.ResultSort resultSort)
   =
     [ TestPattern
-        { testPatternPattern = AndPattern And
+        { testPatternPattern = AndF And
             { andSort = testedSort
             , andFirst = testedUnifiedPattern
             , andSecond = anotherUnifiedPattern
@@ -1267,7 +1262,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\and (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = AndPattern And
+        { testPatternPattern = AndF And
             { andSort = testedSort
             , andFirst = anotherUnifiedPattern
             , andSecond = testedUnifiedPattern
@@ -1276,7 +1271,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\and (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = CeilPattern Ceil
+        { testPatternPattern = CeilF Ceil
             { ceilOperandSort = testedSort
             , ceilResultSort = resultSort
             , ceilChild = testedUnifiedPattern
@@ -1285,7 +1280,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\ceil (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = EqualsPattern Equals
+        { testPatternPattern = EqualsF Equals
             { equalsOperandSort = testedSort
             , equalsResultSort = resultSort
             , equalsFirst = testedUnifiedPattern
@@ -1295,7 +1290,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\equals (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = EqualsPattern Equals
+        { testPatternPattern = EqualsF Equals
             { equalsOperandSort = testedSort
             , equalsResultSort = resultSort
             , equalsFirst = anotherUnifiedPattern
@@ -1305,7 +1300,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\equals (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = FloorPattern Floor
+        { testPatternPattern = FloorF Floor
             { floorOperandSort = testedSort
             , floorResultSort = resultSort
             , floorChild = testedUnifiedPattern
@@ -1314,7 +1309,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\floor (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = IffPattern Iff
+        { testPatternPattern = IffF Iff
             { iffSort = testedSort
             , iffFirst = testedUnifiedPattern
             , iffSecond = anotherUnifiedPattern
@@ -1323,7 +1318,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\iff (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = IffPattern Iff
+        { testPatternPattern = IffF Iff
             { iffSort = testedSort
             , iffFirst = anotherUnifiedPattern
             , iffSecond = testedUnifiedPattern
@@ -1332,7 +1327,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\iff (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = ImpliesPattern Implies
+        { testPatternPattern = ImpliesF Implies
             { impliesSort = testedSort
             , impliesFirst = testedUnifiedPattern
             , impliesSecond = anotherUnifiedPattern
@@ -1341,7 +1336,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\implies (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = ImpliesPattern Implies
+        { testPatternPattern = ImpliesF Implies
             { impliesSort = testedSort
             , impliesFirst = anotherUnifiedPattern
             , impliesSecond = testedUnifiedPattern
@@ -1350,7 +1345,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\implies (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = InPattern In
+        { testPatternPattern = InF In
             { inOperandSort = testedSort
             , inResultSort = resultSort
             , inContainedChild = testedUnifiedPattern
@@ -1360,7 +1355,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\in (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = InPattern In
+        { testPatternPattern = InF In
             { inOperandSort = testedSort
             , inResultSort = resultSort
             , inContainedChild = anotherUnifiedPattern
@@ -1370,7 +1365,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\in (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = NotPattern Not
+        { testPatternPattern = NotF Not
             { notSort = testedSort
             , notChild = testedUnifiedPattern
             }
@@ -1378,7 +1373,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\not (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = OrPattern Or
+        { testPatternPattern = OrF Or
             { orSort = testedSort
             , orFirst = testedUnifiedPattern
             , orSecond = anotherUnifiedPattern
@@ -1387,7 +1382,7 @@ patternInUnquantifiedGenericPatterns
         , testPatternErrorStack = ErrorStack ["\\or (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = OrPattern Or
+        { testPatternPattern = OrF Or
             { orSort = testedSort
             , orFirst = anotherUnifiedPattern
             , orSecond = testedUnifiedPattern
@@ -1398,30 +1393,27 @@ patternInUnquantifiedGenericPatterns
     ]
   where
     valid =
-        Valid
+        Attribute.Pattern
             { patternSort = testedSort
             , freeVariables =
-                Foldable.foldl'
-                    Set.union
-                    Set.empty
-                    (unifiedFreeVariables . extract <$> testedPattern)
+                Foldable.foldl' Set.union Set.empty
+                    (Attribute.freeVariables . extract <$> testedPattern)
             }
-    unifiedFreeVariables = freeVariables
-    anotherUnifiedPattern = asPurePattern (valid :< anotherPattern)
-    testedUnifiedPattern = asPurePattern (valid :< testedPattern)
+    anotherUnifiedPattern = asPattern (valid :< anotherPattern)
+    testedUnifiedPattern = asPattern (valid :< testedPattern)
 
 patternInUnquantifiedObjectPatterns
-    :: Pattern Object Domain.Builtin Variable (TermLike Variable)
-    -> Pattern Object Domain.Builtin Variable (TermLike Variable)
-    -> OperandSort Object
-    -> [TestPattern Object]
+    :: PatternF Domain.Builtin Variable (TermLike Variable)
+    -> PatternF Domain.Builtin Variable (TermLike Variable)
+    -> OperandSort
+    -> [TestPattern]
 patternInUnquantifiedObjectPatterns
     testedPattern
     anotherPattern
     (OperandSort testedSort)
   =
     [ TestPattern
-        { testPatternPattern = NextPattern Next
+        { testPatternPattern = NextF Next
             { nextSort = testedSort
             , nextChild = testedUnifiedPattern
             }
@@ -1429,7 +1421,7 @@ patternInUnquantifiedObjectPatterns
         , testPatternErrorStack = ErrorStack ["\\next (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = RewritesPattern Rewrites
+        { testPatternPattern = RewritesF Rewrites
             { rewritesSort = testedSort
             , rewritesFirst = testedUnifiedPattern
             , rewritesSecond = anotherUnifiedPattern
@@ -1438,7 +1430,7 @@ patternInUnquantifiedObjectPatterns
         , testPatternErrorStack = ErrorStack ["\\rewrites (<test data>)"]
         }
     , TestPattern
-        { testPatternPattern = RewritesPattern Rewrites
+        { testPatternPattern = RewritesF Rewrites
             { rewritesSort = testedSort
             , rewritesFirst = anotherUnifiedPattern
             , rewritesSecond = testedUnifiedPattern
@@ -1450,26 +1442,23 @@ patternInUnquantifiedObjectPatterns
     ]
   where
     valid =
-        Valid
+        Attribute.Pattern
             { patternSort = testedSort
             , freeVariables =
-                Foldable.foldl'
-                    Set.union
-                    Set.empty
-                    (unifiedFreeVariables . extract <$> testedPattern)
+                Foldable.foldl' Set.union Set.empty
+                    (Attribute.freeVariables . extract <$> testedPattern)
             }
-    unifiedFreeVariables = freeVariables
-    anotherUnifiedPattern = asPurePattern (valid :< anotherPattern)
-    testedUnifiedPattern = asPurePattern (valid :< testedPattern)
+    anotherUnifiedPattern = asPattern (valid :< anotherPattern)
+    testedUnifiedPattern = asPattern (valid :< testedPattern)
 
 testsForUnifiedPatternInTopLevelContext
     :: NamePrefix
-    -> DeclaredSort Object
-    -> SortVariablesThatMustBeDeclared Object
-    -> SortVariablesThatMustBeDeclared Object
+    -> DeclaredSort
+    -> SortVariablesThatMustBeDeclared
+    -> SortVariablesThatMustBeDeclared
     -> [Verified.Sentence]
     -> PatternRestrict
-    -> [TestPattern Object -> TestData]
+    -> [TestPattern -> TestData]
 testsForUnifiedPatternInTopLevelContext
     namePrefix
     additionalSort
@@ -1483,11 +1472,11 @@ testsForUnifiedPatternInTopLevelContext
 
 testsForUnifiedPatternInTopLevelGenericContext
     :: NamePrefix
-    -> DeclaredSort Object
-    -> SortVariablesThatMustBeDeclared Object
+    -> DeclaredSort
+    -> SortVariablesThatMustBeDeclared
     -> [Verified.Sentence]
     -> PatternRestrict
-    -> [TestPattern Object -> TestData]
+    -> [TestPattern -> TestData]
 testsForUnifiedPatternInTopLevelGenericContext
     (NamePrefix _)
     (DeclaredSort _)

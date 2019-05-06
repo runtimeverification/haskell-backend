@@ -12,15 +12,15 @@ module Kore.Step.Axiom.UserDefined
     , equalityRuleEvaluator
     ) where
 
-import           Kore.AST.Pure hiding
-                 ( isConcrete )
-import qualified Kore.AST.Pure as Pure
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Axiom.Concrete as Axiom.Concrete
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import           Kore.Step.Axiom.Data as AttemptedAxiomResults
@@ -30,19 +30,16 @@ import           Kore.Step.Axiom.Data
                  BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification )
-import qualified Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.Step
                  ( UnificationProcedure (..) )
 import qualified Kore.Step.Step as Step
-import           Kore.Step.TermLike
+import qualified Kore.Syntax.Pattern as Pure
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse )
@@ -59,20 +56,19 @@ equalityRuleEvaluator
         , Show variable
         , Unparse variable
         )
-    => EqualityRule Object Variable
+    => EqualityRule Variable
     -- ^ Axiom defining the current function.
     -> SmtMetadataTools StepperAttributes
     -- ^ Tools for finding additional information about patterns
     -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -- ^ The function on which to evaluate the current function.
-    -> Simplifier
-        (AttemptedAxiom Object variable, SimplificationProof Object)
+    -> Simplifier (AttemptedAxiom variable)
 equalityRuleEvaluator
     (EqualityRule rule)
     tools
@@ -88,15 +84,10 @@ equalityRuleEvaluator
   | otherwise = do
     result <- applyRule patt rule
     case result of
-        Left _ ->
-            notApplicable
-        Right results ->
-            (,)
-                <$> (AttemptedAxiom.Applied <$> simplifyResults results)
-                <*> pure SimplificationProof
+        Left _        -> notApplicable
+        Right results -> AttemptedAxiom.Applied <$> simplifyResults results
   where
-    notApplicable =
-        return (AttemptedAxiom.NotApplicable, SimplificationProof)
+    notApplicable = return AttemptedAxiom.NotApplicable
 
     unificationProcedure = UnificationProcedure matchAsUnification
 
@@ -115,19 +106,17 @@ equalityRuleEvaluator
         MultiOr.filterOr
         <$> traverse simplifyPattern unsimplified
 
-    simplifyPattern config = do
-        (config', _) <-
-            Pattern.simplifyPredicate
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                config
-        return config'
+    simplifyPattern config =
+        Pattern.simplifyPredicate
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            config
 
     simplifyResults
         :: Step.Results variable
-        -> Simplifier (AttemptedAxiomResults Object variable)
+        -> Simplifier (AttemptedAxiomResults variable)
     simplifyResults stepResults = do
         results <- simplifyOrPatterns $ Step.gatherResults stepResults
         remainders <- simplifyOrPatterns $ Step.remainders stepResults

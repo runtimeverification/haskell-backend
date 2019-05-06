@@ -13,9 +13,6 @@ import qualified Data.Set as Set
 import           Numeric.Natural
                  ( Natural )
 
-import           Kore.AST.Pure
-import           Kore.AST.Sentence
-                 ( ModuleName (..) )
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  verifyAndIndexDefinition )
@@ -29,6 +26,7 @@ import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule,
                  makeIndexedModuleAttributesNull, mapIndexedModulePatterns )
+import           Kore.Internal.TermLike
 import           Kore.Logger.Output
                  ( emptyLogger )
 import           Kore.Parser
@@ -37,7 +35,8 @@ import           Kore.Step
                  ( anyRewrite )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
-import           Kore.Step.TermLike
+import           Kore.Syntax.Module
+                 ( ModuleName (..) )
 import qualified SMT
 
 import           System.Directory
@@ -207,8 +206,8 @@ execBenchmark root kFile definitionFile mainModuleName test =
 -- functions are constructors (so that function patterns can match)
 -- and that @kseq@ and @dotk@ are both functional and constructor.
 constructorFunctions
-    :: IndexedModule sortParam patternType StepperAttributes Attribute.Axiom
-    -> IndexedModule sortParam patternType StepperAttributes Attribute.Axiom
+    :: IndexedModule patternType StepperAttributes Attribute.Axiom
+    -> IndexedModule patternType StepperAttributes Attribute.Axiom
 constructorFunctions ixm =
     ixm
         { indexedModuleSymbolSentences =

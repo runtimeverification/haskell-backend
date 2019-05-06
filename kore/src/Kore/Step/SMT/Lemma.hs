@@ -24,18 +24,17 @@ import qualified Data.Map.Strict as Map
 import           Data.Reflection
 import qualified Data.Text as Text
 
-import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.SmtLemma
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
 import qualified Kore.Step.SMT.Declaration.All as SMT.All
                  ( declare )
 import           Kore.Step.SMT.Translate
-import           Kore.Step.TermLike
+import           Kore.Syntax.Definition
 import           Kore.Unparser
 import           SMT
                  ( MonadSMT, SExpr (..), SMT )
@@ -61,10 +60,8 @@ declareSMTLemmas m = SMT.liftSMT $ do
     tools = given
 
     declareRule
-        :: forall sortParam . (Given (SmtMetadataTools StepperAttributes))
-        => ( Attribute.Axiom
-           , SentenceAxiom sortParam (TermLike Variable)
-           )
+        :: Given (SmtMetadataTools StepperAttributes)
+        => ( Attribute.Axiom , SentenceAxiom (TermLike Variable) )
         -> SMT (Maybe ())
     declareRule (atts, axiomDeclaration) = runMaybeT $ do
         guard (isSmtLemma $ Attribute.smtLemma atts)
@@ -95,7 +92,7 @@ translateUninterpreted t pat | isVariable pat =
   where
     isVariable p =
         case Cofree.tailF $ Recursive.project p of
-            VariablePattern _ -> True
+            VariableF _ -> True
             _ -> False
     lookupPattern = do
         result <- State.gets $ Map.lookup pat

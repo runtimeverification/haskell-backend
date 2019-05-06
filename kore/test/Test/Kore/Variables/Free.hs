@@ -2,17 +2,17 @@ module Test.Kore.Variables.Free where
 
 import Hedgehog
 
-import qualified Kore.Annotation as Annotation
-import qualified Kore.Annotation.Valid as Annotation.Valid
+import qualified Kore.Attribute.Pattern as Attribute
+import qualified Kore.Attribute.Synthetic as Attribute
 import qualified Kore.Variables.Free as Variables.Free
 
 import Test.Kore
 
 -- | Check that 'Variables.Free.synthetic' produces the same free variable
--- annotations as the smart constructors in "Kore.AST.Valid".
+-- annotations as the smart constructors in "Kore.Internal.TermLike".
 hprop_synthetic :: Property
 hprop_synthetic = property $ do
     termLike <- forAll termLikeGen
     (===)
-        (Annotation.synthesize Variables.Free.synthetic termLike)
-        (Annotation.Valid.freeVariables <$> termLike)
+        (Attribute.synthesize Variables.Free.synthetic termLike)
+        (Attribute.freeVariables <$> termLike)

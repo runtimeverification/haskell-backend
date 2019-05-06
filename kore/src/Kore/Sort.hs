@@ -62,8 +62,6 @@ instance Unparse SortVariable where
 @object-sort@ and @meta-sort@ syntactic categories from the Semantics of K,
 Section 9.1.2 (Sorts).
 
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 data SortActual = SortActual
     { sortActualName  :: !Id
@@ -91,8 +89,6 @@ instance Unparse SortActual where
 @meta-sort@ syntactic categories from the Semantics of K,
 Section 9.1.2 (Sorts).
 
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 data Sort
     = SortVariableSort !SortVariable

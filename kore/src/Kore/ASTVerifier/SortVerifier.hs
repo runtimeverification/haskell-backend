@@ -13,16 +13,16 @@ module Kore.ASTVerifier.SortVerifier (verifySort) where
 import qualified Data.Set as Set
 
 import Kore.AST.Error
-import Kore.AST.Pure
-import Kore.AST.Sentence
 import Kore.ASTVerifier.Error
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
+import Kore.Syntax
+import Kore.Syntax.Definition
 
 {-|'verifySort' verifies the welformedness of a Kore 'Sort'. -}
 verifySort
     :: MonadError (Error VerifyError) m
-    => (Id -> m (SortDescription Object dom))
+    => (Id -> m (SortDescription dom))
     -- ^ Provides a sortMetaSorts description.
     -> Set.Set SortVariable
     -- ^ Sort variables visible here.
@@ -61,10 +61,10 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort)
 
 verifySortMatchesDeclaration
     :: MonadError (Error VerifyError) m
-    => (Id -> m (SortDescription Object dom))
+    => (Id -> m (SortDescription dom))
     -> Set.Set SortVariable
     -> SortActual
-    -> SortDescription Object dom
+    -> SortDescription dom
     -> m VerifySuccess
 verifySortMatchesDeclaration
     findSortDescription declaredSortVariables sort sortDescription

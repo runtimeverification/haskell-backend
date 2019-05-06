@@ -1,31 +1,31 @@
-module Test.Kore.IndexedModule.Resolvers
-where
+module Test.Kore.IndexedModule.Resolvers where
 
 import Test.Tasty
 import Test.Tasty.HUnit
--- import Test.Terse
 
 import           Data.Default
+import qualified Data.List as List
+import           Data.Map
+                 ( Map )
 import qualified Data.Map as Map
-import           Data.Maybe
-                 ( fromMaybe )
 import qualified Data.Set as Set
 
-import           Kore.Annotation.Valid
-import           Kore.AST.Pure
-import           Kore.AST.Sentence
-import           Kore.AST.Valid
 import           Kore.ASTHelpers
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.Error as Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
-import           Kore.Step.TermLike hiding
+import           Kore.Internal.TermLike hiding
                  ( freeVariables )
+import           Kore.Syntax
+import           Kore.Syntax.Definition
+import           Kore.Syntax.PatternF
+                 ( groundHead )
 import qualified Kore.Verified as Verified
 
 import Test.Kore
@@ -34,16 +34,28 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 objectS1 :: Sort
 objectS1 = simpleSort (SortName "s1")
 
-objectA :: SentenceSymbol Object (TermLike Variable)
+objectA :: SentenceSymbol (TermLike Variable)
 objectA = mkSymbol_ (testId "a") [] objectS1
 
-objectB :: SentenceAlias Object (TermLike Variable)
+-- Two variations on a constructor axiom for 'objectA'.
+axiomA, axiomA' :: SentenceAxiom (TermLike Variable)
+axiomA = mkAxiom_ $ applySymbol_ objectA []
+axiomA' =
+    mkAxiom [sortVariableR]
+    $ mkForall x
+    $ mkEquals sortR (mkVar x) (applySymbol_ objectA [])
+  where
+    x = varS "x" objectS1
+    sortVariableR = SortVariable (testId "R")
+    sortR = SortVariableSort sortVariableR
+
+objectB :: SentenceAlias (TermLike Variable)
 objectB = mkAlias_ (testId "b") objectS1 [] $ mkTop objectS1
 
-metaA :: SentenceSymbol Meta (TermLike Variable)
+metaA :: SentenceSymbol (TermLike Variable)
 metaA = mkSymbol_ (testId "#a") [] stringMetaSort
 
-metaB :: SentenceAlias Meta (TermLike Variable)
+metaB :: SentenceAlias (TermLike Variable)
 metaB = mkAlias_ (testId "#b") stringMetaSort [] $ mkTop stringMetaSort
 
 testObjectModuleName :: ModuleName
@@ -60,10 +72,9 @@ testMainModuleName = ModuleName "TEST-MAIN-MODULE"
 
 strictAttribute :: ParsedPattern
 strictAttribute =
-    (asParsedPattern . ApplicationPattern)
+    (asParsedPattern . ApplicationF)
         Application
-            { applicationSymbolOrAlias =
-                groundHead "strict" AstLocationTest :: SymbolOrAlias
+            { applicationSymbolOrAlias = groundHead "strict" AstLocationTest
             , applicationChildren = []
             }
 
@@ -80,6 +91,8 @@ testObjectModule =
                     }
             , asSentence objectA
             , asSentence objectB
+            , asSentence axiomA
+            , asSentence axiomA'
             ]
         , moduleAttributes = Attributes [strictAttribute]
         }
@@ -130,19 +143,17 @@ testDefinition =
             ]
         }
 
-testIndexedModule :: VerifiedModule Attribute.Null Attribute.Null
-testIndexedModule =
-    case
-        verifyAndIndexDefinition
-            DoNotVerifyAttributes
-            Builtin.koreVerifiers
-            (eraseSentenceAnnotations <$> testDefinition)
-      of
-        Right modulesMap ->
-            fromMaybe
-                (error "This should not have happened")
-                (Map.lookup testMainModuleName modulesMap)
-        Left err -> error (printError err)
+indexedModules :: Map ModuleName (VerifiedModule Attribute.Null Attribute.Null)
+Right indexedModules =
+    verifyAndIndexDefinition
+        DoNotVerifyAttributes
+        Builtin.koreVerifiers
+        (eraseSentenceAnnotations <$> testDefinition)
+
+testIndexedModule, testIndexedObjectModule
+    :: VerifiedModule Attribute.Null Attribute.Null
+Just testIndexedModule = Map.lookup testMainModuleName indexedModules
+Just testIndexedObjectModule = Map.lookup testObjectModuleName indexedModules
 
 test_resolvers :: [TestTree]
 test_resolvers =
@@ -214,13 +225,14 @@ test_resolvers =
                             }
                     , sentenceAliasRightPattern =
                         let
-                            valid = Valid { patternSort, freeVariables }
-                              where
-                                patternSort = objectS1
-                                freeVariables = Set.empty
-                            top' = TopPattern Top { topSort = objectS1 }
+                            valid =
+                                Attribute.Pattern
+                                    { patternSort = objectS1
+                                    , freeVariables = Set.empty
+                                    }
+                            top' = TopF Top { topSort = objectS1 }
                         in
-                            asPurePattern (valid :< top')
+                            asPattern (valid :< top')
                     , sentenceAliasResultSort = objectS1
                     }
                 )
@@ -251,13 +263,13 @@ test_resolvers =
                         }
                 , sentenceAliasRightPattern =
                     let
-                        valid = Valid { patternSort, freeVariables }
+                        valid = Attribute.Pattern { patternSort, freeVariables }
                           where
                             patternSort = stringMetaSort
                             freeVariables = Set.empty
-                        top' = TopPattern Top { topSort = stringMetaSort }
+                        top' = TopF Top { topSort = stringMetaSort }
                     in
-                        asPurePattern (valid :< top')
+                        asPattern (valid :< top')
                 , sentenceAliasResultSort = stringMetaSort
                 }
             ))
@@ -284,6 +296,11 @@ test_resolvers =
                 testIndexedModule
                 (getSentenceSymbolOrAliasHead objectB [])
             )
+        )
+    , testCase "sort indexed axioms"
+        (assertEqual ""
+            (reverse $ List.sort [axiomA, axiomA'])
+            (getIndexedSentence <$> indexedModuleAxioms testIndexedObjectModule)
         )
     ]
   where

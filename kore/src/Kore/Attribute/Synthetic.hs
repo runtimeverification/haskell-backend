@@ -1,12 +1,11 @@
 {- |
-Module      : Kore.Annotation
 Description : Attribute grammars implemented as cofree annotations
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-Maintainer  : thomas.tuegel@runtimeverification.com
+
  -}
 
-module Kore.Annotation
+module Kore.Attribute.Synthetic
     ( synthesize
     ) where
 

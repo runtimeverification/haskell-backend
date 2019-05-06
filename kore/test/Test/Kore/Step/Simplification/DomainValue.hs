@@ -10,21 +10,20 @@ import Test.Tasty.HUnit
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern
+                 ( Conditional (..) )
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
-                 ( Conditional (..) )
-import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.DomainValue
                  ( simplify )
 
@@ -114,8 +113,6 @@ mockMetadataTools =
 
 evaluate
     :: SmtMetadataTools attrs
-    -> Domain.Builtin (OrPattern Object Variable)
-    -> OrPattern Object Variable
-evaluate tools domainValue =
-    case simplify tools domainValue of
-        (result, _proof) -> result
+    -> Domain.Builtin (OrPattern Variable)
+    -> OrPattern Variable
+evaluate = simplify

@@ -8,13 +8,12 @@ import           Test.Terse
 
 import qualified Data.Text as Text
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.IndexedModule.MetadataTools
-import           Kore.Step.Pattern
-import           Kore.Step.TermLike
+import           Kore.Internal.Pattern
+import           Kore.Internal.TermLike
 
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
@@ -57,7 +56,7 @@ asInternal :: Bool -> TermLike Variable
 asInternal = Bool.asInternal boolSort
 
 -- | Specialize 'Bool.asPattern' to the builtin sort 'boolSort'.
-asPattern :: Bool -> Pattern Object Variable
+asPattern :: Bool -> Pattern Variable
 asPattern = Bool.asPattern boolSort
 
 -- | Test a binary operator hooked to the given symbol.
@@ -117,7 +116,7 @@ test_simplification =
 
         becomes :: HasCallStack
                 => TermLike Variable
-                -> Pattern Object Variable
+                -> Pattern Variable
                 -> TestTree
         becomes makerInput =
             wrapped_maker_expected withSolver

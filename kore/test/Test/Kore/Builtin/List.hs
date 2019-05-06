@@ -12,7 +12,6 @@ import           Data.Sequence
                  ( Seq )
 import qualified Data.Sequence as Seq
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
 import           Kore.Attribute.Symbol
@@ -21,9 +20,8 @@ import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.List as List
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
-import           Kore.Step.Pattern
-import qualified Kore.Step.Pattern as Pattern
-import           Kore.Step.TermLike
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 
 import           Test.Kore
                  ( testId )
@@ -217,7 +215,7 @@ asInternal =
 asPattern
     :: Foldable f
     => f (TermLike Variable)
-    -> Pattern Object Variable
+    -> Pattern Variable
 asPattern =
     Reflection.give testMetadataTools List.asPattern listSort
     . Seq.fromList

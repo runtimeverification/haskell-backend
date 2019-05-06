@@ -26,9 +26,9 @@ import Data.List
        ( intercalate )
 
 import Kore.AST.AstWithLocation
-import Kore.AST.Pure
-import Kore.AST.Sentence
 import Kore.Error
+import Kore.Syntax
+import Kore.Syntax.Definition
 
 {-|'koreFailWithLocations' produces an error result with a context containing
 the provided locations. -}
@@ -83,7 +83,7 @@ withLocationAndContext location message =
  -}
 withSentenceSymbolContext
     :: MonadError (Error e) m
-    => SentenceSymbol level patternType
+    => SentenceSymbol patternType
     -> m a
     -> m a
 withSentenceSymbolContext
@@ -95,7 +95,7 @@ withSentenceSymbolContext
 {- | Identify and locate the given alias declaration in the error context.
  -}
 withSentenceAliasContext
-    :: SentenceAlias level patternType
+    :: SentenceAlias patternType
     -> Either (Error e) a
     -> Either (Error e) a
 withSentenceAliasContext
@@ -107,7 +107,7 @@ withSentenceAliasContext
 {- | Identify and locate the given axiom declaration in the error context.
  -}
 withSentenceAxiomContext
-    :: SentenceAxiom sortParam patternType
+    :: SentenceAxiom patternType
     -> Either (Error e) a
     -> Either (Error e) a
 withSentenceAxiomContext _ = withContext "axiom declaration"
@@ -115,7 +115,7 @@ withSentenceAxiomContext _ = withContext "axiom declaration"
 {- | Identify and locate the given claim declaration in the error context.
  -}
 withSentenceClaimContext
-    :: SentenceAxiom sortParam patternType
+    :: SentenceClaim patternType
     -> Either (Error e) a
     -> Either (Error e) a
 withSentenceClaimContext _ = withContext "claim declaration"
@@ -123,7 +123,7 @@ withSentenceClaimContext _ = withContext "claim declaration"
 {- | Identify and locate the given sort declaration in the error context.
  -}
 withSentenceSortContext
-    :: SentenceSort level patternType
+    :: SentenceSort patternType
     -> Either (Error e) a
     -> Either (Error e) a
 withSentenceSortContext
@@ -160,7 +160,7 @@ withSentenceImportContext _ = \go -> go
 {- | Identify and  locate the given sentence in the error context.
  -}
 withSentenceContext
-    :: Sentence level sortParam patternType
+    :: Sentence patternType
     -> Either (Error e) a
     -> Either (Error e) a
 withSentenceContext =

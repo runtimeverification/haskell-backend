@@ -21,8 +21,6 @@ import           Data.Text
 import qualified Data.Text as Text
 
 import           Kore.AST.Error
-import           Kore.AST.Pure
-import           Kore.AST.Sentence
 import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
@@ -32,13 +30,15 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
+import           Kore.Syntax
+import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 {-|'verifyUniqueNames' verifies that names defined in a list of sentences are
 unique both within the list and outside, using the provided name set.
 -}
 verifyUniqueNames
-    :: [Sentence Object param pat]
+    :: [Sentence pat]
     -> Map.Map Text AstLocation
     -- ^ Names that are already defined.
     -> Either (Error VerifyError) (Map.Map Text AstLocation)
@@ -77,7 +77,7 @@ verifyUniqueId existing (UnparameterizedId name location) =
   where
     name' = Text.pack name
 
-definedNamesForSentence :: Sentence Object param pat -> [UnparameterizedId]
+definedNamesForSentence :: Sentence pat -> [UnparameterizedId]
 definedNamesForSentence (SentenceAliasSentence sentenceAlias) =
     [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
 definedNamesForSentence (SentenceSymbolSentence sentenceSymbol) =
@@ -148,9 +148,9 @@ verifySentence builtinVerifiers indexedModule attributesVerification sentence =
                         )
                 SentenceClaimSentence claimSentence ->
                     (<$>)
-                        SentenceClaimSentence
+                        (SentenceClaimSentence . SentenceClaim)
                         (verifyAxiomSentence
-                            claimSentence
+                            (getSentenceClaim claimSentence)
                             builtinVerifiers
                             indexedModule
                         )

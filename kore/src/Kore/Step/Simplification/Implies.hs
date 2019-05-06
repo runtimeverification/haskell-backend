@@ -12,21 +12,20 @@ module Kore.Step.Simplification.Implies
     , simplifyEvaluated
     ) where
 
-import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
                  ( makeEvaluate, simplifyEvaluated )
 import           Kore.Syntax.Implies
@@ -54,12 +53,11 @@ simplify
         , Unparse variable
         )
     => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
-    -> Implies Sort (OrPattern Object variable)
-    -> Simplifier
-        (OrPattern Object variable , SimplificationProof Object)
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
+    -> Implies Sort (OrPattern variable)
+    -> Simplifier (OrPattern variable)
 simplify
     tools
     predicateSimplifier
@@ -88,10 +86,10 @@ See 'simplify' for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Implies Sort) (Valid Object) (OrPattern Object variable)
+> CofreeF (Implies Sort) (Attribute.Pattern variable) (OrPattern variable)
 
 instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
-be changed analogously. The 'Valid' annotation will eventually cache information
+be changed analogously. The 'Attribute.Pattern' annotation will eventually cache information
 besides the pattern sort, which will make it even more useful to carry around.
 
 -}
@@ -102,13 +100,12 @@ simplifyEvaluated
         , Unparse variable
         )
     => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
-    -> OrPattern Object variable
-    -> OrPattern Object variable
-    -> Simplifier
-        (OrPattern Object variable, SimplificationProof Object)
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
+    -> OrPattern variable
+    -> OrPattern variable
+    -> Simplifier (OrPattern variable)
 simplifyEvaluated
     tools
     predicateSimplifier
@@ -116,24 +113,19 @@ simplifyEvaluated
     axiomSimplifiers
     first
     second
-  | OrPattern.isTrue first =
-    return (second, SimplificationProof)
-  | OrPattern.isFalse first =
-    return (OrPattern.fromPatterns [Pattern.top], SimplificationProof)
-  | OrPattern.isTrue second =
-    return (OrPattern.fromPatterns [Pattern.top], SimplificationProof)
-  | OrPattern.isFalse second = do
-    result <-
-        Not.simplifyEvaluated
-            tools
-            predicateSimplifier
-            termSimplifier
-            axiomSimplifiers
-            first
-    return (result, SimplificationProof)
+  | OrPattern.isTrue first   = return second
+  | OrPattern.isFalse first  = return OrPattern.top
+  | OrPattern.isTrue second  = return OrPattern.top
+  | OrPattern.isFalse second =
+    Not.simplifyEvaluated
+        tools
+        predicateSimplifier
+        termSimplifier
+        axiomSimplifiers
+        first
   | otherwise = do
     results <- traverse (simplifyEvaluateHalfImplies' first) second
-    return (MultiOr.flatten results, SimplificationProof)
+    return (MultiOr.flatten results)
   where
     simplifyEvaluateHalfImplies' =
         simplifyEvaluateHalfImplies
@@ -149,12 +141,12 @@ simplifyEvaluateHalfImplies
         , Unparse variable
         )
     => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
-    -> OrPattern Object variable
-    -> Pattern Object variable
-    -> Simplifier (OrPattern Object variable)
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
+    -> OrPattern variable
+    -> Pattern variable
+    -> Simplifier (OrPattern variable)
 simplifyEvaluateHalfImplies
     tools
     predicateSimplifier
@@ -187,9 +179,9 @@ makeEvaluateImplies
         , Show variable
         , Unparse variable
         )
-    => Pattern Object variable
-    -> Pattern Object variable
-    -> OrPattern Object variable
+    => Pattern variable
+    -> Pattern variable
+    -> OrPattern variable
 makeEvaluateImplies
     first second
   | Pattern.isTop first =
@@ -209,9 +201,9 @@ makeEvaluateImpliesNonBool
         , Show variable
         , Unparse variable
         )
-    => Pattern Object variable
-    -> Pattern Object variable
-    -> OrPattern Object variable
+    => Pattern variable
+    -> Pattern variable
+    -> OrPattern variable
 makeEvaluateImpliesNonBool
     pattern1@Conditional
         { term = firstTerm

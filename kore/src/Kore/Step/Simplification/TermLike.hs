@@ -10,17 +10,17 @@ module Kore.Step.Simplification.TermLike
 
 import qualified Data.Functor.Foldable as Recursive
 
-import qualified Kore.AST.Common as Common
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Simplification.And as And
                  ( simplify )
 import qualified Kore.Step.Simplification.Application as Application
@@ -32,8 +32,8 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
 import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
                  ( simplify )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier, simplifyTerm, termLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
+                 simplifyTerm, termLikeSimplifier )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
                  ( simplify )
 import qualified Kore.Step.Simplification.Equals as Equals
@@ -68,6 +68,7 @@ import qualified Kore.Step.Simplification.Top as Top
                  ( simplify )
 import qualified Kore.Step.Simplification.Variable as Variable
                  ( simplify )
+import qualified Kore.Syntax.PatternF as Syntax
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -85,18 +86,14 @@ simplify
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> PredicateSimplifier
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
-    -> Simplifier
-        ( Pattern Object variable
-        , SimplificationProof Object
-        )
+    -> Simplifier (Pattern variable)
 simplify tools substitutionSimplifier axiomIdToEvaluator patt = do
-    (orPatt, proof) <-
-        simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt
-    return (OrPattern.toExpandedPattern orPatt, proof)
+    orPatt <- simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt
+    return (OrPattern.toExpandedPattern orPatt)
 
 {-|'simplifyToOr' simplifies a TermLike variable, returning an
 'OrPattern'.
@@ -109,14 +106,11 @@ simplifyToOr
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
     -> TermLike variable
-    -> Simplifier
-        ( OrPattern Object variable
-        , SimplificationProof Object
-        )
+    -> Simplifier (OrPattern variable)
 simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt =
     simplifyInternal
         tools
@@ -136,15 +130,12 @@ simplifyInternal
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Recursive.Base (TermLike variable) (TermLike variable)
-    -> Simplifier
-        ( OrPattern Object variable
-        , SimplificationProof Object
-        )
+    -> Simplifier (OrPattern variable)
 simplifyInternal
     tools
     substitutionSimplifier
@@ -154,11 +145,11 @@ simplifyInternal
   = do
     halfSimplified <- traverse simplifyTerm' patt
     -- TODO: Remove fst
-    case fmap fst halfSimplified of
-        Common.AndPattern p ->
+    case halfSimplified of
+        Syntax.AndF p ->
             And.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Common.ApplicationPattern p ->
+        Syntax.ApplicationF p ->
             --  TODO: Re-evaluate outside of the application and stop passing
             -- the simplifier.
             Application.simplify
@@ -167,41 +158,40 @@ simplifyInternal
                 simplifier
                 axiomIdToEvaluator
                 (valid :< p)
-        Common.BottomPattern p -> return $ Bottom.simplify p
-        Common.CeilPattern p ->
+        Syntax.BottomF p -> return $ Bottom.simplify p
+        Syntax.CeilF p ->
             Ceil.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Common.DomainValuePattern p -> return $ DomainValue.simplify tools p
-        Common.EqualsPattern p ->
+        Syntax.DomainValueF p -> return $ DomainValue.simplify tools p
+        Syntax.EqualsF p ->
             Equals.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Common.ExistsPattern p ->
+        Syntax.ExistsF p ->
             Exists.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Common.FloorPattern p -> return $ Floor.simplify p
-        Common.ForallPattern p -> return $ Forall.simplify p
-        Common.IffPattern p ->
+        Syntax.FloorF p -> return $ Floor.simplify p
+        Syntax.ForallF p -> return $ Forall.simplify p
+        Syntax.IffF p ->
             Iff.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Common.ImpliesPattern p ->
+        Syntax.ImpliesF p ->
             Implies.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Common.InPattern p ->
+        Syntax.InF p ->
             In.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Common.InhabitantPattern s -> return $ Inhabitant.simplify s
+        Syntax.InhabitantF s -> return $ Inhabitant.simplify s
         -- TODO(virgil): Move next up through patterns.
-        Common.NextPattern p -> return $ Next.simplify p
-        Common.NotPattern p ->
-            fmap withProof $ Not.simplify
+        Syntax.NextF p -> return $ Next.simplify p
+        Syntax.NotF p ->
+            Not.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Common.OrPattern p -> return $ Or.simplify p
-        Common.RewritesPattern p -> return $ Rewrites.simplify p
-        Common.StringLiteralPattern p -> return $ StringLiteral.simplify p
-        Common.CharLiteralPattern p -> return $ CharLiteral.simplify p
-        Common.TopPattern p -> return $ Top.simplify p
-        Common.VariablePattern p -> return $ Variable.simplify p
-        Common.SetVariablePattern p -> return $ SetVariable.simplify p
+        Syntax.OrF p -> return $ Or.simplify p
+        Syntax.RewritesF p -> return $ Rewrites.simplify p
+        Syntax.StringLiteralF p -> return $ StringLiteral.simplify p
+        Syntax.CharLiteralF p -> return $ CharLiteral.simplify p
+        Syntax.TopF p -> return $ Top.simplify p
+        Syntax.VariableF p -> return $ Variable.simplify p
+        Syntax.SetVariableF p -> return $ SetVariable.simplify p
   where
     simplifyTerm' = simplifyTerm simplifier substitutionSimplifier
-    withProof a = (a, SimplificationProof)

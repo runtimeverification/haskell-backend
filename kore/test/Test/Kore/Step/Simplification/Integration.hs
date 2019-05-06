@@ -14,12 +14,16 @@ import           Data.Default
                  ( Default (..) )
 import qualified Data.Map.Strict as Map
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Builtin.Map as Map
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
@@ -29,10 +33,6 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Axiom.Registry
                  ( axiomPatternsToEvaluators )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
@@ -402,36 +402,35 @@ mockMetadataTools =
 
 evaluate
     :: SmtMetadataTools StepperAttributes
-    -> Pattern Object Variable
-    -> IO (OrPattern Object Variable)
+    -> Pattern Variable
+    -> IO (OrPattern Variable)
 evaluate tools patt =
     evaluateWithAxioms tools Map.empty patt
 
 evaluateWithAxioms
     :: SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifierMap Object
-    -> Pattern Object Variable
-    -> IO (OrPattern Object Variable)
+    -> BuiltinAndAxiomSimplifierMap
+    -> Pattern Variable
+    -> IO (OrPattern Variable)
 evaluateWithAxioms tools axioms patt =
-    (<$>) fst
-        $ SMT.runSMT SMT.defaultConfig
-        $ evalSimplifier emptyLogger
-        $ Pattern.simplify
-            tools
-            (Predicate.create tools simplifier axiomIdToSimplifier)
-            simplifier
-            axiomIdToSimplifier
-            patt
+    SMT.runSMT SMT.defaultConfig
+    $ evalSimplifier emptyLogger
+    $ Pattern.simplify
+        tools
+        (Predicate.create tools simplifier axiomIdToSimplifier)
+        simplifier
+        axiomIdToSimplifier
+        patt
   where
-    simplifier :: TermLikeSimplifier Object
+    simplifier :: TermLikeSimplifier
     simplifier = Simplifier.create tools axiomIdToSimplifier
-    axiomIdToSimplifier :: BuiltinAndAxiomSimplifierMap Object
+    axiomIdToSimplifier :: BuiltinAndAxiomSimplifierMap
     axiomIdToSimplifier =
         Map.unionWith
             simplifierWithFallback
             builtinAxioms
             axioms
-    builtinAxioms :: BuiltinAndAxiomSimplifierMap Object
+    builtinAxioms :: BuiltinAndAxiomSimplifierMap
     builtinAxioms =
         Map.fromList
             [   ( AxiomIdentifier.Application Mock.concatMapId

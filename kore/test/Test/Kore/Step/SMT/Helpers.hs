@@ -32,13 +32,6 @@ import GHC.Stack
 import Numeric.Natural
        ( Natural )
 
-import           Kore.AST.Pure
-                 ( eraseAnnotations )
-import           Kore.AST.Sentence
-import qualified Kore.AST.Sentence as SentenceAxiom
-                 ( SentenceAxiom (..) )
-import           Kore.AST.Valid
-                 ( mkApp, mkBottom, mkExists, mkOr, mkVar )
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom )
 import qualified Kore.Attribute.Symbol as Attribute
@@ -49,17 +42,18 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
-import           Kore.Sort
-                 ( Sort (SortActualSort), SortActual (SortActual) )
-import qualified Kore.Sort as SortActual
-                 ( SortActual (..) )
+import           Kore.Internal.TermLike
 import           Kore.Syntax.Application
                  ( SymbolOrAlias (SymbolOrAlias) )
 import           Kore.Syntax.Application as SymbolOrAlias
                  ( SymbolOrAlias (..) )
+import           Kore.Syntax.Definition
+import           Kore.Syntax.Pattern
+                 ( eraseAnnotations )
+import qualified Kore.Syntax.Sentence as SentenceAxiom
+                 ( SentenceAxiom (..) )
 import           Kore.Syntax.Variable
                  ( Variable (Variable) )
-import qualified Kore.Syntax.Variable as Variable
 import           SMT
                  ( SMT )
 import qualified SMT

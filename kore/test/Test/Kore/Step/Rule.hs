@@ -17,23 +17,22 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Pure
-import           Kore.AST.Sentence
-import           Kore.AST.Valid as Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
+import           Kore.Internal.TermLike hiding
+                 ( freeVariables )
 import           Kore.Parser.Parser
 import           Kore.Parser.ParserUtils
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Rule hiding
                  ( freeVariables )
 import qualified Kore.Step.Rule as Rule
-import           Kore.Step.TermLike hiding
-                 ( freeVariables )
+import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 import           Test.Kore
@@ -210,16 +209,17 @@ axiomPatternsIntegrationTests =
                             \        )\n\
                             \    )\n\
                             \[]"
-                    let valid = Valid { patternSort, freeVariables }
-                          where
-                            patternSort = sortTCell
-                            freeVariables =
-                                Set.fromList
-                                    [ Variable "VarI1" mempty sortAInt
-                                    , Variable "VarI2" mempty sortAInt
-                                    , Variable "VarDotVar1" mempty sortK
-                                    , Variable "VarDotVar0" mempty sortStateCell
-                                    ]
+                    let valid =
+                            Attribute.Pattern
+                                { patternSort = sortTCell
+                                , freeVariables =
+                                    Set.fromList
+                                        [ varS "VarI1" sortAInt
+                                        , varS "VarI2" sortAInt
+                                        , varS "VarDotVar1" sortK
+                                        , varS "VarDotVar0" sortStateCell
+                                        ]
+                                }
                     Rule.fromSentence ((<$) valid <$> parsed)
                 )
             )
@@ -243,7 +243,7 @@ sortSentenceAInt :: Verified.Sentence
 sortSentenceAInt =
     (asSentence sentence)
   where
-    sentence :: SentenceSort Object (TermLike Variable)
+    sentence :: SentenceSort (TermLike Variable)
     sentence =
         SentenceSort
             { sentenceSortName = testId "AInt"
@@ -255,7 +255,7 @@ sortSentenceKItem :: Verified.Sentence
 sortSentenceKItem =
     (asSentence sentence)
   where
-    sentence :: SentenceSort Object (TermLike Variable)
+    sentence :: SentenceSort (TermLike Variable)
     sentence =
         SentenceSort
             { sentenceSortName = testId "KItem"
@@ -269,7 +269,7 @@ sortParam name = SortVariable (testId name)
 sortParamSort :: Text -> Sort
 sortParamSort = SortVariableSort . sortParam
 
-symbolTCell, symbolKCell :: SentenceSymbol Object (TermLike Variable)
+symbolTCell, symbolKCell :: SentenceSymbol (TermLike Variable)
 symbolTCell = mkSymbol_ (testId "T") [sortKCell, sortStateCell] sortTCell
 -- symbol T{}(KCell{}, StateCell{}) : TCell{} []
 applyTCell
@@ -285,7 +285,7 @@ applyKCell
     -> TermLike Variable
 applyKCell child = applySymbol_ symbolKCell [child]
 
-symbolKSeq, symbolInj :: SentenceSymbol Object (TermLike Variable)
+symbolKSeq, symbolInj :: SentenceSymbol (TermLike Variable)
 symbolKSeq = mkSymbol_ (testId "kseq") [sortKItem, sortK] sortK
 
 symbolInj =
@@ -309,14 +309,13 @@ applyInj
 applyInj sortTo child =
     applySymbol symbolInj [sortFrom, sortTo] [child]
   where
-    Valid { patternSort = sortFrom } = extract child
+    Attribute.Pattern { patternSort = sortFrom } = extract child
 
-symbolSentenceInj
-    :: Sentence Object SortVariable (TermLike Variable)
+symbolSentenceInj :: Sentence (TermLike Variable)
 symbolSentenceInj = asSentence symbolInj
 -- symbol inj{From,To}(From) : To []
 
-symbolLeqAExp :: SentenceSymbol Object (TermLike Variable)
+symbolLeqAExp :: SentenceSymbol (TermLike Variable)
 symbolLeqAExp = mkSymbol_ (testId "leqAExp") [sortAExp, sortAExp] sortBExp
 
 applyLeqAExp
@@ -326,7 +325,7 @@ applyLeqAExp
 applyLeqAExp child1 child2 =
     applySymbol_ symbolLeqAExp [child1, child2]
 
-symbolLeqAInt :: SentenceSymbol Object (TermLike Variable)
+symbolLeqAInt :: SentenceSymbol (TermLike Variable)
 symbolLeqAInt = mkSymbol_ (testId "leqAInt") [sortAInt, sortAInt] sortABool
 
 applyLeqAInt
@@ -410,7 +409,7 @@ test_refreshRulePattern =
             "Expected no free variables in common with original RulePattern"
             (Set.null $ Set.intersection avoiding free')
 
-testRulePattern :: RulePattern Object Variable
+testRulePattern :: RulePattern Variable
 testRulePattern =
     RulePattern
         { left =

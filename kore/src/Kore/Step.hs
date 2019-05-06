@@ -33,18 +33,15 @@ import           GHC.Stack
 import           Numeric.Natural
                  ( Natural )
 
-import           Kore.AST.MetaOrObject
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.Pattern
+                 ( Pattern )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
-                 ( Pattern )
-import           Kore.Step.Proof
-                 ( StepProof (..) )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern, isCoolingRule,
                  isHeatingRule, isNormalRule )
@@ -91,24 +88,23 @@ rewriteStep a =
 transitionRule
     :: HasCallStack
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
-    -> Prim (RewriteRule Object Variable)
-    -> (Pattern Object Variable, StepProof Object Variable)
+    -> Prim (RewriteRule Variable)
+    -> Pattern Variable
     -- ^ Configuration being rewritten and its accompanying proof
-    -> TransitionT (RewriteRule Object Variable) Simplifier
-        (Pattern Object Variable, StepProof Object Variable)
+    -> TransitionT (RewriteRule Variable) Simplifier (Pattern Variable)
 transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
     \case
         Simplify -> transitionSimplify
         Rewrite a -> transitionRewrite a
   where
-    transitionSimplify (config, proof) =
+    transitionSimplify config =
         do
-            (configs, _) <-
+            configs <-
                 Monad.Trans.lift
                 $ Pattern.simplify
                     tools
@@ -117,11 +113,10 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                     axiomIdToSimplifier
                     config
             let
-                prove config' = (config', proof)
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = MultiOr.filterOr configs
-            (Foldable.asum . fmap pure) (prove <$> nonEmptyConfigs)
-    transitionRewrite rule (config, proof) = do
+            Foldable.asum (pure <$> nonEmptyConfigs)
+    transitionRewrite rule config = do
         Transition.addRule rule
         result <-
             Monad.Trans.lift
@@ -144,10 +139,7 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                     , "Un-implemented unification case; aborting execution."
                     ]
             Right results ->
-                (Foldable.asum . fmap pure)
-                    (withProof <$> Step.gatherResults results)
-              where
-                withProof result' = (result', proof)
+                Foldable.asum (pure <$> Step.gatherResults results)
 
 
 {- | A strategy that applies all the rewrites in parallel.
@@ -187,8 +179,8 @@ anyRewrite rewrites =
 heatingCooling
     :: (forall rewrite. [rewrite] -> Strategy (Prim rewrite))
     -- ^ 'allRewrites' or 'anyRewrite'
-    -> [RewriteRule Object Variable]
-    -> Strategy (Prim (RewriteRule Object Variable))
+    -> [RewriteRule Variable]
+    -> Strategy (Prim (RewriteRule Variable))
 heatingCooling rewriteStrategy rewrites =
     Strategy.sequence [Strategy.many heat, normal, Strategy.try cool]
   where

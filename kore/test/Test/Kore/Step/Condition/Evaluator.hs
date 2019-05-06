@@ -10,14 +10,14 @@ import           Data.Reflection
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Valid
+import           Kore.Internal.Pattern
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
                  makeNotPredicate, makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Step.Condition.Evaluator as Evaluator
-import           Kore.Step.Pattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import           SMT
@@ -63,10 +63,9 @@ test_andNegation =
 
 evaluate
     :: Syntax.Predicate Variable
-    -> PropertyT SMT (Predicate Object Variable)
+    -> PropertyT SMT (Predicate Variable)
 evaluate predicate =
-    (<$>) fst
-    $ give testMetadataTools
+    give testMetadataTools
     $ Trans.lift
     $ evalSimplifier emptyLogger
     $ Evaluator.evaluate
@@ -74,11 +73,7 @@ evaluate predicate =
         (mockSimplifier noSimplification)
         predicate
 
-noSimplification
-    ::  [   ( TermLike Variable
-            , ([Pattern level Variable], SimplificationProof level)
-            )
-        ]
+noSimplification :: [(TermLike Variable, [Pattern Variable])]
 noSimplification = []
 
 -- ----------------------------------------------------------------

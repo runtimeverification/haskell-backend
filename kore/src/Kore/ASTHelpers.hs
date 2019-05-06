@@ -26,15 +26,15 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-import qualified Kore.Annotation.Null as Annotation
-import           Kore.AST.Pure hiding
-                 ( substituteSortVariables )
-import           Kore.AST.Sentence
+import qualified Kore.Attribute.Null as Attribute
 import           Kore.Error
+import           Kore.Syntax hiding
+                 ( substituteSortVariables )
+import           Kore.Syntax.Definition
 import           Kore.Variables.Free
 
 
-data ApplicationSorts level = ApplicationSorts
+data ApplicationSorts = ApplicationSorts
     { applicationSortsOperands :: ![Sort]
     , applicationSortsResult   :: !Sort
     }
@@ -44,10 +44,10 @@ data ApplicationSorts level = ApplicationSorts
 pattern from the given sort parameters.
 -}
 symbolOrAliasSorts
-    :: (SentenceSymbolOrAlias ssoa, MonadError (Error e) m)
+    :: (SentenceSymbolOrAlias sentence, MonadError (Error e) m)
     => [Sort]
-    -> ssoa Object pat
-    -> m (ApplicationSorts Object)
+    -> sentence pat
+    -> m ApplicationSorts
 symbolOrAliasSorts params sentence = do
     variableToSort <-
         pairVariablesToSorts
@@ -112,8 +112,8 @@ It assumes that the pattern has the provided sort.
 quantifyFreeVariables
     :: (Foldable domain, Functor domain)
     => Sort
-    -> PurePattern Object domain Variable (Annotation.Null Object)
-    -> PurePattern Object domain Variable (Annotation.Null Object)
+    -> Pattern domain Variable Attribute.Null
+    -> Pattern domain Variable Attribute.Null
 quantifyFreeVariables s p =
     foldl'
         (wrapAndQuantify s)
@@ -123,12 +123,12 @@ quantifyFreeVariables s p =
 wrapAndQuantify
     :: Functor domain
     => Sort
-    -> CommonPurePattern level domain
+    -> Pattern domain Variable Attribute.Null
     -> Variable
-    -> CommonPurePattern level domain
+    -> Pattern domain Variable Attribute.Null
 wrapAndQuantify s p var =
-    asPurePattern
-        (mempty :< ForallPattern Forall
+    asPattern
+        (mempty :< ForallF Forall
             { forallSort = s
             , forallVariable = var
             , forallChild = p

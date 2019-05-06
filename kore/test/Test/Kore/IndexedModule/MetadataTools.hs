@@ -11,9 +11,6 @@ import           Data.Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
-import           Kore.AST.Pure
-import           Kore.AST.Sentence
-import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Constructor
@@ -29,7 +26,9 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools, extractMetadataTools )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
-import           Kore.Step.TermLike
+import           Kore.Internal.TermLike
+import           Kore.Syntax.Definition
+import           Kore.Syntax.Top
 import qualified Kore.Verified as Verified
 
 import Test.Kore
@@ -38,12 +37,12 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 objectS1 :: Sort
 objectS1 = simpleSort (SortName "s1")
 
-objectA :: SentenceSymbol Object (TermLike Variable)
+objectA :: SentenceSymbol (TermLike Variable)
 objectA =
     (mkSymbol_ (testId "b") [] objectS1)
         { sentenceSymbolAttributes = Attributes [ constructorAttribute ] }
 
-metaA :: SentenceSymbol Meta (TermLike Variable)
+metaA :: SentenceSymbol (TermLike Variable)
 metaA = mkSymbol_ (testId "#a") [] stringMetaSort
 
 testObjectModuleName :: ModuleName
@@ -197,7 +196,7 @@ testSubsorts =
             DoNotVerifyAttributes
             Builtin.koreVerifiers
             testSubsortDefinition
-    meta :: MetadataTools Object () Attribute.Null
+    meta :: MetadataTools () Attribute.Null
     meta =
         extractMetadataTools
             (moduleIndex Map.! testObjectModuleName)
@@ -233,7 +232,7 @@ testSubsortModule =
           (SentenceAxiom
               { sentenceAxiomParameters = [sortVariable "R"]
               , sentenceAxiomPattern =
-                  asParsedPattern $ TopPattern (Top sortVarR)
+                  asParsedPattern $ TopF (Top sortVarR)
               , sentenceAxiomAttributes = Attributes
                   [subsortAttribute subSort superSort]
               })

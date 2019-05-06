@@ -23,7 +23,6 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
-import           Kore.AST.MetaOrObject
 import           Kore.ASTHelpers
                  ( ApplicationSorts )
 import qualified Kore.Attribute.Sort as Attribute
@@ -38,7 +37,7 @@ import           Kore.Syntax.Application
 
 -- |'MetadataTools' defines a dictionary of functions which can be used to
 -- access the metadata needed during the unification process.
-data MetadataTools level smt attributes = MetadataTools
+data MetadataTools smt attributes = MetadataTools
     { symAttributes :: SymbolOrAlias -> attributes
     -- ^ get the attributes of a symbol or alias
     , symbolOrAliasType :: SymbolOrAlias -> HeadType
@@ -50,7 +49,7 @@ data MetadataTools level smt attributes = MetadataTools
        including when @a@ equals @b@. -}
     , subsorts :: Sort -> Set Sort
     -- ^ get the subsorts for a sort
-    , applicationSorts :: SymbolOrAlias -> ApplicationSorts level
+    , applicationSorts :: SymbolOrAlias -> ApplicationSorts
     -- ^ Sorts for a specific symbol application.
     , smtData :: smt
     -- ^ The SMT data for the given module.
@@ -58,7 +57,7 @@ data MetadataTools level smt attributes = MetadataTools
   deriving Functor
 
 type SmtMetadataTools attributes =
-    MetadataTools Object SMT.AST.SmtDeclarations attributes
+    MetadataTools SMT.AST.SmtDeclarations attributes
 
 -- |'extractMetadataTools' extracts a set of 'MetadataTools' from a
 -- 'KoreIndexedModule'.  The metadata tools are functions yielding information
@@ -71,7 +70,7 @@ extractMetadataTools
     ->  (  VerifiedModule declAtts axiomAtts
         -> smt
         )
-    -> MetadataTools Object smt declAtts
+    -> MetadataTools smt declAtts
 extractMetadataTools m smtExtractor =
     MetadataTools
         { symAttributes = getHeadAttributes m

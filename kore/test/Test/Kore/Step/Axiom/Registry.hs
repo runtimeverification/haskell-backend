@@ -11,11 +11,6 @@ import           Data.Maybe
 import           Data.Proxy
                  ( Proxy (..) )
 
-import qualified Kore.AST.Common as Common
-import           Kore.AST.Pure
-                 ( groundHead )
-import           Kore.AST.Sentence
-import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Simplification
@@ -30,15 +25,13 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
-import           Kore.Sort
+import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Axiom.Registry
-import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
                  ( extractRewriteAxioms )
 import           Kore.Step.Simplification.Data
@@ -46,8 +39,9 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.TermLike
-import           Kore.Syntax.Application
+import           Kore.Syntax.Definition
+import           Kore.Syntax.PatternF
+                 ( groundHead )
 import qualified Kore.Verified as Verified
 import qualified SMT
 
@@ -198,26 +192,18 @@ testDef =
             SentenceAxiom
                 { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes =
-                    Attributes
-                        [ asParsedPattern
-                            (Common.ApplicationPattern Application
-                                { applicationSymbolOrAlias =
-                                    simplificationSymbol
-                                , applicationChildren = []
-                                }
-                            )
-                        ]
+                    Attributes [ attributePattern_ simplificationSymbol ]
                 , sentenceAxiomPattern =
-                        (mkImplies
-                            (mkTop sortVarS)
-                            (mkAnd
-                                (mkEquals sortVarS
-                                    (mkApp sortS fHead [])
-                                    (mkApp sortS gHead [])
-                                )
-                                (mkTop sortVarS)
+                    mkImplies
+                        (mkTop sortVarS)
+                        (mkAnd
+                            (mkEquals sortVarS
+                                (mkApp sortS fHead [])
+                                (mkApp sortS gHead [])
                             )
-                        :: TermLike Variable)
+                            (mkTop sortVarS)
+                        )
+                    :: TermLike Variable
                 }
         , SentenceAxiomSentence
             SentenceAxiom
@@ -272,7 +258,7 @@ testIndexedModule =
                     (Map.lookup (ModuleName "test") indexedModules)
 
 testEvaluators
-    :: BuiltinAndAxiomSimplifierMap Object
+    :: BuiltinAndAxiomSimplifierMap
 testEvaluators =
     axiomPatternsToEvaluators $ extractEqualityAxioms testIndexedModule
 
@@ -319,7 +305,7 @@ test_functionRegistry =
         )
     , testCase "Checking that evaluator simplifies correctly" $ do
         let expect = mkApp sortS sHead []
-        (simplified, _) <-
+        simplified <-
             SMT.runSMT SMT.defaultConfig
             $ evalSimplifier emptyLogger
             $ Pattern.simplify
@@ -334,12 +320,5 @@ test_functionRegistry =
         assertEqual "" expect actual
     ]
   where
-    makePattern
-        :: TermLike Variable
-        -> Pattern Object Variable
-    makePattern pat =
-        Conditional
-        { term = pat
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
+    makePattern :: TermLike Variable -> Pattern Variable
+    makePattern = Pattern.fromTermLike

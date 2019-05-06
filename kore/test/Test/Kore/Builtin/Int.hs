@@ -19,13 +19,12 @@ import           GHC.Integer.GMP.Internals
 import           GHC.Integer.Logarithms
                  ( integerLog2# )
 
-import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Int as Int
 import           Kore.IndexedModule.MetadataTools
+import           Kore.Internal.Pattern
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
-import           Kore.Step.Pattern
-import           Kore.Step.TermLike
 
 import           Test.Kore
 import qualified Test.Kore.Builtin.Bool as Test.Bool
@@ -346,18 +345,18 @@ asConcretePattern :: Integer -> TermLike Concrete
 asConcretePattern = Int.asConcretePattern intSort
 
 -- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
-asPattern :: Integer -> Pattern Object Variable
+asPattern :: Integer -> Pattern Variable
 asPattern = Int.asPattern intSort
 
 -- | Specialize 'Int.asPartialPattern' to the builtin sort 'intSort'.
-asPartialPattern :: Maybe Integer -> Pattern Object Variable
+asPartialPattern :: Maybe Integer -> Pattern Variable
 asPartialPattern = Int.asPartialPattern intSort
 
 testInt
     :: String
     -> SymbolOrAlias
     -> [TermLike Variable]
-    -> Pattern Object Variable
+    -> Pattern Variable
     -> TestTree
 testInt name = testSymbolWithSolver evaluate name intSort
 

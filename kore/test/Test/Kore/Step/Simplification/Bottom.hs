@@ -7,13 +7,12 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Kore.AST.MetaOrObject
-import           Kore.Sort
-import           Kore.Step.OrPattern
+import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import qualified Kore.Step.Pattern as Pattern
+import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.Pattern as Pattern
                  ( bottom )
+import           Kore.Sort
 import           Kore.Step.Simplification.Bottom
                  ( simplify )
 import           Kore.Syntax.Bottom
@@ -27,18 +26,10 @@ test_bottomSimplification :: [TestTree]
 test_bottomSimplification =
     [ testCase "Bottom evaluates to bottom"
         (assertEqualWithExplanation ""
-            (OrPattern.fromPatterns
-                [ Pattern.bottom ]
-            )
-            (evaluate
-                Bottom { bottomSort = Mock.testSort }
-            )
+            (OrPattern.fromPatterns [ Pattern.bottom ])
+            (evaluate Bottom { bottomSort = Mock.testSort })
         )
     ]
 
-evaluate
-    :: Bottom Sort (OrPattern Object Variable)
-    -> OrPattern Object Variable
-evaluate bottom =
-    case simplify bottom of
-        (result, _proof) -> result
+evaluate :: Bottom Sort (OrPattern Variable) -> OrPattern Variable
+evaluate = simplify

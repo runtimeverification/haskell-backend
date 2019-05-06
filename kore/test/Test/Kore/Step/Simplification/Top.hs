@@ -7,13 +7,13 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Kore.AST.Pure
-import           Kore.Step.OrPattern
+import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import qualified Kore.Step.Pattern as Pattern
+import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Step.Simplification.Top
                  ( simplify )
+import           Kore.Syntax
 
 import Test.Kore.Comparators ()
 import Test.Kore.Step.MockSymbols
@@ -29,9 +29,5 @@ test_topSimplification =
         )
     ]
 
-evaluate
-    :: Top Sort (OrPattern Object Variable)
-    -> OrPattern Object Variable
-evaluate top =
-    case simplify top of
-        (result, _proof) -> result
+evaluate :: Top Sort (OrPattern Variable) -> OrPattern Variable
+evaluate = simplify

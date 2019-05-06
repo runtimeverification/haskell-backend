@@ -32,14 +32,11 @@ import Data.Sup
 import Kore.Sort
 import Kore.Unparser
 
-{-|'Variable' corresponds to the @object-variable@ and
-@meta-variable@ syntactic categories from the Semantics of K,
-Section 9.1.4 (Patterns).
+{-|'Variable' corresponds to the @variable@ syntactic category from the
+Semantics of K, Section 9.1.4 (Patterns).
 
 Particularly, this is the type of variable in patterns returned by the parser.
 
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 -- Invariant [variableCounter = Just Sup]:
 -- No function returns a value that would match the pattern:
@@ -88,7 +85,7 @@ illegalVariableCounter =
 {- | Reset 'variableCounter' so that a 'Variable' may be unparsed.
 
 @externalizeFreshVariable@ is not injective and is unsafe if used with
-'mapVariables'. See 'Kore.Step.Pattern.externalizeFreshVariables' instead.
+'mapVariables'. See 'Kore.Internal.Pattern.externalizeFreshVariables' instead.
 
  -}
 externalizeFreshVariable :: Variable -> Variable

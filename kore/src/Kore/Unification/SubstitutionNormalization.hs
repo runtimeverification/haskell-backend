@@ -26,20 +26,20 @@ import           Data.Set
 import qualified Data.Set as Set
 
 import           Data.Graph.TopologicalSort
-import           Kore.AST.Pure
-import           Kore.AST.Valid
+import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes, isNonSimplifiable_ )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Predicate
+                 ( Conditional (..), Predicate )
+import qualified Kore.Internal.Predicate as Predicate
+import           Kore.Internal.TermLike
+                 ( TermLike )
+import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
-import           Kore.Step.Predicate
-                 ( Conditional (..), Predicate )
-import qualified Kore.Step.Predicate as Predicate
-import           Kore.Step.TermLike
-                 ( TermLike )
-import qualified Kore.Step.TermLike as TermLike
+import           Kore.Syntax
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -66,9 +66,9 @@ normalizeSubstitution
     => SmtMetadataTools StepperAttributes
     -> Map variable (TermLike variable)
     -> ExceptT
-        (SubstitutionError Object variable)
+        (SubstitutionError variable)
         m
-        (Predicate Object variable)
+        (Predicate variable)
 normalizeSubstitution tools substitution =
     ExceptT . sequence . fmap maybeToBottom $ topologicalSortConverted
 
@@ -93,7 +93,7 @@ normalizeSubstitution tools substitution =
     -- Non-simplifiable cycles are returned as Right Nothing.
     topologicalSortConverted
         :: Either
-            (SubstitutionError Object variable)
+            (SubstitutionError variable)
             (Maybe [variable])
     topologicalSortConverted =
         case topologicalSort (Set.toList <$> allDependencies) of
@@ -115,13 +115,13 @@ normalizeSubstitution tools substitution =
 
     normalizeSortedSubstitution'
         :: [variable]
-        -> m (Predicate Object variable)
+        -> m (Predicate variable)
     normalizeSortedSubstitution' s =
         normalizeSortedSubstitution (sortedSubstitution s) mempty mempty
 
     maybeToBottom
         :: Maybe [variable]
-        -> m (Predicate Object variable)
+        -> m (Predicate variable)
     maybeToBottom = maybe
         (return Predicate.bottom)
         normalizeSortedSubstitution'
@@ -145,7 +145,7 @@ normalizeSortedSubstitution
     => [(variable, TermLike variable)]
     -> [(variable, TermLike variable)]
     -> [(variable, TermLike variable)]
-    -> m (Predicate Object variable)
+    -> m (Predicate variable)
 normalizeSortedSubstitution [] result _ =
     return Conditional
         { term = ()
@@ -158,8 +158,8 @@ normalizeSortedSubstitution
     substitution
   =
     case Cofree.tailF (Recursive.project varPattern) of
-        BottomPattern _ -> return Predicate.bottom
-        VariablePattern var'
+        BottomF _ -> return Predicate.bottom
+        VariableF var'
           | var == var' ->
             normalizeSortedSubstitution unprocessed result substitution
         _ -> do
@@ -184,10 +184,10 @@ getDependencies
     -> Set variable
 getDependencies interesting var (Recursive.project -> valid :< patternHead) =
     case patternHead of
-        VariablePattern v | v == var -> Set.empty
+        VariableF v | v == var -> Set.empty
         _ -> Set.intersection interesting freeVars
   where
-    Valid { freeVariables = freeVars } = valid
+    Attribute.Pattern { Attribute.freeVariables = freeVars } = valid
 
 {- | Calculate the dependencies of a substitution that have only
      non-simplifiable symbols above.
@@ -209,7 +209,7 @@ getNonSimplifiableDependencies
     tools interesting var p@(Recursive.project -> _ :< h)
   =
     case h of
-        VariablePattern v | v == var -> Set.empty
+        VariableF v | v == var -> Set.empty
         _ -> Recursive.fold (nonSimplifiableAbove tools interesting) p
 
 nonSimplifiableAbove
@@ -220,11 +220,11 @@ nonSimplifiableAbove
     -> Set variable
 nonSimplifiableAbove tools interesting p =
     case Cofree.tailF p of
-        VariablePattern v ->
+        VariableF v ->
             if v `Set.member` interesting then Set.singleton v else Set.empty
-        ExistsPattern Exists {existsVariable = v} -> Set.delete v dependencies
-        ForallPattern Forall {forallVariable = v} -> Set.delete v dependencies
-        ApplicationPattern Application { applicationSymbolOrAlias } ->
+        ExistsF Exists {existsVariable = v} -> Set.delete v dependencies
+        ForallF Forall {forallVariable = v} -> Set.delete v dependencies
+        ApplicationF Application { applicationSymbolOrAlias } ->
             if give tools $ isNonSimplifiable_ applicationSymbolOrAlias
                 then dependencies
                 else Set.empty

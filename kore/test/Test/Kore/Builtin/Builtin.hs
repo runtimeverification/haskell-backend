@@ -21,9 +21,6 @@ import qualified Data.Set as Set
 import           GHC.Stack
                  ( HasCallStack )
 
-import qualified Kore.AST.Pure as AST
-import           Kore.AST.Sentence
-import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.ASTVerifier.Error
                  ( VerifyError )
@@ -37,22 +34,24 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
+import           Kore.Internal.MultiOr
+                 ( MultiOr )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern
+                 ( Conditional (..), Pattern )
+import           Kore.Internal.TermLike
 import           Kore.Parser
                  ( parseKorePattern )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
-                 ( Conditional (..), Pattern )
-import           Kore.Step.Representation.MultiOr
-                 ( MultiOr )
 import           Kore.Step.Rule
                  ( RewriteRule )
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Step.Step as Step
-import           Kore.Step.TermLike
+import           Kore.Syntax.Definition
+import qualified Kore.Syntax.Pattern as AST
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Procedure as Unification
@@ -79,7 +78,7 @@ mkPair lSort rSort l r =
 
 substitutionSimplifier
     :: SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
 substitutionSimplifier tools =
     Predicate.create tools stepSimplifier evaluators
 
@@ -87,7 +86,7 @@ substitutionSimplifier tools =
 testSymbolWithSolver
     ::  ( HasCallStack
         , p ~ TermLike Variable
-        , expanded ~ Pattern Object Variable
+        , expanded ~ Pattern Variable
         )
     => (p -> SMT expanded)
     -- ^ evaluator function for the builtin
@@ -175,35 +174,28 @@ indexedModule =
 testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build (constructorFunctions verifiedModule)
 
-testSubstitutionSimplifier :: PredicateSimplifier Object
+testSubstitutionSimplifier :: PredicateSimplifier
 testSubstitutionSimplifier = Mock.substitutionSimplifier testMetadataTools
 
-evaluators :: BuiltinAndAxiomSimplifierMap Object
+evaluators :: BuiltinAndAxiomSimplifierMap
 evaluators = Builtin.koreEvaluators verifiedModule
 
-stepSimplifier :: TermLikeSimplifier Object
+stepSimplifier :: TermLikeSimplifier
 stepSimplifier =
-    termLikeSimplifier
-        (\_ p ->
-            return
-                ( OrPattern.fromPatterns
-                    [ Conditional
-                        { term = mkTop_
-                        , predicate = Predicate.wrapPredicate p
-                        , substitution = mempty
-                        }
-                    ]
-                , SimplificationProof
-                )
-        )
+    termLikeSimplifier $ \_ p ->
+        return $ OrPattern.fromPattern
+            Conditional
+                { term = mkTop_
+                , predicate = Predicate.wrapPredicate p
+                , substitution = mempty
+                }
 
 evaluate
     :: MonadSMT m
     => TermLike Variable
-    -> m (Pattern Object Variable)
+    -> m (Pattern Variable)
 evaluate =
-    (<$>) fst
-    . liftSMT
+    liftSMT
     . evalSimplifier emptyLogger
     . TermLike.simplify
         testMetadataTools
@@ -213,32 +205,32 @@ evaluate =
 evaluateWith
     :: MVar Solver
     -> TermLike Variable
-    -> IO (Pattern Object Variable)
+    -> IO (Pattern Variable)
 evaluateWith solver patt =
     runReaderT (SMT.getSMT $ evaluate patt) solver
 
 runStep
-    :: Pattern Object Variable
+    :: Pattern Variable
     -- ^ configuration
-    -> RewriteRule Object Variable
+    -> RewriteRule Variable
     -- ^ axiom
     -> IO
         (Either
-            (UnificationOrSubstitutionError Object Variable)
-            (MultiOr (Pattern Object Variable))
+            (UnificationOrSubstitutionError Variable)
+            (MultiOr (Pattern Variable))
         )
 runStep configuration axiom = do
     result <- runStepResult configuration axiom
     return (Step.gatherResults <$> result)
 
 runStepResult
-    :: Pattern Object Variable
+    :: Pattern Variable
     -- ^ configuration
-    -> RewriteRule Object Variable
+    -> RewriteRule Variable
     -- ^ axiom
     -> IO
         (Either
-            (UnificationOrSubstitutionError Object Variable)
+            (UnificationOrSubstitutionError Variable)
             (Step.Results Variable)
         )
 runStepResult configuration axiom =
@@ -259,14 +251,14 @@ runSMT = SMT.runSMT SMT.defaultConfig
 
 runStepWith
     :: MVar Solver
-    -> Pattern Object Variable
+    -> Pattern Variable
     -- ^ configuration
-    -> RewriteRule Object Variable
+    -> RewriteRule Variable
     -- ^ axiom
     -> IO
         (Either
-            (UnificationOrSubstitutionError Object Variable)
-            (MultiOr (Pattern Object Variable))
+            (UnificationOrSubstitutionError Variable)
+            (MultiOr (Pattern Variable))
         )
 runStepWith solver configuration axiom = do
     result <- runStepResultWith solver configuration axiom
@@ -274,13 +266,13 @@ runStepWith solver configuration axiom = do
 
 runStepResultWith
     :: MVar Solver
-    -> Pattern Object Variable
+    -> Pattern Variable
     -- ^ configuration
-    -> RewriteRule Object Variable
+    -> RewriteRule Variable
     -- ^ axiom
     -> IO
         (Either
-            (UnificationOrSubstitutionError Object Variable)
+            (UnificationOrSubstitutionError Variable)
             (Step.Results Variable)
         )
 runStepResultWith solver configuration axiom =

@@ -13,13 +13,11 @@ import           Control.Monad.Trans.Except
 import           Data.Text.Prettyprint.Doc
                  ( Doc )
 
-import           Kore.AST.MetaOrObject
-                 ( Object )
+import           Kore.Internal.TermLike
+                 ( TermLike )
 import qualified Kore.Logger as Log
 import           Kore.Step.Simplification.Data
                  ( Environment (..), Simplifier )
-import           Kore.Step.TermLike
-                 ( TermLike )
 import           Kore.Unification.Error
 import           Kore.Unparser
                  ( Unparse )
@@ -36,7 +34,7 @@ import           Kore.Unparser
 -- to display information about unification failures through 'explainFailure'.
 class (forall variable. Monad (unifier variable)) => MonadUnify unifier where
     throwSubstitutionError
-        :: SubstitutionError Object variable
+        :: SubstitutionError variable
         -> unifier variable a
 
     throwUnificationError
@@ -64,7 +62,7 @@ class (forall variable. Monad (unifier variable)) => MonadUnify unifier where
 newtype Unifier variable a = Unifier
     { getUnifier ::
             ExceptT
-                (UnificationOrSubstitutionError Object variable)
+                (UnificationOrSubstitutionError variable)
                 Simplifier
                 a
     } deriving (Applicative, Functor, Monad)
@@ -93,7 +91,7 @@ instance Log.WithLog Log.LogMessage (Unifier variable) where
 -- | Lift an 'ExceptT' to a 'MonadUnify'.
 fromExceptT
     :: MonadUnify unifier
-    => ExceptT (UnificationOrSubstitutionError Object variable) Simplifier a
+    => ExceptT (UnificationOrSubstitutionError variable) Simplifier a
     -> unifier variable a
 fromExceptT e = do
     result <- liftSimplifier $ runExceptT e
@@ -104,5 +102,5 @@ fromExceptT e = do
 
 runUnifier
     :: Unifier variable a
-    -> Simplifier (Either (UnificationOrSubstitutionError Object variable) a)
+    -> Simplifier (Either (UnificationOrSubstitutionError variable) a)
 runUnifier = runExceptT . getUnifier

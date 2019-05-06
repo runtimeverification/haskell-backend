@@ -5,9 +5,9 @@ License     : NCSA
 module Kore.AST.ApplicativeKore
     ( completeDefinition ) where
 
-import           Kore.AST.Sentence
-import           Kore.AST.Valid
-import           Kore.Step.TermLike as TermLike
+import           Kore.Internal.TermLike
+import           Kore.Internal.TermLike as TermLike
+import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 completeDefinition

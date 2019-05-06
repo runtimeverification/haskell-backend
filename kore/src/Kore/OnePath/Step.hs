@@ -26,32 +26,26 @@ import           Control.Applicative
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import           Data.Hashable
-import           Data.Semigroup
-                 ( (<>) )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
 
-import           Kore.AST.MetaOrObject
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.Conditional as Conditional
+import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.Pattern
+                 ( Pattern )
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.Pattern
-                 ( Pattern )
-import qualified Kore.Step.Pattern as Pattern
-import           Kore.Step.Proof
-                 ( StepProof )
-import qualified Kore.Step.Proof as Step.Proof
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule) )
@@ -63,7 +57,6 @@ import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Syntax.Variable
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
@@ -171,8 +164,8 @@ strategyPattern
         Stuck patt -> stuckTransformer patt
         Bottom -> bottomValue
 
--- | A 'StrategyPattern' instantiated to 'Pattern Object Variable' for convenience.
-type CommonStrategyPattern level = StrategyPattern (Pattern Object Variable)
+-- | A 'StrategyPattern' instantiated to 'Pattern Variable' for convenience.
+type CommonStrategyPattern = StrategyPattern (Pattern Variable)
 
 instance Hashable patt => Hashable (StrategyPattern patt)
 
@@ -189,7 +182,7 @@ simplify = Simplify
 removeDestination :: patt -> Prim patt rewrite
 removeDestination = RemoveDestination
 
-type Transition = TransitionT (RewriteRule Object Variable) Simplifier
+type Transition = TransitionT (RewriteRule Variable) Simplifier
 
 {- | Transition rule for primitive strategies in 'Prim'.
 
@@ -228,16 +221,15 @@ and n destinations.
  -}
 transitionRule
     :: SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
-    -> Prim (Pattern Object Variable) (RewriteRule Object Variable)
-    -> (CommonStrategyPattern  Object, StepProof Object Variable)
+    -> Prim (Pattern Variable) (RewriteRule Variable)
+    -> CommonStrategyPattern
     -- ^ Configuration being rewritten and its accompanying proof
-    -> TransitionT (RewriteRule Object Variable) Simplifier
-        (CommonStrategyPattern Object, StepProof Object Variable)
+    -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
 transitionRule
     tools
     substitutionSimplifier
@@ -255,54 +247,44 @@ transitionRule
         ApplyWithRemainders a -> transitionApplyWithRemainders a expandedPattern
         RemoveDestination d -> transitionRemoveDestination d expandedPattern
   where
-    transitionSimplify (RewritePattern config, proof) =
-        applySimplify RewritePattern (config, proof)
-    transitionSimplify (Stuck config, proof) =
-        applySimplify Stuck (config, proof)
-    transitionSimplify c@(Bottom, _) = return c
+    transitionSimplify (RewritePattern config) =
+        applySimplify RewritePattern config
+    transitionSimplify (Stuck config) =
+        applySimplify Stuck config
+    transitionSimplify c@Bottom = return c
 
-    applySimplify wrapper (config, proof) =
-        do
-            (configs, proof') <-
-                Monad.Trans.lift
-                $ Pattern.simplify
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-                    config
-            let
-                proof'' = proof <> Step.Proof.simplificationProof proof'
-                prove config' = (config', proof'')
-                -- Filter out ⊥ patterns
-                nonEmptyConfigs = MultiOr.filterOr configs
-            if null nonEmptyConfigs
-                then return (Bottom, proof'')
-                else Foldable.asum
-                    (   pure . prove
-                    <$> map wrapper (Foldable.toList nonEmptyConfigs)
-                    )
+    applySimplify wrapper config = do
+        configs <-
+            Monad.Trans.lift
+            $ Pattern.simplify
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+                config
+        let
+            -- Filter out ⊥ patterns
+            nonEmptyConfigs = MultiOr.filterOr configs
+        if null nonEmptyConfigs
+            then return Bottom
+            else Foldable.asum (pure . wrapper <$> nonEmptyConfigs)
 
     transitionApplyWithRemainders
-        :: [RewriteRule Object Variable]
-        -> (CommonStrategyPattern Object, StepProof Object Variable)
-        -> TransitionT (RewriteRule Object Variable) Simplifier
-            (CommonStrategyPattern Object, StepProof Object Variable)
-    transitionApplyWithRemainders _ c@(Bottom, _) = return c
-    transitionApplyWithRemainders _ c@(Stuck _, _) = return c
-    transitionApplyWithRemainders
-        rules
-        (RewritePattern config, proof)
-      = transitionMultiApplyWithRemainders rules (config, proof)
+        :: [RewriteRule Variable]
+        -> CommonStrategyPattern
+        -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
+    transitionApplyWithRemainders _ c@Bottom = return c
+    transitionApplyWithRemainders _ c@(Stuck _) = return c
+    transitionApplyWithRemainders rules (RewritePattern config) =
+        transitionMultiApplyWithRemainders rules config
 
     transitionMultiApplyWithRemainders
-        :: [RewriteRule Object Variable]
-        -> (Pattern Object Variable, StepProof Object Variable)
-        -> Transition
-            (CommonStrategyPattern Object, StepProof Object Variable)
-    transitionMultiApplyWithRemainders _ (config, _)
-        | Pattern.isBottom config = empty
-    transitionMultiApplyWithRemainders rules (config, proof) = do
+        :: [RewriteRule Variable]
+        -> Pattern Variable
+        -> Transition CommonStrategyPattern
+    transitionMultiApplyWithRemainders rules config
+      | Pattern.isBottom config = empty
+      | otherwise = do
         result <-
             Monad.Trans.lift
             $ Monad.Unify.runUnifier
@@ -326,33 +308,25 @@ transitionRule
                 ]
             Right results -> do
                 let
-                    withProof :: forall x. x -> (x, StepProof Object Variable)
-                    withProof x = (x, proof)
                     mapRules =
                         Result.mapRules
                         $ RewriteRule
                         . Step.unwrapRule
                         . Step.withoutUnification
-                    mapConfigs =
-                        Result.mapConfigs
-                            (withProof . RewritePattern)
-                            (withProof . Stuck)
+                    mapConfigs = Result.mapConfigs RewritePattern Stuck
                 Result.transitionResults (mapConfigs $ mapRules results)
 
     transitionRemoveDestination
-        :: Pattern Object Variable
-        ->  ( CommonStrategyPattern Object
-            , StepProof Object Variable
-            )
-        -> TransitionT (RewriteRule Object Variable) Simplifier
-            (CommonStrategyPattern Object, StepProof Object Variable)
-    transitionRemoveDestination _ (Bottom, _) = empty
-    transitionRemoveDestination _ (Stuck _, _) = empty
-    transitionRemoveDestination destination (RewritePattern patt, proof1) = do
+        :: Pattern Variable
+        -> CommonStrategyPattern
+        -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
+    transitionRemoveDestination _ Bottom = empty
+    transitionRemoveDestination _ (Stuck _) = empty
+    transitionRemoveDestination destination (RewritePattern patt) = do
         let
             removal = removalPredicate destination patt
             result = patt `Conditional.andPredicate` removal
-        (orResult, proof) <-
+        orResult <-
             Monad.Trans.lift
             $ Pattern.simplify
                 tools
@@ -360,19 +334,10 @@ transitionRule
                 simplifier
                 axiomIdToSimplifier
                 result
-        let
-            finalProof = proof1 <> Step.Proof.simplificationProof proof
-            patternsWithProofs =
-                map
-                    (\p ->
-                        ( RewritePattern p
-                        , finalProof
-                        )
-                    )
-                    (MultiOr.extractPatterns orResult)
-        if null patternsWithProofs
-            then return (Bottom, finalProof)
-            else Foldable.asum (pure <$> patternsWithProofs)
+        let nonEmpty = MultiOr.filterOr orResult
+        if null nonEmpty
+            then return Bottom
+            else Foldable.asum (pure . RewritePattern <$> nonEmpty)
 
 {- | The predicate to remove the destination from the present configuration.
  -}
@@ -382,9 +347,9 @@ removalPredicate
         , Unparse variable
         , SortedVariable variable
         )
-    => Pattern Object variable
+    => Pattern variable
     -- ^ Destination
-    -> Pattern Object variable
+    -> Pattern variable
     -- ^ Current configuration
     -> Predicate variable
 removalPredicate destination config =

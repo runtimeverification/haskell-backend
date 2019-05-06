@@ -14,21 +14,20 @@ import           Control.Applicative
 import qualified Data.Foldable as Foldable
 import qualified Data.Set as Set
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
+import           Kore.Internal.Conditional
+                 ( Conditional (Conditional) )
+import           Kore.Internal.MultiAnd
+                 ( MultiAnd )
+import qualified Kore.Internal.MultiAnd as MultiAnd
+import           Kore.Internal.MultiOr
+                 ( MultiOr )
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Predicate
+                 ( Predicate )
+import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Step.Conditional
-                 ( Conditional (Conditional) )
-import qualified Kore.Step.Pattern as Pattern
-import           Kore.Step.Predicate
-                 ( Predicate )
-import           Kore.Step.Representation.MultiAnd
-                 ( MultiAnd )
-import qualified Kore.Step.Representation.MultiAnd as MultiAnd
-import           Kore.Step.Representation.MultiOr
-                 ( MultiOr )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -49,7 +48,7 @@ remainder
         , Unparse variable
         , SortedVariable variable
         )
-    => MultiOr (Predicate Object (Target variable))
+    => MultiOr (Predicate (Target variable))
     -> Syntax.Predicate variable
 remainder results =
     mkMultiAndPredicate $ mkNotExists conditions
@@ -113,7 +112,7 @@ unificationConditions
         , Unparse variable
         , SortedVariable variable
         )
-    => Predicate Object (Target variable)
+    => Predicate (Target variable)
     -- ^ Unification solution
     -> MultiAnd (Syntax.Predicate (Target variable))
 unificationConditions Conditional { predicate, substitution } =

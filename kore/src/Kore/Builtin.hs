@@ -38,11 +38,10 @@ import           Data.Semigroup
 import           Data.Text
                  ( Text )
 
-import qualified Kore.Annotation.Null as Annotation
-import           Kore.AST.Pure
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Hook
                  ( Hook (..) )
+import qualified Kore.Attribute.Null as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Attribute.Symbol as Attribute
@@ -61,11 +60,13 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import           Kore.Step.TermLike
+import           Kore.Syntax.DomainValue
+import           Kore.Syntax.Pattern
 
 {- | The default type of builtin domain values.
  -}
@@ -114,7 +115,7 @@ koreVerifiers =
 koreEvaluators
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ Module under which evaluation takes place
-    -> Map (AxiomIdentifier Object) Builtin.Function
+    -> Map (AxiomIdentifier) Builtin.Function
 koreEvaluators = evaluators builtins
   where
     builtins :: Map Text Builtin.Function
@@ -143,7 +144,7 @@ evaluators
     -- ^ Builtin functions indexed by name
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ Module under which evaluation takes place
-    -> Map (AxiomIdentifier Object) Builtin.Function
+    -> Map (AxiomIdentifier) Builtin.Function
 evaluators builtins indexedModule =
     Map.mapMaybe
         lookupBuiltins
@@ -196,7 +197,7 @@ externalizePattern =
         ->  Base (TermLike variable) (TermLike variable)
     externalizePatternWorker (Recursive.project -> original@(_ :< pat)) =
         case pat of
-            DomainValuePattern domain ->
+            DomainValueF domain ->
                 case domain of
                     Domain.BuiltinExternal _ -> original
                     Domain.BuiltinMap  builtin ->
@@ -220,7 +221,7 @@ WARNING: This is not implemented for internal domain values. Use
 asMetaPattern
     :: Functor domain
     => Domain.Builtin child
-    -> PurePattern Meta domain Variable (Annotation.Null Meta)
+    -> Pattern domain Variable Attribute.Null
 asMetaPattern =
     \case
         Domain.BuiltinExternal ext ->

@@ -12,13 +12,11 @@ import           Data.Maybe
                  ( mapMaybe )
 import qualified Data.Text as Text
 
-import           Kore.AST.Pure
-import           Kore.AST.Sentence
-import           Kore.AST.Valid
-                 ( mkTop )
 import           Kore.Error
 import           Kore.IndexedModule.Error
                  ( noSort )
+import           Kore.Internal.TermLike
+import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 import Test.Kore
@@ -251,7 +249,7 @@ testsForObjectSort
     -> FailureConfiguration
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> TestedSort Object
+    -> TestedSort
     -> NamePrefix
     -> TestTree
 testsForObjectSort
@@ -324,8 +322,8 @@ addSentenceToTestConfiguration
 successTestsForMetaSort
     :: CommonDescription
     -> SuccessConfiguration
-    -> TestedSort Meta
-    -> SortActualThatIsDeclared Meta
+    -> TestedSort
+    -> SortActualThatIsDeclared
     -> NamePrefix
     -> TestTree
 successTestsForMetaSort
@@ -354,8 +352,8 @@ failureTestsForMetaSort
     -> FailureConfiguration
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> TestedSort Meta
-    -> SortActualThatIsDeclared Meta
+    -> TestedSort
+    -> SortActualThatIsDeclared
     -> NamePrefix
     -> TestTree
 failureTestsForMetaSort
@@ -420,8 +418,8 @@ expectFailureWithErrorFlaggedTests FailureConfigurationSkipAll _ _ _ =
 
 flaggedObjectTestsForSort
     :: TestConfiguration
-    -> TestedSort Object
-    -> SortActualThatIsDeclared Object
+    -> TestedSort
+    -> SortActualThatIsDeclared
     -> NamePrefix
     -> [FlaggedTestData]
 flaggedObjectTestsForSort
@@ -448,8 +446,8 @@ flaggedObjectTestsForSort
 
 flaggedMetaTestsForSort
     :: TestConfiguration
-    -> TestedSort Meta
-    -> SortActualThatIsDeclared Meta
+    -> TestedSort
+    -> SortActualThatIsDeclared
     -> NamePrefix
     -> [FlaggedTestData]
 flaggedMetaTestsForSort
@@ -496,13 +494,13 @@ applyOneTestConfiguration testConfiguration flaggedTestData =
             (`elem` flaggedTestDataFlags flaggedTestData)
             (fst configurationWithFlags)
 
-newtype TestedSort level = TestedSort Sort
-newtype SortActualThatIsDeclared level =
+newtype TestedSort = TestedSort Sort
+newtype SortActualThatIsDeclared =
     SortActualThatIsDeclared SortActual
 
 unfilteredTestExamplesForSort
-    :: TestedSort level
-    -> SortActualThatIsDeclared level
+    :: TestedSort
+    -> SortActualThatIsDeclared
     -> [SortVariable]
     -> NamePrefix
     -> (Verified.SentenceAlias -> Verified.Sentence)
@@ -695,8 +693,8 @@ unfilteredTestExamplesForSort
     defaultErrorMessage = "Replace this with a real error message."
 
 unfilteredTestExamplesForObjectSort
-    :: TestedSort Object
-    -> SortActualThatIsDeclared Object
+    :: TestedSort
+    -> SortActualThatIsDeclared
     -> [SortVariable]
     -> NamePrefix
     -> [FlaggedTestData]

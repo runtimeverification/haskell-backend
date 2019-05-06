@@ -3,19 +3,19 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
 -}
-module Kore.Step.Predicate
+module Kore.Internal.Predicate
     ( Predicate
     , eraseConditionalTerm
     , top
     , bottom
     , topPredicate
     , bottomPredicate
-    , fromPurePattern
+    , fromPattern
     , Conditional.fromPredicate
     , Conditional.fromSubstitution
     , toPredicate
     , freeVariables
-    , Kore.Step.Predicate.mapVariables
+    , Kore.Internal.Predicate.mapVariables
     -- * Re-exports
     , Conditional (..)
     ) where
@@ -24,25 +24,25 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
-import           Kore.AST.Pure
+import           Kore.Internal.Conditional
+                 ( Conditional (..) )
+import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Step.Conditional
-                 ( Conditional (..) )
-import qualified Kore.Step.Conditional as Conditional
+import           Kore.Syntax
 import           Kore.Unparser
 
 -- | A predicate and substitution without an accompanying term.
-type Predicate level variable = Conditional level variable ()
+type Predicate variable = Conditional variable ()
 
 -- | Erase the @Conditional@ 'term' to yield a 'Predicate'.
 eraseConditionalTerm
-    :: Conditional Object variable child
-    -> Predicate Object variable
+    :: Conditional variable child
+    -> Predicate variable
 eraseConditionalTerm = Conditional.withoutTerm
 
-top :: Ord variable => Predicate Object variable
+top :: Ord variable => Predicate variable
 top =
     Conditional
         { term = ()
@@ -50,7 +50,7 @@ top =
         , substitution = mempty
         }
 
-bottom :: Ord variable => Predicate Object variable
+bottom :: Ord variable => Predicate variable
 bottom =
     Conditional
         { term = ()
@@ -58,12 +58,12 @@ bottom =
         , substitution = mempty
         }
 
-topPredicate :: Ord variable => Predicate Object variable
+topPredicate :: Ord variable => Predicate variable
 topPredicate = top
 
 bottomPredicate
     :: Ord variable
-    => Predicate Object variable
+    => Predicate variable
 bottomPredicate = bottom
 
 {- | Extract the set of free variables from a predicate and substitution.
@@ -77,7 +77,7 @@ freeVariables
        , Unparse variable
        , SortedVariable variable
        )
-    => Predicate Object variable
+    => Predicate variable
     -> Set variable
 freeVariables = Conditional.freeVariables (const Set.empty)
 
@@ -95,13 +95,13 @@ toPredicate
        , Show variable
        , Unparse variable
        )
-    => Predicate Object variable
+    => Predicate variable
     -> Syntax.Predicate variable
 toPredicate = Conditional.toPredicate
 
 mapVariables
     :: Ord variable2
     => (variable1 -> variable2)
-    -> Predicate Object variable1
-    -> Predicate Object variable2
+    -> Predicate variable1
+    -> Predicate variable2
 mapVariables = Conditional.mapVariables (\_ () -> ())

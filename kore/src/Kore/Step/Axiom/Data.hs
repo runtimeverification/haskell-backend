@@ -30,30 +30,27 @@ import qualified Data.Map.Strict as Map
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Common
-                 ( Pattern (..) )
-import           Kore.AST.MetaOrObject
-import           Kore.AST.Pure
-                 ( fromPurePattern )
-import           Kore.AST.Valid
-                 ( Valid )
+import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.MultiOr as MultiOr
+                 ( merge )
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.TermLike
+                 ( TermLike )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( merge )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier )
-import           Kore.Step.TermLike
-                 ( TermLike )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Syntax.Application
+import           Kore.Syntax.Pattern
+                 ( fromPattern )
+import           Kore.Syntax.PatternF
+                 ( PatternF (..) )
 import           Kore.Syntax.Variable
                  ( SortedVariable, Variable (..) )
 import           Kore.Unparser
@@ -83,53 +80,45 @@ It returns the result of simplifying the pattern with builtins and
 axioms, together with a proof certifying that it was simplified correctly
 (which is only a placeholder right now).
 -}
-newtype BuiltinAndAxiomSimplifier level =
+newtype BuiltinAndAxiomSimplifier =
     BuiltinAndAxiomSimplifier
         (forall variable
         .   ( FreshVariable variable
-            , Ord variable
             , SortedVariable variable
-            , Show variable
             , Show variable
             , Unparse variable
             )
         => SmtMetadataTools StepperAttributes
-        -> PredicateSimplifier level
-        -> TermLikeSimplifier level
-        -> BuiltinAndAxiomSimplifierMap level
+        -> PredicateSimplifier
+        -> TermLikeSimplifier
+        -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
-        -> Simplifier
-            ( AttemptedAxiom level variable
-            , SimplificationProof level
-            )
+        -> Simplifier (AttemptedAxiom variable)
         )
 
 {-|A type to abstract away the mapping from symbol identifiers to
 their corresponding evaluators.
 -}
-type BuiltinAndAxiomSimplifierMap level =
-    Map.Map (AxiomIdentifier level) (BuiltinAndAxiomSimplifier level)
+type BuiltinAndAxiomSimplifierMap =
+    Map.Map AxiomIdentifier BuiltinAndAxiomSimplifier
 
 {-| A type holding the result of applying an axiom to a pattern.
 -}
-data AttemptedAxiomResults level variable =
+data AttemptedAxiomResults variable =
     AttemptedAxiomResults
-        { results :: !(OrPattern level variable)
+        { results :: !(OrPattern variable)
         -- ^ The result of applying the axiom
-        , remainders :: !(OrPattern level variable)
+        , remainders :: !(OrPattern variable)
         -- ^ The part of the pattern that was not rewritten by the axiom.
         }
     deriving Generic
 
-deriving instance Eq variable => Eq (AttemptedAxiomResults level variable)
-deriving instance Show variable => Show (AttemptedAxiomResults level variable)
+deriving instance Eq variable => Eq (AttemptedAxiomResults variable)
+deriving instance Show variable => Show (AttemptedAxiomResults variable)
 
-instance (NFData variable)
-    => NFData (AttemptedAxiomResults level variable)
+instance (NFData variable) => NFData (AttemptedAxiomResults variable)
 
-instance Ord variable
-    => Semigroup (AttemptedAxiomResults level variable)
-  where
+instance Ord variable => Semigroup (AttemptedAxiomResults variable) where
     (<>)
         AttemptedAxiomResults
             { results = firstResults
@@ -146,9 +135,7 @@ instance Ord variable
                     MultiOr.merge firstRemainders secondRemainders
             }
 
-instance
-    Ord variable => Monoid (AttemptedAxiomResults Object variable)
-  where
+instance Ord variable => Monoid (AttemptedAxiomResults variable) where
     mempty =
         AttemptedAxiomResults
             { results = OrPattern.bottom
@@ -158,28 +145,27 @@ instance
 {-| 'AttemptedAxiom' holds the result of axiom-based simplification, with
 a case for axioms that can't be applied.
 -}
-data AttemptedAxiom level variable
+data AttemptedAxiom variable
     = NotApplicable
-    | Applied !(AttemptedAxiomResults level variable)
+    | Applied !(AttemptedAxiomResults variable)
     deriving Generic
 
-deriving instance Eq variable => Eq (AttemptedAxiom level variable)
-deriving instance Show variable => Show (AttemptedAxiom level variable)
+deriving instance Eq variable => Eq (AttemptedAxiom variable)
+deriving instance Show variable => Show (AttemptedAxiom variable)
 
-instance (NFData variable)
-    => NFData (AttemptedAxiom level variable)
+instance (NFData variable) => NFData (AttemptedAxiom variable)
 
 {-| 'CommonAttemptedAxiom' particularizes 'AttemptedAxiom' to 'Variable',
 following the same pattern as the other `Common*` types.
 -}
-type CommonAttemptedAxiom level = AttemptedAxiom level Variable
+type CommonAttemptedAxiom = AttemptedAxiom Variable
 
 {- | Does the 'AttemptedAxiom' have remainders?
 
 A 'NotApplicable' result is not considered to have remainders.
 
  -}
-hasRemainders :: AttemptedAxiom level variable -> Bool
+hasRemainders :: AttemptedAxiom variable -> Bool
 hasRemainders (Applied axiomResults) = (not . null) (remainders axiomResults)
 hasRemainders NotApplicable = False
 
@@ -187,30 +173,29 @@ hasRemainders NotApplicable = False
  -}
 exceptNotApplicable
     :: Functor m
-    => ExceptT e m (AttemptedAxiom Object variable, SimplificationProof Object)
-    ->           m (AttemptedAxiom Object variable, SimplificationProof Object)
+    => ExceptT e m (AttemptedAxiom variable)
+    ->           m (AttemptedAxiom variable)
 exceptNotApplicable =
     fmap (either (const notApplicable) id) . runExceptT
   where
-    notApplicable = (NotApplicable, SimplificationProof)
+    notApplicable = NotApplicable
 
 -- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
-notApplicableAxiomEvaluator
-    :: Simplifier (AttemptedAxiom Object variable, SimplificationProof Object)
-notApplicableAxiomEvaluator = pure (NotApplicable, SimplificationProof)
+notApplicableAxiomEvaluator :: Simplifier (AttemptedAxiom variable)
+notApplicableAxiomEvaluator = pure NotApplicable
 
 -- |Yields a pure 'Simplifier' which produces a given 'TermLike'
 purePatternAxiomEvaluator
     :: Ord variable
     => TermLike variable
-    -> Simplifier (AttemptedAxiom Object variable, SimplificationProof Object)
+    -> Simplifier (AttemptedAxiom variable)
 purePatternAxiomEvaluator p =
     pure
         ( Applied AttemptedAxiomResults
             { results = OrPattern.fromTermLike p
             , remainders = OrPattern.fromPatterns []
             }
-        , SimplificationProof
+
         )
 
 {-| Creates an 'BuiltinAndAxiomSimplifier' from a similar function that takes an
@@ -226,19 +211,16 @@ applicationAxiomSimplifier
             , Unparse variable
             )
         => SmtMetadataTools StepperAttributes
-        -> PredicateSimplifier Object
-        -> TermLikeSimplifier Object
-        -> BuiltinAndAxiomSimplifierMap Object
+        -> PredicateSimplifier
+        -> TermLikeSimplifier
+        -> BuiltinAndAxiomSimplifierMap
         -> CofreeF
             (Application SymbolOrAlias)
-            (Valid variable Object)
+            (Attribute.Pattern variable)
             (TermLike variable)
-        -> Simplifier
-            ( AttemptedAxiom Object variable
-            , SimplificationProof Object
-            )
+        -> Simplifier (AttemptedAxiom variable)
         )
-    -> BuiltinAndAxiomSimplifier Object
+    -> BuiltinAndAxiomSimplifier
 applicationAxiomSimplifier applicationSimplifier =
     BuiltinAndAxiomSimplifier helper
   where
@@ -252,14 +234,11 @@ applicationAxiomSimplifier applicationSimplifier =
                 , Unparse variable
                 )
             => SmtMetadataTools StepperAttributes
-            -> PredicateSimplifier Object
-            -> TermLikeSimplifier Object
-            -> BuiltinAndAxiomSimplifierMap Object
+            -> PredicateSimplifier
+            -> TermLikeSimplifier
+            -> BuiltinAndAxiomSimplifierMap
             -> TermLike variable
-            -> Simplifier
-                ( AttemptedAxiom Object variable
-                , SimplificationProof Object
-                )
+            -> Simplifier (AttemptedAxiom variable)
         )
     helper
         tools
@@ -268,8 +247,8 @@ applicationAxiomSimplifier applicationSimplifier =
         axiomIdToSimplifier
         patt
       =
-        case fromPurePattern patt of
-            (valid :< ApplicationPattern p) ->
+        case fromPattern patt of
+            (valid :< ApplicationF p) ->
                 applicationSimplifier
                     tools
                     substitutionSimplifier

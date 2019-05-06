@@ -55,14 +55,14 @@ If any of the variables to rename occurs in the set of avoided variables, it
 will be mapped to a fresh name in the result. Every fresh name in the result
 will also be unique among the fresh names.
 
-To use @refreshVariables@ with 'Kore.Step.Pattern.substitute', map the result
-with 'Kore.AST.Valid.mkVar':
+To use @refreshVariables@ with 'Kore.Internal.Pattern.substitute', map the result
+with 'Kore.Internal.TermLike.mkVar':
 
 @
-'Kore.Step.Pattern.substitute'
-    ('Kore.AST.Valid.mkVar' \<$\> refreshVariables avoid rename)
-    :: 'Kore.Step.Pattern.StepPattern' Object Variable
-    -> 'Kore.Step.Pattern.StepPattern' Object Variable
+'Kore.Internal.TermLike.substitute'
+    ('Kore.Internal.TermLike.mkVar' \<$\> refreshVariables avoid rename)
+    :: 'Kore.Internal.TermLike TermLike' Variable
+    -> 'Kore.Internal.TermLike TermLike' Variable
 @
 
  -}

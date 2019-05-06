@@ -15,20 +15,20 @@ module Kore.Step.Simplification.Not
 
 import qualified Data.Foldable as Foldable
 
-import           Kore.AST.Valid hiding
-                 ( mkAnd )
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike hiding
+                 ( mkAnd )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeNotPredicate, makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Simplification.And as And
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
@@ -55,11 +55,11 @@ simplify
         , Unparse variable
         )
     => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
-    -> Not Sort (OrPattern Object variable)
-    -> Simplifier (OrPattern Object variable)
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
+    -> Not Sort (OrPattern variable)
+    -> Simplifier (OrPattern variable)
 simplify
     tools
     predicateSimplifier
@@ -84,10 +84,10 @@ See 'simplify' for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Not Sort) (Valid Object) (OrPattern Object variable)
+> CofreeF (Not Sort) (Attribute.Pattern variable) (OrPattern variable)
 
 instead of an 'OrPattern' argument. The type of 'makeEvaluate' may
-be changed analogously. The 'Valid' annotation will eventually cache information
+be changed analogously. The 'Attribute.Pattern' annotation will eventually cache information
 besides the pattern sort, which will make it even more useful to carry around.
 
 -}
@@ -99,11 +99,11 @@ simplifyEvaluated
         , Unparse variable
         )
     => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
-    -> OrPattern Object variable
-    -> Simplifier (OrPattern Object variable)
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
+    -> OrPattern variable
+    -> Simplifier (OrPattern variable)
 simplifyEvaluated
     tools
     predicateSimplifier
@@ -134,8 +134,8 @@ makeEvaluate
         , Show variable
         , Unparse variable
         )
-    => Pattern Object variable
-    -> OrPattern Object variable
+    => Pattern variable
+    -> OrPattern variable
 makeEvaluate Conditional { term, predicate, substitution } =
     OrPattern.fromPatterns
         [ Conditional
@@ -144,7 +144,7 @@ makeEvaluate Conditional { term, predicate, substitution } =
             , substitution = mempty
             }
         , Conditional
-            { term = mkTop (getSort term)
+            { term = mkTop (termLikeSort term)
             , predicate =
                 makeNotPredicate
                 $ makeAndPredicate predicate
@@ -165,6 +165,6 @@ makeTermNot
 -- not ceil = floor not
 -- not forall = exists not
 makeTermNot term
-  | isBottom term = mkTop    (getSort term)
-  | isTop term    = mkBottom (getSort term)
+  | isBottom term = mkTop    (termLikeSort term)
+  | isTop term    = mkBottom (termLikeSort term)
   | otherwise = mkNot term

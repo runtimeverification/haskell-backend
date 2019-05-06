@@ -11,20 +11,15 @@ module Kore.Step.Simplification.DomainValue
     ( simplify
     ) where
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
-import           Kore.Step.Conditional
+import           Kore.Internal.Conditional
                  ( Conditional )
-import           Kore.Step.OrPattern
+import           Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.OrPattern
                  ( OrPattern )
-import           Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
-import           Kore.Step.TermLike
-                 ( TermLike )
+import           Kore.Internal.TermLike
 import           Kore.Unparser
 
 {-| 'simplify' simplifies a 'DomainValue' pattern, which means returning
@@ -37,16 +32,12 @@ simplify
        , SortedVariable variable
        )
     => SmtMetadataTools attrs
-    -> Domain.Builtin (OrPattern Object variable)
-    -> (OrPattern Object variable, SimplificationProof Object)
+    -> Domain.Builtin (OrPattern variable)
+    -> OrPattern variable
 simplify _ builtin =
-    ( MultiOr.filterOr
-        (do
-            child <- simplifyBuiltin builtin
-            return (mkDomainValue <$> child)
-        )
-    , SimplificationProof
-    )
+    MultiOr.filterOr $ do
+        child <- simplifyBuiltin builtin
+        return (mkDomainValue <$> child)
 
 simplifyBuiltin
     :: ( Ord variable
@@ -54,9 +45,8 @@ simplifyBuiltin
        , Unparse variable
        , SortedVariable variable
        )
-    => Domain.Builtin (OrPattern Object variable)
-    -> MultiOr
-        (Conditional Object variable (Domain.Builtin (TermLike variable)))
+    => Domain.Builtin (OrPattern variable)
+    -> MultiOr (Conditional variable (Domain.Builtin (TermLike variable)))
 simplifyBuiltin =
     \case
         Domain.BuiltinExternal _ext -> do

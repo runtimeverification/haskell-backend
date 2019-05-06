@@ -2,45 +2,35 @@ module Test.Kore.Step.MockSimplifiers where
 
 import qualified Data.Map as Map
 
-import           Kore.AST.MetaOrObject
-                 ( Object )
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern
+                 ( Conditional (Conditional) )
+import qualified Kore.Internal.Pattern as Pattern
+                 ( Conditional (..) )
+import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Predicate
                  ( wrapPredicate )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
-                 ( Conditional (Conditional) )
-import qualified Kore.Step.Pattern as Pattern
-                 ( Conditional (..) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier (..),
-                 SimplificationProof (SimplificationProof),
-                 termLikeSimplifier )
+                 ( PredicateSimplifier (..), termLikeSimplifier )
 import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
 
 substitutionSimplifier
     :: SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
+    -> PredicateSimplifier
 substitutionSimplifier tools =
     Predicate.create
         tools
-        (termLikeSimplifier
-            (\_ p ->
-                return
-                    ( OrPattern.fromPatterns
-                        [ Conditional
-                            { term = mkTop_
-                            , predicate = Predicate.wrapPredicate p
-                            , substitution = mempty
-                            }
-                        ]
-                    , SimplificationProof
-                    )
-            )
+        (termLikeSimplifier $ \_ p ->
+            return $ OrPattern.fromPattern
+                Conditional
+                    { term = mkTop_
+                    , predicate = Predicate.wrapPredicate p
+                    , substitution = mempty
+                    }
         )
         Map.empty

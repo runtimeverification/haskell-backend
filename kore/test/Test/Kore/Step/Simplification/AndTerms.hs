@@ -12,22 +12,22 @@ import           Control.Error
 import qualified Control.Error as Error
 import qualified Data.Map as Map
 
-import qualified Kore.AST.Pure as AST
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeFalsePredicate, makeTruePredicate )
-import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.AndTerms
                  ( termAnd, termUnification )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import qualified Kore.Syntax.Pattern as AST
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
 import qualified SMT
@@ -793,24 +793,22 @@ simplifyUnify
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Pattern Object Variable, Maybe (Pattern Object Variable))
+    -> IO (Pattern Variable, Maybe (Pattern Variable))
 simplifyUnify tools first second =
     (,)
         <$> simplify tools first second
         <*> unify tools first second
 
-
 unify
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (Pattern Object Variable))
+    -> IO (Maybe (Pattern Variable))
 unify tools first second =
     SMT.runSMT SMT.defaultConfig
-        $ evalSimplifier emptyLogger
-        $ runMaybeT
-        $ (<$>) fst
-        $ unification
+    $ evalSimplifier emptyLogger
+    $ runMaybeT
+    $ unification
   where
     substitutionSimplifier = Mock.substitutionSimplifier tools
     unification =
@@ -829,10 +827,9 @@ simplify
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Pattern Object Variable)
+    -> IO (Pattern Variable)
 simplify tools first second =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ termAnd
         tools

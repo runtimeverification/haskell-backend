@@ -17,7 +17,6 @@ import qualified Data.Set as Set
 import           Prelude hiding
                  ( concatMap )
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
 import           Kore.Attribute.Symbol
@@ -26,14 +25,14 @@ import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.Map as Map
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
-import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Pattern
-import qualified Kore.Step.Pattern as Pattern
-import           Kore.Step.Representation.MultiOr
+import           Kore.Internal.MultiOr
                  ( MultiOr (..) )
+import           Kore.Internal.Pattern
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
+import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
-import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore
@@ -493,7 +492,7 @@ asTermLike =
     . Map.toAscList
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
-asPattern :: Map.Builtin Variable -> Pattern Object Variable
+asPattern :: Map.Builtin Variable -> Pattern Variable
 asPattern =
     Reflection.give testMetadataTools Map.asPattern mapSort
 
@@ -509,5 +508,5 @@ mkIntVar :: Id -> TermLike Variable
 mkIntVar variableName =
     mkVar Variable { variableName, variableCounter = mempty, variableSort = intSort }
 
-mockSubstitutionSimplifier :: PredicateSimplifier level
+mockSubstitutionSimplifier :: PredicateSimplifier
 mockSubstitutionSimplifier = PredicateSimplifier return

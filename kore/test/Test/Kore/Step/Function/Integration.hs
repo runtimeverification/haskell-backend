@@ -9,10 +9,12 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 
 import           Data.Sup
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
@@ -28,24 +30,19 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..), rulePattern )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier (..), SimplificationProof (..),
-                 Simplifier, TermLikeSimplifier, evalSimplifier )
+                 ( PredicateSimplifier (..), Simplifier, TermLikeSimplifier,
+                 evalSimplifier )
 import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import qualified Kore.Step.Simplification.TermLike as TermLike
                  ( simplify )
-import           Kore.Step.TermLike
-import           Kore.Syntax.Variable
-                 ( SortedVariable (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
 import qualified SMT
@@ -586,7 +583,7 @@ test_functionIntegration =
 axiomEvaluator
     :: TermLike Variable
     -> TermLike Variable
-    -> BuiltinAndAxiomSimplifier Object
+    -> BuiltinAndAxiomSimplifier
 axiomEvaluator left right =
     BuiltinAndAxiomSimplifier
         (equalityRuleEvaluator (axiom left right makeTruePredicate))
@@ -595,12 +592,12 @@ axiom
     :: TermLike Variable
     -> TermLike Variable
     -> Syntax.Predicate Variable
-    -> EqualityRule Object Variable
+    -> EqualityRule Variable
 axiom left right predicate =
     EqualityRule (RulePattern.rulePattern left right) { requires = predicate }
 
 appliedMockEvaluator
-    :: Pattern Object Variable -> BuiltinAndAxiomSimplifier Object
+    :: Pattern Variable -> BuiltinAndAxiomSimplifier
 appliedMockEvaluator result =
     BuiltinAndAxiomSimplifier
     $ mockEvaluator
@@ -614,41 +611,38 @@ mapVariables
     ::  ( FreshVariable variable
         , SortedVariable variable
         )
-    => Pattern Object Variable
-    -> Pattern Object variable
+    => Pattern Variable
+    -> Pattern variable
 mapVariables =
     Pattern.mapVariables $ \v ->
         fromVariable v { variableCounter = Just (Element 1) }
 
 mockEvaluator
-    :: AttemptedAxiom Object variable
+    :: AttemptedAxiom variable
     -> SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
-    -> Simplifier
-        (AttemptedAxiom Object variable, SimplificationProof Object)
-mockEvaluator evaluation _ _ _ _ _ =
-    return (evaluation, SimplificationProof)
+    -> Simplifier (AttemptedAxiom variable)
+mockEvaluator evaluation _ _ _ _ _ = return evaluation
 
 evaluate
     :: SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -> TermLike Variable
-    -> IO (Pattern Object Variable)
+    -> IO (Pattern Variable)
 evaluate metadataTools functionIdToEvaluator patt =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ TermLike.simplify
         metadataTools substitutionSimplifier functionIdToEvaluator patt
   where
-    substitutionSimplifier :: PredicateSimplifier Object
+    substitutionSimplifier :: PredicateSimplifier
     substitutionSimplifier =
         Predicate.create
             metadataTools patternSimplifier functionIdToEvaluator
-    patternSimplifier :: TermLikeSimplifier Object
+    patternSimplifier :: TermLikeSimplifier
     patternSimplifier = Simplifier.create metadataTools functionIdToEvaluator
 
 mockMetadataTools :: SmtMetadataTools StepperAttributes

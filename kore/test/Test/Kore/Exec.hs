@@ -23,8 +23,6 @@ import           Data.Text
 import           System.Exit
                  ( ExitCode (..) )
 
-import           Kore.AST.Sentence
-import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  verifyAndIndexDefinition )
@@ -38,19 +36,19 @@ import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
-import           Kore.Sort
 import           Kore.Step
                  ( allRewrites, anyRewrite )
-import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Rule
 import           Kore.Step.Search
                  ( SearchType (..) )
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
-import           Kore.Step.TermLike
+import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 import qualified SMT
 
@@ -164,7 +162,7 @@ searchVar =
 --  \and{MySort{}}(
 --      V:MySort{},
 --      \top{MySort{}}())
-searchPattern :: Pattern Object Variable
+searchPattern :: Pattern Variable
 searchPattern = Conditional
     { term = searchVar
     , predicate = makeTruePredicate

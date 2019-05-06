@@ -9,17 +9,17 @@ import Test.Tasty.HUnit
 import qualified Data.Function as Function
 import qualified Data.Map.Strict as Map
 
-import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeIffPredicate, makeTruePredicate )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Iff as Iff
@@ -174,7 +174,7 @@ testEvaluateBoolean a b =
       | otherwise = Pattern.bottom
     r = a == b
 
-termA :: Pattern Object Variable
+termA :: Pattern Variable
 termA =
     Conditional
         { term = Mock.a
@@ -182,14 +182,14 @@ termA =
         , substitution = mempty
         }
 
-termNotA :: Pattern Object Variable
+termNotA :: Pattern Variable
 termNotA = mkNot <$> termA
 
 makeIff
     :: (Ord variable)
-    => [Pattern Object variable]
-    -> [Pattern Object variable]
-    -> Iff Sort (OrPattern Object variable)
+    => [Pattern variable]
+    -> [Pattern variable]
+    -> Iff Sort (OrPattern variable)
 makeIff first second =
     Iff
         { iffSort   = Mock.testSort
@@ -198,11 +198,10 @@ makeIff first second =
         }
 
 simplify
-    :: Iff Sort (OrPattern Object Variable)
-    -> IO (OrPattern Object Variable)
+    :: Iff Sort (OrPattern Variable)
+    -> IO (OrPattern Variable)
 simplify iff0 =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ Iff.simplify
         mockMetadataTools
@@ -212,9 +211,9 @@ simplify iff0 =
         iff0
 
 makeEvaluate
-    :: Pattern Object Variable
-    -> Pattern Object Variable
-    -> OrPattern Object Variable
+    :: Pattern Variable
+    -> Pattern Variable
+    -> OrPattern Variable
 makeEvaluate = Iff.makeEvaluate
 
 mockMetadataTools :: SmtMetadataTools Attribute.Symbol

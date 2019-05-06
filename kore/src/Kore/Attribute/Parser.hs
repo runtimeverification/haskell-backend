@@ -43,12 +43,12 @@ module Kore.Attribute.Parser
     , asAttributePattern
     , attributePattern
     , attributePattern_
+    , attributeString
     , Default (..)
     , StringLiteral (StringLiteral)
     , Generic
     , NFData
     , module Kore.AST.Common
-    , module Kore.AST.MetaOrObject
     , module Kore.Sort
     , module Kore.Syntax.Application
     ) where
@@ -73,10 +73,9 @@ import           GHC.Generics
 
 import           Kore.AST.Common
 import qualified Kore.AST.Error as Kore.Error
-import           Kore.AST.MetaOrObject
-import           Kore.AST.Pure hiding
-                 ( getStringLiteral )
 import           Kore.Attribute.Attributes
+import qualified Kore.Attribute.Null as Attribute
+                 ( Null )
 import qualified Kore.Attribute.Smtlib.Smthook as Attribute
 import qualified Kore.Attribute.Smtlib.Smtlib as Attribute
 import           Kore.Error
@@ -84,6 +83,7 @@ import           Kore.Error
 import qualified Kore.Error
 import           Kore.Sort
 import           Kore.Syntax.Application
+import           Kore.Syntax.Pattern
 import           Kore.Syntax.StringLiteral
                  ( StringLiteral (StringLiteral) )
 import           SMT.SimpleSMT
@@ -115,6 +115,9 @@ class Default attrs => ParseAttributes attrs where
 instance ParseAttributes Attributes where
     parseAttribute attr (Attributes attrs) =
         return (Attributes $ attr : attrs)
+
+instance ParseAttributes Attribute.Null where
+    parseAttribute _ _ = return mempty
 
 parseAttributesWith
     :: ParseAttributes attrs
@@ -154,7 +157,7 @@ withApplication
     -> Parser attrs
 withApplication ident go kore =
     case Recursive.project kore of
-        _ :< ApplicationPattern app
+        _ :< ApplicationF app
           | symbolOrAliasConstructor == ident -> \attrs ->
             Kore.Error.withLocationAndContext
                 symbol
@@ -234,7 +237,7 @@ getTwoArguments =
 getSymbolOrAlias :: AttributePattern -> Parser SymbolOrAlias
 getSymbolOrAlias kore =
     case Recursive.project kore of
-        _ :< ApplicationPattern app
+        _ :< ApplicationF app
           | [] <- applicationChildren -> return symbol
           | otherwise ->
             Kore.Error.withLocationAndContext
@@ -251,7 +254,7 @@ getSymbolOrAlias kore =
 getStringLiteral :: AttributePattern -> Parser StringLiteral
 getStringLiteral kore =
     case Recursive.project kore of
-        _ :< StringLiteralPattern lit -> return lit
+        _ :< StringLiteralF lit -> return lit
         _ -> Kore.Error.koreFail "expected string literal pattern"
 
 {- | Parse an 'SExpr' for the @smtlib@ attribute.

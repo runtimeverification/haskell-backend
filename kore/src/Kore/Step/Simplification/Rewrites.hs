@@ -11,13 +11,11 @@ module Kore.Step.Simplification.Rewrites
     ( simplify
     ) where
 
-import           Kore.AST.Valid
-import           Kore.Step.OrPattern
+import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Syntax.Rewrites
 import           Kore.Unparser
 
@@ -33,10 +31,8 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => Rewrites Sort (OrPattern Object variable)
-    ->  ( OrPattern Object variable
-        , SimplificationProof Object
-        )
+    => Rewrites Sort (OrPattern variable)
+    -> OrPattern variable
 simplify
     Rewrites
         { rewritesFirst = first
@@ -50,10 +46,10 @@ simplify
 One way to preserve the required sort annotations is to make
 'simplifyEvaluatedRewrites' take an argument of type
 
-> CofreeF (Or Sort) (Valid Object) (OrPattern Object variable)
+> CofreeF (Or Sort) (Attribute.Pattern variable) (OrPattern variable)
 
 instead of two 'OrPattern' arguments. The type of
-'makeEvaluateRewrites' may be changed analogously. The 'Valid' annotation will
+'makeEvaluateRewrites' may be changed analogously. The 'Attribute.Pattern' annotation will
 eventually cache information besides the pattern sort, which will make it even
 more useful to carry around.
 
@@ -64,9 +60,9 @@ simplifyEvaluatedRewrites
         , Show variable
         , Unparse variable
         )
-    => OrPattern Object variable
-    -> OrPattern Object variable
-    -> (OrPattern Object variable, SimplificationProof Object)
+    => OrPattern variable
+    -> OrPattern variable
+    -> OrPattern variable
 simplifyEvaluatedRewrites first second =
     makeEvaluateRewrites
         (OrPattern.toExpandedPattern first)
@@ -78,14 +74,11 @@ makeEvaluateRewrites
         , Show variable
         , Unparse variable
         )
-    => Pattern Object variable
-    -> Pattern Object variable
-    -> (OrPattern Object variable, SimplificationProof Object)
+    => Pattern variable
+    -> Pattern variable
+    -> OrPattern variable
 makeEvaluateRewrites first second =
-    ( OrPattern.fromPattern
-        $ Pattern.fromTermLike
-        $ mkRewrites
-            (Pattern.toMLPattern first)
-            (Pattern.toMLPattern second)
-    , SimplificationProof
-    )
+    OrPattern.fromTermLike
+    $ mkRewrites
+        (Pattern.toMLPattern first)
+        (Pattern.toMLPattern second)

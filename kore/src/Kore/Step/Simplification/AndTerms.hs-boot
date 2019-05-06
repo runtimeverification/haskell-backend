@@ -1,19 +1,17 @@
 module Kore.Step.Simplification.AndTerms where
 
-import Kore.AST.MetaOrObject
 import Kore.Attribute.Symbol
        ( StepperAttributes )
 import Kore.IndexedModule.MetadataTools
        ( SmtMetadataTools )
+import Kore.Internal.Pattern
+       ( Pattern )
+import Kore.Internal.TermLike
+       ( TermLike )
 import Kore.Step.Axiom.Data
        ( BuiltinAndAxiomSimplifierMap )
-import Kore.Step.Pattern
-       ( Pattern )
 import Kore.Step.Simplification.Data
-       ( PredicateSimplifier, SimplificationProof, Simplifier,
-       TermLikeSimplifier )
-import Kore.Step.TermLike
-       ( TermLike )
+       ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import Kore.Syntax.Variable
        ( SortedVariable )
 import Kore.Unification.Unify
@@ -30,12 +28,12 @@ termAnd
         , SortedVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> TermLike variable
-    -> Simplifier (Pattern Object variable, SimplificationProof Object)
+    -> Simplifier (Pattern variable)
 
 termUnification
     :: forall variable unifier unifierM .
@@ -48,9 +46,9 @@ termUnification
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> TermLike variable
-    -> unifier (Pattern Object variable, SimplificationProof Object)
+    -> unifier (Pattern variable)

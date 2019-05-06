@@ -2,7 +2,7 @@ module Test.Kore.Step.Remainder where
 
 import Test.Tasty
 
-import           Kore.AST.Valid
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate

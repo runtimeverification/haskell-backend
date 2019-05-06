@@ -11,30 +11,28 @@ module Kore.Step.Simplification.AndPredicates
     ( simplifyEvaluatedMultiPredicate
     ) where
 
-import           Kore.AST.Pure
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.MultiAnd
+                 ( MultiAnd )
+import qualified Kore.Internal.MultiAnd as MultiAnd
+                 ( extractPatterns )
+import           Kore.Internal.MultiOr
+                 ( MultiOr )
+import qualified Kore.Internal.MultiOr as MultiOr
+                 ( fullCrossProduct )
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
+import           Kore.Internal.Pattern
+                 ( Predicate )
+import qualified Kore.Internal.Pattern as Pattern
+                 ( Conditional (..) )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
-import           Kore.Step.Pattern
-                 ( Predicate )
-import qualified Kore.Step.Pattern as Pattern
-                 ( Conditional (..) )
-import           Kore.Step.Representation.MultiAnd
-                 ( MultiAnd )
-import qualified Kore.Step.Representation.MultiAnd as MultiAnd
-                 ( extractPatterns )
-import           Kore.Step.Representation.MultiOr
-                 ( MultiOr )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( fullCrossProduct )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Unparser
@@ -49,12 +47,11 @@ simplifyEvaluatedMultiPredicate
         , FreshVariable variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
-    -> BuiltinAndAxiomSimplifierMap Object
-    -> MultiAnd (OrPredicate Object variable)
-    -> Simplifier
-        (OrPredicate Object variable, SimplificationProof Object)
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
+    -> MultiAnd (OrPredicate variable)
+    -> Simplifier (OrPredicate variable)
 simplifyEvaluatedMultiPredicate
     tools
     substitutionSimplifier
@@ -63,25 +60,18 @@ simplifyEvaluatedMultiPredicate
     predicates
   = do
     let
-        crossProduct :: MultiOr [Predicate Object variable]
+        crossProduct :: MultiOr [Predicate variable]
         crossProduct =
             MultiOr.fullCrossProduct
                 (MultiAnd.extractPatterns predicates)
-    result <- traverse andPredicates crossProduct
-    return
-        ( result
-        , SimplificationProof
-        )
+    traverse andPredicates crossProduct
   where
-    andPredicates
-        :: [Predicate Object variable]
-        -> Simplifier (Predicate Object variable)
-    andPredicates predicates0 = do
-        (result, _proof) <- mergePredicatesAndSubstitutions
+    andPredicates :: [Predicate variable] -> Simplifier (Predicate variable)
+    andPredicates predicates0 =
+        mergePredicatesAndSubstitutions
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSubstitution
             (map Pattern.predicate predicates0)
             (map Pattern.substitution predicates0)
-        return result

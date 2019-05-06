@@ -24,28 +24,28 @@ import           Control.Monad.Trans.Maybe
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.MultiOr
+                 ( MultiOr )
+import qualified Kore.Internal.MultiOr as MultiOr
+                 ( extractPatterns, filterOr, fullCrossProduct, make )
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
+import qualified Kore.Internal.OrPredicate as OrPredicate
+import           Kore.Internal.Predicate as Conditional
+                 ( Conditional (..), Predicate )
+import qualified Kore.Internal.Predicate as Predicate
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.OrPattern as OrPattern
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
-import           Kore.Step.Predicate as Conditional
-                 ( Conditional (..), Predicate )
-import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
-import           Kore.Step.Representation.MultiOr
-                 ( MultiOr )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( extractPatterns, filterOr, fullCrossProduct, make )
 import           Kore.Step.Simplification.AndTerms
                  ( SortInjectionMatch (SortInjectionMatch),
                  simplifySortInjections )
@@ -60,14 +60,11 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMergerExcept,
                  mergePredicatesAndSubstitutionsExcept )
-import           Kore.Step.TermLike
 import           Kore.Unification.Error
                  ( UnificationError (..) )
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.Unifier
-                 ( UnificationProof (..) )
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -99,16 +96,16 @@ matchAsUnification
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> TermLike variable
     -> unifier
-        ( OrPredicate Object variable
-        , UnificationProof Object variable
+        ( OrPredicate variable
+
         )
 matchAsUnification
     tools
@@ -119,9 +116,7 @@ matchAsUnification
     second
   = do
     result <- runMaybeT matchResult
-    case result of
-        Nothing -> Monad.Unify.throwUnificationError UnsupportedPatterns
-        Just r -> return (r, EmptyUnificationProof)
+    maybe (Monad.Unify.throwUnificationError UnsupportedPatterns) return result
   where
     matchResult =
         match
@@ -142,16 +137,16 @@ unificationWithAppMatchOnTop
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> TermLike variable
     -> unifier
-        ( OrPredicate Object variable
-        , UnificationProof Object variable
+        ( OrPredicate variable
+
         )
 unificationWithAppMatchOnTop
     tools
@@ -222,17 +217,17 @@ match
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Map.Map variable variable
     -> TermLike variable
     -> TermLike variable
     -- TODO: Use Result here.
     -> MaybeT unifier
-        (OrPredicate Object variable)
+        (OrPredicate variable)
 match
     tools
     substitutionSimplifier
@@ -270,15 +265,15 @@ matchEqualHeadPatterns
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Map.Map variable variable
     -> TermLike variable
     -> TermLike variable
-    -> MaybeT unifier (OrPredicate Object variable)
+    -> MaybeT unifier (OrPredicate variable)
 matchEqualHeadPatterns
     tools
     substitutionSimplifier
@@ -518,7 +513,7 @@ matchEqualHeadPatterns
             else nothing
     justTop
         :: MaybeT unifier
-            (OrPredicate Object variable)
+            (OrPredicate variable)
     justTop = just
         (MultiOr.make [Predicate.top])
 
@@ -532,15 +527,15 @@ matchJoin
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Map.Map variable variable
     -> [(TermLike variable, TermLike variable)]
     -> MaybeT unifier
-        (OrPredicate Object variable)
+        (OrPredicate variable)
 matchJoin
     tools
     substitutionSimplifier
@@ -561,21 +556,17 @@ matchJoin
             )
             patterns
     let
-        crossProduct :: MultiOr [Predicate Object variable]
+        crossProduct :: MultiOr [Predicate variable]
         crossProduct = MultiOr.fullCrossProduct matched
-        merge
-            :: [Predicate Object variable]
-            -> unifier
-                (Predicate Object variable)
-        merge items = do
-            (result, _proof) <- mergePredicatesAndSubstitutionsExcept
+        merge :: [Predicate variable] -> unifier (Predicate variable)
+        merge items =
+            mergePredicatesAndSubstitutionsExcept
                 tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
                 (map Conditional.predicate items)
                 (map Conditional.substitution items)
-            return result
     MultiOr.filterOr <$> traverse (lift . merge) crossProduct
 
 unifyJoin
@@ -588,20 +579,20 @@ unifyJoin
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> [(TermLike variable, TermLike variable)]
     -> unifier
-        ( OrPredicate Object variable
-        , UnificationProof Object variable
+        ( OrPredicate variable
+
         )
 unifyJoin
     tools substitutionSimplifier simplifier axiomIdToSimplifier patterns
   = do
-    matchedWithProofs <-
+    matched <-
         traverse
             (uncurry $
                 unificationProcedure
@@ -612,26 +603,22 @@ unifyJoin
             )
             patterns
     let
-        matched :: [OrPredicate Object variable]
-        (matched, _proof) = unzip matchedWithProofs
-        crossProduct :: MultiOr [Predicate Object variable]
+        crossProduct :: MultiOr [Predicate variable]
         crossProduct = MultiOr.fullCrossProduct matched
         merge
-            :: [Predicate Object variable]
+            :: [Predicate variable]
             -> unifier
-                (Predicate Object variable)
-        merge items = do
-            (result, _proof) <- mergePredicatesAndSubstitutionsExcept
+                (Predicate variable)
+        merge items =
+            mergePredicatesAndSubstitutionsExcept
                 tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
                 (map Conditional.predicate items)
                 (map Conditional.substitution items)
-            return result
     mergedItems <- mapM merge (MultiOr.extractPatterns crossProduct)
-    return
-        ( MultiOr.make mergedItems , EmptyUnificationProof )
+    return (OrPredicate.fromPredicates mergedItems)
 
 -- Note that we can't match variables to stuff which can have more than one
 -- value, because if we take the axiom
@@ -657,16 +644,16 @@ matchVariableFunction
         , unifier ~ unifierM variable
         )
     => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier Object
-    -> TermLikeSimplifier Object
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
     -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap Object
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Map.Map variable variable
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier
-        (OrPredicate Object variable)
+        (OrPredicate variable)
 matchVariableFunction
     tools
     substitutionSimplifier
@@ -678,14 +665,14 @@ matchVariableFunction
   | not (var `Map.member` quantifiedVariables)
     && isFunctionPattern tools second
   = Monad.Trans.lift $ do
-    (ceilOr, _proof) <- Monad.Unify.liftSimplifier $
+    ceilOr <- Monad.Unify.liftSimplifier $
         Ceil.makeEvaluateTerm
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
             second
-    (result, _proof) <-
+    result <-
         OrPattern.mergeWithPredicateAssumesEvaluated
             (createPredicatesAndSubstitutionsMergerExcept
                 tools
@@ -710,8 +697,8 @@ checkVariableEscapeOr
         , Unparse variable
         )
     => [variable]
-    -> OrPredicate Object variable
-    -> OrPredicate Object variable
+    -> OrPredicate variable
+    -> OrPredicate variable
 checkVariableEscapeOr vars = fmap (checkVariableEscape vars)
 
 checkVariableEscape
@@ -722,8 +709,8 @@ checkVariableEscape
         , Unparse variable
         )
     => [variable]
-    -> Predicate Object variable
-    -> Predicate Object variable
+    -> Predicate variable
+    -> Predicate variable
 checkVariableEscape vars predSubst
   | any (`Set.member` freeVars) vars = error
         "quantified variables in substitution or predicate escaping context"

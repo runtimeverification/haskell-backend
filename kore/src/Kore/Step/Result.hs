@@ -24,9 +24,9 @@ import           Data.Sequence
                  ( Seq )
 import qualified GHC.Generics as GHC
 
-import           Kore.Step.Representation.MultiOr
+import           Kore.Internal.MultiOr
                  ( MultiOr )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
+import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Step.Transition
                  ( TransitionT )
 import qualified Kore.Step.Transition as Transition

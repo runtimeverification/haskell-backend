@@ -64,23 +64,21 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Exts
                  ( toList )
 
-import           Kore.AST.MetaOrObject
-                 ( Object )
+import           Kore.Internal.Pattern
+                 ( Conditional (..) )
+import           Kore.Internal.TermLike
+                 ( TermLike )
 import           Kore.OnePath.Step
                  ( CommonStrategyPattern, StrategyPattern (..) )
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
                  ( Claim )
-import           Kore.Step.Pattern
-                 ( Conditional (..) )
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Step.TermLike
-                 ( TermLike )
 import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unification.Unify
@@ -110,7 +108,7 @@ data ReplCommand
     -- ^ Show the nth axiom.
     | Prove !Int
     -- ^ Drop the current proof state and re-initialize for the nth claim.
-    | ShowGraph
+    | ShowGraph !(Maybe FilePath)
     -- ^ Show the current execution graph.
     | ProveSteps !Int
     -- ^ Do n proof steps from current node.
@@ -161,7 +159,8 @@ helpText =
     \axiom <n>                             shows the nth axiom\n\
     \prove <n>                             initializes proof mode for the nth \
                                            \claim\n\
-    \graph                                 shows the current proof graph (*)\n\
+    \graph [file]                          shows the current proof graph (*)\n\
+                                           \ (saves image if file argument is given)\n\
     \step [n]                              attempts to run 'n' proof steps at\
                                            \the current node (n=1 by default)\n\
     \stepf [n]                             attempts to run 'n' proof steps at\
@@ -209,7 +208,7 @@ shouldStore =
         Help             -> False
         ShowClaim _      -> False
         ShowAxiom _      -> False
-        ShowGraph        -> False
+        ShowGraph _      -> False
         ShowConfig _     -> False
         ShowLeafs        -> False
         ShowRule _       -> False
@@ -222,15 +221,15 @@ shouldStore =
 -- Type synonym for the actual type of the execution graph.
 type ExecutionGraph =
     Strategy.ExecutionGraph
-        (CommonStrategyPattern Object)
-        (RewriteRule Object Variable)
+        (CommonStrategyPattern)
+        (RewriteRule Variable)
 
 type InnerGraph =
-    Gr (CommonStrategyPattern Object) (Seq (RewriteRule Object Variable))
+    Gr (CommonStrategyPattern) (Seq (RewriteRule Variable))
 
 -- | State for the rep.
-data ReplState claim level = ReplState
-    { axioms   :: [Axiom level]
+data ReplState claim = ReplState
+    { axioms   :: [Axiom]
     -- ^ List of available axioms
     , claims   :: [claim]
     -- ^ List of claims to be proven
@@ -249,7 +248,7 @@ data ReplState claim level = ReplState
         :: Claim claim
         => claim
         -> [claim]
-        -> [Axiom level]
+        -> [Axiom]
         -> ExecutionGraph
         -> Graph.Node
         -> Simplifier ExecutionGraph
@@ -320,14 +319,14 @@ emptyExecutionGraph =
     Strategy.emptyExecutionGraph . extractConfig . RewriteRule . coerce
   where
     extractConfig
-        :: RewriteRule level Variable
-        -> CommonStrategyPattern level
+        :: RewriteRule Variable
+        -> CommonStrategyPattern
     extractConfig (RewriteRule RulePattern { left, requires }) =
         RewritePattern $ Conditional left requires mempty
 
 -- | Get nth claim from the claims list.
 getClaimByIndex
-    :: MonadState (ReplState claim level) m
+    :: MonadState (ReplState claim) m
     => Int
     -- ^ index in the claims list
     -> m (Maybe claim)
@@ -335,18 +334,18 @@ getClaimByIndex index = Lens.preuse $ lensClaims . Lens.element index
 
 -- | Get nth axiom from the axioms list.
 getAxiomByIndex
-    :: MonadState (ReplState claim level) m
+    :: MonadState (ReplState claim) m
     => Int
     -- ^ index in the axioms list
-    -> m (Maybe (Axiom level))
+    -> m (Maybe (Axiom))
 getAxiomByIndex index = Lens.preuse $ lensAxioms . Lens.element index
 
 -- | Transforms an axiom or claim index into an axiom or claim if they could be
 -- found.
 getAxiomOrClaimByIndex
-    :: MonadState (ReplState claim level) m
+    :: MonadState (ReplState claim) m
     => Either AxiomIndex ClaimIndex
-    -> m (Maybe (Either (Axiom level) claim))
+    -> m (Maybe (Either (Axiom) claim))
 getAxiomOrClaimByIndex =
     fmap bisequence
         . bitraverse
@@ -355,7 +354,7 @@ getAxiomOrClaimByIndex =
 
 -- | Initialize the execution graph with selected claim.
 initializeProofFor
-    :: MonadState (ReplState claim level) m
+    :: MonadState (ReplState claim) m
     => Claim claim
     => claim
     -> m ()
@@ -369,13 +368,13 @@ initializeProofFor claim =
 
 -- | Get the internal representation of the execution graph.
 getInnerGraph
-    :: MonadState (ReplState claim level) m
+    :: MonadState (ReplState claim) m
     => m InnerGraph
 getInnerGraph = Strategy.graph . graph <$> get
 
 -- | Update the internal representation of the execution graph.
 updateInnerGraph
-    :: MonadState (ReplState claim level) m
+    :: MonadState (ReplState claim) m
     => InnerGraph
     -> m ()
 updateInnerGraph ig = lensGraph Lens.%= updateInnerGraph0 ig
@@ -387,7 +386,7 @@ updateInnerGraph ig = lensGraph Lens.%= updateInnerGraph0 ig
 -- | Get selected node (or current node for 'Nothing') and validate that it's
 -- part of the execution graph.
 getTargetNode
-    :: MonadState (ReplState claim level) m
+    :: MonadState (ReplState claim) m
     => Maybe Graph.Node
     -- ^ node index
     -> m (Maybe Graph.Node)
@@ -401,10 +400,9 @@ getTargetNode maybeNode = do
 
 -- | Get the configuration at selected node (or current node for 'Nothing').
 getConfigAt
-    :: level ~ Object
-    => MonadState (ReplState claim level) m
+    :: MonadState (ReplState claim) m
     => Maybe Graph.Node
-    -> m (Maybe (Graph.Node, CommonStrategyPattern level))
+    -> m (Maybe (Graph.Node, CommonStrategyPattern))
 getConfigAt maybeNode = do
     node' <- getTargetNode maybeNode
     case node' of
@@ -417,10 +415,10 @@ getConfigAt maybeNode = do
 
 -- | Get the rule used to reach selected node.
 getRuleFor
-    :: MonadState (ReplState claim level) m
+    :: MonadState (ReplState claim) m
     => Maybe Graph.Node
     -- ^ node index
-    -> m (Maybe (RewriteRule Object Variable))
+    -> m (Maybe (RewriteRule Variable))
 getRuleFor maybeNode = do
     targetNode <- getTargetNode maybeNode
     graph' <- getInnerGraph
@@ -428,8 +426,8 @@ getRuleFor maybeNode = do
   where
     getRewriteRule
         :: forall a b
-        .  [(a, b, Seq (RewriteRule Object Variable))]
-        -> Maybe (RewriteRule Object Variable)
+        .  [(a, b, Seq (RewriteRule Variable))]
+        -> Maybe (RewriteRule Variable)
     getRewriteRule =
         listToMaybe
         . join
@@ -451,7 +449,7 @@ data StepResult
 -- | Run a single step for the data in state (claim, axioms, claims, current node
 -- and execution graph.
 runStepper
-    :: MonadState (ReplState claim level) (m Simplifier)
+    :: MonadState (ReplState claim) (m Simplifier)
     => Monad.Trans.MonadTrans m
     => Claim claim
     => m Simplifier StepResult
@@ -468,11 +466,11 @@ runStepper = do
 -- | Run a single step for the current claim with the selected claims, axioms
 -- starting at the selected node.
 runStepper'
-    :: MonadState (ReplState claim level) (m Simplifier)
+    :: MonadState (ReplState claim) (m Simplifier)
     => Monad.Trans.MonadTrans m
     => Claim claim
     => [claim]
-    -> [Axiom level]
+    -> [Axiom]
     -> Graph.Node
     -> m Simplifier (ExecutionGraph, StepResult)
 runStepper' claims axioms node = do

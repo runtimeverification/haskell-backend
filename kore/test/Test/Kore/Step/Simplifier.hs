@@ -3,57 +3,39 @@ module Test.Kore.Step.Simplifier
     , mockPredicateSimplifier
     ) where
 
-import           Kore.AST.Valid
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate, wrapPredicate )
-import           Kore.Step.OrPattern
+import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
-import qualified Kore.Step.Pattern as Pattern
-                 ( mapVariables )
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike as TermLike
+import           Kore.Predicate.Predicate
+                 ( wrapPredicate )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationProof (..), Simplifier,
-                 TermLikeSimplifier, termLikeSimplifier )
-import           Kore.Step.TermLike
-                 ( Object, TermLike )
-import qualified Kore.Step.TermLike as TermLike
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
+                 termLikeSimplifier )
 import           Kore.Syntax.Variable
                  ( SortedVariable (..) )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
 mockSimplifier
-    ::  ( Ord variable
-        , SortedVariable variable
-        )
-    =>  [   ( TermLike variable
-            , ([Pattern Object variable], SimplificationProof Object)
-            )
-        ]
-    -> TermLikeSimplifier Object
+    :: (Ord variable, SortedVariable variable)
+    => [(TermLike variable, [Pattern variable])]
+    -> TermLikeSimplifier
 mockSimplifier values =
-    termLikeSimplifier
-        ( mockSimplifierHelper
-            (\patt -> Conditional
-                { term = patt
-                , predicate = makeTruePredicate
-                , substitution = mempty
-                }
-            )
-            values
-        )
+    termLikeSimplifier $ mockSimplifierHelper Pattern.fromTermLike values
 
 mockPredicateSimplifier
     ::  ( Ord variable
         , SortedVariable variable
         )
     =>  [   ( TermLike variable
-            , ([Pattern Object variable], SimplificationProof Object)
+            , ([Pattern variable])
             )
         ]
-    -> TermLikeSimplifier Object
+    -> TermLikeSimplifier
 mockPredicateSimplifier values =
     termLikeSimplifier
         (mockSimplifierHelper
@@ -72,40 +54,32 @@ mockSimplifierHelper
         , SortedVariable variable
         , SortedVariable variable0
         )
-    =>  (TermLike variable -> Pattern Object variable)
-    ->  [   ( TermLike variable
-            , ([Pattern Object variable], SimplificationProof Object)
-            )
-        ]
-    -> PredicateSimplifier Object
+    => (TermLike variable -> Pattern variable)
+    -> [(TermLike variable, [Pattern variable])]
+    -> PredicateSimplifier
     -> TermLike variable0
-    -> Simplifier
-        (OrPattern Object variable0, SimplificationProof Object)
+    -> Simplifier (OrPattern variable0)
 mockSimplifierHelper unevaluatedConverter [] _ patt =
     return
         ( OrPattern.fromPatterns
             [ convertExpandedVariables
                 (unevaluatedConverter (convertPatternVariables patt))
             ]
-        , SimplificationProof
+
         )
 mockSimplifierHelper
     unevaluatedConverter
-    ((patt, (patts, proof)) : reminder)
+    ((patt, patts) : reminder)
     substitutionSimplifier
     unevaluatedPatt
-  =
-    if patt == convertPatternVariables unevaluatedPatt
-        then return
-            ( OrPattern.fromPatterns (map convertExpandedVariables patts)
-            , proof
-            )
-        else
-            mockSimplifierHelper
-                unevaluatedConverter
-                reminder
-                substitutionSimplifier
-                unevaluatedPatt
+  | patt == convertPatternVariables unevaluatedPatt
+  = return $ OrPattern.fromPatterns $ map convertExpandedVariables patts
+  | otherwise =
+    mockSimplifierHelper
+        unevaluatedConverter
+        reminder
+        substitutionSimplifier
+        unevaluatedPatt
 
 convertPatternVariables
     ::  ( Ord variable0
@@ -121,7 +95,7 @@ convertExpandedVariables
         , SortedVariable variable
         , SortedVariable variable0
         )
-    => Pattern Object variable
-    -> Pattern Object variable0
+    => Pattern variable
+    -> Pattern variable0
 convertExpandedVariables =
     Pattern.mapVariables (fromVariable . toVariable)

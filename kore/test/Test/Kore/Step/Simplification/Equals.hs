@@ -10,38 +10,35 @@ import Test.Tasty.HUnit
 import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 
-import qualified Kore.AST.Pure as AST
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
+import           Kore.Internal.Pattern
+                 ( Pattern )
+import qualified Kore.Internal.Pattern as Conditional
+import           Kore.Internal.Predicate
+                 ( Conditional (..), Predicate )
+import qualified Kore.Internal.Predicate as Predicate
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( pattern PredicateFalse, makeAndPredicate, makeCeilPredicate,
                  makeEqualsPredicate, makeIffPredicate, makeImpliesPredicate,
                  makeMultipleAndPredicate, makeNotPredicate, makeOrPredicate,
                  makeTruePredicate )
-import           Kore.Sort
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
-import           Kore.Step.Pattern
-                 ( Pattern )
-import qualified Kore.Step.Pattern as Conditional
-import           Kore.Step.Predicate
-                 ( Conditional (..), Predicate )
-import qualified Kore.Step.Predicate as Predicate
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.Simplification.Equals
                  ( makeEvaluate, makeEvaluateTermsToPredicate, simplify )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.TermLike
 import           Kore.Syntax.Equals
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
@@ -404,14 +401,14 @@ test_equalsSimplification_TermLike =
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
                     }
                 )
             )
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
                     }
                 )
             )
@@ -423,14 +420,14 @@ test_equalsSimplification_TermLike =
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
                     }
                 )
             )
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "b"
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "b"
                     }
                 )
             )
@@ -442,14 +439,14 @@ test_equalsSimplification_TermLike =
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
                     }
                 )
             )
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort2
-                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
                     }
                 )
             )
@@ -855,7 +852,7 @@ test_equalsSimplification_TermLike =
 assertTermEquals
     :: HasCallStack
     => SmtMetadataTools StepperAttributes
-    -> Predicate Object Variable
+    -> Predicate Variable
     -> TermLike Variable
     -> TermLike Variable
     -> IO ()
@@ -864,7 +861,7 @@ assertTermEquals = assertTermEqualsGeneric
 assertTermEqualsGeneric
     :: HasCallStack
     => SmtMetadataTools StepperAttributes
-    -> Predicate Object Variable
+    -> Predicate Variable
     -> TermLike Variable
     -> TermLike Variable
     -> Assertion
@@ -875,7 +872,7 @@ assertTermEqualsGeneric tools expectPure =
 assertTermEqualsMulti
     :: HasCallStack
     => SmtMetadataTools StepperAttributes
-    -> [Predicate Object Variable]
+    -> [Predicate Variable]
     -> TermLike Variable
     -> TermLike Variable
     -> IO ()
@@ -884,7 +881,7 @@ assertTermEqualsMulti = assertTermEqualsMultiGeneric
 assertTermEqualsMultiGeneric
     :: HasCallStack
     => SmtMetadataTools StepperAttributes
-    -> [Predicate Object Variable]
+    -> [Predicate Variable]
     -> TermLike Variable
     -> TermLike Variable
     -> Assertion
@@ -907,7 +904,7 @@ assertTermEqualsMultiGeneric tools expectPure first second = do
         (MultiOr.make expectPure)
         actualPure
   where
-    termToPattern :: TermLike Variable -> Pattern Object Variable
+    termToPattern :: TermLike Variable -> Pattern Variable
     termToPattern (Bottom_ _) =
         Conditional.bottom
     termToPattern term =
@@ -916,7 +913,7 @@ assertTermEqualsMultiGeneric tools expectPure first second = do
             , predicate = makeTruePredicate
             , substitution = mempty
             }
-    predSubstToPattern :: Predicate Object Variable -> Pattern Object Variable
+    predSubstToPattern :: Predicate Variable -> Pattern Variable
     predSubstToPattern
         Conditional {predicate = PredicateFalse}
       =
@@ -992,11 +989,10 @@ testSort2 =
 
 evaluateOr
     :: SmtMetadataTools StepperAttributes
-    -> Equals Sort (OrPattern Object Variable)
-    -> IO (OrPattern Object Variable)
+    -> Equals Sort (OrPattern Variable)
+    -> IO (OrPattern Variable)
 evaluateOr tools equals =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ simplify
         tools
@@ -1007,19 +1003,18 @@ evaluateOr tools equals =
 
 evaluate
     :: SmtMetadataTools StepperAttributes
-    -> Pattern Object Variable
-    -> Pattern Object Variable
-    -> IO (OrPattern Object Variable)
+    -> Pattern Variable
+    -> Pattern Variable
+    -> IO (OrPattern Variable)
 evaluate = evaluateGeneric
 
 evaluateGeneric
     :: SmtMetadataTools StepperAttributes
-    -> Pattern Object Variable
-    -> Pattern Object Variable
-    -> IO (OrPattern Object Variable)
+    -> Pattern Variable
+    -> Pattern Variable
+    -> IO (OrPattern Variable)
 evaluateGeneric tools first second =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ makeEvaluate
         tools
@@ -1033,10 +1028,9 @@ evaluateTermsGeneric
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (OrPredicate Object Variable)
+    -> IO (OrPredicate Variable)
 evaluateTermsGeneric tools first second =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ makeEvaluateTermsToPredicate
         tools

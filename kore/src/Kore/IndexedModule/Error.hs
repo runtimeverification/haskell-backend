@@ -10,7 +10,7 @@ module Kore.IndexedModule.Error
     , noSymbol
     ) where
 
-import Kore.AST.Pure
+import Kore.Syntax
 
 -- | A message declaring that a Sort is undefined
 noSort :: Id -> String

@@ -9,12 +9,18 @@ import Test.Tasty.HUnit
 
 import qualified Data.Map as Map
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
+import           Kore.Internal.Predicate
+                 ( Conditional (..), Predicate )
+import qualified Kore.Internal.Predicate as Conditional
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
@@ -22,20 +28,12 @@ import           Kore.Step.Axiom.EvaluationStrategy
                  ( firstFullEvaluation )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
-import           Kore.Step.Predicate
-                 ( Conditional (..), Predicate )
-import qualified Kore.Step.Predicate as Conditional
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data hiding
                  ( runSimplifier )
 import qualified Kore.Step.Simplification.Predicate as PSSimplifier
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -285,9 +283,9 @@ mockMetadataTools =
         Mock.smtDeclarations
 
 runSimplifier
-    :: BuiltinAndAxiomSimplifierMap Object
-    -> Predicate Object Variable
-    -> IO (OrPredicate Object Variable)
+    :: BuiltinAndAxiomSimplifierMap
+    -> Predicate Variable
+    -> IO (OrPredicate Variable)
 runSimplifier patternSimplifierMap predicate =
     fmap MultiOr.make
     $ SMT.runSMT SMT.defaultConfig
@@ -302,8 +300,8 @@ runSimplifier patternSimplifierMap predicate =
             patternSimplifierMap
 
 simplificationEvaluator
-    :: [BuiltinAndAxiomSimplifier Object]
-    -> BuiltinAndAxiomSimplifier Object
+    :: [BuiltinAndAxiomSimplifier]
+    -> BuiltinAndAxiomSimplifier
 simplificationEvaluator = firstFullEvaluation
 
 makeEvaluator
@@ -313,7 +311,7 @@ makeEvaluator
             )
         => [(TermLike variable, TermLike variable)]
         )
-    -> BuiltinAndAxiomSimplifier Object
+    -> BuiltinAndAxiomSimplifier
 makeEvaluator mapping =
     BuiltinAndAxiomSimplifier
         $ const $ const $ const $ const $ simpleEvaluator mapping
@@ -324,19 +322,13 @@ simpleEvaluator
         )
     => [(TermLike variable, TermLike variable)]
     -> TermLike variable
-    -> Simplifier
-        ( AttemptedAxiom Object variable
-        , SimplificationProof Object
-        )
-simpleEvaluator [] _ = return (NotApplicable, SimplificationProof)
+    -> Simplifier (AttemptedAxiom variable)
+simpleEvaluator [] _ = return NotApplicable
 simpleEvaluator ((from, to) : ps) patt
   | from == patt =
-    return
-        ( Applied AttemptedAxiomResults
-            { results = OrPattern.fromTermLike to
-            , remainders = MultiOr.make []
-            }
-        , SimplificationProof
-        )
+    return $ Applied AttemptedAxiomResults
+        { results = OrPattern.fromTermLike to
+        , remainders = OrPattern.bottom
+        }
   | otherwise =
     simpleEvaluator ps patt

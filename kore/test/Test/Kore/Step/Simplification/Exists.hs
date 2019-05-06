@@ -8,20 +8,19 @@ import Test.Tasty.HUnit
 
 import qualified Data.Map as Map
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeExistsPredicate,
                  makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Sort
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Exists as Exists
@@ -85,8 +84,8 @@ test_simplify =
             }
     simplifies
         :: HasCallStack
-        => [Pattern Object Variable]
-        -> [Pattern Object Variable]
+        => [Pattern Variable]
+        -> [Pattern Variable]
         -> String
         -> TestTree
     simplifies original expected message =
@@ -103,7 +102,7 @@ test_makeEvaluate =
             actual <-
                 makeEvaluate mockMetadataTools
                     Mock.x
-                    (Pattern.top :: Pattern Object Variable)
+                    (Pattern.top :: Pattern Variable)
             assertEqualWithExplanation "" expect actual
 
         , testCase " Bottom" $ do
@@ -111,7 +110,7 @@ test_makeEvaluate =
             actual <-
                 makeEvaluate mockMetadataTools
                     Mock.x
-                    (Pattern.bottom :: Pattern Object Variable)
+                    (Pattern.bottom :: Pattern Variable)
             assertEqualWithExplanation "" expect actual
         ]
 
@@ -263,8 +262,8 @@ mockMetadataTools =
 makeExists
     :: Ord variable
     => variable
-    -> [Pattern Object variable]
-    -> Exists Sort variable (OrPattern Object variable)
+    -> [Pattern variable]
+    -> Exists Sort variable (OrPattern variable)
 makeExists variable patterns =
     Exists
         { existsSort = testSort
@@ -277,11 +276,10 @@ testSort = Mock.testSort
 
 simplify
     :: SmtMetadataTools StepperAttributes
-    -> Exists Sort Variable (OrPattern Object Variable)
-    -> IO (OrPattern Object Variable)
+    -> Exists Sort Variable (OrPattern Variable)
+    -> IO (OrPattern Variable)
 simplify tools exists =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ Exists.simplify
         tools
@@ -293,11 +291,10 @@ simplify tools exists =
 makeEvaluate
     :: SmtMetadataTools StepperAttributes
     -> Variable
-    -> Pattern Object Variable
-    -> IO (OrPattern Object Variable)
+    -> Pattern Variable
+    -> IO (OrPattern Variable)
 makeEvaluate tools variable child =
-    (<$>) fst
-    $ SMT.runSMT SMT.defaultConfig
+    SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ Exists.makeEvaluate
         tools

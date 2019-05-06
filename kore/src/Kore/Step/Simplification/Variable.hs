@@ -11,14 +11,10 @@ module Kore.Step.Simplification.Variable
     ( simplify
     ) where
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
-import           Kore.Step.OrPattern
+import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import qualified Kore.Step.Pattern as Pattern
-import           Kore.Step.Simplification.Data
-                 ( SimplificationProof (..) )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.TermLike
 
 {-| 'simplify' simplifies a 'Variable' pattern, which means returning
 an or containing a term made of that variable.
@@ -26,8 +22,5 @@ an or containing a term made of that variable.
 simplify
     :: (Ord variable, SortedVariable variable)
     => variable
-    -> (OrPattern Object variable, SimplificationProof Object)
-simplify var =
-    ( OrPattern.fromPattern $ Pattern.fromTermLike $ mkVar var
-    , SimplificationProof
-    )
+    -> OrPattern variable
+simplify var = OrPattern.fromTermLike $ mkVar var

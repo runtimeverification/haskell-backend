@@ -1,13 +1,11 @@
 {- |
-Module      : Kore.Annotation.Valid
-Description : Annotations collected during verification
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : thomas.tuegel@runtimeverification.com
+
  -}
 
-module Kore.Annotation.Valid
-    ( Valid (..)
+module Kore.Attribute.Pattern
+    ( Pattern (..)
     , mapVariables
     , traverseVariables
     , deleteFreeVariable
@@ -26,10 +24,10 @@ import           GHC.Generics
 import Kore.Sort
        ( Sort )
 
-{- | @Valid@ is a pattern annotation of facts collected during verification.
+{- | @Pattern@ are the attributes of a pattern collected during verification.
  -}
-data Valid variable level =
-    Valid
+data Pattern variable =
+    Pattern
         { patternSort :: !Sort
         -- ^ The sort determined by the verifier.
         , freeVariables :: !(Set variable)
@@ -37,15 +35,15 @@ data Valid variable level =
         }
     deriving (Eq, Generic, Ord, Show)
 
-instance NFData variable => NFData (Valid variable level)
+instance NFData variable => NFData (Pattern variable)
 
-instance Hashable variable => Hashable (Valid variable level) where
-    hashWithSalt salt Valid { patternSort, freeVariables } =
+instance Hashable variable => Hashable (Pattern variable) where
+    hashWithSalt salt Pattern { patternSort, freeVariables } =
         flip hashWithSalt patternSort
         $ flip hashWithSalt (Set.toList freeVariables)
         $ salt
 
-{- | Use the provided mapping to replace all variables in a 'PurePattern'.
+{- | Use the provided mapping to replace all variables in a 'Pattern'.
 
 See also: 'traverseVariables'
 
@@ -53,24 +51,24 @@ See also: 'traverseVariables'
 mapVariables
     :: Ord variable2
     => (variable1 -> variable2)
-    -> Valid variable1 level -> Valid variable2 level
+    -> Pattern variable1 -> Pattern variable2
 mapVariables mapping valid =
     valid { freeVariables = Set.map mapping freeVariables }
   where
-    Valid { freeVariables } = valid
+    Pattern { freeVariables } = valid
 
-{- | Use the provided traversal to replace the free variables in a 'Valid'.
+{- | Use the provided traversal to replace the free variables in a 'Pattern'.
 
 See also: 'mapVariables'
 
  -}
 traverseVariables
-    ::  forall m level variable1 variable2.
+    ::  forall m variable1 variable2.
         (Monad m, Ord variable2)
     => (variable1 -> m variable2)
-    -> Valid variable1 level
-    -> m (Valid variable2 level)
-traverseVariables traversing valid@Valid { freeVariables } =
+    -> Pattern variable1
+    -> m (Pattern variable2)
+traverseVariables traversing valid@Pattern { freeVariables } =
     (\freeVariables' -> valid { freeVariables = Set.fromList freeVariables' })
         <$> traverse traversing (Set.toList freeVariables)
 
@@ -79,7 +77,7 @@ traverseVariables traversing valid@Valid { freeVariables } =
 deleteFreeVariable
     :: Ord variable
     => variable
-    -> Valid variable level
-    -> Valid variable level
-deleteFreeVariable variable valid@Valid { freeVariables } =
+    -> Pattern variable
+    -> Pattern variable
+deleteFreeVariable variable valid@Pattern { freeVariables } =
     valid { freeVariables = Set.delete variable freeVariables }
