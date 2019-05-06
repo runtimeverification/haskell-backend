@@ -194,7 +194,9 @@ list
 list left right =
     \case
         [] -> left <> right
-        xs -> (group . (<> close) . nest 4 . (open <>) . vsep . punctuate between) xs
+        xs ->
+            (group . (<> close) . nest 4 . (open <>) . vsep . punctuate between)
+                xs
   where
     open = left <> line'
     close = line' <> right
@@ -209,7 +211,9 @@ list2
 list2 left right =
     \case
         [] -> left <> right
-        xs -> (group . (<> close) . nest 4 . (open <>) . vsep . punctuate between) xs
+        xs ->
+            (group . (<> close) . nest 4 . (open <>) . vsep . punctuate between)
+                xs
   where
     open = left <> line'
     close = line' <> right
@@ -218,7 +222,8 @@ list2 left right =
 
 -- | Render a 'Doc ann' with indentation and without extra line breaks.
 layoutPrettyUnbounded :: Doc ann -> SimpleDocStream ann
-layoutPrettyUnbounded = layoutPretty LayoutOptions { layoutPageWidth = Unbounded }
+layoutPrettyUnbounded =
+    layoutPretty LayoutOptions { layoutPageWidth = Unbounded }
 
 {- | Escape a 'String' for a Kore string literal.
 

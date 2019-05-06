@@ -186,7 +186,8 @@ type SymbolVerifiers = HashMap Text SymbolVerifier
 type DomainValueVerifier child =
        Domain.Builtin child -> Either (Error VerifyError) (Domain.Builtin child)
 
--- | @DomainValueVerifiers@  associates a @DomainValueVerifier@ with each builtin
+-- | @DomainValueVerifiers@  associates a @DomainValueVerifier@ with each
+-- builtin
 type DomainValueVerifiers child = (HashMap Text (DomainValueVerifier child))
 
 
@@ -245,7 +246,8 @@ symbolVerifier Verifiers { symbolVerifiers } hook =
                 -- In either case, there is nothing more to do.
                 \_ _ -> pure ()
             Just verifier ->
-                -- Invoke the verifier that is registered to this builtin symbol.
+                -- Invoke the verifier that is registered to this builtin
+                -- symbol.
                 verifier
 
 notImplemented :: Function
@@ -775,10 +777,12 @@ ternaryOperator
         -> Simplifier (AttemptedAxiom variable)
     ternaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
-            [Syntax.DomainValueF a, Syntax.DomainValueF b, Syntax.DomainValueF c] -> do
-                -- Apply the operator to three domain values
-                let r = op (get a) (get b) (get c)
-                (appliedFunction . asPattern resultSort) r
+            [ Syntax.DomainValueF a
+                , Syntax.DomainValueF b
+                , Syntax.DomainValueF c] -> do
+                    -- Apply the operator to three domain values
+                    let r = op (get a) (get b) (get c)
+                    (appliedFunction . asPattern resultSort) r
             [_, _, _] -> return NotApplicable
             _ -> wrongArity (Text.unpack ctx)
 
@@ -821,7 +825,8 @@ functionEvaluator impl =
 runParser :: HasCallStack => Text -> Either (Error e) a -> a
 runParser ctx result =
     case result of
-        Left e -> verifierBug $ Text.unpack ctx ++ ": " ++ Kore.Error.printError e
+        Left e ->
+            verifierBug $ Text.unpack ctx ++ ": " ++ Kore.Error.printError e
         Right a -> a
 
 {- | Look up the symbol hooked to the named builtin in the provided module.

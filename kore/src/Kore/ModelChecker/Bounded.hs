@@ -144,7 +144,9 @@ checkClaim
     (ImplicationRule RulePattern { left, right }, stepLimit)
   = do
         let
-            App_ SymbolOrAlias { symbolOrAliasConstructor = symbol } [prop] = right
+            App_ SymbolOrAlias
+                { symbolOrAliasConstructor = symbol } [prop]
+              = right
             goalPattern = ModalPattern { modalOp = getId symbol, term = prop }
             strategy =
                 Limit.takeWithin
@@ -154,7 +156,10 @@ checkClaim
             startState =
                 ProofState.GoalLHS
                     Conditional
-                        {term = left, predicate = Predicate.makeTruePredicate, substitution = mempty}
+                        { term = left
+                        , predicate = Predicate.makeTruePredicate
+                        , substitution = mempty
+                        }
         executionGraph <- State.evalStateT
                             (runStrategy transitionRule' strategy startState)
                             Nothing

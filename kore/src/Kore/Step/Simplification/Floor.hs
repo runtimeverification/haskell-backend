@@ -54,9 +54,9 @@ take an argument of type
 > CofreeF (Floor Sort) (Attribute.Pattern variable) (OrPattern variable)
 
 instead of an 'OrPattern' argument. The type of 'makeEvaluateFloor'
-may be changed analogously. The 'Attribute.Pattern' annotation will eventually cache
-information besides the pattern sort, which will make it even more useful to
-carry around.
+may be changed analogously. The 'Attribute.Pattern' annotation will eventually
+cache information besides the pattern sort, which will make it even more useful
+to carry around.
 
 -}
 simplifyEvaluatedFloor

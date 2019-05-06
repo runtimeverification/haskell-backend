@@ -126,8 +126,8 @@ deriving instance Ord variable => Ord (RewriteRule variable)
 deriving instance Show variable => Show (RewriteRule variable)
 
 instance
-    (Ord variable, SortedVariable variable, Unparse variable) =>
-    Unparse (RewriteRule variable)
+    (Ord variable, SortedVariable variable, Unparse variable)
+    => Unparse (RewriteRule variable)
   where
     unparse (RewriteRule RulePattern { left, right, requires } ) =
         unparse $ mkImplies

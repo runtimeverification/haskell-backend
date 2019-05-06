@@ -81,7 +81,11 @@ test_getLastElement =
   where
     prop = do
         values <- forAll genSeqInteger
-        let patGet = mkApp intSort getListSymbol [ patList , Test.Int.asInternal (-1) ]
+        let patGet =
+                mkApp
+                    intSort
+                    getListSymbol
+                    [ patList , Test.Int.asInternal (-1) ]
             patList = asTermLike (Test.Int.asInternal <$> values)
             value =
                 case values of

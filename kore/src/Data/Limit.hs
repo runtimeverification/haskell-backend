@@ -65,9 +65,11 @@ enumFromLimit limit a = takeWhile (withinLimit limit) (enumFrom a)
 
 {- | A list of limited length with identical elements.
 
-@replicate Unlimited x@ is an infinite list where @x@ is the value of every element.
+@replicate Unlimited x@ is an infinite list where @x@ is the value of every
+element.
 
-@replicate (Limit n) x@ is a list of length @n@ where @x@ is the value of every element.
+@replicate (Limit n) x@ is a list of length @n@ where @x@ is the value of every
+element.
 
  -}
 replicate :: (Enum a, Ord a) => Limit a -> b -> [b]

@@ -146,8 +146,10 @@ test_concatAssociates =
             patSet3 <- forAll genSetPattern
             let patConcat12 = mkApp setSort concatSetSymbol [ patSet1, patSet2 ]
                 patConcat23 = mkApp setSort concatSetSymbol [ patSet2, patSet3 ]
-                patConcat12_3 = mkApp setSort concatSetSymbol [ patConcat12, patSet3 ]
-                patConcat1_23 = mkApp setSort concatSetSymbol [ patSet1, patConcat23 ]
+                patConcat12_3 =
+                    mkApp setSort concatSetSymbol [ patConcat12, patSet3 ]
+                patConcat1_23 =
+                    mkApp setSort concatSetSymbol [ patSet1, patConcat23 ]
                 predicate = mkEquals_ patConcat12_3 patConcat1_23
             concat12_3 <- evaluate patConcat12_3
             concat1_23 <- evaluate patConcat1_23
@@ -590,4 +592,6 @@ asInternal = Set.asInternal testMetadataTools setSort
 
 mkIntVar :: Id -> TermLike Variable
 mkIntVar variableName =
-    mkVar Variable { variableName, variableCounter = mempty, variableSort = intSort }
+    mkVar
+        Variable
+            { variableName, variableCounter = mempty, variableSort = intSort }
