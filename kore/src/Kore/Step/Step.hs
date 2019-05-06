@@ -214,8 +214,7 @@ unifyRule
         -> BranchT unifier (Conditional variable ())
     unifyPatterns pat1 pat2 = do
         unifiers <-
-            Monad.Trans.lift
-            $ unificationProcedure
+            unificationProcedure
                 metadataTools
                 predicateSimplifier
                 patternSimplifier

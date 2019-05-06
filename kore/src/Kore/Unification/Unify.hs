@@ -17,7 +17,7 @@ import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Logger as Log
 import           Kore.Step.Simplification.Data
-                 ( Environment (..), Simplifier )
+                 ( BranchT, Environment (..), Simplifier )
 import           Kore.Unification.Error
 import           Kore.Unparser
                  ( Unparse )
@@ -51,6 +51,20 @@ class Monad unifier => MonadUnify unifier where
         -> TermLike variable
         -> unifier ()
     explainBottom _ _ _ = pure ()
+
+instance MonadUnify unifier => MonadUnify (BranchT unifier) where
+    throwSubstitutionError = Monad.Trans.lift . throwSubstitutionError
+    {-# INLINE throwSubstitutionError #-}
+
+    throwUnificationError = Monad.Trans.lift . throwUnificationError
+    {-# INLINE throwUnificationError #-}
+
+    liftSimplifier = Monad.Trans.lift . liftSimplifier
+    {-# INLINE liftSimplifier #-}
+
+    explainBottom why term1 term2 =
+        Monad.Trans.lift (explainBottom why term1 term2)
+    {-# INLINE explainBottom #-}
 
 -- | 'Unifier' is the default concrete implementation of a 'MonadUnify'.
 -- See also: 'fromExceptT' and 'runUnifier' for common usages.
