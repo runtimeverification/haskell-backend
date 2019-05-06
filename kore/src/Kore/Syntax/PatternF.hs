@@ -156,9 +156,8 @@ traverseVariables traversing =
         ExistsF any0 -> ExistsF <$> traverseVariablesExists any0
         ForallF all0 -> ForallF <$> traverseVariablesForall all0
         VariableF variable -> VariableF <$> traversing variable
-        InhabitantF s -> pure (InhabitantF s)
-        SetVariableF (SetVariable variable)
-            -> SetVariableF . SetVariable <$> traversing variable
+        SetVariableF (SetVariable variable) ->
+            SetVariableF . SetVariable <$> traversing variable
         -- Trivial cases
         AndF andP -> pure (AndF andP)
         ApplicationF appP -> pure (ApplicationF appP)
@@ -177,6 +176,7 @@ traverseVariables traversing =
         StringLiteralF strP -> pure (StringLiteralF strP)
         CharLiteralF charP -> pure (CharLiteralF charP)
         TopF topP -> pure (TopF topP)
+        InhabitantF s -> pure (InhabitantF s)
   where
     traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
         Exists existsSort <$> traversing existsVariable <*> pure existsChild
@@ -192,7 +192,6 @@ mapDomainValues mapping =
     \case
         -- Non-trivial case
         DomainValueF domainP -> DomainValueF (mapping domainP)
-        InhabitantF s -> InhabitantF s
         -- Trivial cases
         AndF andP -> AndF andP
         ApplicationF appP -> ApplicationF appP
@@ -214,6 +213,7 @@ mapDomainValues mapping =
         TopF topP -> TopF topP
         VariableF varP -> VariableF varP
         SetVariableF varP -> SetVariableF varP
+        InhabitantF s -> InhabitantF s
 
 {- | Cast a 'PatternF' head with @'Const' 'Void'@ domain values into any domain.
 
