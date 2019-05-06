@@ -2,18 +2,18 @@ module Test.Kore.Step.MockSimplifiers where
 
 import qualified Data.Map as Map
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern
+                 ( Conditional (Conditional) )
+import qualified Kore.Internal.Pattern as Pattern
+                 ( Conditional (..) )
+import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Predicate
                  ( wrapPredicate )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
-                 ( Conditional (Conditional) )
-import qualified Kore.Step.Pattern as Pattern
-                 ( Conditional (..) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), termLikeSimplifier )
 import qualified Kore.Step.Simplification.Predicate as Predicate

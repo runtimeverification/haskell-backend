@@ -21,7 +21,6 @@ import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe, mapMaybe )
 
-import           Kore.AST.Pure
 import           Kore.Attribute.Axiom
                  ( Assoc (Assoc), Comm (Comm), Idem (Idem), Unit (Unit) )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -30,6 +29,7 @@ import           Kore.Attribute.Simplification
                  ( Simplification (..) )
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.IndexedModule
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifier (..) )
 import           Kore.Step.Axiom.EvaluationStrategy
@@ -41,7 +41,6 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( extract )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
-import           Kore.Step.Pattern
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule),
                  QualifiedAxiomPattern (AllPathClaimPattern, FunctionAxiomPattern, ImplicationAxiomPattern, OnePathClaimPattern, RewriteAxiomPattern),

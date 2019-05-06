@@ -12,12 +12,10 @@ import           Data.Maybe
                  ( mapMaybe )
 import qualified Data.Text as Text
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
-                 ( mkTop )
 import           Kore.Error
 import           Kore.IndexedModule.Error
                  ( noSort )
+import           Kore.Internal.TermLike
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 

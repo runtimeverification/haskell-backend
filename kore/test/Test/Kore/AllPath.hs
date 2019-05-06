@@ -16,7 +16,7 @@ import           GHC.Stack
                  ( HasCallStack )
 
 import qualified Kore.AllPath as AllPath
-import qualified Kore.Step.Representation.MultiOr as MultiOr
+import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.Transition
                  ( runTransitionT )

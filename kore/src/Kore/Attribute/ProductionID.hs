@@ -43,8 +43,7 @@ productionIDSymbol =
 -- | Kore pattern representing a @productionID@ attribute.
 productionIDAttribute :: Text -> AttributePattern
 productionIDAttribute name =
-    attributePattern productionIDSymbol
-        [ (asAttributePattern . StringLiteralPattern) (StringLiteral name) ]
+    attributePattern productionIDSymbol [attributeString name]
 
 instance ParseAttributes ProductionID where
     parseAttribute =

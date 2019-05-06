@@ -13,29 +13,27 @@ import           Control.Monad.Except
                  ( ExceptT, runExceptT )
 import qualified Data.Map as Map
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.MultiOr as MultiOr
+                 ( make )
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
+import           Kore.Internal.Predicate
+                 ( Conditional (..) )
+import qualified Kore.Internal.Predicate as Conditional
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification, unificationWithAppMatchOnTop )
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
-import           Kore.Step.Predicate
-                 ( Conditional (..) )
-import qualified Kore.Step.Predicate as Conditional
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( make )
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.TermLike
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Substitution as Substitution

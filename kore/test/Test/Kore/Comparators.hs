@@ -23,14 +23,17 @@ import           Numeric.Natural
                  ( Natural )
 
 import qualified Kore.AllPath as AllPath
-import           Kore.Annotation.Valid
-import           Kore.AST.Pure
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Location as Attribute
 import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Source as Attribute
 import           Kore.Domain.Builtin
 import           Kore.Error
+import           Kore.Internal.MultiOr
+import           Kore.Internal.Pattern
+                 ( Conditional (..) )
+import           Kore.Internal.TermLike
 import           Kore.OnePath.Step
                  ( StrategyPattern )
 import           Kore.OnePath.Step as StrategyPattern
@@ -44,10 +47,7 @@ import           Kore.Step.Axiom.Data as AttemptedAxiomResults
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import           Kore.Step.Pattern
-                 ( Conditional (..) )
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
-import           Kore.Step.Representation.MultiOr
 import           Kore.Step.Rule
                  ( RulePattern (..) )
 import qualified Kore.Step.SMT.AST as SMT
@@ -68,7 +68,7 @@ import qualified Kore.Step.SMT.AST as SMT.SymbolReference
                  ( SymbolReference (..) )
 import qualified Kore.Step.SMT.AST as SMT.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
-import           Kore.Step.TermLike
+import           Kore.Syntax
 import           Kore.Syntax.Definition
 import qualified Kore.Syntax.SetVariable as SetVariable
 import           Kore.Unification.Error
@@ -116,138 +116,138 @@ instance
     , Eq variable
     , Show variable
     )
-    => SumEqualWithExplanation (Pattern domain variable child)
+    => SumEqualWithExplanation (PatternF domain variable child)
   where
-    sumConstructorPair (AndPattern a1) (AndPattern a2) =
-        SumConstructorSameWithArguments (EqWrap "AndPattern" a1 a2)
-    sumConstructorPair pattern1@(AndPattern _) pattern2 =
+    sumConstructorPair (AndF a1) (AndF a2) =
+        SumConstructorSameWithArguments (EqWrap "AndF" a1 a2)
+    sumConstructorPair pattern1@(AndF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (ApplicationPattern a1) (ApplicationPattern a2) =
-        SumConstructorSameWithArguments (EqWrap "ApplicationPattern" a1 a2)
-    sumConstructorPair pattern1@(ApplicationPattern _) pattern2 =
+    sumConstructorPair (ApplicationF a1) (ApplicationF a2) =
+        SumConstructorSameWithArguments (EqWrap "ApplicationF" a1 a2)
+    sumConstructorPair pattern1@(ApplicationF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (BottomPattern a1) (BottomPattern a2) =
-        SumConstructorSameWithArguments (EqWrap "BottomPattern" a1 a2)
-    sumConstructorPair pattern1@(BottomPattern _) pattern2 =
+    sumConstructorPair (BottomF a1) (BottomF a2) =
+        SumConstructorSameWithArguments (EqWrap "BottomF" a1 a2)
+    sumConstructorPair pattern1@(BottomF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (CeilPattern a1) (CeilPattern a2) =
-        SumConstructorSameWithArguments (EqWrap "CeilPattern" a1 a2)
-    sumConstructorPair pattern1@(CeilPattern _) pattern2 =
+    sumConstructorPair (CeilF a1) (CeilF a2) =
+        SumConstructorSameWithArguments (EqWrap "CeilF" a1 a2)
+    sumConstructorPair pattern1@(CeilF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (DomainValuePattern a1) (DomainValuePattern a2) =
-        SumConstructorSameWithArguments (EqWrap "DomainValuePattern" a1 a2)
-    sumConstructorPair pattern1@(DomainValuePattern _) pattern2 =
+    sumConstructorPair (DomainValueF a1) (DomainValueF a2) =
+        SumConstructorSameWithArguments (EqWrap "DomainValueF" a1 a2)
+    sumConstructorPair pattern1@(DomainValueF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (EqualsPattern a1) (EqualsPattern a2) =
-        SumConstructorSameWithArguments (EqWrap "EqualsPattern" a1 a2)
-    sumConstructorPair pattern1@(EqualsPattern _) pattern2 =
+    sumConstructorPair (EqualsF a1) (EqualsF a2) =
+        SumConstructorSameWithArguments (EqWrap "EqualsF" a1 a2)
+    sumConstructorPair pattern1@(EqualsF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (ExistsPattern a1) (ExistsPattern a2) =
-        SumConstructorSameWithArguments (EqWrap "ExistsPattern" a1 a2)
-    sumConstructorPair pattern1@(ExistsPattern _) pattern2 =
+    sumConstructorPair (ExistsF a1) (ExistsF a2) =
+        SumConstructorSameWithArguments (EqWrap "ExistsF" a1 a2)
+    sumConstructorPair pattern1@(ExistsF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (FloorPattern a1) (FloorPattern a2) =
-        SumConstructorSameWithArguments (EqWrap "FloorPattern" a1 a2)
-    sumConstructorPair pattern1@(FloorPattern _) pattern2 =
+    sumConstructorPair (FloorF a1) (FloorF a2) =
+        SumConstructorSameWithArguments (EqWrap "FloorF" a1 a2)
+    sumConstructorPair pattern1@(FloorF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (ForallPattern a1) (ForallPattern a2) =
-        SumConstructorSameWithArguments (EqWrap "ForallPattern" a1 a2)
-    sumConstructorPair pattern1@(ForallPattern _) pattern2 =
+    sumConstructorPair (ForallF a1) (ForallF a2) =
+        SumConstructorSameWithArguments (EqWrap "ForallF" a1 a2)
+    sumConstructorPair pattern1@(ForallF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (IffPattern a1) (IffPattern a2) =
-        SumConstructorSameWithArguments (EqWrap "IffPattern" a1 a2)
-    sumConstructorPair pattern1@(IffPattern _) pattern2 =
+    sumConstructorPair (IffF a1) (IffF a2) =
+        SumConstructorSameWithArguments (EqWrap "IffF" a1 a2)
+    sumConstructorPair pattern1@(IffF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (ImpliesPattern a1) (ImpliesPattern a2) =
-        SumConstructorSameWithArguments (EqWrap "ImpliesPattern" a1 a2)
-    sumConstructorPair pattern1@(ImpliesPattern _) pattern2 =
+    sumConstructorPair (ImpliesF a1) (ImpliesF a2) =
+        SumConstructorSameWithArguments (EqWrap "ImpliesF" a1 a2)
+    sumConstructorPair pattern1@(ImpliesF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (InPattern a1) (InPattern a2) =
-        SumConstructorSameWithArguments (EqWrap "InPattern" a1 a2)
-    sumConstructorPair pattern1@(InPattern _) pattern2 =
+    sumConstructorPair (InF a1) (InF a2) =
+        SumConstructorSameWithArguments (EqWrap "InF" a1 a2)
+    sumConstructorPair pattern1@(InF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (NextPattern a1) (NextPattern a2) =
-        SumConstructorSameWithArguments (EqWrap "NextPattern" a1 a2)
-    sumConstructorPair pattern1@(NextPattern _) pattern2 =
+    sumConstructorPair (NextF a1) (NextF a2) =
+        SumConstructorSameWithArguments (EqWrap "NextF" a1 a2)
+    sumConstructorPair pattern1@(NextF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (NotPattern a1) (NotPattern a2) =
-        SumConstructorSameWithArguments (EqWrap "NotPattern" a1 a2)
-    sumConstructorPair pattern1@(NotPattern _) pattern2 =
+    sumConstructorPair (NotF a1) (NotF a2) =
+        SumConstructorSameWithArguments (EqWrap "NotF" a1 a2)
+    sumConstructorPair pattern1@(NotF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (OrPattern a1) (OrPattern a2) =
-        SumConstructorSameWithArguments (EqWrap "OrPattern" a1 a2)
-    sumConstructorPair pattern1@(OrPattern _) pattern2 =
+    sumConstructorPair (OrF a1) (OrF a2) =
+        SumConstructorSameWithArguments (EqWrap "OrF" a1 a2)
+    sumConstructorPair pattern1@(OrF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (RewritesPattern a1) (RewritesPattern a2) =
-        SumConstructorSameWithArguments (EqWrap "RewritesPattern" a1 a2)
-    sumConstructorPair pattern1@(RewritesPattern _) pattern2 =
+    sumConstructorPair (RewritesF a1) (RewritesF a2) =
+        SumConstructorSameWithArguments (EqWrap "RewritesF" a1 a2)
+    sumConstructorPair pattern1@(RewritesF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (StringLiteralPattern a1) (StringLiteralPattern a2) =
-        SumConstructorSameWithArguments (EqWrap "StringLiteralPattern" a1 a2)
-    sumConstructorPair pattern1@(StringLiteralPattern _) pattern2 =
+    sumConstructorPair (StringLiteralF a1) (StringLiteralF a2) =
+        SumConstructorSameWithArguments (EqWrap "StringLiteralF" a1 a2)
+    sumConstructorPair pattern1@(StringLiteralF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (CharLiteralPattern a1) (CharLiteralPattern a2) =
-        SumConstructorSameWithArguments (EqWrap "CharLiteralPattern" a1 a2)
-    sumConstructorPair pattern1@(CharLiteralPattern _) pattern2 =
+    sumConstructorPair (CharLiteralF a1) (CharLiteralF a2) =
+        SumConstructorSameWithArguments (EqWrap "CharLiteralF" a1 a2)
+    sumConstructorPair pattern1@(CharLiteralF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (TopPattern a1) (TopPattern a2) =
-        SumConstructorSameWithArguments (EqWrap "TopPattern" a1 a2)
-    sumConstructorPair pattern1@(TopPattern _) pattern2 =
+    sumConstructorPair (TopF a1) (TopF a2) =
+        SumConstructorSameWithArguments (EqWrap "TopF" a1 a2)
+    sumConstructorPair pattern1@(TopF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (VariablePattern a1) (VariablePattern a2) =
-        SumConstructorSameWithArguments (EqWrap "VariablePattern" a1 a2)
-    sumConstructorPair pattern1@(VariablePattern _) pattern2 =
+    sumConstructorPair (VariableF a1) (VariableF a2) =
+        SumConstructorSameWithArguments (EqWrap "VariableF" a1 a2)
+    sumConstructorPair pattern1@(VariableF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (InhabitantPattern s1) (InhabitantPattern s2) =
-        SumConstructorSameWithArguments (EqWrap "InhabitantPattern" s1 s2)
-    sumConstructorPair pattern1@(InhabitantPattern _) pattern2 =
+    sumConstructorPair (InhabitantF s1) (InhabitantF s2) =
+        SumConstructorSameWithArguments (EqWrap "InhabitantF" s1 s2)
+    sumConstructorPair pattern1@(InhabitantF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1)
             (printWithExplanation pattern2)
 
-    sumConstructorPair (SetVariablePattern a1) (SetVariablePattern a2) =
-        SumConstructorSameWithArguments (EqWrap "SetVariablePattern" a1 a2)
-    sumConstructorPair pattern1@(SetVariablePattern _) pattern2 =
+    sumConstructorPair (SetVariableF a1) (SetVariableF a2) =
+        SumConstructorSameWithArguments (EqWrap "SetVariableF" a1 a2)
+    sumConstructorPair pattern1@(SetVariableF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
@@ -260,13 +260,13 @@ instance
     , Show variable
     , Show1 domain
     , Eq1 domain
-    ) => EqualWithExplanation (Pattern domain variable child)
+    ) => EqualWithExplanation (PatternF domain variable child)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
 instance
-    ( Show (PurePattern domain variable annotation)
+    ( Show (Pattern domain variable annotation)
     , Show1 domain
     , Eq1 domain
     , Show variable
@@ -275,15 +275,15 @@ instance
     , Show annotation
     , Eq annotation
     , EqualWithExplanation annotation
-    , EqualWithExplanation (domain (Cofree (Pattern domain variable) annotation))
+    , EqualWithExplanation (domain (Cofree (PatternF domain variable) annotation))
     ) =>
-    EqualWithExplanation (PurePattern domain variable annotation)
+    EqualWithExplanation (Pattern domain variable annotation)
   where
-    compareWithExplanation a@(PurePattern _) = wrapperCompareWithExplanation a
+    compareWithExplanation a@(Pattern _) = wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance
-    ( Show (PurePattern domain variable annotation)
+    ( Show (Pattern domain variable annotation)
     , Show1 domain
     , Eq1 domain
     , Show variable
@@ -292,16 +292,16 @@ instance
     , Show annotation
     , Eq annotation
     , EqualWithExplanation annotation
-    , EqualWithExplanation (domain (Cofree (Pattern domain variable) annotation))
+    , EqualWithExplanation (domain (Cofree (PatternF domain variable) annotation))
     ) =>
-    WrapperEqualWithExplanation (PurePattern domain variable annotation)
+    WrapperEqualWithExplanation (Pattern domain variable annotation)
   where
     wrapperField expected actual =
         EqWrap
-            "getPurePattern = "
-            (getPurePattern expected)
-            (getPurePattern actual)
-    wrapperConstructorName _ = "PurePattern"
+            "getPattern = "
+            (getPattern expected)
+            (getPattern actual)
+    wrapperConstructorName _ = "Pattern"
 
 instance
     ( Show (CofreeT f w a)
@@ -1202,23 +1202,23 @@ instance EqualWithExplanation Attribute.Null where
 
 instance
     ( EqualWithExplanation variable, Show variable
-    ) => StructEqualWithExplanation (Valid variable)
+    ) => StructEqualWithExplanation (Attribute.Pattern variable)
   where
-    structFieldsWithNames expected@(Valid _ _) actual@(Valid _ _) =
+    structFieldsWithNames expected@(Attribute.Pattern _ _) actual@(Attribute.Pattern _ _) =
         [ EqWrap
             "patternSort = "
-            (patternSort expected)
-            (patternSort actual)
+            (Attribute.patternSort expected)
+            (Attribute.patternSort actual)
         , EqWrap
             "freeVariables = "
-            (Kore.Annotation.Valid.freeVariables expected)
-            (Kore.Annotation.Valid.freeVariables actual)
+            (Attribute.freeVariables expected)
+            (Attribute.freeVariables actual)
         ]
-    structConstructorName _ = "Valid"
+    structConstructorName _ = "Pattern"
 
 instance
     ( EqualWithExplanation variable, Show variable
-    ) => EqualWithExplanation (Valid variable)
+    ) => EqualWithExplanation (Attribute.Pattern variable)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show

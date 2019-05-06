@@ -11,18 +11,15 @@ module Kore.Step.Simplification.DomainValue
     ( simplify
     ) where
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
-import           Kore.Step.Conditional
+import           Kore.Internal.Conditional
                  ( Conditional )
-import           Kore.Step.OrPattern
+import           Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.OrPattern
                  ( OrPattern )
-import           Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.TermLike
-                 ( TermLike )
+import           Kore.Internal.TermLike
 import           Kore.Unparser
 
 {-| 'simplify' simplifies a 'DomainValue' pattern, which means returning

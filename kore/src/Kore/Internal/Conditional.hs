@@ -4,7 +4,7 @@ License     : NCSA
 
 Representation of conditional terms.
 -}
-module Kore.Step.Conditional
+module Kore.Internal.Conditional
     ( Conditional (..)
     , withoutTerm
     , withCondition
@@ -12,9 +12,9 @@ module Kore.Step.Conditional
     , fromPredicate
     , fromSubstitution
     , andPredicate
-    , Kore.Step.Conditional.freeVariables
+    , Kore.Internal.Conditional.freeVariables
     , toPredicate
-    , Kore.Step.Conditional.mapVariables
+    , Kore.Internal.Conditional.mapVariables
     ) where
 
 import           Control.DeepSeq
@@ -28,10 +28,10 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Pure
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Syntax
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unification.Substitution

@@ -16,11 +16,15 @@ import           Data.Limit
 import qualified Data.Limit as Limit
 import           Debug.Trace
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Pattern
+                 ( Conditional (Conditional) )
+import           Kore.Internal.Pattern as Conditional
+                 ( Conditional (..) )
+import           Kore.Internal.TermLike
 import           Kore.ModelChecker.Step
                  ( CommonModalPattern, CommonProofState, ModalPattern (..),
                  Prim (..), defaultOneStepStrategy )
@@ -33,10 +37,6 @@ import           Kore.OnePath.Verification
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
-                 ( Conditional (Conditional) )
-import           Kore.Step.Pattern as Conditional
-                 ( Conditional (..) )
 import           Kore.Step.Rule
                  ( ImplicationRule (ImplicationRule), RewriteRule,
                  RulePattern (..) )

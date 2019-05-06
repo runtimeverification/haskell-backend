@@ -1,4 +1,4 @@
-module Test.Kore.Step.Pattern
+module Test.Kore.Internal.Pattern
     ( test_expandedPattern
     ) where
 
@@ -11,15 +11,13 @@ import qualified Data.Set as Set
 import           Data.Text.Prettyprint.Doc
                  ( Pretty (..) )
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid hiding
+import           Kore.Internal.Pattern as Pattern
+                 ( Conditional (..), allVariables, mapVariables, toMLPattern )
+import           Kore.Internal.TermLike hiding
                  ( V )
 import           Kore.Predicate.Predicate
                  ( Predicate, makeEqualsPredicate, makeFalsePredicate,
                  makeTruePredicate )
-import           Kore.Step.Pattern as Pattern
-                 ( Conditional (..), allVariables, mapVariables, toMLPattern )
-import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 

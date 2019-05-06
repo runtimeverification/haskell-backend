@@ -19,24 +19,25 @@ import qualified Data.Map as Map
 import           Numeric.Natural
                  ( Natural )
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern
+                 ( Conditional (Conditional) )
+import           Kore.Internal.Pattern as Conditional
+                 ( Conditional (..) )
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
+import           Kore.Internal.TermLike
+                 ( TermLike )
 import qualified Kore.OnePath.Verification as OnePath
 import qualified Kore.OnePath.Verification as Claim
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeNotPredicate, makeTruePredicate )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
-                 ( Conditional (Conditional) )
-import           Kore.Step.Pattern as Conditional
-                 ( Conditional (..) )
-import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Rule
                  ( OnePathRule (..), RewriteRule (..),
                  RulePattern (RulePattern) )
@@ -45,8 +46,6 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Step.TermLike
-                 ( TermLike )
 import qualified SMT
 
 import           Test.Kore

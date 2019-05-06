@@ -7,17 +7,17 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern
+                 ( Conditional (..) )
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
-                 ( Conditional (..) )
 import           Kore.Step.Simplification.StringLiteral
                  ( simplify )
+import           Kore.Syntax.StringLiteral
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions

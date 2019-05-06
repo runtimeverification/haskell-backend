@@ -84,9 +84,7 @@ function.
  -}
 hookAttribute :: Text  -- ^ hooked function name
               -> AttributePattern
-hookAttribute builtin = attributePattern hookSymbol [lit]
-  where
-    lit = (asAttributePattern . StringLiteralPattern) (StringLiteral builtin)
+hookAttribute builtin = attributePattern hookSymbol [attributeString builtin]
 
 {- | Look up a required @hook{}()@ attribute from the given attributes.
 

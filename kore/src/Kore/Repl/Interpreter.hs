@@ -58,13 +58,15 @@ import           System.Process
                  ( StdStream (CreatePipe), createProcess, proc, std_in,
                  std_out )
 
-import           Kore.AST.Common
-                 ( Pattern (..) )
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom (..), RuleIndex (..), sourceLocation )
 import           Kore.Attribute.RuleIndex
+import           Kore.Internal.Pattern
+                 ( Conditional (..) )
+import           Kore.Internal.TermLike
+                 ( TermLike )
 import           Kore.OnePath.Step
                  ( CommonStrategyPattern, StrategyPattern (..),
                  StrategyPatternTransformer (StrategyPatternTransformer),
@@ -76,8 +78,6 @@ import           Kore.OnePath.Verification
 import           Kore.OnePath.Verification
                  ( Claim )
 import           Kore.Repl.Data
-import           Kore.Step.Pattern
-                 ( Conditional (..) )
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
 import qualified Kore.Step.Rule as Rule
@@ -86,11 +86,11 @@ import qualified Kore.Step.Rule as Axiom
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Step.TermLike
-                 ( TermLike )
 import           Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
                  ( Id (..) )
+import           Kore.Syntax.PatternF
+                 ( PatternF (..) )
 import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unparser
@@ -735,10 +735,10 @@ unparseStrategy omitList =
     hide =
         Recursive.unfold $ \termLike ->
             case Recursive.project termLike of
-                ann :< ApplicationPattern app
+                ann :< ApplicationF app
                   | shouldBeExcluded (applicationSymbolOrAlias app) ->
                     -- Do not display children
-                    ann :< ApplicationPattern (withoutChildren app)
+                    ann :< ApplicationF (withoutChildren app)
                 projected -> projected
 
     withoutChildren app = app { applicationChildren = [] }

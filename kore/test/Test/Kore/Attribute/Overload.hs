@@ -6,14 +6,14 @@ import Test.Tasty.HUnit
 import qualified Data.Map.Strict as Map
 import           Data.Proxy
 
-import           Kore.AST.Pure as Pure
-import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.Attribute.Overload
 import qualified Kore.Builtin as Builtin
+import           Kore.Internal.TermLike
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import           Kore.Step.Axiom.Registry
 import           Kore.Syntax.Definition
+import           Kore.Syntax.Pattern as Pure
 
 import           Test.Kore
 import           Test.Kore.Attribute.Parser
@@ -74,11 +74,11 @@ test_arguments =
     $ parseOverload $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationF)
             Application
                 { applicationSymbolOrAlias = overloadSymbol
                 , applicationChildren =
-                    [ (asAttributePattern . StringLiteralPattern)
+                    [ (asAttributePattern . StringLiteralF)
                         (StringLiteral "illegal")
                     ]
                 }
@@ -90,7 +90,7 @@ test_parameters =
     $ parseOverload $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationF)
             Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias

@@ -7,11 +7,10 @@ module Kore.Step.Simplification.Inhabitant
     ( simplify
     ) where
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
-import           Kore.Step.OrPattern
+import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.TermLike
 
 {-| 'simplify' simplifies a 'StringLiteral' pattern, which means returning
 an or containing a term made of that literal.
@@ -20,4 +19,4 @@ simplify
     :: (Ord variable, SortedVariable variable)
     => Sort
     -> OrPattern variable
-simplify s = OrPattern.fromTermLike $ mkInhabitantPattern s
+simplify s = OrPattern.fromTermLike $ mkInhabitant s

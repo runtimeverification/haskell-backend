@@ -35,7 +35,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Prelude hiding
                  ( concat )
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( SortInjection (..), StepperAttributes )
 import qualified Kore.Attribute.Symbol as Attribute
@@ -46,23 +45,24 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
+import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
+import qualified Kore.Internal.OrPredicate as OrPredicate
+import           Kore.Internal.Pattern
+                 ( Conditional (..), Pattern )
+import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeEqualsPredicate,
                  makeNotPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
-import qualified Kore.Step.OrPredicate as OrPredicate
-import           Kore.Step.Pattern
-                 ( Conditional (..), Pattern )
-import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.PatternAttributes
                  ( isConstructorLikeTop )
-import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, SimplificationType, Simplifier,
                  TermLikeSimplifier )
@@ -72,7 +72,6 @@ import           Kore.Step.Substitution
                  ( PredicateMerger (PredicateMerger),
                  createLiftedPredicatesAndSubstitutionsMerger,
                  createPredicatesAndSubstitutionsMergerExcept )
-import           Kore.Step.TermLike
 import           Kore.TopBottom
 import           Kore.Unification.Error
                  ( UnificationError (..) )
@@ -996,7 +995,7 @@ equalInjectiveHeadsAndEquals
         return merged
             { term =
                 mkApp
-                    (getSort firstPattern)
+                    (termLikeSort firstPattern)
                     firstHead
                     (Pattern.term <$> children)
             }

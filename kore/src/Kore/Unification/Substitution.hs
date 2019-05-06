@@ -43,9 +43,9 @@ import           GHC.Stack
 import           Prelude hiding
                  ( null )
 
-import           Kore.Step.TermLike
+import           Kore.Internal.TermLike
                  ( TermLike )
-import qualified Kore.Step.TermLike as TermLike
+import qualified Kore.Internal.TermLike as TermLike
 import           Kore.TopBottom
                  ( TopBottom (..) )
 

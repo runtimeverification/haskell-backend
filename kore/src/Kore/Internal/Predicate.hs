@@ -3,19 +3,19 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
 -}
-module Kore.Step.Predicate
+module Kore.Internal.Predicate
     ( Predicate
     , eraseConditionalTerm
     , top
     , bottom
     , topPredicate
     , bottomPredicate
-    , fromPurePattern
+    , fromPattern
     , Conditional.fromPredicate
     , Conditional.fromSubstitution
     , toPredicate
     , freeVariables
-    , Kore.Step.Predicate.mapVariables
+    , Kore.Internal.Predicate.mapVariables
     -- * Re-exports
     , Conditional (..)
     ) where
@@ -24,13 +24,13 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
-import           Kore.AST.Pure
+import           Kore.Internal.Conditional
+                 ( Conditional (..) )
+import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Step.Conditional
-                 ( Conditional (..) )
-import qualified Kore.Step.Conditional as Conditional
+import           Kore.Syntax
 import           Kore.Unparser
 
 -- | A predicate and substitution without an accompanying term.

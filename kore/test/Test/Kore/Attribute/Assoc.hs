@@ -3,8 +3,8 @@ module Test.Kore.Attribute.Assoc where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.AST.Pure
 import Kore.Attribute.Assoc
+import Kore.Syntax.Pattern
 
 import Test.Kore.Attribute.Parser
 
@@ -37,11 +37,11 @@ test_arguments =
         $ parseAssoc $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationF)
             Application
                 { applicationSymbolOrAlias = assocSymbol
                 , applicationChildren =
-                    [ (asAttributePattern . StringLiteralPattern)
+                    [ (asAttributePattern . StringLiteralF)
                         (StringLiteral "illegal")
                     ]
                 }
@@ -53,7 +53,7 @@ test_parameters =
         $ parseAssoc $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationF)
             Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias

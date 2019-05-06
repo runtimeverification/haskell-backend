@@ -17,8 +17,8 @@ import           Control.Lens hiding
                  ( (:<) )
 import qualified Data.Functor.Foldable as Recursive
 
-import Kore.AST.Pure
 import Kore.Domain.Class
+import Kore.Syntax
 
 patternLens
     ::  forall f domain variable1 variable2 annotation
@@ -27,12 +27,12 @@ patternLens
     -> (Sort -> f Sort)
     -- ^ Result sorts, and operand sorts when the two are equal
     -> (variable1 -> f variable2)  -- ^ Variables
-    ->  (  PurePattern domain variable1 annotation
-        -> f (PurePattern domain variable2 annotation)
+    ->  (  Pattern domain variable1 annotation
+        -> f (Pattern domain variable2 annotation)
         )
         -- ^ Children
-    ->  (  PurePattern domain variable1 annotation
-        -> f (PurePattern domain variable2 annotation)
+    ->  (  Pattern domain variable1 annotation
+        -> f (Pattern domain variable2 annotation)
         )
 patternLens
     lensOperandSort   -- input sort
@@ -44,31 +44,31 @@ patternLens
   where
     patternLensWorker =
         \case
-            AndPattern and0 -> AndPattern <$> patternLensAnd and0
-            BottomPattern bot0 -> BottomPattern <$> patternLensBottom bot0
-            CeilPattern ceil0 -> CeilPattern <$> patternLensCeil ceil0
-            DomainValuePattern dv0 ->
-                DomainValuePattern <$> patternLensDomain dv0
-            EqualsPattern eq0 -> EqualsPattern <$> patternLensEquals eq0
-            ExistsPattern ex0 -> ExistsPattern <$> patternLensExists ex0
-            FloorPattern flr0 -> FloorPattern <$> patternLensFloor flr0
-            ForallPattern fa0 -> ForallPattern <$> patternLensForall fa0
-            IffPattern iff0 -> IffPattern <$> patternLensIff iff0
-            ImpliesPattern imp0 -> ImpliesPattern <$> patternLensImplies imp0
-            InPattern in0 -> InPattern <$> patternLensIn in0
-            NextPattern next0 -> NextPattern <$> patternLensNext next0
-            NotPattern not0 -> NotPattern <$> patternLensNot not0
-            OrPattern or0 -> OrPattern <$> patternLensOr or0
-            RewritesPattern rew0 -> RewritesPattern <$> patternLensRewrites rew0
-            TopPattern top0 -> TopPattern <$> patternLensTop top0
-            VariablePattern var0 -> VariablePattern <$> lensVariable var0
-            SetVariablePattern svar0 ->
-                SetVariablePattern <$> patternLensSetVariable svar0
-            ApplicationPattern app0 ->
-                ApplicationPattern <$> patternLensApplication app0
-            StringLiteralPattern lit -> pure (StringLiteralPattern lit)
-            CharLiteralPattern lit -> pure (CharLiteralPattern lit)
-            InhabitantPattern s -> pure (InhabitantPattern s)
+            AndF and0 -> AndF <$> patternLensAnd and0
+            BottomF bot0 -> BottomF <$> patternLensBottom bot0
+            CeilF ceil0 -> CeilF <$> patternLensCeil ceil0
+            DomainValueF dv0 ->
+                DomainValueF <$> patternLensDomain dv0
+            EqualsF eq0 -> EqualsF <$> patternLensEquals eq0
+            ExistsF ex0 -> ExistsF <$> patternLensExists ex0
+            FloorF flr0 -> FloorF <$> patternLensFloor flr0
+            ForallF fa0 -> ForallF <$> patternLensForall fa0
+            IffF iff0 -> IffF <$> patternLensIff iff0
+            ImpliesF imp0 -> ImpliesF <$> patternLensImplies imp0
+            InF in0 -> InF <$> patternLensIn in0
+            NextF next0 -> NextF <$> patternLensNext next0
+            NotF not0 -> NotF <$> patternLensNot not0
+            OrF or0 -> OrF <$> patternLensOr or0
+            RewritesF rew0 -> RewritesF <$> patternLensRewrites rew0
+            TopF top0 -> TopF <$> patternLensTop top0
+            VariableF var0 -> VariableF <$> lensVariable var0
+            SetVariableF svar0 ->
+                SetVariableF <$> patternLensSetVariable svar0
+            ApplicationF app0 ->
+                ApplicationF <$> patternLensApplication app0
+            StringLiteralF lit -> pure (StringLiteralF lit)
+            CharLiteralF lit -> pure (CharLiteralF lit)
+            InhabitantF s -> pure (InhabitantF s)
 
     patternLensAnd And { andSort, andFirst, andSecond } =
         And
@@ -86,8 +86,8 @@ patternLens
             <*> lensChild ceilChild
 
     patternLensDomain
-        :: domain (PurePattern domain variable1 annotation)
-        -> f (domain (PurePattern domain variable2 annotation))
+        :: domain (Pattern domain variable1 annotation)
+        -> f (domain (Pattern domain variable2 annotation))
     patternLensDomain =
         lensDomainValue patternLensDomainValue
       where
@@ -205,7 +205,7 @@ patternLens
 -- | The sort returned by a top-level constructor.
 resultSort
     :: (Domain domain, Traversable domain)
-    => Traversal' (PurePattern domain variable annotation) Sort
+    => Traversal' (Pattern domain variable annotation) Sort
 resultSort = \f -> patternLens pure f pure pure
 
 -- | All sub-expressions which are 'Pattern's.
@@ -213,19 +213,19 @@ resultSort = \f -> patternLens pure f pure pure
 allChildren
     :: (Domain domain, Traversable domain)
     => Traversal'
-        (PurePattern domain variable annotation)
-        (PurePattern domain variable annotation)
+        (Pattern domain variable annotation)
+        (Pattern domain variable annotation)
 allChildren = patternLens pure pure pure
 
 -- | Applies a function at an `[Int]` path.
 localInPattern
     :: (Domain domain, Traversable domain)
     => [Int]
-    ->  (  PurePattern domain variable annotation
-        -> PurePattern domain variable annotation
+    ->  (  Pattern domain variable annotation
+        -> Pattern domain variable annotation
         )
-    -> PurePattern domain variable annotation
-    -> PurePattern domain variable annotation
+    -> Pattern domain variable annotation
+    -> Pattern domain variable annotation
 localInPattern path f pat = pat & inPath path %~ f
 
 -- | Takes an `[Int]` representing a path, and returns a lens to that position.
@@ -234,11 +234,11 @@ localInPattern path f pat = pat & inPath path %~ f
 inPath
     :: (Applicative f, Domain domain, Traversable domain)
     => [Int]
-    ->  (  PurePattern domain variable annotation
-        -> f (PurePattern domain variable annotation)
+    ->  (  Pattern domain variable annotation
+        -> f (Pattern domain variable annotation)
         )
-    ->  (  PurePattern domain variable annotation
-        -> f (PurePattern domain variable annotation)
+    ->  (  Pattern domain variable annotation
+        -> f (Pattern domain variable annotation)
         )
 inPath []       = id --aka the identity lens
 inPath (n : ns) = partsOf allChildren . ix n . inPath ns
@@ -256,22 +256,22 @@ inPath (n : ns) = partsOf allChildren . ix n . inPath ns
 -- are synonymous. But don't quote me on this.
 isObviouslyPredicate
     :: Functor domain
-    => PurePattern domain variable annotation
+    => Pattern domain variable annotation
     -> Bool
 isObviouslyPredicate (Recursive.project -> _ :< pat) =
     case pat of
         -- Trivial cases
-        EqualsPattern _ -> True
-        InPattern _ -> True
-        CeilPattern _ -> True
-        FloorPattern _ -> True
+        EqualsF _ -> True
+        InF _ -> True
+        CeilF _ -> True
+        FloorF _ -> True
         -- Non-trivial cases
-        AndPattern and0 -> all isObviouslyPredicate and0
-        OrPattern or0 -> all isObviouslyPredicate or0
-        ImpliesPattern imp0 -> all isObviouslyPredicate imp0
-        IffPattern iff0 -> all isObviouslyPredicate iff0
-        NotPattern not0 -> all isObviouslyPredicate not0
-        ForallPattern all0 -> all isObviouslyPredicate all0
-        ExistsPattern any0 -> all isObviouslyPredicate any0
+        AndF and0 -> all isObviouslyPredicate and0
+        OrF or0 -> all isObviouslyPredicate or0
+        ImpliesF imp0 -> all isObviouslyPredicate imp0
+        IffF iff0 -> all isObviouslyPredicate iff0
+        NotF not0 -> all isObviouslyPredicate not0
+        ForallF all0 -> all isObviouslyPredicate all0
+        ExistsF any0 -> all isObviouslyPredicate any0
         -- Non-predicates
         _ -> False

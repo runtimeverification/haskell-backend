@@ -42,16 +42,16 @@ import           GHC.Stack
 
 import           Control.Monad.Catch
                  ( Exception, MonadCatch, MonadThrow, catch, throwM )
-import           Kore.Logger
-import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.OrPattern
+import qualified Kore.Internal.Conditional as Conditional
+import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern
                  ( Pattern, Predicate )
-import qualified Kore.Step.Predicate as Predicate
-import           Kore.Step.TermLike
+import qualified Kore.Internal.Predicate as Predicate
+import           Kore.Internal.TermLike
                  ( TermLike )
+import           Kore.Logger
 import           Kore.Syntax.Variable
                  ( SortedVariable )
 import           Kore.Unparser

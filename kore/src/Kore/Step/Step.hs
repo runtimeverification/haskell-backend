@@ -43,33 +43,33 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import qualified Kore.AST.Valid as Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Conditional
+                 ( Conditional (Conditional) )
+import qualified Kore.Internal.Conditional as Conditional
+import           Kore.Internal.MultiOr
+                 ( MultiOr )
+import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Predicate
+                 ( Predicate )
+import qualified Kore.Internal.Predicate as Predicate
+import           Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Log
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Conditional
-                 ( Conditional (Conditional) )
-import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
-import           Kore.Step.Pattern as Pattern
-import           Kore.Step.Predicate
-                 ( Predicate )
-import qualified Kore.Step.Predicate as Predicate
 import qualified Kore.Step.Remainder as Remainder
-import           Kore.Step.Representation.MultiOr
-                 ( MultiOr )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Result as Step
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (RulePattern) )
@@ -77,7 +77,6 @@ import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.Step.TermLike as TermLike
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Error
                  ( UnificationError (..) )
@@ -643,13 +642,13 @@ checkSubstitutionCoverage tools initial unified final
     -- A constructor-like pattern consists of constructor applications and
     -- variables only.
     isConstructorLikePattern p
-      | Valid.App_ symbolOrAlias children <- p =
+      | App_ symbolOrAlias children <- p =
         isConstructor symbolOrAlias && all isConstructorLikePattern children
-      | Valid.Var_ _ <- p = True
+      | Var_ _ <- p = True
       | otherwise = False
     isConstructor = Reflection.give tools Attribute.Symbol.isConstructor_
     isSortInjectionPattern p
-      | Valid.App_ symbolOrAlias _ <- p = isSortInjection symbolOrAlias
+      | App_ symbolOrAlias _ <- p = isSortInjection symbolOrAlias
       | otherwise = False
     isSortInjection = Reflection.give tools Attribute.Symbol.isSortInjection_
     isValidSymbolic (x, t) =

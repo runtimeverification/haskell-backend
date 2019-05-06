@@ -41,15 +41,12 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Data.Text.Prettyprint.Doc.Render.String
                  ( renderString )
 
-import           Kore.Annotation.Valid
-                 ( Valid (..) )
-import qualified Kore.Annotation.Valid as Valid
 import           Kore.AST.Error
-import           Kore.AST.Pure
 import           Kore.ASTHelpers
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.SortVerifier
 import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
@@ -57,6 +54,7 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
 import           Kore.Parser
                  ( ParsedPattern )
+import           Kore.Syntax
 import           Kore.Syntax.Definition
 import           Kore.Unparser
 import qualified Kore.Variables.Free as Variables
@@ -207,13 +205,13 @@ verifyAliasLeftPattern leftPattern = do
   where
     expectVariable
         :: Variable
-        -> PatternVerifier (Variable, Valid Variable)
+        -> PatternVerifier (Variable, Attribute.Pattern Variable)
     expectVariable var = do
         verifyVariableDeclaration var
         let
             patternSort = variableSort var
             freeVariables = Set.singleton var
-            valid = Valid { patternSort, freeVariables }
+            valid = Attribute.Pattern { patternSort, freeVariables }
         return (var, valid)
 
 {- | Verify that a Kore pattern is well-formed.
@@ -266,8 +264,8 @@ verifyNoPatterns
 verifyNoPatterns _ = koreFail "Unexpected pattern."
 
 verifyObjectPattern
-    ::  ( base ~ Pattern Domain.Builtin Variable
-        , valid ~ Valid Variable
+    ::  ( base ~ PatternF Domain.Builtin Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => base (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF base valid Verified.Pattern)
@@ -277,60 +275,60 @@ verifyObjectPattern pat =
     patternName = patternNameForContext pat
 
 verifyPatternHead
-    ::  ( base ~ Pattern Domain.Builtin Variable
-        , valid ~ Valid Variable
+    ::  ( base ~ PatternF Domain.Builtin Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => base (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF base valid Verified.Pattern)
 verifyPatternHead =
     \case
-        AndPattern and' ->
-            transCofreeF AndPattern <$> verifyAnd and'
-        ApplicationPattern app ->
-            transCofreeF ApplicationPattern <$> verifyApplication app
-        BottomPattern bottom ->
-            transCofreeF BottomPattern <$> verifyBottom bottom
-        CeilPattern ceil' ->
-            transCofreeF CeilPattern <$> verifyCeil ceil'
-        DomainValuePattern dv ->
-            transCofreeF DomainValuePattern <$> verifyDomainValue dv
-        EqualsPattern equals' ->
-            transCofreeF EqualsPattern <$> verifyEquals equals'
-        ExistsPattern exists ->
-            transCofreeF ExistsPattern <$> verifyExists exists
-        FloorPattern floor' ->
-            transCofreeF FloorPattern <$> verifyFloor floor'
-        ForallPattern forall' ->
-            transCofreeF ForallPattern <$> verifyForall forall'
-        IffPattern iff ->
-            transCofreeF IffPattern <$> verifyIff iff
-        ImpliesPattern implies ->
-            transCofreeF ImpliesPattern <$> verifyImplies implies
-        InPattern in' ->
-            transCofreeF InPattern <$> verifyIn in'
-        NextPattern next ->
-            transCofreeF NextPattern <$> verifyNext next
-        NotPattern not' ->
-            transCofreeF NotPattern <$> verifyNot not'
-        OrPattern or' ->
-            transCofreeF OrPattern <$> verifyOr or'
-        RewritesPattern rewrites ->
-            transCofreeF RewritesPattern <$> verifyRewrites rewrites
-        StringLiteralPattern str ->
-            transCofreeF (StringLiteralPattern . getConst)
+        AndF and' ->
+            transCofreeF AndF <$> verifyAnd and'
+        ApplicationF app ->
+            transCofreeF ApplicationF <$> verifyApplication app
+        BottomF bottom ->
+            transCofreeF BottomF <$> verifyBottom bottom
+        CeilF ceil' ->
+            transCofreeF CeilF <$> verifyCeil ceil'
+        DomainValueF dv ->
+            transCofreeF DomainValueF <$> verifyDomainValue dv
+        EqualsF equals' ->
+            transCofreeF EqualsF <$> verifyEquals equals'
+        ExistsF exists ->
+            transCofreeF ExistsF <$> verifyExists exists
+        FloorF floor' ->
+            transCofreeF FloorF <$> verifyFloor floor'
+        ForallF forall' ->
+            transCofreeF ForallF <$> verifyForall forall'
+        IffF iff ->
+            transCofreeF IffF <$> verifyIff iff
+        ImpliesF implies ->
+            transCofreeF ImpliesF <$> verifyImplies implies
+        InF in' ->
+            transCofreeF InF <$> verifyIn in'
+        NextF next ->
+            transCofreeF NextF <$> verifyNext next
+        NotF not' ->
+            transCofreeF NotF <$> verifyNot not'
+        OrF or' ->
+            transCofreeF OrF <$> verifyOr or'
+        RewritesF rewrites ->
+            transCofreeF RewritesF <$> verifyRewrites rewrites
+        StringLiteralF str ->
+            transCofreeF (StringLiteralF . getConst)
                 <$> verifyStringLiteral str
-        CharLiteralPattern char ->
-            transCofreeF (CharLiteralPattern . getConst)
+        CharLiteralF char ->
+            transCofreeF (CharLiteralF . getConst)
                 <$> verifyCharLiteral char
-        TopPattern top ->
-            transCofreeF TopPattern <$> verifyTop top
-        VariablePattern var ->
-            transCofreeF (VariablePattern . getConst)
+        TopF top ->
+            transCofreeF TopF <$> verifyTop top
+        VariableF var ->
+            transCofreeF (VariableF . getConst)
                 <$> verifyVariable var
-        InhabitantPattern _ ->
+        InhabitantF _ ->
             koreFail "Unexpected pattern."
-        SetVariablePattern (SetVariable var) ->
-            transCofreeF (SetVariablePattern . SetVariable . getConst)
+        SetVariableF (SetVariable var) ->
+            transCofreeF (SetVariableF . SetVariable . getConst)
                 <$> verifyVariable var
   where
     transCofreeF fg (a :< fb) = a :< fg fb
@@ -343,7 +341,7 @@ verifyPatternSort patternSort = do
 
 verifyOperands
     ::  ( Traversable operator
-        , valid ~ Valid Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => (forall a. operator a -> Sort)
     -> operator (PatternVerifier Verified.Pattern)
@@ -358,16 +356,14 @@ verifyOperands operandSort = \operator -> do
             return child
     verified <- traverse verifyChildWithSort operator
     let freeVariables =
-            Foldable.foldl'
-                Set.union
-                Set.empty
-                (Valid.freeVariables . extract <$> verified)
-    return (Valid { patternSort, freeVariables } :< verified)
+            Foldable.foldl' Set.union Set.empty
+                (Attribute.freeVariables . extract <$> verified)
+    return (Attribute.Pattern { patternSort, freeVariables } :< verified)
 {-# INLINE verifyOperands #-}
 
 verifyAnd
     ::  ( logical ~ And Sort
-        , valid ~ Valid Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => logical (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF logical valid Verified.Pattern)
@@ -375,7 +371,7 @@ verifyAnd = verifyOperands andSort
 
 verifyOr
     ::  ( logical ~ Or Sort
-        , valid ~ Valid Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => logical (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF logical valid Verified.Pattern)
@@ -383,7 +379,7 @@ verifyOr = verifyOperands orSort
 
 verifyIff
     ::  ( logical ~ Iff Sort
-        , valid ~ Valid Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => logical (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF logical valid Verified.Pattern)
@@ -391,7 +387,7 @@ verifyIff = verifyOperands iffSort
 
 verifyImplies
     ::  ( logical ~ Implies Sort
-        , valid ~ Valid Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => logical (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF logical valid Verified.Pattern)
@@ -399,7 +395,7 @@ verifyImplies = verifyOperands impliesSort
 
 verifyBottom
     ::  ( logical ~ Bottom Sort
-        , valid ~ Valid Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => logical (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF logical valid Verified.Pattern)
@@ -407,7 +403,7 @@ verifyBottom = verifyOperands bottomSort
 
 verifyTop
     ::  ( logical ~ Top Sort
-        , valid ~ Valid Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => logical (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF logical valid Verified.Pattern)
@@ -415,7 +411,7 @@ verifyTop = verifyOperands topSort
 
 verifyNot
     ::  ( logical ~ Not Sort
-        , valid ~ Valid Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => logical (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF logical valid Verified.Pattern)
@@ -423,7 +419,7 @@ verifyNot = verifyOperands notSort
 
 verifyRewrites
     ::  ( logical ~ Rewrites Sort
-        , valid ~ Valid Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => logical (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF logical valid Verified.Pattern)
@@ -431,7 +427,7 @@ verifyRewrites = verifyOperands rewritesSort
 
 verifyPredicate
     ::  ( Traversable predicate
-        , valid ~ Valid Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => (forall a. predicate a -> Sort)  -- ^ Operand sort
     -> (forall a. predicate a -> Sort)  -- ^ Result sort
@@ -440,13 +436,13 @@ verifyPredicate
 verifyPredicate operandSort resultSort = \predicate -> do
     let patternSort = resultSort predicate
     verifyPatternSort patternSort
-    Valid { freeVariables } :< verified <- verifyOperands operandSort predicate
-    return (Valid { patternSort, freeVariables } :< verified)
+    Attribute.Pattern { freeVariables } :< verified <- verifyOperands operandSort predicate
+    return (Attribute.Pattern { patternSort, freeVariables } :< verified)
 {-# INLINE verifyPredicate #-}
 
 verifyCeil
     ::  ( predicate ~ Ceil Sort
-        , valid ~ Valid Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => predicate (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF predicate valid Verified.Pattern)
@@ -454,7 +450,7 @@ verifyCeil = verifyPredicate ceilOperandSort ceilResultSort
 
 verifyFloor
     ::  ( predicate ~ Floor Sort
-        , valid ~ Valid Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => predicate (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF predicate valid Verified.Pattern)
@@ -462,7 +458,7 @@ verifyFloor = verifyPredicate floorOperandSort floorResultSort
 
 verifyEquals
     ::  ( predicate ~ Equals Sort
-        , valid ~ Valid Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => predicate (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF predicate valid Verified.Pattern)
@@ -470,7 +466,7 @@ verifyEquals = verifyPredicate equalsOperandSort equalsResultSort
 
 verifyIn
     ::  ( predicate ~ In Sort
-        , valid ~ Valid Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => predicate (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF predicate valid Verified.Pattern)
@@ -478,14 +474,14 @@ verifyIn = verifyPredicate inOperandSort inResultSort
 
 verifyNext
     ::  ( operator ~ Next Sort
-        , valid ~ Valid Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => operator (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF operator valid Verified.Pattern)
 verifyNext = verifyOperands nextSort
 
 verifyPatternsWithSorts
-    :: ( Comonad pat, valid ~ Valid Variable )
+    :: ( Comonad pat, valid ~ Attribute.Pattern Variable )
     => [Sort]
     -> [PatternVerifier (pat valid)]
     -> PatternVerifier [(pat valid)]
@@ -512,7 +508,7 @@ verifyPatternsWithSorts sorts operands = do
 verifyApplication
     ::  ( Comonad child
         , base ~ Application SymbolOrAlias
-        , valid ~ Valid Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => base (PatternVerifier (child valid))
     -> PatternVerifier (CofreeF base valid (child valid))
@@ -524,15 +520,15 @@ verifyApplication application = do
     let patternSort = applicationSortsResult applicationSorts
         verified = application { applicationChildren = verifiedChildren }
         freeVariables =
-            Set.unions (Valid.freeVariables . extract <$> verifiedChildren)
-    return (Valid { patternSort, freeVariables } :< verified)
+            Set.unions (Attribute.freeVariables . extract <$> verifiedChildren)
+    return (Attribute.Pattern { patternSort, freeVariables } :< verified)
   where
     Application { applicationSymbolOrAlias } = application
     Application { applicationChildren } = application
 
 verifyBinder
     ::  ( Traversable binder
-        , valid ~ Valid Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => (forall a. binder a -> Sort)
     -> (forall a. binder a -> Variable)
@@ -554,13 +550,13 @@ verifyBinder binderSort binderVariable = \binder -> do
         Reader.local
             withQuantifiedVariable
             (verifyOperands binderSort binder)
-    let valid' = Valid.deleteFreeVariable variable valid
+    let valid' = Attribute.deleteFreeVariable variable valid
     return (valid' :< binder')
 {-# INLINE verifyBinder #-}
 
 verifyExists
     ::  ( binder ~ Exists Sort Variable
-        , valid ~ Valid Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => binder (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF binder valid Verified.Pattern)
@@ -568,7 +564,7 @@ verifyExists = verifyBinder existsSort existsVariable
 
 verifyForall
     ::  ( binder ~ Forall Sort Variable
-        , valid ~ Valid Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => binder (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF binder valid Verified.Pattern)
@@ -576,7 +572,7 @@ verifyForall = verifyBinder forallSort forallVariable
 
 verifyVariable
     ::  ( base ~ Const (Variable)
-        , valid ~ Valid Variable
+        , valid ~ Attribute.Pattern Variable
         )
     => Variable
     -> PatternVerifier (CofreeF base valid Verified.Pattern)
@@ -590,10 +586,10 @@ verifyVariable variable@Variable { variableName, variableSort } = do
     let patternSort = variableSort
         verified = Const variable
         freeVariables = Set.singleton variable
-    return (Valid { patternSort, freeVariables } :< verified)
+    return (Attribute.Pattern { patternSort, freeVariables } :< verified)
 
 verifyDomainValue
-    :: valid ~ Valid Variable
+    :: valid ~ Attribute.Pattern Variable
     => Domain.Builtin (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF Domain.Builtin valid Verified.Pattern)
 verifyDomainValue domain = do
@@ -608,33 +604,31 @@ verifyDomainValue domain = do
     verified <- PatternVerifier $ Reader.lift $ Builtin.verifyDomainValue
                     builtinDomainValueVerifiers lookupSortDeclaration' domain'
     let freeVariables =
-            Foldable.foldl'
-                Set.union
-                Set.empty
-                (Valid.freeVariables . extract <$> verified)
+            Foldable.foldl' Set.union Set.empty
+                (Attribute.freeVariables . extract <$> verified)
     Monad.unless (Set.null freeVariables)
         (koreFail "Domain value must not contain free variables.")
-    return (Valid { patternSort, freeVariables } :< verified)
+    return (Attribute.Pattern { patternSort, freeVariables } :< verified)
 
 verifyStringLiteral
-    :: (base ~ Const StringLiteral, valid ~ Valid variable)
+    :: (base ~ Const StringLiteral, valid ~ Attribute.Pattern variable)
     => StringLiteral
     -> PatternVerifier (CofreeF base valid Verified.Pattern)
 verifyStringLiteral str = do
     let patternSort = stringMetaSort
         freeVariables = Set.empty
         verified = Const str
-    return (Valid { patternSort, freeVariables } :< verified)
+    return (Attribute.Pattern { patternSort, freeVariables } :< verified)
 
 verifyCharLiteral
-    :: (base ~ Const CharLiteral, valid ~ Valid variable)
+    :: (base ~ Const CharLiteral, valid ~ Attribute.Pattern variable)
     => CharLiteral
     -> PatternVerifier (CofreeF base valid Verified.Pattern)
 verifyCharLiteral char = do
     let patternSort = charMetaSort
         freeVariables = Set.empty
         verified = Const char
-    return (Valid { patternSort, freeVariables } :< verified)
+    return (Attribute.Pattern { patternSort, freeVariables } :< verified)
 
 verifyVariableDeclaration :: Variable -> PatternVerifier VerifySuccess
 verifyVariableDeclaration Variable { variableSort } = do
@@ -700,10 +694,10 @@ assertSameSort expectedSort actualSort = do
 
 assertExpectedSort
     :: Maybe Sort
-    -> Valid variable
+    -> Attribute.Pattern variable
     -> PatternVerifier ()
 assertExpectedSort Nothing _ = return ()
-assertExpectedSort (Just expected) Valid { patternSort } =
+assertExpectedSort (Just expected) Attribute.Pattern { patternSort } =
     assertSameSort expected patternSort
 
 verifyFreeVariables
@@ -739,40 +733,40 @@ checkVariable var vars =
             <+> unparse var
             <> Pretty.dot
 
-patternNameForContext :: Pattern dom Variable p -> String
-patternNameForContext (AndPattern _) = "\\and"
-patternNameForContext (ApplicationPattern application) =
+patternNameForContext :: PatternF dom Variable p -> String
+patternNameForContext (AndF _) = "\\and"
+patternNameForContext (ApplicationF application) =
     "symbol or alias '"
     ++ getIdForError
         (symbolOrAliasConstructor (applicationSymbolOrAlias application))
     ++ "'"
-patternNameForContext (BottomPattern _) = "\\bottom"
-patternNameForContext (CeilPattern _) = "\\ceil"
-patternNameForContext (DomainValuePattern _) = "\\dv"
-patternNameForContext (EqualsPattern _) = "\\equals"
-patternNameForContext (ExistsPattern exists) =
+patternNameForContext (BottomF _) = "\\bottom"
+patternNameForContext (CeilF _) = "\\ceil"
+patternNameForContext (DomainValueF _) = "\\dv"
+patternNameForContext (EqualsF _) = "\\equals"
+patternNameForContext (ExistsF exists) =
     "\\exists '"
     ++ variableNameForContext (existsVariable exists)
     ++ "'"
-patternNameForContext (FloorPattern _) = "\\floor"
-patternNameForContext (ForallPattern forall) =
+patternNameForContext (FloorF _) = "\\floor"
+patternNameForContext (ForallF forall) =
     "\\forall '"
     ++ variableNameForContext (forallVariable forall)
     ++ "'"
-patternNameForContext (IffPattern _) = "\\iff"
-patternNameForContext (ImpliesPattern _) = "\\implies"
-patternNameForContext (InPattern _) = "\\in"
-patternNameForContext (NextPattern _) = "\\next"
-patternNameForContext (NotPattern _) = "\\not"
-patternNameForContext (OrPattern _) = "\\or"
-patternNameForContext (RewritesPattern _) = "\\rewrites"
-patternNameForContext (StringLiteralPattern _) = "<string>"
-patternNameForContext (CharLiteralPattern _) = "<char>"
-patternNameForContext (TopPattern _) = "\\top"
-patternNameForContext (VariablePattern variable) =
+patternNameForContext (IffF _) = "\\iff"
+patternNameForContext (ImpliesF _) = "\\implies"
+patternNameForContext (InF _) = "\\in"
+patternNameForContext (NextF _) = "\\next"
+patternNameForContext (NotF _) = "\\not"
+patternNameForContext (OrF _) = "\\or"
+patternNameForContext (RewritesF _) = "\\rewrites"
+patternNameForContext (StringLiteralF _) = "<string>"
+patternNameForContext (CharLiteralF _) = "<char>"
+patternNameForContext (TopF _) = "\\top"
+patternNameForContext (VariableF variable) =
     "variable '" ++ variableNameForContext variable ++ "'"
-patternNameForContext (InhabitantPattern _) = "\\inh"
-patternNameForContext (SetVariablePattern (SetVariable variable)) =
+patternNameForContext (InhabitantF _) = "\\inh"
+patternNameForContext (SetVariableF (SetVariable variable)) =
     "set variable '" ++ variableNameForContext variable ++ "'"
 
 variableNameForContext :: Variable -> String

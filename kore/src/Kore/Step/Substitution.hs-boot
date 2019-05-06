@@ -4,12 +4,12 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Pattern
+                 ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
-                 ( Predicate )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, TermLikeSimplifier )
 import           Kore.Syntax.Variable

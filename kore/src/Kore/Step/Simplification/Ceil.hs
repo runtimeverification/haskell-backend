@@ -19,9 +19,6 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
 
-import qualified Kore.AST.Common as Common
-import           Kore.AST.Valid
-                 ( pattern Top_, mkCeil_, mkTop_ )
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Attribute.Symbol as StepperAttributes
@@ -31,35 +28,36 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
+import           Kore.Internal.Conditional
+                 ( Conditional (..) )
+import qualified Kore.Internal.MultiAnd as MultiAnd
+                 ( make )
+import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
+import qualified Kore.Internal.OrPredicate as OrPredicate
+import           Kore.Internal.Pattern
+                 ( Pattern )
+import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Conditional
-                 ( Conditional (..) )
 import qualified Kore.Step.Function.Evaluator as Axiom
                  ( evaluatePattern )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
-import qualified Kore.Step.OrPredicate as OrPredicate
-import           Kore.Step.Pattern
-                 ( Pattern )
-import qualified Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.RecursiveAttributes
                  ( isTotalPattern )
-import qualified Kore.Step.Representation.MultiAnd as MultiAnd
-                 ( make )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Simplification.AndPredicates as And
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
-import           Kore.Step.TermLike
 import           Kore.Syntax.Application
 import           Kore.Syntax.Ceil
+import qualified Kore.Syntax.PatternF as Syntax
 import           Kore.TopBottom
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -106,10 +104,10 @@ for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Ceil Sort) (Valid variable) (OrPattern variable)
+> CofreeF (Ceil Sort) (Attribute.Pattern variable) (OrPattern variable)
 
 instead of an 'OrPattern' argument. The type of 'makeEvaluate' may
-be changed analogously. The 'Valid' annotation will eventually cache information
+be changed analogously. The 'Attribute.Pattern' annotation will eventually cache information
 besides the pattern sort, which will make it even more useful to carry around.
 
 -}
@@ -245,7 +243,7 @@ makeEvaluateTerm
   | isTotalPattern tools term = return OrPredicate.top
   | otherwise =
     case projected of
-        Common.ApplicationPattern app
+        Syntax.ApplicationF app
           | StepperAttributes.isTotal headAttributes -> do
             simplifiedChildren <- mapM
                 (makeEvaluateTerm
@@ -263,7 +261,7 @@ makeEvaluateTerm
             Application { applicationSymbolOrAlias = patternHead } = app
             Application { applicationChildren = children } = app
             headAttributes = MetadataTools.symAttributes tools patternHead
-        Common.DomainValuePattern child ->
+        Syntax.DomainValueF child ->
             makeEvaluateBuiltin
                 tools
                 substitutionSimplifier
@@ -326,7 +324,7 @@ makeEvaluateBuiltin
     (Domain.BuiltinExternal Domain.External { domainValueChild = p })
   =
     case Recursive.project p of
-        _ :< Common.StringLiteralPattern _ ->
+        _ :< Syntax.StringLiteralF _ ->
             -- This should be the only kind of Domain.BuiltinExternal, and it
             -- should be valid and functional if this has passed verification.
             return OrPredicate.top

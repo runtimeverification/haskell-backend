@@ -21,7 +21,6 @@ import           Data.Text
 import qualified Data.Text as Text
 
 import           Kore.AST.Error
-import           Kore.AST.Pure
 import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
@@ -31,6 +30,7 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
+import           Kore.Syntax
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 

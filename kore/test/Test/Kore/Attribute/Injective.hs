@@ -3,8 +3,8 @@ module Test.Kore.Attribute.Injective where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.AST.Pure
 import Kore.Attribute.Injective
+import Kore.Syntax.Pattern
 
 import Test.Kore.Attribute.Parser
 
@@ -37,11 +37,11 @@ test_arguments =
         $ parseInjective $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationF)
             Application
                 { applicationSymbolOrAlias = injectiveSymbol
                 , applicationChildren =
-                    [ (asAttributePattern . StringLiteralPattern)
+                    [ (asAttributePattern . StringLiteralF)
                         (StringLiteral "illegal")
                     ]
                 }
@@ -53,7 +53,7 @@ test_parameters =
         $ parseInjective $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationF)
             Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias

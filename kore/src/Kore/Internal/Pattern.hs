@@ -4,27 +4,26 @@ License     : NCSA
 
 Representation of program configurations as conditional patterns.
 -}
-module Kore.Step.Pattern
+module Kore.Internal.Pattern
     ( Pattern
     , fromPredicate
     , toPredicate
-    , Kore.Step.Pattern.allVariables
+    , Kore.Internal.Pattern.allVariables
     , bottom
     , bottomOf
     , isBottom
     , isTop
-    , Kore.Step.Pattern.mapVariables
+    , Kore.Internal.Pattern.mapVariables
     , toMLPattern
     , toStepPattern
     , top
     , topOf
     , fromTermLike
-    , Kore.Step.Pattern.freeVariables
+    , Kore.Internal.Pattern.freeVariables
     -- * Re-exports
     , Conditional (..)
     , Conditional.withCondition
     , Predicate
-    , module Kore.Step.TermLike
     ) where
 
 import           Data.Set
@@ -33,18 +32,15 @@ import qualified Data.Set as Set
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.Valid
+import           Kore.Internal.Conditional
+                 ( Conditional (..) )
+import qualified Kore.Internal.Conditional as Conditional
+import           Kore.Internal.Predicate
+                 ( Predicate )
+import           Kore.Internal.TermLike as TermLike
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Step.Conditional
-                 ( Conditional (..) )
-import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.Predicate
-                 ( Predicate )
-import           Kore.Step.TermLike
-                 ( CofreeF (..), Sort, SortedVariable, TermLike, Variable )
-import qualified Kore.Step.TermLike as TermLike
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -143,14 +139,13 @@ toStepPattern
         -> TermLike variable
     simpleAnd pattern' predicate'
       | isTop predicate'    = pattern'
-      | isBottom predicate' = mkBottom patternSort
+      | isBottom predicate' = mkBottom sort
       | isTop pattern'      = predicateTermLike
       | isBottom pattern'   = pattern'
       | otherwise           = mkAnd pattern' predicateTermLike
       where
-        predicateTermLike =
-            Syntax.Predicate.fromPredicate patternSort predicate'
-        patternSort = getSort pattern'
+        predicateTermLike = Syntax.Predicate.fromPredicate sort predicate'
+        sort = termLikeSort pattern'
 
 toMLPattern
     ::  forall variable.

@@ -17,22 +17,21 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid as Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
+import           Kore.Internal.TermLike hiding
+                 ( freeVariables )
 import           Kore.Parser.Parser
 import           Kore.Parser.ParserUtils
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Rule hiding
                  ( freeVariables )
 import qualified Kore.Step.Rule as Rule
-import           Kore.Step.TermLike hiding
-                 ( freeVariables )
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
@@ -210,16 +209,17 @@ axiomPatternsIntegrationTests =
                             \        )\n\
                             \    )\n\
                             \[]"
-                    let valid = Valid { patternSort, freeVariables }
-                          where
-                            patternSort = sortTCell
-                            freeVariables =
-                                Set.fromList
-                                    [ Variable "VarI1" mempty sortAInt
-                                    , Variable "VarI2" mempty sortAInt
-                                    , Variable "VarDotVar1" mempty sortK
-                                    , Variable "VarDotVar0" mempty sortStateCell
-                                    ]
+                    let valid =
+                            Attribute.Pattern
+                                { patternSort = sortTCell
+                                , freeVariables =
+                                    Set.fromList
+                                        [ varS "VarI1" sortAInt
+                                        , varS "VarI2" sortAInt
+                                        , varS "VarDotVar1" sortK
+                                        , varS "VarDotVar0" sortStateCell
+                                        ]
+                                }
                     Rule.fromSentence ((<$) valid <$> parsed)
                 )
             )
@@ -309,7 +309,7 @@ applyInj
 applyInj sortTo child =
     applySymbol symbolInj [sortFrom, sortTo] [child]
   where
-    Valid { patternSort = sortFrom } = extract child
+    Attribute.Pattern { patternSort = sortFrom } = extract child
 
 symbolSentenceInj :: Sentence (TermLike Variable)
 symbolSentenceInj = asSentence symbolInj
