@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-exit_code=0
+set -exuo pipefail
 
-for f in `find ./kore -name '*.hs'`; do
-    src/main/python/lint.py $f || exit_code=1
-done
+export TOP=${TOP:-$(git rev-parse --show-toplevel)}
 
-exit $exit_code
+source $TOP/scripts/run-on-haskell.include.sh
+
+runOnHaskellFiles "$TOP" "$TOP/src/main/python/lint.py"
