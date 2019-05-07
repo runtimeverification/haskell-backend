@@ -52,7 +52,10 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort)
     koreFailWithLocationsWhen
         (sortIsMeta && sortActualSorts sort /= [])
         [sortName]
-        ("Malformed meta sort '" ++ sortId ++ "' with non-empty Parameter sorts.")
+        (  "Malformed meta sort '"
+        ++ sortId
+        ++ "' with non-empty Parameter sorts."
+        )
     verifySuccess
   where
     sortIsMeta = False

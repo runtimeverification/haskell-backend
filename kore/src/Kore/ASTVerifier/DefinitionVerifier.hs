@@ -65,7 +65,9 @@ verifyDefinition
     -> ParsedDefinition
     -> Either (Error VerifyError) VerifySuccess
 verifyDefinition attributesVerification builtinVerifiers definition = do
-    _ <- verifyAndIndexDefinition attributesVerification builtinVerifiers definition
+    _ <-
+        verifyAndIndexDefinition
+            attributesVerification builtinVerifiers definition
     verifySuccess
 
 {-|'verifyAndIndexDefinition' verifies a definition and returns an indexed

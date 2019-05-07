@@ -506,7 +506,9 @@ asInternal = Map.asInternal testMetadataTools mapSort
 
 mkIntVar :: Id -> TermLike Variable
 mkIntVar variableName =
-    mkVar Variable { variableName, variableCounter = mempty, variableSort = intSort }
+    mkVar
+        Variable
+            { variableName, variableCounter = mempty, variableSort = intSort }
 
 mockSubstitutionSimplifier :: PredicateSimplifier
 mockSubstitutionSimplifier = PredicateSimplifier return

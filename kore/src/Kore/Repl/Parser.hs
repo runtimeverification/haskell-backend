@@ -93,7 +93,8 @@ proveSteps :: Parser ReplCommand
 proveSteps = ProveSteps <$$> literal "step" *> option 1 L.decimal <* Char.space
 
 proveStepsF :: Parser ReplCommand
-proveStepsF = ProveStepsF <$$> literal "stepf" *> option 1 L.decimal <* Char.space
+proveStepsF =
+    ProveStepsF <$$> literal "stepf" *> option 1 L.decimal <* Char.space
 
 selectNode :: Parser ReplCommand
 selectNode = SelectNode . ReplNode <$$> literal "select" *> decimal
