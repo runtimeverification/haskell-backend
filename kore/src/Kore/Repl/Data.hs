@@ -270,6 +270,28 @@ data ReplState claim = ReplState
     -- ^ Map from labels to nodes
     }
 
+instance Show claim => Show (ReplState claim) where
+    show rs =
+        "ReplState "
+        <> "(" <> show (unAxiom <$> axioms rs) <> ")"
+        <> "(" <> show (claims rs) <> ")"
+        <> "(" <> show (claim rs) <> ")"
+        <> "(" <> show (graph rs) <> ")"
+        <> "(" <> show (node rs) <> ")"
+        <> "(" <> show (commands rs) <> ")"
+        <> "(" <> show (omit rs) <> ")"
+        <> "(" <> show (labels rs) <> ")"
+
+instance Eq claim => Eq (ReplState claim) where
+    rs1 == rs2 =
+        (unAxiom <$> axioms rs1) == (unAxiom <$> axioms rs2)
+        && claims rs1 == claims rs2
+        && graph rs1 == graph rs2
+        && node rs1 == node rs2
+        && commands rs1 == commands rs2
+        && omit rs1 == omit rs2
+        && labels rs1 == labels rs2
+
 
 -- | Unifier that stores the first 'explainBottom'.
 -- See 'runUnifierWithExplanation'.

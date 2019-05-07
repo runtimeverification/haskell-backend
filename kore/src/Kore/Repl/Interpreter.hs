@@ -8,6 +8,7 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 
 module Kore.Repl.Interpreter
     ( replInterpreter
+    , showUsageMessage
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -153,8 +154,11 @@ replInterpreter printFn replCmd = do
         put st'
         pure (w, exit)
 
+showUsageMessage :: String
+showUsageMessage = "Could not parse command, try using 'help'."
+
 showUsage :: MonadWriter String m => m ()
-showUsage = putStrLn' "Could not parse command, try using 'help'."
+showUsage = putStrLn' showUsageMessage
 
 help :: MonadWriter String m => m ()
 help = putStrLn' helpText
