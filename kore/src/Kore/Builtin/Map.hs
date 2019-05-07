@@ -542,13 +542,12 @@ make progress toward simplification. We introduce special cases when @x₁@ and/
  -}
 -- TODO (thomas.tuegel): Handle the case of two framed maps.
 unifyEquals
-    ::  forall variable unifierM unifier
+    ::  forall variable unifier
     .   ( SortedVariable variable
         , FreshVariable variable
         , Show variable
         , Unparse variable
-        , unifier ~ unifierM variable
-        , MonadUnify unifierM
+        , MonadUnify unifier
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes

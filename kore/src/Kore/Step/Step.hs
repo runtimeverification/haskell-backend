@@ -79,7 +79,6 @@ import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
                  ( MonadUnify )
-import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 import           Kore.Variables.Target
@@ -91,14 +90,13 @@ import qualified Kore.Variables.Target as Target
 -- 'stepWithRule'.
 newtype UnificationProcedure =
     UnificationProcedure
-        ( forall variable unifier unifierM
+        ( forall variable unifier
         .   ( SortedVariable variable
             , Ord variable
             , Show variable
             , Unparse variable
             , FreshVariable variable
-            , MonadUnify unifierM
-            , unifier ~ unifierM variable
+            , MonadUnify unifier
             )
         => SmtMetadataTools StepperAttributes
         -> PredicateSimplifier
@@ -164,14 +162,13 @@ unification. The substitution is not applied to the renamed rule.
 
  -}
 unifyRule
-    ::  forall unifier variable unifierM
+    ::  forall unifier variable
     .   ( Ord     variable
         , Show    variable
         , Unparse variable
         , FreshVariable  variable
         , SortedVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> UnificationProcedure
@@ -217,8 +214,7 @@ unifyRule
         -> BranchT unifier (Conditional variable ())
     unifyPatterns pat1 pat2 = do
         unifiers <-
-            Monad.Trans.lift
-            $ unificationProcedure
+            unificationProcedure
                 metadataTools
                 predicateSimplifier
                 patternSimplifier
@@ -240,14 +236,13 @@ The rule is considered to apply if the result is not @\\bottom@.
 
  -}
 applyInitialConditions
-    ::  forall unifier variable unifierM
+    ::  forall unifier variable
     .   ( Ord     variable
         , Show    variable
         , Unparse variable
         , FreshVariable  variable
         , SortedVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -302,14 +297,13 @@ See also: 'applyInitialConditions'
 
  -}
 finalizeAppliedRule
-    ::  forall unifier variable unifierM
+    ::  forall unifier variable
     .   ( Ord     variable
         , Show    variable
         , Unparse variable
         , FreshVariable  variable
         , SortedVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -362,14 +356,13 @@ finalizeAppliedRule
 
  -}
 applyRemainder
-    ::  forall unifier variable unifierM
+    ::  forall unifier variable
     .   ( Ord     variable
         , Show    variable
         , Unparse variable
         , FreshVariable  variable
         , SortedVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -430,8 +423,7 @@ applyRule
         , FreshVariable variable
         , SortedVariable variable
         , Log.WithLog Log.LogMessage unifier
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -456,7 +448,6 @@ applyRule
     initial
     rule
   = Log.withLogScope "applyRule"
-    $ Monad.Unify.mapVariable Target.unwrapVariable
     $ gather $ do
         let
             -- Wrap the rule and configuration so that unification prefers to
@@ -512,8 +503,7 @@ applyRewriteRule
         , FreshVariable variable
         , SortedVariable variable
         , Log.WithLog Log.LogMessage unifier
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -567,8 +557,7 @@ checkSubstitutionCoverage
         , Ord     variable
         , Show    variable
         , Unparse variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM (Target variable)
+        , MonadUnify unifier
         )
     => Pattern (Target variable)
     -- ^ Initial configuration
@@ -616,15 +605,14 @@ See also: 'applyRewriteRule'
 
  -}
 applyRulesInParallel
-    ::  forall unifier variable unifierM
+    ::  forall unifier variable
     .   ( Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         , Log.WithLog Log.LogMessage unifier
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -681,15 +669,14 @@ See also: 'applyRewriteRule'
 
  -}
 applyRewriteRules
-    ::  forall unifier variable unifierM
+    ::  forall unifier variable
     .   ( Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
         , Log.WithLog Log.LogMessage unifier
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -727,15 +714,14 @@ See also: 'applyRewriteRule'
 
  -}
 sequenceRules
-    ::  forall unifier variable unifierM
+    ::  forall unifier variable
     .   ( Ord     variable
         , Show    variable
         , Unparse variable
         , FreshVariable  variable
         , SortedVariable variable
         , Log.WithLog Log.LogMessage unifier
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -815,15 +801,14 @@ See also: 'applyRewriteRule'
 
  -}
 sequenceRewriteRules
-    ::  forall unifier variable unifierM
+    ::  forall unifier variable
     .   ( Ord     variable
         , Show    variable
         , Unparse variable
         , FreshVariable  variable
         , SortedVariable variable
         , Log.WithLog Log.LogMessage unifier
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier

@@ -920,19 +920,13 @@ match tools first second = do
     return $ either (const Nothing) Just result
   where
     matchAsEither
-        :: IO
-            (Either
-                (UnificationOrSubstitutionError Variable)
-                (OrPredicate Variable)
-            )
+        :: IO (Either UnificationOrSubstitutionError (OrPredicate Variable))
     matchAsEither =
         SMT.runSMT SMT.defaultConfig
             $ evalSimplifier emptyLogger
             $ runExceptT matchResult
     matchResult
-        :: ExceptT
-            (UnificationOrSubstitutionError Variable)
-            Simplifier
+        :: ExceptT UnificationOrSubstitutionError Simplifier
             (OrPredicate Variable)
     matchResult =
         Monad.Unify.getUnifier $ matchAsUnification
