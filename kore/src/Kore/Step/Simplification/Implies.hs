@@ -238,8 +238,8 @@ makeEvaluateImpliesNonBool
         [ Conditional
             { term =
                 mkImplies
-                    (Pattern.toMLPattern pattern1)
-                    (Pattern.toMLPattern pattern2)
+                    (Pattern.toTermLike pattern1)
+                    (Pattern.toTermLike pattern2)
             , predicate = Syntax.Predicate.makeTruePredicate
             , substitution = mempty
             }

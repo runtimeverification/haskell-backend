@@ -109,7 +109,7 @@ toPattern multiOr =
         [patt] -> patt
         patts ->
             Conditional.Conditional
-                { term = Foldable.foldr1 mkOr (Pattern.toMLPattern <$> patts)
+                { term = Foldable.foldr1 mkOr (Pattern.toTermLike <$> patts)
                 , predicate = Syntax.Predicate.makeTruePredicate
                 , substitution = mempty
                 }
@@ -126,5 +126,5 @@ toTermLike
 toTermLike multiOr =
     case MultiOr.extractPatterns multiOr of
         [] -> mkBottom_
-        [patt] -> Pattern.toMLPattern patt
-        patts -> Foldable.foldr1 mkOr (Pattern.toMLPattern <$> patts)
+        [patt] -> Pattern.toTermLike patt
+        patts -> Foldable.foldr1 mkOr (Pattern.toTermLike <$> patts)

@@ -136,7 +136,7 @@ exec indexedModule strategy purePattern = do
     let
         Execution { executionGraph } = execution
         finalConfig = pickLongest executionGraph
-    return (forceSort patternSort $ Pattern.toMLPattern finalConfig)
+    return (forceSort patternSort $ Pattern.toTermLike finalConfig)
   where
     patternSort = Attribute.patternSort $ extract purePattern
 

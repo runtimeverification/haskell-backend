@@ -48,5 +48,5 @@ simplifyEvaluated
 simplifyEvaluated simplified =
     OrPattern.fromTermLike
     $ mkNext
-    $ Pattern.toMLPattern
+    $ Pattern.toTermLike
     $ OrPattern.toPattern simplified

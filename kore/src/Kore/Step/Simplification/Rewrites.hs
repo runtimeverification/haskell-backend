@@ -80,5 +80,5 @@ makeEvaluateRewrites
 makeEvaluateRewrites first second =
     OrPattern.fromTermLike
     $ mkRewrites
-        (Pattern.toMLPattern first)
-        (Pattern.toMLPattern second)
+        (Pattern.toTermLike first)
+        (Pattern.toTermLike second)

@@ -367,8 +367,8 @@ removalPredicate destination config =
         $ quantifyPredicate
         $ Predicate.makeCeilPredicate
         $ mkAnd
-            (Pattern.toStepPattern destination)
-            (Pattern.toStepPattern config)
+            (Pattern.toTermLike destination)
+            (Pattern.toTermLike config)
 
 
 {-| A strategy for doing the first step of a one-path verification.
