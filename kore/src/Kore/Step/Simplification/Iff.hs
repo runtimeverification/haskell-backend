@@ -127,8 +127,8 @@ simplifyEvaluated
         ([firstP], [secondP]) -> makeEvaluate firstP secondP
         _ ->
             makeEvaluate
-                (OrPattern.toExpandedPattern first)
-                (OrPattern.toExpandedPattern second)
+                (OrPattern.toPattern first)
+                (OrPattern.toPattern second)
   where
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second

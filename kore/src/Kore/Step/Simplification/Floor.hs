@@ -72,7 +72,7 @@ simplifyEvaluatedFloor child =
         [childP] -> makeEvaluateFloor childP
         _ ->
             makeEvaluateFloor
-                (OrPattern.toExpandedPattern child)
+                (OrPattern.toPattern child)
 
 {-| 'makeEvaluateFloor' simplifies a 'Floor' of 'Pattern'.
 
