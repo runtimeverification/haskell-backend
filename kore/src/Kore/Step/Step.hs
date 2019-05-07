@@ -38,38 +38,36 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
-import qualified Data.Reflection as Reflection
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import qualified Kore.AST.Valid as Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
-import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Conditional
+                 ( Conditional (Conditional) )
+import qualified Kore.Internal.Conditional as Conditional
+import           Kore.Internal.MultiOr
+                 ( MultiOr )
+import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Predicate
+                 ( Predicate )
+import qualified Kore.Internal.Predicate as Predicate
+import           Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Log
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Conditional
-                 ( Conditional (Conditional) )
-import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
-import           Kore.Step.Pattern as Pattern
-import           Kore.Step.Predicate
-                 ( Predicate )
-import qualified Kore.Step.Predicate as Predicate
 import qualified Kore.Step.Remainder as Remainder
-import           Kore.Step.Representation.MultiOr
-                 ( MultiOr )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Result as Step
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (RulePattern) )
@@ -77,10 +75,7 @@ import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.Step.TermLike as TermLike
 import qualified Kore.TopBottom as TopBottom
-import           Kore.Unification.Error
-                 ( UnificationError (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
                  ( MonadUnify )
@@ -111,10 +106,7 @@ newtype UnificationProcedure =
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
         -> TermLike variable
-        -> unifier
-            ( OrPredicate variable
-
-            )
+        -> unifier (OrPredicate variable)
         )
 
 {- | A @UnifiedRule@ has been renamed and unified with a configuration.
@@ -482,7 +474,6 @@ applyRule
         let
             checkSubstitutionCoverage' =
                 checkSubstitutionCoverage
-                    metadataTools
                     initial'
                     unifiedRule
         result <- traverse checkSubstitutionCoverage' final
@@ -579,35 +570,15 @@ checkSubstitutionCoverage
         , MonadUnify unifierM
         , unifier ~ unifierM (Target variable)
         )
-    => SmtMetadataTools StepperAttributes
-    -> Pattern (Target variable)
+    => Pattern (Target variable)
     -- ^ Initial configuration
     -> UnifiedRule (Target variable)
     -- ^ Unified rule
     -> Pattern (Target variable)
     -- ^ Configuration after applying rule
     -> BranchT unifier (Pattern variable)
-checkSubstitutionCoverage tools initial unified final
-  | isCoveringSubstitution || isAcceptable = return (unwrapConfiguration final)
-  | isSymbolic =
-    -- The substitution does not cover all the variables on the left-hand side
-    -- of the rule, but this was not unexpected because the initial
-    -- configuration was symbolic. This case is not yet supported, but it is not
-    -- a fatal error.
-    Monad.Trans.lift
-    $ Monad.Unify.throwUnificationError
-    $ UnsupportedSymbolic $ Pretty.vsep
-        [ "While applying axiom:"
-        , Pretty.indent 4 (Pretty.pretty axiom)
-        , "from the initial configuration:"
-        , Pretty.indent 4 (unparse initial)
-        , "Expected unification:"
-        , Pretty.indent 4 (unparse unification)
-        , "to cover all the variables:"
-        , (Pretty.indent 4 . Pretty.sep)
-            (unparse <$> Set.toAscList leftAxiomVariables)
-        , "in the left-hand side of the axiom."
-        ]
+checkSubstitutionCoverage initial unified final
+  | isCoveringSubstitution || isSymbolic = return (unwrapConfiguration final)
   | otherwise =
     -- The substitution does not cover all the variables on the left-hand side
     -- of the rule *and* we did not generate a substitution for a symbolic
@@ -628,7 +599,6 @@ checkSubstitutionCoverage tools initial unified final
         ]
   where
     Conditional { term = axiom } = unified
-    unification = Conditional.toPredicate (Conditional.withoutTerm unified)
     leftAxiomVariables =
         TermLike.freeVariables leftAxiom
       where
@@ -639,23 +609,6 @@ checkSubstitutionCoverage tools initial unified final
     isCoveringSubstitution =
         Set.isSubsetOf leftAxiomVariables substitutionVariables
     isSymbolic = Foldable.any Target.isNonTarget substitutionVariables
-    isAcceptable = all isValidSymbolic (Map.toList subst)
-    -- A constructor-like pattern consists of constructor applications and
-    -- variables only.
-    isConstructorLikePattern p
-      | Valid.App_ symbolOrAlias children <- p =
-        isConstructor symbolOrAlias && all isConstructorLikePattern children
-      | Valid.Var_ _ <- p = True
-      | otherwise = False
-    isConstructor = Reflection.give tools Attribute.Symbol.isConstructor_
-    isSortInjectionPattern p
-      | Valid.App_ symbolOrAlias _ <- p = isSortInjection symbolOrAlias
-      | otherwise = False
-    isSortInjection = Reflection.give tools Attribute.Symbol.isSortInjection_
-    isValidSymbolic (x, t) =
-        Target.isTarget x
-        || isConstructorLikePattern t
-        || isSortInjectionPattern t
 
 {- | Apply the given rules to the initial configuration in parallel.
 
@@ -833,7 +786,7 @@ sequenceRules
     sequenceRules1
         :: Results variable
         -> RulePattern variable
-        -> unifier(Results variable)
+        -> unifier (Results variable)
     sequenceRules1 results rule = do
         results' <- traverse (applyRule' rule) (Step.remainders results)
         return (Step.withoutRemainders results <> Foldable.fold results')

@@ -1,11 +1,11 @@
-module Test.Kore.Step.OrPattern where
+module Test.Kore.Internal.OrPattern where
 
 import           Hedgehog
                  ( Property, (===) )
 import qualified Hedgehog
 
-import qualified Kore.Step.OrPattern as OrPattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
+import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.OrPattern as OrPattern
 
 import Test.Kore
 
@@ -17,7 +17,7 @@ hprop_mergeIdemOr = Hedgehog.property $ do
 
 hprop_makeIdemOr :: Property
 hprop_makeIdemOr = Hedgehog.property $ do
-    pat <- Hedgehog.forAll (standaloneGen expandedPatternGen)
+    pat <- Hedgehog.forAll (standaloneGen internalPatternGen)
     OrPattern.fromPatterns [pat, pat] === OrPattern.fromPatterns [pat]
 
 hprop_flattenIdemOr :: Property

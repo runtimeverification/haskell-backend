@@ -5,9 +5,9 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import           Kore.AST.Pure
 import           Kore.ASTPrettyPrint
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Syntax
 
 import Test.Kore
 
@@ -15,8 +15,8 @@ test_astPrettyPrint :: [TestTree]
 test_astPrettyPrint =
     [ testCase "Char literal"
         (assertEqual ""
-            "CharLiteralPattern (CharLiteral 'a')"
-            (prettyPrintPattern (CharLiteralPattern (CharLiteral 'a')))
+            "CharLiteralF (CharLiteral 'a')"
+            (prettyPrintPattern (CharLiteralF (CharLiteral 'a')))
         )
     , testCase "Object unified variable"
         (assertEqual ""
@@ -51,6 +51,6 @@ test_astPrettyPrint =
     ]
 
 prettyPrintPattern
-    :: Pattern Domain.Builtin Variable ParsedPattern
+    :: PatternF Domain.Builtin Variable ParsedPattern
     -> String
 prettyPrintPattern = prettyPrintToString

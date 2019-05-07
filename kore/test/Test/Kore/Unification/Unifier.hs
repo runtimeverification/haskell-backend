@@ -18,9 +18,6 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-import qualified Kore.AST.Pure as AST
-import           Kore.AST.Valid hiding
-                 ( V )
 import           Kore.Attribute.Constructor
 import           Kore.Attribute.Function
 import           Kore.Attribute.Functional
@@ -31,18 +28,19 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
+import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike hiding
+                 ( V )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
-import           Kore.Sort
-import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Step.TermLike
 import           Kore.Syntax.Definition
+import qualified Kore.Syntax.Pattern as AST
 import           Kore.Unification.Error
 import           Kore.Unification.Procedure
 import qualified Kore.Unification.Substitution as Substitution
@@ -64,7 +62,7 @@ applyInj
 applyInj sortTo pat =
     applySymbol symbolInj [sortFrom, sortTo] [pat]
   where
-    sortFrom = getSort pat
+    sortFrom = termLikeSort pat
 
 s1, s2, s3, s4 :: Sort
 s1 = simpleSort (SortName "s1")
@@ -225,7 +223,11 @@ unificationSubstitution
 unificationSubstitution = map trans
   where
     trans (v, p) =
-        ( Variable { variableSort = getSort p, variableName = testId v, variableCounter = mempty }
+        ( Variable
+            { variableSort = termLikeSort p
+            , variableName = testId v
+            , variableCounter = mempty
+            }
         , p
         )
 

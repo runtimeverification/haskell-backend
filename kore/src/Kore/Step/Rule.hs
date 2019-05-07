@@ -27,10 +27,11 @@ module Kore.Step.Rule
     , mkRewriteAxiom
     , mkEqualityAxiom
     , refreshRulePattern
-    , freeVariables
+    , Kore.Step.Rule.freeVariables
     , Kore.Step.Rule.mapVariables
-    , substitute
+    , Kore.Step.Rule.substitute
     ) where
+
 import           Control.Comonad
 import qualified Data.Default as Default
 import           Data.Map.Strict
@@ -43,20 +44,15 @@ import           Data.Text.Prettyprint.Doc
                  ( Pretty )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid hiding
-                 ( freeVariables )
-import qualified Kore.AST.Valid as Valid
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
+import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
+import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.TermLike
-                 ( TermLike )
-import qualified Kore.Step.TermLike as TermLike
 import           Kore.Syntax.Definition
 import           Kore.Unparser
                  ( Unparse, unparse, unparse2 )
@@ -128,15 +124,13 @@ deriving instance Show variable => Show (RewriteRule variable)
 
 instance (Unparse variable, Ord variable) => Unparse (RewriteRule variable) where
     unparse (RewriteRule RulePattern { left, right, requires } ) =
-        unparse
-            $ Valid.mkImplies
-                (Valid.mkAnd left (Predicate.unwrapPredicate requires))
-                right
+        unparse $ mkImplies
+            (mkAnd left (Predicate.unwrapPredicate requires))
+            right
     unparse2 (RewriteRule RulePattern { left, right, requires } ) =
-        unparse2
-            $ Valid.mkImplies
-                (Valid.mkAnd left (Predicate.unwrapPredicate requires))
-                right
+        unparse2 $ mkImplies
+            (mkAnd left (Predicate.unwrapPredicate requires))
+            right
 
 {-  | Implication-based pattern.
 -}
@@ -319,7 +313,7 @@ fromSentenceAxiom sentenceAxiom = do
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 
-@patternToAxiomPattern@ returns an error if the given 'CommonPurePattern' does
+@patternToAxiomPattern@ returns an error if the given 'CommonPattern' does
 not encode a normal rewrite or function axiom.
 -}
 patternToAxiomPattern
@@ -405,7 +399,7 @@ mkRewriteAxiom lhs rhs requires =
             (mkAnd (mkTop patternSort) rhs)
         )
   where
-    Valid { patternSort } = extract lhs
+    Attribute.Pattern { Attribute.patternSort = patternSort } = extract lhs
 
 {- | Construct a 'VerifiedKoreSentence' corresponding to 'EqualityRule'.
 
@@ -458,7 +452,7 @@ refreshRulePattern avoid rule1 =
     in (rename, rule2)
   where
     RulePattern { left, right, requires } = rule1
-    originalFreeVariables = freeVariables rule1
+    originalFreeVariables = Kore.Step.Rule.freeVariables rule1
 
 {- | Extract the free variables of a 'RulePattern'.
  -}
@@ -468,8 +462,8 @@ freeVariables
     -> Set variable
 freeVariables RulePattern { left, right, requires } =
     Set.unions
-        [ (Valid.freeVariables . extract) left
-        , (Valid.freeVariables . extract) right
+        [ (Attribute.freeVariables . extract) left
+        , (Attribute.freeVariables . extract) right
         , Predicate.freeVariables requires
         ]
 

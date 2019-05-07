@@ -88,16 +88,14 @@ import           Text.Megaparsec
                  ( Parsec )
 import qualified Text.Megaparsec as Parsec
 
-import qualified Kore.AST.Common as Common
-                 ( Pattern (..) )
 import qualified Kore.AST.Error as Kore.Error
-import           Kore.AST.Valid
 import qualified Kore.ASTVerifier.AttributesVerifier as Verifier.Attributes
 import           Kore.ASTVerifier.Error
                  ( VerifyError )
 import           Kore.Attribute.Hook
                  ( Hook (..) )
 import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
 import qualified Kore.Attribute.Sort.Element as Attribute.Sort
@@ -115,10 +113,15 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern
+                 ( Conditional (..), Pattern )
+import           Kore.Internal.Pattern as Pattern
+                 ( top )
+import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate )
 import qualified Kore.Proof.Value as Value
-import           Kore.Sort
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..),
                  AttemptedAxiomResults (AttemptedAxiomResults),
@@ -126,22 +129,15 @@ import           Kore.Step.Axiom.Data
                  BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier )
 import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
-                 ( Conditional (..), Pattern )
-import           Kore.Step.Pattern as Pattern
-                 ( top )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, SimplificationType, Simplifier,
                  TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
-import           Kore.Step.TermLike as TermLike
 import           Kore.Syntax.Application
 import           Kore.Syntax.Definition
-                 ( ParsedSentenceSort, ParsedSentenceSymbol, SentenceSort (..),
-                 SentenceSymbol (..) )
 import           Kore.Syntax.DomainValue
+import qualified Kore.Syntax.PatternF as Syntax
 import           Kore.Unparser
 import qualified Kore.Verified as Verified
 
@@ -673,7 +669,7 @@ unaryOperator
         -> Simplifier (AttemptedAxiom variable)
     unaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
-            [Common.DomainValuePattern a] -> do
+            [Syntax.DomainValueF a] -> do
                 -- Apply the operator to a domain value
                 let r = op (get a)
                 (appliedFunction . asPattern resultSort) r
@@ -726,7 +722,7 @@ binaryOperator
         -> Simplifier (AttemptedAxiom variable)
     binaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
-            [Common.DomainValuePattern a, Common.DomainValuePattern b] -> do
+            [Syntax.DomainValueF a, Syntax.DomainValueF b] -> do
                 -- Apply the operator to two domain values
                 let r = op (get a) (get b)
                 (appliedFunction . asPattern resultSort) r
@@ -779,7 +775,7 @@ ternaryOperator
         -> Simplifier (AttemptedAxiom variable)
     ternaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
-            [Common.DomainValuePattern a, Common.DomainValuePattern b, Common.DomainValuePattern c] -> do
+            [Syntax.DomainValueF a, Syntax.DomainValueF b, Syntax.DomainValueF c] -> do
                 -- Apply the operator to three domain values
                 let r = op (get a) (get b) (get c)
                 (appliedFunction . asPattern resultSort) r
@@ -807,14 +803,14 @@ functionEvaluator impl =
         -> BuiltinAndAxiomSimplifierMap
         -> CofreeF
             (Application SymbolOrAlias)
-            (Valid variable)
+            (Attribute.Pattern variable)
             (TermLike variable)
         -> Simplifier (AttemptedAxiom variable)
     evaluator tools _ simplifier _axiomIdToSimplifier (valid :< app) =
         impl tools simplifier resultSort applicationChildren
       where
         Application { applicationChildren } = app
-        Valid { patternSort = resultSort } = valid
+        Attribute.Pattern { Attribute.patternSort = resultSort } = valid
 
 {- | Run a parser on a verified domain value.
 

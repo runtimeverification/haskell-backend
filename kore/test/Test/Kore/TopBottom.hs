@@ -5,12 +5,12 @@ import qualified Test.Tasty as Tasty
 import Prelude hiding
        ( and, floor, or )
 
-import qualified Kore.AST.Valid as AST
+import           Kore.Internal.TermLike
+                 ( TermLike, Variable )
+import qualified Kore.Internal.TermLike as AST
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.TermLike
-                 ( TermLike, Variable )
 import qualified Kore.TopBottom as TopBottom
 
 import qualified Test.Kore.Step.MockSymbols as Mock

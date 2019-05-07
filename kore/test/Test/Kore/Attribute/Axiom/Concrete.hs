@@ -36,14 +36,7 @@ test_arguments =
         $ parseConcrete $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationPattern)
-            Application
-                { applicationSymbolOrAlias = concreteSymbol
-                , applicationChildren =
-                    [ (asAttributePattern . StringLiteralPattern)
-                        (StringLiteral "illegal")
-                    ]
-                }
+        attributePattern concreteSymbol [attributeString "illegal"]
 
 test_parameters :: TestTree
 test_parameters =
@@ -52,13 +45,9 @@ test_parameters =
         $ parseConcrete $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationPattern)
-            Application
-                { applicationSymbolOrAlias =
-                    SymbolOrAlias
-                        { symbolOrAliasConstructor = concreteId
-                        , symbolOrAliasParams =
-                            [ SortVariableSort (SortVariable "illegal") ]
-                        }
-                , applicationChildren = []
+        attributePattern_
+            SymbolOrAlias
+                { symbolOrAliasConstructor = concreteId
+                , symbolOrAliasParams =
+                    [ SortVariableSort (SortVariable "illegal") ]
                 }

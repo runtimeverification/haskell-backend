@@ -6,7 +6,7 @@ module Test.Kore.AST.Common
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.AST.Pure
+import Kore.Syntax.Id
 
 test_prettyPrintAstLocation :: TestTree
 test_prettyPrintAstLocation =

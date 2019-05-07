@@ -23,14 +23,14 @@ import qualified Data.Function as Function
 
 import           Kore.Predicate.Predicate
                  ( makeOrPredicate )
-import           Kore.Step.Conditional as Conditional
-import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.OrPattern
+import           Kore.Internal.Conditional as Conditional
+import           Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
+import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.TermLike
 import           Kore.Syntax.Or
-                 ( Or(..) )
 import           Kore.Unparser
 \end{code}
 
@@ -76,10 +76,10 @@ simplifyEvaluated
 One way to preserve the required sort annotations is to make `simplifyEvaluated`
 take an argument of type
 ``` haskell
-CofreeF (Or Sort) (Valid variable) (OrPattern variable)
+CofreeF (Or Sort) (Attribute.Pattern variable) (OrPattern variable)
 ```
 instead of two `OrPattern` arguments. The type of `makeEvaluate` may
-be changed analogously. The `Valid` annotation will eventually cache
+be changed analogously. The `Attribute.Pattern` annotation will eventually cache
 information besides the pattern sort, which will make it even more useful to
 carry around.
 

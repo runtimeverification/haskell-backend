@@ -23,15 +23,18 @@ import           Data.Maybe
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.Pure
-                 ( asConcretePurePattern )
-import           Kore.AST.Valid
-                 ( pattern App_ )
 import           Kore.Attribute.Symbol
                  ( Hook (..), StepperAttributes )
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
+import qualified Kore.Internal.MultiOr as MultiOr
+                 ( extractPatterns )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern
+                 ( Pattern )
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom,
                  AttemptedAxiomResults (AttemptedAxiomResults),
@@ -42,12 +45,6 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..), exceptNotApplicable, hasRemainders )
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
-                 ( Pattern )
-import qualified Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( extractPatterns )
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
 import qualified Kore.Step.Rule as RulePattern
@@ -56,9 +53,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
-import           Kore.Step.TermLike
-                 ( TermLike, asConcreteStepPattern )
-import           Kore.Syntax.Variable
+import           Kore.Syntax.Pattern
+                 ( asConcretePattern )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse, unparse )
@@ -217,7 +213,7 @@ evaluateBuiltin
             return (AttemptedAxiom.NotApplicable)
         AttemptedAxiom.Applied _ -> return (result)
   where
-    isPattConcrete = isJust (asConcretePurePattern patt)
+    isPattConcrete = isJust (asConcretePattern patt)
     isValue pat = isJust $
         Value.fromConcreteStepPattern tools =<< asConcreteStepPattern pat
     -- TODO(virgil): Send this from outside.

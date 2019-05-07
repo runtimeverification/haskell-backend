@@ -38,7 +38,6 @@ import           Data.Semigroup
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Pure
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Hook
                  ( Hook (..) )
@@ -61,11 +60,13 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import           Kore.Step.TermLike
+import           Kore.Syntax.DomainValue
+import           Kore.Syntax.Pattern
 
 {- | The default type of builtin domain values.
  -}
@@ -196,7 +197,7 @@ externalizePattern =
         ->  Base (TermLike variable) (TermLike variable)
     externalizePatternWorker (Recursive.project -> original@(_ :< pat)) =
         case pat of
-            DomainValuePattern domain ->
+            DomainValueF domain ->
                 case domain of
                     Domain.BuiltinExternal _ -> original
                     Domain.BuiltinMap  builtin ->
@@ -220,7 +221,7 @@ WARNING: This is not implemented for internal domain values. Use
 asMetaPattern
     :: Functor domain
     => Domain.Builtin child
-    -> PurePattern domain Variable Attribute.Null
+    -> Pattern domain Variable Attribute.Null
 asMetaPattern =
     \case
         Domain.BuiltinExternal ext ->

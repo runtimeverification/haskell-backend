@@ -3,8 +3,8 @@ module Test.Kore.Attribute.Subsort where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.AST.Pure
 import Kore.Attribute.Subsort
+import Kore.Syntax.Pattern
 
 import Test.Kore
        ( sortActual )
@@ -45,7 +45,7 @@ test_zeroParams =
         $ parseSubsorts $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationF)
             Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias
@@ -62,11 +62,11 @@ test_arguments =
         $ parseSubsorts $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationF)
             Application
                 { applicationSymbolOrAlias = subsortSymbol sub super
                 , applicationChildren =
-                    [ (asAttributePattern . StringLiteralPattern)
+                    [ (asAttributePattern . StringLiteralF)
                         (StringLiteral "illegal")
                     ]
                 }

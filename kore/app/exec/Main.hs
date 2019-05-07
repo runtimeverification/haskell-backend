@@ -22,7 +22,6 @@ import System.IO
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
-import           Kore.AST.Valid
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
 import           Kore.Error
@@ -32,6 +31,9 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
+import           Kore.Internal.Pattern
+                 ( Conditional (..), Pattern )
+import           Kore.Internal.TermLike
 import           Kore.Logger.Output
                  ( KoreLogOptions (..), parseKoreLogOptions, withLogger )
 import           Kore.Parser
@@ -39,15 +41,12 @@ import           Kore.Parser
 import           Kore.Predicate.Predicate
                  ( makePredicate )
 import           Kore.Step
-import           Kore.Step.Pattern
-                 ( Conditional (..), Pattern )
 import           Kore.Step.Search
                  ( SearchType (..) )
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.SMT.Lemma
-import           Kore.Step.TermLike
 import           Kore.Syntax.Definition
 import           Kore.Unparser
                  ( unparse )
@@ -331,7 +330,7 @@ mainWithOptions
                         specDefIndexedModule <-
                             mainModule specMainModule specDefIndexedModules
                         return (Just (specDefIndexedModule, bmc))
-        maybePurePattern <- case patternFileName of
+        maybePattern <- case patternFileName of
             Nothing -> return Nothing
             Just fileName ->
                 Just
@@ -352,7 +351,7 @@ mainWithOptions
                             let
                                 purePattern = fromMaybe
                                     (error "Missing: --pattern PATTERN_FILE")
-                                    maybePurePattern
+                                    maybePattern
                             case searchParameters of
                                 Nothing -> do
                                     pat <-

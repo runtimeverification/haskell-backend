@@ -33,8 +33,7 @@ import           Data.String
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
+import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Builtin.Bool as Bool
@@ -43,18 +42,19 @@ import           Kore.Builtin.Builtin
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern
+                 ( Conditional (..) )
+import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), AttemptedAxiomResults (..),
                  BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier,
                  notApplicableAxiomEvaluator, purePatternAxiomEvaluator )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
-                 ( Conditional (..) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Or as Or
-import           Kore.Step.TermLike
+import           Kore.Syntax.Application
 import           Kore.Syntax.Definition
                  ( SentenceSymbol (..) )
 import           Kore.Unparser
@@ -136,7 +136,7 @@ evalKEq
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid variable)
+        (Attribute.Pattern variable)
         (TermLike variable)
     -> Simplifier (AttemptedAxiom variable)
 evalKEq true _ _ _ _ (valid :< app) =
@@ -145,20 +145,20 @@ evalKEq true _ _ _ _ (valid :< app) =
         _ -> Builtin.wrongArity (if true then eqKey else neqKey)
   where
     false = not true
-    Valid { patternSort } = valid
+    sort = Attribute.patternSort valid
     Application { applicationChildren } = app
     evalEq t1 t2 = do
         let expr = Or.simplifyEvaluated
                 (OrPattern.fromPattern
                     (Conditional
-                        (Bool.asInternal patternSort true)
+                        (Bool.asInternal sort true)
                         (Predicate.makeEqualsPredicate t1 t2)
                         mempty
                     )
                 )
                 (OrPattern.fromPattern
                     (Conditional
-                        (Bool.asInternal patternSort false)
+                        (Bool.asInternal sort false)
                         ( Predicate.makeNotPredicate $
                             Predicate.makeEqualsPredicate t1 t2
                         )
@@ -182,7 +182,7 @@ evalKIte
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid variable)
+        (Attribute.Pattern variable)
         (TermLike variable)
     -> Simplifier (AttemptedAxiom variable)
 evalKIte _ _ _ _ (_ :< app) =
@@ -196,7 +196,7 @@ evalKIte _ _ _ _ (_ :< app) =
         -> Maybe Bool
     evaluate (Recursive.project -> _ :< pat) =
         case pat of
-            DomainValuePattern dv ->
+            DomainValueF dv ->
                 Just (Bool.extractBoolDomainValue iteKey dv)
             _ -> Nothing
 

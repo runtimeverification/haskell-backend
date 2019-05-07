@@ -12,10 +12,10 @@ import           Test.Tasty.Hedgehog
 import           Test.Tasty.HUnit
                  ( assertEqual, testCase )
 
-import Kore.AST.Pure
 import Kore.Parser.Lexeme
 import Kore.Parser.Parser
 import Kore.Parser.ParserUtils
+import Kore.Syntax
 import Kore.Syntax.Definition
 import Kore.Unparser
 
@@ -39,11 +39,11 @@ test_unparse =
         , unparseTest
             Attributes
                 { getAttributes =
-                    [ asParsedPattern (TopPattern Top
+                    [ asParsedPattern (TopF Top
                         { topSort = SortVariableSort SortVariable
                             { getSortVariable = testId "#Fm" }
                         })
-                    , asParsedPattern (InPattern In
+                    , asParsedPattern (InF In
                         { inOperandSort = SortActualSort SortActual
                             { sortActualName = testId "B"
                             , sortActualSorts = []
@@ -53,13 +53,13 @@ test_unparse =
                             , sortActualSorts = []
                             }
                         , inContainedChild =
-                            asParsedPattern $ VariablePattern Variable
+                            asParsedPattern $ VariableF Variable
                                 { variableName = testId "T"
                                 , variableSort = SortVariableSort SortVariable
                                     { getSortVariable = testId "C" }
                                 , variableCounter = mempty
                                 }
-                        , inContainingChild = asParsedPattern (StringLiteralPattern
+                        , inContainingChild = asParsedPattern (StringLiteralF
                             StringLiteral { getStringLiteral = "" })
                         })
                     ]
@@ -131,7 +131,7 @@ test_unparse =
             (Attributes
                 { getAttributes =
                     [ asParsedPattern
-                        ( TopPattern Top
+                        ( TopF Top
                             { topSort = SortActualSort SortActual
                                 { sortActualName = testId "#CharList"
                                 , sortActualSorts = []
@@ -146,11 +146,11 @@ test_unparse =
             (Attributes
                 { getAttributes =
                     [ asParsedPattern
-                        (CharLiteralPattern CharLiteral
+                        (CharLiteralF CharLiteral
                             { getCharLiteral = '\'' }
                         )
                     , asParsedPattern
-                        (CharLiteralPattern CharLiteral
+                        (CharLiteralF CharLiteral
                             { getCharLiteral = '\'' }
                         )
                     ]

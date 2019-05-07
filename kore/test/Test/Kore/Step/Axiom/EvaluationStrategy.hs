@@ -9,10 +9,15 @@ import           Data.Default
                  ( def )
 import qualified Data.Map as Map
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern as Pattern
+                 ( Conditional (Conditional) )
+import qualified Kore.Internal.Pattern as Pattern
+                 ( Conditional (..) )
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, makeEqualsPredicate,
                  makeNotPredicate, makeTruePredicate )
@@ -26,11 +31,6 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
 import           Kore.Step.Axiom.EvaluationStrategy
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
-                 ( Conditional (Conditional) )
-import qualified Kore.Step.Pattern as Pattern
-                 ( Conditional (..) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Rule
@@ -42,9 +42,6 @@ import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.TermLike
-                 ( TermLike )
-import           Kore.Syntax.Variable
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 

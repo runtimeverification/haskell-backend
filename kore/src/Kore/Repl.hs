@@ -42,6 +42,8 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.TermLike
+                 ( TermLike, Variable )
 import           Kore.OnePath.Verification
                  ( verifyClaimStep )
 import           Kore.OnePath.Verification
@@ -62,8 +64,6 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Step.TermLike
-                 ( TermLike, Variable )
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import           Kore.Unparser

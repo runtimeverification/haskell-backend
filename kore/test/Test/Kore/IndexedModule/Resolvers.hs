@@ -10,21 +10,22 @@ import           Data.Map
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-import           Kore.Annotation.Valid
-import           Kore.AST.Pure
-import           Kore.AST.Valid
 import           Kore.ASTHelpers
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.Error as Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
-import           Kore.Step.TermLike hiding
+import           Kore.Internal.TermLike hiding
                  ( freeVariables )
+import           Kore.Syntax
 import           Kore.Syntax.Definition
+import           Kore.Syntax.PatternF
+                 ( groundHead )
 import qualified Kore.Verified as Verified
 
 import Test.Kore
@@ -71,7 +72,7 @@ testMainModuleName = ModuleName "TEST-MAIN-MODULE"
 
 strictAttribute :: ParsedPattern
 strictAttribute =
-    (asParsedPattern . ApplicationPattern)
+    (asParsedPattern . ApplicationF)
         Application
             { applicationSymbolOrAlias = groundHead "strict" AstLocationTest
             , applicationChildren = []
@@ -224,13 +225,14 @@ test_resolvers =
                             }
                     , sentenceAliasRightPattern =
                         let
-                            valid = Valid { patternSort, freeVariables }
-                              where
-                                patternSort = objectS1
-                                freeVariables = Set.empty
-                            top' = TopPattern Top { topSort = objectS1 }
+                            valid =
+                                Attribute.Pattern
+                                    { patternSort = objectS1
+                                    , freeVariables = Set.empty
+                                    }
+                            top' = TopF Top { topSort = objectS1 }
                         in
-                            asPurePattern (valid :< top')
+                            asPattern (valid :< top')
                     , sentenceAliasResultSort = objectS1
                     }
                 )
@@ -261,13 +263,13 @@ test_resolvers =
                         }
                 , sentenceAliasRightPattern =
                     let
-                        valid = Valid { patternSort, freeVariables }
+                        valid = Attribute.Pattern { patternSort, freeVariables }
                           where
                             patternSort = stringMetaSort
                             freeVariables = Set.empty
-                        top' = TopPattern Top { topSort = stringMetaSort }
+                        top' = TopF Top { topSort = stringMetaSort }
                     in
-                        asPurePattern (valid :< top')
+                        asPattern (valid :< top')
                 , sentenceAliasResultSort = stringMetaSort
                 }
             ))

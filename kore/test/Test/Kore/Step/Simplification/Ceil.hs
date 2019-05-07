@@ -10,13 +10,16 @@ import Test.Tasty.HUnit
 import qualified Data.Map as Map
 
 import qualified Data.Sup as Sup
-import qualified Kore.AST.Pure as AST
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Logger.Output as Logger
                  ( emptyLogger )
 import           Kore.Predicate.Predicate
@@ -33,10 +36,6 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplify )
 import           Kore.Step.Simplification.Data
@@ -44,10 +43,7 @@ import           Kore.Step.Simplification.Data
                  evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.TermLike
 import           Kore.Syntax.Ceil
-import           Kore.Syntax.Variable
-                 ( SortedVariable (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -379,7 +375,7 @@ test_ceilSimplification =
                         (Domain.BuiltinExternal Domain.External
                             { domainValueSort = Mock.testSort
                             , domainValueChild =
-                                AST.eraseAnnotations $ mkStringLiteral "a"
+                                eraseAnnotations $ mkStringLiteral "a"
                             }
                         )
                 , predicate = makeTruePredicate

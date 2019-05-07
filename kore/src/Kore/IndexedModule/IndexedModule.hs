@@ -67,7 +67,6 @@ import           GHC.Generics
                  ( Generic )
 
 import           Kore.AST.Error
-import           Kore.AST.Pure
 import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Null as Attribute
 import           Kore.Attribute.Parser
@@ -81,11 +80,12 @@ import qualified Kore.Attribute.Symbol.Symbol as Attribute
 import           Kore.Error
 import           Kore.Parser
                  ( ParsedPattern )
+import           Kore.Syntax
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 type SortDescription dom =
-    SentenceSort (PurePattern dom Variable Attribute.Null)
+    SentenceSort (Pattern dom Variable Attribute.Null)
 
 data IndexModuleError
 

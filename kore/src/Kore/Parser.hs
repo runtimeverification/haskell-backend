@@ -34,8 +34,6 @@ module Kore.Parser
 
 import           Kore.Parser.Lexeme
                  ( skipWhitespace )
-import           Kore.Parser.Parser
-                 ( ParsedPattern )
 import qualified Kore.Parser.Parser as Parser
 import           Kore.Parser.ParserUtils
 import           Kore.Syntax.Definition

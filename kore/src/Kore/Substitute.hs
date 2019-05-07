@@ -21,9 +21,7 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
-import Kore.AST.Common
-       ( Pattern (..) )
-import Kore.AST.Pure
+import Kore.Syntax
 import Kore.Variables.Fresh
 
 {- | Traverse the pattern from the top down and apply substitutions.
@@ -46,15 +44,15 @@ substitute
         )
     => Lens.Lens' attribute (Set variable)
     -- ^ Lens into free variables of the pattern
-    -> Map variable (PurePattern domain variable attribute)
+    -> Map variable (Pattern domain variable attribute)
     -- ^ Substitution
-    -> PurePattern domain variable attribute
+    -> Pattern domain variable attribute
     -- ^ Original pattern
-    -> PurePattern domain variable attribute
+    -> Pattern domain variable attribute
 substitute lensFreeVariables = \subst -> substituteWorker (Map.map Right subst)
   where
     extractFreeVariables
-        :: PurePattern domain variable attribute
+        :: Pattern domain variable attribute
         -> Set variable
     extractFreeVariables = Lens.view lensFreeVariables . extract
 
@@ -75,7 +73,7 @@ substitute lensFreeVariables = \subst -> substituteWorker (Map.map Right subst)
       | otherwise =
         case termLikeHead of
             -- Capturing quantifiers
-            ExistsPattern exists@Exists { existsVariable, existsChild }
+            ExistsF exists@Exists { existsVariable, existsChild }
               | Just existsVariable' <- avoidCapture existsVariable ->
                 -- Rename the freshened bound variable in the subterms.
                 let subst'' = renaming existsVariable existsVariable' subst'
@@ -84,9 +82,9 @@ substitute lensFreeVariables = \subst -> substituteWorker (Map.map Right subst)
                             { existsVariable = existsVariable'
                             , existsChild = substituteWorker subst'' existsChild
                             }
-                in Recursive.embed (attrib' :< ExistsPattern exists')
+                in Recursive.embed (attrib' :< ExistsF exists')
 
-            ForallPattern forall@Forall { forallVariable, forallChild }
+            ForallF forall@Forall { forallVariable, forallChild }
               | Just forallVariable' <- avoidCapture forallVariable ->
                 -- Rename the freshened bound variable in the subterms.
                 let subst'' = renaming forallVariable forallVariable' subst'
@@ -95,10 +93,10 @@ substitute lensFreeVariables = \subst -> substituteWorker (Map.map Right subst)
                             { forallVariable = forallVariable'
                             , forallChild = substituteWorker subst'' forallChild
                             }
-                in Recursive.embed (attrib' :< ForallPattern forall')
+                in Recursive.embed (attrib' :< ForallF forall')
 
             -- Variables
-            VariablePattern variable ->
+            VariableF variable ->
                 case Map.lookup variable subst' of
                     Nothing ->
                         -- This is impossible: if the pattern is a non-targeted
@@ -106,7 +104,7 @@ substitute lensFreeVariables = \subst -> substituteWorker (Map.map Right subst)
                         -- the top of substituteWorker.
                         error "Internal error: Impossible free variable"
                     Just (Left variable') ->
-                        Recursive.embed (attrib' :< VariablePattern variable')
+                        Recursive.embed (attrib' :< VariableF variable')
                     Just (Right termLike') ->
                         termLike'
 

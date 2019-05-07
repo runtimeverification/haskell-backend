@@ -66,21 +66,21 @@ import           GHC.Exts
                  ( toList )
 import           Numeric.Natural
 
+import           Kore.Internal.Pattern
+                 ( Conditional (..) )
+import           Kore.Internal.TermLike
+                 ( TermLike )
 import           Kore.OnePath.Step
                  ( CommonStrategyPattern, StrategyPattern (..) )
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
                  ( Claim )
-import           Kore.Step.Pattern
-                 ( Conditional (..) )
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Step.TermLike
-                 ( TermLike )
 import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unification.Unify

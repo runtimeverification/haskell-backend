@@ -36,8 +36,7 @@ smtlibSymbol =
 -- | Kore pattern representing the @smtlib@ attribute.
 smtlibAttribute :: Text -> AttributePattern
 smtlibAttribute syntax =
-    attributePattern smtlibSymbol
-        [ (asAttributePattern . StringLiteralPattern) (StringLiteral syntax) ]
+    attributePattern smtlibSymbol [attributeString syntax]
 
 shortenSExpr :: SExpr -> SExpr
 shortenSExpr (List [e]) = e

@@ -3,7 +3,7 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
 -}
-module Kore.Step.OrPattern
+module Kore.Internal.OrPattern
     ( OrPattern
     , fromPatterns
     , fromPattern
@@ -19,16 +19,15 @@ module Kore.Step.OrPattern
 
 import qualified Data.Foldable as Foldable
 
-import           Kore.AST.Valid
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.Pattern
-                 ( Pattern )
-import qualified Kore.Step.Pattern as Pattern
-import           Kore.Step.Representation.MultiOr
+import qualified Kore.Internal.Conditional as Conditional
+import           Kore.Internal.MultiOr
                  ( MultiOr )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-import           Kore.Step.TermLike
+import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.Pattern
+                 ( Pattern )
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser

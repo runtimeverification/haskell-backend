@@ -26,8 +26,8 @@ import Data.List
        ( intercalate )
 
 import Kore.AST.AstWithLocation
-import Kore.AST.Pure
 import Kore.Error
+import Kore.Syntax
 import Kore.Syntax.Definition
 
 {-|'koreFailWithLocations' produces an error result with a context containing

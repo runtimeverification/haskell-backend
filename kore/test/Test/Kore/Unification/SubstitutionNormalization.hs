@@ -11,16 +11,15 @@ import qualified Data.Default as Default
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
-import qualified Kore.Step.Pattern as Conditional
-import           Kore.Step.TermLike
-                 ( TermLike )
+import qualified Kore.Internal.Pattern as Conditional
+import           Kore.Internal.TermLike
+import           Kore.Syntax.PatternF
+                 ( groundHead )
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution
