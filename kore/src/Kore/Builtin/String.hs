@@ -317,7 +317,9 @@ evalFind = Builtin.functionEvaluator evalFind0
             Builtin.appliedFunction
                 . Int.asPattern resultSort
                 . maybeNotFound
-                $ findIndex (Text.isPrefixOf _substr) (Text.tails . Text.drop _idx $ _str)
+                $ findIndex
+                    (Text.isPrefixOf _substr)
+                    (Text.tails . Text.drop _idx $ _str)
 
 evalString2Base :: Builtin.Function
 evalString2Base = Builtin.functionEvaluator evalString2Base0

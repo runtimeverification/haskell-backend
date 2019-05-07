@@ -83,7 +83,9 @@ each Definition's tests.
 definitions :: [Definition]
 definitions =
     [ Definition
-        { root = Paths.dataFileName "../src/main/k/working/function-evaluation-demo"
+        { root =
+            Paths.dataFileName
+                "../src/main/k/working/function-evaluation-demo"
         , kFile = "demo.k"
         , definitionFile = "demo-kompiled/definition.kore"
         , mainModuleName = ModuleName "DEMO"

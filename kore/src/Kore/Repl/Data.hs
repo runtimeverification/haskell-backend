@@ -169,7 +169,8 @@ helpText =
     \prove <n>                             initializes proof mode for the nth \
                                            \claim\n\
     \graph [file]                          shows the current proof graph (*)\n\
-                                           \ (saves image if file argument is given)\n\
+                                           \ (saves image if file argument is\
+                                           \ given)\n\
     \step [n]                              attempts to run 'n' proof steps at\
                                            \the current node (n=1 by default)\n\
     \stepf [n]                             attempts to run 'n' proof steps at\
@@ -179,7 +180,8 @@ helpText =
     \config [n]                            shows the config for node 'n'\
                                            \ (defaults to current node)\n\
     \omit [cell]                           adds or removes cell to omit list\
-                                           \ (defaults to showing the omit list)\n\
+                                           \ (defaults to showing the omit\
+                                           \ list)\n\
     \leafs                                 shows unevaluated or stuck leafs\n\
     \rule [n]                              shows the rule for node 'n'\
                                            \ (defaults to current node)\n\
@@ -192,17 +194,25 @@ helpText =
     \label <+l> [n]                        add a new label for a node\
                                            \ (defaults to current node)\n\
     \label <-l>                            remove a label\n\
-    \try <a|c><num>                        attempts <a>xiom or <c>laim at index <num>.\n\
-    \clear [n]                             removes all node children from the proof graph\n\
+    \try <a|c><num>                        attempts <a>xiom or <c>laim at\
+                                           \ index <num>.\n\
+    \clear [n]                             removes all node children from the\
+                                           \ proof graph\n\
                                            \ (defaults to current node)\n\
     \exit                                  exits the repl\
     \\n\
     \Available modifiers:\n\
-    \<command> > file                      prints the output of 'command' to file\n\
-    \<command> >> file                     appends the output of 'command' to file\n\
-    \<command> | external script           pipes command to external script and prints the result in the repl\n\
-    \<command> | external script > file    pipes and then redirects the output of the piped command to a file\n\
-    \<command> | external script >> file   pipes and then appends the output of the piped command to a file\n\
+    \<command> > file                      prints the output of 'command'\
+                                           \ to file\n\
+    \<command> >> file                     appends the output of 'command'\
+                                           \ to file\n\
+    \<command> | external script           pipes command to external script\
+                                           \ and prints the result in the\
+                                           \ repl\n\
+    \<command> | external script > file    pipes and then redirects the output\
+                                           \ of the piped command to a file\n\
+    \<command> | external script >> file   pipes and then appends the output\
+                                           \ of the piped command to a file\n\
     \\n\
     \(*) If an edge is labeled as Simpl/RD it means that\
     \ either the target node was reached using the SMT solver\
@@ -451,8 +461,8 @@ data StepResult
     -- ^ configuration branched
     deriving (Show)
 
--- | Run a single step for the data in state (claim, axioms, claims, current node
--- and execution graph.
+-- | Run a single step for the data in state
+-- (claim, axioms, claims, current node and execution graph).
 runStepper
     :: MonadState (ReplState claim) (m Simplifier)
     => Monad.Trans.MonadTrans m

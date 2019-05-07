@@ -502,7 +502,8 @@ tryAxiomClaim eac = do
                 BranchResult nodes -> do
                     stuckToUnstuck nodes graph
                     putStrLn'
-                        $ "Unification successful with branching: " <> show nodes
+                        $ "Unification successful with branching: "
+                            <> show nodes
   where
     leftToList :: Either a b -> [a]
     leftToList = either pure (const [])
@@ -512,7 +513,9 @@ tryAxiomClaim eac = do
 
     stuckToUnstuck :: [ReplNode] -> ExecutionGraph -> ReplM claim ()
     stuckToUnstuck nodes Strategy.ExecutionGraph{ graph } =
-        updateInnerGraph $ Graph.gmap (stuckToRewrite $ fmap unReplNode nodes) graph
+        updateInnerGraph
+        $ Graph.gmap (stuckToRewrite
+        $ fmap unReplNode nodes) graph
 
     stuckToRewrite xs ct@(to, n, lab, from)
         | n `elem` xs =

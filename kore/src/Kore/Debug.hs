@@ -49,7 +49,8 @@ make test-k 2>&1 | python ../src/main/python/debugFilter.py > debug.txt
 
 It also works for test error messages:
 ```
-stack -j3 test --pedantic --test-arguments --pattern=zzz 2>&1 | python ../python/debugFilter.py`
+stack -j3 test --pedantic --test-arguments --pattern=zzz 2>&1 | \
+    python ../python/debugFilter.py`
 ```
 
 Enjoy.

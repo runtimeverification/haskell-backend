@@ -135,7 +135,8 @@ lexeme = L.lexeme skipWhitespace
 skipWhitespace ::  Parser ()
 skipWhitespace = L.space Parser.space1 (L.skipLineComment "//") blockComment
   where
-    blockComment = Parser.string "/*" >> void (manyTill commentBody (Parser.string "*/"))
+    blockComment =
+        Parser.string "/*" >> void (manyTill commentBody (Parser.string "*/"))
     commentBody = anySingle <|> (eof >> fail "Unfinished comment.")
 
 koreKeywordsSet :: HashSet Char8.ByteString
@@ -510,4 +511,5 @@ metaSortTrie =
 metaSortConverter :: String -> Maybe MetaSortType
 -- TODO(virgil): Does the pack call matter for performance? Should we try to
 -- improve it?
-metaSortConverter identifier = HashMap.lookup (Char8.pack identifier) metaSortTrie
+metaSortConverter identifier =
+    HashMap.lookup (Char8.pack identifier) metaSortTrie

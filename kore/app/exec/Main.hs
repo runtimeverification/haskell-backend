@@ -112,7 +112,8 @@ parseKoreSearchOptions =
                 Just val -> pure val
                 _ ->
                     let
-                        unknown = "Unknown " ++  longName ++ " '" ++ opt ++ "'. "
+                        unknown =
+                            "Unknown " ++  longName ++ " '" ++ opt ++ "'. "
                         known = "Known " ++ longName ++ "s are: " ++
                             intercalate ", " (map fst options) ++ "."
                     in
@@ -177,7 +178,8 @@ parseKoreExecOptions =
             (strOption
                 (  metavar "PATTERN_FILE"
                 <> long "pattern"
-                <> help "Verify and execute the Kore pattern found in PATTERN_FILE."
+                <> help
+                    "Verify and execute the Kore pattern found in PATTERN_FILE."
                 )
             )
         <*> optional

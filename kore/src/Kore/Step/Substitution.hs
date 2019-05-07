@@ -136,7 +136,8 @@ normalizeExcept
     -- use guardAgainstBottom at the end.
     deduplicated <- normalizeSubstitutionDuplication' substitution
     let
-        Conditional { substitution = preDeduplicatedSubstitution } = deduplicated
+        Conditional { substitution = preDeduplicatedSubstitution } =
+            deduplicated
         Conditional { predicate = deduplicatedPredicate } = deduplicated
         -- The substitution is not fully normalized, but it is safe to convert
         -- to a Map because it has been deduplicated.

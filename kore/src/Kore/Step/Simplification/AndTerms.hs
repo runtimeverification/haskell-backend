@@ -571,8 +571,8 @@ another case to handle the patterns. If the pattern heads do match the
 unification case, then use 'Control.Monad.Trans.lift' to wrap the implementation
 of that case.
 
-All the @TermTransformationOld@s and similar functions defined in this module call
-'empty' unless given patterns matching their unification case.
+All the @TermTransformationOld@s and similar functions defined in this module
+call 'empty' unless given patterns matching their unification case.
 
  -}
 type TermTransformation variable unifier =

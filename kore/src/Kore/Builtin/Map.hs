@@ -155,7 +155,8 @@ symbolVerifiers =
       , Builtin.verifySymbol assertSort []
       )
     , ( updateKey
-      , Builtin.verifySymbol assertSort [assertSort, acceptAnySort, acceptAnySort]
+      , Builtin.verifySymbol assertSort
+            [assertSort, acceptAnySort, acceptAnySort]
       )
     , ( in_keysKey
       , Builtin.verifySymbol Bool.assertSort [acceptAnySort, assertSort]

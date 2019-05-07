@@ -903,7 +903,10 @@ aliasSentenceRemainderParser = do
     mlLexemeParser ":="
     rightPattern <- korePatternParser
     attributes <- attributesParser
-    return (SentenceAlias aliasSymbol sorts resultSort leftPattern rightPattern attributes)
+    return
+        (SentenceAlias
+            aliasSymbol sorts resultSort leftPattern rightPattern attributes
+        )
 
 {-|'importSentenceRemainderParser' parses the part after the starting
 'import' keyword of an import-declaration and constructs it.

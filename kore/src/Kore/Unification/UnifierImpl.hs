@@ -228,7 +228,8 @@ normalizeSubstitutionDuplication
                 , substitution = Conditional.substitution finalSubst
                 }
   where
-    groupedSubstitution = groupSubstitutionByVariable $ Substitution.unwrap subst
+    groupedSubstitution =
+        groupSubstitutionByVariable $ Substitution.unwrap subst
     isSingleton [_] = True
     isSingleton _   = False
     singletonSubstitutions, nonSingletonSubstitutions

@@ -436,7 +436,8 @@ verifyPredicate
 verifyPredicate operandSort resultSort = \predicate -> do
     let patternSort = resultSort predicate
     verifyPatternSort patternSort
-    Attribute.Pattern { freeVariables } :< verified <- verifyOperands operandSort predicate
+    Attribute.Pattern { freeVariables } :< verified <-
+        verifyOperands operandSort predicate
     return (Attribute.Pattern { patternSort, freeVariables } :< verified)
 {-# INLINE verifyPredicate #-}
 
@@ -655,7 +656,9 @@ verifySymbolOrAlias symbolOrAlias = do
                 sentenceAlias
         (Left err, Left _) -> throwError err
         (Right _, Right _) -> error
-            "The (Right, Right) match should be caught by the unique names check."
+            (  "The (Right, Right) match should be caught "
+            ++ "by the unique names check."
+            )
   where
     lookupSymbol = lookupSymbolDeclaration applicationId
     lookupAlias = lookupAliasDeclaration applicationId
