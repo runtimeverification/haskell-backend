@@ -14,7 +14,7 @@ import           Data.Text.Prettyprint.Doc
                  ( Doc )
 
 import           Kore.Internal.TermLike
-                 ( TermLike )
+                 ( SortedVariable, TermLike )
 import qualified Kore.Logger as Log
 import           Kore.Step.Simplification.Data
                  ( Environment (..), Simplifier )
@@ -50,7 +50,7 @@ class (forall variable. Monad (unifier variable)) => MonadUnify unifier where
         -> unifier variable' a
 
     explainBottom
-        :: Unparse variable
+        :: (SortedVariable variable, Unparse variable)
         => Doc ()
         -> TermLike variable
         -> TermLike variable
