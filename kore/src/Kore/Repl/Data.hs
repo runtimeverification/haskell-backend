@@ -15,6 +15,8 @@ module Kore.Repl.Data
     , AxiomIndex (..), ClaimIndex (..)
     , ReplNode (..)
     , ReplState (..)
+    , NodeState (..)
+    , getNodeState
     , InnerGraph
     , lensAxioms, lensClaims, lensClaim
     , lensGraph, lensNode, lensStepper
@@ -71,7 +73,8 @@ import           Kore.Internal.Pattern
 import           Kore.Internal.TermLike
                  ( TermLike )
 import           Kore.OnePath.Step
-                 ( CommonStrategyPattern, StrategyPattern (..) )
+                 ( CommonStrategyPattern, StrategyPattern (..),
+                 StrategyPatternTransformer (..), strategyPattern )
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
@@ -485,5 +488,23 @@ runStepper' claims axioms node = do
         Monad.Trans.lift $ stepper claim claims axioms graph node
     pure . (,) gr $ case Graph.suc innerGraph (unReplNode node) of
         []       -> NoResult
-        [single] -> SingleResult $ ReplNode single
+        [single] -> case getNodeState innerGraph single of
+                        Nothing -> NoResult
+                        Just (StuckNode, _) -> NoResult
+                        _ -> SingleResult . ReplNode $ single
         nodes    -> BranchResult $ fmap ReplNode nodes
+
+getNodeState :: InnerGraph -> Graph.Node -> Maybe (NodeState, Graph.Node)
+getNodeState graph node =
+        fmap (\nodeState -> (nodeState, node))
+        . strategyPattern StrategyPatternTransformer
+            { rewriteTransformer = const . Just $ UnevaluatedNode
+            , stuckTransformer = const . Just $ StuckNode
+            , bottomValue = Nothing
+            }
+        . Graph.lab'
+        . Graph.context graph
+        $ node
+
+data NodeState = StuckNode | UnevaluatedNode
+    deriving (Eq, Ord, Show)

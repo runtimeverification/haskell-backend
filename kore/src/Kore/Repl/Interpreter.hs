@@ -333,17 +333,6 @@ showLeafs = do
     findLeafNodes graph =
         filter ((==) 0 . Graph.outdeg graph) $ Graph.nodes graph
 
-    getNodeState :: InnerGraph -> Graph.Node -> Maybe (NodeState, Graph.Node)
-    getNodeState graph node =
-        fmap (\nodeState -> (nodeState, node))
-        . strategyPattern StrategyPatternTransformer
-            { rewriteTransformer = const . Just $ UnevaluatedNode
-            , stuckTransformer = const . Just $ StuckNode
-            , bottomValue = Nothing
-            }
-        . Graph.lab'
-        . Graph.context graph
-        $ node
 
     showPair :: (NodeState, [Graph.Node]) -> String
     showPair (ns, xs) = show ns <> ": " <> show xs
@@ -512,6 +501,7 @@ tryAxiomClaim eac = do
                     showUnificationFailure axiomOrClaim node
                 SingleResult node' -> do
                     lensNode .= node'
+                    lensGraph .= graph
                     putStrLn' "Unification successful."
                 BranchResult nodes -> do
                     stuckToUnstuck nodes graph
@@ -816,5 +806,3 @@ showAxiomOrClaim len (RuleIndex (Just rid))
   | rid < len = Just $ "Axiom " <> show rid
   | otherwise = Just $ "Claim " <> show (rid - len)
 
-data NodeState = StuckNode | UnevaluatedNode
-    deriving (Eq, Ord, Show)
