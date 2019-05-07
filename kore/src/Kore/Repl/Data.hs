@@ -490,7 +490,7 @@ runStepper' claims axioms node = do
         []       -> NoResult
         [single] -> case getNodeState innerGraph single of
                         Nothing -> NoResult
-                        Just (StuckNode, n) -> NoResult
+                        Just (StuckNode, _) -> NoResult
                         _ -> SingleResult . ReplNode $ single
         nodes    -> BranchResult $ fmap ReplNode nodes
 
