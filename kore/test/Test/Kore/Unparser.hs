@@ -1,6 +1,7 @@
 module Test.Kore.Unparser
     ( test_parse
     , test_unparse
+    , test_unparseGeneric
     ) where
 
 import           Hedgehog
@@ -12,6 +13,9 @@ import           Test.Tasty.Hedgehog
 import           Test.Tasty.HUnit
                  ( assertEqual, testCase )
 
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
+
 import Kore.Parser.Lexeme
 import Kore.Parser.Parser
 import Kore.Parser.ParserUtils
@@ -19,7 +23,8 @@ import Kore.Syntax
 import Kore.Syntax.Definition
 import Kore.Unparser
 
-import Test.Kore
+import           Test.Kore
+import qualified Test.Terse as Terse
 
 test_unparse :: TestTree
 test_unparse =
@@ -218,3 +223,52 @@ unparseTest astInput expected =
         (assertEqual (show astInput)
             expected
             (unparseToString astInput))
+
+-- -----------------------------------------------------------------------------
+-- Generic unparsing tests
+
+-- Three simple symbols
+data A = A deriving GHC.Generic
+data B = B deriving GHC.Generic
+data C = C deriving GHC.Generic
+
+instance Unparse A where
+    unparse A = "A"
+    unparse2 A = "A"
+
+instance Unparse B where
+    unparse B = "B"
+    unparse2 B = "B"
+
+instance Unparse C where
+    unparse C = "C"
+    unparse2 C = "C"
+
+-- A sum type with three different symbols
+data S = SA A | SB B | SC C deriving GHC.Generic
+
+instance SOP.Generic S
+
+-- A product type with three different symbols
+data P = P A B C deriving GHC.Generic
+
+instance SOP.Generic P
+
+-- A complex algebraic type with sums and products
+data D = D0 | D1 A | D2 A B | D3 A B C deriving GHC.Generic
+
+instance SOP.Generic D
+
+test_unparseGeneric :: [TestTree]
+test_unparseGeneric =
+    [ SA A     `yields` "A"
+    , SB B     `yields` "B"
+    , SC C     `yields` "C"
+    , P A B C  `yields` "A B C"
+    , D0       `yields` ""
+    , D1 A     `yields` "A"
+    , D2 A B   `yields` "A B"
+    , D3 A B C `yields` "A B C"
+    ]
+  where
+    yields input = Terse.equals_ (show $ unparseGeneric input)

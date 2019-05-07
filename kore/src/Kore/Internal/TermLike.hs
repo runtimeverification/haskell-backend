@@ -158,9 +158,7 @@ Otherwise, the argument is returned.
 
  -}
 withoutFreeVariable
-    ::  ( Ord variable
-        , Unparse variable
-        )
+    :: (Ord variable, SortedVariable variable, Unparse variable)
     => variable  -- ^ variable
     -> TermLike variable
     -> a  -- ^ result, if the variable does not occur free in the pattern
@@ -399,7 +397,7 @@ termLikeSort = Attribute.patternSort . extract
 
 -- | Attempts to modify p to have sort s.
 forceSort
-    :: (Unparse variable, HasCallStack)
+    :: (SortedVariable variable, Unparse variable, HasCallStack)
     => Sort
     -> TermLike variable
     -> TermLike variable
@@ -487,9 +485,7 @@ same sort.
 
  -}
 makeSortsAgree
-    ::  ( Unparse variable
-        , HasCallStack
-        )
+    :: (SortedVariable variable, Unparse variable, HasCallStack)
     => (TermLike variable -> TermLike variable -> Sort -> a)
     -> TermLike variable
     -> TermLike variable
@@ -516,6 +512,7 @@ getRigidSort pattern' =
  -}
 mkAnd
     ::  ( Ord variable
+        , SortedVariable variable
         , Unparse variable
         , HasCallStack
         )
@@ -596,7 +593,7 @@ See also: 'mkApp', 'applyAlias_', 'applySymbol', 'mkAlias'
 
  -}
 applyAlias
-    :: (Ord variable, Unparse variable, HasCallStack)
+    :: (Ord variable, SortedVariable variable, Unparse variable, HasCallStack)
     => SentenceAlias (TermLike variable)
     -- ^ 'Alias' declaration
     -> [Sort]
@@ -651,7 +648,9 @@ See also: 'mkApp', 'applyAlias'
  -}
 applyAlias_
     ::  ( Ord variable
+        , SortedVariable variable
         , Unparse variable
+        , HasCallStack
         )
     => SentenceAlias (TermLike variable)
     -> [TermLike variable]
@@ -666,9 +665,7 @@ See also: 'mkApp', 'applySymbol_', 'mkSymbol'
 
  -}
 applySymbol
-    ::  ( Ord variable
-        , Unparse variable
-        )
+    :: (Ord variable, SortedVariable variable, Unparse variable, HasCallStack)
     => SentenceSymbol pattern''
     -- ^ 'Symbol' declaration
     -> [Sort]
@@ -719,7 +716,7 @@ See also: 'mkApp', 'applySymbol'
 
  -}
 applySymbol_
-    :: (Ord variable, Unparse variable)
+    :: (Ord variable, SortedVariable variable, Unparse variable, HasCallStack)
     => SentenceSymbol pattern''
     -> [TermLike variable]
     -> TermLike variable
@@ -803,7 +800,7 @@ See also: 'mkEquals_'
 
  -}
 mkEquals
-    :: ( Ord variable , Unparse variable, HasCallStack )
+    :: (Ord variable, SortedVariable variable, Unparse variable, HasCallStack)
     => Sort
     -> TermLike variable
     -> TermLike variable
@@ -839,6 +836,7 @@ See also: 'mkEquals'
  -}
 mkEquals_
     ::  ( Ord variable
+        , SortedVariable variable
         , Unparse variable
         , HasCallStack
         )
@@ -920,7 +918,7 @@ mkForall forallVariable forallChild =
 {- | Construct an 'Iff' pattern.
  -}
 mkIff
-    :: ( Ord variable , Unparse variable , HasCallStack )
+    :: (Ord variable, SortedVariable variable, Unparse variable, HasCallStack)
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -941,7 +939,7 @@ mkIff = makeSortsAgree mkIffWorker
 {- | Construct an 'Implies' pattern.
  -}
 mkImplies
-    :: ( Ord variable , Unparse variable , HasCallStack )
+    :: (Ord variable, SortedVariable variable, Unparse variable, HasCallStack)
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -965,7 +963,7 @@ See also: 'mkIn_'
 
  -}
 mkIn
-    :: ( Ord variable , Unparse variable , HasCallStack )
+    :: (Ord variable, SortedVariable variable, Unparse variable, HasCallStack)
     => Sort
     -> TermLike variable
     -> TermLike variable
@@ -999,7 +997,7 @@ See also: 'mkIn'
 
  -}
 mkIn_
-    :: ( Ord variable , Unparse variable , HasCallStack )
+    :: (Ord variable, SortedVariable variable, Unparse variable, HasCallStack)
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -1036,7 +1034,7 @@ mkNot notChild =
 {- | Construct an 'Or' pattern.
  -}
 mkOr
-    :: ( Ord variable , Unparse variable , HasCallStack )
+    :: (Ord variable, SortedVariable variable, Unparse variable, HasCallStack)
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -1057,7 +1055,7 @@ mkOr = makeSortsAgree mkOrWorker
 {- | Construct a 'Rewrites' pattern.
  -}
 mkRewrites
-    :: ( Ord variable , Unparse variable , HasCallStack )
+    :: (Ord variable, SortedVariable variable, Unparse variable, HasCallStack)
     => TermLike variable
     -> TermLike variable
     -> TermLike variable

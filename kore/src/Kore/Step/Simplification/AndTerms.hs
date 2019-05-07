@@ -1025,6 +1025,7 @@ when @src1@ is a subsort of @src2@.
 sortInjectionAndEqualsAssumesDifferentHeads
     ::  forall variable unifier unifierM .
         ( Ord variable
+        , SortedVariable variable
         , Unparse variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -1214,6 +1215,7 @@ returns @\\bottom@.
 -- injection should always clash with constructors. We should clarify this.
 constructorSortInjectionAndEquals
     ::  ( Eq variable
+        , SortedVariable variable
         , Unparse variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -1251,6 +1253,7 @@ to be different; therefore their conjunction is @\\bottom@.
  -}
 constructorAndEqualsAssumesDifferentHeads
     ::  ( Eq variable
+        , SortedVariable variable
         , Unparse variable
         , MonadUnify unifierM
         , unifier ~ unifierM variable
@@ -1317,6 +1320,7 @@ See also: 'equalAndEquals'
 -- but it is not.
 domainValueAndEqualsAssumesDifferent
     :: Eq variable
+    => SortedVariable variable
     => Unparse variable
     => MonadUnify unifierM
     => unifier ~ unifierM variable
@@ -1339,6 +1343,7 @@ domainValueAndEqualsAssumesDifferent _ _ = empty
 
 cannotUnifyDomainValues
     :: Eq variable
+    => SortedVariable variable
     => Unparse variable
     => MonadUnify unifierM
     => unifier ~ unifierM variable
@@ -1363,6 +1368,7 @@ See also: 'equalAndEquals'
  -}
 stringLiteralAndEqualsAssumesDifferent
     :: Eq variable
+    => SortedVariable variable
     => Unparse variable
     => MonadUnify unifierM
     => unifier ~ unifierM variable
@@ -1385,6 +1391,7 @@ See also: 'equalAndEquals'
  -}
 charLiteralAndEqualsAssumesDifferent
     :: Eq variable
+    => SortedVariable variable
     => Unparse variable
     => MonadUnify unifierM
     => unifier ~ unifierM variable

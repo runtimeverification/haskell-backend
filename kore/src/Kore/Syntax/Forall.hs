@@ -19,6 +19,7 @@ import           GHC.Generics
                  ( Generic )
 
 import Kore.Sort
+import Kore.Syntax.Variable
 import Kore.Unparser
 
 {-|'Forall' corresponds to the @\forall@ branches of the @object-pattern@ and
@@ -48,7 +49,7 @@ instance
     NFData (Forall sort variable child)
 
 instance
-    (Unparse child, Unparse variable) =>
+    (SortedVariable variable, Unparse variable, Unparse child) =>
     Unparse (Forall Sort variable child)
   where
     unparse Forall { forallSort, forallVariable, forallChild } =
@@ -59,6 +60,6 @@ instance
     unparse2 Forall { forallVariable, forallChild } =
         Pretty.parens (Pretty.fillSep
             [ "\\forall"
-            , unparse2BindingVariables forallVariable
+            , unparse2SortedVariable forallVariable
             , unparse2 forallChild
             ])
