@@ -8,8 +8,10 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.OnePath.Step
-    ( -- * Primitive strategies
-      Prim (..)
+    ( Verifier
+    , Transition
+      -- * Primitive strategies
+    , Prim (..)
     , StrategyPattern (..)
     , StrategyPatternTransformer (..)
     , CommonStrategyPattern
@@ -23,6 +25,9 @@ module Kore.OnePath.Step
 
 import           Control.Applicative
                  ( Alternative (..) )
+import           Control.Monad.Except
+                 ( ExceptT )
+import qualified Control.Monad.Except as Monad.Except
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import           Data.Hashable
@@ -182,7 +187,9 @@ simplify = Simplify
 removeDestination :: patt -> Prim patt rewrite
 removeDestination = RemoveDestination
 
-type Transition = TransitionT (RewriteRule Variable) Simplifier
+type Verifier = ExceptT (Pattern Variable) Simplifier
+
+type Transition = TransitionT (RewriteRule Variable) Verifier
 
 {- | Transition rule for primitive strategies in 'Prim'.
 
@@ -229,7 +236,7 @@ transitionRule
     -> Prim (Pattern Variable) (RewriteRule Variable)
     -> CommonStrategyPattern
     -- ^ Configuration being rewritten and its accompanying proof
-    -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
+    -> Transition CommonStrategyPattern
 transitionRule
     tools
     substitutionSimplifier
@@ -253,9 +260,13 @@ transitionRule
         applySimplify Stuck config
     transitionSimplify c@Bottom = return c
 
+    applySimplify
+        :: (Pattern Variable -> CommonStrategyPattern)
+        -> Pattern Variable
+        -> Transition CommonStrategyPattern
     applySimplify wrapper config = do
         configs <-
-            Monad.Trans.lift
+            Monad.Trans.lift . Monad.Trans.lift
             $ Pattern.simplify
                 tools
                 substitutionSimplifier
@@ -272,7 +283,7 @@ transitionRule
     transitionApplyWithRemainders
         :: [RewriteRule Variable]
         -> CommonStrategyPattern
-        -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
+        -> Transition CommonStrategyPattern
     transitionApplyWithRemainders _ c@Bottom = return c
     transitionApplyWithRemainders _ c@(Stuck _) = return c
     transitionApplyWithRemainders rules (RewritePattern config) =
@@ -286,7 +297,7 @@ transitionRule
       | Pattern.isBottom config = empty
       | otherwise = do
         result <-
-            Monad.Trans.lift
+            Monad.Trans.lift . Monad.Trans.lift
             $ Monad.Unify.runUnifier
             $ Step.sequenceRewriteRules
                 tools
@@ -319,15 +330,16 @@ transitionRule
     transitionRemoveDestination
         :: Pattern Variable
         -> CommonStrategyPattern
-        -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
+        -> Transition CommonStrategyPattern
     transitionRemoveDestination _ Bottom = empty
-    transitionRemoveDestination _ (Stuck _) = empty
+    transitionRemoveDestination _ (Stuck config) =
+        Monad.Except.throwError config
     transitionRemoveDestination destination (RewritePattern patt) = do
         let
             removal = removalPredicate destination patt
             result = patt `Conditional.andPredicate` removal
         orResult <-
-            Monad.Trans.lift
+            Monad.Trans.lift . Monad.Trans.lift
             $ Pattern.simplify
                 tools
                 substitutionSimplifier

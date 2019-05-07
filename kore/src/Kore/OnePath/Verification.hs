@@ -17,12 +17,10 @@ module Kore.OnePath.Verification
     , verifyClaimStep
     ) where
 
-import qualified Control.Monad as Monad
-import qualified Control.Monad.Trans as Monad.Trans
-import           Control.Monad.Trans.Except
-                 ( ExceptT, throwE )
+import qualified Control.Monad.Except as Monad.Except
 import           Data.Coerce
                  ( Coercible, coerce )
+import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Limit
                  ( Limit )
@@ -37,16 +35,14 @@ import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
 import           Kore.Internal.Pattern
                  ( Conditional (Conditional), Pattern )
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Pattern as Conditional
                  ( Conditional (..) )
 import           Kore.OnePath.Step
-                 ( CommonStrategyPattern, Prim, onePathFirstStep,
-                 onePathFollowupStep )
+                 ( CommonStrategyPattern, Prim, Transition, Verifier,
+                 onePathFirstStep, onePathFollowupStep )
 import qualified Kore.OnePath.Step as StrategyPattern
                  ( StrategyPattern (..), extractUnproven )
 import qualified Kore.OnePath.Step as OnePath
@@ -58,16 +54,15 @@ import           Kore.Step.Rule
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+                 ( PredicateSimplifier, TermLikeSimplifier )
 import           Kore.Step.Strategy
                  ( executionHistoryStep )
 import           Kore.Step.Strategy
-                 ( Strategy, TransitionT, pickFinal, runStrategy )
+                 ( Strategy, pickFinal, runStrategy )
 import           Kore.Step.Strategy
                  ( ExecutionGraph (..) )
 import           Kore.Syntax.Variable
                  ( Variable )
-import qualified Kore.TopBottom as TopBottom
 import           Numeric.Natural
                  ( Natural )
 
@@ -156,10 +151,7 @@ verify
     -> [(RewriteRule Variable, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
-    -> ExceptT
-        (OrPattern Variable)
-        Simplifier
-        ()
+    -> Verifier ()
 verify
     metadataTools
     simplifier
@@ -228,7 +220,7 @@ verifyClaim
         -> [Strategy (Prim (Pattern Variable) (RewriteRule Variable))]
         )
     -> (RewriteRule Variable, Limit Natural)
-    -> ExceptT (OrPattern Variable) Simplifier ()
+    -> Verifier ()
 verifyClaim
     metadataTools
     simplifier
@@ -253,18 +245,13 @@ verifyClaim
             StrategyPattern.RewritePattern
                 Conditional
                     {term = left, predicate = requires, substitution = mempty}
-    executionGraph <-
-        Monad.Trans.lift $ runStrategy
-            transitionRule'
-            strategy
-            startPattern
-    let remainingNodes = unprovenNodes executionGraph
-    Monad.unless (TopBottom.isBottom remainingNodes) (throwE remainingNodes)
+    executionGraph <- runStrategy transitionRule' strategy startPattern
+    Foldable.traverse_ Monad.Except.throwError (unprovenNodes executionGraph)
   where
     transitionRule'
         :: Prim (Pattern Variable) (RewriteRule Variable)
         -> CommonStrategyPattern
-        -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
+        -> Transition CommonStrategyPattern
     transitionRule' =
         OnePath.transitionRule
             metadataTools
@@ -301,11 +288,7 @@ verifyClaimStep
     -- ^ current execution graph
     -> Graph.Node
     -- ^ selected node in the graph
-    -> Simplifier
-        (ExecutionGraph
-            (CommonStrategyPattern)
-            (RewriteRule Variable)
-        )
+    -> Verifier (ExecutionGraph (CommonStrategyPattern) (RewriteRule Variable))
 verifyClaimStep
     tools
     simplifier
@@ -325,8 +308,7 @@ verifyClaimStep
     transitionRule'
         :: Prim (Pattern Variable) (RewriteRule Variable)
         -> CommonStrategyPattern
-        -> TransitionT (RewriteRule Variable) Simplifier
-            (CommonStrategyPattern)
+        -> Transition CommonStrategyPattern
     transitionRule' =
         OnePath.transitionRule
             tools
@@ -334,9 +316,7 @@ verifyClaimStep
             simplifier
             axiomIdToSimplifier
 
-    strategy'
-        :: Strategy
-            (Prim (Pattern Variable) (RewriteRule Variable))
+    strategy' :: Strategy (Prim (Pattern Variable) (RewriteRule Variable))
     strategy'
         | isRoot =
             onePathFirstStep targetPattern rewrites

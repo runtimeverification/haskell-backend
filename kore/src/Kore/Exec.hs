@@ -49,7 +49,6 @@ import           Kore.IndexedModule.Resolvers
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Internal.Pattern as Pattern
@@ -238,7 +237,7 @@ prove limit definitionModule specModule = do
             axiomIdToSimplifier
             (defaultStrategy claims axioms)
             (map (\x -> (x,limit)) (extractUntrustedClaims claims))
-    return $ Bifunctor.first OrPattern.toTermLike result
+    return $ Bifunctor.first Pattern.toTermLike result
 
 -- | Initialize and run the repl with the main and spec modules. This will loop
 -- the repl until the user exits.
