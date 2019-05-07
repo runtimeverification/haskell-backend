@@ -112,7 +112,8 @@ unroll = Unroll
 computeWeakNext :: [rewrite] -> Prim patt rewrite
 computeWeakNext = ComputeWeakNext
 
-type Transition = TransitionT (RewriteRule Variable) (StateT (Maybe ()) Simplifier)
+type Transition =
+    TransitionT (RewriteRule Variable) (StateT (Maybe ()) Simplifier)
 
 transitionRule
     :: SmtMetadataTools StepperAttributes
@@ -133,12 +134,14 @@ transitionRule
     proofState
   = do
     execState <- Monad.Trans.lift State.get
-    when (isJust execState) empty     -- End early if any unprovable state was reached
+    -- End early if any unprovable state was reached
+    when (isJust execState) empty
     case strategyPrim of
         CheckProofState -> transitionCheckProofState proofState
         Simplify -> transitionSimplify proofState
         Unroll goalrhs -> transitionUnroll goalrhs proofState
-        ComputeWeakNext rewrites -> transitionComputeWeakNext rewrites proofState
+        ComputeWeakNext rewrites ->
+            transitionComputeWeakNext rewrites proofState
   where
     transitionCheckProofState
         :: CommonProofState

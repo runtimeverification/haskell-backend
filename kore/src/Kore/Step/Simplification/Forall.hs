@@ -58,9 +58,9 @@ take an argument of type
 > CofreeF (Forall Sort) (Attribute.Pattern variable) (OrPattern variable)
 
 instead of a 'variable' and an 'OrPattern' argument. The type of
-'makeEvaluate' may be changed analogously. The 'Attribute.Pattern' annotation will
-eventually cache information besides the pattern sort, which will make it even
-more useful to carry around.
+'makeEvaluate' may be changed analogously. The 'Attribute.Pattern' annotation
+will eventually cache information besides the pattern sort, which will make it
+even more useful to carry around.
 
 -}
 simplifyEvaluated

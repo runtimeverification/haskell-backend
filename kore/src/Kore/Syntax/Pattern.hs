@@ -140,7 +140,7 @@ instance
 
 instance
     ( Functor domain
-    , Unparse variable
+    , SortedVariable variable, Unparse variable
     , Unparse (domain self)
     , self ~ Pattern domain variable annotation
     ) =>

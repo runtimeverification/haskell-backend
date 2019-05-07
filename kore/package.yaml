@@ -39,6 +39,7 @@ dependencies:
   - extra
   - fgl
   - free
+  - generics-sop
   - gitrev
   - graphviz
   - groom

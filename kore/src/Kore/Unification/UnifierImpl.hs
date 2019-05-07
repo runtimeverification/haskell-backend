@@ -52,13 +52,12 @@ import {-# SOURCE #-} Kore.Step.Substitution
        ( mergePredicatesAndSubstitutionsExcept )
 
 simplifyAnds
-    ::  forall variable unifier unifierM .
-        ( Show variable
+    ::  forall variable unifier
+    .   ( Show variable
         , Unparse variable
         , SortedVariable variable
         , FreshVariable variable
-        , unifier ~ unifierM variable
-        , MonadUnify unifierM
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -134,8 +133,7 @@ solveGroupedSubstitution
        , Unparse variable
        , SortedVariable variable
        , FreshVariable variable
-       , MonadUnify unifierM
-       , unifier ~ unifierM variable
+       , MonadUnify unifier
       )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -143,10 +141,7 @@ solveGroupedSubstitution
     -> BuiltinAndAxiomSimplifierMap
     -> variable
     -> NonEmpty (TermLike variable)
-    -> unifier
-        ( Predicate variable
-
-        )
+    -> unifier (Predicate variable)
 solveGroupedSubstitution
     tools
     substitutionSimplifier
@@ -179,23 +174,19 @@ solveGroupedSubstitution
 -- `normalizeSubstitutionDuplication` recursively calls itself until it
 -- stabilizes.
 normalizeSubstitutionDuplication
-    :: forall variable unifier unifierM
+    :: forall variable unifier
     .   ( Show variable
         , Unparse variable
         , SortedVariable variable
         , FreshVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> Substitution variable
-    -> unifier
-        ( Predicate variable
-
-        )
+    -> unifier (Predicate variable)
 normalizeSubstitutionDuplication
     tools
     substitutionSimplifier
@@ -237,7 +228,8 @@ normalizeSubstitutionDuplication
                 , substitution = Conditional.substitution finalSubst
                 }
   where
-    groupedSubstitution = groupSubstitutionByVariable $ Substitution.unwrap subst
+    groupedSubstitution =
+        groupSubstitutionByVariable $ Substitution.unwrap subst
     isSingleton [_] = True
     isSingleton _   = False
     singletonSubstitutions, nonSingletonSubstitutions

@@ -52,7 +52,10 @@ verifyModule
     -> Either (Error VerifyError) (Module Verified.Sentence)
 verifyModule attributesVerification builtinVerifiers indexedModule =
     withContext
-        ("module '" ++ getModuleNameForError (indexedModuleName indexedModule) ++ "'")
+        (  "module '"
+        ++ getModuleNameForError (indexedModuleName indexedModule)
+        ++ "'"
+        )
         (do
             verifyAttributes
                 (snd (indexedModuleAttributes indexedModule))

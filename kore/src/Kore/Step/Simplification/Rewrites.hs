@@ -49,9 +49,9 @@ One way to preserve the required sort annotations is to make
 > CofreeF (Or Sort) (Attribute.Pattern variable) (OrPattern variable)
 
 instead of two 'OrPattern' arguments. The type of
-'makeEvaluateRewrites' may be changed analogously. The 'Attribute.Pattern' annotation will
-eventually cache information besides the pattern sort, which will make it even
-more useful to carry around.
+'makeEvaluateRewrites' may be changed analogously. The 'Attribute.Pattern'
+annotation will eventually cache information besides the pattern sort, which
+will make it even more useful to carry around.
 
 -}
 simplifyEvaluatedRewrites

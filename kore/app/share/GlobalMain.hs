@@ -317,8 +317,10 @@ verifyDefinitionWithBase
         , Map.Map Text AstLocation
         )
     -- ^ base definition to use for verification
-    -> Bool -- ^ whether to check (True) or ignore attributes during verification
-    -> ParsedDefinition -- ^ Parsed definition to check well-formedness
+    -> Bool
+    -- ^ whether to check (True) or ignore attributes during verification
+    -> ParsedDefinition
+    -- ^ Parsed definition to check well-formedness
     -> IO
         ( Map.Map
             ModuleName

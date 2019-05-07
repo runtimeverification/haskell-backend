@@ -109,7 +109,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             , claims   = addIndexesToClaims (length axioms') claims'
             , claim    = firstClaim
             , graph    = firstClaimExecutionGraph
-            , node     = (Strategy.root firstClaimExecutionGraph)
+            , node     = ReplNode (Strategy.root firstClaimExecutionGraph)
             , commands = Seq.empty
             -- TODO(Vladimir): should initialize this to the value obtained from
             -- the frontend via '--omit-labels'.
@@ -168,9 +168,10 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
         -> [claim]
         -> [Axiom]
         -> ExecutionGraph
-        -> Graph.Node
+        -> ReplNode
         -> Simplifier ExecutionGraph
-    stepper0 claim claims axioms graph node = do
+    stepper0 claim claims axioms graph rnode = do
+        let node = unReplNode rnode
         if Graph.outdeg (Strategy.graph graph) node == 0
             then
                 catchInterruptWithDefault graph
@@ -189,7 +190,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     unifier0
         :: TermLike Variable
         -> TermLike Variable
-        -> UnifierWithExplanation Variable ()
+        -> UnifierWithExplanation ()
     unifier0 first second =
         () <$ unificationProcedure
             tools
@@ -214,6 +215,6 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     prompt = do
         node <- Lens.use lensNode
         liftIO $ do
-            putStr $ "Kore (" <> show node <> ")> "
+            putStr $ "Kore (" <> show (unReplNode node) <> ")> "
             hFlush stdout
             getLine

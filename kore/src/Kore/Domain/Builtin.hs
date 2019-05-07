@@ -54,8 +54,8 @@ import           Data.Sequence
 import           Data.Set
                  ( Set )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Control.Lens.TH.Rules
        ( makeLenses )
@@ -98,7 +98,7 @@ data InternalMap child =
         , builtinMapConcat :: !SymbolOrAlias
         , builtinMapChild :: !(Map Key child)
         }
-    deriving (Foldable, Functor, Generic, Traversable)
+    deriving (Foldable, Functor, GHC.Generic, Traversable)
 
 instance Eq child => Eq (InternalMap child) where
     (==) = eq1
@@ -158,7 +158,7 @@ data InternalList child =
         , builtinListConcat :: !SymbolOrAlias
         , builtinListChild :: !(Seq child)
         }
-    deriving (Foldable, Functor, Generic, Traversable)
+    deriving (Foldable, Functor, GHC.Generic, Traversable)
 
 instance Eq child => Eq (InternalList child) where
     (==) = eq1
@@ -214,7 +214,7 @@ data InternalSet =
         , builtinSetConcat :: !SymbolOrAlias
         , builtinSetChild :: !(Set Key)
         }
-    deriving Generic
+    deriving GHC.Generic
 
 instance Hashable InternalSet where
     hashWithSalt salt builtin =
@@ -258,7 +258,7 @@ data InternalInt =
         { builtinIntSort :: !Sort
         , builtinIntValue :: !Integer
         }
-    deriving (Eq, Generic, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
 
 instance Hashable InternalInt
 
@@ -284,7 +284,7 @@ data InternalBool =
         { builtinBoolSort :: !Sort
         , builtinBoolValue :: !Bool
         }
-    deriving (Eq, Generic, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
 
 instance Hashable InternalBool
 
@@ -318,7 +318,7 @@ data Builtin child
     | BuiltinSet !InternalSet
     | BuiltinInt !InternalInt
     | BuiltinBool !InternalBool
-    deriving (Foldable, Functor, Generic, Traversable)
+    deriving (Foldable, Functor, GHC.Generic, Traversable)
 
 deriving instance Eq child => Eq (Builtin child)
 
@@ -326,28 +326,15 @@ deriving instance Ord child => Ord (Builtin child)
 
 deriving instance Show child => Show (Builtin child)
 
-instance Hashable child => Hashable (Builtin child) where
+instance SOP.Generic (Builtin child)
+
+instance Hashable child => Hashable (Builtin child)
 
 instance NFData child => NFData (Builtin child)
 
 instance Unparse child => Unparse (Builtin child) where
-    unparse =
-        \case
-            BuiltinExternal external -> unparse external
-            BuiltinInt builtinInt -> unparse builtinInt
-            BuiltinBool builtinBool -> unparse builtinBool
-            BuiltinMap builtinMap -> unparse builtinMap
-            BuiltinList builtinList -> unparse builtinList
-            BuiltinSet builtinSet -> unparse builtinSet
-
-    unparse2 =
-        \case
-            BuiltinExternal external -> unparse2 external
-            BuiltinInt builtinInt -> unparse2 builtinInt
-            BuiltinBool builtinBool -> unparse2 builtinBool
-            BuiltinMap builtinMap -> unparse2 builtinMap
-            BuiltinList builtinList -> unparse2 builtinList
-            BuiltinSet builtinSet -> unparse2 builtinSet
+    unparse = unparseGeneric
+    unparse2 = unparse2Generic
 
 makeLenses ''InternalMap
 makeLenses ''InternalList

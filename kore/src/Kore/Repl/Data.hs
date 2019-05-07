@@ -13,7 +13,10 @@ module Kore.Repl.Data
     , helpText
     , ExecutionGraph
     , AxiomIndex (..), ClaimIndex (..)
+    , ReplNode (..)
     , ReplState (..)
+    , NodeState (..)
+    , getNodeState
     , InnerGraph
     , lensAxioms, lensClaims, lensClaim
     , lensGraph, lensNode, lensStepper
@@ -63,13 +66,15 @@ import           Data.Text.Prettyprint.Doc
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Exts
                  ( toList )
+import           Numeric.Natural
 
 import           Kore.Internal.Pattern
                  ( Conditional (..) )
 import           Kore.Internal.TermLike
                  ( TermLike )
 import           Kore.OnePath.Step
-                 ( CommonStrategyPattern, StrategyPattern (..) )
+                 ( CommonStrategyPattern, StrategyPattern (..),
+                 StrategyPatternTransformer (..), strategyPattern )
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
@@ -95,6 +100,10 @@ newtype ClaimIndex = ClaimIndex
     { unClaimIndex :: Int
     } deriving (Eq, Show)
 
+newtype ReplNode = ReplNode
+    { unReplNode :: Graph.Node
+    } deriving (Eq, Show)
+
 -- | List of available commands for the Repl. Note that we are always in a proof
 -- state. We pick the first available Claim when we initialize the state.
 data ReplCommand
@@ -102,35 +111,35 @@ data ReplCommand
     -- ^ This is the default action in case parsing all others fail.
     | Help
     -- ^ Shows the help message.
-    | ShowClaim !Int
+    | ShowClaim !ClaimIndex
     -- ^ Show the nth claim.
-    | ShowAxiom !Int
+    | ShowAxiom !AxiomIndex
     -- ^ Show the nth axiom.
-    | Prove !Int
+    | Prove !ClaimIndex
     -- ^ Drop the current proof state and re-initialize for the nth claim.
     | ShowGraph !(Maybe FilePath)
     -- ^ Show the current execution graph.
-    | ProveSteps !Int
+    | ProveSteps !Natural
     -- ^ Do n proof steps from current node.
-    | ProveStepsF !Int
+    | ProveStepsF !Natural
     -- ^ Do n proof steps (through branchings) from the current node.
-    | SelectNode !Int
+    | SelectNode !ReplNode
     -- ^ Select a different node in the graph.
-    | ShowConfig !(Maybe Int)
+    | ShowConfig !(Maybe ReplNode)
     -- ^ Show the configuration from the current node.
     | OmitCell !(Maybe String)
     -- ^ Adds or removes cell to omit list, or shows current omit list.
     | ShowLeafs
     -- ^ Show leafs which can continue evaluation and leafs which are stuck
-    | ShowRule !(Maybe Int)
+    | ShowRule !(Maybe ReplNode)
     -- ^ Show the rule(s) that got us to this configuration.
-    | ShowPrecBranch !(Maybe Int)
+    | ShowPrecBranch !(Maybe ReplNode)
     -- ^ Show the first preceding branch.
-    | ShowChildren !(Maybe Int)
+    | ShowChildren !(Maybe ReplNode)
     -- ^ Show direct children of node.
     | Label !(Maybe String)
     -- ^ Show all node labels or jump to a label.
-    | LabelAdd !String !(Maybe Int)
+    | LabelAdd !String !(Maybe ReplNode)
     -- ^ Add a label to a node.
     | LabelDel !String
     -- ^ Remove a label.
@@ -138,7 +147,7 @@ data ReplCommand
     -- ^ Prints the output of the inner command to the file.
     | Try !(Either AxiomIndex ClaimIndex)
     -- ^ Attempt to apply axiom or claim to current node.
-    | Clear !(Maybe Int)
+    | Clear !(Maybe ReplNode)
     -- ^ Remove child nodes from graph.
     | Pipe ReplCommand !String ![String]
     -- ^ Pipes a repl command into an external script.
@@ -160,7 +169,8 @@ helpText =
     \prove <n>                             initializes proof mode for the nth \
                                            \claim\n\
     \graph [file]                          shows the current proof graph (*)\n\
-                                           \ (saves image if file argument is given)\n\
+                                           \ (saves image if file argument is\
+                                           \ given)\n\
     \step [n]                              attempts to run 'n' proof steps at\
                                            \the current node (n=1 by default)\n\
     \stepf [n]                             attempts to run 'n' proof steps at\
@@ -170,7 +180,8 @@ helpText =
     \config [n]                            shows the config for node 'n'\
                                            \ (defaults to current node)\n\
     \omit [cell]                           adds or removes cell to omit list\
-                                           \ (defaults to showing the omit list)\n\
+                                           \ (defaults to showing the omit\
+                                           \ list)\n\
     \leafs                                 shows unevaluated or stuck leafs\n\
     \rule [n]                              shows the rule for node 'n'\
                                            \ (defaults to current node)\n\
@@ -183,17 +194,25 @@ helpText =
     \label <+l> [n]                        add a new label for a node\
                                            \ (defaults to current node)\n\
     \label <-l>                            remove a label\n\
-    \try <a|c><num>                        attempts <a>xiom or <c>laim at index <num>.\n\
-    \clear [n]                             removes all node children from the proof graph\n\
+    \try <a|c><num>                        attempts <a>xiom or <c>laim at\
+                                           \ index <num>.\n\
+    \clear [n]                             removes all node children from the\
+                                           \ proof graph\n\
                                            \ (defaults to current node)\n\
     \exit                                  exits the repl\
     \\n\
     \Available modifiers:\n\
-    \<command> > file                      prints the output of 'command' to file\n\
-    \<command> >> file                     appends the output of 'command' to file\n\
-    \<command> | external script           pipes command to external script and prints the result in the repl\n\
-    \<command> | external script > file    pipes and then redirects the output of the piped command to a file\n\
-    \<command> | external script >> file   pipes and then appends the output of the piped command to a file\n\
+    \<command> > file                      prints the output of 'command'\
+                                           \ to file\n\
+    \<command> >> file                     appends the output of 'command'\
+                                           \ to file\n\
+    \<command> | external script           pipes command to external script\
+                                           \ and prints the result in the\
+                                           \ repl\n\
+    \<command> | external script > file    pipes and then redirects the output\
+                                           \ of the piped command to a file\n\
+    \<command> | external script >> file   pipes and then appends the output\
+                                           \ of the piped command to a file\n\
     \\n\
     \(*) If an edge is labeled as Simpl/RD it means that\
     \ either the target node was reached using the SMT solver\
@@ -237,7 +256,7 @@ data ReplState claim = ReplState
     -- ^ Currently focused claim in the repl
     , graph    :: ExecutionGraph
     -- ^ Execution graph for the current proof; initialized with root = claim
-    , node     :: Graph.Node
+    , node     :: ReplNode
     -- ^ Currently selected node in the graph; initialized with node = root
     , commands :: Seq String
     -- ^ All commands evaluated by the current repl session
@@ -250,25 +269,25 @@ data ReplState claim = ReplState
         -> [claim]
         -> [Axiom]
         -> ExecutionGraph
-        -> Graph.Node
+        -> ReplNode
         -> Simplifier ExecutionGraph
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , unifier
         :: TermLike Variable
         -> TermLike Variable
-        -> UnifierWithExplanation Variable ()
+        -> UnifierWithExplanation ()
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
     --   failures
-    , labels  :: Map String Graph.Node
+    , labels  :: Map String ReplNode
     -- ^ Map from labels to nodes
     }
 
 
 -- | Unifier that stores the first 'explainBottom'.
 -- See 'runUnifierWithExplanation'.
-newtype UnifierWithExplanation variable a = UnifierWithExplanation
-    { getUnifier :: AccumT (First (Doc ())) (Unifier variable) a
+newtype UnifierWithExplanation a = UnifierWithExplanation
+    { getUnifier :: AccumT (First (Doc ())) Unifier a
     } deriving (Applicative, Functor, Monad)
 
 instance MonadUnify UnifierWithExplanation where
@@ -287,10 +306,6 @@ instance MonadUnify UnifierWithExplanation where
             . Monad.Trans.lift
             . Monad.Unify.liftSimplifier
 
-    mapVariable f (UnifierWithExplanation u) =
-        UnifierWithExplanation
-            $ Monad.Accum.mapAccumT (Monad.Unify.mapVariable f) u
-
     explainBottom info first second =
         UnifierWithExplanation . Monad.Accum.add . First . Just $ Pretty.vsep
             [ info
@@ -301,7 +316,7 @@ instance MonadUnify UnifierWithExplanation where
             ]
 
 runUnifierWithExplanation
-    :: UnifierWithExplanation variable a
+    :: UnifierWithExplanation a
     -> Simplifier (Maybe (Doc ()))
 runUnifierWithExplanation (UnifierWithExplanation accum)
     = fmap join
@@ -362,7 +377,7 @@ initializeProofFor claim =
     modify (\st -> st
         { graph  = emptyExecutionGraph claim
         , claim  = claim
-        , node   = 0
+        , node   = ReplNode 0
         , labels = Map.empty
         })
 
@@ -387,42 +402,42 @@ updateInnerGraph ig = lensGraph Lens.%= updateInnerGraph0 ig
 -- part of the execution graph.
 getTargetNode
     :: MonadState (ReplState claim) m
-    => Maybe Graph.Node
+    => Maybe ReplNode
     -- ^ node index
-    -> m (Maybe Graph.Node)
+    -> m (Maybe ReplNode)
 getTargetNode maybeNode = do
     currentNode <- Lens.use lensNode
-    let node' = maybe currentNode id maybeNode
+    let node' = unReplNode $ maybe currentNode id maybeNode
     graph <- getInnerGraph
     if node' `elem` Graph.nodes graph
-       then pure $ Just node'
+       then pure . Just . ReplNode $ node'
        else pure $ Nothing
 
 -- | Get the configuration at selected node (or current node for 'Nothing').
 getConfigAt
     :: MonadState (ReplState claim) m
-    => Maybe Graph.Node
-    -> m (Maybe (Graph.Node, CommonStrategyPattern))
+    => Maybe ReplNode
+    -> m (Maybe (ReplNode, CommonStrategyPattern))
 getConfigAt maybeNode = do
     node' <- getTargetNode maybeNode
     case node' of
         Nothing -> pure $ Nothing
         Just n -> do
             graph' <- getInnerGraph
-            pure $ Just (n, getLabel graph' n)
+            pure $ Just (n, getLabel graph' (unReplNode n))
   where
     getLabel gr n = Graph.lab' . Graph.context gr $ n
 
 -- | Get the rule used to reach selected node.
 getRuleFor
     :: MonadState (ReplState claim) m
-    => Maybe Graph.Node
+    => Maybe ReplNode
     -- ^ node index
     -> m (Maybe (RewriteRule Variable))
 getRuleFor maybeNode = do
     targetNode <- getTargetNode maybeNode
     graph' <- getInnerGraph
-    pure $ targetNode >>= getRewriteRule . Graph.inn graph'
+    pure $ fmap unReplNode targetNode >>= getRewriteRule . Graph.inn graph'
   where
     getRewriteRule
         :: forall a b
@@ -440,14 +455,14 @@ getRuleFor maybeNode = do
 data StepResult
     = NoResult
     -- ^ reached end of proof on current branch
-    | SingleResult Graph.Node
+    | SingleResult ReplNode
     -- ^ single follow-up configuration
-    | BranchResult [Graph.Node]
+    | BranchResult [ReplNode]
     -- ^ configuration branched
     deriving (Show)
 
--- | Run a single step for the data in state (claim, axioms, claims, current node
--- and execution graph.
+-- | Run a single step for the data in state
+-- (claim, axioms, claims, current node and execution graph).
 runStepper
     :: MonadState (ReplState claim) (m Simplifier)
     => Monad.Trans.MonadTrans m
@@ -471,13 +486,31 @@ runStepper'
     => Claim claim
     => [claim]
     -> [Axiom]
-    -> Graph.Node
+    -> ReplNode
     -> m Simplifier (ExecutionGraph, StepResult)
 runStepper' claims axioms node = do
     ReplState { claim, graph, stepper } <- get
     gr@Strategy.ExecutionGraph { graph = innerGraph } <-
         Monad.Trans.lift $ stepper claim claims axioms graph node
-    pure . (,) gr $ case Graph.suc innerGraph node of
+    pure . (,) gr $ case Graph.suc innerGraph (unReplNode node) of
         []       -> NoResult
-        [single] -> SingleResult single
-        nodes    -> BranchResult nodes
+        [single] -> case getNodeState innerGraph single of
+                        Nothing -> NoResult
+                        Just (StuckNode, _) -> NoResult
+                        _ -> SingleResult . ReplNode $ single
+        nodes    -> BranchResult $ fmap ReplNode nodes
+
+getNodeState :: InnerGraph -> Graph.Node -> Maybe (NodeState, Graph.Node)
+getNodeState graph node =
+        fmap (\nodeState -> (nodeState, node))
+        . strategyPattern StrategyPatternTransformer
+            { rewriteTransformer = const . Just $ UnevaluatedNode
+            , stuckTransformer = const . Just $ StuckNode
+            , bottomValue = Nothing
+            }
+        . Graph.lab'
+        . Graph.context graph
+        $ node
+
+data NodeState = StuckNode | UnevaluatedNode
+    deriving (Eq, Ord, Show)

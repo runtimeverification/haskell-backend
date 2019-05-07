@@ -53,13 +53,17 @@ checkImplicationIsTop
                 subst = mkVar <$> rename
                 implicationLHS' = TermLike.substitute subst implicationLHS
                 implicationRHS' = TermLike.substitute subst implicationRHS
-                resultTerm = mkCeil_
-                                (mkAnd
-                                    (mkAnd lhsMLPatt implicationLHS')
-                                    (mkNot implicationRHS')
-                                )
+                resultTerm =
+                    mkCeil_
+                        (mkAnd
+                            (mkAnd lhsMLPatt implicationLHS')
+                            (mkNot implicationRHS')
+                        )
                 result = Conditional
-                            { term = resultTerm, predicate = Predicate.makeTruePredicate, substitution = mempty}
+                    { term = resultTerm
+                    , predicate = Predicate.makeTruePredicate
+                    , substitution = mempty
+                    }
             orResult <-
                 Pattern.simplify
                     tools

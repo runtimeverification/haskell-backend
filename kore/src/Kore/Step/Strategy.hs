@@ -356,10 +356,11 @@ emptyExecutionGraph config =
  considered failed if it returns no children.
 
  The strategies are applied in sequence. An edge @a -> b@ exists between
- two configurations @a, b@ if @b@ follows by applying one step of the strategy to @a@
+ two configurations @a, b@ if @b@ follows by applying one step of the strategy
+ to @a@.
  Nondeterministic strategies result in nodes with an outdegree > 1.
- If two different branches converge to the same configuration at the same time step,
- they will be recombined, yielding a node with indegree > 1.
+ If two different branches converge to the same configuration at the same time
+ step, they will be recombined, yielding a node with indegree > 1.
 
 See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
   -}

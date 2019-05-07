@@ -91,8 +91,7 @@ matchAsUnification
         , Show variable
         , Unparse variable
         , SortedVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -129,8 +128,7 @@ unificationWithAppMatchOnTop
         , Show variable
         , Unparse variable
         , SortedVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -206,8 +204,7 @@ match
         , Show variable
         , Unparse variable
         , SortedVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -247,14 +244,12 @@ match
         second
 
 matchEqualHeadPatterns
-    ::  forall variable unifier unifierM .
-        ( Show variable
-        , SortedVariable variable
+    ::  forall variable unifier
+    .   ( SortedVariable variable
         , Unparse variable
         , Show variable
         , FreshVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -510,13 +505,12 @@ matchEqualHeadPatterns
         (MultiOr.make [Predicate.top])
 
 matchJoin
-    :: forall variable unifier unifierM .
-        ( FreshVariable variable
+    ::  forall variable unifier
+    .   ( FreshVariable variable
         , Show variable
         , Unparse variable
         , SortedVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -561,13 +555,12 @@ matchJoin
     MultiOr.filterOr <$> traverse (lift . merge) crossProduct
 
 unifyJoin
-    :: forall variable unifier unifierM .
-        ( FreshVariable variable
+    ::  forall variable unifier
+    .   ( FreshVariable variable
         , Show variable
         , Unparse variable
         , SortedVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -576,10 +569,7 @@ unifyJoin
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> [(TermLike variable, TermLike variable)]
-    -> unifier
-        ( OrPredicate variable
-
-        )
+    -> unifier (OrPredicate variable)
 unifyJoin
     tools substitutionSimplifier simplifier axiomIdToSimplifier patterns
   = do
@@ -619,8 +609,7 @@ matchVariableFunction
         , Show variable
         , SortedVariable variable
         , Unparse variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier

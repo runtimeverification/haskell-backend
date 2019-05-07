@@ -784,20 +784,18 @@ instance EqualWithExplanation UnificationError where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance (Show variable, EqualWithExplanation variable)
-    => SumEqualWithExplanation (SubstitutionError variable)
-  where
+instance SumEqualWithExplanation SubstitutionError where
     sumConstructorPair
         (NonCtorCircularVariableDependency a1)
         (NonCtorCircularVariableDependency a2)
       =
         SumConstructorSameWithArguments
-            (EqWrap "NonCtorCircularVariableDependency" a1 a2)
+        $ EqWrap "NonCtorCircularVariableDependency"
+            (toVariable <$> a1)
+            (toVariable <$> a2)
 
 
-instance (Show variable, EqualWithExplanation variable)
-    => EqualWithExplanation (SubstitutionError variable)
-  where
+instance EqualWithExplanation SubstitutionError where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
@@ -1126,10 +1124,7 @@ instance EqualWithExplanation (PatternAttributesError.FunctionalError)
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
-instance
-    (EqualWithExplanation variable, Show variable)
-    => SumEqualWithExplanation (UnificationOrSubstitutionError variable)
-  where
+instance SumEqualWithExplanation UnificationOrSubstitutionError where
     sumConstructorPair (UnificationError a1) (UnificationError a2) =
         SumConstructorSameWithArguments (EqWrap "UnificationError" a1 a2)
     sumConstructorPair a1@(UnificationError _) a2 =
@@ -1142,10 +1137,7 @@ instance
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
-instance
-    (EqualWithExplanation variable, Show variable)
-    => EqualWithExplanation (UnificationOrSubstitutionError variable)
-  where
+instance EqualWithExplanation UnificationOrSubstitutionError where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
