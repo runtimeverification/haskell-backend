@@ -1011,7 +1011,11 @@ when @src1@ is a subsort of @src2@.
  -}
 sortInjectionAndEqualsAssumesDifferentHeads
     ::  forall variable unifier
-    .  ( Ord variable , Unparse variable , MonadUnify unifier )
+    .   ( Ord variable
+        , SortedVariable variable
+        , Unparse variable
+        , MonadUnify unifier
+        )
     => SmtMetadataTools StepperAttributes
     -> TermSimplifier variable unifier
     -> TermLike variable
@@ -1196,7 +1200,11 @@ returns @\\bottom@.
 -- TODO (virgil): This implementation is provisional, we're not sure yet if sort
 -- injection should always clash with constructors. We should clarify this.
 constructorSortInjectionAndEquals
-    :: ( Eq variable , Unparse variable , MonadUnify unifier )
+    ::  ( Eq variable
+        , SortedVariable variable
+        , Unparse variable
+        , MonadUnify unifier
+        )
     => SmtMetadataTools StepperAttributes
     -> TermLike variable
     -> TermLike variable
@@ -1230,6 +1238,7 @@ to be different; therefore their conjunction is @\\bottom@.
  -}
 constructorAndEqualsAssumesDifferentHeads
     ::  ( Eq variable
+        , SortedVariable variable
         , Unparse variable
         , MonadUnify unifier
         )
@@ -1295,6 +1304,7 @@ See also: 'equalAndEquals'
 -- but it is not.
 domainValueAndEqualsAssumesDifferent
     :: Eq variable
+    => SortedVariable variable
     => Unparse variable
     => MonadUnify unifier
     => TermLike variable
@@ -1316,6 +1326,7 @@ domainValueAndEqualsAssumesDifferent _ _ = empty
 
 cannotUnifyDomainValues
     :: Eq variable
+    => SortedVariable variable
     => Unparse variable
     => MonadUnify unifier
     => TermLike variable
@@ -1339,6 +1350,7 @@ See also: 'equalAndEquals'
  -}
 stringLiteralAndEqualsAssumesDifferent
     :: Eq variable
+    => SortedVariable variable
     => Unparse variable
     => MonadUnify unifier
     => TermLike variable
@@ -1360,6 +1372,7 @@ See also: 'equalAndEquals'
  -}
 charLiteralAndEqualsAssumesDifferent
     :: Eq variable
+    => SortedVariable variable
     => Unparse variable
     => MonadUnify unifier
     => TermLike variable

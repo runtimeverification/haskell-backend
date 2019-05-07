@@ -30,8 +30,8 @@ import           Data.Text
                  ( Text )
 import           Data.Void
                  ( Void )
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Kore.Sort
 import Kore.Syntax.And
@@ -53,6 +53,7 @@ import Kore.Syntax.Rewrites
 import Kore.Syntax.SetVariable
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
+import Kore.Syntax.Variable
 import Kore.Unparser
 
 {- | 'PatternF' is the 'Base' functor of Kore patterns
@@ -81,7 +82,7 @@ data PatternF domain variable child
     | VariableF      !variable
     | InhabitantF    !Sort
     | SetVariableF   !(SetVariable variable)
-    deriving (Foldable, Functor, Generic, Traversable)
+    deriving (Foldable, Functor, GHC.Generic, Traversable)
 
 Deriving.deriveEq1 ''PatternF
 Deriving.deriveOrd1 ''PatternF
@@ -108,76 +109,24 @@ instance
     showsPrec = showsPrec1
     {-# INLINE showsPrec #-}
 
+instance SOP.Generic (PatternF domain variable child)
+
 instance
-    ( Hashable child
-    , Hashable variable
-    , Hashable (domain child)
-    ) =>
+    (Hashable child, Hashable variable, Hashable (domain child)) =>
     Hashable (PatternF domain variable child)
 
 instance
-    ( NFData child
-    , NFData variable
-    , NFData (domain child)
-    ) =>
+    (NFData child, NFData variable, NFData (domain child)) =>
     NFData (PatternF domain variable child)
 
 instance
-    ( Unparse child
-    , Unparse (domain child)
-    , Unparse variable
+    ( SortedVariable variable, Unparse variable
+    , Unparse child, Unparse (domain child)
     ) =>
     Unparse (PatternF domain variable child)
   where
-    unparse =
-        \case
-            AndF p           -> unparse p
-            ApplicationF p   -> unparse p
-            BottomF p        -> unparse p
-            CeilF p          -> unparse p
-            DomainValueF p   -> unparse p
-            EqualsF p        -> unparse p
-            ExistsF p        -> unparse p
-            FloorF p         -> unparse p
-            ForallF p        -> unparse p
-            IffF p           -> unparse p
-            ImpliesF p       -> unparse p
-            InF p            -> unparse p
-            NextF p          -> unparse p
-            NotF p           -> unparse p
-            OrF p            -> unparse p
-            RewritesF p      -> unparse p
-            StringLiteralF p -> unparse p
-            CharLiteralF p   -> unparse p
-            TopF p           -> unparse p
-            VariableF p      -> unparse p
-            InhabitantF s          -> unparse s
-            SetVariableF p   -> unparse p
-
-    unparse2 =
-        \case
-            AndF p           -> unparse2 p
-            ApplicationF p   -> unparse2 p
-            BottomF p        -> unparse2 p
-            CeilF p          -> unparse2 p
-            DomainValueF p   -> unparse2 p
-            EqualsF p        -> unparse2 p
-            ExistsF p        -> unparse2 p
-            FloorF p         -> unparse2 p
-            ForallF p        -> unparse2 p
-            IffF p           -> unparse2 p
-            ImpliesF p       -> unparse2 p
-            InF p            -> unparse2 p
-            NextF p          -> unparse2 p
-            NotF p           -> unparse2 p
-            OrF p            -> unparse2 p
-            RewritesF p      -> unparse2 p
-            StringLiteralF p -> unparse2 p
-            CharLiteralF p   -> unparse2 p
-            TopF p           -> unparse2 p
-            VariableF p      -> unparse2 p
-            InhabitantF s          -> unparse s
-            SetVariableF p   -> unparse p
+    unparse = unparseGeneric
+    unparse2 = unparse2Generic
 
 {- | Use the provided mapping to replace all variables in a 'PatternF' head.
 
@@ -210,9 +159,8 @@ traverseVariables traversing =
         ExistsF any0 -> ExistsF <$> traverseVariablesExists any0
         ForallF all0 -> ForallF <$> traverseVariablesForall all0
         VariableF variable -> VariableF <$> traversing variable
-        InhabitantF s -> pure (InhabitantF s)
-        SetVariableF (SetVariable variable)
-            -> SetVariableF . SetVariable <$> traversing variable
+        SetVariableF (SetVariable variable) ->
+            SetVariableF . SetVariable <$> traversing variable
         -- Trivial cases
         AndF andP -> pure (AndF andP)
         ApplicationF appP -> pure (ApplicationF appP)
@@ -231,6 +179,7 @@ traverseVariables traversing =
         StringLiteralF strP -> pure (StringLiteralF strP)
         CharLiteralF charP -> pure (CharLiteralF charP)
         TopF topP -> pure (TopF topP)
+        InhabitantF s -> pure (InhabitantF s)
   where
     traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
         Exists existsSort <$> traversing existsVariable <*> pure existsChild
@@ -246,7 +195,6 @@ mapDomainValues mapping =
     \case
         -- Non-trivial case
         DomainValueF domainP -> DomainValueF (mapping domainP)
-        InhabitantF s -> InhabitantF s
         -- Trivial cases
         AndF andP -> AndF andP
         ApplicationF appP -> ApplicationF appP
@@ -268,6 +216,7 @@ mapDomainValues mapping =
         TopF topP -> TopF topP
         VariableF varP -> VariableF varP
         SetVariableF varP -> SetVariableF varP
+        InhabitantF s -> InhabitantF s
 
 {- | Cast a 'PatternF' head with @'Const' 'Void'@ domain values into any domain.
 
