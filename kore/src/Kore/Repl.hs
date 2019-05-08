@@ -88,13 +88,22 @@ runRepl
     -- ^ list of axioms to used in the proof
     -> [claim]
     -- ^ list of claims to be proven
+    -> Maybe FilePath
+    -- ^ optional initial script
     -> Simplifier ()
-runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
-  = do
-    replGreeting
-    evalStateT (whileM repl0) state
+runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims' mscript = do
+    case mscript of
+        Just file -> do
+            contents <- liftIO $ readFile file
+            let cmds = parseScript contents
+            liftIO $ putStrLn "WIP"
+        Nothing -> do
+            replGreeting
+            evalStateT (whileM repl0) state
 
   where
+    parseScript = id
+
     repl0 :: StateT (ReplState claim) Simplifier Bool
     repl0 = do
         str <- prompt

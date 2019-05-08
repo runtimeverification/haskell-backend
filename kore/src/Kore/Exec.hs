@@ -247,8 +247,10 @@ proveWithRepl
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
+    -> Maybe FilePath
+    -- ^ Optional script
     -> Simplifier ()
-proveWithRepl definitionModule specModule = do
+proveWithRepl definitionModule specModule mscript = do
     let tools = MetadataTools.build definitionModule
     Initialized
         { rewriteRules
@@ -271,6 +273,7 @@ proveWithRepl definitionModule specModule = do
         axiomIdToSimplifier
         axioms
         claims
+        mscript
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck

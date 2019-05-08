@@ -166,13 +166,9 @@ mainWithOptions
                 , SMT.preludeFile = smtPrelude
                 }
     let mscript = unInitialScript initialScript
-    case mscript of
-        Nothing -> do
-            putStrLn "No script file!"
-            SMT.runSMT smtConfig
-                $ evalSimplifier emptyLogger
-                $ proveWithRepl indexedModule specDefIndexedModule
-        Just scriptFile -> putStrLn "Found a script file!"
+    SMT.runSMT smtConfig
+        $ evalSimplifier emptyLogger
+        $ proveWithRepl indexedModule specDefIndexedModule mscript
 
   where
     mainModuleName :: ModuleName
