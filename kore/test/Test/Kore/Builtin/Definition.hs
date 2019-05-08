@@ -287,6 +287,16 @@ toListSetSymbol = builtinSymbol "toListSet"
 sizeSetSymbol :: SymbolOrAlias
 sizeSetSymbol = builtinSymbol "sizeSet"
 
+intersectionSetSymbol :: SymbolOrAlias
+intersectionSetSymbol = builtinSymbol "intersectionSet"
+
+intersectionSet
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+intersectionSet set1 set2 =
+    mkApp setSort intersectionSetSymbol [set1, set2]
+
 -- ** String
 
 ltStringSymbol :: SymbolOrAlias
@@ -1112,6 +1122,11 @@ setModule =
                 intSort
                 [setSort]
                 [hookAttribute Set.sizeKey]
+            , hookedSymbolDecl
+                intersectionSetSymbol
+                setSort
+                [setSort, setSort]
+                [hookAttribute Set.intersectionKey]
             ]
         }
 
