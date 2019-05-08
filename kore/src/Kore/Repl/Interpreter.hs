@@ -201,16 +201,20 @@ prove cindex = do
 
 showGraph
     :: MonadIO m
+    => MonadWriter String m
     => Maybe FilePath
     -> MonadState (ReplState claim) m
     => m ()
 showGraph mfile = do
     graph <- getInnerGraph
     axioms <- Lens.use lensAxioms
-    liftIO $ maybe
-            (showDotGraph (length axioms) graph)
-            (saveDotGraph (length axioms) graph)
-            mfile
+    installed <- liftIO Graph.isGraphvizInstalled
+    if installed == True
+       then liftIO $ maybe
+                        (showDotGraph (length axioms) graph)
+                        (saveDotGraph (length axioms) graph)
+                        mfile
+       else putStrLn' "Graphviz is not installed."
 
 -- | Executes 'n' prove steps, or until branching occurs.
 proveSteps
