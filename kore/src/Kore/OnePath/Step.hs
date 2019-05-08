@@ -58,6 +58,7 @@ import           Kore.Unparser
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}
+-- TODO (thomas.tuegel): Use the same primitive rules as all-path verification.
 data Prim patt rewrite =
       Simplify
     -- ^ Builtin and function symbol simplification step
@@ -65,7 +66,7 @@ data Prim patt rewrite =
     -- ^ Removes the destination from the current pattern.
     -- see the algorithm in
     -- https://github.com/kframework/kore/blob/master/docs/2018-11-08-Configuration-Splitting-Simplification.md
-    | ApplyWithRemainders ![rewrite]
+    | ApplyWithRemainders ![rewrite] !patt
     -- ^ Daisy-chaining of rules such that each subsequent one uses the
     -- previous rule's remainders.
     --
@@ -86,11 +87,11 @@ data Prim patt rewrite =
 debugString :: (Show patt, Show rewrite) => Prim patt rewrite -> String
 debugString Simplify = "Simplify"
 debugString s@(RemoveDestination _) = show s
-debugString (ApplyWithRemainders _) = "ApplyWithRemainders"
+debugString (ApplyWithRemainders _ _) = "ApplyWithRemainders"
 
 -- | Apply the rewrites in order. The first one is applied on the start pattern,
 -- then each subsequent one is applied on the remainder of the previous one.
-applyWithRemainder :: [rewrite] -> Prim patt rewrite
+applyWithRemainder :: [rewrite] -> patt -> Prim patt rewrite
 applyWithRemainder = ApplyWithRemainders
 
 -- | Apply builtin simplification rewrites and evaluate functions.
@@ -163,14 +164,13 @@ transitionRule
         ]
     $ case strategy of
         Simplify -> transitionSimplify expandedPattern
-        ApplyWithRemainders a -> transitionApplyWithRemainders a expandedPattern
+        ApplyWithRemainders a d ->
+            transitionApplyWithRemainders a d expandedPattern
         RemoveDestination d -> transitionRemoveDestination d expandedPattern
   where
     transitionSimplify (RewritePattern config) =
         applySimplify RewritePattern config
-    transitionSimplify (Stuck config) =
-        applySimplify Stuck config
-    transitionSimplify c@Bottom = return c
+    transitionSimplify c = return c
 
     applySimplify wrapper config = do
         configs <-
@@ -190,18 +190,19 @@ transitionRule
 
     transitionApplyWithRemainders
         :: [RewriteRule Variable]
+        -> Pattern Variable -- ^ destination
         -> CommonStrategyPattern
         -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
-    transitionApplyWithRemainders _ c@Bottom = return c
-    transitionApplyWithRemainders _ c@(Stuck _) = return c
-    transitionApplyWithRemainders rules (RewritePattern config) =
-        transitionMultiApplyWithRemainders rules config
+    transitionApplyWithRemainders rules destination (RewritePattern config) =
+        transitionMultiApplyWithRemainders rules destination config
+    transitionApplyWithRemainders _ _ c = return c
 
     transitionMultiApplyWithRemainders
         :: [RewriteRule Variable]
-        -> Pattern Variable
+        -> Pattern Variable  -- ^ destination
+        -> Pattern Variable  -- ^ configuration
         -> Transition CommonStrategyPattern
-    transitionMultiApplyWithRemainders rules config
+    transitionMultiApplyWithRemainders rules destination config
       | Pattern.isBottom config = empty
       | otherwise = do
         result <-
@@ -232,16 +233,35 @@ transitionRule
                         $ RewriteRule
                         . Step.unwrapRule
                         . Step.withoutUnification
-                    mapConfigs = Result.mapConfigs RewritePattern Stuck
-                Result.transitionResults (mapConfigs $ mapRules results)
+                    -- Try one last time to remove the destination from the
+                    -- remainder.
+                    checkRemainder remainder =
+                        applyRemoveDestination
+                            (const $ Stuck remainder)
+                            destination
+                            remainder
+                    traverseConfigs =
+                        Result.traverseConfigs
+                            (pure . RewritePattern)
+                            checkRemainder
+                results' <- traverseConfigs (mapRules results)
+                Result.transitionResults results'
 
     transitionRemoveDestination
         :: Pattern Variable
         -> CommonStrategyPattern
         -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
-    transitionRemoveDestination _ Bottom = empty
-    transitionRemoveDestination _ (Stuck _) = empty
-    transitionRemoveDestination destination (RewritePattern patt) = do
+    transitionRemoveDestination destination (RewritePattern patt) =
+        applyRemoveDestination RewritePattern destination patt
+    transitionRemoveDestination _ _ = empty
+
+    applyRemoveDestination
+        :: (Pattern Variable -> CommonStrategyPattern)
+        -- ^ proof state constructor
+        -> Pattern Variable  -- ^ destination
+        -> Pattern Variable  -- ^ configuration
+        -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
+    applyRemoveDestination proofState destination patt = do
         let
             removal = removalPredicate destination patt
             result = patt `Conditional.andPredicate` removal
@@ -256,7 +276,7 @@ transitionRule
         let nonEmpty = MultiOr.filterOr orResult
         if null nonEmpty
             then return Bottom
-            else Foldable.asum (pure . RewritePattern <$> nonEmpty)
+            else Foldable.asum (pure . proofState <$> nonEmpty)
 
 {- | The predicate to remove the destination from the present configuration.
  -}
@@ -309,7 +329,7 @@ onePathFirstStep destination rewrites =
     Strategy.sequence
         [ Strategy.apply simplify
         , Strategy.apply (removeDestination destination)
-        , Strategy.apply (applyWithRemainder rewrites)
+        , Strategy.apply (applyWithRemainder rewrites destination)
         , Strategy.apply simplify
         ]
 
