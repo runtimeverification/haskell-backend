@@ -218,6 +218,16 @@ test_size =
             (===) Pattern.top =<< evaluate predicate
         )
 
+test_intersectionUnit :: TestTree
+test_intersectionUnit =
+    testPropertyWithSolver "intersection(as, unit()) === unit()" $ do
+        as <- forAll genSetPattern
+        let
+            original = intersectionSet as unitSet
+            expect = Pattern.fromTermLike unitSet
+        (===) expect      =<< evaluate original
+        (===) Pattern.top =<< evaluate (mkEquals_ original unitSet)
+
 setVariableGen :: Sort -> Gen (Set Variable)
 setVariableGen sort =
     Gen.set (Range.linear 0 32) (standaloneGen $ variableGen sort)
