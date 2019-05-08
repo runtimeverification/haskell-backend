@@ -56,7 +56,10 @@ test_normalize =
                     (mkVar Mock.x)
                     (Mock.sigma (mkVar Mock.y) (mkVar Mock.z))
         actual <- normalizeExcept expect
-        assertEqual "Expected original result" (Right $ MultiOr.make [expect]) actual
+        assertEqualWithExplanation
+            "Expected original result"
+            (Right $ MultiOr.make [expect])
+            actual
     , testCase "¬∃ y z. x = σ(y, z)" $ do
         let expect =
                 Predicate.fromPredicate
@@ -66,7 +69,10 @@ test_normalize =
                     (mkVar Mock.x)
                     (Mock.sigma (mkVar Mock.y) (mkVar Mock.z))
         actual <- normalizeExcept expect
-        assertEqual "Expected original result" (Right $ MultiOr.make [expect]) actual
+        assertEqualWithExplanation
+            "Expected original result"
+            (Right $ MultiOr.make [expect])
+            actual
     ]
 
 test_mergeAndNormalizeSubstitutions :: [TestTree]
@@ -87,7 +93,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 Mock.a
                         )
                     ]
-            assertEqual "" expect actual
+            assertEqualWithExplanation "" expect actual
 
     , testCase "Constructor normalization with variables"
         -- [x=constructor(y)] + [x=constructor(y)]  === [x=constructor(y)]
@@ -105,7 +111,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (mkVar Mock.y)
                         )
                     ]
-            assertEqual "" expect actual
+            assertEqualWithExplanation "" expect actual
 
     , testCase "Double constructor is bottom"
         -- [x=constructor(a)] + [x=constructor(constructor(a))]  === bottom?
@@ -121,7 +127,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (Mock.constr10 Mock.a)
                         )
                     ]
-            assertEqual "" expect actual
+            assertEqualWithExplanation "" expect actual
 
     , testCase "Double constructor is bottom with variables"
         -- [x=constructor(y)] + [x=constructor(constructor(y))]  === bottom?
@@ -137,7 +143,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (Mock.constr10 (mkVar Mock.y))
                         )
                     ]
-            assertEqual "" expect actual
+            assertEqualWithExplanation "" expect actual
 
     , testCase "Constructor and constructor of function"
         -- [x=constructor(a)] + [x=constructor(f(a))]
@@ -165,7 +171,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (Mock.f Mock.a)
                         )
                     ]
-            assertEqual "" expect actual
+            assertEqualWithExplanation "" expect actual
 
     , testCase "Constructor and constructor of function with variables"
         -- [x=constructor(y)] + [x=constructor(f(y))]
@@ -184,7 +190,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (Mock.f (mkVar Mock.y))
                         )
                     ]
-            assertEqual "" expect actual
+            assertEqualWithExplanation "" expect actual
 
     , testCase "Constructor and constructor of functional symbol"
         -- [x=constructor(y)] + [x=constructor(functional(y))]
@@ -203,7 +209,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (Mock.functional10 (mkVar Mock.y))
                         )
                     ]
-            assertEqual "" expect actual
+            assertEqualWithExplanation "" expect actual
 
     , testCase "Constructor circular dependency?"
         -- [x=y] + [y=constructor(x)]  === error
@@ -219,7 +225,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (mkVar Mock.x)
                         )
                     ]
-            assertEqual "" expect actual
+            assertEqualWithExplanation "" expect actual
 
     , testCase "Non-ctor circular dependency"
         -- [x=y] + [y=f(x)]  === error
@@ -238,7 +244,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.f (mkVar Mock.x)
                         )
                     ]
-            assertEqual "" expect actual
+            assertEqualWithExplanation "" expect actual
 
     , testCase "Normalizes substitution"
         $ do
@@ -321,11 +327,7 @@ mockMetadataTools =
 merge
     :: [(Variable, TermLike Variable)]
     -> [(Variable, TermLike Variable)]
-    -> IO
-        (Either
-            ( UnificationOrSubstitutionError Variable )
-            ( Predicate Variable )
-        )
+    -> IO (Either UnificationOrSubstitutionError (Predicate Variable))
 merge s1 s2 =
     runSMT
     $ evalSimplifier emptyLogger
@@ -354,7 +356,7 @@ normalize predicated =
 
 normalizeExcept
     :: Conditional Variable ()
-    -> IO (Either (UnificationOrSubstitutionError Variable) (MultiOr (Conditional Variable ())))
+    -> IO (Either UnificationOrSubstitutionError (MultiOr (Conditional Variable ())))
 normalizeExcept predicated =
     runSMT
     $ evalSimplifier emptyLogger

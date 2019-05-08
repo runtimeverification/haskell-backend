@@ -1150,7 +1150,10 @@ mkCharLiteral
 mkCharLiteral char =
     asPattern (valid :< CharLiteralF charLiteral)
   where
-    valid = Attribute.Pattern { patternSort = charMetaSort, freeVariables = Set.empty }
+    valid = Attribute.Pattern
+        { patternSort = charMetaSort
+        , freeVariables = Set.empty
+        }
     charLiteral = CharLiteral char
 
 mkInhabitant

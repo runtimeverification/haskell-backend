@@ -275,7 +275,8 @@ andSimplifyFailure
     -> UnificationError
     -> Assertion
 andSimplifyFailure term1 term2 err = do
-    let expect = Left (UnificationError err)
+    let expect :: Either (UnificationOrSubstitutionError) (Pattern Variable)
+        expect = Left (UnificationError err)
     actual <-
         runSMT
         $ evalSimplifier emptyLogger
@@ -286,7 +287,7 @@ andSimplifyFailure term1 term2 err = do
             (Simplifier.create tools Map.empty)
             Map.empty
             (unificationProblem term1 term2 :| [])
-    assertEqualWithPrinter show "" expect actual
+    assertEqual "" (show expect) (show actual)
 
 andSimplifyException
     :: HasCallStack

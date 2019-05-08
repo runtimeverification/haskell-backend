@@ -53,8 +53,7 @@ unificationProcedure
         , Show variable
         , Unparse variable
         , FreshVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads

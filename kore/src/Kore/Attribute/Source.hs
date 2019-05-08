@@ -72,7 +72,8 @@ sourceParser :: StringParser Source
 sourceParser = Source <$> (Just <$> sourceParser0)
   where
     sourceParser0 :: StringParser String
-    sourceParser0 = string "Source(" *> many (noneOf excludedChars) <* string ")"
+    sourceParser0 =
+        string "Source(" *> many (noneOf excludedChars) <* string ")"
 
     excludedChars :: String
     excludedChars = ")"
