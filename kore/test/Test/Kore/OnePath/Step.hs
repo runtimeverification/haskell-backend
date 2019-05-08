@@ -7,9 +7,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Control.Monad.Except
-                 ( runExceptT )
-import qualified Data.Bifunctor as Bifunctor
 import           Data.Default
                  ( def )
 import           Data.List
@@ -58,7 +55,10 @@ import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
-type ExecutionGraph a = Strategy.ExecutionGraph a (RewriteRule Variable)
+type ExecutionGraph a =
+    Strategy.ExecutionGraph
+        (a)
+        (RewriteRule Variable)
 
 test_onePathStrategy :: [TestTree]
 test_onePathStrategy =
@@ -68,7 +68,7 @@ test_onePathStrategy =
         -- Normal axiom: a => c
         -- Start pattern: a
         -- Expected: a
-        Right [ actual ] <- runOnePathSteps
+        [ actual ] <- runOnePathSteps
             metadataTools
             (Limit 0)
             (Pattern.fromTermLike Mock.a)
@@ -84,7 +84,7 @@ test_onePathStrategy =
         -- Normal axiom: a => c
         -- Start pattern: a
         -- Expected: bottom, since a->bottom
-        Right [ _actual ] <- runOnePathSteps
+        [ _actual ] <- runOnePathSteps
             metadataTools
             (Limit 1)
             (Pattern.fromTermLike Mock.a)
@@ -99,7 +99,7 @@ test_onePathStrategy =
         -- Start pattern: a
         -- Expected: c, since coinductive axioms are applied only at the second
         -- step
-        Right [ _actual ] <- runOnePathSteps
+        [ _actual ] <- runOnePathSteps
             metadataTools
             (Limit 1)
             (Pattern.fromTermLike Mock.a)
@@ -116,7 +116,7 @@ test_onePathStrategy =
         -- Normal axiom: a => b
         -- Start pattern: a
         -- Expected: bottom, since a->b = target
-        Right [ _actual ] <- runOnePathSteps
+        [ _actual ] <- runOnePathSteps
             metadataTools
             (Limit 2)
             (Pattern.fromTermLike Mock.a)
@@ -135,7 +135,7 @@ test_onePathStrategy =
         -- Normal axiom: a => b
         -- Start pattern: a
         -- Expected: c, since a->b->c and b->d is ignored
-        Right [ _actual1 ] <- runOnePathSteps
+        [ _actual1 ] <- runOnePathSteps
             metadataTools
             (Limit 2)
             (Pattern.fromTermLike Mock.a)
@@ -160,7 +160,7 @@ test_onePathStrategy =
         -- Normal axiom: a => b
         -- Start pattern: a
         -- Expected: d, since a->b->d
-        Right [ _actual ] <- runOnePathSteps
+        [ _actual ] <- runOnePathSteps
             metadataTools
             (Limit 2)
             (Pattern.fromTermLike Mock.a)
@@ -193,7 +193,7 @@ test_onePathStrategy =
         --   or (f(b) and x=b)
         --   or (f(c) and x=c)
         --   or (h(x) and x!=a and x!=b and x!=c )
-        Right [ _actual1, _actual2, _actual3, _actual4 ] <-
+        [ _actual1, _actual2, _actual3, _actual4 ] <-
             runOnePathSteps
                 metadataTools
                 (Limit 2)
@@ -264,7 +264,7 @@ test_onePathStrategy =
         --   or (f(b) and x=b)
         --   or (f(c) and x=c)
         --   Stuck (functionalConstr11(x) and x!=a and x!=b and x!=c )
-        Right [ _actual1, _actual2, _actual3 ] <-
+        [ _actual1, _actual2, _actual3 ] <-
             runOnePathSteps
                 metadataTools
                 (Limit 2)
@@ -322,10 +322,12 @@ test_onePathStrategy =
         -- Normal axiom: constr10(b) => a | f(b) == c
         -- Start pattern: constr10(b)
         -- Expected: a | f(b) == c
-        Left actual <- runOnePathSteps
+        [ _actual1, _actual2 ] <- runOnePathSteps
             metadataTools
             (Limit 2)
-            (Pattern.fromTermLike (Mock.functionalConstr10 Mock.b))
+            (Pattern.fromTermLike
+                (Mock.functionalConstr10 Mock.b)
+            )
             Mock.a
             []
             [ rewriteWithPredicate
@@ -335,21 +337,27 @@ test_onePathStrategy =
                     Mock.c
                     $ Mock.f Mock.b
             ]
-        let stuck =
-                Conditional
-                    { term = Mock.functionalConstr10 Mock.b
-                    , predicate =
-                        makeNotPredicate
-                            $ makeEqualsPredicate Mock.c (Mock.f Mock.b)
-                    , substitution = mempty
-                    }
-        assertEqualWithExplanation "" stuck actual
+        assertEqualWithExplanation ""
+            [ Stuck Conditional
+                { term = Mock.functionalConstr10 Mock.b
+                , predicate =
+                    makeNotPredicate
+                        $ makeEqualsPredicate
+                            Mock.c
+                            $ Mock.f Mock.b
+                , substitution = mempty
+                }
+            , Bottom
+            ]
+            [ _actual1
+            , _actual2
+            ]
     , testCase "Stuck pattern simplification" $ do
         -- Target: 1
         -- Coinductive axioms: none
         -- Normal axiom: x => 1 if x<2
         -- Start pattern: 0
-        Right [ _actual ] <-
+        [ _actual ] <-
             runOnePathSteps
                 metadataTools
                 (Limit 2)
@@ -366,7 +374,9 @@ test_onePathStrategy =
                         (Mock.builtinBool True)
                     )
                 ]
-        assertEqualWithExplanation "" Bottom _actual
+        assertEqualWithExplanation ""
+            Bottom
+            _actual
     ]
   where
     metadataTools :: SmtMetadataTools StepperAttributes
@@ -416,12 +426,11 @@ runSteps
     -> Pattern Variable
     -- ^left-hand-side of unification
     -> [Strategy (Prim (Pattern Variable) (RewriteRule Variable))]
-    -> IO (Either (Pattern Variable) a)
+    -> IO a
 runSteps metadataTools graphFilter picker configuration strategy =
-    (<$>) (Bifunctor.second picker)
+    (<$>) picker
     $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
-    $ runExceptT
     $ (fromMaybe (error "Unexpected missing tree") . graphFilter)
     <$> runStrategy
         (transitionRule
@@ -444,7 +453,7 @@ runOnePathSteps
     -> TermLike Variable
     -> [RewriteRule Variable]
     -> [RewriteRule Variable]
-    -> IO (Either (Pattern Variable) [CommonStrategyPattern])
+    -> IO [CommonStrategyPattern]
 runOnePathSteps
     metadataTools
     stepLimit
@@ -469,6 +478,6 @@ runOnePathSteps
                 )
             )
         )
-    return (Bifunctor.second (sort . nub) result)
+    return (sort $ nub result)
   where
     expandedTarget = Pattern.fromTermLike target

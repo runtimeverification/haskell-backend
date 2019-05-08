@@ -17,7 +17,10 @@ module Kore.OnePath.Verification
     , verifyClaimStep
     ) where
 
+import           Control.Monad.Except
+                 ( ExceptT )
 import qualified Control.Monad.Except as Monad.Except
+import qualified Control.Monad.Trans as Monad.Trans
 import           Data.Coerce
                  ( Coercible, coerce )
 import qualified Data.Foldable as Foldable
@@ -41,10 +44,10 @@ import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Pattern as Conditional
                  ( Conditional (..) )
 import           Kore.OnePath.Step
-                 ( CommonStrategyPattern, Prim, Transition, Verifier,
-                 onePathFirstStep, onePathFollowupStep )
+                 ( CommonStrategyPattern, Prim, onePathFirstStep,
+                 onePathFollowupStep )
 import qualified Kore.OnePath.Step as StrategyPattern
-                 ( StrategyPattern (..), extractUnproven )
+                 ( StrategyPattern (..), extractStuck, extractUnproven )
 import qualified Kore.OnePath.Step as OnePath
                  ( transitionRule )
 import           Kore.Step.Axiom.Data
@@ -54,13 +57,16 @@ import           Kore.Step.Rule
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, TermLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Strategy
                  ( executionHistoryStep )
 import           Kore.Step.Strategy
-                 ( Strategy, pickFinal, runStrategy )
+                 ( Strategy, TransitionT, pickFinal, runStrategy )
 import           Kore.Step.Strategy
                  ( ExecutionGraph (..) )
+import           Kore.Step.Transition
+                 ( runTransitionT )
+import qualified Kore.Step.Transition as Transition
 import           Kore.Syntax.Variable
                  ( Variable )
 import           Numeric.Natural
@@ -121,6 +127,14 @@ newtype Axiom = Axiom
     { unAxiom :: RewriteRule Variable
     }
 
+{- | @Verifer a@ is a 'Simplifier'-based action which returns an @a@.
+
+The action may throw an exception if the proof fails; the exception is a single
+@'Pattern' 'Variable'@, the first unprovable configuration.
+
+ -}
+type Verifier = ExceptT (Pattern Variable) Simplifier
+
 {- | Verifies a set of claims. When it verifies a certain claim, after the
 first step, it also uses the claims as axioms (i.e. it does coinductive proofs).
 
@@ -151,7 +165,7 @@ verify
     -> [(RewriteRule Variable, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
-    -> Verifier ()
+    -> ExceptT (Pattern Variable) Simplifier ()
 verify
     metadataTools
     simplifier
@@ -220,7 +234,7 @@ verifyClaim
         -> [Strategy (Prim (Pattern Variable) (RewriteRule Variable))]
         )
     -> (RewriteRule Variable, Limit Natural)
-    -> Verifier ()
+    -> ExceptT (Pattern Variable) Simplifier ()
 verifyClaim
     metadataTools
     simplifier
@@ -246,18 +260,32 @@ verifyClaim
                 Conditional
                     {term = left, predicate = requires, substitution = mempty}
     executionGraph <- runStrategy transitionRule' strategy startPattern
+    -- Throw the first unproven configuration as an error.
+    -- This might appear to be unnecessary because transitionRule' (below)
+    -- throws an error if it encounters a Stuck proof state. However, the proof
+    -- could also fail because the depth limit was reached, yet we never
+    -- encountered a Stuck state.
     Foldable.traverse_ Monad.Except.throwError (unprovenNodes executionGraph)
   where
     transitionRule'
         :: Prim (Pattern Variable) (RewriteRule Variable)
         -> CommonStrategyPattern
-        -> Transition CommonStrategyPattern
-    transitionRule' =
-        OnePath.transitionRule
-            metadataTools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
+        -> TransitionT (RewriteRule Variable) Verifier CommonStrategyPattern
+    transitionRule' prim proofState = do
+        transitions <-
+            Monad.Trans.lift . Monad.Trans.lift
+            $ runTransitionT
+            $ OnePath.transitionRule
+                metadataTools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+                prim
+                proofState
+        let (configs, _) = unzip transitions
+            stuck = mapMaybe StrategyPattern.extractStuck configs
+        Foldable.traverse_ Monad.Except.throwError stuck
+        Transition.scatter transitions
 
 -- | Find all final nodes of the execution graph that did not reach the goal
 unprovenNodes
@@ -288,7 +316,11 @@ verifyClaimStep
     -- ^ current execution graph
     -> Graph.Node
     -- ^ selected node in the graph
-    -> Verifier (ExecutionGraph (CommonStrategyPattern) (RewriteRule Variable))
+    -> Simplifier
+        (ExecutionGraph
+            (CommonStrategyPattern)
+            (RewriteRule Variable)
+        )
 verifyClaimStep
     tools
     simplifier
@@ -308,7 +340,8 @@ verifyClaimStep
     transitionRule'
         :: Prim (Pattern Variable) (RewriteRule Variable)
         -> CommonStrategyPattern
-        -> Transition CommonStrategyPattern
+        -> TransitionT (RewriteRule Variable) Simplifier
+            (CommonStrategyPattern)
     transitionRule' =
         OnePath.transitionRule
             tools
@@ -316,7 +349,9 @@ verifyClaimStep
             simplifier
             axiomIdToSimplifier
 
-    strategy' :: Strategy (Prim (Pattern Variable) (RewriteRule Variable))
+    strategy'
+        :: Strategy
+            (Prim (Pattern Variable) (RewriteRule Variable))
     strategy'
         | isRoot =
             onePathFirstStep targetPattern rewrites

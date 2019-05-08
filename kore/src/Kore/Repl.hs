@@ -18,8 +18,6 @@ import           Control.Monad
                  ( when )
 import           Control.Monad.Catch
                  ( MonadCatch, catch )
-import           Control.Monad.Except
-                 ( ExceptT, runExceptT )
 import           Control.Monad.Extra
                  ( whileM )
 import           Control.Monad.IO.Class
@@ -177,7 +175,6 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
         if Graph.outdeg (Strategy.graph graph) node == 0
             then
                 catchInterruptWithDefault graph
-                $ catchUnprovableWithDefault graph
                 $ verifyClaimStep
                     tools
                     simplifier
@@ -208,11 +205,6 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
         catch sa $ \UserInterrupt -> do
             liftIO $ putStrLn "Step evaluation interrupted."
             pure def
-
-    catchUnprovableWithDefault :: Monad m => a -> ExceptT e m a -> m a
-    catchUnprovableWithDefault def action = do
-        result <- runExceptT action
-        return $ either (const def) id result
 
     replGreeting :: MonadIO m => m ()
     replGreeting =
