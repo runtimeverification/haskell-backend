@@ -172,6 +172,9 @@ symbolVerifiers =
     , ( sizeKey
       , Builtin.verifySymbol Int.assertSort [assertSort]
       )
+    , ( intersectionKey
+      , Builtin.verifySymbol assertSort [assertSort, assertSort]
+      )
     ]
 
 type Builtin = Set (TermLike Concrete)
@@ -351,6 +354,22 @@ evalSize = Builtin.functionEvaluator evalSize0
                 . Set.size
                 $ _set
 
+evalIntersection :: Builtin.Function
+evalIntersection =
+    Builtin.functionEvaluator evalIntersection0
+  where
+    ctx = intersectionKey
+    evalIntersection0 :: Builtin.FunctionImplementation
+    evalIntersection0 tools _ resultSort = \arguments ->
+        Builtin.getAttemptedAxiom $ do
+            let (_set1, _set2) =
+                    case arguments of
+                        [_set1, _set2] -> (_set1, _set2)
+                        _ -> Builtin.wrongArity intersectionKey
+            _set1 <- expectBuiltinSet ctx tools _set1
+            _set2 <- expectBuiltinSet ctx tools _set2
+            returnSet tools resultSort (Set.intersection _set1 _set2)
+
 {- | Implement builtin function evaluation.
  -}
 builtinFunctions :: Map Text Builtin.Function
@@ -363,6 +382,7 @@ builtinFunctions =
         , (differenceKey, evalDifference)
         , (toListKey, evalToList)
         , (sizeKey, evalSize)
+        , (intersectionKey, evalIntersection)
         ]
 
 {- | Render a 'Set' as an internal domain value pattern of the given sort.
