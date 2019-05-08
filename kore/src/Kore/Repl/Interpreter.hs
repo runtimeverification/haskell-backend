@@ -209,12 +209,12 @@ showGraph mfile = do
     graph <- getInnerGraph
     axioms <- Lens.use lensAxioms
     installed <- liftIO Graph.isGraphvizInstalled
-    case installed of
-        True -> liftIO $ maybe
-                    (showDotGraph (length axioms) graph)
-                    (saveDotGraph (length axioms) graph)
-                    mfile
-        False -> putStrLn' "Graphviz is not installed."
+    if installed == True
+       then liftIO $ maybe
+                        (showDotGraph (length axioms) graph)
+                        (saveDotGraph (length axioms) graph)
+                        mfile
+       else putStrLn' "Graphviz is not installed."
 
 -- | Executes 'n' prove steps, or until branching occurs.
 proveSteps
