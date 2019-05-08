@@ -159,7 +159,7 @@ test_onePathVerification =
         -- Expected: success
         actual <- runVerification
             metadataTools
-            (Limit 3)
+            (Limit 4)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
             , simpleAxiom (Mock.functionalConstr11 (mkVar Mock.x)) Mock.b
             , simpleAxiom
@@ -167,9 +167,7 @@ test_onePathVerification =
                 (Mock.functionalConstr11 (mkVar Mock.x))
             ]
             [simpleClaim (Mock.functionalConstr10 (mkVar Mock.x)) Mock.b]
-        assertEqualWithExplanation ""
-            (Right ())
-            actual
+        assertEqualWithExplanation "" (Right ()) actual
     , testCase "Partial verification failure" $ do
         -- Axiom: constr11(a) => b
         -- Axiom: constr10(x) => constr11(x)

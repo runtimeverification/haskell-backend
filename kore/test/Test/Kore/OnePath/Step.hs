@@ -28,6 +28,7 @@ import           Kore.Internal.TermLike
 import           Kore.Internal.TermLike
                  ( TermLike )
 import           Kore.OnePath.Step
+import           Kore.OnePath.StrategyPattern
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeNotPredicate,
                  makeTruePredicate )

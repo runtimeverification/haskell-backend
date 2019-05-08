@@ -44,12 +44,12 @@ import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Pattern as Conditional
                  ( Conditional (..) )
 import           Kore.OnePath.Step
-                 ( CommonStrategyPattern, Prim, onePathFirstStep,
-                 onePathFollowupStep )
-import qualified Kore.OnePath.Step as StrategyPattern
-                 ( StrategyPattern (..), extractStuck, extractUnproven )
+                 ( Prim, onePathFirstStep, onePathFollowupStep )
 import qualified Kore.OnePath.Step as OnePath
                  ( transitionRule )
+import           Kore.OnePath.StrategyPattern
+                 ( CommonStrategyPattern )
+import qualified Kore.OnePath.StrategyPattern as StrategyPattern
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Rule
