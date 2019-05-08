@@ -39,6 +39,7 @@ module Kore.Builtin.Set
     , differenceKey
     , toListKey
     , sizeKey
+    , intersectionKey
       -- * Unification
     , unifyEquals
     ) where
@@ -451,6 +452,9 @@ toListKey = "SET.set2list"
 
 sizeKey :: IsString s => s
 sizeKey = "SET.size"
+
+intersectionKey :: IsString s => s
+intersectionKey = "SET.intersection"
 
 {- | Find the symbol hooked to @SET.get@ in an indexed module.
  -}
