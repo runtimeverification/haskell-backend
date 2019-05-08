@@ -180,6 +180,18 @@ testSubstitutionSimplifier = Mock.substitutionSimplifier testMetadataTools
 evaluators :: BuiltinAndAxiomSimplifierMap
 evaluators = Builtin.koreEvaluators verifiedModule
 
+-- | Warning: This simplifier always returns the same term with a top predicate.
+doNothingSimplifier :: TermLikeSimplifier
+doNothingSimplifier =
+    termLikeSimplifier $ \_ p ->
+        return $ OrPattern.fromPattern
+            Conditional
+                { term = p
+                , predicate = Predicate.makeTruePredicate
+                , substitution = mempty
+                }
+
+-- | Warning: This simplifier always throws the pattern into a predicate.
 stepSimplifier :: TermLikeSimplifier
 stepSimplifier =
     termLikeSimplifier $ \_ p ->
