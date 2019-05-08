@@ -163,7 +163,7 @@ mkState axioms claim =
     stepper0 claim claims axioms graph (ReplNode node) =
         verifyClaimStep
             testMetadataTools
-            doNothingSimplifier
+            smtSimplifier
             testSubstitutionSimplifier
             evaluators
             claim

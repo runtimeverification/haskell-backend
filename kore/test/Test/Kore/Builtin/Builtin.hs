@@ -48,6 +48,8 @@ import           Kore.Step.Rule
                  ( RewriteRule )
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Predicate as Predicate
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
+                 ( create )
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Step.Step as Step
 import           Kore.Syntax.Definition
@@ -201,6 +203,9 @@ stepSimplifier =
                 , predicate = Predicate.wrapPredicate p
                 , substitution = mempty
                 }
+
+smtSimplifier :: TermLikeSimplifier
+smtSimplifier = Simplifier.create testMetadataTools evaluators
 
 evaluate
     :: MonadSMT m
