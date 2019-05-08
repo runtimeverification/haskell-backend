@@ -269,6 +269,9 @@ pairSymbol lSort rSort =
 unitSetSymbol :: SymbolOrAlias
 unitSetSymbol = builtinSymbol "unitSet"
 
+unitSet :: TermLike Variable
+unitSet = mkApp setSort unitSetSymbol []
+
 elementSetSymbol :: SymbolOrAlias
 elementSetSymbol = builtinSymbol "elementSet"
 
