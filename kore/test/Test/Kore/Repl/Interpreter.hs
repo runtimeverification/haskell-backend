@@ -87,9 +87,9 @@ step100 =
         command = ProveSteps 100
     in do
         Result { output, continue, state } <- run command axioms claim
-        output     @?= showStepStoppedMessage 11 NoResult <> "\n"
+        output     @?= showStepStoppedMessage 10 NoResult <> "\n"
         continue   @?= True
-        node state @?= ReplNode 11
+        node state @?= ReplNode 10
 
 add1 :: Axiom
 add1 = coerce $ rulePattern n plusOne
