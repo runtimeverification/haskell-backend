@@ -254,7 +254,7 @@ becomes
         (stateIntention
             [ prettyOr or1 or2
             , "to become:"
-            , Unparser.unparse $ OrPattern.toExpandedPattern expected
+            , Unparser.unparse $ OrPattern.toPattern expected
             ]
         )
 

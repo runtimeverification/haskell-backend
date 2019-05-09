@@ -67,7 +67,7 @@ evaluate
             case refute of
                 Just False -> Pattern.bottom
                 Just True -> Pattern.top
-                _ -> OrPattern.toExpandedPattern simplified
+                _ -> OrPattern.toPattern simplified
     return $ asPredicate simplified'
   where
     simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
