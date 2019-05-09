@@ -113,7 +113,7 @@ data AttemptedAxiomResults variable =
         }
     deriving Generic
 
-deriving instance Eq variable => Eq (AttemptedAxiomResults variable)
+deriving instance Ord variable => Eq (AttemptedAxiomResults variable)
 deriving instance Show variable => Show (AttemptedAxiomResults variable)
 
 instance (NFData variable) => NFData (AttemptedAxiomResults variable)
@@ -150,7 +150,7 @@ data AttemptedAxiom variable
     | Applied !(AttemptedAxiomResults variable)
     deriving Generic
 
-deriving instance Eq variable => Eq (AttemptedAxiom variable)
+deriving instance Ord variable => Eq (AttemptedAxiom variable)
 deriving instance Show variable => Show (AttemptedAxiom variable)
 
 instance (NFData variable) => NFData (AttemptedAxiom variable)

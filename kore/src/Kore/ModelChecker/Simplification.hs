@@ -79,7 +79,7 @@ checkImplicationIsTop
              ]
       where
         lhsFreeVariables = Pattern.freeVariables lhs
-        lhsMLPatt = Pattern.toMLPattern lhs
+        lhsMLPatt = Pattern.toTermLike lhs
 
 stripForallQuantifiers
     :: TermLike Variable

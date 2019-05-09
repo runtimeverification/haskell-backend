@@ -172,7 +172,7 @@ simplifyEvaluateHalfImplies
     -- TODO: Also merge predicate-only patterns for 'Or'
     return $ case MultiOr.extractPatterns first of
         [firstP] -> makeEvaluateImplies firstP second
-        _ -> makeEvaluateImplies (OrPattern.toExpandedPattern first) second
+        _ -> makeEvaluateImplies (OrPattern.toPattern first) second
 
 makeEvaluateImplies
     ::  ( SortedVariable variable
@@ -238,8 +238,8 @@ makeEvaluateImpliesNonBool
         [ Conditional
             { term =
                 mkImplies
-                    (Pattern.toMLPattern pattern1)
-                    (Pattern.toMLPattern pattern2)
+                    (Pattern.toTermLike pattern1)
+                    (Pattern.toTermLike pattern2)
             , predicate = Syntax.Predicate.makeTruePredicate
             , substitution = mempty
             }

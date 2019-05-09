@@ -21,6 +21,7 @@ import           Control.Monad.Except
 import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Maybe
                  ( MaybeT (..) )
+import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
@@ -31,10 +32,8 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Internal.MultiOr
                  ( MultiOr )
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( extractPatterns, filterOr, fullCrossProduct, make )
 import           Kore.Internal.OrPredicate
                  ( OrPredicate )
-import qualified Kore.Internal.OrPredicate as OrPredicate
 import           Kore.Internal.Predicate as Conditional
                  ( Conditional (..), Predicate )
 import qualified Kore.Internal.Predicate as Predicate
@@ -587,20 +586,8 @@ unifyJoin
     let
         crossProduct :: MultiOr [Predicate variable]
         crossProduct = MultiOr.fullCrossProduct matched
-        merge
-            :: [Predicate variable]
-            -> unifier
-                (Predicate variable)
-        merge items =
-            mergePredicatesAndSubstitutionsExcept
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                (map Conditional.predicate items)
-                (map Conditional.substitution items)
-    mergedItems <- mapM merge (MultiOr.extractPatterns crossProduct)
-    return (OrPredicate.fromPredicates mergedItems)
+        merged = Foldable.fold <$> crossProduct
+    return (MultiOr.filterOr merged)
 
 -- Note that we can't match variables to stuff which can have more than one
 -- value, because if we take the axiom

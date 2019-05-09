@@ -127,8 +127,8 @@ simplifyEvaluated
         ([firstP], [secondP]) -> makeEvaluate firstP secondP
         _ ->
             makeEvaluate
-                (OrPattern.toExpandedPattern first)
-                (OrPattern.toExpandedPattern second)
+                (OrPattern.toPattern first)
+                (OrPattern.toPattern second)
   where
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second
@@ -193,5 +193,5 @@ makeEvaluateNonBoolIff
         ]
   | otherwise =
     OrPattern.fromTermLike $ mkIff
-        (Pattern.toMLPattern patt1)
-        (Pattern.toMLPattern patt2)
+        (Pattern.toTermLike patt1)
+        (Pattern.toTermLike patt2)

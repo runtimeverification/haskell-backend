@@ -710,9 +710,15 @@ instance PrettyPrint variable => PrettyPrint (Predicate variable) where
     prettyPrint flags pat =
         prettyPrint flags (unwrapPredicate pat)
 
-instance PrettyPrint variable => PrettyPrint (Substitution variable) where
-      prettyPrint flags = prettyPrint flags . Substitution.unwrap
+instance
+    (Ord variable, PrettyPrint variable) =>
+    PrettyPrint (Substitution variable)
+  where
+    prettyPrint flags = prettyPrint flags . Substitution.unwrap
 
-instance PrettyPrint variable => PrettyPrint (Step.Pattern variable) where
+instance
+    (Ord variable, PrettyPrint variable) =>
+    PrettyPrint (Step.Pattern variable)
+  where
     prettyPrint flags (Conditional t p s) =
         writeThreeFieldStruct flags "Conditional" t p s
