@@ -22,7 +22,7 @@ module Kore.Repl.Data
     , lensAxioms, lensClaims, lensClaim
     , lensGraph, lensNode, lensStepper
     , lensLabels, lensOmit, lensUnifier
-    , lensCommands, shouldStore
+    , lensCommands, lensAliases, shouldStore
     , UnifierWithExplanation (..)
     , runUnifierWithExplanation
     , emptyExecutionGraph
@@ -31,6 +31,7 @@ module Kore.Repl.Data
     , getTargetNode, getInnerGraph, getConfigAt, getRuleFor
     , StepResult(..), runStepper, runStepper'
     , updateInnerGraph
+    , addOrUpdateAlias, findAlias
     ) where
 
 import           Control.Error
@@ -163,6 +164,8 @@ data ReplCommand
     -- ^ Appends the output of a command to a file.
     | Alias ReplAlias
     -- ^ Alias a command.
+    | TryAlias String
+    -- ^ Try running an alias.
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -207,6 +210,7 @@ helpText =
     \clear [n]                             removes all node children from the\
                                            \ proof graph\n\
                                            \ (defaults to current node)\n\
+    \alias <name> = <command>              adds as an alias for <command>\n\
     \exit                                  exits the repl\
     \\n\
     \Available modifiers:\n\
@@ -289,6 +293,8 @@ data ReplState claim = ReplState
     --   failures
     , labels  :: Map String ReplNode
     -- ^ Map from labels to nodes
+    , aliases :: Map String ReplAlias
+    -- ^ Map of command aliases
     }
 
 
@@ -522,3 +528,11 @@ getNodeState graph node =
 
 data NodeState = StuckNode | UnevaluatedNode
     deriving (Eq, Ord, Show)
+
+-- | Adds or updates the provided alias.
+addOrUpdateAlias :: MonadState (ReplState claim) m => ReplAlias -> m ()
+addOrUpdateAlias alias@ReplAlias { name } =
+    lensAliases Lens.%= Map.insert name alias
+
+findAlias :: MonadState (ReplState claim) m => String -> m (Maybe ReplAlias)
+findAlias name = Map.lookup name <$> Lens.use lensAliases

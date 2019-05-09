@@ -117,6 +117,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             , stepper = stepper0
             , unifier = unifier0
             , labels  = Map.empty
+            , aliases = Map.empty
             }
 
     addIndexesToAxioms

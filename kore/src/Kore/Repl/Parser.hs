@@ -66,6 +66,7 @@ nonRecursiveCommand =
         , clear
         , saveSession
         , exit
+        , tryAlias
         ]
 
 pipeWith
@@ -188,6 +189,9 @@ alias = do
     literal "="
     cmd  <- commandParserExceptAlias
     return . Alias $ ReplAlias name cmd
+
+tryAlias :: Parser ReplCommand
+tryAlias = TryAlias <$$> word
 
 infixr 2 <$$>
 infixr 1 <**>
