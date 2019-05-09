@@ -488,28 +488,14 @@ instance Unparse (SentenceHook patternType) where
 Section 9.1.6 (Declaration and Definitions).
 
 -}
-data Sentence (patternType :: *) where
-    SentenceAliasSentence
-        :: !(SentenceAlias patternType)
-        -> Sentence patternType
-    SentenceSymbolSentence
-        :: !(SentenceSymbol patternType)
-        -> Sentence patternType
-    SentenceImportSentence
-        :: !(SentenceImport patternType)
-        -> Sentence patternType
-    SentenceAxiomSentence
-        :: !(SentenceAxiom patternType)
-        -> Sentence patternType
-    SentenceClaimSentence
-        :: !(SentenceClaim patternType)
-        -> Sentence patternType
-    SentenceSortSentence
-        :: !(SentenceSort patternType)
-        -> Sentence patternType
-    SentenceHookSentence
-        :: !(SentenceHook patternType)
-        -> Sentence patternType
+data Sentence (patternType :: *)
+    = SentenceAliasSentence  !(SentenceAlias patternType)
+    | SentenceSymbolSentence !(SentenceSymbol patternType)
+    | SentenceImportSentence !(SentenceImport patternType)
+    | SentenceAxiomSentence  !(SentenceAxiom patternType)
+    | SentenceClaimSentence  !(SentenceClaim patternType)
+    | SentenceSortSentence   !(SentenceSort patternType)
+    | SentenceHookSentence   !(SentenceHook patternType)
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance NFData patternType => NFData (Sentence patternType)
@@ -521,25 +507,8 @@ instance SOP.HasDatatypeInfo (Sentence patternType)
 instance Debug patternType => Debug (Sentence patternType)
 
 instance Unparse patternType => Unparse (Sentence patternType) where
-     unparse =
-        \case
-            SentenceAliasSentence s -> unparse s
-            SentenceSymbolSentence s -> unparse s
-            SentenceImportSentence s -> unparse s
-            SentenceAxiomSentence s -> unparse s
-            SentenceClaimSentence s -> unparse s
-            SentenceSortSentence s -> unparse s
-            SentenceHookSentence s -> unparse s
-
-     unparse2 =
-        \case
-            SentenceAliasSentence s -> unparse2 s
-            SentenceSymbolSentence s -> unparse2 s
-            SentenceImportSentence s -> unparse2 s
-            SentenceAxiomSentence s -> unparse2 s
-            SentenceClaimSentence s -> unparse2 s
-            SentenceSortSentence s -> unparse2 s
-            SentenceHookSentence s -> unparse2 s
+     unparse = unparseGeneric
+     unparse2 = unparse2Generic
 
 {- | The attributes associated with a sentence.
 
