@@ -22,6 +22,7 @@ module Kore.Internal.Pattern
     -- * Re-exports
     , Conditional (..)
     , Conditional.withCondition
+    , Conditional.withoutTerm
     , Predicate
     ) where
 
@@ -68,7 +69,7 @@ freeVariables = Conditional.freeVariables TermLike.freeVariables
 in an Pattern.
 -}
 mapVariables
-    :: Ord variableTo
+    :: (Ord variableFrom, Ord variableTo)
     => (variableFrom -> variableTo)
     -> Pattern variableFrom
     -> Pattern variableTo
