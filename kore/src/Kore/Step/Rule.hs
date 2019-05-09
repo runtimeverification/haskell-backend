@@ -76,7 +76,10 @@ deriving instance Eq variable => Eq (RulePattern variable)
 deriving instance Ord variable => Ord (RulePattern variable)
 deriving instance Show variable => Show (RulePattern variable)
 
-instance Unparse variable => Pretty (RulePattern variable) where
+instance
+    (SortedVariable variable, Unparse variable) =>
+    Pretty (RulePattern variable)
+  where
     pretty rulePattern'@(RulePattern _ _ _ _ _) =
         Pretty.vsep
             [ "left:"
@@ -122,7 +125,10 @@ deriving instance Eq variable => Eq (RewriteRule variable)
 deriving instance Ord variable => Ord (RewriteRule variable)
 deriving instance Show variable => Show (RewriteRule variable)
 
-instance (Unparse variable, Ord variable) => Unparse (RewriteRule variable) where
+instance
+    (Ord variable, SortedVariable variable, Unparse variable)
+    => Unparse (RewriteRule variable)
+  where
     unparse (RewriteRule RulePattern { left, right, requires } ) =
         unparse $ mkImplies
             (mkAnd left (Predicate.unwrapPredicate requires))

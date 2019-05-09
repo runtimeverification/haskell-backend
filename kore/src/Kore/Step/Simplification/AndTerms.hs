@@ -180,8 +180,7 @@ termEqualsAnd
                 Right result -> result
   where
     termEqualsAndWorker
-        :: MonadUnify unifierM
-        => unifier ~ unifierM variable
+        :: MonadUnify unifier
         => TermLike variable
         -> TermLike variable
         -> unifier (Pattern variable)
@@ -221,8 +220,7 @@ maybeTermEquals
         , Show variable
         , Unparse variable
         , SortedVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -251,14 +249,13 @@ the special cases handled by this.
 -- NOTE (hs-boot): Please update the AndTerms.hs-boot file when changing the
 -- signature.
 termUnification
-    :: forall variable unifier unifierM .
-        ( FreshVariable variable
+    ::  forall variable unifier
+    .   ( FreshVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
         , SortedVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -331,7 +328,7 @@ termAnd tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2 = do
     termAndWorker
         :: TermLike variable
         -> TermLike variable
-        -> Unifier variable (Pattern variable)
+        -> Unifier (Pattern variable)
     termAndWorker first second = do
         let maybeTermAnd' =
                 maybeTermAnd
@@ -359,8 +356,7 @@ maybeTermAnd
         , Show variable
         , Unparse variable
         , SortedVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -375,14 +371,13 @@ maybeTermAnd
 maybeTermAnd = maybeTransformTerm andFunctions
 
 andFunctions
-    ::  forall variable unifier unifierM
+    ::  forall variable unifier
     .   ( FreshVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
         , SortedVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => [TermTransformationOld variable unifier]
 andFunctions =
@@ -399,14 +394,13 @@ andFunctions =
     forAnd f = f SimplificationType.And
 
 equalsFunctions
-    :: forall variable unifier unifierM
+    ::  forall variable unifier
     .   ( FreshVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
         , SortedVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => [TermTransformationOld variable unifier]
 equalsFunctions =
@@ -423,15 +417,14 @@ equalsFunctions =
     forEquals f = f SimplificationType.Equals
 
 andEqualsFunctions
-    :: forall variable unifier unifierM .
-        ( Eq variable
+    ::  forall variable unifier
+    .   ( Eq variable
         , FreshVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
         , SortedVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => [(SimplificationTarget, TermTransformation variable unifier)]
 andEqualsFunctions =
@@ -578,8 +571,8 @@ another case to handle the patterns. If the pattern heads do match the
 unification case, then use 'Control.Monad.Trans.lift' to wrap the implementation
 of that case.
 
-All the @TermTransformationOld@s and similar functions defined in this module call
-'empty' unless given patterns matching their unification case.
+All the @TermTransformationOld@s and similar functions defined in this module
+call 'empty' unless given patterns matching their unification case.
 
  -}
 type TermTransformation variable unifier =
@@ -612,8 +605,7 @@ maybeTransformTerm
         , Ord variable
         , Show variable
         , SortedVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => [TermTransformationOld variable unifier]
     -> SmtMetadataTools StepperAttributes
@@ -743,8 +735,7 @@ bottomTermEquals
         , SortedVariable variable
         , Show variable
         , Unparse variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -801,8 +792,7 @@ termBottomEquals
         , SortedVariable variable
         , Show variable
         , Unparse variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -829,8 +819,7 @@ variableFunctionAndEquals
         , SortedVariable variable
         , Show variable
         , Unparse variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
@@ -923,8 +912,7 @@ functionVariableAndEquals
         , SortedVariable variable
         , Show variable
         , Unparse variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes
@@ -970,8 +958,7 @@ equalInjectiveHeadsAndEquals
         , Show variable
         , Unparse variable
         , SortedVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateMerger variable unifier
@@ -1023,11 +1010,11 @@ when @src1@ is a subsort of @src2@.
 
  -}
 sortInjectionAndEqualsAssumesDifferentHeads
-    ::  forall variable unifier unifierM .
-        ( Ord variable
+    ::  forall variable unifier
+    .   ( Ord variable
+        , SortedVariable variable
         , Unparse variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> TermSimplifier variable unifier
@@ -1214,9 +1201,9 @@ returns @\\bottom@.
 -- injection should always clash with constructors. We should clarify this.
 constructorSortInjectionAndEquals
     ::  ( Eq variable
+        , SortedVariable variable
         , Unparse variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> TermLike variable
@@ -1251,9 +1238,9 @@ to be different; therefore their conjunction is @\\bottom@.
  -}
 constructorAndEqualsAssumesDifferentHeads
     ::  ( Eq variable
+        , SortedVariable variable
         , Unparse variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> TermLike variable
@@ -1317,9 +1304,9 @@ See also: 'equalAndEquals'
 -- but it is not.
 domainValueAndEqualsAssumesDifferent
     :: Eq variable
+    => SortedVariable variable
     => Unparse variable
-    => MonadUnify unifierM
-    => unifier ~ unifierM variable
+    => MonadUnify unifier
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier (TermLike variable)
@@ -1339,9 +1326,9 @@ domainValueAndEqualsAssumesDifferent _ _ = empty
 
 cannotUnifyDomainValues
     :: Eq variable
+    => SortedVariable variable
     => Unparse variable
-    => MonadUnify unifierM
-    => unifier ~ unifierM variable
+    => MonadUnify unifier
     => TermLike variable
     -> TermLike variable
     -> unifier (TermLike variable)
@@ -1363,9 +1350,9 @@ See also: 'equalAndEquals'
  -}
 stringLiteralAndEqualsAssumesDifferent
     :: Eq variable
+    => SortedVariable variable
     => Unparse variable
-    => MonadUnify unifierM
-    => unifier ~ unifierM variable
+    => MonadUnify unifier
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier (TermLike variable)
@@ -1385,9 +1372,9 @@ See also: 'equalAndEquals'
  -}
 charLiteralAndEqualsAssumesDifferent
     :: Eq variable
+    => SortedVariable variable
     => Unparse variable
-    => MonadUnify unifierM
-    => unifier ~ unifierM variable
+    => MonadUnify unifier
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier (TermLike variable)

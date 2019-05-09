@@ -219,16 +219,20 @@ prove cindex = do
 
 showGraph
     :: MonadIO m
+    => MonadWriter String m
     => Maybe FilePath
     -> MonadState (ReplState claim) m
     => m ()
 showGraph mfile = do
     graph <- getInnerGraph
     axioms <- Lens.use lensAxioms
-    liftIO $ maybe
-            (showDotGraph (length axioms) graph)
-            (saveDotGraph (length axioms) graph)
-            mfile
+    installed <- liftIO Graph.isGraphvizInstalled
+    if installed == True
+       then liftIO $ maybe
+                        (showDotGraph (length axioms) graph)
+                        (saveDotGraph (length axioms) graph)
+                        mfile
+       else putStrLn' "Graphviz is not installed."
 
 -- | Executes 'n' prove steps, or until branching occurs.
 proveSteps
@@ -333,17 +337,6 @@ showLeafs = do
     findLeafNodes graph =
         filter ((==) 0 . Graph.outdeg graph) $ Graph.nodes graph
 
-    getNodeState :: InnerGraph -> Graph.Node -> Maybe (NodeState, Graph.Node)
-    getNodeState graph node =
-        fmap (\nodeState -> (nodeState, node))
-        . strategyPattern StrategyPatternTransformer
-            { rewriteTransformer = const . Just $ UnevaluatedNode
-            , stuckTransformer = const . Just $ StuckNode
-            , bottomValue = Nothing
-            }
-        . Graph.lab'
-        . Graph.context graph
-        $ node
 
     showPair :: (NodeState, [Graph.Node]) -> String
     showPair (ns, xs) = show ns <> ": " <> show xs
@@ -512,11 +505,13 @@ tryAxiomClaim eac = do
                     showUnificationFailure axiomOrClaim node
                 SingleResult node' -> do
                     lensNode .= node'
+                    lensGraph .= graph
                     putStrLn' "Unification successful."
                 BranchResult nodes -> do
                     stuckToUnstuck nodes graph
                     putStrLn'
-                        $ "Unification successful with branching: " <> show nodes
+                        $ "Unification successful with branching: "
+                            <> show nodes
   where
     leftToList :: Either a b -> [a]
     leftToList = either pure (const [])
@@ -526,7 +521,9 @@ tryAxiomClaim eac = do
 
     stuckToUnstuck :: [ReplNode] -> ExecutionGraph -> ReplM claim ()
     stuckToUnstuck nodes Strategy.ExecutionGraph{ graph } =
-        updateInnerGraph $ Graph.gmap (stuckToRewrite $ fmap unReplNode nodes) graph
+        updateInnerGraph
+        $ Graph.gmap (stuckToRewrite
+        $ fmap unReplNode nodes) graph
 
     stuckToRewrite xs ct@(to, n, lab, from)
         | n `elem` xs =
@@ -816,5 +813,3 @@ showAxiomOrClaim len (RuleIndex (Just rid))
   | rid < len = Just $ "Axiom " <> show rid
   | otherwise = Just $ "Claim " <> show (rid - len)
 
-data NodeState = StuckNode | UnevaluatedNode
-    deriving (Eq, Ord, Show)

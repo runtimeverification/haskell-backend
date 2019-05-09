@@ -15,6 +15,8 @@ module Kore.Repl.Data
     , AxiomIndex (..), ClaimIndex (..)
     , ReplNode (..)
     , ReplState (..)
+    , NodeState (..)
+    , getNodeState
     , InnerGraph
     , lensAxioms, lensClaims, lensClaim
     , lensGraph, lensNode, lensStepper
@@ -71,7 +73,8 @@ import           Kore.Internal.Pattern
 import           Kore.Internal.TermLike
                  ( TermLike )
 import           Kore.OnePath.Step
-                 ( CommonStrategyPattern, StrategyPattern (..) )
+                 ( CommonStrategyPattern, StrategyPattern (..),
+                 StrategyPatternTransformer (..), strategyPattern )
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
@@ -166,7 +169,8 @@ helpText =
     \prove <n>                             initializes proof mode for the nth \
                                            \claim\n\
     \graph [file]                          shows the current proof graph (*)\n\
-                                           \ (saves image if file argument is given)\n\
+                                           \ (saves image if file argument is\
+                                           \ given)\n\
     \step [n]                              attempts to run 'n' proof steps at\
                                            \the current node (n=1 by default)\n\
     \stepf [n]                             attempts to run 'n' proof steps at\
@@ -176,7 +180,8 @@ helpText =
     \config [n]                            shows the config for node 'n'\
                                            \ (defaults to current node)\n\
     \omit [cell]                           adds or removes cell to omit list\
-                                           \ (defaults to showing the omit list)\n\
+                                           \ (defaults to showing the omit\
+                                           \ list)\n\
     \leafs                                 shows unevaluated or stuck leafs\n\
     \rule [n]                              shows the rule for node 'n'\
                                            \ (defaults to current node)\n\
@@ -189,17 +194,25 @@ helpText =
     \label <+l> [n]                        add a new label for a node\
                                            \ (defaults to current node)\n\
     \label <-l>                            remove a label\n\
-    \try <a|c><num>                        attempts <a>xiom or <c>laim at index <num>.\n\
-    \clear [n]                             removes all node children from the proof graph\n\
+    \try <a|c><num>                        attempts <a>xiom or <c>laim at\
+                                           \ index <num>.\n\
+    \clear [n]                             removes all node children from the\
+                                           \ proof graph\n\
                                            \ (defaults to current node)\n\
     \exit                                  exits the repl\
     \\n\
     \Available modifiers:\n\
-    \<command> > file                      prints the output of 'command' to file\n\
-    \<command> >> file                     appends the output of 'command' to file\n\
-    \<command> | external script           pipes command to external script and prints the result in the repl\n\
-    \<command> | external script > file    pipes and then redirects the output of the piped command to a file\n\
-    \<command> | external script >> file   pipes and then appends the output of the piped command to a file\n\
+    \<command> > file                      prints the output of 'command'\
+                                           \ to file\n\
+    \<command> >> file                     appends the output of 'command'\
+                                           \ to file\n\
+    \<command> | external script           pipes command to external script\
+                                           \ and prints the result in the\
+                                           \ repl\n\
+    \<command> | external script > file    pipes and then redirects the output\
+                                           \ of the piped command to a file\n\
+    \<command> | external script >> file   pipes and then appends the output\
+                                           \ of the piped command to a file\n\
     \\n\
     \(*) If an edge is labeled as Simpl/RD it means that\
     \ either the target node was reached using the SMT solver\
@@ -262,7 +275,7 @@ data ReplState claim = ReplState
     , unifier
         :: TermLike Variable
         -> TermLike Variable
-        -> UnifierWithExplanation Variable ()
+        -> UnifierWithExplanation ()
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
     --   failures
@@ -295,8 +308,8 @@ instance Eq claim => Eq (ReplState claim) where
 
 -- | Unifier that stores the first 'explainBottom'.
 -- See 'runUnifierWithExplanation'.
-newtype UnifierWithExplanation variable a = UnifierWithExplanation
-    { getUnifier :: AccumT (First (Doc ())) (Unifier variable) a
+newtype UnifierWithExplanation a = UnifierWithExplanation
+    { getUnifier :: AccumT (First (Doc ())) Unifier a
     } deriving (Applicative, Functor, Monad)
 
 instance MonadUnify UnifierWithExplanation where
@@ -315,10 +328,6 @@ instance MonadUnify UnifierWithExplanation where
             . Monad.Trans.lift
             . Monad.Unify.liftSimplifier
 
-    mapVariable f (UnifierWithExplanation u) =
-        UnifierWithExplanation
-            $ Monad.Accum.mapAccumT (Monad.Unify.mapVariable f) u
-
     explainBottom info first second =
         UnifierWithExplanation . Monad.Accum.add . First . Just $ Pretty.vsep
             [ info
@@ -329,7 +338,7 @@ instance MonadUnify UnifierWithExplanation where
             ]
 
 runUnifierWithExplanation
-    :: UnifierWithExplanation variable a
+    :: UnifierWithExplanation a
     -> Simplifier (Maybe (Doc ()))
 runUnifierWithExplanation (UnifierWithExplanation accum)
     = fmap join
@@ -474,8 +483,8 @@ data StepResult
     -- ^ configuration branched
     deriving (Show)
 
--- | Run a single step for the data in state (claim, axioms, claims, current node
--- and execution graph.
+-- | Run a single step for the data in state
+-- (claim, axioms, claims, current node and execution graph).
 runStepper
     :: MonadState (ReplState claim) (m Simplifier)
     => Monad.Trans.MonadTrans m
@@ -507,5 +516,23 @@ runStepper' claims axioms node = do
         Monad.Trans.lift $ stepper claim claims axioms graph node
     pure . (,) gr $ case Graph.suc innerGraph (unReplNode node) of
         []       -> NoResult
-        [single] -> SingleResult $ ReplNode single
+        [single] -> case getNodeState innerGraph single of
+                        Nothing -> NoResult
+                        Just (StuckNode, _) -> NoResult
+                        _ -> SingleResult . ReplNode $ single
         nodes    -> BranchResult $ fmap ReplNode nodes
+
+getNodeState :: InnerGraph -> Graph.Node -> Maybe (NodeState, Graph.Node)
+getNodeState graph node =
+        fmap (\nodeState -> (nodeState, node))
+        . strategyPattern StrategyPatternTransformer
+            { rewriteTransformer = const . Just $ UnevaluatedNode
+            , stuckTransformer = const . Just $ StuckNode
+            , bottomValue = Nothing
+            }
+        . Graph.lab'
+        . Graph.context graph
+        $ node
+
+data NodeState = StuckNode | UnevaluatedNode
+    deriving (Eq, Ord, Show)

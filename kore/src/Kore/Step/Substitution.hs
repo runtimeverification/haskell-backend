@@ -117,8 +117,7 @@ normalizeExcept
         , Unparse variable
         , SortedVariable variable
         , FreshVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -137,7 +136,8 @@ normalizeExcept
     -- use guardAgainstBottom at the end.
     deduplicated <- normalizeSubstitutionDuplication' substitution
     let
-        Conditional { substitution = preDeduplicatedSubstitution } = deduplicated
+        Conditional { substitution = preDeduplicatedSubstitution } =
+            deduplicated
         Conditional { predicate = deduplicatedPredicate } = deduplicated
         -- The substitution is not fully normalized, but it is safe to convert
         -- to a Map because it has been deduplicated.
@@ -235,8 +235,7 @@ mergePredicatesAndSubstitutionsExcept
         , Ord variable
         , Unparse variable
         , FreshVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -244,10 +243,7 @@ mergePredicatesAndSubstitutionsExcept
     -> BuiltinAndAxiomSimplifierMap
     -> [Syntax.Predicate variable]
     -> [Substitution variable]
-    -> unifier
-        ( Predicate variable
-
-        )
+    -> unifier (Predicate variable)
 mergePredicatesAndSubstitutionsExcept
     tools
     substitutionSimplifier
@@ -274,14 +270,13 @@ mergePredicatesAndSubstitutionsExcept
 can't handle.
 -}
 createPredicatesAndSubstitutionsMergerExcept
-    :: forall variable unifier unifierM .
-        ( Show variable
+    ::  forall variable unifier
+    .   ( Show variable
         , Unparse variable
         , SortedVariable variable
         , Ord variable
         , FreshVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -345,14 +340,13 @@ unifications it can't handle and whose result is in any monad transformer
 over the base monad.
 -}
 createLiftedPredicatesAndSubstitutionsMerger
-    :: forall variable unifier unifierM .
-        ( Show variable
+    ::  forall variable unifier
+    .   ( Show variable
         , Unparse variable
         , SortedVariable variable
         , Ord variable
         , FreshVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -385,18 +379,14 @@ normalizeSubstitutionAfterMerge
         , SortedVariable variable
         , FreshVariable variable
         , HasCallStack
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> Predicate variable
-    -> unifier
-          ( Predicate variable
-
-          )
+    -> unifier (Predicate variable)
 normalizeSubstitutionAfterMerge
     tools
     substitutionSimplifier

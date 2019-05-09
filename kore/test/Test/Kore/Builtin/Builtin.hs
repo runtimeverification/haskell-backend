@@ -34,8 +34,8 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
-import           Kore.Internal.MultiOr
-                 ( MultiOr )
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
@@ -222,11 +222,7 @@ runStep
     -- ^ configuration
     -> RewriteRule Variable
     -- ^ axiom
-    -> IO
-        (Either
-            (UnificationOrSubstitutionError Variable)
-            (MultiOr (Pattern Variable))
-        )
+    -> IO (Either UnificationOrSubstitutionError (OrPattern Variable))
 runStep configuration axiom = do
     result <- runStepResult configuration axiom
     return (Step.gatherResults <$> result)
@@ -236,11 +232,7 @@ runStepResult
     -- ^ configuration
     -> RewriteRule Variable
     -- ^ axiom
-    -> IO
-        (Either
-            (UnificationOrSubstitutionError Variable)
-            (Step.Results Variable)
-        )
+    -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
 runStepResult configuration axiom =
     runSMT
     $ evalSimplifier emptyLogger
@@ -263,11 +255,7 @@ runStepWith
     -- ^ configuration
     -> RewriteRule Variable
     -- ^ axiom
-    -> IO
-        (Either
-            (UnificationOrSubstitutionError Variable)
-            (MultiOr (Pattern Variable))
-        )
+    -> IO (Either UnificationOrSubstitutionError (OrPattern Variable))
 runStepWith solver configuration axiom = do
     result <- runStepResultWith solver configuration axiom
     return (Step.gatherResults <$> result)
@@ -278,11 +266,7 @@ runStepResultWith
     -- ^ configuration
     -> RewriteRule Variable
     -- ^ axiom
-    -> IO
-        (Either
-            (UnificationOrSubstitutionError Variable)
-            (Step.Results Variable)
-        )
+    -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
 runStepResultWith solver configuration axiom =
     let smt =
             evalSimplifier emptyLogger
