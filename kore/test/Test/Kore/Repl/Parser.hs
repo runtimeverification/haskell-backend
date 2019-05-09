@@ -37,6 +37,7 @@ test_replParser =
     , saveSessionTests  `tests` "save-session"
     , appendTests       `tests` "append"
     , pipeAppendTests   `tests` "pipe append"
+    , aliasTests        `tests` "alias tests"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -299,4 +300,9 @@ saveSessionTests =
     [ "save-session file"  `parsesTo_` SaveSession "file"
     , "save-session file " `parsesTo_` SaveSession "file"
     , "save-session"       `fails`     "need to supply file name"
+    ]
+
+aliasTests :: [ParserTest ReplCommand]
+aliasTests =
+    [ "alias help' = help" `fails` "not implemented"
     ]
