@@ -281,7 +281,6 @@ data ReplState claim = ReplState
     -- ^ Map from labels to nodes
     }
 
-
 -- | Unifier that stores the first 'explainBottom'.
 -- See 'runUnifierWithExplanation'.
 newtype UnifierWithExplanation a = UnifierWithExplanation
