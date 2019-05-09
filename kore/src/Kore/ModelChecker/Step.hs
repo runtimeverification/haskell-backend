@@ -132,11 +132,7 @@ transitionRule
     axiomSimplifiers
     strategyPrim
     proofState
-  = do
-    execState <- Monad.Trans.lift State.get
-    -- End early if any unprovable state was reached
-    when (isJust execState) empty
-    case strategyPrim of
+  = case strategyPrim of
         CheckProofState -> transitionCheckProofState proofState
         Simplify -> transitionSimplify proofState
         Unroll goalrhs -> transitionUnroll goalrhs proofState
@@ -146,9 +142,14 @@ transitionRule
     transitionCheckProofState
         :: CommonProofState
         -> Transition CommonProofState
-    transitionCheckProofState Proven = empty
-    transitionCheckProofState Unprovable = empty
-    transitionCheckProofState ps = return ps
+    transitionCheckProofState proofState0 = do
+        execState <- Monad.Trans.lift State.get
+        -- End early if any unprovable state was reached
+        when (isJust execState) empty
+        case proofState0 of
+            Proven -> empty
+            Unprovable -> empty
+            ps -> return ps
 
     transitionSimplify
         :: CommonProofState
