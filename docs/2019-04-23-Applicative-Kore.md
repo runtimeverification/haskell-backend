@@ -4,6 +4,8 @@ _Applicative matching mu-logic_ (AML) is the applicative/functional fragment of 
 
 _Applicative Kore_ (AppKore) is the language to write AML theories. We call the existing Kore language for full ML as _FullKore_.
 
+AppKore/AML differs from FullKore/ML in two ways. Firstly, AppKore has a simpler syntax. It is unsorted and only contains constant symbols. Secondly, AppKore has support for fixpoint reasoning. This makes it capable of precisely capturing many mathematical domains, such as natural numbers, which FullKore/ML cannot.
+
 ## AppKore parser
 
 ### Keywords
@@ -11,8 +13,16 @@ _Applicative Kore_ (AppKore) is the language to write AML theories. We call the 
 AppKore has the following keywords:
 
 ```
-module import axiom symbol notation hooked-symbol hooked-notation endmodule
+module import axiom symbol notation meta-notation endmodule
 ```
+
+Compared with FullKore/ML, we made three changes on the choice of keywords. 
+
+Firstly, we remove `sort` and `hooked-sort`, because sorts in FullKore can be captured as (constant) symbols in AppKore. 
+
+Secondly, we remove hooked sorts/symbols, because many mathematical domains (such as natural numbers) that cannot be captured in ML (without support for fixpoints) or FullKore can now be precisely captured in AppKore/AML. In other words, we can precisely capture the semantics of these "hooked" sorts/symbols by writing sufficient axioms in AML, instead of leaving it to backends and implementation. Note that backends and implementation still can and should hook these sorts/symbols and have builtin support for them. These "hooking" information will be declared as attributes. What is different from FullKore is that the way backends implement these hooked sorts/symbols does not affect the semantics, because they are completely axiomatized in AML.
+
+Thirdly, we add `notation` and `meta-notation`. `notation` is a replacement of `alias` in FullKore. `meta-notation` is like `notation` but it declares meta-level notations such as capture-avoiding-substitution, whose precisely definition only exists on paper and cannot be formalized in AML. Mostly we only use `notation` in practice. `meta-notation` is rarely used.
 
 ### Identifiers
 
@@ -98,6 +108,8 @@ Each sentence/module is associated with zero, one, or more _attributes_. Attribu
 
 ## Some remarks on notations
 
+#### Main principle of notations
+
 AppKore allows the users to define notations (a.k.a. aliases). The __main principle of notations__ is that they can be desugared in a unique and well-founded way. Notations differ from symbols in many aspects, even though they share the same syntax in the AppKore grammar shown above. In the following, we illustrate some of the main differences between notations and symbols by examples. These differences will taken into consideration by no the parser, but the verifier, which we discuss later.
 
 The purpose of this section is to show some examples of notations. 
@@ -161,35 +173,26 @@ As an example, here is the declaration of `\or` using `left-assoc` attribute:
 notation \or P Q = \implies (\neg P) Q [left-assoc]
 ```
 
-Another neat example is the declaration of `\exists` that allows multiple binders:
+Another neat example is a variant of `\forall` and `\exists` that allows multiple binders:
 
 ```
-notation \exists X P = \neg (\forall X (\neg P)) [binder, right-assoc]
+notation \forall* X P = \forall X P [binder, right-assoc]
+notation \exists* X P = \exists X P [binder, right-assoc]
 ```
 
-Here, the `right-assoc` attribute tells the verifier to accept patterns of the form `\exists X1 X2 ... Xn P` as a notation of the pattern `(\exists X1 ... (\exists Xn P) ...)`.
+Here, the `right-assoc` attribute tells the verifier to accept patterns of the form `\forall* X1 X2 ... Xn P` as a notation of the pattern `(\forall X1 ... (\forall Xn P) ...)`.
 
-___QUESTION.___ How to do the same thing for `\forall`? Note that unlike `\exists`, `\forall` is one of the primitive construct that takes exactly one binder, as specified by the AppKore syntax. Can we declare:
-
-```
-notation \forall X P = \forall X P [binder, right-assoc]  // try to make \forall valatile
-```
-
-Note that `\forall` now also appears on the right hand side. This is not intended, because we want to forbid recursive notations. 
-
-#### Hooked notations
+#### Meta-notations
 
 Some notations are not definable in the logic. One such examples is _capture-avoiding substitution_. Specifically, we want to define `\subst X P Q` as a notation that represents the pattern obtained by substituting all free occurrences of `X` in `P` for `Q`, where alpha-renaming happens explicitly to prevent unintended variable capturing. 
 
-To achieve this, we use _hooked notations_. Hooked notations are notations that do not have an explicit definition in their declarations. Instead, the backends should provide proper implementation of hooked notations. 
-
-As an example, `\subst` can be defined as follows:
+We call such notations whose definitions cannot be formalized in AML _meta-notations_. Meta-notations are necessary in practice. The most important meta-notation is capture-avoiding-substitution, `\subst`, which is declared as a meta-notation as follows:
 
 ```
-hooked-notation \subst X P Q [required, desugar]
+meta-notation \subst X P Q [required, desugar]
 ```
 
-What the declaration says is that `\subst` expects three arguments, and the precise definition of `\subst` is given by the backends. The `required` attribute specifies that an implementation of `\subst` is required for all AppKore backends. The attribute `desugar` specifies that `\subst` should always be desugared (during runtime).
+What the declaration says is that `\subst` expects three arguments, and the precise definition of `\subst` is given by the backends. All backends must provide an appropriate implementation of `\subst` as specified by the `[required]` attribute. The attribute `desugar` specifies that `\subst` should always be desugared (during runtime).
 
 ## Builtin modules
 
@@ -199,14 +202,18 @@ We present some builtin modules. There modules define all the basic derived cons
 
 ```
 module BASIC-DERIVED-CONSTRUCTS
-  hooked-notation \subst X P Q                                  [required, desugar]
+  meta-notation \subst X P Q                                    [required, desugar]
   notation \neg P = \implies P \bot                             []
   notation \or P Q = \implies (\neg P) Q                        [left-assoc]
   notation \and P Q = \neg (\or (\neg P) (\neg Q))              [left-assoc]
   notation \iff P Q = \and (\implies P Q) (\implies Q P)        []
   notation \top = \neg \bot                                     []
-  notation \exists X P = \neg \forall X \neg P                  [binder, right-assoc]
-  notation \nu X P = \neg \mu X (\neg (\subst X (\neg X) P))    [binder, right-assoc]
+  notation \exists X P = \neg \forall X \neg P                  [binder]
+  notation \forall* X P = \forall X P                           [binder, right-assoc]
+  notation \exists* X P = \exists X P                           [binder, right-assoc]
+  notation \nu X P = \neg \mu X (\neg (\subst X (\neg X) P))    [binder]
+  notation \mu* X P = \mu X P                                   [binder, right-assoc]
+  notation \nu* X P = \nu X P                                   [binder, right-assoc]
 endmodule
 ```
 
@@ -234,10 +241,10 @@ module INHABITANT
   symbol \Sort                                                        []
   symbol \inh                                                         []
   notation \typeof X S = \subset X (\inh S)                           []
-  notation \forallIn X S P = \forall X (\implies (\typeof X S) P)     []
-  notation \existsIn X S P = \exists X (\and (\typeof X S) P)         []
-  notation \muIn X S P = \mu X (\and P (\inh S))                      []
-  notation \nuIn X S P = \nu X (\and P (\inh S))                      []
+  notation \forallIn X S P = \forall X (\implies (\typeof X S) P)     [binder]
+  notation \existsIn X S P = \exists X (\and (\typeof X S) P)         [binder]
+  notation \muIn X S P = \mu X (\and P (\inh S))                      [binder]
+  notation \nuIn X S P = \nu X (\and P (\inh S))                      [binder]
 endmodule
 ```
 
