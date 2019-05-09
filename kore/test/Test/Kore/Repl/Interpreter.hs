@@ -39,10 +39,10 @@ type Claim = OnePathRule Variable
 
 test_replInterpreter :: [TestTree]
 test_replInterpreter =
-    [ showUsage `tests_` "Showing the usage message"
-    , help      `tests_` "Showing the help message"
-    , step5     `tests_` "Performing 5 steps"
-    , step100   `tests_` "Stepping over proof completion"
+    [ showUsage `tests` "Showing the usage message"
+    , help      `tests` "Showing the help message"
+    , step5     `tests` "Performing 5 steps"
+    , step100   `tests` "Stepping over proof completion"
     ]
 
 showUsage :: IO ()
@@ -124,8 +124,8 @@ data Result = Result
     , state    :: ReplState Claim
     }
 
-tests_ :: IO () -> String -> TestTree
-tests_ = flip testCase
+tests :: IO () -> String -> TestTree
+tests = flip testCase
 
 mkState :: [Axiom] -> Claim -> ReplState Claim
 mkState axioms claim =
