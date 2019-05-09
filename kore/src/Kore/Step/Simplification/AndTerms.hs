@@ -1278,20 +1278,22 @@ domainValueAndConstructorErrors
     -> Maybe (TermLike variable)
 domainValueAndConstructorErrors
     tools
-    (DV_ _ _)
-    term@(App_ secondHead _)
+    term1@(DV_ _ _)
+    term2@(App_ secondHead _)
     | give tools Attribute.isConstructor_ secondHead =
       error (unlines [ "Cannot handle DomainValue and Constructor:"
-                     , unparseToString term
+                     , unparseToString term1
+                     , unparseToString term2
                      ]
             )
 domainValueAndConstructorErrors
     tools
-    term@(App_ firstHead _)
-    (DV_ _ _)
+    term1@(App_ firstHead _)
+    term2@(DV_ _ _)
     | give tools Attribute.isConstructor_ firstHead =
       error (unlines [ "Cannot handle Constructor and DomainValue:"
-                     , unparseToString term
+                     , unparseToString term1
+                     , unparseToString term2
                      ]
             )
 domainValueAndConstructorErrors _ _ _ = empty
