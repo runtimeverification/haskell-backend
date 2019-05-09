@@ -26,6 +26,7 @@ module Kore.Step.Rule
     , extractImplicationClaims
     , mkRewriteAxiom
     , mkEqualityAxiom
+    , mkCeilAxiom
     , refreshRulePattern
     , Kore.Step.Rule.freeVariables
     , Kore.Step.Rule.mapVariables
@@ -368,6 +369,15 @@ patternToAxiomPattern attributes pat =
                 , ensures = Predicate.makeTruePredicate
                 , attributes
                 }
+        -- definedness axioms
+        ceil@(Ceil_ _ resultSort _) ->
+            pure $ FunctionAxiomPattern $ EqualityRule RulePattern
+                { left = ceil
+                , right = mkTop resultSort
+                , requires = Predicate.makeTruePredicate
+                , ensures = Predicate.makeTruePredicate
+                , attributes
+                }
         Forall_ _ _ child -> patternToAxiomPattern attributes child
         -- implication axioms:
         -- init -> modal_op ( prop )
@@ -428,6 +438,20 @@ mkEqualityAxiom lhs rhs requires =
     sortVariableR = SortVariable "R"
     sortR = SortVariableSort sortVariableR
     function = mkEquals sortR lhs rhs
+
+{- | Construct a 'VerifiedKoreSentence' corresponding to a 'Ceil' axiom.
+
+ -}
+mkCeilAxiom
+    :: TermLike Variable  -- ^ the child of 'Ceil'
+    -> Verified.Sentence
+mkCeilAxiom child =
+    SentenceAxiomSentence
+    $ mkAxiom [sortVariableR]
+    $ mkCeil sortR child
+  where
+    sortVariableR = SortVariable "R"
+    sortR = SortVariableSort sortVariableR
 
 {- | Refresh the variables of a 'RulePattern'.
 
