@@ -109,6 +109,19 @@ axiomPatternsUnitTests =
                     (extractRewriteAxioms
                         (extractIndexedModule "TEST" indexedDefinition)
                     )
+        , testCase "\\ceil(I1:AInt <= I2:AInt)" $ do
+            let term = applyLeqAInt varI1 varI2
+                sortR = mkSortVariable (testId "R")
+            assertEqual ""
+                (Right $ FunctionAxiomPattern $ EqualityRule RulePattern
+                    { left = mkCeil sortR term
+                    , right = mkTop sortR
+                    , requires = Predicate.makeTruePredicate
+                    , ensures = Predicate.makeTruePredicate
+                    , attributes = def
+                    }
+                )
+                (Rule.fromSentence $ mkCeilAxiom term)
         , testCase "(I1:AInt => I2:AInt)::KItem"
             (assertEqual ""
                 (koreFail "Unsupported pattern type in axiom")
