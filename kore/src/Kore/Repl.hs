@@ -101,7 +101,6 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             evalStateT (whileM repl0) state
 
   where
-    parseScript = id
 
     repl0 :: StateT (ReplState claim) Simplifier Bool
     repl0 = do

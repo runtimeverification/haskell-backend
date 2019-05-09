@@ -12,7 +12,7 @@ module Kore.Repl.Parser
     ) where
 
 import           Control.Applicative
-                 ( empty, some, (<|>) )
+                 ( some, (<|>) )
 import qualified Data.Foldable as Foldable
 import           Data.Functor
                  ( void, ($>) )
