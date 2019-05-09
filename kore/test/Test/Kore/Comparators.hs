@@ -34,10 +34,9 @@ import           Kore.Internal.MultiOr
 import           Kore.Internal.Pattern
                  ( Conditional (..) )
 import           Kore.Internal.TermLike
-import           Kore.OnePath.Step
+import           Kore.OnePath.StrategyPattern
                  ( StrategyPattern )
-import           Kore.OnePath.Step as StrategyPattern
-                 ( StrategyPattern (..) )
+import qualified Kore.OnePath.StrategyPattern as StrategyPattern
 import           Kore.Predicate.Predicate
 import           Kore.Proof.Functional
 import           Kore.Step.Axiom.Data as AttemptedAxiom

@@ -72,9 +72,7 @@ import           Kore.Internal.Pattern
                  ( Conditional (..) )
 import           Kore.Internal.TermLike
                  ( TermLike )
-import           Kore.OnePath.Step
-                 ( CommonStrategyPattern, StrategyPattern (..),
-                 StrategyPatternTransformer (..), strategyPattern )
+import           Kore.OnePath.StrategyPattern
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification

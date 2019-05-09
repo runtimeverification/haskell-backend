@@ -65,8 +65,8 @@ simplifyEvaluatedRewrites
     -> OrPattern variable
 simplifyEvaluatedRewrites first second =
     makeEvaluateRewrites
-        (OrPattern.toExpandedPattern first)
-        (OrPattern.toExpandedPattern second)
+        (OrPattern.toPattern first)
+        (OrPattern.toPattern second)
 
 makeEvaluateRewrites
     ::  ( SortedVariable variable
@@ -80,5 +80,5 @@ makeEvaluateRewrites
 makeEvaluateRewrites first second =
     OrPattern.fromTermLike
     $ mkRewrites
-        (Pattern.toMLPattern first)
-        (Pattern.toMLPattern second)
+        (Pattern.toTermLike first)
+        (Pattern.toTermLike second)

@@ -93,7 +93,7 @@ simplify
     -> Simplifier (Pattern variable)
 simplify tools substitutionSimplifier axiomIdToEvaluator patt = do
     orPatt <- simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt
-    return (OrPattern.toExpandedPattern orPatt)
+    return (OrPattern.toPattern orPatt)
 
 {-|'simplifyToOr' simplifies a TermLike variable, returning an
 'OrPattern'.

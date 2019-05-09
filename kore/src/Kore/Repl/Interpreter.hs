@@ -68,11 +68,11 @@ import           Kore.Internal.Pattern
                  ( Conditional (..) )
 import           Kore.Internal.TermLike
                  ( TermLike )
-import           Kore.OnePath.Step
+import           Kore.OnePath.StrategyPattern
                  ( CommonStrategyPattern, StrategyPattern (..),
                  StrategyPatternTransformer (StrategyPatternTransformer),
                  strategyPattern )
-import qualified Kore.OnePath.Step as StrategyPatternTransformer
+import qualified Kore.OnePath.StrategyPattern as StrategyPatternTransformer
                  ( StrategyPatternTransformer (..) )
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
@@ -201,16 +201,20 @@ prove cindex = do
 
 showGraph
     :: MonadIO m
+    => MonadWriter String m
     => Maybe FilePath
     -> MonadState (ReplState claim) m
     => m ()
 showGraph mfile = do
     graph <- getInnerGraph
     axioms <- Lens.use lensAxioms
-    liftIO $ maybe
-            (showDotGraph (length axioms) graph)
-            (saveDotGraph (length axioms) graph)
-            mfile
+    installed <- liftIO Graph.isGraphvizInstalled
+    if installed == True
+       then liftIO $ maybe
+                        (showDotGraph (length axioms) graph)
+                        (saveDotGraph (length axioms) graph)
+                        mfile
+       else putStrLn' "Graphviz is not installed."
 
 -- | Executes 'n' prove steps, or until branching occurs.
 proveSteps
@@ -804,4 +808,3 @@ showAxiomOrClaim _   (RuleIndex Nothing) = Nothing
 showAxiomOrClaim len (RuleIndex (Just rid))
   | rid < len = Just $ "Axiom " <> show rid
   | otherwise = Just $ "Claim " <> show (rid - len)
-

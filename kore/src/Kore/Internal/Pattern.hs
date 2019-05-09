@@ -14,8 +14,7 @@ module Kore.Internal.Pattern
     , isBottom
     , isTop
     , Kore.Internal.Pattern.mapVariables
-    , toMLPattern
-    , toStepPattern
+    , toTermLike
     , top
     , topOf
     , fromTermLike
@@ -117,7 +116,7 @@ substitutions; this function should be used with care where that distinction is
 important.
 
  -}
-toStepPattern
+toTermLike
     ::  forall variable.
         ( SortedVariable variable
         , Ord variable
@@ -126,9 +125,7 @@ toStepPattern
         , HasCallStack
         )
     => Pattern variable -> TermLike variable
-toStepPattern
-    Conditional { term, predicate, substitution }
-  =
+toTermLike Conditional { term, predicate, substitution } =
     simpleAnd
         (simpleAnd term predicate)
         (Syntax.Predicate.fromSubstitution substitution)
@@ -147,17 +144,6 @@ toStepPattern
       where
         predicateTermLike = Syntax.Predicate.fromPredicate sort predicate'
         sort = termLikeSort pattern'
-
-toMLPattern
-    ::  forall variable.
-        ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , HasCallStack
-        )
-    => Pattern variable -> TermLike variable
-toMLPattern = toStepPattern
 
 {-|'bottom' is an expanded pattern that has a bottom condition and that
 should become Bottom when transformed to a ML pattern.
