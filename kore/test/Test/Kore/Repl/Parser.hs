@@ -37,7 +37,7 @@ test_replParser =
     , saveSessionTests  `tests` "save-session"
     , appendTests       `tests` "append"
     , pipeAppendTests   `tests` "pipe append"
-    , aliasTests        `tests` "alias tests"
+    , noArgsAliasTests  `tests` "no arguments alias tests"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -302,7 +302,17 @@ saveSessionTests =
     , "save-session"       `fails`     "need to supply file name"
     ]
 
-aliasTests :: [ParserTest ReplCommand]
-aliasTests =
-    [ "alias help' = help" `fails` "not implemented"
+noArgsAliasTests :: [ParserTest ReplCommand]
+noArgsAliasTests =
+    [ "alias a = help"                   `parsesTo_` alias Help
+    , "alias a = config 10"              `parsesTo_` alias config10
+    , "alias a = config 10 | cmd"        `parsesTo_` alias pipeCmd
+    , "alias a = config 10 > file"       `parsesTo_` alias redirectFile
+    , "alias a = config 10 | cmd > file" `parsesTo_` alias pipeRedirect
     ]
+  where
+    alias = Alias . ReplAlias "a"
+    config10 = ShowConfig . Just . ReplNode $ 10
+    pipeCmd      = Pipe config10 "cmd" []
+    redirectFile = Redirect config10 "file"
+    pipeRedirect = Redirect pipeCmd "file"

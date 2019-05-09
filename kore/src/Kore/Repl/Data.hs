@@ -16,6 +16,7 @@ module Kore.Repl.Data
     , ReplNode (..)
     , ReplState (..)
     , NodeState (..)
+    , ReplAlias (..)
     , getNodeState
     , InnerGraph
     , lensAxioms, lensClaims, lensClaim
@@ -104,6 +105,11 @@ newtype ReplNode = ReplNode
     { unReplNode :: Graph.Node
     } deriving (Eq, Show)
 
+data ReplAlias = ReplAlias
+    { name    :: String
+    , command :: ReplCommand
+    } deriving (Eq, Show)
+
 -- | List of available commands for the Repl. Note that we are always in a proof
 -- state. We pick the first available Claim when we initialize the state.
 data ReplCommand
@@ -155,6 +161,8 @@ data ReplCommand
     -- ^ Writes all commands executed in this session to a file on disk.
     | AppendTo ReplCommand FilePath
     -- ^ Appends the output of a command to a file.
+    | Alias ReplAlias
+    -- ^ Alias a command.
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
