@@ -5,10 +5,10 @@ module Test.Kore.Repl.Interpreter
 import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
-       ( testCase, (@?=) )
+       ( Assertion, testCase, (@?=) )
 
 import           Control.Monad.Trans.State.Strict
-                 ( runStateT )
+                 ( evalStateT, runStateT )
 import           Data.Coerce
                  ( coerce )
 import           Data.IORef
@@ -53,8 +53,8 @@ showUsage =
         command = ShowUsage
     in do
         Result { output, continue } <- run command axioms claim
-        output   @?= showUsageMessage <> "\n"
-        continue @?= True
+        output   `equalsOutput` showUsageMessage
+        continue `equals`       True
 
 help :: IO ()
 help =
@@ -64,8 +64,8 @@ help =
         command = Help
     in do
         Result { output, continue } <- run command axioms claim
-        output   @?= helpText <> "\n"
-        continue @?= True
+        output   `equalsOutput` helpText
+        continue `equals`       True
 
 step5 :: IO ()
 step5 =
@@ -75,9 +75,9 @@ step5 =
         command = ProveSteps 5
     in do
         Result { output, continue, state } <- run command axioms claim
-        output     @?= ""
-        continue   @?= True
-        node state @?= ReplNode 5
+        output     `equalsOutput`   ""
+        continue   `equals`         True
+        state      `hasCurrentNode` ReplNode 5
 
 step100 :: IO ()
 step100 =
@@ -87,9 +87,9 @@ step100 =
         command = ProveSteps 100
     in do
         Result { output, continue, state } <- run command axioms claim
-        output     @?= showStepStoppedMessage 10 NoResult <> "\n"
-        continue   @?= True
-        node state @?= ReplNode 10
+        output     `equalsOutput`   showStepStoppedMessage 10 NoResult
+        continue   `equals`         True
+        state      `hasCurrentNode` ReplNode 10
 
 add1 :: Axiom
 add1 = coerce $ rulePattern n plusOne
@@ -123,6 +123,28 @@ data Result = Result
     , continue :: Bool
     , state    :: ReplState Claim
     }
+
+equals
+    :: (Eq a, Show a)
+    => a
+    -> a
+    -> Assertion
+equals = (@?=)
+
+equalsOutput
+    :: String
+    -> String
+    -> Assertion
+equalsOutput "" expected     = "" @?= expected
+equalsOutput actual expected = actual @?= expected <> "\n"
+
+hasCurrentNode :: ReplState Claim -> ReplNode -> IO ()
+hasCurrentNode st n = do
+    node st `equals` n
+    graphNode <- evalStateT (getTargetNode justNode) st
+    graphNode `equals` justNode
+  where
+    justNode = Just n
 
 tests :: IO () -> String -> TestTree
 tests = flip testCase
