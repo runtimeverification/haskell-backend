@@ -48,6 +48,8 @@ import           Kore.Step.Rule
                  ( RewriteRule )
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Predicate as Predicate
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
+                 ( create )
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Step.Step as Step
 import           Kore.Syntax.Definition
@@ -180,6 +182,8 @@ testSubstitutionSimplifier = Mock.substitutionSimplifier testMetadataTools
 evaluators :: BuiltinAndAxiomSimplifierMap
 evaluators = Builtin.koreEvaluators verifiedModule
 
+-- | Warning: This simplifier always throws the pattern into a predicate without
+-- using the SMT or the actual simplifier.
 stepSimplifier :: TermLikeSimplifier
 stepSimplifier =
     termLikeSimplifier $ \_ p ->
@@ -189,6 +193,10 @@ stepSimplifier =
                 , predicate = Predicate.wrapPredicate p
                 , substitution = mempty
                 }
+
+-- | This simplifier is not a mock: it will use the actual simplifier/SMT.
+smtSimplifier :: TermLikeSimplifier
+smtSimplifier = Simplifier.create testMetadataTools evaluators
 
 evaluate
     :: MonadSMT m

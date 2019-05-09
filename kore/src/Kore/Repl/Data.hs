@@ -74,9 +74,7 @@ import           Kore.Internal.Pattern
                  ( Conditional (..) )
 import           Kore.Internal.TermLike
                  ( TermLike )
-import           Kore.OnePath.Step
-                 ( CommonStrategyPattern, StrategyPattern (..),
-                 StrategyPatternTransformer (..), strategyPattern )
+import           Kore.OnePath.StrategyPattern
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
@@ -296,7 +294,6 @@ data ReplState claim = ReplState
     , aliases :: Map String ReplAlias
     -- ^ Map of command aliases
     }
-
 
 -- | Unifier that stores the first 'explainBottom'.
 -- See 'runUnifierWithExplanation'.

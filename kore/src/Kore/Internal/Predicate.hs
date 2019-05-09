@@ -12,6 +12,7 @@ module Kore.Internal.Predicate
     , bottomPredicate
     , fromPattern
     , Conditional.fromPredicate
+    , Conditional.fromSingleSubstitution
     , Conditional.fromSubstitution
     , toPredicate
     , freeVariables
@@ -100,7 +101,7 @@ toPredicate
 toPredicate = Conditional.toPredicate
 
 mapVariables
-    :: Ord variable2
+    :: (Ord variable1, Ord variable2)
     => (variable1 -> variable2)
     -> Predicate variable1
     -> Predicate variable2

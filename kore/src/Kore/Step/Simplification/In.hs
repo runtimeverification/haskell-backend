@@ -170,7 +170,7 @@ makeEvaluateNonBoolIn patt1 patt2 =
         , predicate =
             makeInPredicate
                 -- TODO: Wrap in 'contained' and 'container'.
-                (Pattern.toMLPattern patt1)
-                (Pattern.toMLPattern patt2)
+                (Pattern.toTermLike patt1)
+                (Pattern.toTermLike patt2)
         , substitution = mempty
         }

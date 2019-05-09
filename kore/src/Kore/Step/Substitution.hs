@@ -61,7 +61,7 @@ newtype PredicateMerger variable m =
     PredicateMerger
     (  [Syntax.Predicate variable]
     -> [Substitution variable]
-    -> m (Predicate variable)
+    -> BranchT m (Predicate variable)
     )
 
 -- | Normalize the substitution and predicate of 'expanded'.
@@ -190,6 +190,7 @@ mergePredicatesAndSubstitutions
        , SortedVariable variable
        , Ord variable
        , FreshVariable variable
+       , HasCallStack
        )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -235,6 +236,7 @@ mergePredicatesAndSubstitutionsExcept
         , Ord variable
         , Unparse variable
         , FreshVariable variable
+        , HasCallStack
         , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
@@ -291,15 +293,17 @@ createPredicatesAndSubstitutionsMergerExcept
     worker
         :: [Syntax.Predicate variable]
         -> [Substitution variable]
-        -> unifier (Predicate variable)
-    worker predicates substitutions =
-        mergePredicatesAndSubstitutionsExcept
+        -> BranchT unifier (Predicate variable)
+    worker predicates substitutions = do
+        let merged =
+                (Predicate.fromPredicate <$> predicates)
+                <> (Predicate.fromSubstitution <$> substitutions)
+        normalizeExcept
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
-            predicates
-            substitutions
+            (Foldable.fold merged)
 
 {-| Creates a 'PredicateMerger' that creates predicates for
 unifications it can't handle.
@@ -325,15 +329,17 @@ createPredicatesAndSubstitutionsMerger
     worker
         :: [Syntax.Predicate variable]
         -> [Substitution variable]
-        -> Simplifier (Predicate variable)
-    worker predicates substitutions =
-        mergePredicatesAndSubstitutions
+        -> BranchT Simplifier (Predicate variable)
+    worker predicates substitutions = do
+        let merged =
+                (Predicate.fromPredicate <$> predicates)
+                <> (Predicate.fromSubstitution <$> substitutions)
+        normalize
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
-            predicates
-            substitutions
+            (Foldable.fold merged)
 
 {-| Creates a 'PredicateMerger' that creates predicates for
 unifications it can't handle and whose result is in any monad transformer
@@ -361,16 +367,17 @@ createLiftedPredicatesAndSubstitutionsMerger
     worker
         :: [Syntax.Predicate variable]
         -> [Substitution variable]
-        -> unifier (Predicate variable)
-    worker predicates substitutions =
-        Monad.Unify.liftSimplifier
-        $ mergePredicatesAndSubstitutions
+        -> BranchT unifier (Predicate variable)
+    worker predicates substitutions = do
+        let merged =
+                (Predicate.fromPredicate <$> predicates)
+                <> (Predicate.fromSubstitution <$> substitutions)
+        normalizeExcept
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
-            predicates
-            substitutions
+            (Foldable.fold merged)
 
 normalizeSubstitutionAfterMerge
     ::  ( Ord variable

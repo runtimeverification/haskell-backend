@@ -8,6 +8,8 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 
 module Kore.Repl.Interpreter
     ( replInterpreter
+    , showUsageMessage
+    , showStepStoppedMessage
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -68,11 +70,11 @@ import           Kore.Internal.Pattern
                  ( Conditional (..) )
 import           Kore.Internal.TermLike
                  ( TermLike )
-import           Kore.OnePath.Step
+import           Kore.OnePath.StrategyPattern
                  ( CommonStrategyPattern, StrategyPattern (..),
                  StrategyPatternTransformer (StrategyPatternTransformer),
                  strategyPattern )
-import qualified Kore.OnePath.Step as StrategyPatternTransformer
+import qualified Kore.OnePath.StrategyPattern as StrategyPatternTransformer
                  ( StrategyPatternTransformer (..) )
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
@@ -155,8 +157,24 @@ replInterpreter printFn replCmd = do
         put st'
         pure (w, exit)
 
+showUsageMessage :: String
+showUsageMessage = "Could not parse command, try using 'help'."
+
+showStepStoppedMessage :: Natural -> StepResult -> String
+showStepStoppedMessage n sr =
+    "Stopped after "
+    <> show n
+    <> " step(s) due to "
+    <> case sr of
+        NoResult ->
+            "reaching end of proof on current branch."
+        SingleResult _ -> ""
+        BranchResult xs ->
+            "branching on "
+            <> show (fmap unReplNode xs)
+
 showUsage :: MonadWriter String m => m ()
-showUsage = putStrLn' "Could not parse command, try using 'help'."
+showUsage = putStrLn' showUsageMessage
 
 help :: MonadWriter String m => m ()
 help = putStrLn' helpText
@@ -230,21 +248,7 @@ proveSteps n = do
     case result of
         (0, SingleResult _) -> pure ()
         (done, res) ->
-            putStrLn'
-                $ "Stopped after "
-                <> show (n - done - 1)
-                <> " step(s) due to "
-                <> showResult res
-  where
-    showResult :: StepResult -> String
-    showResult =
-        \case
-            NoResult ->
-                "reaching end of proof on current branch."
-            SingleResult _ -> ""
-            BranchResult xs ->
-                "branching on "
-                <> show (fmap unReplNode xs)
+            putStrLn' $ showStepStoppedMessage (n - done - 1) res
 
 -- | Executes 'n' prove steps, distributing over branches. It will perform less
 -- than 'n' steps if the proof is stuck or completed in less than 'n' steps.

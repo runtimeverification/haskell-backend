@@ -284,7 +284,7 @@ test_equalsSimplification_Or_Pattern =
         let message1 =
                 unlines
                     [ "Expected"
-                    , unparseToString (OrPattern.toExpandedPattern <$> test1)
+                    , unparseToString (OrPattern.toPattern <$> test1)
                     , "would simplify to:"
                     , unlines (unparseToString <$> Foldable.toList expect)
                     , "but instead found:"
