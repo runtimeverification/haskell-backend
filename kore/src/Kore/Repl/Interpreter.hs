@@ -9,6 +9,7 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 module Kore.Repl.Interpreter
     ( replInterpreter
     , showUsageMessage
+    , showStepStoppedMessage
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -157,6 +158,19 @@ replInterpreter printFn replCmd = do
 showUsageMessage :: String
 showUsageMessage = "Could not parse command, try using 'help'."
 
+showStepStoppedMessage :: Natural -> StepResult -> String
+showStepStoppedMessage n sr =
+    "Stopped after "
+    <> show n
+    <> " step(s) due to "
+    <> case sr of
+        NoResult ->
+            "reaching end of proof on current branch."
+        SingleResult _ -> ""
+        BranchResult xs ->
+            "branching on "
+            <> show (fmap unReplNode xs)
+
 showUsage :: MonadWriter String m => m ()
 showUsage = putStrLn' showUsageMessage
 
@@ -228,21 +242,7 @@ proveSteps n = do
     case result of
         (0, SingleResult _) -> pure ()
         (done, res) ->
-            putStrLn'
-                $ "Stopped after "
-                <> show (n - done - 1)
-                <> " step(s) due to "
-                <> showResult res
-  where
-    showResult :: StepResult -> String
-    showResult =
-        \case
-            NoResult ->
-                "reaching end of proof on current branch."
-            SingleResult _ -> ""
-            BranchResult xs ->
-                "branching on "
-                <> show (fmap unReplNode xs)
+            putStrLn' $ showStepStoppedMessage (n - done - 1) res
 
 -- | Executes 'n' prove steps, distributing over branches. It will perform less
 -- than 'n' steps if the proof is stuck or completed in less than 'n' steps.
