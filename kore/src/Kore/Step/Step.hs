@@ -35,7 +35,6 @@ module Kore.Step.Step
     ) where
 
 import qualified Control.Monad as Monad
-import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
@@ -79,6 +78,8 @@ import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
                  ( MonadUnify )
+import qualified Kore.Unification.Unify as Monad.Unify
+                 ( gather, scatter )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 import           Kore.Variables.Target
@@ -104,7 +105,7 @@ newtype UnificationProcedure =
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
         -> TermLike variable
-        -> unifier (OrPredicate variable)
+        -> unifier (Predicate variable)
         )
 
 {- | A @UnifiedRule@ has been renamed and unified with a configuration.
@@ -180,7 +181,7 @@ unifyRule
     -- ^ Initial configuration
     -> RulePattern variable
     -- ^ Rule
-    -> BranchT unifier (UnifiedRule variable)
+    -> unifier (UnifiedRule variable)
 unifyRule
     metadataTools
     (UnificationProcedure unificationProcedure)
@@ -211,24 +212,19 @@ unifyRule
     unifyPatterns
         :: TermLike variable
         -> TermLike variable
-        -> BranchT unifier (Conditional variable ())
-    unifyPatterns pat1 pat2 = do
-        unifiers <-
-            unificationProcedure
-                metadataTools
-                predicateSimplifier
-                patternSimplifier
-                axiomSimplifiers
-                pat1
-                pat2
-        scatter unifiers
-    normalize condition =
+        -> unifier (Conditional variable ())
+    unifyPatterns =
+        unificationProcedure
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+    normalize =
         Substitution.normalizeExcept
             metadataTools
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
-            condition
 
 {- | Apply the initial conditions to the results of rule unification.
 
@@ -253,7 +249,9 @@ applyInitialConditions
     -- ^ Initial conditions
     -> Predicate variable
     -- ^ Unification conditions
-    -> BranchT unifier (OrPredicate variable)
+    -> unifier (OrPredicate variable)
+    -- TODO(virgil): This should take advantage of the unifier's branching and
+    -- not return an Or.
 applyInitialConditions
     metadataTools
     predicateSimplifier
@@ -266,9 +264,8 @@ applyInitialConditions
     -- Combine the initial conditions and the unification conditions.
     -- The axiom requires clause is included in the unification conditions.
     applied <-
-        Monad.Trans.lift
-        $ Monad.liftM MultiOr.make
-        $ gather
+        Monad.liftM MultiOr.make
+        $ Monad.Unify.gather
         $ normalize (initial <> unification)
     -- If 'applied' is \bottom, the rule is considered to not apply and
     -- no result is returned. If the result is \bottom after this check,
@@ -314,7 +311,7 @@ finalizeAppliedRule
     -- ^ Applied rule
     -> OrPredicate variable
     -- ^ Conditions of applied rule
-    -> BranchT unifier (OrPattern variable)
+    -> unifier (OrPattern variable)
 finalizeAppliedRule
     metadataTools
     predicateSimplifier
@@ -324,8 +321,8 @@ finalizeAppliedRule
     renamedRule
     appliedConditions
   =
-    Monad.Trans.lift . Monad.liftM OrPattern.fromPatterns . gather
-    $ finalizeAppliedRuleWorker =<< scatter appliedConditions
+    Monad.liftM OrPattern.fromPatterns . Monad.Unify.gather
+    $ finalizeAppliedRuleWorker =<< Monad.Unify.scatter appliedConditions
   where
     finalizeAppliedRuleWorker appliedCondition = do
         -- Combine the initial conditions, the unification conditions, and the
@@ -373,7 +370,7 @@ applyRemainder
     -- ^ Initial configuration
     -> Syntax.Predicate variable
     -- ^ Remainder
-    -> BranchT unifier (Pattern variable)
+    -> unifier (Pattern variable)
 applyRemainder
     metadataTools
     predicateSimplifier
@@ -438,6 +435,8 @@ applyRule
     -> RulePattern variable
     -- ^ Rewriting axiom
     -> unifier [Result variable]
+    -- TODO (virgil): This is broken, it should take advantage of the unifier's
+    -- branching and not return a list.
 applyRule
     metadataTools
     predicateSimplifier
@@ -448,7 +447,7 @@ applyRule
     initial
     rule
   = Log.withLogScope "applyRule"
-    $ gather $ do
+    $ Monad.Unify.gather $ do
         let
             -- Wrap the rule and configuration so that unification prefers to
             -- substitute axiom variables.
@@ -565,7 +564,7 @@ checkSubstitutionCoverage
     -- ^ Unified rule
     -> Pattern (Target variable)
     -- ^ Configuration after applying rule
-    -> BranchT unifier (Pattern variable)
+    -> unifier (Pattern variable)
 checkSubstitutionCoverage initial unified final
   | isCoveringSubstitution || isSymbolic = return (unwrapConfiguration final)
   | otherwise =
@@ -581,7 +580,8 @@ checkSubstitutionCoverage initial unified final
         , "to the final configuration:"
         , Pretty.indent 4 (unparse final)
         , "Failed substitution coverage check!"
-        , "Expected substitution (above) to cover all variables:"
+        , "Expected substitution (above, in the final configuration)"
+        , "to cover all variables:"
         , (Pretty.indent 4 . Pretty.sep)
             (unparse <$> Set.toAscList leftAxiomVariables)
         , "in the left-hand side of the axiom."
@@ -642,7 +642,7 @@ applyRulesInParallel
             MultiOr.make
                 (Conditional.withoutTerm . Step.appliedRule <$> results)
         remainder = Remainder.remainder unifications
-    remainders' <- gather $ applyRemainder' initial remainder
+    remainders' <- Monad.Unify.gather $ applyRemainder' initial remainder
     return Step.Results
         { results = Seq.fromList results
         , remainders = OrPattern.fromPatterns remainders'
@@ -754,13 +754,16 @@ sequenceRules
         -> [Result variable]
         -- ^ results
         -> unifier (MultiOr (Pattern variable))
+        -- TODO(virgil): This should take advantage of the unifier's branching
+        -- and should not return an Or.
     remainingAfter config results = do
         let remainder =
                 Remainder.remainder
                 $ MultiOr.make
                 $ Conditional.withoutTerm . Step.appliedRule <$> results
-        Monad.liftM OrPattern.fromPatterns
-            $ gather $ applyRemainder' config remainder
+        appliedRemainders <-
+            Monad.Unify.gather $ applyRemainder' config remainder
+        return (OrPattern.fromPatterns appliedRemainders)
 
     applyRemainder' =
         applyRemainder

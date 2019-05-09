@@ -9,8 +9,6 @@ module Test.Kore.Step.Axiom.Matcher
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Control.Monad.Except
-                 ( ExceptT, runExceptT )
 import qualified Data.Map as Map
 
 import           Kore.Attribute.Symbol
@@ -892,7 +890,7 @@ unificationWithMatch tools first second = do
             Map.empty
             first
             second
-    return $ either (const Nothing) Just result
+    return $ either (const Nothing) Just (MultiOr.make <$> result)
 
 match
     :: SmtMetadataTools StepperAttributes
@@ -907,16 +905,17 @@ match tools first second = do
         :: IO (Either UnificationOrSubstitutionError (OrPredicate Variable))
     matchAsEither =
         SMT.runSMT SMT.defaultConfig
-            $ evalSimplifier emptyLogger
-            $ runExceptT matchResult
+            $ evalSimplifier emptyLogger matchResult
     matchResult
-        :: ExceptT UnificationOrSubstitutionError Simplifier
-            (OrPredicate Variable)
+        :: Simplifier
+            (Either UnificationOrSubstitutionError (OrPredicate Variable))
     matchResult =
-        Monad.Unify.getUnifier $ matchAsUnification
-            tools
-            (Mock.substitutionSimplifier tools)
-            (Simplifier.create tools Map.empty)
-            Map.empty
-            first
-            second
+        fmap MultiOr.make <$> Monad.Unify.runUnifier
+            (matchAsUnification
+                tools
+                (Mock.substitutionSimplifier tools)
+                (Simplifier.create tools Map.empty)
+                Map.empty
+                first
+                second
+            )

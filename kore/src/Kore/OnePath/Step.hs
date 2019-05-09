@@ -205,7 +205,7 @@ transitionRule
     transitionMultiApplyWithRemainders rules destination config
       | Pattern.isBottom config = empty
       | otherwise = do
-        result <-
+        eitherResults <-
             Monad.Trans.lift
             $ Monad.Unify.runUnifier
             $ Step.sequenceRewriteRules
@@ -216,7 +216,7 @@ transitionRule
                 (Step.UnificationProcedure Unification.unificationProcedure)
                 config
                 rules
-        case result of
+        case eitherResults of
             Left err ->
                 (error . show . Pretty.vsep)
                 [ "Not implemented error:"
@@ -244,7 +244,7 @@ transitionRule
                         Result.traverseConfigs
                             (pure . RewritePattern)
                             checkRemainder
-                results' <- traverseConfigs (mapRules results)
+                results' <- traverseConfigs (mapRules (Foldable.fold results))
                 Result.transitionResults results'
 
     transitionRemoveDestination

@@ -65,10 +65,12 @@ import           Kore.Step.PatternAttributes
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationType, Simplifier,
-                 TermLikeSimplifier )
+                 ( BranchT, PredicateSimplifier, SimplificationType,
+                 Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
+import qualified Kore.Step.Simplification.Data as BranchT
+                 ( gather, scatter )
 import           Kore.Step.Substitution
                  ( PredicateMerger,
                  createLiftedPredicatesAndSubstitutionsMerger,
@@ -123,16 +125,19 @@ termEquals
     axiomIdToSimplifier
     first
     second
-  = do
-    result <-
-        termEqualsAnd
+  = MaybeT $ do
+    maybeResults <-
+        BranchT.gather $ runMaybeT $ termEqualsAnd
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
             first
             second
-    return $ OrPredicate.fromPredicate $ Predicate.eraseConditionalTerm result
+    case sequence maybeResults of
+        Nothing -> return Nothing
+        Just results -> return $ Just $
+            MultiOr.make (map Predicate.eraseConditionalTerm results)
 
 termEqualsAnd
     :: forall variable .
@@ -148,7 +153,7 @@ termEqualsAnd
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> TermLike variable
-    -> MaybeT Simplifier (Pattern variable)
+    -> MaybeT (BranchT Simplifier) (Pattern variable)
 termEqualsAnd
     tools
     substitutionSimplifier
@@ -159,7 +164,7 @@ termEqualsAnd
   =
     MaybeT $ do
         eitherMaybeResult <-
-            Monad.Unify.runUnifier
+            Monad.Trans.lift . Monad.Unify.runUnifier
             . runMaybeT
             $ maybeTermEquals
                 tools
@@ -175,19 +180,19 @@ termEqualsAnd
                 termEqualsAndWorker
                 p1
                 p2
-        return $
-            case eitherMaybeResult of
-                Left _ -> Nothing
-                Right result -> result
+        case eitherMaybeResult of
+            Left _ -> return Nothing
+            Right results -> BranchT.scatter results
   where
     termEqualsAndWorker
         :: MonadUnify unifier
         => TermLike variable
         -> TermLike variable
         -> unifier (Pattern variable)
-    termEqualsAndWorker first second = Monad.Unify.liftSimplifier $ do
-        eitherMaybeTermEqualsAndChild <- Monad.Unify.runUnifier $ runMaybeT $
-            maybeTermEquals
+    termEqualsAndWorker first second = Monad.Unify.liftBranchedSimplifier $ do
+        eitherMaybeTermEqualsAndChild <-
+            Monad.Trans.lift $ Monad.Unify.runUnifier $ runMaybeT
+            $ maybeTermEquals
                 tools
                 substitutionSimplifier
                 simplifier
@@ -201,12 +206,12 @@ termEqualsAnd
                 termEqualsAndWorker
                 first
                 second
-        return $
-            (case eitherMaybeTermEqualsAndChild of
-                Left _ -> equalsPredicate
-                Right maybeResult ->
-                    fromMaybe equalsPredicate maybeResult
-            )
+        case eitherMaybeTermEqualsAndChild of
+            Left _ -> return equalsPredicate
+            Right maybeResults ->
+                case sequence maybeResults of
+                    Nothing -> return equalsPredicate
+                    Just results -> BranchT.scatter results
       where
         equalsPredicate =
             Conditional
@@ -318,13 +323,13 @@ termAnd
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> TermLike variable
-    -> Simplifier (Pattern variable)
+    -> BranchT Simplifier (Pattern variable)
 termAnd tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2 = do
-    eitherResult <- Error.runExceptT $ Monad.Unify.getUnifier $
+    eitherResult <- Monad.Trans.lift $ Monad.Unify.runUnifier $
         termAndWorker p1 p2
     case eitherResult of
-        Left _       -> return $ Pattern.fromTermLike (mkAnd p1 p2)
-        Right result -> return result
+        Left _        -> return $ Pattern.fromTermLike (mkAnd p1 p2)
+        Right results -> BranchT.scatter results
   where
     termAndWorker
         :: TermLike variable

@@ -5,6 +5,10 @@ License     : NCSA
 
 module Kore.Unification.Unify where
 
+import           Control.Applicative
+                 ( Alternative )
+import           Control.Monad
+                 ( MonadPlus )
 import qualified Control.Monad.Except as Error
 import           Control.Monad.Reader.Class
                  ( MonadReader (..) )
@@ -18,6 +22,8 @@ import           Kore.Internal.TermLike
 import qualified Kore.Logger as Log
 import           Kore.Step.Simplification.Data
                  ( BranchT, Environment (..), Simplifier )
+import qualified Kore.Step.Simplification.Data as BranchT
+                 ( gather, scatter )
 import           Kore.Unification.Error
 import           Kore.Unparser
                  ( Unparse )
@@ -32,7 +38,7 @@ import           Kore.Unparser
 -- 'MonadUnify' chooses its error/left type to 'UnificationOrSubstitutionError'
 -- and provides functions to throw these errors. The point of this is to be able
 -- to display information about unification failures through 'explainFailure'.
-class Monad unifier => MonadUnify unifier where
+class (Alternative unifier, Monad unifier) => MonadUnify unifier where
     throwSubstitutionError
         :: SubstitutionError
         -> unifier a
@@ -43,6 +49,11 @@ class Monad unifier => MonadUnify unifier where
 
     -- TODO: Abstract this through implementing 'MonadSimplify'.
     liftSimplifier :: Simplifier a -> unifier a
+    liftBranchedSimplifier :: BranchT Simplifier a -> unifier a
+
+    -- TODO: This is ugly and not type-safe
+    gather :: unifier a -> unifier [a]
+    scatter :: Traversable t => t a -> unifier a
 
     explainBottom
         :: (SortedVariable variable, Unparse variable)
@@ -52,36 +63,35 @@ class Monad unifier => MonadUnify unifier where
         -> unifier ()
     explainBottom _ _ _ = pure ()
 
-instance MonadUnify unifier => MonadUnify (BranchT unifier) where
-    throwSubstitutionError = Monad.Trans.lift . throwSubstitutionError
-    {-# INLINE throwSubstitutionError #-}
-
-    throwUnificationError = Monad.Trans.lift . throwUnificationError
-    {-# INLINE throwUnificationError #-}
-
-    liftSimplifier = Monad.Trans.lift . liftSimplifier
-    {-# INLINE liftSimplifier #-}
-
-    explainBottom why term1 term2 =
-        Monad.Trans.lift (explainBottom why term1 term2)
-    {-# INLINE explainBottom #-}
-
 -- | 'Unifier' is the default concrete implementation of a 'MonadUnify'.
 -- See also: 'fromExceptT' and 'runUnifier' for common usages.
 newtype Unifier a = Unifier
-    { getUnifier :: ExceptT UnificationOrSubstitutionError Simplifier a
-    } deriving (Applicative, Functor, Monad)
+    { getUnifier
+        :: BranchT (ExceptT UnificationOrSubstitutionError Simplifier) a
+    } deriving (Alternative, Applicative, Functor, Monad)
 
 instance MonadUnify Unifier where
-    throwSubstitutionError = Unifier . Error.throwError . SubstitutionError
+    throwSubstitutionError =
+        Unifier . Monad.Trans.lift . Error.throwError . SubstitutionError
 
-    throwUnificationError = Unifier . Error.throwError . UnificationError
+    throwUnificationError =
+        Unifier . Monad.Trans.lift . Error.throwError . UnificationError
 
-    liftSimplifier = Unifier . Monad.Trans.lift
+    liftSimplifier = Unifier . Monad.Trans.lift . Monad.Trans.lift
+
+    liftBranchedSimplifier simplifier = Unifier $ do
+        branches <- Monad.Trans.lift $ Monad.Trans.lift $
+            BranchT.gather simplifier
+        BranchT.scatter branches
+
+    gather = Unifier . Monad.Trans.lift . BranchT.gather . getUnifier
+    scatter = Unifier . BranchT.scatter
 
 instance MonadReader Environment Unifier where
     ask = liftSimplifier ask
     local f (Unifier ma) = Unifier $ local f ma
+
+instance MonadPlus Unifier where
 
 instance Log.WithLog Log.LogMessage Unifier where
     askLogAction = do
@@ -104,5 +114,5 @@ fromExceptT e = do
 
 runUnifier
     :: Unifier a
-    -> Simplifier (Either UnificationOrSubstitutionError a)
-runUnifier = runExceptT . getUnifier
+    -> Simplifier (Either UnificationOrSubstitutionError [a])
+runUnifier = runExceptT . BranchT.gather . getUnifier

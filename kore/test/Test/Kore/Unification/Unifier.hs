@@ -266,7 +266,7 @@ andSimplifySuccess term1 term2 resultTerm subst predicate = do
             (Simplifier.create tools Map.empty)
             Map.empty
             (unificationProblem term1 term2 :| [])
-    assertEqualWithExplanation "" expect subst'
+    assertEqualWithExplanation "" [expect] subst'
 
 andSimplifyFailure
     :: HasCallStack
@@ -275,7 +275,7 @@ andSimplifyFailure
     -> UnificationError
     -> Assertion
 andSimplifyFailure term1 term2 err = do
-    let expect :: Either (UnificationOrSubstitutionError) (Pattern Variable)
+    let expect :: Either UnificationOrSubstitutionError (Pattern Variable)
         expect = Left (UnificationError err)
     actual <-
         runSMT
@@ -352,7 +352,7 @@ unificationProcedureSuccess
                 (Substitution.unwrap substitution, predicate)
         assertEqualWithExplanation ""
             expect
-            (map normalize (MultiOr.extractPatterns results))
+            (map normalize results)
   where
     expect =
         map (Bifunctor.first unificationSubstitution) substPredicate
@@ -685,7 +685,7 @@ injUnificationTests =
             Syntax.Predicate.makeFalsePredicate
     ]
 
-simplifyPattern :: UnificationTerm -> IO (UnificationTerm)
+simplifyPattern :: UnificationTerm -> IO UnificationTerm
 simplifyPattern (UnificationTerm term) = do
     Conditional { term = term' } <- runSMT $ evalSimplifier emptyLogger simplifier
     return $ UnificationTerm term'

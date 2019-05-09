@@ -118,7 +118,7 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
             Foldable.asum (pure <$> nonEmptyConfigs)
     transitionRewrite rule config = do
         Transition.addRule rule
-        result <-
+        eitherResults <-
             Monad.Trans.lift
             $ Monad.Unify.runUnifier
             $ Step.applyRewriteRules
@@ -129,7 +129,7 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                 (Step.UnificationProcedure Unification.unificationProcedure)
                 [rule]
                 config
-        case result of
+        case eitherResults of
             Left _ ->
                 (error . show . Pretty.vsep)
                     [ "Could not apply the axiom:"
@@ -139,7 +139,8 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                     , "Un-implemented unification case; aborting execution."
                     ]
             Right results ->
-                Foldable.asum (pure <$> Step.gatherResults results)
+                Foldable.asum
+                    (pure <$> Step.gatherResults (Foldable.fold results))
 
 
 {- | A strategy that applies all the rewrites in parallel.

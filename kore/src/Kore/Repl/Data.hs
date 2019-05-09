@@ -34,6 +34,8 @@ module Kore.Repl.Data
     , addOrUpdateAlias, findAlias, substituteAlias
     ) where
 
+import           Control.Applicative
+                 ( Alternative )
 import           Control.Error
                  ( hush )
 import qualified Control.Lens as Lens hiding
@@ -47,13 +49,14 @@ import qualified Control.Monad.Error.Class as Monad.Error
 import           Control.Monad.State.Strict
                  ( MonadState, get, modify )
 import           Control.Monad.Trans.Accum
-                 ( AccumT )
+                 ( AccumT (AccumT), runAccumT )
 import qualified Control.Monad.Trans.Accum as Monad.Accum
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import           Data.Bitraversable
                  ( bisequence, bitraverse )
 import           Data.Coerce
                  ( coerce )
+import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Graph.Inductive.PatriciaTree
                  ( Gr )
@@ -345,7 +348,7 @@ data ReplState claim = ReplState
 -- See 'runUnifierWithExplanation'.
 newtype UnifierWithExplanation a = UnifierWithExplanation
     { getUnifier :: AccumT (First (Doc ())) Unifier a
-    } deriving (Applicative, Functor, Monad)
+    } deriving (Alternative, Applicative, Functor, Monad)
 
 instance MonadUnify UnifierWithExplanation where
     throwSubstitutionError =
@@ -363,6 +366,29 @@ instance MonadUnify UnifierWithExplanation where
             . Monad.Trans.lift
             . Monad.Unify.liftSimplifier
 
+    liftBranchedSimplifier =
+        UnifierWithExplanation
+            . Monad.Trans.lift
+            . Monad.Unify.liftBranchedSimplifier
+
+    gather :: forall a . UnifierWithExplanation a -> UnifierWithExplanation [a]
+    gather unifierWithExplanation =
+        UnifierWithExplanation $ AccumT unifierActions
+      where
+        unifierAction :: First (Doc ()) -> Unifier (a, First (Doc ()))
+        unifierAction w =
+            runAccumT (getUnifier unifierWithExplanation) w
+
+        unifierActions :: First (Doc ()) -> Unifier ([a], First (Doc ()))
+        unifierActions w = do
+            unifiersWithExplanations <- Monad.Unify.gather (unifierAction w)
+            let
+                (unifiers, explanations) = unzip unifiersWithExplanations
+            return (unifiers, Foldable.fold explanations)
+
+    scatter =
+        UnifierWithExplanation . Monad.Trans.lift . Monad.Unify.scatter
+
     explainBottom info first second =
         UnifierWithExplanation . Monad.Accum.add . First . Just $ Pretty.vsep
             [ info
@@ -373,15 +399,20 @@ instance MonadUnify UnifierWithExplanation where
             ]
 
 runUnifierWithExplanation
-    :: UnifierWithExplanation a
-    -> Simplifier (Maybe (Doc ()))
+    :: forall a
+    .  UnifierWithExplanation a
+    -> Simplifier (Maybe [Maybe (Doc ())])
 runUnifierWithExplanation (UnifierWithExplanation accum)
-    = fmap join
-        . (fmap . fmap) getFirst
-        . (fmap . fmap) snd
-        . fmap hush
-        . Monad.Unify.runUnifier
+  = fmap (fmap (map getFirst)) unificationExplanations
+  where
+    unificationResults :: Simplifier (Maybe [(a, First (Doc ()))])
+    unificationResults =
+        fmap hush
+        $ Monad.Unify.runUnifier
         $ Monad.Accum.runAccumT accum mempty
+    unificationExplanations :: Simplifier (Maybe [First (Doc ())])
+    unificationExplanations =
+        fmap (fmap (map snd)) unificationResults
 
 Lens.makeLenses ''ReplState
 

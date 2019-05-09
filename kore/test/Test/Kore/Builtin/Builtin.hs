@@ -24,6 +24,7 @@ import           Control.Concurrent.MVar
 import qualified Control.Lens as Lens
 import           Control.Monad.Reader
                  ( runReaderT )
+import qualified Data.Foldable as Foldable
 import           Data.Function
                  ( (&) )
 import           Data.Map
@@ -240,7 +241,7 @@ runStepResultWith solver configuration axiom =
                 (Step.UnificationProcedure Unification.unificationProcedure)
                 [axiom]
                 configuration
-    in runReaderT (SMT.getSMT smt) solver
+    in runReaderT (SMT.getSMT (fmap Foldable.fold <$> smt)) solver
 
 
 -- | Test unparsing internalized patterns.

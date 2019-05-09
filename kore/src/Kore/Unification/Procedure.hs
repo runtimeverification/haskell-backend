@@ -11,16 +11,21 @@ module Kore.Unification.Procedure
     ( unificationProcedure
     ) where
 
+import           Control.Applicative
+                 ( empty )
+import qualified Control.Monad.Trans.Class as Monad.Trans
+
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
-import qualified Kore.Internal.OrPredicate as OrPredicate
+import qualified Kore.Internal.MultiOr as MultiOr
+                 ( extractPatterns )
 import           Kore.Internal.Pattern
                  ( Conditional (..) )
 import qualified Kore.Internal.Pattern as Conditional
+import           Kore.Internal.Predicate
+                 ( Predicate )
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
@@ -31,6 +36,8 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as BranchT
+                 ( scatter )
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMerger )
 import           Kore.Syntax.Variable
@@ -41,7 +48,6 @@ import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
-
 
 -- |'unificationProcedure' atempts to simplify @t1 = t2@, assuming @t1@ and @t2@
 -- are terms (functional patterns) to a substitution.
@@ -65,10 +71,10 @@ unificationProcedure
     -> TermLike variable
     -- ^left-hand-side of unification
     -> TermLike variable
-    -> unifier (OrPredicate variable)
+    -> unifier (Predicate variable)
 unificationProcedure
     tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2
-  | p1Sort /= p2Sort = return OrPredicate.bottom
+  | p1Sort /= p2Sort = empty
   | otherwise = do
     let
         getUnifiedTerm =
@@ -81,28 +87,30 @@ unificationProcedure
                 p2
     pat@Conditional { term, predicate, substitution } <- getUnifiedTerm
     if Conditional.isBottom pat
-        then return OrPredicate.bottom
-        else Monad.Unify.liftSimplifier $ do
+        then empty
+        else Monad.Unify.liftBranchedSimplifier $ do
             orCeil <-
-                Ceil.makeEvaluateTerm
+                Monad.Trans.lift $ Ceil.makeEvaluateTerm
                     tools
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplifier
                     term
-            OrPattern.mergeWithPredicateAssumesEvaluated
-                (createPredicatesAndSubstitutionsMerger
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-                )
-                Conditional
-                    { term = ()
-                    , predicate
-                    , substitution
-                    }
-                orCeil
+            orResult <-
+                OrPattern.mergeWithPredicateAssumesEvaluated
+                    (createPredicatesAndSubstitutionsMerger
+                        tools
+                        substitutionSimplifier
+                        simplifier
+                        axiomIdToSimplifier
+                    )
+                    Conditional
+                        { term = ()
+                        , predicate
+                        , substitution
+                        }
+                    orCeil
+            BranchT.scatter (MultiOr.extractPatterns orResult)
   where
       p1Sort = termLikeSort p1
       p2Sort = termLikeSort p2

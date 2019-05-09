@@ -17,6 +17,8 @@ module Kore.Step.Axiom.EvaluationStrategy
 
 import           Control.Monad
                  ( when )
+import           Control.Monad.Trans.Except
+                 ( ExceptT (ExceptT) )
 import qualified Data.Foldable as Foldable
 import           Data.Maybe
                  ( isJust )
@@ -340,7 +342,7 @@ evaluateWithDefinitionAxioms
     let unwrapEqualityRule =
             \(EqualityRule rule) ->
                 RulePattern.mapVariables fromVariable rule
-    result <- Monad.Unify.getUnifier
+    results <- ExceptT $ Monad.Unify.runUnifier
         $ Step.sequenceRules
             tools
             substitutionSimplifier
@@ -349,6 +351,9 @@ evaluateWithDefinitionAxioms
             (UnificationProcedure unificationWithAppMatchOnTop)
             expanded
             (map unwrapEqualityRule definitionRules)
+
+    let
+        result = Foldable.fold results
 
     return $ AttemptedAxiom.Applied AttemptedAxiomResults
         { results = Step.gatherResults result

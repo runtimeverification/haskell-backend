@@ -238,7 +238,7 @@ transitionRule
     transitionComputeWeakNextHelper _ config
         | Pattern.isBottom config = return Proven
     transitionComputeWeakNextHelper rules config = do
-        result <-
+        eitherResults <-
             Monad.Trans.lift . Monad.Trans.lift
             $ Monad.Unify.runUnifier
             $ Step.applyRewriteRules
@@ -249,7 +249,7 @@ transitionRule
                 (Step.UnificationProcedure Unification.unificationProcedure)
                 rules
                 config
-        case result of
+        case eitherResults of
             Left _ ->
                 (error . show . Pretty.vsep)
                 [ "Not implemented error:"
@@ -269,7 +269,8 @@ transitionRule
                         StepResult.mapConfigs
                             GoalLHS
                             GoalRemLHS
-                StepResult.transitionResults (mapConfigs $ mapRules results)
+                StepResult.transitionResults
+                    (mapConfigs $ mapRules (Foldable.fold results))
 
 defaultOneStepStrategy
     :: patt
