@@ -14,7 +14,6 @@ module Kore.Attribute.Smthook
 import Data.Text
        ( Text )
 
-import Kore.AST.Common
 import Kore.Attribute.Parser
 import Kore.Attribute.Smtlib.Smthook
 
@@ -29,5 +28,4 @@ smthookSymbol =
 -- | Kore pattern representing the @smthook@ attribute.
 smthookAttribute :: Text -> AttributePattern
 smthookAttribute syntax =
-    attributePattern smthookSymbol
-        [ (asAttributePattern . StringLiteralPattern) (StringLiteral syntax) ]
+    attributePattern smthookSymbol [attributeString syntax]

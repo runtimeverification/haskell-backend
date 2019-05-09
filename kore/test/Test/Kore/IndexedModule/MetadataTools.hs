@@ -11,8 +11,6 @@ import           Data.Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Constructor
@@ -28,8 +26,9 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools, extractMetadataTools )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
-import           Kore.Step.TermLike
+import           Kore.Internal.TermLike
 import           Kore.Syntax.Definition
+import           Kore.Syntax.Top
 import qualified Kore.Verified as Verified
 
 import Test.Kore
@@ -233,7 +232,7 @@ testSubsortModule =
           (SentenceAxiom
               { sentenceAxiomParameters = [sortVariable "R"]
               , sentenceAxiomPattern =
-                  asParsedPattern $ TopPattern (Top sortVarR)
+                  asParsedPattern $ TopF (Top sortVarR)
               , sentenceAxiomAttributes = Attributes
                   [subsortAttribute subSort superSort]
               })

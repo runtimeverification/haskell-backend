@@ -9,6 +9,8 @@ Portability : portable
 -}
 module Kore.Unparser
     ( Unparse (..)
+    , unparseGeneric
+    , unparse2Generic
     , unparseToText
     , unparseToString
     , renderDefault
@@ -47,29 +49,25 @@ import           Data.Text.Prettyprint.Doc.Render.String
 import           Data.Text.Prettyprint.Doc.Render.Text
                  ( renderStrict )
 import           Data.Void
+import           Generics.SOP
 import qualified Numeric
 
 {- | Class of types that can be rendered in concrete Kore syntax.
 
-    @Unparse@ should only be instantiated for types with a corresponding
-    concrete syntax, i.e. each instance of @Unparse@ should correspond to a
-    parser in "Kore.Parser.Parser".
+@Unparse@ should only be instantiated for types with a corresponding
+concrete syntax, i.e. each instance of @Unparse@ should correspond to a
+parser in "Kore.Parser.Parser".
 
-    @Unparse@ assumes that the pattern is fully externalized by
-    'Builtin.externalizePattern'. An error will be thrown if an internal domain
-    value is found.
+@Unparse@ assumes that the pattern is fully externalized by
+'Builtin.externalizePattern'. An error will be thrown if an internal domain
+value is found.
 
  -}
 class Unparse p where
     -- | Render a type from abstract to concrete Kore syntax.
-    -- original/old unparser
     unparse :: p -> Doc ann
-    -- applicative/new unparser
+    -- | Render a type from abstract to concrete Applicative Kore syntax.
     unparse2 :: p -> Doc ann
-    -- special unparser only for binding variables
-    unparse2BindingVariables :: p -> Doc ann
-    -- default implementation of unparse2BindingVariables
-    unparse2BindingVariables = unparse2
 
 instance Unparse a => Unparse (Const a child) where
     unparse (Const a) = unparse a
@@ -80,6 +78,52 @@ instance Unparse Void where
     unparse = \case {}
     unparse2 = \case {}
 
+{- | Unparse a 'Generic' type with 'unparse'.
+
+/All/ arguments of /all/ constructors must be instances of 'Unparse'; this is
+the @'All2' 'Unparse'@ constraint.
+
+Each constructor is unparsed in the following generic way:
+
+- For zero-argument constructors, produce no output ('empty').
+- For one-argument constructors, 'unparse' the argument.
+- For construtors with more arguments, 'unparse' each argument and combine them
+  with 'sep'.
+
+@unparseGeneric@ can be used to quickly implement 'unparse' for types that are
+instances of 'Generic'. @unparseGeneric@ is not the default implementation for
+all types because it is /excessively/ general. Instances that rely on
+@unparseGeneric@ and @unparse2Generic@ should test that these functions
+implement the desired behavior, i.e. that they actually produce output that can
+be parsed.
+
+See also: 'unparse2Generic'
+
+ -}
+unparseGeneric :: (Generic a, All2 Unparse (Code a)) => a -> Doc ann
+unparseGeneric = unparseGenericWith unparse
+{-# INLINE unparseGeneric #-}
+
+{- | Unparse a 'Generic' type with 'unparse2'.
+
+@unparse2Generic@ is exactly the same as @unparseGeneric@, but uses 'unparse2'
+instead of 'unparse'.
+
+ -}
+unparse2Generic :: (Generic a, All2 Unparse (Code a)) => a -> Doc ann
+unparse2Generic = unparseGenericWith unparse2
+{-# INLINE unparse2Generic #-}
+
+unparseGenericWith
+    :: (Generic a, All2 Unparse (Code a))
+    => (forall x. Unparse x => x -> Doc ann)  -- ^ function to unparse anything
+    -> a
+    -> Doc ann
+unparseGenericWith helper =
+    sep . hcollapse . hcmap constraint (mapIK helper) . from
+  where
+    constraint = Proxy :: Proxy Unparse
+{-# INLINE unparseGenericWith #-}
 
 -- | Serialize an object to 'Text'.
 unparseToText :: Unparse p => p -> Text
@@ -150,7 +194,9 @@ list
 list left right =
     \case
         [] -> left <> right
-        xs -> (group . (<> close) . nest 4 . (open <>) . vsep . punctuate between) xs
+        xs ->
+            (group . (<> close) . nest 4 . (open <>) . vsep . punctuate between)
+                xs
   where
     open = left <> line'
     close = line' <> right
@@ -165,7 +211,9 @@ list2
 list2 left right =
     \case
         [] -> left <> right
-        xs -> (group . (<> close) . nest 4 . (open <>) . vsep . punctuate between) xs
+        xs ->
+            (group . (<> close) . nest 4 . (open <>) . vsep . punctuate between)
+                xs
   where
     open = left <> line'
     close = line' <> right
@@ -174,7 +222,8 @@ list2 left right =
 
 -- | Render a 'Doc ann' with indentation and without extra line breaks.
 layoutPrettyUnbounded :: Doc ann -> SimpleDocStream ann
-layoutPrettyUnbounded = layoutPretty LayoutOptions { layoutPageWidth = Unbounded }
+layoutPrettyUnbounded =
+    layoutPretty LayoutOptions { layoutPageWidth = Unbounded }
 
 {- | Escape a 'String' for a Kore string literal.
 

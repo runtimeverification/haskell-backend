@@ -11,12 +11,12 @@ module Kore.Step.Simplification.Next
     ( simplify
     ) where
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
-import           Kore.Step.OrPattern
+import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import qualified Kore.Step.Pattern as Pattern
+import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
+import           Kore.Syntax.Next
 import           Kore.Unparser
 
 -- TODO: Move Next up in the other simplifiers or something similar. Note
@@ -48,5 +48,5 @@ simplifyEvaluated
 simplifyEvaluated simplified =
     OrPattern.fromTermLike
     $ mkNext
-    $ Pattern.toMLPattern
-    $ OrPattern.toExpandedPattern simplified
+    $ Pattern.toTermLike
+    $ OrPattern.toPattern simplified

@@ -10,38 +10,35 @@ import Test.Tasty.HUnit
 import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 
-import qualified Kore.AST.Pure as AST
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
+import           Kore.Internal.Pattern
+                 ( Pattern )
+import qualified Kore.Internal.Pattern as Conditional
+import           Kore.Internal.Predicate
+                 ( Conditional (..), Predicate )
+import qualified Kore.Internal.Predicate as Predicate
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( pattern PredicateFalse, makeAndPredicate, makeCeilPredicate,
                  makeEqualsPredicate, makeIffPredicate, makeImpliesPredicate,
                  makeMultipleAndPredicate, makeNotPredicate, makeOrPredicate,
                  makeTruePredicate )
-import           Kore.Sort
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
-import           Kore.Step.Pattern
-                 ( Pattern )
-import qualified Kore.Step.Pattern as Conditional
-import           Kore.Step.Predicate
-                 ( Conditional (..), Predicate )
-import qualified Kore.Step.Predicate as Predicate
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.Simplification.Equals
                  ( makeEvaluate, makeEvaluateTermsToPredicate, simplify )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Step.TermLike
 import           Kore.Syntax.Equals
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
@@ -287,7 +284,7 @@ test_equalsSimplification_Or_Pattern =
         let message1 =
                 unlines
                     [ "Expected"
-                    , unparseToString (OrPattern.toExpandedPattern <$> test1)
+                    , unparseToString (OrPattern.toPattern <$> test1)
                     , "would simplify to:"
                     , unlines (unparseToString <$> Foldable.toList expect)
                     , "but instead found:"
@@ -404,14 +401,14 @@ test_equalsSimplification_TermLike =
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
                     }
                 )
             )
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
                     }
                 )
             )
@@ -423,14 +420,14 @@ test_equalsSimplification_TermLike =
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
                     }
                 )
             )
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "b"
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "b"
                     }
                 )
             )
@@ -442,14 +439,14 @@ test_equalsSimplification_TermLike =
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
                     }
                 )
             )
             (mkDomainValue
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort2
-                    , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
                     }
                 )
             )

@@ -24,14 +24,14 @@ module Kore.Step.Axiom.Identifier
     , extract
     ) where
 
-import Kore.AST.Pure
-       ( PurePattern )
-import Kore.AST.Valid
+import Kore.Internal.TermLike
        ( pattern App_, pattern Ceil_ )
 import Kore.Syntax.Application
        ( SymbolOrAlias (..) )
 import Kore.Syntax.Id
        ( Id (..) )
+import Kore.Syntax.Pattern
+       ( Pattern )
 
 {-| Identifer for the left-hand-side of axioms and for the terms with which
 these can be identified.
@@ -54,7 +54,7 @@ Currently parameters of parameterized symbols are ignored.
 -}
 extract
     :: (Functor domain)
-    => PurePattern domain variable annotation
+    => Pattern domain variable annotation
     -> Maybe (AxiomIdentifier)
 extract (App_ symbolOrAlias _children) =
     Just (Application (symbolOrAliasConstructor symbolOrAlias))

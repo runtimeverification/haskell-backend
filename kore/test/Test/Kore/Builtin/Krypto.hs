@@ -7,10 +7,10 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.String as String
 import           Kore.IndexedModule.MetadataTools
+import           Kore.Internal.TermLike
 
 import           Test.Kore.Builtin.Builtin
 import           Test.Kore.Builtin.Definition

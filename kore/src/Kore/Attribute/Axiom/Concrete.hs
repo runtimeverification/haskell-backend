@@ -39,12 +39,7 @@ concreteSymbol =
 
 -- | Kore pattern representing the @concrete@ attribute.
 concreteAttribute :: AttributePattern
-concreteAttribute =
-    (asAttributePattern . ApplicationPattern)
-        Application
-            { applicationSymbolOrAlias = concreteSymbol
-            , applicationChildren = []
-            }
+concreteAttribute = attributePattern_ concreteSymbol
 
 instance ParseAttributes Concrete where
     parseAttribute =

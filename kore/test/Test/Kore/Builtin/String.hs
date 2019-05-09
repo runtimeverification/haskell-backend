@@ -11,10 +11,9 @@ import Data.Text
 import GHC.Stack
        ( HasCallStack )
 
-import           Kore.AST.Valid
 import qualified Kore.Builtin.String as String
-import           Kore.Step.Pattern
-import           Kore.Step.TermLike
+import           Kore.Internal.Pattern
+import           Kore.Internal.TermLike
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin

@@ -326,7 +326,9 @@ instance EqualWithExplanation a => EqualWithExplanation [a]
 
 instance EqualWithExplanation a => EqualWithExplanation (Seq a) where
     compareWithExplanation expected actual =
-        compareWithExplanation (Foldable.toList expected) (Foldable.toList actual)
+        compareWithExplanation
+            (Foldable.toList expected)
+            (Foldable.toList actual)
 
     printWithExplanation = printWithExplanation . Foldable.toList
 
@@ -345,13 +347,21 @@ instance
 
     printWithExplanation = printWithExplanation . Map.toList
 
-instance (Show (thing (Fix thing)), Show1 thing, EqualWithExplanation (thing (Fix thing)))
+instance
+    ( Show (thing (Fix thing))
+    , Show1 thing
+    , EqualWithExplanation (thing (Fix thing))
+    )
     => WrapperEqualWithExplanation (Fix thing)
   where
     wrapperField (Fix a) (Fix b) = EqWrap "" a b
     wrapperConstructorName _ = "Fix"
 
-instance (Show (thing (Fix thing)), Show1 thing, EqualWithExplanation (thing (Fix thing)))
+instance
+    ( Show (thing (Fix thing))
+    , Show1 thing
+    , EqualWithExplanation (thing (Fix thing))
+    )
     => EqualWithExplanation (Fix thing)
   where
     compareWithExplanation = wrapperCompareWithExplanation

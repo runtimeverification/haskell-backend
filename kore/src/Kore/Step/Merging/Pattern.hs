@@ -14,15 +14,16 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Pattern
+                 ( Conditional (..), Pattern, Predicate )
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
-import           Kore.Step.Pattern
-                 ( Conditional (..), Pattern, Predicate )
-import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+                 ( BranchT, PredicateSimplifier, Simplifier,
+                 TermLikeSimplifier )
 import           Kore.Step.Substitution
                  ( PredicateMerger (PredicateMerger),
                  mergePredicatesAndSubstitutions )
@@ -142,7 +143,7 @@ mergeWithPredicateAssumesEvaluated
     => PredicateMerger variable m
     -> Predicate variable
     -> Conditional variable term
-    -> m (Conditional variable term)
+    -> BranchT m (Conditional variable term)
 mergeWithPredicateAssumesEvaluated
     (PredicateMerger substitutionMerger)
     Conditional
@@ -151,7 +152,7 @@ mergeWithPredicateAssumesEvaluated
         , substitution = predSubstitution
         }
     Conditional
-        { term = pattTerm
+        { term
         , predicate = pattPredicate
         , substitution = pattSubstitution
         }  -- The predicate was already included in the Predicate
@@ -160,4 +161,4 @@ mergeWithPredicateAssumesEvaluated
         substitutionMerger
             [pattPredicate, predPredicate]
             [pattSubstitution, predSubstitution]
-    return $ Pattern.withCondition pattTerm merged
+    return (Pattern.withCondition term merged)

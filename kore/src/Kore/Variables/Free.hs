@@ -24,12 +24,12 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
-import Kore.AST.Pure
+import Kore.Syntax
 
 -- | The free variables of a pure pattern.
 freePureVariables
     :: (Foldable domain, Functor domain, Ord variable)
-    => PurePattern domain variable annotation
+    => Pattern domain variable annotation
     -> Set variable
 freePureVariables root =
     let (free, ()) =
@@ -46,14 +46,14 @@ freePureVariables root =
 
     freePureVariables1 recursive =
         case Cofree.tailF (Recursive.project recursive) of
-            VariablePattern v -> unlessM (isBound v) (recordFree v)
-            ExistsPattern Exists { existsVariable, existsChild } ->
+            VariableF v -> unlessM (isBound v) (recordFree v)
+            ExistsF Exists { existsVariable, existsChild } ->
                 Monad.RWS.local
                     -- record the bound variable
                     (Set.insert existsVariable)
                     -- descend into the bound pattern
                     (freePureVariables1 existsChild)
-            ForallPattern Forall { forallVariable, forallChild } ->
+            ForallF Forall { forallVariable, forallChild } ->
                 Monad.RWS.local
                     -- record the bound variable
                     (Set.insert forallVariable)
@@ -64,15 +64,15 @@ freePureVariables root =
 pureMergeVariables
     :: (Foldable domain, Ord variable)
     => Base
-        (PurePattern domain variable annotation)
+        (Pattern domain variable annotation)
         (Set.Set variable)
     -> Set.Set variable
 pureMergeVariables base =
     case Cofree.tailF base of
-        VariablePattern v -> Set.singleton v
-        ExistsPattern Exists { existsVariable, existsChild } ->
+        VariableF v -> Set.singleton v
+        ExistsF Exists { existsVariable, existsChild } ->
             Set.insert existsVariable existsChild
-        ForallPattern Forall { forallVariable, forallChild } ->
+        ForallF Forall { forallVariable, forallChild } ->
             Set.insert forallVariable forallChild
         p -> Foldable.foldl' Set.union Set.empty p
 
@@ -81,7 +81,7 @@ set, regardless of whether they are quantified or not.
 -}
 pureAllVariables
     :: (Foldable domain, Functor domain, Ord variable)
-    => PurePattern domain variable annotation
+    => Pattern domain variable annotation
     -> Set.Set variable
 pureAllVariables = Recursive.fold pureMergeVariables
 
@@ -92,18 +92,16 @@ free variables as a synthetic attribute.
 
  -}
 synthetic
-    ::  ( Foldable domain
-        , Ord variable
-        )
-    => CofreeF (Pattern domain variable) a (Set.Set variable)
+    :: (Foldable domain, Ord variable)
+    => CofreeF (PatternF domain variable) a (Set.Set variable)
     -> Set.Set variable
 synthetic (_ :< patternHead) =
     case patternHead of
-        ExistsPattern Exists { existsVariable, existsChild } ->
+        ExistsF Exists { existsVariable, existsChild } ->
             Set.delete existsVariable existsChild
-        ForallPattern Forall { forallVariable, forallChild } ->
+        ForallF Forall { forallVariable, forallChild } ->
             Set.delete forallVariable forallChild
-        VariablePattern variable ->
+        VariableF variable ->
             Set.singleton variable
         _ -> Foldable.foldl' Set.union Set.empty patternHead
 

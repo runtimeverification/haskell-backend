@@ -12,15 +12,15 @@ module Kore.Step.Simplification.Floor
     , makeEvaluateFloor
     ) where
 
-import           Kore.AST.Valid
+import qualified Kore.Internal.MultiOr as MultiOr
+                 ( extractPatterns )
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeFloorPredicate )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( extractPatterns )
 import           Kore.Syntax.Floor
 import           Kore.Unparser
 
@@ -51,12 +51,12 @@ simplify Floor { floorChild = child } =
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Floor Sort) (Valid variable) (OrPattern variable)
+> CofreeF (Floor Sort) (Attribute.Pattern variable) (OrPattern variable)
 
 instead of an 'OrPattern' argument. The type of 'makeEvaluateFloor'
-may be changed analogously. The 'Valid' annotation will eventually cache
-information besides the pattern sort, which will make it even more useful to
-carry around.
+may be changed analogously. The 'Attribute.Pattern' annotation will eventually
+cache information besides the pattern sort, which will make it even more useful
+to carry around.
 
 -}
 simplifyEvaluatedFloor
@@ -72,7 +72,7 @@ simplifyEvaluatedFloor child =
         [childP] -> makeEvaluateFloor childP
         _ ->
             makeEvaluateFloor
-                (OrPattern.toExpandedPattern child)
+                (OrPattern.toPattern child)
 
 {-| 'makeEvaluateFloor' simplifies a 'Floor' of 'Pattern'.
 

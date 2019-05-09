@@ -37,14 +37,16 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.Pattern
+                 ( Pattern )
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
+                 ( TermLike )
 import           Kore.ModelChecker.Simplification
                  ( checkImplicationIsTop )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
-                 ( Pattern )
-import qualified Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Result as StepResult
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule) )
@@ -56,8 +58,6 @@ import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Step.TermLike
-                 ( TermLike )
 import           Kore.Syntax.Variable
                  ( Variable )
 import qualified Kore.Unification.Procedure as Unification
@@ -112,7 +112,8 @@ unroll = Unroll
 computeWeakNext :: [rewrite] -> Prim patt rewrite
 computeWeakNext = ComputeWeakNext
 
-type Transition = TransitionT (RewriteRule Variable) (StateT (Maybe ()) Simplifier)
+type Transition =
+    TransitionT (RewriteRule Variable) (StateT (Maybe ()) Simplifier)
 
 transitionRule
     :: SmtMetadataTools StepperAttributes
@@ -131,21 +132,24 @@ transitionRule
     axiomSimplifiers
     strategyPrim
     proofState
-  = do
-    execState <- Monad.Trans.lift State.get
-    when (isJust execState) empty     -- End early if any unprovable state was reached
-    case strategyPrim of
+  = case strategyPrim of
         CheckProofState -> transitionCheckProofState proofState
         Simplify -> transitionSimplify proofState
         Unroll goalrhs -> transitionUnroll goalrhs proofState
-        ComputeWeakNext rewrites -> transitionComputeWeakNext rewrites proofState
+        ComputeWeakNext rewrites ->
+            transitionComputeWeakNext rewrites proofState
   where
     transitionCheckProofState
         :: CommonProofState
         -> Transition CommonProofState
-    transitionCheckProofState Proven = empty
-    transitionCheckProofState Unprovable = empty
-    transitionCheckProofState ps = return ps
+    transitionCheckProofState proofState0 = do
+        execState <- Monad.Trans.lift State.get
+        -- End early if any unprovable state was reached
+        when (isJust execState) empty
+        case proofState0 of
+            Proven -> empty
+            Unprovable -> empty
+            ps -> return ps
 
     transitionSimplify
         :: CommonProofState

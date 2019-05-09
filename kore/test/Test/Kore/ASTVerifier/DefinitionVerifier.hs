@@ -9,17 +9,17 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
 import           Kore.ASTPrettyPrint
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
-import           Kore.Step.TermLike hiding
+import           Kore.Internal.TermLike hiding
                  ( freeVariables )
+import           Kore.Syntax
 import           Kore.Syntax.Definition
 import           Kore.Unparser
                  ( unparseToString )
@@ -600,10 +600,14 @@ objectAliasSentenceWithArguments a b c =
         a
         b
         c
-        (asPurePattern $ valid :< top')
+        (asPattern $ valid :< top')
   where
-    top' = TopPattern Top { topSort = b }
-    valid = Valid { patternSort = b, freeVariables = Set.empty }
+    top' = TopF Top { topSort = b }
+    valid =
+        Attribute.Pattern
+            { Attribute.patternSort = b
+            , Attribute.freeVariables = Set.empty
+            }
 
 aliasSentenceWithArguments
     :: AliasName
@@ -666,23 +670,18 @@ unifiedVariable :: VariableName -> Sort -> Variable
 unifiedVariable name sort =
     variable name sort
 
-variablePattern :: VariableName -> Sort -> Pattern domain Variable p
-variablePattern name sort =
-    VariablePattern (variable name sort)
+variablePattern :: VariableName -> Sort -> PatternF domain Variable p
+variablePattern name sort = VariableF (variable name sort)
 
-unifiedVariablePattern :: VariableName -> Sort -> TermLike Variable
-unifiedVariablePattern name patternSort =
-    asPurePattern (valid :< variablePattern name patternSort)
-  where
-    freeVariables = Set.singleton (variable name patternSort)
-    valid = Valid { patternSort, freeVariables }
+variableTermLike :: VariableName -> Sort -> TermLike Variable
+variableTermLike name sort = mkVar (variable name sort)
 
 simpleExistsPattern
     :: Variable
     -> Sort
-    -> Pattern domain Variable (TermLike Variable)
+    -> PatternF domain Variable (TermLike Variable)
 simpleExistsPattern quantifiedVariable resultSort =
-    ExistsPattern Exists
+    ExistsF Exists
         { existsSort = resultSort
         , existsVariable = quantifiedVariable
         , existsChild = mkVar quantifiedVariable
@@ -691,9 +690,9 @@ simpleExistsPattern quantifiedVariable resultSort =
 simpleExistsUnifiedPattern
     :: VariableName -> Sort -> TermLike Variable
 simpleExistsUnifiedPattern name sort =
-    asPurePattern $ valid :< simpleExistsPattern (variable name sort) sort
+    asPattern $ valid :< simpleExistsPattern (variable name sort) sort
   where
-    valid = Valid { patternSort = sort, freeVariables = Set.empty }
+    valid = Attribute.Pattern { patternSort = sort, freeVariables = Set.empty }
 
 simpleExistsObjectUnifiedPattern
     :: VariableName -> Sort -> TermLike Variable
@@ -729,14 +728,14 @@ applicationObjectUnifiedPatternWithChildren
 applicationObjectUnifiedPatternWithChildren name unifiedPatterns =
     asParsedPattern
         ( applicationPatternWithChildren name unifiedPatterns
-        :: Pattern Domain.Builtin Variable ParsedPattern)
+        :: PatternF Domain.Builtin Variable ParsedPattern)
 
 applicationPatternWithChildren
     :: SymbolName
     -> [child]
-    -> Pattern dom v child
+    -> PatternF dom v child
 applicationPatternWithChildren (SymbolName name) unifiedPatterns =
-    ApplicationPattern Application
+    ApplicationF Application
         { applicationSymbolOrAlias = SymbolOrAlias
             { symbolOrAliasConstructor = testId name
             , symbolOrAliasParams = []

@@ -31,17 +31,18 @@ import           Data.Reflection
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.Annotation.Valid
-import           Kore.AST.Pure
-                 ( CofreeF (..), Pattern (..) )
-import qualified Kore.AST.Pure as Pattern
+import qualified Kore.Attribute.Pattern as Attribute
+                 ( Pattern (..) )
 import           Kore.Attribute.Symbol
                  ( StepperAttributes, isConstructor_, isSortInjection_ )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-import           Kore.Step.TermLike
+import           Kore.Internal.TermLike
                  ( Concrete, TermLike )
+import qualified Kore.Syntax as Syntax
 import           Kore.Syntax.Application
+import           Kore.Syntax.Pattern
+                 ( CofreeF (..), PatternF (..) )
 
 {- | Proof (by construction) that a pattern is a normalized value.
 
@@ -59,10 +60,10 @@ Deriving.deriveOrd1 ''ValueF
 Deriving.deriveShow1 ''ValueF
 
 newtype Value =
-    Value { getValue :: Cofree ValueF (Valid Concrete) }
+    Value { getValue :: Cofree ValueF (Attribute.Pattern Concrete) }
     deriving (Eq, Generic, Ord, Show)
 
-type instance Base Value = CofreeF ValueF (Valid Concrete)
+type instance Base Value = CofreeF ValueF (Attribute.Pattern Concrete)
 
 instance Recursive Value where
     project (Value embedded) =
@@ -90,7 +91,7 @@ eraseSortInjection (Recursive.project -> ann :< value) =
 
 {- | Embed the normalized pattern head if its children are normal values.
 
-    See also: 'fromConcretePurePattern'.
+    See also: 'fromConcretePattern'.
 
  -}
 fromPattern
@@ -99,8 +100,8 @@ fromPattern
     -> Maybe Value
 fromPattern tools (ann :< pat) =
     case pat of
-        ApplicationPattern
-            appP@Pattern.Application
+        ApplicationF
+            appP@Syntax.Application
                 { applicationSymbolOrAlias = symbolOrAlias }
           | isConstructor symbolOrAlias ->
             -- The constructor application is normal if all its children are
@@ -111,7 +112,7 @@ fromPattern tools (ann :< pat) =
             -- normal and none are sort injections.
             Recursive.embed . (ann :<) . SortInjection
                 <$> traverse (>>= eraseSortInjection) appP
-        DomainValuePattern dvP ->
+        DomainValueF dvP ->
             -- A domain value is not technically a constructor, but it is
             -- constructor-like for builtin domains, at least from the
             -- perspective of normalization.
@@ -145,9 +146,9 @@ fromConcreteStepPattern tools =
 asPattern :: Value -> Base (TermLike Concrete) Value
 asPattern (Recursive.project -> ann :< val) =
     case val of
-        Constructor appP -> ann :< ApplicationPattern appP
-        SortInjection appP -> ann :< ApplicationPattern appP
-        DomainValue dvP -> ann :< DomainValuePattern dvP
+        Constructor appP -> ann :< ApplicationF appP
+        SortInjection appP -> ann :< ApplicationF appP
+        DomainValue dvP -> ann :< DomainValueF dvP
 
 {- | View a normalized value as a 'ConcreteStepPattern'.
  -}

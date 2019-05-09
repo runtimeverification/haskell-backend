@@ -31,14 +31,14 @@ import GHC.Generics
 
 import Control.Lens.TH.Rules
        ( makeLenses )
-import Kore.AST.Pure
 import Kore.Domain.Class
+import Kore.Syntax
 import Kore.Unparser
 
 data External child =
     External
         { domainValueSort :: Sort
-        , domainValueChild :: CommonPurePattern (Const Void)
+        , domainValueChild :: CommonPattern (Const Void)
         }
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
@@ -75,4 +75,4 @@ instance Domain External where
         getExternal DomainValue { domainValueSort, domainValueChild } =
             domainValueChild { domainValueSort } :: External child
 
-type CommonExternalPattern = CommonPurePattern External
+type CommonExternalPattern = CommonPattern External

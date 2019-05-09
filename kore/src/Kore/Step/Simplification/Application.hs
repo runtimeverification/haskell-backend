@@ -12,7 +12,7 @@ module Kore.Step.Simplification.Application
     , Application (..)
     ) where
 
-import           Kore.AST.Valid
+import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -21,23 +21,23 @@ import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
+import qualified Kore.Internal.MultiOr as MultiOr
+                 ( fullCrossProduct )
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern
+                 ( Conditional (..), Pattern )
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Function.Evaluator
                  ( evaluateApplication )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
-                 ( Conditional (..), Pattern )
-import qualified Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( fullCrossProduct )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Step.TermLike
 import           Kore.Syntax.Application
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -47,7 +47,7 @@ type ExpandedApplication variable =
         variable
         (CofreeF
             (Application SymbolOrAlias)
-            (Valid variable)
+            (Attribute.Pattern variable)
             (TermLike variable)
         )
 
@@ -76,7 +76,7 @@ simplify
     -- ^ Map from axiom IDs to axiom evaluators
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid variable)
+        (Attribute.Pattern variable)
         (OrPattern variable)
     -> Simplifier (OrPattern variable)
 simplify
@@ -120,7 +120,7 @@ makeAndEvaluateApplications
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Valid variable
+    -> Attribute.Pattern variable
     -> SymbolOrAlias
     -> [Pattern variable]
     -> Simplifier (OrPattern variable)
@@ -158,7 +158,7 @@ makeAndEvaluateSymbolApplications
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Valid variable
+    -> Attribute.Pattern variable
     -> SymbolOrAlias
     -> [Pattern variable]
     -> Simplifier (OrPattern variable)
@@ -232,7 +232,7 @@ makeExpandedApplication
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Valid variable
+    -> Attribute.Pattern variable
     -> SymbolOrAlias
     -> [Pattern variable]
     -> Simplifier (ExpandedApplication variable)

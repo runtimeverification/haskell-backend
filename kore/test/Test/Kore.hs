@@ -17,7 +17,7 @@ module Test.Kore
     , sortVariable
     , sortVariableSort
     , termLikeGen
-    , expandedPatternGen
+    , internalPatternGen
     , orPatternGen
     , predicateGen
     , predicateChildGen
@@ -41,10 +41,14 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import qualified Kore.AST.Common as Common
-import qualified Kore.AST.Pure
-import           Kore.AST.Valid
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.Pattern as Internal
+                 ( Pattern )
+import qualified Kore.Internal.Pattern as Internal.Pattern
+import           Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger.Output as Logger
                  ( emptyLogger )
 import           Kore.Parser
@@ -53,14 +57,10 @@ import           Kore.Parser.Lexeme
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Sort
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
-import           Kore.Step.TermLike as TermLike
 import           Kore.Syntax
 import           Kore.Syntax.Definition
+import qualified Kore.Syntax.PatternF as Syntax
+                 ( PatternF (..) )
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}
@@ -305,7 +305,7 @@ genExternal :: Sort -> Gen (Domain.External child)
 genExternal domainValueSort =
     Domain.External
         domainValueSort
-        . Kore.AST.Pure.eraseAnnotations
+        . TermLike.eraseAnnotations
         . mkStringLiteral
         . getStringLiteral
         <$> stringLiteralGen
@@ -346,24 +346,24 @@ topGen = topBottomGen Top
 patternGen
     :: (Sort -> Gen child)
     -> Sort
-    -> Gen (Common.Pattern dom Variable child)
+    -> Gen (Syntax.PatternF dom Variable child)
 patternGen childGen patternSort =
     Gen.frequency
-        [ (1, Common.AndPattern <$> andGen childGen patternSort)
-        , (1, Common.ApplicationPattern <$> applicationGen childGen patternSort)
-        , (1, Common.BottomPattern <$> bottomGen patternSort)
-        , (1, Common.CeilPattern <$> ceilGen childGen patternSort)
-        , (1, Common.EqualsPattern <$> equalsGen childGen patternSort)
-        , (1, Common.ExistsPattern <$> existsGen childGen patternSort)
-        , (1, Common.FloorPattern <$> floorGen childGen patternSort)
-        , (1, Common.ForallPattern <$> forallGen childGen patternSort)
-        , (1, Common.IffPattern <$> iffGen childGen patternSort)
-        , (1, Common.ImpliesPattern <$> impliesGen childGen patternSort)
-        , (1, Common.InPattern <$> inGen childGen patternSort)
-        , (1, Common.NotPattern <$> notGen childGen patternSort)
-        , (1, Common.OrPattern <$> orGen childGen patternSort)
-        , (1, Common.TopPattern <$> topGen patternSort)
-        , (5, Common.VariablePattern <$> variableGen patternSort)
+        [ (1, Syntax.AndF <$> andGen childGen patternSort)
+        , (1, Syntax.ApplicationF <$> applicationGen childGen patternSort)
+        , (1, Syntax.BottomF <$> bottomGen patternSort)
+        , (1, Syntax.CeilF <$> ceilGen childGen patternSort)
+        , (1, Syntax.EqualsF <$> equalsGen childGen patternSort)
+        , (1, Syntax.ExistsF <$> existsGen childGen patternSort)
+        , (1, Syntax.FloorF <$> floorGen childGen patternSort)
+        , (1, Syntax.ForallF <$> forallGen childGen patternSort)
+        , (1, Syntax.IffF <$> iffGen childGen patternSort)
+        , (1, Syntax.ImpliesF <$> impliesGen childGen patternSort)
+        , (1, Syntax.InF <$> inGen childGen patternSort)
+        , (1, Syntax.NotF <$> notGen childGen patternSort)
+        , (1, Syntax.OrF <$> orGen childGen patternSort)
+        , (1, Syntax.TopF <$> topGen patternSort)
+        , (5, Syntax.VariableF <$> variableGen patternSort)
         ]
 
 termLikeGen :: Hedgehog.Gen (TermLike Variable)
@@ -494,30 +494,30 @@ korePatternChildGen patternSort' =
 
     korePatternGenStringLiteral :: Gen ParsedPattern
     korePatternGenStringLiteral =
-        asParsedPattern . Common.StringLiteralPattern <$> stringLiteralGen
+        asParsedPattern . Syntax.StringLiteralF <$> stringLiteralGen
 
     korePatternGenCharLiteral :: Gen ParsedPattern
     korePatternGenCharLiteral =
-        asParsedPattern . Common.CharLiteralPattern <$> charLiteralGen
+        asParsedPattern . Syntax.CharLiteralF <$> charLiteralGen
 
     korePatternGenDomainValue :: Gen ParsedPattern
     korePatternGenDomainValue =
-        asParsedPattern . Common.DomainValuePattern
+        asParsedPattern . Syntax.DomainValueF
             <$> genBuiltinExternal patternSort'
 
     korePatternGenNext :: Gen ParsedPattern
     korePatternGenNext =
-        asParsedPattern . Common.NextPattern
+        asParsedPattern . Syntax.NextF
             <$> nextGen korePatternChildGen patternSort'
 
     korePatternGenRewrites :: Gen ParsedPattern
     korePatternGenRewrites =
-        asParsedPattern . Common.RewritesPattern
+        asParsedPattern . Syntax.RewritesF
             <$> rewritesGen korePatternChildGen patternSort'
 
     korePatternGenVariable :: Gen ParsedPattern
     korePatternGenVariable =
-        asParsedPattern . Common.VariablePattern <$> variableGen patternSort'
+        asParsedPattern . Syntax.VariableF <$> variableGen patternSort'
 
 korePatternUnifiedGen :: Gen ParsedPattern
 korePatternUnifiedGen = korePatternChildGen =<< sortGen
@@ -736,10 +736,10 @@ sortActual name sorts =
         , sortActualSorts = sorts
         }
 
-expandedPatternGen :: Gen (Pattern Variable)
-expandedPatternGen =
-    Pattern.fromTermLike <$> (termLikeChildGen =<< sortGen)
+internalPatternGen :: Gen (Internal.Pattern Variable)
+internalPatternGen =
+    Internal.Pattern.fromTermLike <$> (termLikeChildGen =<< sortGen)
 
 orPatternGen :: Gen (OrPattern Variable)
 orPatternGen =
-    OrPattern.fromPatterns <$> Gen.list (Range.linear 0 64) expandedPatternGen
+    OrPattern.fromPatterns <$> Gen.list (Range.linear 0 64) internalPatternGen

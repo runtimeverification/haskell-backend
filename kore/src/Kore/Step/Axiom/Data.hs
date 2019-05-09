@@ -30,28 +30,27 @@ import qualified Data.Map.Strict as Map
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Common
-                 ( Pattern (..) )
-import           Kore.AST.Pure
-                 ( fromPurePattern )
-import           Kore.AST.Valid
-                 ( Valid )
+import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.MultiOr as MultiOr
+                 ( merge )
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.TermLike
+                 ( TermLike )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( merge )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
-import           Kore.Step.TermLike
-                 ( TermLike )
 import           Kore.Syntax.Application
+import           Kore.Syntax.Pattern
+                 ( fromPattern )
+import           Kore.Syntax.PatternF
+                 ( PatternF (..) )
 import           Kore.Syntax.Variable
                  ( SortedVariable, Variable (..) )
 import           Kore.Unparser
@@ -114,7 +113,7 @@ data AttemptedAxiomResults variable =
         }
     deriving Generic
 
-deriving instance Eq variable => Eq (AttemptedAxiomResults variable)
+deriving instance Ord variable => Eq (AttemptedAxiomResults variable)
 deriving instance Show variable => Show (AttemptedAxiomResults variable)
 
 instance (NFData variable) => NFData (AttemptedAxiomResults variable)
@@ -151,7 +150,7 @@ data AttemptedAxiom variable
     | Applied !(AttemptedAxiomResults variable)
     deriving Generic
 
-deriving instance Eq variable => Eq (AttemptedAxiom variable)
+deriving instance Ord variable => Eq (AttemptedAxiom variable)
 deriving instance Show variable => Show (AttemptedAxiom variable)
 
 instance (NFData variable) => NFData (AttemptedAxiom variable)
@@ -217,12 +216,9 @@ applicationAxiomSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> CofreeF
             (Application SymbolOrAlias)
-            (Valid variable)
+            (Attribute.Pattern variable)
             (TermLike variable)
-        -> Simplifier
-            ( AttemptedAxiom variable
-
-            )
+        -> Simplifier (AttemptedAxiom variable)
         )
     -> BuiltinAndAxiomSimplifier
 applicationAxiomSimplifier applicationSimplifier =
@@ -251,8 +247,8 @@ applicationAxiomSimplifier applicationSimplifier =
         axiomIdToSimplifier
         patt
       =
-        case fromPurePattern patt of
-            (valid :< ApplicationPattern p) ->
+        case fromPattern patt of
+            (valid :< ApplicationF p) ->
                 applicationSimplifier
                     tools
                     substitutionSimplifier

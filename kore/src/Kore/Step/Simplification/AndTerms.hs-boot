@@ -4,14 +4,14 @@ import Kore.Attribute.Symbol
        ( StepperAttributes )
 import Kore.IndexedModule.MetadataTools
        ( SmtMetadataTools )
+import Kore.Internal.Pattern
+       ( Pattern )
+import Kore.Internal.TermLike
+       ( TermLike )
 import Kore.Step.Axiom.Data
        ( BuiltinAndAxiomSimplifierMap )
-import Kore.Step.Pattern
-       ( Pattern )
 import Kore.Step.Simplification.Data
        ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
-import Kore.Step.TermLike
-       ( TermLike )
 import Kore.Syntax.Variable
        ( SortedVariable )
 import Kore.Unification.Unify
@@ -36,14 +36,13 @@ termAnd
     -> Simplifier (Pattern variable)
 
 termUnification
-    :: forall variable unifier unifierM .
-        ( FreshVariable variable
+    ::  forall variable unifier
+    .   ( FreshVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
         , SortedVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier

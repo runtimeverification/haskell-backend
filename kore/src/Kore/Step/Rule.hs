@@ -26,11 +26,13 @@ module Kore.Step.Rule
     , extractImplicationClaims
     , mkRewriteAxiom
     , mkEqualityAxiom
+    , mkCeilAxiom
     , refreshRulePattern
-    , freeVariables
+    , Kore.Step.Rule.freeVariables
     , Kore.Step.Rule.mapVariables
-    , substitute
+    , Kore.Step.Rule.substitute
     ) where
+
 import           Control.Comonad
 import qualified Data.Default as Default
 import           Data.Map.Strict
@@ -43,20 +45,15 @@ import           Data.Text.Prettyprint.Doc
                  ( Pretty )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid hiding
-                 ( freeVariables )
-import qualified Kore.AST.Valid as Valid
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
+import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
+import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.TermLike
-                 ( TermLike )
-import qualified Kore.Step.TermLike as TermLike
 import           Kore.Syntax.Definition
 import           Kore.Unparser
                  ( Unparse, unparse, unparse2 )
@@ -80,7 +77,10 @@ deriving instance Eq variable => Eq (RulePattern variable)
 deriving instance Ord variable => Ord (RulePattern variable)
 deriving instance Show variable => Show (RulePattern variable)
 
-instance Unparse variable => Pretty (RulePattern variable) where
+instance
+    (SortedVariable variable, Unparse variable) =>
+    Pretty (RulePattern variable)
+  where
     pretty rulePattern'@(RulePattern _ _ _ _ _) =
         Pretty.vsep
             [ "left:"
@@ -126,17 +126,18 @@ deriving instance Eq variable => Eq (RewriteRule variable)
 deriving instance Ord variable => Ord (RewriteRule variable)
 deriving instance Show variable => Show (RewriteRule variable)
 
-instance (Unparse variable, Ord variable) => Unparse (RewriteRule variable) where
+instance
+    (Ord variable, SortedVariable variable, Unparse variable)
+    => Unparse (RewriteRule variable)
+  where
     unparse (RewriteRule RulePattern { left, right, requires } ) =
-        unparse
-            $ Valid.mkImplies
-                (Valid.mkAnd left (Predicate.unwrapPredicate requires))
-                right
+        unparse $ mkImplies
+            (mkAnd left (Predicate.unwrapPredicate requires))
+            right
     unparse2 (RewriteRule RulePattern { left, right, requires } ) =
-        unparse2
-            $ Valid.mkImplies
-                (Valid.mkAnd left (Predicate.unwrapPredicate requires))
-                right
+        unparse2 $ mkImplies
+            (mkAnd left (Predicate.unwrapPredicate requires))
+            right
 
 {-  | Implication-based pattern.
 -}
@@ -319,7 +320,7 @@ fromSentenceAxiom sentenceAxiom = do
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 
-@patternToAxiomPattern@ returns an error if the given 'CommonPurePattern' does
+@patternToAxiomPattern@ returns an error if the given 'CommonPattern' does
 not encode a normal rewrite or function axiom.
 -}
 patternToAxiomPattern
@@ -368,6 +369,15 @@ patternToAxiomPattern attributes pat =
                 , ensures = Predicate.makeTruePredicate
                 , attributes
                 }
+        -- definedness axioms
+        ceil@(Ceil_ _ resultSort _) ->
+            pure $ FunctionAxiomPattern $ EqualityRule RulePattern
+                { left = ceil
+                , right = mkTop resultSort
+                , requires = Predicate.makeTruePredicate
+                , ensures = Predicate.makeTruePredicate
+                , attributes
+                }
         Forall_ _ _ child -> patternToAxiomPattern attributes child
         -- implication axioms:
         -- init -> modal_op ( prop )
@@ -405,7 +415,7 @@ mkRewriteAxiom lhs rhs requires =
             (mkAnd (mkTop patternSort) rhs)
         )
   where
-    Valid { patternSort } = extract lhs
+    Attribute.Pattern { Attribute.patternSort = patternSort } = extract lhs
 
 {- | Construct a 'VerifiedKoreSentence' corresponding to 'EqualityRule'.
 
@@ -428,6 +438,20 @@ mkEqualityAxiom lhs rhs requires =
     sortVariableR = SortVariable "R"
     sortR = SortVariableSort sortVariableR
     function = mkEquals sortR lhs rhs
+
+{- | Construct a 'VerifiedKoreSentence' corresponding to a 'Ceil' axiom.
+
+ -}
+mkCeilAxiom
+    :: TermLike Variable  -- ^ the child of 'Ceil'
+    -> Verified.Sentence
+mkCeilAxiom child =
+    SentenceAxiomSentence
+    $ mkAxiom [sortVariableR]
+    $ mkCeil sortR child
+  where
+    sortVariableR = SortVariable "R"
+    sortR = SortVariableSort sortVariableR
 
 {- | Refresh the variables of a 'RulePattern'.
 
@@ -458,7 +482,7 @@ refreshRulePattern avoid rule1 =
     in (rename, rule2)
   where
     RulePattern { left, right, requires } = rule1
-    originalFreeVariables = freeVariables rule1
+    originalFreeVariables = Kore.Step.Rule.freeVariables rule1
 
 {- | Extract the free variables of a 'RulePattern'.
  -}
@@ -468,8 +492,8 @@ freeVariables
     -> Set variable
 freeVariables RulePattern { left, right, requires } =
     Set.unions
-        [ (Valid.freeVariables . extract) left
-        , (Valid.freeVariables . extract) right
+        [ (Attribute.freeVariables . extract) left
+        , (Attribute.freeVariables . extract) right
         , Predicate.freeVariables requires
         ]
 

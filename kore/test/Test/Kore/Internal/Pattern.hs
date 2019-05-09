@@ -1,4 +1,4 @@
-module Test.Kore.Step.Pattern
+module Test.Kore.Internal.Pattern
     ( test_expandedPattern
     ) where
 
@@ -11,15 +11,13 @@ import qualified Data.Set as Set
 import           Data.Text.Prettyprint.Doc
                  ( Pretty (..) )
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid hiding
+import           Kore.Internal.Pattern as Pattern
+                 ( Conditional (..), allVariables, mapVariables, toTermLike )
+import           Kore.Internal.TermLike hiding
                  ( V )
 import           Kore.Predicate.Predicate
                  ( Predicate, makeEqualsPredicate, makeFalsePredicate,
                  makeTruePredicate )
-import           Kore.Step.Pattern as Pattern
-                 ( Conditional (..), allVariables, mapVariables, toMLPattern )
-import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 
@@ -65,7 +63,7 @@ test_expandedPattern =
                 )
                 (makeEq (var 4) (var 5))
             )
-            (Pattern.toMLPattern
+            (Pattern.toTermLike
                 Conditional
                     { term = var 1
                     , predicate = makeEquals (var 2) (var 3)
@@ -79,7 +77,7 @@ test_expandedPattern =
                 (makeEq (var 2) (var 3))
                 (makeEq (var 4) (var 5))
             )
-            (Pattern.toMLPattern
+            (Pattern.toTermLike
                 Conditional
                     { term = mkTop sortVariable
                     , predicate = makeEquals (var 2) (var 3)
@@ -90,7 +88,7 @@ test_expandedPattern =
     , testCase "Converting to a ML pattern - top predicate"
         (assertEqualWithExplanation ""
             (var 1)
-            (Pattern.toMLPattern
+            (Pattern.toTermLike
                 Conditional
                     { term = var 1
                     , predicate = makeTruePredicate
@@ -101,7 +99,7 @@ test_expandedPattern =
     , testCase "Converting to a ML pattern - bottom pattern"
         (assertEqualWithExplanation ""
             (mkBottom sortVariable)
-            (Pattern.toMLPattern
+            (Pattern.toTermLike
                 Conditional
                     { term = mkBottom sortVariable
                     , predicate = makeEquals (var 2) (var 3)
@@ -112,7 +110,7 @@ test_expandedPattern =
     , testCase "Converting to a ML pattern - bottom predicate"
         (assertEqualWithExplanation ""
             (mkBottom sortVariable)
-            (Pattern.toMLPattern
+            (Pattern.toTermLike
                 Conditional
                     { term = var 1
                     , predicate = makeFalsePredicate

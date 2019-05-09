@@ -11,20 +11,20 @@ module Kore.Unification.Procedure
     ( unificationProcedure
     ) where
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
+import qualified Kore.Internal.OrPredicate as OrPredicate
+import           Kore.Internal.Pattern
+                 ( Conditional (..) )
+import qualified Kore.Internal.Pattern as Conditional
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.OrPattern as OrPattern
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
-import qualified Kore.Step.OrPredicate as OrPredicate
-import           Kore.Step.Pattern
-                 ( Conditional (..) )
-import qualified Kore.Step.Pattern as Conditional
 import           Kore.Step.Simplification.AndTerms
                  ( termUnification )
 import qualified Kore.Step.Simplification.Ceil as Ceil
@@ -33,7 +33,6 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, TermLikeSimplifier )
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMerger )
-import           Kore.Step.TermLike
 import           Kore.Syntax.Variable
                  ( SortedVariable )
 import           Kore.Unification.Unify
@@ -54,8 +53,7 @@ unificationProcedure
         , Show variable
         , Unparse variable
         , FreshVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -- ^functions yielding metadata for pattern heads
@@ -106,5 +104,5 @@ unificationProcedure
                     }
                 orCeil
   where
-      p1Sort = getSort p1
-      p2Sort = getSort p2
+      p1Sort = termLikeSort p1
+      p2Sort = termLikeSort p2

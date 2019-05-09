@@ -14,6 +14,7 @@ module Kore.Syntax.Variable
     , illegalVariableCounter
     , externalizeFreshVariable
     , SortedVariable (..)
+    , unparse2SortedVariable
     , Concrete
     ) where
 
@@ -52,24 +53,20 @@ data Variable = Variable
     }
     deriving (Show, Eq, Ord, Generic)
 
-instance Hashable (Variable)
+instance Hashable Variable
 
-instance NFData (Variable)
+instance NFData Variable
 
-instance Unparse (Variable) where
+instance Unparse Variable where
     unparse Variable { variableName, variableCounter, variableSort } =
         unparse variableName
         <> Pretty.pretty variableCounter
         <> Pretty.colon
         <> unparse variableSort
+
     unparse2 Variable { variableName, variableCounter } =
         unparse2 variableName
         <> Pretty.pretty variableCounter
-    unparse2BindingVariables Variable { variableName, variableCounter, variableSort } =
-        unparse2 variableName
-        <> Pretty.pretty variableCounter
-        <> Pretty.colon
-        <> unparse2 variableSort
 
 {- | Is the variable original (as opposed to generated)?
  -}
@@ -85,7 +82,7 @@ illegalVariableCounter =
 {- | Reset 'variableCounter' so that a 'Variable' may be unparsed.
 
 @externalizeFreshVariable@ is not injective and is unsafe if used with
-'mapVariables'. See 'Kore.Step.Pattern.externalizeFreshVariables' instead.
+'mapVariables'. See 'Kore.Internal.Pattern.externalizeFreshVariables' instead.
 
  -}
 externalizeFreshVariable :: Variable -> Variable
@@ -136,6 +133,21 @@ instance SortedVariable Variable where
     fromVariable = id
     toVariable = id
 
+{- | Unparse any 'SortedVariable' in an Applicative Kore binder.
+
+Variables occur without their sorts as subterms in Applicative Kore patterns,
+but with their sorts in binders like @\\exists@ and
+@\\forall@. @unparse2SortedVariable@ adds the sort ascription to the unparsed
+variable for the latter case.
+
+ -}
+unparse2SortedVariable
+    :: (SortedVariable variable, Unparse variable)
+    => variable
+    -> Pretty.Doc ann
+unparse2SortedVariable variable =
+    unparse2 variable <> Pretty.colon <> unparse (sortedVariableSort variable)
+
 {- | @Concrete@ is a variable occuring in a concrete pattern.
 
 Concrete patterns do not contain variables, so this is an uninhabited type
@@ -154,3 +166,8 @@ instance NFData Concrete
 instance Unparse Concrete where
     unparse = \case {}
     unparse2 = \case {}
+
+instance SortedVariable Concrete where
+    sortedVariableSort = \case {}
+    toVariable = \case {}
+    fromVariable = error "Cannot construct a variable in a concrete term!"

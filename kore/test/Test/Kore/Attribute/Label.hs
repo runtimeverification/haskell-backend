@@ -3,8 +3,8 @@ module Test.Kore.Attribute.Label where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.AST.Pure
 import Kore.Attribute.Label
+import Kore.Syntax.Pattern
 
 import Test.Kore.Attribute.Parser
 
@@ -40,7 +40,7 @@ test_arguments =
     $ parseLabel $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationF)
             Application
                 { applicationSymbolOrAlias = labelSymbol
                 , applicationChildren = []
@@ -53,7 +53,7 @@ test_parameters =
     $ parseLabel $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationPattern)
+        (asAttributePattern . ApplicationF)
             Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias
@@ -62,7 +62,7 @@ test_parameters =
                             [ SortVariableSort (SortVariable "illegal") ]
                         }
                 , applicationChildren =
-                    [ (asAttributePattern . StringLiteralPattern)
+                    [ (asAttributePattern . StringLiteralF)
                         (StringLiteral "text")
                     ]
                 }

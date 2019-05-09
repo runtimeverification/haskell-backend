@@ -20,17 +20,20 @@ import           Numeric.Natural
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
+import           Kore.Internal.TermLike
+                 ( TermLike )
 import           Kore.OnePath.Step
+import           Kore.OnePath.StrategyPattern
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeNotPredicate,
                  makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
-import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
@@ -41,8 +44,6 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.Strategy
                  ( Strategy, pickFinal, runStrategy )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Step.TermLike
-                 ( TermLike )
 import           Kore.Syntax.Variable
                  ( Variable (..) )
 import qualified Kore.Unification.Substitution as Substitution

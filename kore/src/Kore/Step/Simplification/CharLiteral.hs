@@ -11,12 +11,12 @@ module Kore.Step.Simplification.CharLiteral
     ( simplify
     ) where
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
-import           Kore.Step.OrPattern
+import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import qualified Kore.Step.Pattern as Pattern
+import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
+import           Kore.Syntax.CharLiteral
 
 {-| 'simplify' simplifies a 'CharLiteral' pattern, which means returning
 an or containing a term made of that literal.

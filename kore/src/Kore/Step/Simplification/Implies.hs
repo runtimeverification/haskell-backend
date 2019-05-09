@@ -12,18 +12,18 @@ module Kore.Step.Simplification.Implies
     , simplifyEvaluated
     ) where
 
-import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
@@ -86,11 +86,12 @@ See 'simplify' for details.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Implies Sort) (Valid variable) (OrPattern variable)
+> CofreeF (Implies Sort) (Attribute.Pattern variable) (OrPattern variable)
 
 instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
-be changed analogously. The 'Valid' annotation will eventually cache information
-besides the pattern sort, which will make it even more useful to carry around.
+be changed analogously. The 'Attribute.Pattern' annotation will eventually cache
+information besides the pattern sort, which will make it even more useful to
+carry around.
 
 -}
 simplifyEvaluated
@@ -171,7 +172,7 @@ simplifyEvaluateHalfImplies
     -- TODO: Also merge predicate-only patterns for 'Or'
     return $ case MultiOr.extractPatterns first of
         [firstP] -> makeEvaluateImplies firstP second
-        _ -> makeEvaluateImplies (OrPattern.toExpandedPattern first) second
+        _ -> makeEvaluateImplies (OrPattern.toPattern first) second
 
 makeEvaluateImplies
     ::  ( SortedVariable variable
@@ -237,8 +238,8 @@ makeEvaluateImpliesNonBool
         [ Conditional
             { term =
                 mkImplies
-                    (Pattern.toMLPattern pattern1)
-                    (Pattern.toMLPattern pattern2)
+                    (Pattern.toTermLike pattern1)
+                    (Pattern.toTermLike pattern2)
             , predicate = Syntax.Predicate.makeTruePredicate
             , substitution = mempty
             }

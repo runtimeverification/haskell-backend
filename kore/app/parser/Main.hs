@@ -47,11 +47,16 @@ data KoreParserOptions = KoreParserOptions
     -- ^ Name for file containing a pattern to parse and verify
     , mainModuleName      :: !Text
     -- ^ the name of the main module in the definition
-    , willPrintDefinition :: !Bool   -- ^ Option to print definition
-    , willPrintPattern    :: !Bool   -- ^ Option to print pattern
-    , willVerify          :: !Bool   -- ^ Option to verify definition
-    , willChkAttr         :: !Bool   -- ^ Option to check attributes during verification
-    , appKore             :: !Bool   -- ^ Option to print in applicative Kore syntax
+    , willPrintDefinition :: !Bool
+    -- ^ Option to print definition
+    , willPrintPattern    :: !Bool
+    -- ^ Option to print pattern
+    , willVerify          :: !Bool
+    -- ^ Option to verify definition
+    , willChkAttr         :: !Bool
+    -- ^ Option to check attributes during verification
+    , appKore             :: !Bool
+    -- ^ Option to print in applicative Kore syntax
     }
 
 -- | Command Line Argument Parser
@@ -64,7 +69,8 @@ commandLineParser =
     <*> strOption
         (  metavar "PATTERN_FILE"
         <> long "pattern"
-        <> help "Kore pattern source file to parse [and verify]. Needs --module."
+        <> help
+            "Kore pattern source file to parse [and verify]. Needs --module."
         <> value "" )
     <*> strOption
         (  metavar "MODULE"
@@ -82,10 +88,12 @@ commandLineParser =
         "Verify well-formedness of parsed definition [default enabled]"
     <*> enableDisableFlag "chkattr"
         True False True
-            "attributes checking during verification [default enabled]"
+        "attributes checking during verification [default enabled]"
     <*> enableDisableFlag "appkore"
         True False False
-        "printing parsed definition in applicative Kore syntax [default disabled]"
+        (  "printing parsed definition in applicative Kore syntax "
+        ++ "[default disabled]"
+        )
 
 -- | modifiers for the Command line parser description
 parserInfoModifiers :: InfoMod options
@@ -102,7 +110,8 @@ main :: IO ()
 main = do
   options <- mainGlobal commandLineParser parserInfoModifiers
   case localOptions options of
-    Nothing -> return () -- global options parsed, but local failed; exit gracefully
+    Nothing ->  -- global options parsed, but local failed; exit gracefully
+        return ()
     Just KoreParserOptions
         { fileName
         , patternFileName
@@ -149,8 +158,10 @@ mainPatternParse = mainParse parseKorePattern
 -- | IO action verifies well-formedness of Kore definition and prints
 -- timing information.
 mainVerify
-    :: Bool -- ^ whether to check (True) or ignore attributes during verification
-    -> ParsedDefinition -- ^ Parsed definition to check well-formedness
+    :: Bool
+    -- ^ whether to check (True) or ignore attributes during verification
+    -> ParsedDefinition
+    -- ^ Parsed definition to check well-formedness
     -> IO
         (Map.Map
             ModuleName

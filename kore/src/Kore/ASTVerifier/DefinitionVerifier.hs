@@ -26,7 +26,6 @@ import           Data.Proxy
 import           Data.Text
                  ( Text )
 
-import           Kore.AST.Pure as AST.Pure
 import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.ModuleVerifier
@@ -36,6 +35,7 @@ import           Kore.Attribute.Parser
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
+import           Kore.Syntax as Syntax
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
@@ -65,7 +65,9 @@ verifyDefinition
     -> ParsedDefinition
     -> Either (Error VerifyError) VerifySuccess
 verifyDefinition attributesVerification builtinVerifiers definition = do
-    _ <- verifyAndIndexDefinition attributesVerification builtinVerifiers definition
+    _ <-
+        verifyAndIndexDefinition
+            attributesVerification builtinVerifiers definition
     verifySuccess
 
 {-|'verifyAndIndexDefinition' verifies a definition and returns an indexed

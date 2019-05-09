@@ -12,12 +12,16 @@ import           Data.Ord
 import qualified Data.Set as Set
 
 import           Data.Sup
-import qualified Kore.Annotation.Valid as Valid
-import           Kore.AST.Valid
+import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
@@ -27,14 +31,9 @@ import           Kore.Step.Axiom.EvaluationStrategy
                  ( firstFullEvaluation )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Application
 import           Kore.Step.Simplification.Data
                  ( TermLikeSimplifier, evalSimplifier )
-import           Kore.Step.TermLike as TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
                  ( Unparse )
@@ -334,7 +333,7 @@ makeApplication
     -> [[Pattern variable]]
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid variable)
+        (Attribute.Pattern variable)
         (OrPattern variable)
 makeApplication patternSort symbol patterns =
     (:<)
@@ -346,7 +345,7 @@ makeApplication patternSort symbol patterns =
   where
     termFreeVariables = TermLike.freeVariables . Pattern.term
     valid =
-        Valid
+        Attribute.Pattern
             { patternSort
             , freeVariables =
                 Set.unions (Set.unions . map termFreeVariables <$> patterns)
@@ -360,7 +359,7 @@ evaluate
     -- ^ Map from axiom IDs to axiom evaluators
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid Variable)
+        (Attribute.Pattern Variable)
         (OrPattern Variable)
     -> IO (OrPattern Variable)
 evaluate tools simplifier axiomIdToEvaluator application =

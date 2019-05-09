@@ -13,10 +13,10 @@ module Kore.ASTVerifier.SortVerifier (verifySort) where
 import qualified Data.Set as Set
 
 import Kore.AST.Error
-import Kore.AST.Pure
 import Kore.ASTVerifier.Error
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
+import Kore.Syntax
 import Kore.Syntax.Definition
 
 {-|'verifySort' verifies the welformedness of a Kore 'Sort'. -}
@@ -52,7 +52,10 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort)
     koreFailWithLocationsWhen
         (sortIsMeta && sortActualSorts sort /= [])
         [sortName]
-        ("Malformed meta sort '" ++ sortId ++ "' with non-empty Parameter sorts.")
+        (  "Malformed meta sort '"
+        ++ sortId
+        ++ "' with non-empty Parameter sorts."
+        )
     verifySuccess
   where
     sortIsMeta = False

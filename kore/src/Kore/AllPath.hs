@@ -10,7 +10,7 @@ import qualified Data.Foldable as Foldable
 import           Data.Maybe
                  ( mapMaybe )
 
-import qualified Kore.Step.Representation.MultiOr as MultiOr
+import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Step.Strategy
                  ( Strategy )
 import qualified Kore.Step.Strategy as Strategy

@@ -5,8 +5,8 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.UniqueNames
 import Test.Tasty
        ( TestTree )
 
-import Kore.AST.Pure
 import Kore.Error
+import Kore.Syntax
 import Kore.Syntax.Definition
 
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -78,7 +78,7 @@ test_uniqueNames =
     -}
         (simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
-                (unifiedVariablePattern (VariableName "#a") charMetaSort)
+                (variableTermLike (VariableName "#a") charMetaSort)
                 [namedSortVariable (SortVariableName "#a")]
             ]
         )

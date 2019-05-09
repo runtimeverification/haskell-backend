@@ -11,11 +11,11 @@ module Kore.Step.Simplification.Rewrites
     ( simplify
     ) where
 
-import           Kore.AST.Valid
-import           Kore.Step.OrPattern
+import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Syntax.Rewrites
 import           Kore.Unparser
 
@@ -46,12 +46,12 @@ simplify
 One way to preserve the required sort annotations is to make
 'simplifyEvaluatedRewrites' take an argument of type
 
-> CofreeF (Or Sort) (Valid variable) (OrPattern variable)
+> CofreeF (Or Sort) (Attribute.Pattern variable) (OrPattern variable)
 
 instead of two 'OrPattern' arguments. The type of
-'makeEvaluateRewrites' may be changed analogously. The 'Valid' annotation will
-eventually cache information besides the pattern sort, which will make it even
-more useful to carry around.
+'makeEvaluateRewrites' may be changed analogously. The 'Attribute.Pattern'
+annotation will eventually cache information besides the pattern sort, which
+will make it even more useful to carry around.
 
 -}
 simplifyEvaluatedRewrites
@@ -65,8 +65,8 @@ simplifyEvaluatedRewrites
     -> OrPattern variable
 simplifyEvaluatedRewrites first second =
     makeEvaluateRewrites
-        (OrPattern.toExpandedPattern first)
-        (OrPattern.toExpandedPattern second)
+        (OrPattern.toPattern first)
+        (OrPattern.toPattern second)
 
 makeEvaluateRewrites
     ::  ( SortedVariable variable
@@ -80,5 +80,5 @@ makeEvaluateRewrites
 makeEvaluateRewrites first second =
     OrPattern.fromTermLike
     $ mkRewrites
-        (Pattern.toMLPattern first)
-        (Pattern.toMLPattern second)
+        (Pattern.toTermLike first)
+        (Pattern.toTermLike second)

@@ -19,6 +19,7 @@ import           GHC.Generics
                  ( Generic )
 
 import Kore.Sort
+import Kore.Syntax.Variable
 import Kore.Unparser
 
 {-|'Exists' corresponds to the @\exists@ branches of the @object-pattern@ and
@@ -48,9 +49,7 @@ instance
     NFData (Exists sort variable child)
 
 instance
-    ( Unparse child
-    , Unparse variable
-    ) =>
+    (SortedVariable variable, Unparse variable, Unparse child) =>
     Unparse (Exists Sort variable child)
   where
     unparse Exists { existsSort, existsVariable, existsChild } =
@@ -61,6 +60,6 @@ instance
     unparse2 Exists { existsVariable, existsChild } =
         Pretty.parens (Pretty.fillSep
             [ "\\exists"
-            , unparse2BindingVariables existsVariable
+            , unparse2SortedVariable existsVariable
             , unparse2 existsChild
             ])

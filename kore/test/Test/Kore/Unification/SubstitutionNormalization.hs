@@ -2,25 +2,22 @@ module Test.Kore.Unification.SubstitutionNormalization
     (test_substitutionNormalization) where
 
 import Test.Tasty
-       ( TestTree )
 import Test.Tasty.HUnit
-       ( assertEqual, testCase )
 
 import qualified Control.Monad.Except as Except
 import qualified Data.Default as Default
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
-import qualified Kore.Step.Pattern as Conditional
-import           Kore.Step.TermLike
-                 ( TermLike )
+import qualified Kore.Internal.Pattern as Conditional
+import           Kore.Internal.TermLike
+import           Kore.Syntax.PatternF
+                 ( groundHead )
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -35,21 +32,21 @@ import           Test.Tasty.HUnit.Extensions
 test_substitutionNormalization :: [TestTree]
 test_substitutionNormalization =
     [ testCase "Empty substitution"
-        (assertEqual ""
+        (assertEqualWithExplanation ""
             (Right [])
             (runNormalizeSubstitution
                 ([] :: [(Variable, TermLike Variable)])
             )
         )
     , testCase "Simple substitution"
-        (assertEqual ""
+        (assertEqualWithExplanation ""
             (Right [(v1 Mock.testSort, mkTop_)])
             (runNormalizeSubstitution
                 [(v1 Mock.testSort, mkTop_)]
             )
         )
     , testCase "Simple unnormalized substitution"
-        (assertEqual ""
+        (assertEqualWithExplanation ""
             (Right
                 [ (v1 Mock.testSort, mkTop Mock.testSort)
                 , (x1 Mock.testSort, mkTop Mock.testSort)
@@ -62,7 +59,7 @@ test_substitutionNormalization =
             )
         )
     , testCase "Unnormalized substitution with 'and'"
-        (assertEqual ""
+        (assertEqualWithExplanation ""
             (Right
                 [   ( v1 Mock.testSort
                     , mkAnd mkTop_ (mkTop Mock.testSort)
@@ -82,7 +79,7 @@ test_substitutionNormalization =
         var1 =  (v1 Mock.testSort)
       in
         testCase "Simplest cycle"
-            (assertEqual ""
+            (assertEqualWithExplanation ""
                 (Right [])
                 (runNormalizeSubstitution [(var1, mkVar $ v1 Mock.testSort)])
             )
@@ -91,7 +88,7 @@ test_substitutionNormalization =
         varx1 =  (x1 Mock.testSort)
       in
         testCase "Cycle with extra substitution"
-            (assertEqual ""
+            (assertEqualWithExplanation ""
                 (Right [(x1 Mock.testSort, mkVar $ v1 Mock.testSort)])
                 (runNormalizeSubstitution
                     [ (var1, mkVar $ v1 Mock.testSort)
@@ -103,7 +100,7 @@ test_substitutionNormalization =
         var1 =  (v1 Mock.testSort)
       in
         testCase "Function cycle"
-            (assertEqual ""
+            (assertEqualWithExplanation ""
                 (Left (NonCtorCircularVariableDependency [var1]))
                 (runNormalizeSubstitution
                     [   ( var1
@@ -117,7 +114,7 @@ test_substitutionNormalization =
         varx1 =  (x1 Mock.testSort)
       in
         testCase "Length 2 cycle"
-            (assertEqual ""
+            (assertEqualWithExplanation ""
                 (Right [])
                 (runNormalizeSubstitution
                     [ (var1, mkVar $ x1 Mock.testSort)
@@ -130,7 +127,7 @@ test_substitutionNormalization =
         varx1 =  (x1 Mock.testSort)
       in
         testCase "Cycle with 'and'"
-            (assertEqual ""
+            (assertEqualWithExplanation ""
                 (Right [])
                 (runNormalizeSubstitution
                     [ (var1, mkAnd (mkVar $ x1 Mock.testSort) mkTop_)
@@ -143,7 +140,7 @@ test_substitutionNormalization =
         varx1 =  (x1 Mock.testSort)
       in
         testCase "Length 2 non-ctor cycle"
-            (assertEqual ""
+            (assertEqualWithExplanation ""
                 (Left (NonCtorCircularVariableDependency [var1, varx1]))
                 (runNormalizeSubstitution
                     [ (var1, mkApp Mock.testSort f [mkVar varx1])
@@ -185,9 +182,7 @@ test_substitutionNormalization =
 
 runNormalizeSubstitution
     :: [(Variable, TermLike Variable)]
-    -> Either
-        (SubstitutionError Variable)
-        [(Variable, TermLike Variable)]
+    -> Either SubstitutionError [(Variable, TermLike Variable)]
 runNormalizeSubstitution substitution =
     fmap (Substitution.unwrap . Conditional.substitution)
     . Except.runExcept
@@ -195,9 +190,7 @@ runNormalizeSubstitution substitution =
 
 runNormalizeSubstitutionObject
     :: [(Variable, TermLike Variable)]
-    -> Either
-        (SubstitutionError Variable)
-        [(Variable, TermLike Variable)]
+    -> Either SubstitutionError [(Variable, TermLike Variable)]
 runNormalizeSubstitutionObject substitution =
     fmap (Substitution.unwrap . Conditional.substitution)
     . Except.runExcept

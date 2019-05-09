@@ -6,14 +6,14 @@ import Kore.Attribute.Symbol
        ( StepperAttributes )
 import Kore.IndexedModule.MetadataTools
        ( SmtMetadataTools )
+import Kore.Internal.OrPredicate
+       ( OrPredicate )
+import Kore.Internal.TermLike
+       ( TermLike )
 import Kore.Step.Axiom.Data
        ( BuiltinAndAxiomSimplifierMap )
-import Kore.Step.OrPredicate
-       ( OrPredicate )
 import Kore.Step.Simplification.Data
        ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
-import Kore.Step.TermLike
-       ( TermLike )
 import Kore.Syntax.Variable
        ( SortedVariable )
 import Kore.Unparser

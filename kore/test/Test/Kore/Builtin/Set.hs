@@ -18,7 +18,6 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
 import           Kore.Attribute.Symbol
@@ -27,15 +26,15 @@ import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.Set as Set
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
-import           Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Pattern as Pattern
-import           Kore.Step.Representation.MultiOr
+import           Kore.Internal.MultiOr
                  ( MultiOr (..) )
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
+import           Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
-import           Kore.Step.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -147,8 +146,10 @@ test_concatAssociates =
             patSet3 <- forAll genSetPattern
             let patConcat12 = mkApp setSort concatSetSymbol [ patSet1, patSet2 ]
                 patConcat23 = mkApp setSort concatSetSymbol [ patSet2, patSet3 ]
-                patConcat12_3 = mkApp setSort concatSetSymbol [ patConcat12, patSet3 ]
-                patConcat1_23 = mkApp setSort concatSetSymbol [ patSet1, patConcat23 ]
+                patConcat12_3 =
+                    mkApp setSort concatSetSymbol [ patConcat12, patSet3 ]
+                patConcat1_23 =
+                    mkApp setSort concatSetSymbol [ patSet1, patConcat23 ]
                 predicate = mkEquals_ patConcat12_3 patConcat1_23
             concat12_3 <- evaluate patConcat12_3
             concat1_23 <- evaluate patConcat1_23
@@ -591,4 +592,6 @@ asInternal = Set.asInternal testMetadataTools setSort
 
 mkIntVar :: Id -> TermLike Variable
 mkIntVar variableName =
-    mkVar Variable { variableName, variableCounter = mempty, variableSort = intSort }
+    mkVar
+        Variable
+            { variableName, variableCounter = mempty, variableSort = intSort }

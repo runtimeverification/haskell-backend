@@ -13,18 +13,18 @@ module Kore.Step.Simplification.Iff
     , simplifyEvaluated
     ) where
 
-import           Kore.AST.Valid
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
@@ -77,11 +77,12 @@ See 'simplify' for detailed documentation.
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Iff Sort) (Valid variable) (OrPattern variable)
+> CofreeF (Iff Sort) (Attribute.Pattern variable) (OrPattern variable)
 
 instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
-be changed analogously. The 'Valid' annotation will eventually cache information
-besides the pattern sort, which will make it even more useful to carry around.
+be changed analogously. The 'Attribute.Pattern' annotation will eventually cache
+information besides the pattern sort, which will make it even more useful to
+carry around.
 
 -}
 simplifyEvaluated
@@ -126,8 +127,8 @@ simplifyEvaluated
         ([firstP], [secondP]) -> makeEvaluate firstP secondP
         _ ->
             makeEvaluate
-                (OrPattern.toExpandedPattern first)
-                (OrPattern.toExpandedPattern second)
+                (OrPattern.toPattern first)
+                (OrPattern.toPattern second)
   where
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second
@@ -192,5 +193,5 @@ makeEvaluateNonBoolIff
         ]
   | otherwise =
     OrPattern.fromTermLike $ mkIff
-        (Pattern.toMLPattern patt1)
-        (Pattern.toMLPattern patt2)
+        (Pattern.toTermLike patt1)
+        (Pattern.toTermLike patt2)

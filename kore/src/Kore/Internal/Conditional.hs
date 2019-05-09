@@ -4,17 +4,18 @@ License     : NCSA
 
 Representation of conditional terms.
 -}
-module Kore.Step.Conditional
+module Kore.Internal.Conditional
     ( Conditional (..)
     , withoutTerm
     , withCondition
     , andCondition
     , fromPredicate
     , fromSubstitution
+    , fromSingleSubstitution
     , andPredicate
-    , Kore.Step.Conditional.freeVariables
+    , Kore.Internal.Conditional.freeVariables
     , toPredicate
-    , Kore.Step.Conditional.mapVariables
+    , Kore.Internal.Conditional.mapVariables
     ) where
 
 import           Control.DeepSeq
@@ -28,10 +29,12 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Pure
+import           Kore.Internal.TermLike
+                 ( TermLike )
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Syntax
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unification.Substitution
@@ -61,7 +64,7 @@ data Conditional variable child =
     deriving (Foldable, Functor, Generic, Traversable)
 
 deriving instance
-    (Eq child, Eq variable) =>
+    (Eq child, Ord variable) =>
     Eq (Conditional variable child)
 
 deriving instance
@@ -245,6 +248,22 @@ fromSubstitution substitution =
         , substitution
         }
 
+{- | Construct a 'Conditional' holding a single substitution.
+
+The result has a true 'Predicate'.
+
+ -}
+fromSingleSubstitution
+    :: Ord variable
+    => (variable, TermLike variable)
+    -> Conditional variable ()
+fromSingleSubstitution pair =
+    Conditional
+        { term = ()
+        , predicate = Predicate.makeTruePredicate
+        , substitution = Substitution.wrap [pair]
+        }
+
 {- | Combine the predicate with the conditions of the first argument.
  -}
 andPredicate
@@ -303,7 +322,7 @@ toPredicate Conditional { predicate, substitution } =
 
 -}
 mapVariables
-    :: Ord variableTo
+    :: (Ord variableFrom, Ord variableTo)
     => ((variableFrom -> variableTo) -> termFrom -> termTo)
     -> (variableFrom -> variableTo)
     -> Conditional variableFrom termFrom

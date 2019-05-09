@@ -42,7 +42,6 @@ import           GHC.Stack
 
 import           Kore.AST.Error
                  ( koreFailWithLocations )
-import           Kore.AST.Pure
 import           Kore.ASTHelpers as AST
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
@@ -53,6 +52,7 @@ import           Kore.IndexedModule.Error
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), getIndexedSentence,
                  indexedModulesInScope )
+import           Kore.Syntax
 import           Kore.Syntax.Definition hiding
                  ( Alias (..), Symbol (..) )
 

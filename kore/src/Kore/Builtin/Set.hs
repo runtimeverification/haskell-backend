@@ -69,7 +69,6 @@ import qualified Data.Text as Text
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
 import           Kore.Attribute.Symbol
@@ -87,15 +86,15 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools, sortAttributes )
+import           Kore.Internal.Pattern
+                 ( Conditional (..), Pattern )
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
-                 ( Conditional (..), Pattern )
-import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), SimplificationType,
                  TermLikeSimplifier )
-import           Kore.Step.TermLike
 import           Kore.Syntax.Definition
 import           Kore.Unification.Unify
                  ( MonadUnify )
@@ -503,13 +502,12 @@ isSymbolUnit = Builtin.isSymbol "SET.unit"
     reject the definition.
  -}
 unifyEquals
-    ::  forall variable unifier unifierM
+    ::  forall variable unifier
     .   ( SortedVariable variable
         , Unparse variable
         , Show variable
         , FreshVariable variable
-        , unifier ~ unifierM variable
-        , MonadUnify unifierM
+        , MonadUnify unifier
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes

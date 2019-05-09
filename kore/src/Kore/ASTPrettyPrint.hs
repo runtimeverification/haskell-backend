@@ -27,16 +27,16 @@ import           Data.Void
 import           Numeric.Natural
 
 import           Data.Sup
-import           Kore.AST.Pure
-import           Kore.AST.Valid
 import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Builtin.Error as Builtin
 import qualified Kore.Domain.Builtin as Domain
+import           Kore.Internal.Conditional
+import qualified Kore.Internal.Pattern as Step
+                 ( Pattern )
 import           Kore.Predicate.Predicate
 import           Kore.Proof.Functional
-import           Kore.Step.Conditional
-import qualified Kore.Step.Pattern as Step
-                 ( Pattern )
+import           Kore.Syntax
 import           Kore.Syntax.Definition
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -309,15 +309,12 @@ instance PrettyPrint a => PrettyPrint (Const a b) where
 instance PrettyPrint Attribute.Null where
     prettyPrint _ Attribute.Null = "Null"
 
-instance PrettyPrint variable => PrettyPrint (Valid variable) where
-    prettyPrint _ valid@(Valid _ _) =
+instance PrettyPrint variable => PrettyPrint (Attribute.Pattern variable) where
+    prettyPrint _ valid@(Attribute.Pattern _ _) =
         writeStructure
-            "Valid"
-            [ writeFieldOneLine "patternSort" patternSort valid
-            , writeFieldNewLine
-                "freeVariables"
-                Kore.AST.Valid.freeVariables
-                valid
+            "Pattern"
+            [ writeFieldOneLine "patternSort" Attribute.patternSort valid
+            , writeFieldNewLine "freeVariables" Attribute.freeVariables valid
             ]
 
 instance PrettyPrint child => PrettyPrint (Domain.Builtin child) where
@@ -458,52 +455,52 @@ instance
     ( PrettyPrint child
     , PrettyPrint (domain child)
     , PrettyPrint variable
-    ) => PrettyPrint (Pattern domain variable child)
+    ) => PrettyPrint (PatternF domain variable child)
   where
-    prettyPrint flags (AndPattern p) =
-        writeOneFieldStruct flags "AndPattern" p
-    prettyPrint flags (ApplicationPattern p)   =
-        writeOneFieldStruct flags "ApplicationPattern" p
-    prettyPrint flags (BottomPattern p)        =
-        writeOneFieldStruct flags "BottomPattern" p
-    prettyPrint flags (CeilPattern p)          =
-        writeOneFieldStruct flags "CeilPattern" p
-    prettyPrint flags (DomainValuePattern p)          =
-        writeOneFieldStruct flags "DomainValuePattern" p
-    prettyPrint flags (EqualsPattern p)        =
-        writeOneFieldStruct flags "EqualsPattern" p
-    prettyPrint flags (ExistsPattern p)        =
-        writeOneFieldStruct flags "ExistsPattern" p
-    prettyPrint flags (FloorPattern p)         =
-        writeOneFieldStruct flags "FloorPattern" p
-    prettyPrint flags (ForallPattern p)        =
-        writeOneFieldStruct flags "ForallPattern" p
-    prettyPrint flags (IffPattern p)           =
-        writeOneFieldStruct flags "IffPattern" p
-    prettyPrint flags (ImpliesPattern p)       =
-        writeOneFieldStruct flags "ImpliesPattern" p
-    prettyPrint flags (InPattern p)            =
-        writeOneFieldStruct flags "InPattern" p
-    prettyPrint flags (NextPattern p)          =
-        writeOneFieldStruct flags "NextPattern" p
-    prettyPrint flags (NotPattern p)           =
-        writeOneFieldStruct flags "NotPattern" p
-    prettyPrint flags (OrPattern p)            =
-        writeOneFieldStruct flags "OrPattern" p
-    prettyPrint flags (RewritesPattern p)      =
-        writeOneFieldStruct flags "RewritesPattern" p
-    prettyPrint flags (StringLiteralPattern p) =
-        writeOneFieldStruct flags "StringLiteralPattern" p
-    prettyPrint flags (CharLiteralPattern p) =
-        writeOneFieldStruct flags "CharLiteralPattern" p
-    prettyPrint flags (TopPattern p)           =
-        writeOneFieldStruct flags "TopPattern" p
-    prettyPrint flags (VariablePattern p)      =
-        writeOneFieldStruct flags "VariablePattern" p
-    prettyPrint flags (InhabitantPattern s)          =
-        writeOneFieldStruct flags "InhabitantPattern" s
-    prettyPrint flags (SetVariablePattern p)      =
-        writeOneFieldStruct flags "SetVariablePattern" p
+    prettyPrint flags (AndF p) =
+        writeOneFieldStruct flags "AndF" p
+    prettyPrint flags (ApplicationF p)   =
+        writeOneFieldStruct flags "ApplicationF" p
+    prettyPrint flags (BottomF p)        =
+        writeOneFieldStruct flags "BottomF" p
+    prettyPrint flags (CeilF p)          =
+        writeOneFieldStruct flags "CeilF" p
+    prettyPrint flags (DomainValueF p)          =
+        writeOneFieldStruct flags "DomainValueF" p
+    prettyPrint flags (EqualsF p)        =
+        writeOneFieldStruct flags "EqualsF" p
+    prettyPrint flags (ExistsF p)        =
+        writeOneFieldStruct flags "ExistsF" p
+    prettyPrint flags (FloorF p)         =
+        writeOneFieldStruct flags "FloorF" p
+    prettyPrint flags (ForallF p)        =
+        writeOneFieldStruct flags "ForallF" p
+    prettyPrint flags (IffF p)           =
+        writeOneFieldStruct flags "IffF" p
+    prettyPrint flags (ImpliesF p)       =
+        writeOneFieldStruct flags "ImpliesF" p
+    prettyPrint flags (InF p)            =
+        writeOneFieldStruct flags "InF" p
+    prettyPrint flags (NextF p)          =
+        writeOneFieldStruct flags "NextF" p
+    prettyPrint flags (NotF p)           =
+        writeOneFieldStruct flags "NotF" p
+    prettyPrint flags (OrF p)            =
+        writeOneFieldStruct flags "OrF" p
+    prettyPrint flags (RewritesF p)      =
+        writeOneFieldStruct flags "RewritesF" p
+    prettyPrint flags (StringLiteralF p) =
+        writeOneFieldStruct flags "StringLiteralF" p
+    prettyPrint flags (CharLiteralF p) =
+        writeOneFieldStruct flags "CharLiteralF" p
+    prettyPrint flags (TopF p)           =
+        writeOneFieldStruct flags "TopF" p
+    prettyPrint flags (VariableF p)      =
+        writeOneFieldStruct flags "VariableF" p
+    prettyPrint flags (InhabitantF s)          =
+        writeOneFieldStruct flags "InhabitantF" s
+    prettyPrint flags (SetVariableF p)      =
+        writeOneFieldStruct flags "SetVariableF" p
 
 instance
     ( self ~ CofreeT f w a
@@ -533,13 +530,13 @@ instance
     , PrettyPrint child
     , PrettyPrint annotation
     , PrettyPrint (domain child)
-    , child ~ Cofree (Pattern domain variable) annotation
+    , child ~ Cofree (PatternF domain variable) annotation
     ) =>
-    PrettyPrint (PurePattern domain variable annotation)
+    PrettyPrint (Pattern domain variable annotation)
   where
     prettyPrint _ purePattern =
-        writeStructure "PurePattern"
-            [ writeFieldOneLine "getPurePattern" getPurePattern purePattern ]
+        writeStructure "Pattern"
+            [ writeFieldOneLine "getPattern" getPattern purePattern ]
 
 instance PrettyPrint Attributes
   where
@@ -713,9 +710,15 @@ instance PrettyPrint variable => PrettyPrint (Predicate variable) where
     prettyPrint flags pat =
         prettyPrint flags (unwrapPredicate pat)
 
-instance PrettyPrint variable => PrettyPrint (Substitution variable) where
-      prettyPrint flags = prettyPrint flags . Substitution.unwrap
+instance
+    (Ord variable, PrettyPrint variable) =>
+    PrettyPrint (Substitution variable)
+  where
+    prettyPrint flags = prettyPrint flags . Substitution.unwrap
 
-instance PrettyPrint variable => PrettyPrint (Step.Pattern variable) where
+instance
+    (Ord variable, PrettyPrint variable) =>
+    PrettyPrint (Step.Pattern variable)
+  where
     prettyPrint flags (Conditional t p s) =
         writeThreeFieldStruct flags "Conditional" t p s

@@ -28,6 +28,7 @@ module Kore.Unification.Substitution
 import           Control.DeepSeq
                  ( NFData )
 import qualified Data.Foldable as Foldable
+import qualified Data.Function as Function
 import           Data.Hashable
 import qualified Data.List as List
 import           Data.Map.Strict
@@ -43,9 +44,9 @@ import           GHC.Stack
 import           Prelude hiding
                  ( null )
 
-import           Kore.Step.TermLike
+import           Kore.Internal.TermLike
                  ( TermLike )
-import qualified Kore.Step.TermLike as TermLike
+import qualified Kore.Internal.TermLike as TermLike
 import           Kore.TopBottom
                  ( TopBottom (..) )
 
@@ -71,23 +72,25 @@ data Substitution variable
     | NormalizedSubstitution !(Map variable (TermLike variable))
     deriving Generic
 
-deriving instance Eq variable => Eq (Substitution variable)
-deriving instance Ord variable => Ord (Substitution variable)
+-- | 'Eq' does not differentiate normalized and denormalized 'Substitution's.
+instance Ord variable => Eq (Substitution variable) where
+    (==) = Function.on (==) unwrap
+
+-- | 'Ord' does not differentiate normalized and denormalized 'Substitution's.
+instance Ord variable => Ord (Substitution variable) where
+    compare = Function.on compare unwrap
+
 deriving instance Show variable => Show (Substitution variable)
 
 instance NFData variable => NFData (Substitution variable)
 
-instance
-    Hashable variable =>
-    Hashable (Substitution variable)
-  where
+instance Hashable variable => Hashable (Substitution variable) where
     hashWithSalt salt (Substitution denorm) =
         salt `hashWithSalt` (0::Int) `hashWithSalt` denorm
     hashWithSalt salt (NormalizedSubstitution norm) =
         salt `hashWithSalt` (1::Int) `hashWithSalt` (Map.toList norm)
 
-instance TopBottom (Substitution variable)
-  where
+instance TopBottom (Substitution variable) where
     isTop = null
     isBottom _ = False
 
@@ -103,9 +106,10 @@ instance Ord variable => Monoid (Substitution variable) where
 
 -- | Unwrap the 'Substitution' to its inner list of substitutions.
 unwrap
-    :: Substitution variable
+    :: Ord variable
+    => Substitution variable
     -> [(variable, TermLike variable)]
-unwrap (Substitution xs) = xs
+unwrap (Substitution xs) = List.sortBy (Function.on compare fst) xs
 unwrap (NormalizedSubstitution xs)  = Map.toList xs
 
 {- | Convert a normalized substitution to a 'Map'.
@@ -149,7 +153,8 @@ unsafeWrap = NormalizedSubstitution . Map.fromList
 -- | Maps a function over the inner representation of the 'Substitution'. The
 -- normalization status is reset to un-normalized.
 modify
-    :: ([(variable1, TermLike variable1)] -> [(variable2, TermLike variable2)])
+    :: Ord variable1
+    => ([(variable1, TermLike variable1)] -> [(variable2, TermLike variable2)])
     -> Substitution variable1
     -> Substitution variable2
 modify f = wrap . f . unwrap
@@ -158,7 +163,7 @@ modify f = wrap . f . unwrap
 -- with the given function.
 mapVariables
     :: forall variableFrom variableTo
-    .  Ord variableTo
+    .  (Ord variableFrom, Ord variableTo)
     => (variableFrom -> variableTo)
     -> Substitution variableFrom
     -> Substitution variableTo
@@ -186,12 +191,13 @@ null (Substitution denorm)         = List.null denorm
 null (NormalizedSubstitution norm) = Map.null norm
 
 -- | Returns the list of variables in the 'Substitution'.
-variables :: Substitution variable -> [variable]
+variables :: Ord variable => Substitution variable -> [variable]
 variables = fmap fst . unwrap
 
 -- | Filter the variables of the 'Substitution'.
 filter
-    :: (variable -> Bool)
+    :: Ord variable
+    => (variable -> Bool)
     -> Substitution variable
     -> Substitution variable
 filter filtering =

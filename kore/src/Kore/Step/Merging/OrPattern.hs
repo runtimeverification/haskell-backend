@@ -14,17 +14,19 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.MultiOr
+                 ( MultiOr )
+import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import           Kore.Internal.Pattern
+                 ( Conditional, Predicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.Pattern as Pattern
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import           Kore.Step.Pattern
-                 ( Conditional, Predicate )
-import           Kore.Step.Representation.MultiOr
-                 ( MultiOr )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
+                 gather )
 import           Kore.Step.Substitution
                  ( PredicateMerger )
 import           Kore.Syntax.Variable
@@ -95,6 +97,9 @@ mergeWithPredicateAssumesEvaluated
     -> MultiOr (Conditional variable term)
     -- ^ Pattern to which the condition should be added.
     -> m (MultiOr (Conditional variable term))
-mergeWithPredicateAssumesEvaluated substitutionMerger toMerge =
-    traverse
+mergeWithPredicateAssumesEvaluated substitutionMerger toMerge patt =
+    fmap MultiOr.mergeAll
+    $ gather
+    $ traverse
         (Pattern.mergeWithPredicateAssumesEvaluated substitutionMerger toMerge)
+        patt

@@ -50,7 +50,6 @@ import           System.Clock
 import           System.IO
                  ( hPutStrLn, stderr )
 
-import           Kore.AST.Pure
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  defaultAttributesVerification,
@@ -65,6 +64,7 @@ import           Kore.IndexedModule.IndexedModule
                  makeIndexedModuleAttributesNull, mapIndexedModulePatterns )
 import           Kore.Parser
                  ( ParsedPattern, parseKoreDefinition )
+import           Kore.Syntax
 import           Kore.Syntax.Definition
                  ( ModuleName (..), ParsedDefinition, getModuleNameForError )
 import qualified Kore.Verified as Verified
@@ -317,8 +317,10 @@ verifyDefinitionWithBase
         , Map.Map Text AstLocation
         )
     -- ^ base definition to use for verification
-    -> Bool -- ^ whether to check (True) or ignore attributes during verification
-    -> ParsedDefinition -- ^ Parsed definition to check well-formedness
+    -> Bool
+    -- ^ whether to check (True) or ignore attributes during verification
+    -> ParsedDefinition
+    -- ^ Parsed definition to check well-formedness
     -> IO
         ( Map.Map
             ModuleName

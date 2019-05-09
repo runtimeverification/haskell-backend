@@ -12,15 +12,15 @@ module Kore.Step.Axiom.UserDefined
     , equalityRuleEvaluator
     ) where
 
-import           Kore.AST.Pure hiding
-                 ( isConcrete )
-import qualified Kore.AST.Pure as Pure
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Axiom.Concrete as Axiom.Concrete
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import           Kore.Step.Axiom.Data as AttemptedAxiomResults
@@ -30,8 +30,6 @@ import           Kore.Step.Axiom.Data
                  BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification )
-import qualified Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
@@ -41,7 +39,7 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.Step
                  ( UnificationProcedure (..) )
 import qualified Kore.Step.Step as Step
-import           Kore.Step.TermLike
+import qualified Kore.Syntax.Pattern as Pure
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse )

@@ -16,6 +16,8 @@ module Kore.Step.Transition
     ) where
 
 import           Control.Applicative
+import           Control.Monad.Except
+                 ( MonadError (..) )
 import qualified Control.Monad.Morph as Monad.Morph
 import           Control.Monad.Reader
 import qualified Control.Monad.Trans as Monad.Trans
@@ -61,6 +63,17 @@ newtype TransitionT rule m a =
 
 instance MonadTrans (TransitionT rule) where
     lift = TransitionT . Monad.Trans.lift . Monad.Trans.lift
+
+instance MonadError e m => MonadError e (TransitionT rule m) where
+    throwError = Monad.Trans.lift . throwError
+    {-# INLINE throwError #-}
+
+    catchError action handler =
+        Monad.Trans.lift (catchError action' handler') >>= scatter
+      where
+        action' = runTransitionT action
+        handler' e = runTransitionT (handler e)
+    {-# INLINE catchError #-}
 
 instance MonadSMT m => MonadSMT (TransitionT rule m) where
     liftSMT = lift . liftSMT

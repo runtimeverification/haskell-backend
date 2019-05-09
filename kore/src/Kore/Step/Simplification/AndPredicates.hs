@@ -11,27 +11,26 @@ module Kore.Step.Simplification.AndPredicates
     ( simplifyEvaluatedMultiPredicate
     ) where
 
-import           Kore.AST.Pure
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.MultiAnd
+                 ( MultiAnd )
+import qualified Kore.Internal.MultiAnd as MultiAnd
+                 ( extractPatterns )
+import           Kore.Internal.MultiOr
+                 ( MultiOr )
+import qualified Kore.Internal.MultiOr as MultiOr
+                 ( fullCrossProduct )
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
+import           Kore.Internal.Pattern
+                 ( Predicate )
+import qualified Kore.Internal.Pattern as Pattern
+                 ( Conditional (..) )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
-import           Kore.Step.Pattern
-                 ( Predicate )
-import qualified Kore.Step.Pattern as Pattern
-                 ( Conditional (..) )
-import           Kore.Step.Representation.MultiAnd
-                 ( MultiAnd )
-import qualified Kore.Step.Representation.MultiAnd as MultiAnd
-                 ( extractPatterns )
-import           Kore.Step.Representation.MultiOr
-                 ( MultiOr )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( fullCrossProduct )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Substitution

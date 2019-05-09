@@ -65,7 +65,6 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
 import           Kore.Attribute.Symbol
@@ -82,13 +81,13 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
+import           Kore.Internal.Pattern
+                 ( Conditional (..), Pattern )
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
-                 ( Conditional (..), Pattern )
-import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
-import           Kore.Step.TermLike
 import           Kore.Syntax.Definition
 import           Kore.Unification.Unify
                  ( MonadUnify )
@@ -156,7 +155,8 @@ symbolVerifiers =
       , Builtin.verifySymbol assertSort []
       )
     , ( updateKey
-      , Builtin.verifySymbol assertSort [assertSort, acceptAnySort, acceptAnySort]
+      , Builtin.verifySymbol assertSort
+            [assertSort, acceptAnySort, acceptAnySort]
       )
     , ( in_keysKey
       , Builtin.verifySymbol Bool.assertSort [acceptAnySort, assertSort]
@@ -543,13 +543,12 @@ make progress toward simplification. We introduce special cases when @x₁@ and/
  -}
 -- TODO (thomas.tuegel): Handle the case of two framed maps.
 unifyEquals
-    ::  forall variable unifierM unifier
+    ::  forall variable unifier
     .   ( SortedVariable variable
         , FreshVariable variable
         , Show variable
         , Unparse variable
-        , unifier ~ unifierM variable
-        , MonadUnify unifierM
+        , MonadUnify unifier
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes

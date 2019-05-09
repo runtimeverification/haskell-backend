@@ -21,23 +21,22 @@ import           Data.List
 import           Data.List.NonEmpty
                  ( NonEmpty (..) )
 
-import qualified Kore.AST.Common as Common
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
+import qualified Kore.Internal.Conditional as Conditional
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Predicate
+                 ( Conditional (..), Predicate )
+import qualified Kore.Internal.Predicate as Predicate
+import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse, makeAndPredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.Pattern as Pattern
-import           Kore.Step.Predicate
-                 ( Conditional (..), Predicate )
-import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), TermLikeSimplifier )
-import           Kore.Step.TermLike
-                 ( TermLike )
 import           Kore.Syntax.And
+import qualified Kore.Syntax.PatternF as Syntax
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -53,13 +52,12 @@ import {-# SOURCE #-} Kore.Step.Substitution
        ( mergePredicatesAndSubstitutionsExcept )
 
 simplifyAnds
-    ::  forall variable unifier unifierM .
-        ( Show variable
+    ::  forall variable unifier
+    .   ( Show variable
         , Unparse variable
         , SortedVariable variable
         , FreshVariable variable
-        , unifier ~ unifierM variable
-        , MonadUnify unifierM
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -85,7 +83,7 @@ simplifyAnds
         -> unifier (Pattern variable)
     simplifyAnds' intermediate pat =
         case Cofree.tailF (Recursive.project pat) of
-            Common.AndPattern And { andFirst = lhs, andSecond = rhs } ->
+            Syntax.AndF And { andFirst = lhs, andSecond = rhs } ->
                 foldM simplifyAnds' intermediate [lhs, rhs]
             _ -> do
                 result <-
@@ -122,9 +120,9 @@ groupSubstitutionByVariable
 groupSubstitutionByVariable =
     groupBy ((==) `on` fst) . sortBy (compare `on` fst) . map sortRenaming
   where
-    sortRenaming (var, Recursive.project -> ann :< Common.VariablePattern var')
+    sortRenaming (var, Recursive.project -> ann :< Syntax.VariableF var')
         | var' < var =
-          (var', Recursive.embed (ann :< Common.VariablePattern var))
+          (var', Recursive.embed (ann :< Syntax.VariableF var))
     sortRenaming eq = eq
 
 -- simplifies x = t1 /\ x = t2 /\ ... /\ x = tn by transforming it into
@@ -135,8 +133,7 @@ solveGroupedSubstitution
        , Unparse variable
        , SortedVariable variable
        , FreshVariable variable
-       , MonadUnify unifierM
-       , unifier ~ unifierM variable
+       , MonadUnify unifier
       )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
@@ -144,10 +141,7 @@ solveGroupedSubstitution
     -> BuiltinAndAxiomSimplifierMap
     -> variable
     -> NonEmpty (TermLike variable)
-    -> unifier
-        ( Predicate variable
-
-        )
+    -> unifier (Predicate variable)
 solveGroupedSubstitution
     tools
     substitutionSimplifier
@@ -180,23 +174,19 @@ solveGroupedSubstitution
 -- `normalizeSubstitutionDuplication` recursively calls itself until it
 -- stabilizes.
 normalizeSubstitutionDuplication
-    :: forall variable unifier unifierM
+    :: forall variable unifier
     .   ( Show variable
         , Unparse variable
         , SortedVariable variable
         , FreshVariable variable
-        , MonadUnify unifierM
-        , unifier ~ unifierM variable
+        , MonadUnify unifier
         )
     => SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> Substitution variable
-    -> unifier
-        ( Predicate variable
-
-        )
+    -> unifier (Predicate variable)
 normalizeSubstitutionDuplication
     tools
     substitutionSimplifier
@@ -238,7 +228,8 @@ normalizeSubstitutionDuplication
                 , substitution = Conditional.substitution finalSubst
                 }
   where
-    groupedSubstitution = groupSubstitutionByVariable $ Substitution.unwrap subst
+    groupedSubstitution =
+        groupSubstitutionByVariable $ Substitution.unwrap subst
     isSingleton [_] = True
     isSingleton _   = False
     singletonSubstitutions, nonSingletonSubstitutions

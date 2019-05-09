@@ -16,26 +16,26 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.Conditional as Conditional
+import           Kore.Internal.MultiOr
+                 ( MultiOr )
+import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
+import           Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate as Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeExistsPredicate, makeFalsePredicate, makeNotPredicate,
                  makeTruePredicate )
 import qualified Kore.Step.Axiom.Matcher as Matcher
-import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
-import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Predicate as Predicate
-import           Kore.Step.Representation.MultiOr
-                 ( MultiOr )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import           Kore.Step.Rule
                  ( EqualityRule (..), RewriteRule (..), RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
@@ -79,8 +79,8 @@ mockMetadataTools =
         Mock.smtDeclarations
 
 evalUnifier
-    :: BranchT (Unifier Variable) a
-    -> IO (Either (UnificationOrSubstitutionError Variable) [a])
+    :: BranchT Unifier a
+    -> IO (Either UnificationOrSubstitutionError [a])
 evalUnifier =
     SMT.runSMT SMT.defaultConfig
     . evalSimplifier emptyLogger
@@ -90,11 +90,7 @@ evalUnifier =
 applyInitialConditions
     :: Predicate Variable
     -> Predicate Variable
-    -> IO
-        (Either
-            (UnificationOrSubstitutionError Variable)
-            [OrPredicate Variable]
-        )
+    -> IO (Either UnificationOrSubstitutionError [OrPredicate Variable])
 applyInitialConditions initial unification =
     (fmap . fmap) Foldable.toList
     $ evalUnifier
@@ -173,7 +169,7 @@ unifyRule
     -> RulePattern Variable
     -> IO
         (Either
-            (UnificationOrSubstitutionError Variable)
+            UnificationOrSubstitutionError
             [Conditional Variable (RulePattern Variable)]
         )
 unifyRule initial rule =
@@ -256,11 +252,7 @@ applyRewriteRule_
     -- ^ Configuration
     -> RewriteRule Variable
     -- ^ Rewrite rule
-    -> IO
-        (Either
-            (UnificationOrSubstitutionError Variable)
-            [OrPattern Variable]
-        )
+    -> IO (Either UnificationOrSubstitutionError [OrPattern Variable])
 applyRewriteRule_ initial rule = do
     result <- applyRewriteRules initial [rule]
     return (Foldable.toList . discardRemainders <$> result)
@@ -686,10 +678,7 @@ applyRewriteRules
     -- ^ Configuration
     -> [RewriteRule Variable]
     -- ^ Rewrite rule
-    -> IO
-        (Either
-            (UnificationOrSubstitutionError Variable)
-            (Step.Results Variable))
+    -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
 applyRewriteRules initial rules =
     SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
@@ -1061,10 +1050,7 @@ sequenceRewriteRules
     -- ^ Configuration
     -> [RewriteRule Variable]
     -- ^ Rewrite rule
-    -> IO
-        (Either
-             (UnificationOrSubstitutionError Variable)
-             (Results Variable))
+    -> IO (Either UnificationOrSubstitutionError (Results Variable))
 sequenceRewriteRules initial rules =
     SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
@@ -1184,10 +1170,7 @@ sequenceMatchingRules
     -- ^ Configuration
     -> [EqualityRule Variable]
     -- ^ Rewrite rule
-    -> IO
-        (Either
-            (UnificationOrSubstitutionError Variable)
-            (Step.Results Variable))
+    -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
 sequenceMatchingRules initial rules =
     SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger

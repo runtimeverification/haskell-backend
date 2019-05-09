@@ -3,21 +3,18 @@ module Test.Kore.Step.Simplifier
     , mockPredicateSimplifier
     ) where
 
-import           Kore.AST.Valid
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern
+                 ( Conditional (..), Pattern )
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( wrapPredicate )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
-                 ( Conditional (..), Pattern )
-import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
                  termLikeSimplifier )
-import           Kore.Step.TermLike
-                 ( TermLike )
-import qualified Kore.Step.TermLike as TermLike
 import           Kore.Syntax.Variable
                  ( SortedVariable (..) )
 import           Kore.Variables.Fresh
@@ -65,8 +62,8 @@ mockSimplifierHelper
 mockSimplifierHelper unevaluatedConverter [] _ patt =
     return
         ( OrPattern.fromPatterns
-            [ convertExpandedVariables
-                (unevaluatedConverter (convertPatternVariables patt))
+            [ convertPatternVariables
+                (unevaluatedConverter (convertTermLikeVariables patt))
             ]
 
         )
@@ -75,8 +72,8 @@ mockSimplifierHelper
     ((patt, patts) : reminder)
     substitutionSimplifier
     unevaluatedPatt
-  | patt == convertPatternVariables unevaluatedPatt
-  = return $ OrPattern.fromPatterns $ map convertExpandedVariables patts
+  | patt == convertTermLikeVariables unevaluatedPatt
+  = return $ OrPattern.fromPatterns $ map convertPatternVariables patts
   | otherwise =
     mockSimplifierHelper
         unevaluatedConverter
@@ -84,21 +81,23 @@ mockSimplifierHelper
         substitutionSimplifier
         unevaluatedPatt
 
-convertPatternVariables
+convertTermLikeVariables
     ::  ( Ord variable0
         , SortedVariable variable
         , SortedVariable variable0
         )
     => TermLike variable
     -> TermLike variable0
-convertPatternVariables = TermLike.mapVariables (fromVariable . toVariable)
+convertTermLikeVariables =
+    TermLike.mapVariables (fromVariable . toVariable)
 
-convertExpandedVariables
-    ::  ( Ord variable0
+convertPatternVariables
+    ::  ( Ord variable
+        , Ord variable0
         , SortedVariable variable
         , SortedVariable variable0
         )
     => Pattern variable
     -> Pattern variable0
-convertExpandedVariables =
+convertPatternVariables =
     Pattern.mapVariables (fromVariable . toVariable)

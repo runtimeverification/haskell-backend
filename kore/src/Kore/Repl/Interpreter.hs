@@ -8,6 +8,8 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 
 module Kore.Repl.Interpreter
     ( replInterpreter
+    , showUsageMessage
+    , showStepStoppedMessage
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -52,32 +54,33 @@ import           GHC.Exts
                  ( toList )
 import           GHC.IO.Handle
                  ( hGetContents, hPutStr )
+import           Numeric.Natural
 import           System.Directory
                  ( findExecutable )
 import           System.Process
                  ( StdStream (CreatePipe), createProcess, proc, std_in,
                  std_out )
 
-import           Kore.AST.Common
-                 ( Pattern (..) )
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom (..), RuleIndex (..), sourceLocation )
 import           Kore.Attribute.RuleIndex
-import           Kore.OnePath.Step
+import           Kore.Internal.Pattern
+                 ( Conditional (..) )
+import           Kore.Internal.TermLike
+                 ( TermLike )
+import           Kore.OnePath.StrategyPattern
                  ( CommonStrategyPattern, StrategyPattern (..),
                  StrategyPatternTransformer (StrategyPatternTransformer),
                  strategyPattern )
-import qualified Kore.OnePath.Step as StrategyPatternTransformer
+import qualified Kore.OnePath.StrategyPattern as StrategyPatternTransformer
                  ( StrategyPatternTransformer (..) )
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
                  ( Claim )
 import           Kore.Repl.Data
-import           Kore.Step.Pattern
-                 ( Conditional (..) )
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
 import qualified Kore.Step.Rule as Rule
@@ -86,11 +89,11 @@ import qualified Kore.Step.Rule as Axiom
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Step.TermLike
-                 ( TermLike )
 import           Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
                  ( Id (..) )
+import           Kore.Syntax.PatternF
+                 ( PatternF (..) )
 import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unparser
@@ -152,8 +155,24 @@ replInterpreter printFn replCmd = do
         put st'
         pure (w, exit)
 
+showUsageMessage :: String
+showUsageMessage = "Could not parse command, try using 'help'."
+
+showStepStoppedMessage :: Natural -> StepResult -> String
+showStepStoppedMessage n sr =
+    "Stopped after "
+    <> show n
+    <> " step(s) due to "
+    <> case sr of
+        NoResult ->
+            "reaching end of proof on current branch."
+        SingleResult _ -> ""
+        BranchResult xs ->
+            "branching on "
+            <> show (fmap unReplNode xs)
+
 showUsage :: MonadWriter String m => m ()
-showUsage = putStrLn' "Could not parse command, try using 'help'."
+showUsage = putStrLn' showUsageMessage
 
 help :: MonadWriter String m => m ()
 help = putStrLn' helpText
@@ -163,22 +182,21 @@ showClaim
     :: Claim claim
     => MonadState (ReplState claim) m
     => MonadWriter String m
-    => Int
-    -- ^ index in the claims list
+    => ClaimIndex
     -> m ()
-showClaim index = do
-    claim <- getClaimByIndex index
-    maybe printNotFound (printRewriteRule .RewriteRule . coerce) $ claim
+showClaim cindex = do
+    claim <- getClaimByIndex . unClaimIndex $ cindex
+    maybe printNotFound (printRewriteRule . RewriteRule . coerce) $ claim
 
 -- | Prints an axiom using an index in the axioms list.
 showAxiom
     :: MonadState (ReplState claim) m
     => MonadWriter String m
-    => Int
+    => AxiomIndex
     -- ^ index in the axioms list
     -> m ()
-showAxiom index = do
-    axiom <- getAxiomByIndex index
+showAxiom aindex = do
+    axiom <- getAxiomByIndex . unAxiomIndex $ aindex
     maybe printNotFound (printRewriteRule . unAxiom) $ axiom
 
 -- | Changes the currently focused proof, using an index in the claims list.
@@ -187,11 +205,11 @@ prove
     .  Claim claim
     => MonadState (ReplState claim) m
     => MonadWriter String m
-    => Int
+    => ClaimIndex
     -- ^ index in the claims list
     -> m ()
-prove index = do
-    claim' <- getClaimByIndex index
+prove cindex = do
+    claim' <- getClaimByIndex . unClaimIndex $ cindex
     maybe printNotFound initProof claim'
   where
     initProof :: claim -> m ()
@@ -201,39 +219,40 @@ prove index = do
 
 showGraph
     :: MonadIO m
+    => MonadWriter String m
     => Maybe FilePath
     -> MonadState (ReplState claim) m
     => m ()
 showGraph mfile = do
     graph <- getInnerGraph
     axioms <- Lens.use lensAxioms
-    liftIO $ maybe
-            (showDotGraph (length axioms) graph)
-            (saveDotGraph (length axioms) graph)
-            mfile
+    installed <- liftIO Graph.isGraphvizInstalled
+    if installed == True
+       then liftIO $ maybe
+                        (showDotGraph (length axioms) graph)
+                        (saveDotGraph (length axioms) graph)
+                        mfile
+       else putStrLn' "Graphviz is not installed."
 
 -- | Executes 'n' prove steps, or until branching occurs.
 proveSteps
     :: Claim claim
-    => Int
+    => Natural
     -- ^ maximum number of steps to perform
     -> ReplM claim ()
 proveSteps n = do
-    result <- loopM performStepNoBranching (n, SingleResult n)
+    let node = ReplNode . fromEnum $ n
+    result <- loopM performStepNoBranching (n, SingleResult node)
     case result of
         (0, SingleResult _) -> pure ()
         (done, res) ->
-            putStrLn'
-                $ "Stopped after "
-                <> show (n - done - 1)
-                <> " step(s) due to "
-                <> show res
+            putStrLn' $ showStepStoppedMessage (n - done - 1) res
 
 -- | Executes 'n' prove steps, distributing over branches. It will perform less
 -- than 'n' steps if the proof is stuck or completed in less than 'n' steps.
 proveStepsF
     :: Claim claim
-    => Int
+    => Natural
     -- ^ maximum number of steps to perform
     -> ReplM claim ()
 proveStepsF n = do
@@ -246,25 +265,26 @@ proveStepsF n = do
 selectNode
     :: MonadState (ReplState claim) m
     => MonadWriter String m
-    => Int
+    => ReplNode
     -- ^ node identifier
     -> m ()
-selectNode i = do
+selectNode rnode = do
     graph <- getInnerGraph
+    let i = unReplNode rnode
     if i `elem` Graph.nodes graph
-        then lensNode .= i
+        then lensNode .= rnode
         else putStrLn' "Invalid node!"
 
 -- | Shows configuration at node 'n', or current node if 'Nothing' is passed.
 showConfig
-    :: Maybe Int
+    :: Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM claim ()
 showConfig configNode = do
     maybeConfig <- getConfigAt configNode
     case maybeConfig of
         Nothing -> putStrLn' "Invalid node!"
-        Just (node, config) -> do
+        Just (ReplNode node, config) -> do
             omit <- Lens.use lensOmit
             putStrLn' $ "Config at node " <> show node <> " is:"
             putStrLn' $ unparseStrategy omit config
@@ -317,17 +337,6 @@ showLeafs = do
     findLeafNodes graph =
         filter ((==) 0 . Graph.outdeg graph) $ Graph.nodes graph
 
-    getNodeState :: InnerGraph -> Graph.Node -> Maybe (NodeState, Graph.Node)
-    getNodeState graph node =
-        fmap (\nodeState -> (nodeState, node))
-        . strategyPattern StrategyPatternTransformer
-            { rewriteTransformer = const . Just $ UnevaluatedNode
-            , stuckTransformer = const . Just $ StuckNode
-            , bottomValue = Nothing
-            }
-        . Graph.lab'
-        . Graph.context graph
-        $ node
 
     showPair :: (NodeState, [Graph.Node]) -> String
     showPair (ns, xs) = show ns <> ": " <> show xs
@@ -335,7 +344,7 @@ showLeafs = do
 showRule
     :: MonadState (ReplState claim) m
     => MonadWriter String m
-    => Maybe Int
+    => Maybe ReplNode
     -> m ()
 showRule configNode = do
     maybeRule <- getRuleFor configNode
@@ -355,7 +364,7 @@ showRule configNode = do
 
 -- | Shows the previous branching point.
 showPrecBranch
-    :: Maybe Int
+    :: Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM claim ()
 showPrecBranch maybeNode = do
@@ -363,7 +372,7 @@ showPrecBranch maybeNode = do
     node' <- getTargetNode maybeNode
     case node' of
         Nothing -> putStrLn' "Invalid node!"
-        Just node -> putStrLn' . show $ loop (loopCond graph) node
+        Just node -> putStrLn' . show $ loop (loopCond graph) (unReplNode node)
   where
     -- "Left n" means continue looping with value being n
     -- "Right n" means "stop and return n"
@@ -376,7 +385,7 @@ showPrecBranch maybeNode = do
 
 -- | Shows the next node(s) for the selected node.
 showChildren
-    :: Maybe Int
+    :: Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM claim ()
 showChildren maybeNode = do
@@ -384,7 +393,7 @@ showChildren maybeNode = do
     node' <- getTargetNode maybeNode
     case node' of
         Nothing -> putStrLn' "Invalid node!"
-        Just node -> putStrLn' . show . Graph.suc graph $ node
+        Just node -> putStrLn' . show . Graph.suc graph $ unReplNode node
 
 -- | Shows existing labels or go to an existing label.
 label
@@ -409,11 +418,11 @@ label =
     gotoLabel :: String -> m ()
     gotoLabel l = do
         labels <- Lens.use lensLabels
-        selectNode $ maybe (-1) id (Map.lookup l labels)
+        selectNode $ maybe (ReplNode $ -1) id (Map.lookup l labels)
 
-    acc :: String -> Graph.Node -> String -> String
+    acc :: String -> ReplNode -> String -> String
     acc key node res =
-        res <> "\n  " <> key <> ": " <> show node
+        res <> "\n  " <> key <> ": " <> show (unReplNode node)
 
 -- | Adds label for selected node.
 labelAdd
@@ -421,7 +430,7 @@ labelAdd
     => MonadWriter String m
     => String
     -- ^ label
-    -> Maybe Int
+    -> Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> m ()
 labelAdd lbl maybeNode = do
@@ -496,11 +505,13 @@ tryAxiomClaim eac = do
                     showUnificationFailure axiomOrClaim node
                 SingleResult node' -> do
                     lensNode .= node'
+                    lensGraph .= graph
                     putStrLn' "Unification successful."
                 BranchResult nodes -> do
                     stuckToUnstuck nodes graph
                     putStrLn'
-                        $ "Unification successful with branching: " <> show nodes
+                        $ "Unification successful with branching: "
+                            <> show nodes
   where
     leftToList :: Either a b -> [a]
     leftToList = either pure (const [])
@@ -508,9 +519,11 @@ tryAxiomClaim eac = do
     rightToList :: Either a b -> [b]
     rightToList = either (const []) pure
 
-    stuckToUnstuck :: [Graph.Node] -> ExecutionGraph -> ReplM claim ()
+    stuckToUnstuck :: [ReplNode] -> ExecutionGraph -> ReplM claim ()
     stuckToUnstuck nodes Strategy.ExecutionGraph{ graph } =
-        updateInnerGraph $ Graph.gmap (stuckToRewrite nodes) graph
+        updateInnerGraph
+        $ Graph.gmap (stuckToRewrite
+        $ fmap unReplNode nodes) graph
 
     stuckToRewrite xs ct@(to, n, lab, from)
         | n `elem` xs =
@@ -521,7 +534,7 @@ tryAxiomClaim eac = do
 
     showUnificationFailure
         :: Either (Axiom) claim
-        -> Graph.Node
+        -> ReplNode
         -> ReplM claim ()
     showUnificationFailure axiomOrClaim' node = do
         let first = extractLeftPattern axiomOrClaim'
@@ -558,24 +571,25 @@ clear
     :: forall m claim
     .  MonadState (ReplState claim) m
     => MonadWriter String m
-    => Maybe Int
+    => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> m ()
 clear =
     \case
         Nothing -> Just <$> Lens.use lensNode >>= clear
         Just node
-          | node == 0 -> putStrLn' "Cannot clear initial node (0)."
+          | unReplNode node == 0 -> putStrLn' "Cannot clear initial node (0)."
           | otherwise -> clear0 node
   where
-    clear0 :: Int -> m ()
-    clear0 node = do
+    clear0 :: ReplNode -> m ()
+    clear0 rnode = do
         graph <- getInnerGraph
+        let node = unReplNode rnode
         let
             nodesToBeRemoved = collect (next graph) node
             graph' = Graph.delNodes nodesToBeRemoved graph
         updateInnerGraph graph'
-        lensNode .= prevNode graph' node
+        lensNode .= ReplNode (prevNode graph' node)
         putStrLn' $ "Removed " <> show (length nodesToBeRemoved) <> " node(s)."
 
     next :: InnerGraph -> Graph.Node -> [Graph.Node]
@@ -667,9 +681,9 @@ appendTo cmd file = do
 performStepNoBranching
     :: forall claim
     .  Claim claim
-    => (Int, StepResult)
+    => (Natural, StepResult)
     -- ^ (current step, last result)
-    -> ReplM claim (Either (Int, StepResult) (Int, StepResult))
+    -> ReplM claim (Either (Natural, StepResult) (Natural, StepResult))
 performStepNoBranching =
     \case
         -- Termination branch
@@ -685,9 +699,9 @@ performStepNoBranching =
 -- 'performStepNoBranching'.
 recursiveForcedStep
     :: Claim claim
-    => Int
+    => Natural
     -> ExecutionGraph
-    -> Graph.Node
+    -> ReplNode
     -> ReplM claim ExecutionGraph
 recursiveForcedStep n graph node
   | n == 0    = return graph
@@ -695,9 +709,9 @@ recursiveForcedStep n graph node
       ReplState { claims , axioms , claim , stepper } <- get
       graph'@Strategy.ExecutionGraph { graph = gr } <-
           lift $ stepper claim claims axioms graph node
-      case (Graph.suc gr node) of
+      case Graph.suc gr (unReplNode node) of
           [] -> return graph'
-          xs -> foldM (recursiveForcedStep $ n-1) graph' xs
+          xs -> foldM (recursiveForcedStep $ n-1) graph' (fmap ReplNode xs)
 
 -- | Prints an unparsed rewrite rule along with its source location.
 printRewriteRule :: MonadWriter String m => RewriteRule Variable -> m ()
@@ -735,10 +749,10 @@ unparseStrategy omitList =
     hide =
         Recursive.unfold $ \termLike ->
             case Recursive.project termLike of
-                ann :< ApplicationPattern app
+                ann :< ApplicationF app
                   | shouldBeExcluded (applicationSymbolOrAlias app) ->
                     -- Do not display children
-                    ann :< ApplicationPattern (withoutChildren app)
+                    ann :< ApplicationF (withoutChildren app)
                 projected -> projected
 
     withoutChildren app = app { applicationChildren = [] }
@@ -798,6 +812,3 @@ showAxiomOrClaim _   (RuleIndex Nothing) = Nothing
 showAxiomOrClaim len (RuleIndex (Just rid))
   | rid < len = Just $ "Axiom " <> show rid
   | otherwise = Just $ "Claim " <> show (rid - len)
-
-data NodeState = StuckNode | UnevaluatedNode
-    deriving (Eq, Ord, Show)

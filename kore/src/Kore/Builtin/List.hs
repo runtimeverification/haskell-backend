@@ -59,7 +59,6 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Hook
                  ( Hook )
 import           Kore.Attribute.Symbol
@@ -75,12 +74,12 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
-import           Kore.Step.Axiom.Data
-import           Kore.Step.Pattern
+import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
-import qualified Kore.Step.Pattern as Pattern
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
+import           Kore.Step.Axiom.Data
 import           Kore.Step.Simplification.Data
-import           Kore.Step.TermLike
 import           Kore.Syntax.Definition
 import           Kore.Unification.Unify
                  ( MonadUnify )
@@ -399,13 +398,12 @@ isSymbolUnit = Builtin.isSymbol unitKey
     reject the definition.
  -}
 unifyEquals
-    :: forall variable unifier unifierM.
-        ( Show variable
+    ::  forall variable unifier
+    .   ( Show variable
         , Unparse variable
         , SortedVariable variable
         , FreshVariable variable
-        , unifier ~ unifierM variable
-        , MonadUnify unifierM
+        , MonadUnify unifier
         )
     => SimplificationType
     -> SmtMetadataTools StepperAttributes

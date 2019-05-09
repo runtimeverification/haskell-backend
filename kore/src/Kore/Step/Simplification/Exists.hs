@@ -17,27 +17,26 @@ import qualified Data.Map.Strict as Map
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.Conditional as Conditional
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
+import           Kore.Internal.TermLike as Pattern
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Conditional as Conditional
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.Simplification.Data
                  ( BranchT, PredicateSimplifier, Simplifier,
                  TermLikeSimplifier, gather, scatter )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.Step.TermLike as Pattern
 import           Kore.Syntax.Exists
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Substitution
@@ -102,12 +101,12 @@ simplify
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Exists Sort) (Valid variable) (OrPattern variable)
+> CofreeF (Exists Sort) (Attribute.Pattern variable) (OrPattern variable)
 
 instead of a 'variable' and an 'OrPattern' argument. The type of
-'makeEvaluate' may be changed analogously. The 'Valid' annotation will
-eventually cache information besides the pattern sort, which will make it even
-more useful to carry around.
+'makeEvaluate' may be changed analogously. The 'Attribute.Pattern' annotation
+will eventually cache information besides the pattern sort, which will make it
+even more useful to carry around.
 
 -}
 simplifyEvaluated

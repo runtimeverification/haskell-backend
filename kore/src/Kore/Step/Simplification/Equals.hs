@@ -23,27 +23,27 @@ import           Data.Maybe
                  ( fromMaybe )
 import qualified Data.Traversable as Traversable
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
+import qualified Kore.Internal.OrPredicate as OrPredicate
+import           Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeAndPredicate,
                  makeEqualsPredicate, makeNotPredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.OrPredicate
-                 ( OrPredicate )
-import qualified Kore.Step.OrPredicate as OrPredicate
-import           Kore.Step.Pattern as Pattern
-import qualified Kore.Step.Predicate as Predicate
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
 import qualified Kore.Step.Simplification.And as And
                  ( simplifyEvaluated )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
@@ -178,11 +178,12 @@ simplify
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Equals Sort) (Valid variable) (OrPattern variable)
+> CofreeF (Equals Sort) (Attribute.Pattern variable) (OrPattern variable)
 
 instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
-be changed analogously. The 'Valid' annotation will eventually cache information
-besides the pattern sort, which will make it even more useful to carry around.
+be changed analogously. The 'Attribute.Pattern' annotation will eventually cache
+information besides the pattern sort, which will make it even more useful to
+carry around.
 
 -}
 simplifyEvaluated
@@ -245,8 +246,8 @@ simplifyEvaluated
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplfier
-                (OrPattern.toExpandedPattern first)
-                (OrPattern.toExpandedPattern second)
+                (OrPattern.toPattern first)
+                (OrPattern.toPattern second)
   where
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second
@@ -640,8 +641,10 @@ makeEvaluateTermsToPredicate
                         ++ ", first=" ++ show first
                         ++ ", second=" ++ show second
                         )
-                firstCeil = OrPredicate.toPredicate (fmap toPredicateSafe firstCeilOr)
-                secondCeil = OrPredicate.toPredicate (fmap toPredicateSafe secondCeilOr)
+                firstCeil =
+                    OrPredicate.toPredicate (fmap toPredicateSafe firstCeilOr)
+                secondCeil =
+                    OrPredicate.toPredicate (fmap toPredicateSafe secondCeilOr)
                 firstCeilNegation = makeNotPredicate firstCeil
                 secondCeilNegation = makeNotPredicate secondCeil
                 ceilNegationAnd =

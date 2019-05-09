@@ -3,8 +3,6 @@ module Test.Kore.Proof.Value where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
 import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Domain.Builtin as Domain
@@ -12,8 +10,8 @@ import           Kore.IndexedModule.MetadataTools
                  ( HeadType, SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
+import           Kore.Internal.TermLike
 import qualified Kore.Proof.Value as Value
-import           Kore.Step.TermLike
 
 import           Test.Kore
 import           Test.Kore.Builtin.Definition
@@ -50,7 +48,7 @@ unit_fun =
 
 mkInj :: TermLike Variable -> TermLike Variable
 mkInj input =
-    mkApp supSort (injSymbol (getSort input) supSort) [input]
+    mkApp supSort (injSymbol (termLikeSort input) supSort) [input]
 
 mkPair
     :: TermLike Variable
@@ -59,7 +57,7 @@ mkPair
 mkPair a b =
     mkApp (pairSort inputSort') (pairSymbol inputSort') [a, b]
   where
-    inputSort' = getSort a
+    inputSort' = termLikeSort a
 
 unitPattern :: TermLike Variable
 unitPattern = mkApp unitSort unitSymbol []

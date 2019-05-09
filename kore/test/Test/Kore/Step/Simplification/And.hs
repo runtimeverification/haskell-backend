@@ -7,20 +7,20 @@ import Test.Tasty.HUnit
 
 import qualified Data.Map as Map
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.MultiOr
+                 ( MultiOr (MultiOr) )
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeFalsePredicate, makeTruePredicate )
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
-import           Kore.Step.Representation.MultiOr
-                 ( MultiOr (MultiOr) )
 import           Kore.Step.Simplification.And
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier, gather )
@@ -413,7 +413,7 @@ makeAnd first second =
 
 findSort :: [Pattern Variable] -> Sort
 findSort [] = testSort
-findSort ( Conditional {term} : _ ) = getSort term
+findSort ( Conditional {term} : _ ) = termLikeSort term
 
 evaluate :: And Sort (OrPattern Variable) -> IO (OrPattern Variable)
 evaluate patt =

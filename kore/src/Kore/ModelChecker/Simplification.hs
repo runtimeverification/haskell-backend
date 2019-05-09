@@ -10,25 +10,21 @@ module Kore.ModelChecker.Simplification
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.AST.Valid
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import           Kore.Internal.Pattern
+                 ( Conditional (..), Pattern )
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike as TermLike
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Pattern
-                 ( Conditional (..), Pattern )
-import qualified Kore.Step.Pattern as Pattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
-import           Kore.Step.TermLike
-                 ( TermLike )
-import qualified Kore.Step.TermLike as TermLike
-import           Kore.Syntax.Variable
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser
@@ -57,13 +53,17 @@ checkImplicationIsTop
                 subst = mkVar <$> rename
                 implicationLHS' = TermLike.substitute subst implicationLHS
                 implicationRHS' = TermLike.substitute subst implicationRHS
-                resultTerm = mkCeil_
-                                (mkAnd
-                                    (mkAnd lhsMLPatt implicationLHS')
-                                    (mkNot implicationRHS')
-                                )
+                resultTerm =
+                    mkCeil_
+                        (mkAnd
+                            (mkAnd lhsMLPatt implicationLHS')
+                            (mkNot implicationRHS')
+                        )
                 result = Conditional
-                            { term = resultTerm, predicate = Predicate.makeTruePredicate, substitution = mempty}
+                    { term = resultTerm
+                    , predicate = Predicate.makeTruePredicate
+                    , substitution = mempty
+                    }
             orResult <-
                 Pattern.simplify
                     tools
@@ -79,7 +79,7 @@ checkImplicationIsTop
              ]
       where
         lhsFreeVariables = Pattern.freeVariables lhs
-        lhsMLPatt = Pattern.toMLPattern lhs
+        lhsMLPatt = Pattern.toTermLike lhs
 
 stripForallQuantifiers
     :: TermLike Variable

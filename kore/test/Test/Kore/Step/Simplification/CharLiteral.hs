@@ -7,13 +7,13 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Kore.AST.Pure
-import           Kore.AST.Valid
-import           Kore.Step.OrPattern
+import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.TermLike
 import           Kore.Step.Simplification.CharLiteral
                  ( simplify )
+import           Kore.Syntax.CharLiteral
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions

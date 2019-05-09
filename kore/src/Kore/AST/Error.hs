@@ -26,8 +26,8 @@ import Data.List
        ( intercalate )
 
 import Kore.AST.AstWithLocation
-import Kore.AST.Pure
 import Kore.Error
+import Kore.Syntax
 import Kore.Syntax.Definition
 
 {-|'koreFailWithLocations' produces an error result with a context containing
@@ -142,12 +142,18 @@ withSentenceHookContext =
     \case
         SentenceHookedSort SentenceSort { sentenceSortName } ->
             withLocationAndContext sentenceSortName
-                ("hooked-sort '" ++ getIdForError sentenceSortName ++ "' declaration")
+                (  "hooked-sort '"
+                ++ getIdForError sentenceSortName
+                ++ "' declaration"
+                )
 
         SentenceHookedSymbol SentenceSymbol
             { sentenceSymbolSymbol = Symbol { symbolConstructor } } ->
             withLocationAndContext symbolConstructor
-                ("hooked-symbol '" ++ getIdForError symbolConstructor ++ "' declaration")
+                (  "hooked-symbol '"
+                ++ getIdForError symbolConstructor
+                ++ "' declaration"
+                )
 
 {- | Locate the given import declaration in the error context.
  -}

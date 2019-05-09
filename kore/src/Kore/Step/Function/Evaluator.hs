@@ -22,14 +22,21 @@ import           Data.Reflection
                  ( give )
 import qualified Data.Text as Text
 
-import qualified Kore.AST.Common as Common
-import           Kore.AST.Valid
+import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Attribute.Symbol
                  ( Hook (..), StepperAttributes, isSortInjection_ )
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
+import qualified Kore.Internal.MultiOr as MultiOr
+                 ( flatten, merge )
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern
+                 ( Conditional (..), Pattern, Predicate )
+import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiomResults (AttemptedAxiomResults),
                  BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap )
@@ -42,20 +49,11 @@ import           Kore.Step.Axiom.Identifier
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( extract )
 import qualified Kore.Step.Merging.OrPattern as OrPattern
-import           Kore.Step.OrPattern
-                 ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern
-                 ( Conditional (..), Pattern, Predicate )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
-                 ( flatten, merge )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
                  simplifyTerm )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import           Kore.Step.TermLike
 import           Kore.Syntax.Application
-import           Kore.Syntax.Id
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -63,8 +61,7 @@ import           Kore.Variables.Fresh
 -}
 evaluateApplication
     ::  forall variable.
-        ( Ord variable
-        , Show variable
+        ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
@@ -81,7 +78,7 @@ evaluateApplication
     -- ^ Aggregated children predicate and substitution.
     -> CofreeF
         (Application SymbolOrAlias)
-        (Valid variable)
+        (Attribute.Pattern variable)
         (TermLike variable)
     -- ^ The pattern to be evaluated
     -> Simplifier (OrPattern variable)
@@ -113,18 +110,18 @@ evaluateApplication
             simplifier
             axiomIdToEvaluator
             childrenPredicate
-            appPurePattern
+            appPattern
             unchanged
 
     Application { applicationSymbolOrAlias = appHead } = afterInj
     SymbolOrAlias { symbolOrAliasConstructor = symbolId } = appHead
 
-    appPurePattern =
-        Recursive.embed (valid :< Common.ApplicationPattern afterInj)
+    appPattern =
+        Recursive.embed (valid :< ApplicationF afterInj)
 
     unchangedPatt =
         Conditional
-            { term         = appPurePattern
+            { term         = appPattern
             , predicate    = predicate
             , substitution = substitution
             }

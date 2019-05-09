@@ -12,11 +12,11 @@ module Kore.Step.Simplification.Forall
     , makeEvaluate
     ) where
 
-import           Kore.AST.Valid
-import           Kore.Step.OrPattern
+import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Step.OrPattern as OrPattern
-import           Kore.Step.Pattern as Pattern
+import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
 import           Kore.Syntax.Forall
 import           Kore.Unparser
 
@@ -55,12 +55,12 @@ simplify
 One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
-> CofreeF (Forall Sort) (Valid variable) (OrPattern variable)
+> CofreeF (Forall Sort) (Attribute.Pattern variable) (OrPattern variable)
 
 instead of a 'variable' and an 'OrPattern' argument. The type of
-'makeEvaluate' may be changed analogously. The 'Valid' annotation will
-eventually cache information besides the pattern sort, which will make it even
-more useful to carry around.
+'makeEvaluate' may be changed analogously. The 'Attribute.Pattern' annotation
+will eventually cache information besides the pattern sort, which will make it
+even more useful to carry around.
 
 -}
 simplifyEvaluated
@@ -94,4 +94,4 @@ makeEvaluate variable patt
   | Pattern.isTop patt    = Pattern.top
   | Pattern.isBottom patt = Pattern.bottom
   | otherwise =
-    Pattern.fromTermLike $ mkForall variable $ Pattern.toMLPattern patt
+    Pattern.fromTermLike $ mkForall variable $ Pattern.toTermLike patt

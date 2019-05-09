@@ -14,6 +14,7 @@ module Kore.Step.Result
     , transitionResults
     , mapRules
     , mapConfigs
+    , traverseConfigs
     ) where
 
 import           Control.Applicative
@@ -24,9 +25,9 @@ import           Data.Sequence
                  ( Seq )
 import qualified GHC.Generics as GHC
 
-import           Kore.Step.Representation.MultiOr
+import           Kore.Internal.MultiOr
                  ( MultiOr )
-import qualified Kore.Step.Representation.MultiOr as MultiOr
+import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Step.Transition
                  ( TransitionT )
 import qualified Kore.Step.Transition as Transition
@@ -130,3 +131,17 @@ mapConfigs mapResults mapRemainders Results { results, remainders } =
         { results = fmap mapResults <$> results
         , remainders = mapRemainders <$> remainders
         }
+
+{- | Apply 'Applicative' transformations to the configurations of the 'results'
+and 'remainders'.
+ -}
+traverseConfigs
+   :: Applicative f
+   => (config1 -> f config2)  -- ^ traverse 'results'
+   -> (config1 -> f config2)  -- ^ traverse 'remainders'
+   -> Results rule config1
+   -> f (Results rule config2)
+traverseConfigs traverseResults traverseRemainders rs =
+    Results
+        <$> (traverse . traverse) traverseResults (results rs)
+        <*> traverse traverseRemainders (remainders rs)
