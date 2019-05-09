@@ -35,7 +35,7 @@ import           Kore.Attribute.RuleIndex
 import           System.IO
                  ( hFlush, stdout )
 import           Text.Megaparsec
-                 ( parseMaybe )
+                 ( parseMaybe, parseTest )
 
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
@@ -95,8 +95,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     case mscript of
         Just file -> do
             contents <- liftIO $ readFile file
-            let cmds = parseScript contents
-            liftIO $ putStrLn "WIP"
+            liftIO $ parseTest scriptParser contents
         Nothing -> do
             replGreeting
             evalStateT (whileM repl0) state
