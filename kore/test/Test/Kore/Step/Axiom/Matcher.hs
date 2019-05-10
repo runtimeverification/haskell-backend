@@ -9,8 +9,13 @@ module Test.Kore.Step.Axiom.Matcher
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import           Data.Default
+                 ( Default (..) )
 import qualified Data.Map as Map
 
+import qualified Kore.Attribute.Axiom as Attribute
+import           Kore.Attribute.Simplification
+                 ( Simplification (Simplification) )
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Domain.Builtin as Domain
@@ -20,6 +25,8 @@ import qualified Kore.Internal.MultiOr as MultiOr
                  ( make )
 import           Kore.Internal.OrPredicate
                  ( OrPredicate )
+import qualified Kore.Internal.OrPredicate as OrPredicate
+                 ( fromPredicates )
 import           Kore.Internal.Predicate
                  ( Conditional (..) )
 import qualified Kore.Internal.Predicate as Conditional
@@ -27,8 +34,17 @@ import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification, unificationWithAppMatchOnTop )
+import           Kore.Step.Axiom.Registry
+                 ( axiomPatternsToEvaluators )
+import           Kore.Step.Rule
+                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
+import qualified Kore.Step.Rule as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
@@ -858,6 +874,119 @@ test_unificationWithAppMatchOnTop =
             (Mock.f Mock.a)
             (Mock.f Mock.b)
         assertEqualWithExplanation "" expect actual
+    , testCase "handles ambiguity" $ do
+        let
+            expected = Just $ OrPredicate.fromPredicates
+                [ Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [(Mock.x, Mock.cf), (Mock.y, Mock.a)]
+                    }
+                , Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                    }
+                ]
+            sortVar = SortVariableSort (SortVariable (testId "S"))
+            simplifiers = axiomPatternsToEvaluators $ Map.fromList
+                [   (   AxiomIdentifier.Ceil
+                            (AxiomIdentifier.Application Mock.cfId)
+                    ,   [ EqualityRule RulePattern
+                            { left = mkCeil sortVar Mock.cf
+                            , right =
+                                mkOr
+                                    (mkEquals_ (mkVar Mock.y) Mock.a)
+                                    (mkEquals_ (mkVar Mock.y) Mock.b)
+                            , requires = makeTruePredicate
+                            , ensures = makeTruePredicate
+                            , attributes = def
+                                {Attribute.simplification = Simplification True}
+                            }
+                        ]
+                    )
+                ]
+        actual <- unificationWithMatchSimplifiers
+            mockMetadataTools simplifiers
+            (Mock.f (mkVar Mock.x))
+            (Mock.f Mock.cf)
+        assertEqualWithExplanation "" expected actual
+    , testCase "handles multiple ambiguity" $ do
+        let
+            expected = Just $ OrPredicate.fromPredicates
+                [ Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg)
+                        , (Mock.y, Mock.a), (Mock.z, Mock.a)
+                        ]
+                    }
+                , Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg)
+                        , (Mock.y, Mock.a), (Mock.z, Mock.b)
+                        ]
+                    }
+                , Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg)
+                        , (Mock.y, Mock.b), (Mock.z, Mock.a)
+                        ]
+                    }
+                , Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg)
+                        , (Mock.y, Mock.b), (Mock.z, Mock.b)
+                        ]
+                    }
+                ]
+            sortVar = SortVariableSort (SortVariable (testId "S"))
+            simplifiers = axiomPatternsToEvaluators $ Map.fromList
+                [   (   AxiomIdentifier.Ceil
+                            (AxiomIdentifier.Application Mock.cfId)
+                    ,   [ EqualityRule RulePattern
+                            { left = mkCeil sortVar Mock.cf
+                            , right =
+                                mkOr
+                                    (mkEquals_ (mkVar Mock.y) Mock.a)
+                                    (mkEquals_ (mkVar Mock.y) Mock.b)
+                            , requires = makeTruePredicate
+                            , ensures = makeTruePredicate
+                            , attributes = def
+                                {Attribute.simplification = Simplification True}
+                            }
+                        ]
+                    )
+                ,   (   AxiomIdentifier.Ceil
+                            (AxiomIdentifier.Application Mock.cgId)
+                    ,   [ EqualityRule RulePattern
+                            { left = mkCeil sortVar Mock.cg
+                            , right =
+                                mkOr
+                                    (mkEquals_ (mkVar Mock.z) Mock.a)
+                                    (mkEquals_ (mkVar Mock.z) Mock.b)
+                            , requires = makeTruePredicate
+                            , ensures = makeTruePredicate
+                            , attributes = def
+                                {Attribute.simplification = Simplification True}
+                            }
+                        ]
+                    )
+                ]
+        actual <- unificationWithMatchSimplifiers
+            mockMetadataTools simplifiers
+            (Mock.functionalConstr20 (mkVar Mock.x) (mkVar Mock.var_x_1))
+            (Mock.functionalConstr20 Mock.cf Mock.cg)
+        assertEqualWithExplanation "" expected actual
     ]
 
 matchDefinition
@@ -874,23 +1003,32 @@ matchSimplification
     -> IO (Maybe (OrPredicate Variable))
 matchSimplification = match
 
-unificationWithMatch
+unificationWithMatchSimplifiers
     :: SmtMetadataTools StepperAttributes
+    -> BuiltinAndAxiomSimplifierMap
     -> TermLike Variable
     -> TermLike Variable
     -> IO (Maybe (OrPredicate Variable))
-unificationWithMatch tools first second = do
+unificationWithMatchSimplifiers tools axiomIdToSimplifier first second = do
     result <- SMT.runSMT SMT.defaultConfig
         $ evalSimplifier emptyLogger
         $ Monad.Unify.runUnifier
         $ unificationWithAppMatchOnTop
             tools
             (Mock.substitutionSimplifier tools)
-            (Simplifier.create tools Map.empty)
-            Map.empty
+            (Simplifier.create tools axiomIdToSimplifier)
+            axiomIdToSimplifier
             first
             second
     return $ either (const Nothing) Just (MultiOr.make <$> result)
+
+unificationWithMatch
+    :: SmtMetadataTools StepperAttributes
+    -> TermLike Variable
+    -> TermLike Variable
+    -> IO (Maybe (OrPredicate Variable))
+unificationWithMatch tools =
+    unificationWithMatchSimplifiers tools Map.empty
 
 match
     :: SmtMetadataTools StepperAttributes
