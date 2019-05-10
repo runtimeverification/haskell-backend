@@ -116,7 +116,7 @@ tryAlias =
         stateT  = \st -> st { aliases = Map.insert name alias (aliases st) }
         command = TryAlias "h"
     in do
-        Result { output, continue, state } <-
+        Result { output, continue } <-
             runWithState command axioms claim stateT
         output   `equalsOutput` helpText
         continue `equals` True
