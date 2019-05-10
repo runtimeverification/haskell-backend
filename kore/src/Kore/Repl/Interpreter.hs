@@ -61,6 +61,8 @@ import           System.Directory
 import           System.Process
                  ( StdStream (CreatePipe), createProcess, proc, std_in,
                  std_out )
+import           Text.Megaparsec
+                 ( parseMaybe )
 
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
@@ -82,6 +84,8 @@ import           Kore.OnePath.Verification
 import           Kore.OnePath.Verification
                  ( Claim )
 import           Kore.Repl.Data
+import           Kore.Repl.Parser
+                 ( commandParser )
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
 import qualified Kore.Step.Rule as Rule
@@ -140,7 +144,7 @@ replInterpreter printFn replCmd = do
                 Pipe inn file args -> pipe inn file args $> True
                 AppendTo inn file  -> appendTo inn file  $> True
                 Alias a            -> alias a            $> True
-                TryAlias name      -> tryAlias name printFn
+                TryAlias a         -> tryAlias a printFn
                 Exit               -> pure                  False
     (output, shouldContinue) <- evaluateCommand command
     liftIO $ printFn output
@@ -678,22 +682,26 @@ appendTo cmd file = do
 alias
     :: forall m claim
     .  MonadState (ReplState claim) m
-    => ReplAlias
+    => AliasDefinition
     -> m ()
 alias a = addOrUpdateAlias a
 
 tryAlias
     :: forall claim
     .  Claim claim
-    => String
+    => ReplAlias
     -> (String -> IO ())
     -> ReplM claim Bool
-tryAlias name printFn = do
+tryAlias replAlias@ReplAlias { name } printFn = do
     res <- findAlias name
     case res of
         Nothing  -> showUsage $> True
-        Just ReplAlias { command } -> do
-            (cont, st') <- get >>= runInterpreter command
+        Just alias -> do
+            let
+                command = substituteAlias alias replAlias
+                parsedCommand =
+                    maybe ShowUsage id $ parseMaybe commandParser command
+            (cont, st') <- get >>= runInterpreter parsedCommand
             put st'
             return cont
   where

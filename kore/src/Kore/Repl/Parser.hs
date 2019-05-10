@@ -185,12 +185,16 @@ alias :: Parser ReplCommand
 alias = do
     literal "alias"
     name <- word
+    arguments <- many $ wordWithout "="
     literal "="
-    cmd  <- commandParserExceptAlias
-    return . Alias $ ReplAlias name cmd
+    command <- some L.charLiteral
+    return . Alias $ AliasDefinition { name, arguments, command }
 
 tryAlias :: Parser ReplCommand
-tryAlias = TryAlias <$$> word
+tryAlias = do
+    name <- word
+    arguments <- some $ quotedOrWordWithout ""
+    return . TryAlias $ ReplAlias { name, arguments }
 
 infixr 2 <$$>
 infixr 1 <**>

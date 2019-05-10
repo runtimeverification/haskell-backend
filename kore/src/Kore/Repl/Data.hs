@@ -16,7 +16,7 @@ module Kore.Repl.Data
     , ReplNode (..)
     , ReplState (..)
     , NodeState (..)
-    , ReplAlias (..)
+    , AliasDefinition (..), ReplAlias (..)
     , getNodeState
     , InnerGraph
     , lensAxioms, lensClaims, lensClaim
@@ -31,7 +31,7 @@ module Kore.Repl.Data
     , getTargetNode, getInnerGraph, getConfigAt, getRuleFor
     , StepResult(..), runStepper, runStepper'
     , updateInnerGraph
-    , addOrUpdateAlias, findAlias
+    , addOrUpdateAlias, findAlias, substituteAlias
     ) where
 
 import           Control.Error
@@ -104,9 +104,15 @@ newtype ReplNode = ReplNode
     { unReplNode :: Graph.Node
     } deriving (Eq, Show)
 
+data AliasDefinition = AliasDefinition
+    { name      :: String
+    , arguments :: [String]
+    , command   :: String
+    } deriving (Eq, Show)
+
 data ReplAlias = ReplAlias
-    { name    :: String
-    , command :: ReplCommand
+    { name      :: String
+    , arguments :: [String]
     } deriving (Eq, Show)
 
 -- | List of available commands for the Repl. Note that we are always in a proof
@@ -160,9 +166,9 @@ data ReplCommand
     -- ^ Writes all commands executed in this session to a file on disk.
     | AppendTo ReplCommand FilePath
     -- ^ Appends the output of a command to a file.
-    | Alias ReplAlias
+    | Alias AliasDefinition
     -- ^ Alias a command.
-    | TryAlias String
+    | TryAlias ReplAlias
     -- ^ Try running an alias.
     | Exit
     -- ^ Exit the repl.
@@ -292,7 +298,7 @@ data ReplState claim = ReplState
     --   failures
     , labels  :: Map String ReplNode
     -- ^ Map from labels to nodes
-    , aliases :: Map String ReplAlias
+    , aliases :: Map String AliasDefinition
     -- ^ Map of command aliases
     }
 
@@ -528,9 +534,30 @@ data NodeState = StuckNode | UnevaluatedNode
     deriving (Eq, Ord, Show)
 
 -- | Adds or updates the provided alias.
-addOrUpdateAlias :: MonadState (ReplState claim) m => ReplAlias -> m ()
-addOrUpdateAlias alias@ReplAlias { name } =
+addOrUpdateAlias :: MonadState (ReplState claim) m => AliasDefinition -> m ()
+addOrUpdateAlias alias@AliasDefinition { name } =
     lensAliases Lens.%= Map.insert name alias
 
-findAlias :: MonadState (ReplState claim) m => String -> m (Maybe ReplAlias)
+findAlias
+    :: MonadState (ReplState claim) m
+    => String
+    -> m (Maybe AliasDefinition)
 findAlias name = Map.lookup name <$> Lens.use lensAliases
+
+substituteAlias
+    :: AliasDefinition
+    -> ReplAlias
+    -> String
+substituteAlias
+    AliasDefinition { arguments, command }
+    ReplAlias { arguments = actualArguments } =
+    unwords
+      . fmap replaceArguments
+      . words
+      $ command
+  where
+    values :: Map String String
+    values = Map.fromList $ zip arguments actualArguments
+
+    replaceArguments :: String -> String
+    replaceArguments s = maybe s id $ Map.lookup s values

@@ -98,7 +98,7 @@ makeAlias =
     let
         axioms  = []
         claim   = emptyClaim
-        alias   = ReplAlias { name = "a", command = Help }
+        alias   = AliasDefinition { name = "a", arguments = [], command = "help" }
         command = Alias alias
     in do
         Result { output, continue, state } <- run command axioms claim
@@ -112,9 +112,9 @@ tryAlias =
         axioms  = []
         claim   = emptyClaim
         name    = "h"
-        alias   = ReplAlias { name, command = Help }
+        alias   = AliasDefinition { name, arguments = [], command = "help" }
         stateT  = \st -> st { aliases = Map.insert name alias (aliases st) }
-        command = TryAlias "h"
+        command = TryAlias $ ReplAlias "h" []
     in do
         Result { output, continue } <-
             runWithState command axioms claim stateT
@@ -182,11 +182,11 @@ hasCurrentNode st n = do
   where
     justNode = Just n
 
-hasAlias :: ReplState Claim -> ReplAlias -> IO ()
-hasAlias st alias =
+hasAlias :: ReplState Claim -> AliasDefinition -> IO ()
+hasAlias st alias@AliasDefinition { name } =
     let
         aliasMap = aliases st
-        actual   = name alias `Map.lookup` aliasMap
+        actual   = name `Map.lookup` aliasMap
     in
         actual `equals` Just alias
 

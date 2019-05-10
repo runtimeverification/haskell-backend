@@ -37,8 +37,9 @@ test_replParser =
     , saveSessionTests  `tests` "save-session"
     , appendTests       `tests` "append"
     , pipeAppendTests   `tests` "pipe append"
-    , noArgsAliasTests  `tests` "no arguments alias tests"
+    , noArgsAliasTests  `tests` "no arguments alias"
     , tryAliasTests     `tests` "try alias"
+    , aliasesWithArgs   `tests` "aliases with arguments"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -305,21 +306,25 @@ saveSessionTests =
 
 noArgsAliasTests :: [ParserTest ReplCommand]
 noArgsAliasTests =
-    [ "alias a = help"                   `parsesTo_` alias Help
-    , "alias a = config 10"              `parsesTo_` alias config10
-    , "alias a = config 10 | cmd"        `parsesTo_` alias pipeCmd
-    , "alias a = config 10 > file"       `parsesTo_` alias redirectFile
-    , "alias a = config 10 | cmd > file" `parsesTo_` alias pipeRedirect
+    [ "alias a = help"              `parsesTo_` alias "help"
+    , "alias a = config 10"         `parsesTo_` alias "config 10"
+    , "alias a = config 10 | c"     `parsesTo_` alias "config 10 | c"
+    , "alias a = config 10 > f"     `parsesTo_` alias "config 10 > f"
+    , "alias a = config 10 | c > f" `parsesTo_` alias "config 10 | c > f"
     ]
   where
-    alias        = Alias . ReplAlias "a"
-    config10     = ShowConfig . Just . ReplNode $ 10
-    pipeCmd      = Pipe config10 "cmd" []
-    redirectFile = Redirect config10 "file"
-    pipeRedirect = Redirect pipeCmd "file"
+    alias        = Alias . AliasDefinition "a" []
 
 tryAliasTests :: [ParserTest ReplCommand]
 tryAliasTests =
-    [ "whatever"           `parsesTo_` TryAlias "whatever"
+    [ "whatever"           `parsesTo_` TryAlias (ReplAlias "whatever" [])
     , "whatever with args" `fails`     "arguments not yet supported"
     ]
+
+aliasesWithArgs :: [ParserTest ReplCommand]
+aliasesWithArgs =
+    [ "alias s n = step n" `parsesTo_` alias "s" ["n"] "step n"
+    ]
+  where
+    alias name arguments command =
+        Alias $ AliasDefinition { name, arguments, command }
