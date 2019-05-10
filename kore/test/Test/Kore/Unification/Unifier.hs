@@ -35,6 +35,8 @@ import           Kore.Internal.TermLike hiding
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
@@ -319,18 +321,25 @@ andSimplifyException message term1 term2 exceptionMessage =
                 exceptionMessage
                 s
 
-unificationProcedureSuccess
+unificationProcedureSuccessWithSimplifiers
     :: HasCallStack
     => TestName
+    -> SmtMetadataTools StepperAttributes
+    -- TODO(virgil): The above should not be here, we should just be using
+    -- `mockMetadataTools`, but while we are also using 'tools' below,
+    -- not passing it explicitly might be too confusing.
+    -> BuiltinAndAxiomSimplifierMap
     -> UnificationTerm
     -> UnificationTerm
-    -> [(Substitution, Syntax.Predicate Variable)]
+    -> [([(Variable, TermLike Variable)], Syntax.Predicate Variable)]
     -> TestTree
-unificationProcedureSuccess
+unificationProcedureSuccessWithSimplifiers
     message
+    mockTools
+    axiomIdToSimplifier
     (UnificationTerm term1)
     (UnificationTerm term2)
-    substPredicate
+    expect
   =
     testCase message $ do
         Right results <-
@@ -338,10 +347,10 @@ unificationProcedureSuccess
             $ evalSimplifier emptyLogger
             $ Monad.Unify.runUnifier
             $ unificationProcedure
-                tools
+                mockTools
                 (Mock.substitutionSimplifier tools)
-                (Simplifier.create tools Map.empty)
-                Map.empty
+                (Simplifier.create tools axiomIdToSimplifier)
+                axiomIdToSimplifier
                 term1
                 term2
         let
@@ -353,10 +362,25 @@ unificationProcedureSuccess
         assertEqualWithExplanation ""
             expect
             (map normalize results)
+
+unificationProcedureSuccess
+    :: HasCallStack
+    => TestName
+    -> UnificationTerm
+    -> UnificationTerm
+    -> [(Substitution, Syntax.Predicate Variable)]
+    -> TestTree
+unificationProcedureSuccess message term1 term2 substPredicate =
+    unificationProcedureSuccessWithSimplifiers
+        message
+        tools
+        Map.empty
+        term1
+        term2
+        expect
   where
     expect =
         map (Bifunctor.first unificationSubstitution) substPredicate
-
 
 test_unification :: [TestTree]
 test_unification =
@@ -545,7 +569,7 @@ test_unification =
             (UnificationResultTerm mkBottom_)
             []
             Syntax.Predicate.makeFalsePredicate
-          {- currently this cannot even be built because of builder checkd
+          {- currently this cannot even be built because of builder checks
     , andSimplifyFailure "Unmatching sorts"
         (UnificationTerm aA)
         (UnificationTerm bA)
@@ -560,6 +584,7 @@ test_unification =
                 $ [(V 1, var' 2)]
             )
         )
+
     ]
 
 test_unsupportedConstructs :: TestTree

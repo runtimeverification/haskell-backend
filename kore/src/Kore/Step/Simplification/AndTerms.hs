@@ -732,7 +732,7 @@ equalAndEquals
     -> Maybe (TermLike variable)
 equalAndEquals first second
   | first == second =
-    return (first)
+    return first
 equalAndEquals _ _ = empty
 
 -- | Unify two patterns where the first is @\\bottom@.
@@ -891,17 +891,7 @@ variableFunctionAndEquals
                            first
                            second
                         return Predicate.bottom
-                    [resultPredicate] ->
-                        return resultPredicate
-                    _ -> error
-                        (  "Unimplemented, ceil of "
-                        ++ show second
-                        ++ " returned multiple results: "
-                        ++ show resultOr
-                        ++ ". This could happen, as an example, when"
-                        ++ " defining ceil(f(x))=g(x), and the evaluation for"
-                        ++ " g(x) splits the configuration."
-                        )
+                    resultPredicates -> Monad.Unify.scatter resultPredicates
     let result = predicate <> Predicate.fromSingleSubstitution (v, second)
     return (Pattern.withCondition second result)
 variableFunctionAndEquals _ _ _ _ _ _ _ _ = empty

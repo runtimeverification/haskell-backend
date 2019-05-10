@@ -193,8 +193,8 @@ unificationWithAppMatchOnTop
                 ++ show second ++ "."
                 )
     _ -> error
-        (  "Expecting application patterns, but second = "
-        ++ show second ++ "."
+        (  "Expecting application or ceil with sort variable patterns, "
+        ++ "but second = " ++ show second ++ "."
         )
 
 match

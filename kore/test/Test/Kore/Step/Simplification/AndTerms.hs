@@ -1,6 +1,4 @@
-module Test.Kore.Step.Simplification.AndTerms
-    ( test_andTermsSimplification
-    ) where
+module Test.Kore.Step.Simplification.AndTerms where
 
 import Test.Tasty
        ( TestTree, testGroup )
@@ -10,19 +8,36 @@ import Test.Tasty.HUnit
 import           Control.Error
                  ( MaybeT (..) )
 import qualified Control.Error as Error
+import           Data.Default
+                 ( Default (..) )
 import qualified Data.Map as Map
 
+import qualified Kore.Attribute.Axiom as Attribute
+import           Kore.Attribute.Simplification
+                 ( Simplification (Simplification) )
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.MultiOr as MultiOr
+                 ( extractPatterns )
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
-                 ( makeEqualsPredicate, makeFalsePredicate, makeTruePredicate )
+                 ( makeCeilPredicate, makeEqualsPredicate, makeFalsePredicate,
+                 makeTruePredicate )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+import           Kore.Step.Axiom.Registry
+                 ( axiomPatternsToEvaluators )
+import           Kore.Step.Rule
+                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
+import qualified Kore.Step.Rule as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Step.Simplification.AndTerms
-                 ( termAnd, termUnification )
+                 ( termAnd, termEquals, termUnification )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
@@ -755,6 +770,132 @@ test_andTermsSimplification =
     -- TODO: Add tests for set unification.
     ]
 
+test_equalsTermsSimplification :: [TestTree]
+test_equalsTermsSimplification =
+    [ testCase "adds ceil when producing substitutions" $ do
+        let expected = Just
+                [ Conditional
+                    { term = ()
+                    , predicate = makeCeilPredicate Mock.cf
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.cf)]
+                    }
+                ]
+        actual <- simplifyEquals
+            mockMetadataTools Map.empty (mkVar Mock.x) Mock.cf
+        assertEqualWithExplanation "" expected actual
+    , testCase "handles ambiguity" $ do
+        let
+            expected = Just
+                [ Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [(Mock.x, Mock.cf), (Mock.y, Mock.a)]
+                    }
+                , Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                    }
+                ]
+            sortVar = SortVariableSort (SortVariable (testId "S"))
+            simplifiers = axiomPatternsToEvaluators $ Map.fromList
+                [   (   AxiomIdentifier.Ceil
+                            (AxiomIdentifier.Application Mock.cfId)
+                    ,   [ EqualityRule RulePattern
+                            { left = mkCeil sortVar Mock.cf
+                            , right =
+                                mkOr
+                                    (mkEquals_ (mkVar Mock.y) Mock.a)
+                                    (mkEquals_ (mkVar Mock.y) Mock.b)
+                            , requires = makeTruePredicate
+                            , ensures = makeTruePredicate
+                            , attributes = def
+                                {Attribute.simplification = Simplification True}
+                            }
+                        ]
+                    )
+                ]
+        actual <- simplifyEquals
+            mockMetadataTools simplifiers (mkVar Mock.x) Mock.cf
+        assertEqualWithExplanation "" expected actual
+    , testCase "handles multiple ambiguity" $ do
+        let
+            expected = Just
+                [ Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg)
+                        , (Mock.y, Mock.a), (Mock.z, Mock.a)
+                        ]
+                    }
+                , Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg)
+                        , (Mock.y, Mock.a), (Mock.z, Mock.b)
+                        ]
+                    }
+                , Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg)
+                        , (Mock.y, Mock.b), (Mock.z, Mock.a)
+                        ]
+                    }
+                , Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg)
+                        , (Mock.y, Mock.b), (Mock.z, Mock.b)
+                        ]
+                    }
+                ]
+            sortVar = SortVariableSort (SortVariable (testId "S"))
+            simplifiers = axiomPatternsToEvaluators $ Map.fromList
+                [   (   AxiomIdentifier.Ceil
+                            (AxiomIdentifier.Application Mock.cfId)
+                    ,   [ EqualityRule RulePattern
+                            { left = mkCeil sortVar Mock.cf
+                            , right =
+                                mkOr
+                                    (mkEquals_ (mkVar Mock.y) Mock.a)
+                                    (mkEquals_ (mkVar Mock.y) Mock.b)
+                            , requires = makeTruePredicate
+                            , ensures = makeTruePredicate
+                            , attributes = def
+                                {Attribute.simplification = Simplification True}
+                            }
+                        ]
+                    )
+                ,   (   AxiomIdentifier.Ceil
+                            (AxiomIdentifier.Application Mock.cgId)
+                    ,   [ EqualityRule RulePattern
+                            { left = mkCeil sortVar Mock.cg
+                            , right =
+                                mkOr
+                                    (mkEquals_ (mkVar Mock.z) Mock.a)
+                                    (mkEquals_ (mkVar Mock.z) Mock.b)
+                            , requires = makeTruePredicate
+                            , ensures = makeTruePredicate
+                            , attributes = def
+                                {Attribute.simplification = Simplification True}
+                            }
+                        ]
+                    )
+                ]
+        actual <- simplifyEquals
+            mockMetadataTools simplifiers
+            (Mock.functionalConstr20 (mkVar Mock.x) (mkVar Mock.var_x_1))
+            (Mock.functionalConstr20 Mock.cf Mock.cg)
+        assertEqualWithExplanation "" expected actual
+    ]
+
 fOfA :: TermLike Variable
 fOfA = Mock.f Mock.a
 
@@ -808,8 +949,7 @@ unify
 unify tools first second =
     SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
-    $ runMaybeT
-    $ unification
+    $ runMaybeT unification
   where
     substitutionSimplifier = Mock.substitutionSimplifier tools
     unification =
@@ -840,3 +980,23 @@ simplify tools first second =
         Map.empty
         first
         second
+
+simplifyEquals
+    :: SmtMetadataTools StepperAttributes
+    -> BuiltinAndAxiomSimplifierMap
+    -> TermLike Variable
+    -> TermLike Variable
+    -> IO (Maybe [Predicate Variable])
+simplifyEquals tools axiomIdToSimplifier first second =
+    fmap MultiOr.extractPatterns
+    <$> SMT.runSMT SMT.defaultConfig
+        ( evalSimplifier emptyLogger
+        $ runMaybeT
+        $ termEquals
+            tools
+            (Mock.substitutionSimplifier tools)
+            (Simplifier.create tools axiomIdToSimplifier)
+            axiomIdToSimplifier
+            first
+            second
+        )
