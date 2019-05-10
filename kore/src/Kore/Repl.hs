@@ -100,7 +100,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
         str <- prompt
         let command = maybe ShowUsage id $ parseMaybe commandParser str
         when (shouldStore command) $ lensCommands Lens.%= (Seq.|> str)
-        replInterpreter putStrLn command
+        replInterpreter printIfNotEmpty command
 
     state :: ReplState claim
     state =
@@ -117,6 +117,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             , stepper = stepper0
             , unifier = unifier0
             , labels  = Map.empty
+            , aliases = Map.empty
             }
 
     addIndexesToAxioms

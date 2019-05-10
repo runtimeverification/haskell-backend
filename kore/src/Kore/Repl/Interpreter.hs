@@ -10,6 +10,7 @@ module Kore.Repl.Interpreter
     ( replInterpreter
     , showUsageMessage
     , showStepStoppedMessage
+    , printIfNotEmpty
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -138,6 +139,8 @@ replInterpreter printFn replCmd = do
                 SaveSession file   -> saveSession file   $> True
                 Pipe inn file args -> pipe inn file args $> True
                 AppendTo inn file  -> appendTo inn file  $> True
+                Alias a            -> alias a            $> True
+                TryAlias name      -> tryAlias name printFn
                 Exit               -> pure                  False
     (output, shouldContinue) <- evaluateCommand command
     liftIO $ printFn output
@@ -672,6 +675,35 @@ appendTo cmd file = do
         -> ReplM claim (ReplState claim)
     runInterpreter = lift . execStateT (replInterpreter (appendFile file) cmd)
 
+alias
+    :: forall m claim
+    .  MonadState (ReplState claim) m
+    => ReplAlias
+    -> m ()
+alias a = addOrUpdateAlias a
+
+tryAlias
+    :: forall claim
+    .  Claim claim
+    => String
+    -> (String -> IO ())
+    -> ReplM claim Bool
+tryAlias name printFn = do
+    res <- findAlias name
+    case res of
+        Nothing  -> showUsage $> True
+        Just ReplAlias { command } -> do
+            (cont, st') <- get >>= runInterpreter command
+            put st'
+            return cont
+  where
+    runInterpreter
+        :: ReplCommand
+        -> ReplState claim
+        -> ReplM claim (Bool, ReplState claim)
+    runInterpreter cmd =
+        lift . runStateT (replInterpreter printFn cmd)
+
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
 -- Returns 'Left' while it has to continue looping, and 'Right' when done
@@ -765,6 +797,12 @@ unparseStrategy omitList =
 
 putStrLn' :: MonadWriter String m => String -> m ()
 putStrLn' str = tell $ str <> "\n"
+
+printIfNotEmpty :: String -> IO ()
+printIfNotEmpty =
+    \case
+        "" -> pure ()
+        xs -> putStrLn xs
 
 printNotFound :: MonadWriter String m => m ()
 printNotFound = putStrLn' "Variable or index not found"
