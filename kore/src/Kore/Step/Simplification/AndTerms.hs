@@ -1270,22 +1270,32 @@ sort with constructors.
 -}
 domainValueAndConstructorErrors
     :: Eq variable
+    => Unparse variable
+    => SortedVariable variable
     => SmtMetadataTools StepperAttributes
     -> TermLike variable
     -> TermLike variable
     -> Maybe (TermLike variable)
 domainValueAndConstructorErrors
     tools
-    (DV_ _ _)
-    (App_ secondHead _)
+    term1@(DV_ _ _)
+    term2@(App_ secondHead _)
     | give tools Attribute.isConstructor_ secondHead =
-      error "Cannot handle DomainValue and Constructor"
+      error (unlines [ "Cannot handle DomainValue and Constructor:"
+                     , unparseToString term1
+                     , unparseToString term2
+                     ]
+            )
 domainValueAndConstructorErrors
     tools
-    (App_ firstHead _)
-    (DV_ _ _)
+    term1@(App_ firstHead _)
+    term2@(DV_ _ _)
     | give tools Attribute.isConstructor_ firstHead =
-      error "Cannot handle Constructor and DomainValue"
+      error (unlines [ "Cannot handle Constructor and DomainValue:"
+                     , unparseToString term1
+                     , unparseToString term2
+                     ]
+            )
 domainValueAndConstructorErrors _ _ _ = empty
 
 {- | Unify two domain values.
