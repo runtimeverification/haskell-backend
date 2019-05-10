@@ -34,17 +34,17 @@ type Parser = Parsec String String
 
 scriptParser :: Parser [ReplCommand]
 scriptParser =
-    some (sc *> commandParser' <* sc <* some Char.newline) <* eof
+    some (sc *> many Char.newline *> sc *> commandParser' <* sc <* some Char.newline) <* eof
   where
     commandParser' :: Parser ReplCommand
     commandParser' = do
         cmd <- nonRecursiveCommand
-        return cmd
-            <|> pipeWith appendTo cmd
+        pipeWith appendTo cmd
             <|> pipeWith redirect cmd
             <|> appendTo cmd
             <|> redirect cmd
             <|> pipe cmd
+            <|> return cmd
 
 sc :: Parser ()
 sc = L.space space1NoNewline (L.skipLineComment "//") (L.skipBlockComment "/*" "*/")

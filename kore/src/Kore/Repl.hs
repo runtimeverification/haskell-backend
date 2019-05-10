@@ -23,9 +23,11 @@ import           Control.Monad.Extra
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.State.Strict
-                 ( MonadState, StateT, evalStateT )
+                 ( MonadState, StateT, evalStateT, execStateT, get )
 import           Data.Coerce
                  ( coerce )
+import           Data.Foldable
+                 ( traverse_ )
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
@@ -35,7 +37,7 @@ import           Kore.Attribute.RuleIndex
 import           System.IO
                  ( hFlush, stdout )
 import           Text.Megaparsec
-                 ( parseMaybe, parseTest )
+                 ( errorBundlePretty, parseMaybe, runParser )
 
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
@@ -95,7 +97,18 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     case mscript of
         Just file -> do
             contents <- liftIO $ readFile file
-            liftIO $ parseTest scriptParser contents
+            -- liftIO $ parseTest scriptParser contents
+            let result = runParser scriptParser file contents
+            replGreeting
+            case result of
+                Left err -> do
+                    liftIO
+                    . putStrLn
+                    $ "Couldn't parse initial script: "
+                    <> errorBundlePretty err
+                Right cmds -> do
+                    newSt <- execStateT (traverse_ (replInterpreter putStrLn) cmds) state
+                    evalStateT (whileM repl0) newSt
         Nothing -> do
             replGreeting
             evalStateT (whileM repl0) state

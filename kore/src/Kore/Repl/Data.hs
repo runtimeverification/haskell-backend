@@ -199,6 +199,7 @@ helpText =
     \clear [n]                             removes all node children from the\
                                            \ proof graph\n\
                                            \ (defaults to current node)\n\
+    \save-session file                     saves the current session to file\n\
     \exit                                  exits the repl\
     \\n\
     \Available modifiers:\n\
