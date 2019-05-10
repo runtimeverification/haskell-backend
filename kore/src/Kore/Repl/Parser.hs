@@ -30,7 +30,7 @@ type Parser = Parsec String String
 -- @
 commandParser :: Parser ReplCommand
 commandParser =
-    alias <|> commandParserExceptAlias
+    alias <|> commandParserExceptAlias <|> tryAlias
 
 commandParserExceptAlias :: Parser ReplCommand
 commandParserExceptAlias = do
@@ -66,7 +66,6 @@ nonRecursiveCommand =
         , clear
         , saveSession
         , exit
-        , tryAlias
         ]
 
 pipeWith

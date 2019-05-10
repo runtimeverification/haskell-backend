@@ -178,7 +178,7 @@ helpText =
     \prove <n>                             initializes proof mode for the nth \
                                            \claim\n\
     \graph [file]                          shows the current proof graph (*)\n\
-                                           \ (saves image if file argument is\
+    \                                      (saves image if file argument is\
                                            \ given)\n\
     \step [n]                              attempts to run 'n' proof steps at\
                                            \the current node (n=1 by default)\n\
@@ -207,8 +207,9 @@ helpText =
                                            \ index <num>.\n\
     \clear [n]                             removes all node children from the\
                                            \ proof graph\n\
-                                           \ (defaults to current node)\n\
+    \                                      (defaults to current node)\n\
     \alias <name> = <command>              adds as an alias for <command>\n\
+    \<alias>                               runs an existing alias\n\
     \exit                                  exits the repl\
     \\n\
     \Available modifiers:\n\

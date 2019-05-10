@@ -10,6 +10,7 @@ module Kore.Repl.Interpreter
     ( replInterpreter
     , showUsageMessage
     , showStepStoppedMessage
+    , printIfNotEmpty
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -700,7 +701,7 @@ tryAlias name = do
         -> ReplState claim
         -> ReplM claim (Bool, ReplState claim)
     runInterpreter cmd =
-        lift . runStateT (replInterpreter putStrLn cmd)
+        lift . runStateT (replInterpreter printIfNotEmpty cmd)
 
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
@@ -795,6 +796,12 @@ unparseStrategy omitList =
 
 putStrLn' :: MonadWriter String m => String -> m ()
 putStrLn' str = tell $ str <> "\n"
+
+printIfNotEmpty :: String -> IO ()
+printIfNotEmpty =
+    \case
+        "" -> pure ()
+        xs -> putStrLn xs
 
 printNotFound :: MonadWriter String m => m ()
 printNotFound = putStrLn' "Variable or index not found"

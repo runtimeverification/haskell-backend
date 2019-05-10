@@ -158,10 +158,11 @@ mkState axioms claim =
         , graph    = graph'
         , node     = ReplNode 0
         , commands = Seq.empty
-        , omit    = []
-        , stepper = stepper0
-        , unifier = unifier0
-        , labels  = Map.empty
+        , omit     = []
+        , stepper  = stepper0
+        , unifier  = unifier0
+        , labels   = Map.empty
+        , aliases  = Map.empty
         }
   where
     graph' = emptyExecutionGraph claim
