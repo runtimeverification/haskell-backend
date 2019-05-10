@@ -140,7 +140,7 @@ replInterpreter printFn replCmd = do
                 Pipe inn file args -> pipe inn file args $> True
                 AppendTo inn file  -> appendTo inn file  $> True
                 Alias a            -> alias a            $> True
-                TryAlias name      -> tryAlias name
+                TryAlias name      -> tryAlias name printFn
                 Exit               -> pure                  False
     (output, shouldContinue) <- evaluateCommand command
     liftIO $ printFn output
@@ -686,8 +686,9 @@ tryAlias
     :: forall claim
     .  Claim claim
     => String
+    -> (String -> IO ())
     -> ReplM claim Bool
-tryAlias name = do
+tryAlias name printFn = do
     res <- findAlias name
     case res of
         Nothing  -> showUsage $> True
@@ -701,7 +702,7 @@ tryAlias name = do
         -> ReplState claim
         -> ReplM claim (Bool, ReplState claim)
     runInterpreter cmd =
-        lift . runStateT (replInterpreter printIfNotEmpty cmd)
+        lift . runStateT (replInterpreter printFn cmd)
 
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
