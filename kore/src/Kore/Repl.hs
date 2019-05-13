@@ -8,6 +8,7 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 
 module Kore.Repl
     ( runRepl
+    , InitialScript (..)
     ) where
 
 import           Control.Exception
@@ -23,9 +24,11 @@ import           Control.Monad.Extra
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.State.Strict
-                 ( MonadState, StateT, evalStateT )
+                 ( MonadState, StateT, evalStateT, execStateT )
 import           Data.Coerce
                  ( coerce )
+import           Data.Foldable
+                 ( traverse_ )
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
@@ -35,7 +38,8 @@ import           Kore.Attribute.RuleIndex
 import           System.IO
                  ( hFlush, stdout )
 import           Text.Megaparsec
-                 ( parseMaybe )
+                 ( ParseErrorBundle (..), errorBundlePretty, parseMaybe,
+                 runParser )
 
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
@@ -69,6 +73,12 @@ import           Kore.Unification.Procedure
 import           Kore.Unparser
                  ( Unparse )
 
+-- | Represents an optional file name which contains a sequence of
+-- repl commands.
+newtype InitialScript = InitialScript
+    { unInitialScript :: Maybe FilePath
+    } deriving (Eq, Show)
+
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
 -- that would otherwise be required in the proof and allows for step-by-step
 -- execution of proofs. Currently works via stdin/stdout interaction.
@@ -88,19 +98,41 @@ runRepl
     -- ^ list of axioms to used in the proof
     -> [claim]
     -- ^ list of claims to be proven
+    -> InitialScript
+    -- ^ optional initial script
     -> Simplifier ()
-runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
-  = do
+runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims' initScript = do
+    let mscript = unInitialScript initScript
+    newState <- maybe (pure state) parseEvalScript mscript
     replGreeting
-    evalStateT (whileM repl0) state
+    evalStateT (whileM repl0) newState
 
   where
+
+    parseEvalScript :: FilePath -> Simplifier (ReplState claim)
+    parseEvalScript file = do
+       contents <- liftIO $ readFile file
+       let result = runParser scriptParser file contents
+       either parseFailed executeScript result
+
+    parseFailed :: ParseErrorBundle String String -> Simplifier (ReplState claim)
+    parseFailed err = do
+        liftIO . putStrLn
+            $ "\nCouldn't parse initial script file."
+            <> "\nParser error at: "
+            <> errorBundlePretty err
+        return state
+
+    executeScript :: [ReplCommand] -> Simplifier (ReplState claim)
+    executeScript cmds =
+        execStateT (traverse_ (replInterpreter $ \_ -> return () ) cmds) state
+
     repl0 :: StateT (ReplState claim) Simplifier Bool
     repl0 = do
         str <- prompt
         let command = maybe ShowUsage id $ parseMaybe commandParser str
         when (shouldStore command) $ lensCommands Lens.%= (Seq.|> str)
-        replInterpreter putStrLn command
+        replInterpreter printIfNotEmpty command
 
     state :: ReplState claim
     state =
@@ -117,6 +149,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             , stepper = stepper0
             , unifier = unifier0
             , labels  = Map.empty
+            , aliases = Map.empty
             }
 
     addIndexesToAxioms

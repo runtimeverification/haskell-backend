@@ -500,11 +500,11 @@ test_unification =
     , andSimplifyException "Unmatching constructor constant + domain value"
         (UnificationTerm aA)
         (UnificationTerm dv2)
-        "Cannot handle Constructor and DomainValue"
+        "Cannot handle Constructor and DomainValue:\na{}()\n\\dv{s1{}}(\"dv.\")\n"
     , andSimplifyException "Unmatching domain value + constructor constant"
         (UnificationTerm dv1)
         (UnificationTerm aA)
-        "Cannot handle DomainValue and Constructor"
+        "Cannot handle DomainValue and Constructor:\n\\dv{s1{}}(\"dv1\")\na{}()\n"
     , testCase "Unmatching domain value + nonconstructor constant" $
         andSimplifySuccess
             (UnificationTerm dv1)
