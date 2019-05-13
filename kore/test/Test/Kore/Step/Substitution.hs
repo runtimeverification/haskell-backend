@@ -1,4 +1,4 @@
- module Test.Kore.Step.Substitution
+module Test.Kore.Step.Substitution
     ( test_mergeAndNormalizeSubstitutions
     , test_normalize
     ) where
