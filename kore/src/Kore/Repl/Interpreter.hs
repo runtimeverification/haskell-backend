@@ -144,7 +144,7 @@ replInterpreter printFn replCmd = do
                 Pipe inn file args -> pipe inn file args $> True
                 AppendTo inn file  -> appendTo inn file  $> True
                 Alias a            -> alias a            $> True
-                TryAlias a         -> tryAlias a printFn
+                TryAlias name      -> tryAlias name printFn
                 Exit               -> pure                  False
     (output, shouldContinue) <- evaluateCommand command
     liftIO $ printFn output

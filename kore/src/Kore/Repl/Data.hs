@@ -219,6 +219,7 @@ helpText =
     \clear [n]                             removes all node children from the\
                                            \ proof graph\n\
     \                                      (defaults to current node)\n\
+    \save-session file                     saves the current session to file\n\
     \alias <name> = <command>              adds as an alias for <command>\n\
     \<alias>                               runs an existing alias\n\
     \exit                                  exits the repl\
