@@ -29,11 +29,13 @@ module Kore.Step.Strategy
     , stuck
     , continue
       -- * Running strategies
+    , GraphSearchOrder(..)
     , constructExecutionGraph
     , ExecutionGraph(..)
     , insNode
     , insEdge
     , runStrategy
+    , runStrategyWithSearchOrder
     , pickLongest
     , pickFinal
     , pickOne
@@ -349,6 +351,10 @@ emptyExecutionGraph config =
         , graph = Graph.insNode (0, config) Graph.empty
         }
 
+{-| Search order of the execution graph.
+-}
+data GraphSearchOrder = BreadthFirst | DepthFirst
+
 {- | Execute a 'Strategy'.
 
  The primitive strategy rule is used to execute the 'apply' strategy. The
@@ -370,10 +376,11 @@ constructExecutionGraph
     .  (Monad m, Show config, Show rule)
     => (instr -> config -> TransitionT rule m config)
     -> [instr]
+    -> GraphSearchOrder
     -> config
     -> m (ExecutionGraph config rule)
-constructExecutionGraph transit instrs0 config0 = do
-    finalGraph <- State.execStateT (unfoldWorker initialSeed) initialGraph
+constructExecutionGraph transit instrs0 graphSearch0 config0 = do
+    finalGraph <- State.execStateT (unfoldWorker initialSeed graphSearch0) initialGraph
     return exe { graph = finalGraph }
   where
     exe@ExecutionGraph { root, graph = initialGraph } =
@@ -385,18 +392,23 @@ constructExecutionGraph transit instrs0 config0 = do
 
     unfoldWorker
         :: Seq (Graph.Node, [instr])
+        -> GraphSearchOrder
         -> StateT (Gr config (Seq rule)) m ()
-    unfoldWorker Seq.Empty = return ()
-    unfoldWorker ((node, instrs) Seq.:<| rest)
-      | []              <- instrs = unfoldWorker rest
+    unfoldWorker Seq.Empty _ = return ()
+    unfoldWorker ((node, instrs) Seq.:<| rest) graphSearch
+      | []              <- instrs = unfoldWorker rest graphSearch
       | instr : instrs' <- instrs = do
         nodes' <- applyInstr instr node
         let seeds = map (withInstrs instrs') nodes'
-        -- The graph is unfolded breadth-first by appending the new seeds to the
-        -- end of the todo list. The next seed is always taken from the
-        -- beginning of the sequence, so that all the pending seeds are unfolded
-        -- once before the new seeds are unfolded.
-        unfoldWorker (rest <> Seq.fromList seeds)
+        case graphSearch of
+            -- The graph is unfolded breadth-first by appending the new seeds to the
+            -- end of the todo list. The next seed is always taken from the
+            -- beginning of the sequence, so that all the pending seeds are unfolded
+            -- once before the new seeds are unfolded.
+            BreadthFirst -> unfoldWorker (rest <> Seq.fromList seeds) graphSearch
+            -- The graph is unfolded depth-first by putting the new seeds to the
+            -- head of the todo list.
+            DepthFirst -> unfoldWorker (Seq.fromList seeds <> rest) graphSearch
 
     withInstrs instrs nodes = (nodes, instrs)
 
@@ -488,7 +500,22 @@ runStrategy
     -- ^ Initial configuration
     -> m (ExecutionGraph config rule)
 runStrategy applyPrim instrs0 config0 =
-    constructExecutionGraph (transitionRule applyPrim) instrs0 config0
+    runStrategyWithSearchOrder applyPrim instrs0 BreadthFirst config0
+
+runStrategyWithSearchOrder
+    :: forall m prim rule config
+    .  (Monad m, Show config, Show rule)
+    => (prim -> config -> TransitionT rule m config)
+    -- ^ Primitive strategy rule
+    -> [Strategy prim]
+    -- ^ Strategies
+    -> GraphSearchOrder
+    -- ^ Search order of the execution graph
+    -> config
+    -- ^ Initial configuration
+    -> m (ExecutionGraph config rule)
+runStrategyWithSearchOrder applyPrim instrs0 graphSearch0 config0 =
+    constructExecutionGraph (transitionRule applyPrim) instrs0 graphSearch0 config0
 
 {- | Construct the step-wise execution history of an 'ExecutionGraph'.
 
