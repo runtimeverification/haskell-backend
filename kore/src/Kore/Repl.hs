@@ -23,7 +23,7 @@ import           Control.Monad.Extra
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.State.Strict
-                 ( MonadState, StateT, evalStateT, execStateT, get )
+                 ( MonadState, StateT, evalStateT, execStateT )
 import           Data.Coerce
                  ( coerce )
 import           Data.Foldable
@@ -97,7 +97,6 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     case mscript of
         Just file -> do
             contents <- liftIO $ readFile file
-            -- liftIO $ parseTest scriptParser contents
             let result = runParser scriptParser file contents
             replGreeting
             case result of
@@ -108,7 +107,8 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
                     <> "\nParser error at: "
                     <> errorBundlePretty err
                 Right cmds -> do
-                    newSt <- execStateT (traverse_ (replInterpreter (\s -> return ())) cmds) state
+                    newSt <-
+                        execStateT (traverse_ (replInterpreter $ \_ -> return () ) cmds) state
                     evalStateT (whileM repl0) newSt
         Nothing -> do
             replGreeting
