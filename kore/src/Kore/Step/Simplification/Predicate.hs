@@ -129,7 +129,7 @@ simplify
 assertDistinctVariables
     :: forall variable m
     .   ( Show variable
-        , Eq variable
+        , Ord variable
         , Monad m
         )
     => Substitution variable

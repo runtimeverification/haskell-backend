@@ -12,7 +12,7 @@ module Kore.Internal.OrPattern
     , isFalse
     , top
     , isTrue
-    , toExpandedPattern
+    , toPattern
     , toTermLike
     , MultiOr.flatten
     ) where
@@ -93,24 +93,23 @@ top = fromPattern Pattern.top
 isTrue :: Ord variable => OrPattern variable -> Bool
 isTrue = isTop
 
-{-| 'toExpandedPattern' transforms an 'Pattern' into
+{-| 'toPattern' transforms an 'Pattern' into
 an 'Pattern.Pattern'.
 -}
-toExpandedPattern
+toPattern
     ::  ( SortedVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
         )
     => OrPattern variable -> Pattern variable
-toExpandedPattern multiOr
-  =
+toPattern multiOr =
     case MultiOr.extractPatterns multiOr of
         [] -> Pattern.bottom
         [patt] -> patt
         patts ->
             Conditional.Conditional
-                { term = Foldable.foldr1 mkOr (Pattern.toMLPattern <$> patts)
+                { term = Foldable.foldr1 mkOr (Pattern.toTermLike <$> patts)
                 , predicate = Syntax.Predicate.makeTruePredicate
                 , substitution = mempty
                 }
@@ -127,5 +126,5 @@ toTermLike
 toTermLike multiOr =
     case MultiOr.extractPatterns multiOr of
         [] -> mkBottom_
-        [patt] -> Pattern.toMLPattern patt
-        patts -> Foldable.foldr1 mkOr (Pattern.toMLPattern <$> patts)
+        [patt] -> Pattern.toTermLike patt
+        patts -> Foldable.foldr1 mkOr (Pattern.toTermLike <$> patts)

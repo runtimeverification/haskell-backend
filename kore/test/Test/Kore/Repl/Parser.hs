@@ -37,6 +37,8 @@ test_replParser =
     , saveSessionTests  `tests`  "save-session"
     , appendTests       `tests`  "append"
     , pipeAppendTests   `tests`  "pipe append"
+    , noArgsAliasTests  `tests`  "no arguments alias tests"
+    , tryAliasTests     `tests`  "try alias"
     , initScriptTests   `sTests` "repl script"
     ]
 
@@ -331,3 +333,24 @@ initScriptTests =
               \config   5 | grep predicate > file\n\
               \// comment\n\
               \select    9    \n"
+
+noArgsAliasTests :: [ParserTest ReplCommand]
+noArgsAliasTests =
+    [ "alias a = help"                   `parsesTo_` alias Help
+    , "alias a = config 10"              `parsesTo_` alias config10
+    , "alias a = config 10 | cmd"        `parsesTo_` alias pipeCmd
+    , "alias a = config 10 > file"       `parsesTo_` alias redirectFile
+    , "alias a = config 10 | cmd > file" `parsesTo_` alias pipeRedirect
+    ]
+  where
+    alias        = Alias . ReplAlias "a"
+    config10     = ShowConfig . Just . ReplNode $ 10
+    pipeCmd      = Pipe config10 "cmd" []
+    redirectFile = Redirect config10 "file"
+    pipeRedirect = Redirect pipeCmd "file"
+
+tryAliasTests :: [ParserTest ReplCommand]
+tryAliasTests =
+    [ "whatever"           `parsesTo_` TryAlias "whatever"
+    , "whatever with args" `fails`     "arguments not yet supported"
+    ]

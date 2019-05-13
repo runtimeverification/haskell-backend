@@ -27,6 +27,7 @@ import           Control.Exception
                  ( assert )
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
+import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import           Data.Reflection
                  ( give )
@@ -69,7 +70,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import           Kore.Step.Substitution
-                 ( PredicateMerger (PredicateMerger),
+                 ( PredicateMerger,
                  createLiftedPredicatesAndSubstitutionsMerger,
                  createPredicatesAndSubstitutionsMergerExcept )
 import           Kore.TopBottom
@@ -855,11 +856,11 @@ variableFunctionAndEquals
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
-    (PredicateMerger substitutionMerger)
+    _
     first@(Var_ v)
     second
   | isFunctionPattern tools second = Monad.Trans.lift $ do -- MonadUnify
-    Conditional {term = (), predicate, substitution} <-
+    predicate <-
         case simplificationType of -- Simplifier
             SimplificationType.And ->
                 -- Ceil predicate not needed since 'second' being bottom
@@ -896,10 +897,8 @@ variableFunctionAndEquals
                         ++ " defining ceil(f(x))=g(x), and the evaluation for"
                         ++ " g(x) splits the configuration."
                         )
-    merged <- substitutionMerger
-            [predicate]
-            [substitution, Substitution.wrap [(v, second)]]
-    return $ Pattern.withCondition second merged
+    let result = predicate <> Predicate.fromSingleSubstitution (v, second)
+    return (Pattern.withCondition second result)
 variableFunctionAndEquals _ _ _ _ _ _ _ _ = empty
 
 {- | Unify a function pattern with a variable.
@@ -969,23 +968,20 @@ equalInjectiveHeadsAndEquals
     -> MaybeT unifier (Pattern variable)
 equalInjectiveHeadsAndEquals
     tools
-    (PredicateMerger substitutionMerger)
+    _
     termMerger
     firstPattern@(App_ firstHead firstChildren)
     (App_ secondHead secondChildren)
   | isFirstInjective && isSecondInjective && firstHead == secondHead =
     Monad.Trans.lift $ do
         children <- Monad.zipWithM termMerger firstChildren secondChildren
-        let predicates = Pattern.predicate <$> children
-            substitutions = Pattern.substitution <$> children
-        merged <- substitutionMerger predicates substitutions
-        return merged
-            { term =
+        let merged = Foldable.foldMap Pattern.withoutTerm children
+            term =
                 mkApp
                     (termLikeSort firstPattern)
                     firstHead
                     (Pattern.term <$> children)
-            }
+        return (Pattern.withCondition term merged)
   where
     isFirstInjective = give tools Attribute.isInjective_ firstHead
     isSecondInjective = give tools Attribute.isInjective_ secondHead
@@ -1274,22 +1270,32 @@ sort with constructors.
 -}
 domainValueAndConstructorErrors
     :: Eq variable
+    => Unparse variable
+    => SortedVariable variable
     => SmtMetadataTools StepperAttributes
     -> TermLike variable
     -> TermLike variable
     -> Maybe (TermLike variable)
 domainValueAndConstructorErrors
     tools
-    (DV_ _ _)
-    (App_ secondHead _)
+    term1@(DV_ _ _)
+    term2@(App_ secondHead _)
     | give tools Attribute.isConstructor_ secondHead =
-      error "Cannot handle DomainValue and Constructor"
+      error (unlines [ "Cannot handle DomainValue and Constructor:"
+                     , unparseToString term1
+                     , unparseToString term2
+                     ]
+            )
 domainValueAndConstructorErrors
     tools
-    (App_ firstHead _)
-    (DV_ _ _)
+    term1@(App_ firstHead _)
+    term2@(DV_ _ _)
     | give tools Attribute.isConstructor_ firstHead =
-      error "Cannot handle Constructor and DomainValue"
+      error (unlines [ "Cannot handle Constructor and DomainValue:"
+                     , unparseToString term1
+                     , unparseToString term2
+                     ]
+            )
 domainValueAndConstructorErrors _ _ _ = empty
 
 {- | Unify two domain values.

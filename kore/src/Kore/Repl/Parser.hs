@@ -23,7 +23,6 @@ import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import Kore.Repl.Data
-       ( AxiomIndex (..), ClaimIndex (..), ReplCommand (..), ReplNode (..) )
 
 type Parser = Parsec String String
 
@@ -52,7 +51,11 @@ scriptParser =
             <|> return cmd
 
 commandParser :: Parser ReplCommand
-commandParser = do
+commandParser =
+    alias <|> commandParserExceptAlias <|> tryAlias
+
+commandParserExceptAlias :: Parser ReplCommand
+commandParserExceptAlias = do
     cmd <- nonRecursiveCommand
     endOfInput cmd
         <|> pipeWith appendTo cmd
@@ -199,6 +202,17 @@ appendTo cmd =
     AppendTo cmd
     <$$> literal ">>"
     *> quotedOrWordWithout ""
+
+alias :: Parser ReplCommand
+alias = do
+    literal "alias"
+    name <- word
+    literal "="
+    cmd  <- commandParserExceptAlias
+    return . Alias $ ReplAlias name cmd
+
+tryAlias :: Parser ReplCommand
+tryAlias = TryAlias <$$> word
 
 infixr 2 <$$>
 infixr 1 <**>

@@ -246,8 +246,8 @@ simplifyEvaluated
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplfier
-                (OrPattern.toExpandedPattern first)
-                (OrPattern.toExpandedPattern second)
+                (OrPattern.toPattern first)
+                (OrPattern.toPattern second)
   where
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second

@@ -16,12 +16,13 @@ module Kore.Repl.Data
     , ReplNode (..)
     , ReplState (..)
     , NodeState (..)
+    , ReplAlias (..)
     , getNodeState
     , InnerGraph
     , lensAxioms, lensClaims, lensClaim
     , lensGraph, lensNode, lensStepper
     , lensLabels, lensOmit, lensUnifier
-    , lensCommands, shouldStore
+    , lensCommands, lensAliases, shouldStore
     , UnifierWithExplanation (..)
     , runUnifierWithExplanation
     , emptyExecutionGraph
@@ -30,6 +31,7 @@ module Kore.Repl.Data
     , getTargetNode, getInnerGraph, getConfigAt, getRuleFor
     , StepResult(..), runStepper, runStepper'
     , updateInnerGraph
+    , addOrUpdateAlias, findAlias
     ) where
 
 import           Control.Error
@@ -72,9 +74,7 @@ import           Kore.Internal.Pattern
                  ( Conditional (..) )
 import           Kore.Internal.TermLike
                  ( TermLike )
-import           Kore.OnePath.Step
-                 ( CommonStrategyPattern, StrategyPattern (..),
-                 StrategyPatternTransformer (..), strategyPattern )
+import           Kore.OnePath.StrategyPattern
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
 import           Kore.OnePath.Verification
@@ -102,6 +102,11 @@ newtype ClaimIndex = ClaimIndex
 
 newtype ReplNode = ReplNode
     { unReplNode :: Graph.Node
+    } deriving (Eq, Show)
+
+data ReplAlias = ReplAlias
+    { name    :: String
+    , command :: ReplCommand
     } deriving (Eq, Show)
 
 -- | List of available commands for the Repl. Note that we are always in a proof
@@ -155,6 +160,10 @@ data ReplCommand
     -- ^ Writes all commands executed in this session to a file on disk.
     | AppendTo ReplCommand FilePath
     -- ^ Appends the output of a command to a file.
+    | Alias ReplAlias
+    -- ^ Alias a command.
+    | TryAlias String
+    -- ^ Try running an alias.
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -169,7 +178,7 @@ helpText =
     \prove <n>                             initializes proof mode for the nth \
                                            \claim\n\
     \graph [file]                          shows the current proof graph (*)\n\
-                                           \ (saves image if file argument is\
+    \                                      (saves image if file argument is\
                                            \ given)\n\
     \step [n]                              attempts to run 'n' proof steps at\
                                            \the current node (n=1 by default)\n\
@@ -200,6 +209,8 @@ helpText =
                                            \ proof graph\n\
                                            \ (defaults to current node)\n\
     \save-session file                     saves the current session to file\n\
+    \alias <name> = <command>              adds as an alias for <command>\n\
+    \<alias>                               runs an existing alias\n\
     \exit                                  exits the repl\
     \\n\
     \Available modifiers:\n\
@@ -282,8 +293,9 @@ data ReplState claim = ReplState
     --   failures
     , labels  :: Map String ReplNode
     -- ^ Map from labels to nodes
+    , aliases :: Map String ReplAlias
+    -- ^ Map of command aliases
     }
-
 
 -- | Unifier that stores the first 'explainBottom'.
 -- See 'runUnifierWithExplanation'.
@@ -515,3 +527,11 @@ getNodeState graph node =
 
 data NodeState = StuckNode | UnevaluatedNode
     deriving (Eq, Ord, Show)
+
+-- | Adds or updates the provided alias.
+addOrUpdateAlias :: MonadState (ReplState claim) m => ReplAlias -> m ()
+addOrUpdateAlias alias@ReplAlias { name } =
+    lensAliases Lens.%= Map.insert name alias
+
+findAlias :: MonadState (ReplState claim) m => String -> m (Maybe ReplAlias)
+findAlias name = Map.lookup name <$> Lens.use lensAliases
