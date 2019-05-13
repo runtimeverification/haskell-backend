@@ -10,8 +10,6 @@ import Test.Tasty.HUnit
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
@@ -28,7 +26,6 @@ import           Kore.Step.Simplification.DomainValue
                  ( simplify )
 
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import           Test.Kore.Step.MockSymbols
                  ( testSort )
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -54,7 +51,7 @@ test_domainValueSimplification =
                 ]
             )
             (evaluate
-                mockMetadataTools
+                Mock.emptyMetadataTools
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
                     , domainValueChild =
@@ -68,7 +65,7 @@ test_domainValueSimplification =
             "Expected \\bottom to propagate to the top level"
             (OrPattern.fromPatterns [])
             (evaluate
-                mockMetadataTools
+                Mock.emptyMetadataTools
                 (mkMapDomainValue [(Mock.aConcrete, bottom)])
             )
         )
@@ -77,7 +74,7 @@ test_domainValueSimplification =
             "Expected \\bottom to propagate to the top level"
             (OrPattern.fromPatterns [])
             (evaluate
-                mockMetadataTools
+                Mock.emptyMetadataTools
                 (mkListDomainValue [bottom])
             )
         )
@@ -106,10 +103,6 @@ mkListDomainValue children =
         , builtinListConcat = Mock.concatListSymbol
         , builtinListChild = Seq.fromList children
         }
-
-mockMetadataTools :: SmtMetadataTools StepperAttributes
-mockMetadataTools =
-    Mock.makeMetadataTools [] [] [] [] [] Mock.emptySmtDeclarations
 
 evaluate
     :: SmtMetadataTools attrs

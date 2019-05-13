@@ -7,10 +7,6 @@ import Test.Tasty.HUnit
 
 import qualified Data.Map as Map
 
-import qualified Kore.Attribute.Symbol as Attribute
-                 ( Symbol )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -28,7 +24,6 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import qualified SMT
 
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
@@ -53,27 +48,17 @@ test_Pattern_simplify =
             actual <- simplify original
             assertEqualWithExplanation "" expect actual
 
-metadataTools :: SmtMetadataTools Attribute.Symbol
-metadataTools =
-    Mock.makeMetadataTools
-        Mock.attributesMapping
-        Mock.headTypeMapping
-        Mock.sortAttributesMapping
-        Mock.subsorts
-        Mock.headSortsMapping
-        Mock.smtDeclarations
-
 simplify :: Pattern Variable -> IO (OrPattern Variable)
 simplify original =
     SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ Pattern.simplify
-        metadataTools
+        Mock.metadataTools
         predicateSimplifier
         termLikeSimplifier
         axiomSimplifiers
         original
   where
-    predicateSimplifier = Mock.substitutionSimplifier metadataTools
-    termLikeSimplifier = Simplifier.create metadataTools axiomSimplifiers
+    predicateSimplifier = Mock.substitutionSimplifier Mock.metadataTools
+    termLikeSimplifier = Simplifier.create Mock.metadataTools axiomSimplifiers
     axiomSimplifiers = Map.empty
