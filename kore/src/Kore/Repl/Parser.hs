@@ -193,7 +193,7 @@ alias = do
 tryAlias :: Parser ReplCommand
 tryAlias = do
     name <- word
-    arguments <- some (QuotedArgument <$> quotedWord <|> SimpleArgument <$> wordWithout "")
+    arguments <- many (QuotedArgument <$> quotedWord <|> SimpleArgument <$> wordWithout "")
     return . TryAlias $ ReplAlias { name, arguments }
 
 infixr 2 <$$>

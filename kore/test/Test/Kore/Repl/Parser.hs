@@ -60,8 +60,6 @@ claimTests =
     [ "claim 0"  `parsesTo_` ShowClaim (ClaimIndex 0)
     , "claim 0 " `parsesTo_` ShowClaim (ClaimIndex 0)
     , "claim 5"  `parsesTo_` ShowClaim (ClaimIndex 5)
-    , "claim"    `fails`     "needs parameters"
-    , "claim -5" `fails`     "no negative numbers"
     ]
 
 axiomTests :: [ParserTest ReplCommand]
@@ -69,8 +67,6 @@ axiomTests =
     [ "axiom 0"  `parsesTo_` ShowAxiom (AxiomIndex 0)
     , "axiom 0 " `parsesTo_` ShowAxiom (AxiomIndex 0)
     , "axiom 5"  `parsesTo_` ShowAxiom (AxiomIndex 5)
-    , "axiom"    `fails`     "needs parameters"
-    , "axiom -5" `fails`     "no negative numbers"
     ]
 
 proveTests :: [ParserTest ReplCommand]
@@ -78,8 +74,6 @@ proveTests =
     [ "prove 0"  `parsesTo_` Prove (ClaimIndex 0)
     , "prove 0 " `parsesTo_` Prove (ClaimIndex 0)
     , "prove 5"  `parsesTo_` Prove (ClaimIndex 5)
-    , "prove"    `fails`     "needs parameters"
-    , "prove -5" `fails`     "no negative numbers"
     ]
 
 graphTests :: [ParserTest ReplCommand]
@@ -88,7 +82,6 @@ graphTests =
     , "graph "          `parsesTo_` ShowGraph Nothing
     , "graph file"      `parsesTo_` ShowGraph (Just "file")
     , "graph \"f ile\"" `parsesTo_` ShowGraph (Just "f ile")
-    , "graph f ile"     `fails`     "graph doesn't take 2 args"
     ]
 
 stepTests :: [ParserTest ReplCommand]
@@ -97,7 +90,6 @@ stepTests =
     , "step "   `parsesTo_` ProveSteps 1
     , "step 5"  `parsesTo_` ProveSteps 5
     , "step 5 " `parsesTo_` ProveSteps 5
-    , "step -5" `fails`     "no negative numbers"
     ]
 
 stepfTests :: [ParserTest ReplCommand]
@@ -106,14 +98,12 @@ stepfTests =
     , "stepf "   `parsesTo_` ProveStepsF 1
     , "stepf 5"  `parsesTo_` ProveStepsF 5
     , "stepf 5 " `parsesTo_` ProveStepsF 5
-    , "stepf -5" `fails`     "no negative numbers"
     ]
 
 selectTests :: [ParserTest ReplCommand]
 selectTests =
     [ "select 5"  `parsesTo_` SelectNode (ReplNode 5)
     , "select 5 " `parsesTo_` SelectNode (ReplNode 5)
-    , "select -5" `fails`     "no negative numbers"
     ]
 
 configTests :: [ParserTest ReplCommand]
@@ -121,7 +111,6 @@ configTests =
     [ "config"    `parsesTo_` ShowConfig Nothing
     , "config "   `parsesTo_` ShowConfig Nothing
     , "config 5"  `parsesTo_` ShowConfig (Just (ReplNode 5))
-    , "config -5" `fails`     "no negative numbers"
     ]
 
 omitTests :: [ParserTest ReplCommand]
@@ -146,7 +135,6 @@ precBranchTests =
     [ "prec-branch"    `parsesTo_` ShowPrecBranch Nothing
     , "prec-branch "   `parsesTo_` ShowPrecBranch Nothing
     , "prec-branch 5"  `parsesTo_` ShowPrecBranch (Just (ReplNode 5))
-    , "prec-branch -5" `fails`     "no negative numbers"
     ]
 
 childrenTests :: [ParserTest ReplCommand]
@@ -154,7 +142,6 @@ childrenTests =
     [ "children"    `parsesTo_` ShowChildren Nothing
     , "children "   `parsesTo_` ShowChildren Nothing
     , "children 5"  `parsesTo_` ShowChildren (Just (ReplNode 5))
-    , "children -5" `fails`     "no negative numbers"
     ]
 
 labelTests :: [ParserTest ReplCommand]
@@ -170,17 +157,12 @@ labelTests =
     , "label +1ab31 5"  `parsesTo_` LabelAdd "1ab31" (Just (ReplNode 5))
     , "label -label"    `parsesTo_` LabelDel "label"
     , "label -1ab31"    `parsesTo_` LabelDel "1ab31"
-    , "label +label -5" `fails`     "no negative numbers"
     ]
 
 tryTests :: [ParserTest ReplCommand]
 tryTests =
     [ "try a5"  `parsesTo_` tryAxiom 5
     , "try c5"  `parsesTo_` tryClaim 5
-    , "try"     `fails`     "empty try"
-    , "try 5"   `fails`     "need to specify axiom or claim"
-    , "try a 5" `fails`     "can't separate specifier and id"
-    , "try a"   `fails`     "must specify identifier"
     ]
   where
     tryAxiom :: Int -> ReplCommand
@@ -202,7 +184,6 @@ redirectTests =
     , "config 5 > file"   `parsesTo_` Redirect (ShowConfig (Just (ReplNode 5))) "file"
     , "claim 3 > cf"      `parsesTo_` Redirect (ShowClaim (ClaimIndex 3)) "cf"
     , "claim 3 > \"c f\"" `parsesTo_` Redirect (ShowClaim (ClaimIndex 3)) "c f"
-    , "config 5 > "       `fails`     "no file name"
     ]
 
 pipeTests :: [ParserTest ReplCommand]
@@ -212,7 +193,6 @@ pipeTests =
     , "config 5 | script \"arg1\" \"arg2\"" `parsesTo_` pipeConfig (Just (ReplNode 5)) "script" ["arg1", "arg2"]
     , "step 5 | script"                     `parsesTo_` pipeStep 5 "script" []
     , "step 5 | \"s c ri p t\""             `parsesTo_` pipeStep 5 "s c ri p t" []
-    , "config 5 | "                         `fails`     "no script name"
     ]
   where
     pipeConfig
@@ -239,9 +219,6 @@ pipeRedirectTests =
         `parsesTo_` pipeRedirectConfig Nothing "s cript" ["arg 1", "arg2"] "f ile"
     , "config 5 | script \"a r g 1\" arg2 > file"
         `parsesTo_` pipeRedirectConfig (Just (ReplNode 5)) "script" ["a r g 1", "arg2"] "file"
-    , "config 5 | > "        `fails`     "no script or file name"
-    , "config 5 | script > " `fails`     "no file name"
-    , "config 5 | > file"    `fails`     "no script name"
     ]
   where
     pipeRedirectConfig
@@ -257,7 +234,6 @@ appendTests :: [ParserTest ReplCommand]
 appendTests =
     [ "config >> file"        `parsesTo_` AppendTo (ShowConfig Nothing) "file"
     , "config >> \"f i l e\"" `parsesTo_` AppendTo (ShowConfig Nothing) "f i l e"
-    , "config >> "            `fails`     "no file name"
     ]
 
 pipeAppendTests :: [ParserTest ReplCommand]
@@ -266,8 +242,6 @@ pipeAppendTests =
         `parsesTo_` pipeAppendConfig Nothing "script" [] "file"
     , "config 5 | \"sc ript\" arg1 \"a rg\" >> \"f ile\""
         `parsesTo_` pipeAppendConfig (Just (ReplNode 5)) "sc ript" ["arg1", "a rg"] "f ile"
-    , "config | > >> file" `fails` "incorrect script name"
-    , "config | s >> "     `fails` "no file name"
     ]
   where
     pipeAppendConfig
@@ -285,7 +259,6 @@ ruleTests =
     , "rule "   `parsesTo_` ShowRule Nothing
     , "rule 5"  `parsesTo_` ShowRule (Just (ReplNode 5))
     , "rule 5 " `parsesTo_` ShowRule (Just (ReplNode 5))
-    , "rule -5" `fails`     "no negative numbers"
     ]
 
 clearTests :: [ParserTest ReplCommand]
@@ -294,14 +267,12 @@ clearTests =
     , "clear "   `parsesTo_` Clear Nothing
     , "clear 5"  `parsesTo_` Clear (Just (ReplNode 5))
     , "clear 5 " `parsesTo_` Clear (Just (ReplNode 5))
-    , "clear -5" `fails`     "no negative numbers"
     ]
 
 saveSessionTests :: [ParserTest ReplCommand]
 saveSessionTests =
     [ "save-session file"  `parsesTo_` SaveSession "file"
     , "save-session file " `parsesTo_` SaveSession "file"
-    , "save-session"       `fails`     "need to supply file name"
     ]
 
 noArgsAliasTests :: [ParserTest ReplCommand]
@@ -318,12 +289,14 @@ noArgsAliasTests =
 tryAliasTests :: [ParserTest ReplCommand]
 tryAliasTests =
     [ "whatever"           `parsesTo_` TryAlias (ReplAlias "whatever" [])
-    , "whatever with args" `fails`     "arguments not yet supported"
     ]
 
 aliasesWithArgs :: [ParserTest ReplCommand]
 aliasesWithArgs =
-    [ "alias s n = step n" `parsesTo_` alias "s" ["n"] "step n"
+    [ "alias s n = step n"         `parsesTo_` alias "s" ["n"] "step n"
+    , "alias s = step 1 > \"a b\"" `parsesTo_` alias "s" [] "step 1 > \"a b\""
+    , "alias c n s = config n | echo \"hello world\" > s"
+            `parsesTo_` alias "c" ["n", "s"] "config n | echo \"hello world\" > s"
     ]
   where
     alias name arguments command =
