@@ -353,7 +353,7 @@ emptyExecutionGraph config =
 
 {-| Search order of the execution graph.
 -}
-data GraphSearchOrder = BreadthFirst | DepthFirst
+data GraphSearchOrder = BreadthFirst | DepthFirst deriving Eq
 
 {- | Execute a 'Strategy'.
 
