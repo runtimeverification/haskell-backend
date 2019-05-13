@@ -43,6 +43,8 @@ test_replInterpreter =
     , help      `tests` "Showing the help message"
     , step5     `tests` "Performing 5 steps"
     , step100   `tests` "Stepping over proof completion"
+    , makeAlias `tests` "Creating an alias"
+    , tryAlias  `tests` "Executing an existing alias"
     ]
 
 showUsage :: IO ()
@@ -91,6 +93,35 @@ step100 =
         continue   `equals`         True
         state      `hasCurrentNode` ReplNode 10
 
+makeAlias :: IO ()
+makeAlias =
+    let
+        axioms  = []
+        claim   = emptyClaim
+        alias   = ReplAlias { name = "a", command = Help }
+        command = Alias alias
+    in do
+        Result { output, continue, state } <- run command axioms claim
+        output   `equalsOutput` ""
+        continue `equals`       True
+        state    `hasAlias`     alias
+
+tryAlias :: IO ()
+tryAlias =
+    let
+        axioms  = []
+        claim   = emptyClaim
+        name    = "h"
+        alias   = ReplAlias { name, command = Help }
+        stateT  = \st -> st { aliases = Map.insert name alias (aliases st) }
+        command = TryAlias "h"
+    in do
+        Result { output, continue } <-
+            runWithState command axioms claim stateT
+        output   `equalsOutput` helpText
+        continue `equals` True
+
+
 add1 :: Axiom
 add1 = coerce $ rulePattern n plusOne
   where
@@ -108,15 +139,27 @@ emptyClaim :: Claim
 emptyClaim = coerce $ rulePattern mkBottom_ mkBottom_
 
 run :: ReplCommand -> [Axiom] -> Claim -> IO Result
-run command axioms claim =  do
+run command axioms claim =  runWithState command axioms claim id
+
+runWithState
+    :: ReplCommand
+    -> [Axiom]
+    -> Claim
+    -> (ReplState Claim -> ReplState Claim)
+    -> IO Result
+runWithState command axioms claim stateTransformer = do
     output <- newIORef ""
     (c, s) <- liftSimplifier $
-        replInterpreter (writeIORef output) command `runStateT` state
+        replInterpreter (writeIORefIfNotEmpty output) command `runStateT` state
     output' <- readIORef output
     return $ Result output' c s
   where
     liftSimplifier = SMT.runSMT SMT.defaultConfig . evalSimplifier emptyLogger
-    state = mkState axioms claim
+    state = stateTransformer $ mkState axioms claim
+    writeIORefIfNotEmpty out =
+        \case
+            "" -> pure ()
+            xs -> writeIORef out xs
 
 data Result = Result
     { output   :: String
@@ -124,17 +167,10 @@ data Result = Result
     , state    :: ReplState Claim
     }
 
-equals
-    :: (Eq a, Show a)
-    => a
-    -> a
-    -> Assertion
+equals :: (Eq a, Show a) => a -> a -> Assertion
 equals = (@?=)
 
-equalsOutput
-    :: String
-    -> String
-    -> Assertion
+equalsOutput :: String -> String -> Assertion
 equalsOutput "" expected     = "" @?= expected
 equalsOutput actual expected = actual @?= expected <> "\n"
 
@@ -145,6 +181,14 @@ hasCurrentNode st n = do
     graphNode `equals` justNode
   where
     justNode = Just n
+
+hasAlias :: ReplState Claim -> ReplAlias -> IO ()
+hasAlias st alias =
+    let
+        aliasMap = aliases st
+        actual   = name alias `Map.lookup` aliasMap
+    in
+        actual `equals` Just alias
 
 tests :: IO () -> String -> TestTree
 tests = flip testCase
@@ -158,19 +202,20 @@ mkState axioms claim =
         , graph    = graph'
         , node     = ReplNode 0
         , commands = Seq.empty
-        , omit    = []
-        , stepper = stepper0
-        , unifier = unifier0
-        , labels  = Map.empty
+        , omit     = []
+        , stepper  = stepper0
+        , unifier  = unifier0
+        , labels   = Map.empty
+        , aliases  = Map.empty
         }
   where
     graph' = emptyExecutionGraph claim
     stepper0 claim' claims' axioms' graph (ReplNode node) =
         verifyClaimStep
             testMetadataTools
-            smtSimplifier
+            testTermLikeSimplifier
             testSubstitutionSimplifier
-            evaluators
+            testEvaluators
             claim'
             claims'
             axioms'
