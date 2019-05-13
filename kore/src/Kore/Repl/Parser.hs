@@ -44,6 +44,7 @@ scriptParser =
     skipSpacesAndComments =
         optional $ spaceConsumer <* Char.newline
 
+commandParser :: Parser ReplCommand
 commandParser = commandParser0 eof
 
 commandParser0 :: Parser () -> Parser ReplCommand

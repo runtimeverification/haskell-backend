@@ -34,9 +34,7 @@ import           Control.Monad.State.Strict
                  ( MonadState, StateT (..), execStateT )
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import           Data.Coerce
-                 ( Coercible (..) )
-import           Data.Coerce
-                 ( coerce )
+                 ( Coercible, coerce )
 import           Data.Foldable
                  ( traverse_ )
 import           Data.Functor
@@ -699,9 +697,9 @@ tryAlias replAlias@ReplAlias { name } printFn = do
     res <- findAlias name
     case res of
         Nothing  -> showUsage $> True
-        Just alias -> do
+        Just aliasDef -> do
             let
-                command = substituteAlias alias replAlias
+                command = substituteAlias aliasDef replAlias
                 parsedCommand =
                     maybe ShowUsage id $ parseMaybe commandParser command
             (cont, st') <- get >>= runInterpreter parsedCommand
