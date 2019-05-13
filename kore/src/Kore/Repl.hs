@@ -38,7 +38,8 @@ import           Kore.Attribute.RuleIndex
 import           System.IO
                  ( hFlush, stdout )
 import           Text.Megaparsec
-                 ( errorBundlePretty, parseMaybe, runParser )
+                 ( ParseErrorBundle (..), errorBundlePretty, parseMaybe,
+                 runParser )
 
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
@@ -102,27 +103,29 @@ runRepl
     -> Simplifier ()
 runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims' initScript = do
     let mscript = unInitialScript initScript
-    case mscript of
-        Just file -> do
-            contents <- liftIO $ readFile file
-            let result = runParser scriptParser file contents
-            case result of
-                Left err -> do
-                    liftIO
-                    . putStrLn
-                    $ "Couldn't parse initial script file."
-                    <> "\nParser error at: "
-                    <> errorBundlePretty err
-                Right cmds -> do
-                    replGreeting
-                    newSt <-
-                        execStateT (traverse_ (replInterpreter $ \_ -> return () ) cmds) state
-                    evalStateT (whileM repl0) newSt
-        Nothing -> do
-            replGreeting
-            evalStateT (whileM repl0) state
+    newState <- maybe (pure state) parseEvalScript mscript
+    replGreeting
+    evalStateT (whileM repl0) newState
 
   where
+
+    parseEvalScript :: FilePath -> Simplifier (ReplState claim)
+    parseEvalScript file = do
+       contents <- liftIO $ readFile file
+       let result = runParser scriptParser file contents
+       either parseFailed executeScript result
+
+    parseFailed :: ParseErrorBundle String String -> Simplifier (ReplState claim)
+    parseFailed err = do
+        liftIO . putStrLn
+            $ "\nCouldn't parse initial script file."
+            <> "\nParser error at: "
+            <> errorBundlePretty err
+        return state
+
+    executeScript :: [ReplCommand] -> Simplifier (ReplState claim)
+    executeScript cmds =
+        execStateT (traverse_ (replInterpreter $ \_ -> return () ) cmds) state
 
     repl0 :: StateT (ReplState claim) Simplifier Bool
     repl0 = do
