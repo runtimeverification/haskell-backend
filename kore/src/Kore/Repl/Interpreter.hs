@@ -11,6 +11,7 @@ module Kore.Repl.Interpreter
     , showUsageMessage
     , showStepStoppedMessage
     , printIfNotEmpty
+    , parseEvalScript
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -55,12 +56,15 @@ import           GHC.Exts
                  ( toList )
 import           GHC.IO.Handle
                  ( hGetContents, hPutStr )
+import           Kore.Repl.Parser
 import           Numeric.Natural
 import           System.Directory
                  ( findExecutable )
 import           System.Process
                  ( StdStream (CreatePipe), createProcess, proc, std_in,
                  std_out )
+import           Text.Megaparsec
+                 ( ParseErrorBundle (..), errorBundlePretty, runParser )
 
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
@@ -850,3 +854,33 @@ showAxiomOrClaim _   (RuleIndex Nothing) = Nothing
 showAxiomOrClaim len (RuleIndex (Just rid))
   | rid < len = Just $ "Axiom " <> show rid
   | otherwise = Just $ "Claim " <> show (rid - len)
+
+
+parseEvalScript
+    :: forall claim
+    .  Claim claim
+    => ReplState claim
+    -> FilePath
+    -> Simplifier (ReplState claim)
+parseEvalScript state file = do
+    contents <- liftIO $ readFile file
+    let result = runParser scriptParser file contents
+    either (parseFailed state) (executeScript state) result
+  where
+    parseFailed
+        :: ReplState claim
+        -> ParseErrorBundle String String
+        -> Simplifier (ReplState claim)
+    parseFailed state err = do
+        liftIO . putStrLn
+            $ "\nCouldn't parse initial script file."
+            <> "\nParser error at: "
+            <> errorBundlePretty err
+        return state
+
+    executeScript
+        :: ReplState claim
+        -> [ReplCommand]
+        -> Simplifier (ReplState claim)
+    executeScript state cmds =
+        execStateT (traverse_ (replInterpreter $ \_ -> return () ) cmds) state

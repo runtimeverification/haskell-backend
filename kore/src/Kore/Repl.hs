@@ -103,29 +103,11 @@ runRepl
     -> Simplifier ()
 runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims' initScript = do
     let mscript = unInitialScript initScript
-    newState <- maybe (pure state) parseEvalScript mscript
+    newState <- maybe (pure state) (parseEvalScript state) mscript
     replGreeting
     evalStateT (whileM repl0) newState
 
   where
-
-    parseEvalScript :: FilePath -> Simplifier (ReplState claim)
-    parseEvalScript file = do
-       contents <- liftIO $ readFile file
-       let result = runParser scriptParser file contents
-       either parseFailed executeScript result
-
-    parseFailed :: ParseErrorBundle String String -> Simplifier (ReplState claim)
-    parseFailed err = do
-        liftIO . putStrLn
-            $ "\nCouldn't parse initial script file."
-            <> "\nParser error at: "
-            <> errorBundlePretty err
-        return state
-
-    executeScript :: [ReplCommand] -> Simplifier (ReplState claim)
-    executeScript cmds =
-        execStateT (traverse_ (replInterpreter $ \_ -> return () ) cmds) state
 
     repl0 :: StateT (ReplState claim) Simplifier Bool
     repl0 = do
