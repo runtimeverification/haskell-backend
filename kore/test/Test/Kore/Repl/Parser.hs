@@ -13,32 +13,33 @@ import Test.Kore.Parser
 
 test_replParser :: [TestTree]
 test_replParser =
-    [ helpTests         `tests` "help"
-    , claimTests        `tests` "claim"
-    , axiomTests        `tests` "axiom"
-    , proveTests        `tests` "prove"
-    , graphTests        `tests` "graph"
-    , stepTests         `tests` "step"
-    , selectTests       `tests` "select"
-    , configTests       `tests` "config"
-    , leafsTests        `tests` "leafs"
-    , precBranchTests   `tests` "prec-branch"
-    , childrenTests     `tests` "children"
-    , exitTests         `tests` "exit"
-    , omitTests         `tests` "omit"
-    , labelTests        `tests` "label"
-    , tryTests          `tests` "try"
-    , redirectTests     `tests` "redirect"
-    , ruleTests         `tests` "rule"
-    , stepfTests        `tests` "stepf"
-    , clearTests        `tests` "clear"
-    , pipeTests         `tests` "pipe"
-    , pipeRedirectTests `tests` "pipe redirect"
-    , saveSessionTests  `tests` "save-session"
-    , appendTests       `tests` "append"
-    , pipeAppendTests   `tests` "pipe append"
-    , noArgsAliasTests  `tests` "no arguments alias tests"
-    , tryAliasTests     `tests` "try alias"
+    [ helpTests         `tests`       "help"
+    , claimTests        `tests`       "claim"
+    , axiomTests        `tests`       "axiom"
+    , proveTests        `tests`       "prove"
+    , graphTests        `tests`       "graph"
+    , stepTests         `tests`       "step"
+    , selectTests       `tests`       "select"
+    , configTests       `tests`       "config"
+    , leafsTests        `tests`       "leafs"
+    , precBranchTests   `tests`       "prec-branch"
+    , childrenTests     `tests`       "children"
+    , exitTests         `tests`       "exit"
+    , omitTests         `tests`       "omit"
+    , labelTests        `tests`       "label"
+    , tryTests          `tests`       "try"
+    , redirectTests     `tests`       "redirect"
+    , ruleTests         `tests`       "rule"
+    , stepfTests        `tests`       "stepf"
+    , clearTests        `tests`       "clear"
+    , pipeTests         `tests`       "pipe"
+    , pipeRedirectTests `tests`       "pipe redirect"
+    , saveSessionTests  `tests`       "save-session"
+    , appendTests       `tests`       "append"
+    , pipeAppendTests   `tests`       "pipe append"
+    , noArgsAliasTests  `tests`       "no arguments alias tests"
+    , tryAliasTests     `tests`       "try alias"
+    , initScriptTests   `testsScript` "repl script"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -46,6 +47,13 @@ tests ts pname =
     testGroup
         ("REPL.Parser." <> pname)
         . parseTree commandParser
+        $ ts
+
+testsScript :: [ParserTest [ReplCommand]] -> String -> TestTree
+testsScript ts pname =
+    testGroup
+        ("REPL.Parser." <> pname)
+        . parseTree scriptParser
         $ ts
 
 helpTests :: [ParserTest ReplCommand]
@@ -181,12 +189,12 @@ tryTests =
     , "try a 5" `fails`     "can't separate specifier and id"
     , "try a"   `fails`     "must specify identifier"
     ]
-  where
-    tryAxiom :: Int -> ReplCommand
-    tryAxiom = Try . Left . AxiomIndex
 
-    tryClaim :: Int -> ReplCommand
-    tryClaim = Try . Right . ClaimIndex
+tryAxiom :: Int -> ReplCommand
+tryAxiom = Try . Left . AxiomIndex
+
+tryClaim :: Int -> ReplCommand
+tryClaim = Try . Right . ClaimIndex
 
 exitTests :: [ParserTest ReplCommand]
 exitTests =
@@ -242,15 +250,15 @@ pipeRedirectTests =
     , "config 5 | script > " `fails`     "no file name"
     , "config 5 | > file"    `fails`     "no script name"
     ]
-  where
-    pipeRedirectConfig
-        :: Maybe ReplNode
-        -> String
-        -> [String]
-        -> String
-        -> ReplCommand
-    pipeRedirectConfig mrnode s xs file =
-        Redirect (Pipe (ShowConfig mrnode) s xs) file
+
+pipeRedirectConfig
+    :: Maybe ReplNode
+    -> String
+    -> [String]
+    -> String
+    -> ReplCommand
+pipeRedirectConfig mrnode s xs file =
+    Redirect (Pipe (ShowConfig mrnode) s xs) file
 
 appendTests :: [ParserTest ReplCommand]
 appendTests =
@@ -268,15 +276,15 @@ pipeAppendTests =
     , "config | > >> file" `fails` "incorrect script name"
     , "config | s >> "     `fails` "no file name"
     ]
-  where
-    pipeAppendConfig
-        :: Maybe ReplNode
-        -> String
-        -> [String]
-        -> String
-        -> ReplCommand
-    pipeAppendConfig mrnode s xs file =
-        AppendTo (Pipe (ShowConfig mrnode) s xs) file
+
+pipeAppendConfig
+    :: Maybe ReplNode
+    -> String
+    -> [String]
+    -> String
+    -> ReplCommand
+pipeAppendConfig mrnode s xs file =
+    AppendTo (Pipe (ShowConfig mrnode) s xs) file
 
 ruleTests :: [ParserTest ReplCommand]
 ruleTests =
@@ -301,6 +309,31 @@ saveSessionTests =
     [ "save-session file"  `parsesTo_` SaveSession "file"
     , "save-session file " `parsesTo_` SaveSession "file"
     , "save-session"       `fails`     "need to supply file name"
+    ]
+
+initScriptTests :: [ParserTest [ReplCommand]]
+initScriptTests =
+    [ let
+        script1 =
+            "// comment\n\
+            \step 5    \n\n\n\
+            \try a3\n\
+            \/* multi\n\
+            \line\n\
+            \comment */\n\
+            \stepf    10\n\
+            \config   5 | grep predicate > file\n\
+            \// comment\n\
+            \select    9    \n"
+        commands1 =
+            [ ProveSteps 5
+            , tryAxiom 3
+            , ProveStepsF 10
+            , pipeRedirectConfig (Just (ReplNode 5)) "grep" ["predicate"] "file"
+            , SelectNode (ReplNode 9)
+            ]
+      in
+        script1 `parsesTo_` commands1
     ]
 
 noArgsAliasTests :: [ParserTest ReplCommand]
