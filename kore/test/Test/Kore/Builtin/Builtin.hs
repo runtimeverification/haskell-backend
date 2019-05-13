@@ -1,4 +1,17 @@
-module Test.Kore.Builtin.Builtin where
+module Test.Kore.Builtin.Builtin
+    ( mkPair
+    , hpropUnparse
+    , testMetadataTools
+    , testSubstitutionSimplifier
+    , testTermLikeSimplifier
+    , testEvaluators
+    , testSymbolWithSolver
+    , evaluate
+    , evaluateWith
+    , indexedModule
+    , runStepWith
+    , runSMT
+    ) where
 
 import qualified Hedgehog
 import           Test.Tasty
@@ -36,18 +49,16 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
-                 ( Conditional (..), Pattern )
+                 ( Pattern )
 import           Kore.Internal.TermLike
 import           Kore.Parser
                  ( parseKorePattern )
-import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
 import           Kore.Step.Rule
                  ( RewriteRule )
 import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Predicate as Predicate
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Step.Step as Step
 import           Kore.Syntax.Definition
@@ -75,12 +86,6 @@ mkPair
     -> TermLike Variable
 mkPair lSort rSort l r =
     mkApp (pairSort lSort rSort) (pairSymbol lSort rSort) [l, r]
-
-substitutionSimplifier
-    :: SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-substitutionSimplifier tools =
-    Predicate.create tools stepSimplifier evaluators
 
 -- | 'testSymbol' is useful for writing unit tests for symbols.
 testSymbolWithSolver
@@ -177,18 +182,11 @@ testMetadataTools = MetadataTools.build (constructorFunctions verifiedModule)
 testSubstitutionSimplifier :: PredicateSimplifier
 testSubstitutionSimplifier = Mock.substitutionSimplifier testMetadataTools
 
-evaluators :: BuiltinAndAxiomSimplifierMap
-evaluators = Builtin.koreEvaluators verifiedModule
+testEvaluators :: BuiltinAndAxiomSimplifierMap
+testEvaluators = Builtin.koreEvaluators verifiedModule
 
-stepSimplifier :: TermLikeSimplifier
-stepSimplifier =
-    termLikeSimplifier $ \_ p ->
-        return $ OrPattern.fromPattern
-            Conditional
-                { term = mkTop_
-                , predicate = Predicate.wrapPredicate p
-                , substitution = mempty
-                }
+testTermLikeSimplifier :: TermLikeSimplifier
+testTermLikeSimplifier = Simplifier.create testMetadataTools testEvaluators
 
 evaluate
     :: MonadSMT m
@@ -200,7 +198,7 @@ evaluate =
     . TermLike.simplify
         testMetadataTools
         testSubstitutionSimplifier
-        evaluators
+        testEvaluators
 
 evaluateWith
     :: MVar Solver
@@ -208,35 +206,6 @@ evaluateWith
     -> IO (Pattern Variable)
 evaluateWith solver patt =
     runReaderT (SMT.getSMT $ evaluate patt) solver
-
-runStep
-    :: Pattern Variable
-    -- ^ configuration
-    -> RewriteRule Variable
-    -- ^ axiom
-    -> IO (Either UnificationOrSubstitutionError (OrPattern Variable))
-runStep configuration axiom = do
-    result <- runStepResult configuration axiom
-    return (Step.gatherResults <$> result)
-
-runStepResult
-    :: Pattern Variable
-    -- ^ configuration
-    -> RewriteRule Variable
-    -- ^ axiom
-    -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
-runStepResult configuration axiom =
-    runSMT
-    $ evalSimplifier emptyLogger
-    $ Monad.Unify.runUnifier
-    $ Step.applyRewriteRules
-        testMetadataTools
-        testSubstitutionSimplifier
-        stepSimplifier
-        evaluators
-        (Step.UnificationProcedure Unification.unificationProcedure)
-        [axiom]
-        configuration
 
 runSMT :: SMT a -> IO a
 runSMT = SMT.runSMT SMT.defaultConfig
@@ -266,8 +235,8 @@ runStepResultWith solver configuration axiom =
             $ Step.applyRewriteRules
                 testMetadataTools
                 testSubstitutionSimplifier
-                stepSimplifier
-                evaluators
+                testTermLikeSimplifier
+                testEvaluators
                 (Step.UnificationProcedure Unification.unificationProcedure)
                 [axiom]
                 configuration

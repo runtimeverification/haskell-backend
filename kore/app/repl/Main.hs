@@ -17,6 +17,7 @@ import Kore.Exec
        ( proveWithRepl )
 import Kore.Logger.Output
        ( emptyLogger )
+import Kore.Repl
 import Kore.Step.Simplification.Data
        ( evalSimplifier )
 import Kore.Syntax.Module
@@ -42,6 +43,7 @@ data KoreReplOptions = KoreReplOptions
     { definitionModule :: !KoreModule
     , proveOptions     :: !KoreProveOptions
     , smtOptions       :: !SmtOptions
+    , initialScript    :: !InitialScript
     }
 
 parseKoreReplOptions :: Parser KoreReplOptions
@@ -50,6 +52,7 @@ parseKoreReplOptions =
     <$> parseMainModule
     <*> parseKoreProveOptions
     <*> parseSmtOptions
+    <*> parseInitialScript
     <* parseIgnoredOutput
   where
     parseMainModule :: Parser KoreModule
@@ -87,6 +90,17 @@ parseKoreReplOptions =
                 )
             )
 
+    parseInitialScript :: Parser InitialScript
+    parseInitialScript =
+        InitialScript
+        <$> optional
+            ( strOption
+                ( metavar "INIT_SCRIPT"
+                <> long "init-script"
+                <> help "Path to the initial repl script file"
+                )
+            )
+
     SMT.Config { timeOut = defaultTimeOut } = SMT.defaultConfig
 
     readSMTTimeOut = do
@@ -120,7 +134,7 @@ main = do
 
 mainWithOptions :: KoreReplOptions -> IO ()
 mainWithOptions
-    KoreReplOptions { definitionModule, proveOptions, smtOptions }
+    KoreReplOptions { definitionModule, proveOptions, smtOptions, initialScript }
   = do
     parsedDefinition <- parseDefinition definitionFileName
     indexedDefinition@(indexedModules, _) <-
@@ -148,7 +162,7 @@ mainWithOptions
                 }
     SMT.runSMT smtConfig
         $ evalSimplifier emptyLogger
-        $ proveWithRepl indexedModule specDefIndexedModule
+        $ proveWithRepl indexedModule specDefIndexedModule initialScript
 
   where
     mainModuleName :: ModuleName

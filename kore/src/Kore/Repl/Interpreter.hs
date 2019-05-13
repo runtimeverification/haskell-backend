@@ -8,6 +8,9 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 
 module Kore.Repl.Interpreter
     ( replInterpreter
+    , showUsageMessage
+    , showStepStoppedMessage
+    , printIfNotEmpty
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -136,6 +139,8 @@ replInterpreter printFn replCmd = do
                 SaveSession file   -> saveSession file   $> True
                 Pipe inn file args -> pipe inn file args $> True
                 AppendTo inn file  -> appendTo inn file  $> True
+                Alias a            -> alias a            $> True
+                TryAlias name      -> tryAlias name printFn
                 Exit               -> pure                  False
     (output, shouldContinue) <- evaluateCommand command
     liftIO $ printFn output
@@ -153,8 +158,24 @@ replInterpreter printFn replCmd = do
         put st'
         pure (w, exit)
 
+showUsageMessage :: String
+showUsageMessage = "Could not parse command, try using 'help'."
+
+showStepStoppedMessage :: Natural -> StepResult -> String
+showStepStoppedMessage n sr =
+    "Stopped after "
+    <> show n
+    <> " step(s) due to "
+    <> case sr of
+        NoResult ->
+            "reaching end of proof on current branch."
+        SingleResult _ -> ""
+        BranchResult xs ->
+            "branching on "
+            <> show (fmap unReplNode xs)
+
 showUsage :: MonadWriter String m => m ()
-showUsage = putStrLn' "Could not parse command, try using 'help'."
+showUsage = putStrLn' showUsageMessage
 
 help :: MonadWriter String m => m ()
 help = putStrLn' helpText
@@ -228,21 +249,7 @@ proveSteps n = do
     case result of
         (0, SingleResult _) -> pure ()
         (done, res) ->
-            putStrLn'
-                $ "Stopped after "
-                <> show (n - done - 1)
-                <> " step(s) due to "
-                <> showResult res
-  where
-    showResult :: StepResult -> String
-    showResult =
-        \case
-            NoResult ->
-                "reaching end of proof on current branch."
-            SingleResult _ -> ""
-            BranchResult xs ->
-                "branching on "
-                <> show (fmap unReplNode xs)
+            putStrLn' $ showStepStoppedMessage (n - done - 1) res
 
 -- | Executes 'n' prove steps, distributing over branches. It will perform less
 -- than 'n' steps if the proof is stuck or completed in less than 'n' steps.
@@ -668,6 +675,35 @@ appendTo cmd file = do
         -> ReplM claim (ReplState claim)
     runInterpreter = lift . execStateT (replInterpreter (appendFile file) cmd)
 
+alias
+    :: forall m claim
+    .  MonadState (ReplState claim) m
+    => ReplAlias
+    -> m ()
+alias a = addOrUpdateAlias a
+
+tryAlias
+    :: forall claim
+    .  Claim claim
+    => String
+    -> (String -> IO ())
+    -> ReplM claim Bool
+tryAlias name printFn = do
+    res <- findAlias name
+    case res of
+        Nothing  -> showUsage $> True
+        Just ReplAlias { command } -> do
+            (cont, st') <- get >>= runInterpreter command
+            put st'
+            return cont
+  where
+    runInterpreter
+        :: ReplCommand
+        -> ReplState claim
+        -> ReplM claim (Bool, ReplState claim)
+    runInterpreter cmd =
+        lift . runStateT (replInterpreter printFn cmd)
+
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
 -- Returns 'Left' while it has to continue looping, and 'Right' when done
@@ -761,6 +797,12 @@ unparseStrategy omitList =
 
 putStrLn' :: MonadWriter String m => String -> m ()
 putStrLn' str = tell $ str <> "\n"
+
+printIfNotEmpty :: String -> IO ()
+printIfNotEmpty =
+    \case
+        "" -> pure ()
+        xs -> putStrLn xs
 
 printNotFound :: MonadWriter String m => m ()
 printNotFound = putStrLn' "Variable or index not found"
