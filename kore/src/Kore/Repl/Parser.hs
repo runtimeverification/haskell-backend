@@ -33,31 +33,28 @@ type Parser = Parsec String String
 
 scriptParser :: Parser [ReplCommand]
 scriptParser =
-    some (optional (spaceConsumer *> Char.newline)
-         *> commandParser'
-         <* some Char.newline
-         <* optional (spaceConsumer <* Char.newline)
+    some ( skipSpacesAndComments
+         *> commandParser0 (void Char.newline)
+         <* many Char.newline
+         <* skipSpacesAndComments
          )
     <* eof
   where
-    commandParser' :: Parser ReplCommand
-    commandParser' = do
-        cmd <- nonRecursiveCommand
-        pipeWith appendTo cmd
-            <|> pipeWith redirect cmd
-            <|> appendTo cmd
-            <|> redirect cmd
-            <|> pipe cmd
-            <|> return cmd
+    skipSpacesAndComments :: Parser (Maybe ())
+    skipSpacesAndComments =
+        optional $ spaceConsumer <* Char.newline
 
 commandParser :: Parser ReplCommand
-commandParser =
-    alias <|> commandParserExceptAlias <|> tryAlias
+commandParser = commandParser0 eof
 
-commandParserExceptAlias :: Parser ReplCommand
-commandParserExceptAlias = do
+commandParser0 :: Parser () -> Parser ReplCommand
+commandParser0 endParser =
+    alias endParser <|> commandParserExceptAlias endParser <|> tryAlias
+
+commandParserExceptAlias :: Parser () -> Parser ReplCommand
+commandParserExceptAlias endParser = do
     cmd <- nonRecursiveCommand
-    endOfInput cmd
+    endOfInput cmd endParser
         <|> pipeWith appendTo cmd
         <|> pipeWith redirect cmd
         <|> appendTo cmd
@@ -96,8 +93,8 @@ pipeWith
     -> Parser ReplCommand
 pipeWith parserCmd cmd = try (pipe cmd >>= parserCmd)
 
-endOfInput :: ReplCommand -> Parser ReplCommand
-endOfInput cmd = eof $> cmd
+endOfInput :: ReplCommand -> Parser () -> Parser ReplCommand
+endOfInput cmd p = p $> cmd
 
 help :: Parser ReplCommand
 help = const Help <$$> literal "help"
@@ -203,12 +200,12 @@ appendTo cmd =
     <$$> literal ">>"
     *> quotedOrWordWithout ""
 
-alias :: Parser ReplCommand
-alias = do
+alias :: Parser () -> Parser ReplCommand
+alias endParser = do
     literal "alias"
     name <- word
     literal "="
-    cmd  <- commandParserExceptAlias
+    cmd  <- commandParserExceptAlias endParser
     return . Alias $ ReplAlias name cmd
 
 tryAlias :: Parser ReplCommand
