@@ -34,7 +34,12 @@ type Parser = Parsec String String
 
 scriptParser :: Parser [ReplCommand]
 scriptParser =
-    some (sc *> many Char.newline *> sc *> commandParser' <* sc <* some Char.newline) <* eof
+    some (optional (sc *> void Char.newline)
+         *> commandParser'
+         <* some Char.newline
+         <* optional (sc <* void Char.newline)
+         )
+    <* eof
   where
     commandParser' :: Parser ReplCommand
     commandParser' = do
@@ -240,7 +245,7 @@ quotedWord =
     <* spaceNoNewline
 
 wordWithout :: [Char] -> Parser String
-wordWithout xs = some (noneOf $ [' '] <> xs) <* spaceNoNewline
+wordWithout xs = some (noneOf $ [' ', '\t', '\r', '\f', '\v', '\n'] <> xs) <* spaceNoNewline
 
 maybeWord :: Parser (Maybe String)
 maybeWord = optional word

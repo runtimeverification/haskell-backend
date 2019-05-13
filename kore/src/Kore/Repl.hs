@@ -104,10 +104,11 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
                 Left err -> do
                     liftIO
                     . putStrLn
-                    $ "Couldn't parse initial script: "
+                    $ "Couldn't parse initial script file."
+                    <> "\nParser error at: "
                     <> errorBundlePretty err
                 Right cmds -> do
-                    newSt <- execStateT (traverse_ (replInterpreter putStrLn) cmds) state
+                    newSt <- execStateT (traverse_ (replInterpreter (\s -> return ())) cmds) state
                     evalStateT (whileM repl0) newSt
         Nothing -> do
             replGreeting
