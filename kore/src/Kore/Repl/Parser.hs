@@ -33,10 +33,10 @@ type Parser = Parsec String String
 
 scriptParser :: Parser [ReplCommand]
 scriptParser =
-    some (optional (sc *> Char.newline)
+    some (optional (spaceConsumer *> Char.newline)
          *> commandParser'
          <* some Char.newline
-         <* optional (sc <* Char.newline)
+         <* optional (spaceConsumer <* Char.newline)
          )
     <* eof
   where
@@ -226,8 +226,8 @@ infixr 1 <**>
 (<**>) = (<*>)
 
 
-sc :: Parser ()
-sc =
+spaceConsumer :: Parser ()
+spaceConsumer =
     L.space
         space1NoNewline
         (L.skipLineComment "//")
