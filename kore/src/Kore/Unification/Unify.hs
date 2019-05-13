@@ -12,8 +12,12 @@ import           Control.Monad
 import qualified Control.Monad.Except as Error
 import           Control.Monad.Reader.Class
                  ( MonadReader (..) )
+import           Control.Monad.Trans.Class
+                 ( MonadTrans )
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import           Control.Monad.Trans.Except
+import           Control.Monad.Trans.Identity
+                 ( IdentityT, runIdentityT )
 import           Data.Text.Prettyprint.Doc
                  ( Doc )
 
@@ -63,42 +67,75 @@ class (Alternative unifier, Monad unifier) => MonadUnify unifier where
         -> unifier ()
     explainBottom _ _ _ = pure ()
 
--- | 'Unifier' is the default concrete implementation of a 'MonadUnify'.
--- See also: 'fromExceptT' and 'runUnifier' for common usages.
-newtype Unifier a = Unifier
+-- | 'UnifierT' contains everything that is needed for a MonadUnify,
+-- but allows parameterization over a monad transformer.
+-- See also: 'Unifier'.
+newtype UnifierT m a = UnifierT
     { getUnifier
-        :: BranchT (ExceptT UnificationOrSubstitutionError Simplifier) a
+        :: BranchT (m (ExceptT UnificationOrSubstitutionError Simplifier)) a
     } deriving (Alternative, Applicative, Functor, Monad)
 
-instance MonadUnify Unifier where
+-- | 'Unifier' is the default concrete implementation of a 'MonadUnify'.
+-- See also: 'fromExceptT' and 'runUnifier' for common usages.
+type Unifier a = UnifierT IdentityT a
+
+instance
+    ( Monad (m (ExceptT UnificationOrSubstitutionError Simplifier))
+    , MonadTrans m
+    )
+    => MonadUnify (UnifierT m)
+  where
     throwSubstitutionError =
-        Unifier . Monad.Trans.lift . Error.throwError . SubstitutionError
+        UnifierT
+        . Monad.Trans.lift
+        . Monad.Trans.lift
+        . Error.throwError
+        . SubstitutionError
 
     throwUnificationError =
-        Unifier . Monad.Trans.lift . Error.throwError . UnificationError
+        UnifierT
+        . Monad.Trans.lift
+        . Monad.Trans.lift
+        . Error.throwError
+        . UnificationError
 
-    liftSimplifier = Unifier . Monad.Trans.lift . Monad.Trans.lift
+    liftSimplifier =
+        UnifierT . Monad.Trans.lift . Monad.Trans.lift . Monad.Trans.lift
 
-    liftBranchedSimplifier simplifier = Unifier $ do
-        branches <- Monad.Trans.lift $ Monad.Trans.lift $
+    liftBranchedSimplifier simplifier = UnifierT $ do
+        branches <- Monad.Trans.lift $ Monad.Trans.lift $ Monad.Trans.lift $
             BranchT.gather simplifier
         BranchT.scatter branches
 
-    gather = Unifier . Monad.Trans.lift . BranchT.gather . getUnifier
-    scatter = Unifier . BranchT.scatter
+    gather = UnifierT . Monad.Trans.lift . BranchT.gather . getUnifier
+    scatter = UnifierT . BranchT.scatter
 
-instance MonadReader Environment Unifier where
+instance
+    ( MonadReader
+        Environment
+        (m (ExceptT UnificationOrSubstitutionError Simplifier))
+    , MonadTrans m
+    )
+    => MonadReader Environment (UnifierT m)
+  where
     ask = liftSimplifier ask
-    local f (Unifier ma) = Unifier $ local f ma
+    local f (UnifierT ma) = UnifierT $ local f ma
 
-instance MonadPlus Unifier where
+instance MonadPlus (UnifierT m) where
 
-instance Log.WithLog Log.LogMessage Unifier where
+instance
+    ( Log.WithLog
+        Log.LogMessage
+        (m (ExceptT UnificationOrSubstitutionError Simplifier))
+    , MonadTrans m
+    )
+    => Log.WithLog Log.LogMessage (UnifierT m)
+  where
     askLogAction = do
         Log.LogAction logger <- liftSimplifier $ logger <$> ask
         return $ Log.LogAction (\msg -> liftSimplifier $ logger msg)
 
-    withLog f = Unifier . Log.withLog f . getUnifier
+    withLog f = UnifierT . Log.withLog f . getUnifier
 
 -- | Lift an 'ExceptT' to a 'MonadUnify'.
 fromExceptT
@@ -115,4 +152,11 @@ fromExceptT e = do
 runUnifier
     :: Unifier a
     -> Simplifier (Either UnificationOrSubstitutionError [a])
-runUnifier = runExceptT . BranchT.gather . getUnifier
+runUnifier = runUnifierT runIdentityT
+
+runUnifierT
+    :: Monad (m (ExceptT UnificationOrSubstitutionError Simplifier))
+    => (forall n . Monad n => m n [a] -> n b)
+    -> UnifierT m a
+    -> Simplifier (Either UnificationOrSubstitutionError b)
+runUnifierT runM = runExceptT . runM . BranchT.gather . getUnifier

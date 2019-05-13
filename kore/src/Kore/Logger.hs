@@ -30,6 +30,8 @@ import qualified Control.Monad.Morph as Monad.Morph
 import           Control.Monad.Trans
                  ( MonadTrans )
 import qualified Control.Monad.Trans as Monad.Trans
+import           Control.Monad.Trans.Identity
+                 ( IdentityT, runIdentityT )
 import           Data.Functor.Contravariant
                  ( contramap )
 import           Data.String
@@ -87,6 +89,16 @@ class Monad m => WithLog msg m where
         .  (forall n. LogAction n msg -> LogAction n msg)
         -> m a
         -> m a
+
+instance (WithLog msg m, Monad m) => WithLog msg (IdentityT m) where
+    askLogAction = liftLogAction <$> Monad.Trans.lift askLogAction
+    withLog
+        :: forall a
+        .  (forall n. LogAction n msg -> LogAction n msg)
+        -> IdentityT m a
+        -> IdentityT m a
+    withLog mapping =
+        Monad.Trans.lift . withLog mapping . runIdentityT
 
 -- | 'Monad.Trans.lift' any 'LogAction' into a monad transformer.
 liftLogAction
