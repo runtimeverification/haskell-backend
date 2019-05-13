@@ -773,7 +773,6 @@ showRewriteRule rule =
         (RewriteRule (RulePattern{ Axiom.attributes })) =
             Attribute.sourceLocation attributes
 
-
 -- | Unparses a strategy node, using an omit list to hide specified children.
 unparseStrategy
     :: [String]
