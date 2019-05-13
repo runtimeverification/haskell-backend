@@ -17,7 +17,7 @@ import Kore.Exec
        ( proveWithRepl )
 import Kore.Logger.Output
        ( emptyLogger )
-import Kore.Repl as Repl
+import Kore.Repl
 import Kore.Step.Simplification.Data
        ( evalSimplifier )
 import Kore.Syntax.Module
@@ -43,7 +43,7 @@ data KoreReplOptions = KoreReplOptions
     { definitionModule :: !KoreModule
     , proveOptions     :: !KoreProveOptions
     , smtOptions       :: !SmtOptions
-    , initialScript    :: !Repl.InitialScript
+    , initialScript    :: !InitialScript
     }
 
 parseKoreReplOptions :: Parser KoreReplOptions
