@@ -16,7 +16,7 @@ module Kore.Repl.Data
     , ReplNode (..)
     , ReplState (..)
     , NodeState (..)
-    , AliasDefinition (..), ReplAlias (..)
+    , AliasDefinition (..), ReplAlias (..), AliasArgument(..)
     , getNodeState
     , InnerGraph
     , lensAxioms, lensClaims, lensClaim
@@ -110,9 +110,14 @@ data AliasDefinition = AliasDefinition
     , command   :: String
     } deriving (Eq, Show)
 
+data AliasArgument
+  = SimpleArgument String
+  | QuotedArgument String
+  deriving (Eq, Show)
+
 data ReplAlias = ReplAlias
     { name      :: String
-    , arguments :: [String]
+    , arguments :: [AliasArgument]
     } deriving (Eq, Show)
 
 -- | List of available commands for the Repl. Note that we are always in a proof
@@ -556,8 +561,13 @@ substituteAlias
       . words
       $ command
   where
-    values :: Map String String
+    values :: Map String AliasArgument
     values = Map.fromList $ zip arguments actualArguments
 
     replaceArguments :: String -> String
-    replaceArguments s = maybe s id $ Map.lookup s values
+    replaceArguments s = maybe s toString $ Map.lookup s values
+
+    toString :: AliasArgument -> String
+    toString = \case
+        SimpleArgument str -> str
+        QuotedArgument str -> "\"" <> str <> "\""
