@@ -17,6 +17,7 @@ import Kore.Exec
        ( proveWithRepl )
 import Kore.Logger.Output
        ( emptyLogger )
+import Kore.Repl as Repl
 import Kore.Step.Simplification.Data
        ( evalSimplifier )
 import Kore.Syntax.Module
@@ -37,18 +38,12 @@ data SmtOptions = SmtOptions
     , prelude :: !(Maybe FilePath)
     }
 
--- | Represents an optional file name which contains a sequence of
--- repl commands.
-newtype InitialScript = InitialScript
-    { unInitialScript :: Maybe FilePath
-    }
-
 -- | Options for the kore repl.
 data KoreReplOptions = KoreReplOptions
     { definitionModule :: !KoreModule
     , proveOptions     :: !KoreProveOptions
     , smtOptions       :: !SmtOptions
-    , initialScript    :: !InitialScript
+    , initialScript    :: !Repl.InitialScript
     }
 
 parseKoreReplOptions :: Parser KoreReplOptions
@@ -165,10 +160,9 @@ mainWithOptions
                 { SMT.timeOut = smtTimeOut
                 , SMT.preludeFile = smtPrelude
                 }
-    let mscript = unInitialScript initialScript
     SMT.runSMT smtConfig
         $ evalSimplifier emptyLogger
-        $ proveWithRepl indexedModule specDefIndexedModule mscript
+        $ proveWithRepl indexedModule specDefIndexedModule initialScript
 
   where
     mainModuleName :: ModuleName

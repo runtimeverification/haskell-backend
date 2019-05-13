@@ -8,6 +8,7 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 
 module Kore.Repl
     ( runRepl
+    , InitialScript (..)
     ) where
 
 import           Control.Exception
@@ -71,6 +72,12 @@ import           Kore.Unification.Procedure
 import           Kore.Unparser
                  ( Unparse )
 
+-- | Represents an optional file name which contains a sequence of
+-- repl commands.
+newtype InitialScript = InitialScript
+    { unInitialScript :: Maybe FilePath
+    } deriving (Eq, Show)
+
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
 -- that would otherwise be required in the proof and allows for step-by-step
 -- execution of proofs. Currently works via stdin/stdout interaction.
@@ -90,10 +97,11 @@ runRepl
     -- ^ list of axioms to used in the proof
     -> [claim]
     -- ^ list of claims to be proven
-    -> Maybe FilePath
+    -> InitialScript
     -- ^ optional initial script
     -> Simplifier ()
-runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims' mscript = do
+runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims' initScript = do
+    let mscript = unInitialScript initScript
     case mscript of
         Just file -> do
             contents <- liftIO $ readFile file
