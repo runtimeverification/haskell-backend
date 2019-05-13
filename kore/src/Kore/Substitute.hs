@@ -8,11 +8,19 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 
 module Kore.Substitute
     ( substitute
+    -- * Binders
+    , Binder (..)
+    , existsBinder
+    , forallBinder
     ) where
 
-import           Control.Comonad
+import           Control.Applicative
 import qualified Control.Lens as Lens
+import qualified Control.Monad.Except as Monad.Except
+import           Control.Monad.Trans.Maybe
 import qualified Data.Foldable as Foldable
+import           Data.Functor.Foldable
+                 ( Corecursive, Recursive )
 import qualified Data.Functor.Foldable as Recursive
 import           Data.Map.Strict
                  ( Map )
@@ -23,6 +31,41 @@ import qualified Data.Set as Set
 
 import Kore.Syntax
 import Kore.Variables.Fresh
+
+data Binder variable child =
+    Binder { binderVariable :: !variable, binderChild :: !child }
+
+-- | A 'Lens.Lens' to view an 'Exists' as a 'Binder'.
+existsBinder :: Lens.Lens' (Exists sort variable child) (Binder variable child)
+existsBinder mapping exists =
+    finish <$> mapping binder
+  where
+    binder =
+        Binder { binderVariable, binderChild }
+      where
+        Exists { existsVariable = binderVariable } = exists
+        Exists { existsChild    = binderChild    } = exists
+    finish binder' =
+        exists { existsVariable, existsChild }
+      where
+        Binder { binderVariable = existsVariable } = binder'
+        Binder { binderChild    = existsChild    } = binder'
+
+-- | A 'Lens.Lens' to view a 'Forall' as a 'Binder'.
+forallBinder :: Lens.Lens' (Forall sort variable child) (Binder variable child)
+forallBinder mapping forall =
+    finish <$> mapping binder
+  where
+    binder =
+        Binder { binderVariable, binderChild }
+      where
+        Forall { forallVariable = binderVariable } = forall
+        Forall { forallChild    = binderChild    } = forall
+    finish binder' =
+        forall { forallVariable, forallChild }
+      where
+        Binder { binderVariable = forallVariable } = binder'
+        Binder { binderChild    = forallChild    } = binder'
 
 {- | Traverse the pattern from the top down and apply substitutions.
 
@@ -36,87 +79,74 @@ may appear in the right-hand side of any substitution, but this is not checked.
 -- TODO (thomas.tuegel): In the future, patterns may have other types of
 -- attributes which need to be re-synthesized after substitution.
 substitute
-    ::  forall domain variable attribute.
+    ::  forall patternType patternBase attribute variable.
         ( FreshVariable variable
         , Ord variable
         , SortedVariable variable
-        , Traversable domain
+        , Corecursive patternType, Recursive patternType
+        , Functor patternBase
+        , CofreeF patternBase attribute ~ Base patternType
         )
-    => Lens.Lens' attribute (Set variable)
+    => Lens.Lens' patternType (Set variable)
     -- ^ Lens into free variables of the pattern
-    -> Map variable (Pattern domain variable attribute)
+    ->  (   forall f
+        .   Alternative f
+        =>  (Binder variable patternType -> f (Binder variable patternType))
+        ->  patternType -> f patternType
+        )
+    -- ^ Match a 'Binder' in @patternType.
+    ->  (   forall f
+        .   Alternative f
+        =>  (variable -> f variable)
+        ->  patternType -> f patternType
+        )
+    -- ^ Match a @variable@ in @patternType.
+    -> Map variable patternType
     -- ^ Substitution
-    -> Pattern domain variable attribute
+    -> patternType
     -- ^ Original pattern
-    -> Pattern domain variable attribute
-substitute lensFreeVariables = \subst -> substituteWorker (Map.map Right subst)
+    -> patternType
+substitute lensFreeVariables matchBinder matchVariable =
+    \subst -> substituteWorker (Map.map Left subst)
   where
-    extractFreeVariables
-        :: Pattern domain variable attribute
-        -> Set variable
-    extractFreeVariables = Lens.view lensFreeVariables . extract
+    extractFreeVariables :: patternType -> Set variable
+    extractFreeVariables = Lens.view lensFreeVariables
 
     -- | Insert a variable renaming into the substitution.
     renaming
         :: variable  -- ^ Original variable
         -> variable  -- ^ Renamed variable
-        -> Map variable (Either variable a)  -- ^ Substitution
-        -> Map variable (Either variable a)
-    renaming variable variable' = Map.insert variable (Left variable')
+        -> Map variable (Either patternType variable)  -- ^ Substitution
+        -> Map variable (Either patternType variable)
+    renaming variable variable' = Map.insert variable (Right variable')
 
+    substituteWorker
+        :: Map variable (Either patternType variable)
+        -> patternType
+        -> patternType
     substituteWorker subst termLike
       | Map.null subst' =
         -- If there are no targeted free variables, return the original pattern.
         -- Note that this covers the case of a non-targeted variable pattern,
         -- which produces an error below.
         termLike
+
+      | Just termLike' <- matchBinder underBinder termLike = termLike'
+
+      | Just termLike' <- matchEither (matchVariable overVariable termLike) =
+        termLike'
+
       | otherwise =
-        case termLikeHead of
-            -- Capturing quantifiers
-            ExistsF exists@Exists { existsVariable, existsChild }
-              | Just existsVariable' <- avoidCapture existsVariable ->
-                -- Rename the freshened bound variable in the subterms.
-                let subst'' = renaming existsVariable existsVariable' subst'
-                    exists' =
-                        exists
-                            { existsVariable = existsVariable'
-                            , existsChild = substituteWorker subst'' existsChild
-                            }
-                in Recursive.embed (attrib' :< ExistsF exists')
-
-            ForallF forall@Forall { forallVariable, forallChild }
-              | Just forallVariable' <- avoidCapture forallVariable ->
-                -- Rename the freshened bound variable in the subterms.
-                let subst'' = renaming forallVariable forallVariable' subst'
-                    forall' =
-                        forall
-                            { forallVariable = forallVariable'
-                            , forallChild = substituteWorker subst'' forallChild
-                            }
-                in Recursive.embed (attrib' :< ForallF forall')
-
-            -- Variables
-            VariableF variable ->
-                case Map.lookup variable subst' of
-                    Nothing ->
-                        -- This is impossible: if the pattern is a non-targeted
-                        -- variable, we would have taken the first branch at
-                        -- the top of substituteWorker.
-                        error "Internal error: Impossible free variable"
-                    Just (Left variable') ->
-                        Recursive.embed (attrib' :< VariableF variable')
-                    Just (Right termLike') ->
-                        termLike'
-
-            -- All other patterns
-            _ ->
-                let termLikeHead' =
-                        substituteWorker subst' <$> termLikeHead
-                in Recursive.embed (attrib' :< termLikeHead')
+        -- All other patterns
+        let termLikeHead' = substituteWorker subst' <$> termLikeHead
+        in embed termLikeHead'
       where
         attrib :< termLikeHead = Recursive.project termLike
-        freeVariables = Lens.view lensFreeVariables attrib
-        attrib' = Lens.set lensFreeVariables freeVariables' attrib
+        freeVariables = extractFreeVariables termLike
+        embed =
+            Lens.set lensFreeVariables freeVariables'
+            . Recursive.embed
+            . (attrib :<)
         -- | The substitution applied to subterms, including only the free
         -- variables below the current node. Shadowed variables are
         -- automatically omitted.
@@ -128,11 +158,34 @@ substitute lensFreeVariables = \subst -> substituteWorker (Map.map Right subst)
           where
             -- | Free variables of the target substitutions.
             targetFreeVariables =
-                Foldable.foldl'
-                    Set.union
-                    Set.empty
-                    (either Set.singleton extractFreeVariables <$> subst')
+                Foldable.foldl' Set.union Set.empty
+                    (either extractFreeVariables Set.singleton <$> subst')
         -- | Rename a bound variable, if needed.
         avoidCapture = refreshVariable freeVariables'
+
+        underBinder binder = do
+            let Binder { binderVariable } = binder
+            binderVariable' <- avoidCapture binderVariable
+            -- Rename the freshened bound variable in the subterms.
+            let subst'' = renaming binderVariable binderVariable' subst'
+                Binder { binderChild } = binder
+            return Binder
+                { binderVariable = binderVariable'
+                , binderChild = substituteWorker subst'' binderChild
+                }
+
+        overVariable :: variable -> MaybeT (Either patternType) variable
+        overVariable variable = do
+            case Map.lookup variable subst' of
+                Nothing ->
+                    -- This is impossible: if the pattern is a non-targeted
+                    -- variable, we would have taken the first branch at
+                    -- the top of substituteWorker.
+                    error "Internal error: Impossible free variable"
+                Just (Right variable')  -> return variable'
+                Just (Left termLike')   -> Monad.Except.throwError termLike'
+
+        matchEither :: MaybeT (Either r) r -> Maybe r
+        matchEither = fmap (either id id) . sequence . runMaybeT
 
 {-# INLINE substitute #-}

@@ -128,6 +128,8 @@ import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Domain.Class
 import           Kore.Sort
+import           Kore.Substitute
+                 ( Binder (..) )
 import qualified Kore.Substitute as Substitute
 import           Kore.Syntax hiding
                  ( mapVariables, traverseVariables )
@@ -277,11 +279,69 @@ substitute
     => Map variable (TermLike variable)
     -> TermLike variable
     -> TermLike variable
-substitute = Substitute.substitute (Lens.lens getFreeVariables setFreeVariables)
+substitute =
+    Substitute.substitute
+        lensFreeVariables
+        matchBinder
+        matchVariable
+
+lensFreeVariables :: Lens.Lens' (TermLike variable) (Set variable)
+lensFreeVariables mapping (Recursive.project -> attrs :< termLikeHead) =
+    embed <$> Attribute.lensFreeVariables mapping attrs
   where
-    getFreeVariables = Attribute.freeVariables
-    setFreeVariables valid freeVars =
-        valid { Attribute.freeVariables = freeVars }
+    embed = Recursive.embed . (:< termLikeHead)
+
+matchVariable
+    ::  (Alternative f, Ord variable)
+    =>  (variable -> f variable)
+    ->  TermLike variable -> f (TermLike variable)
+matchVariable match (Recursive.project -> attrs :< termLikeHead) =
+    case termLikeHead of
+        VariableF variable ->
+            matched <$> match variable
+          where
+            matched variable' =
+                Recursive.embed (attrs' :< VariableF variable')
+              where
+                attrs' =
+                    attrs { Attribute.freeVariables = Set.singleton variable' }
+        _ -> empty
+
+matchBinder
+    ::  (Alternative f, Ord variable)
+    =>  (      Binder variable (TermLike variable)
+        ->  f (Binder variable (TermLike variable))
+        )
+    ->  TermLike variable -> f (TermLike variable)
+matchBinder match (Recursive.project -> attrs :< termLikeHead) =
+    case termLikeHead of
+        ExistsF exists -> matched <$> Substitute.existsBinder match exists
+          where
+            matched exists' = Recursive.embed (attrs' :< ExistsF exists')
+              where
+                Exists { existsChild } = exists'
+                Exists { existsVariable } = exists'
+                attrs' =
+                    attrs
+                        { Attribute.freeVariables =
+                            Set.delete existsVariable
+                            $ freeVariables existsChild
+                        }
+
+        ForallF forall -> matched <$> Substitute.forallBinder match forall
+          where
+            matched forall' = Recursive.embed (attrs' :< ForallF forall')
+              where
+                Forall { forallChild } = forall'
+                Forall { forallVariable } = forall'
+                attrs' =
+                    attrs
+                        { Attribute.freeVariables =
+                            Set.delete forallVariable
+                            $ freeVariables forallChild
+                        }
+
+        _ -> empty
 
 {- | Reset the 'variableCounter' of all 'Variables'.
 
