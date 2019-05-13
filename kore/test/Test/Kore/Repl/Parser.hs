@@ -60,6 +60,7 @@ claimTests =
     [ "claim 0"  `parsesTo_` ShowClaim (ClaimIndex 0)
     , "claim 0 " `parsesTo_` ShowClaim (ClaimIndex 0)
     , "claim 5"  `parsesTo_` ShowClaim (ClaimIndex 5)
+    , "claim"    `fails`     "wat"
     ]
 
 axiomTests :: [ParserTest ReplCommand]
@@ -288,8 +289,13 @@ noArgsAliasTests =
 
 tryAliasTests :: [ParserTest ReplCommand]
 tryAliasTests =
-    [ "whatever"           `parsesTo_` TryAlias (ReplAlias "whatever" [])
+    [ "whatever"    `parsesTo_` tryAlias "whatever" []
+    , "c 1 \"a b\"" `parsesTo_` tryAlias "c" [str "1", quoted "a b"]
     ]
+  where
+    tryAlias name = TryAlias . ReplAlias name
+    str = SimpleArgument
+    quoted = QuotedArgument
 
 aliasesWithArgs :: [ParserTest ReplCommand]
 aliasesWithArgs =
