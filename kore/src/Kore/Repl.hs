@@ -98,7 +98,6 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
         Just file -> do
             contents <- liftIO $ readFile file
             let result = runParser scriptParser file contents
-            replGreeting
             case result of
                 Left err -> do
                     liftIO
@@ -107,6 +106,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
                     <> "\nParser error at: "
                     <> errorBundlePretty err
                 Right cmds -> do
+                    replGreeting
                     newSt <-
                         execStateT (traverse_ (replInterpreter $ \_ -> return () ) cmds) state
                     evalStateT (whileM repl0) newSt
