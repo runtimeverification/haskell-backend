@@ -39,12 +39,14 @@ type Claim = OnePathRule Variable
 
 test_replInterpreter :: [TestTree]
 test_replInterpreter =
-    [ showUsage `tests` "Showing the usage message"
-    , help      `tests` "Showing the help message"
-    , step5     `tests` "Performing 5 steps"
-    , step100   `tests` "Stepping over proof completion"
-    , makeAlias `tests` "Creating an alias"
-    , tryAlias  `tests` "Executing an existing alias"
+    [ showUsage       `tests` "Showing the usage message"
+    , help            `tests` "Showing the help message"
+    , step5           `tests` "Performing 5 steps"
+    , step100         `tests` "Stepping over proof completion"
+    , makeSimpleAlias `tests` "Creating an alias with no arguments"
+    , trySimpleAlias  `tests` "Executing an existing alias with no arguments"
+    , makeAlias       `tests` "Creating an alias with arguments"
+    , tryAlias        `tests` "Executing an existing alias with arguments"
     ]
 
 showUsage :: IO ()
@@ -93,12 +95,44 @@ step100 =
         continue   `equals`         True
         state      `hasCurrentNode` ReplNode 10
 
+makeSimpleAlias :: IO ()
+makeSimpleAlias =
+    let
+        axioms  = []
+        claim   = emptyClaim
+        alias   = AliasDefinition { name = "a", arguments = [], command = "help" }
+        command = Alias alias
+    in do
+        Result { output, continue, state } <- run command axioms claim
+        output   `equalsOutput` ""
+        continue `equals`       True
+        state    `hasAlias`     alias
+
+trySimpleAlias :: IO ()
+trySimpleAlias =
+    let
+        axioms  = []
+        claim   = emptyClaim
+        name    = "h"
+        alias   = AliasDefinition { name, arguments = [], command = "help" }
+        stateT  = \st -> st { aliases = Map.insert name alias (aliases st) }
+        command = TryAlias $ ReplAlias "h" []
+    in do
+        Result { output, continue } <-
+            runWithState command axioms claim stateT
+        output   `equalsOutput` helpText
+        continue `equals` True
+
 makeAlias :: IO ()
 makeAlias =
     let
         axioms  = []
         claim   = emptyClaim
-        alias   = AliasDefinition { name = "a", arguments = [], command = "help" }
+        alias   = AliasDefinition
+                    { name = "c"
+                    , arguments = ["n"]
+                    , command = "claim n"
+                    }
         command = Alias alias
     in do
         Result { output, continue, state } <- run command axioms claim
@@ -111,14 +145,18 @@ tryAlias =
     let
         axioms  = []
         claim   = emptyClaim
-        name    = "h"
-        alias   = AliasDefinition { name, arguments = [], command = "help" }
+        name    = "c"
+        alias   = AliasDefinition
+                    { name = "c"
+                    , arguments = ["n"]
+                    , command = "claim n"
+                    }
         stateT  = \st -> st { aliases = Map.insert name alias (aliases st) }
-        command = TryAlias $ ReplAlias "h" []
+        command = TryAlias $ ReplAlias "c" [SimpleArgument "0"]
     in do
         Result { output, continue } <-
             runWithState command axioms claim stateT
-        output   `equalsOutput` helpText
+        output   `equalsOutput` showRewriteRule claim
         continue `equals` True
 
 

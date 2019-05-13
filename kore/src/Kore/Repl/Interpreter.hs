@@ -11,6 +11,7 @@ module Kore.Repl.Interpreter
     , showUsageMessage
     , showStepStoppedMessage
     , printIfNotEmpty
+    , showRewriteRule
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -32,6 +33,8 @@ import           Control.Monad.State.Class
 import           Control.Monad.State.Strict
                  ( MonadState, StateT (..), execStateT )
 import qualified Control.Monad.Trans.Class as Monad.Trans
+import           Data.Coerce
+                 ( Coercible (..) )
 import           Data.Coerce
                  ( coerce )
 import           Data.Foldable
@@ -193,7 +196,7 @@ showClaim
     -> m ()
 showClaim cindex = do
     claim <- getClaimByIndex . unClaimIndex $ cindex
-    maybe printNotFound (printRewriteRule . RewriteRule . coerce) $ claim
+    maybe printNotFound (putStrLn' . showRewriteRule) $ claim
 
 -- | Prints an axiom using an index in the axioms list.
 showAxiom
@@ -204,7 +207,7 @@ showAxiom
     -> m ()
 showAxiom aindex = do
     axiom <- getAxiomByIndex . unAxiomIndex $ aindex
-    maybe printNotFound (printRewriteRule . unAxiom) $ axiom
+    maybe printNotFound (putStrLn' . showRewriteRule)  $ axiom
 
 -- | Changes the currently focused proof, using an index in the claims list.
 prove
@@ -359,7 +362,7 @@ showRule configNode = do
         Nothing -> putStrLn' "Invalid node!"
         Just rule -> do
             axioms <- Lens.use lensAxioms
-            printRewriteRule rule
+            putStrLn' $ showRewriteRule rule
             let ruleIndex = getRuleIndex rule
             putStrLn' $ maybe
                 "Error: identifier attribute wasn't initialized."
@@ -753,22 +756,25 @@ recursiveForcedStep n graph node
           [] -> return graph'
           xs -> foldM (recursiveForcedStep $ n-1) graph' (fmap ReplNode xs)
 
--- | Prints an unparsed rewrite rule along with its source location.
-printRewriteRule :: MonadWriter String m => RewriteRule Variable -> m ()
-printRewriteRule rule = do
-    putStrLn' $ unparseToString rule
-    putStrLn'
-        . show
-        . Pretty.pretty
-        . extractSourceAndLocation
-        $ rule
+-- | Display a rule as a String.
+showRewriteRule
+    :: Coercible (RewriteRule Variable) rule
+    => rule
+    -> String
+showRewriteRule rule =
+    unparseToString rule'
+    <> "\n"
+    <> (show . Pretty.pretty . extractSourceAndLocation $ rule')
   where
+    rule' = coerce rule
+
     extractSourceAndLocation
         :: RewriteRule Variable
         -> SourceLocation
     extractSourceAndLocation
         (RewriteRule (RulePattern{ Axiom.attributes })) =
             Attribute.sourceLocation attributes
+
 
 -- | Unparses a strategy node, using an omit list to hide specified children.
 unparseStrategy
