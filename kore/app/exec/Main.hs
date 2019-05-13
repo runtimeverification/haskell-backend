@@ -321,7 +321,7 @@ mainWithOptions
         proveParameters <-
             case koreProveOptions of
                 Nothing -> return Nothing
-                Just KoreProveOptions { specFileName, specMainModule, bmc } ->
+                Just KoreProveOptions { specFileName, specMainModule, graphSearch, bmc } ->
                     do
                         specDef <- parseDefinition specFileName
                         (specDefIndexedModules, _) <-
@@ -331,7 +331,7 @@ mainWithOptions
                                 specDef
                         specDefIndexedModule <-
                             mainModule specMainModule specDefIndexedModules
-                        return (Just (specDefIndexedModule, bmc))
+                        return (Just (specDefIndexedModule, graphSearch, bmc))
         maybePattern <- case patternFileName of
             Nothing -> return Nothing
             Just fileName ->
@@ -371,12 +371,13 @@ mainWithOptions
                                             searchPattern
                                             searchConfig
                                     return (ExitSuccess, pat)
-                        Just (specIndexedModule, bmc)
+                        Just (specIndexedModule, graphSearch, bmc)
                           | bmc -> do
                             _ <- boundedModelCheck
                                     stepLimit
                                     indexedModule
                                     specIndexedModule
+                                    graphSearch
                             return success
                           | otherwise ->
                             either failure (const success)

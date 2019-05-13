@@ -46,8 +46,8 @@ import           Development.GitRev
 import           Options.Applicative
                  ( InfoMod, Parser, argument, disabled, execParser, flag,
                  flag', help, helper, hidden, info, internal, long, metavar,
-                 option, str, strOption, switch, readerError, value,
-                 (<**>), (<|>) )
+                 option, readerError, str, strOption, switch, value, (<**>),
+                 (<|>) )
 import           System.Clock
                  ( Clock (Monotonic), diffTimeSpec, getTime )
 import           System.IO
@@ -68,7 +68,7 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.Parser
                  ( ParsedPattern, parseKoreDefinition )
 import           Kore.Step.Strategy
-                 ( GraphSearchOrder(..) )
+                 ( GraphSearchOrder (..) )
 import           Kore.Syntax
 import           Kore.Syntax.Definition
                  ( ModuleName (..), ParsedDefinition, getModuleNameForError )
