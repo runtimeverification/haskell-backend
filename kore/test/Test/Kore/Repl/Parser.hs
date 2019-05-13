@@ -68,7 +68,8 @@ claimTests =
     [ "claim 0"  `parsesTo_` ShowClaim (ClaimIndex 0)
     , "claim 0 " `parsesTo_` ShowClaim (ClaimIndex 0)
     , "claim 5"  `parsesTo_` ShowClaim (ClaimIndex 5)
-    , "claim"    `fails`     "wat"
+    , "claim"    `fails`     ()
+    , "claim -5" `fails`     ()
     ]
 
 axiomTests :: [ParserTest ReplCommand]
@@ -76,6 +77,8 @@ axiomTests =
     [ "axiom 0"  `parsesTo_` ShowAxiom (AxiomIndex 0)
     , "axiom 0 " `parsesTo_` ShowAxiom (AxiomIndex 0)
     , "axiom 5"  `parsesTo_` ShowAxiom (AxiomIndex 5)
+    , "axiom"    `fails`     ()
+    , "axiom -5" `fails`     ()
     ]
 
 proveTests :: [ParserTest ReplCommand]
@@ -83,6 +86,8 @@ proveTests =
     [ "prove 0"  `parsesTo_` Prove (ClaimIndex 0)
     , "prove 0 " `parsesTo_` Prove (ClaimIndex 0)
     , "prove 5"  `parsesTo_` Prove (ClaimIndex 5)
+    , "prove"    `fails`     ()
+    , "prove -5" `fails`     ()
     ]
 
 graphTests :: [ParserTest ReplCommand]
@@ -91,6 +96,7 @@ graphTests =
     , "graph "          `parsesTo_` ShowGraph Nothing
     , "graph file"      `parsesTo_` ShowGraph (Just "file")
     , "graph \"f ile\"" `parsesTo_` ShowGraph (Just "f ile")
+    , "graph f ile"     `fails`     ()
     ]
 
 stepTests :: [ParserTest ReplCommand]
@@ -99,6 +105,7 @@ stepTests =
     , "step "   `parsesTo_` ProveSteps 1
     , "step 5"  `parsesTo_` ProveSteps 5
     , "step 5 " `parsesTo_` ProveSteps 5
+    , "step -5" `fails`     ()
     ]
 
 stepfTests :: [ParserTest ReplCommand]
@@ -107,19 +114,24 @@ stepfTests =
     , "stepf "   `parsesTo_` ProveStepsF 1
     , "stepf 5"  `parsesTo_` ProveStepsF 5
     , "stepf 5 " `parsesTo_` ProveStepsF 5
+    , "stepf -5" `fails`     ()
     ]
 
 selectTests :: [ParserTest ReplCommand]
 selectTests =
     [ "select 5"  `parsesTo_` SelectNode (ReplNode 5)
     , "select 5 " `parsesTo_` SelectNode (ReplNode 5)
+    , "select -5" `fails`     ()
     ]
 
 configTests :: [ParserTest ReplCommand]
 configTests =
-    [ "config"    `parsesTo_` ShowConfig Nothing
-    , "config "   `parsesTo_` ShowConfig Nothing
-    , "config 5"  `parsesTo_` ShowConfig (Just (ReplNode 5))
+    [ "config"             `parsesTo_` ShowConfig Nothing
+    , "config "            `parsesTo_` ShowConfig Nothing
+    , "config 5"           `parsesTo_` ShowConfig (Just (ReplNode 5))
+    , "config -5"          `fails`     ()
+    , "config | > >> file" `fails`     ()
+    , "config | s >> "     `fails`     ()
     ]
 
 omitTests :: [ParserTest ReplCommand]
@@ -144,6 +156,7 @@ precBranchTests =
     [ "prec-branch"    `parsesTo_` ShowPrecBranch Nothing
     , "prec-branch "   `parsesTo_` ShowPrecBranch Nothing
     , "prec-branch 5"  `parsesTo_` ShowPrecBranch (Just (ReplNode 5))
+    , "prec-branch -5" `fails`     ()
     ]
 
 childrenTests :: [ParserTest ReplCommand]
@@ -151,6 +164,7 @@ childrenTests =
     [ "children"    `parsesTo_` ShowChildren Nothing
     , "children "   `parsesTo_` ShowChildren Nothing
     , "children 5"  `parsesTo_` ShowChildren (Just (ReplNode 5))
+    , "children -5" `fails`     ()
     ]
 
 labelTests :: [ParserTest ReplCommand]
@@ -188,12 +202,16 @@ exitTests =
 
 redirectTests :: [ParserTest ReplCommand]
 redirectTests =
-    [ "config > file"     `parsesTo_` Redirect (ShowConfig Nothing)  "file"
-    , "config 5 > file"   `parsesTo_` Redirect (ShowConfig (Just (ReplNode 5))) "file"
-    , "config 5 > file"   `parsesTo_` Redirect (ShowConfig (Just (ReplNode 5))) "file"
-    , "claim 3 > cf"      `parsesTo_` Redirect (ShowClaim (ClaimIndex 3)) "cf"
-    , "claim 3 > \"c f\"" `parsesTo_` Redirect (ShowClaim (ClaimIndex 3)) "c f"
+    [ "config > file"     `parsesTo_` redirectConfig Nothing "file"
+    , "config 5 > file"   `parsesTo_` redirectConfig (Just $ ReplNode 5) "file"
+    , "config 5 > file"   `parsesTo_` redirectConfig (Just $ ReplNode 5) "file"
+    , "claim 3 > cf"      `parsesTo_` redirectClaim (ClaimIndex 3) "cf"
+    , "claim 3 > \"c f\"" `parsesTo_` redirectClaim (ClaimIndex 3) "c f"
+    , "config 5 > "       `fails`     ()
     ]
+  where
+    redirectConfig maybeNode file  = Redirect (ShowConfig maybeNode) file
+    redirectClaim  maybeClaim file = Redirect (ShowClaim maybeClaim) file
 
 pipeTests :: [ParserTest ReplCommand]
 pipeTests =
@@ -202,6 +220,7 @@ pipeTests =
     , "config 5 | script \"arg1\" \"arg2\"" `parsesTo_` pipeConfig (Just (ReplNode 5)) "script" ["arg1", "arg2"]
     , "step 5 | script"                     `parsesTo_` pipeStep 5 "script" []
     , "step 5 | \"s c ri p t\""             `parsesTo_` pipeStep 5 "s c ri p t" []
+    , "config 5 | "                         `fails`     ()
     ]
   where
     pipeConfig
@@ -243,6 +262,7 @@ appendTests :: [ParserTest ReplCommand]
 appendTests =
     [ "config >> file"        `parsesTo_` AppendTo (ShowConfig Nothing) "file"
     , "config >> \"f i l e\"" `parsesTo_` AppendTo (ShowConfig Nothing) "f i l e"
+    , "config >> "            `fails`     ()
     ]
 
 pipeAppendTests :: [ParserTest ReplCommand]
@@ -268,6 +288,7 @@ ruleTests =
     , "rule "   `parsesTo_` ShowRule Nothing
     , "rule 5"  `parsesTo_` ShowRule (Just (ReplNode 5))
     , "rule 5 " `parsesTo_` ShowRule (Just (ReplNode 5))
+    , "rule -5" `fails`     ()
     ]
 
 clearTests :: [ParserTest ReplCommand]
@@ -276,12 +297,14 @@ clearTests =
     , "clear "   `parsesTo_` Clear Nothing
     , "clear 5"  `parsesTo_` Clear (Just (ReplNode 5))
     , "clear 5 " `parsesTo_` Clear (Just (ReplNode 5))
+    , "clear -5" `fails`     ()
     ]
 
 saveSessionTests :: [ParserTest ReplCommand]
 saveSessionTests =
     [ "save-session file"  `parsesTo_` SaveSession "file"
     , "save-session file " `parsesTo_` SaveSession "file"
+    , "save-session"       `fails`     ()
     ]
 
 noArgsAliasTests :: [ParserTest ReplCommand]
