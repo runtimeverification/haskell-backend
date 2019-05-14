@@ -39,11 +39,12 @@ import qualified Kore.Attribute.Sort.Concat as Attribute
 import qualified Kore.Attribute.Sort.Element as Attribute
 import qualified Kore.Attribute.Sort.Unit as Attribute
 import           Kore.Attribute.Symbol
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( HeadType )
+                 ( HeadType, SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import           Kore.Internal.TermLike
@@ -1962,3 +1963,23 @@ builtinBool
     => Bool
     -> TermLike variable
 builtinBool = Builtin.Bool.asInternal boolSort
+
+emptyMetadataTools :: SmtMetadataTools Attribute.Symbol
+emptyMetadataTools =
+    Mock.makeMetadataTools
+        [] -- attributesMapping
+        [] -- headTypeMapping
+        [] -- sortAttributesMapping
+        [] -- subsorts
+        [] -- headSortsMapping
+        emptySmtDeclarations
+
+metadataTools :: SmtMetadataTools Attribute.Symbol
+metadataTools =
+    Mock.makeMetadataTools
+        attributesMapping
+        headTypeMapping
+        sortAttributesMapping
+        subsorts
+        headSortsMapping
+        smtDeclarations

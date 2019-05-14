@@ -8,6 +8,7 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 
 module Kore.Repl.Parser
     ( commandParser
+    , scriptParser
     ) where
 
 import           Control.Applicative
@@ -16,12 +17,12 @@ import qualified Data.Foldable as Foldable
 import           Data.Functor
                  ( void, ($>) )
 import           Text.Megaparsec
-                 ( Parsec, eof, many, manyTill, noneOf, option, optional, try )
+                 ( Parsec, eof, many, manyTill, noneOf, oneOf, option,
+                 optional, try )
 import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import Kore.Repl.Data
-       ( AxiomIndex (..), ClaimIndex (..), ReplCommand (..), ReplNode (..) )
 
 type Parser = Parsec String String
 
@@ -29,10 +30,31 @@ type Parser = Parsec String String
 -- @
 -- maybe ShowUsage id . Text.Megaparsec.parseMaybe commandParser
 -- @
+
+scriptParser :: Parser [ReplCommand]
+scriptParser =
+    some ( skipSpacesAndComments
+         *> commandParser0 (void Char.newline)
+         <* many Char.newline
+         <* skipSpacesAndComments
+         )
+    <* eof
+  where
+    skipSpacesAndComments :: Parser (Maybe ())
+    skipSpacesAndComments =
+        optional $ spaceConsumer <* Char.newline
+
 commandParser :: Parser ReplCommand
-commandParser = do
+commandParser = commandParser0 eof
+
+commandParser0 :: Parser () -> Parser ReplCommand
+commandParser0 endParser =
+    alias endParser <|> commandParserExceptAlias endParser <|> tryAlias
+
+commandParserExceptAlias :: Parser () -> Parser ReplCommand
+commandParserExceptAlias endParser = do
     cmd <- nonRecursiveCommand
-    endOfInput cmd
+    endOfInput cmd endParser
         <|> pipeWith appendTo cmd
         <|> pipeWith redirect cmd
         <|> appendTo cmd
@@ -62,6 +84,7 @@ nonRecursiveCommand =
         , tryAxiomClaim
         , clear
         , saveSession
+        , loadScript
         , exit
         ]
 
@@ -71,11 +94,14 @@ pipeWith
     -> Parser ReplCommand
 pipeWith parserCmd cmd = try (pipe cmd >>= parserCmd)
 
-endOfInput :: ReplCommand -> Parser ReplCommand
-endOfInput cmd = eof $> cmd
+endOfInput :: ReplCommand -> Parser () -> Parser ReplCommand
+endOfInput cmd p = p $> cmd
 
 help :: Parser ReplCommand
 help = const Help <$$> literal "help"
+
+loadScript :: Parser ReplCommand
+loadScript = LoadScript <$$> literal "load" *> quotedOrWordWithout ""
 
 showClaim :: Parser ReplCommand
 showClaim = ShowClaim . ClaimIndex <$$> literal "claim" *> decimal
@@ -90,11 +116,11 @@ showGraph :: Parser ReplCommand
 showGraph = ShowGraph <$$> literal "graph" *> optional (quotedOrWordWithout "")
 
 proveSteps :: Parser ReplCommand
-proveSteps = ProveSteps <$$> literal "step" *> option 1 L.decimal <* Char.space
+proveSteps = ProveSteps <$$> literal "step" *> option 1 L.decimal <* spaceNoNewline
 
 proveStepsF :: Parser ReplCommand
 proveStepsF =
-    ProveStepsF <$$> literal "stepf" *> option 1 L.decimal <* Char.space
+    ProveStepsF <$$> literal "stepf" *> option 1 L.decimal <* spaceNoNewline
 
 selectNode :: Parser ReplCommand
 selectNode = SelectNode . ReplNode <$$> literal "select" *> decimal
@@ -178,6 +204,17 @@ appendTo cmd =
     <$$> literal ">>"
     *> quotedOrWordWithout ""
 
+alias :: Parser () -> Parser ReplCommand
+alias endParser = do
+    literal "alias"
+    name <- word
+    literal "="
+    cmd  <- commandParserExceptAlias endParser
+    return . Alias $ ReplAlias name cmd
+
+tryAlias :: Parser ReplCommand
+tryAlias = TryAlias <$$> word
+
 infixr 2 <$$>
 infixr 1 <**>
 
@@ -190,11 +227,26 @@ infixr 1 <**>
 (<**>) = (<*>)
 
 
+spaceConsumer :: Parser ()
+spaceConsumer =
+    L.space
+        space1NoNewline
+        (L.skipLineComment "//")
+        (L.skipBlockComment "/*" "*/")
+
+space1NoNewline :: Parser ()
+space1NoNewline =
+    void . some $ oneOf [' ', '\t', '\r', '\f', '\v']
+
+spaceNoNewline :: Parser ()
+spaceNoNewline =
+    void . many $ oneOf [' ', '\t', '\r', '\f', '\v']
+
 literal :: String -> Parser ()
-literal str = void $ Char.string str <* Char.space
+literal str = void $ Char.string str <* spaceNoNewline
 
 decimal :: Parser Int
-decimal = L.decimal <* Char.space
+decimal = L.decimal <* spaceNoNewline
 
 maybeDecimal :: Parser (Maybe Int)
 maybeDecimal = optional decimal
@@ -209,10 +261,12 @@ quotedWord :: Parser String
 quotedWord =
     Char.char '"'
     *> manyTill L.charLiteral (Char.char '"')
-    <* Char.space
+    <* spaceNoNewline
 
 wordWithout :: [Char] -> Parser String
-wordWithout xs = some (noneOf $ [' '] <> xs) <* Char.space
+wordWithout xs =
+    some (noneOf $ [' ', '\t', '\r', '\f', '\v', '\n'] <> xs)
+    <* spaceNoNewline
 
 maybeWord :: Parser (Maybe String)
 maybeWord = optional word

@@ -47,7 +47,6 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
@@ -59,7 +58,7 @@ test_onePathVerification =
         -- Claim: a => b
         -- Expected: error a
         actual <- runVerification
-            metadataTools
+            Mock.metadataTools
             (Limit 0)
             [simpleAxiom Mock.a Mock.b]
             [simpleClaim Mock.a Mock.b]
@@ -76,7 +75,7 @@ test_onePathVerification =
         -- the rewrite transforms 'a' into 'b'. We detect the success at the
         -- beginning of the second step, which does not run here.
         actual <- runVerification
-            metadataTools
+            Mock.metadataTools
             (Limit 1)
             [simpleAxiom Mock.a Mock.b]
             [simpleClaim Mock.a Mock.b]
@@ -88,7 +87,7 @@ test_onePathVerification =
         -- Claim: a => d
         -- Expected: error [b, c]
         actual <- runVerification
-            metadataTools
+            Mock.metadataTools
             (Limit 1)
             [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
             [simpleClaim Mock.a Mock.d]
@@ -101,7 +100,7 @@ test_onePathVerification =
         -- Claim: a => b
         -- Expected: success
         actual <- runVerification
-            metadataTools
+            Mock.metadataTools
             (Limit 2)
             [simpleAxiom Mock.a Mock.b]
             [simpleClaim Mock.a Mock.b]
@@ -112,7 +111,7 @@ test_onePathVerification =
         -- Trusted Claim: a => b
         -- Expected: error a
         actual <- runVerification
-            metadataTools
+            Mock.metadataTools
             (Limit 4)
             []
             [ simpleTrustedClaim Mock.a Mock.b
@@ -127,7 +126,7 @@ test_onePathVerification =
         -- Claim: a => c
         -- Expected: success
         actual <- runVerification
-            metadataTools
+            Mock.metadataTools
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
@@ -142,7 +141,7 @@ test_onePathVerification =
         -- Claim: a => b
         -- Expected: success
         actual <- runVerification
-            metadataTools
+            Mock.metadataTools
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
@@ -158,7 +157,7 @@ test_onePathVerification =
         -- Claim: constr10(x) => b
         -- Expected: success
         actual <- runVerification
-            metadataTools
+            Mock.metadataTools
             (Limit 4)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
             , simpleAxiom (Mock.functionalConstr11 (mkVar Mock.x)) Mock.b
@@ -174,7 +173,7 @@ test_onePathVerification =
         -- Claim: constr10(x) => b
         -- Expected: error constr11(x) and x != a
         actual <- runVerification
-            metadataTools
+            Mock.metadataTools
             (Limit 3)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
             , simpleAxiom
@@ -199,7 +198,7 @@ test_onePathVerification =
         -- Claim: d => e
         -- Expected: success
         actual <- runVerification
-            metadataTools
+            Mock.metadataTools
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
@@ -219,7 +218,7 @@ test_onePathVerification =
         -- Claim: d => e
         -- Expected: error c
         actual <- runVerification
-            metadataTools
+            Mock.metadataTools
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
@@ -239,7 +238,7 @@ test_onePathVerification =
         -- Claim: d => c
         -- Expected: error e
         actual <- runVerification
-            metadataTools
+            Mock.metadataTools
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
@@ -258,7 +257,7 @@ test_onePathVerification =
         -- Claim: b => c
         -- Expected: error b
         actual <- runVerification
-            metadataTools
+            Mock.metadataTools
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.c Mock.d
@@ -276,7 +275,7 @@ test_onePathVerification =
         -- Claim: a => d
         -- Expected: error b
         actual <- runVerification
-            metadataTools
+            Mock.metadataTools
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.c Mock.d
@@ -294,7 +293,7 @@ test_onePathVerification =
         -- Trusted Claim: b => c
         -- Expected: success
         actual <- runVerification
-            metadataTools
+            Mock.metadataTools
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.c Mock.d
@@ -312,7 +311,7 @@ test_onePathVerification =
         -- Claim: a => d
         -- Expected: success
         actual <- runVerification
-            metadataTools
+            Mock.metadataTools
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.c Mock.d
@@ -334,7 +333,7 @@ test_onePathVerification =
         --        without second claim would be: a=>b=>c=>d
         --    second verification: b=>c=>d, not visible here
         actual <- runVerification
-            metadataTools
+            Mock.metadataTools
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
@@ -347,16 +346,6 @@ test_onePathVerification =
             (Left $ Pattern.fromTermLike Mock.e)
             actual
     ]
-  where
-    metadataTools :: SmtMetadataTools StepperAttributes
-    metadataTools =
-        Mock.makeMetadataTools
-            Mock.attributesMapping
-            Mock.headTypeMapping
-            Mock.sortAttributesMapping
-            Mock.subsorts
-            Mock.headSortsMapping
-            Mock.smtDeclarations
 
 simpleAxiom
     :: TermLike Variable

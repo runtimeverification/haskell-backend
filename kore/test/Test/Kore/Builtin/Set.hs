@@ -20,8 +20,6 @@ import qualified Data.Set as Set
 
 import           Kore.Attribute.Hook
                  ( Hook )
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
 import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.Set as Set
 import           Kore.IndexedModule.MetadataTools
@@ -48,8 +46,6 @@ import           Test.Kore.Builtin.Int
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.SMT
 import           Test.Tasty.HUnit.Extensions
@@ -217,6 +213,27 @@ test_size =
             (===) expect =<< evaluate patActual
             (===) Pattern.top =<< evaluate predicate
         )
+
+test_intersection_unit :: TestTree
+test_intersection_unit =
+    testPropertyWithSolver "intersection(as, unit()) === unit()" $ do
+        as <- forAll genSetPattern
+        let
+            original = intersectionSet as unitSet
+            expect = Pattern.fromTermLike (asInternal Set.empty)
+        (===) expect      =<< evaluate original
+        (===) Pattern.top =<< evaluate (mkEquals_ original unitSet)
+
+test_intersection_idem :: TestTree
+test_intersection_idem =
+    testPropertyWithSolver "intersection(as, as) === as" $ do
+        as <- forAll genConcreteSet
+        let
+            termLike = asTermLike as
+            original = intersectionSet termLike termLike
+            expect = Pattern.fromTermLike (asInternal as)
+        (===) expect      =<< evaluate original
+        (===) Pattern.top =<< evaluate (mkEquals_ original termLike)
 
 setVariableGen :: Sort -> Gen (Set Variable)
 setVariableGen sort =
@@ -556,18 +573,8 @@ test_isBuiltin =
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> genConcreteSet)
 
-mockMetadataTools :: SmtMetadataTools StepperAttributes
-mockMetadataTools =
-    Mock.makeMetadataTools
-        Mock.attributesMapping
-        Mock.headTypeMapping
-        Mock.sortAttributesMapping
-        Mock.subsorts
-        Mock.headSortsMapping
-        Mock.smtDeclarations
-
 mockHookTools :: SmtMetadataTools Hook
-mockHookTools = StepperAttributes.hook <$> mockMetadataTools
+mockHookTools = StepperAttributes.hook <$> Mock.metadataTools
 
 -- | Specialize 'Set.asTermLike' to the builtin sort 'setSort'.
 asTermLike

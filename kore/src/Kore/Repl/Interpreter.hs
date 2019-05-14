@@ -10,6 +10,8 @@ module Kore.Repl.Interpreter
     ( replInterpreter
     , showUsageMessage
     , showStepStoppedMessage
+    , printIfNotEmpty
+    , parseEvalScript
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -54,12 +56,15 @@ import           GHC.Exts
                  ( toList )
 import           GHC.IO.Handle
                  ( hGetContents, hPutStr )
+import           Kore.Repl.Parser
 import           Numeric.Natural
 import           System.Directory
-                 ( findExecutable )
+                 ( doesFileExist, findExecutable )
 import           System.Process
                  ( StdStream (CreatePipe), createProcess, proc, std_in,
                  std_out )
+import           Text.Megaparsec
+                 ( ParseErrorBundle (..), errorBundlePretty, runParser )
 
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
@@ -138,6 +143,9 @@ replInterpreter printFn replCmd = do
                 SaveSession file   -> saveSession file   $> True
                 Pipe inn file args -> pipe inn file args $> True
                 AppendTo inn file  -> appendTo inn file  $> True
+                Alias a            -> alias a            $> True
+                TryAlias name      -> tryAlias name printFn
+                LoadScript file    -> loadScript file    $> True
                 Exit               -> pure                  False
     (output, shouldContinue) <- evaluateCommand command
     liftIO $ printFn output
@@ -260,6 +268,17 @@ proveStepsF n = do
     node   <- Lens.use lensNode
     graph' <- recursiveForcedStep n graph node
     lensGraph .= graph'
+
+-- | Loads a script from a file.
+loadScript
+    :: forall claim
+    .  Claim claim
+    => FilePath
+    -- ^ path to file
+    -> ReplM claim ()
+loadScript file = do
+    state <- get
+    lift (parseEvalScript state file) >>= put
 
 -- | Focuses the node with id equals to 'n'.
 selectNode
@@ -672,6 +691,35 @@ appendTo cmd file = do
         -> ReplM claim (ReplState claim)
     runInterpreter = lift . execStateT (replInterpreter (appendFile file) cmd)
 
+alias
+    :: forall m claim
+    .  MonadState (ReplState claim) m
+    => ReplAlias
+    -> m ()
+alias a = addOrUpdateAlias a
+
+tryAlias
+    :: forall claim
+    .  Claim claim
+    => String
+    -> (String -> IO ())
+    -> ReplM claim Bool
+tryAlias name printFn = do
+    res <- findAlias name
+    case res of
+        Nothing  -> showUsage $> True
+        Just ReplAlias { command } -> do
+            (cont, st') <- get >>= runInterpreter command
+            put st'
+            return cont
+  where
+    runInterpreter
+        :: ReplCommand
+        -> ReplState claim
+        -> ReplM claim (Bool, ReplState claim)
+    runInterpreter cmd =
+        lift . runStateT (replInterpreter printFn cmd)
+
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
 -- Returns 'Left' while it has to continue looping, and 'Right' when done
@@ -766,6 +814,12 @@ unparseStrategy omitList =
 putStrLn' :: MonadWriter String m => String -> m ()
 putStrLn' str = tell $ str <> "\n"
 
+printIfNotEmpty :: String -> IO ()
+printIfNotEmpty =
+    \case
+        "" -> pure ()
+        xs -> putStrLn xs
+
 printNotFound :: MonadWriter String m => m ()
 printNotFound = putStrLn' "Variable or index not found"
 
@@ -812,3 +866,41 @@ showAxiomOrClaim _   (RuleIndex Nothing) = Nothing
 showAxiomOrClaim len (RuleIndex (Just rid))
   | rid < len = Just $ "Axiom " <> show rid
   | otherwise = Just $ "Claim " <> show (rid - len)
+
+parseEvalScript
+    :: forall claim
+    .  Claim claim
+    => ReplState claim
+    -> FilePath
+    -> Simplifier (ReplState claim)
+parseEvalScript state file = do
+    exists <- liftIO . doesFileExist $ file
+    if exists == True
+        then do
+            contents <- liftIO $ readFile file
+            let result = runParser scriptParser file contents
+            either (parseFailed state) (executeScript state) result
+        else do
+            liftIO . putStrLn
+                $ "Cannot find " <> file
+            return state
+
+  where
+
+    parseFailed
+        :: ReplState claim
+        -> ParseErrorBundle String String
+        -> Simplifier (ReplState claim)
+    parseFailed st err = do
+        liftIO . putStrLn
+            $ "\nCouldn't parse initial script file."
+            <> "\nParser error at: "
+            <> errorBundlePretty err
+        return st
+
+    executeScript
+        :: ReplState claim
+        -> [ReplCommand]
+        -> Simplifier (ReplState claim)
+    executeScript st cmds =
+        execStateT (traverse_ (replInterpreter $ \_ -> return () ) cmds) st

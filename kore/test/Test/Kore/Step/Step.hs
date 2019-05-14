@@ -16,9 +16,6 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-import           Kore.Attribute.Symbol
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.MultiOr
                  ( MultiOr )
@@ -63,20 +60,8 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
-
-mockMetadataTools :: SmtMetadataTools StepperAttributes
-mockMetadataTools =
-    Mock.makeMetadataTools
-        Mock.attributesMapping
-        Mock.headTypeMapping
-        Mock.sortAttributesMapping
-        Mock.subsorts
-        Mock.headSortsMapping
-        Mock.smtDeclarations
 
 evalUnifier
     :: BranchT Unifier a
@@ -102,7 +87,7 @@ applyInitialConditions initial unification =
         initial
         unification
   where
-    metadataTools = mockMetadataTools
+    metadataTools = Mock.metadataTools
     predicateSimplifier =
         Predicate.create
             metadataTools
@@ -183,7 +168,7 @@ unifyRule initial rule =
         initial
         rule
   where
-    metadataTools = mockMetadataTools
+    metadataTools = Mock.metadataTools
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
     predicateSimplifier =
         Predicate.create
@@ -692,7 +677,7 @@ applyRewriteRules initial rules =
         rules
         initial
   where
-    metadataTools = mockMetadataTools
+    metadataTools = Mock.metadataTools
     predicateSimplifier =
         Predicate.create
             metadataTools
@@ -1064,7 +1049,7 @@ sequenceRewriteRules initial rules =
         initial
         rules
   where
-    metadataTools = mockMetadataTools
+    metadataTools = Mock.metadataTools
     predicateSimplifier =
         Predicate.create
             metadataTools
@@ -1184,7 +1169,7 @@ sequenceMatchingRules initial rules =
         initial
         (getEqualityRule <$> rules)
   where
-    metadataTools = mockMetadataTools
+    metadataTools = Mock.metadataTools
     predicateSimplifier =
         Predicate.create
             metadataTools

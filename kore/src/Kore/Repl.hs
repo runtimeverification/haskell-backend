@@ -8,6 +8,7 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 
 module Kore.Repl
     ( runRepl
+    , InitialScript (..)
     ) where
 
 import           Control.Exception
@@ -69,6 +70,12 @@ import           Kore.Unification.Procedure
 import           Kore.Unparser
                  ( Unparse )
 
+-- | Represents an optional file name which contains a sequence of
+-- repl commands.
+newtype InitialScript = InitialScript
+    { unInitialScript :: Maybe FilePath
+    } deriving (Eq, Show)
+
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
 -- that would otherwise be required in the proof and allows for step-by-step
 -- execution of proofs. Currently works via stdin/stdout interaction.
@@ -88,19 +95,23 @@ runRepl
     -- ^ list of axioms to used in the proof
     -> [claim]
     -- ^ list of claims to be proven
+    -> InitialScript
+    -- ^ optional initial script
     -> Simplifier ()
-runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
-  = do
+runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims' initScript = do
+    let mscript = unInitialScript initScript
+    newState <- maybe (pure state) (parseEvalScript state) mscript
     replGreeting
-    evalStateT (whileM repl0) state
+    evalStateT (whileM repl0) newState
 
   where
+
     repl0 :: StateT (ReplState claim) Simplifier Bool
     repl0 = do
         str <- prompt
         let command = maybe ShowUsage id $ parseMaybe commandParser str
         when (shouldStore command) $ lensCommands Lens.%= (Seq.|> str)
-        replInterpreter putStrLn command
+        replInterpreter printIfNotEmpty command
 
     state :: ReplState claim
     state =
@@ -117,6 +128,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             , stepper = stepper0
             , unifier = unifier0
             , labels  = Map.empty
+            , aliases = Map.empty
             }
 
     addIndexesToAxioms
