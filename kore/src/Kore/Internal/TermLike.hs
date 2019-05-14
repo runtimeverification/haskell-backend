@@ -276,9 +276,9 @@ substitute
         , Ord variable
         , SortedVariable variable
         )
-    => Map variable (TermLike variable)
-    -> TermLike variable
-    -> TermLike variable
+    =>  Map variable (TermLike variable)
+    ->  TermLike variable
+    ->  TermLike variable
 substitute =
     Substitute.substitute
         lensFreeVariables
