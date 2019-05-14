@@ -24,11 +24,9 @@ import           Control.Monad.Extra
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.State.Strict
-                 ( MonadState, StateT, evalStateT, execStateT )
+                 ( MonadState, StateT, evalStateT )
 import           Data.Coerce
                  ( coerce )
-import           Data.Foldable
-                 ( traverse_ )
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
@@ -38,8 +36,7 @@ import           Kore.Attribute.RuleIndex
 import           System.IO
                  ( hFlush, stdout )
 import           Text.Megaparsec
-                 ( ParseErrorBundle (..), errorBundlePretty, parseMaybe,
-                 runParser )
+                 ( parseMaybe )
 
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol

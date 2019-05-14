@@ -891,16 +891,16 @@ parseEvalScript state file = do
         :: ReplState claim
         -> ParseErrorBundle String String
         -> Simplifier (ReplState claim)
-    parseFailed state err = do
+    parseFailed st err = do
         liftIO . putStrLn
             $ "\nCouldn't parse initial script file."
             <> "\nParser error at: "
             <> errorBundlePretty err
-        return state
+        return st
 
     executeScript
         :: ReplState claim
         -> [ReplCommand]
         -> Simplifier (ReplState claim)
-    executeScript state cmds =
-        execStateT (traverse_ (replInterpreter $ \_ -> return () ) cmds) state
+    executeScript st cmds =
+        execStateT (traverse_ (replInterpreter $ \_ -> return () ) cmds) st
