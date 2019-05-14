@@ -406,10 +406,9 @@ externalizeFreshVariables termLike =
                     (Map Variable Variable)
                     (TermLike Variable)
                 )
-        ->  (Reader
+        ->  Reader
                 (Map Variable Variable)
                 (TermLike Variable)
-            )
     externalizeFreshVariablesWorker (valid :< patt) = do
         valid' <- Attribute.traverseVariables lookupVariable valid
         let freeVariables' = Attribute.freeVariables valid'
