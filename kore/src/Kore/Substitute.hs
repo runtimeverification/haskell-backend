@@ -18,6 +18,8 @@ import           Control.Applicative
 import           Control.Comonad.Trans.Env
 import qualified Control.Lens as Lens
 import qualified Data.Foldable as Foldable
+import           Data.Function
+                 ( (&) )
 import           Data.Functor.Foldable
                  ( Corecursive, Recursive )
 import qualified Data.Functor.Foldable as Recursive
@@ -128,8 +130,8 @@ substitute lensFreeVariables traverseBinder traverseVariable =
         -> patternType
         -> patternType
     substituteWorker subst termLike =
-        fromMaybe substituteDefault
-        $ substituteNone <|> substituteBinder <|> substituteVariable
+        substituteNone <|> substituteBinder <|> substituteVariable
+        & fromMaybe substituteDefault
       where
         -- | Special case: None of the targeted variables occurs in the pattern.
         -- There is nothing to substitute, return the original pattern.
@@ -144,32 +146,61 @@ substitute lensFreeVariables traverseBinder traverseVariable =
         -- is carried out on the bound pattern.
         substituteBinder :: Maybe patternType
         substituteBinder =
-            runIdentity <$> matchWith traverseBinder underBinder termLike
+            runIdentity <$> matchWith traverseBinder worker termLike
+          where
+            worker
+                :: Binder variable patternType
+                -> Identity (Binder variable patternType)
+            worker Binder { binderVariable, binderChild } = do
+                let
+                    binderVariable' = avoidCapture binderVariable
+                    -- Rename the freshened bound variable in the subterms.
+                    subst'' = renaming binderVariable binderVariable' subst'
+                return Binder
+                    { binderVariable = fromMaybe binderVariable binderVariable'
+                    , binderChild = substituteWorker subst'' binderChild
+                    }
 
         -- | Special case: The pattern is a variable.
         -- Substitute or rename the variable, as required.
         substituteVariable :: Maybe patternType
         substituteVariable =
-            either id id <$> matchWith traverseVariable overVariable termLike
+            either id id <$> matchWith traverseVariable worker termLike
+          where
+            worker :: variable -> Either patternType variable
+            worker variable =
+                -- If the variable is not substituted or renamed, return the
+                -- original pattern.
+                fromMaybe
+                    (Left termLike)
+                    -- If the variable is renamed, 'Map.lookup' returns a
+                    -- 'Right' which @traverseVariable@ embeds into
+                    -- @patternType@. If the variable is substituted,
+                    -- 'Map.lookup' returns a 'Left' which is used directly as
+                    -- the result, exiting early from @traverseVariable@.
+                    (Map.lookup variable subst')
 
         -- | Default case: Descend into sub-patterns and apply the substitution.
         substituteDefault =
-            -- All other patterns
-            let termLikeHead' = substituteWorker subst' <$> termLikeHead
-            in embed termLikeHead'
+            embed termLikeHead'
+          where
+            attrib :< termLikeHead = Recursive.project termLike
+            termLikeHead' = substituteWorker subst' <$> termLikeHead
+            embed =
+                Lens.set lensFreeVariables freeVariables'
+                . Recursive.embed
+                . (attrib :<)
 
-        attrib :< termLikeHead = Recursive.project termLike
         freeVariables = extractFreeVariables termLike
-        embed =
-            Lens.set lensFreeVariables freeVariables'
-            . Recursive.embed
-            . (attrib :<)
+
         -- | The substitution applied to subterms, including only the free
         -- variables below the current node. Shadowed variables are
         -- automatically omitted.
         subst' = Map.intersection subst (Map.fromSet id freeVariables)
+
         -- | Free variables of the original pattern that are not targeted.
         originalVariables = Set.difference freeVariables (Map.keysSet subst')
+
         -- | Free variables of the resulting pattern.
         freeVariables' = Set.union originalVariables targetFreeVariables
           where
@@ -177,32 +208,9 @@ substitute lensFreeVariables traverseBinder traverseVariable =
             targetFreeVariables =
                 Foldable.foldl' Set.union Set.empty
                     (either extractFreeVariables Set.singleton <$> subst')
+
         -- | Rename a bound variable, if needed.
         avoidCapture = refreshVariable freeVariables'
-
-        underBinder
-            :: Binder variable patternType
-            -> Identity (Binder variable patternType)
-        underBinder Binder { binderVariable, binderChild } = do
-            let
-                binderVariable' = avoidCapture binderVariable
-                -- Rename the freshened bound variable in the subterms.
-                subst'' = renaming binderVariable binderVariable' subst'
-            return Binder
-                { binderVariable = fromMaybe binderVariable binderVariable'
-                , binderChild = substituteWorker subst'' binderChild
-                }
-
-        overVariable :: variable -> Either patternType variable
-        overVariable variable = do
-            case Map.lookup variable subst' of
-                Nothing ->
-                    -- This is impossible: if the pattern is a non-targeted
-                    -- variable, we would have taken the first branch at
-                    -- the top of substituteWorker.
-                    -- error "Internal error: Impossible free variable"
-                    Left termLike
-                Just variable' -> variable'
 
 {-# INLINE substitute #-}
 
