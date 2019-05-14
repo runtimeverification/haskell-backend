@@ -249,6 +249,7 @@ shouldStore =
         ShowPrecBranch _ -> False
         ShowChildren _   -> False
         SaveSession _    -> False
+        LoadScript _     -> False
         Exit             -> False
         _                -> True
 
