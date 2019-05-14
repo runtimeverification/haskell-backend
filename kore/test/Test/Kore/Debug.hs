@@ -8,7 +8,11 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
+import Kore.Sort
+import Kore.Syntax.CharLiteral
+import Kore.Syntax.Variable
 
+import           Test.Kore
 import qualified Test.Terse as Terse
 
 -- A simple type with one constructor
@@ -157,3 +161,38 @@ test_debugPrec =
     layout =
         Pretty.layoutSmart
             Pretty.LayoutOptions { layoutPageWidth = Pretty.Unbounded }
+
+test_Debug :: [TestTree]
+test_Debug =
+    [ Variable
+        { variableName = testId "v"
+        , variableCounter = mempty
+        , variableSort = SortVariableSort (SortVariable (testId "sv"))
+        }
+        `yields`
+        "Variable\n\
+        \    { variableName = Id { getId = \"v\", idLocation = AstLocationTest }\n\
+        \    , variableCounter = Nothing\n\
+        \    , variableSort =\n\
+        \        SortVariableSort\n\
+        \            SortVariable\n\
+        \                { getSortVariable =\n\
+        \                    Id { getId = \"sv\", idLocation = AstLocationTest }\n\
+        \                }\n\
+        \    }"
+        $  "Variable"
+    , CharLiteral 'a'
+        `yields`
+        "CharLiteral { getCharLiteral = 'a' }"
+        $ "CharLiteral"
+    , Just (testId "v")
+        `yields`
+        "Just Id { getId = \"v\", idLocation = AstLocationTest }"
+        $ "Maybe - Just"
+    , (Nothing :: Maybe Id)
+        `yields`
+        "Nothing"
+        $ "Maybe - Nothing"
+    ]
+  where
+    yields input = Terse.equals (show $ debug input)

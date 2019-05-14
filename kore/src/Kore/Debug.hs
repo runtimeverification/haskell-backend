@@ -447,6 +447,26 @@ endThing name result debugResult =
         DebugResult -> " with " ++ result
         DebugNoResult -> ""
 
+encloseSep :: Doc ann -> Doc ann -> Doc ann -> [Doc ann] -> Doc ann
+encloseSep ldelim rdelim sep =
+    \case
+        [] -> ldelim <> rdelim
+        (doc : docs) ->
+            mconcat $ concat
+                [ [ldelim <+> doc]
+                , map ((Pretty.line' <> sep) <+>) docs
+                , [Pretty.line, rdelim]
+                ]
+
+-- | Surround the second argument with parentheses if needed.
+parens
+    :: Bool  -- ^ Needs parentheses
+    -> Doc ann
+    -> Doc ann
+parens needsParens
+  | needsParens  = Pretty.parens
+  | otherwise    = id
+
 {- | 'Debug' prints data for debugging.
 
 'debug' should produce correct Haskell source syntax so that debugged values can
@@ -497,21 +517,9 @@ debugPrecSOP precOut datatypeInfo (SOP sop) =
             SOP.ADT     _ _ cs -> cs
             SOP.Newtype _ _ c  -> c :* Nil
 
-    -- | Surround the second argument with parentheses if needed.
-    parens
-        :: Bool  -- ^ Needs parentheses
-        -> Doc ann
-        -> Doc ann
-    parens needsParens
-      | needsParens  = Pretty.parens
-      | otherwise    = id
-
     precConstr, precRecord :: Int
     precConstr = 10  -- precedence of function application
     precRecord = 11  -- precedence of record syntax
-
-    sepBy :: Doc ann -> [Doc ann] -> Doc ann
-    sepBy sep = Pretty.sep . Pretty.punctuate sep
 
     debugConstr
         :: All Debug xs
@@ -543,11 +551,10 @@ debugPrecSOP precOut datatypeInfo (SOP sop) =
 
     debugConstr (SOP.Record name fields) args =
         K $ parens (precOut >= precRecord)
-        $ Pretty.nest 4 $ Pretty.group $ mconcat $
-            [ Pretty.pretty name Pretty.<+> Pretty.lbrace
+        $ Pretty.align $ Pretty.nest 4 $ Pretty.group $ mconcat $
+            [ Pretty.pretty name
             , Pretty.line
-            , sepBy Pretty.comma args'
-            , Pretty.nest (-4) (Pretty.line <> Pretty.rbrace)
+            , encloseSep Pretty.lbrace Pretty.rbrace Pretty.comma args'
             ]
       where
         args' = SOP.hcollapse $ SOP.hczipWith pDebug debugField fields args
@@ -561,11 +568,7 @@ debugPrecSOP precOut datatypeInfo (SOP sop) =
 
 instance Debug a => Debug [a] where
     debugPrec _ =
-        Pretty.brackets
-        . Pretty.nest 4
-        . Pretty.sep
-        . Pretty.punctuate Pretty.comma
-        . map debug
+        encloseSep Pretty.lbracket Pretty.rbracket Pretty.comma . map debug
 
 instance {-# OVERLAPS #-} Debug String where
     debugPrec p a = Pretty.pretty (showsPrec p a "")
