@@ -32,7 +32,7 @@ test_Pattern_simplify :: [TestTree]
 test_Pattern_simplify =
     [ notTop     `becomes` OrPattern.bottom              $ "\\not(\\top)"
     , orAs       `becomes` OrPattern.fromTermLike Mock.a $ "\\or(a, a)"
-    , bottomLike `becomes` OrPattern.bottom              $ "\\and(a, \bottom)"
+    , bottomLike `becomes` OrPattern.bottom              $ "\\and(a, \\bottom)"
     ]
   where
     termLike = Pattern.fromTermLike
