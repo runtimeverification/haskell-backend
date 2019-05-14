@@ -59,7 +59,7 @@ import           GHC.IO.Handle
 import           Kore.Repl.Parser
 import           Numeric.Natural
 import           System.Directory
-                 ( findExecutable )
+                 ( doesFileExist, findExecutable )
 import           System.Process
                  ( StdStream (CreatePipe), createProcess, proc, std_in,
                  std_out )
@@ -145,6 +145,7 @@ replInterpreter printFn replCmd = do
                 AppendTo inn file  -> appendTo inn file  $> True
                 Alias a            -> alias a            $> True
                 TryAlias name      -> tryAlias name printFn
+                LoadScript file    -> loadScript file    $> True
                 Exit               -> pure                  False
     (output, shouldContinue) <- evaluateCommand command
     liftIO $ printFn output
@@ -267,6 +268,17 @@ proveStepsF n = do
     node   <- Lens.use lensNode
     graph' <- recursiveForcedStep n graph node
     lensGraph .= graph'
+
+-- | Loads a script from a file.
+loadScript
+    :: forall claim
+    .  Claim claim
+    => FilePath
+    -- ^ path to file
+    -> ReplM claim ()
+loadScript file = do
+    state <- get
+    lift (parseEvalScript state file) >>= put
 
 -- | Focuses the node with id equals to 'n'.
 selectNode
@@ -855,7 +867,6 @@ showAxiomOrClaim len (RuleIndex (Just rid))
   | rid < len = Just $ "Axiom " <> show rid
   | otherwise = Just $ "Claim " <> show (rid - len)
 
-
 parseEvalScript
     :: forall claim
     .  Claim claim
@@ -863,10 +874,19 @@ parseEvalScript
     -> FilePath
     -> Simplifier (ReplState claim)
 parseEvalScript state file = do
-    contents <- liftIO $ readFile file
-    let result = runParser scriptParser file contents
-    either (parseFailed state) (executeScript state) result
+    exists <- liftIO . doesFileExist $ file
+    if exists == True
+        then do
+            contents <- liftIO $ readFile file
+            let result = runParser scriptParser file contents
+            either (parseFailed state) (executeScript state) result
+        else do
+            liftIO . putStrLn
+                $ "Cannot find " <> file
+            return state
+
   where
+
     parseFailed
         :: ReplState claim
         -> ParseErrorBundle String String
