@@ -14,8 +14,6 @@ import qualified Data.Sequence as Seq
 
 import           Kore.Attribute.Hook
                  ( Hook )
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
 import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.List as List
 import           Kore.IndexedModule.MetadataTools
@@ -28,8 +26,6 @@ import           Test.Kore
 import           Test.Kore.Builtin.Builtin
 import           Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.SMT
 
@@ -182,18 +178,8 @@ test_isBuiltin =
             (not (List.isSymbolUnit mockHookTools Mock.concatListSymbol))
     ]
 
-mockMetadataTools :: SmtMetadataTools StepperAttributes
-mockMetadataTools =
-    Mock.makeMetadataTools
-        Mock.attributesMapping
-        Mock.headTypeMapping
-        Mock.sortAttributesMapping
-        Mock.subsorts
-        Mock.headSortsMapping
-        Mock.smtDeclarations
-
 mockHookTools :: SmtMetadataTools Hook
-mockHookTools = StepperAttributes.hook <$> mockMetadataTools
+mockHookTools = StepperAttributes.hook <$> Mock.metadataTools
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asTermLike

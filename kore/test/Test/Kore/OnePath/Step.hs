@@ -51,15 +51,11 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
-type ExecutionGraph a =
-    Strategy.ExecutionGraph
-        (a)
-        (RewriteRule Variable)
+type ExecutionGraph a = Strategy.ExecutionGraph a (RewriteRule Variable)
 
 test_onePathStrategy :: [TestTree]
 test_onePathStrategy =
@@ -70,7 +66,7 @@ test_onePathStrategy =
         -- Start pattern: a
         -- Expected: a
         [ actual ] <- runOnePathSteps
-            metadataTools
+            Mock.metadataTools
             (Limit 0)
             (Pattern.fromTermLike Mock.a)
             Mock.a
@@ -86,7 +82,7 @@ test_onePathStrategy =
         -- Start pattern: a
         -- Expected: bottom, since a->bottom
         [ _actual ] <- runOnePathSteps
-            metadataTools
+            Mock.metadataTools
             (Limit 1)
             (Pattern.fromTermLike Mock.a)
             Mock.a
@@ -101,7 +97,7 @@ test_onePathStrategy =
         -- Expected: c, since coinductive axioms are applied only at the second
         -- step
         [ _actual ] <- runOnePathSteps
-            metadataTools
+            Mock.metadataTools
             (Limit 1)
             (Pattern.fromTermLike Mock.a)
             Mock.d
@@ -118,7 +114,7 @@ test_onePathStrategy =
         -- Start pattern: a
         -- Expected: bottom, since a->b = target
         [ _actual ] <- runOnePathSteps
-            metadataTools
+            Mock.metadataTools
             (Limit 2)
             (Pattern.fromTermLike Mock.a)
             Mock.b
@@ -137,7 +133,7 @@ test_onePathStrategy =
         -- Start pattern: a
         -- Expected: c, since a->b->c and b->d is ignored
         [ _actual1 ] <- runOnePathSteps
-            metadataTools
+            Mock.metadataTools
             (Limit 2)
             (Pattern.fromTermLike Mock.a)
             Mock.e
@@ -162,7 +158,7 @@ test_onePathStrategy =
         -- Start pattern: a
         -- Expected: d, since a->b->d
         [ _actual ] <- runOnePathSteps
-            metadataTools
+            Mock.metadataTools
             (Limit 2)
             (Pattern.fromTermLike Mock.a)
             Mock.e
@@ -196,7 +192,7 @@ test_onePathStrategy =
         --   or (h(x) and x!=a and x!=b and x!=c )
         [ _actual1, _actual2, _actual3, _actual4 ] <-
             runOnePathSteps
-                metadataTools
+                Mock.metadataTools
                 (Limit 2)
                 (Pattern.fromTermLike
                     (Mock.functionalConstr10 (mkVar Mock.x))
@@ -267,7 +263,7 @@ test_onePathStrategy =
         --   Stuck (functionalConstr11(x) and x!=a and x!=b and x!=c )
         [ _actual1, _actual2, _actual3 ] <-
             runOnePathSteps
-                metadataTools
+                Mock.metadataTools
                 (Limit 2)
                 (Pattern.fromTermLike
                     (Mock.functionalConstr10 (mkVar Mock.x))
@@ -324,7 +320,7 @@ test_onePathStrategy =
         -- Start pattern: constr10(b)
         -- Expected: a | f(b) == c
         [ _actual1, _actual2 ] <- runOnePathSteps
-            metadataTools
+            Mock.metadataTools
             (Limit 2)
             (Pattern.fromTermLike
                 (Mock.functionalConstr10 Mock.b)
@@ -360,7 +356,7 @@ test_onePathStrategy =
         -- Start pattern: 0
         [ _actual ] <-
             runOnePathSteps
-                metadataTools
+                Mock.metadataTools
                 (Limit 2)
                 (Pattern.fromTermLike (Mock.builtinInt 0))
                 (Mock.builtinInt 1)
@@ -379,16 +375,6 @@ test_onePathStrategy =
             Bottom
             _actual
     ]
-  where
-    metadataTools :: SmtMetadataTools StepperAttributes
-    metadataTools =
-        Mock.makeMetadataTools
-            Mock.attributesMapping
-            Mock.headTypeMapping
-            Mock.sortAttributesMapping
-            Mock.subsorts
-            Mock.headSortsMapping
-            Mock.smtDeclarations
 
 simpleRewrite
     :: TermLike Variable

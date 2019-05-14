@@ -88,8 +88,7 @@ uncheckedMerge (MultiOr a) (MultiOr b) = MultiOr (a <> b)
 
 instance NFData child => NFData (MultiOr child)
 
-instance TopBottom child => TopBottom (MultiOr child)
-  where
+instance TopBottom child => TopBottom (MultiOr child) where
     isTop (MultiOr [child]) = isTop child
     isTop _ = False
     isBottom (MultiOr []) = True
@@ -113,8 +112,7 @@ filterOr
     :: (Ord term, TopBottom term)
     => MultiOr term
     -> MultiOr term
-filterOr =
-    filterGeneric patternToOrBool . filterUnique
+filterOr = filterGeneric patternToOrBool . filterUnique
 
 {- | Simplify the disjunction by eliminating duplicate elements.
 

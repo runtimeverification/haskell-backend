@@ -9,10 +9,6 @@ import Test.Tasty.HUnit
 import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPredicate
                  ( OrPredicate )
@@ -35,8 +31,6 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
@@ -328,16 +322,6 @@ test_mergeAndNormalizeSubstitutions =
             assertNormalizedPredicates actual
     ]
 
-mockMetadataTools :: SmtMetadataTools StepperAttributes
-mockMetadataTools =
-    Mock.makeMetadataTools
-        Mock.attributesMapping
-        Mock.headTypeMapping
-        Mock.sortAttributesMapping
-        Mock.subsorts
-        Mock.headSortsMapping
-        Mock.smtDeclarations
-
 merge
     :: [(Variable, TermLike Variable)]
     -> [(Variable, TermLike Variable)]
@@ -347,9 +331,9 @@ merge s1 s2 =
     $ evalSimplifier emptyLogger
     $ Monad.Unify.runUnifier
     $ mergePredicatesAndSubstitutionsExcept
-        mockMetadataTools
-        (Mock.substitutionSimplifier mockMetadataTools)
-        (Simplifier.create mockMetadataTools Map.empty)
+        Mock.metadataTools
+        (Mock.substitutionSimplifier Mock.metadataTools)
+        (Simplifier.create Mock.metadataTools Map.empty)
         Map.empty
         []
         $ Substitution.wrap <$> [s1, s2]
@@ -362,9 +346,9 @@ normalize predicated =
     $ evalSimplifier emptyLogger
     $ gather
     $ Substitution.normalize
-        mockMetadataTools
-        (Mock.substitutionSimplifier mockMetadataTools)
-        (Simplifier.create mockMetadataTools Map.empty)
+        Mock.metadataTools
+        (Mock.substitutionSimplifier Mock.metadataTools)
+        (Simplifier.create Mock.metadataTools Map.empty)
         Map.empty
         predicated
 
@@ -378,9 +362,9 @@ normalizeExcept predicated =
     $ fmap MultiOr.make
     $ gather
     $ Substitution.normalizeExcept
-        mockMetadataTools
-        (Mock.substitutionSimplifier mockMetadataTools)
-        (Simplifier.create mockMetadataTools Map.empty)
+        Mock.metadataTools
+        (Mock.substitutionSimplifier Mock.metadataTools)
+        (Simplifier.create Mock.metadataTools Map.empty)
         Map.empty
         predicated
 

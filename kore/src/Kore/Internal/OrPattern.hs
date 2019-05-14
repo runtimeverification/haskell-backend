@@ -15,6 +15,7 @@ module Kore.Internal.OrPattern
     , toPattern
     , toTermLike
     , MultiOr.flatten
+    , MultiOr.filterOr
     ) where
 
 import qualified Data.Foldable as Foldable
