@@ -563,7 +563,10 @@ substituteAlias
       $ command
   where
     values :: Map String AliasArgument
-    values = Map.fromList $ zip arguments actualArguments
+    values
+      | length arguments == length actualArguments
+        = Map.fromList $ zip arguments actualArguments
+      | otherwise = Map.empty
 
     replaceArguments :: String -> String
     replaceArguments s = maybe s toString $ Map.lookup s values

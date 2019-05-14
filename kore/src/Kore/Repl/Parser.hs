@@ -16,9 +16,11 @@ import           Control.Applicative
 import qualified Data.Foldable as Foldable
 import           Data.Functor
                  ( void, ($>) )
+import           Data.List
+                 ( nub )
 import           Text.Megaparsec
-                 ( Parsec, eof, many, manyTill, noneOf, oneOf, option,
-                 optional, try )
+                 ( Parsec, customFailure, eof, many, manyTill, noneOf, oneOf,
+                 option, optional, try )
 import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
@@ -205,6 +207,9 @@ alias = do
     literal "alias"
     name <- word
     arguments <- many $ wordWithout "="
+    if nub arguments /= arguments
+        then customFailure "Error when parsing alias: duplicate argument name."
+        else pure ()
     literal "="
     command <- some L.charLiteral
     return . Alias $ AliasDefinition { name, arguments, command }
