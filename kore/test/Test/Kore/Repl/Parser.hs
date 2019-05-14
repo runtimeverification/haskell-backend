@@ -39,6 +39,7 @@ test_replParser =
     , pipeAppendTests   `tests`       "pipe append"
     , noArgsAliasTests  `tests`       "no arguments alias tests"
     , tryAliasTests     `tests`       "try alias"
+    , loadScriptTests   `tests`       "load file"
     , initScriptTests   `testsScript` "repl script"
     ]
 
@@ -309,6 +310,14 @@ saveSessionTests =
     [ "save-session file"  `parsesTo_` SaveSession "file"
     , "save-session file " `parsesTo_` SaveSession "file"
     , "save-session"       `fails`     "need to supply file name"
+    ]
+
+loadScriptTests :: [ParserTest ReplCommand]
+loadScriptTests =
+    [ "load file"      `parsesTo_` LoadScript "file"
+    , "load file "     `parsesTo_` LoadScript "file"
+    , "load \"f ile\"" `parsesTo_` LoadScript "f ile"
+    , "load"           `fails`     "need to supply file name"
     ]
 
 initScriptTests :: [ParserTest [ReplCommand]]

@@ -164,6 +164,8 @@ data ReplCommand
     -- ^ Alias a command.
     | TryAlias String
     -- ^ Try running an alias.
+    | LoadScript FilePath
+    -- ^ Load script from file
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -211,6 +213,7 @@ helpText =
     \save-session file                     saves the current session to file\n\
     \alias <name> = <command>              adds as an alias for <command>\n\
     \<alias>                               runs an existing alias\n\
+    \load file                             loads the file as a repl script\n\
     \exit                                  exits the repl\
     \\n\
     \Available modifiers:\n\
