@@ -31,4 +31,4 @@ ln -s $TOP/.build/k .build/k/k-distribution/target/release
 
 make build-haskell -B
 
-make test-vm-haskell -j8
+make test-interactive -j8 TEST_CONCRETE_BACKEND=haskell
