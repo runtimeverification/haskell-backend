@@ -592,6 +592,15 @@ The union of both arguments.
         [hook{}("SET.concat")]
 ~~~
 
+### SET.intersection
+
+The intersection of both arguments
+
+~~~
+    hooked-symbol intersect{}(Set{}, Set{}) : Set{}
+        [hook{}("SET.intersection")]
+~~~
+
 ### SET.in
 
 Is the element a member of the given set?
