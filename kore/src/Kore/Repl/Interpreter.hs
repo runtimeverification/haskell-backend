@@ -12,6 +12,7 @@ module Kore.Repl.Interpreter
     , showStepStoppedMessage
     , printIfNotEmpty
     , showRewriteRule
+    , parseEvalScript
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -56,15 +57,6 @@ import           GHC.Exts
                  ( toList )
 import           GHC.IO.Handle
                  ( hGetContents, hPutStr )
-import           Numeric.Natural
-import           System.Directory
-                 ( findExecutable )
-import           System.Process
-                 ( StdStream (CreatePipe), createProcess, proc, std_in,
-                 std_out )
-import           Text.Megaparsec
-                 ( parseMaybe )
-
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -86,6 +78,7 @@ import           Kore.OnePath.Verification
                  ( Claim )
 import           Kore.Repl.Data
 import           Kore.Repl.Parser
+import           Kore.Repl.Parser
                  ( commandParser )
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
@@ -104,6 +97,15 @@ import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unparser
                  ( unparseToString )
+import           Numeric.Natural
+import           System.Directory
+                 ( doesFileExist, findExecutable )
+import           System.Process
+                 ( StdStream (CreatePipe), createProcess, proc, std_in,
+                 std_out )
+import           Text.Megaparsec
+                 ( ParseErrorBundle (..), errorBundlePretty, parseMaybe,
+                 runParser )
 
 -- | Warning: you should never use WriterT or RWST. It is used here with
 -- _great care_ of evaluating the RWST to a StateT immediatly, and thus getting
@@ -146,6 +148,7 @@ replInterpreter printFn replCmd = do
                 AppendTo inn file  -> appendTo inn file  $> True
                 Alias a            -> alias a            $> True
                 TryAlias name      -> tryAlias name printFn
+                LoadScript file    -> loadScript file    $> True
                 Exit               -> pure                  False
     (output, shouldContinue) <- evaluateCommand command
     liftIO $ printFn output
@@ -268,6 +271,17 @@ proveStepsF n = do
     node   <- Lens.use lensNode
     graph' <- recursiveForcedStep n graph node
     lensGraph .= graph'
+
+-- | Loads a script from a file.
+loadScript
+    :: forall claim
+    .  Claim claim
+    => FilePath
+    -- ^ path to file
+    -> ReplM claim ()
+loadScript file = do
+    state <- get
+    lift (parseEvalScript state file) >>= put
 
 -- | Focuses the node with id equals to 'n'.
 selectNode
@@ -861,3 +875,41 @@ showAxiomOrClaim _   (RuleIndex Nothing) = Nothing
 showAxiomOrClaim len (RuleIndex (Just rid))
   | rid < len = Just $ "Axiom " <> show rid
   | otherwise = Just $ "Claim " <> show (rid - len)
+
+parseEvalScript
+    :: forall claim
+    .  Claim claim
+    => ReplState claim
+    -> FilePath
+    -> Simplifier (ReplState claim)
+parseEvalScript state file = do
+    exists <- liftIO . doesFileExist $ file
+    if exists == True
+        then do
+            contents <- liftIO $ readFile file
+            let result = runParser scriptParser file contents
+            either (parseFailed state) (executeScript state) result
+        else do
+            liftIO . putStrLn
+                $ "Cannot find " <> file
+            return state
+
+  where
+
+    parseFailed
+        :: ReplState claim
+        -> ParseErrorBundle String String
+        -> Simplifier (ReplState claim)
+    parseFailed st err = do
+        liftIO . putStrLn
+            $ "\nCouldn't parse initial script file."
+            <> "\nParser error at: "
+            <> errorBundlePretty err
+        return st
+
+    executeScript
+        :: ReplState claim
+        -> [ReplCommand]
+        -> Simplifier (ReplState claim)
+    executeScript st cmds =
+        execStateT (traverse_ (replInterpreter $ \_ -> return () ) cmds) st

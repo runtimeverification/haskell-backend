@@ -39,6 +39,7 @@ test_replParser =
     , pipeAppendTests   `tests`       "pipe append"
     , noArgsAliasTests  `tests`       "no arguments alias tests"
     , tryAliasTests     `tests`       "try alias"
+    , loadScriptTests   `tests`       "load file"
     , initScriptTests   `testsScript` "repl script"
     , aliasesWithArgs   `tests`       "aliases with arguments"
     ]
@@ -338,6 +339,14 @@ aliasesWithArgs =
   where
     alias name arguments command =
         Alias $ AliasDefinition { name, arguments, command }
+
+loadScriptTests :: [ParserTest ReplCommand]
+loadScriptTests =
+    [ "load file"      `parsesTo_` LoadScript "file"
+    , "load file "     `parsesTo_` LoadScript "file"
+    , "load \"f ile\"" `parsesTo_` LoadScript "f ile"
+    , "load"           `fails`     ()
+    ]
 
 initScriptTests :: [ParserTest [ReplCommand]]
 initScriptTests =

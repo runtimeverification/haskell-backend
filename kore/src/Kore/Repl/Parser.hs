@@ -86,6 +86,7 @@ nonRecursiveCommand =
         , tryAxiomClaim
         , clear
         , saveSession
+        , loadScript
         , exit
         ]
 
@@ -100,6 +101,9 @@ endOfInput cmd p = p $> cmd
 
 help :: Parser ReplCommand
 help = const Help <$$> literal "help"
+
+loadScript :: Parser ReplCommand
+loadScript = LoadScript <$$> literal "load" *> quotedOrWordWithout ""
 
 showClaim :: Parser ReplCommand
 showClaim = ShowClaim . ClaimIndex <$$> literal "claim" *> decimal
