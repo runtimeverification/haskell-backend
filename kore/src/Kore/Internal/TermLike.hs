@@ -282,8 +282,8 @@ substitute
 substitute =
     Substitute.substitute
         lensFreeVariables
-        matchBinder
-        matchVariable
+        traverseBinder
+        traverseVariable
 
 lensFreeVariables :: Lens.Lens' (TermLike variable) (Set variable)
 lensFreeVariables mapping (Recursive.project -> attrs :< termLikeHead) =
@@ -291,11 +291,8 @@ lensFreeVariables mapping (Recursive.project -> attrs :< termLikeHead) =
   where
     embed = Recursive.embed . (:< termLikeHead)
 
-matchVariable
-    ::  (Alternative f, Ord variable)
-    =>  (variable -> f variable)
-    ->  TermLike variable -> f (TermLike variable)
-matchVariable match (Recursive.project -> attrs :< termLikeHead) =
+traverseVariable :: Ord variable => Lens.Traversal' (TermLike variable) variable
+traverseVariable match termLike@(Recursive.project -> attrs :< termLikeHead) =
     case termLikeHead of
         VariableF variable ->
             matched <$> match variable
@@ -305,15 +302,12 @@ matchVariable match (Recursive.project -> attrs :< termLikeHead) =
               where
                 attrs' =
                     attrs { Attribute.freeVariables = Set.singleton variable' }
-        _ -> empty
+        _ -> pure termLike
 
-matchBinder
-    ::  (Alternative f, Ord variable)
-    =>  (      Binder variable (TermLike variable)
-        ->  f (Binder variable (TermLike variable))
-        )
-    ->  TermLike variable -> f (TermLike variable)
-matchBinder match (Recursive.project -> attrs :< termLikeHead) =
+traverseBinder
+    :: Ord variable
+    => Lens.Traversal' (TermLike variable) (Binder variable (TermLike variable))
+traverseBinder match termLike@(Recursive.project -> attrs :< termLikeHead) =
     case termLikeHead of
         ExistsF exists -> matched <$> Substitute.existsBinder match exists
           where
@@ -341,7 +335,7 @@ matchBinder match (Recursive.project -> attrs :< termLikeHead) =
                             $ freeVariables forallChild
                         }
 
-        _ -> empty
+        _ -> pure termLike
 
 {- | Reset the 'variableCounter' of all 'Variables'.
 

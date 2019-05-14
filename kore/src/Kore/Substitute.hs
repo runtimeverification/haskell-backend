@@ -15,16 +15,19 @@ module Kore.Substitute
     ) where
 
 import           Control.Applicative
+import           Control.Comonad.Trans.Env
 import qualified Control.Lens as Lens
-import qualified Control.Monad.Except as Monad.Except
-import           Control.Monad.Trans.Maybe
 import qualified Data.Foldable as Foldable
 import           Data.Functor.Foldable
                  ( Corecursive, Recursive )
 import qualified Data.Functor.Foldable as Recursive
+import           Data.Functor.Identity
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
+import           Data.Maybe
+import           Data.Monoid
+                 ( Any (..) )
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
@@ -90,57 +93,71 @@ substitute
     => Lens.Lens' patternType (Set variable)
     -- ^ Lens into free variables of the pattern
     ->  (   forall f
-        .   Alternative f
+        .   Applicative f
         =>  (Binder variable patternType -> f (Binder variable patternType))
         ->  patternType -> f patternType
         )
-    -- ^ Match a 'Binder' in @patternType.
+    -- ^ Traverse a 'Binder' in @patternType@.
     ->  (   forall f
-        .   Alternative f
+        .   Applicative f
         =>  (variable -> f variable)
         ->  patternType -> f patternType
         )
-    -- ^ Match a @variable@ in @patternType.
+    -- ^ Traverse a @variable@ in @patternType@.
     -> Map variable patternType
     -- ^ Substitution
     -> patternType
     -- ^ Original pattern
     -> patternType
-substitute lensFreeVariables matchBinder matchVariable =
+substitute lensFreeVariables traverseBinder traverseVariable =
     \subst -> substituteWorker (Map.map Left subst)
   where
     extractFreeVariables :: patternType -> Set variable
     extractFreeVariables = Lens.view lensFreeVariables
 
-    -- | Insert a variable renaming into the substitution.
+    -- | Insert an optional variable renaming into the substitution.
     renaming
         :: variable  -- ^ Original variable
-        -> variable  -- ^ Renamed variable
+        -> Maybe variable  -- ^ Renamed variable
         -> Map variable (Either patternType variable)  -- ^ Substitution
         -> Map variable (Either patternType variable)
-    renaming variable variable' = Map.insert variable (Right variable')
+    renaming variable = maybe id (Map.insert variable . Right)
 
     substituteWorker
         :: Map variable (Either patternType variable)
         -> patternType
         -> patternType
-    substituteWorker subst termLike
-      | Map.null subst' =
-        -- If there are no targeted free variables, return the original pattern.
-        -- Note that this covers the case of a non-targeted variable pattern,
-        -- which produces an error below.
-        termLike
-
-      | Just termLike' <- matchBinder underBinder termLike = termLike'
-
-      | Just termLike' <- matchEither (matchVariable overVariable termLike) =
-        termLike'
-
-      | otherwise =
-        -- All other patterns
-        let termLikeHead' = substituteWorker subst' <$> termLikeHead
-        in embed termLikeHead'
+    substituteWorker subst termLike =
+        fromMaybe substituteDefault
+        $ substituteNone <|> substituteBinder <|> substituteVariable
       where
+        -- | Special case: None of the targeted variables occurs in the pattern.
+        -- There is nothing to substitute, return the original pattern.
+        substituteNone :: Maybe patternType
+        substituteNone
+          | Map.null subst' = pure termLike
+          | otherwise       = empty
+
+        -- | Special case: The pattern is a binder.
+        -- The bound variable may be renamed to avoid capturing free variables
+        -- in the substitutions. The substitution (and renaming, if necessary)
+        -- is carried out on the bound pattern.
+        substituteBinder :: Maybe patternType
+        substituteBinder =
+            runIdentity <$> matchWith traverseBinder underBinder termLike
+
+        -- | Special case: The pattern is a variable.
+        -- Substitute or rename the variable, as required.
+        substituteVariable :: Maybe patternType
+        substituteVariable =
+            either id id <$> matchWith traverseVariable overVariable termLike
+
+        -- | Default case: Descend into sub-patterns and apply the substitution.
+        substituteDefault =
+            -- All other patterns
+            let termLikeHead' = substituteWorker subst' <$> termLikeHead
+            in embed termLikeHead'
+
         attrib :< termLikeHead = Recursive.project termLike
         freeVariables = extractFreeVariables termLike
         embed =
@@ -163,29 +180,37 @@ substitute lensFreeVariables matchBinder matchVariable =
         -- | Rename a bound variable, if needed.
         avoidCapture = refreshVariable freeVariables'
 
-        underBinder binder = do
-            let Binder { binderVariable } = binder
-            binderVariable' <- avoidCapture binderVariable
-            -- Rename the freshened bound variable in the subterms.
-            let subst'' = renaming binderVariable binderVariable' subst'
-                Binder { binderChild } = binder
+        underBinder
+            :: Binder variable patternType
+            -> Identity (Binder variable patternType)
+        underBinder Binder { binderVariable, binderChild } = do
+            let
+                binderVariable' = avoidCapture binderVariable
+                -- Rename the freshened bound variable in the subterms.
+                subst'' = renaming binderVariable binderVariable' subst'
             return Binder
-                { binderVariable = binderVariable'
+                { binderVariable = fromMaybe binderVariable binderVariable'
                 , binderChild = substituteWorker subst'' binderChild
                 }
 
-        overVariable :: variable -> MaybeT (Either patternType) variable
+        overVariable :: variable -> Either patternType variable
         overVariable variable = do
             case Map.lookup variable subst' of
                 Nothing ->
                     -- This is impossible: if the pattern is a non-targeted
                     -- variable, we would have taken the first branch at
                     -- the top of substituteWorker.
-                    error "Internal error: Impossible free variable"
-                Just (Right variable')  -> return variable'
-                Just (Left termLike')   -> Monad.Except.throwError termLike'
-
-        matchEither :: MaybeT (Either r) r -> Maybe r
-        matchEither = fmap (either id id) . sequence . runMaybeT
+                    -- error "Internal error: Impossible free variable"
+                    Left termLike
+                Just variable' -> variable'
 
 {-# INLINE substitute #-}
+
+matchWith
+    :: Applicative f
+    => (forall f'. Applicative f' => (a -> f' b) -> s -> f' t)  -- ^ Traversal
+    -> (a -> f b)
+    -> s -> Maybe (f t)
+matchWith traverse' afb s =
+    let (getAny -> matched, ft) = runEnvT (traverse' (EnvT (Any True) . afb) s)
+    in if matched then Just ft else Nothing
