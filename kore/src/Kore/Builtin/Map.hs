@@ -81,14 +81,18 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
+import           Kore.Internal.Conditional
+                 ( Conditional, andCondition, withoutTerm )
 import           Kore.Internal.Pattern
-                 ( Conditional (..), Pattern )
+                 ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
 import           Kore.Syntax.Definition
+import           Kore.Unification.Error
+                 ( errorIfConcreteIncompletelyUnified )
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -653,34 +657,40 @@ unifyEquals
             -> TermLike variable                       -- ^ value
             -> TermLike variable                       -- ^ framing variable
             -> unifier (Pattern variable)
-        unifyEqualsSelect builtin1' _ _key2 _value2 _map2
+        unifyEqualsSelect builtin1' _ key2 value2 map2
           | map1 == Map.empty = bottomWithExplanation
-          {-
-          | otherwise = case Set.toList set1 of
-            [fromConcreteStepPattern -> key1] ->
+          | otherwise = case Map.toList map1 of
+            [(fromConcreteStepPattern -> key1, value1)] ->
                 Reflection.give tools $ do
-                    let emptySetPat = asInternal tools sort1 Set.empty
-                    elemUnifier <- unifyEqualsChildren key1 key2
+                    let emptyMapPat = asInternal tools sort1 Map.empty
+                    keyUnifier <- unifyEqualsChildren key1 key2
                     -- error when subunification problem returns partial result.
                     -- More details at 'errorIfIncompletelyUnified'.
-                    errorIfIncompletelyUnified key1 key2 elemUnifier
-                    setUnifier <- unifyEqualsChildren emptySetPat set2
+                    errorIfConcreteIncompletelyUnified key1 key2 keyUnifier
+
+                    valueUnifier <- unifyEqualsChildren value1 value2
+
+                    mapUnifier <- unifyEqualsChildren emptyMapPat map2
                     -- error when subunification problem returns partial result
                     -- More details at 'errorIfIncompletelyUnified'.
-                    errorIfIncompletelyUnified emptySetPat set2 setUnifier
-                    -- Return the concrete set, but capture any predicates and
+                    errorIfConcreteIncompletelyUnified
+                        emptyMapPat map2 mapUnifier
+                    -- Return the concrete map, but capture any predicates and
                     -- substitutions from unifying the element
                     -- and framing variable.
-                    let result = pure dv1 <* elemUnifier <* setUnifier
-                    return (result)
+                    let result =
+                            pure dv1
+                                `andCondition` withoutTerm keyUnifier
+                                `andCondition` withoutTerm valueUnifier
+                                `andCondition` withoutTerm mapUnifier
+                    return result
             _ -> Builtin.unifyEqualsUnsolved simplificationType dv1 app2
-            -}
           | otherwise =
             Builtin.unifyEqualsUnsolved simplificationType dv1 app2
           where
             Domain.InternalMap
                 { builtinMapChild = map1
-                , builtinMapSort = _sort1
+                , builtinMapSort = sort1
                 } = builtin1'
 
     unifyEquals0 (DV_ _ (Domain.BuiltinMap _)) _ = empty

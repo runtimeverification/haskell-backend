@@ -29,10 +29,13 @@ import           Kore.Internal.MultiOr
 import           Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
+import           Kore.Predicate.Predicate
+                 ( makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
 import qualified Kore.Unification.Substitution as Substitution
+import qualified SMT
 
 import           Test.Kore
 import qualified Test.Kore.Builtin.Bool as Test.Bool
@@ -430,6 +433,57 @@ test_unifySelectFromEmpty =
     doesNotUnifyWith pat1 pat2 =
         (===) Pattern.bottom =<< evaluate (mkAnd pat1 pat2)
 
+test_unifySelectFromSingleton :: TestTree
+test_unifySelectFromSingleton =
+    testPropertyWithSolver
+        "unify a singleton map with a variable selection pattern"
+        (do
+            concreteKey <- forAll genConcreteIntegerPattern
+            value <- forAll genIntegerPattern
+            keyVar <- forAll (standaloneGen $ variableGen intSort)
+            valueVar <- forAll (standaloneGen $ variableGen intSort)
+            mapVar <- forAll (standaloneGen $ variableGen mapSort)
+            Monad.when (variableName keyVar == variableName valueVar) discard
+            Monad.when (variableName keyVar == variableName mapVar) discard
+            Monad.when (variableName valueVar == variableName mapVar) discard
+            let selectPat       = selectPattern keyVar valueVar mapVar id
+                selectPatRev    = selectPattern keyVar valueVar mapVar reverse
+                singleton       =
+                    asInternal (Map.singleton concreteKey value)
+                keyStepPattern = fromConcreteStepPattern concreteKey
+                expect =
+                    Conditional
+                        { term = singleton
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [ (mapVar, asInternal Map.empty)
+                                , (keyVar, keyStepPattern)
+                                , (valueVar, value)
+                                ]
+                        }
+            -- { 5 -> 7 } /\ Item(K:Int, V:Int) Rest:Map
+            (singleton `unifiesWith` selectPat) expect
+            (selectPat `unifiesWith` singleton) expect
+            -- { 5 -> 7 } /\ Rest:Map MapItem(K:Int, V:Int)
+            (singleton `unifiesWith` selectPatRev) expect
+            (selectPatRev `unifiesWith` singleton) expect
+        )
+
+-- use as (pat1 `unifiesWith` pat2) expect
+unifiesWith
+    :: HasCallStack
+    => TermLike Variable
+    -> TermLike Variable
+    -> Pattern Variable
+    -> PropertyT SMT.SMT ()
+unifiesWith pat1 pat2 Conditional { term, predicate, substitution } = do
+    Conditional { term = uTerm, predicate = uPred, substitution = uSubst } <-
+        evaluate (mkAnd pat1 pat2)
+    Substitution.toMap substitution === Substitution.toMap uSubst
+    predicate === uPred
+    term === uTerm
+
 {- | Unify a concrete map with symbolic-keyed map.
 
 @
@@ -550,7 +604,7 @@ asPattern :: Map.Builtin Variable -> Pattern Variable
 asPattern =
     Reflection.give testMetadataTools Map.asPattern mapSort
 
--- | Specialize 'Map.asInternal' to the builtin sort 'listSort'.
+-- | Specialize 'Map.asInternal' to the builtin sort 'mapSort'.
 asInternal
     :: Map.Builtin Variable
     -> TermLike Variable
