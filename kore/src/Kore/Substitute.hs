@@ -1,10 +1,8 @@
-{-|
-Module      : Kore.Substitute
-Description : Abstract substitution algorithm
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-Maintainer  : thomas.tuegel@runtimeverification.com
--}
+
+ -}
 
 module Kore.Substitute
     ( substitute
