@@ -4,6 +4,9 @@ License     : NCSA
 
 -}
 
+-- TODO (thomas.tuegel): Remove -fno-warn-orphans
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Kore.Internal.TermLike
     ( TermLike
     , freeVariables
@@ -128,8 +131,6 @@ import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Domain.Class
 import           Kore.Sort
-import           Kore.Substitute
-                 ( Binder (..) )
 import qualified Kore.Substitute as Substitute
 import           Kore.Syntax hiding
                  ( mapVariables, traverseVariables )
@@ -139,10 +140,61 @@ import qualified Kore.Syntax.Variable as Variable
 import           Kore.Unparser
                  ( Unparse (..) )
 import qualified Kore.Unparser as Unparse
+import           Kore.Variables.Binding
 import           Kore.Variables.Fresh
 
 type TermLike variable =
     Pattern Domain.Builtin variable (Attribute.Pattern variable)
+
+instance Ord variable => Binding (TermLike variable) where
+    type VariableType (TermLike variable) = variable
+
+    traverseVariable match termLike =
+        case termLikeHead of
+            VariableF variable ->
+                matched <$> match variable
+              where
+                matched variable' =
+                    Recursive.embed (attrs' :< VariableF variable')
+                  where
+                    attrs' =
+                        attrs
+                            { Attribute.freeVariables =
+                                Set.singleton variable'
+                            }
+            _ -> pure termLike
+      where
+        attrs :< termLikeHead = Recursive.project termLike
+
+    traverseBinder match termLike@(Recursive.project -> attrs :< termLikeHead) =
+        case termLikeHead of
+            ExistsF exists -> matched <$> existsBinder match exists
+              where
+                matched exists' = Recursive.embed (attrs' :< ExistsF exists')
+                  where
+                    Exists { existsChild } = exists'
+                    Exists { existsVariable } = exists'
+                    attrs' =
+                        attrs
+                            { Attribute.freeVariables =
+                                Set.delete existsVariable
+                                $ freeVariables existsChild
+                            }
+
+            ForallF forall -> matched <$> forallBinder match forall
+              where
+                matched forall' = Recursive.embed (attrs' :< ForallF forall')
+                  where
+                    Forall { forallChild } = forall'
+                    Forall { forallVariable } = forall'
+                    attrs' =
+                        attrs
+                            { Attribute.freeVariables =
+                                Set.delete forallVariable
+                                $ freeVariables forallChild
+                            }
+
+            _ -> pure termLike
 
 freeVariables :: TermLike variable -> Set variable
 freeVariables termLike = Attribute.freeVariables (extract termLike)
@@ -279,63 +331,13 @@ substitute
     =>  Map variable (TermLike variable)
     ->  TermLike variable
     ->  TermLike variable
-substitute =
-    Substitute.substitute
-        lensFreeVariables
-        traverseBinder
-        traverseVariable
+substitute = Substitute.substitute lensFreeVariables
 
 lensFreeVariables :: Lens.Lens' (TermLike variable) (Set variable)
 lensFreeVariables mapping (Recursive.project -> attrs :< termLikeHead) =
     embed <$> Attribute.lensFreeVariables mapping attrs
   where
     embed = Recursive.embed . (:< termLikeHead)
-
-traverseVariable :: Ord variable => Lens.Traversal' (TermLike variable) variable
-traverseVariable match termLike@(Recursive.project -> attrs :< termLikeHead) =
-    case termLikeHead of
-        VariableF variable ->
-            matched <$> match variable
-          where
-            matched variable' =
-                Recursive.embed (attrs' :< VariableF variable')
-              where
-                attrs' =
-                    attrs { Attribute.freeVariables = Set.singleton variable' }
-        _ -> pure termLike
-
-traverseBinder
-    :: Ord variable
-    => Lens.Traversal' (TermLike variable) (Binder variable (TermLike variable))
-traverseBinder match termLike@(Recursive.project -> attrs :< termLikeHead) =
-    case termLikeHead of
-        ExistsF exists -> matched <$> Substitute.existsBinder match exists
-          where
-            matched exists' = Recursive.embed (attrs' :< ExistsF exists')
-              where
-                Exists { existsChild } = exists'
-                Exists { existsVariable } = exists'
-                attrs' =
-                    attrs
-                        { Attribute.freeVariables =
-                            Set.delete existsVariable
-                            $ freeVariables existsChild
-                        }
-
-        ForallF forall -> matched <$> Substitute.forallBinder match forall
-          where
-            matched forall' = Recursive.embed (attrs' :< ForallF forall')
-              where
-                Forall { forallChild } = forall'
-                Forall { forallVariable } = forall'
-                attrs' =
-                    attrs
-                        { Attribute.freeVariables =
-                            Set.delete forallVariable
-                            $ freeVariables forallChild
-                        }
-
-        _ -> pure termLike
 
 {- | Reset the 'variableCounter' of all 'Variables'.
 

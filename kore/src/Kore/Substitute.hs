@@ -6,14 +6,9 @@ License     : NCSA
 
 module Kore.Substitute
     ( substitute
-    -- * Binders
-    , Binder (..)
-    , existsBinder
-    , forallBinder
     ) where
 
 import           Control.Applicative
-import           Control.Comonad.Trans.Env
 import qualified Control.Lens as Lens
 import qualified Data.Foldable as Foldable
 import           Data.Function
@@ -26,49 +21,13 @@ import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
-import           Data.Monoid
-                 ( Any (..) )
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
 import Kore.Syntax
+import Kore.Variables.Binding
 import Kore.Variables.Fresh
-
-data Binder variable child =
-    Binder { binderVariable :: !variable, binderChild :: !child }
-
--- | A 'Lens.Lens' to view an 'Exists' as a 'Binder'.
-existsBinder :: Lens.Lens' (Exists sort variable child) (Binder variable child)
-existsBinder mapping exists =
-    finish <$> mapping binder
-  where
-    binder =
-        Binder { binderVariable, binderChild }
-      where
-        Exists { existsVariable = binderVariable } = exists
-        Exists { existsChild    = binderChild    } = exists
-    finish binder' =
-        exists { existsVariable, existsChild }
-      where
-        Binder { binderVariable = existsVariable } = binder'
-        Binder { binderChild    = existsChild    } = binder'
-
--- | A 'Lens.Lens' to view a 'Forall' as a 'Binder'.
-forallBinder :: Lens.Lens' (Forall sort variable child) (Binder variable child)
-forallBinder mapping forall =
-    finish <$> mapping binder
-  where
-    binder =
-        Binder { binderVariable, binderChild }
-      where
-        Forall { forallVariable = binderVariable } = forall
-        Forall { forallChild    = binderChild    } = forall
-    finish binder' =
-        forall { forallVariable, forallChild }
-      where
-        Binder { binderVariable = forallVariable } = binder'
-        Binder { binderChild    = forallChild    } = binder'
 
 {- | Traverse the pattern from the top down and apply substitutions.
 
@@ -89,27 +48,17 @@ substitute
         , Corecursive patternType, Recursive patternType
         , Functor patternBase
         , CofreeF patternBase attribute ~ Base patternType
+        , Binding patternType
+        , VariableType patternType ~ variable
         )
     => Lens.Lens' patternType (Set variable)
     -- ^ Lens into free variables of the pattern
-    ->  (   forall f
-        .   Applicative f
-        =>  (Binder variable patternType -> f (Binder variable patternType))
-        ->  patternType -> f patternType
-        )
-    -- ^ Traverse a 'Binder' in @patternType@.
-    ->  (   forall f
-        .   Applicative f
-        =>  (variable -> f variable)
-        ->  patternType -> f patternType
-        )
-    -- ^ Traverse a @variable@ in @patternType@.
     -> Map variable patternType
     -- ^ Substitution
     -> patternType
     -- ^ Original pattern
     -> patternType
-substitute lensFreeVariables traverseBinder traverseVariable =
+substitute lensFreeVariables =
     \subst -> substituteWorker (Map.map Left subst)
   where
     extractFreeVariables :: patternType -> Set variable
@@ -211,12 +160,3 @@ substitute lensFreeVariables traverseBinder traverseVariable =
         avoidCapture = refreshVariable freeVariables'
 
 {-# INLINE substitute #-}
-
-matchWith
-    :: Applicative f
-    => (forall f'. Applicative f' => (a -> f' b) -> s -> f' t)  -- ^ Traversal
-    -> (a -> f b)
-    -> s -> Maybe (f t)
-matchWith traverse' afb s =
-    let (getAny -> matched, ft) = runEnvT (traverse' (EnvT (Any True) . afb) s)
-    in if matched then Just ft else Nothing
