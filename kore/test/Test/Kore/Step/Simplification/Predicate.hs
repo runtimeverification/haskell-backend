@@ -9,10 +9,6 @@ import Test.Tasty.HUnit
 
 import qualified Data.Map as Map
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.OrPredicate
@@ -41,8 +37,6 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
@@ -272,16 +266,6 @@ test_predicateSimplification =
         assertEqualWithExplanation "" (MultiOr.singleton expect) actual
     ]
 
-mockMetadataTools :: SmtMetadataTools StepperAttributes
-mockMetadataTools =
-    Mock.makeMetadataTools
-        Mock.attributesMapping
-        Mock.headTypeMapping
-        Mock.sortAttributesMapping
-        Mock.subsorts
-        Mock.headSortsMapping
-        Mock.smtDeclarations
-
 runSimplifier
     :: BuiltinAndAxiomSimplifierMap
     -> Predicate Variable
@@ -295,8 +279,8 @@ runSimplifier patternSimplifierMap predicate =
   where
     PredicateSimplifier simplifier =
         PSSimplifier.create
-            mockMetadataTools
-            (Simplifier.create mockMetadataTools patternSimplifierMap)
+            Mock.metadataTools
+            (Simplifier.create Mock.metadataTools patternSimplifierMap)
             patternSimplifierMap
 
 simplificationEvaluator

@@ -7,9 +7,6 @@ import Test.Tasty.HUnit
 
 import qualified Data.Map.Strict as Map
 
-import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -32,7 +29,6 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
@@ -99,17 +95,7 @@ simplifyEvaluated =
     SMT.runSMT SMT.defaultConfig
     . evalSimplifier emptyLogger
     . Not.simplifyEvaluated
-        mockMetadataTools
-        (Mock.substitutionSimplifier mockMetadataTools)
-        (Simplifier.create mockMetadataTools Map.empty)
+        Mock.metadataTools
+        (Mock.substitutionSimplifier Mock.metadataTools)
+        (Simplifier.create Mock.metadataTools Map.empty)
         Map.empty
-
-mockMetadataTools :: SmtMetadataTools Attribute.Symbol
-mockMetadataTools =
-    Mock.makeMetadataTools
-        Mock.attributesMapping
-        Mock.headTypeMapping
-        Mock.sortAttributesMapping
-        Mock.subsorts
-        Mock.headSortsMapping
-        Mock.smtDeclarations
