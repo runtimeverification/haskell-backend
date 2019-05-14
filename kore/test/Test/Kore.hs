@@ -57,8 +57,6 @@ import           Kore.Parser.Lexeme
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Syntax
-import           Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
                  ( PatternF (..) )
 
@@ -280,11 +278,15 @@ ceilGen = ceilFloorGen Ceil
 equalsGen :: (Sort -> Gen child) -> Sort -> Gen (Equals Sort child)
 equalsGen = equalsInGen Equals
 
-genBuiltinExternal :: Sort -> Gen (Domain.Builtin child)
+genDomainValue :: (Sort -> Gen child) -> Sort -> Gen (Domain.External child)
+genDomainValue childGen domainValueSort =
+    Domain.External domainValueSort <$> childGen stringMetaSort
+
+genBuiltinExternal :: Sort -> Gen (TermLike.Builtin (TermLike variable))
 genBuiltinExternal domainValueSort =
     Domain.BuiltinExternal <$> genExternal domainValueSort
 
-genBuiltin :: Sort -> Gen (Domain.Builtin child)
+genBuiltin :: Sort -> Gen (TermLike.Builtin (TermLike variable))
 genBuiltin domainValueSort = Gen.choice
     [ genBuiltinExternal domainValueSort
     , Domain.BuiltinInt <$> genInternalInt domainValueSort
@@ -301,11 +303,9 @@ genInternalBool :: Sort -> Gen Domain.InternalBool
 genInternalBool builtinBoolSort =
     Domain.InternalBool builtinBoolSort <$> Gen.bool
 
-genExternal :: Sort -> Gen (Domain.External child)
+genExternal :: Sort -> Gen (Domain.External (TermLike variable))
 genExternal domainValueSort =
-    Domain.External
-        domainValueSort
-        . TermLike.eraseAnnotations
+    Domain.External domainValueSort
         . mkStringLiteral
         . getStringLiteral
         <$> stringLiteralGen
@@ -384,7 +384,7 @@ termLikeChildGen patternSort =
               | otherwise ->
                 Gen.choice
                     [ mkVar <$> variableGen patternSort
-                    , mkDomainValue <$> genBuiltin patternSort
+                    , mkBuiltin <$> genBuiltin patternSort
                     ]
       | otherwise =
         (Gen.small . Gen.frequency)
@@ -503,7 +503,7 @@ korePatternChildGen patternSort' =
     korePatternGenDomainValue :: Gen ParsedPattern
     korePatternGenDomainValue =
         asParsedPattern . Syntax.DomainValueF
-            <$> genBuiltinExternal patternSort'
+            <$> genDomainValue korePatternChildGen patternSort'
 
     korePatternGenNext :: Gen ParsedPattern
     korePatternGenNext =

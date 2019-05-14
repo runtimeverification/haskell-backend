@@ -32,34 +32,21 @@ simplify
        , SortedVariable variable
        )
     => SmtMetadataTools attrs
-    -> Domain.Builtin (OrPattern variable)
+    -> Domain.External (OrPattern variable)
     -> OrPattern variable
 simplify _ builtin =
     MultiOr.filterOr $ do
-        child <- simplifyBuiltin builtin
+        child <- simplifyDomainValue builtin
         return (mkDomainValue <$> child)
 
-simplifyBuiltin
+simplifyDomainValue
     :: ( Ord variable
        , Show variable
        , Unparse variable
        , SortedVariable variable
        )
-    => Domain.Builtin (OrPattern variable)
-    -> MultiOr (Conditional variable (Domain.Builtin (TermLike variable)))
-simplifyBuiltin =
-    \case
-        Domain.BuiltinExternal _ext -> do
-            _ext <- sequence _ext
-            return (Domain.BuiltinExternal <$> sequenceA _ext)
-        Domain.BuiltinMap _map -> do
-            _map <- sequence _map
-            -- MultiOr propagates \bottom children upward.
-            return (Domain.BuiltinMap <$> sequenceA _map)
-        Domain.BuiltinList _list -> do
-            _list <- sequence _list
-            -- MultiOr propagates \bottom children upward.
-            return (Domain.BuiltinList <$> sequenceA _list)
-        Domain.BuiltinSet set -> (return . pure) (Domain.BuiltinSet set)
-        Domain.BuiltinInt int -> (return . pure) (Domain.BuiltinInt int)
-        Domain.BuiltinBool bool -> (return . pure) (Domain.BuiltinBool bool)
+    => Domain.External (OrPattern variable)
+    -> MultiOr (Conditional variable (Domain.External (TermLike variable)))
+simplifyDomainValue _ext = do
+    _ext <- sequence _ext
+    return (sequenceA _ext)

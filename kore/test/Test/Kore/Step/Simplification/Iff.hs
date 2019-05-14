@@ -22,7 +22,6 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate, simplify )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Syntax.Iff
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 

@@ -90,7 +90,6 @@ import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-import           Kore.Syntax.Definition
 import           Kore.Unification.Error
                  ( errorIfConcreteIncompletelyUnified )
 import           Kore.Unification.Unify
@@ -111,7 +110,7 @@ sort = "MAP.Map"
 
  -}
 assertSort :: Builtin.SortVerifier
-assertSort findSort = Builtin.verifySort findSort sort
+assertSort = Builtin.verifySort sort
 
 {- | Verify that hooked sort declarations are well-formed.
 
@@ -170,8 +169,6 @@ symbolVerifiers =
       )
     ]
 
-type Builtin variable = Map (TermLike Concrete) (TermLike variable)
-
 {- | Abort function evaluation if the argument is not a Map domain value.
 
     If the operand pattern is not a domain value, the function is simply
@@ -183,24 +180,21 @@ expectBuiltinMap
     :: Monad m
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
-    -> MaybeT m (Builtin variable)
-expectBuiltinMap ctx mapPattern =
-    case mapPattern of
-        DV_ _ domain ->
-            case domain of
-                Domain.BuiltinMap Domain.InternalMap { builtinMapChild } ->
-                    return builtinMapChild
-                _ ->
-                    Builtin.verifierBug
-                    $ Text.unpack ctx ++ ": Domain value is not a map"
+    -> MaybeT m (Map (TermLike Concrete) (TermLike variable))
+expectBuiltinMap ctx (Builtin_ builtin) =
+    case builtin of
+        Domain.BuiltinMap Domain.InternalMap { builtinMapChild } ->
+            return builtinMapChild
         _ ->
-            empty
+            Builtin.verifierBug
+            $ Text.unpack ctx ++ ": Domain value is not a map"
+expectBuiltinMap _ _ = empty
 
 returnMap
     :: (Monad m, Ord variable)
     => SmtMetadataTools attrs
     -> Sort
-    -> Builtin variable
+    -> Map (TermLike Concrete) (TermLike variable)
     -> m (AttemptedAxiom variable)
 returnMap tools resultSort map' =
     Builtin.appliedFunction
@@ -380,10 +374,10 @@ asInternal
     :: Ord variable
     => SmtMetadataTools attrs
     -> Sort
-    -> Builtin variable
+    -> Map (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 asInternal tools builtinMapSort builtinMapChild =
-    (mkDomainValue . Domain.BuiltinMap)
+    (mkBuiltin . Domain.BuiltinMap)
         Domain.InternalMap
             { builtinMapSort
             , builtinMapUnit =
@@ -401,7 +395,7 @@ asInternal tools builtinMapSort builtinMapChild =
  -}
 asTermLike
     :: Ord variable
-    => Domain.InternalMap (TermLike variable)
+    => Domain.InternalMap (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 asTermLike builtin =
     foldr concat' unit (element <$> Map.toAscList map')
@@ -414,8 +408,7 @@ asTermLike builtin =
 
     apply = mkApp builtinSort
     unit = apply unitSymbol []
-    element (key, value) =
-        apply elementSymbol [fromConcreteStepPattern key, value]
+    element (key, value) = apply elementSymbol [fromConcrete key, value]
     concat' map1 map2 = apply concatSymbol [map1, map2]
 
 {- | Render a 'Map' a domain value 'Pattern'.
@@ -428,7 +421,7 @@ asPattern
         , Given (SmtMetadataTools StepperAttributes)
         )
     => Sort
-    -> Builtin variable
+    -> Map (TermLike Concrete) (TermLike variable)
     -> Pattern variable
 asPattern resultSort =
     Pattern.fromTermLike . asInternal tools resultSort
@@ -593,8 +586,8 @@ unifyEquals
         -> MaybeT unifier (Pattern variable)
 
     unifyEquals0
-        dv1@(DV_ _ (Domain.BuiltinMap builtin1))
-        dv2@(DV_ _ internal2)
+        dv1@(Builtin_ (Domain.BuiltinMap builtin1))
+        dv2@(Builtin_ internal2)
       =
         case internal2 of
             Domain.BuiltinMap builtin2 ->
@@ -609,14 +602,14 @@ unifyEquals
                     ]
 
     unifyEquals0
-        dv1@(DV_ _ (Domain.BuiltinMap builtin1))
+        dv1@(Builtin_ (Domain.BuiltinMap builtin1))
         app2@(App_ symbol2 args2)
       | isSymbolConcat hookTools symbol2 =
         -- Accept the arguments of MAP.concat in either order.
         Monad.Trans.lift $ case args2 of
-            [ DV_ _ (Domain.BuiltinMap builtin2), x@(Var_ _) ] ->
+            [ Builtin_ (Domain.BuiltinMap builtin2), x@(Var_ _) ] ->
                 unifyEqualsFramed1 builtin1 builtin2 x
-            [ x@(Var_ _), DV_ _ (Domain.BuiltinMap builtin2) ] ->
+            [ x@(Var_ _), Builtin_ (Domain.BuiltinMap builtin2) ] ->
                 unifyEqualsFramed1 builtin1 builtin2 x
             [ App_ symbol3 [ key3, value3 ], x@(Var_ _) ]
                 | isSymbolElement hookTools symbol3 ->
@@ -651,7 +644,9 @@ unifyEquals
         -- (not just variables).
         -- TODO(virgil): move it from where once the otherwise is not needed
         unifyEqualsSelect
-            :: Domain.InternalMap (TermLike variable)  -- ^ concrete map
+            ::  Domain.InternalMap
+                    (TermLike Concrete)
+                    (TermLike variable)  -- ^ concrete map
             -> SymbolOrAlias                           -- ^ 'element' symbol
             -> TermLike variable                       -- ^ key
             -> TermLike variable                       -- ^ value
@@ -660,7 +655,7 @@ unifyEquals
         unifyEqualsSelect builtin1' _ key2 value2 map2
           | map1 == Map.empty = bottomWithExplanation
           | otherwise = case Map.toList map1 of
-            [(fromConcreteStepPattern -> key1, value1)] ->
+            [(fromConcrete -> key1, value1)] ->
                 Reflection.give tools $ do
                     let emptyMapPat = asInternal tools sort1 Map.empty
                     keyUnifier <- unifyEqualsChildren key1 key2
@@ -693,17 +688,17 @@ unifyEquals
                 , builtinMapSort = sort1
                 } = builtin1'
 
-    unifyEquals0 (DV_ _ (Domain.BuiltinMap _)) _ = empty
+    unifyEquals0 (Builtin_ (Domain.BuiltinMap _)) _ = empty
 
-    unifyEquals0 pat1 dv@(DV_ _ (Domain.BuiltinMap _)) =
+    unifyEquals0 pat1 dv@(Builtin_ (Domain.BuiltinMap _)) =
         unifyEquals0 dv pat1
 
     unifyEquals0 _ _ = empty
 
     -- | Unify two concrete maps.
     unifyEqualsConcrete
-        :: Domain.InternalMap (TermLike variable)
-        -> Domain.InternalMap (TermLike variable)
+        :: Domain.InternalMap (TermLike Concrete) (TermLike variable)
+        -> Domain.InternalMap (TermLike Concrete) (TermLike variable)
         -> unifier (Pattern variable)
     unifyEqualsConcrete builtin1 builtin2 = do
         intersect <-
@@ -732,8 +727,10 @@ unifyEquals
 
     -- | Unify one concrete map with one framed concrete map.
     unifyEqualsFramed1
-        :: Domain.InternalMap (TermLike variable)  -- ^ concrete map
-        -> Domain.InternalMap (TermLike variable)  -- ^ framed map
+        :: Domain.InternalMap (TermLike Concrete) (TermLike variable)
+        -- ^ concrete map
+        -> Domain.InternalMap (TermLike Concrete) (TermLike variable)
+        -- ^ framed map
         -> TermLike variable  -- ^ framing variable
         -> unifier (Pattern variable)
     unifyEqualsFramed1 builtin1 builtin2 x = do
@@ -767,14 +764,15 @@ unifyEquals
         asBuiltinMap = asInternal tools builtinMapSort
 
     unifyEqualsElement
-        :: Domain.InternalMap (TermLike variable)  -- ^ concrete map
+        :: Domain.InternalMap (TermLike Concrete) (TermLike variable)
+        -- ^ concrete map
         -> SymbolOrAlias  -- ^ 'element' symbol
         -> TermLike variable  -- ^ key
         -> TermLike variable  -- ^ value
         -> unifier (Pattern variable)
     unifyEqualsElement builtin1 element' key2 value2 =
         case Map.toList map1 of
-            [(fromConcreteStepPattern -> key1, value1)] ->
+            [(fromConcrete -> key1, value1)] ->
                 do
                     key <- unifyEqualsChildren key1 key2
                     value <- unifyEqualsChildren value1 value2

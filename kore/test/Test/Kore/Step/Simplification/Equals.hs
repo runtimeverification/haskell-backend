@@ -39,7 +39,6 @@ import           Kore.Step.Simplification.Equals
                  ( makeEvaluate, makeEvaluateTermsToPredicate, simplify )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Syntax.Equals
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import qualified SMT
@@ -417,17 +416,17 @@ test_equalsSimplification_TermLike =
         (assertTermEquals
             Mock.metadataTools
             Predicate.topPredicate
-            (mkDomainValue
+            (mkBuiltin
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = mkStringLiteral "a"
                     }
                 )
             )
-            (mkDomainValue
+            (mkBuiltin
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = mkStringLiteral "a"
                     }
                 )
             )
@@ -436,17 +435,17 @@ test_equalsSimplification_TermLike =
         (assertTermEquals
             Mock.metadataTools
             Predicate.bottomPredicate
-            (mkDomainValue
+            (mkBuiltin
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = mkStringLiteral "a"
                     }
                 )
             )
-            (mkDomainValue
+            (mkBuiltin
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = eraseAnnotations $ mkStringLiteral "b"
+                    , domainValueChild = mkStringLiteral "b"
                     }
                 )
             )
@@ -455,17 +454,17 @@ test_equalsSimplification_TermLike =
         (assertTermEquals
             Mock.metadataTools
             Predicate.bottomPredicate
-            (mkDomainValue
+            (mkBuiltin
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort
-                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = mkStringLiteral "a"
                     }
                 )
             )
-            (mkDomainValue
+            (mkBuiltin
                 (Domain.BuiltinExternal Domain.External
                     { domainValueSort = testSort2
-                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
+                    , domainValueChild = mkStringLiteral "a"
                     }
                 )
             )

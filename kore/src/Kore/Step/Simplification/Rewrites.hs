@@ -16,7 +16,6 @@ import           Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-import           Kore.Syntax.Rewrites
 import           Kore.Unparser
 
 {- | Simplify a 'Rewrites' pattern with a 'OrPattern' child.

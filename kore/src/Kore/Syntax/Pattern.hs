@@ -17,6 +17,28 @@ module Kore.Syntax.Pattern
     , isConcrete
     , fromConcretePattern
     , castVoidDomainValues
+    -- * Pattern synonyms
+    , pattern And_
+    , pattern App_
+    , pattern Bottom_
+    , pattern Ceil_
+    , pattern DV_
+    , pattern Equals_
+    , pattern Exists_
+    , pattern Floor_
+    , pattern Forall_
+    , pattern Iff_
+    , pattern Implies_
+    , pattern In_
+    , pattern Next_
+    , pattern Not_
+    , pattern Or_
+    , pattern Rewrites_
+    , pattern Top_
+    , pattern Var_
+    , pattern V
+    , pattern StringLiteral_
+    , pattern CharLiteral_
     -- * Re-exports
     , Base, CofreeF (..)
     , PatternF (..)
@@ -29,6 +51,7 @@ import           Control.Comonad.Trans.Cofree
 import qualified Control.Comonad.Trans.Env as Env
 import           Control.DeepSeq
                  ( NFData (..) )
+import qualified Control.Lens as Lens
 import qualified Data.Bifunctor as Bifunctor
 import           Data.Functor.Classes
 import           Data.Functor.Compose
@@ -43,6 +66,8 @@ import           Data.Functor.Identity
 import           Data.Hashable
                  ( Hashable (..) )
 import           Data.Maybe
+import           Data.Text
+                 ( Text )
 import           Data.Void
                  ( Void )
 import qualified Generics.SOP as SOP
@@ -52,10 +77,29 @@ import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
                  ( Pattern )
 import           Kore.Debug
+import           Kore.Domain.Class
+import           Kore.Sort
+import           Kore.Syntax.And
+import           Kore.Syntax.Application
 import           Kore.Syntax.Bottom
+import           Kore.Syntax.Ceil
+import           Kore.Syntax.CharLiteral
+import           Kore.Syntax.DomainValue
+import           Kore.Syntax.Equals
+import           Kore.Syntax.Exists
+import           Kore.Syntax.Floor
+import           Kore.Syntax.Forall
+import           Kore.Syntax.Iff
+import           Kore.Syntax.Implies
+import           Kore.Syntax.In
+import           Kore.Syntax.Next
+import           Kore.Syntax.Not
+import           Kore.Syntax.Or
 import           Kore.Syntax.PatternF
                  ( PatternF (..) )
 import qualified Kore.Syntax.PatternF as PatternF
+import           Kore.Syntax.Rewrites
+import           Kore.Syntax.StringLiteral
 import           Kore.Syntax.Top
 import           Kore.Syntax.Variable
 import           Kore.TopBottom
@@ -439,3 +483,239 @@ castVoidDomainValues
     => Pattern (Const Void) variable annotation
     -> Pattern domain variable annotation
 castVoidDomainValues = mapDomainValues (\case {})
+
+pattern And_
+    :: Functor domain
+    => Sort
+    -> Pattern domain variable annotation
+    -> Pattern domain variable annotation
+    -> Pattern domain variable annotation
+
+pattern App_
+    :: Functor domain
+    => SymbolOrAlias
+    -> [Pattern domain variable annotation]
+    -> Pattern domain variable annotation
+
+pattern Bottom_
+    :: Functor domain
+    => Sort
+    -> Pattern domain variable annotation
+
+pattern Ceil_
+    :: Functor domain
+    => Sort
+    -> Sort
+    -> Pattern domain variable annotation
+    -> Pattern domain variable annotation
+
+pattern DV_
+    :: Domain domain
+    => Sort
+    -> domain (Pattern domain variable annotation)
+    -> Pattern domain variable annotation
+
+pattern Equals_
+    :: Functor domain
+    => Sort
+    -> Sort
+    -> Pattern domain variable annotation
+    -> Pattern domain variable annotation
+    -> Pattern domain variable annotation
+
+pattern Exists_
+    :: Functor domain
+    => Sort
+    -> variable
+    -> Pattern domain variable annotation
+    -> Pattern domain variable annotation
+
+pattern Floor_
+    :: Functor domain
+    => Sort
+    -> Sort
+    -> Pattern domain variable annotation
+    -> Pattern domain variable annotation
+
+pattern Forall_
+    :: Functor domain
+    => Sort
+    -> variable
+    -> Pattern domain variable annotation
+    -> Pattern domain variable annotation
+
+pattern Iff_
+    :: Functor domain
+    => Sort
+    -> Pattern domain variable annotation
+    -> Pattern domain variable annotation
+    -> Pattern domain variable annotation
+
+pattern Implies_
+    :: Functor domain
+    => Sort
+    -> Pattern domain variable annotation
+    -> Pattern domain variable annotation
+    -> Pattern domain variable annotation
+
+pattern In_
+    :: Functor domain
+    => Sort
+    -> Sort
+    -> Pattern domain variable annotation
+    -> Pattern domain variable annotation
+    -> Pattern domain variable annotation
+
+pattern Next_
+    :: Functor domain
+    => Sort
+    -> Pattern domain variable annotation
+    -> Pattern domain variable annotation
+
+pattern Not_
+    :: Functor domain
+    => Sort
+    -> Pattern domain variable annotation
+    -> Pattern domain variable annotation
+
+pattern Or_
+    :: Functor domain
+    => Sort
+    -> Pattern domain variable annotation
+    -> Pattern domain variable annotation
+    -> Pattern domain variable annotation
+
+pattern Rewrites_
+  :: Functor domain
+  => Sort
+  -> Pattern domain variable annotation
+  -> Pattern domain variable annotation
+  -> Pattern domain variable annotation
+
+pattern Top_ :: Functor domain => Sort -> Pattern domain variable annotation
+
+pattern Var_ :: Functor domain => variable -> Pattern domain variable annotation
+
+pattern StringLiteral_
+    :: Functor domain
+    => Text
+    -> Pattern domain variable annotation
+
+pattern CharLiteral_
+    :: Functor domain
+    => Char
+    -> Pattern domain variable annotation
+
+-- No way to make multiline pragma?
+-- NOTE: If you add a case to the AST type, add another synonym here.
+{-# COMPLETE And_, App_, Bottom_, Ceil_, DV_, Equals_, Exists_, Floor_, Forall_, Iff_, Implies_, In_, Next_, Not_, Or_, Rewrites_, Top_, Var_, StringLiteral_, CharLiteral_ #-}
+
+pattern And_ andSort andFirst andSecond <-
+    (Recursive.project -> _ :< AndF And { andSort, andFirst, andSecond })
+
+pattern App_ applicationSymbolOrAlias applicationChildren <-
+    (Recursive.project ->
+        _ :< ApplicationF Application
+            { applicationSymbolOrAlias
+            , applicationChildren
+            }
+    )
+
+pattern Bottom_ bottomSort <-
+    (Recursive.project -> _ :< BottomF Bottom { bottomSort })
+
+pattern Ceil_ ceilOperandSort ceilResultSort ceilChild <-
+    (Recursive.project ->
+        _ :< CeilF Ceil { ceilOperandSort, ceilResultSort, ceilChild }
+    )
+
+pattern DV_ domainValueSort domainValueChild <-
+    (Recursive.project -> _ :< DomainValueF
+        (Lens.view lensDomainValue ->
+            DomainValue { domainValueSort, domainValueChild }
+        )
+    )
+
+pattern Equals_ equalsOperandSort equalsResultSort equalsFirst equalsSecond <-
+    (Recursive.project ->
+        _ :< EqualsF Equals
+            { equalsOperandSort
+            , equalsResultSort
+            , equalsFirst
+            , equalsSecond
+            }
+    )
+
+pattern Exists_ existsSort existsVariable existsChild <-
+    (Recursive.project ->
+        _ :< ExistsF Exists { existsSort, existsVariable, existsChild }
+    )
+
+pattern Floor_ floorOperandSort floorResultSort floorChild <-
+    (Recursive.project ->
+        _ :< FloorF Floor
+            { floorOperandSort
+            , floorResultSort
+            , floorChild
+            }
+    )
+
+pattern Forall_ forallSort forallVariable forallChild <-
+    (Recursive.project ->
+        _ :< ForallF Forall { forallSort, forallVariable, forallChild }
+    )
+
+pattern Iff_ iffSort iffFirst iffSecond <-
+    (Recursive.project ->
+        _ :< IffF Iff { iffSort, iffFirst, iffSecond }
+    )
+
+pattern Implies_ impliesSort impliesFirst impliesSecond <-
+    (Recursive.project ->
+        _ :< ImpliesF Implies { impliesSort, impliesFirst, impliesSecond }
+    )
+
+pattern In_ inOperandSort inResultSort inFirst inSecond <-
+    (Recursive.project ->
+        _ :< InF In
+            { inOperandSort
+            , inResultSort
+            , inContainedChild = inFirst
+            , inContainingChild = inSecond
+            }
+    )
+
+pattern Next_ nextSort nextChild <-
+    (Recursive.project ->
+        _ :< NextF Next { nextSort, nextChild })
+
+pattern Not_ notSort notChild <-
+    (Recursive.project ->
+        _ :< NotF Not { notSort, notChild })
+
+pattern Or_ orSort orFirst orSecond <-
+    (Recursive.project -> _ :< OrF Or { orSort, orFirst, orSecond })
+
+pattern Rewrites_ rewritesSort rewritesFirst rewritesSecond <-
+    (Recursive.project ->
+        _ :< RewritesF Rewrites
+            { rewritesSort
+            , rewritesFirst
+            , rewritesSecond
+            }
+    )
+
+pattern Top_ topSort <-
+    (Recursive.project -> _ :< TopF Top { topSort })
+
+pattern Var_ variable <-
+    (Recursive.project -> _ :< VariableF variable)
+
+pattern V :: Functor domain => variable -> Pattern domain variable annotation
+pattern V x <- Var_ x
+
+pattern StringLiteral_ str <-
+    (Recursive.project -> _ :< StringLiteralF (StringLiteral str))
+
+pattern CharLiteral_ char <-
+    (Recursive.project -> _ :< CharLiteralF (CharLiteral char))

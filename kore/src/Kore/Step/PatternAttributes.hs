@@ -41,7 +41,6 @@ import           Kore.Proof.Functional
 import           Kore.Step.PatternAttributesError
                  ( ConstructorLikeError (..), FunctionError (..),
                  FunctionalError (..), TotalError (..) )
-import           Kore.Syntax
 
 functionalProofVars
     :: Prism
@@ -137,7 +136,7 @@ isPreconstructedPattern
     -> Either err (PartialPatternProof (FunctionalProof variable))
 isPreconstructedPattern err (_ :< pattern') =
     case pattern' of
-        DomainValueF domain ->
+        BuiltinF domain ->
             (Right . Descend) (FunctionalDomainValue $ () <$ domain)
         StringLiteralF str ->
             Right (DoNotDescend (FunctionalStringLiteral str))

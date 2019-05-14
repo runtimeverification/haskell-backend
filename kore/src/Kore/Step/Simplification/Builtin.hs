@@ -1,0 +1,61 @@
+{- |
+Copyright   : (c) Runtime Verification, 2019
+License     : NCSA
+
+ -}
+module Kore.Step.Simplification.Builtin
+    ( simplify
+    ) where
+
+import qualified Kore.Domain.Builtin as Domain
+import           Kore.IndexedModule.MetadataTools
+                 ( SmtMetadataTools )
+import           Kore.Internal.Conditional
+                 ( Conditional )
+import           Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import           Kore.Internal.TermLike
+import           Kore.Unparser
+
+{-| 'simplify' simplifies a 'DomainValue' pattern, which means returning
+an or containing a term made of that value.
+-}
+simplify
+    :: ( Ord variable
+       , Show variable
+       , Unparse variable
+       , SortedVariable variable
+       )
+    => SmtMetadataTools attrs
+    -> Builtin (OrPattern variable)
+    -> OrPattern variable
+simplify _ builtin =
+    MultiOr.filterOr $ do
+        child <- simplifyBuiltin builtin
+        return (mkBuiltin <$> child)
+
+simplifyBuiltin
+    :: ( Ord variable
+       , Show variable
+       , Unparse variable
+       , SortedVariable variable
+       )
+    => Builtin (OrPattern variable)
+    -> MultiOr (Conditional variable (Builtin (TermLike variable)))
+simplifyBuiltin =
+    \case
+        Domain.BuiltinExternal _ext -> do
+            _ext <- sequence _ext
+            return (Domain.BuiltinExternal <$> sequenceA _ext)
+        Domain.BuiltinMap _map -> do
+            _map <- sequence _map
+            -- MultiOr propagates \bottom children upward.
+            return (Domain.BuiltinMap <$> sequenceA _map)
+        Domain.BuiltinList _list -> do
+            _list <- sequence _list
+            -- MultiOr propagates \bottom children upward.
+            return (Domain.BuiltinList <$> sequenceA _list)
+        Domain.BuiltinSet set -> (return . pure) (Domain.BuiltinSet set)
+        Domain.BuiltinInt int -> (return . pure) (Domain.BuiltinInt int)
+        Domain.BuiltinBool bool -> (return . pure) (Domain.BuiltinBool bool)

@@ -41,7 +41,6 @@ import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Syntax.Application
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 

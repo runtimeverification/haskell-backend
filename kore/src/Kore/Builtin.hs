@@ -18,6 +18,8 @@ module Kore.Builtin
     , Builtin.DomainValueVerifiers
     , Builtin.Function
     , Builtin
+    , Builtin.SymbolVerifier (..)
+    , Builtin.SortVerifier (..)
     , Builtin.sortDeclVerifier
     , Builtin.symbolVerifier
     , Builtin.verifyDomainValue
@@ -25,7 +27,7 @@ module Kore.Builtin
     , koreEvaluators
     , evaluators
     , externalizePattern
-    , asMetaPattern
+    , externalizePattern'
     ) where
 
 import qualified Data.Functor.Foldable as Recursive
@@ -37,6 +39,7 @@ import           Data.Semigroup
                  ( (<>) )
 import           Data.Text
                  ( Text )
+import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Hook
@@ -47,8 +50,6 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
-import           Kore.Builtin.Error
-                 ( notImplementedInternal )
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.KEqual as KEqual
 import qualified Kore.Builtin.Krypto as Krypto
@@ -65,12 +66,7 @@ import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import           Kore.Syntax.DomainValue
-import           Kore.Syntax.Pattern
-
-{- | The default type of builtin domain values.
- -}
-type Builtin = DomainValue Sort (Domain.Builtin (TermLike Variable))
+import qualified Kore.Syntax.Pattern as Syntax
 
 {- | Verifiers for Kore builtin sorts.
 
@@ -194,10 +190,10 @@ externalizePattern =
   where
     externalizePatternWorker
         ::  TermLike variable
-        ->  Base (TermLike variable) (TermLike variable)
+        ->  Recursive.Base (TermLike variable) (TermLike variable)
     externalizePatternWorker (Recursive.project -> original@(_ :< pat)) =
         case pat of
-            DomainValueF domain ->
+            BuiltinF domain ->
                 case domain of
                     Domain.BuiltinExternal _ -> original
                     Domain.BuiltinMap  builtin ->
@@ -212,24 +208,79 @@ externalizePattern =
                         Recursive.project (Bool.asTermLike builtin)
             _ -> original
 
-{- | Extract the meta-level pattern argument of a domain value.
+{- | Externalize the 'TermLike' into a 'Syntax.Pattern'.
 
-WARNING: This is not implemented for internal domain values. Use
-'externalizePattern' before calling this function.
+All builtins will be rendered using their concrete Kore syntax.
+
+See also: 'asPattern'
 
  -}
-asMetaPattern
-    :: Functor domain
-    => Domain.Builtin child
-    -> Pattern domain Variable Attribute.Null
-asMetaPattern =
-    \case
-        Domain.BuiltinExternal ext ->
-            castVoidDomainValues domainValueChild
-          where
-            Domain.External { domainValueChild } = ext
-        Domain.BuiltinMap _ -> notImplementedInternal
-        Domain.BuiltinList _ -> notImplementedInternal
-        Domain.BuiltinSet _ -> notImplementedInternal
-        Domain.BuiltinInt _ -> notImplementedInternal
-        Domain.BuiltinBool _ -> notImplementedInternal
+externalizePattern'
+    ::  forall variable. Ord variable
+    =>  TermLike variable
+    ->  Syntax.Pattern Domain.External variable Attribute.Null
+externalizePattern' =
+    Recursive.unfold externalizePatternWorker
+  where
+    externalizePatternWorker
+        ::  TermLike variable
+        ->  Recursive.Base
+                (Syntax.Pattern Domain.External variable Attribute.Null)
+                (TermLike variable)
+    externalizePatternWorker termLike =
+        case termLikeF of
+            BuiltinF domain ->
+                case domain of
+                    Domain.BuiltinMap  builtin ->
+                        (toPatternF . Recursive.project)
+                            (Map.asTermLike builtin)
+                    Domain.BuiltinList builtin ->
+                        (toPatternF . Recursive.project)
+                            (List.asTermLike builtin)
+                    Domain.BuiltinSet  builtin ->
+                        (toPatternF . Recursive.project)
+                            (Set.asTermLike builtin)
+                    Domain.BuiltinInt  builtin ->
+                        (toPatternF . Recursive.project)
+                            (Int.asTermLike builtin)
+                    Domain.BuiltinBool builtin ->
+                        (toPatternF . Recursive.project)
+                            (Bool.asTermLike builtin)
+                    Domain.BuiltinExternal external ->
+                        Attribute.Null :< Syntax.DomainValueF external
+            _ -> toPatternF termLikeBase
+      where
+        termLikeBase@(_ :< termLikeF) = Recursive.project termLike
+
+    toPatternF
+        :: GHC.HasCallStack
+        => Recursive.Base (TermLike variable) child
+        -> Recursive.Base
+            (Syntax.Pattern Domain.External variable Attribute.Null)
+            child
+    toPatternF (_ :< termLikeF) =
+        (Attribute.Null :<)
+        $ case termLikeF of
+            AndF andF -> Syntax.AndF andF
+            ApplicationF applicationF -> Syntax.ApplicationF applicationF
+            BottomF bottomF -> Syntax.BottomF bottomF
+            CeilF ceilF -> Syntax.CeilF ceilF
+            DomainValueF domainValueF -> Syntax.DomainValueF domainValueF
+            EqualsF equalsF -> Syntax.EqualsF equalsF
+            ExistsF existsF -> Syntax.ExistsF existsF
+            FloorF floorF -> Syntax.FloorF floorF
+            ForallF forallF -> Syntax.ForallF forallF
+            IffF iffF -> Syntax.IffF iffF
+            ImpliesF impliesF -> Syntax.ImpliesF impliesF
+            InF inF -> Syntax.InF inF
+            NextF nextF -> Syntax.NextF nextF
+            NotF notF -> Syntax.NotF notF
+            OrF orF -> Syntax.OrF orF
+            RewritesF rewritesF -> Syntax.RewritesF rewritesF
+            StringLiteralF stringLiteralF -> Syntax.StringLiteralF stringLiteralF
+            CharLiteralF charLiteralF -> Syntax.CharLiteralF charLiteralF
+            TopF topF -> Syntax.TopF topF
+            VariableF variableF -> Syntax.VariableF variableF
+            InhabitantF inhabitantF -> Syntax.InhabitantF inhabitantF
+            SetVariableF setVariableF -> Syntax.SetVariableF setVariableF
+            BuiltinF _ -> error "Unexpected internal builtin"

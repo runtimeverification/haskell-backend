@@ -1,34 +1,38 @@
 module Main (main) where
 
-import Control.Applicative
-       ( Alternative (..), optional, (<$) )
-import Data.List
-       ( intercalate )
-import Data.Maybe
-       ( fromMaybe )
-import Data.Reflection
-import Data.Semigroup
-       ( (<>) )
-import Data.Text.Prettyprint.Doc.Render.Text
-       ( hPutDoc, putDoc )
-import Options.Applicative
-       ( InfoMod, Parser, argument, auto, fullDesc, header, help, long,
-       metavar, option, progDesc, readerError, str, strOption, value )
-import System.Exit
-       ( ExitCode (..), exitWith )
-import System.IO
-       ( IOMode (WriteMode), withFile )
+import           Control.Applicative
+                 ( Alternative (..), optional, (<$) )
+import qualified Data.Bifunctor as Bifunctor
+import           Data.List
+                 ( intercalate )
+import           Data.Maybe
+                 ( fromMaybe )
+import           Data.Reflection
+import           Data.Semigroup
+                 ( (<>) )
+import           Data.Text.Prettyprint.Doc.Render.Text
+                 ( hPutDoc, putDoc )
+import           Options.Applicative
+                 ( InfoMod, Parser, argument, auto, fullDesc, header, help,
+                 long, metavar, option, progDesc, readerError, str, strOption,
+                 value )
+import           System.Exit
+                 ( ExitCode (..), exitWith )
+import           System.IO
+                 ( IOMode (WriteMode), withFile )
 
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
+import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
+import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
 import           Kore.Internal.Pattern
@@ -47,7 +51,6 @@ import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.SMT.Lemma
-import           Kore.Syntax.Definition
 import           Kore.Unparser
                  ( unparse )
 import qualified SMT
@@ -326,10 +329,14 @@ mainWithOptions
                         KoreProveOptions { specMainModule } = proveOptions
                         KoreProveOptions { graphSearch } = proveOptions
                         KoreProveOptions { bmc } = proveOptions
+                        unverifiedDefinition =
+                            (Bifunctor.first . fmap . IndexedModule.mapPatterns)
+                                Builtin.externalizePattern'
+                                indexedDefinition
                     specDef <- parseDefinition specFileName
                     (specDefIndexedModules, _) <-
                         verifyDefinitionWithBase
-                            (Just indexedDefinition)
+                            (Just unverifiedDefinition)
                              True
                             specDef
                     specDefIndexedModule <-

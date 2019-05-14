@@ -36,6 +36,7 @@ import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom )
 import qualified Kore.Attribute.Symbol as Attribute
                  ( Symbol )
+import qualified Kore.Builtin as Builtin
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
@@ -47,9 +48,6 @@ import           Kore.Syntax.Application
                  ( SymbolOrAlias (SymbolOrAlias) )
 import           Kore.Syntax.Application as SymbolOrAlias
                  ( SymbolOrAlias (..) )
-import           Kore.Syntax.Definition
-import           Kore.Syntax.Pattern
-                 ( eraseAnnotations )
 import qualified Kore.Syntax.Sentence as SentenceAxiom
                  ( SentenceAxiom (..) )
 import           Kore.Syntax.Variable
@@ -192,7 +190,7 @@ constructorAxiom sortName constructors =
     SentenceAxiomSentence SentenceAxiom
         { sentenceAxiomParameters = []
         , sentenceAxiomPattern =
-            eraseAnnotations
+            Builtin.externalizePattern'
             $ foldr mkOr (mkBottom sort) constructorAssertions
         , sentenceAxiomAttributes = Attributes []
         }

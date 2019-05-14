@@ -41,8 +41,6 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Syntax.Definition
-import qualified Kore.Syntax.Pattern as AST
 import           Kore.Unification.Error
 import           Kore.Unification.Procedure
 import qualified Kore.Unification.Substitution as Substitution
@@ -116,14 +114,14 @@ ex4 = mkVar Variable { variableName = testId "ex4", variableCounter = mempty, va
 
 dv1, dv2 :: TermLike Variable
 dv1 =
-    mkDomainValue $ Domain.BuiltinExternal Domain.External
+    mkBuiltin $ Domain.BuiltinExternal Domain.External
         { domainValueSort = s1
-        , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "dv1"
+        , domainValueChild = mkStringLiteral "dv1"
         }
 dv2 =
-    mkDomainValue $ Domain.BuiltinExternal Domain.External
+    mkBuiltin $ Domain.BuiltinExternal Domain.External
         { domainValueSort = s1
-        , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "dv."
+        , domainValueChild = mkStringLiteral "dv."
         }
 
 aA :: TermLike Variable
@@ -524,11 +522,11 @@ test_unification =
     , andSimplifyException "Unmatching constructor constant + domain value"
         (UnificationTerm aA)
         (UnificationTerm dv2)
-        "Cannot handle Constructor and DomainValue:\na{}()\n\\dv{s1{}}(\"dv.\")\n"
+        "Cannot handle Constructor and builtin:\na{}()\n\\dv{s1{}}(\"dv.\")\n"
     , andSimplifyException "Unmatching domain value + constructor constant"
         (UnificationTerm dv1)
         (UnificationTerm aA)
-        "Cannot handle DomainValue and Constructor:\n\\dv{s1{}}(\"dv1\")\na{}()\n"
+        "Cannot handle builtin and Constructor:\n\\dv{s1{}}(\"dv1\")\na{}()\n"
     , testCase "Unmatching domain value + nonconstructor constant" $
         andSimplifySuccess
             (UnificationTerm dv1)

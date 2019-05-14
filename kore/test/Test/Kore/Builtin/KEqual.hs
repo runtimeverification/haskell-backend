@@ -78,18 +78,14 @@ test_KEqual =
                 mkApp
                     boolSort
                     keqBoolSymbol
-                    [ mkDomainValue
-                        $ Domain.BuiltinExternal Domain.External
-                            { domainValueSort = idSort
-                            , domainValueChild =
-                                eraseAnnotations $ mkStringLiteral "t"
-                            }
-                    , mkDomainValue
-                        $ Domain.BuiltinExternal Domain.External
-                            { domainValueSort = idSort
-                            , domainValueChild =
-                                eraseAnnotations $ mkStringLiteral "x"
-                            }
+                    [ mkBuiltin $ Domain.BuiltinExternal Domain.External
+                        { domainValueSort = idSort
+                        , domainValueChild = mkStringLiteral "t"
+                        }
+                    , mkBuiltin $ Domain.BuiltinExternal Domain.External
+                        { domainValueSort = idSort
+                        , domainValueChild = mkStringLiteral "x"
+                        }
                     ]
         actual <- evaluateWith solver original
         assertEqual "" expect actual
@@ -105,22 +101,18 @@ test_KEqual =
                     [ mkApp
                         kItemSort
                         (injSymbol idSort kItemSort)
-                        [ mkDomainValue
-                            $ Domain.BuiltinExternal Domain.External
-                                { domainValueSort = idSort
-                                , domainValueChild =
-                                    eraseAnnotations $ mkStringLiteral "t"
-                                }
+                        [ mkBuiltin $ Domain.BuiltinExternal Domain.External
+                            { domainValueSort = idSort
+                            , domainValueChild = mkStringLiteral "t"
+                            }
                         ]
                     , mkApp
                         kItemSort
                         (injSymbol idSort kItemSort)
-                        [ mkDomainValue
-                            $ Domain.BuiltinExternal Domain.External
-                                { domainValueSort = idSort
-                                , domainValueChild =
-                                    eraseAnnotations $ mkStringLiteral "x"
-                                }
+                        [ mkBuiltin $ Domain.BuiltinExternal Domain.External
+                            { domainValueSort = idSort
+                            , domainValueChild = mkStringLiteral "x"
+                            }
                         ]
                     ]
         actual <- evaluateWith solver original
@@ -140,11 +132,10 @@ test_KEqual =
                         [ mkApp
                             kItemSort
                             (injSymbol idSort kItemSort)
-                            [ mkDomainValue
+                            [ mkBuiltin
                                 $ Domain.BuiltinExternal Domain.External
                                     { domainValueSort = idSort
-                                    , domainValueChild =
-                                        eraseAnnotations $ mkStringLiteral "t"
+                                    , domainValueChild = mkStringLiteral "t"
                                     }
                             ]
                         , mkApp kSort dotkSymbol []
@@ -155,11 +146,10 @@ test_KEqual =
                         [ mkApp
                             kItemSort
                             (injSymbol idSort kItemSort)
-                            [ mkDomainValue
+                            [ mkBuiltin
                                 $ Domain.BuiltinExternal Domain.External
                                     { domainValueSort = idSort
-                                    , domainValueChild =
-                                        eraseAnnotations $ mkStringLiteral "x"
+                                    , domainValueChild = mkStringLiteral "x"
                                     }
                             ]
                         , mkApp kSort dotkSymbol []

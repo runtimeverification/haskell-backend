@@ -16,7 +16,6 @@ import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.Simplification.Next
                  ( simplify )
-import           Kore.Syntax.Next
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock

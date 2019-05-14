@@ -32,12 +32,12 @@ import           Kore.Syntax
 import           Kore.Unparser
 
 -- | A pure pattern which has only been parsed.
-type ParsedPattern = Pattern Domain.Builtin Variable Attribute.Null
+type ParsedPattern = Pattern Domain.External Variable Attribute.Null
 
 type AttributePattern = ParsedPattern
 
 asAttributePattern
-    :: (PatternF Domain.Builtin Variable) AttributePattern
+    :: (PatternF Domain.External Variable) AttributePattern
     -> AttributePattern
 asAttributePattern = asPattern . (mempty :<)
 

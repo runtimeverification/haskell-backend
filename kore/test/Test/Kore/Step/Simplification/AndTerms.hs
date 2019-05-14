@@ -47,7 +47,6 @@ import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import qualified Kore.Syntax.Pattern as AST
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
 import qualified SMT
@@ -979,16 +978,16 @@ plain1OfB = Mock.plain11 Mock.b
 
 aDomainValue :: TermLike Variable
 aDomainValue =
-    mkDomainValue $ Domain.BuiltinExternal Domain.External
+    mkBuiltin $ Domain.BuiltinExternal Domain.External
         { domainValueSort = Mock.testSort
-        , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
+        , domainValueChild = mkStringLiteral "a"
         }
 
 bDomainValue :: TermLike Variable
 bDomainValue =
-    mkDomainValue $ Domain.BuiltinExternal Domain.External
+    mkBuiltin $ Domain.BuiltinExternal Domain.External
         { domainValueSort = Mock.testSort
-        , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "b"
+        , domainValueChild = mkStringLiteral "b"
         }
 
 simplifyUnify

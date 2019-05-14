@@ -16,7 +16,6 @@ import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeTruePredicate )
 import qualified Kore.Step.Simplification.Forall as Forall
                  ( makeEvaluate, simplify )
-import           Kore.Syntax.Forall
 import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore.Comparators ()

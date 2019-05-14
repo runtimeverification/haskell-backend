@@ -20,12 +20,8 @@ import           Control.DeepSeq
                  ( NFData )
 import           Data.Deriving
                  ( deriveEq1, deriveOrd1, deriveShow1 )
-import           Data.Functor.Const
-                 ( Const )
 import           Data.Hashable
                  ( Hashable )
-import           Data.Void
-                 ( Void )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -39,7 +35,7 @@ import Kore.Unparser
 data External child =
     External
         { domainValueSort :: Sort
-        , domainValueChild :: CommonPattern (Const Void)
+        , domainValueChild :: !child
         }
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
@@ -48,17 +44,17 @@ deriveEq1 ''External
 deriveOrd1 ''External
 deriveShow1 ''External
 
-instance Hashable (External child)
+instance Hashable child => Hashable (External child)
 
-instance NFData (External child)
+instance NFData child => NFData (External child)
 
 instance SOP.Generic (External child)
 
 instance SOP.HasDatatypeInfo (External child)
 
-instance Debug (External child)
+instance Debug child => Debug (External child)
 
-instance Unparse (External child) where
+instance Unparse child => Unparse (External child) where
     unparse (External { domainValueSort, domainValueChild }) =
         "\\dv"
         <> parameters [domainValueSort]

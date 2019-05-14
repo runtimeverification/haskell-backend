@@ -18,7 +18,6 @@ import qualified Kore.Attribute.Sort.Unit as Sort
 import qualified Kore.Builtin.Set as Set
 import           Kore.Domain.Builtin
 import           Kore.Internal.TermLike
-import           Kore.Syntax.Definition
 
 import Test.Kore
 
@@ -514,7 +513,7 @@ mapSortDecl =
 
 builtinMap
     :: [(TermLike Concrete, TermLike Variable)]
-    -> InternalMap (TermLike Variable)
+    -> InternalMap (TermLike Concrete) (TermLike Variable)
 builtinMap children =
     InternalMap
         { builtinMapSort = mapSort
@@ -576,7 +575,7 @@ setSortDecl =
 
 builtinSet
     :: [TermLike Concrete]
-    -> InternalSet
+    -> InternalSet (TermLike Concrete)
 builtinSet children =
     InternalSet
         { builtinSetSort = setSort

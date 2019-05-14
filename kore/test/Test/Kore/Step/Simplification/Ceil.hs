@@ -19,7 +19,7 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
+import           Kore.Internal.TermLike as TermLike
 import           Kore.Logger.Output as Logger
                  ( emptyLogger )
 import           Kore.Predicate.Predicate
@@ -43,7 +43,6 @@ import           Kore.Step.Simplification.Data
                  evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Syntax.Ceil
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -369,11 +368,10 @@ test_ceilSimplification =
         actual <- makeEvaluate Mock.metadataTools
             Conditional
                 { term =
-                    mkDomainValue
+                    mkBuiltin
                         (Domain.BuiltinExternal Domain.External
                             { domainValueSort = Mock.testSort
-                            , domainValueChild =
-                                eraseAnnotations $ mkStringLiteral "a"
+                            , domainValueChild = mkStringLiteral "a"
                             }
                         )
                 , predicate = makeTruePredicate
@@ -398,7 +396,7 @@ test_ceilSimplification =
             Conditional
                 { term =
                     Mock.builtinMap
-                        [(asConcrete fOfA, fOfB), (asConcrete gOfA, gOfB)]
+                        [(asConcrete' fOfA, fOfB), (asConcrete' gOfA, gOfB)]
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
@@ -430,7 +428,7 @@ test_ceilSimplification =
             expected = OrPattern.fromPatterns [ Pattern.top ]
         actual <- makeEvaluate Mock.metadataTools
             Conditional
-                { term = Mock.builtinSet [asConcrete fOfA, asConcrete fOfB]
+                { term = Mock.builtinSet [asConcrete' fOfA, asConcrete' fOfB]
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
@@ -455,8 +453,7 @@ test_ceilSimplification =
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    asConcrete p =
-        let Just r = asConcreteStepPattern p in r
+    asConcrete' p = let Just r = TermLike.asConcrete p in r
 
 appliedMockEvaluator
     :: Pattern Variable -> BuiltinAndAxiomSimplifier

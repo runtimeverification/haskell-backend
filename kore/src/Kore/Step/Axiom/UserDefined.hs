@@ -23,7 +23,7 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
+import           Kore.Internal.TermLike as TermLike
 import           Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import           Kore.Step.Axiom.Data as AttemptedAxiomResults
@@ -44,7 +44,6 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.Step
                  ( UnificationProcedure (..) )
 import qualified Kore.Step.Step as Step
-import qualified Kore.Syntax.Pattern as Pure
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -86,7 +85,7 @@ equalityRuleEvaluator
   -- TODO(traiansf): never apply smt-lemma axioms,
   -- neither as simplification rules nor as function definition rules
   | Axiom.Concrete.isConcrete (Attribute.concrete $ attributes rule)
-  , not (Pure.isConcrete patt)
+  , not (TermLike.isConcrete patt)
   = notApplicable
   | otherwise = do
     result <- applyRule patt rule

@@ -28,7 +28,6 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
                  ( makeEvaluate, simplifyEvaluated )
-import           Kore.Syntax.Implies
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )

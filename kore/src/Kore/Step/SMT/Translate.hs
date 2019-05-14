@@ -45,7 +45,6 @@ import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
 import           Kore.Step.SMT.Resolvers
                  ( translateSymbol )
-import           Kore.Syntax
 import           Kore.Unparser
 import           SMT
                  ( SExpr (..), SMT )
@@ -105,6 +104,7 @@ translatePredicate translateUninterpreted predicate =
 
             -- Invalid: no translation, should not occur in predicates
             ApplicationF _ -> empty
+            BuiltinF _ -> empty
             DomainValueF _ -> empty
             NextF _ -> empty
             RewritesF _ -> empty
@@ -168,7 +168,7 @@ translatePredicate translateUninterpreted predicate =
     translateInt pat =
         case Cofree.tailF (Recursive.project pat) of
             VariableF _ -> translateUninterpreted SMT.tInt pat
-            DomainValueF dv ->
+            BuiltinF dv ->
                 return $ SMT.int $ Builtin.Int.extractIntDomainValue
                     "while translating dv to SMT.int" dv
             ApplicationF app ->
@@ -188,7 +188,7 @@ translatePredicate translateUninterpreted predicate =
     translateBool pat =
         case Cofree.tailF (Recursive.project pat) of
             VariableF _ -> translateUninterpreted SMT.tBool pat
-            DomainValueF dv ->
+            BuiltinF dv ->
                 return $ SMT.bool $ Builtin.Bool.extractBoolDomainValue
                     "while translating dv to SMT.bool" dv
             NotF Not { notChild } ->

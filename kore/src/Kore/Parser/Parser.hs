@@ -55,7 +55,7 @@ import           Kore.Unparser
                  ( unparseToString )
 
 asParsedPattern
-    :: (PatternF Domain.Builtin Variable) ParsedPattern
+    :: (PatternF Domain.External Variable) ParsedPattern
     -> ParsedPattern
 asParsedPattern patternBase = asPattern (mempty :< patternBase)
 
@@ -525,12 +525,12 @@ koreMLConstructorParser = do
             then asParsedPattern <$>
                 mlConstructorRemainderParser
                     korePatternParser
-                    builtinDomainParser
+                    externalDomainParser
                     patternType
             else asParsedPattern <$>
                 mlConstructorRemainderParser
                     korePatternParser
-                    builtinDomainParser
+                    externalDomainParser
                     patternType
 
 {-|'leveledMLConstructorParser' is similar to 'koreMLConstructorParser'
@@ -558,7 +558,7 @@ BNF definitions (here cat ranges over meta and object):
 leveledMLConstructorParser
     :: Functor domain
     => Parser child
-    -> (Parser child -> Parser (domain child))
+    -> Parser (domain child)
     -> Parser (PatternF domain Variable child)
 leveledMLConstructorParser childParser domainValueParser = do
     void (Parser.char '\\')
@@ -595,7 +595,7 @@ order to determine whether we are parsing a 'Meta' or an 'Object' 'Pattern'.
 mlConstructorRemainderParser
     :: Functor domain
     => Parser child
-    -> (Parser child -> Parser (domain child))
+    -> Parser (domain child)
     -> MLPatternType
     -> Parser (PatternF domain Variable child)
 mlConstructorRemainderParser childParser domainValueParser patternType =
@@ -627,27 +627,34 @@ mlConstructorRemainderParser childParser domainValueParser patternType =
         TopPatternType -> TopF <$>
             topBottomRemainderParser Top
         DomainValuePatternType ->
-            DomainValueF <$> domainValueParser childParser
+            DomainValueF <$> domainValueParser
         NextPatternType ->
             NextF <$> unaryOperatorRemainderParser childParser Next
         RewritesPatternType ->
             RewritesF
             <$> binaryOperatorRemainderParser childParser Rewrites
 
-builtinDomainParser :: Parser child -> Parser (Domain.Builtin child)
-builtinDomainParser _ = do
+externalDomainParser :: Parser (Domain.External ParsedPattern)
+externalDomainParser = do
     domainValueSort <- inCurlyBracesRemainderParser sortParser
-    domainValueChild <- inParenthesesParser stringLiteralPatternParser
+    domainValueChild <- inParenthesesParser childParser
+    return Domain.External
+        { domainValueSort
+        , domainValueChild
+        }
+  where
+    childParser = asParsedPattern . StringLiteralF <$> stringLiteralParser
+
+builtinDomainParser :: Parser child -> Parser (Domain.Builtin key child)
+builtinDomainParser childParser = do
+    domainValueSort <- inCurlyBracesRemainderParser sortParser
+    domainValueChild <- inParenthesesParser childParser
     let external =
             Domain.External
                 { domainValueSort
                 , domainValueChild
                 }
     return (Domain.BuiltinExternal external)
-  where
-    stringLiteralPatternParser =
-        asPattern . (mempty :<) . StringLiteralF
-        <$> stringLiteralParser
 
 {-|'korePatternParser' parses an unifiedPattern
 
@@ -1002,7 +1009,7 @@ hookedSortSentenceRemainderParser =
 leveledPatternParser
     :: Functor domain
     => Parser child
-    -> (Parser child -> Parser (domain child))
+    -> Parser (domain child)
     -> Parser (PatternF domain Variable child)
 leveledPatternParser patternParser domainValueParser = do
     c <- ParserUtils.peekChar'
@@ -1014,7 +1021,7 @@ leveledPatternParser patternParser domainValueParser = do
 
 purePatternParser :: Parser ParsedPattern
 purePatternParser = do
-    patternHead <- leveledPatternParser childParser builtinDomainParser
+    patternHead <- leveledPatternParser childParser externalDomainParser
     return $ asPattern (mempty :< patternHead)
   where
     childParser = purePatternParser

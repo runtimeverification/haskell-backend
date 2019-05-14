@@ -21,7 +21,6 @@ import Kore.Attribute.Symbol
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools (..), SmtMetadataTools )
 import Kore.Internal.TermLike
-import Kore.Syntax.Application
 
 recursivelyCheckHeadProperty
     :: forall variable
@@ -46,6 +45,7 @@ recursivelyCheckHeadProperty prop MetadataTools { symAttributes } =
                 Application { applicationSymbolOrAlias } = app
                 attrs = symAttributes applicationSymbolOrAlias
             DomainValueF dv -> and dv
+            BuiltinF builtin -> and builtin
             _ -> False
 
 isFunctionalPattern, isFunctionPattern, isTotalPattern

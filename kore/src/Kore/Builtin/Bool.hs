@@ -69,7 +69,7 @@ sort = "BOOL.Bool"
 
  -}
 assertSort :: Builtin.SortVerifier
-assertSort findSort = Builtin.verifySort findSort sort
+assertSort = Builtin.verifySort sort
 
 {- | Verify that hooked sort declarations are well-formed.
 
@@ -100,31 +100,28 @@ symbolVerifiers =
 
 {- | Verify that domain value patterns are well-formed.
  -}
-patternVerifier :: Builtin.DomainValueVerifier child
+patternVerifier :: Builtin.DomainValueVerifier (TermLike variable)
 patternVerifier =
     Builtin.makeEncodedDomainValueVerifier sort patternVerifierWorker
   where
-    patternVerifierWorker domain =
-        case domain of
-            Domain.BuiltinExternal builtin
-              | StringLiteral_ lit <- externalChild -> do
+    patternVerifierWorker domainValue =
+        case externalChild of
+            StringLiteral_ lit -> do
                 builtinBoolValue <- Builtin.parseString parse lit
                 (return . Domain.BuiltinBool)
                     Domain.InternalBool
                         { builtinBoolSort = domainValueSort
                         , builtinBoolValue
                         }
-              where
-                Domain.External { domainValueSort } = builtin
-                Domain.External { domainValueChild = externalChild } = builtin
-            Domain.BuiltinBool _ -> return domain
-            _ -> Kore.Error.koreFail
-                    "Expected literal string or internal value"
+            _ -> Kore.Error.koreFail "Expected literal string"
+      where
+        Domain.External { domainValueSort } = domainValue
+        Domain.External { domainValueChild = externalChild } = domainValue
 
 -- | get the value from a (possibly encoded) domain value
 extractBoolDomainValue
     :: Text -- ^ error message Context
-    -> Domain.Builtin child
+    -> Builtin child
     -> Bool
 extractBoolDomainValue ctx =
     \case
@@ -156,7 +153,7 @@ asInternal
     -> Bool  -- ^ builtin value to render
     -> TermLike variable
 asInternal builtinBoolSort builtinBoolValue =
-    (mkDomainValue . Domain.BuiltinBool)
+    (mkBuiltin . Domain.BuiltinBool)
         Domain.InternalBool
             { builtinBoolSort
             , builtinBoolValue
@@ -175,11 +172,10 @@ asTermLike
     => Domain.InternalBool  -- ^ builtin value to render
     -> TermLike variable
 asTermLike builtin =
-    (mkDomainValue . Domain.BuiltinExternal)
-        Domain.External
-            { domainValueSort = builtinBoolSort
-            , domainValueChild = eraseAnnotations $ mkStringLiteral literal
-            }
+    mkDomainValue Domain.External
+        { domainValueSort = builtinBoolSort
+        , domainValueChild = mkStringLiteral literal
+        }
   where
     Domain.InternalBool { builtinBoolSort } = builtin
     Domain.InternalBool { builtinBoolValue = bool } = builtin

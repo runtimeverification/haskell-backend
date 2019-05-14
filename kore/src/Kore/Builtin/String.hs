@@ -72,7 +72,6 @@ import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-import qualified Kore.Syntax.Pattern as AST
 
 {- | Builtin name of the @String@ sort.
  -}
@@ -86,7 +85,7 @@ sort = "STRING.String"
 
  -}
 assertSort :: Builtin.SortVerifier
-assertSort findSort = Builtin.verifySort findSort sort
+assertSort = Builtin.verifySort sort
 
 {- | Verify that hooked sort declarations are well-formed.
 
@@ -141,7 +140,7 @@ symbolVerifiers =
 
 {- | Verify that domain value patterns are well-formed.
  -}
-patternVerifier :: Builtin.DomainValueVerifier child
+patternVerifier :: Builtin.DomainValueVerifier (TermLike variable)
 patternVerifier =
     Builtin.makeNonEncodedDomainValueVerifier sort
         (void . Builtin.parseDomainValue parse)
@@ -149,10 +148,15 @@ patternVerifier =
 -- | get the value from a (possibly encoded) domain value
 extractStringDomainValue
     :: Text -- ^ error message Context
-    -> Domain.Builtin child
+    -> Builtin (TermLike variable)
     -> Text
 extractStringDomainValue ctx =
-    Builtin.runParser ctx . Builtin.parseDomainValue parse
+    \case
+        Domain.BuiltinExternal ext ->
+            Builtin.runParser ctx $ Builtin.parseDomainValue parse ext
+        _ ->
+            Builtin.verifierBug
+            $ Text.unpack ctx ++ ": Domain value is not a string"
 
 {- | Parse a string literal.
  -}
@@ -173,7 +177,7 @@ expectBuiltinString
     -> MaybeT m Text
 expectBuiltinString ctx =
     \case
-        DV_ _ domain ->
+        Builtin_ domain ->
             case domain of
                 Domain.BuiltinExternal external
                   | StringLiteral_ lit <- domainValueChild ->
@@ -184,8 +188,7 @@ expectBuiltinString ctx =
                 _ ->
                     Builtin.verifierBug
                     $ Text.unpack ctx ++ ": Domain value is not a string"
-        _ ->
-            empty
+        _ -> empty
 
 {- | Render an 'String' as a domain value pattern of the given sort.
 
@@ -201,7 +204,7 @@ asTermLike
     -> Text  -- ^ builtin value to render
     -> TermLike variable
 asTermLike resultSort result =
-    fromConcreteStepPattern (asConcretePattern resultSort result)
+    fromConcrete (asConcretePattern resultSort result)
 
 {- | Render a 'String' as a concrete domain value pattern of the given sort.
 
@@ -216,11 +219,10 @@ asConcretePattern
     -> Text  -- ^ builtin value to render
     -> TermLike Concrete
 asConcretePattern domainValueSort builtinStringChild =
-    (mkDomainValue . Domain.BuiltinExternal)
+    (mkBuiltin . Domain.BuiltinExternal)
         Domain.External
             { domainValueSort
-            , domainValueChild =
-                AST.eraseAnnotations $ mkStringLiteral builtinStringChild
+            , domainValueChild = mkStringLiteral builtinStringChild
             }
 
 asPattern

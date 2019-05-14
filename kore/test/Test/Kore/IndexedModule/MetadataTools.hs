@@ -27,9 +27,6 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
 import           Kore.Internal.TermLike
-import           Kore.Syntax.Definition
-import           Kore.Syntax.Top
-import qualified Kore.Verified as Verified
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -37,13 +34,16 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 objectS1 :: Sort
 objectS1 = simpleSort (SortName "s1")
 
-objectA :: SentenceSymbol (TermLike Variable)
+objectA :: SentenceSymbol ParsedPattern
 objectA =
-    (mkSymbol_ (testId "b") [] objectS1)
+    fmap Builtin.externalizePattern'
+    $ (mkSymbol_ (testId "b") [] objectS1)
         { sentenceSymbolAttributes = Attributes [ constructorAttribute ] }
 
-metaA :: SentenceSymbol (TermLike Variable)
-metaA = mkSymbol_ (testId "#a") [] stringMetaSort
+metaA :: SentenceSymbol ParsedPattern
+metaA =
+    fmap Builtin.externalizePattern'
+    $ mkSymbol_ (testId "#a") [] stringMetaSort
 
 testObjectModuleName :: ModuleName
 testObjectModuleName = ModuleName "TEST-OBJECT-MODULE"
@@ -54,24 +54,22 @@ testMetaModuleName = ModuleName "TEST-META-MODULE"
 testMainModuleName :: ModuleName
 testMainModuleName = ModuleName "TEST-MAIN-MODULE"
 
-testObjectModule :: Module Verified.Sentence
+testObjectModule :: Module ParsedSentence
 testObjectModule =
     Module
         { moduleName = testObjectModuleName
         , moduleSentences =
-            [ SentenceSortSentence
-                SentenceSort
-                    { sentenceSortName = testId "s1"
-                    , sentenceSortParameters = []
-                    , sentenceSortAttributes = Attributes []
-                    }
-
+            [ SentenceSortSentence SentenceSort
+                { sentenceSortName = testId "s1"
+                , sentenceSortParameters = []
+                , sentenceSortAttributes = Attributes []
+                }
             , asSentence objectA
             ]
         , moduleAttributes = Attributes []
         }
 
-testMetaModule :: Module Verified.Sentence
+testMetaModule :: Module ParsedSentence
 testMetaModule =
     Module
         { moduleName = testMetaModuleName
@@ -79,7 +77,7 @@ testMetaModule =
         , moduleAttributes = Attributes []
         }
 
-mainModule :: Module Verified.Sentence
+mainModule :: Module ParsedSentence
 mainModule =
     Module
         { moduleName = testMainModuleName
@@ -93,16 +91,14 @@ mainModule =
 
 testDefinition :: ParsedDefinition
 testDefinition =
-    (<$>)
-        eraseSentenceAnnotations
-        Definition
-            { definitionAttributes = Attributes []
-            , definitionModules =
-                [ testObjectModule
-                , testMetaModule
-                , mainModule
-                ]
-            }
+    Definition
+        { definitionAttributes = Attributes []
+        , definitionModules =
+            [ testObjectModule
+            , testMetaModule
+            , mainModule
+            ]
+        }
 
 testVerifiedModule :: VerifiedModule StepperAttributes Attribute.Axiom
 testVerifiedModule =
@@ -228,14 +224,13 @@ testSubsortModule =
   where
     subsortAxiom :: Sort -> Sort -> ParsedSentence
     subsortAxiom subSort superSort =
-        SentenceAxiomSentence
-          (SentenceAxiom
-              { sentenceAxiomParameters = [sortVariable "R"]
-              , sentenceAxiomPattern =
-                  asParsedPattern $ TopF (Top sortVarR)
-              , sentenceAxiomAttributes = Attributes
-                  [subsortAttribute subSort superSort]
-              })
+        SentenceAxiomSentence SentenceAxiom
+            { sentenceAxiomParameters = [sortVariable "R"]
+            , sentenceAxiomPattern =
+                Builtin.externalizePattern' (mkTop sortVarR)
+            , sentenceAxiomAttributes = Attributes
+                [subsortAttribute subSort superSort]
+            }
 
     sortDecl :: Sort -> ParsedSentence
     sortDecl (SortActualSort (SortActual name [])) =

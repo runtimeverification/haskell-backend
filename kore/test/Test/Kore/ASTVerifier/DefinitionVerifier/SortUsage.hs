@@ -12,12 +12,11 @@ import           Data.Maybe
                  ( mapMaybe )
 import qualified Data.Text as Text
 
+import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.Error
                  ( noSort )
 import           Kore.Internal.TermLike
-import           Kore.Syntax.Definition
-import qualified Kore.Verified as Verified
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -29,11 +28,11 @@ data TestFlag
 
 data AdditionalTestConfiguration
     = SkipTest
-    | AdditionalSentences [Verified.Sentence]
+    | AdditionalSentences [ParsedSentence]
 
 data TestConfiguration = TestConfiguration
     { testConfigurationDescription :: !String
-    , testConfigurationAdditionalSentences :: ![Verified.Sentence]
+    , testConfigurationAdditionalSentences :: ![ParsedSentence]
     , testConfigurationAdditionalSortVariables :: ![SortVariable]
     , testConfigurationCaseBasedConfiguration
         :: ![([TestFlag], AdditionalTestConfiguration)]
@@ -48,7 +47,7 @@ data FailureConfiguration
 
 data FlaggedTestData = FlaggedTestData
     { flaggedTestDataFlags    :: ![TestFlag]
-    , flaggedTestDataTestData :: !([Verified.Sentence] -> TestData)
+    , flaggedTestDataTestData :: !([ParsedSentence] -> TestData)
     }
 
 test_sortUsage :: [TestTree]
@@ -178,14 +177,11 @@ test_sortUsage =
             { testConfigurationDescription = "Correct sort count"
             , testConfigurationAdditionalSentences =
                 [ simpleSortSentence additionalSortName
-                , asSentence
-                    (SentenceSort
-                        { sentenceSortName = testId "UnarySort"
-                        , sentenceSortParameters = [ SortVariable (testId "svn") ]
-                        , sentenceSortAttributes =
-                            Attributes []
-                        }
-                    :: Verified.SentenceSort)
+                , asSentence SentenceSort
+                    { sentenceSortName = testId "UnarySort"
+                    , sentenceSortParameters = [ SortVariable (testId "svn") ]
+                    , sentenceSortAttributes = Attributes []
+                    }
                 ]
             , testConfigurationAdditionalSortVariables = []
             , testConfigurationCaseBasedConfiguration =
@@ -210,14 +206,11 @@ test_sortUsage =
             { testConfigurationDescription = "Wrong sort count"
             , testConfigurationAdditionalSentences =
                 [ simpleSortSentence additionalSortName
-                , asSentence
-                    (SentenceSort
-                        { sentenceSortName = testId "UnarySort"
-                        , sentenceSortParameters = [ SortVariable (testId "svn") ]
-                        , sentenceSortAttributes =
-                            Attributes []
-                        }
-                    :: Verified.SentenceSort)
+                , asSentence SentenceSort
+                    { sentenceSortName = testId "UnarySort"
+                    , sentenceSortParameters = [ SortVariable (testId "svn") ]
+                    , sentenceSortAttributes = Attributes []
+                    }
                 ]
             , testConfigurationAdditionalSortVariables = []
             , testConfigurationCaseBasedConfiguration =
@@ -308,7 +301,7 @@ testsForObjectSort
         addSentenceToTestConfiguration additionalSortSentence
 
 addSentenceToTestConfiguration
-    :: Verified.Sentence
+    :: ParsedSentence
     -> TestConfiguration
     -> TestConfiguration
 addSentenceToTestConfiguration
@@ -503,8 +496,8 @@ unfilteredTestExamplesForSort
     -> SortActualThatIsDeclared
     -> [SortVariable]
     -> NamePrefix
-    -> (Verified.SentenceAlias -> Verified.Sentence)
-    -> (Verified.SentenceSymbol -> Verified.Sentence)
+    -> (ParsedSentenceAlias -> ParsedSentence)
+    -> (ParsedSentenceSymbol -> ParsedSentence)
     -> [FlaggedTestData]
 unfilteredTestExamplesForSort
     (TestedSort sort)
@@ -534,7 +527,7 @@ unfilteredTestExamplesForSort
                             aliasName
                             sort
                             sortVariables
-                            (mkTop sort)
+                            (Builtin.externalizePattern' $ mkTop sort)
                         )
                     : additionalSentences
                     )
@@ -561,7 +554,7 @@ unfilteredTestExamplesForSort
                             sort
                             additionalSort
                             sortVariables
-                            (mkTop additionalSort)
+                            (Builtin.externalizePattern' $ mkTop additionalSort)
                         )
                     : additionalSentences
                     )
@@ -585,7 +578,7 @@ unfilteredTestExamplesForSort
                 simpleDefinitionFromSentences
                     (ModuleName "MODULE")
                     ( axiomSentenceWithSortParameters
-                        (simpleExistsUnifiedPattern variableName1 sort)
+                        (simpleExistsParsedPattern variableName1 sort)
                         sortVariables
                     : additionalSentences
                     )
@@ -609,7 +602,7 @@ unfilteredTestExamplesForSort
                 simpleDefinitionFromSentences
                     (ModuleName "MODULE")
                     ( axiomSentenceWithSortParameters
-                        ( simpleExistsEqualsUnifiedPattern
+                        ( simpleExistsEqualsParsedPattern
                             variableName1
                             (OperandSort sort)
                             (ResultSort additionalSort)
@@ -637,7 +630,7 @@ unfilteredTestExamplesForSort
                 simpleDefinitionFromSentences
                     (ModuleName "MODULE")
                     ( axiomSentenceWithSortParameters
-                        ( simpleExistsEqualsUnifiedPattern
+                        ( simpleExistsEqualsParsedPattern
                             variableName1
                             (OperandSort additionalSort)
                             (ResultSort sort)
@@ -664,16 +657,16 @@ unfilteredTestExamplesForSort
                 simpleDefinitionFromSentences
                     (ModuleName "MODULE")
                     ( axiomSentenceWithSortParameters
-                        ( applicationUnifiedPatternWithParams
+                        ( applicationParsedPatternWithParams
                             additionalSort
                             (SymbolName rawAliasName)
                             [sort]
                         )
                         sortVariables
                     : sentenceSymbolSentence
-                        (symbolSentenceWithSortParameters
+                        (symbolSentenceWithSortParametersAux
                             (SymbolName rawAliasName)
-                            additionalSortName
+                            (simpleSort additionalSortName)
                             [sortVariable sortVariableName1]
                         )
                     : additionalSentences
@@ -722,7 +715,7 @@ unfilteredTestExamplesForObjectSort
                 simpleDefinitionFromSentences
                     (ModuleName "MODULE")
                     ( axiomSentenceWithSortParameters
-                        (applicationUnifiedPatternWithParams
+                        (applicationParsedPatternWithParams
                             resultSort
                             (SymbolName "a")
                             [ SortActualSort SortActual

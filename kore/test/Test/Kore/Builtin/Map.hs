@@ -446,11 +446,10 @@ test_unifySelectFromSingleton =
             Monad.when (variableName keyVar == variableName valueVar) discard
             Monad.when (variableName keyVar == variableName mapVar) discard
             Monad.when (variableName valueVar == variableName mapVar) discard
-            let selectPat       = selectPattern keyVar valueVar mapVar id
-                selectPatRev    = selectPattern keyVar valueVar mapVar reverse
-                singleton       =
-                    asInternal (Map.singleton concreteKey value)
-                keyStepPattern = fromConcreteStepPattern concreteKey
+            let selectPat      = selectPattern keyVar valueVar mapVar id
+                selectPatRev   = selectPattern keyVar valueVar mapVar reverse
+                singleton      = asInternal (Map.singleton concreteKey value)
+                keyStepPattern = fromConcrete concreteKey
                 expect =
                     Conditional
                         { term = singleton
@@ -517,7 +516,7 @@ test_concretizeKeys =
             , variableSort = intSort
             }
     key = Test.Int.asInternal 1
-    symbolicKey = fromConcreteStepPattern key
+    symbolicKey = fromConcrete key
     val = Test.Int.asInternal 2
     concreteMap = asTermLike $ Map.fromList [(key, val)]
     symbolic = asSymbolicPattern $ Map.fromList [(mkVar x, mkVar v)]
@@ -573,7 +572,7 @@ test_concretizeKeysAxiom =
     x = mkIntVar (testId "x")
     v = mkIntVar (testId "v")
     key = Test.Int.asInternal 1
-    symbolicKey = fromConcreteStepPattern key
+    symbolicKey = fromConcrete key
     val = Test.Int.asInternal 2
     symbolicMap = asSymbolicPattern $ Map.fromList [(x, v)]
     axiom =
@@ -593,20 +592,20 @@ hprop_unparse =
     genValue = Test.Int.asInternal <$> genInteger
 
 -- | Specialize 'Map.asTermLike' to the builtin sort 'mapSort'.
-asTermLike :: Map.Builtin Variable -> TermLike Variable
+asTermLike :: Map (TermLike Concrete) (TermLike Variable) -> TermLike Variable
 asTermLike =
     Reflection.give testMetadataTools Map.asTermLike
     . builtinMap
     . Map.toAscList
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
-asPattern :: Map.Builtin Variable -> Pattern Variable
+asPattern :: Map (TermLike Concrete) (TermLike Variable) -> Pattern Variable
 asPattern =
     Reflection.give testMetadataTools Map.asPattern mapSort
 
 -- | Specialize 'Map.asInternal' to the builtin sort 'mapSort'.
 asInternal
-    :: Map.Builtin Variable
+    :: Map (TermLike Concrete) (TermLike Variable)
     -> TermLike Variable
 asInternal = Map.asInternal testMetadataTools mapSort
 

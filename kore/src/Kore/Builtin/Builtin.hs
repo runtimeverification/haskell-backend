@@ -18,10 +18,10 @@ module Kore.Builtin.Builtin
     (
       -- * Using builtin verifiers
       Verifiers (..)
-    , SymbolVerifier, SymbolVerifiers
+    , SymbolVerifier (..), SymbolVerifiers
     , SortDeclVerifier, SortDeclVerifiers
     , DomainValueVerifier, DomainValueVerifiers
-    , SortVerifier
+    , SortVerifier (..)
     , Function
     , Parser
     , symbolVerifier
@@ -109,7 +109,7 @@ import           Kore.Error
                  ( Error )
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
-                 ( KoreIndexedModule, SortDescription, VerifiedModule )
+                 ( KoreIndexedModule, VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
@@ -134,18 +134,12 @@ import           Kore.Step.Simplification.Data
                  TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
-import           Kore.Syntax.Application
-import           Kore.Syntax.Definition
-import           Kore.Syntax.DomainValue
-import qualified Kore.Syntax.PatternF as Syntax
 import           Kore.Unparser
 import qualified Kore.Verified as Verified
 
 type Parser = Parsec Void Text
 
 type Function = BuiltinAndAxiomSimplifier
-
-type HookedSortDescription = SortDescription Domain.Builtin
 
 -- | Verify a sort declaration.
 type SortDeclVerifier =
@@ -157,22 +151,26 @@ type SortDeclVerifier =
     -- ^ Declared sort attributes
     ->  Either (Error VerifyError) ()
 
-type SortVerifier =
-        (Id -> Either (Error VerifyError) HookedSortDescription)
-    -- ^ Find a sort declaration
-    -> Sort
-    -- ^ Sort to verify
-    -> Either (Error VerifyError) ()
+newtype SortVerifier =
+    SortVerifier
+        { runSortVerifier
+            :: forall patternType
+            .  (Id -> Either (Error VerifyError) (SentenceSort patternType))
+            -> Sort
+            -> Either (Error VerifyError) ()
+        }
 
 -- | @SortDeclVerifiers@ associates a sort verifier with its builtin sort name.
 type SortDeclVerifiers = HashMap Text SortDeclVerifier
 
-type SymbolVerifier =
-        (Id -> Either (Error VerifyError) HookedSortDescription)
-    -- ^ Find a sort declaration
-    -> ParsedSentenceSymbol
-    -- ^ Symbol declaration to verify
-    -> Either (Error VerifyError) ()
+newtype SymbolVerifier =
+    SymbolVerifier
+        { runSymbolVerifier
+            :: forall patternType
+            .  (Id -> Either (Error VerifyError) (SentenceSort patternType))
+            -> ParsedSentenceSymbol
+            -> Either (Error VerifyError) ()
+        }
 
 {- | @SymbolVerifiers@ associates a @SymbolVerifier@ with each builtin
   symbol name.
@@ -184,7 +182,7 @@ type SymbolVerifiers = HashMap Text SymbolVerifier
 
 -}
 type DomainValueVerifier child =
-       Domain.Builtin child -> Either (Error VerifyError) (Domain.Builtin child)
+       Domain.External child -> Either (Error VerifyError) (Builtin child)
 
 -- | @DomainValueVerifiers@  associates a @DomainValueVerifier@ with each
 -- builtin
@@ -244,7 +242,7 @@ symbolVerifier Verifiers { symbolVerifiers } hook =
                 -- 1. the symbol is not hooked, or
                 -- 2. there is no SymbolVerifier registered to the hooked name.
                 -- In either case, there is nothing more to do.
-                \_ _ -> pure ()
+                SymbolVerifier $ \_ _ -> pure ()
             Just verifier ->
                 -- Invoke the verifier that is registered to this builtin
                 -- symbol.
@@ -383,12 +381,17 @@ assertSymbolResultSort indexedModule symbolId expectedSort = do
 
  -}
 verifySort
-    :: (Id -> Either (Error VerifyError) HookedSortDescription)
-    -> Text
-    -> Sort
-    -> Either (Error VerifyError) ()
-verifySort findSort builtinName (SortActualSort SortActual { sortActualName }) =
-    do
+    :: Text
+    -> SortVerifier
+verifySort builtinName =
+    SortVerifier worker
+  where
+    worker
+        :: forall patternType
+        .  (Id -> Either (Error VerifyError) (SentenceSort patternType))
+        -> Sort
+        -> Either (Error VerifyError) ()
+    worker findSort (SortActualSort SortActual { sortActualName }) = do
         SentenceSort { sentenceSortAttributes } <- findSort sortActualName
         let expectHook = Hook (Just builtinName)
         declHook <- Verifier.Attributes.parseAttributes sentenceSortAttributes
@@ -396,17 +399,18 @@ verifySort findSort builtinName (SortActualSort SortActual { sortActualName }) =
             ("Sort '" ++ getIdForError sortActualName
                 ++ "' is not hooked to builtin sort '"
                 ++ Text.unpack builtinName ++ "'")
-verifySort _ _ (SortVariableSort SortVariable { getSortVariable }) =
-    Kore.Error.koreFail
-        ("unexpected sort variable '" ++ getIdForError getSortVariable ++ "'")
+    worker _ (SortVariableSort SortVariable { getSortVariable }) =
+        Kore.Error.koreFail
+            ("unexpected sort variable '"
+                ++ getIdForError getSortVariable ++ "'")
 
 -- | Wildcard for sort verification on parameterized builtin sorts
 acceptAnySort :: SortVerifier
-acceptAnySort = const $ const $ return ()
+acceptAnySort = SortVerifier $ \_ _ -> return ()
 
 {- | Find the hooked sort for a domain value sort. -}
 lookupHookSort
-    :: (Id -> Either (Error VerifyError) HookedSortDescription)
+    :: (Id -> Either (Error VerifyError) (SentenceSort patternType))
     -> Sort
     -> Either (Error VerifyError) (Maybe Text)
 lookupHookSort findSort (SortActualSort SortActual { sortActualName }) = do
@@ -428,16 +432,12 @@ verifySymbol
     :: SortVerifier  -- ^ Builtin result sort
     -> [SortVerifier]  -- ^ Builtin argument sorts
     -> SymbolVerifier
-verifySymbol
-    verifyResult
-    verifyArguments
-    findSort
-    decl@SentenceSymbol { sentenceSymbolResultSort = result }
-  =
-    do
+verifySymbol verifyResult verifyArguments =
+    SymbolVerifier $ \findSort decl -> do
+        let SentenceSymbol { sentenceSymbolResultSort = result } = decl
         Kore.Error.withContext "In result sort"
-            (verifyResult findSort result)
-        verifySymbolArguments verifyArguments findSort decl
+            (runSortVerifier verifyResult findSort result)
+        runSymbolVerifier (verifySymbolArguments verifyArguments) findSort decl
 
 {- | Verify the arguments of a builtin sort declaration.
 
@@ -451,29 +451,26 @@ verifySymbol
 verifySymbolArguments
     :: [SortVerifier]  -- ^ Builtin argument sorts
     -> SymbolVerifier
-verifySymbolArguments
-    verifyArguments
-    findSort
-    SentenceSymbol { sentenceSymbolSorts = sorts }
-  =
-    Kore.Error.withContext "In argument sorts"
-    (do
-        Kore.Error.koreFailWhen (arity /= builtinArity)
-            ("Expected " ++ show builtinArity
-             ++ " arguments, found " ++ show arity)
-        zipWithM_ (\verify sort -> verify findSort sort) verifyArguments sorts
-    )
-  where
-    builtinArity = length verifyArguments
-    arity = length sorts
+verifySymbolArguments verifyArguments =
+    SymbolVerifier $ \findSort sentenceSymbol ->
+        Kore.Error.withContext "In argument sorts" $ do
+            let SentenceSymbol { sentenceSymbolSorts = sorts } = sentenceSymbol
+                builtinArity = length verifyArguments
+                arity = length sorts
+            Kore.Error.koreFailWhen (arity /= builtinArity)
+                ("Expected " ++ show builtinArity
+                ++ " arguments, found " ++ show arity)
+            zipWithM_ (\verify sort -> verify findSort sort)
+                (runSortVerifier <$> verifyArguments)
+                sorts
 
 {- | Run a DomainValueVerifier.
 -}
 verifyDomainValue
-    :: DomainValueVerifiers child
-    -> (Id -> Either (Error VerifyError) HookedSortDescription)
-    -> Domain.Builtin child
-    -> Either (Error VerifyError) (Domain.Builtin child)
+    :: DomainValueVerifiers (TermLike variable)
+    -> (Id -> Either (Error VerifyError) (SentenceSort patternType))
+    -> Domain.External (TermLike variable)
+    -> Either (Error VerifyError) (Builtin (TermLike variable))
 verifyDomainValue
     verifiers
     findSort
@@ -494,10 +491,10 @@ verifyDomainValue
 {- | In the case of a hooked sort, lookup the specific verifier for the hook
   sort and attempt to encode the domain value. -}
 verifyHookedSortDomainValue
-    :: DomainValueVerifiers child
+    :: DomainValueVerifiers (TermLike variable)
     -> Text
-    -> Domain.Builtin child
-    -> Either (Error VerifyError) (Domain.Builtin child)
+    -> Domain.External (TermLike variable)
+    -> Either (Error VerifyError) (Builtin (TermLike variable))
 verifyHookedSortDomainValue verifiers hookSort dv = do
     verifier <- case HashMap.lookup hookSort verifiers of
         Nothing -> return defaultDomainValueVerifier
@@ -512,12 +509,11 @@ verifyHookedSortDomainValue verifiers hookSort dv = do
   confirm the domain value argument is a string literal pattern.
 -}
 defaultDomainValueVerifier
-    :: DomainValueVerifier child
+    :: DomainValueVerifier (TermLike variable)
 defaultDomainValueVerifier
-    dv@(Domain.BuiltinExternal ext)
-  | Domain.External { domainValueChild = StringLiteral_ _ } <- ext
+    domainValue@Domain.External { domainValueChild = StringLiteral_ _ }
   =
-    return dv
+    return (Domain.BuiltinExternal domainValue)
 defaultDomainValueVerifier _ =
     Kore.Error.koreFail "Domain value argument must be a literal string."
 
@@ -525,9 +521,7 @@ defaultDomainValueVerifier _ =
 makeEncodedDomainValueVerifier
     :: Text
     -- ^ Builtin sort identifier
-    ->  (   Domain.Builtin child
-        ->  Either (Error VerifyError) (Domain.Builtin child)
-        )
+    -> (Domain.External child -> Either (Error VerifyError) (Builtin child))
     -- ^ encoding function for the builtin sort
     -> DomainValueVerifier child
 makeEncodedDomainValueVerifier _builtinSort encodeSort domain =
@@ -537,11 +531,12 @@ makeEncodedDomainValueVerifier _builtinSort encodeSort domain =
 -- | Construct a 'DomainValueVerifier' for a sort with no builtin encoding
 makeNonEncodedDomainValueVerifier
     :: Text
-    -> (Domain.Builtin child -> Either (Error VerifyError) ())
+    -> (Domain.External child -> Either (Error VerifyError) ())
     -> DomainValueVerifier child
 makeNonEncodedDomainValueVerifier _builtinName verifyNoEncode domainValue =
-    Kore.Error.withContext "While parsing domain value"
-        (verifyNoEncode domainValue >> return domainValue)
+    Kore.Error.withContext "While parsing domain value" $ do
+        verifyNoEncode domainValue
+        return (Domain.BuiltinExternal domainValue)
 
 
 {- | Run a parser in a domain value pattern and construct the builtin
@@ -554,9 +549,9 @@ makeNonEncodedDomainValueVerifier _builtinName verifyNoEncode domainValue =
 -}
 parseEncodeDomainValue
     :: Parser a
-    -> (a -> Domain.Builtin child)
-    -> DomainValue Sort (Domain.Builtin child)
-    -> Either (Error VerifyError) (Domain.Builtin child)
+    -> (a -> Builtin (TermLike variable))
+    -> DomainValue Sort (Builtin (TermLike variable))
+    -> Either (Error VerifyError) (Builtin (TermLike variable))
 parseEncodeDomainValue parser ctor DomainValue { domainValueChild } =
     Kore.Error.withContext "While parsing domain value"
         $ case domainValueChild of
@@ -564,7 +559,9 @@ parseEncodeDomainValue parser ctor DomainValue { domainValueChild } =
                 val <- parseString parser lit
                 return $ ctor val
               where
-                Domain.External { domainValueChild = StringLiteral_ lit } =
+                Domain.External
+                    { domainValueChild = StringLiteral_ lit }
+                  =
                     builtin
             Domain.BuiltinInt _ -> return domainValueChild
             Domain.BuiltinBool _ -> return domainValueChild
@@ -579,19 +576,15 @@ parseEncodeDomainValue parser ctor DomainValue { domainValueChild } =
  -}
 parseDomainValue
     :: Parser a
-    -> Domain.Builtin child
+    -> Domain.External (TermLike variable)
     -> Either (Error VerifyError) a
 parseDomainValue
     parser
-    domainValueChild
+    Domain.External { domainValueChild }
   =
     Kore.Error.withContext "While parsing domain value"
         $ case domainValueChild of
-            Domain.BuiltinExternal ext
-              | StringLiteral_ lit <- child ->
-                parseString parser lit
-              where
-                Domain.External { domainValueChild = child } = ext
+            StringLiteral_ lit -> parseString parser lit
             _ -> Kore.Error.koreFail
                     "Domain value argument must be a literal string."
 
@@ -636,16 +629,9 @@ appliedFunction epat =
  -}
 unaryOperator
     :: forall a b
-    .   (   forall variable
-        .   Text
-        ->  Domain.Builtin (TermLike variable)
-        ->  a
-        )
+    .   (forall variable. Text -> Builtin (TermLike variable) -> a)
     -- ^ Parse operand
-    ->  (   forall variable.
-            Ord variable
-        => Sort -> b -> Pattern variable
-        )
+    ->  (forall variable. Ord variable => Sort -> b -> Pattern variable)
     -- ^ Render result as pattern with given sort
     -> Text
     -- ^ Builtin function name (for error messages)
@@ -660,7 +646,7 @@ unaryOperator
   =
     functionEvaluator unaryOperator0
   where
-    get :: Domain.Builtin (TermLike variable) -> a
+    get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
     unaryOperator0
         :: Ord variable
@@ -671,7 +657,7 @@ unaryOperator
         -> Simplifier (AttemptedAxiom variable)
     unaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
-            [Syntax.DomainValueF a] -> do
+            [BuiltinF a] -> do
                 -- Apply the operator to a domain value
                 let r = op (get a)
                 (appliedFunction . asPattern resultSort) r
@@ -690,15 +676,9 @@ unaryOperator
  -}
 binaryOperator
     :: forall a b
-    .   (  forall variable
-        .  Text
-        -> Domain.Builtin (TermLike variable)
-        -> a
-        )
+    .  (forall variable. Text -> Builtin (TermLike variable) -> a)
     -- ^ Extract domain value
-    ->  (  forall variable . Ord variable
-        => Sort -> b -> Pattern variable
-        )
+    -> (forall variable . Ord variable => Sort -> b -> Pattern variable)
     -- ^ Render result as pattern with given sort
     -> Text
     -- ^ Builtin function name (for error messages)
@@ -713,7 +693,7 @@ binaryOperator
   =
     functionEvaluator binaryOperator0
   where
-    get :: Domain.Builtin (TermLike variable) -> a
+    get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
     binaryOperator0
         :: Ord variable
@@ -724,7 +704,7 @@ binaryOperator
         -> Simplifier (AttemptedAxiom variable)
     binaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
-            [Syntax.DomainValueF a, Syntax.DomainValueF b] -> do
+            [BuiltinF a, BuiltinF b] -> do
                 -- Apply the operator to two domain values
                 let r = op (get a) (get b)
                 (appliedFunction . asPattern resultSort) r
@@ -743,15 +723,9 @@ binaryOperator
  -}
 ternaryOperator
     :: forall a b
-    .   (  forall variable
-        .  Text
-        -> Domain.Builtin (TermLike variable)
-        -> a
-        )
+    .  (forall variable. Text -> Builtin (TermLike variable) -> a)
     -- ^ Extract domain value
-    ->  (  forall variable. Ord variable
-        => Sort -> b -> Pattern variable
-        )
+    -> (forall variable. Ord variable => Sort -> b -> Pattern variable)
     -- ^ Render result as pattern with given sort
     -> Text
     -- ^ Builtin function name (for error messages)
@@ -766,7 +740,7 @@ ternaryOperator
   =
     functionEvaluator ternaryOperator0
   where
-    get :: Domain.Builtin (TermLike variable) -> a
+    get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
     ternaryOperator0
         :: Ord variable
@@ -777,12 +751,10 @@ ternaryOperator
         -> Simplifier (AttemptedAxiom variable)
     ternaryOperator0 _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
-            [ Syntax.DomainValueF a
-                , Syntax.DomainValueF b
-                , Syntax.DomainValueF c] -> do
-                    -- Apply the operator to three domain values
-                    let r = op (get a) (get b) (get c)
-                    (appliedFunction . asPattern resultSort) r
+            [ BuiltinF a, BuiltinF b, BuiltinF c ] -> do
+                -- Apply the operator to three domain values
+                let r = op (get a) (get b) (get c)
+                (appliedFunction . asPattern resultSort) r
             [_, _, _] -> return NotApplicable
             _ -> wrongArity (Text.unpack ctx)
 
@@ -932,7 +904,7 @@ expectNormalConcreteTerm
     -> MaybeT m (TermLike Concrete)
 expectNormalConcreteTerm tools purePattern =
     MaybeT $ return $ do
-        p <- TermLike.asConcreteStepPattern purePattern
+        p <- TermLike.asConcrete purePattern
         -- TODO (thomas.tuegel): Use the return value as the term.
         _ <- Value.fromConcreteStepPattern tools p
         return p

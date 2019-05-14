@@ -2,8 +2,15 @@ module Test.Kore.Variables.Free where
 
 import Hedgehog
 
-import qualified Kore.Attribute.Pattern as Attribute
+import Data.Set
+       ( Set )
+
+import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Synthetic as Attribute
+import qualified Kore.Builtin as Builtin
+import qualified Kore.Domain.External as Domain
+import           Kore.Internal.TermLike
+import qualified Kore.Syntax.Pattern as Syntax
 import qualified Kore.Variables.Free as Variables.Free
 
 import Test.Kore
@@ -13,6 +20,11 @@ import Test.Kore
 hprop_synthetic :: Property
 hprop_synthetic = property $ do
     termLike <- forAll termLikeGen
-    (===)
-        (Attribute.synthesize Variables.Free.synthetic termLike)
-        (Attribute.freeVariables <$> termLike)
+    let
+        external :: Syntax.Pattern Domain.External Variable Attribute.Null
+        external = Builtin.externalizePattern' termLike
+        synthesized :: Syntax.Pattern Domain.External Variable (Set Variable)
+        synthesized = Attribute.synthesize Variables.Free.synthetic external
+        expect = freeVariables termLike
+        actual = extract synthesized
+    expect === actual

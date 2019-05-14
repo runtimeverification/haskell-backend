@@ -3,25 +3,29 @@
 
 module Main (main) where
 
-import Control.Applicative
-       ( optional )
-import Data.Semigroup
-       ( (<>) )
-import Options.Applicative
-       ( InfoMod, Parser, argument, auto, fullDesc, header, help, long,
-       metavar, option, progDesc, readerError, str, strOption, value )
+import           Control.Applicative
+                 ( optional )
+import qualified Data.Bifunctor as Bifunctor
+import           Data.Semigroup
+                 ( (<>) )
+import           Options.Applicative
+                 ( InfoMod, Parser, argument, auto, fullDesc, header, help,
+                 long, metavar, option, progDesc, readerError, str, strOption,
+                 value )
 
-import Data.Limit
-       ( Limit (..) )
-import Kore.Exec
-       ( proveWithRepl )
-import Kore.Logger.Output
-       ( emptyLogger )
-import Kore.Repl
-import Kore.Step.Simplification.Data
-       ( evalSimplifier )
-import Kore.Syntax.Module
-       ( ModuleName (..) )
+import           Data.Limit
+                 ( Limit (..) )
+import qualified Kore.Builtin as Builtin
+import           Kore.Exec
+                 ( proveWithRepl )
+import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import           Kore.Logger.Output
+                 ( emptyLogger )
+import           Kore.Repl
+import           Kore.Step.Simplification.Data
+                 ( evalSimplifier )
+import           Kore.Syntax.Module
+                 ( ModuleName (..) )
 
 import           GlobalMain
 import qualified SMT as SMT
@@ -146,9 +150,15 @@ mainWithOptions
         constructorFunctions <$> mainModule mainModuleName indexedModules
 
     specDef <- parseDefinition specFile
+    let unverifiedDefinition =
+            Bifunctor.first
+                ((fmap . IndexedModule.mapPatterns)
+                    Builtin.externalizePattern'
+                )
+                indexedDefinition
     (specDefIndexedModules, _) <-
         verifyDefinitionWithBase
-            (Just indexedDefinition)
+            (Just unverifiedDefinition)
             True
             specDef
     specDefIndexedModule <-

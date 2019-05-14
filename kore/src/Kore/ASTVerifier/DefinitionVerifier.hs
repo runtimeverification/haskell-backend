@@ -21,6 +21,7 @@ module Kore.ASTVerifier.DefinitionVerifier
 import           Control.Monad
                  ( foldM )
 import qualified Data.Map as Map
+import           Data.Maybe
 import           Data.Proxy
                  ( Proxy (..) )
 import           Data.Text
@@ -100,7 +101,7 @@ verifyAndIndexDefinitionWithBase
     :: forall declAtts axiomAtts
     .  (ParseAttributes declAtts, ParseAttributes axiomAtts)
     => Maybe
-        ( Map.Map ModuleName (VerifiedModule declAtts axiomAtts)
+        ( Map.Map ModuleName (KoreIndexedModule declAtts axiomAtts)
         , Map.Map Text AstLocation
         )
     -> AttributesVerification declAtts axiomAtts
@@ -118,18 +119,12 @@ verifyAndIndexDefinitionWithBase
   = do
     let
         (baseIndexedModules, baseNames) =
-            case maybeBaseDefinition of
-                Nothing -> (implicitModules, implicitNames)
-                Just (baseIndexedModules', baseNames') ->
-                    ( (<$>)
-                        (mapIndexedModulePatterns eraseAnnotations)
-                        baseIndexedModules'
-                    , baseNames'
-                    )
+            fromMaybe (implicitModules, implicitNames) maybeBaseDefinition
 
     names <- foldM verifyUniqueNames baseNames (definitionModules definition)
 
     let
+        defaultModule :: ImplicitIndexedModule ParsedPattern declAtts axiomAtts
         defaultModule = ImplicitIndexedModule implicitIndexedModule
         indexModules
             :: [ParsedModule]
@@ -140,13 +135,10 @@ verifyAndIndexDefinitionWithBase
             castError $ foldM
                 (indexModuleIfNeeded
                     (Just defaultModule)
-                    unverifiedModulesByName
+                    (modulesByName modules)
                 )
-                baseIndexedModules
+                (baseIndexedModules :: Map.Map ModuleName (KoreIndexedModule declAtts axiomAtts))
                 modules
-          where
-            unverifiedModulesByName =
-                modulesByName modules
 
         verifyModule' = verifyModule attributesVerification builtinVerifiers
         verifyModules = traverse verifyModule'
@@ -161,6 +153,9 @@ verifyAndIndexDefinitionWithBase
         attributesVerification
 
     let
+        verifiedDefaultModule
+            :: ImplicitIndexedModule Verified.Pattern declAtts axiomAtts
+        verifiedDefaultModule = ImplicitIndexedModule implicitIndexedModule
         indexVerifiedModules
             :: [Module Verified.Sentence]
             -> Either
@@ -169,7 +164,7 @@ verifyAndIndexDefinitionWithBase
         indexVerifiedModules modules =
             castError $ foldM
                 (indexModuleIfNeeded
-                    (Just defaultModule)
+                    (Just verifiedDefaultModule)
                     verifiedModulesByName
                 )
                 implicitModules

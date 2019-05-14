@@ -14,15 +14,11 @@ module Kore.Verified
     , SentenceSymbol
     ) where
 
-import qualified Kore.Attribute.Pattern as Attribute
-                 ( Pattern )
-import qualified Kore.Domain.Builtin as Domain
-import qualified Kore.Syntax.Pattern as Syntax
+import           Kore.Internal.TermLike
+                 ( TermLike, Variable )
 import qualified Kore.Syntax.Sentence as Syntax
-import           Kore.Syntax.Variable
 
-type Pattern =
-    Syntax.Pattern Domain.Builtin Variable (Attribute.Pattern Variable)
+type Pattern = TermLike Variable
 
 type Sentence = Syntax.Sentence Pattern
 

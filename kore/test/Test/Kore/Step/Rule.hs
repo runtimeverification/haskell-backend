@@ -26,13 +26,10 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.Internal.TermLike hiding
                  ( freeVariables )
-import           Kore.Parser.Parser
-import           Kore.Parser.ParserUtils
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Rule hiding
                  ( freeVariables )
 import qualified Kore.Step.Rule as Rule
-import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 import           Test.Kore
@@ -77,8 +74,7 @@ axiomPatternsUnitTests =
                     Module
                         { moduleName = ModuleName "TEST"
                         , moduleSentences =
-                            map
-                                eraseSentenceAnnotations
+                            (fmap . fmap) Builtin.externalizePattern'
                                 [ axiom1
                                 , axiom2
                                 , sortSentenceAInt
@@ -146,97 +142,45 @@ axiomPatternsIntegrationTests =
         "Rule Unit Tests"
         [ testCase "I1 <= I2 => I1 <=Int I2 (generated)"
             (assertEqual ""
-                (Right $ RewriteAxiomPattern $ RewriteRule RulePattern
-                    { left =
-                        applyTCell
-                            (applyKCell
-                                (applyKSeq
-                                    (applyInj sortKItem
-                                        (applyLeqAExp
-                                            (applyInj sortAExp varI1)
-                                            (applyInj sortAExp varI2)
-                                        )
-                                    )
-                                    varKRemainder
-                                )
-                            )
-                            varStateCell
-                    , right =
-                        applyTCell
-                            (applyKCell
-                                (applyKSeq
-                                    (applyInj
-                                        sortKItem
-                                        (applyLeqAInt varI1 varI2)
-                                    )
-                                    varKRemainder
-                                )
-                            )
-                            varStateCell
-                    , requires = Predicate.wrapPredicate (mkTop sortTCell)
-                    , ensures = Predicate.wrapPredicate (mkTop sortTCell)
-                    , attributes = def
-                    }
-                )
-                (do
-                    parsed <-
-                        parseAxiom
-                            "axiom{}\n\
-                            \    \\rewrites{TCell{}}(\n\
-                            \        \\and{TCell{}}(\n\
-                            \            \\top{TCell{}}(),\n\
-                            \            T{}(\n\
-                            \                k{}(\n\
-                            \                    kseq{}(\n\
-                            \                        inj{BExp{}, KItem{}}(\n\
-                            \                            leqAExp{}(\n\
-                            \                                inj{AInt{}, AExp{}}(\n\
-                            \                                    VarI1:AInt{}\n\
-                            \                                ),\n\
-                            \                                inj{AInt{}, AExp{}}(\n\
-                            \                                    VarI2:AInt{}\n\
-                            \                                )\n\
-                            \                            )\n\
-                            \                        ),\n\
-                            \                        VarDotVar1:K{}\n\
-                            \                    )\n\
-                            \                ),\n\
-                            \                VarDotVar0:StateCell{}\n\
-                            \            )\n\
-                            \        ),\n\
-                            \        \\and{TCell{}}(\n\
-                            \            \\top{TCell{}}(),\n\
-                            \            T{}(\n\
-                            \                k{}(\n\
-                            \                    kseq{}(\n\
-                            \                       inj{ABool{}, KItem{}}(\n\
-                            \                            leqAInt{}(\n\
-                            \                                VarI1:AInt{},\n\
-                            \                                VarI2:AInt{})\n\
-                            \                        ),\n\
-                            \                        VarDotVar1:K{}\n\
-                            \                    )\n\
-                            \                ),\n\
-                            \                VarDotVar0:StateCell{}\n\
-                            \            )\n\
-                            \        )\n\
-                            \    )\n\
-                            \[]"
-                    let valid =
-                            Attribute.Pattern
-                                { patternSort = sortTCell
-                                , freeVariables =
-                                    Set.fromList
-                                        [ varS "VarI1" sortAInt
-                                        , varS "VarI2" sortAInt
-                                        , varS "VarDotVar1" sortK
-                                        , varS "VarDotVar0" sortStateCell
-                                        ]
-                                }
-                    Rule.fromSentence ((<$) valid <$> parsed)
-                )
+                (Right $ RewriteAxiomPattern $ RewriteRule rule)
+                (Rule.fromSentence $ Rule.mkRewriteAxiom left right Nothing)
             )
         ]
+  where
+    left =
+        applyTCell
+            (applyKCell
+                (applyKSeq
+                    (applyInj sortKItem
+                        (applyLeqAExp
+                            (applyInj sortAExp varI1)
+                            (applyInj sortAExp varI2)
+                        )
+                    )
+                    varKRemainder
+                )
+            )
+            varStateCell
+    right =
+        applyTCell
+            (applyKCell
+                (applyKSeq
+                    (applyInj
+                        sortKItem
+                        (applyLeqAInt varI1 varI2)
+                    )
+                    varKRemainder
+                )
+            )
+            varStateCell
+    rule =
+        RulePattern
+            { left
+            , right
+            , requires = Predicate.wrapPredicate (mkTop sortTCell)
+            , ensures = Predicate.wrapPredicate (mkTop sortTCell)
+            , attributes = def
+            }
 
 sortK, sortKItem, sortKCell, sortStateCell, sortTCell :: Sort
 sortK = simpleSort (SortName "K")
@@ -322,7 +266,7 @@ applyInj
 applyInj sortTo child =
     applySymbol symbolInj [sortFrom, sortTo] [child]
   where
-    Attribute.Pattern { patternSort = sortFrom } = extract child
+    Attribute.Pattern { patternSort = sortFrom } = extractAttributes child
 
 symbolSentenceInj :: Sentence (TermLike Variable)
 symbolSentenceInj = asSentence symbolInj
@@ -376,12 +320,6 @@ varStateCell =
         , variableCounter = mempty
         , variableSort = sortStateCell
         }
-
-parseAxiom :: String -> Either (Error a) ParsedSentence
-parseAxiom str =
-    case parseOnly (koreSentenceParser <* endOfInput) "<test-string>" str of
-        Left err  -> koreFail err
-        Right sen -> return sen
 
 extractIndexedModule
     :: Text

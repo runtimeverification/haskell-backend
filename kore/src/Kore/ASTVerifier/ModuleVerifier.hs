@@ -48,7 +48,7 @@ verifyUniqueNames existingNames koreModule =
 verifyModule
     :: AttributesVerification declAtts axiomAtts
     -> Builtin.Verifiers
-    -> KoreIndexedModule declAtts axiomAtts
+    -> IndexedModule ParsedPattern declAtts axiomAtts
     -> Either (Error VerifyError) (Module Verified.Sentence)
 verifyModule attributesVerification builtinVerifiers indexedModule =
     withContext

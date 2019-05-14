@@ -14,8 +14,6 @@ import           Kore.Step.PatternAttributes
 import           Kore.Step.PatternAttributesError
                  ( ConstructorLikeError (..), FunctionError (..),
                  FunctionalError (..) )
-import           Kore.Syntax.CharLiteral
-import           Kore.Syntax.StringLiteral
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as MockSymbols
@@ -43,8 +41,7 @@ test_patternAttributes =
                 dv =
                     Domain.BuiltinExternal Domain.External
                         { domainValueSort = Mock.testSort
-                        , domainValueChild =
-                            eraseAnnotations $ mkStringLiteral "10"
+                        , domainValueChild = ()
                         }
             assertEqualWithExplanation "FunctionalDomainValue"
                 (FunctionalDomainValue dv)
@@ -292,13 +289,11 @@ test_patternAttributes =
                 )
             let
                 dv :: TermLike Variable
-                dv = mkDomainValue
-                        (Domain.BuiltinExternal Domain.External
-                            { domainValueSort = Mock.testSort
-                            , domainValueChild =
-                                eraseAnnotations $ mkStringLiteral "a"
-                            }
-                        )
+                dv =
+                    mkBuiltin $ Domain.BuiltinExternal Domain.External
+                        { domainValueSort = Mock.testSort
+                        , domainValueChild = mkStringLiteral "a"
+                        }
             assertEqualWithExplanation "domain values are constructor-like"
                 (Right [ConstructorLikeProof])
                 (isConstructorLikePattern
@@ -391,13 +386,11 @@ test_patternAttributes =
                 )
             let
                 dv :: TermLike Variable
-                dv = mkDomainValue
-                        (Domain.BuiltinExternal Domain.External
-                            { domainValueSort = Mock.testSort
-                            , domainValueChild =
-                                eraseAnnotations $ mkStringLiteral "a"
-                            }
-                        )
+                dv =
+                    mkBuiltin $ Domain.BuiltinExternal Domain.External
+                        { domainValueSort = Mock.testSort
+                        , domainValueChild = mkStringLiteral "a"
+                        }
             assertEqualWithExplanation
                 "domain values are constructor-modulo-like"
                 (Right [ConstructorLikeProof])

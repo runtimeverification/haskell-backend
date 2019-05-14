@@ -43,7 +43,7 @@ import qualified Kore.Attribute.Null as Attribute
 import           Kore.Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Error
-import           Kore.IndexedModule.IndexedModule
+import           Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
@@ -66,8 +66,6 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Step.Step as Step
-import           Kore.Syntax.Definition
-import qualified Kore.Syntax.Pattern as AST
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Procedure as Unification
@@ -178,8 +176,9 @@ Just verifiedModule = Map.lookup testModuleName verifiedModules
 
 indexedModule :: KoreIndexedModule Attribute.Null Attribute.Null
 indexedModule =
-    makeIndexedModuleAttributesNull
-    $ mapIndexedModulePatterns AST.eraseAnnotations verifiedModule
+    verifiedModule
+    & IndexedModule.eraseAttributes
+    & IndexedModule.mapPatterns Builtin.externalizePattern'
 
 testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build (constructorFunctions verifiedModule)
@@ -269,5 +268,5 @@ hpropUnparse
 hpropUnparse gen = Hedgehog.property $ do
     builtin <- Hedgehog.forAll gen
     let syntax = unparseToString builtin
-        expected = AST.eraseAnnotations (Builtin.externalizePattern builtin)
+        expected = Builtin.externalizePattern' builtin
     Right expected Hedgehog.=== parseKorePattern "<test>" syntax

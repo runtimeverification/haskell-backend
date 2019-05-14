@@ -48,7 +48,6 @@ import           Kore.Step.Search
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
-import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 import qualified SMT
 
@@ -201,7 +200,8 @@ verifiedMyModule module_ = indexedModule
         definition
     definition = Definition
         { definitionAttributes = Attributes []
-        , definitionModules = [eraseSentenceAnnotations <$> module_]
+        , definitionModules =
+            [(fmap . fmap) Builtin.externalizePattern' module_]
         }
 
 mySortName :: Id

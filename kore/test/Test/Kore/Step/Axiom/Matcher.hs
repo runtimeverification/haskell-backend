@@ -165,20 +165,34 @@ test_matcherEqualHeads =
                 (mkCharLiteral 'a')
         assertEqualWithExplanation "" expect actual
 
+    , testCase "Builtin" $ do
+        let expect = Just $ MultiOr.make [Conditional.topPredicate]
+        actual <-
+            matchDefinition Mock.metadataTools
+                (mkBuiltin $ Domain.BuiltinExternal Domain.External
+                    { domainValueSort = Mock.testSort1
+                    , domainValueChild = mkStringLiteral "10"
+                    }
+                )
+                (mkBuiltin $ Domain.BuiltinExternal Domain.External
+                    { domainValueSort = Mock.testSort1
+                    , domainValueChild = mkStringLiteral "10"
+                    }
+                )
+        assertEqualWithExplanation "" expect actual
+
     , testCase "DomainValue" $ do
         let expect = Just $ MultiOr.make [Conditional.topPredicate]
         actual <-
             matchDefinition Mock.metadataTools
-                (mkDomainValue $ Domain.BuiltinExternal Domain.External
+                (mkDomainValue Domain.External
                     { domainValueSort = Mock.testSort1
-                    , domainValueChild =
-                        eraseAnnotations $ mkStringLiteral "10"
+                    , domainValueChild = mkStringLiteral "10"
                     }
                 )
-                (mkDomainValue $ Domain.BuiltinExternal Domain.External
+                (mkDomainValue Domain.External
                     { domainValueSort = Mock.testSort1
-                    , domainValueChild =
-                        eraseAnnotations $ mkStringLiteral "10"
+                    , domainValueChild = mkStringLiteral "10"
                     }
                 )
         assertEqualWithExplanation "" expect actual
