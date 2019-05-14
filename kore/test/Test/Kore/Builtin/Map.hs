@@ -9,6 +9,7 @@ import           Test.Tasty.HUnit
 
 import qualified Control.Monad as Monad
 import qualified Data.Default as Default
+import qualified Data.List as List
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
@@ -57,7 +58,7 @@ genConcreteMap genElement =
 genMapPattern :: Gen (TermLike Variable)
 genMapPattern = asTermLike <$> genConcreteMap genIntegerPattern
 
-genMapSortedVariable :: Sort -> Gen a -> Gen (Map (Variable) a)
+genMapSortedVariable :: Sort -> Gen a -> Gen (Map Variable a)
 genMapSortedVariable sort genElement =
     Gen.map
         (Range.linear 0 32)
@@ -361,6 +362,73 @@ test_unifyConcrete =
             (===) expect actual
             (===) Pattern.top =<< evaluate predicate
         )
+
+
+-- Given a function to scramble the arguments to concat, i.e.,
+-- @id@ or @reverse@, produces a pattern of the form
+-- `MapItem(absInt(K:Int), absInt(V:Int)) Rest:Map`, or
+-- `Rest:Map MapItem(absInt(K:Int), absInt(V:Int))`, respectively.
+selectFunctionPattern
+    :: Variable          -- ^key variable
+    -> Variable          -- ^value variable
+    -> Variable          -- ^map variable
+    -> (forall a . [a] -> [a])  -- ^scrambling function
+    -> TermLike Variable
+selectFunctionPattern keyVar valueVar mapVar permutation  =
+    mkApp mapSort concatMapSymbol $ permutation [singleton, mkVar mapVar]
+  where
+    key = mkApp intSort absIntSymbol  [mkVar keyVar]
+    value = mkApp intSort absIntSymbol  [mkVar valueVar]
+    singleton = mkApp mapSort elementMapSymbol [ key, value ]
+
+-- Given a function to scramble the arguments to concat, i.e.,
+-- @id@ or @reverse@, produces a pattern of the form
+-- `MapItem(K:Int, V:Int) Rest:Map`, or `Rest:Map MapItem(K:Int, V:Int)`,
+-- respectively.
+selectPattern
+    :: Variable          -- ^key variable
+    -> Variable          -- ^value variable
+    -> Variable          -- ^map variable
+    -> (forall a . [a] -> [a])  -- ^scrambling function
+    -> TermLike Variable
+selectPattern keyVar valueVar mapVar permutation  =
+    mkApp mapSort concatMapSymbol $ permutation [element, mkVar mapVar]
+  where
+    element = mkApp mapSort elementMapSymbol [mkVar keyVar, mkVar valueVar]
+
+test_unifySelectFromEmpty :: TestTree
+test_unifySelectFromEmpty =
+    testPropertyWithSolver "unify an empty map with a selection pattern" $ do
+        keyVar <- forAll (standaloneGen $ variableGen intSort)
+        valueVar <- forAll (standaloneGen $ variableGen intSort)
+        mapVar <- forAll (standaloneGen $ variableGen mapSort)
+        let varNames =
+                [ variableName keyVar
+                , variableName valueVar
+                , variableName mapVar
+                ]
+        Monad.when (varNames /= List.nub varNames) discard
+        let selectPat       = selectPattern keyVar valueVar mapVar id
+            selectPatRev    = selectPattern keyVar valueVar mapVar reverse
+            fnSelectPat     = selectFunctionPattern keyVar valueVar mapVar id
+            fnSelectPatRev  =
+                selectFunctionPattern keyVar valueVar mapVar reverse
+        -- Map.empty /\ MapItem(K:Int, V:Int) Rest:Map
+        emptyMap `doesNotUnifyWith` selectPat
+        selectPat `doesNotUnifyWith` emptyMap
+        -- Map.empty /\ Rest:Map MapItem(K:Int, V:int)
+        emptyMap `doesNotUnifyWith` selectPatRev
+        selectPatRev `doesNotUnifyWith` emptyMap
+        -- Map.empty /\ MapItem(absInt(K:Int), absInt(V:Int)) Rest:Map
+        emptyMap `doesNotUnifyWith` fnSelectPat
+        fnSelectPat `doesNotUnifyWith` emptyMap
+        -- Map.empty /\ Rest:Map MapItem(absInt(K:Int), absInt(V:Int))
+        emptyMap `doesNotUnifyWith` fnSelectPatRev
+        fnSelectPatRev `doesNotUnifyWith` emptyMap
+  where
+    emptyMap = asTermLike Map.empty
+    doesNotUnifyWith pat1 pat2 =
+        (===) Pattern.bottom =<< evaluate (mkAnd pat1 pat2)
 
 {- | Unify a concrete map with symbolic-keyed map.
 

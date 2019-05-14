@@ -587,10 +587,10 @@ unifyEquals
                     unifyEqualsFramed builtin1 builtin2 x
                 [x@(Var_ _), DV_ _ (Domain.BuiltinSet builtin2)] ->
                     unifyEqualsFramed builtin1 builtin2 x
-                [(App_ symbol3 [ key3 ]), x@(Var_ _)]
+                [App_ symbol3 [ key3 ], x@(Var_ _)]
                   | isSymbolElement hookTools symbol3 ->
                         unifyEqualsSelect builtin1 symbol3 key3 x
-                [x@(Var_ _), (App_ symbol3 [ key3 ])]
+                [x@(Var_ _), App_ symbol3 [ key3 ]]
                   | isSymbolElement hookTools symbol3 ->
                         unifyEqualsSelect builtin1 symbol3 key3 x
                 _ ->
@@ -645,7 +645,7 @@ unifyEquals
                     -- substitutions from unifying the element
                     -- and framing variable.
                     let result = pure dv1 <* elemUnifier <* setUnifier
-                    return (result)
+                    return result
             _ -> Builtin.unifyEqualsUnsolved simplificationType dv1 app2
           where
             Domain.InternalSet
