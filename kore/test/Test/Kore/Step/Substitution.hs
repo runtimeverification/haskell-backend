@@ -4,15 +4,14 @@ module Test.Kore.Step.Substitution
     ) where
 
 import Test.Tasty
-       ( TestTree )
 import Test.Tasty.HUnit
-       ( assertEqual, testCase )
 
+import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 
-import           Kore.Internal.MultiOr
-                 ( MultiOr )
 import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
 import           Kore.Internal.Predicate
                  ( Conditional (..), Predicate )
 import qualified Kore.Internal.Predicate as Predicate
@@ -42,6 +41,7 @@ test_normalize =
         let expect = mempty
         actual <- normalize Predicate.bottomPredicate
         assertEqual "Expected empty result" expect actual
+        assertNormalizedPredicates actual
     , testCase "∃ y z. x = σ(y, z)" $ do
         let expect =
                 Predicate.fromPredicate
@@ -54,6 +54,7 @@ test_normalize =
             "Expected original result"
             (Right $ MultiOr.make [expect])
             actual
+        Foldable.traverse_ assertNormalizedPredicates actual
     , testCase "¬∃ y z. x = σ(y, z)" $ do
         let expect =
                 Predicate.fromPredicate
@@ -67,6 +68,7 @@ test_normalize =
             "Expected original result"
             (Right $ MultiOr.make [expect])
             actual
+        Foldable.traverse_ assertNormalizedPredicates actual
     ]
 
 test_mergeAndNormalizeSubstitutions :: [TestTree]
@@ -88,6 +90,7 @@ test_mergeAndNormalizeSubstitutions =
                         )
                     ]
             assertEqualWithExplanation "" expect actual
+            assertNormalizedPredicates actual
 
     , testCase "Constructor normalization with variables"
         -- [x=constructor(y)] + [x=constructor(y)]  === [x=constructor(y)]
@@ -106,6 +109,7 @@ test_mergeAndNormalizeSubstitutions =
                         )
                     ]
             assertEqualWithExplanation "" expect actual
+            assertNormalizedPredicates actual
 
     , testCase "Double constructor is bottom"
         -- [x=constructor(a)] + [x=constructor(constructor(a))]  === bottom?
@@ -122,6 +126,7 @@ test_mergeAndNormalizeSubstitutions =
                         )
                     ]
             assertEqualWithExplanation "" expect actual
+            assertNormalizedPredicates actual
 
     , testCase "Double constructor is bottom with variables"
         -- [x=constructor(y)] + [x=constructor(constructor(y))]  === bottom?
@@ -138,6 +143,7 @@ test_mergeAndNormalizeSubstitutions =
                         )
                     ]
             assertEqualWithExplanation "" expect actual
+            assertNormalizedPredicates actual
 
     , testCase "Constructor and constructor of function"
         -- [x=constructor(a)] + [x=constructor(f(a))]
@@ -166,6 +172,7 @@ test_mergeAndNormalizeSubstitutions =
                         )
                     ]
             assertEqualWithExplanation "" expect actual
+            assertNormalizedPredicates actual
 
     , testCase "Constructor and constructor of function with variables"
         -- [x=constructor(y)] + [x=constructor(f(y))]
@@ -185,6 +192,7 @@ test_mergeAndNormalizeSubstitutions =
                         )
                     ]
             assertEqualWithExplanation "" expect actual
+            assertNormalizedPredicates actual
 
     , testCase "Constructor and constructor of functional symbol"
         -- [x=constructor(y)] + [x=constructor(functional(y))]
@@ -204,6 +212,7 @@ test_mergeAndNormalizeSubstitutions =
                         )
                     ]
             assertEqualWithExplanation "" expect actual
+            assertNormalizedPredicates actual
 
     , testCase "Constructor circular dependency?"
         -- [x=y] + [y=constructor(x)]  === error
@@ -220,6 +229,7 @@ test_mergeAndNormalizeSubstitutions =
                         )
                     ]
             assertEqualWithExplanation "" expect actual
+            assertNormalizedPredicates actual
 
     , testCase "Non-ctor circular dependency"
         -- [x=y] + [y=f(x)]  === error
@@ -239,6 +249,7 @@ test_mergeAndNormalizeSubstitutions =
                         )
                     ]
             assertEqualWithExplanation "" expect actual
+            assertNormalizedPredicates actual
 
     , testCase "Normalizes substitution"
         $ do
@@ -255,6 +266,7 @@ test_mergeAndNormalizeSubstitutions =
                     , (Mock.x, Mock.constr10 (mkVar Mock.y))
                     ]
             assertEqualWithExplanation "" expect actual
+            assertNormalizedPredicates actual
 
     , testCase "Predicate from normalizing substitution"
         $ do
@@ -278,6 +290,7 @@ test_mergeAndNormalizeSubstitutions =
                             ]
                         }
             assertEqualWithExplanation "" expect actual
+            assertNormalizedPredicates actual
 
     , testCase "Normalizes substitution and substitutes in predicate"
         $ do
@@ -306,6 +319,7 @@ test_mergeAndNormalizeSubstitutions =
                             ]
                         }
             assertEqualWithExplanation "" expect actual
+            assertNormalizedPredicates actual
     ]
 
 merge
@@ -340,7 +354,7 @@ normalize predicated =
 
 normalizeExcept
     :: Conditional Variable ()
-    -> IO (Either UnificationOrSubstitutionError (MultiOr (Conditional Variable ())))
+    -> IO (Either UnificationOrSubstitutionError (OrPredicate Variable))
 normalizeExcept predicated =
     runSMT
     $ evalSimplifier emptyLogger
@@ -357,3 +371,11 @@ normalizeExcept predicated =
 -- | Run an 'SMT' computation with the default configuration.
 runSMT :: SMT a -> IO a
 runSMT = SMT.runSMT SMT.defaultConfig
+
+-- | Check that 'Predicate.substitution' is normalized for all arguments.
+assertNormalizedPredicates :: Foldable f => f (Predicate Variable) -> Assertion
+assertNormalizedPredicates =
+    Foldable.traverse_
+    $ assertBool "Substitution is normalized"
+    . Substitution.isNormalized
+    . Predicate.substitution
