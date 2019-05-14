@@ -114,11 +114,15 @@ parseKoreProveOptions =
             (  metavar "GRAPH_SEARCH"
             <> long "graph-search"
             <> value BreadthFirst
-            <> help "Search order of the execution graph. Either breadth-first or depth-first. \
+            <> help "Search order of the execution graph. \
+                    \Either breadth-first or depth-first. \
                     \Default is breadth-first."
             )
       where
-        searchOrders = [("breadth-first", BreadthFirst), ("depth-first", DepthFirst)]
+        searchOrders =
+            [ ("breadth-first", BreadthFirst)
+            , ("depth-first", DepthFirst)
+            ]
         readGraphSearch = do
             input <- str
             let found = lookup input searchOrders
@@ -126,7 +130,7 @@ parseKoreProveOptions =
                 Just searchOrder -> pure searchOrder
                 Nothing ->
                     let
-                        unknown = "Unknown graph search order '" ++ input ++ "'. "
+                        unknown = "Unknown search order '" ++ input ++ "'. "
                         names = intercalate ", " (fst <$> searchOrders)
                         known = "Known search order are: " ++ names
                     in

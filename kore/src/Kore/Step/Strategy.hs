@@ -380,7 +380,9 @@ constructExecutionGraph
     -> config
     -> m (ExecutionGraph config rule)
 constructExecutionGraph transit instrs0 graphSearch0 config0 = do
-    finalGraph <- State.execStateT (unfoldWorker initialSeed graphSearch0) initialGraph
+    finalGraph <- State.execStateT
+                    (unfoldWorker initialSeed graphSearch0)
+                    initialGraph
     return exe { graph = finalGraph }
   where
     exe@ExecutionGraph { root, graph = initialGraph } =
@@ -401,14 +403,18 @@ constructExecutionGraph transit instrs0 graphSearch0 config0 = do
         nodes' <- applyInstr instr node
         let seeds = map (withInstrs instrs') nodes'
         case graphSearch of
-            -- The graph is unfolded breadth-first by appending the new seeds to the
-            -- end of the todo list. The next seed is always taken from the
-            -- beginning of the sequence, so that all the pending seeds are unfolded
-            -- once before the new seeds are unfolded.
-            BreadthFirst -> unfoldWorker (rest <> Seq.fromList seeds) graphSearch
-            -- The graph is unfolded depth-first by putting the new seeds to the
-            -- head of the todo list.
-            DepthFirst -> unfoldWorker (Seq.fromList seeds <> rest) graphSearch
+            -- The graph is unfolded breadth-first by appending the new seeds
+            -- to the end of the todo list. The next seed is always taken from
+            -- the beginning of the sequence, so that all the pending seeds
+            -- are unfolded once before the new seeds are unfolded.
+            BreadthFirst -> unfoldWorker
+                                (rest <> Seq.fromList seeds)
+                                graphSearch
+            -- The graph is unfolded depth-first by putting the new seeds to
+            -- the head of the todo list.
+            DepthFirst -> unfoldWorker
+                              (Seq.fromList seeds <> rest)
+                              graphSearch
 
     withInstrs instrs nodes = (nodes, instrs)
 
@@ -515,7 +521,11 @@ runStrategyWithSearchOrder
     -- ^ Initial configuration
     -> m (ExecutionGraph config rule)
 runStrategyWithSearchOrder applyPrim instrs0 graphSearch0 config0 =
-    constructExecutionGraph (transitionRule applyPrim) instrs0 graphSearch0 config0
+    constructExecutionGraph
+        (transitionRule applyPrim)
+        instrs0
+        graphSearch0
+        config0
 
 {- | Construct the step-wise execution history of an 'ExecutionGraph'.
 
