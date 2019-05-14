@@ -24,11 +24,9 @@ import           Control.Monad.Extra
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.State.Strict
-                 ( MonadState, StateT, evalStateT, execStateT )
+                 ( MonadState, StateT, evalStateT )
 import           Data.Coerce
                  ( coerce )
-import           Data.Foldable
-                 ( traverse_ )
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
@@ -38,8 +36,7 @@ import           Kore.Attribute.RuleIndex
 import           System.IO
                  ( hFlush, stdout )
 import           Text.Megaparsec
-                 ( ParseErrorBundle (..), errorBundlePretty, parseMaybe,
-                 runParser )
+                 ( parseMaybe )
 
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
@@ -103,29 +100,11 @@ runRepl
     -> Simplifier ()
 runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims' initScript = do
     let mscript = unInitialScript initScript
-    newState <- maybe (pure state) parseEvalScript mscript
+    newState <- maybe (pure state) (parseEvalScript state) mscript
     replGreeting
     evalStateT (whileM repl0) newState
 
   where
-
-    parseEvalScript :: FilePath -> Simplifier (ReplState claim)
-    parseEvalScript file = do
-       contents <- liftIO $ readFile file
-       let result = runParser scriptParser file contents
-       either parseFailed executeScript result
-
-    parseFailed :: ParseErrorBundle String String -> Simplifier (ReplState claim)
-    parseFailed err = do
-        liftIO . putStrLn
-            $ "\nCouldn't parse initial script file."
-            <> "\nParser error at: "
-            <> errorBundlePretty err
-        return state
-
-    executeScript :: [ReplCommand] -> Simplifier (ReplState claim)
-    executeScript cmds =
-        execStateT (traverse_ (replInterpreter $ \_ -> return () ) cmds) state
 
     repl0 :: StateT (ReplState claim) Simplifier Bool
     repl0 = do
