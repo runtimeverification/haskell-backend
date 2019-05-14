@@ -568,7 +568,9 @@ debugPrecSOP precOut datatypeInfo (SOP sop) =
 
 instance Debug a => Debug [a] where
     debugPrec _ =
-        encloseSep Pretty.lbracket Pretty.rbracket Pretty.comma . map debug
+        Pretty.group
+        . encloseSep Pretty.lbracket Pretty.rbracket Pretty.comma
+        . map debug
 
 instance {-# OVERLAPS #-} Debug String where
     debugPrec p a = Pretty.pretty (showsPrec p a "")
@@ -637,27 +639,16 @@ instance
 
 instance (Debug k, Debug a) => Debug (Map.Map k a) where
     debugPrec precOut as =
-        parens ("Data.Map.fromList" <+> debug (Map.toList as))
-      where
-        parens
-          | precOut >= 10 = Pretty.parens
-          | otherwise     = id
+        parens (precOut >= 10) ("Data.Map.fromList" <+> debug (Map.toList as))
 
 instance Debug a => Debug (Set a) where
     debugPrec precOut as =
-        parens ("Data.Set.fromList" <+> debug (Set.toList as))
-      where
-        parens
-          | precOut >= 10 = Pretty.parens
-          | otherwise     = id
+        parens (precOut >= 10) ("Data.Set.fromList" <+> debug (Set.toList as))
 
 instance Debug a => Debug (Seq a) where
     debugPrec precOut as =
-        parens ("Data.Sequence.fromList" <+> debug (Foldable.toList as))
-      where
-        parens
-          | precOut >= 10 = Pretty.parens
-          | otherwise     = id
+        parens (precOut >= 10)
+        $ "Data.Sequence.fromList" <+> debug (Foldable.toList as)
 
 instance Debug Bool
 
