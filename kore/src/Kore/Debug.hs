@@ -614,14 +614,10 @@ instance Debug Natural where
     debugPrec _ = Pretty.pretty
 
 instance Debug Integer where
-    debugPrec _ x
-      | x < 0     = Pretty.parens (Pretty.pretty x)
-      | otherwise = Pretty.pretty x
+    debugPrec _ x = parens (x < 0) (Pretty.pretty x)
 
 instance Debug Int where
-    debugPrec _ x
-      | x < 0     = Pretty.parens (Pretty.pretty x)
-      | otherwise = Pretty.pretty x
+    debugPrec _ x = parens (x < 0) (Pretty.pretty x)
 
 instance Debug Char where
     debugPrec _ x = Pretty.squotes (Pretty.pretty x)
