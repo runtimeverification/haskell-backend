@@ -781,7 +781,7 @@ test_equalsTermsSimplification =
                     }
                 ]
         actual <- simplifyEquals
-            mockMetadataTools Map.empty (mkVar Mock.x) Mock.cf
+            Mock.metadataTools Map.empty (mkVar Mock.x) Mock.cf
         assertEqualWithExplanation "" expected actual
     , testCase "handles ambiguity" $ do
         let
@@ -818,7 +818,7 @@ test_equalsTermsSimplification =
                     )
                 ]
         actual <- simplifyEquals
-            mockMetadataTools simplifiers (mkVar Mock.x) Mock.cf
+            Mock.metadataTools simplifiers (mkVar Mock.x) Mock.cf
         assertEqualWithExplanation "" expected actual
     , testCase "handles multiple ambiguity" $ do
         let
@@ -890,7 +890,7 @@ test_equalsTermsSimplification =
                     )
                 ]
         actual <- simplifyEquals
-            mockMetadataTools simplifiers
+            Mock.metadataTools simplifiers
             (Mock.functionalConstr20 (mkVar Mock.x) (mkVar Mock.var_x_1))
             (Mock.functionalConstr20 Mock.cf Mock.cg)
         assertEqualWithExplanation "" expected actual

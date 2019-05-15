@@ -910,7 +910,7 @@ test_unificationWithAppMatchOnTop =
                     )
                 ]
         actual <- unificationWithMatchSimplifiers
-            mockMetadataTools simplifiers
+            Mock.metadataTools simplifiers
             (Mock.f (mkVar Mock.x))
             (Mock.f Mock.cf)
         assertEqualWithExplanation "" expected actual
@@ -985,7 +985,7 @@ test_unificationWithAppMatchOnTop =
                     )
                 ]
         actual <- unificationWithMatchSimplifiers
-            mockMetadataTools simplifiers
+            Mock.metadataTools simplifiers
             (Mock.functionalConstr20 (mkVar Mock.x) (mkVar Mock.var_x_1))
             (Mock.functionalConstr20 Mock.cf Mock.cg)
         assertEqualWithExplanation "" expected actual
