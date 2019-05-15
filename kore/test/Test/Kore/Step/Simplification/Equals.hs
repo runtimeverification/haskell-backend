@@ -222,9 +222,25 @@ test_equalsSimplification_Or_Pattern =
                         , predicate =
                             makeMultipleAndPredicate
                                 [ definedF
-                                , makeOrPredicate definedG definedH
+                                , definedG
                                 , makeImpliesPredicate
-                                    definedG
+                                    definedGSubstituted
+                                    (makeEqualsPredicate Mock.cf Mock.cg)
+                                , makeImpliesPredicate
+                                    definedH
+                                    (makeEqualsPredicate Mock.cf Mock.ch)
+                                ]
+                        , substitution = Substitution.unsafeWrap
+                            [(Mock.x, Mock.a)]
+                        }
+                    , Conditional
+                        { term = mkTop_
+                        , predicate =
+                            makeMultipleAndPredicate
+                                [ definedF
+                                , definedH
+                                , makeImpliesPredicate
+                                    definedGWithSubstitution
                                     (makeEqualsPredicate Mock.cf Mock.cg)
                                 , makeImpliesPredicate
                                     definedH
@@ -232,12 +248,12 @@ test_equalsSimplification_Or_Pattern =
                                 ]
                         , substitution = mempty
                         }
-                    ,  Conditional
+                    , Conditional
                         { term = mkTop_
                         , predicate =
                             makeMultipleAndPredicate
                                 [ makeNotPredicate definedF
-                                , makeNotPredicate definedG
+                                , makeNotPredicate definedGWithSubstitution
                                 , makeNotPredicate definedH
                                 ]
                         , substitution = mempty
@@ -245,10 +261,15 @@ test_equalsSimplification_Or_Pattern =
                     ]
               where
                 definedF = makeCeilPredicate Mock.cf
-                definedG =
+                definedG = makeCeilPredicate Mock.cg
+                definedGWithSubstitution =
                     makeAndPredicate
                         (makeCeilPredicate Mock.cg)
                         (makeEqualsPredicate (mkVar Mock.x) Mock.a)
+                definedGSubstituted =
+                    makeAndPredicate
+                        (makeCeilPredicate Mock.cg)
+                        (makeEqualsPredicate Mock.a Mock.a)
                 definedH = makeCeilPredicate Mock.ch
             first =
                 OrPattern.fromPatterns
@@ -288,7 +309,7 @@ test_equalsSimplification_Or_Pattern =
                     , "but instead found:"
                     , unlines (unparseToString <$> Foldable.toList actual1)
                     ]
-        assertEqual message1 expect actual1
+        assertEqualWithExplanation message1 expect actual1
         actual2 <-
             evaluateOr
                 Mock.metadataTools

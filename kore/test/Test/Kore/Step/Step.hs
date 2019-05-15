@@ -33,6 +33,8 @@ import           Kore.Predicate.Predicate as Predicate
                  makeExistsPredicate, makeFalsePredicate, makeNotPredicate,
                  makeTruePredicate )
 import qualified Kore.Step.Axiom.Matcher as Matcher
+import qualified Kore.Step.Result as Result
+                 ( mergeResults )
 import           Kore.Step.Rule
                  ( EqualityRule (..), RewriteRule (..), RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
@@ -64,13 +66,12 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 evalUnifier
-    :: BranchT Unifier a
+    :: Unifier a
     -> IO (Either UnificationOrSubstitutionError [a])
 evalUnifier =
     SMT.runSMT SMT.defaultConfig
     . evalSimplifier emptyLogger
     . Monad.Unify.runUnifier
-    . gather
 
 applyInitialConditions
     :: Predicate Variable
@@ -665,17 +666,18 @@ applyRewriteRules
     -- ^ Rewrite rule
     -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
 applyRewriteRules initial rules =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
-    $ Monad.Unify.runUnifier
-    $ Step.applyRewriteRules
-        metadataTools
-        predicateSimplifier
-        patternSimplifier
-        axiomSimplifiers
-        unificationProcedure
-        rules
-        initial
+    (fmap . fmap) Result.mergeResults
+        $ SMT.runSMT SMT.defaultConfig
+        $ evalSimplifier emptyLogger
+        $ Monad.Unify.runUnifier
+        $ Step.applyRewriteRules
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+            unificationProcedure
+            rules
+            initial
   where
     metadataTools = Mock.metadataTools
     predicateSimplifier =
@@ -1037,17 +1039,18 @@ sequenceRewriteRules
     -- ^ Rewrite rule
     -> IO (Either UnificationOrSubstitutionError (Results Variable))
 sequenceRewriteRules initial rules =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
-    $ Monad.Unify.runUnifier
-    $ Step.sequenceRewriteRules
-        metadataTools
-        predicateSimplifier
-        patternSimplifier
-        axiomSimplifiers
-        unificationProcedure
-        initial
-        rules
+    (fmap . fmap) Result.mergeResults
+        $ SMT.runSMT SMT.defaultConfig
+        $ evalSimplifier emptyLogger
+        $ Monad.Unify.runUnifier
+        $ Step.sequenceRewriteRules
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+            unificationProcedure
+            initial
+            rules
   where
     metadataTools = Mock.metadataTools
     predicateSimplifier =
@@ -1157,7 +1160,8 @@ sequenceMatchingRules
     -- ^ Rewrite rule
     -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
 sequenceMatchingRules initial rules =
-    SMT.runSMT SMT.defaultConfig
+    fmap (fmap Foldable.fold)
+    $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ Monad.Unify.runUnifier
     $ Step.sequenceRules

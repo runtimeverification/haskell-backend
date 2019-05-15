@@ -12,18 +12,19 @@ module Kore.Step.Search
     , matchWith
     ) where
 
-import Control.Error
-       ( MaybeT (..) )
-import Control.Error.Util
-       ( hushT )
-import Control.Monad.Trans.Class
-       ( lift )
-import Data.Maybe
-       ( catMaybes )
-import Data.Reflection
-       ( give )
-import Numeric.Natural
-       ( Natural )
+import           Control.Error
+                 ( MaybeT (..), nothing )
+import           Control.Error.Util
+                 ( hush )
+import qualified Control.Monad.Trans as Monad.Trans
+import           Control.Monad.Trans.Class
+                 ( lift )
+import           Data.Maybe
+                 ( catMaybes )
+import           Data.Reflection
+                 ( give )
+import           Numeric.Natural
+                 ( Natural )
 
 import           Data.Limit
                  ( Limit (..) )
@@ -32,6 +33,8 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.MultiOr as MultiOr
+                 ( make, mergeAll )
 import           Kore.Internal.OrPredicate
                  ( OrPredicate )
 import           Kore.Internal.Pattern
@@ -42,7 +45,10 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+                 ( BranchT, PredicateSimplifier, Simplifier,
+                 TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as BranchT
+                 ( gather )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
@@ -133,8 +139,8 @@ matchWith
     -> Pattern variable
     -> MaybeT Simplifier (OrPredicate variable)
 matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
-    unifier <-
-        hushT . Monad.Unify.getUnifier
+    eitherUnifiers <-
+        Monad.Trans.lift $ Monad.Unify.runUnifier
         $ unificationProcedure
             tools
             substitutionSimplifier
@@ -143,10 +149,18 @@ matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
             t1
             t2
     let
+        maybeUnifiers :: Maybe [Predicate variable]
+        maybeUnifiers = hush eitherUnifiers
         mergeAndEvaluate
             :: Predicate variable
-            -> Simplifier (Predicate variable)
+            -> Simplifier (OrPredicate variable)
         mergeAndEvaluate predSubst = do
+            results <- BranchT.gather $ mergeAndEvaluateBranches predSubst
+            return (MultiOr.make results)
+        mergeAndEvaluateBranches
+            :: Predicate variable
+            -> BranchT Simplifier (Predicate variable)
+        mergeAndEvaluateBranches predSubst = do
             merged <-
                 mergePredicatesAndSubstitutions
                     tools
@@ -159,7 +173,8 @@ matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
                     ]
                     [ Conditional.substitution predSubst]
             evaluated <-
-                give tools
+                Monad.Trans.lift
+                $ give tools
                 $ Predicate.evaluate substitutionSimplifier simplifier
                 $ Conditional.predicate merged
             mergePredicatesAndSubstitutions
@@ -172,9 +187,15 @@ matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
                 [ Conditional.substitution merged
                 , Conditional.substitution evaluated
                 ]
-    result <- lift $ traverse mergeAndEvaluate unifier
-    guardAgainstBottom result
-    return result
+    case maybeUnifiers of
+        Nothing -> nothing
+        Just unifiers -> do
+            results <- lift $ traverse mergeAndEvaluate unifiers
+            let
+                orResults :: OrPredicate variable
+                orResults = MultiOr.mergeAll results
+            guardAgainstBottom orResults
+            return orResults
   where
     t1 = Conditional.term e1
     t2 = Conditional.term e2

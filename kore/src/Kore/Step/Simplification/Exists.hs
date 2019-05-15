@@ -22,6 +22,8 @@ import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.Internal.Conditional as Conditional
+import qualified Kore.Internal.MultiOr as MultiOr
+                 ( extractPatterns )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -33,7 +35,9 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( BranchT, PredicateSimplifier, Simplifier,
-                 TermLikeSimplifier, gather, scatter )
+                 TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as BranchT
+                 ( gather, scatter )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Substitution as Substitution
@@ -174,7 +178,7 @@ makeEvaluate
     axiomIdToSimplifier
     variable
     original
-  = fmap OrPattern.fromPatterns $ gather $ do
+  = fmap OrPattern.fromPatterns $ BranchT.gather $ do
     normalized <- normalize original
     let Conditional { substitution = normalizedSubstitution } = normalized
     case splitSubstitution variable normalizedSubstitution of
@@ -249,8 +253,8 @@ makeEvaluateBoundLeft
                         Syntax.Predicate.substitute boundSubstitution
                         $ Conditional.predicate normalized
                     }
-        results <- Monad.Trans.lift $ simplify' substituted
-        scatter results
+        orPattern <- Monad.Trans.lift $ simplify' substituted
+        BranchT.scatter (MultiOr.extractPatterns orPattern)
   where
     simplify' =
         Pattern.simplify

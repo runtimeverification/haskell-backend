@@ -19,6 +19,9 @@ import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Internal.OrPattern
+                 ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data as AttemptedAxiom
@@ -35,11 +38,15 @@ import           Kore.Step.Rule
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as BranchT
+                 ( gather )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.Step
                  ( UnificationProcedure (..) )
 import qualified Kore.Step.Step as Step
 import qualified Kore.Syntax.Pattern as Pure
+import           Kore.Unification.Error
+                 ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse )
@@ -87,10 +94,17 @@ equalityRuleEvaluator
         Left _        -> notApplicable
         Right results -> AttemptedAxiom.Applied <$> simplifyResults results
   where
+    notApplicable :: Simplifier (AttemptedAxiom variable)
     notApplicable = return AttemptedAxiom.NotApplicable
 
+    unificationProcedure :: UnificationProcedure
     unificationProcedure = UnificationProcedure matchAsUnification
 
+    applyRule
+        :: TermLike variable
+        -> RulePattern Variable
+        -> Simplifier
+            (Either UnificationOrSubstitutionError [Step.Results variable])
     applyRule patt' rule' =
         Monad.Unify.runUnifier $
         Step.applyRulesInParallel
@@ -102,22 +116,32 @@ equalityRuleEvaluator
             [RulePattern.mapVariables fromVariable rule']
             (Pattern.fromTermLike patt')
 
+    simplifyOrPatterns
+        :: [OrPattern variable] -> Simplifier (OrPattern variable)
     simplifyOrPatterns unsimplified =
-        MultiOr.filterOr
-        <$> traverse simplifyPattern unsimplified
+        MultiOr.mergeAll
+        <$> traverse
+            simplifyPattern
+            (MultiOr.extractPatterns (MultiOr.mergeAll unsimplified))
 
-    simplifyPattern config =
-        Pattern.simplifyPredicate
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            config
+    simplifyPattern
+        :: Pattern.Pattern variable
+        -- ^ The condition to be evaluated.
+        -> Simplifier (OrPattern variable)
+    simplifyPattern config = do
+        patterns <- BranchT.gather
+            $ Pattern.simplifyPredicate
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+                config
+        return (OrPattern.fromPatterns patterns)
 
     simplifyResults
-        :: Step.Results variable
+        :: [Step.Results variable]
         -> Simplifier (AttemptedAxiomResults variable)
     simplifyResults stepResults = do
-        results <- simplifyOrPatterns $ Step.gatherResults stepResults
-        remainders <- simplifyOrPatterns $ Step.remainders stepResults
+        results <- simplifyOrPatterns $ map Step.gatherResults stepResults
+        remainders <- simplifyOrPatterns $ map Step.remainders stepResults
         return AttemptedAxiomResults { results, remainders }

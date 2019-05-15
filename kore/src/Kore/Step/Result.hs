@@ -10,6 +10,7 @@ module Kore.Step.Result
     , remainder
     , withoutRemainders
     , gatherResults
+    , mergeResults
     , transitionResult
     , transitionResults
     , mapRules
@@ -73,6 +74,12 @@ instance (Ord config, TopBottom config) => Semigroup (Results rule config) where
 instance (Ord config, TopBottom config) => Monoid (Results rule config) where
     mempty = Results { results = mempty, remainders = mempty }
     mappend = (<>)
+
+mergeResults
+    :: (Ord config, TopBottom config)
+    => [Results rule config]
+    -> Results rule config
+mergeResults = Foldable.fold
 
 {- | Take the 'Results' without any 'remainders'.
  -}
