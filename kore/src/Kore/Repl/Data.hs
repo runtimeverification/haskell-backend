@@ -42,7 +42,7 @@ import qualified Control.Lens.TH.Rules as Lens
 import           Control.Monad
                  ( join )
 import           Control.Monad.State.Strict
-                 ( MonadState, get, modify )
+                 ( MonadState, get, gets, modify )
 import           Control.Monad.Trans.Accum
                  ( AccumT )
 import qualified Control.Monad.Trans.Accum as Monad.Accum
@@ -269,7 +269,7 @@ data ReplState claim = ReplState
     -- ^ List of claims to be proven
     , claim    :: claim
     -- ^ Currently focused claim in the repl
-    , graph    :: ExecutionGraph
+    , graph    :: Map claim ExecutionGraph
     -- ^ Execution graph for the current proof; initialized with root = claim
     , node     :: ReplNode
     -- ^ Currently selected node in the graph; initialized with node = root
@@ -391,7 +391,7 @@ initializeProofFor
     -> m ()
 initializeProofFor claim =
     modify (\st -> st
-        { graph  = emptyExecutionGraph claim
+        { graph  = Map.singleton claim (emptyExecutionGraph claim)
         , claim  = claim
         , node   = ReplNode 0
         , labels = Map.empty
@@ -400,15 +400,24 @@ initializeProofFor claim =
 -- | Get the internal representation of the execution graph.
 getInnerGraph
     :: MonadState (ReplState claim) m
+    => Claim claim
+    => Ord claim
     => m InnerGraph
-getInnerGraph = Strategy.graph . graph <$> get
+getInnerGraph = do
+    cl <- gets claim
+    gph <- gets graph
+    let mgraph = Map.lookup cl gph
+    return . Strategy.graph $ maybe (emptyExecutionGraph cl) id mgraph
 
 -- | Update the internal representation of the execution graph.
 updateInnerGraph
     :: MonadState (ReplState claim) m
     => InnerGraph
     -> m ()
-updateInnerGraph ig = lensGraph Lens.%= updateInnerGraph0 ig
+updateInnerGraph ig = do
+    cl <- gets claim
+--    lensGraph Lens.%= updateInnerGraph0 ig
+    return ()
   where
     updateInnerGraph0 :: InnerGraph -> ExecutionGraph -> ExecutionGraph
     updateInnerGraph0 graph Strategy.ExecutionGraph { root } =
