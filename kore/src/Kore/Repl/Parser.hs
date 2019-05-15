@@ -16,9 +16,11 @@ import           Control.Applicative
 import qualified Data.Foldable as Foldable
 import           Data.Functor
                  ( void, ($>) )
+import           Data.List
+                 ( nub )
 import           Text.Megaparsec
-                 ( Parsec, eof, many, manyTill, noneOf, oneOf, option,
-                 optional, try )
+                 ( Parsec, customFailure, eof, many, manyTill, noneOf, oneOf,
+                 option, optional, try )
 import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
@@ -49,7 +51,7 @@ commandParser = commandParser0 eof
 
 commandParser0 :: Parser () -> Parser ReplCommand
 commandParser0 endParser =
-    alias endParser <|> commandParserExceptAlias endParser <|> tryAlias
+    alias <|> commandParserExceptAlias endParser <|> tryAlias
 
 commandParserExceptAlias :: Parser () -> Parser ReplCommand
 commandParserExceptAlias endParser = do
@@ -204,16 +206,23 @@ appendTo cmd =
     <$$> literal ">>"
     *> quotedOrWordWithout ""
 
-alias :: Parser () -> Parser ReplCommand
-alias endParser = do
+alias :: Parser ReplCommand
+alias = do
     literal "alias"
     name <- word
+    arguments <- many $ wordWithout "="
+    if nub arguments /= arguments
+        then customFailure "Error when parsing alias: duplicate argument name."
+        else pure ()
     literal "="
-    cmd  <- commandParserExceptAlias endParser
-    return . Alias $ ReplAlias name cmd
+    command <- some L.charLiteral
+    return . Alias $ AliasDefinition { name, arguments, command }
 
 tryAlias :: Parser ReplCommand
-tryAlias = TryAlias <$$> word
+tryAlias = do
+    name <- some (noneOf [' ']) <* Char.space
+    arguments <- many (QuotedArgument <$> quotedWord <|> SimpleArgument <$> wordWithout "")
+    return . TryAlias $ ReplAlias { name, arguments }
 
 infixr 2 <$$>
 infixr 1 <**>
