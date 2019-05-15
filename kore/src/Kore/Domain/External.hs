@@ -16,21 +16,22 @@ module Kore.Domain.External
     , Domain (..)
     ) where
 
-import Control.DeepSeq
-       ( NFData )
-import Data.Deriving
-       ( deriveEq1, deriveOrd1, deriveShow1 )
-import Data.Functor.Const
-       ( Const )
-import Data.Hashable
-       ( Hashable )
-import Data.Void
-       ( Void )
-import GHC.Generics
-       ( Generic )
+import           Control.DeepSeq
+                 ( NFData )
+import           Data.Deriving
+                 ( deriveEq1, deriveOrd1, deriveShow1 )
+import           Data.Functor.Const
+                 ( Const )
+import           Data.Hashable
+                 ( Hashable )
+import           Data.Void
+                 ( Void )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Control.Lens.TH.Rules
        ( makeLenses )
+import Kore.Debug
 import Kore.Domain.Class
 import Kore.Syntax
 import Kore.Unparser
@@ -40,7 +41,7 @@ data External child =
         { domainValueSort :: Sort
         , domainValueChild :: CommonPattern (Const Void)
         }
-    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
+    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 makeLenses ''External
 deriveEq1 ''External
@@ -50,6 +51,12 @@ deriveShow1 ''External
 instance Hashable (External child)
 
 instance NFData (External child)
+
+instance SOP.Generic (External child)
+
+instance SOP.HasDatatypeInfo (External child)
+
+instance Debug (External child)
 
 instance Unparse (External child) where
     unparse (External { domainValueSort, domainValueChild }) =

@@ -28,9 +28,10 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Kore.Debug
 import Kore.Unparser
 
 {- | @Id@ is a Kore identifier.
@@ -43,7 +44,7 @@ data Id = Id
     { getId      :: !Text
     , idLocation :: !AstLocation
     }
-    deriving (Show, Generic)
+    deriving (Show, GHC.Generic)
 
 -- | 'Ord' ignores the 'AstLocation'
 instance Ord Id where
@@ -58,6 +59,12 @@ instance Eq Id where
 instance Hashable Id
 
 instance NFData Id
+
+instance SOP.Generic Id
+
+instance SOP.HasDatatypeInfo Id
+
+instance Debug Id
 
 instance IsString Id where
     fromString = noLocationId . fromString
@@ -100,10 +107,17 @@ data AstLocation
     | AstLocationFile FileLocation
     | AstLocationUnknown
     -- ^ This should not be used and should be eliminated in further releases
-    deriving (Eq, Show, Generic)
+    deriving (Eq, Show, GHC.Generic)
 
 instance Hashable AstLocation
+
 instance NFData AstLocation
+
+instance SOP.Generic AstLocation
+
+instance SOP.HasDatatypeInfo AstLocation
+
+instance Debug AstLocation
 
 {-| 'prettyPrintAstLocation' displays an `AstLocation` in a way that's
 (sort of) user friendly.
@@ -131,7 +145,14 @@ data FileLocation = FileLocation
     , line     :: Int
     , column   :: Int
     }
-    deriving (Eq, Show, Generic)
+    deriving (Eq, Show, GHC.Generic)
 
 instance Hashable FileLocation
+
 instance NFData FileLocation
+
+instance SOP.Generic FileLocation
+
+instance SOP.HasDatatypeInfo FileLocation
+
+instance Debug FileLocation
