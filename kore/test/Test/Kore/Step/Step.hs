@@ -33,6 +33,8 @@ import           Kore.Predicate.Predicate as Predicate
                  makeExistsPredicate, makeFalsePredicate, makeNotPredicate,
                  makeTruePredicate )
 import qualified Kore.Step.Axiom.Matcher as Matcher
+import qualified Kore.Step.Result as Result
+                 ( mergeResults )
 import           Kore.Step.Rule
                  ( EqualityRule (..), RewriteRule (..), RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
@@ -664,9 +666,9 @@ applyRewriteRules
     -- ^ Rewrite rule
     -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
 applyRewriteRules initial rules =
-    fmap Foldable.fold
-        <$> SMT.runSMT SMT.defaultConfig
-        ( evalSimplifier emptyLogger
+    (fmap . fmap) Result.mergeResults
+        $ SMT.runSMT SMT.defaultConfig
+        $ evalSimplifier emptyLogger
         $ Monad.Unify.runUnifier
         $ Step.applyRewriteRules
             metadataTools
@@ -676,7 +678,6 @@ applyRewriteRules initial rules =
             unificationProcedure
             rules
             initial
-        )
   where
     metadataTools = Mock.metadataTools
     predicateSimplifier =
@@ -1038,9 +1039,9 @@ sequenceRewriteRules
     -- ^ Rewrite rule
     -> IO (Either UnificationOrSubstitutionError (Results Variable))
 sequenceRewriteRules initial rules =
-    fmap Foldable.fold
-    <$> SMT.runSMT SMT.defaultConfig
-        ( evalSimplifier emptyLogger
+    (fmap . fmap) Result.mergeResults
+        $ SMT.runSMT SMT.defaultConfig
+        $ evalSimplifier emptyLogger
         $ Monad.Unify.runUnifier
         $ Step.sequenceRewriteRules
             metadataTools
@@ -1050,7 +1051,6 @@ sequenceRewriteRules initial rules =
             unificationProcedure
             initial
             rules
-        )
   where
     metadataTools = Mock.metadataTools
     predicateSimplifier =

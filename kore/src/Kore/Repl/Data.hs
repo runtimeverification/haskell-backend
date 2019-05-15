@@ -84,9 +84,7 @@ import           Kore.Internal.TermLike
                  ( TermLike )
 import           Kore.OnePath.StrategyPattern
 import           Kore.OnePath.Verification
-                 ( Axiom (..) )
-import           Kore.OnePath.Verification
-                 ( Claim )
+                 ( Axiom (..), Claim )
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
 import           Kore.Step.Simplification.Data
@@ -95,7 +93,7 @@ import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unification.Unify
-                 ( MonadUnify, UnifierT (UnifierT) )
+                 ( MonadUnify, UnifierTT (UnifierTT) )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( unparse )
@@ -298,11 +296,11 @@ shouldStore =
 -- Type synonym for the actual type of the execution graph.
 type ExecutionGraph =
     Strategy.ExecutionGraph
-        (CommonStrategyPattern)
+        CommonStrategyPattern
         (RewriteRule Variable)
 
 type InnerGraph =
-    Gr (CommonStrategyPattern) (Seq (RewriteRule Variable))
+    Gr CommonStrategyPattern (Seq (RewriteRule Variable))
 
 -- | State for the rep.
 data ReplState claim = ReplState
@@ -347,7 +345,7 @@ data ReplState claim = ReplState
 -- See 'runUnifierWithExplanation'.
 newtype UnifierWithExplanation a =
     UnifierWithExplanation
-        { getUnifierWithExplanation :: UnifierT (AccumT (First (Doc ()))) a }
+        { getUnifierWithExplanation :: UnifierTT (AccumT (First (Doc ()))) a }
   deriving (Alternative, Applicative, Functor, Monad)
 
 instance MonadUnify UnifierWithExplanation where
@@ -367,7 +365,7 @@ instance MonadUnify UnifierWithExplanation where
 
     explainBottom info first second =
         UnifierWithExplanation
-        . UnifierT
+        . UnifierTT
         . Monad.Trans.lift
         . Monad.Accum.add
         . First
@@ -389,11 +387,10 @@ runUnifierWithExplanation (UnifierWithExplanation unifier)
   where
     unificationResults :: Simplifier (Maybe ([a], First (Doc ())))
     unificationResults =
-        fmap hush
-        $ Monad.Unify.runUnifierT
+        hush
+        <$> Monad.Unify.runUnifierT
             (\accum -> runAccumT accum mempty)
             unifier
-    -- accumRunner :: AccumT m [a] -> m ()
     unificationExplanations :: Simplifier (Maybe (First (Doc ())))
     unificationExplanations =
         fmap (fmap snd) unificationResults
@@ -424,7 +421,7 @@ getAxiomByIndex
     :: MonadState (ReplState claim) m
     => Int
     -- ^ index in the axioms list
-    -> m (Maybe (Axiom))
+    -> m (Maybe Axiom)
 getAxiomByIndex index = Lens.preuse $ lensAxioms . Lens.element index
 
 -- | Transforms an axiom or claim index into an axiom or claim if they could be
@@ -432,7 +429,7 @@ getAxiomByIndex index = Lens.preuse $ lensAxioms . Lens.element index
 getAxiomOrClaimByIndex
     :: MonadState (ReplState claim) m
     => Either AxiomIndex ClaimIndex
-    -> m (Maybe (Either (Axiom) claim))
+    -> m (Maybe (Either Axiom claim))
 getAxiomOrClaimByIndex =
     fmap bisequence
         . bitraverse

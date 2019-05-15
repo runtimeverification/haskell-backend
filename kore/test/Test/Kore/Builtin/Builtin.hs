@@ -24,7 +24,6 @@ import           Control.Concurrent.MVar
 import qualified Control.Lens as Lens
 import           Control.Monad.Reader
                  ( runReaderT )
-import qualified Data.Foldable as Foldable
 import           Data.Function
                  ( (&) )
 import           Data.Map
@@ -56,6 +55,8 @@ import           Kore.Internal.TermLike
 import           Kore.Parser
                  ( parseKorePattern )
 import           Kore.Step.Axiom.Data
+import qualified Kore.Step.Result as Result
+                 ( mergeResults )
 import           Kore.Step.Rule
                  ( RewriteRule )
 import           Kore.Step.Simplification.Data
@@ -241,7 +242,7 @@ runStepResultWith solver configuration axiom =
                 (Step.UnificationProcedure Unification.unificationProcedure)
                 [axiom]
                 configuration
-    in runReaderT (SMT.getSMT (fmap Foldable.fold <$> smt)) solver
+    in runReaderT (SMT.getSMT (fmap Result.mergeResults <$> smt)) solver
 
 
 -- | Test unparsing internalized patterns.

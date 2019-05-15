@@ -180,8 +180,8 @@ expectBuiltinMap
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m (Builtin variable)
-expectBuiltinMap ctx _map =
-    case _map of
+expectBuiltinMap ctx mapPattern =
+    case mapPattern of
         DV_ _ domain ->
             case domain of
                 Domain.BuiltinMap Domain.InternalMap { builtinMapChild } ->

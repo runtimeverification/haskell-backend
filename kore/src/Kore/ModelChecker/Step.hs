@@ -270,7 +270,7 @@ transitionRule
                             GoalLHS
                             GoalRemLHS
                 StepResult.transitionResults
-                    (mapConfigs $ mapRules (Foldable.fold results))
+                    (mapConfigs $ mapRules (StepResult.mergeResults results))
 
 defaultOneStepStrategy
     :: patt

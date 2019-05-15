@@ -85,7 +85,7 @@ unificationProcedure
                 axiomIdToSimplifier
                 p1
                 p2
-    pat@Conditional { term, predicate, substitution } <- getUnifiedTerm
+    pat@Conditional { term } <- getUnifiedTerm
     if Conditional.isBottom pat
         then empty
         else Monad.Unify.liftBranchedSimplifier $ do
@@ -104,11 +104,7 @@ unificationProcedure
                         simplifier
                         axiomIdToSimplifier
                     )
-                    Conditional
-                        { term = ()
-                        , predicate
-                        , substitution
-                        }
+                    (Conditional.withoutTerm pat)
                     orCeil
             BranchT.scatter (MultiOr.extractPatterns orResult)
   where

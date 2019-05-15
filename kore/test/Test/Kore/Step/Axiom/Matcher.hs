@@ -891,6 +891,7 @@ test_unificationWithAppMatchOnTop =
                     }
                 ]
             sortVar = SortVariableSort (SortVariable (testId "S"))
+            -- Ceil branches, which makes matching ambiguous.
             simplifiers = axiomPatternsToEvaluators $ Map.fromList
                 [   (   AxiomIdentifier.Ceil
                             (AxiomIdentifier.Application Mock.cfId)
@@ -950,6 +951,7 @@ test_unificationWithAppMatchOnTop =
                     }
                 ]
             sortVar = SortVariableSort (SortVariable (testId "S"))
+            -- Ceil branches, which makes matching ambiguous.
             simplifiers = axiomPatternsToEvaluators $ Map.fromList
                 [   (   AxiomIdentifier.Ceil
                             (AxiomIdentifier.Application Mock.cfId)

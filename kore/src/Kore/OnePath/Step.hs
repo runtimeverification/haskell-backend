@@ -244,7 +244,8 @@ transitionRule
                         Result.traverseConfigs
                             (pure . RewritePattern)
                             checkRemainder
-                results' <- traverseConfigs (mapRules (Foldable.fold results))
+                results' <-
+                    traverseConfigs (mapRules (Result.mergeResults results))
                 Result.transitionResults results'
 
     transitionRemoveDestination

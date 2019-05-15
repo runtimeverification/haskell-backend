@@ -42,6 +42,8 @@ import           Kore.Internal.Pattern
                  ( Pattern )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Result as Result
+                 ( mergeResults )
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern, isCoolingRule,
                  isHeatingRule, isNormalRule )
@@ -57,6 +59,7 @@ import           Kore.Syntax.Variable
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
+
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}
@@ -140,7 +143,7 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                     ]
             Right results ->
                 Foldable.asum
-                    (pure <$> Step.gatherResults (Foldable.fold results))
+                    (pure <$> Step.gatherResults (Result.mergeResults results))
 
 
 {- | A strategy that applies all the rewrites in parallel.
