@@ -19,8 +19,6 @@ import           Prelude hiding
 
 import           Kore.Attribute.Hook
                  ( Hook )
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
 import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.Map as Map
 import           Kore.IndexedModule.MetadataTools
@@ -44,8 +42,6 @@ import           Test.Kore.Builtin.Int
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.Set as Test.Set
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.SMT
 import           Test.Tasty.HUnit.Extensions
@@ -325,18 +321,8 @@ test_isBuiltin =
             (not (Map.isSymbolUnit mockHookTools Mock.concatMapSymbol))
     ]
 
-mockMetadataTools :: SmtMetadataTools StepperAttributes
-mockMetadataTools =
-    Mock.makeMetadataTools
-        Mock.attributesMapping
-        Mock.headTypeMapping
-        Mock.sortAttributesMapping
-        Mock.subsorts
-        Mock.headSortsMapping
-        Mock.smtDeclarations
-
 mockHookTools :: SmtMetadataTools Hook
-mockHookTools = StepperAttributes.hook <$> mockMetadataTools
+mockHookTools = StepperAttributes.hook <$> Mock.metadataTools
 
 -- | Construct a pattern for a map which may have symbolic keys.
 asSymbolicPattern

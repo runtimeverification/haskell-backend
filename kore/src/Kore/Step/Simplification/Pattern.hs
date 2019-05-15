@@ -15,6 +15,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Internal.Pattern as Pattern
@@ -58,7 +59,7 @@ simplify
     Conditional {term, predicate, substitution}
   = do
     simplifiedTerm <- simplifyTerm' term
-    traverse
+    OrPattern.filterOr <$> traverse
         (give tools $ Pattern.mergeWithPredicate
             tools
             substitutionSimplifier

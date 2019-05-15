@@ -32,8 +32,6 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
@@ -90,7 +88,7 @@ test_simplify =
         -> TestTree
     simplifies original expected message =
         testCase message $ do
-            actual <- simplify mockMetadataTools (makeExists Mock.x original)
+            actual <- simplify Mock.metadataTools (makeExists Mock.x original)
             assertEqualWithExplanation "expected simplification"
                 (OrPattern.fromPatterns expected) actual
 
@@ -100,7 +98,7 @@ test_makeEvaluate =
         [ testCase "Top" $ do
             let expect = OrPattern.fromPatterns [ Pattern.top ]
             actual <-
-                makeEvaluate mockMetadataTools
+                makeEvaluate Mock.metadataTools
                     Mock.x
                     (Pattern.top :: Pattern Variable)
             assertEqualWithExplanation "" expect actual
@@ -108,7 +106,7 @@ test_makeEvaluate =
         , testCase " Bottom" $ do
             let expect = OrPattern.fromPatterns []
             actual <-
-                makeEvaluate mockMetadataTools
+                makeEvaluate Mock.metadataTools
                     Mock.x
                     (Pattern.bottom :: Pattern Variable)
             assertEqualWithExplanation "" expect actual
@@ -128,7 +126,7 @@ test_makeEvaluate =
                         }
                     ]
         actual <-
-            makeEvaluate mockMetadataTools
+            makeEvaluate Mock.metadataTools
                 Mock.x
                 Conditional
                     { term = Mock.f (mkVar Mock.x)
@@ -151,7 +149,7 @@ test_makeEvaluate =
                         }
                     ]
         actual <-
-            makeEvaluate mockMetadataTools
+            makeEvaluate Mock.metadataTools
                 Mock.x
                 Conditional
                     { term = fOfA
@@ -173,7 +171,7 @@ test_makeEvaluate =
                         }
                     ]
         actual <-
-            makeEvaluate mockMetadataTools
+            makeEvaluate Mock.metadataTools
                 Mock.x
                 Conditional
                     { term = fOfX
@@ -196,7 +194,7 @@ test_makeEvaluate =
                         }
                     ]
         actual <-
-            makeEvaluate mockMetadataTools
+            makeEvaluate Mock.metadataTools
                 Mock.x
                 Conditional
                     { term = fOfA
@@ -220,7 +218,7 @@ test_makeEvaluate =
                         }
                     ]
         actual <-
-            makeEvaluate mockMetadataTools
+            makeEvaluate Mock.metadataTools
                 Mock.x
                 Conditional
                     { term = fOfX
@@ -234,7 +232,7 @@ test_makeEvaluate =
         --    = top.s
         let expect = OrPattern.fromPatterns [ Pattern.top ]
         actual <-
-            makeEvaluate mockMetadataTools
+            makeEvaluate Mock.metadataTools
                 Mock.x
                 Conditional
                     { term = mkTop_
@@ -248,16 +246,6 @@ test_makeEvaluate =
     fOfX = Mock.f (mkVar Mock.x)
     gOfA = Mock.g Mock.a
     hOfA = Mock.h Mock.a
-
-mockMetadataTools :: SmtMetadataTools StepperAttributes
-mockMetadataTools =
-    Mock.makeMetadataTools
-        Mock.attributesMapping
-        Mock.headTypeMapping
-        Mock.sortAttributesMapping
-        Mock.subsorts
-        Mock.headSortsMapping
-        Mock.smtDeclarations
 
 makeExists
     :: Ord variable
