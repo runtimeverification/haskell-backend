@@ -25,6 +25,8 @@ import           Control.Monad
                  ( when )
 import           Data.Function
                  ( (&) )
+import           Data.List
+                 ( intercalate )
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
@@ -44,7 +46,8 @@ import           Development.GitRev
 import           Options.Applicative
                  ( InfoMod, Parser, argument, disabled, execParser, flag,
                  flag', help, helper, hidden, info, internal, long, metavar,
-                 strOption, switch, (<**>), (<|>) )
+                 option, readerError, str, strOption, switch, value, (<**>),
+                 (<|>) )
 import           System.Clock
                  ( Clock (Monotonic), diffTimeSpec, getTime )
 import           System.IO
@@ -64,6 +67,8 @@ import           Kore.IndexedModule.IndexedModule
                  makeIndexedModuleAttributesNull, mapIndexedModulePatterns )
 import           Kore.Parser
                  ( ParsedPattern, parseKoreDefinition )
+import           Kore.Step.Strategy
+                 ( GraphSearchOrder (..) )
 import           Kore.Syntax
 import           Kore.Syntax.Definition
                  ( ModuleName (..), ParsedDefinition, getModuleNameForError )
@@ -77,6 +82,8 @@ data KoreProveOptions =
         -- ^ Name of file containing the spec to be proven
         , specMainModule :: !ModuleName
         -- ^ The main module of the spec to be proven
+        , graphSearch :: GraphSearchOrder
+        -- ^ Search order of the execution graph
         , bmc :: !Bool
         -- ^ Whether to use bounded model checker
         }
@@ -97,9 +104,37 @@ parseKoreProveOptions =
             <> help "The name of the main module in the spec to be proven."
             )
         )
+    <*> parseGraphSearch
     <*> switch
         ( long "bmc"
         <> help "Whether to use the bounded model checker." )
+  where
+    parseGraphSearch =
+        option readGraphSearch
+            (  metavar "GRAPH_SEARCH"
+            <> long "graph-search"
+            <> value BreadthFirst
+            <> help "Search order of the execution graph. \
+                    \Either breadth-first or depth-first. \
+                    \Default is breadth-first."
+            )
+      where
+        searchOrders =
+            [ ("breadth-first", BreadthFirst)
+            , ("depth-first", DepthFirst)
+            ]
+        readGraphSearch = do
+            input <- str
+            let found = lookup input searchOrders
+            case found of
+                Just searchOrder -> pure searchOrder
+                Nothing ->
+                    let
+                        unknown = "Unknown search order '" ++ input ++ "'. "
+                        names = intercalate ", " (fst <$> searchOrders)
+                        known = "Known search order are: " ++ names
+                    in
+                        readerError (unknown ++ known)
 
 {- | Record Type containing common command-line arguments for each executable in
 the project -}
