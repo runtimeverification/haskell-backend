@@ -180,18 +180,17 @@ expectBuiltinMap
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m (Builtin variable)
-expectBuiltinMap ctx _map =
-    do
-        case _map of
-            DV_ _ domain ->
-                case domain of
-                    Domain.BuiltinMap Domain.InternalMap { builtinMapChild } ->
-                        return builtinMapChild
-                    _ ->
-                        Builtin.verifierBug
-                        $ Text.unpack ctx ++ ": Domain value is not a map"
-            _ ->
-                empty
+expectBuiltinMap ctx mapPattern =
+    case mapPattern of
+        DV_ _ domain ->
+            case domain of
+                Domain.BuiltinMap Domain.InternalMap { builtinMapChild } ->
+                    return builtinMapChild
+                _ ->
+                    Builtin.verifierBug
+                    $ Text.unpack ctx ++ ": Domain value is not a map"
+        _ ->
+            empty
 
 returnMap
     :: (Monad m, Ord variable)
@@ -639,6 +638,7 @@ unifyEquals
         \case
             dv@(DV_ _ (Domain.BuiltinMap _)) -> unifyEquals0 dv pat1
             _ -> empty
+            -- TODO(virgil): Is this "empty" or an error?
 
     -- | Unify two concrete maps.
     unifyEqualsConcrete

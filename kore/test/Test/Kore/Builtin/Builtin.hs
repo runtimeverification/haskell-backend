@@ -55,6 +55,8 @@ import           Kore.Internal.TermLike
 import           Kore.Parser
                  ( parseKorePattern )
 import           Kore.Step.Axiom.Data
+import qualified Kore.Step.Result as Result
+                 ( mergeResults )
 import           Kore.Step.Rule
                  ( RewriteRule )
 import           Kore.Step.Simplification.Data
@@ -240,7 +242,7 @@ runStepResultWith solver configuration axiom =
                 (Step.UnificationProcedure Unification.unificationProcedure)
                 [axiom]
                 configuration
-    in runReaderT (SMT.getSMT smt) solver
+    in runReaderT (SMT.getSMT (fmap Result.mergeResults <$> smt)) solver
 
 
 -- | Test unparsing internalized patterns.
