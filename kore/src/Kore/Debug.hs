@@ -447,7 +447,33 @@ endThing name result debugResult =
         DebugResult -> " with " ++ result
         DebugNoResult -> ""
 
-encloseSep :: Doc ann -> Doc ann -> Doc ann -> [Doc ann] -> Doc ann
+
+{- | Insert a separator between the items and enclose them with the delimiters.
+
+When the document is grouped with 'Pretty.group' and fits on one line, the
+delimiters are set off by one space,
+
+@
+[ A, B, C ]
+@
+
+Otherwise, the delimiters and separators are placed at the beginning of each
+line,
+
+@
+[ A
+, B
+, C
+]
+@
+
+ -}
+encloseSep
+    :: Doc ann   -- ^ Left delimiter
+    -> Doc ann   -- ^ Right delimiter
+    -> Doc ann   -- ^ Separator
+    -> [Doc ann] -- ^ Items
+    -> Doc ann
 encloseSep ldelim rdelim sep =
     \case
         [] -> ldelim <> rdelim
