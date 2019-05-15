@@ -39,14 +39,17 @@ type Claim = OnePathRule Variable
 
 test_replInterpreter :: [TestTree]
 test_replInterpreter =
-    [ showUsage       `tests` "Showing the usage message"
-    , help            `tests` "Showing the help message"
-    , step5           `tests` "Performing 5 steps"
-    , step100         `tests` "Stepping over proof completion"
-    , makeSimpleAlias `tests` "Creating an alias with no arguments"
-    , trySimpleAlias  `tests` "Executing an existing alias with no arguments"
-    , makeAlias       `tests` "Creating an alias with arguments"
-    , tryAlias        `tests` "Executing an existing alias with arguments"
+    [ showUsage              `tests` "Showing the usage message"
+    , help                   `tests` "Showing the help message"
+    , step5                  `tests` "Performing 5 steps"
+    , step100                `tests` "Stepping over proof completion"
+    , makeSimpleAlias        `tests` "Creating an alias with no arguments"
+    , trySimpleAlias         `tests` "Executing an existing alias with no arguments"
+    , makeAlias              `tests` "Creating an alias with arguments"
+    , aliasOfExistingCommand `tests` "Create alias of existing command"
+    , aliasOfUnknownCommand  `tests` "Create alias of unknown command"
+    , recursiveAlias         `tests` "Create alias of unknown command"
+    , tryAlias               `tests` "Executing an existing alias with arguments"
     ]
 
 showUsage :: IO ()
@@ -139,6 +142,54 @@ makeAlias =
         output   `equalsOutput` ""
         continue `equals`       True
         state    `hasAlias`     alias
+
+aliasOfExistingCommand :: IO ()
+aliasOfExistingCommand =
+    let
+        axioms  = []
+        claim   = emptyClaim
+        alias   = AliasDefinition
+                    { name = "help"
+                    , arguments = ["n"]
+                    , command = "claim n"
+                    }
+        command = Alias alias
+    in do
+        Result { output, continue } <- run command axioms claim
+        output   `equalsOutput` showAliasError NameAlreadyDefined
+        continue `equals`       True
+
+aliasOfUnknownCommand :: IO ()
+aliasOfUnknownCommand =
+    let
+        axioms  = []
+        claim   = emptyClaim
+        alias   = AliasDefinition
+                    { name = "c"
+                    , arguments = ["n"]
+                    , command = "unknown n"
+                    }
+        command = Alias alias
+    in do
+        Result { output, continue } <- run command axioms claim
+        output   `equalsOutput` showAliasError UnknownCommand
+        continue `equals`       True
+
+recursiveAlias :: IO ()
+recursiveAlias =
+    let
+        axioms  = []
+        claim   = emptyClaim
+        alias   = AliasDefinition
+                    { name = "c"
+                    , arguments = ["n"]
+                    , command = "c n"
+                    }
+        command = Alias alias
+    in do
+        Result { output, continue } <- run command axioms claim
+        output   `equalsOutput` showAliasError UnknownCommand
+        continue `equals`       True
 
 tryAlias :: IO ()
 tryAlias =

@@ -13,6 +13,7 @@ module Kore.Repl.Interpreter
     , printIfNotEmpty
     , showRewriteRule
     , parseEvalScript
+    , showAliasError
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -34,6 +35,8 @@ import           Control.Monad.State.Class
 import           Control.Monad.State.Strict
                  ( MonadState, StateT (..), execStateT )
 import qualified Control.Monad.Trans.Class as Monad.Trans
+import           Control.Monad.Trans.Except
+                 ( runExceptT )
 import           Data.Coerce
                  ( Coercible, coerce )
 import           Data.Foldable
@@ -697,9 +700,14 @@ appendTo cmd file = do
 alias
     :: forall m claim
     .  MonadState (ReplState claim) m
+    => MonadWriter String m
     => AliasDefinition
     -> m ()
-alias a = addOrUpdateAlias a
+alias a = do
+    result <- runExceptT $ addOrUpdateAlias a
+    case result of
+        Left err -> putStrLn' $ showAliasError err
+        Right _  -> pure ()
 
 tryAlias
     :: forall claim
@@ -869,6 +877,12 @@ graphParams len = Graph.nonClusteredParams
                     . Rule.attributes
                     . Rule.getRewriteRule
                     $ rule
+
+showAliasError :: AliasError -> String
+showAliasError =
+    \case
+        NameAlreadyDefined -> "Error: Alias name is already defined."
+        UnknownCommand     -> "Error: Command does not exist."
 
 showAxiomOrClaim :: Int -> Attribute.RuleIndex -> Maybe String
 showAxiomOrClaim _   (RuleIndex Nothing) = Nothing

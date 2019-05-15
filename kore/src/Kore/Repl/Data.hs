@@ -16,7 +16,7 @@ module Kore.Repl.Data
     , ReplNode (..)
     , ReplState (..)
     , NodeState (..)
-    , AliasDefinition (..), ReplAlias (..), AliasArgument(..)
+    , AliasDefinition (..), ReplAlias (..), AliasArgument(..), AliasError (..)
     , getNodeState
     , InnerGraph
     , lensAxioms, lensClaims, lensClaim
@@ -41,6 +41,9 @@ import qualified Control.Lens as Lens hiding
 import qualified Control.Lens.TH.Rules as Lens
 import           Control.Monad
                  ( join )
+import           Control.Monad.Error.Class
+                 ( MonadError )
+import qualified Control.Monad.Error.Class as Monad.Error
 import           Control.Monad.State.Strict
                  ( MonadState, get, modify )
 import           Control.Monad.Trans.Accum
@@ -63,6 +66,9 @@ import           Data.Monoid
                  ( First (..) )
 import           Data.Sequence
                  ( Seq )
+import           Data.Set
+                 ( Set )
+import qualified Data.Set as Set
 import           Data.Text.Prettyprint.Doc
                  ( Doc )
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -180,6 +186,30 @@ data ReplCommand
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
+
+commandSet :: Set String
+commandSet = Set.fromList
+    [ "help"
+    , "claim"
+    , "axiom"
+    , "prove"
+    , "graph"
+    , "step"
+    , "stepf"
+    , "select"
+    , "omit"
+    , "leafs"
+    , "rule"
+    , "prec-branch"
+    , "children"
+    , "label"
+    , "try"
+    , "clear"
+    , "save-session"
+    , "alias"
+    , "load"
+    , "exit"
+    ]
 
 -- | Please remember to update this text whenever you update the ADT above.
 helpText :: String
@@ -542,10 +572,49 @@ getNodeState graph node =
 data NodeState = StuckNode | UnevaluatedNode
     deriving (Eq, Ord, Show)
 
+data AliasError
+    = NameAlreadyDefined
+    | UnknownCommand
+
 -- | Adds or updates the provided alias.
-addOrUpdateAlias :: MonadState (ReplState claim) m => AliasDefinition -> m ()
-addOrUpdateAlias alias@AliasDefinition { name } =
+addOrUpdateAlias
+    :: forall m claim
+    .  MonadState (ReplState claim) m
+    => MonadError AliasError m
+    => AliasDefinition
+    -> m ()
+addOrUpdateAlias alias@AliasDefinition { name, command } = do
+    checkNameIsNotUsed
+    checkCommandExists
     lensAliases Lens.%= Map.insert name alias
+  where
+    checkNameIsNotUsed :: m ()
+    checkNameIsNotUsed =
+        not . Set.member name <$> existingCommands
+            >>= falseToError NameAlreadyDefined
+
+    checkCommandExists :: m ()
+    checkCommandExists = do
+        cmds <- existingCommands
+        let
+            maybeCommand = listToMaybe $ words command
+            maybeExists = Set.member <$> maybeCommand <*> pure cmds
+        maybe
+            (Monad.Error.throwError UnknownCommand)
+            (falseToError UnknownCommand)
+            maybeExists
+
+    existingCommands :: m (Set String)
+    existingCommands =
+        Set.union commandSet
+        . Set.fromList
+        . Map.keys
+        <$> Lens.use lensAliases
+
+    falseToError :: AliasError -> Bool -> m ()
+    falseToError e b =
+        if b then pure () else Monad.Error.throwError e
+
 
 findAlias
     :: MonadState (ReplState claim) m
