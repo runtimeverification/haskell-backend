@@ -119,7 +119,7 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
             { axioms   = addIndexesToAxioms axioms'
             , claims   = addIndexesToClaims (length axioms') claims'
             , claim    = firstClaim
-            , graph    = firstClaimExecutionGraph
+            , graphs   = firstClaimExecutionGraph
             , node     = ReplNode (Strategy.root firstClaimExecutionGraph)
             , commands = Seq.empty
             -- TODO(Vladimir): should initialize this to the value obtained from
