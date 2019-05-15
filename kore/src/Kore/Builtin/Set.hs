@@ -48,7 +48,6 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT )
-import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
@@ -67,8 +66,6 @@ import           Data.String
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
-import           GHC.Stack
-                 ( HasCallStack )
 
 import           Kore.Attribute.Hook
                  ( Hook )
@@ -87,8 +84,10 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools, sortAttributes )
+import           Kore.Internal.Conditional
+                 ( Conditional, andCondition, withoutTerm )
 import           Kore.Internal.Pattern
-                 ( Conditional (..), Pattern )
+                 ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
@@ -97,11 +96,13 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), SimplificationType,
                  TermLikeSimplifier )
 import           Kore.Syntax.Definition
+import           Kore.Unification.Error
+                 ( errorIfConcreteIncompletelyUnified )
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
-                 ( Unparse, unparseToString )
+                 ( Unparse )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -587,10 +588,10 @@ unifyEquals
                     unifyEqualsFramed builtin1 builtin2 x
                 [x@(Var_ _), DV_ _ (Domain.BuiltinSet builtin2)] ->
                     unifyEqualsFramed builtin1 builtin2 x
-                [(App_ symbol3 [ key3 ]), x@(Var_ _)]
+                [App_ symbol3 [ key3 ], x@(Var_ _)]
                   | isSymbolElement hookTools symbol3 ->
                         unifyEqualsSelect builtin1 symbol3 key3 x
-                [x@(Var_ _), (App_ symbol3 [ key3 ])]
+                [x@(Var_ _), App_ symbol3 [ key3 ]]
                   | isSymbolElement hookTools symbol3 ->
                         unifyEqualsSelect builtin1 symbol3 key3 x
                 _ ->
@@ -636,16 +637,24 @@ unifyEquals
                     elemUnifier <- unifyEqualsChildren key1 key2
                     -- error when subunification problem returns partial result.
                     -- More details at 'errorIfIncompletelyUnified'.
-                    errorIfIncompletelyUnified key1 key2 elemUnifier
+                    errorIfConcreteIncompletelyUnified key1 key2 elemUnifier
                     setUnifier <- unifyEqualsChildren emptySetPat set2
                     -- error when subunification problem returns partial result
                     -- More details at 'errorIfIncompletelyUnified'.
-                    errorIfIncompletelyUnified emptySetPat set2 setUnifier
+                    errorIfConcreteIncompletelyUnified
+                        emptySetPat set2 setUnifier
                     -- Return the concrete set, but capture any predicates and
                     -- substitutions from unifying the element
                     -- and framing variable.
-                    let result = pure dv1 <* elemUnifier <* setUnifier
-                    return (result)
+                    let result =
+                            pure dv1
+                                -- TODO (virgil): Using withoutTerm here looks
+                                -- bad. Consider replacing that with a ceil,
+                                -- if only to remove an assumption on the
+                                -- set values (i.e. that they're functional).
+                                `andCondition` withoutTerm elemUnifier
+                                `andCondition` withoutTerm setUnifier
+                    return result
             _ -> Builtin.unifyEqualsUnsolved simplificationType dv1 app2
           where
             Domain.InternalSet
@@ -720,38 +729,3 @@ unifyEquals
             first
             second
         return Pattern.bottom
-
--- Setup: we are unifying against a concrete (no variables) pattern
--- If the unification problem is completely solved, we expect that
--- the term of the unifier is precisely the concrete pattern.
--- If not, this is probably because the term contains an and coming from
--- an incomplete unification problem.
--- An example of how this might happen is unifying a concrete pattern
--- against a non-functional term.
--- Since this case is not yet handled by the unification algorithm
--- we choose to throw an error here.
-errorIfIncompletelyUnified
-    ::  ( Monad m
-        , Ord variable
-        , Show variable
-        , SortedVariable variable
-        , Unparse variable
-        , HasCallStack
-        )
-    => TermLike variable
-    -> TermLike variable
-    -> Pattern variable
-    -> m ()
-errorIfIncompletelyUnified expected patt unifiedPattern =
-    Monad.when (term unifiedPattern /= expected)
-        $ error
-            (  "Unification problem not completely solved. "
-            ++ "When unfying against concrete pattern\n\t"
-            ++ show (unparseToString expected)
-            ++ "\nwith pattern\n\t"
-            ++ show (unparseToString patt)
-            ++ "\nExpecting to get the concrete pattern back but got\n\t"
-            ++ show (unparseToString unifiedPattern)
-            ++ "\nHandling this is currently not implemented."
-            ++ "\nPlease file an issue if this should work for you."
-            )
