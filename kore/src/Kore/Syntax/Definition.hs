@@ -17,10 +17,11 @@ import           Control.DeepSeq
 import           Data.Hashable
                  ( Hashable (..) )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Attributes
+import Kore.Debug
 import Kore.Syntax.Module
 import Kore.Syntax.Sentence
 import Kore.Unparser
@@ -40,11 +41,17 @@ data Definition (sentence :: *) =
         { definitionAttributes :: !Attributes
         , definitionModules    :: ![Module sentence]
         }
-    deriving (Eq, Functor, Foldable, Generic, Show, Traversable)
+    deriving (Eq, Functor, Foldable, GHC.Generic, Show, Traversable)
 
 instance Hashable sentence => Hashable (Definition sentence)
 
 instance NFData sentence => NFData (Definition sentence)
+
+instance SOP.Generic (Definition sentence)
+
+instance SOP.HasDatatypeInfo (Definition sentence)
+
+instance Debug sentence => Debug (Definition sentence)
 
 instance Unparse sentence => Unparse (Definition sentence) where
     unparse Definition { definitionAttributes, definitionModules } =

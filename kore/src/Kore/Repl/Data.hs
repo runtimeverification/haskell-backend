@@ -16,7 +16,7 @@ module Kore.Repl.Data
     , ReplNode (..)
     , ReplState (..)
     , NodeState (..)
-    , ReplAlias (..)
+    , AliasDefinition (..), ReplAlias (..), AliasArgument(..), AliasError (..)
     , getNodeState
     , InnerGraph
     , lensAxioms, lensClaims, lensClaim
@@ -31,7 +31,7 @@ module Kore.Repl.Data
     , getTargetNode, getInnerGraph, getConfigAt, getRuleFor
     , StepResult(..), runStepper, runStepper'
     , updateInnerGraph
-    , addOrUpdateAlias, findAlias
+    , addOrUpdateAlias, findAlias, substituteAlias
     ) where
 
 import           Control.Error
@@ -41,6 +41,9 @@ import qualified Control.Lens as Lens hiding
 import qualified Control.Lens.TH.Rules as Lens
 import           Control.Monad
                  ( join )
+import           Control.Monad.Error.Class
+                 ( MonadError )
+import qualified Control.Monad.Error.Class as Monad.Error
 import           Control.Monad.State.Strict
                  ( MonadState, get, modify )
 import           Control.Monad.Trans.Accum
@@ -63,6 +66,9 @@ import           Data.Monoid
                  ( First (..) )
 import           Data.Sequence
                  ( Seq )
+import           Data.Set
+                 ( Set )
+import qualified Data.Set as Set
 import           Data.Text.Prettyprint.Doc
                  ( Doc )
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -104,9 +110,20 @@ newtype ReplNode = ReplNode
     { unReplNode :: Graph.Node
     } deriving (Eq, Show)
 
+data AliasDefinition = AliasDefinition
+    { name      :: String
+    , arguments :: [String]
+    , command   :: String
+    } deriving (Eq, Show)
+
+data AliasArgument
+  = SimpleArgument String
+  | QuotedArgument String
+  deriving (Eq, Show)
+
 data ReplAlias = ReplAlias
-    { name    :: String
-    , command :: ReplCommand
+    { name      :: String
+    , arguments :: [AliasArgument]
     } deriving (Eq, Show)
 
 -- | List of available commands for the Repl. Note that we are always in a proof
@@ -160,15 +177,39 @@ data ReplCommand
     -- ^ Writes all commands executed in this session to a file on disk.
     | AppendTo ReplCommand FilePath
     -- ^ Appends the output of a command to a file.
-    | Alias ReplAlias
+    | Alias AliasDefinition
     -- ^ Alias a command.
-    | TryAlias String
+    | TryAlias ReplAlias
     -- ^ Try running an alias.
     | LoadScript FilePath
     -- ^ Load script from file
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
+
+commandSet :: Set String
+commandSet = Set.fromList
+    [ "help"
+    , "claim"
+    , "axiom"
+    , "prove"
+    , "graph"
+    , "step"
+    , "stepf"
+    , "select"
+    , "omit"
+    , "leafs"
+    , "rule"
+    , "prec-branch"
+    , "children"
+    , "label"
+    , "try"
+    , "clear"
+    , "save-session"
+    , "alias"
+    , "load"
+    , "exit"
+    ]
 
 -- | Please remember to update this text whenever you update the ADT above.
 helpText :: String
@@ -296,7 +337,7 @@ data ReplState claim = ReplState
     --   failures
     , labels  :: Map String ReplNode
     -- ^ Map from labels to nodes
-    , aliases :: Map String ReplAlias
+    , aliases :: Map String AliasDefinition
     -- ^ Map of command aliases
     }
 
@@ -531,10 +572,78 @@ getNodeState graph node =
 data NodeState = StuckNode | UnevaluatedNode
     deriving (Eq, Ord, Show)
 
--- | Adds or updates the provided alias.
-addOrUpdateAlias :: MonadState (ReplState claim) m => ReplAlias -> m ()
-addOrUpdateAlias alias@ReplAlias { name } =
-    lensAliases Lens.%= Map.insert name alias
+data AliasError
+    = NameAlreadyDefined
+    | UnknownCommand
 
-findAlias :: MonadState (ReplState claim) m => String -> m (Maybe ReplAlias)
+-- | Adds or updates the provided alias.
+addOrUpdateAlias
+    :: forall m claim
+    .  MonadState (ReplState claim) m
+    => MonadError AliasError m
+    => AliasDefinition
+    -> m ()
+addOrUpdateAlias alias@AliasDefinition { name, command } = do
+    checkNameIsNotUsed
+    checkCommandExists
+    lensAliases Lens.%= Map.insert name alias
+  where
+    checkNameIsNotUsed :: m ()
+    checkNameIsNotUsed =
+        not . Set.member name <$> existingCommands
+            >>= falseToError NameAlreadyDefined
+
+    checkCommandExists :: m ()
+    checkCommandExists = do
+        cmds <- existingCommands
+        let
+            maybeCommand = listToMaybe $ words command
+            maybeExists = Set.member <$> maybeCommand <*> pure cmds
+        maybe
+            (Monad.Error.throwError UnknownCommand)
+            (falseToError UnknownCommand)
+            maybeExists
+
+    existingCommands :: m (Set String)
+    existingCommands =
+        Set.union commandSet
+        . Set.fromList
+        . Map.keys
+        <$> Lens.use lensAliases
+
+    falseToError :: AliasError -> Bool -> m ()
+    falseToError e b =
+        if b then pure () else Monad.Error.throwError e
+
+
+findAlias
+    :: MonadState (ReplState claim) m
+    => String
+    -> m (Maybe AliasDefinition)
 findAlias name = Map.lookup name <$> Lens.use lensAliases
+
+substituteAlias
+    :: AliasDefinition
+    -> ReplAlias
+    -> String
+substituteAlias
+    AliasDefinition { arguments, command }
+    ReplAlias { arguments = actualArguments } =
+    unwords
+      . fmap replaceArguments
+      . words
+      $ command
+  where
+    values :: Map String AliasArgument
+    values
+      | length arguments == length actualArguments
+        = Map.fromList $ zip arguments actualArguments
+      | otherwise = Map.empty
+
+    replaceArguments :: String -> String
+    replaceArguments s = maybe s toString $ Map.lookup s values
+
+    toString :: AliasArgument -> String
+    toString = \case
+        SimpleArgument str -> str
+        QuotedArgument str -> "\"" <> str <> "\""

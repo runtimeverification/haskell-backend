@@ -21,21 +21,28 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Attributes
+import Kore.Debug
 import Kore.Unparser
 
 {- | 'ModuleName' corresponds to the @module-name@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
 newtype ModuleName = ModuleName { getModuleName :: Text }
-    deriving (Eq, Generic, IsString, Ord, Show)
+    deriving (Eq, GHC.Generic, IsString, Ord, Show)
 
 instance Hashable ModuleName
 
 instance NFData ModuleName
+
+instance SOP.Generic ModuleName
+
+instance SOP.HasDatatypeInfo ModuleName
+
+instance Debug ModuleName
 
 instance Unparse ModuleName where
     unparse = Pretty.pretty . getModuleName
@@ -58,11 +65,17 @@ data Module (sentence :: *) =
         , moduleSentences  :: ![sentence]
         , moduleAttributes :: !Attributes
         }
-    deriving (Eq, Functor, Foldable, Generic, Show, Traversable)
+    deriving (Eq, Functor, Foldable, GHC.Generic, Show, Traversable)
 
 instance Hashable sentence => Hashable (Module sentence)
 
 instance NFData sentence => NFData (Module sentence)
+
+instance SOP.Generic (Module sentence)
+
+instance SOP.HasDatatypeInfo (Module sentence)
+
+instance Debug sentence => Debug (Module sentence)
 
 instance Unparse sentence => Unparse (Module sentence) where
     unparse

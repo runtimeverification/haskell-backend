@@ -33,6 +33,7 @@ import           Data.Void
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Debug
 import Kore.Sort
 import Kore.Syntax.And
 import Kore.Syntax.Application
@@ -110,6 +111,12 @@ instance
     {-# INLINE showsPrec #-}
 
 instance SOP.Generic (PatternF domain variable child)
+
+instance SOP.HasDatatypeInfo (PatternF domain variable child)
+
+instance
+    (Debug (domain child), Debug variable, Debug child) =>
+    Debug (PatternF domain variable child)
 
 instance
     (Hashable child, Hashable variable, Hashable (domain child)) =>

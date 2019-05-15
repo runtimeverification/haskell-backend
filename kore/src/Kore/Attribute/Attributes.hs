@@ -21,10 +21,12 @@ import           Data.Hashable
                  ( Hashable )
 import           Data.Text
                  ( Text )
+import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Null as Attribute
                  ( Null )
+import           Kore.Debug
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Syntax
 import           Kore.Unparser
@@ -70,6 +72,12 @@ newtype Attributes =
 instance Hashable Attributes
 
 instance NFData Attributes
+
+instance SOP.Generic Attributes
+
+instance SOP.HasDatatypeInfo Attributes
+
+instance Debug Attributes
 
 instance Unparse Attributes where
     unparse = attributes . getAttributes

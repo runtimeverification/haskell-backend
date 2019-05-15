@@ -45,12 +45,13 @@ import           Data.Hashable
 import           Data.Maybe
 import           Data.Void
                  ( Void )
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
                  ( Pattern )
+import           Kore.Debug
 import           Kore.Syntax.Bottom
 import           Kore.Syntax.PatternF
                  ( PatternF (..) )
@@ -79,7 +80,7 @@ newtype Pattern
   =
     Pattern
         { getPattern :: Cofree (PatternF domain variable) annotation }
-    deriving (Foldable, Functor, Generic, Traversable)
+    deriving (Foldable, Functor, GHC.Generic, Traversable)
 
 instance
     ( Eq variable , Eq1 domain, Functor domain ) =>
@@ -138,6 +139,19 @@ instance
     rnf (Recursive.project -> annotation :< pat) =
         rnf annotation `seq` rnf pat `seq` ()
 
+instance SOP.Generic (Pattern domain variable annotation)
+
+instance SOP.HasDatatypeInfo (Pattern domain variable annotation)
+
+instance
+    ( Debug annotation
+    , Debug variable
+    , Debug (domain child)
+    , Functor domain
+    , child ~ Cofree (PatternF domain variable) annotation
+    ) =>
+    Debug (Pattern domain variable annotation)
+
 instance
     ( Functor domain
     , SortedVariable variable, Unparse variable
@@ -148,7 +162,6 @@ instance
   where
     unparse (Recursive.project -> _ :< pat) = unparse pat
     unparse2 (Recursive.project -> _ :< pat) = unparse2 pat
-
 
 type instance Base (Pattern domain variable annotation) =
     CofreeF (PatternF domain variable) annotation
