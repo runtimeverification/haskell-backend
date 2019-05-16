@@ -40,7 +40,6 @@ module Kore.Builtin.Builtin
     , verifySymbol
     , verifySymbolArguments
     , verifyDomainValue
-    , parseDomainValue
     , parseString
       -- * Implementing builtin functions
     , notImplemented
@@ -100,7 +99,6 @@ import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.Builtin.Error
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
                  ( Error )
 import qualified Kore.Error
@@ -497,26 +495,6 @@ makeEncodedDomainValueVerifier
 makeEncodedDomainValueVerifier _builtinSort encodeSort domain =
     Kore.Error.withContext "While parsing domain value"
         (encodeSort domain)
-
-{- | Run a parser in a domain value pattern.
-
-  An error is thrown if the domain value does not contain a literal string.
-  The parsed value is returned.
-
- -}
-parseDomainValue
-    :: Parser a
-    -> Domain.External (TermLike variable)
-    -> Either (Error VerifyError) a
-parseDomainValue
-    parser
-    Domain.External { domainValueChild }
-  =
-    Kore.Error.withContext "While parsing domain value"
-        $ case domainValueChild of
-            StringLiteral_ lit -> parseString parser lit
-            _ -> Kore.Error.koreFail
-                    "Domain value argument must be a literal string."
 
 {- | Run a parser on a string.
 

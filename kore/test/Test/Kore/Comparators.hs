@@ -865,29 +865,6 @@ instance
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance
-    (EqualWithExplanation child, Show child ) =>
-    EqualWithExplanation (External child)
-  where
-    compareWithExplanation = structCompareWithExplanation
-    printWithExplanation = show
-
-instance
-    (EqualWithExplanation child, Show child ) =>
-    StructEqualWithExplanation (External child)
-  where
-    structFieldsWithNames expect actual =
-        [ Function.on (EqWrap "domainValueSort = ")
-            Domain.domainValueSort
-            expect
-            actual
-        , Function.on (EqWrap "domainValueChild = ")
-            Domain.domainValueChild
-            expect
-            actual
-        ]
-    structConstructorName _ = "External"
-
 instance EqualWithExplanation InternalInt where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show

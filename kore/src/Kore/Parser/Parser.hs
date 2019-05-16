@@ -44,7 +44,6 @@ import qualified Text.Megaparsec.Char as Parser
                  ( char )
 
 import           Kore.AST.Common
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.Parser.Lexeme
 import           Kore.Parser.ParserUtils
                  ( Parser )
@@ -636,17 +635,6 @@ domainValueParser =
     DomainValue
         <$> inCurlyBracesRemainderParser sortParser
         <*> inParenthesesParser childParser
-  where
-    childParser = asParsedPattern . StringLiteralF <$> stringLiteralParser
-
-externalDomainParser :: Parser (Domain.External ParsedPattern)
-externalDomainParser = do
-    domainValueSort <- inCurlyBracesRemainderParser sortParser
-    domainValueChild <- inParenthesesParser childParser
-    return Domain.External
-        { domainValueSort
-        , domainValueChild
-        }
   where
     childParser = asParsedPattern . StringLiteralF <$> stringLiteralParser
 

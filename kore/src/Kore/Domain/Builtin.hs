@@ -37,7 +37,6 @@ module Kore.Domain.Builtin
     , InternalString (..)
     , lensInternalStringSort
     , lensInternalStringValue
-    , module Kore.Domain.External
     , Domain (..)
     ) where
 
@@ -64,7 +63,6 @@ import Control.Lens.TH.Rules
        ( makeLenses )
 import Kore.Debug
 import Kore.Domain.Class
-import Kore.Domain.External
 import Kore.Syntax
 import Kore.Unparser
 
