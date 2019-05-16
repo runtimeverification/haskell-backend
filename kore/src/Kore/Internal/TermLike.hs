@@ -4,9 +4,6 @@ License     : NCSA
 
 -}
 
--- TODO (thomas.tuegel): Remove -fno-warn-orphans
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 {-# LANGUAGE TemplateHaskell #-}
 
 module Kore.Internal.TermLike
