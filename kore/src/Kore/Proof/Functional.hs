@@ -19,12 +19,13 @@ import Data.Hashable
 import GHC.Generics
        ( Generic )
 
-import Kore.Domain.External
 import Kore.Internal.TermLike
        ( Builtin )
+import Kore.Sort
 import Kore.Syntax.Application
        ( SymbolOrAlias )
 import Kore.Syntax.CharLiteral
+import Kore.Syntax.DomainValue
 import Kore.Syntax.StringLiteral
 
 -- |'FunctionalProof' is used for providing arguments that a pattern is
@@ -41,7 +42,7 @@ data FunctionalProof variable
     | FunctionalBuiltin (Builtin ())
     -- ^ Builtin pattern without children are functional: they represent
     -- one value in the model.
-    | FunctionalDomainValue (External ())
+    | FunctionalDomainValue (DomainValue Sort ())
     -- ^ Domain value pattern without children are functional: they represent
     -- one value in the model.
     | FunctionalHead SymbolOrAlias

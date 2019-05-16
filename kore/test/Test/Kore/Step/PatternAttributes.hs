@@ -7,13 +7,11 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import qualified Kore.Domain.Builtin as Domain
-import           Kore.Internal.TermLike
-import           Kore.Proof.Functional as Proof.Functional
-import           Kore.Step.PatternAttributes
-import           Kore.Step.PatternAttributesError
-                 ( ConstructorLikeError (..), FunctionError (..),
-                 FunctionalError (..) )
+import Kore.Internal.TermLike
+import Kore.Proof.Functional as Proof.Functional
+import Kore.Step.PatternAttributes
+import Kore.Step.PatternAttributesError
+       ( ConstructorLikeError (..), FunctionError (..), FunctionalError (..) )
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as MockSymbols
@@ -278,7 +276,7 @@ test_patternAttributes =
             let
                 dv :: TermLike Variable
                 dv =
-                    mkDomainValue Domain.External
+                    mkDomainValue DomainValue
                         { domainValueSort = Mock.testSort
                         , domainValueChild = mkStringLiteral "a"
                         }
@@ -375,7 +373,7 @@ test_patternAttributes =
             let
                 dv :: TermLike Variable
                 dv =
-                    mkDomainValue Domain.External
+                    mkDomainValue DomainValue
                         { domainValueSort = Mock.testSort
                         , domainValueChild = mkStringLiteral "a"
                         }

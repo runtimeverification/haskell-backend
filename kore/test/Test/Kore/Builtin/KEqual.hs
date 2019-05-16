@@ -12,7 +12,6 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 
 import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
@@ -78,11 +77,11 @@ test_KEqual =
                 mkApp
                     boolSort
                     keqBoolSymbol
-                    [ mkDomainValue Domain.External
+                    [ mkDomainValue DomainValue
                         { domainValueSort = idSort
                         , domainValueChild = mkStringLiteral "t"
                         }
-                    , mkDomainValue Domain.External
+                    , mkDomainValue DomainValue
                         { domainValueSort = idSort
                         , domainValueChild = mkStringLiteral "x"
                         }
@@ -101,7 +100,7 @@ test_KEqual =
                     [ mkApp
                         kItemSort
                         (injSymbol idSort kItemSort)
-                        [ mkDomainValue Domain.External
+                        [ mkDomainValue DomainValue
                             { domainValueSort = idSort
                             , domainValueChild = mkStringLiteral "t"
                             }
@@ -109,7 +108,7 @@ test_KEqual =
                     , mkApp
                         kItemSort
                         (injSymbol idSort kItemSort)
-                        [ mkDomainValue Domain.External
+                        [ mkDomainValue DomainValue
                             { domainValueSort = idSort
                             , domainValueChild = mkStringLiteral "x"
                             }
@@ -132,7 +131,7 @@ test_KEqual =
                         [ mkApp
                             kItemSort
                             (injSymbol idSort kItemSort)
-                            [ mkDomainValue Domain.External
+                            [ mkDomainValue DomainValue
                                 { domainValueSort = idSort
                                 , domainValueChild = mkStringLiteral "t"
                                 }
@@ -145,7 +144,7 @@ test_KEqual =
                         [ mkApp
                             kItemSort
                             (injSymbol idSort kItemSort)
-                            [ mkDomainValue Domain.External
+                            [ mkDomainValue DomainValue
                                 { domainValueSort = idSort
                                 , domainValueChild = mkStringLiteral "x"
                                 }

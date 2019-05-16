@@ -209,7 +209,7 @@ data TermLikeF variable child
     | ApplicationF   !(Application SymbolOrAlias child)
     | BottomF        !(Bottom Sort child)
     | CeilF          !(Ceil Sort child)
-    | DomainValueF   !(Domain.External child)
+    | DomainValueF   !(DomainValue Sort child)
     | EqualsF        !(Equals Sort child)
     | ExistsF        !(Exists Sort variable child)
     | FloorF         !(Floor Sort child)
@@ -1172,14 +1172,14 @@ mkBuiltin domain =
  -}
 mkDomainValue
     :: Ord variable
-    => Domain.External (TermLike variable)
+    => DomainValue Sort (TermLike variable)
     -> TermLike variable
 mkDomainValue domain =
     Recursive.embed (attrs :< DomainValueF domain)
   where
     attrs =
         Attribute.Pattern
-            { patternSort = Domain.domainValueSort domain
+            { patternSort = domainValueSort domain
             , freeVariables =
                 (Set.unions . Foldable.toList) (freeVariables <$> domain)
             }
@@ -1795,7 +1795,7 @@ pattern Ceil_ ceilOperandSort ceilResultSort ceilChild <-
 
 pattern DV_ domainValueSort domainValueChild <-
     (Recursive.project ->
-        _ :< DomainValueF Domain.External { domainValueSort, domainValueChild }
+        _ :< DomainValueF DomainValue { domainValueSort, domainValueChild }
     )
 
 pattern Builtin_ builtin <- (Recursive.project -> _ :< BuiltinF builtin)

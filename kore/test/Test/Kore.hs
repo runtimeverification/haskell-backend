@@ -278,9 +278,9 @@ ceilGen = ceilFloorGen Ceil
 equalsGen :: (Sort -> Gen child) -> Sort -> Gen (Equals Sort child)
 equalsGen = equalsInGen Equals
 
-genDomainValue :: (Sort -> Gen child) -> Sort -> Gen (Domain.External child)
+genDomainValue :: (Sort -> Gen child) -> Sort -> Gen (DomainValue Sort child)
 genDomainValue childGen domainValueSort =
-    Domain.External domainValueSort <$> childGen stringMetaSort
+    DomainValue domainValueSort <$> childGen stringMetaSort
 
 genBuiltin :: Sort -> Gen (TermLike.Builtin (TermLike variable))
 genBuiltin domainValueSort = Gen.choice
@@ -340,7 +340,7 @@ topGen = topBottomGen Top
 patternGen
     :: (Sort -> Gen child)
     -> Sort
-    -> Gen (Syntax.PatternF dom Variable child)
+    -> Gen (Syntax.PatternF Variable child)
 patternGen childGen patternSort =
     Gen.frequency
         [ (1, Syntax.AndF <$> andGen childGen patternSort)

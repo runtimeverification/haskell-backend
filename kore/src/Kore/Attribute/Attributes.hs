@@ -36,9 +36,7 @@ type ParsedPattern = Pattern Domain.External Variable Attribute.Null
 
 type AttributePattern = ParsedPattern
 
-asAttributePattern
-    :: (PatternF Domain.External Variable) AttributePattern
-    -> AttributePattern
+asAttributePattern :: (PatternF Variable) AttributePattern -> AttributePattern
 asAttributePattern = asPattern . (mempty :<)
 
 -- | An 'AttributePattern' of the attribute symbol applied to its arguments.

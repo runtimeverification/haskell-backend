@@ -67,7 +67,6 @@ module Kore.Builtin.Builtin
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Control.Error
                  ( MaybeT (..), fromMaybe )
-import qualified Control.Lens as Lens
 import           Control.Monad
                  ( zipWithM_ )
 import qualified Control.Monad as Monad
@@ -102,7 +101,6 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.Builtin.Error
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Domain.Class
 import           Kore.Error
                  ( Error )
 import qualified Kore.Error
@@ -180,7 +178,7 @@ type SymbolVerifiers = HashMap Text SymbolVerifier
 
 -}
 type DomainValueVerifier child =
-       Domain.External child -> Either (Error VerifyError) (Builtin child)
+       DomainValue Sort child -> Either (Error VerifyError) (Builtin child)
 
 -- | @DomainValueVerifiers@  associates a @DomainValueVerifier@ with each
 -- builtin
@@ -467,7 +465,7 @@ verifySymbolArguments verifyArguments =
 verifyDomainValue
     :: DomainValueVerifiers (TermLike variable)
     -> (Id -> Either (Error VerifyError) (SentenceSort patternType))
-    -> Domain.External (TermLike variable)
+    -> DomainValue Sort (TermLike variable)
     -> Either (Error VerifyError) (TermLikeF variable (TermLike variable))
 verifyDomainValue
     verifiers
@@ -487,13 +485,13 @@ verifyDomainValue
         SortVariableSort _ -> external domain
   where
     external = return . DomainValueF
-    DomainValue { domainValueSort } = Lens.view lensDomainValue domain
+    DomainValue { domainValueSort } = domain
 
 -- | Construct a 'DomainValueVerifier' for an encodable sort.
 makeEncodedDomainValueVerifier
     :: Text
     -- ^ Builtin sort identifier
-    -> (Domain.External child -> Either (Error VerifyError) (Builtin child))
+    -> (DomainValue Sort child -> Either (Error VerifyError) (Builtin child))
     -- ^ encoding function for the builtin sort
     -> DomainValueVerifier child
 makeEncodedDomainValueVerifier _builtinSort encodeSort domain =

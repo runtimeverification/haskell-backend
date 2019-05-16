@@ -7,7 +7,6 @@ import Data.Text
        ( Text )
 
 import qualified Kore.Builtin as Builtin
-import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.TermLike as Internal
 import           Kore.Parser.Parser
 import           Kore.Syntax
@@ -441,7 +440,7 @@ domainValuePatternParserTests =
     parseTree korePatternParser
         [ success "\\dv{s1}(\"a\")"
             $ Builtin.externalizePattern'
-            $ Internal.mkDomainValue Domain.External
+            $ Internal.mkDomainValue DomainValue
                 { domainValueSort = sortVariableSort "s1"
                 , domainValueChild = Internal.mkStringLiteral "a"
                 }
@@ -932,7 +931,7 @@ sentenceAliasParserTests =
                             }
                     , sentenceAliasRightPattern =
                         Builtin.externalizePattern'
-                        $ Internal.mkDomainValue Domain.External
+                        $ Internal.mkDomainValue DomainValue
                             { domainValueSort = resultSort
                             , domainValueChild = Internal.mkStringLiteral "f"
                             }

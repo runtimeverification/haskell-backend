@@ -22,7 +22,6 @@ module Kore.ASTVerifier.PatternVerifier
     , assertSameSort
     ) where
 
-import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import           Control.Monad.Reader
                  ( MonadReader, ReaderT, runReaderT )
@@ -47,7 +46,6 @@ import           Kore.ASTVerifier.SortVerifier
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Builtin as Builtin
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
@@ -589,11 +587,10 @@ verifyVariable variable@Variable { variableName, variableSort } = do
     return (Attribute.Pattern { patternSort, freeVariables } :< verified)
 
 verifyDomainValue
-    :: Domain.External (PatternVerifier Verified.Pattern)
+    :: DomainValue Sort (PatternVerifier Verified.Pattern)
     -> PatternVerifier (Base Verified.Pattern Verified.Pattern)
 verifyDomainValue domain = do
-    let DomainValue { domainValueSort = patternSort } =
-            Lens.view Domain.lensDomainValue domain
+    let DomainValue { domainValueSort = patternSort } = domain
     Context { builtinDomainValueVerifiers, indexedModule } <- Reader.ask
     verifyPatternSort patternSort
     let lookupSortDeclaration' sortId = do
@@ -739,7 +736,7 @@ checkVariable var vars =
             <+> unparse var
             <> Pretty.dot
 
-patternNameForContext :: PatternF dom Variable p -> String
+patternNameForContext :: PatternF Variable p -> String
 patternNameForContext (AndF _) = "\\and"
 patternNameForContext (ApplicationF application) =
     "symbol or alias '"

@@ -12,7 +12,6 @@ import qualified Data.Map as Map
 
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -416,12 +415,12 @@ test_equalsSimplification_TermLike =
         (assertTermEquals
             Mock.metadataTools
             Predicate.topPredicate
-            (mkDomainValue Domain.External
+            (mkDomainValue DomainValue
                 { domainValueSort = testSort
                 , domainValueChild = mkStringLiteral "a"
                 }
             )
-            (mkDomainValue Domain.External
+            (mkDomainValue DomainValue
                 { domainValueSort = testSort
                 , domainValueChild = mkStringLiteral "a"
                 }
@@ -431,12 +430,12 @@ test_equalsSimplification_TermLike =
         (assertTermEquals
             Mock.metadataTools
             Predicate.bottomPredicate
-            (mkDomainValue Domain.External
+            (mkDomainValue DomainValue
                 { domainValueSort = testSort
                 , domainValueChild = mkStringLiteral "a"
                 }
             )
-            (mkDomainValue Domain.External
+            (mkDomainValue DomainValue
                 { domainValueSort = testSort
                 , domainValueChild = mkStringLiteral "b"
                 }
@@ -446,12 +445,12 @@ test_equalsSimplification_TermLike =
         (assertTermEquals
             Mock.metadataTools
             Predicate.bottomPredicate
-            (mkDomainValue Domain.External
+            (mkDomainValue DomainValue
                 { domainValueSort = testSort
                 , domainValueChild = mkStringLiteral "a"
                 }
             )
-            (mkDomainValue Domain.External
+            (mkDomainValue DomainValue
                 { domainValueSort = testSort2
                 , domainValueChild = mkStringLiteral "a"
                 }

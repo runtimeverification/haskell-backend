@@ -54,9 +54,7 @@ import           Kore.Syntax.Definition
 import           Kore.Unparser
                  ( unparseToString )
 
-asParsedPattern
-    :: (PatternF Domain.External Variable) ParsedPattern
-    -> ParsedPattern
+asParsedPattern :: (PatternF Variable) ParsedPattern -> ParsedPattern
 asParsedPattern patternBase = asPattern (mempty :< patternBase)
 
 {-|'sortVariableParser' parses either an @object-sort-variable@, or a
@@ -342,7 +340,7 @@ Always starts with @{@.
 symbolOrAliasPatternRemainderParser
     :: Parser child
     -> Id  -- ^ The already parsed prefix.
-    -> Parser (PatternF domain Variable child)
+    -> Parser (PatternF Variable child)
 symbolOrAliasPatternRemainderParser childParser identifier =
     ApplicationF
     <$> (   Application
@@ -416,7 +414,7 @@ BNF definitions:
 variableOrTermPatternParser
     :: Parser child
     -> Bool  -- ^ Whether it can be a Set Variable
-    -> Parser (PatternF domain Variable child)
+    -> Parser (PatternF Variable child)
 variableOrTermPatternParser childParser isSetVar = do
     identifier <- idParser
     c <- ParserUtils.peekChar'
@@ -520,17 +518,18 @@ koreMLConstructorParser = do
         )
     koreMLConstructorRemainderParser patternType = do
         openCurlyBraceParser
+        -- TODO (thomas.tuegel): Don't peekChar
         c <- ParserUtils.peekChar'
         if c == '#'
             then asParsedPattern <$>
                 mlConstructorRemainderParser
                     korePatternParser
-                    externalDomainParser
+                    domainValueParser
                     patternType
             else asParsedPattern <$>
                 mlConstructorRemainderParser
                     korePatternParser
-                    externalDomainParser
+                    domainValueParser
                     patternType
 
 {-|'leveledMLConstructorParser' is similar to 'koreMLConstructorParser'
@@ -556,11 +555,10 @@ BNF definitions (here cat ranges over meta and object):
 @
 -}
 leveledMLConstructorParser
-    :: Functor domain
-    => Parser child
-    -> Parser (domain child)
-    -> Parser (PatternF domain Variable child)
-leveledMLConstructorParser childParser domainValueParser = do
+    :: Parser child
+    -> Parser (DomainValue Sort child)
+    -> Parser (PatternF Variable child)
+leveledMLConstructorParser childParser domainValueParser' = do
     void (Parser.char '\\')
     keywordBasedParsers
         (map
@@ -572,7 +570,7 @@ leveledMLConstructorParser childParser domainValueParser = do
         openCurlyBraceParser
         mlConstructorRemainderParser
             childParser
-            domainValueParser
+            domainValueParser'
             patternType
 
 {-|'unsupportedPatternType' reports an error for a missing parser for
@@ -593,12 +591,11 @@ required to be able to peek at the first character of the sort identifier, in
 order to determine whether we are parsing a 'Meta' or an 'Object' 'Pattern'.
 -}
 mlConstructorRemainderParser
-    :: Functor domain
-    => Parser child
-    -> Parser (domain child)
+    :: Parser child
+    -> Parser (DomainValue Sort child)
     -> MLPatternType
-    -> Parser (PatternF domain Variable child)
-mlConstructorRemainderParser childParser domainValueParser patternType =
+    -> Parser (PatternF Variable child)
+mlConstructorRemainderParser childParser domainValueParser' patternType =
     case patternType of
         AndPatternType -> AndF <$>
             binaryOperatorRemainderParser childParser And
@@ -627,12 +624,20 @@ mlConstructorRemainderParser childParser domainValueParser patternType =
         TopPatternType -> TopF <$>
             topBottomRemainderParser Top
         DomainValuePatternType ->
-            DomainValueF <$> domainValueParser
+            DomainValueF <$> domainValueParser'
         NextPatternType ->
             NextF <$> unaryOperatorRemainderParser childParser Next
         RewritesPatternType ->
             RewritesF
             <$> binaryOperatorRemainderParser childParser Rewrites
+
+domainValueParser :: Parser (DomainValue Sort ParsedPattern)
+domainValueParser =
+    DomainValue
+        <$> inCurlyBracesRemainderParser sortParser
+        <*> inParenthesesParser childParser
+  where
+    childParser = asParsedPattern . StringLiteralF <$> stringLiteralParser
 
 externalDomainParser :: Parser (Domain.External ParsedPattern)
 externalDomainParser = do
@@ -996,21 +1001,20 @@ hookedSortSentenceRemainderParser =
     asSentence . SentenceHookedSort <$> sortSentenceRemainderParser
 
 leveledPatternParser
-    :: Functor domain
-    => Parser child
-    -> Parser (domain child)
-    -> Parser (PatternF domain Variable child)
-leveledPatternParser patternParser domainValueParser = do
+    :: Parser child
+    -> Parser (DomainValue Sort child)
+    -> Parser (PatternF Variable child)
+leveledPatternParser patternParser domainValueParser' = do
     c <- ParserUtils.peekChar'
     case c of
-        '\\' -> leveledMLConstructorParser patternParser domainValueParser
+        '\\' -> leveledMLConstructorParser patternParser domainValueParser'
         '"'  -> StringLiteralF <$> stringLiteralParser
         '\'' -> CharLiteralF <$> charLiteralParser
         _ -> variableOrTermPatternParser patternParser (c == '#')
 
 purePatternParser :: Parser ParsedPattern
 purePatternParser = do
-    patternHead <- leveledPatternParser childParser externalDomainParser
+    patternHead <- leveledPatternParser childParser domainValueParser
     return $ asPattern (mempty :< patternHead)
   where
     childParser = purePatternParser

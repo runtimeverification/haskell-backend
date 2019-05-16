@@ -7,7 +7,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -26,12 +25,12 @@ test_simplify =
     [ testCase "DomainValue evaluates to DomainValue"
         (assertEqualWithExplanation ""
             (OrPattern.fromTermLike $ mkDomainValue
-                Domain.External
+                DomainValue
                     { domainValueSort = testSort
                     , domainValueChild = mkStringLiteral "a"
                     }
             )
-            (evaluate Domain.External
+            (evaluate DomainValue
                 { domainValueSort = testSort
                 , domainValueChild =
                     OrPattern.fromTermLike $ mkStringLiteral "a"
@@ -41,6 +40,6 @@ test_simplify =
     ]
 
 evaluate
-    :: Domain.External (OrPattern Variable)
+    :: DomainValue Sort (OrPattern Variable)
     -> OrPattern Variable
 evaluate = simplify Mock.emptyMetadataTools

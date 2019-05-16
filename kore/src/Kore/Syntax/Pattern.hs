@@ -16,7 +16,6 @@ module Kore.Syntax.Pattern
     , asConcretePattern
     , isConcrete
     , fromConcretePattern
-    , castVoidDomainValues
     -- * Re-exports
     , Base, CofreeF (..)
     , PatternF (..)
@@ -33,8 +32,6 @@ import qualified Data.Bifunctor as Bifunctor
 import           Data.Functor.Classes
 import           Data.Functor.Compose
                  ( Compose (..) )
-import           Data.Functor.Const
-                 ( Const )
 import           Data.Functor.Foldable
                  ( Base, Corecursive, Recursive )
 import qualified Data.Functor.Foldable as Recursive
@@ -43,8 +40,6 @@ import           Data.Functor.Identity
 import           Data.Hashable
                  ( Hashable (..) )
 import           Data.Maybe
-import           Data.Void
-                 ( Void )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -77,7 +72,7 @@ newtype Pattern
     (annotation :: *)
   =
     Pattern
-        { getPattern :: Cofree (PatternF domain variable) annotation }
+        { getPattern :: Cofree (PatternF variable) annotation }
     deriving (Foldable, Functor, GHC.Generic, Traversable)
 
 instance
@@ -110,7 +105,7 @@ deriving instance
     ( Show annotation
     , Show variable
     , Show1 domain
-    , child ~ Cofree (PatternF domain variable) annotation
+    , child ~ Cofree (PatternF variable) annotation
     ) =>
     Show (Pattern domain variable annotation)
 
@@ -146,7 +141,7 @@ instance
     , Debug variable
     , Debug (domain child)
     , Functor domain
-    , child ~ Cofree (PatternF domain variable) annotation
+    , child ~ Cofree (PatternF variable) annotation
     ) =>
     Debug (Pattern domain variable annotation)
 
@@ -162,7 +157,7 @@ instance
     unparse2 (Recursive.project -> _ :< pat) = unparse2 pat
 
 type instance Base (Pattern domain variable annotation) =
-    CofreeF (PatternF domain variable) annotation
+    CofreeF (PatternF variable) annotation
 
 -- This instance implements all class functions for the Pattern newtype
 -- because the their implementations for the inner type may be specialized.
@@ -275,7 +270,7 @@ instance
 instance
     Functor domain =>
     ComonadCofree
-        (PatternF domain variable)
+        (PatternF variable)
         (Pattern domain variable)
   where
     unwrap = \(Pattern fixed) -> Pattern <$> unwrap fixed
@@ -372,22 +367,6 @@ mapVariables mapping =
     mapVariablesWorker (a :< pat) =
         a :< PatternF.mapVariables mapping pat
 
--- | Use the provided mapping to replace all domain values in a 'Pattern'.
-mapDomainValues
-    ::  forall domain1 domain2 variable annotation.
-        (Functor domain1, Functor domain2)
-    => (forall child. domain1 child -> domain2 child)
-    -> Pattern domain1 variable annotation
-    -> Pattern domain2 variable annotation
-mapDomainValues mapping =
-    -- Using 'Recursive.unfold' so that the pattern will unfold lazily.
-    -- Lazy unfolding allows composing multiple tree transformations without
-    -- allocating the entire intermediates.
-    Recursive.unfold (mapDomainValuesWorker . Recursive.project)
-  where
-    mapDomainValuesWorker (a :< pat) =
-        a :< PatternF.mapDomainValues mapping pat
-
 {- | Construct a 'ConcretePattern' from a 'Pattern'.
 
 A concrete pattern contains no variables, so @asConcretePattern@ is
@@ -425,15 +404,3 @@ fromConcretePattern
     => Pattern domain Concrete annotation
     -> Pattern domain variable annotation
 fromConcretePattern = mapVariables (\case {})
-
-{- | Cast a pure pattern with @'Const' 'Void'@ domain values into any domain.
-
-The @Const Void@ domain excludes domain values; the pattern head be cast
-trivially because it must contain no domain values.
-
- -}
-castVoidDomainValues
-    :: Functor domain
-    => Pattern (Const Void) variable annotation
-    -> Pattern domain variable annotation
-castVoidDomainValues = mapDomainValues (\case {})

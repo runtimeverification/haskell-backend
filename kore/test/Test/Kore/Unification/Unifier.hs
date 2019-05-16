@@ -24,7 +24,6 @@ import           Kore.Attribute.Functional
 import           Kore.Attribute.Injective
 import           Kore.Attribute.SortInjection
 import           Kore.Attribute.Symbol
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
@@ -114,12 +113,12 @@ ex4 = mkVar Variable { variableName = testId "ex4", variableCounter = mempty, va
 
 dv1, dv2 :: TermLike Variable
 dv1 =
-    mkDomainValue Domain.External
+    mkDomainValue DomainValue
         { domainValueSort = s1
         , domainValueChild = mkStringLiteral "dv1"
         }
 dv2 =
-    mkDomainValue Domain.External
+    mkDomainValue DomainValue
         { domainValueSort = s1
         , domainValueChild = mkStringLiteral "dv2"
         }

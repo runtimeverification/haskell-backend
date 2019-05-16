@@ -115,8 +115,8 @@ patternVerifier =
                         }
             _ -> Kore.Error.koreFail "Expected literal string"
       where
-        Domain.External { domainValueSort } = domainValue
-        Domain.External { domainValueChild = externalChild } = domainValue
+        DomainValue { domainValueSort } = domainValue
+        DomainValue { domainValueChild = externalChild } = domainValue
 
 -- | get the value from a (possibly encoded) domain value
 extractBoolDomainValue
@@ -172,7 +172,7 @@ asTermLike
     => Domain.InternalBool  -- ^ builtin value to render
     -> TermLike variable
 asTermLike builtin =
-    mkDomainValue Domain.External
+    mkDomainValue DomainValue
         { domainValueSort = builtinBoolSort
         , domainValueChild = mkStringLiteral literal
         }

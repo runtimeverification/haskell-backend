@@ -14,7 +14,7 @@ module Test.Kore.Comparators where
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Comonad.Trans.Cofree
-                 ( Cofree, CofreeF (..), CofreeT (..) )
+                 ( CofreeF (..), CofreeT (..) )
 import qualified Data.Function as Function
 import           Data.Functor.Classes
 import           Data.Functor.Identity
@@ -107,14 +107,11 @@ instance
     ( EqualWithExplanation child
     , Eq child
     , Show child
-    , Eq1 domain
-    , Show1 domain
     , EqualWithExplanation variable
-    , EqualWithExplanation (domain child)
     , Eq variable
     , Show variable
     )
-    => SumEqualWithExplanation (PatternF domain variable child)
+    => SumEqualWithExplanation (PatternF variable child)
   where
     sumConstructorPair (Syntax.AndF a1) (Syntax.AndF a2) =
         SumConstructorSameWithArguments (EqWrap "AndF" a1 a2)
@@ -294,7 +291,6 @@ instance
     , Show annotation
     , Eq annotation
     , EqualWithExplanation annotation
-    , EqualWithExplanation (domain (Cofree (PatternF domain variable) annotation))
     ) =>
     EqualWithExplanation (Pattern domain variable annotation)
   where
@@ -311,7 +307,6 @@ instance
     , Show annotation
     , Eq annotation
     , EqualWithExplanation annotation
-    , EqualWithExplanation (domain (Cofree (PatternF domain variable) annotation))
     ) =>
     WrapperEqualWithExplanation (Pattern domain variable annotation)
   where
@@ -2123,11 +2118,8 @@ instance
     , Eq child, Eq variable
     , Show child
     , EqualWithExplanation variable
-    , EqualWithExplanation (domain child)
     , Show variable
-    , Show1 domain
-    , Eq1 domain
-    ) => EqualWithExplanation (PatternF domain variable child)
+    ) => EqualWithExplanation (PatternF variable child)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show

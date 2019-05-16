@@ -39,9 +39,11 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Internal.TermLike
                  ( SymbolOrAlias, TermLike, TermLikeF (..) )
+import           Kore.Sort
 import qualified Kore.Syntax.Application as Syntax
 import           Kore.Syntax.CharLiteral
                  ( CharLiteral )
+import qualified Kore.Syntax.DomainValue as Syntax
 import           Kore.Syntax.StringLiteral
                  ( StringLiteral )
 import           Kore.Syntax.Variable
@@ -54,7 +56,7 @@ import           Kore.Syntax.Variable
 data ValueF child
     = Constructor !(Syntax.Application SymbolOrAlias child)
     | SortInjection !(Syntax.Application SymbolOrAlias child)
-    | DomainValue !(Domain.External child)
+    | DomainValue !(Syntax.DomainValue Sort child)
     | Builtin !(Domain.Builtin (TermLike Concrete) child)
     | StringLiteral !StringLiteral
     | CharLiteral !CharLiteral

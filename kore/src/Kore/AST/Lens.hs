@@ -22,7 +22,7 @@ import Kore.Syntax
 
 patternLens
     ::  forall f domain variable1 variable2 annotation
-    .   (Applicative f, Domain domain, Traversable domain)
+    .   (Applicative f, Traversable domain)
     => (Sort -> f Sort)  -- ^ Operand sorts
     -> (Sort -> f Sort)
     -- ^ Result sorts, and operand sorts when the two are equal
@@ -86,20 +86,12 @@ patternLens
             <*> lensChild ceilChild
 
     patternLensDomain
-        :: domain (Pattern domain variable1 annotation)
-        -> f (domain (Pattern domain variable2 annotation))
-    patternLensDomain =
-        lensDomainValue patternLensDomainValue
-      where
-        patternLensDomainValue
-            DomainValue
-                { domainValueSort
-                , domainValueChild
-                }
-          =
-            DomainValue
-                <$> lensResultSort domainValueSort
-                <*> traverse lensChild domainValueChild
+        :: DomainValue Sort (Pattern domain variable1 annotation)
+        -> f (DomainValue Sort (Pattern domain variable2 annotation))
+    patternLensDomain DomainValue { domainValueSort, domainValueChild } =
+        DomainValue
+            <$> lensResultSort domainValueSort
+            <*> lensChild domainValueChild
 
     patternLensEquals
         Equals

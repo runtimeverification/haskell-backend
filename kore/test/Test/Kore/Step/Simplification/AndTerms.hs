@@ -20,7 +20,6 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Builtin.Set as Set
                  ( asInternal )
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -978,14 +977,14 @@ plain1OfB = Mock.plain11 Mock.b
 
 aDomainValue :: TermLike Variable
 aDomainValue =
-    mkDomainValue Domain.External
+    mkDomainValue DomainValue
         { domainValueSort = Mock.testSort
         , domainValueChild = mkStringLiteral "a"
         }
 
 bDomainValue :: TermLike Variable
 bDomainValue =
-    mkDomainValue Domain.External
+    mkDomainValue DomainValue
         { domainValueSort = Mock.testSort
         , domainValueChild = mkStringLiteral "b"
         }

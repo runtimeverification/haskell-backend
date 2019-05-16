@@ -12,7 +12,6 @@ import qualified Data.Map as Map
 import qualified Data.Sup as Sup
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Internal.OrPattern
@@ -367,7 +366,7 @@ test_ceilSimplification =
                 ]
         actual <- makeEvaluate Mock.metadataTools
             $ Pattern.fromTermLike
-            $ mkDomainValue Domain.External
+            $ mkDomainValue DomainValue
                 { domainValueSort = Mock.testSort
                 , domainValueChild = mkStringLiteral "a"
                 }

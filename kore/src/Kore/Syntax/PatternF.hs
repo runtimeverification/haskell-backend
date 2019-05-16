@@ -10,8 +10,6 @@ module Kore.Syntax.PatternF
     ( PatternF (..)
     , mapVariables
     , traverseVariables
-    , mapDomainValues
-    , castVoidDomainValues
     -- * Pure pattern heads
     , groundHead
     , constant
@@ -21,15 +19,11 @@ import           Control.DeepSeq
                  ( NFData (..) )
 import qualified Data.Deriving as Deriving
 import           Data.Functor.Classes
-import           Data.Functor.Const
-                 ( Const )
 import           Data.Functor.Identity
                  ( Identity (..) )
 import           Data.Hashable
 import           Data.Text
                  ( Text )
-import           Data.Void
-                 ( Void )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -40,6 +34,7 @@ import Kore.Syntax.Application
 import Kore.Syntax.Bottom
 import Kore.Syntax.Ceil
 import Kore.Syntax.CharLiteral
+import Kore.Syntax.DomainValue
 import Kore.Syntax.Equals
 import Kore.Syntax.Exists
 import Kore.Syntax.Floor
@@ -60,12 +55,12 @@ import Kore.Unparser
 {- | 'PatternF' is the 'Base' functor of Kore patterns
 
 -}
-data PatternF domain variable child
+data PatternF variable child
     = AndF           !(And Sort child)
     | ApplicationF   !(Application SymbolOrAlias child)
     | BottomF        !(Bottom Sort child)
     | CeilF          !(Ceil Sort child)
-    | DomainValueF   !(domain child)
+    | DomainValueF   !(DomainValue Sort child)
     | EqualsF        !(Equals Sort child)
     | ExistsF        !(Exists Sort variable child)
     | FloorF         !(Floor Sort child)
@@ -89,48 +84,33 @@ Deriving.deriveEq1 ''PatternF
 Deriving.deriveOrd1 ''PatternF
 Deriving.deriveShow1 ''PatternF
 
-instance
-    (Eq1 domain, Eq variable, Eq child) =>
-    Eq (PatternF domain variable child)
-  where
+instance (Eq variable, Eq child) => Eq (PatternF variable child) where
     (==) = eq1
     {-# INLINE (==) #-}
 
-instance
-    (Ord1 domain, Ord variable, Ord child) =>
-    Ord (PatternF domain variable child)
-  where
+instance (Ord variable, Ord child) => Ord (PatternF variable child) where
     compare = compare1
     {-# INLINE compare #-}
 
-instance
-    (Show1 domain, Show variable, Show child) =>
-    Show (PatternF domain variable child)
-  where
+instance (Show variable, Show child) => Show (PatternF variable child) where
     showsPrec = showsPrec1
     {-# INLINE showsPrec #-}
 
-instance SOP.Generic (PatternF domain variable child)
+instance SOP.Generic (PatternF variable child)
 
-instance SOP.HasDatatypeInfo (PatternF domain variable child)
+instance SOP.HasDatatypeInfo (PatternF variable child)
 
-instance
-    (Debug (domain child), Debug variable, Debug child) =>
-    Debug (PatternF domain variable child)
+instance (Debug variable, Debug child) => Debug (PatternF variable child)
 
 instance
-    (Hashable child, Hashable variable, Hashable (domain child)) =>
-    Hashable (PatternF domain variable child)
+    (Hashable child, Hashable variable) =>
+    Hashable (PatternF variable child)
+
+instance (NFData child, NFData variable) => NFData (PatternF variable child)
 
 instance
-    (NFData child, NFData variable, NFData (domain child)) =>
-    NFData (PatternF domain variable child)
-
-instance
-    ( SortedVariable variable, Unparse variable
-    , Unparse child, Unparse (domain child)
-    ) =>
-    Unparse (PatternF domain variable child)
+    (SortedVariable variable, Unparse variable, Unparse child) =>
+    Unparse (PatternF variable child)
   where
     unparse = unparseGeneric
     unparse2 = unparse2Generic
@@ -143,8 +123,8 @@ not injective!
 -}
 mapVariables
     :: (variable1 -> variable2)
-    -> PatternF domain variable1 child
-    -> PatternF domain variable2 child
+    -> PatternF variable1 child
+    -> PatternF variable2 child
 mapVariables mapping =
     runIdentity . traverseVariables (Identity . mapping)
 {-# INLINE mapVariables #-}
@@ -158,8 +138,8 @@ traversal is not injective!
 traverseVariables
     :: Applicative f
     => (variable1 -> f variable2)
-    -> PatternF domain variable1 child
-    -> f (PatternF domain variable2 child)
+    -> PatternF variable1 child
+    -> f (PatternF variable2 child)
 traverseVariables traversing =
     \case
         -- Non-trivial cases
@@ -193,49 +173,6 @@ traverseVariables traversing =
     traverseVariablesForall Forall { forallSort, forallVariable, forallChild } =
         Forall forallSort <$> traversing forallVariable <*> pure forallChild
 
--- | Use the provided mapping to replace all domain values in a 'PatternF' head.
-mapDomainValues
-    :: (forall child'. domain1 child' -> domain2 child')
-    -> PatternF domain1 variable child
-    -> PatternF domain2 variable child
-mapDomainValues mapping =
-    \case
-        -- Non-trivial case
-        DomainValueF domainP -> DomainValueF (mapping domainP)
-        -- Trivial cases
-        AndF andP -> AndF andP
-        ApplicationF appP -> ApplicationF appP
-        BottomF botP -> BottomF botP
-        CeilF ceilP -> CeilF ceilP
-        EqualsF eqP -> EqualsF eqP
-        ExistsF existsP -> ExistsF existsP
-        FloorF flrP -> FloorF flrP
-        ForallF forallP -> ForallF forallP
-        IffF iffP -> IffF iffP
-        ImpliesF impP -> ImpliesF impP
-        InF inP -> InF inP
-        NextF nextP -> NextF nextP
-        NotF notP -> NotF notP
-        OrF orP -> OrF orP
-        RewritesF rewP -> RewritesF rewP
-        StringLiteralF strP -> StringLiteralF strP
-        CharLiteralF charP -> CharLiteralF charP
-        TopF topP -> TopF topP
-        VariableF varP -> VariableF varP
-        SetVariableF varP -> SetVariableF varP
-        InhabitantF s -> InhabitantF s
-
-{- | Cast a 'PatternF' head with @'Const' 'Void'@ domain values into any domain.
-
-The @Const Void@ domain excludes domain values; the pattern head can be cast
-trivially because it must contain no domain values.
-
- -}
-castVoidDomainValues
-    :: PatternF (Const Void) variable child
-    -> PatternF domain       variable child
-castVoidDomainValues = mapDomainValues (\case {})
-
 -- | Given an 'Id', 'groundHead' produces the head of an 'Application'
 -- corresponding to that argument.
 groundHead :: Text -> AstLocation -> SymbolOrAlias
@@ -249,7 +186,7 @@ groundHead ctor location = SymbolOrAlias
 
 -- | Given a head and a list of children, produces an 'ApplicationF'
 --  applying the given head to the children
-apply :: SymbolOrAlias -> [child] -> PatternF domain variable child
+apply :: SymbolOrAlias -> [child] -> PatternF variable child
 apply patternHead patterns = ApplicationF Application
     { applicationSymbolOrAlias = patternHead
     , applicationChildren = patterns
@@ -257,5 +194,5 @@ apply patternHead patterns = ApplicationF Application
 
 -- |Applies the given head to the empty list of children to obtain a
 -- constant 'ApplicationF'
-constant :: SymbolOrAlias -> PatternF domain variable child
+constant :: SymbolOrAlias -> PatternF variable child
 constant patternHead = apply patternHead []

@@ -15,7 +15,6 @@ import           Kore.AST.AstWithLocation
 import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Hook as Attribute.Hook
 import qualified Kore.Builtin as Builtin
-import qualified Kore.Domain.External as Domain
 import           Kore.Error
 import           Kore.IndexedModule.Error
                  ( noSort )
@@ -34,7 +33,7 @@ data PatternRestrict
     | NeedsSortedParent
 
 data TestPattern = TestPattern
-    { testPatternPattern :: !(PatternF Domain.External Variable ParsedPattern)
+    { testPatternPattern    :: !(PatternF Variable ParsedPattern)
     , testPatternSort       :: !Sort
     , testPatternErrorStack :: !ErrorStack
     }
@@ -473,7 +472,7 @@ test_patternVerifier =
             , "While parsing domain value"
             ]
         )
-        (DomainValueF Domain.External
+        (DomainValueF DomainValue
             { domainValueSort = intSort
             , domainValueChild =
                 Builtin.externalizePattern'
@@ -487,7 +486,7 @@ test_patternVerifier =
         [ asSentence intSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - INT.Int - Negative"
-        (DomainValueF Domain.External
+        (DomainValueF DomainValue
             { domainValueSort = intSort
             , domainValueChild =
                 Builtin.externalizePattern'
@@ -501,7 +500,7 @@ test_patternVerifier =
         [ asSentence intSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - INT.Int - Positive (unsigned)"
-        (DomainValueF Domain.External
+        (DomainValueF DomainValue
             { domainValueSort = intSort
             , domainValueChild =
                 Builtin.externalizePattern'
@@ -515,7 +514,7 @@ test_patternVerifier =
         [ asSentence intSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - INT.Int - Positive (signed)"
-        (DomainValueF Domain.External
+        (DomainValueF DomainValue
             { domainValueSort = intSort
             , domainValueChild =
                 Builtin.externalizePattern'
@@ -542,7 +541,7 @@ test_patternVerifier =
             , "While parsing domain value"
             ]
         )
-        (DomainValueF Domain.External
+        (DomainValueF DomainValue
             { domainValueSort = boolSort
             , domainValueChild =
                 Builtin.externalizePattern'
@@ -556,7 +555,7 @@ test_patternVerifier =
         [ asSentence boolSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - BOOL.Bool - true"
-        (DomainValueF Domain.External
+        (DomainValueF DomainValue
             { domainValueSort = boolSort
             , domainValueChild =
                 Builtin.externalizePattern'
@@ -570,7 +569,7 @@ test_patternVerifier =
         [ asSentence boolSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - BOOL.Bool - false"
-        (DomainValueF Domain.External
+        (DomainValueF DomainValue
             { domainValueSort = boolSort
             , domainValueChild =
                 Builtin.externalizePattern'
@@ -718,7 +717,7 @@ dummyVariableAndSentences (NamePrefix namePrefix) =
 
 successTestsForObjectPattern
     :: String
-    -> PatternF Domain.External Variable ParsedPattern
+    -> PatternF Variable ParsedPattern
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
@@ -762,7 +761,7 @@ successTestsForObjectPattern
 
 successTestsForMetaPattern
     :: String
-    -> PatternF Domain.External Variable ParsedPattern
+    -> PatternF Variable ParsedPattern
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
@@ -803,7 +802,7 @@ failureTestsForObjectPattern
     => String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> PatternF Domain.External Variable ParsedPattern
+    -> PatternF Variable ParsedPattern
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
@@ -859,7 +858,7 @@ failureTestsForMetaPattern
     => String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> PatternF Domain.External Variable ParsedPattern
+    -> PatternF Variable ParsedPattern
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
@@ -902,7 +901,7 @@ failureTestsForMetaPattern
             patternRestrict
 
 genericPatternInAllContexts
-    :: PatternF Domain.External Variable ParsedPattern
+    :: PatternF Variable ParsedPattern
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
@@ -969,7 +968,7 @@ genericPatternInAllContexts
             }
 
 objectPatternInAllContexts
-    :: PatternF Domain.External Variable ParsedPattern
+    :: PatternF Variable ParsedPattern
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
@@ -1087,8 +1086,8 @@ patternsInAllContexts
             }
 
 genericPatternInPatterns
-    :: PatternF Domain.External Variable ParsedPattern
-    -> PatternF Domain.External Variable ParsedPattern
+    :: PatternF Variable ParsedPattern
+    -> PatternF Variable ParsedPattern
     -> OperandSort
     -> Helpers.ResultSort
     -> VariableOfDeclaredSort
@@ -1148,14 +1147,14 @@ genericPatternInPatterns
         ]
 
 objectPatternInPatterns
-    :: PatternF Domain.External Variable ParsedPattern
-    -> PatternF Domain.External Variable ParsedPattern
+    :: PatternF Variable ParsedPattern
+    -> PatternF Variable ParsedPattern
     -> OperandSort
     -> [TestPattern]
 objectPatternInPatterns = patternInUnquantifiedObjectPatterns
 
 patternInQuantifiedPatterns
-    :: PatternF Domain.External Variable ParsedPattern
+    :: PatternF Variable ParsedPattern
     -> Sort
     -> Variable
     -> [TestPattern]
@@ -1193,8 +1192,8 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
     testedKorePattern = asParsedPattern testedPattern
 
 patternInUnquantifiedGenericPatterns
-    :: PatternF Domain.External Variable ParsedPattern
-    -> PatternF Domain.External Variable ParsedPattern
+    :: PatternF Variable ParsedPattern
+    -> PatternF Variable ParsedPattern
     -> OperandSort
     -> Helpers.ResultSort
     -> [TestPattern]
@@ -1348,8 +1347,8 @@ patternInUnquantifiedGenericPatterns
     testedUnifiedPattern = asParsedPattern testedPattern
 
 patternInUnquantifiedObjectPatterns
-    :: PatternF Domain.External Variable ParsedPattern
-    -> PatternF Domain.External Variable ParsedPattern
+    :: PatternF Variable ParsedPattern
+    -> PatternF Variable ParsedPattern
     -> OperandSort
     -> [TestPattern]
 patternInUnquantifiedObjectPatterns
