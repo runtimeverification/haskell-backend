@@ -28,8 +28,8 @@ import Kore.Syntax
 
 -- | The free variables of a pure pattern.
 freePureVariables
-    :: (Foldable domain, Functor domain, Ord variable)
-    => Pattern domain variable annotation
+    :: Ord variable
+    => Pattern variable annotation
     -> Set variable
 freePureVariables root =
     let (free, ()) =
@@ -64,7 +64,7 @@ freePureVariables root =
 pureMergeVariables
     :: Ord variable
     => Base
-        (Pattern domain variable annotation)
+        (Pattern variable annotation)
         (Set.Set variable)
     -> Set.Set variable
 pureMergeVariables base =
@@ -80,8 +80,8 @@ pureMergeVariables base =
 set, regardless of whether they are quantified or not.
 -}
 pureAllVariables
-    :: (Foldable domain, Functor domain, Ord variable)
-    => Pattern domain variable annotation
+    :: Ord variable
+    => Pattern variable annotation
     -> Set.Set variable
 pureAllVariables = Recursive.fold pureMergeVariables
 

@@ -27,12 +27,11 @@ import qualified GHC.Generics as GHC
 import qualified Kore.Attribute.Null as Attribute
                  ( Null )
 import           Kore.Debug
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.Syntax
 import           Kore.Unparser
 
 -- | A pure pattern which has only been parsed.
-type ParsedPattern = Pattern Domain.External Variable Attribute.Null
+type ParsedPattern = Pattern Variable Attribute.Null
 
 type AttributePattern = ParsedPattern
 

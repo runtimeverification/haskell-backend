@@ -17,22 +17,21 @@ import           Control.Lens hiding
                  ( (:<) )
 import qualified Data.Functor.Foldable as Recursive
 
-import Kore.Domain.Class
 import Kore.Syntax
 
 patternLens
-    ::  forall f domain variable1 variable2 annotation
-    .   (Applicative f, Traversable domain)
+    ::  forall f variable1 variable2 annotation
+    .   Applicative f
     => (Sort -> f Sort)  -- ^ Operand sorts
     -> (Sort -> f Sort)
     -- ^ Result sorts, and operand sorts when the two are equal
     -> (variable1 -> f variable2)  -- ^ Variables
-    ->  (  Pattern domain variable1 annotation
-        -> f (Pattern domain variable2 annotation)
+    ->  (  Pattern variable1 annotation
+        -> f (Pattern variable2 annotation)
         )
         -- ^ Children
-    ->  (  Pattern domain variable1 annotation
-        -> f (Pattern domain variable2 annotation)
+    ->  (  Pattern variable1 annotation
+        -> f (Pattern variable2 annotation)
         )
 patternLens
     lensOperandSort   -- input sort
@@ -86,8 +85,8 @@ patternLens
             <*> lensChild ceilChild
 
     patternLensDomain
-        :: DomainValue Sort (Pattern domain variable1 annotation)
-        -> f (DomainValue Sort (Pattern domain variable2 annotation))
+        :: DomainValue Sort (Pattern variable1 annotation)
+        -> f (DomainValue Sort (Pattern variable2 annotation))
     patternLensDomain DomainValue { domainValueSort, domainValueChild } =
         DomainValue
             <$> lensResultSort domainValueSort
@@ -195,42 +194,38 @@ patternLens
             <$> traverse lensChild applicationChildren
 
 -- | The sort returned by a top-level constructor.
-resultSort
-    :: (Domain domain, Traversable domain)
-    => Traversal' (Pattern domain variable annotation) Sort
+resultSort :: Traversal' (Pattern variable annotation) Sort
 resultSort = \f -> patternLens pure f pure pure
 
 -- | All sub-expressions which are 'Pattern's.
 -- Use partsOf allChildren to get a lens to a List.
 allChildren
-    :: (Domain domain, Traversable domain)
-    => Traversal'
-        (Pattern domain variable annotation)
-        (Pattern domain variable annotation)
+    :: Traversal'
+        (Pattern variable annotation)
+        (Pattern variable annotation)
 allChildren = patternLens pure pure pure
 
 -- | Applies a function at an `[Int]` path.
 localInPattern
-    :: (Domain domain, Traversable domain)
-    => [Int]
-    ->  (  Pattern domain variable annotation
-        -> Pattern domain variable annotation
+    :: [Int]
+    ->  (  Pattern variable annotation
+        -> Pattern variable annotation
         )
-    -> Pattern domain variable annotation
-    -> Pattern domain variable annotation
+    -> Pattern variable annotation
+    -> Pattern variable annotation
 localInPattern path f pat = pat & inPath path %~ f
 
 -- | Takes an `[Int]` representing a path, and returns a lens to that position.
 -- The ints represent subpatterns in the obvious way:
 -- [0,1] points to b in \ceil(a /\ b), etc.
 inPath
-    :: (Applicative f, Domain domain, Traversable domain)
+    :: Applicative f
     => [Int]
-    ->  (  Pattern domain variable annotation
-        -> f (Pattern domain variable annotation)
+    ->  (  Pattern variable annotation
+        -> f (Pattern variable annotation)
         )
-    ->  (  Pattern domain variable annotation
-        -> f (Pattern domain variable annotation)
+    ->  (  Pattern variable annotation
+        -> f (Pattern variable annotation)
         )
 inPath []       = id --aka the identity lens
 inPath (n : ns) = partsOf allChildren . ix n . inPath ns
@@ -246,10 +241,7 @@ inPath (n : ns) = partsOf allChildren . ix n . inPath ns
 -- traverse the whole pattern and return True.
 -- Also, in practice, having a flexible sort and being a predicate
 -- are synonymous. But don't quote me on this.
-isObviouslyPredicate
-    :: Functor domain
-    => Pattern domain variable annotation
-    -> Bool
+isObviouslyPredicate :: Pattern variable annotation -> Bool
 isObviouslyPredicate (Recursive.project -> _ :< pat) =
     case pat of
         -- Trivial cases

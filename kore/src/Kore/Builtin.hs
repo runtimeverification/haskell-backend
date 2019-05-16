@@ -219,14 +219,14 @@ See also: 'asPattern'
 externalizePattern'
     ::  forall variable. Ord variable
     =>  TermLike variable
-    ->  Syntax.Pattern Domain.External variable Attribute.Null
+    ->  Syntax.Pattern variable Attribute.Null
 externalizePattern' =
     Recursive.unfold externalizePatternWorker
   where
     externalizePatternWorker
         ::  TermLike variable
         ->  Recursive.Base
-                (Syntax.Pattern Domain.External variable Attribute.Null)
+                (Syntax.Pattern variable Attribute.Null)
                 (TermLike variable)
     externalizePatternWorker termLike =
         case termLikeF of
@@ -258,7 +258,7 @@ externalizePattern' =
         :: GHC.HasCallStack
         => Recursive.Base (TermLike variable) child
         -> Recursive.Base
-            (Syntax.Pattern Domain.External variable Attribute.Null)
+            (Syntax.Pattern variable Attribute.Null)
             child
     toPatternF (_ :< termLikeF) =
         (Attribute.Null :<)

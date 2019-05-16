@@ -16,7 +16,6 @@ import           Control.Applicative
 import           Control.Comonad.Trans.Cofree
                  ( CofreeF (..), CofreeT (..) )
 import qualified Data.Function as Function
-import           Data.Functor.Classes
 import           Data.Functor.Identity
                  ( Identity (..) )
 import           Numeric.Natural
@@ -282,9 +281,7 @@ instance
     wrapperConstructorName _ = "TermLike"
 
 instance
-    ( Show (Pattern domain variable annotation)
-    , Show1 domain
-    , Eq1 domain
+    ( Show (Pattern variable annotation)
     , Show variable
     , Eq variable
     , EqualWithExplanation variable
@@ -292,15 +289,13 @@ instance
     , Eq annotation
     , EqualWithExplanation annotation
     ) =>
-    EqualWithExplanation (Pattern domain variable annotation)
+    EqualWithExplanation (Pattern variable annotation)
   where
     compareWithExplanation a@(Pattern _) = wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance
-    ( Show (Pattern domain variable annotation)
-    , Show1 domain
-    , Eq1 domain
+    ( Show (Pattern variable annotation)
     , Show variable
     , Eq variable
     , EqualWithExplanation variable
@@ -308,7 +303,7 @@ instance
     , Eq annotation
     , EqualWithExplanation annotation
     ) =>
-    WrapperEqualWithExplanation (Pattern domain variable annotation)
+    WrapperEqualWithExplanation (Pattern variable annotation)
   where
     wrapperField expected actual =
         EqWrap

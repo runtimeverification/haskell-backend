@@ -596,9 +596,8 @@ sentenceAttributes =
 
 -- | Erase the pattern annotations within a 'Sentence'.
 eraseSentenceAnnotations
-    :: Functor domain
-    => Sentence (Pattern domain variable erased)
-    -> Sentence (Pattern domain variable Attribute.Null)
+    :: Sentence (Pattern variable erased)
+    -> Sentence (Pattern variable Attribute.Null)
 eraseSentenceAnnotations sentence = (<$) Attribute.Null <$> sentence
 
 class AsSentence sentenceType where

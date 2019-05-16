@@ -8,7 +8,6 @@ import Data.Set
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Synthetic as Attribute
 import qualified Kore.Builtin as Builtin
-import qualified Kore.Domain.External as Domain
 import           Kore.Internal.TermLike
 import qualified Kore.Syntax.Pattern as Syntax
 import qualified Kore.Variables.Free as Variables.Free
@@ -21,9 +20,9 @@ hprop_synthetic :: Property
 hprop_synthetic = property $ do
     termLike <- forAll termLikeGen
     let
-        external :: Syntax.Pattern Domain.External Variable Attribute.Null
+        external :: Syntax.Pattern Variable Attribute.Null
         external = Builtin.externalizePattern' termLike
-        synthesized :: Syntax.Pattern Domain.External Variable (Set Variable)
+        synthesized :: Syntax.Pattern Variable (Set Variable)
         synthesized = Attribute.synthesize Variables.Free.synthetic external
         expect = freeVariables termLike
         actual = extract synthesized

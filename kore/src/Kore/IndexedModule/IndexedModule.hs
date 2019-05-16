@@ -87,8 +87,7 @@ import           Kore.Syntax
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
-type SortDescription dom =
-    SentenceSort (Pattern dom Variable Attribute.Null)
+type SortDescription = SentenceSort (Pattern Variable Attribute.Null)
 
 data IndexModuleError
 
