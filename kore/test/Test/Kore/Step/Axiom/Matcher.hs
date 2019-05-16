@@ -169,12 +169,12 @@ test_matcherEqualHeads =
         let expect = Just $ MultiOr.make [Conditional.topPredicate]
         actual <-
             matchDefinition Mock.metadataTools
-                (mkBuiltin $ Domain.BuiltinExternal Domain.External
+                (mkDomainValue Domain.External
                     { domainValueSort = Mock.testSort1
                     , domainValueChild = mkStringLiteral "10"
                     }
                 )
-                (mkBuiltin $ Domain.BuiltinExternal Domain.External
+                (mkDomainValue Domain.External
                     { domainValueSort = Mock.testSort1
                     , domainValueChild = mkStringLiteral "10"
                     }

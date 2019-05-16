@@ -282,14 +282,9 @@ genDomainValue :: (Sort -> Gen child) -> Sort -> Gen (Domain.External child)
 genDomainValue childGen domainValueSort =
     Domain.External domainValueSort <$> childGen stringMetaSort
 
-genBuiltinExternal :: Sort -> Gen (TermLike.Builtin (TermLike variable))
-genBuiltinExternal domainValueSort =
-    Domain.BuiltinExternal <$> genExternal domainValueSort
-
 genBuiltin :: Sort -> Gen (TermLike.Builtin (TermLike variable))
 genBuiltin domainValueSort = Gen.choice
-    [ genBuiltinExternal domainValueSort
-    , Domain.BuiltinInt <$> genInternalInt domainValueSort
+    [ Domain.BuiltinInt <$> genInternalInt domainValueSort
     , Domain.BuiltinBool <$> genInternalBool domainValueSort
     , Domain.BuiltinString <$> genInternalString domainValueSort
     ]
@@ -308,13 +303,6 @@ genInternalString :: Sort -> Gen Domain.InternalString
 genInternalString internalStringSort =
     Domain.InternalString internalStringSort
     <$> Gen.text (Range.linear 0 1024) Gen.unicode
-
-genExternal :: Sort -> Gen (Domain.External (TermLike variable))
-genExternal domainValueSort =
-    Domain.External domainValueSort
-        . mkStringLiteral
-        . getStringLiteral
-        <$> stringLiteralGen
 
 existsGen :: (Sort -> Gen child) -> Sort -> Gen (Exists Sort Variable child)
 existsGen = existsForallGen Exists

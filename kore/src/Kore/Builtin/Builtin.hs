@@ -41,7 +41,6 @@ module Kore.Builtin.Builtin
     , verifySymbolArguments
     , verifyDomainValue
     , parseDomainValue
-    , parseEncodeDomainValue
     , parseString
       -- * Implementing builtin functions
     , notImplemented
@@ -469,7 +468,7 @@ verifyDomainValue
     :: DomainValueVerifiers (TermLike variable)
     -> (Id -> Either (Error VerifyError) (SentenceSort patternType))
     -> Domain.External (TermLike variable)
-    -> Either (Error VerifyError) (Builtin (TermLike variable))
+    -> Either (Error VerifyError) (TermLikeF variable (TermLike variable))
 verifyDomainValue
     verifiers
     findSort
@@ -477,44 +476,18 @@ verifyDomainValue
   =
     case domainValueSort of
         SortActualSort _ -> do
-            mHookSort <- lookupHookSort findSort domainValueSort
-            case mHookSort of
-                Nothing -> defaultDomainValueVerifier domain
-                Just hookSort ->
-                    verifyHookedSortDomainValue verifiers hookSort domain
-        SortVariableSort _ -> do
-            defaultDomainValueVerifier domain
+            hookSort <- lookupHookSort findSort domainValueSort
+            fromMaybe (external domain) $ do
+                hook <- hookSort
+                verifier <- HashMap.lookup hook verifiers
+                let context =
+                        "Verifying builtin sort '" ++ Text.unpack hook ++ "'"
+                    verify = Kore.Error.withContext context . verifier
+                pure (BuiltinF <$> verify domain)
+        SortVariableSort _ -> external domain
   where
+    external = return . DomainValueF
     DomainValue { domainValueSort } = Lens.view lensDomainValue domain
-
-{- | In the case of a hooked sort, lookup the specific verifier for the hook
-  sort and attempt to encode the domain value. -}
-verifyHookedSortDomainValue
-    :: DomainValueVerifiers (TermLike variable)
-    -> Text
-    -> Domain.External (TermLike variable)
-    -> Either (Error VerifyError) (Builtin (TermLike variable))
-verifyHookedSortDomainValue verifiers hookSort dv = do
-    verifier <- case HashMap.lookup hookSort verifiers of
-        Nothing -> return defaultDomainValueVerifier
-        Just verifier -> return verifier
-    validDomainValue <-
-        Kore.Error.withContext
-            ("Verifying builtin sort '" ++ Text.unpack hookSort ++ "'")
-            (verifier dv)
-    return validDomainValue
-
-{- | In the case of either variable, unhooked, or non builtin sorts
-  confirm the domain value argument is a string literal pattern.
--}
-defaultDomainValueVerifier
-    :: DomainValueVerifier (TermLike variable)
-defaultDomainValueVerifier
-    domainValue@Domain.External { domainValueChild = StringLiteral_ _ }
-  =
-    return (Domain.BuiltinExternal domainValue)
-defaultDomainValueVerifier _ =
-    Kore.Error.koreFail "Domain value argument must be a literal string."
 
 -- | Construct a 'DomainValueVerifier' for an encodable sort.
 makeEncodedDomainValueVerifier
@@ -526,35 +499,6 @@ makeEncodedDomainValueVerifier
 makeEncodedDomainValueVerifier _builtinSort encodeSort domain =
     Kore.Error.withContext "While parsing domain value"
         (encodeSort domain)
-
-{- | Run a parser in a domain value pattern and construct the builtin
-  representation of the value.
-
-  An error is thrown if the string is not a literal string or a previously
-  encoded domain value.
-  The constructed value is returned.
-
--}
-parseEncodeDomainValue
-    :: Parser a
-    -> (a -> Builtin (TermLike variable))
-    -> DomainValue Sort (Builtin (TermLike variable))
-    -> Either (Error VerifyError) (Builtin (TermLike variable))
-parseEncodeDomainValue parser ctor DomainValue { domainValueChild } =
-    Kore.Error.withContext "While parsing domain value"
-        $ case domainValueChild of
-            Domain.BuiltinExternal builtin -> do
-                val <- parseString parser lit
-                return $ ctor val
-              where
-                Domain.External
-                    { domainValueChild = StringLiteral_ lit }
-                  =
-                    builtin
-            Domain.BuiltinInt _ -> return domainValueChild
-            Domain.BuiltinBool _ -> return domainValueChild
-            _ -> Kore.Error.koreFail
-                    "Expected literal string or internal value"
 
 {- | Run a parser in a domain value pattern.
 

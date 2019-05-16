@@ -45,9 +45,6 @@ simplifyBuiltin
     -> MultiOr (Conditional variable (Builtin (TermLike variable)))
 simplifyBuiltin =
     \case
-        Domain.BuiltinExternal _ext -> do
-            _ext <- sequence _ext
-            return (Domain.BuiltinExternal <$> sequenceA _ext)
         Domain.BuiltinMap _map -> do
             _map <- sequence _map
             -- MultiOr propagates \bottom children upward.

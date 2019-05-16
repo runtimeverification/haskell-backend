@@ -114,14 +114,14 @@ ex4 = mkVar Variable { variableName = testId "ex4", variableCounter = mempty, va
 
 dv1, dv2 :: TermLike Variable
 dv1 =
-    mkBuiltin $ Domain.BuiltinExternal Domain.External
+    mkDomainValue Domain.External
         { domainValueSort = s1
         , domainValueChild = mkStringLiteral "dv1"
         }
 dv2 =
-    mkBuiltin $ Domain.BuiltinExternal Domain.External
+    mkDomainValue Domain.External
         { domainValueSort = s1
-        , domainValueChild = mkStringLiteral "dv."
+        , domainValueChild = mkStringLiteral "dv2"
         }
 
 aA :: TermLike Variable
@@ -522,11 +522,13 @@ test_unification =
     , andSimplifyException "Unmatching constructor constant + domain value"
         (UnificationTerm aA)
         (UnificationTerm dv2)
-        "Cannot handle Constructor and builtin:\na{}()\n\\dv{s1{}}(\"dv.\")\n"
+        "Cannot handle Constructor and DomainValue:\n\
+        \a{}()\n\\dv{s1{}}(\"dv2\")\n"
     , andSimplifyException "Unmatching domain value + constructor constant"
         (UnificationTerm dv1)
         (UnificationTerm aA)
-        "Cannot handle builtin and Constructor:\n\\dv{s1{}}(\"dv1\")\na{}()\n"
+        "Cannot handle DomainValue and Constructor:\n\
+        \\\dv{s1{}}(\"dv1\")\na{}()\n"
     , testCase "Unmatching domain value + nonconstructor constant" $
         andSimplifySuccess
             (UnificationTerm dv1)

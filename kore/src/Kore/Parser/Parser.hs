@@ -645,17 +645,6 @@ externalDomainParser = do
   where
     childParser = asParsedPattern . StringLiteralF <$> stringLiteralParser
 
-builtinDomainParser :: Parser child -> Parser (Domain.Builtin key child)
-builtinDomainParser childParser = do
-    domainValueSort <- inCurlyBracesRemainderParser sortParser
-    domainValueChild <- inParenthesesParser childParser
-    let external =
-            Domain.External
-                { domainValueSort
-                , domainValueChild
-                }
-    return (Domain.BuiltinExternal external)
-
 {-|'korePatternParser' parses an unifiedPattern
 
 BNF definitions:

@@ -52,7 +52,7 @@ import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
 import           Kore.Internal.TermLike
-                 ( Builtin, TermLike )
+                 ( TermLike )
 import qualified Kore.Internal.TermLike as Internal
 import           Kore.Parser
                  ( ParsedPattern )
@@ -287,8 +287,7 @@ verifyPatternHead (_ :< patternF) =
             transCofreeF Internal.BottomF <$> verifyBottom bottom
         Syntax.CeilF ceil' ->
             transCofreeF Internal.CeilF <$> verifyCeil ceil'
-        Syntax.DomainValueF dv ->
-            transCofreeF Internal.BuiltinF <$> verifyDomainValue dv
+        Syntax.DomainValueF dv -> verifyDomainValue dv
         Syntax.EqualsF equals' ->
             transCofreeF Internal.EqualsF <$> verifyEquals equals'
         Syntax.ExistsF exists ->
@@ -591,8 +590,7 @@ verifyVariable variable@Variable { variableName, variableSort } = do
 
 verifyDomainValue
     :: Domain.External (PatternVerifier Verified.Pattern)
-    ->   PatternVerifier
-            (CofreeF Builtin (Attribute.Pattern Variable) Verified.Pattern)
+    -> PatternVerifier (Base Verified.Pattern Verified.Pattern)
 verifyDomainValue domain = do
     let DomainValue { domainValueSort = patternSort } =
             Lens.view Domain.lensDomainValue domain

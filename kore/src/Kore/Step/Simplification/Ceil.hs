@@ -315,23 +315,6 @@ makeEvaluateBuiltin
     -> Builtin (TermLike variable)
     -> Simplifier (OrPredicate variable)
 makeEvaluateBuiltin
-    _tools
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSimplifier
-    (Domain.BuiltinExternal Domain.External { domainValueChild = p })
-  =
-    case Recursive.project p of
-        _ :< StringLiteralF _ ->
-            -- This should be the only kind of Domain.BuiltinExternal, and it
-            -- should be valid and functional if this has passed verification.
-            return OrPredicate.top
-        _ ->
-            error
-                ( "Ceil not implemented: non-string pattern."
-                ++ show p
-                )
-makeEvaluateBuiltin
     tools
     substitutionSimplifier
     simplifier

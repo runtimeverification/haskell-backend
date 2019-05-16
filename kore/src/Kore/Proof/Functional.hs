@@ -19,6 +19,7 @@ import Data.Hashable
 import GHC.Generics
        ( Generic )
 
+import Kore.Domain.External
 import Kore.Internal.TermLike
        ( Builtin )
 import Kore.Syntax.Application
@@ -37,7 +38,10 @@ data FunctionalProof variable
     -- ^Variables are functional as per Corollary 5.19
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     -- |= ∃y . x = y
-    | FunctionalDomainValue (Builtin ())
+    | FunctionalBuiltin (Builtin ())
+    -- ^ Builtin pattern without children are functional: they represent
+    -- one value in the model.
+    | FunctionalDomainValue (External ())
     -- ^ Domain value pattern without children are functional: they represent
     -- one value in the model.
     | FunctionalHead SymbolOrAlias
@@ -100,6 +104,7 @@ mapVariables
 mapVariables mapping =
     \case
         FunctionalVariable variable -> FunctionalVariable (mapping variable)
+        FunctionalBuiltin value -> FunctionalBuiltin value
         FunctionalDomainValue value -> FunctionalDomainValue value
         FunctionalHead symbol -> FunctionalHead symbol
         FunctionalStringLiteral string -> FunctionalStringLiteral string

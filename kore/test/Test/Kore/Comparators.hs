@@ -1001,9 +1001,6 @@ instance
     ) =>
     SumEqualWithExplanation (Domain.Builtin key child)
   where
-    sumConstructorPair (BuiltinExternal ext1) (BuiltinExternal ext2) =
-        SumConstructorSameWithArguments
-            (EqWrap "BuiltinExternal" ext1 ext2)
     sumConstructorPair (BuiltinInt int1) (BuiltinInt int2) =
         SumConstructorSameWithArguments
             (EqWrap "BuiltinInt" int1 int2)

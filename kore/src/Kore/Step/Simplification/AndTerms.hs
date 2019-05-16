@@ -1331,6 +1331,10 @@ domainValueAndEqualsAssumesDifferent
     -> TermLike variable
     -> MaybeT unifier (TermLike variable)
 domainValueAndEqualsAssumesDifferent
+    first@(DV_ _ _)
+    second@(DV_ _ _)
+  = Monad.Trans.lift $ cannotUnifyDomainValues first second
+domainValueAndEqualsAssumesDifferent
     first@(Builtin_ (Domain.BuiltinBool _))
     second@(Builtin_ (Domain.BuiltinBool _))
   = Monad.Trans.lift $ cannotUnifyDomainValues first second

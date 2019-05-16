@@ -195,7 +195,6 @@ externalizePattern =
         case pat of
             BuiltinF domain ->
                 case domain of
-                    Domain.BuiltinExternal _ -> original
                     Domain.BuiltinMap  builtin ->
                         Recursive.project (Map.asTermLike builtin)
                     Domain.BuiltinList builtin ->
@@ -251,8 +250,6 @@ externalizePattern' =
                     Domain.BuiltinString builtin ->
                         (toPatternF . Recursive.project)
                             (String.asTermLike builtin)
-                    Domain.BuiltinExternal external ->
-                        Attribute.Null :< Syntax.DomainValueF external
             _ -> toPatternF termLikeBase
       where
         termLikeBase@(_ :< termLikeF) = Recursive.project termLike

@@ -16,50 +16,18 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern
-                 ( Conditional (..) )
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
 import           Kore.Step.Simplification.Builtin
                  ( simplify )
 
 import           Test.Kore.Comparators ()
-import           Test.Kore.Step.MockSymbols
-                 ( testSort )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_simplify :: [TestTree]
 test_simplify =
-    [ testCase "DomainValue evaluates to DomainValue"
-        (assertEqualWithExplanation ""
-            (OrPattern.fromPatterns
-                [ Conditional
-                    { term =
-                        mkBuiltin
-                            (Domain.BuiltinExternal Domain.External
-                                { domainValueSort = testSort
-                                , domainValueChild = mkStringLiteral "a"
-                                }
-                            )
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-                ]
-            )
-            (evaluate
-                Mock.emptyMetadataTools
-                (Domain.BuiltinExternal Domain.External
-                    { domainValueSort = testSort
-                    , domainValueChild =
-                        OrPattern.fromTermLike $ mkStringLiteral "a"
-                    }
-                )
-            )
-        )
-    , testCase "\\bottom propagates through builtin Map"
+    [ testCase "\\bottom propagates through builtin Map"
         (assertEqualWithExplanation
             "Expected \\bottom to propagate to the top level"
             (OrPattern.fromPatterns [])

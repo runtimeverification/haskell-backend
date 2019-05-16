@@ -366,16 +366,10 @@ test_ceilSimplification =
                     }
                 ]
         actual <- makeEvaluate Mock.metadataTools
-            Conditional
-                { term =
-                    mkBuiltin
-                        (Domain.BuiltinExternal Domain.External
-                            { domainValueSort = Mock.testSort
-                            , domainValueChild = mkStringLiteral "a"
-                            }
-                        )
-                , predicate = makeTruePredicate
-                , substitution = mempty
+            $ Pattern.fromTermLike
+            $ mkDomainValue Domain.External
+                { domainValueSort = Mock.testSort
+                , domainValueChild = mkStringLiteral "a"
                 }
         assertEqualWithExplanation "ceil(1)" expected actual
     , testCase "ceil with map domain value" $ do

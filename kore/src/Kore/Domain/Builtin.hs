@@ -369,8 +369,7 @@ instance Unparse InternalString where
 -- * Builtin domain representations
 
 data Builtin key child
-    = BuiltinExternal !(External child)
-    | BuiltinMap !(InternalMap key child)
+    = BuiltinMap !(InternalMap key child)
     | BuiltinList !(InternalList child)
     | BuiltinSet !(InternalSet key)
     | BuiltinInt !InternalInt
@@ -414,7 +413,6 @@ instance Domain (Builtin key) where
                 }
         originalSort =
             case builtin of
-                BuiltinExternal External { domainValueSort } -> domainValueSort
                 BuiltinInt InternalInt { builtinIntSort } -> builtinIntSort
                 BuiltinBool InternalBool { builtinBoolSort } -> builtinBoolSort
                 BuiltinString InternalString { internalStringSort } -> internalStringSort
@@ -427,9 +425,6 @@ instance Domain (Builtin key) where
             -> Builtin key child
         getBuiltin DomainValue { domainValueSort, domainValueChild } =
             case domainValueChild of
-                BuiltinExternal external ->
-                    BuiltinExternal
-                        (external { domainValueSort } :: External child)
                 BuiltinInt internal ->
                     BuiltinInt internal { builtinIntSort = domainValueSort }
                 BuiltinBool internal ->

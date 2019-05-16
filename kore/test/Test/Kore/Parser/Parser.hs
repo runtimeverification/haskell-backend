@@ -441,8 +441,7 @@ domainValuePatternParserTests =
     parseTree korePatternParser
         [ success "\\dv{s1}(\"a\")"
             $ Builtin.externalizePattern'
-            $ Internal.mkBuiltin
-            $ Domain.BuiltinExternal Domain.External
+            $ Internal.mkDomainValue Domain.External
                 { domainValueSort = sortVariableSort "s1"
                 , domainValueChild = Internal.mkStringLiteral "a"
                 }
@@ -933,8 +932,7 @@ sentenceAliasParserTests =
                             }
                     , sentenceAliasRightPattern =
                         Builtin.externalizePattern'
-                        $ Internal.mkBuiltin
-                        $ Domain.BuiltinExternal Domain.External
+                        $ Internal.mkDomainValue Domain.External
                             { domainValueSort = resultSort
                             , domainValueChild = Internal.mkStringLiteral "f"
                             }

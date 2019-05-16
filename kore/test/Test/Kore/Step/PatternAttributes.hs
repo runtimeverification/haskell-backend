@@ -9,7 +9,7 @@ import Test.Tasty.HUnit
 
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Internal.TermLike
-import           Kore.Proof.Functional
+import           Kore.Proof.Functional as Proof.Functional
 import           Kore.Step.PatternAttributes
 import           Kore.Step.PatternAttributesError
                  ( ConstructorLikeError (..), FunctionError (..),
@@ -33,37 +33,25 @@ test_patternAttributes =
         (do
             assertEqualWithExplanation "FunctionalVariable"
                 (FunctionalVariable (LevelString "10"))
-                (mapFunctionalProofVariables
+                (Proof.Functional.mapVariables
                     levelShow
                     (FunctionalVariable (LevelInt 10))
                 )
-            let
-                dv =
-                    Domain.BuiltinExternal Domain.External
-                        { domainValueSort = Mock.testSort
-                        , domainValueChild = ()
-                        }
-            assertEqualWithExplanation "FunctionalDomainValue"
-                (FunctionalDomainValue dv)
-                (mapFunctionalProofVariables
-                    levelShow
-                    (FunctionalDomainValue dv)
-                )
             assertEqualWithExplanation "FunctionalHead"
                 (FunctionalHead MockSymbols.aSymbol)
-                (mapFunctionalProofVariables
+                (Proof.Functional.mapVariables
                     levelShow
                     (FunctionalHead MockSymbols.aSymbol)
                 )
             assertEqualWithExplanation "FunctionalStringLiteral"
                 (FunctionalStringLiteral (StringLiteral "10"))
-                (mapFunctionalProofVariables
+                (Proof.Functional.mapVariables
                     levelShow
                     (FunctionalStringLiteral (StringLiteral "10"))
                 )
             assertEqualWithExplanation "FunctionalCharLiteral"
                 (FunctionalCharLiteral (CharLiteral 'a'))
-                (mapFunctionalProofVariables
+                (Proof.Functional.mapVariables
                     levelShow
                     (FunctionalCharLiteral (CharLiteral 'a'))
                 )
@@ -290,7 +278,7 @@ test_patternAttributes =
             let
                 dv :: TermLike Variable
                 dv =
-                    mkBuiltin $ Domain.BuiltinExternal Domain.External
+                    mkDomainValue Domain.External
                         { domainValueSort = Mock.testSort
                         , domainValueChild = mkStringLiteral "a"
                         }
@@ -387,7 +375,7 @@ test_patternAttributes =
             let
                 dv :: TermLike Variable
                 dv =
-                    mkBuiltin $ Domain.BuiltinExternal Domain.External
+                    mkDomainValue Domain.External
                         { domainValueSort = Mock.testSort
                         , domainValueChild = mkStringLiteral "a"
                         }

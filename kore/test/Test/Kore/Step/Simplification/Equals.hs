@@ -416,57 +416,45 @@ test_equalsSimplification_TermLike =
         (assertTermEquals
             Mock.metadataTools
             Predicate.topPredicate
-            (mkBuiltin
-                (Domain.BuiltinExternal Domain.External
-                    { domainValueSort = testSort
-                    , domainValueChild = mkStringLiteral "a"
-                    }
-                )
+            (mkDomainValue Domain.External
+                { domainValueSort = testSort
+                , domainValueChild = mkStringLiteral "a"
+                }
             )
-            (mkBuiltin
-                (Domain.BuiltinExternal Domain.External
-                    { domainValueSort = testSort
-                    , domainValueChild = mkStringLiteral "a"
-                    }
-                )
+            (mkDomainValue Domain.External
+                { domainValueSort = testSort
+                , domainValueChild = mkStringLiteral "a"
+                }
             )
         )
     , testCase "domain-value != domain-value"
         (assertTermEquals
             Mock.metadataTools
             Predicate.bottomPredicate
-            (mkBuiltin
-                (Domain.BuiltinExternal Domain.External
-                    { domainValueSort = testSort
-                    , domainValueChild = mkStringLiteral "a"
-                    }
-                )
+            (mkDomainValue Domain.External
+                { domainValueSort = testSort
+                , domainValueChild = mkStringLiteral "a"
+                }
             )
-            (mkBuiltin
-                (Domain.BuiltinExternal Domain.External
-                    { domainValueSort = testSort
-                    , domainValueChild = mkStringLiteral "b"
-                    }
-                )
+            (mkDomainValue Domain.External
+                { domainValueSort = testSort
+                , domainValueChild = mkStringLiteral "b"
+                }
             )
         )
     , testCase "domain-value != domain-value because of sorts"
         (assertTermEquals
             Mock.metadataTools
             Predicate.bottomPredicate
-            (mkBuiltin
-                (Domain.BuiltinExternal Domain.External
-                    { domainValueSort = testSort
-                    , domainValueChild = mkStringLiteral "a"
-                    }
-                )
+            (mkDomainValue Domain.External
+                { domainValueSort = testSort
+                , domainValueChild = mkStringLiteral "a"
+                }
             )
-            (mkBuiltin
-                (Domain.BuiltinExternal Domain.External
-                    { domainValueSort = testSort2
-                    , domainValueChild = mkStringLiteral "a"
-                    }
-                )
+            (mkDomainValue Domain.External
+                { domainValueSort = testSort2
+                , domainValueChild = mkStringLiteral "a"
+                }
             )
         )
     , testCase "\"a\" == \"a\""

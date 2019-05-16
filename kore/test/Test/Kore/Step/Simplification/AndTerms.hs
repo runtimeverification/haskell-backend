@@ -978,14 +978,14 @@ plain1OfB = Mock.plain11 Mock.b
 
 aDomainValue :: TermLike Variable
 aDomainValue =
-    mkBuiltin $ Domain.BuiltinExternal Domain.External
+    mkDomainValue Domain.External
         { domainValueSort = Mock.testSort
         , domainValueChild = mkStringLiteral "a"
         }
 
 bDomainValue :: TermLike Variable
 bDomainValue =
-    mkBuiltin $ Domain.BuiltinExternal Domain.External
+    mkDomainValue Domain.External
         { domainValueSort = Mock.testSort
         , domainValueChild = mkStringLiteral "b"
         }

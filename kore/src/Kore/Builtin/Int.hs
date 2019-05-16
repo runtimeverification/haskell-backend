@@ -28,7 +28,6 @@ module Kore.Builtin.Int
     , extractIntDomainValue
     , asTermLike
     , asInternal
-    , asConcretePattern
     , asPattern
     , asPartialPattern
     , parse
@@ -228,12 +227,6 @@ expectBuiltinInt ctx =
     \case
         Builtin_ domain ->
             case domain of
-                Domain.BuiltinExternal external
-                  | StringLiteral_ lit <- domainValueChild ->
-                    (return . Builtin.runParser ctx)
-                        (Builtin.parseString parse lit)
-                  where
-                    Domain.External { domainValueChild } = external
                 Domain.BuiltinInt Domain.InternalInt { builtinIntValue } ->
                     return builtinIntValue
                 _ ->
@@ -282,26 +275,6 @@ asTermLike builtin =
   where
     Domain.InternalInt { builtinIntSort } = builtin
     Domain.InternalInt { builtinIntValue = int } = builtin
-
-{- | Render an 'Integer' as a concrete domain value pattern of the given sort.
-
-  The result sort should be hooked to the builtin @Int@ sort, but this is not
-  checked.
-
-  See also: 'sort'
-
- -}
-asConcretePattern
-    :: Sort  -- ^ resulting sort
-    -> Integer  -- ^ builtin value to render
-    -> TermLike Concrete
-asConcretePattern domainValueSort builtinIntChild =
-    (mkBuiltin . Domain.BuiltinExternal)
-        Domain.External
-            { domainValueSort
-            , domainValueChild =
-                mkStringLiteral . Text.pack $ show builtinIntChild
-            }
 
 asPattern
     :: Ord variable
