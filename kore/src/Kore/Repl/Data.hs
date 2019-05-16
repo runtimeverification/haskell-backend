@@ -380,10 +380,10 @@ instance MonadUnify UnifierWithExplanation where
 runUnifierWithExplanation
     :: forall a
     .  UnifierWithExplanation a
-    -> Simplifier (Maybe (Maybe (Doc ())))
+    -> Simplifier (Maybe (Doc ()))
 runUnifierWithExplanation (UnifierWithExplanation unifier)
   =
-    fmap (fmap getFirst) unificationExplanations
+    join <$> fmap (fmap getFirst) unificationExplanations
   where
     unificationResults :: Simplifier (Maybe ([a], First (Doc ())))
     unificationResults =
