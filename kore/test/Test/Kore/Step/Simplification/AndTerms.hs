@@ -11,12 +11,15 @@ import qualified Control.Error as Error
 import           Data.Default
                  ( Default (..) )
 import qualified Data.Map as Map
+import qualified Data.Set as Set
 
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Simplification
                  ( Simplification (Simplification) )
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
+import qualified Kore.Builtin.Set as Set
+                 ( asInternal )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
@@ -767,7 +770,37 @@ test_andTermsSimplification =
 
         -- TODO: Add tests with non-trivial unifications and predicates.
         ]
-    -- TODO: Add tests for set unification.
+
+    , testGroup "Builtin Set domain"
+        [ testCase "handles set ambiguity" $ do
+            let
+                expected = Just
+                    [ Conditional
+                        { term = Mock.builtinSet [Mock.a, Mock.b]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.x, Mock.a)
+                            , (Mock.xSet, Mock.builtinSet [Mock.b])
+                            ]
+                        }
+                    , Conditional
+                        { term = Mock.builtinSet [Mock.a, Mock.b]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.x, Mock.b)
+                            , (Mock.xSet, Mock.builtinSet [Mock.a])
+                            ]
+                        }
+                    ]
+            actual <- unify
+                Mock.metadataTools
+                (Mock.concatSet
+                    (Mock.elementSet (mkVar Mock.x))
+                    (mkVar Mock.xSet)
+                )
+                (Mock.builtinSet [Mock.a, Mock.b])
+            assertEqualWithExplanation "" expected actual
+        ]
     ]
 
 test_equalsTermsSimplification :: [TestTree]
@@ -893,6 +926,33 @@ test_equalsTermsSimplification =
             Mock.metadataTools simplifiers
             (Mock.functionalConstr20 (mkVar Mock.x) (mkVar Mock.var_x_1))
             (Mock.functionalConstr20 Mock.cf Mock.cg)
+        assertEqualWithExplanation "" expected actual
+    , testCase "handles set ambiguity" $ do
+        let
+            asInternal = Set.asInternal Mock.metadataTools Mock.setSort
+            expected = Just
+                [ Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (Mock.x, Mock.a)
+                        , (Mock.xSet, asInternal (Set.fromList [Mock.b]))
+                        ]
+                    }
+                , Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (Mock.x, Mock.b)
+                        , (Mock.xSet, asInternal (Set.fromList [Mock.a]))
+                        ]
+                    }
+                ]
+        actual <- simplifyEquals
+            Mock.metadataTools
+            Map.empty
+            (Mock.concatSet (Mock.elementSet (mkVar Mock.x)) (mkVar Mock.xSet))
+            (asInternal (Set.fromList [Mock.a, Mock.b]))
         assertEqualWithExplanation "" expected actual
     ]
 
