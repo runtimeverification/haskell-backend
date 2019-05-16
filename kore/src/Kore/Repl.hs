@@ -116,20 +116,24 @@ runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
     state :: ReplState claim
     state =
         ReplState
-            { axioms   = addIndexesToAxioms axioms'
-            , claims   = addIndexesToClaims (length axioms') claims'
-            , claim    = firstClaim
-            , graphs   = firstClaimExecutionGraph
-            , node     = ReplNode (Strategy.root firstClaimExecutionGraph)
-            , commands = Seq.empty
+            { axioms     = addIndexesToAxioms axioms'
+            , claims     = addIndexesToClaims (length axioms') claims'
+            , claim      = firstClaim
+            , claimIndex = firstClaimIndex
+            , graphs     = Map.singleton firstClaimIndex firstClaimExecutionGraph
+            , node       = ReplNode (Strategy.root firstClaimExecutionGraph)
+            , commands   = Seq.empty
             -- TODO(Vladimir): should initialize this to the value obtained from
             -- the frontend via '--omit-labels'.
-            , omit    = []
-            , stepper = stepper0
-            , unifier = unifier0
-            , labels  = Map.empty
-            , aliases = Map.empty
+            , omit       = []
+            , stepper    = stepper0
+            , unifier    = unifier0
+            , labels     = Map.empty
+            , aliases    = Map.empty
             }
+
+    firstClaimIndex :: ClaimIndex
+    firstClaimIndex = ClaimIndex 0
 
     addIndexesToAxioms
         :: [Axiom]

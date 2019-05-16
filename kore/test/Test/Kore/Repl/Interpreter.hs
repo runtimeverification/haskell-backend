@@ -196,17 +196,18 @@ tests = flip testCase
 mkState :: [Axiom] -> Claim -> ReplState Claim
 mkState axioms claim =
     ReplState
-        { axioms   = axioms
-        , claims   = [claim]
-        , claim    = claim
-        , graph    = graph'
-        , node     = ReplNode 0
-        , commands = Seq.empty
-        , omit     = []
-        , stepper  = stepper0
-        , unifier  = unifier0
-        , labels   = Map.empty
-        , aliases  = Map.empty
+        { axioms      = axioms
+        , claims      = [claim]
+        , claim       = claim
+        , claimIndex  = ClaimIndex 0
+        , graphs      = Map.singleton (ClaimIndex 0) graph'
+        , node        = ReplNode 0
+        , commands    = Seq.empty
+        , omit        = []
+        , stepper     = stepper0
+        , unifier     = unifier0
+        , labels      = Map.empty
+        , aliases     = Map.empty
         }
   where
     graph' = emptyExecutionGraph claim
