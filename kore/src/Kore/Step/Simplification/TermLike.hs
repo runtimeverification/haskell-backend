@@ -75,8 +75,7 @@ import           Kore.Variables.Fresh
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
 -- instances of that.
 
-{-|'simplify' simplifies a TermLike variable, returning an
-'Pattern'.
+{-|'simplify' simplifies a `TermLike`, returning a 'Pattern'.
 -}
 simplify
     ::  ( SortedVariable variable

@@ -588,10 +588,10 @@ unifyEquals
                     unifyEqualsFramed builtin1 builtin2 x
                 [x@(Var_ _), DV_ _ (Domain.BuiltinSet builtin2)] ->
                     unifyEqualsFramed builtin1 builtin2 x
-                [App_ symbol3 [ key3 ], x@(Var_ _)]
+                [App_ symbol3 [ key3 ], x]
                   | isSymbolElement hookTools symbol3 ->
                         unifyEqualsSelect builtin1 symbol3 key3 x
-                [x@(Var_ _), App_ symbol3 [ key3 ]]
+                [x, App_ symbol3 [ key3 ]]
                   | isSymbolElement hookTools symbol3 ->
                         unifyEqualsSelect builtin1 symbol3 key3 x
                 _ ->
@@ -618,9 +618,16 @@ unifyEquals
         -- The same applies to the similar places in Map and List, but not
         -- to the empty result a few lines below.
         empty
+        -- This error can be replaced with `empty` if implementing the
+        -- missing case is undesirable.
+        --(error . unlines)
+        --    [ "Unimplemented set unification for domain value vs application. "
+        --    , "dv=" ++ unparseToString dv1
+        --    , "app=" ++ unparseToString app2
+        --    ]
       where
         -- Unify one concrete set with a select pattern (x:elem s:set)
-        -- Note that x can be a proper symbolic pattern (not just a variable)
+        -- Note that x an s can be proper symbolic patterns (not just variables)
         -- TODO(traiansf): move it from where once the otherwise is not needed
         unifyEqualsSelect
             :: Domain.InternalSet  -- ^ concrete set
@@ -630,32 +637,34 @@ unifyEquals
             -> unifier (Pattern variable)
         unifyEqualsSelect builtin1' _ key2 set2
           | set1 == Set.empty = bottomWithExplanation
-          | otherwise = case Set.toList set1 of
-            [fromConcreteStepPattern -> key1] ->
-                Reflection.give tools $ do
-                    let emptySetPat = asInternal tools sort1 Set.empty
-                    elemUnifier <- unifyEqualsChildren key1 key2
-                    -- error when subunification problem returns partial result.
-                    -- More details at 'errorIfIncompletelyUnified'.
-                    errorIfConcreteIncompletelyUnified key1 key2 elemUnifier
-                    setUnifier <- unifyEqualsChildren emptySetPat set2
-                    -- error when subunification problem returns partial result
-                    -- More details at 'errorIfIncompletelyUnified'.
-                    errorIfConcreteIncompletelyUnified
-                        emptySetPat set2 setUnifier
-                    -- Return the concrete set, but capture any predicates and
-                    -- substitutions from unifying the element
-                    -- and framing variable.
-                    let result =
-                            pure dv1
-                                -- TODO (virgil): Using withoutTerm here looks
-                                -- bad. Consider replacing that with a ceil,
-                                -- if only to remove an assumption on the
-                                -- set values (i.e. that they're functional).
-                                `andCondition` withoutTerm elemUnifier
-                                `andCondition` withoutTerm setUnifier
-                    return result
-            _ -> Builtin.unifyEqualsUnsolved simplificationType dv1 app2
+          | otherwise =
+            Reflection.give tools $ do
+                concreteKey1 <- Monad.Unify.scatter (Set.toList set1)
+                let
+                    remainderSet = Set.delete concreteKey1 set1
+                    remainderSetPat = asInternal tools sort1 remainderSet
+                    key1 = fromConcreteStepPattern concreteKey1
+                elemUnifier <- unifyEqualsChildren key1 key2
+                -- error when subunification problem returns partial result.
+                -- More details at 'errorIfIncompletelyUnified'.
+                errorIfConcreteIncompletelyUnified key1 key2 elemUnifier
+                setUnifier <- unifyEqualsChildren remainderSetPat set2
+                -- error when subunification problem returns partial result
+                -- More details at 'errorIfIncompletelyUnified'.
+                errorIfConcreteIncompletelyUnified
+                    remainderSetPat set2 setUnifier
+                -- Return the concrete set, but capture any predicates and
+                -- substitutions from unifying the element
+                -- and framing variable.
+                let result =
+                        pure dv1
+                            -- TODO (virgil): Using withoutTerm here looks
+                            -- bad. Consider replacing that with a ceil,
+                            -- if only to remove an assumption on the
+                            -- set values (i.e. that they're functional).
+                            `andCondition` withoutTerm elemUnifier
+                            `andCondition` withoutTerm setUnifier
+                return result
           where
             Domain.InternalSet
                 { builtinSetChild = set1
