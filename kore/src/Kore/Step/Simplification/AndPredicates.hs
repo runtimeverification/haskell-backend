@@ -11,6 +11,8 @@ module Kore.Step.Simplification.AndPredicates
     ( simplifyEvaluatedMultiPredicate
     ) where
 
+import qualified Data.Foldable as Foldable
+
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -27,8 +29,6 @@ import           Kore.Internal.OrPredicate
                  ( OrPredicate )
 import           Kore.Internal.Pattern
                  ( Predicate )
-import qualified Kore.Internal.Pattern as Pattern
-                 ( Conditional (..) )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
@@ -36,8 +36,7 @@ import           Kore.Step.Simplification.Data
                  TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
-import           Kore.Step.Substitution
-                 ( mergePredicatesAndSubstitutions )
+import qualified Kore.Step.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -73,11 +72,12 @@ simplifyEvaluatedMultiPredicate
     andPredicates
         :: [Predicate variable]
         -> BranchT Simplifier (Predicate variable)
-    andPredicates predicates0 =
-        mergePredicatesAndSubstitutions
+    andPredicates predicates' =
+        normalize (Foldable.fold predicates')
+
+    normalize =
+        Substitution.normalize
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSubstitution
-            (map Pattern.predicate predicates0)
-            (map Pattern.substitution predicates0)
