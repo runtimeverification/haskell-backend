@@ -50,7 +50,7 @@ import           Control.Monad.Error.Class
                  ( MonadError )
 import qualified Control.Monad.Error.Class as Monad.Error
 import           Control.Monad.State.Strict
-                 ( MonadState, get, gets, modify )
+                 ( MonadState, get, modify )
 import           Control.Monad.Trans.Accum
                  ( AccumT, runAccumT )
 import qualified Control.Monad.Trans.Accum as Monad.Accum
