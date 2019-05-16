@@ -50,6 +50,7 @@ module Kore.Internal.TermLike
     , mkSort
     , mkSortVariable
     , mkInhabitant
+    , mkEvaluated
     , varS
     , symS
     -- * Predicate constructors
@@ -94,6 +95,7 @@ module Kore.Internal.TermLike
     , pattern V
     , pattern StringLiteral_
     , pattern CharLiteral_
+    , pattern Evaluated_
     -- * Re-exports
     , SymbolOrAlias (..)
     , SortedVariable (..)
@@ -228,6 +230,7 @@ data TermLikeF variable child
     | InhabitantF    !Sort
     | SetVariableF   !(SetVariable variable)
     | BuiltinF       !(Builtin child)
+    | EvaluatedF     !child
     deriving (Foldable, Functor, GHC.Generic, Traversable)
 
 instance (Eq variable, Eq child) => Eq (TermLikeF variable child) where
@@ -310,6 +313,7 @@ traverseVariablesF traversing =
         CharLiteralF charP -> pure (CharLiteralF charP)
         TopF topP -> pure (TopF topP)
         InhabitantF s -> pure (InhabitantF s)
+        EvaluatedF childP -> pure (EvaluatedF childP)
   where
     traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
         Exists existsSort <$> traversing existsVariable <*> pure existsChild
@@ -796,6 +800,8 @@ forceSort forcedSort = Recursive.apo forceSortWorker
             ]
         forceSortWorkerPredicate =
             case pattern' of
+                -- Recurse
+                EvaluatedF child -> EvaluatedF (Right child)
                 -- Predicates: Force sort and stop.
                 BottomF bottom' -> BottomF bottom' { bottomSort = forcedSort }
                 TopF top' -> TopF top' { topSort = forcedSort }
@@ -1546,6 +1552,10 @@ mkInhabitant sort =
             , freeVariables = Set.empty
             }
 
+mkEvaluated :: TermLike variable -> TermLike variable
+mkEvaluated termLike =
+    Recursive.embed (extractAttributes termLike :< EvaluatedF termLike)
+
 mkSort :: Id -> Sort
 mkSort name = SortActualSort $ SortActual name []
 
@@ -1774,6 +1784,8 @@ pattern StringLiteral_ :: Text -> TermLike variable
 
 pattern CharLiteral_ :: Char -> TermLike variable
 
+pattern Evaluated_ :: TermLike variable -> TermLike variable
+
 pattern And_ andSort andFirst andSecond <-
     (Recursive.project -> _ :< AndF And { andSort, andFirst, andSecond })
 
@@ -1883,3 +1895,5 @@ pattern StringLiteral_ str <-
 
 pattern CharLiteral_ char <-
     (Recursive.project -> _ :< CharLiteralF (CharLiteral char))
+
+pattern Evaluated_ child <- (Recursive.project -> _ :< EvaluatedF child)
