@@ -772,7 +772,7 @@ test_andTermsSimplification =
         ]
 
     , testGroup "Builtin Set domain"
-        [ testCase "zzzhandles set ambiguity" $ do
+        [ testCase "handles set ambiguity" $ do
             let
                 expected = Just
                     [ Conditional
