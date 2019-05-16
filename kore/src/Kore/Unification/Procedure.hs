@@ -14,6 +14,8 @@ module Kore.Unification.Procedure
 import           Control.Applicative
                  ( empty )
 import qualified Control.Monad.Trans.Class as Monad.Trans
+import qualified Data.Text as Text
+import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -27,6 +29,7 @@ import qualified Kore.Internal.Pattern as Conditional
 import           Kore.Internal.Predicate
                  ( Predicate )
 import           Kore.Internal.TermLike
+import qualified Kore.Logger as Logger
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.OrPattern as OrPattern
@@ -76,6 +79,17 @@ unificationProcedure
     tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2
   | p1Sort /= p2Sort = empty
   | otherwise = do
+    Monad.Unify.liftSimplifier
+        . Logger.withLogScope (Logger.Scope "UnificationProcedure")
+        . Logger.logInfo
+        . Text.pack
+        . show
+        $ Pretty.vsep
+            [ "Attemptying to unify terms"
+            , Pretty.indent 4 $ unparse p1
+            , "with"
+            , Pretty.indent 4 $ unparse p2
+            ]
     let
         getUnifiedTerm =
             termUnification

@@ -12,6 +12,7 @@ module Kore.Logger.Output
     , withLogger
     , parseKoreLogOptions
     , emptyLogger
+    , module Kore.Logger
     ) where
 
 import           Colog
