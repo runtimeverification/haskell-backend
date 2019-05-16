@@ -106,7 +106,7 @@ testDef =
             { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes = Attributes []
             , sentenceAxiomPattern =
-                Builtin.externalizePattern' $ mkImplies
+                Builtin.externalizePattern $ mkImplies
                     (mkTop sortVarS)
                     (mkAnd
                         (mkEquals
@@ -123,7 +123,7 @@ testDef =
             { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes = Attributes []
             , sentenceAxiomPattern =
-                Builtin.externalizePattern' $ mkImplies
+                Builtin.externalizePattern $ mkImplies
                     (mkTop sortVarS)
                     (mkAnd
                         (mkEquals
@@ -138,7 +138,7 @@ testDef =
             { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes = Attributes []
             , sentenceAxiomPattern =
-                Builtin.externalizePattern' $ mkImplies
+                Builtin.externalizePattern $ mkImplies
                     (mkTop sortVarS)
                     (mkAnd
                         (mkEquals sortVarS
@@ -152,7 +152,7 @@ testDef =
             { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes = Attributes []
             , sentenceAxiomPattern =
-                Builtin.externalizePattern' $ mkImplies
+                Builtin.externalizePattern $ mkImplies
                     (mkTop sortVarS)
                     (mkAnd
                         (mkEquals sortVarS
@@ -166,7 +166,7 @@ testDef =
             { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes = Attributes []
             , sentenceAxiomPattern =
-                Builtin.externalizePattern' $ mkImplies
+                Builtin.externalizePattern $ mkImplies
                     (mkTop sortVarS)
                     (mkAnd
                         (mkEquals sortVarS
@@ -181,7 +181,7 @@ testDef =
             , sentenceAxiomAttributes =
                 Attributes [ attributePattern_ simplificationSymbol ]
             , sentenceAxiomPattern =
-                Builtin.externalizePattern' $ mkImplies
+                Builtin.externalizePattern $ mkImplies
                     (mkTop sortVarS)
                     (mkAnd
                         (mkEquals sortVarS
@@ -195,13 +195,13 @@ testDef =
             { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes = Attributes []
             , sentenceAxiomPattern =
-                Builtin.externalizePattern' $ mkTop sortS
+                Builtin.externalizePattern $ mkTop sortS
             }
         , SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes = Attributes []
             , sentenceAxiomPattern =
-                Builtin.externalizePattern' $ mkRewrites
+                Builtin.externalizePattern $ mkRewrites
                     (mkAnd mkTop_ (mkApp sortS fHead []))
                     (mkAnd mkTop_ (mkApp sortS tHead []))
             }
@@ -209,7 +209,7 @@ testDef =
             { sentenceAxiomParameters = [sortVar, sortVar1]
             , sentenceAxiomAttributes = Attributes []
             , sentenceAxiomPattern =
-                Builtin.externalizePattern' $ mkImplies
+                Builtin.externalizePattern $ mkImplies
                     (mkTop sortVarS)
                     (mkAnd
                         (mkEquals sortVarS

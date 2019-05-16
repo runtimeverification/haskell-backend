@@ -21,7 +21,7 @@ hprop_synthetic = property $ do
     termLike <- forAll termLikeGen
     let
         external :: Syntax.Pattern Variable Attribute.Null
-        external = Builtin.externalizePattern' termLike
+        external = Builtin.externalizePattern termLike
         synthesized :: Syntax.Pattern Variable (Set Variable)
         synthesized = Attribute.synthesize Variables.Free.synthetic external
         expect = freeVariables termLike

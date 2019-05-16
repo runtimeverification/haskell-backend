@@ -153,7 +153,7 @@ mainWithOptions
     let unverifiedDefinition =
             Bifunctor.first
                 ((fmap . IndexedModule.mapPatterns)
-                    Builtin.externalizePattern'
+                    Builtin.externalizePattern
                 )
                 indexedDefinition
     (specDefIndexedModules, _) <-

@@ -36,13 +36,13 @@ objectS1 = simpleSort (SortName "s1")
 
 objectA :: SentenceSymbol ParsedPattern
 objectA =
-    fmap Builtin.externalizePattern'
+    fmap Builtin.externalizePattern
     $ (mkSymbol_ (testId "b") [] objectS1)
         { sentenceSymbolAttributes = Attributes [ constructorAttribute ] }
 
 metaA :: SentenceSymbol ParsedPattern
 metaA =
-    fmap Builtin.externalizePattern'
+    fmap Builtin.externalizePattern
     $ mkSymbol_ (testId "#a") [] stringMetaSort
 
 testObjectModuleName :: ModuleName
@@ -227,7 +227,7 @@ testSubsortModule =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = [sortVariable "R"]
             , sentenceAxiomPattern =
-                Builtin.externalizePattern' (mkTop sortVarR)
+                Builtin.externalizePattern (mkTop sortVarR)
             , sentenceAxiomAttributes = Attributes
                 [subsortAttribute subSort superSort]
             }

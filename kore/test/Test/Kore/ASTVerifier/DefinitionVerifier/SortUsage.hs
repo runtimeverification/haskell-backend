@@ -527,7 +527,7 @@ unfilteredTestExamplesForSort
                             aliasName
                             sort
                             sortVariables
-                            (Builtin.externalizePattern' $ mkTop sort)
+                            (Builtin.externalizePattern $ mkTop sort)
                         )
                     : additionalSentences
                     )
@@ -554,7 +554,7 @@ unfilteredTestExamplesForSort
                             sort
                             additionalSort
                             sortVariables
-                            (Builtin.externalizePattern' $ mkTop additionalSort)
+                            (Builtin.externalizePattern $ mkTop additionalSort)
                         )
                     : additionalSentences
                     )

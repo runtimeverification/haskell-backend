@@ -31,16 +31,16 @@ objectS1 = simpleSort (SortName "s1")
 
 objectA :: SentenceSymbol ParsedPattern
 objectA =
-    fmap Builtin.externalizePattern'
+    fmap Builtin.externalizePattern
     $ mkSymbol_ (testId "a") [] objectS1
 
 -- Two variations on a constructor axiom for 'objectA'.
 axiomA, axiomA' :: SentenceAxiom ParsedPattern
 axiomA =
-    fmap Builtin.externalizePattern'
+    fmap Builtin.externalizePattern
     $ mkAxiom_ $ applySymbol_ objectA []
 axiomA' =
-    fmap Builtin.externalizePattern'
+    fmap Builtin.externalizePattern
     $ mkAxiom [sortVariableR]
     $ mkForall x
     $ mkEquals sortR (mkVar x) (applySymbol_ objectA [])
@@ -51,17 +51,17 @@ axiomA' =
 
 objectB :: SentenceAlias ParsedPattern
 objectB =
-    fmap Builtin.externalizePattern'
+    fmap Builtin.externalizePattern
     $ mkAlias_ (testId "b") objectS1 [] $ mkTop objectS1
 
 metaA :: SentenceSymbol ParsedPattern
 metaA =
-    fmap Builtin.externalizePattern'
+    fmap Builtin.externalizePattern
     $ mkSymbol_ (testId "#a") [] stringMetaSort
 
 metaB :: SentenceAlias ParsedPattern
 metaB =
-    fmap Builtin.externalizePattern'
+    fmap Builtin.externalizePattern
     $ mkAlias_ (testId "#b") stringMetaSort []
     $ mkTop stringMetaSort
 
@@ -285,7 +285,7 @@ test_resolvers =
     , testCase "sort indexed axioms"
         (assertEqual ""
             (reverse $ List.sort [axiomA, axiomA'])
-            (fmap Builtin.externalizePattern' . getIndexedSentence
+            (fmap Builtin.externalizePattern . getIndexedSentence
                 <$> indexedModuleAxioms testIndexedObjectModule)
         )
     ]

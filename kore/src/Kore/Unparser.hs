@@ -58,10 +58,6 @@ import qualified Numeric
 concrete syntax, i.e. each instance of @Unparse@ should correspond to a
 parser in "Kore.Parser.Parser".
 
-@Unparse@ assumes that the pattern is fully externalized by
-'Builtin.externalizePattern'. An error will be thrown if an internal domain
-value is found.
-
  -}
 class Unparse p where
     -- | Render a type from abstract to concrete Kore syntax.

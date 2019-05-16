@@ -74,7 +74,7 @@ axiomPatternsUnitTests =
                     Module
                         { moduleName = ModuleName "TEST"
                         , moduleSentences =
-                            (fmap . fmap) Builtin.externalizePattern'
+                            (fmap . fmap) Builtin.externalizePattern
                                 [ axiom1
                                 , axiom2
                                 , sortSentenceAInt

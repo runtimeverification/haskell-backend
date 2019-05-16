@@ -439,7 +439,7 @@ domainValuePatternParserTests :: [TestTree]
 domainValuePatternParserTests =
     parseTree korePatternParser
         [ success "\\dv{s1}(\"a\")"
-            $ Builtin.externalizePattern'
+            $ Builtin.externalizePattern
             $ Internal.mkDomainValue DomainValue
                 { domainValueSort = sortVariableSort "s1"
                 , domainValueChild = Internal.mkStringLiteral "a"
@@ -930,7 +930,7 @@ sentenceAliasParserTests =
                             , applicationChildren = []
                             }
                     , sentenceAliasRightPattern =
-                        Builtin.externalizePattern'
+                        Builtin.externalizePattern
                         $ Internal.mkDomainValue DomainValue
                             { domainValueSort = resultSort
                             , domainValueChild = Internal.mkStringLiteral "f"
@@ -975,7 +975,7 @@ sentenceAliasParserTests =
                             , applicationChildren = [varA, varB]
                             }
                     , sentenceAliasRightPattern =
-                        Builtin.externalizePattern'
+                        Builtin.externalizePattern
                         $ Internal.mkRewrites argA argB
                     , sentenceAliasAttributes = Attributes []
                     }
@@ -1013,7 +1013,7 @@ sentenceAliasParserTests =
                             , applicationChildren = [var]
                             }
                     , sentenceAliasRightPattern =
-                        Builtin.externalizePattern' $ Internal.mkNext arg
+                        Builtin.externalizePattern $ Internal.mkNext arg
                     , sentenceAliasAttributes = Attributes []
                     }
             )

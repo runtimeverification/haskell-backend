@@ -27,7 +27,6 @@ module Kore.Builtin
     , koreEvaluators
     , evaluators
     , externalizePattern
-    , externalizePattern'
     ) where
 
 import qualified Data.Functor.Foldable as Recursive
@@ -173,42 +172,6 @@ evaluators builtins indexedModule =
             impl <- Map.lookup name builtins
             pure impl
 
-{- | Externalize all builtin domain values in the given pattern.
-
-All builtins will be rendered using their concrete Kore syntax.
-
-See also: 'asPattern'
-
- -}
--- TODO (thomas.tuegel): Transform from Domain.Internal to Domain.External.
-externalizePattern
-    ::  forall variable. Ord variable
-    =>  TermLike variable
-    ->  TermLike variable
-externalizePattern =
-    Recursive.unfold externalizePatternWorker
-  where
-    externalizePatternWorker
-        ::  TermLike variable
-        ->  Recursive.Base (TermLike variable) (TermLike variable)
-    externalizePatternWorker (Recursive.project -> original@(_ :< pat)) =
-        case pat of
-            BuiltinF domain ->
-                case domain of
-                    Domain.BuiltinMap  builtin ->
-                        Recursive.project (Map.asTermLike builtin)
-                    Domain.BuiltinList builtin ->
-                        Recursive.project (List.asTermLike builtin)
-                    Domain.BuiltinSet  builtin ->
-                        Recursive.project (Set.asTermLike builtin)
-                    Domain.BuiltinInt  builtin ->
-                        Recursive.project (Int.asTermLike builtin)
-                    Domain.BuiltinBool builtin ->
-                        Recursive.project (Bool.asTermLike builtin)
-                    Domain.BuiltinString builtin ->
-                        Recursive.project (String.asTermLike builtin)
-            _ -> original
-
 {- | Externalize the 'TermLike' into a 'Syntax.Pattern'.
 
 All builtins will be rendered using their concrete Kore syntax.
@@ -216,11 +179,11 @@ All builtins will be rendered using their concrete Kore syntax.
 See also: 'asPattern'
 
  -}
-externalizePattern'
+externalizePattern
     ::  forall variable. Ord variable
     =>  TermLike variable
     ->  Syntax.Pattern variable Attribute.Null
-externalizePattern' =
+externalizePattern =
     Recursive.unfold externalizePatternWorker
   where
     externalizePatternWorker
@@ -257,9 +220,7 @@ externalizePattern' =
     toPatternF
         :: GHC.HasCallStack
         => Recursive.Base (TermLike variable) child
-        -> Recursive.Base
-            (Syntax.Pattern variable Attribute.Null)
-            child
+        -> Recursive.Base (Syntax.Pattern variable Attribute.Null) child
     toPatternF (_ :< termLikeF) =
         (Attribute.Null :<)
         $ case termLikeF of

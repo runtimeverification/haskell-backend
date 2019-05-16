@@ -109,7 +109,7 @@ test_patternVerifier =
             { existsSort = objectSort
             , existsVariable = objectVariable'
             , existsChild =
-                Builtin.externalizePattern' $ Internal.mkVar anotherVariable
+                Builtin.externalizePattern $ Internal.mkVar anotherVariable
             }
         )
         (NamePrefix "dummy")
@@ -475,7 +475,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                Builtin.externalizePattern'
+                Builtin.externalizePattern
                 $ Internal.mkStringLiteral "abcd"  -- Not a decimal integer
             }
         )
@@ -489,7 +489,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                Builtin.externalizePattern'
+                Builtin.externalizePattern
                 $ Internal.mkStringLiteral "-256"
             }
         )
@@ -503,7 +503,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                Builtin.externalizePattern'
+                Builtin.externalizePattern
                 $ Internal.mkStringLiteral "1024"
             }
         )
@@ -517,7 +517,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                Builtin.externalizePattern'
+                Builtin.externalizePattern
                 $ Internal.mkStringLiteral "+128"
             }
         )
@@ -544,7 +544,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = boolSort
             , domainValueChild =
-                Builtin.externalizePattern'
+                Builtin.externalizePattern
                 $ Internal.mkStringLiteral "untrue"  -- Not a BOOL.Bool
             }
         )
@@ -558,7 +558,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = boolSort
             , domainValueChild =
-                Builtin.externalizePattern'
+                Builtin.externalizePattern
                 $ Internal.mkStringLiteral "true"
             }
         )
@@ -572,7 +572,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = boolSort
             , domainValueChild =
-                Builtin.externalizePattern'
+                Builtin.externalizePattern
                 $ Internal.mkStringLiteral "false"
             }
         )
@@ -689,7 +689,7 @@ test_verifyBinder =
     testVerifyBinder name expect =
         testCase name $ do
             let
-                original = Builtin.externalizePattern' expect
+                original = Builtin.externalizePattern expect
                 verifier = verifyStandalonePattern Nothing original
                 Right actual = runPatternVerifier context verifier
             assertEqual "" expect actual
@@ -946,7 +946,7 @@ genericPatternInAllContexts
             { existsSort = testedSort
             , existsVariable = anotherVariable
             , existsChild =
-                Builtin.externalizePattern' $ Internal.mkVar anotherVariable
+                Builtin.externalizePattern $ Internal.mkVar anotherVariable
             }
     anotherVariable =
         Variable
@@ -1000,7 +1000,7 @@ objectPatternInAllContexts
             { existsSort = testedSort
             , existsVariable = anotherVariable
             , existsChild =
-                Builtin.externalizePattern'
+                Builtin.externalizePattern
                 $ Internal.mkVar anotherVariable
             }
     anotherVariable =
@@ -1081,7 +1081,7 @@ patternsInAllContexts
                         ]
                     }
             , sentenceAliasRightPattern =
-                Builtin.externalizePattern' $ Internal.mkTop anotherSort
+                Builtin.externalizePattern $ Internal.mkTop anotherSort
             , sentenceAliasAttributes = Attributes []
             }
 

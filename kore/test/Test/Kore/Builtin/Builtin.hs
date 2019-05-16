@@ -178,7 +178,7 @@ indexedModule :: KoreIndexedModule Attribute.Null Attribute.Null
 indexedModule =
     verifiedModule
     & IndexedModule.eraseAttributes
-    & IndexedModule.mapPatterns Builtin.externalizePattern'
+    & IndexedModule.mapPatterns Builtin.externalizePattern
 
 testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build (constructorFunctions verifiedModule)
@@ -268,5 +268,5 @@ hpropUnparse
 hpropUnparse gen = Hedgehog.property $ do
     builtin <- Hedgehog.forAll gen
     let syntax = unparseToString builtin
-        expected = Builtin.externalizePattern' builtin
+        expected = Builtin.externalizePattern builtin
     Right expected Hedgehog.=== parseKorePattern "<test>" syntax

@@ -132,7 +132,7 @@ test_ignore =
             , sentenceAxiomAttributes =
                 Attributes [ overloadAttribute superSymbol subSymbol ]
             , sentenceAxiomPattern =
-                Builtin.externalizePattern'
+                Builtin.externalizePattern
                 $ mkEquals sortS
                     (mkApp Mock.testSort superSymbol [])
                     (mkApp Mock.testSort subSymbol   [])

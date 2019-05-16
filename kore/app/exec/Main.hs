@@ -331,7 +331,7 @@ mainWithOptions
                         KoreProveOptions { bmc } = proveOptions
                         unverifiedDefinition =
                             (Bifunctor.first . fmap . IndexedModule.mapPatterns)
-                                Builtin.externalizePattern'
+                                Builtin.externalizePattern
                                 indexedDefinition
                     specDef <- parseDefinition specFileName
                     (specDefIndexedModules, _) <-
