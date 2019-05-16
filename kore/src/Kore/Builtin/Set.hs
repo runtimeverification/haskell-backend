@@ -101,7 +101,7 @@ import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
-                 ( Unparse )
+                 ( Unparse, unparseToString )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -607,20 +607,13 @@ unifyEquals
                     Builtin.wrongArity "SET.element"
             )
       | otherwise =
-        -- TODO (virgil): This should be an error, since Set.unifyEquals is the
-        -- proper handler for set DV unification. Returning empty would
-        -- mean it could not identify its input, which is not the case here.
-        --
-        -- The same applies to the similar places in Map and List, but not
-        -- to the empty result a few lines below.
-        empty
         -- This error can be replaced with `empty` if implementing the
         -- missing case is undesirable.
-        --(error . unlines)
-        --    [ "Unimplemented set unification for domain value vs application. "
-        --    , "dv=" ++ unparseToString dv1
-        --    , "app=" ++ unparseToString app2
-        --    ]
+        (error . unlines)
+            [ "Unimplemented set unification for domain value vs application. "
+            , "dv=" ++ unparseToString dv1
+            , "app=" ++ unparseToString app2
+            ]
       where
         -- Unify one concrete set with a select pattern (x:elem s:set)
         -- Note that x an s can be proper symbolic patterns (not just variables)
