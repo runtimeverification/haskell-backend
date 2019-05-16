@@ -221,14 +221,14 @@ prove cindex = do
     maybe printNotFound (initOrSwitchToProof cindex) claim'
   where
     initOrSwitchToProof :: ClaimIndex -> claim -> m ()
-    initOrSwitchToProof cindex claim = do
+    initOrSwitchToProof ci claim = do
         gphs <- Lens.use lensGraphs
         if Map.member cindex gphs == True
             then do
-                switchToProof claim cindex
-                putStrLn' $ "Switched to proving claim " <> show (unClaimIndex cindex)
+                switchToProof claim ci
+                putStrLn' $ "Switched to proving claim " <> show (unClaimIndex ci)
             else do
-                initializeProofFor claim cindex
+                initializeProofFor claim ci
                 putStrLn' "Execution Graph initiated"
 
 showGraph
@@ -444,15 +444,13 @@ label =
   where
     showLabels :: m ()
     showLabels = do
-        labels <- Lens.use lensLabels
-        if null labels
-           then putStrLn' "No labels are set."
-           else putStrLn' $ Map.foldrWithKey acc "Labels: " labels
+        lbls <- getLabels
+        putStrLn' $ Map.foldrWithKey acc "Labels: " lbls
 
     gotoLabel :: String -> m ()
     gotoLabel l = do
-        labels <- Lens.use lensLabels
-        selectNode $ maybe (ReplNode $ -1) id (Map.lookup l labels)
+        lbls <- getLabels
+        selectNode $ maybe (ReplNode $ -1) id (Map.lookup l lbls)
 
     acc :: String -> ReplNode -> String -> String
     acc key node res =
@@ -473,10 +471,10 @@ labelAdd lbl maybeNode = do
     case node' of
         Nothing -> putStrLn' "Target node is not in the graph."
         Just node -> do
-            labels <- Lens.use lensLabels
+            labels <- getLabels
             if lbl `Map.notMember` labels
                 then do
-                    lensLabels .= Map.insert lbl node labels
+                    setLabels $ Map.insert lbl node labels
                     putStrLn' "Label added."
                 else
                     putStrLn' "Label already exists."
@@ -489,10 +487,10 @@ labelDel
     -- ^ label
     -> m ()
 labelDel lbl = do
-    labels <- Lens.use lensLabels
+    labels <- getLabels
     if lbl `Map.member` labels
        then do
-           lensLabels .= Map.delete lbl labels
+           setLabels $ Map.delete lbl labels
            putStrLn' "Removed label."
        else
            putStrLn' "Label doesn't exist."

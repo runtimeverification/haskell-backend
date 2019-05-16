@@ -22,14 +22,16 @@ module Kore.Repl.Data
     , lensAxioms, lensClaims, lensClaim
     , lensGraphs, lensNode, lensStepper
     , lensLabels, lensOmit, lensUnifier
-    , lensCommands, lensAliases, shouldStore
+    , lensCommands, lensAliases, lensClaimIndex
+    , shouldStore
     , UnifierWithExplanation (..)
     , runUnifierWithExplanation
     , emptyExecutionGraph
     , getClaimByIndex, getAxiomByIndex, getAxiomOrClaimByIndex
     , initializeProofFor, switchToProof
     , getTargetNode, getInnerGraph, getExecutionGraph
-    , getConfigAt, getRuleFor, StepResult(..)
+    , getConfigAt, getRuleFor, getLabels, setLabels
+    , StepResult(..)
     , runStepper, runStepper'
     , updateInnerGraph, updateExecutionGraph
     , addOrUpdateAlias, findAlias
@@ -297,7 +299,7 @@ data ReplState claim = ReplState
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
     --   failures
-    , labels  :: Map String ReplNode  -- TODO: Map (ClaimIndex, String) ReplNode
+    , labels  :: Map ClaimIndex (Map String ReplNode)
     -- ^ Map from labels to nodes
     , aliases :: Map String ReplAlias
     -- ^ Map of command aliases
@@ -395,12 +397,13 @@ initializeProofFor
     -> m ()
 initializeProofFor claim cindex = do
     gphs <- gets graphs
+    lbls <- gets labels
     modify (\st -> st
         { graphs  = Map.insert cindex (emptyExecutionGraph claim) gphs
         , claim  = claim
         , claimIndex = cindex
         , node   = ReplNode 0
-        , labels = Map.empty
+        , labels = Map.insert cindex Map.empty lbls
         })
 
 switchToProof
@@ -515,6 +518,28 @@ getRuleFor maybeNode = do
     third :: forall a b c. (a, b, c) -> c
     third (_, _, c) = c
 
+getLabels
+    :: MonadState (ReplState claim) m
+    => m (Map String ReplNode)
+getLabels = do
+    labels <- Lens.use lensLabels
+    cindex <- Lens.use lensClaimIndex
+    case Map.lookup cindex labels of
+        Nothing -> do
+            lensLabels Lens..= Map.insert cindex Map.empty labels
+            return Map.empty
+        Just lbls -> return lbls
+
+setLabels
+    :: MonadState (ReplState claim) m
+    => Map String ReplNode
+    -> m ()
+setLabels lbls = do
+    labels <- Lens.use lensLabels
+    cindex <- Lens.use lensClaimIndex
+    lensLabels Lens..= Map.adjust (const lbls) cindex labels
+
+
 -- | Result after running one or multiple proof steps.
 data StepResult
     = NoResult
@@ -533,7 +558,7 @@ runStepper
     => Claim claim
     => m Simplifier StepResult
 runStepper = do
-    ReplState { claims, axioms, node, graphs } <- get
+    ReplState { claims, axioms, node } <- get
     (graph', res) <- runStepper' claims axioms node
     updateExecutionGraph graph'
     case res of
