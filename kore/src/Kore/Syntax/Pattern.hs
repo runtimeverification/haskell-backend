@@ -5,9 +5,6 @@ License     : NCSA
 -}
 module Kore.Syntax.Pattern
     ( Pattern (..)
-    , CommonPattern
-    , ConcretePattern
-    , VerifiedPattern
     , asPattern
     , fromPattern
     , eraseAnnotations
@@ -44,8 +41,6 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Null as Attribute
-import qualified Kore.Attribute.Pattern as Attribute
-                 ( Pattern )
 import           Kore.Debug
 import           Kore.Syntax.PatternF
                  ( PatternF (..) )
@@ -57,7 +52,7 @@ import           Kore.Unparser
 
 {- | The abstract syntax of Kore.
 
-@variable@ is the family of variable types, parameterized by level.
+@variable@ is the family of variable types.
 
 @annotation@ is the type of annotations decorating each node of the abstract
 syntax tree. @Pattern@ is a 'Traversable' 'Comonad' over the type of
@@ -253,17 +248,6 @@ eraseAnnotations
     :: Pattern variable erased
     -> Pattern variable Attribute.Null
 eraseAnnotations = (<$) Attribute.Null
-
--- | A pure pattern at level @level@ with variables in the common 'Variable'.
-type CommonPattern = Pattern Variable Attribute.Null
-
--- | A concrete pure pattern (containing no variables) at level @level@.
-type ConcretePattern =
-    Pattern Concrete (Attribute.Pattern Concrete)
-
--- | A pure pattern which has been parsed and verified.
-type VerifiedPattern =
-    Pattern Variable (Attribute.Pattern Variable)
 
 {- | Use the provided traversal to replace all variables in a 'Pattern'.
 

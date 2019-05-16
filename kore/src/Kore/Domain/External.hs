@@ -12,7 +12,6 @@ module Kore.Domain.External
     ( External (..)
     , lensDomainValueSort
     , lensDomainValueChild
-    , CommonExternalPattern
     , Domain (..)
     ) where
 
@@ -77,5 +76,3 @@ instance Domain External where
             -> External child
         getExternal DomainValue { domainValueSort, domainValueChild } =
             domainValueChild { domainValueSort } :: External child
-
-type CommonExternalPattern = CommonPattern
