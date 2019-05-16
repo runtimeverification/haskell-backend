@@ -425,26 +425,6 @@ equalsFunctions =
         -> TermTransformationOld variable unifier
     forEquals f = f SimplificationType.Equals
 
-data EqualsFunctions
-    = BoolAnd
-    | EqualAndEquals
-    | BottomTermEquals
-    | TermBottomEquals
-    | VariableFunctionAndEquals
-    | FunctionVariableAndEquals
-    | EqualInjectiveHeadsAndEquals
-    | SortInjectionAndEqualsAssumesDifferentHeads
-    | ConstructorSortInjectionAndEquals
-    | ConstructorAndEqualsAssumesDifferentHeads
-    | BuiltinMapEquals
-    | BuiltinSetEquals
-    | BuiltinListEquals
-    | DomainValueAndConstructorErrors
-    | DomainValueAndEqualsAssumesDifferent
-    | StringLiteralAndEqualsAssumesDifferent
-    | CharLiteralAndEqualsAssumesDifferent
-    | FunctionAnd
-
 andEqualsFunctions
     ::  forall variable unifier
     .   ( Eq variable
