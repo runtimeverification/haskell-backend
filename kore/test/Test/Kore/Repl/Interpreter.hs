@@ -206,7 +206,7 @@ mkState axioms claim =
         , omit        = []
         , stepper     = stepper0
         , unifier     = unifier0
-        , labels      = Map.empty
+        , labels      = Map.singleton (ClaimIndex 0) Map.empty
         , aliases     = Map.empty
         }
   where
