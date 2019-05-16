@@ -526,6 +526,8 @@ z :: Variable
 z = Variable (testId "z") mempty testSort
 m :: Variable
 m = Variable (testId "m") mempty mapSort
+xSet :: Variable
+xSet = Variable (testId "xSet") mempty setSort
 xInt :: Variable
 xInt = Variable (testId "xInt") mempty intSort
 
@@ -782,12 +784,42 @@ sortInjectionOtherToTop
 sortInjectionOtherToTop arg =
     mkApp topSort sortInjectionOtherToTopSymbol [arg]
 
+unitMap
+    :: Ord variable
+    => TermLike variable
+unitMap = mkApp mapSort unitMapSymbol []
+
+elementMap
+    :: Ord variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+elementMap m1 m2 = mkApp mapSort elementMapSymbol [m1, m2]
+
 concatMap
     :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
 concatMap m1 m2 = mkApp mapSort concatMapSymbol [m1, m2]
+
+unitSet
+    :: Ord variable
+    => TermLike variable
+unitSet = mkApp setSort unitSetSymbol []
+
+elementSet
+    :: Ord variable
+    => TermLike variable
+    -> TermLike variable
+elementSet s1 = mkApp setSort elementSetSymbol [s1]
+
+concatSet
+    :: Ord variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+concatSet s1 s2 = mkApp setSort concatSetSymbol [s1, s2]
 
 lessInt
     :: Ord variable
@@ -802,18 +834,6 @@ greaterEqInt
     -> TermLike variable
     -> TermLike variable
 greaterEqInt i1 i2 = mkApp boolSort greaterEqIntSymbol [i1, i2]
-
-unitMap
-    :: Ord variable
-    => TermLike variable
-unitMap = mkApp mapSort unitMapSymbol []
-
-elementMap
-    :: Ord variable
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
-elementMap m1 m2 = mkApp mapSort elementMapSymbol [m1, m2]
 
 concatList
     :: Ord variable
@@ -1879,7 +1899,7 @@ mapSort =
 setSort :: Sort
 setSort =
     SortActualSort SortActual
-        { sortActualName  = testId "mapSort"
+        { sortActualName  = testId "setSort"
         , sortActualSorts = []
         }
 
