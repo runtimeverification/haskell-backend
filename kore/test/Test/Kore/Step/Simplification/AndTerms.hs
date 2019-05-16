@@ -27,8 +27,7 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
-                 ( makeCeilPredicate, makeEqualsPredicate, makeFalsePredicate,
-                 makeTruePredicate )
+                 ( makeCeilPredicate, makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -218,8 +217,7 @@ test_andTermsSimplification =
                     (Mock.sortInjection10 Mock.cfSort0)
             assertEqualWithExplanation "" ([expect], Just [expect]) actual
         , testCase "different head, not subsort" $ do
-            let expect =
-                    ([Pattern.bottom], Just [Pattern.bottom])
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     Mock.metadataTools
@@ -273,10 +271,7 @@ test_andTermsSimplification =
                     (Mock.sortInjectionSubSubToTop Mock.plain00SubSubsort)
             assertEqualWithExplanation "" expect actual
         , testCase "different head constructors not subsort" $ do
-            let expect =
-                    ( [Pattern.bottom]
-                    , Just [Pattern.bottom]
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     Mock.metadataTools
@@ -284,10 +279,7 @@ test_andTermsSimplification =
                     (Mock.sortInjection11 Mock.aSort1)
             assertEqualWithExplanation "" expect actual
         , testCase "different head constructors subsort" $ do
-            let expect =
-                    ( [Pattern.bottom]
-                    , Just [Pattern.bottom]
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     Mock.metadataTools
@@ -295,10 +287,7 @@ test_andTermsSimplification =
                     (Mock.sortInjectionSubSubToTop Mock.aSubSubsort)
             assertEqualWithExplanation "" expect actual
         , testCase "different head constructors common subsort" $ do
-            let expect =
-                    ( [Pattern.bottom]
-                    , Just [Pattern.bottom]
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     Mock.metadataTools
@@ -306,10 +295,7 @@ test_andTermsSimplification =
                     (Mock.sortInjectionSubToTop Mock.aSubsort)
             assertEqualWithExplanation "" expect actual
         , testCase "different head constructors common subsort reversed" $ do
-            let expect =
-                    ( [Pattern.bottom]
-                    , Just [Pattern.bottom]
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     Mock.metadataTools
@@ -352,10 +338,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
 
         , testCase "different head" $ do
-            let expect =
-                    ( [Pattern.bottom]
-                    , Just [Pattern.bottom]
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     Mock.metadataTools
@@ -365,10 +348,7 @@ test_andTermsSimplification =
         ]
 
     , testCase "constructor-sortinjection and" $ do
-        let expect =
-                ( [Pattern.bottom]
-                , Just [Pattern.bottom]
-                )
+        let expect = ([], Just [])
         actual <-
             simplifyUnify
                 Mock.metadataTools
@@ -393,10 +373,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
 
         , testCase "different values" $ do
-            let expect =
-                    ( [Pattern.bottom]
-                    , Just [Pattern.bottom]
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     Mock.metadataTools
@@ -422,10 +399,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
 
         , testCase "different values" $ do
-            let expect =
-                    ( [Pattern.bottom]
-                    , Just [Pattern.bottom]
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     Mock.emptyMetadataTools
@@ -452,10 +426,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
 
         , testCase "different values" $ do
-            let expect =
-                    ( [Pattern.bottom]
-                    , Just [Pattern.bottom]
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     Mock.emptyMetadataTools
@@ -733,13 +704,7 @@ test_andTermsSimplification =
         , testCase "[same head, different head]" $ do
             let term3 = Mock.builtinList [Mock.a, Mock.a]
                 term4 = Mock.builtinList [Mock.a, Mock.b]
-                expect = Just
-                    [ Conditional
-                        { term = Mock.builtinList [Mock.a, mkBottom_]
-                        , predicate = makeFalsePredicate
-                        , substitution = mempty
-                        }
-                    ]
+                expect = Just []
             actual <- unify Mock.metadataTools term3 term4
             assertEqualWithExplanation "" expect actual
 
