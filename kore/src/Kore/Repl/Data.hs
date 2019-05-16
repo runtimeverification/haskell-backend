@@ -27,7 +27,7 @@ module Kore.Repl.Data
     , runUnifierWithExplanation
     , emptyExecutionGraph
     , getClaimByIndex, getAxiomByIndex, getAxiomOrClaimByIndex
-    , initializeProofFor
+    , initializeProofFor, switchToProof
     , getTargetNode, getInnerGraph, getExecutionGraph
     , getConfigAt, getRuleFor, StepResult(..)
     , runStepper, runStepper'
@@ -394,12 +394,26 @@ initializeProofFor
     -> ClaimIndex
     -> m ()
 initializeProofFor claim cindex = do
+    gphs <- gets graphs
     modify (\st -> st
-        { graphs  = Map.singleton cindex (emptyExecutionGraph claim)
+        { graphs  = Map.insert cindex (emptyExecutionGraph claim) gphs
         , claim  = claim
         , claimIndex = cindex
         , node   = ReplNode 0
         , labels = Map.empty
+        })
+
+switchToProof
+    :: MonadState (ReplState claim) m
+    => Claim claim
+    => claim
+    -> ClaimIndex
+    -> m ()
+switchToProof claim cindex = do
+    modify (\st -> st
+        { claim = claim
+        , claimIndex = cindex
+        , node = ReplNode 0
         })
 
 -- | Get the internal representation of the execution graph.

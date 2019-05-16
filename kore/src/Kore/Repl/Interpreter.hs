@@ -218,12 +218,18 @@ prove
     -> m ()
 prove cindex = do
     claim' <- getClaimByIndex . unClaimIndex $ cindex
-    maybe printNotFound (initProof cindex) claim'
+    maybe printNotFound (initOrSwitchToProof cindex) claim'
   where
-    initProof :: ClaimIndex -> claim -> m ()
-    initProof cindex claim = do
-            initializeProofFor claim cindex
-            putStrLn' "Execution Graph initiated"
+    initOrSwitchToProof :: ClaimIndex -> claim -> m ()
+    initOrSwitchToProof cindex claim = do
+        gphs <- Lens.use lensGraphs
+        if Map.member cindex gphs == True
+            then do
+                switchToProof claim cindex
+                putStrLn' $ "Switched to proving claim " <> show (unClaimIndex cindex)
+            else do
+                initializeProofFor claim cindex
+                putStrLn' "Execution Graph initiated"
 
 showGraph
     :: MonadIO m
