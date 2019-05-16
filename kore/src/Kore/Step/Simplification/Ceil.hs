@@ -402,3 +402,11 @@ makeEvaluateBuiltin
     (Domain.BuiltinInt _)
   =
     return OrPredicate.top
+makeEvaluateBuiltin
+    _tools
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSimplifier
+    (Domain.BuiltinString _)
+  =
+    return OrPredicate.top

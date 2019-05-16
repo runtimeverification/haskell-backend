@@ -34,6 +34,9 @@ module Kore.Domain.Builtin
     , InternalBool (..)
     , lensBuiltinBoolSort
     , lensBuiltinBoolValue
+    , InternalString (..)
+    , lensInternalStringSort
+    , lensInternalStringValue
     , module Kore.Domain.External
     , Domain (..)
     ) where
@@ -51,6 +54,8 @@ import           Data.Sequence
                  ( Seq )
 import           Data.Set
                  ( Set )
+import           Data.Text
+                 ( Text )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -329,6 +334,38 @@ instance Unparse InternalBool where
           | builtinBoolValue = "true"
           | otherwise        = "false"
 
+-- * Builtin String
+
+{- | Internal representation of the builtin @STRING.String@ domain.
+ -}
+data InternalString =
+    InternalString
+        { internalStringSort :: !Sort
+        , internalStringValue :: !Text
+        }
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance Hashable InternalString
+
+instance NFData InternalString
+
+instance SOP.Generic InternalString
+
+instance SOP.HasDatatypeInfo InternalString
+
+instance Debug InternalString
+
+instance Unparse InternalString where
+    unparse InternalString { internalStringSort, internalStringValue } =
+        "\\dv"
+        <> parameters [internalStringSort]
+        <> arguments [StringLiteral internalStringValue]
+
+    unparse2 InternalString { internalStringSort, internalStringValue } =
+        "\\dv2"
+        <> parameters2 [internalStringSort]
+        <> arguments2 [StringLiteral internalStringValue]
+
 -- * Builtin domain representations
 
 data Builtin key child
@@ -338,6 +375,7 @@ data Builtin key child
     | BuiltinSet !(InternalSet key)
     | BuiltinInt !InternalInt
     | BuiltinBool !InternalBool
+    | BuiltinString !InternalString
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 deriveEq1 ''Builtin
@@ -363,6 +401,7 @@ makeLenses ''InternalList
 makeLenses ''InternalSet
 makeLenses ''InternalInt
 makeLenses ''InternalBool
+makeLenses ''InternalString
 
 instance Domain (Builtin key) where
     lensDomainValue mapDomainValue builtin =
@@ -378,6 +417,7 @@ instance Domain (Builtin key) where
                 BuiltinExternal External { domainValueSort } -> domainValueSort
                 BuiltinInt InternalInt { builtinIntSort } -> builtinIntSort
                 BuiltinBool InternalBool { builtinBoolSort } -> builtinBoolSort
+                BuiltinString InternalString { internalStringSort } -> internalStringSort
                 BuiltinMap InternalMap { builtinMapSort } -> builtinMapSort
                 BuiltinList InternalList { builtinListSort } -> builtinListSort
                 BuiltinSet InternalSet { builtinSetSort } -> builtinSetSort
@@ -394,6 +434,9 @@ instance Domain (Builtin key) where
                     BuiltinInt internal { builtinIntSort = domainValueSort }
                 BuiltinBool internal ->
                     BuiltinBool internal { builtinBoolSort = domainValueSort }
+                BuiltinString internal ->
+                    BuiltinString internal
+                        { internalStringSort = domainValueSort }
                 BuiltinMap internal ->
                     BuiltinMap internal { builtinMapSort = domainValueSort }
                 BuiltinList internal ->

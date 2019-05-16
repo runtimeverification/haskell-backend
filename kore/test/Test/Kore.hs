@@ -291,6 +291,7 @@ genBuiltin domainValueSort = Gen.choice
     [ genBuiltinExternal domainValueSort
     , Domain.BuiltinInt <$> genInternalInt domainValueSort
     , Domain.BuiltinBool <$> genInternalBool domainValueSort
+    , Domain.BuiltinString <$> genInternalString domainValueSort
     ]
 
 genInternalInt :: Sort -> Gen Domain.InternalInt
@@ -302,6 +303,11 @@ genInternalInt builtinIntSort =
 genInternalBool :: Sort -> Gen Domain.InternalBool
 genInternalBool builtinBoolSort =
     Domain.InternalBool builtinBoolSort <$> Gen.bool
+
+genInternalString :: Sort -> Gen Domain.InternalString
+genInternalString internalStringSort =
+    Domain.InternalString internalStringSort
+    <$> Gen.text (Range.linear 0 1024) Gen.unicode
 
 genExternal :: Sort -> Gen (Domain.External (TermLike variable))
 genExternal domainValueSort =

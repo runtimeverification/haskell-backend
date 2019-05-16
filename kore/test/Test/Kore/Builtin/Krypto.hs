@@ -22,10 +22,10 @@ testKeyRecover messageHash v r s result =
     testPropertyWithSolver (Text.unpack name) $ do
         let expect = String.asPattern stringSort result
         actual <- evaluate $ mkApp stringSort ecdsaRecoverSymbol
-            [ String.asTermLike stringSort messageHash
+            [ String.asInternal stringSort messageHash
             , Test.Int.asInternal v
-            , String.asTermLike stringSort r
-            , String.asTermLike stringSort s
+            , String.asInternal stringSort r
+            , String.asInternal stringSort s
             ]
         (===) expect actual
   where
@@ -41,7 +41,7 @@ testKeccak input result =
     testPropertyWithSolver (Text.unpack name) $ do
         let expect = String.asPattern stringSort result
         actual <- evaluate $ mkApp stringSort keccakSymbol
-            [ String.asTermLike stringSort input
+            [ String.asInternal stringSort input
             ]
         (===) expect actual
   where

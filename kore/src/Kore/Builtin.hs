@@ -206,6 +206,8 @@ externalizePattern =
                         Recursive.project (Int.asTermLike builtin)
                     Domain.BuiltinBool builtin ->
                         Recursive.project (Bool.asTermLike builtin)
+                    Domain.BuiltinString builtin ->
+                        Recursive.project (String.asTermLike builtin)
             _ -> original
 
 {- | Externalize the 'TermLike' into a 'Syntax.Pattern'.
@@ -246,6 +248,9 @@ externalizePattern' =
                     Domain.BuiltinBool builtin ->
                         (toPatternF . Recursive.project)
                             (Bool.asTermLike builtin)
+                    Domain.BuiltinString builtin ->
+                        (toPatternF . Recursive.project)
+                            (String.asTermLike builtin)
                     Domain.BuiltinExternal external ->
                         Attribute.Null :< Syntax.DomainValueF external
             _ -> toPatternF termLikeBase

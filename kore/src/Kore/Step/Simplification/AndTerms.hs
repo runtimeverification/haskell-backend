@@ -1331,16 +1331,16 @@ domainValueAndEqualsAssumesDifferent
     -> TermLike variable
     -> MaybeT unifier (TermLike variable)
 domainValueAndEqualsAssumesDifferent
-    first@(Builtin_ (Domain.BuiltinExternal _))
-    second@(Builtin_ (Domain.BuiltinExternal _))
-  = Monad.Trans.lift $ cannotUnifyDomainValues first second
-domainValueAndEqualsAssumesDifferent
     first@(Builtin_ (Domain.BuiltinBool _))
     second@(Builtin_ (Domain.BuiltinBool _))
   = Monad.Trans.lift $ cannotUnifyDomainValues first second
 domainValueAndEqualsAssumesDifferent
     first@(Builtin_ (Domain.BuiltinInt _))
     second@(Builtin_ (Domain.BuiltinInt _))
+  = Monad.Trans.lift $ cannotUnifyDomainValues first second
+domainValueAndEqualsAssumesDifferent
+    first@(Builtin_ (Domain.BuiltinString _))
+    second@(Builtin_ (Domain.BuiltinString _))
   = Monad.Trans.lift $ cannotUnifyDomainValues first second
 domainValueAndEqualsAssumesDifferent _ _ = empty
 

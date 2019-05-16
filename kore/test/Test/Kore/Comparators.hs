@@ -920,6 +920,17 @@ instance StructEqualWithExplanation InternalBool where
         ]
     structConstructorName _ = "InternalBool"
 
+instance EqualWithExplanation InternalString where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance StructEqualWithExplanation InternalString where
+    structFieldsWithNames expect actual =
+        [ Function.on (EqWrap "internalStringSort = ") internalStringSort expect actual
+        , Function.on (EqWrap "internalStringValue = ") internalStringValue expect actual
+        ]
+    structConstructorName _ = "InternalString"
+
 instance
     ( EqualWithExplanation key, Show key
     , EqualWithExplanation child, Show child
@@ -999,6 +1010,9 @@ instance
     sumConstructorPair (BuiltinBool bool1) (BuiltinBool bool2) =
         SumConstructorSameWithArguments
             (EqWrap "BuiltinBool" bool1 bool2)
+    sumConstructorPair (BuiltinString string1) (BuiltinString string2) =
+        SumConstructorSameWithArguments
+            (EqWrap "BuiltinString" string1 string2)
     sumConstructorPair (BuiltinMap map1) (BuiltinMap map2) =
         SumConstructorSameWithArguments
             (EqWrap "BuiltinMap" map1 map2)

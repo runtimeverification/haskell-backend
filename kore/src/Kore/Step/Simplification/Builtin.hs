@@ -59,3 +59,5 @@ simplifyBuiltin =
         Domain.BuiltinSet set -> (return . pure) (Domain.BuiltinSet set)
         Domain.BuiltinInt int -> (return . pure) (Domain.BuiltinInt int)
         Domain.BuiltinBool bool -> (return . pure) (Domain.BuiltinBool bool)
+        Domain.BuiltinString string ->
+            (return . pure) (Domain.BuiltinString string)
