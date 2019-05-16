@@ -28,7 +28,7 @@ module Kore.Repl.Data
     , runUnifierWithExplanation
     , emptyExecutionGraph
     , getClaimByIndex, getAxiomByIndex, getAxiomOrClaimByIndex
-    , initializeProofFor, switchToProof
+    , switchToProof
     , getTargetNode, getInnerGraph, getExecutionGraph
     , getConfigAt, getRuleFor, getLabels, setLabels
     , StepResult(..)
@@ -441,24 +441,7 @@ getAxiomOrClaimByIndex =
             (getAxiomByIndex . coerce)
             (getClaimByIndex . coerce)
 
--- | Initialize the execution graph with selected claim.
-initializeProofFor
-    :: MonadState (ReplState claim) m
-    => Claim claim
-    => claim
-    -> ClaimIndex
-    -> m ()
-initializeProofFor claim cindex = do
-    gphs <- gets graphs
-    lbls <- gets labels
-    modify (\st -> st
-        { graphs  = Map.insert cindex (emptyExecutionGraph claim) gphs
-        , claim  = claim
-        , claimIndex = cindex
-        , node   = ReplNode 0
-        , labels = Map.insert cindex Map.empty lbls
-        })
-
+-- | Update the currently selected claim to prove.
 switchToProof
     :: MonadState (ReplState claim) m
     => Claim claim
@@ -486,34 +469,51 @@ getExecutionGraph
     => Claim claim
     => m ExecutionGraph
 getExecutionGraph = do
-    cindex <- gets claimIndex
-    gph <- gets graphs
-    cl <- gets claim
-    let mgraph = Map.lookup cindex gph
-    return $ maybe (emptyExecutionGraph cl) id mgraph
+    ReplState { claimIndex, graphs, claim } <- get
+    let mgraph = Map.lookup claimIndex graphs
+    return $ maybe (emptyExecutionGraph claim) id mgraph
 
--- | Update the internal representation of the execution graph.
+-- | Update the internal representation of the current execution graph.
 updateInnerGraph
     :: MonadState (ReplState claim) m
     => InnerGraph
     -> m ()
 updateInnerGraph ig = do
-    cindex <- gets claimIndex
-    gphs <- gets graphs
-    lensGraphs Lens..= Map.adjust (updateInnerGraph0 ig) cindex gphs
+    ReplState { claimIndex, graphs } <- get
+    lensGraphs Lens..=
+        Map.adjust (updateInnerGraph0 ig) claimIndex graphs
   where
     updateInnerGraph0 :: InnerGraph -> ExecutionGraph -> ExecutionGraph
     updateInnerGraph0 graph Strategy.ExecutionGraph { root } =
         Strategy.ExecutionGraph { root, graph }
 
+-- | Update the current execution graph.
 updateExecutionGraph
     :: MonadState (ReplState claim) m
     => ExecutionGraph
     -> m ()
 updateExecutionGraph gph = do
-    cindex <- gets claimIndex
-    gphs <- gets graphs
-    lensGraphs Lens..= Map.adjust (const gph) cindex gphs
+    ReplState { claimIndex, graphs } <- get
+    lensGraphs Lens..= Map.insert claimIndex gph graphs
+
+-- | Get the node labels for the current claim.
+getLabels
+    :: MonadState (ReplState claim) m
+    => m (Map String ReplNode)
+getLabels = do
+    ReplState { claimIndex, labels } <- get
+    let mlabels = Map.lookup claimIndex labels
+    return $ maybe Map.empty id mlabels
+
+-- | Update the node labels for the current claim.
+setLabels
+    :: MonadState (ReplState claim) m
+    => Map String ReplNode
+    -> m ()
+setLabels lbls = do
+    ReplState { claimIndex, labels } <- get
+    lensLabels Lens..= Map.insert claimIndex lbls labels
+
 
 -- | Get selected node (or current node for 'Nothing') and validate that it's
 -- part of the execution graph.
@@ -570,27 +570,6 @@ getRuleFor maybeNode = do
 
     third :: forall a b c. (a, b, c) -> c
     third (_, _, c) = c
-
-getLabels
-    :: MonadState (ReplState claim) m
-    => m (Map String ReplNode)
-getLabels = do
-    labels <- Lens.use lensLabels
-    cindex <- Lens.use lensClaimIndex
-    case Map.lookup cindex labels of
-        Nothing -> do
-            lensLabels Lens..= Map.insert cindex Map.empty labels
-            return Map.empty
-        Just lbls -> return lbls
-
-setLabels
-    :: MonadState (ReplState claim) m
-    => Map String ReplNode
-    -> m ()
-setLabels lbls = do
-    labels <- Lens.use lensLabels
-    cindex <- Lens.use lensClaimIndex
-    lensLabels Lens..= Map.adjust (const lbls) cindex labels
 
 
 -- | Result after running one or multiple proof steps.

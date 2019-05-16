@@ -172,7 +172,11 @@ exit = const Exit <$$> literal "exit"
 
 tryAxiomClaim :: Parser ReplCommand
 tryAxiomClaim =
-    Try <$$> literal "try" *> (Left <$> axiomIndexParser <|> Right <$> claimIndexParser)
+    Try
+    <$$> literal "try"
+    *> ( Left <$> axiomIndexParser
+        <|> Right <$> claimIndexParser
+       )
 
 axiomIndexParser :: Parser AxiomIndex
 axiomIndexParser = AxiomIndex <$$> Char.string "a" *> decimal
