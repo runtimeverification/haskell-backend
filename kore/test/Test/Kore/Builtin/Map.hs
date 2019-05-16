@@ -384,6 +384,10 @@ selectFunctionPattern keyVar valueVar mapVar permutation  =
     value = mkApp intSort absIntSymbol  [mkVar valueVar]
     singleton = mkApp mapSort elementMapSymbol [ key, value ]
 
+makeElementSelect :: Variable -> Variable -> TermLike Variable
+makeElementSelect keyVar valueVar =
+    mkApp mapSort elementMapSymbol [mkVar keyVar, mkVar valueVar]
+
 -- Given a function to scramble the arguments to concat, i.e.,
 -- @id@ or @reverse@, produces a pattern of the form
 -- `MapItem(K:Int, V:Int) Rest:Map`, or `Rest:Map MapItem(K:Int, V:Int)`,
@@ -397,7 +401,7 @@ selectPattern
 selectPattern keyVar valueVar mapVar permutation  =
     mkApp mapSort concatMapSymbol $ permutation [element, mkVar mapVar]
   where
-    element = mkApp mapSort elementMapSymbol [mkVar keyVar, mkVar valueVar]
+    element = makeElementSelect keyVar valueVar
 
 test_unifySelectFromEmpty :: TestTree
 test_unifySelectFromEmpty =
@@ -467,6 +471,37 @@ test_unifySelectFromSingleton =
             -- { 5 -> 7 } /\ Rest:Map MapItem(K:Int, V:Int)
             (singleton `unifiesWith` selectPatRev) expect
             (selectPatRev `unifiesWith` singleton) expect
+        )
+
+test_unifySelectFromSingletonWithoutLeftovers :: TestTree
+test_unifySelectFromSingletonWithoutLeftovers =
+    testPropertyWithSolver
+        "unify a singleton map with a variable selection pattern"
+        (do
+            concreteKey <- forAll genConcreteIntegerPattern
+            value <- forAll genIntegerPattern
+            keyVar <- forAll (standaloneGen $ variableGen intSort)
+            valueVar <- forAll (standaloneGen $ variableGen intSort)
+            Monad.when (variableName keyVar == variableName valueVar) discard
+            let selectPat = makeElementSelect keyVar valueVar
+                singleton =
+                    asInternal (Map.singleton concreteKey value)
+                keyStepPattern = fromConcreteStepPattern concreteKey
+                unsimplifiedSingleton =
+                    mkApp mapSort elementMapSymbol [keyStepPattern, value]
+                expect =
+                    Conditional
+                        { term = unsimplifiedSingleton
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [ (keyVar, keyStepPattern)
+                                , (valueVar, value)
+                                ]
+                        }
+            -- { 5 -> 7 } /\ Item(K:Int, V:Int)
+            (singleton `unifiesWith` selectPat) expect
+            (selectPat `unifiesWith` singleton) expect
         )
 
 -- use as (pat1 `unifiesWith` pat2) expect
