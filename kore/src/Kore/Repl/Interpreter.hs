@@ -14,6 +14,7 @@ module Kore.Repl.Interpreter
     , showRewriteRule
     , parseEvalScript
     , showAliasError
+    , formatUnificationMessage
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -582,9 +583,7 @@ tryAxiomClaim eac = do
         unifier <- Lens.use lensUnifier
         mdoc <-
             Monad.Trans.lift . runUnifierWithExplanation $ unifier first second
-        case mdoc of
-            Nothing -> putStrLn' "No unification error found."
-            Just doc -> putStrLn' $ show doc
+        putStrLn' $ formatUnificationMessage mdoc
     extractLeftPattern
         :: Either (Axiom) claim
         -> TermLike Variable
@@ -927,3 +926,7 @@ parseEvalScript state file = do
         -> Simplifier (ReplState claim)
     executeScript st cmds =
         execStateT (traverse_ (replInterpreter $ \_ -> return () ) cmds) st
+
+formatUnificationMessage :: Maybe (Pretty.Doc ()) -> String
+formatUnificationMessage =
+    maybe "No unification error found." show

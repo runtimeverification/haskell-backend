@@ -16,12 +16,13 @@ module Kore.Step.Simplification.AndTerms
     , SortInjectionSimplification (..)
     , TermSimplifier
     , TermTransformationOld
+    , cannotUnifyDistinctDomainValues
     ) where
 
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
-                 ( MaybeT (..), fromMaybe )
+                 ( MaybeT (..), fromMaybe, mapMaybeT )
 import qualified Control.Error as Error
 import           Control.Exception
                  ( assert )
@@ -32,6 +33,7 @@ import qualified Data.Functor.Foldable as Recursive
 import           Data.Reflection
                  ( give )
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Prelude hiding
                  ( concat )
@@ -55,6 +57,7 @@ import           Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
+import qualified Kore.Logger as Logger
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeEqualsPredicate,
                  makeNotPredicate, makeTruePredicate )
@@ -417,6 +420,26 @@ equalsFunctions =
         -> TermTransformationOld variable unifier
     forEquals f = f SimplificationType.Equals
 
+data EqualsFunctions
+    = BoolAnd
+    | EqualAndEquals
+    | BottomTermEquals
+    | TermBottomEquals
+    | VariableFunctionAndEquals
+    | FunctionVariableAndEquals
+    | EqualInjectiveHeadsAndEquals
+    | SortInjectionAndEqualsAssumesDifferentHeads
+    | ConstructorSortInjectionAndEquals
+    | ConstructorAndEqualsAssumesDifferentHeads
+    | BuiltinMapEquals
+    | BuiltinSetEquals
+    | BuiltinListEquals
+    | DomainValueAndConstructorErrors
+    | DomainValueAndEqualsAssumesDifferent
+    | StringLiteralAndEqualsAssumesDifferent
+    | CharLiteralAndEqualsAssumesDifferent
+    | FunctionAnd
+
 andEqualsFunctions
     ::  forall variable unifier
     .   ( Eq variable
@@ -428,27 +451,122 @@ andEqualsFunctions
         , MonadUnify unifier
         )
     => [(SimplificationTarget, TermTransformation variable unifier)]
-andEqualsFunctions =
-    [ (AndT,    liftET boolAnd)
-    , (BothT,   liftET equalAndEquals)
-    , (EqualsT, lift0  bottomTermEquals)
-    , (EqualsT, lift0  termBottomEquals)
-    , (BothT,   liftTS variableFunctionAndEquals)
-    , (BothT,   liftTS functionVariableAndEquals)
-    , (BothT,   addT   equalInjectiveHeadsAndEquals)
-    , (BothT,   addS   sortInjectionAndEqualsAssumesDifferentHeads)
-    , (BothT,   liftE1 constructorSortInjectionAndEquals)
-    , (BothT,   liftE1 constructorAndEqualsAssumesDifferentHeads)
-    , (BothT,   liftB1 Builtin.Map.unifyEquals)
-    , (BothT,   liftB1 Builtin.Set.unifyEquals)
-    , (BothT,   liftB  Builtin.List.unifyEquals)
-    , (BothT,   liftE  domainValueAndConstructorErrors)
-    , (BothT,   liftE0 domainValueAndEqualsAssumesDifferent)
-    , (BothT,   liftE0 stringLiteralAndEqualsAssumesDifferent)
-    , (BothT,   liftE0 charLiteralAndEqualsAssumesDifferent)
-    , (AndT,    lift   functionAnd)
+andEqualsFunctions = fmap (fmap mapEqualsFunctions)
+    [ (AndT,    BoolAnd)
+    , (BothT,   EqualAndEquals)
+    , (EqualsT, BottomTermEquals)
+    , (EqualsT, TermBottomEquals)
+    , (BothT,   VariableFunctionAndEquals)
+    , (BothT,   FunctionVariableAndEquals)
+    , (BothT,   EqualInjectiveHeadsAndEquals)
+    , (BothT,   SortInjectionAndEqualsAssumesDifferentHeads)
+    , (BothT,   ConstructorSortInjectionAndEquals)
+    , (BothT,   ConstructorAndEqualsAssumesDifferentHeads)
+    , (BothT,   BuiltinMapEquals)
+    , (BothT,   BuiltinSetEquals)
+    , (BothT,   BuiltinListEquals)
+    , (BothT,   DomainValueAndConstructorErrors)
+    , (BothT,   DomainValueAndEqualsAssumesDifferent)
+    , (BothT,   StringLiteralAndEqualsAssumesDifferent)
+    , (BothT,   CharLiteralAndEqualsAssumesDifferent)
+    , (AndT,    FunctionAnd)
     ]
   where
+    mapEqualsFunctions :: EqualsFunctions -> TermTransformation variable unifier
+    mapEqualsFunctions =
+        \case
+            BoolAnd ->
+                logTT "boolAnd" $ liftE0 boolAnd
+            EqualAndEquals ->
+                logTT "equalAndEquals" $ liftET equalAndEquals
+            BottomTermEquals ->
+                logTT "bottomTermEquals" $ lift0 bottomTermEquals
+            TermBottomEquals ->
+                logTT "termBottomEquals" $ lift0 termBottomEquals
+            VariableFunctionAndEquals ->
+                logTT "variableFunctionAndEquals"
+                    $ liftTS variableFunctionAndEquals
+            FunctionVariableAndEquals ->
+                logTT "functionVariableAndEquals"
+                    $ liftTS functionVariableAndEquals
+            EqualInjectiveHeadsAndEquals ->
+                logTT "equalInjectiveHeadsAndEquals"
+                    $ addT equalInjectiveHeadsAndEquals
+            SortInjectionAndEqualsAssumesDifferentHeads ->
+                logTT "sortInjectionAndEqualsAssumesDifferentHeads"
+                    $ addS sortInjectionAndEqualsAssumesDifferentHeads
+            ConstructorSortInjectionAndEquals ->
+                logTT "constructorSortInjectionAndEquals"
+                    $ liftE1 constructorSortInjectionAndEquals
+            ConstructorAndEqualsAssumesDifferentHeads ->
+                logTT "constructorAndEqualsAssumesDifferentHeads"
+                    $ liftE1 constructorAndEqualsAssumesDifferentHeads
+            BuiltinMapEquals ->
+                logTT "Builtin.Map.unifyEquals" $ liftB1 Builtin.Map.unifyEquals
+            BuiltinSetEquals ->
+                logTT "Builtin.Set.unifyEquals" $ liftB1 Builtin.Set.unifyEquals
+            BuiltinListEquals ->
+                logTT "Builtin.List.unifyEquals"
+                    $ liftB Builtin.List.unifyEquals
+            DomainValueAndConstructorErrors ->
+                logTT "domainValueAndConstructorErrors"
+                    $ liftE domainValueAndConstructorErrors
+            DomainValueAndEqualsAssumesDifferent ->
+                logTT "domainValueAndEqualsAssumesDifferent"
+                    $ liftE0 domainValueAndEqualsAssumesDifferent
+            StringLiteralAndEqualsAssumesDifferent ->
+                logTT "stringLiteralAndEqualsAssumesDifferent"
+                    $ liftE0 stringLiteralAndEqualsAssumesDifferent
+            CharLiteralAndEqualsAssumesDifferent ->
+                logTT "charLiteralAndEqualsAssumesDifferent"
+                    $ liftE0 charLiteralAndEqualsAssumesDifferent
+            FunctionAnd ->
+                logTT "functionAnd" $ lift functionAnd
+
+    logTT
+        :: String
+        -> TermTransformation variable unifier
+        -> TermTransformation variable unifier
+    logTT fnName termTransformation sType tools ps tls bs pm ts t1 t2 =
+        mapMaybeT (\getResult -> do
+            mresult <- getResult
+            case mresult of
+                Nothing -> do
+                    Monad.Unify.liftSimplifier
+                        . Logger.withLogScope (Logger.Scope "AndTerms")
+                        . Logger.logDebug
+                        . Text.pack
+                        . show
+                        $ Pretty.hsep
+                                [ "Evaluator"
+                                , Pretty.pretty fnName
+                                , "does not apply."
+                                ]
+                    return mresult
+                Just result -> do
+                    Monad.Unify.liftSimplifier
+                        . Logger.withLogScope (Logger.Scope "AndTerms")
+                        . Logger.logInfo
+                        . Text.pack
+                        . show
+                        $ Pretty.vsep
+                            [ Pretty.hsep
+                                [ "Evaluator"
+                                , Pretty.pretty fnName
+                                ]
+                            , Pretty.indent 4 $ Pretty.vsep
+                                [ "First:"
+                                , Pretty.indent 4 $ unparse t1
+                                , "Second:"
+                                , Pretty.indent 4 $ unparse t2
+                                , "Result:"
+                                , Pretty.indent 4 $ unparse result
+                                ]
+                            ]
+                    return mresult
+            )
+            $ termTransformation sType tools ps tls bs pm ts t1 t2
+
     liftB
         f
         simplificationType
@@ -709,13 +827,26 @@ liftPattern = MaybeT . return
 
 -- | Simplify the conjunction of terms where one is a predicate.
 boolAnd
-    :: TermLike variable
+    :: MonadUnify unifier
+    => SortedVariable variable
+    => Unparse variable
+    => TermLike variable
     -> TermLike variable
-    -> Maybe (TermLike variable)
+    -> MaybeT unifier (TermLike variable)
 boolAnd first second
-  | isBottom first  = return first
+  | isBottom first  = do
+      Monad.Trans.lift $ Monad.Unify.explainBottom
+          "Cannot unify bottom."
+          first
+          second
+      return first
   | isTop first     = return second
-  | isBottom second = return second
+  | isBottom second = do
+      Monad.Trans.lift $ Monad.Unify.explainBottom
+          "Cannot unify bottom."
+          first
+          second
+      return second
   | isTop second    = return first
   | otherwise       = empty
 
@@ -1330,6 +1461,9 @@ domainValueAndEqualsAssumesDifferent
   = Monad.Trans.lift $ cannotUnifyDomainValues first second
 domainValueAndEqualsAssumesDifferent _ _ = empty
 
+cannotUnifyDistinctDomainValues :: Pretty.Doc ()
+cannotUnifyDistinctDomainValues = "Cannot unify distinct domain values."
+
 cannotUnifyDomainValues
     :: Eq variable
     => SortedVariable variable
@@ -1341,7 +1475,7 @@ cannotUnifyDomainValues
 cannotUnifyDomainValues first second =
     assert (first /= second) $ do
         Monad.Unify.explainBottom
-            "Cannot unify distinct domain values."
+            cannotUnifyDistinctDomainValues
             first
             second
         return mkBottom_
