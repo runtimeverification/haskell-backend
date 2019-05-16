@@ -7,6 +7,7 @@ module Test.Kore.Builtin.Builtin
     , testEvaluators
     , testSymbolWithSolver
     , evaluate
+    , evaluateToList
     , evaluateWith
     , indexedModule
     , runStepWith
@@ -47,6 +48,8 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
+import qualified Kore.Internal.MultiOr as MultiOr
+                 ( extractPatterns )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import           Kore.Internal.Pattern
@@ -201,6 +204,19 @@ evaluate =
         testMetadataTools
         testSubstitutionSimplifier
         testEvaluators
+
+evaluateToList
+    :: MonadSMT m
+    => TermLike Variable
+    -> m [Pattern Variable]
+evaluateToList =
+    fmap MultiOr.extractPatterns
+    . liftSMT
+    . evalSimplifier emptyLogger
+    . TermLike.simplifyToOr
+        testMetadataTools
+        testEvaluators
+        testSubstitutionSimplifier
 
 evaluateWith
     :: MVar Solver
