@@ -49,8 +49,6 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
@@ -60,7 +58,7 @@ test_simplificationIntegration =
         let expect = OrPattern.fromPatterns []
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 Conditional
                     { term =
                         -- Use the exact form we expect from an owise condition
@@ -98,7 +96,7 @@ test_simplificationIntegration =
         let expect = OrPattern.fromPatterns [Pattern.top]
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 Conditional
                     { term =
                         -- Use the exact form we expect from an owise condition
@@ -148,7 +146,7 @@ test_simplificationIntegration =
                     ]
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 Conditional
                     { term = mkCeil_
                         (mkAnd
@@ -176,7 +174,7 @@ test_simplificationIntegration =
                 ]
         actual <-
             evaluateWithAxioms
-                mockMetadataTools
+                Mock.metadataTools
                 (axiomPatternsToEvaluators
                     (Map.fromList
                         [   ( AxiomIdentifier.Application
@@ -219,7 +217,7 @@ test_simplificationIntegration =
                 ]
         actual <-
             evaluateWithAxioms
-                mockMetadataTools
+                Mock.metadataTools
                 (axiomPatternsToEvaluators
                     (Map.fromList
                         [   ( AxiomIdentifier.Application
@@ -274,7 +272,7 @@ test_substitute =
                     ]
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (Pattern.fromTermLike
                     (mkAnd
                         (Mock.functionalConstr20
@@ -303,7 +301,7 @@ test_substitute =
                     ]
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (Pattern.fromTermLike
                     (mkAnd
                         (Mock.functionalConstr20
@@ -335,7 +333,7 @@ test_substituteMap =
                     ]
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (Pattern.fromTermLike
                     (mkAnd
                         (Mock.functionalConstr20
@@ -372,7 +370,7 @@ test_substituteList =
                     ]
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 ( Pattern.fromTermLike
                     (mkAnd
                         (Mock.functionalConstr20
@@ -389,16 +387,6 @@ test_substituteList =
     ]
   where
     mkDomainBuiltinList = Mock.builtinList
-
-mockMetadataTools :: SmtMetadataTools StepperAttributes
-mockMetadataTools =
-    Mock.makeMetadataTools
-        Mock.attributesMapping
-        Mock.headTypeMapping
-        Mock.sortAttributesMapping
-        Mock.subsorts
-        Mock.headSortsMapping
-        Mock.smtDeclarations
 
 evaluate
     :: SmtMetadataTools StepperAttributes

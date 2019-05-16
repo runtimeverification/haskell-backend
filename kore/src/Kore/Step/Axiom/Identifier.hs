@@ -43,7 +43,7 @@ data AxiomIdentifier
     = Application !Id
     -- ^ Identifier for an application pattern whose symbol has the given id
     -- as name and which has no parameters.
-    | Ceil !(AxiomIdentifier)
+    | Ceil !AxiomIdentifier
     -- ^ Identifier for a ceil pattern whose child has the given identifier.
     deriving (Eq, Ord, Show)
 
@@ -55,7 +55,7 @@ Currently parameters of parameterized symbols are ignored.
 extract
     :: (Functor domain)
     => Pattern domain variable annotation
-    -> Maybe (AxiomIdentifier)
+    -> Maybe AxiomIdentifier
 extract (App_ symbolOrAlias _children) =
     Just (Application (symbolOrAliasConstructor symbolOrAlias))
 extract (Ceil_ _sort1 _sort2 (App_ symbolOrAlias _children)) =

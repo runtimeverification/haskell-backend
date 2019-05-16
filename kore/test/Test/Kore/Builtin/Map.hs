@@ -9,6 +9,7 @@ import           Test.Tasty.HUnit
 
 import qualified Control.Monad as Monad
 import qualified Data.Default as Default
+import qualified Data.List as List
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
@@ -19,8 +20,6 @@ import           Prelude hiding
 
 import           Kore.Attribute.Hook
                  ( Hook )
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
 import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.Map as Map
 import           Kore.IndexedModule.MetadataTools
@@ -30,10 +29,13 @@ import           Kore.Internal.MultiOr
 import           Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
+import           Kore.Predicate.Predicate
+                 ( makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
 import qualified Kore.Unification.Substitution as Substitution
+import qualified SMT
 
 import           Test.Kore
 import qualified Test.Kore.Builtin.Bool as Test.Bool
@@ -44,8 +46,6 @@ import           Test.Kore.Builtin.Int
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.Set as Test.Set
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.SMT
 import           Test.Tasty.HUnit.Extensions
@@ -61,7 +61,7 @@ genConcreteMap genElement =
 genMapPattern :: Gen (TermLike Variable)
 genMapPattern = asTermLike <$> genConcreteMap genIntegerPattern
 
-genMapSortedVariable :: Sort -> Gen a -> Gen (Map (Variable) a)
+genMapSortedVariable :: Sort -> Gen a -> Gen (Map Variable a)
 genMapSortedVariable sort genElement =
     Gen.map
         (Range.linear 0 32)
@@ -325,18 +325,8 @@ test_isBuiltin =
             (not (Map.isSymbolUnit mockHookTools Mock.concatMapSymbol))
     ]
 
-mockMetadataTools :: SmtMetadataTools StepperAttributes
-mockMetadataTools =
-    Mock.makeMetadataTools
-        Mock.attributesMapping
-        Mock.headTypeMapping
-        Mock.sortAttributesMapping
-        Mock.subsorts
-        Mock.headSortsMapping
-        Mock.smtDeclarations
-
 mockHookTools :: SmtMetadataTools Hook
-mockHookTools = StepperAttributes.hook <$> mockMetadataTools
+mockHookTools = StepperAttributes.hook <$> Mock.metadataTools
 
 -- | Construct a pattern for a map which may have symbolic keys.
 asSymbolicPattern
@@ -375,6 +365,124 @@ test_unifyConcrete =
             (===) expect actual
             (===) Pattern.top =<< evaluate predicate
         )
+
+
+-- Given a function to scramble the arguments to concat, i.e.,
+-- @id@ or @reverse@, produces a pattern of the form
+-- `MapItem(absInt(K:Int), absInt(V:Int)) Rest:Map`, or
+-- `Rest:Map MapItem(absInt(K:Int), absInt(V:Int))`, respectively.
+selectFunctionPattern
+    :: Variable          -- ^key variable
+    -> Variable          -- ^value variable
+    -> Variable          -- ^map variable
+    -> (forall a . [a] -> [a])  -- ^scrambling function
+    -> TermLike Variable
+selectFunctionPattern keyVar valueVar mapVar permutation  =
+    mkApp mapSort concatMapSymbol $ permutation [singleton, mkVar mapVar]
+  where
+    key = mkApp intSort absIntSymbol  [mkVar keyVar]
+    value = mkApp intSort absIntSymbol  [mkVar valueVar]
+    singleton = mkApp mapSort elementMapSymbol [ key, value ]
+
+-- Given a function to scramble the arguments to concat, i.e.,
+-- @id@ or @reverse@, produces a pattern of the form
+-- `MapItem(K:Int, V:Int) Rest:Map`, or `Rest:Map MapItem(K:Int, V:Int)`,
+-- respectively.
+selectPattern
+    :: Variable          -- ^key variable
+    -> Variable          -- ^value variable
+    -> Variable          -- ^map variable
+    -> (forall a . [a] -> [a])  -- ^scrambling function
+    -> TermLike Variable
+selectPattern keyVar valueVar mapVar permutation  =
+    mkApp mapSort concatMapSymbol $ permutation [element, mkVar mapVar]
+  where
+    element = mkApp mapSort elementMapSymbol [mkVar keyVar, mkVar valueVar]
+
+test_unifySelectFromEmpty :: TestTree
+test_unifySelectFromEmpty =
+    testPropertyWithSolver "unify an empty map with a selection pattern" $ do
+        keyVar <- forAll (standaloneGen $ variableGen intSort)
+        valueVar <- forAll (standaloneGen $ variableGen intSort)
+        mapVar <- forAll (standaloneGen $ variableGen mapSort)
+        let varNames =
+                [ variableName keyVar
+                , variableName valueVar
+                , variableName mapVar
+                ]
+        Monad.when (varNames /= List.nub varNames) discard
+        let selectPat       = selectPattern keyVar valueVar mapVar id
+            selectPatRev    = selectPattern keyVar valueVar mapVar reverse
+            fnSelectPat     = selectFunctionPattern keyVar valueVar mapVar id
+            fnSelectPatRev  =
+                selectFunctionPattern keyVar valueVar mapVar reverse
+        -- Map.empty /\ MapItem(K:Int, V:Int) Rest:Map
+        emptyMap `doesNotUnifyWith` selectPat
+        selectPat `doesNotUnifyWith` emptyMap
+        -- Map.empty /\ Rest:Map MapItem(K:Int, V:int)
+        emptyMap `doesNotUnifyWith` selectPatRev
+        selectPatRev `doesNotUnifyWith` emptyMap
+        -- Map.empty /\ MapItem(absInt(K:Int), absInt(V:Int)) Rest:Map
+        emptyMap `doesNotUnifyWith` fnSelectPat
+        fnSelectPat `doesNotUnifyWith` emptyMap
+        -- Map.empty /\ Rest:Map MapItem(absInt(K:Int), absInt(V:Int))
+        emptyMap `doesNotUnifyWith` fnSelectPatRev
+        fnSelectPatRev `doesNotUnifyWith` emptyMap
+  where
+    emptyMap = asTermLike Map.empty
+    doesNotUnifyWith pat1 pat2 =
+        (===) Pattern.bottom =<< evaluate (mkAnd pat1 pat2)
+
+test_unifySelectFromSingleton :: TestTree
+test_unifySelectFromSingleton =
+    testPropertyWithSolver
+        "unify a singleton map with a variable selection pattern"
+        (do
+            concreteKey <- forAll genConcreteIntegerPattern
+            value <- forAll genIntegerPattern
+            keyVar <- forAll (standaloneGen $ variableGen intSort)
+            valueVar <- forAll (standaloneGen $ variableGen intSort)
+            mapVar <- forAll (standaloneGen $ variableGen mapSort)
+            Monad.when (variableName keyVar == variableName valueVar) discard
+            Monad.when (variableName keyVar == variableName mapVar) discard
+            Monad.when (variableName valueVar == variableName mapVar) discard
+            let selectPat       = selectPattern keyVar valueVar mapVar id
+                selectPatRev    = selectPattern keyVar valueVar mapVar reverse
+                singleton       =
+                    asInternal (Map.singleton concreteKey value)
+                keyStepPattern = fromConcreteStepPattern concreteKey
+                expect =
+                    Conditional
+                        { term = singleton
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [ (mapVar, asInternal Map.empty)
+                                , (keyVar, keyStepPattern)
+                                , (valueVar, value)
+                                ]
+                        }
+            -- { 5 -> 7 } /\ Item(K:Int, V:Int) Rest:Map
+            (singleton `unifiesWith` selectPat) expect
+            (selectPat `unifiesWith` singleton) expect
+            -- { 5 -> 7 } /\ Rest:Map MapItem(K:Int, V:Int)
+            (singleton `unifiesWith` selectPatRev) expect
+            (selectPatRev `unifiesWith` singleton) expect
+        )
+
+-- use as (pat1 `unifiesWith` pat2) expect
+unifiesWith
+    :: HasCallStack
+    => TermLike Variable
+    -> TermLike Variable
+    -> Pattern Variable
+    -> PropertyT SMT.SMT ()
+unifiesWith pat1 pat2 Conditional { term, predicate, substitution } = do
+    Conditional { term = uTerm, predicate = uPred, substitution = uSubst } <-
+        evaluate (mkAnd pat1 pat2)
+    Substitution.toMap substitution === Substitution.toMap uSubst
+    predicate === uPred
+    term === uTerm
 
 {- | Unify a concrete map with symbolic-keyed map.
 
@@ -496,7 +604,7 @@ asPattern :: Map.Builtin Variable -> Pattern Variable
 asPattern =
     Reflection.give testMetadataTools Map.asPattern mapSort
 
--- | Specialize 'Map.asInternal' to the builtin sort 'listSort'.
+-- | Specialize 'Map.asInternal' to the builtin sort 'mapSort'.
 asInternal
     :: Map.Builtin Variable
     -> TermLike Variable

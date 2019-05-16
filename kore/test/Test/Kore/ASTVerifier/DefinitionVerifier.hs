@@ -9,12 +9,12 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-import           Kore.ASTPrettyPrint
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Builtin as Builtin
+import           Kore.Debug
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Internal.TermLike hiding
@@ -131,7 +131,7 @@ attributesVerificationForTests = defaultNullAttributesVerification
 
 printDefinition :: ParsedDefinition -> String
 printDefinition definition =
-    prettyPrintToString definition
+    (show . debug) definition
     ++ "\n----------------------\n"
     ++ unparseToString definition
     ++ "\n----------------------"

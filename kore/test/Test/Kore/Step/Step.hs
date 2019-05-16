@@ -16,9 +16,6 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-import           Kore.Attribute.Symbol
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.MultiOr
                  ( MultiOr )
@@ -36,6 +33,8 @@ import           Kore.Predicate.Predicate as Predicate
                  makeExistsPredicate, makeFalsePredicate, makeNotPredicate,
                  makeTruePredicate )
 import qualified Kore.Step.Axiom.Matcher as Matcher
+import qualified Kore.Step.Result as Result
+                 ( mergeResults )
 import           Kore.Step.Rule
                  ( EqualityRule (..), RewriteRule (..), RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
@@ -63,29 +62,16 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
-mockMetadataTools :: SmtMetadataTools StepperAttributes
-mockMetadataTools =
-    Mock.makeMetadataTools
-        Mock.attributesMapping
-        Mock.headTypeMapping
-        Mock.sortAttributesMapping
-        Mock.subsorts
-        Mock.headSortsMapping
-        Mock.smtDeclarations
-
 evalUnifier
-    :: BranchT Unifier a
+    :: Unifier a
     -> IO (Either UnificationOrSubstitutionError [a])
 evalUnifier =
     SMT.runSMT SMT.defaultConfig
     . evalSimplifier emptyLogger
     . Monad.Unify.runUnifier
-    . gather
 
 applyInitialConditions
     :: Predicate Variable
@@ -102,7 +88,7 @@ applyInitialConditions initial unification =
         initial
         unification
   where
-    metadataTools = mockMetadataTools
+    metadataTools = Mock.metadataTools
     predicateSimplifier =
         Predicate.create
             metadataTools
@@ -183,7 +169,7 @@ unifyRule initial rule =
         initial
         rule
   where
-    metadataTools = mockMetadataTools
+    metadataTools = Mock.metadataTools
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
     predicateSimplifier =
         Predicate.create
@@ -680,19 +666,20 @@ applyRewriteRules
     -- ^ Rewrite rule
     -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
 applyRewriteRules initial rules =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
-    $ Monad.Unify.runUnifier
-    $ Step.applyRewriteRules
-        metadataTools
-        predicateSimplifier
-        patternSimplifier
-        axiomSimplifiers
-        unificationProcedure
-        rules
-        initial
+    (fmap . fmap) Result.mergeResults
+        $ SMT.runSMT SMT.defaultConfig
+        $ evalSimplifier emptyLogger
+        $ Monad.Unify.runUnifier
+        $ Step.applyRewriteRules
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+            unificationProcedure
+            rules
+            initial
   where
-    metadataTools = mockMetadataTools
+    metadataTools = Mock.metadataTools
     predicateSimplifier =
         Predicate.create
             metadataTools
@@ -1052,19 +1039,20 @@ sequenceRewriteRules
     -- ^ Rewrite rule
     -> IO (Either UnificationOrSubstitutionError (Results Variable))
 sequenceRewriteRules initial rules =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
-    $ Monad.Unify.runUnifier
-    $ Step.sequenceRewriteRules
-        metadataTools
-        predicateSimplifier
-        patternSimplifier
-        axiomSimplifiers
-        unificationProcedure
-        initial
-        rules
+    (fmap . fmap) Result.mergeResults
+        $ SMT.runSMT SMT.defaultConfig
+        $ evalSimplifier emptyLogger
+        $ Monad.Unify.runUnifier
+        $ Step.sequenceRewriteRules
+            metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+            unificationProcedure
+            initial
+            rules
   where
-    metadataTools = mockMetadataTools
+    metadataTools = Mock.metadataTools
     predicateSimplifier =
         Predicate.create
             metadataTools
@@ -1172,7 +1160,8 @@ sequenceMatchingRules
     -- ^ Rewrite rule
     -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
 sequenceMatchingRules initial rules =
-    SMT.runSMT SMT.defaultConfig
+    fmap (fmap Foldable.fold)
+    $ SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ Monad.Unify.runUnifier
     $ Step.sequenceRules
@@ -1184,7 +1173,7 @@ sequenceMatchingRules initial rules =
         initial
         (getEqualityRule <$> rules)
   where
-    metadataTools = mockMetadataTools
+    metadataTools = Mock.metadataTools
     predicateSimplifier =
         Predicate.create
             metadataTools

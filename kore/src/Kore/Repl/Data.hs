@@ -16,7 +16,7 @@ module Kore.Repl.Data
     , ReplNode (..)
     , ReplState (..)
     , NodeState (..)
-    , ReplAlias (..)
+    , AliasDefinition (..), ReplAlias (..), AliasArgument(..), AliasError (..)
     , getNodeState
     , InnerGraph
     , lensAxioms, lensClaims, lensClaim
@@ -34,9 +34,11 @@ module Kore.Repl.Data
     , StepResult(..)
     , runStepper, runStepper'
     , updateInnerGraph, updateExecutionGraph
-    , addOrUpdateAlias, findAlias
+    , addOrUpdateAlias, findAlias, substituteAlias
     ) where
 
+import           Control.Applicative
+                 ( Alternative )
 import           Control.Error
                  ( hush )
 import qualified Control.Lens as Lens hiding
@@ -44,10 +46,13 @@ import qualified Control.Lens as Lens hiding
 import qualified Control.Lens.TH.Rules as Lens
 import           Control.Monad
                  ( join )
+import           Control.Monad.Error.Class
+                 ( MonadError )
+import qualified Control.Monad.Error.Class as Monad.Error
 import           Control.Monad.State.Strict
                  ( MonadState, get, gets, modify )
 import           Control.Monad.Trans.Accum
-                 ( AccumT )
+                 ( AccumT, runAccumT )
 import qualified Control.Monad.Trans.Accum as Monad.Accum
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import           Data.Bitraversable
@@ -66,6 +71,9 @@ import           Data.Monoid
                  ( First (..) )
 import           Data.Sequence
                  ( Seq )
+import           Data.Set
+                 ( Set )
+import qualified Data.Set as Set
 import           Data.Text.Prettyprint.Doc
                  ( Doc )
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -79,9 +87,7 @@ import           Kore.Internal.TermLike
                  ( TermLike )
 import           Kore.OnePath.StrategyPattern
 import           Kore.OnePath.Verification
-                 ( Axiom (..) )
-import           Kore.OnePath.Verification
-                 ( Claim )
+                 ( Axiom (..), Claim )
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
 import           Kore.Step.Simplification.Data
@@ -90,7 +96,7 @@ import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unification.Unify
-                 ( MonadUnify, Unifier )
+                 ( MonadUnify, UnifierTT (UnifierTT) )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( unparse )
@@ -107,9 +113,20 @@ newtype ReplNode = ReplNode
     { unReplNode :: Graph.Node
     } deriving (Eq, Show)
 
+data AliasDefinition = AliasDefinition
+    { name      :: String
+    , arguments :: [String]
+    , command   :: String
+    } deriving (Eq, Show)
+
+data AliasArgument
+  = SimpleArgument String
+  | QuotedArgument String
+  deriving (Eq, Show)
+
 data ReplAlias = ReplAlias
-    { name    :: String
-    , command :: ReplCommand
+    { name      :: String
+    , arguments :: [AliasArgument]
     } deriving (Eq, Show)
 
 -- | List of available commands for the Repl. Note that we are always in a proof
@@ -163,15 +180,39 @@ data ReplCommand
     -- ^ Writes all commands executed in this session to a file on disk.
     | AppendTo ReplCommand FilePath
     -- ^ Appends the output of a command to a file.
-    | Alias ReplAlias
+    | Alias AliasDefinition
     -- ^ Alias a command.
-    | TryAlias String
+    | TryAlias ReplAlias
     -- ^ Try running an alias.
     | LoadScript FilePath
     -- ^ Load script from file
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
+
+commandSet :: Set String
+commandSet = Set.fromList
+    [ "help"
+    , "claim"
+    , "axiom"
+    , "prove"
+    , "graph"
+    , "step"
+    , "stepf"
+    , "select"
+    , "omit"
+    , "leafs"
+    , "rule"
+    , "prec-branch"
+    , "children"
+    , "label"
+    , "try"
+    , "clear"
+    , "save-session"
+    , "alias"
+    , "load"
+    , "exit"
+    ]
 
 -- | Please remember to update this text whenever you update the ADT above.
 helpText :: String
@@ -258,11 +299,11 @@ shouldStore =
 -- Type synonym for the actual type of the execution graph.
 type ExecutionGraph =
     Strategy.ExecutionGraph
-        (CommonStrategyPattern)
+        CommonStrategyPattern
         (RewriteRule Variable)
 
 type InnerGraph =
-    Gr (CommonStrategyPattern) (Seq (RewriteRule Variable))
+    Gr CommonStrategyPattern (Seq (RewriteRule Variable))
 
 -- | State for the rep.
 data ReplState claim = ReplState
@@ -301,34 +342,39 @@ data ReplState claim = ReplState
     --   failures
     , labels  :: Map ClaimIndex (Map String ReplNode)
     -- ^ Map from labels to nodes
-    , aliases :: Map String ReplAlias
+    , aliases :: Map String AliasDefinition
     -- ^ Map of command aliases
     }
 
 -- | Unifier that stores the first 'explainBottom'.
 -- See 'runUnifierWithExplanation'.
-newtype UnifierWithExplanation a = UnifierWithExplanation
-    { getUnifier :: AccumT (First (Doc ())) Unifier a
-    } deriving (Applicative, Functor, Monad)
+newtype UnifierWithExplanation a =
+    UnifierWithExplanation
+        { getUnifierWithExplanation :: UnifierTT (AccumT (First (Doc ()))) a }
+  deriving (Alternative, Applicative, Functor, Monad)
 
 instance MonadUnify UnifierWithExplanation where
     throwSubstitutionError =
-        UnifierWithExplanation
-            . Monad.Trans.lift
-            . Monad.Unify.throwSubstitutionError
-
+        UnifierWithExplanation . Monad.Unify.throwSubstitutionError
     throwUnificationError =
-        UnifierWithExplanation
-            . Monad.Trans.lift
-            . Monad.Unify.throwUnificationError
+        UnifierWithExplanation . Monad.Unify.throwUnificationError
 
     liftSimplifier =
-        UnifierWithExplanation
-            . Monad.Trans.lift
-            . Monad.Unify.liftSimplifier
+        UnifierWithExplanation . Monad.Unify.liftSimplifier
+    liftBranchedSimplifier =
+        UnifierWithExplanation . Monad.Unify.liftBranchedSimplifier
+
+    gather =
+        UnifierWithExplanation . Monad.Unify.gather . getUnifierWithExplanation
+    scatter = UnifierWithExplanation . Monad.Unify.scatter
 
     explainBottom info first second =
-        UnifierWithExplanation . Monad.Accum.add . First . Just $ Pretty.vsep
+        UnifierWithExplanation
+        . UnifierTT
+        . Monad.Trans.lift
+        . Monad.Accum.add
+        . First
+        . Just $ Pretty.vsep
             [ info
             , "When unifying:"
             , Pretty.indent 4 $ unparse first
@@ -337,15 +383,22 @@ instance MonadUnify UnifierWithExplanation where
             ]
 
 runUnifierWithExplanation
-    :: UnifierWithExplanation a
-    -> Simplifier (Maybe (Doc ()))
-runUnifierWithExplanation (UnifierWithExplanation accum)
-    = fmap join
-        . (fmap . fmap) getFirst
-        . (fmap . fmap) snd
-        . fmap hush
-        . Monad.Unify.runUnifier
-        $ Monad.Accum.runAccumT accum mempty
+    :: forall a
+    .  UnifierWithExplanation a
+    -> Simplifier (Maybe (Maybe (Doc ())))
+runUnifierWithExplanation (UnifierWithExplanation unifier)
+  =
+    fmap (fmap getFirst) unificationExplanations
+  where
+    unificationResults :: Simplifier (Maybe ([a], First (Doc ())))
+    unificationResults =
+        hush
+        <$> Monad.Unify.runUnifierT
+            (\accum -> runAccumT accum mempty)
+            unifier
+    unificationExplanations :: Simplifier (Maybe (First (Doc ())))
+    unificationExplanations =
+        fmap (fmap snd) unificationResults
 
 Lens.makeLenses ''ReplState
 
@@ -373,7 +426,7 @@ getAxiomByIndex
     :: MonadState (ReplState claim) m
     => Int
     -- ^ index in the axioms list
-    -> m (Maybe (Axiom))
+    -> m (Maybe Axiom)
 getAxiomByIndex index = Lens.preuse $ lensAxioms . Lens.element index
 
 -- | Transforms an axiom or claim index into an axiom or claim if they could be
@@ -381,7 +434,7 @@ getAxiomByIndex index = Lens.preuse $ lensAxioms . Lens.element index
 getAxiomOrClaimByIndex
     :: MonadState (ReplState claim) m
     => Either AxiomIndex ClaimIndex
-    -> m (Maybe (Either (Axiom) claim))
+    -> m (Maybe (Either Axiom claim))
 getAxiomOrClaimByIndex =
     fmap bisequence
         . bitraverse
@@ -605,10 +658,78 @@ getNodeState graph node =
 data NodeState = StuckNode | UnevaluatedNode
     deriving (Eq, Ord, Show)
 
--- | Adds or updates the provided alias.
-addOrUpdateAlias :: MonadState (ReplState claim) m => ReplAlias -> m ()
-addOrUpdateAlias alias@ReplAlias { name } =
-    lensAliases Lens.%= Map.insert name alias
+data AliasError
+    = NameAlreadyDefined
+    | UnknownCommand
 
-findAlias :: MonadState (ReplState claim) m => String -> m (Maybe ReplAlias)
+-- | Adds or updates the provided alias.
+addOrUpdateAlias
+    :: forall m claim
+    .  MonadState (ReplState claim) m
+    => MonadError AliasError m
+    => AliasDefinition
+    -> m ()
+addOrUpdateAlias alias@AliasDefinition { name, command } = do
+    checkNameIsNotUsed
+    checkCommandExists
+    lensAliases Lens.%= Map.insert name alias
+  where
+    checkNameIsNotUsed :: m ()
+    checkNameIsNotUsed =
+        not . Set.member name <$> existingCommands
+            >>= falseToError NameAlreadyDefined
+
+    checkCommandExists :: m ()
+    checkCommandExists = do
+        cmds <- existingCommands
+        let
+            maybeCommand = listToMaybe $ words command
+            maybeExists = Set.member <$> maybeCommand <*> pure cmds
+        maybe
+            (Monad.Error.throwError UnknownCommand)
+            (falseToError UnknownCommand)
+            maybeExists
+
+    existingCommands :: m (Set String)
+    existingCommands =
+        Set.union commandSet
+        . Set.fromList
+        . Map.keys
+        <$> Lens.use lensAliases
+
+    falseToError :: AliasError -> Bool -> m ()
+    falseToError e b =
+        if b then pure () else Monad.Error.throwError e
+
+
+findAlias
+    :: MonadState (ReplState claim) m
+    => String
+    -> m (Maybe AliasDefinition)
 findAlias name = Map.lookup name <$> Lens.use lensAliases
+
+substituteAlias
+    :: AliasDefinition
+    -> ReplAlias
+    -> String
+substituteAlias
+    AliasDefinition { arguments, command }
+    ReplAlias { arguments = actualArguments } =
+    unwords
+      . fmap replaceArguments
+      . words
+      $ command
+  where
+    values :: Map String AliasArgument
+    values
+      | length arguments == length actualArguments
+        = Map.fromList $ zip arguments actualArguments
+      | otherwise = Map.empty
+
+    replaceArguments :: String -> String
+    replaceArguments s = maybe s toString $ Map.lookup s values
+
+    toString :: AliasArgument -> String
+    toString = \case
+        SimpleArgument str -> str
+        QuotedArgument str -> "\"" <> str <> "\""

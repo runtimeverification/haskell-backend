@@ -43,7 +43,8 @@ import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Strategy
-                 ( Strategy, pickFinal, runStrategy )
+                 ( GraphSearchOrder, Strategy, pickFinal,
+                 runStrategyWithSearchOrder )
 import           Kore.Syntax.Application
                  ( SymbolOrAlias (..) )
 import           Kore.Syntax.Id
@@ -80,6 +81,7 @@ check
         )
     -- ^ Creates a one-step strategy from a target pattern. See
     -- 'defaultStrategy'.
+    -> GraphSearchOrder
     -> [(ImplicationRule Variable, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
@@ -90,6 +92,7 @@ check
     substitutionSimplifier
     axiomIdToSimplifier
     strategyBuilder
+    searchOrder
   =
     mapM
         (checkClaim
@@ -98,6 +101,7 @@ check
             substitutionSimplifier
             axiomIdToSimplifier
             strategyBuilder
+            searchOrder
         )
 
 bmcStrategy
@@ -133,6 +137,7 @@ checkClaim
             )
            ]
         )
+    -> GraphSearchOrder
     -> (ImplicationRule Variable, Limit Natural)
     -> Simplifier CheckResult
 checkClaim
@@ -141,6 +146,7 @@ checkClaim
     substitutionSimplifier
     axiomIdToSimplifier
     strategyBuilder
+    searchOrder
     (ImplicationRule RulePattern { left, right }, stepLimit)
   = do
         let
@@ -161,7 +167,11 @@ checkClaim
                         , substitution = mempty
                         }
         executionGraph <- State.evalStateT
-                            (runStrategy transitionRule' strategy startState)
+                            (runStrategyWithSearchOrder
+                                transitionRule'
+                                strategy
+                                searchOrder
+                                startState)
                             Nothing
         let
             finalResult = (checkFinalNodes . pickFinal) executionGraph

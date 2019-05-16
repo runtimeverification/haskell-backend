@@ -11,7 +11,9 @@ module Kore.Repl.Interpreter
     , showUsageMessage
     , showStepStoppedMessage
     , printIfNotEmpty
+    , showRewriteRule
     , parseEvalScript
+    , showAliasError
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -33,8 +35,10 @@ import           Control.Monad.State.Class
 import           Control.Monad.State.Strict
                  ( MonadState, StateT (..), execStateT )
 import qualified Control.Monad.Trans.Class as Monad.Trans
+import           Control.Monad.Trans.Except
+                 ( runExceptT )
 import           Data.Coerce
-                 ( coerce )
+                 ( Coercible, coerce )
 import           Data.Foldable
                  ( traverse_ )
 import           Data.Functor
@@ -56,16 +60,6 @@ import           GHC.Exts
                  ( toList )
 import           GHC.IO.Handle
                  ( hGetContents, hPutStr )
-import           Kore.Repl.Parser
-import           Numeric.Natural
-import           System.Directory
-                 ( doesFileExist, findExecutable )
-import           System.Process
-                 ( StdStream (CreatePipe), createProcess, proc, std_in,
-                 std_out )
-import           Text.Megaparsec
-                 ( ParseErrorBundle (..), errorBundlePretty, runParser )
-
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -86,6 +80,9 @@ import           Kore.OnePath.Verification
 import           Kore.OnePath.Verification
                  ( Claim )
 import           Kore.Repl.Data
+import           Kore.Repl.Parser
+import           Kore.Repl.Parser
+                 ( commandParser )
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
 import qualified Kore.Step.Rule as Rule
@@ -103,6 +100,15 @@ import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unparser
                  ( unparseToString )
+import           Numeric.Natural
+import           System.Directory
+                 ( doesFileExist, findExecutable )
+import           System.Process
+                 ( StdStream (CreatePipe), createProcess, proc, std_in,
+                 std_out )
+import           Text.Megaparsec
+                 ( ParseErrorBundle (..), errorBundlePretty, parseMaybe,
+                 runParser )
 
 -- | Warning: you should never use WriterT or RWST. It is used here with
 -- _great care_ of evaluating the RWST to a StateT immediatly, and thus getting
@@ -194,7 +200,7 @@ showClaim
     -> m ()
 showClaim cindex = do
     claim <- getClaimByIndex . unClaimIndex $ cindex
-    maybe printNotFound (printRewriteRule . RewriteRule . coerce) $ claim
+    maybe printNotFound (putStrLn' . showRewriteRule) $ claim
 
 -- | Prints an axiom using an index in the axioms list.
 showAxiom
@@ -205,7 +211,7 @@ showAxiom
     -> m ()
 showAxiom aindex = do
     axiom <- getAxiomByIndex . unAxiomIndex $ aindex
-    maybe printNotFound (printRewriteRule . unAxiom) $ axiom
+    maybe printNotFound (putStrLn' . showRewriteRule)  $ axiom
 
 -- | Changes the currently focused proof, using an index in the claims list.
 prove
@@ -383,7 +389,7 @@ showRule configNode = do
         Nothing -> putStrLn' "Invalid node!"
         Just rule -> do
             axioms <- Lens.use lensAxioms
-            printRewriteRule rule
+            putStrLn' $ showRewriteRule rule
             let ruleIndex = getRuleIndex rule
             putStrLn' $ maybe
                 "Error: identifier attribute wasn't initialized."
@@ -709,22 +715,31 @@ appendTo cmd file = do
 alias
     :: forall m claim
     .  MonadState (ReplState claim) m
-    => ReplAlias
+    => MonadWriter String m
+    => AliasDefinition
     -> m ()
-alias a = addOrUpdateAlias a
+alias a = do
+    result <- runExceptT $ addOrUpdateAlias a
+    case result of
+        Left err -> putStrLn' $ showAliasError err
+        Right _  -> pure ()
 
 tryAlias
     :: forall claim
     .  Claim claim
-    => String
+    => ReplAlias
     -> (String -> IO ())
     -> ReplM claim Bool
-tryAlias name printFn = do
+tryAlias replAlias@ReplAlias { name } printFn = do
     res <- findAlias name
     case res of
         Nothing  -> showUsage $> True
-        Just ReplAlias { command } -> do
-            (cont, st') <- get >>= runInterpreter command
+        Just aliasDef -> do
+            let
+                command = substituteAlias aliasDef replAlias
+                parsedCommand =
+                    maybe ShowUsage id $ parseMaybe commandParser command
+            (cont, st') <- get >>= runInterpreter parsedCommand
             put st'
             return cont
   where
@@ -776,16 +791,18 @@ recursiveForcedStep n graph node
           [] -> return graph'
           xs -> foldM (recursiveForcedStep $ n-1) graph' (fmap ReplNode xs)
 
--- | Prints an unparsed rewrite rule along with its source location.
-printRewriteRule :: MonadWriter String m => RewriteRule Variable -> m ()
-printRewriteRule rule = do
-    putStrLn' $ unparseToString rule
-    putStrLn'
-        . show
-        . Pretty.pretty
-        . extractSourceAndLocation
-        $ rule
+-- | Display a rule as a String.
+showRewriteRule
+    :: Coercible (RewriteRule Variable) rule
+    => rule
+    -> String
+showRewriteRule rule =
+    unparseToString rule'
+    <> "\n"
+    <> (show . Pretty.pretty . extractSourceAndLocation $ rule')
   where
+    rule' = coerce rule
+
     extractSourceAndLocation
         :: RewriteRule Variable
         -> SourceLocation
@@ -875,6 +892,12 @@ graphParams len = Graph.nonClusteredParams
                     . Rule.attributes
                     . Rule.getRewriteRule
                     $ rule
+
+showAliasError :: AliasError -> String
+showAliasError =
+    \case
+        NameAlreadyDefined -> "Error: Alias name is already defined."
+        UnknownCommand     -> "Error: Command does not exist."
 
 showAxiomOrClaim :: Int -> Attribute.RuleIndex -> Maybe String
 showAxiomOrClaim _   (RuleIndex Nothing) = Nothing

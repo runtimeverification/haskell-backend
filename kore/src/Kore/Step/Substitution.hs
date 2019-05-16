@@ -19,8 +19,7 @@ module Kore.Step.Substitution
     ) where
 
 import           Control.Monad.Except
-                 ( runExceptT, withExceptT )
-import qualified Control.Monad.Morph as Monad.Morph
+                 ( withExceptT )
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
@@ -39,6 +38,8 @@ import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
+import qualified Kore.Step.Simplification.Data as BranchT
+                 ( scatter )
 import           Kore.Syntax.Variable
                  ( SortedVariable )
 import qualified Kore.TopBottom as TopBottom
@@ -61,7 +62,7 @@ newtype PredicateMerger variable m =
     PredicateMerger
     (  [Syntax.Predicate variable]
     -> [Substitution variable]
-    -> BranchT m (Predicate variable)
+    -> m (Predicate variable)
     )
 
 -- | Normalize the substitution and predicate of 'expanded'.
@@ -89,9 +90,7 @@ normalize
     -- substitution to the predicate when there is an error on *any* branch.
     results <-
         Monad.Trans.lift
-        $ runExceptT
-        $ Monad.Unify.getUnifier
-        $ gather
+        $ Monad.Unify.runUnifier
         $ normalizeExcept
             tools
             substitutionSimplifier
@@ -124,7 +123,7 @@ normalizeExcept
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> Predicate variable
-    -> BranchT unifier (Predicate variable)
+    -> unifier (Predicate variable)
 normalizeExcept
     tools
     predicateSimplifier@(PredicateSimplifier simplifySubstitution)
@@ -154,7 +153,7 @@ normalizeExcept
                 [predicate, deduplicatedPredicate, normalizedPredicate]
 
     TopBottom.guardAgainstBottom mergedPredicate
-    Monad.Morph.hoist Monad.Unify.liftSimplifier
+    Monad.Unify.liftBranchedSimplifier
         $ simplifySubstitution Conditional
             { term = ()
             , predicate = mergedPredicate
@@ -162,16 +161,14 @@ normalizeExcept
             }
   where
     normalizeSubstitutionDuplication' =
-        Monad.Trans.lift
-        . normalizeSubstitutionDuplication
+        normalizeSubstitutionDuplication
             tools
             predicateSimplifier
             simplifier
             axiomIdToSimplifier
 
     normalizeSubstitution' =
-        Monad.Trans.lift
-        . Monad.Unify.fromExceptT
+        Monad.Unify.fromExceptT
         . withExceptT substitutionToUnifyOrSubError
         . normalizeSubstitution tools
 
@@ -198,10 +195,7 @@ mergePredicatesAndSubstitutions
     -> BuiltinAndAxiomSimplifierMap
     -> [Syntax.Predicate variable]
     -> [Substitution variable]
-    -> Simplifier
-        ( Predicate variable
-
-        )
+    -> BranchT Simplifier (Predicate variable)
 mergePredicatesAndSubstitutions
     tools
     substitutionSimplifier
@@ -210,7 +204,7 @@ mergePredicatesAndSubstitutions
     predicates
     substitutions
   = do
-    result <- runExceptT . Monad.Unify.getUnifier $
+    result <- Monad.Trans.lift $ Monad.Unify.runUnifier $
         mergePredicatesAndSubstitutionsExcept
             tools
             substitutionSimplifier
@@ -228,7 +222,7 @@ mergePredicatesAndSubstitutions
                         )
             in
                 return $ Predicate.fromPredicate mergedPredicate
-        Right r -> return r
+        Right r -> BranchT.scatter r
 
 mergePredicatesAndSubstitutionsExcept
     ::  ( Show variable
@@ -293,7 +287,7 @@ createPredicatesAndSubstitutionsMergerExcept
     worker
         :: [Syntax.Predicate variable]
         -> [Substitution variable]
-        -> BranchT unifier (Predicate variable)
+        -> unifier (Predicate variable)
     worker predicates substitutions = do
         let merged =
                 (Predicate.fromPredicate <$> predicates)
@@ -320,7 +314,7 @@ createPredicatesAndSubstitutionsMerger
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
-    -> PredicateMerger variable Simplifier
+    -> PredicateMerger variable (BranchT Simplifier)
 createPredicatesAndSubstitutionsMerger
     tools substitutionSimplifier simplifier axiomIdToSimplifier
   =
@@ -367,7 +361,7 @@ createLiftedPredicatesAndSubstitutionsMerger
     worker
         :: [Syntax.Predicate variable]
         -> [Substitution variable]
-        -> BranchT unifier (Predicate variable)
+        -> unifier (Predicate variable)
     worker predicates substitutions = do
         let merged =
                 (Predicate.fromPredicate <$> predicates)
@@ -402,7 +396,7 @@ normalizeSubstitutionAfterMerge
     predicate
   = do
     results <-
-        gather
+        Monad.Unify.gather
         $ normalizeExcept
             tools
             substitutionSimplifier
@@ -412,4 +406,6 @@ normalizeSubstitutionAfterMerge
     case Foldable.toList results of
         [] -> return Predicate.bottom
         [normal] -> return normal
+        -- TODO(virgil): Allow multiple results and consider dropping this
+        -- function.
         _ -> error "Not implemented: branching during normalization"

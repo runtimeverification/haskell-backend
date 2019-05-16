@@ -14,9 +14,10 @@ import           Control.DeepSeq
                  ( NFData (..) )
 import qualified Data.Deriving as Deriving
 import           Data.Hashable
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
 
@@ -27,7 +28,7 @@ category from the Semantics of K, Section 9.1.4 (Patterns).
 
  -}
 newtype Bottom sort child = Bottom { bottomSort :: sort }
-    deriving (Eq, Functor, Foldable, Generic, Ord, Traversable, Show)
+    deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Traversable, Show)
 
 Deriving.deriveEq1 ''Bottom
 Deriving.deriveOrd1 ''Bottom
@@ -36,6 +37,12 @@ Deriving.deriveShow1 ''Bottom
 instance Hashable sort => Hashable (Bottom sort child)
 
 instance NFData sort => NFData (Bottom sort child)
+
+instance SOP.Generic (Bottom sort child)
+
+instance SOP.HasDatatypeInfo (Bottom sort child)
+
+instance Debug sort => Debug (Bottom sort child)
 
 instance Unparse (Bottom Sort child) where
     unparse Bottom { bottomSort } =

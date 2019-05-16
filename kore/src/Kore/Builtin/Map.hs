@@ -81,14 +81,18 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
+import           Kore.Internal.Conditional
+                 ( Conditional, andCondition, withoutTerm )
 import           Kore.Internal.Pattern
-                 ( Conditional (..), Pattern )
+                 ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
 import           Kore.Syntax.Definition
+import           Kore.Unification.Error
+                 ( errorIfConcreteIncompletelyUnified )
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -180,18 +184,17 @@ expectBuiltinMap
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m (Builtin variable)
-expectBuiltinMap ctx _map =
-    do
-        case _map of
-            DV_ _ domain ->
-                case domain of
-                    Domain.BuiltinMap Domain.InternalMap { builtinMapChild } ->
-                        return builtinMapChild
-                    _ ->
-                        Builtin.verifierBug
-                        $ Text.unpack ctx ++ ": Domain value is not a map"
-            _ ->
-                empty
+expectBuiltinMap ctx mapPattern =
+    case mapPattern of
+        DV_ _ domain ->
+            case domain of
+                Domain.BuiltinMap Domain.InternalMap { builtinMapChild } ->
+                    return builtinMapChild
+                _ ->
+                    Builtin.verifierBug
+                    $ Text.unpack ctx ++ ": Domain value is not a map"
+        _ ->
+            empty
 
 returnMap
     :: (Monad m, Ord variable)
@@ -589,56 +592,113 @@ unifyEquals
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
 
-    unifyEquals0 dv1@(DV_ _ (Domain.BuiltinMap builtin1)) =
-        \case
-            dv2@(DV_ _ internal2) ->
-                case internal2 of
-                    Domain.BuiltinMap builtin2 ->
-                        Monad.Trans.lift $ unifyEqualsConcrete builtin1 builtin2
-                    _ ->
-                        (error . unlines)
-                            [ "Cannot unify a builtin Map domain value:"
-                            , show dv1
-                            , "with:"
-                            , show dv2
-                            , "This should have been a sort error."
-                            ]
-            app@(App_ symbol2 args2)
-                | isSymbolConcat hookTools symbol2 ->
-                    -- Accept the arguments of MAP.concat in either order.
-                    Monad.Trans.lift $ case args2 of
-                        [ DV_ _ (Domain.BuiltinMap builtin2), x@(Var_ _) ] ->
-                            unifyEqualsFramed1 builtin1 builtin2 x
-                        [ x@(Var_ _), DV_ _ (Domain.BuiltinMap builtin2) ] ->
-                            unifyEqualsFramed1 builtin1 builtin2 x
-                        [ _, _ ] ->
-                            Builtin.unifyEqualsUnsolved
-                                simplificationType
-                                dv1
-                                app
-                        _ ->
-                            Builtin.wrongArity "MAP.concat"
-                | isSymbolElement hookTools symbol2 ->
-                    Monad.Trans.lift $ case args2 of
-                        [ key2, value2 ] ->
-                            -- The key is not concrete yet, or MAP.element would
-                            -- have evaluated to a domain value.
-                            unifyEqualsElement
-                                builtin1
-                                symbol2
-                                key2
-                                value2
-                        _ ->
-                            Builtin.wrongArity "MAP.element"
-                | otherwise ->
-                    empty
+    unifyEquals0
+        dv1@(DV_ _ (Domain.BuiltinMap builtin1))
+        dv2@(DV_ _ internal2)
+      =
+        case internal2 of
+            Domain.BuiltinMap builtin2 ->
+                Monad.Trans.lift $ unifyEqualsConcrete builtin1 builtin2
             _ ->
-                empty
+                (error . unlines)
+                    [ "Cannot unify a builtin Map domain value:"
+                    , show dv1
+                    , "with:"
+                    , show dv2
+                    , "This should have been a sort error."
+                    ]
 
-    unifyEquals0 pat1 =
-        \case
-            dv@(DV_ _ (Domain.BuiltinMap _)) -> unifyEquals0 dv pat1
-            _ -> empty
+    unifyEquals0
+        dv1@(DV_ _ (Domain.BuiltinMap builtin1))
+        app2@(App_ symbol2 args2)
+      | isSymbolConcat hookTools symbol2 =
+        -- Accept the arguments of MAP.concat in either order.
+        Monad.Trans.lift $ case args2 of
+            [ DV_ _ (Domain.BuiltinMap builtin2), x@(Var_ _) ] ->
+                unifyEqualsFramed1 builtin1 builtin2 x
+            [ x@(Var_ _), DV_ _ (Domain.BuiltinMap builtin2) ] ->
+                unifyEqualsFramed1 builtin1 builtin2 x
+            [ App_ symbol3 [ key3, value3 ], x@(Var_ _) ]
+                | isSymbolElement hookTools symbol3 ->
+                unifyEqualsSelect builtin1 symbol3 key3 value3 x
+            [ x@(Var_ _), App_ symbol3 [ key3, value3 ] ]
+                | isSymbolElement hookTools symbol3 ->
+                unifyEqualsSelect builtin1 symbol3 key3 value3 x
+            [ _, _ ] ->
+                Builtin.unifyEqualsUnsolved
+                    simplificationType
+                    dv1
+                    app2
+            _ ->
+                Builtin.wrongArity "MAP.concat"
+      | isSymbolElement hookTools symbol2 =
+        Monad.Trans.lift $ case args2 of
+            [ key2, value2 ] ->
+                -- The key is not concrete yet, or MAP.element would
+                -- have evaluated to a domain value.
+                unifyEqualsElement
+                    builtin1
+                    symbol2
+                    key2
+                    value2
+            _ ->
+                Builtin.wrongArity "MAP.element"
+      | otherwise =
+        empty
+      where
+        -- Unify one concrete map with a select pattern (k:key v:value s:map)
+        -- Note that k and v can be a proper symbolic patterns
+        -- (not just variables).
+        -- TODO(virgil): move it from where once the otherwise is not needed
+        unifyEqualsSelect
+            :: Domain.InternalMap (TermLike variable)  -- ^ concrete map
+            -> SymbolOrAlias                           -- ^ 'element' symbol
+            -> TermLike variable                       -- ^ key
+            -> TermLike variable                       -- ^ value
+            -> TermLike variable                       -- ^ framing variable
+            -> unifier (Pattern variable)
+        unifyEqualsSelect builtin1' _ key2 value2 map2
+          | map1 == Map.empty = bottomWithExplanation
+          | otherwise = case Map.toList map1 of
+            [(fromConcreteStepPattern -> key1, value1)] ->
+                Reflection.give tools $ do
+                    let emptyMapPat = asInternal tools sort1 Map.empty
+                    keyUnifier <- unifyEqualsChildren key1 key2
+                    -- error when subunification problem returns partial result.
+                    -- More details at 'errorIfIncompletelyUnified'.
+                    errorIfConcreteIncompletelyUnified key1 key2 keyUnifier
+
+                    valueUnifier <- unifyEqualsChildren value1 value2
+
+                    mapUnifier <- unifyEqualsChildren emptyMapPat map2
+                    -- error when subunification problem returns partial result
+                    -- More details at 'errorIfIncompletelyUnified'.
+                    errorIfConcreteIncompletelyUnified
+                        emptyMapPat map2 mapUnifier
+                    -- Return the concrete map, but capture any predicates and
+                    -- substitutions from unifying the element
+                    -- and framing variable.
+                    let result =
+                            pure dv1
+                                `andCondition` withoutTerm keyUnifier
+                                `andCondition` withoutTerm valueUnifier
+                                `andCondition` withoutTerm mapUnifier
+                    return result
+            _ -> Builtin.unifyEqualsUnsolved simplificationType dv1 app2
+          | otherwise =
+            Builtin.unifyEqualsUnsolved simplificationType dv1 app2
+          where
+            Domain.InternalMap
+                { builtinMapChild = map1
+                , builtinMapSort = sort1
+                } = builtin1'
+
+    unifyEquals0 (DV_ _ (Domain.BuiltinMap _)) _ = empty
+
+    unifyEquals0 pat1 dv@(DV_ _ (Domain.BuiltinMap _)) =
+        unifyEquals0 dv pat1
+
+    unifyEquals0 _ _ = empty
 
     -- | Unify two concrete maps.
     unifyEqualsConcrete

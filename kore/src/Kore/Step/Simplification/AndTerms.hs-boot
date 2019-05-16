@@ -11,7 +11,7 @@ import Kore.Internal.TermLike
 import Kore.Step.Axiom.Data
        ( BuiltinAndAxiomSimplifierMap )
 import Kore.Step.Simplification.Data
-       ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+       ( BranchT, PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import Kore.Syntax.Variable
        ( SortedVariable )
 import Kore.Unification.Unify
@@ -33,7 +33,7 @@ termAnd
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> TermLike variable
-    -> Simplifier (Pattern variable)
+    -> BranchT Simplifier (Pattern variable)
 
 termUnification
     ::  forall variable unifier

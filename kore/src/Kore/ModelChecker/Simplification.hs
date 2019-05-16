@@ -47,7 +47,7 @@ checkImplicationIsTop
     axiomSimplifers
     lhs
     rhs
-  = case (stripForallQuantifiers rhs) of
+  = case stripForallQuantifiers rhs of
         ( forallQuantifiers, Implies_ _ implicationLHS implicationRHS ) -> do
             let rename = refreshVariables lhsFreeVariables forallQuantifiers
                 subst = mkVar <$> rename

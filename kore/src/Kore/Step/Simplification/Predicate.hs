@@ -111,8 +111,7 @@ simplify
                     assertDistinctVariables
                         (substitution <> simplifiedSubstitution)
                     mergedPredicate <-
-                        Monad.Trans.lift
-                        $ mergePredicatesAndSubstitutions
+                        mergePredicatesAndSubstitutions
                             tools
                             substitutionSimplifier
                             simplifier

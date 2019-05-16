@@ -39,12 +39,17 @@ type Claim = OnePathRule Variable
 
 test_replInterpreter :: [TestTree]
 test_replInterpreter =
-    [ showUsage `tests` "Showing the usage message"
-    , help      `tests` "Showing the help message"
-    , step5     `tests` "Performing 5 steps"
-    , step100   `tests` "Stepping over proof completion"
-    , makeAlias `tests` "Creating an alias"
-    , tryAlias  `tests` "Executing an existing alias"
+    [ showUsage              `tests` "Showing the usage message"
+    , help                   `tests` "Showing the help message"
+    , step5                  `tests` "Performing 5 steps"
+    , step100                `tests` "Stepping over proof completion"
+    , makeSimpleAlias        `tests` "Creating an alias with no arguments"
+    , trySimpleAlias         `tests` "Executing an existing alias with no arguments"
+    , makeAlias              `tests` "Creating an alias with arguments"
+    , aliasOfExistingCommand `tests` "Create alias of existing command"
+    , aliasOfUnknownCommand  `tests` "Create alias of unknown command"
+    , recursiveAlias         `tests` "Create alias of unknown command"
+    , tryAlias               `tests` "Executing an existing alias with arguments"
     ]
 
 showUsage :: IO ()
@@ -93,12 +98,12 @@ step100 =
         continue   `equals`         True
         state      `hasCurrentNode` ReplNode 10
 
-makeAlias :: IO ()
-makeAlias =
+makeSimpleAlias :: IO ()
+makeSimpleAlias =
     let
         axioms  = []
         claim   = emptyClaim
-        alias   = ReplAlias { name = "a", command = Help }
+        alias   = AliasDefinition { name = "a", arguments = [], command = "help" }
         command = Alias alias
     in do
         Result { output, continue, state } <- run command axioms claim
@@ -106,19 +111,103 @@ makeAlias =
         continue `equals`       True
         state    `hasAlias`     alias
 
+trySimpleAlias :: IO ()
+trySimpleAlias =
+    let
+        axioms  = []
+        claim   = emptyClaim
+        name    = "h"
+        alias   = AliasDefinition { name, arguments = [], command = "help" }
+        stateT  = \st -> st { aliases = Map.insert name alias (aliases st) }
+        command = TryAlias $ ReplAlias "h" []
+    in do
+        Result { output, continue } <-
+            runWithState command axioms claim stateT
+        output   `equalsOutput` helpText
+        continue `equals` True
+
+makeAlias :: IO ()
+makeAlias =
+    let
+        axioms  = []
+        claim   = emptyClaim
+        alias   = AliasDefinition
+                    { name = "c"
+                    , arguments = ["n"]
+                    , command = "claim n"
+                    }
+        command = Alias alias
+    in do
+        Result { output, continue, state } <- run command axioms claim
+        output   `equalsOutput` ""
+        continue `equals`       True
+        state    `hasAlias`     alias
+
+aliasOfExistingCommand :: IO ()
+aliasOfExistingCommand =
+    let
+        axioms  = []
+        claim   = emptyClaim
+        alias   = AliasDefinition
+                    { name = "help"
+                    , arguments = ["n"]
+                    , command = "claim n"
+                    }
+        command = Alias alias
+    in do
+        Result { output, continue } <- run command axioms claim
+        output   `equalsOutput` showAliasError NameAlreadyDefined
+        continue `equals`       True
+
+aliasOfUnknownCommand :: IO ()
+aliasOfUnknownCommand =
+    let
+        axioms  = []
+        claim   = emptyClaim
+        alias   = AliasDefinition
+                    { name = "c"
+                    , arguments = ["n"]
+                    , command = "unknown n"
+                    }
+        command = Alias alias
+    in do
+        Result { output, continue } <- run command axioms claim
+        output   `equalsOutput` showAliasError UnknownCommand
+        continue `equals`       True
+
+recursiveAlias :: IO ()
+recursiveAlias =
+    let
+        axioms  = []
+        claim   = emptyClaim
+        alias   = AliasDefinition
+                    { name = "c"
+                    , arguments = ["n"]
+                    , command = "c n"
+                    }
+        command = Alias alias
+    in do
+        Result { output, continue } <- run command axioms claim
+        output   `equalsOutput` showAliasError UnknownCommand
+        continue `equals`       True
+
 tryAlias :: IO ()
 tryAlias =
     let
         axioms  = []
         claim   = emptyClaim
-        name    = "h"
-        alias   = ReplAlias { name, command = Help }
+        name    = "c"
+        alias   = AliasDefinition
+                    { name = "c"
+                    , arguments = ["n"]
+                    , command = "claim n"
+                    }
         stateT  = \st -> st { aliases = Map.insert name alias (aliases st) }
-        command = TryAlias "h"
+        command = TryAlias $ ReplAlias "c" [SimpleArgument "0"]
     in do
         Result { output, continue } <-
             runWithState command axioms claim stateT
-        output   `equalsOutput` helpText
+        output   `equalsOutput` showRewriteRule claim
         continue `equals` True
 
 
@@ -182,11 +271,11 @@ hasCurrentNode st n = do
   where
     justNode = Just n
 
-hasAlias :: ReplState Claim -> ReplAlias -> IO ()
-hasAlias st alias =
+hasAlias :: ReplState Claim -> AliasDefinition -> IO ()
+hasAlias st alias@AliasDefinition { name } =
     let
         aliasMap = aliases st
-        actual   = name alias `Map.lookup` aliasMap
+        actual   = name `Map.lookup` aliasMap
     in
         actual `equals` Just alias
 

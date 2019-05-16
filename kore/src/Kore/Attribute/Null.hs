@@ -19,16 +19,24 @@ module Kore.Attribute.Null
     ( Null (..)
     ) where
 
-import Control.DeepSeq
-       ( NFData )
-import Data.Default
-import GHC.Generics
-       ( Generic )
+import           Control.DeepSeq
+                 ( NFData )
+import           Data.Default
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
+
+import Kore.Debug
 
 data Null = Null
-    deriving (Eq, Generic, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
 
 instance NFData Null
+
+instance SOP.Generic Null
+
+instance SOP.HasDatatypeInfo Null
+
+instance Debug Null
 
 instance Default Null where
     def = Null
