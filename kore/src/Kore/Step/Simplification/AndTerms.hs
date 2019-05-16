@@ -456,77 +456,29 @@ andEqualsFunctions
         , MonadUnify unifier
         )
     => [(SimplificationTarget, TermTransformation variable unifier)]
-andEqualsFunctions = fmap (fmap mapEqualsFunctions)
-    [ (AndT,    BoolAnd)
-    , (BothT,   EqualAndEquals)
-    , (EqualsT, BottomTermEquals)
-    , (EqualsT, TermBottomEquals)
-    , (BothT,   VariableFunctionAndEquals)
-    , (BothT,   FunctionVariableAndEquals)
-    , (BothT,   EqualInjectiveHeadsAndEquals)
-    , (BothT,   SortInjectionAndEqualsAssumesDifferentHeads)
-    , (BothT,   ConstructorSortInjectionAndEquals)
-    , (BothT,   ConstructorAndEqualsAssumesDifferentHeads)
-    , (BothT,   BuiltinMapEquals)
-    , (BothT,   BuiltinSetEquals)
-    , (BothT,   BuiltinListEquals)
-    , (BothT,   DomainValueAndConstructorErrors)
-    , (BothT,   DomainValueAndEqualsAssumesDifferent)
-    , (BothT,   StringLiteralAndEqualsAssumesDifferent)
-    , (BothT,   CharLiteralAndEqualsAssumesDifferent)
-    , (AndT,    FunctionAnd)
+andEqualsFunctions = fmap mapEqualsFunctions
+    [ (AndT,    liftE0 boolAnd, "boolAnd")
+    , (BothT,   liftET equalAndEquals, "equalAndEquals")
+    , (EqualsT, lift0  bottomTermEquals, "bottomTermEquals")
+    , (EqualsT, lift0  termBottomEquals, "termBottomEquals")
+    , (BothT,   liftTS variableFunctionAndEquals, "variableFunctionAndEquals")
+    , (BothT,   liftTS functionVariableAndEquals, "functionVariableAndEquals")
+    , (BothT,   addT   equalInjectiveHeadsAndEquals, "equalInjectiveHeadsAndEquals")
+    , (BothT,   addS   sortInjectionAndEqualsAssumesDifferentHeads, "sortInjectionAndEqualsAssumesDifferentHeads")
+    , (BothT,   liftE1 constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
+    , (BothT,   liftE1 constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
+    , (BothT,   liftB1 Builtin.Map.unifyEquals, "Builtin.Map.unifyEquals")
+    , (BothT,   liftB1 Builtin.Set.unifyEquals, "Builtin.Set.unifyEquals")
+    , (BothT,   liftB  Builtin.List.unifyEquals, "Builtin.List.unifyEquals")
+    , (BothT,   liftE  domainValueAndConstructorErrors, "domainValueAndConstructorErrors")
+    , (BothT,   liftE0 domainValueAndEqualsAssumesDifferent, "domainValueAndEqualsAssumesDifferent")
+    , (BothT,   liftE0 stringLiteralAndEqualsAssumesDifferent, "stringLiteralAndEqualsAssumesDifferent")
+    , (BothT,   liftE0 charLiteralAndEqualsAssumesDifferent, "charLiteralAndEqualsAssumesDifferent")
+    , (AndT,    lift   functionAnd, "functionAnd")
     ]
   where
-    mapEqualsFunctions :: EqualsFunctions -> TermTransformation variable unifier
-    mapEqualsFunctions =
-        \case
-            BoolAnd ->
-                logTT "boolAnd" $ liftE0 boolAnd
-            EqualAndEquals ->
-                logTT "equalAndEquals" $ liftET equalAndEquals
-            BottomTermEquals ->
-                logTT "bottomTermEquals" $ lift0 bottomTermEquals
-            TermBottomEquals ->
-                logTT "termBottomEquals" $ lift0 termBottomEquals
-            VariableFunctionAndEquals ->
-                logTT "variableFunctionAndEquals"
-                    $ liftTS variableFunctionAndEquals
-            FunctionVariableAndEquals ->
-                logTT "functionVariableAndEquals"
-                    $ liftTS functionVariableAndEquals
-            EqualInjectiveHeadsAndEquals ->
-                logTT "equalInjectiveHeadsAndEquals"
-                    $ addT equalInjectiveHeadsAndEquals
-            SortInjectionAndEqualsAssumesDifferentHeads ->
-                logTT "sortInjectionAndEqualsAssumesDifferentHeads"
-                    $ addS sortInjectionAndEqualsAssumesDifferentHeads
-            ConstructorSortInjectionAndEquals ->
-                logTT "constructorSortInjectionAndEquals"
-                    $ liftE1 constructorSortInjectionAndEquals
-            ConstructorAndEqualsAssumesDifferentHeads ->
-                logTT "constructorAndEqualsAssumesDifferentHeads"
-                    $ liftE1 constructorAndEqualsAssumesDifferentHeads
-            BuiltinMapEquals ->
-                logTT "Builtin.Map.unifyEquals" $ liftB1 Builtin.Map.unifyEquals
-            BuiltinSetEquals ->
-                logTT "Builtin.Set.unifyEquals" $ liftB1 Builtin.Set.unifyEquals
-            BuiltinListEquals ->
-                logTT "Builtin.List.unifyEquals"
-                    $ liftB Builtin.List.unifyEquals
-            DomainValueAndConstructorErrors ->
-                logTT "domainValueAndConstructorErrors"
-                    $ liftE domainValueAndConstructorErrors
-            DomainValueAndEqualsAssumesDifferent ->
-                logTT "domainValueAndEqualsAssumesDifferent"
-                    $ liftE0 domainValueAndEqualsAssumesDifferent
-            StringLiteralAndEqualsAssumesDifferent ->
-                logTT "stringLiteralAndEqualsAssumesDifferent"
-                    $ liftE0 stringLiteralAndEqualsAssumesDifferent
-            CharLiteralAndEqualsAssumesDifferent ->
-                logTT "charLiteralAndEqualsAssumesDifferent"
-                    $ liftE0 charLiteralAndEqualsAssumesDifferent
-            FunctionAnd ->
-                logTT "functionAnd" $ lift functionAnd
+    mapEqualsFunctions (target, termTransform, name) =
+        (target, logTT name termTransform)
 
     logTT
         :: String
