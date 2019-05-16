@@ -25,11 +25,12 @@ import           Data.Maybe
                  ( isNothing )
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import           Numeric.Natural
 
 import Data.Sup
+import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
 
@@ -51,11 +52,17 @@ data Variable = Variable
     , variableCounter :: !(Maybe (Sup Natural))
     , variableSort :: !Sort
     }
-    deriving (Show, Eq, Ord, Generic)
+    deriving (Eq, GHC.Generic, Ord, Show)
 
 instance Hashable Variable
 
 instance NFData Variable
+
+instance SOP.Generic Variable
+
+instance SOP.HasDatatypeInfo Variable
+
+instance Debug Variable
 
 instance Unparse Variable where
     unparse Variable { variableName, variableCounter, variableSort } =
@@ -157,11 +164,17 @@ See also: 'Data.Void.Void'
 
  -}
 data Concrete
-    deriving (Eq, Generic, Ord, Read, Show)
+    deriving (Eq, GHC.Generic, Ord, Read, Show)
 
 instance Hashable Concrete
 
 instance NFData Concrete
+
+instance SOP.Generic Concrete
+
+instance SOP.HasDatatypeInfo Concrete
+
+instance Debug Concrete
 
 instance Unparse Concrete where
     unparse = \case {}

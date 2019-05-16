@@ -98,7 +98,10 @@ runRepl
     -> InitialScript
     -- ^ optional initial script
     -> Simplifier ()
-runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims' initScript = do
+runRepl
+    tools simplifier predicateSimplifier axiomToIdSimplifier
+    axioms' claims' initScript
+  = do
     let mscript = unInitialScript initScript
     newState <- maybe (pure state) (parseEvalScript state) mscript
     replGreeting

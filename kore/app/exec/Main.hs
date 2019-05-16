@@ -321,17 +321,20 @@ mainWithOptions
         proveParameters <-
             case koreProveOptions of
                 Nothing -> return Nothing
-                Just KoreProveOptions { specFileName, specMainModule, bmc } ->
-                    do
-                        specDef <- parseDefinition specFileName
-                        (specDefIndexedModules, _) <-
-                            verifyDefinitionWithBase
-                                (Just indexedDefinition)
-                                True
-                                specDef
-                        specDefIndexedModule <-
-                            mainModule specMainModule specDefIndexedModules
-                        return (Just (specDefIndexedModule, bmc))
+                Just proveOptions -> do
+                    let KoreProveOptions { specFileName } = proveOptions
+                        KoreProveOptions { specMainModule } = proveOptions
+                        KoreProveOptions { graphSearch } = proveOptions
+                        KoreProveOptions { bmc } = proveOptions
+                    specDef <- parseDefinition specFileName
+                    (specDefIndexedModules, _) <-
+                        verifyDefinitionWithBase
+                            (Just indexedDefinition)
+                             True
+                            specDef
+                    specDefIndexedModule <-
+                        mainModule specMainModule specDefIndexedModules
+                    return (Just (specDefIndexedModule, graphSearch, bmc))
         maybePattern <- case patternFileName of
             Nothing -> return Nothing
             Just fileName ->
@@ -371,12 +374,13 @@ mainWithOptions
                                             searchPattern
                                             searchConfig
                                     return (ExitSuccess, pat)
-                        Just (specIndexedModule, bmc)
+                        Just (specIndexedModule, graphSearch, bmc)
                           | bmc -> do
                             _ <- boundedModelCheck
                                     stepLimit
                                     indexedModule
                                     specIndexedModule
+                                    graphSearch
                             return success
                           | otherwise ->
                             either failure (const success)

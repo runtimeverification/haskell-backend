@@ -16,9 +16,10 @@ import qualified Data.Deriving as Deriving
 import           Data.Functor.Classes
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
 
@@ -35,7 +36,7 @@ data And sort child = And
     , andFirst  :: child
     , andSecond :: child
     }
-    deriving (Functor, Foldable, Traversable, Generic)
+    deriving (Functor, Foldable, Traversable, GHC.Generic)
 
 Deriving.deriveEq1 ''And
 Deriving.deriveOrd1 ''And
@@ -53,6 +54,12 @@ instance (Show sort, Show child) => Show (And sort child) where
 instance (Hashable sort, Hashable child) => Hashable (And sort child)
 
 instance (NFData sort, NFData child) => NFData (And sort child)
+
+instance SOP.Generic (And sort child)
+
+instance SOP.HasDatatypeInfo (And sort child)
+
+instance (Debug sort, Debug child) => Debug (And sort child)
 
 instance Unparse child => Unparse (And Sort child) where
     unparse And { andSort, andFirst, andSecond } =

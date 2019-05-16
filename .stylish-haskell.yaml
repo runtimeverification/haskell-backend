@@ -237,6 +237,7 @@ language_extensions:
   - BangPatterns
   - ConstraintKinds
   - DataKinds
+  - DefaultSignatures
   - DeriveDataTypeable
   - DeriveFoldable
   - DeriveFunctor

@@ -11,18 +11,18 @@ module Data.Sup
     ( Sup (..)
     ) where
 
-import Control.DeepSeq
-       ( NFData )
-import Data.Data
-       ( Data )
-import Data.Hashable
-       ( Hashable )
-import Data.Text.Prettyprint.Doc
-       ( Pretty (..) )
-import Data.Typeable
-       ( Typeable )
-import GHC.Generics
-       ( Generic )
+import           Control.DeepSeq
+                 ( NFData )
+import           Data.Data
+                 ( Data )
+import           Data.Hashable
+                 ( Hashable )
+import           Data.Text.Prettyprint.Doc
+                 ( Pretty (..) )
+import           Data.Typeable
+                 ( Typeable )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 {- | @Sup a@ is an extension of @a@ with a least upper bound.
 
@@ -32,7 +32,7 @@ If @a@ already has a least upper bound, 'Sup' is greater than that bound.
 data Sup a
     = Element !a
     | Sup  -- ^ least upper bound (supremum)
-    deriving (Data, Functor, Generic, Read, Show, Typeable)
+    deriving (Data, Functor, GHC.Generic, Read, Show, Typeable)
 
 instance Eq a => Eq (Sup a) where
     (==) Sup         = \case { Sup       -> True  ; _ -> False }
@@ -45,6 +45,10 @@ instance Ord a => Ord (Sup a) where
 instance Hashable a => Hashable (Sup a)
 
 instance NFData a => NFData (Sup a)
+
+instance SOP.Generic (Sup a)
+
+instance SOP.HasDatatypeInfo (Sup a)
 
 -- | 'Sup' is the annihilator of 'Element'.
 instance Ord a => Semigroup (Sup a) where

@@ -17,6 +17,8 @@ module Kore.Step.Axiom.EvaluationStrategy
 
 import           Control.Monad
                  ( when )
+import           Control.Monad.Trans.Except
+                 ( ExceptT (ExceptT) )
 import qualified Data.Foldable as Foldable
 import           Data.Maybe
                  ( isJust )
@@ -45,6 +47,8 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..), exceptNotApplicable, hasRemainders )
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
+import qualified Kore.Step.Result as Result
+                 ( mergeResults )
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
 import qualified Kore.Step.Rule as RulePattern
@@ -210,8 +214,8 @@ evaluateBuiltin
                 ++ show patt
                 )
           | otherwise ->
-            return (AttemptedAxiom.NotApplicable)
-        AttemptedAxiom.Applied _ -> return (result)
+            return AttemptedAxiom.NotApplicable
+        AttemptedAxiom.Applied _ -> return result
   where
     isPattConcrete = isJust (asConcretePattern patt)
     isValue pat = isJust $
@@ -340,7 +344,7 @@ evaluateWithDefinitionAxioms
     let unwrapEqualityRule =
             \(EqualityRule rule) ->
                 RulePattern.mapVariables fromVariable rule
-    result <- Monad.Unify.getUnifier
+    results <- ExceptT $ Monad.Unify.runUnifier
         $ Step.sequenceRules
             tools
             substitutionSimplifier
@@ -349,6 +353,9 @@ evaluateWithDefinitionAxioms
             (UnificationProcedure unificationWithAppMatchOnTop)
             expanded
             (map unwrapEqualityRule definitionRules)
+
+    let
+        result = Result.mergeResults results
 
     return $ AttemptedAxiom.Applied AttemptedAxiomResults
         { results = Step.gatherResults result

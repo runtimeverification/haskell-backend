@@ -34,9 +34,10 @@ import           Control.DeepSeq
 import           Data.Hashable
                  ( Hashable )
 import qualified Data.Map.Strict as Map
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Kore.Debug
 import Kore.Syntax.Id
 import Kore.Unparser
 
@@ -48,7 +49,7 @@ Semantics of K, Section 9.1.2 (Sorts).
  -}
 newtype SortVariable = SortVariable
     { getSortVariable  :: Id }
-    deriving (Show, Eq, Ord, Generic)
+    deriving (Show, Eq, Ord, GHC.Generic)
 
 instance Hashable SortVariable
 
@@ -57,6 +58,12 @@ instance NFData SortVariable
 instance Unparse SortVariable where
     unparse = unparse . getSortVariable
     unparse2 SortVariable { getSortVariable } = unparse2 getSortVariable
+
+instance SOP.Generic SortVariable
+
+instance SOP.HasDatatypeInfo SortVariable
+
+instance Debug SortVariable
 
 {-|'SortActual' corresponds to the @sort-constructor{sort-list}@ branch of the
 @object-sort@ and @meta-sort@ syntactic categories from the Semantics of K,
@@ -67,11 +74,17 @@ data SortActual = SortActual
     { sortActualName  :: !Id
     , sortActualSorts :: ![Sort]
     }
-    deriving (Show, Eq, Ord, Generic)
+    deriving (Show, Eq, Ord, GHC.Generic)
 
 instance Hashable SortActual
 
 instance NFData SortActual
+
+instance SOP.Generic SortActual
+
+instance SOP.HasDatatypeInfo SortActual
+
+instance Debug SortActual
 
 instance Unparse SortActual where
     unparse SortActual { sortActualName, sortActualSorts } =
@@ -93,11 +106,17 @@ Section 9.1.2 (Sorts).
 data Sort
     = SortVariableSort !SortVariable
     | SortActualSort !SortActual
-    deriving (Show, Eq, Ord, Generic)
+    deriving (Show, Eq, Ord, GHC.Generic)
 
 instance Hashable Sort
 
 instance NFData Sort
+
+instance SOP.Generic Sort
+
+instance SOP.HasDatatypeInfo Sort
+
+instance Debug Sort
 
 instance Unparse Sort where
     unparse =
@@ -138,14 +157,14 @@ representation instead.
 -}
 data MetaBasicSortType
     = CharSort
-    deriving (Generic)
+    deriving (GHC.Generic)
 
 instance Hashable MetaBasicSortType
 
 data MetaSortType
     = MetaBasicSortType MetaBasicSortType
     | StringSort
-    deriving(Generic)
+    deriving (GHC.Generic)
 
 instance Hashable MetaSortType
 

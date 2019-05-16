@@ -8,14 +8,16 @@ module Kore.Step.Simplification.Pattern
     , simplifyPredicate
     ) where
 
+import qualified Control.Monad.Trans.Class as Monad.Trans
 import           Data.Reflection
+
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Internal.Pattern as Pattern
@@ -25,8 +27,10 @@ import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import qualified Kore.Step.Merging.Pattern as Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
-                 simplifyTerm )
+                 ( BranchT, PredicateSimplifier, Simplifier,
+                 TermLikeSimplifier, simplifyTerm )
+import qualified Kore.Step.Simplification.Data as BranchT
+                 ( gather )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Syntax.Variable
@@ -59,19 +63,22 @@ simplify
     Conditional {term, predicate, substitution}
   = do
     simplifiedTerm <- simplifyTerm' term
-    OrPattern.filterOr <$> traverse
-        (give tools $ Pattern.mergeWithPredicate
-            tools
-            substitutionSimplifier
-            termSimplifier
-            axiomIdToSimplifier
-            Conditional
-                { term = ()
-                , predicate
-                , substitution
-                }
+    orPatterns <- BranchT.gather
+        (traverse
+            (give tools $ Pattern.mergeWithPredicate
+                tools
+                substitutionSimplifier
+                termSimplifier
+                axiomIdToSimplifier
+                Conditional
+                    { term = ()
+                    , predicate
+                    , substitution
+                    }
+            )
+            simplifiedTerm
         )
-        simplifiedTerm
+    return (MultiOr.mergeAll orPatterns)
   where
     simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
 
@@ -94,7 +101,7 @@ simplifyPredicate
     -- ^ Map from axiom IDs to axiom evaluators
     -> Pattern variable
     -- ^ The condition to be evaluated.
-    -> Simplifier (Pattern variable)
+    -> BranchT Simplifier (Pattern variable)
 simplifyPredicate
     tools
     substitutionSimplifier
@@ -103,7 +110,7 @@ simplifyPredicate
     Conditional {term, predicate, substitution}
   = do
     evaluated <-
-        give tools
+        give tools $ Monad.Trans.lift
         $ Predicate.evaluate
             substitutionSimplifier
             simplifier

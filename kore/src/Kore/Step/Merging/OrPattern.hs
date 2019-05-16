@@ -17,6 +17,7 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Internal.MultiOr
                  ( MultiOr )
 import qualified Kore.Internal.MultiOr as MultiOr
+                 ( mergeAll )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import           Kore.Internal.Pattern
@@ -25,8 +26,9 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.Pattern as Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
-                 gather )
+                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as BranchT
+                 ( gather )
 import           Kore.Step.Substitution
                  ( PredicateMerger )
 import           Kore.Syntax.Variable
@@ -66,16 +68,19 @@ mergeWithPredicate
     axiomIdToSimplifier
     toMerge
     patt
-  =
-    traverse
-        (give tools $ Pattern.mergeWithPredicate
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            toMerge
+  = do
+    patterns <- BranchT.gather
+        (traverse
+            (give tools $ Pattern.mergeWithPredicate
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+                toMerge
+            )
+            patt
         )
-        patt
+    return (MultiOr.mergeAll patterns)
 
 {-| Ands the given predicate/substitution with the given 'MultiOr'.
 
@@ -98,8 +103,6 @@ mergeWithPredicateAssumesEvaluated
     -- ^ Pattern to which the condition should be added.
     -> m (MultiOr (Conditional variable term))
 mergeWithPredicateAssumesEvaluated substitutionMerger toMerge patt =
-    fmap MultiOr.mergeAll
-    $ gather
-    $ traverse
+    traverse
         (Pattern.mergeWithPredicateAssumesEvaluated substitutionMerger toMerge)
         patt

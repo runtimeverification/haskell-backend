@@ -8,7 +8,8 @@ module Kore.Step.Merging.Pattern
     , mergeWithPredicate
     ) where
 
-import Data.Reflection
+import qualified Control.Monad.Trans.Class as Monad.Trans
+import           Data.Reflection
 
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -55,7 +56,7 @@ mergeWithPredicate
     -- ^ Condition and substitution to add.
     -> Pattern variable
     -- ^ pattern to which the above should be added.
-    -> Simplifier (Pattern variable)
+    -> BranchT Simplifier (Pattern variable)
 mergeWithPredicate
     tools
     substitutionSimplifier
@@ -79,7 +80,7 @@ mergeWithPredicate
             [pattPredicate, conditionToMerge]
             [pattSubstitution, substitutionToMerge]
     let Conditional { predicate = mergedCondition } = merged
-    evaluatedCondition <-
+    evaluatedCondition <- Monad.Trans.lift $
         Predicate.evaluate substitutionSimplifier simplifier mergedCondition
     let Conditional { substitution = mergedSubstitution } = merged
     mergeWithEvaluatedCondition
@@ -105,7 +106,7 @@ mergeWithEvaluatedCondition
     -- ^ Map from axiom IDs to axiom evaluators
     -> Pattern variable
     -> Predicate variable
-    -> Simplifier (Pattern variable)
+    -> BranchT Simplifier (Pattern variable)
 mergeWithEvaluatedCondition
     tools
     substitutionSimplifier
@@ -143,7 +144,7 @@ mergeWithPredicateAssumesEvaluated
     => PredicateMerger variable m
     -> Predicate variable
     -> Conditional variable term
-    -> BranchT m (Conditional variable term)
+    -> m (Conditional variable term)
 mergeWithPredicateAssumesEvaluated
     (PredicateMerger substitutionMerger)
     Conditional

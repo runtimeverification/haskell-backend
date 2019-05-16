@@ -281,8 +281,9 @@ boundedModelCheck
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
+    -> Strategy.GraphSearchOrder
     -> Simplifier [Bounded.CheckResult]
-boundedModelCheck limit definitionModule specModule = do
+boundedModelCheck limit definitionModule specModule searchOrder = do
     let
         tools = MetadataTools.build definitionModule
     Initialized
@@ -303,6 +304,7 @@ boundedModelCheck limit definitionModule specModule = do
             substitutionSimplifier
             axiomIdToSimplifier
             (Bounded.bmcStrategy axioms)
+            searchOrder
             (map (\x -> (x,limit)) specAxioms)
     return result
 

@@ -22,7 +22,7 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
 import           Kore.Internal.MultiOr
                  ( MultiOr )
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( fullCrossProduct )
+                 ( fullCrossProduct, mergeAll )
 import           Kore.Internal.OrPredicate
                  ( OrPredicate )
 import           Kore.Internal.Pattern
@@ -32,7 +32,10 @@ import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+                 ( BranchT, PredicateSimplifier, Simplifier,
+                 TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as BranchT
+                 ( gather )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Unparser
@@ -64,9 +67,12 @@ simplifyEvaluatedMultiPredicate
         crossProduct =
             MultiOr.fullCrossProduct
                 (MultiAnd.extractPatterns predicates)
-    traverse andPredicates crossProduct
+    orResults <- BranchT.gather (traverse andPredicates crossProduct)
+    return (MultiOr.mergeAll orResults)
   where
-    andPredicates :: [Predicate variable] -> Simplifier (Predicate variable)
+    andPredicates
+        :: [Predicate variable]
+        -> BranchT Simplifier (Predicate variable)
     andPredicates predicates0 =
         mergePredicatesAndSubstitutions
             tools
