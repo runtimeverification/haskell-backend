@@ -28,7 +28,6 @@ module Kore.Builtin.Builtin
     , sortDeclVerifier
       -- * Smart constructors for DomainValueVerifier
     , makeEncodedDomainValueVerifier
-    , makeNonEncodedDomainValueVerifier
       -- * Declaring builtin verifiers
     , verifySortDecl
     , getUnitId
@@ -527,17 +526,6 @@ makeEncodedDomainValueVerifier
 makeEncodedDomainValueVerifier _builtinSort encodeSort domain =
     Kore.Error.withContext "While parsing domain value"
         (encodeSort domain)
-
--- | Construct a 'DomainValueVerifier' for a sort with no builtin encoding
-makeNonEncodedDomainValueVerifier
-    :: Text
-    -> (Domain.External child -> Either (Error VerifyError) ())
-    -> DomainValueVerifier child
-makeNonEncodedDomainValueVerifier _builtinName verifyNoEncode domainValue =
-    Kore.Error.withContext "While parsing domain value" $ do
-        verifyNoEncode domainValue
-        return (Domain.BuiltinExternal domainValue)
-
 
 {- | Run a parser in a domain value pattern and construct the builtin
   representation of the value.
