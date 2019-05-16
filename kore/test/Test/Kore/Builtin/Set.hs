@@ -571,7 +571,7 @@ unifiesWith
 unifiesWith pat1 pat2 expected =
     unifiesWithMulti pat1 pat2 [expected]
 
--- use as (pat1 `unifiesWith` pat2) expect
+-- use as (pat1 `unifiesWithMulti` pat2) expect
 unifiesWithMulti
     :: HasCallStack
     => TermLike Variable

@@ -611,10 +611,10 @@ unifyEquals
                 unifyEqualsFramed1 builtin1 builtin2 x
             [ x@(Var_ _), Builtin_ (Domain.BuiltinMap builtin2) ] ->
                 unifyEqualsFramed1 builtin1 builtin2 x
-            [ App_ symbol3 [ key3, value3 ], x@(Var_ _) ]
+            [ App_ symbol3 [ key3, value3 ], x ]
                 | isSymbolElement hookTools symbol3 ->
                 unifyEqualsSelect builtin1 symbol3 key3 value3 x
-            [ x@(Var_ _), App_ symbol3 [ key3, value3 ] ]
+            [ x, App_ symbol3 [ key3, value3 ] ]
                 | isSymbolElement hookTools symbol3 ->
                 unifyEqualsSelect builtin1 symbol3 key3 value3 x
             [ _, _ ] ->
@@ -654,32 +654,30 @@ unifyEquals
             -> unifier (Pattern variable)
         unifyEqualsSelect builtin1' _ key2 value2 map2
           | map1 == Map.empty = bottomWithExplanation
-          | otherwise = case Map.toList map1 of
-            [(fromConcrete -> key1, value1)] ->
-                Reflection.give tools $ do
-                    let emptyMapPat = asInternal tools sort1 Map.empty
-                    keyUnifier <- unifyEqualsChildren key1 key2
-                    -- error when subunification problem returns partial result.
-                    -- More details at 'errorIfIncompletelyUnified'.
-                    errorIfConcreteIncompletelyUnified key1 key2 keyUnifier
+          | otherwise =
+            Reflection.give tools $ do
+                (concreteKey1, value1) <- Monad.Unify.scatter (Map.toList map1)
+                let remainderMap = Map.delete concreteKey1 map1
+                    remainderMapPat = asInternal tools sort1 remainderMap
+                    key1 = fromConcrete concreteKey1
 
-                    valueUnifier <- unifyEqualsChildren value1 value2
+                keyUnifier <- unifyEqualsChildren key1 key2
+                -- error when subunification problem returns partial result.
+                -- More details at 'errorIfIncompletelyUnified'.
+                errorIfConcreteIncompletelyUnified key1 key2 keyUnifier
 
-                    mapUnifier <- unifyEqualsChildren emptyMapPat map2
-                    -- error when subunification problem returns partial result
-                    -- More details at 'errorIfIncompletelyUnified'.
-                    errorIfConcreteIncompletelyUnified
-                        emptyMapPat map2 mapUnifier
-                    -- Return the concrete map, but capture any predicates and
-                    -- substitutions from unifying the element
-                    -- and framing variable.
-                    let result =
-                            pure dv1
-                                `andCondition` withoutTerm keyUnifier
-                                `andCondition` withoutTerm valueUnifier
-                                `andCondition` withoutTerm mapUnifier
-                    return result
-            _ -> Builtin.unifyEqualsUnsolved simplificationType dv1 app2
+                valueUnifier <- unifyEqualsChildren value1 value2
+                mapUnifier <- unifyEqualsChildren remainderMapPat map2
+
+                -- Return the concrete map, but capture any predicates and
+                -- substitutions from unifying the element
+                -- and framing variable.
+                let result =
+                        pure dv1
+                            `andCondition` withoutTerm keyUnifier
+                            `andCondition` withoutTerm valueUnifier
+                            `andCondition` withoutTerm mapUnifier
+                return result
           | otherwise =
             Builtin.unifyEqualsUnsolved simplificationType dv1 app2
           where
