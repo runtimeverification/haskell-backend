@@ -133,7 +133,6 @@ symbolVerifiers =
     , (randKey, Builtin.verifySymbol assertSort [assertSort])
     , (srandKey, Builtin.verifySymbolArguments [assertSort])
 
-      -- TODO (thomas.tuegel): Implement builtin BOOL
     , (gtKey, Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
     , (geKey, Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
     , (eqKey, Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
