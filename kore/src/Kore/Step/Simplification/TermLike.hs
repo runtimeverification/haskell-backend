@@ -141,10 +141,10 @@ simplifyInternal
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
-    _termLike@(Recursive.project -> attrs :< termLikeF)
+    termLike@(Recursive.project -> attrs :< termLikeF)
 
-  -- | EvaluatedF _ <- termLikeF =
-  --   return (OrPattern.fromTermLike termLike)
+  | EvaluatedF _ <- termLikeF =
+    return (OrPattern.fromTermLike termLike)
 
   | otherwise =
     traverse simplifyTerm' termLikeF >>= \case
