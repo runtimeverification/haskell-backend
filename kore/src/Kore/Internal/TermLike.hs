@@ -362,11 +362,10 @@ instance
     unparse (Recursive.project -> _ :< pat) = unparse pat
     unparse2 (Recursive.project -> _ :< pat) = unparse2 pat
 
-
 type instance Base (TermLike variable) =
     CofreeF (TermLikeF variable) (Attribute.Pattern variable)
 
--- This instance implements all class functions for the Pattern newtype
+-- This instance implements all class functions for the TermLike newtype
 -- because the their implementations for the inner type may be specialized.
 instance Recursive (TermLike variable) where
     project = \(TermLike embedded) ->
