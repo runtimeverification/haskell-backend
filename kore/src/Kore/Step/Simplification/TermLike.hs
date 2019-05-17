@@ -202,6 +202,6 @@ simplifyInternal
             -- does not change the head of termLikeF. However, it is harmless to
             -- include this case here to convince the compiler that the case
             -- statement is complete.
-            return patterns
+            return (getEvaluated patterns)
   where
     simplifyTerm' = simplifyTerm simplifier substitutionSimplifier

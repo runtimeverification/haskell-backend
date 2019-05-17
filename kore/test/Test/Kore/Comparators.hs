@@ -2101,3 +2101,17 @@ instance
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
+
+instance
+    (EqualWithExplanation child, Show child) =>
+    EqualWithExplanation (TermLike.Evaluated child)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    (EqualWithExplanation child, Show child) =>
+    WrapperEqualWithExplanation (TermLike.Evaluated child)
+  where
+    wrapperField = Function.on (EqWrap "getEvaluated = ") getEvaluated
+    wrapperConstructorName _ = "Evaluated"

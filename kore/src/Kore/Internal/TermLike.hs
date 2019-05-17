@@ -9,6 +9,7 @@ License     : NCSA
 module Kore.Internal.TermLike
     ( TermLikeF (..)
     , TermLike (..)
+    , Evaluated (..)
     , Builtin
     , extractAttributes
     , freeVariables
@@ -200,6 +201,33 @@ import qualified Kore.Unparser as Unparser
 import           Kore.Variables.Binding
 import           Kore.Variables.Fresh
 
+{- | @Evaluated@ wraps patterns which are fully evaluated.
+
+Fully-evaluated patterns will not be simplified further because no progress
+could be made.
+
+ -}
+newtype Evaluated child = Evaluated { getEvaluated :: child }
+    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
+
+Deriving.deriveEq1 ''Evaluated
+Deriving.deriveOrd1 ''Evaluated
+Deriving.deriveShow1 ''Evaluated
+
+instance SOP.Generic (Evaluated child)
+
+instance SOP.HasDatatypeInfo (Evaluated child)
+
+instance Hashable child => Hashable (Evaluated child)
+
+instance NFData child => NFData (Evaluated child)
+
+instance Unparse child => Unparse (Evaluated child) where
+    unparse evaluated =
+        Pretty.vsep ["/* evaluated: */", Unparser.unparseGeneric evaluated]
+    unparse2 evaluated =
+        Pretty.vsep ["/* evaluated: */", Unparser.unparse2Generic evaluated]
+
 -- | The type of internal domain values.
 type Builtin = Domain.Builtin (TermLike Concrete)
 
@@ -230,7 +258,7 @@ data TermLikeF variable child
     | InhabitantF    !Sort
     | SetVariableF   !(SetVariable variable)
     | BuiltinF       !(Builtin child)
-    | EvaluatedF     !child
+    | EvaluatedF     !(Evaluated child)
     deriving (Foldable, Functor, GHC.Generic, Traversable)
 
 instance (Eq variable, Eq child) => Eq (TermLikeF variable child) where
@@ -246,6 +274,8 @@ instance (Show variable, Show child) => Show (TermLikeF variable child) where
     {-# INLINE showsPrec #-}
 
 instance SOP.Generic (TermLikeF variable child)
+
+instance SOP.HasDatatypeInfo (TermLikeF variable child)
 
 instance
     (Hashable child, Hashable variable) =>
@@ -801,7 +831,7 @@ forceSort forcedSort = Recursive.apo forceSortWorker
         forceSortWorkerPredicate =
             case pattern' of
                 -- Recurse
-                EvaluatedF child -> EvaluatedF (Right child)
+                EvaluatedF evaluated -> EvaluatedF (Right <$> evaluated)
                 -- Predicates: Force sort and stop.
                 BottomF bottom' -> BottomF bottom' { bottomSort = forcedSort }
                 TopF top' -> TopF top' { topSort = forcedSort }
@@ -1554,7 +1584,8 @@ mkInhabitant sort =
 
 mkEvaluated :: TermLike variable -> TermLike variable
 mkEvaluated termLike =
-    Recursive.embed (extractAttributes termLike :< EvaluatedF termLike)
+    Recursive.embed
+        (extractAttributes termLike :< EvaluatedF (Evaluated termLike))
 
 mkSort :: Id -> Sort
 mkSort name = SortActualSort $ SortActual name []
@@ -1896,4 +1927,5 @@ pattern StringLiteral_ str <-
 pattern CharLiteral_ char <-
     (Recursive.project -> _ :< CharLiteralF (CharLiteral char))
 
-pattern Evaluated_ child <- (Recursive.project -> _ :< EvaluatedF child)
+pattern Evaluated_ child <-
+    (Recursive.project -> _ :< EvaluatedF (Evaluated child))

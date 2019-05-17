@@ -243,11 +243,15 @@ externalizePattern =
             NotF notF -> Syntax.NotF notF
             OrF orF -> Syntax.OrF orF
             RewritesF rewritesF -> Syntax.RewritesF rewritesF
-            StringLiteralF stringLiteralF -> Syntax.StringLiteralF stringLiteralF
+            StringLiteralF stringLiteralF ->
+                Syntax.StringLiteralF stringLiteralF
             CharLiteralF charLiteralF -> Syntax.CharLiteralF charLiteralF
             TopF topF -> Syntax.TopF topF
             VariableF variableF -> Syntax.VariableF variableF
             InhabitantF inhabitantF -> Syntax.InhabitantF inhabitantF
             SetVariableF setVariableF -> Syntax.SetVariableF setVariableF
-            EvaluatedF evaluatedF -> Cofree.tailF $ externalizePatternWorker evaluatedF
+            EvaluatedF evaluatedF ->
+                Cofree.tailF
+                $ externalizePatternWorker
+                $ getEvaluated evaluatedF
             BuiltinF _ -> error "Unexpected internal builtin"
