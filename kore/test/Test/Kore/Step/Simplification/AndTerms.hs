@@ -27,8 +27,7 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
-                 ( makeCeilPredicate, makeEqualsPredicate, makeFalsePredicate,
-                 makeTruePredicate )
+                 ( makeCeilPredicate, makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -218,8 +217,7 @@ test_andTermsSimplification =
                     (Mock.sortInjection10 Mock.cfSort0)
             assertEqualWithExplanation "" ([expect], Just [expect]) actual
         , testCase "different head, not subsort" $ do
-            let expect =
-                    ([Pattern.bottom], Just [Pattern.bottom])
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     Mock.metadataTools
@@ -273,10 +271,7 @@ test_andTermsSimplification =
                     (Mock.sortInjectionSubSubToTop Mock.plain00SubSubsort)
             assertEqualWithExplanation "" expect actual
         , testCase "different head constructors not subsort" $ do
-            let expect =
-                    ( [Pattern.bottom]
-                    , Just [Pattern.bottom]
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     Mock.metadataTools
@@ -284,10 +279,7 @@ test_andTermsSimplification =
                     (Mock.sortInjection11 Mock.aSort1)
             assertEqualWithExplanation "" expect actual
         , testCase "different head constructors subsort" $ do
-            let expect =
-                    ( [Pattern.bottom]
-                    , Just [Pattern.bottom]
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     Mock.metadataTools
@@ -295,10 +287,7 @@ test_andTermsSimplification =
                     (Mock.sortInjectionSubSubToTop Mock.aSubSubsort)
             assertEqualWithExplanation "" expect actual
         , testCase "different head constructors common subsort" $ do
-            let expect =
-                    ( [Pattern.bottom]
-                    , Just [Pattern.bottom]
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     Mock.metadataTools
@@ -306,10 +295,7 @@ test_andTermsSimplification =
                     (Mock.sortInjectionSubToTop Mock.aSubsort)
             assertEqualWithExplanation "" expect actual
         , testCase "different head constructors common subsort reversed" $ do
-            let expect =
-                    ( [Pattern.bottom]
-                    , Just [Pattern.bottom]
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     Mock.metadataTools
@@ -352,10 +338,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
 
         , testCase "different head" $ do
-            let expect =
-                    ( [Pattern.bottom]
-                    , Just [Pattern.bottom]
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     Mock.metadataTools
@@ -365,10 +348,7 @@ test_andTermsSimplification =
         ]
 
     , testCase "constructor-sortinjection and" $ do
-        let expect =
-                ( [Pattern.bottom]
-                , Just [Pattern.bottom]
-                )
+        let expect = ([], Just [])
         actual <-
             simplifyUnify
                 Mock.metadataTools
@@ -393,10 +373,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
 
         , testCase "different values" $ do
-            let expect =
-                    ( [Pattern.bottom]
-                    , Just [Pattern.bottom]
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     Mock.metadataTools
@@ -422,10 +399,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
 
         , testCase "different values" $ do
-            let expect =
-                    ( [Pattern.bottom]
-                    , Just [Pattern.bottom]
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     Mock.emptyMetadataTools
@@ -452,10 +426,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
 
         , testCase "different values" $ do
-            let expect =
-                    ( [Pattern.bottom]
-                    , Just [Pattern.bottom]
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     Mock.emptyMetadataTools
@@ -587,7 +558,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
 
         , testCase "concrete Map, different keys" $ do
-            let expect = Just [Pattern.bottom]
+            let expect = Just []
             actual <-
                 unify
                     Mock.metadataTools
@@ -710,6 +681,27 @@ test_andTermsSimplification =
                         ]
                     )
             assertEqualWithExplanation "" expect actual
+
+        , testCase "concrete Map with element+unit" $ do
+            let expect = Just
+                    [ Conditional
+                        { term = Mock.builtinMap [ (Mock.aConcrete, fOfA) ]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.wrap
+                            [ (Mock.x, Mock.a)
+                            , (Mock.y, fOfA)
+                            ]
+                        }
+                    ]
+            actual <-
+                unify
+                    Mock.metadataTools
+                    (Mock.builtinMap [ (Mock.aConcrete, fOfA) ])
+                    (Mock.concatMap
+                        (Mock.elementMap (mkVar Mock.x) (mkVar Mock.y))
+                        Mock.unitMap
+                    )
+            assertEqualWithExplanation "" expect actual
         -- TODO: Add tests with non-trivial predicates.
         ]
 
@@ -733,13 +725,7 @@ test_andTermsSimplification =
         , testCase "[same head, different head]" $ do
             let term3 = Mock.builtinList [Mock.a, Mock.a]
                 term4 = Mock.builtinList [Mock.a, Mock.b]
-                expect = Just
-                    [ Conditional
-                        { term = Mock.builtinList [Mock.a, mkBottom_]
-                        , predicate = makeFalsePredicate
-                        , substitution = mempty
-                        }
-                    ]
+                expect = Just []
             actual <- unify Mock.metadataTools term3 term4
             assertEqualWithExplanation "" expect actual
 
@@ -770,7 +756,25 @@ test_andTermsSimplification =
         ]
 
     , testGroup "Builtin Set domain"
-        [ testCase "handles set ambiguity" $ do
+        [ testCase "set singleton + unit" $ do
+            let
+                expected = Just
+                    [ Conditional
+                        { term = Mock.builtinSet [Mock.a]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.x, Mock.a) ]
+                        }
+                    ]
+            actual <- unify
+                Mock.metadataTools
+                (Mock.concatSet
+                    (Mock.elementSet (mkVar Mock.x))
+                    Mock.unitSet
+                )
+                (Mock.builtinSet [Mock.a])
+            assertEqualWithExplanation "" expected actual
+        ,  testCase "handles set ambiguity" $ do
             let
                 expected = Just
                     [ Conditional

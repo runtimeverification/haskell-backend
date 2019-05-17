@@ -138,7 +138,8 @@ main = do
 
 mainWithOptions :: KoreReplOptions -> IO ()
 mainWithOptions
-    KoreReplOptions { definitionModule, proveOptions, smtOptions, initialScript }
+    KoreReplOptions
+        { definitionModule, proveOptions, smtOptions, initialScript }
   = do
     parsedDefinition <- parseDefinition definitionFileName
     indexedDefinition@(indexedModules, _) <-

@@ -118,7 +118,8 @@ showGraph :: Parser ReplCommand
 showGraph = ShowGraph <$$> literal "graph" *> optional (quotedOrWordWithout "")
 
 proveSteps :: Parser ReplCommand
-proveSteps = ProveSteps <$$> literal "step" *> option 1 L.decimal <* spaceNoNewline
+proveSteps =
+    ProveSteps <$$> literal "step" *> option 1 L.decimal <* spaceNoNewline
 
 proveStepsF :: Parser ReplCommand
 proveStepsF =
@@ -225,7 +226,8 @@ alias = do
 tryAlias :: Parser ReplCommand
 tryAlias = do
     name <- some (noneOf [' ']) <* Char.space
-    arguments <- many (QuotedArgument <$> quotedWord <|> SimpleArgument <$> wordWithout "")
+    arguments <- many
+        (QuotedArgument <$> quotedWord <|> SimpleArgument <$> wordWithout "")
     return . TryAlias $ ReplAlias { name, arguments }
 
 infixr 2 <$$>

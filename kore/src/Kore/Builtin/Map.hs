@@ -91,12 +91,12 @@ import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
 import           Kore.Unification.Error
-                 ( errorIfConcreteIncompletelyUnified )
+                 ( errorIfIncompletelyUnified )
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
-                 ( Unparse )
+                 ( Unparse, unparseToString )
 import           Kore.Variables.Fresh
 
 {- | Builtin name of the @Map@ sort.
@@ -611,10 +611,10 @@ unifyEquals
                 unifyEqualsFramed1 builtin1 builtin2 x
             [ x@(Var_ _), Builtin_ (Domain.BuiltinMap builtin2) ] ->
                 unifyEqualsFramed1 builtin1 builtin2 x
-            [ App_ symbol3 [ key3, value3 ], x@(Var_ _) ]
+            [ App_ symbol3 [ key3, value3 ], x ]
                 | isSymbolElement hookTools symbol3 ->
                 unifyEqualsSelect builtin1 symbol3 key3 value3 x
-            [ x@(Var_ _), App_ symbol3 [ key3, value3 ] ]
+            [ x, App_ symbol3 [ key3, value3 ] ]
                 | isSymbolElement hookTools symbol3 ->
                 unifyEqualsSelect builtin1 symbol3 key3 value3 x
             [ _, _ ] ->
@@ -631,14 +631,21 @@ unifyEquals
                 -- have evaluated to a domain value.
                 unifyEqualsElement
                     builtin1
-                    symbol2
                     key2
                     value2
             _ ->
                 Builtin.wrongArity "MAP.element"
+      | isSymbolUnit hookTools symbol2 =
+        Monad.Trans.lift $ case args2 of
+            [] -> unifyEqualsUnit builtin1
+            _ -> Builtin.wrongArity "MAP.unit"
       | otherwise =
-        empty
-      where
+        (error . unlines)
+            [ "Unimplemented map unification for domain value vs application. "
+            , "dv=" ++ unparseToString dv1
+            , "app=" ++ unparseToString app2
+            ]
+          where
         -- Unify one concrete map with a select pattern (k:key v:value s:map)
         -- Note that k and v can be a proper symbolic patterns
         -- (not just variables).
@@ -647,39 +654,51 @@ unifyEquals
             ::  Domain.InternalMap
                     (TermLike Concrete)
                     (TermLike variable)  -- ^ concrete map
-            -> SymbolOrAlias                           -- ^ 'element' symbol
-            -> TermLike variable                       -- ^ key
-            -> TermLike variable                       -- ^ value
-            -> TermLike variable                       -- ^ framing variable
+            -> SymbolOrAlias             -- ^ 'element' symbol
+            -> TermLike variable         -- ^ key
+            -> TermLike variable         -- ^ value
+            -> TermLike variable         -- ^ remainder for unification
             -> unifier (Pattern variable)
         unifyEqualsSelect builtin1' _ key2 value2 map2
           | map1 == Map.empty = bottomWithExplanation
-          | otherwise = case Map.toList map1 of
-            [(fromConcrete -> key1, value1)] ->
-                Reflection.give tools $ do
-                    let emptyMapPat = asInternal tools sort1 Map.empty
-                    keyUnifier <- unifyEqualsChildren key1 key2
-                    -- error when subunification problem returns partial result.
-                    -- More details at 'errorIfIncompletelyUnified'.
-                    errorIfConcreteIncompletelyUnified key1 key2 keyUnifier
+          | otherwise =
+            Reflection.give tools $ do
+                (concreteKey1, value1) <- Monad.Unify.scatter (Map.toList map1)
+                let remainderMap = Map.delete concreteKey1 map1
+                    remainderMapPat = asInternal tools sort1 remainderMap
+                    key1 = fromConcrete concreteKey1
 
-                    valueUnifier <- unifyEqualsChildren value1 value2
+                keyUnifier <- unifyEqualsChildren key1 key2
+                -- error when subunification problem returns partial result,
+                -- which makes 'withoutTerm' below unsafe.
+                -- More details at 'errorIfIncompletelyUnified'.
+                errorIfIncompletelyUnified key1 key2 keyUnifier
 
-                    mapUnifier <- unifyEqualsChildren emptyMapPat map2
-                    -- error when subunification problem returns partial result
-                    -- More details at 'errorIfIncompletelyUnified'.
-                    errorIfConcreteIncompletelyUnified
-                        emptyMapPat map2 mapUnifier
-                    -- Return the concrete map, but capture any predicates and
-                    -- substitutions from unifying the element
-                    -- and framing variable.
-                    let result =
-                            pure dv1
-                                `andCondition` withoutTerm keyUnifier
-                                `andCondition` withoutTerm valueUnifier
-                                `andCondition` withoutTerm mapUnifier
-                    return result
-            _ -> Builtin.unifyEqualsUnsolved simplificationType dv1 app2
+                valueUnifier <- unifyEqualsChildren value1 value2
+                -- error when subunification problem returns partial result,
+                -- which makes 'withoutTerm' below unsafe.
+                -- More details at 'errorIfIncompletelyUnified'.
+                errorIfIncompletelyUnified value1 value2 valueUnifier
+
+                mapUnifier <- unifyEqualsChildren remainderMapPat map2
+                -- error when subunification problem returns partial result,
+                -- which makes 'withoutTerm' below unsafe.
+                -- More details at 'errorIfIncompletelyUnified'.
+                errorIfIncompletelyUnified remainderMapPat map2 mapUnifier
+
+                -- Return the concrete map, but capture any predicates and
+                -- substitutions from unifying the element
+                -- and framing variable.
+                let result =
+                        -- TODO (virgil): Using withoutTerm here looks
+                        -- fragile. Consider replacing that with a ceil,
+                        -- if only to remove an assumption on the
+                        -- set values (i.e. that they're functional).
+                        pure dv1
+                            `andCondition` withoutTerm keyUnifier
+                            `andCondition` withoutTerm valueUnifier
+                            `andCondition` withoutTerm mapUnifier
+                return result
           | otherwise =
             Builtin.unifyEqualsUnsolved simplificationType dv1 app2
           where
@@ -766,29 +785,61 @@ unifyEquals
     unifyEqualsElement
         :: Domain.InternalMap (TermLike Concrete) (TermLike variable)
         -- ^ concrete map
-        -> SymbolOrAlias  -- ^ 'element' symbol
         -> TermLike variable  -- ^ key
         -> TermLike variable  -- ^ value
         -> unifier (Pattern variable)
-    unifyEqualsElement builtin1 element' key2 value2 =
+    unifyEqualsElement builtin1 key2 value2 =
         case Map.toList map1 of
             [(fromConcrete -> key1, value1)] ->
                 do
-                    key <- unifyEqualsChildren key1 key2
-                    value <- unifyEqualsChildren value1 value2
+                    keyUnifier <- unifyEqualsChildren key1 key2
+                    -- error when subunification problem returns partial result,
+                    -- which makes 'withoutTerm' below unsafe.
+                    -- More details at 'errorIfIncompletelyUnified'.
+                    errorIfIncompletelyUnified key1 key2 keyUnifier
+
+                    valueUnifier <- unifyEqualsChildren value1 value2
+                    -- error when subunification problem returns partial result,
+                    -- which makes 'withoutTerm' below unsafe.
+                    -- More details at 'errorIfIncompletelyUnified'.
+                    errorIfIncompletelyUnified value1 value2 valueUnifier
+
+                    -- Return the concrete map, but capture any predicates and
+                    -- substitutions from unifying the element
+                    -- and framing variable.
                     let result =
-                            mkApp builtinMapSort element'
-                            <$> propagatePredicates [key, value]
+                            -- TODO (virgil): Using withoutTerm here looks
+                            -- fragile. Consider replacing that with a ceil,
+                            -- if only to remove an assumption on the
+                            -- set values (i.e. that they're functional).
+                            pure (mkBuiltin $ Domain.BuiltinMap builtin1)
+                                `andCondition` withoutTerm keyUnifier
+                                `andCondition` withoutTerm valueUnifier
                     return result
             _ -> bottomWithExplanation
             -- Cannot unify a non-element Map with an element Map
       where
-        Domain.InternalMap { builtinMapSort } = builtin1
         Domain.InternalMap { builtinMapChild = map1 } = builtin1
 
+    unifyEqualsUnit
+        :: Domain.InternalMap (TermLike Concrete) (TermLike variable)
+        -- ^ concrete map
+        -> unifier (Pattern variable)
+    unifyEqualsUnit builtin1 =
+        if null map1
+            then return
+                (Pattern.fromTermLike
+                    (mkBuiltin $ Domain.BuiltinMap builtin1)
+                )
+            else bottomWithExplanation
+            -- Cannot unify a non-element Map with an element Map
+      where
+        Domain.InternalMap { builtinMapChild = map1 } = builtin1
+
+    bottomWithExplanation :: unifier (Pattern variable)
     bottomWithExplanation = do
         Monad.Unify.explainBottom
             "Cannot unify a non-element map with an element map."
             first
             second
-        return Pattern.bottom
+        empty
