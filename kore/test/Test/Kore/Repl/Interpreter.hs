@@ -15,20 +15,28 @@ import           Data.IORef
                  ( newIORef, readIORef, writeIORef )
 import qualified Data.Map as Map
 import qualified Data.Sequence as Seq
+import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Builtin.Int as Int
 import           Kore.Internal.TermLike
-                 ( mkApp, mkBottom_, mkVar, varS )
+                 ( TermLike, mkApp, mkBottom_, mkVar, varS )
+import qualified Kore.Logger.Output as Logger
 import           Kore.OnePath.Verification
                  ( Axiom (..), verifyClaimStep )
 import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
 import           Kore.Step.Rule
                  ( OnePathRule (..), RewriteRule (..), rulePattern )
+import           Kore.Step.Simplification.AndTerms
+                 ( cannotUnifyDistinctDomainValues )
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
+                 ( Simplifier, evalSimplifier )
 import           Kore.Syntax.Variable
                  ( Variable )
+import           Kore.Unification.Procedure
+                 ( unificationProcedure )
+import           Kore.Unification.Unify
+                 ( explainBottom )
 import qualified SMT
 
 import Test.Kore
@@ -50,6 +58,7 @@ test_replInterpreter =
     , aliasOfUnknownCommand  `tests` "Create alias of unknown command"
     , recursiveAlias         `tests` "Create alias of unknown command"
     , tryAlias               `tests` "Executing an existing alias with arguments"
+    , unificationFailure     `tests` "Force axiom that doesn't unify"
     ]
 
 showUsage :: IO ()
@@ -210,6 +219,22 @@ tryAlias =
         output   `equalsOutput` showRewriteRule claim
         continue `equals` True
 
+unificationFailure :: IO ()
+unificationFailure =
+    let
+        zero = Int.asInternal intSort 0
+        one = Int.asInternal intSort 1
+        impossibleAxiom = coerce $ rulePattern one one
+        axioms = [ impossibleAxiom ]
+        claim = zeroToTen
+        command = Try . Left $ AxiomIndex 0
+    in do
+        Result { output, continue, state } <- run command axioms claim
+        expectedOutput <-
+            unificationErrorMessage cannotUnifyDistinctDomainValues one zero
+        output `equalsOutput` expectedOutput
+        continue `equals` True
+        state `hasCurrentNode` ReplNode 0
 
 add1 :: Axiom
 add1 = coerce $ rulePattern n plusOne
@@ -230,20 +255,30 @@ emptyClaim = coerce $ rulePattern mkBottom_ mkBottom_
 run :: ReplCommand -> [Axiom] -> Claim -> IO Result
 run command axioms claim =  runWithState command axioms claim id
 
+runSimplifier
+    :: Simplifier a
+    -> IO a
+runSimplifier =
+    SMT.runSMT SMT.defaultConfig . evalSimplifier emptyLogger
+
 runWithState
     :: ReplCommand
     -> [Axiom]
     -> Claim
     -> (ReplState Claim -> ReplState Claim)
     -> IO Result
-runWithState command axioms claim stateTransformer = do
-    output <- newIORef ""
-    (c, s) <- liftSimplifier $
-        replInterpreter (writeIORefIfNotEmpty output) command `runStateT` state
-    output' <- readIORef output
-    return $ Result output' c s
+runWithState command axioms claim stateTransformer
+  = Logger.withLogger logOptions $ \logger -> do
+        output <- newIORef ""
+        (c, s) <- liftSimplifier logger
+            $ replInterpreter (writeIORefIfNotEmpty output) command
+                `runStateT` state
+        output' <- readIORef output
+        return $ Result output' c s
   where
-    liftSimplifier = SMT.runSMT SMT.defaultConfig . evalSimplifier emptyLogger
+    logOptions = Logger.KoreLogOptions Logger.LogNone Logger.Debug
+    liftSimplifier logger =
+        SMT.runSMT SMT.defaultConfig . evalSimplifier logger
     state = stateTransformer $ mkState axioms claim
     writeIORefIfNotEmpty out =
         \case
@@ -311,4 +346,25 @@ mkState axioms claim =
             axioms'
             graph
             node
-    unifier0 _ _ = return ()
+    unifier0
+        :: TermLike Variable
+        -> TermLike Variable
+        -> UnifierWithExplanation ()
+    unifier0 first second =
+        () <$ unificationProcedure
+            testMetadataTools
+            testSubstitutionSimplifier
+            testTermLikeSimplifier
+            testEvaluators
+            first
+            second
+
+unificationErrorMessage
+    :: Pretty.Doc ()
+    -> TermLike Variable
+    -> TermLike Variable
+    -> IO String
+unificationErrorMessage info first second = do
+    res <- runSimplifier . runUnifierWithExplanation
+        $ explainBottom info first second
+    return $ formatUnificationMessage res
