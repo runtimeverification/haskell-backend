@@ -514,7 +514,7 @@ test_unifySelectSingletonFromSingleton =
                 emptyMapPat    = asTermLike Map.empty
                 selectPat      = addSelectElement keyVar valueVar emptyMapPat
                 singleton      = asInternal (Map.singleton concreteKey value)
-                keyStepPattern = fromConcreteStepPattern concreteKey
+                keyStepPattern = fromConcrete concreteKey
                 singletonPat =
                     mkApp mapSort elementMapSymbol [keyStepPattern, value]
                 expect =
@@ -686,7 +686,7 @@ test_unifySelectTwoFromTwoElementMap =
                                 ]
                         }
 
-            -- { 5 } /\ SetItem(X:Int) Rest:Set
+            -- { 5 } /\ MapItem(X:Int) Rest:Map
             (mapDV `unifiesWithMulti` selectPat) [expect1, expect2]
             (selectPat `unifiesWithMulti` mapDV) [expect1, expect2]
         )

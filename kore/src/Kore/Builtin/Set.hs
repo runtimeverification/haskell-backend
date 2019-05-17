@@ -96,7 +96,7 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), SimplificationType,
                  TermLikeSimplifier )
 import           Kore.Unification.Error
-                 ( errorIfConcreteIncompletelyUnified )
+                 ( errorIfIncompletelyUnified )
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -636,21 +636,24 @@ unifyEquals
                     remainderSetPat = asInternal tools sort1 remainderSet
                     key1 = fromConcrete concreteKey1
                 elemUnifier <- unifyEqualsChildren key1 key2
-                -- error when subunification problem returns partial result.
+                -- error when subunification problem returns partial result,
+                -- which makes 'withoutTerm' below unsafe.
                 -- More details at 'errorIfIncompletelyUnified'.
-                errorIfConcreteIncompletelyUnified key1 key2 elemUnifier
+                errorIfIncompletelyUnified key1 key2 elemUnifier
+
                 setUnifier <- unifyEqualsChildren remainderSetPat set2
-                -- error when subunification problem returns partial result
+                -- error when subunification problem returns partial result,
+                -- which makes 'withoutTerm' below unsafe.
                 -- More details at 'errorIfIncompletelyUnified'.
-                errorIfConcreteIncompletelyUnified
-                    remainderSetPat set2 setUnifier
+                errorIfIncompletelyUnified remainderSetPat set2 setUnifier
+
                 -- Return the concrete set, but capture any predicates and
                 -- substitutions from unifying the element
                 -- and framing variable.
                 let result =
                         pure dv1
                             -- TODO (virgil): Using withoutTerm here looks
-                            -- bad. Consider replacing that with a ceil,
+                            -- fragile. Consider replacing that with a ceil,
                             -- if only to remove an assumption on the
                             -- set values (i.e. that they're functional).
                             `andCondition` withoutTerm elemUnifier
@@ -726,7 +729,7 @@ unifyEquals
         Domain.InternalSet { builtinSetChild = set1 } = builtin1
 
     unifyEqualsUnit
-        :: Domain.InternalSet  -- ^ concrete set
+        :: Domain.InternalSet (TermLike Concrete) -- ^ concrete set
         -> SymbolOrAlias  -- ^ 'unit' symbol
         -> unifier (Pattern variable)
     unifyEqualsUnit builtin1 unit' =

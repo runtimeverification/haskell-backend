@@ -91,7 +91,7 @@ import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
 import           Kore.Unification.Error
-                 ( errorIfConcreteIncompletelyUnified )
+                 ( errorIfIncompletelyUnified )
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -670,17 +670,31 @@ unifyEquals
                     key1 = fromConcrete concreteKey1
 
                 keyUnifier <- unifyEqualsChildren key1 key2
-                -- error when subunification problem returns partial result.
+                -- error when subunification problem returns partial result,
+                -- which makes 'withoutTerm' below unsafe.
                 -- More details at 'errorIfIncompletelyUnified'.
-                errorIfConcreteIncompletelyUnified key1 key2 keyUnifier
+                errorIfIncompletelyUnified key1 key2 keyUnifier
 
                 valueUnifier <- unifyEqualsChildren value1 value2
+                -- error when subunification problem returns partial result,
+                -- which makes 'withoutTerm' below unsafe.
+                -- More details at 'errorIfIncompletelyUnified'.
+                errorIfIncompletelyUnified value1 value2 valueUnifier
+
                 mapUnifier <- unifyEqualsChildren remainderMapPat map2
+                -- error when subunification problem returns partial result,
+                -- which makes 'withoutTerm' below unsafe.
+                -- More details at 'errorIfIncompletelyUnified'.
+                errorIfIncompletelyUnified remainderMapPat map2 mapUnifier
 
                 -- Return the concrete map, but capture any predicates and
                 -- substitutions from unifying the element
                 -- and framing variable.
                 let result =
+                        -- TODO (virgil): Using withoutTerm here looks
+                        -- fragile. Consider replacing that with a ceil,
+                        -- if only to remove an assumption on the
+                        -- set values (i.e. that they're functional).
                         pure dv1
                             `andCondition` withoutTerm keyUnifier
                             `andCondition` withoutTerm valueUnifier
@@ -791,8 +805,10 @@ unifyEquals
       where
         Domain.InternalMap { builtinMapSort } = builtin1
         Domain.InternalMap { builtinMapChild = map1 } = builtin1
+
     unifyEqualsUnit
-        :: Domain.InternalMap (TermLike variable)  -- ^ concrete map
+        :: Domain.InternalMap (TermLike Concrete) (TermLike variable)
+        -- ^ concrete map
         -> SymbolOrAlias  -- ^ 'unit' symbol
         -> unifier (Pattern variable)
     unifyEqualsUnit builtin1 unit' =
@@ -803,6 +819,7 @@ unifyEquals
       where
         Domain.InternalMap { builtinMapSort } = builtin1
         Domain.InternalMap { builtinMapChild = map1 } = builtin1
+
     bottomWithExplanation = do
         Monad.Unify.explainBottom
             "Cannot unify a non-element map with an element map."
