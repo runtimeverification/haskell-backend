@@ -96,7 +96,7 @@ import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
-                 ( Unparse )
+                 ( Unparse, unparseToString )
 import           Kore.Variables.Fresh
 
 {- | Builtin name of the @Map@ sort.
@@ -641,8 +641,12 @@ unifyEquals
             [] -> unifyEqualsUnit builtin1 symbol2
             _ -> Builtin.wrongArity "MAP.unit"
       | otherwise =
-        empty
-      where
+        (error . unlines)
+            [ "Unimplemented map unification for domain value vs application. "
+            , "dv=" ++ unparseToString dv1
+            , "app=" ++ unparseToString app2
+            ]
+          where
         -- Unify one concrete map with a select pattern (k:key v:value s:map)
         -- Note that k and v can be a proper symbolic patterns
         -- (not just variables).
