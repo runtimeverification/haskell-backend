@@ -186,6 +186,8 @@ data ReplCommand
     -- ^ Try running an alias.
     | LoadScript FilePath
     -- ^ Load script from file
+    | ProofStatus
+    -- ^ Show proof status of each claim
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -258,6 +260,7 @@ helpText =
     \alias <name> = <command>              adds as an alias for <command>\n\
     \<alias>                               runs an existing alias\n\
     \load file                             loads the file as a repl script\n\
+    \proof-status                          shows status for each claim\
     \exit                                  exits the repl\
     \\n\
     \Available modifiers:\n\
@@ -293,6 +296,7 @@ shouldStore =
         ShowPrecBranch _ -> False
         ShowChildren _   -> False
         SaveSession _    -> False
+        ProofStatus      -> False
         Exit             -> False
         _                -> True
 
@@ -640,6 +644,12 @@ data NodeState = StuckNode | UnevaluatedNode
 data AliasError
     = NameAlreadyDefined
     | UnknownCommand
+
+data ProofStatus
+    = NotStarted
+    | Completed
+    | InProgress [Int]
+    | Stuck [Int]
 
 -- | Adds or updates the provided alias.
 addOrUpdateAlias

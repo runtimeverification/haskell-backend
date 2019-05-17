@@ -153,6 +153,7 @@ replInterpreter printFn replCmd = do
                 Alias a            -> alias a            $> True
                 TryAlias name      -> tryAlias name printFn
                 LoadScript file    -> loadScript file    $> True
+                ProofStatus        -> proofStatus        $> True
                 Exit               -> pure                  False
     (output, shouldContinue) <- evaluateCommand command
     liftIO $ printFn output
@@ -373,6 +374,30 @@ showLeafs = do
 
     showPair :: (NodeState, [Graph.Node]) -> String
     showPair (ns, xs) = show ns <> ": " <> show xs
+
+proofStatus
+    :: forall claim
+    . Claim claim
+    => ReplM claim ()
+proofStatus = do
+    graphs <- Lens.use lensGraphs
+    claims <- Lens.use lensClaims
+    let x = fmap ( \cindex -> (cindex, Map.lookup cindex graphs) )
+            $ fmap ClaimIndex [0..length claims]
+    --let y = fmap getStatus x
+    return ()
+  --where
+    --getStatus :: (ClaimIndex, Maybe ExecutionGraph) -> ([], ProofStatus)
+    --getStatus (ci, mgr) =
+    --    case mgr of
+    --        Nothing -> (ci, NotStarted)
+    --        Just gr -> case (sortLeafsByType . Strategy.graph $ gr) of
+    --                     [] -> (ci, Completed)
+    --                     xs -> case filter (\(nst, _) -> nst == StuckNode) xs of
+    --                             [] ->
+
+-- case filter (\(nst, _) -> nst == StuckNode) (sortLeafsByType . Strategy.graph $ gr) of
+
 
 showRule
     :: MonadState (ReplState claim) m
@@ -744,7 +769,6 @@ tryAlias replAlias@ReplAlias { name } printFn = do
         -> ReplM claim (Bool, ReplState claim)
     runInterpreter cmd =
         lift . runStateT (replInterpreter printFn cmd)
-
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
 -- Returns 'Left' while it has to continue looping, and 'Right' when done
