@@ -515,11 +515,9 @@ test_unifySelectSingletonFromSingleton =
                 selectPat      = addSelectElement keyVar valueVar emptyMapPat
                 singleton      = asInternal (Map.singleton concreteKey value)
                 keyStepPattern = fromConcrete concreteKey
-                singletonPat =
-                    mkApp mapSort elementMapSymbol [keyStepPattern, value]
                 expect =
                     Conditional
-                        { term = singletonPat
+                        { term = singleton
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
@@ -546,11 +544,9 @@ test_unifySelectFromSingletonWithoutLeftovers =
                 singleton =
                     asInternal (Map.singleton concreteKey value)
                 keyStepPattern = fromConcrete concreteKey
-                unsimplifiedSingleton =
-                    mkApp mapSort elementMapSymbol [keyStepPattern, value]
                 expect =
                     Conditional
-                        { term = unsimplifiedSingleton
+                        { term = singleton
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
@@ -781,7 +777,7 @@ test_concretizeKeys =
             { term =
                 mkPair intSort mapSort
                     symbolicKey
-                    (asSymbolicPattern $ Map.fromList [(symbolicKey, val)])
+                    (asInternal $ Map.fromList [(key, val)])
             , predicate = Predicate.makeTruePredicate
             , substitution =
                 Substitution.unsafeWrap

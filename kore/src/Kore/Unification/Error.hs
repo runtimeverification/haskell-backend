@@ -122,12 +122,12 @@ errorIfIncompletelyUnified expected patt unifiedPattern =
     Monad.when (Pattern.term unifiedPattern /= expected)
         $ error
             (  "Unification problem not completely solved. "
-            ++ "When unfying against concrete pattern\n\t"
-            ++ show (unparseToString expected)
+            ++ "When unifying against concrete pattern\n\t"
+            ++ unparseToString expected
             ++ "\nwith pattern\n\t"
-            ++ show (unparseToString patt)
+            ++ unparseToString patt
             ++ "\nExpecting to get the concrete pattern back but got\n\t"
-            ++ show (unparseToString unifiedPattern)
+            ++ unparseToString unifiedPattern
             ++ "\nHandling this is currently not implemented."
             ++ "\nPlease file an issue if this should work for you."
             )

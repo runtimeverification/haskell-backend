@@ -446,11 +446,9 @@ test_unifySelectFromSingletonWithoutLeftovers =
             let selectPat       = makeElementVariable elementVar
                 singleton       = asInternal (Set.singleton concreteElem)
                 elemStepPattern = fromConcrete concreteElem
-                unsimplifiedSingleton =
-                    mkApp setSort elementSetSymbol [elemStepPattern]
                 expect =
                     Conditional
-                        { term = unsimplifiedSingleton
+                        { term = singleton
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
@@ -672,7 +670,7 @@ test_concretizeKeys =
             { term =
                 mkPair intSort setSort
                     symbolicKey
-                    (asSymbolicPattern $ Set.fromList [symbolicKey])
+                    (asInternal $ Set.fromList [concreteKey])
             , predicate = Predicate.makeTruePredicate
             , substitution = Substitution.unsafeWrap
                 [ (x, symbolicKey) ]

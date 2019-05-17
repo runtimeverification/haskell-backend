@@ -85,7 +85,7 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools, sortAttributes )
 import           Kore.Internal.Conditional
-                 ( Conditional, andCondition, withoutTerm )
+                 ( andCondition, withoutTerm )
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
@@ -555,14 +555,6 @@ unifyEquals
   where
     hookTools = StepperAttributes.hook <$> tools
 
-    -- | Given a collection 't' of 'Conditional' values, propagate all the
-    -- predicates to the top, returning a 'Conditional' collection.
-    propagatePredicates
-        :: Traversable t
-        => t (Conditional variable a)
-        -> Conditional variable (t a)
-    propagatePredicates = sequenceA
-
     -- | Unify the two argument patterns.
     unifyEquals0
         :: TermLike variable
@@ -602,7 +594,7 @@ unifyEquals
                 [ key2 ] ->
                     -- The key is not concrete yet, or SET.element would
                     -- have evaluated to a domain value.
-                    unifyEqualsElement builtin1 symbol2 key2
+                    unifyEqualsElement builtin1 key2
                 _ ->
                     Builtin.wrongArity "SET.element"
             )
@@ -711,21 +703,30 @@ unifyEquals
 
     unifyEqualsElement
         :: Domain.InternalSet (TermLike Concrete) -- ^ concrete set
-        -> SymbolOrAlias                          -- ^ 'element' symbol
         -> TermLike variable                      -- ^ key
         -> unifier (Pattern variable)
-    unifyEqualsElement builtin1 element' key2 =
+    unifyEqualsElement builtin1 key2 =
         case Set.toList set1 of
-            [fromConcrete -> key1] ->
-                do
-                    key <- unifyEqualsChildren key1 key2
-                    let result =
-                            mkApp builtinSetSort element'
-                                <$> propagatePredicates [key]
-                    return result
+            [fromConcrete -> key1] -> do
+                elemUnifier <- unifyEqualsChildren key1 key2
+                -- error when subunification problem returns partial result,
+                -- which makes 'withoutTerm' below unsafe.
+                -- More details at 'errorIfIncompletelyUnified'.
+                errorIfIncompletelyUnified key1 key2 elemUnifier
+
+                -- Return the concrete set, but capture any predicates and
+                -- substitutions from unifying the element
+                -- and framing variable.
+                let result =
+                        pure (mkBuiltin $ Domain.BuiltinSet builtin1)
+                            -- TODO (virgil): Using withoutTerm here looks
+                            -- fragile. Consider replacing that with a ceil,
+                            -- if only to remove an assumption on the
+                            -- set values (i.e. that they're functional).
+                            `andCondition` withoutTerm elemUnifier
+                return result
             _ -> bottomWithExplanation
       where
-        Domain.InternalSet { builtinSetSort } = builtin1
         Domain.InternalSet { builtinSetChild = set1 } = builtin1
 
     unifyEqualsUnit

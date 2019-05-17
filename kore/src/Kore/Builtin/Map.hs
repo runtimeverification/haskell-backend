@@ -631,7 +631,6 @@ unifyEquals
                 -- have evaluated to a domain value.
                 unifyEqualsElement
                     builtin1
-                    symbol2
                     key2
                     value2
             _ ->
@@ -655,10 +654,10 @@ unifyEquals
             ::  Domain.InternalMap
                     (TermLike Concrete)
                     (TermLike variable)  -- ^ concrete map
-            -> SymbolOrAlias                           -- ^ 'element' symbol
-            -> TermLike variable                       -- ^ key
-            -> TermLike variable                       -- ^ value
-            -> TermLike variable                       -- ^ framing variable
+            -> SymbolOrAlias             -- ^ 'element' symbol
+            -> TermLike variable         -- ^ key
+            -> TermLike variable         -- ^ value
+            -> TermLike variable         -- ^ remainder for unification
             -> unifier (Pattern variable)
         unifyEqualsSelect builtin1' _ key2 value2 map2
           | map1 == Map.empty = bottomWithExplanation
@@ -786,24 +785,40 @@ unifyEquals
     unifyEqualsElement
         :: Domain.InternalMap (TermLike Concrete) (TermLike variable)
         -- ^ concrete map
-        -> SymbolOrAlias  -- ^ 'element' symbol
         -> TermLike variable  -- ^ key
         -> TermLike variable  -- ^ value
         -> unifier (Pattern variable)
-    unifyEqualsElement builtin1 element' key2 value2 =
+    unifyEqualsElement builtin1 key2 value2 =
         case Map.toList map1 of
             [(fromConcrete -> key1, value1)] ->
                 do
-                    key <- unifyEqualsChildren key1 key2
-                    value <- unifyEqualsChildren value1 value2
+                    keyUnifier <- unifyEqualsChildren key1 key2
+                    -- error when subunification problem returns partial result,
+                    -- which makes 'withoutTerm' below unsafe.
+                    -- More details at 'errorIfIncompletelyUnified'.
+                    errorIfIncompletelyUnified key1 key2 keyUnifier
+
+                    valueUnifier <- unifyEqualsChildren value1 value2
+                    -- error when subunification problem returns partial result,
+                    -- which makes 'withoutTerm' below unsafe.
+                    -- More details at 'errorIfIncompletelyUnified'.
+                    errorIfIncompletelyUnified value1 value2 valueUnifier
+
+                    -- Return the concrete map, but capture any predicates and
+                    -- substitutions from unifying the element
+                    -- and framing variable.
                     let result =
-                            mkApp builtinMapSort element'
-                            <$> propagatePredicates [key, value]
+                            -- TODO (virgil): Using withoutTerm here looks
+                            -- fragile. Consider replacing that with a ceil,
+                            -- if only to remove an assumption on the
+                            -- set values (i.e. that they're functional).
+                            pure (mkBuiltin $ Domain.BuiltinMap builtin1)
+                                `andCondition` withoutTerm keyUnifier
+                                `andCondition` withoutTerm valueUnifier
                     return result
             _ -> bottomWithExplanation
             -- Cannot unify a non-element Map with an element Map
       where
-        Domain.InternalMap { builtinMapSort } = builtin1
         Domain.InternalMap { builtinMapChild = map1 } = builtin1
 
     unifyEqualsUnit
