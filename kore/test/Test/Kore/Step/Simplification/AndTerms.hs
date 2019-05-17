@@ -20,7 +20,6 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Builtin.Set as Set
                  ( asInternal )
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -47,7 +46,6 @@ import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import qualified Kore.Syntax.Pattern as AST
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
 import qualified SMT
@@ -979,16 +977,16 @@ plain1OfB = Mock.plain11 Mock.b
 
 aDomainValue :: TermLike Variable
 aDomainValue =
-    mkDomainValue $ Domain.BuiltinExternal Domain.External
+    mkDomainValue DomainValue
         { domainValueSort = Mock.testSort
-        , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
+        , domainValueChild = mkStringLiteral "a"
         }
 
 bDomainValue :: TermLike Variable
 bDomainValue =
-    mkDomainValue $ Domain.BuiltinExternal Domain.External
+    mkDomainValue DomainValue
         { domainValueSort = Mock.testSort
-        , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "b"
+        , domainValueChild = mkStringLiteral "b"
         }
 
 simplifyUnify

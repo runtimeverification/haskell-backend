@@ -19,11 +19,13 @@ module Kore.IndexedModule.IndexedModule
         , indexedModuleAttributes, indexedModuleImports
         , indexedModuleHooks
         )
+    , IndexModuleError
     , KoreImplicitIndexedModule
     , KoreIndexedModule
     , VerifiedModule
-    , makeIndexedModuleAttributesNull
-    , mapIndexedModulePatterns
+    , eraseAttributes
+    , erasePatterns
+    , mapPatterns
     , indexedModuleRawSentences
     , indexModuleIfNeeded
     , SortDescription
@@ -46,14 +48,15 @@ module Kore.IndexedModule.IndexedModule
 
 import           Control.DeepSeq
                  ( NFData (..) )
+import qualified Control.Lens as Lens
 import           Control.Monad
                  ( foldM )
 import           Control.Monad.State.Strict
                  ( execState )
 import qualified Control.Monad.State.Strict as Monad.State
-import           Data.Bifunctor
 import           Data.Default as Default
 import qualified Data.Foldable as Foldable
+import           Data.Function
 import qualified Data.List as List
 import           Data.Map.Strict
                  ( Map )
@@ -84,8 +87,7 @@ import           Kore.Syntax
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
-type SortDescription dom =
-    SentenceSort (Pattern dom Variable Attribute.Null)
+type SortDescription = SentenceSort (Pattern Variable Attribute.Null)
 
 data IndexModuleError
 
@@ -179,43 +181,41 @@ recursiveIndexedModuleStuff stuffExtractor m =
     subModuleStuff (_, _, subMod) =
         recursiveIndexedModuleStuff stuffExtractor subMod
 
--- |Strip module of its parsed attributes, replacing them with 'Attribute.Null'
-makeIndexedModuleAttributesNull
+-- | Strip module of its parsed attributes, replacing them with 'Attribute.Null'
+eraseAttributes
     :: IndexedModule patternType1 declAttributes axiomAttributes
     -> IndexedModule patternType1 Attribute.Null Attribute.Null
-makeIndexedModuleAttributesNull
-    IndexedModule
-    { indexedModuleName = name
-    , indexedModuleAliasSentences = aliases
-    , indexedModuleSymbolSentences = symbols
-    , indexedModuleSortDescriptions = sorts
-    , indexedModuleAxioms = axioms
-    , indexedModuleClaims = claims
-    , indexedModuleAttributes = attributes
-    , indexedModuleImports = imports
-    , indexedModuleHookedIdentifiers = hookIds
-    , indexedModuleHooks = hooks
-    }
-  = IndexedModule
-    { indexedModuleName = name
-    , indexedModuleAliasSentences = Map.map (first aNull) aliases
-    , indexedModuleSymbolSentences = Map.map (first aNull) symbols
-    , indexedModuleSortDescriptions = sorts
-    , indexedModuleAxioms = map (first aNull) axioms
-    , indexedModuleClaims = map (first aNull) claims
-    , indexedModuleAttributes = first aNull attributes
-    , indexedModuleImports =
-        map
-            (\(_, atts, m)->
-                (Attribute.Null, atts, makeIndexedModuleAttributesNull m))
-            imports
-    , indexedModuleHookedIdentifiers = hookIds
-    , indexedModuleHooks = hooks
-    }
-  where
-    aNull = const Attribute.Null
-
-
+eraseAttributes
+    indexedModule@IndexedModule
+        { indexedModuleAliasSentences
+        , indexedModuleSymbolSentences
+        , indexedModuleAxioms
+        , indexedModuleClaims
+        , indexedModuleAttributes
+        , indexedModuleImports
+        }
+  =
+    indexedModule
+        { indexedModuleAliasSentences =
+            indexedModuleAliasSentences
+            & Lens.set (Lens.mapped . Lens._1) Attribute.Null
+        , indexedModuleSymbolSentences =
+            indexedModuleSymbolSentences
+            & Lens.set (Lens.mapped . Lens._1) Attribute.Null
+        , indexedModuleAxioms =
+            indexedModuleAxioms
+            & Lens.set (Lens.mapped . Lens._1) Attribute.Null
+        , indexedModuleClaims =
+            indexedModuleClaims
+            & Lens.set (Lens.mapped . Lens._1) Attribute.Null
+        , indexedModuleAttributes =
+            indexedModuleAttributes
+            & Lens.set Lens._1 Attribute.Null
+        , indexedModuleImports =
+            indexedModuleImports
+            & Lens.set (Lens.mapped . Lens._1) Attribute.Null
+            & Lens.over (Lens.mapped . Lens._3) eraseAttributes
+        }
 
 instance
     ( NFData patternType , NFData declAttributes , NFData axiomAttributes ) =>
@@ -226,24 +226,55 @@ instance
 getIndexedSentence :: (atts, sentence) -> sentence
 getIndexedSentence = snd
 
-mapIndexedModulePatterns
+{- | Erase the patterns carried by an 'IndexedModule'.
+
+The alias declarations are preserved, but the right-hand side of each alias is
+erased. The axiom and claim declarations are erased entirely.
+
+This is useful because pattern verification needs to know about declared sorts,
+symbols, and aliases, but it does not need to know anything about patterns.
+
+ -}
+erasePatterns
+    :: IndexedModule patternType1 declAttributes axiomAttributes
+    -> IndexedModule ()           declAttributes axiomAttributes
+erasePatterns indexedModule =
+    indexedModule
+        { indexedModuleAliasSentences =
+            Lens.set (Lens.mapped . Lens._2 . Lens.mapped) ()
+            $ indexedModuleAliasSentences indexedModule
+        , indexedModuleSymbolSentences =
+            Lens.set (Lens.mapped . Lens._2 . Lens.mapped) ()
+            $ indexedModuleSymbolSentences indexedModule
+        , indexedModuleSortDescriptions =
+            Lens.set (Lens.mapped . Lens._2 . Lens.mapped) ()
+            $ indexedModuleSortDescriptions indexedModule
+        , indexedModuleAxioms = []
+        , indexedModuleClaims = []
+        , indexedModuleImports =
+            Lens.over (Lens.mapped . Lens._3) erasePatterns
+            $ indexedModuleImports indexedModule
+        }
+
+mapPatterns
     :: (patternType1 -> patternType2)
     -> IndexedModule patternType1 declAttributes axiomAttributes
     -> IndexedModule patternType2 declAttributes axiomAttributes
-mapIndexedModulePatterns mapping indexedModule =
+mapPatterns mapping indexedModule =
     indexedModule
         { indexedModuleAliasSentences =
-            fmap (fmap mapping) <$> indexedModuleAliasSentences
+            (fmap . fmap . fmap) mapping indexedModuleAliasSentences
         , indexedModuleSymbolSentences =
-            fmap (fmap mapping) <$> indexedModuleSymbolSentences
+            (fmap . fmap . fmap) mapping indexedModuleSymbolSentences
         , indexedModuleSortDescriptions =
-            fmap (fmap mapping) <$> indexedModuleSortDescriptions
+            (fmap . fmap . fmap) mapping indexedModuleSortDescriptions
         , indexedModuleAxioms =
-            fmap (fmap mapping) <$> indexedModuleAxioms
+            (fmap . fmap . fmap) mapping indexedModuleAxioms
         , indexedModuleClaims =
-            fmap (fmap mapping) <$> indexedModuleClaims
+            (fmap . fmap . fmap) mapping indexedModuleClaims
         , indexedModuleImports =
-            mapIndexedModuleImports <$> indexedModuleImports
+            indexedModuleImports
+            & Lens.over (Lens.mapped . Lens._3) (mapPatterns mapping)
         }
   where
     IndexedModule { indexedModuleAliasSentences } = indexedModule
@@ -252,11 +283,6 @@ mapIndexedModulePatterns mapping indexedModule =
     IndexedModule { indexedModuleAxioms } = indexedModule
     IndexedModule { indexedModuleClaims } = indexedModule
     IndexedModule { indexedModuleImports } = indexedModule
-    mapIndexedModuleImports (attrs, attributes, indexedModule') =
-        ( attrs
-        , attributes
-        , mapIndexedModulePatterns mapping indexedModule'
-        )
 
 type KoreIndexedModule = IndexedModule ParsedPattern
 
@@ -348,8 +374,7 @@ newtype ImplicitIndexedModule pat declAtts axiomAtts =
     ImplicitIndexedModule (IndexedModule pat declAtts axiomAtts)
     deriving (Show)
 
-type KoreImplicitIndexedModule =
-    ImplicitIndexedModule SortVariable ParsedPattern
+type KoreImplicitIndexedModule = ImplicitIndexedModule ParsedPattern
 
 emptyIndexedModule
     ::  ( Default parsedDeclAttributes

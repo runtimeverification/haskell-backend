@@ -39,10 +39,8 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Syntax.Definition
 import           Kore.Syntax.PatternF
                  ( groundHead )
-import qualified Kore.Verified as Verified
 import qualified SMT
 
 import           Test.Kore
@@ -50,10 +48,10 @@ import           Test.Kore.ASTVerifier.DefinitionVerifier
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 
-updateAttributes :: Attributes -> Verified.Sentence -> Verified.Sentence
+updateAttributes :: Attributes -> Sentence patternType -> Sentence patternType
 updateAttributes attrs = updateAttrs
   where
-    updateAttrs :: Verified.Sentence -> Verified.Sentence
+    updateAttrs :: Sentence patternType -> Sentence patternType
     updateAttrs (SentenceSymbolSentence ss) =
         SentenceSymbolSentence
             (ss { sentenceSymbolAttributes = attrs })
@@ -86,159 +84,141 @@ injHead s1 s2 = SymbolOrAlias
     }
 
 
-testDef :: Definition Verified.Sentence
+testDef :: Definition ParsedSentence
 testDef =
     simpleDefinitionFromSentences
         (ModuleName "test")
         [ simpleSortSentence (SortName "S")
-        , simpleObjectSymbolSentence (SymbolName "s") (SortName "S")
-        , simpleObjectSymbolSentence (SymbolName "t") (SortName "S")
-        , objectSymbolSentenceWithParametersAndArguments
+        , simpleSymbolSentence (SymbolName "s") (SortName "S")
+        , simpleSymbolSentence (SymbolName "t") (SortName "S")
+        , symbolSentenceWithParametersAndArguments
             (SymbolName "inj")
             [sortVar, sortVar1]
             sortVar1S
             [sortVarS]
         , updateAttributes
             (Attributes [functionAttribute, constructorAttribute])
-            (simpleObjectSymbolSentence (SymbolName "f") (SortName "S"))
+            (simpleSymbolSentence (SymbolName "f") (SortName "S"))
         , updateAttributes
             (Attributes [functionAttribute, constructorAttribute])
-            (simpleObjectSymbolSentence (SymbolName "g") (SortName "S"))
-        , SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = [sortVar]
-                , sentenceAxiomAttributes = Attributes []
-                , sentenceAxiomPattern =
-                        (mkImplies
-                            (mkTop sortVarS)
-                            (mkAnd
-                                (mkEquals
-                                    sortVarS
-                                    (mkApp sortS (injHead sortS sortS)
-                                        [mkApp sortS tHead []]
-                                    )
-                                    (mkApp sortS sHead [])
-                                )
-                                (mkTop sortVarS)
+            (simpleSymbolSentence (SymbolName "g") (SortName "S"))
+        , SentenceAxiomSentence SentenceAxiom
+            { sentenceAxiomParameters = [sortVar]
+            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomPattern =
+                Builtin.externalizePattern $ mkImplies
+                    (mkTop sortVarS)
+                    (mkAnd
+                        (mkEquals
+                            sortVarS
+                            (mkApp sortS (injHead sortS sortS)
+                                [mkApp sortS tHead []]
                             )
+                            (mkApp sortS sHead [])
                         )
-                }
-        , SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = [sortVar]
-                , sentenceAxiomAttributes = Attributes []
-                , sentenceAxiomPattern =
-                        (mkImplies
-                            (mkTop sortVarS)
-                            (mkAnd
-                                (mkEquals
-                                    sortVarS
-                                    (mkApp sortS gHead [])
-                                    (mkApp sortS sHead [])
-                                )
-                                (mkTop sortVarS)
-                            )
-                        )
-                }
-        , SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = [sortVar]
-                , sentenceAxiomAttributes = Attributes []
-                , sentenceAxiomPattern =
-                        (mkImplies
-                            (mkTop sortVarS)
-                            (mkAnd
-                                (mkEquals sortVarS
-                                    (mkTop sortS)
-                                    (mkApp sortS fHead [])
-                                )
-                                (mkTop sortVarS)
-                            )
-                        )
-                }
-        , SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = [sortVar]
-                , sentenceAxiomAttributes = Attributes []
-                , sentenceAxiomPattern =
-                        (mkImplies
-                            (mkTop sortVarS)
-                            (mkAnd
-                                (mkEquals sortVarS
-                                    (mkApp sortS fHead [])
-                                    (mkApp sortS sHead [])
-                                )
-                                (mkTop sortVarS)
-                            )
-                        :: TermLike Variable)
-                }
-        , SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = [sortVar]
-                , sentenceAxiomAttributes = Attributes []
-                , sentenceAxiomPattern =
-                        (mkImplies
-                            (mkTop sortVarS)
-                            (mkAnd
-                                (mkEquals sortVarS
-                                    (mkApp sortS fHead [])
-                                    (mkApp sortS tHead [])
-                                )
-                                (mkTop sortVarS)
-                            )
-                        :: TermLike Variable)
-                }
-        , SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = [sortVar]
-                , sentenceAxiomAttributes =
-                    Attributes [ attributePattern_ simplificationSymbol ]
-                , sentenceAxiomPattern =
-                    mkImplies
                         (mkTop sortVarS)
-                        (mkAnd
-                            (mkEquals sortVarS
-                                (mkApp sortS fHead [])
-                                (mkApp sortS gHead [])
-                            )
-                            (mkTop sortVarS)
+                    )
+            }
+        , SentenceAxiomSentence SentenceAxiom
+            { sentenceAxiomParameters = [sortVar]
+            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomPattern =
+                Builtin.externalizePattern $ mkImplies
+                    (mkTop sortVarS)
+                    (mkAnd
+                        (mkEquals
+                            sortVarS
+                            (mkApp sortS gHead [])
+                            (mkApp sortS sHead [])
                         )
-                    :: TermLike Variable
-                }
-        , SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = [sortVar]
-                , sentenceAxiomAttributes = Attributes []
-                , sentenceAxiomPattern =
-                        (mkTop sortS :: TermLike Variable)
-                }
-        , SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = [sortVar]
-                , sentenceAxiomAttributes = Attributes []
-                , sentenceAxiomPattern =
-                        (mkRewrites
-                            (mkAnd mkTop_ (mkApp sortS fHead []))
-                            (mkAnd mkTop_ (mkApp sortS tHead []))
+                        (mkTop sortVarS)
+                    )
+            }
+        , SentenceAxiomSentence SentenceAxiom
+            { sentenceAxiomParameters = [sortVar]
+            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomPattern =
+                Builtin.externalizePattern $ mkImplies
+                    (mkTop sortVarS)
+                    (mkAnd
+                        (mkEquals sortVarS
+                            (mkTop sortS)
+                            (mkApp sortS fHead [])
                         )
-                }
-        , SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters =
-                    [sortVar, sortVar1]
-                , sentenceAxiomAttributes = Attributes []
-                , sentenceAxiomPattern =
-                        (mkImplies
-                            (mkTop sortVarS)
-                            (mkAnd
-                                (mkEquals sortVarS
-                                    (mkCeil sortVar1S (mkApp sortS fHead []))
-                                    mkTop_
-                                )
-                                (mkTop sortVarS)
-                            )
-                        :: TermLike Variable)
-                }
+                        (mkTop sortVarS)
+                    )
+            }
+        , SentenceAxiomSentence SentenceAxiom
+            { sentenceAxiomParameters = [sortVar]
+            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomPattern =
+                Builtin.externalizePattern $ mkImplies
+                    (mkTop sortVarS)
+                    (mkAnd
+                        (mkEquals sortVarS
+                            (mkApp sortS fHead [])
+                            (mkApp sortS sHead [])
+                        )
+                        (mkTop sortVarS)
+                    )
+            }
+        , SentenceAxiomSentence SentenceAxiom
+            { sentenceAxiomParameters = [sortVar]
+            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomPattern =
+                Builtin.externalizePattern $ mkImplies
+                    (mkTop sortVarS)
+                    (mkAnd
+                        (mkEquals sortVarS
+                            (mkApp sortS fHead [])
+                            (mkApp sortS tHead [])
+                        )
+                        (mkTop sortVarS)
+                    )
+            }
+        , SentenceAxiomSentence SentenceAxiom
+            { sentenceAxiomParameters = [sortVar]
+            , sentenceAxiomAttributes =
+                Attributes [ attributePattern_ simplificationSymbol ]
+            , sentenceAxiomPattern =
+                Builtin.externalizePattern $ mkImplies
+                    (mkTop sortVarS)
+                    (mkAnd
+                        (mkEquals sortVarS
+                            (mkApp sortS fHead [])
+                            (mkApp sortS gHead [])
+                        )
+                        (mkTop sortVarS)
+                    )
+            }
+        , SentenceAxiomSentence SentenceAxiom
+            { sentenceAxiomParameters = [sortVar]
+            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomPattern =
+                Builtin.externalizePattern $ mkTop sortS
+            }
+        , SentenceAxiomSentence SentenceAxiom
+            { sentenceAxiomParameters = [sortVar]
+            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomPattern =
+                Builtin.externalizePattern $ mkRewrites
+                    (mkAnd mkTop_ (mkApp sortS fHead []))
+                    (mkAnd mkTop_ (mkApp sortS tHead []))
+            }
+        , SentenceAxiomSentence SentenceAxiom
+            { sentenceAxiomParameters = [sortVar, sortVar1]
+            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomPattern =
+                Builtin.externalizePattern $ mkImplies
+                    (mkTop sortVarS)
+                    (mkAnd
+                        (mkEquals sortVarS
+                            (mkCeil sortVar1S (mkApp sortS fHead []))
+                            mkTop_
+                        )
+                        (mkTop sortVarS)
+                    )
+            }
         ]
 
 testIndexedModule :: VerifiedModule StepperAttributes Attribute.Axiom
@@ -248,7 +228,7 @@ testIndexedModule =
         verifyResult = verifyAndIndexDefinition
             attributesVerification
             Builtin.koreVerifiers
-            (eraseSentenceAnnotations <$> testDef)
+            testDef
     in
         case verifyResult of
             Left err1            -> error (printError err1)

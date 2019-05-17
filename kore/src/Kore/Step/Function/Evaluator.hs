@@ -55,7 +55,6 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import           Kore.Syntax.Application
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 

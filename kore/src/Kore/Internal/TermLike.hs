@@ -4,16 +4,22 @@ License     : NCSA
 
 -}
 
+{-# LANGUAGE TemplateHaskell #-}
+
 module Kore.Internal.TermLike
-    ( TermLike
+    ( TermLikeF (..)
+    , TermLike (..)
+    , Builtin
+    , extractAttributes
     , freeVariables
     , termLikeSort
     , hasFreeVariable
     , withoutFreeVariable
     , mapVariables
     , traverseVariables
-    , asConcreteStepPattern
-    , fromConcreteStepPattern
+    , asConcrete
+    , isConcrete
+    , fromConcrete
     , substitute
     , externalizeFreshVariables
     -- * Utility functions for dealing with sorts
@@ -22,6 +28,7 @@ module Kore.Internal.TermLike
     , mkAnd
     , mkApp
     , mkBottom
+    , mkBuiltin
     , mkCeil
     , mkDomainValue
     , mkEquals
@@ -68,6 +75,7 @@ module Kore.Internal.TermLike
     , pattern And_
     , pattern App_
     , pattern Bottom_
+    , pattern Builtin_
     , pattern Ceil_
     , pattern DV_
     , pattern Equals_
@@ -91,25 +99,55 @@ module Kore.Internal.TermLike
     , SortedVariable (..)
     , Id (..)
     , CofreeF (..), Comonad (..)
-    , Variable (..)
-    , Concrete
-    , eraseAnnotations
-    , module PatternF
     , module Kore.Sort
+    , module Kore.Syntax.And
+    , module Kore.Syntax.Application
+    , module Kore.Syntax.Bottom
+    , module Kore.Syntax.Ceil
+    , module Kore.Syntax.CharLiteral
+    , module Kore.Syntax.Definition
+    , module Kore.Syntax.DomainValue
+    , module Kore.Syntax.Equals
+    , module Kore.Syntax.Exists
+    , module Kore.Syntax.Floor
+    , module Kore.Syntax.Forall
+    , module Kore.Syntax.Iff
+    , module Kore.Syntax.Implies
+    , module Kore.Syntax.In
+    , module Kore.Syntax.Next
+    , module Kore.Syntax.Not
+    , module Kore.Syntax.Or
+    , module Kore.Syntax.Rewrites
+    , module Kore.Syntax.SetVariable
+    , module Kore.Syntax.StringLiteral
+    , module Kore.Syntax.Top
+    , module Variable
     ) where
 
 
 import           Control.Applicative
 import           Control.Comonad
+import           Control.Comonad.Trans.Cofree
+import qualified Control.Comonad.Trans.Env as Env
+import           Control.DeepSeq
+                 ( NFData (..) )
 import qualified Control.Lens as Lens
 import           Control.Monad.Reader
                  ( Reader )
 import qualified Control.Monad.Reader as Reader
 import           Data.Align
+import qualified Data.Bifunctor as Bifunctor
+import qualified Data.Deriving as Deriving
 import qualified Data.Foldable as Foldable
+import           Data.Functor.Classes
+import           Data.Functor.Compose
+                 ( Compose (..) )
 import           Data.Functor.Foldable
-                 ( Base )
+                 ( Base, Corecursive, Recursive )
 import qualified Data.Functor.Foldable as Recursive
+import           Data.Functor.Identity
+                 ( Identity (..) )
+import           Data.Hashable
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
@@ -121,6 +159,8 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Data.These
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import           GHC.Stack
                  ( HasCallStack )
 
@@ -129,21 +169,351 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Domain.Class
 import           Kore.Sort
 import qualified Kore.Substitute as Substitute
-import           Kore.Syntax hiding
-                 ( mapVariables, traverseVariables )
+import           Kore.Syntax.And
+import           Kore.Syntax.Application
+import           Kore.Syntax.Bottom
+import           Kore.Syntax.Ceil
+import           Kore.Syntax.CharLiteral
 import           Kore.Syntax.Definition
-import qualified Kore.Syntax.PatternF as PatternF
-import qualified Kore.Syntax.Variable as Variable
+import           Kore.Syntax.DomainValue
+import           Kore.Syntax.Equals
+import           Kore.Syntax.Exists
+import           Kore.Syntax.Floor
+import           Kore.Syntax.Forall
+import           Kore.Syntax.Iff
+import           Kore.Syntax.Implies
+import           Kore.Syntax.In
+import           Kore.Syntax.Next
+import           Kore.Syntax.Not
+import           Kore.Syntax.Or
+import           Kore.Syntax.Rewrites
+import           Kore.Syntax.SetVariable
+import           Kore.Syntax.StringLiteral
+import           Kore.Syntax.Top
+import           Kore.Syntax.Variable as Variable
+import           Kore.TopBottom
 import           Kore.Unparser
                  ( Unparse (..) )
-import qualified Kore.Unparser as Unparse
+import qualified Kore.Unparser as Unparser
+import           Kore.Variables.Binding
 import           Kore.Variables.Fresh
 
-type TermLike variable =
-    Pattern Domain.Builtin variable (Attribute.Pattern variable)
+-- | The type of internal domain values.
+type Builtin = Domain.Builtin (TermLike Concrete)
+
+{- | 'TermLikeF' is the 'Base' functor of internal term-like patterns.
+
+-}
+data TermLikeF variable child
+    = AndF           !(And Sort child)
+    | ApplicationF   !(Application SymbolOrAlias child)
+    | BottomF        !(Bottom Sort child)
+    | CeilF          !(Ceil Sort child)
+    | DomainValueF   !(DomainValue Sort child)
+    | EqualsF        !(Equals Sort child)
+    | ExistsF        !(Exists Sort variable child)
+    | FloorF         !(Floor Sort child)
+    | ForallF        !(Forall Sort variable child)
+    | IffF           !(Iff Sort child)
+    | ImpliesF       !(Implies Sort child)
+    | InF            !(In Sort child)
+    | NextF          !(Next Sort child)
+    | NotF           !(Not Sort child)
+    | OrF            !(Or Sort child)
+    | RewritesF      !(Rewrites Sort child)
+    | StringLiteralF !StringLiteral
+    | CharLiteralF   !CharLiteral
+    | TopF           !(Top Sort child)
+    | VariableF      !variable
+    | InhabitantF    !Sort
+    | SetVariableF   !(SetVariable variable)
+    | BuiltinF       !(Builtin child)
+    deriving (Foldable, Functor, GHC.Generic, Traversable)
+
+instance (Eq variable, Eq child) => Eq (TermLikeF variable child) where
+    (==) = eq1
+    {-# INLINE (==) #-}
+
+instance (Ord variable, Ord child) => Ord (TermLikeF variable child) where
+    compare = compare1
+    {-# INLINE compare #-}
+
+instance (Show variable, Show child) => Show (TermLikeF variable child) where
+    showsPrec = showsPrec1
+    {-# INLINE showsPrec #-}
+
+instance SOP.Generic (TermLikeF variable child)
+
+instance
+    (Hashable child, Hashable variable) =>
+    Hashable (TermLikeF variable child)
+
+instance (NFData child, NFData variable) => NFData (TermLikeF variable child)
+
+instance
+    ( SortedVariable variable, Unparse variable
+    , Unparse child
+    ) =>
+    Unparse (TermLikeF variable child)
+  where
+    unparse = Unparser.unparseGeneric
+    unparse2 = Unparser.unparse2Generic
+
+{- | Use the provided mapping to replace all variables in a 'TermLikeF' head.
+
+__Warning__: @mapVariablesF@ will capture variables if the provided mapping is
+not injective!
+
+-}
+mapVariablesF
+    :: (variable1 -> variable2)
+    -> TermLikeF variable1 child
+    -> TermLikeF variable2 child
+mapVariablesF mapping = runIdentity . traverseVariablesF (Identity . mapping)
+
+{- | Use the provided traversal to replace all variables in a 'TermLikeF' head.
+
+__Warning__: @traverseVariablesF@ will capture variables if the provided
+traversal is not injective!
+
+-}
+traverseVariablesF
+    :: Applicative f
+    => (variable1 -> f variable2)
+    ->    TermLikeF variable1 child
+    -> f (TermLikeF variable2 child)
+traverseVariablesF traversing =
+    \case
+        -- Non-trivial cases
+        ExistsF any0 -> ExistsF <$> traverseVariablesExists any0
+        ForallF all0 -> ForallF <$> traverseVariablesForall all0
+        VariableF variable -> VariableF <$> traversing variable
+        SetVariableF (SetVariable variable) ->
+            SetVariableF . SetVariable <$> traversing variable
+        -- Trivial cases
+        AndF andP -> pure (AndF andP)
+        ApplicationF appP -> pure (ApplicationF appP)
+        BottomF botP -> pure (BottomF botP)
+        BuiltinF builtinP -> pure (BuiltinF builtinP)
+        CeilF ceilP -> pure (CeilF ceilP)
+        DomainValueF dvP -> pure (DomainValueF dvP)
+        EqualsF eqP -> pure (EqualsF eqP)
+        FloorF flrP -> pure (FloorF flrP)
+        IffF iffP -> pure (IffF iffP)
+        ImpliesF impP -> pure (ImpliesF impP)
+        InF inP -> pure (InF inP)
+        NextF nxtP -> pure (NextF nxtP)
+        NotF notP -> pure (NotF notP)
+        OrF orP -> pure (OrF orP)
+        RewritesF rewP -> pure (RewritesF rewP)
+        StringLiteralF strP -> pure (StringLiteralF strP)
+        CharLiteralF charP -> pure (CharLiteralF charP)
+        TopF topP -> pure (TopF topP)
+        InhabitantF s -> pure (InhabitantF s)
+  where
+    traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
+        Exists existsSort <$> traversing existsVariable <*> pure existsChild
+    traverseVariablesForall Forall { forallSort, forallVariable, forallChild } =
+        Forall forallSort <$> traversing forallVariable <*> pure forallChild
+
+newtype TermLike variable =
+    TermLike
+        { getTermLike
+            :: Cofree (TermLikeF variable) (Attribute.Pattern variable)
+        }
+    deriving (GHC.Generic, Show)
+
+Deriving.deriveEq1 ''TermLikeF
+Deriving.deriveOrd1 ''TermLikeF
+Deriving.deriveShow1 ''TermLikeF
+
+instance Eq variable => Eq (TermLike variable) where
+    (==) = eqWorker
+      where
+        eqWorker
+            (Recursive.project -> _ :< pat1)
+            (Recursive.project -> _ :< pat2)
+          =
+            liftEq eqWorker pat1 pat2
+    {-# INLINE (==) #-}
+
+instance Ord variable => Ord (TermLike variable) where
+    compare = compareWorker
+      where
+        compareWorker
+            (Recursive.project -> _ :< pat1)
+            (Recursive.project -> _ :< pat2)
+          =
+            liftCompare compareWorker pat1 pat2
+    {-# INLINE compare #-}
+
+instance Hashable variable => Hashable (TermLike variable) where
+    hashWithSalt salt (Recursive.project -> _ :< pat) = hashWithSalt salt pat
+    {-# INLINE hashWithSalt #-}
+
+instance NFData variable => NFData (TermLike variable) where
+    rnf (Recursive.project -> annotation :< pat) =
+        rnf annotation `seq` rnf pat `seq` ()
+
+instance
+    (SortedVariable variable, Unparse variable) =>
+    Unparse (TermLike variable)
+  where
+    unparse (Recursive.project -> _ :< pat) = unparse pat
+    unparse2 (Recursive.project -> _ :< pat) = unparse2 pat
+
+type instance Base (TermLike variable) =
+    CofreeF (TermLikeF variable) (Attribute.Pattern variable)
+
+-- This instance implements all class functions for the TermLike newtype
+-- because the their implementations for the inner type may be specialized.
+instance Recursive (TermLike variable) where
+    project = \(TermLike embedded) ->
+        case Recursive.project embedded of
+            Compose (Identity projected) -> TermLike <$> projected
+    {-# INLINE project #-}
+
+    -- This specialization is particularly important: The default implementation
+    -- of 'cata' in terms of 'project' would involve an extra call to 'fmap' at
+    -- every level of the tree due to the implementation of 'project' above.
+    cata alg = \(TermLike fixed) ->
+        Recursive.cata
+            (\(Compose (Identity base)) -> alg base)
+            fixed
+    {-# INLINE cata #-}
+
+    para alg = \(TermLike fixed) ->
+        Recursive.para
+            (\(Compose (Identity base)) ->
+                 alg (Bifunctor.first TermLike <$> base)
+            )
+            fixed
+    {-# INLINE para #-}
+
+    gpara dist alg = \(TermLike fixed) ->
+        Recursive.gpara
+            (\(Compose (Identity base)) -> Compose . Identity <$> dist base)
+            (\(Compose (Identity base)) -> alg (Env.local TermLike <$> base))
+            fixed
+    {-# INLINE gpara #-}
+
+    prepro pre alg = \(TermLike fixed) ->
+        Recursive.prepro
+            (\(Compose (Identity base)) -> (Compose . Identity) (pre base))
+            (\(Compose (Identity base)) -> alg base)
+            fixed
+    {-# INLINE prepro #-}
+
+    gprepro dist pre alg = \(TermLike fixed) ->
+        Recursive.gprepro
+            (\(Compose (Identity base)) -> Compose . Identity <$> dist base)
+            (\(Compose (Identity base)) -> (Compose . Identity) (pre base))
+            (\(Compose (Identity base)) -> alg base)
+            fixed
+    {-# INLINE gprepro #-}
+
+-- This instance implements all class functions for the TermLike newtype
+-- because the their implementations for the inner type may be specialized.
+instance Corecursive (TermLike variable) where
+    embed = \projected ->
+        (TermLike . Recursive.embed . Compose . Identity)
+            (getTermLike <$> projected)
+    {-# INLINE embed #-}
+
+    ana coalg = TermLike . ana0
+      where
+        ana0 =
+            Recursive.ana (Compose . Identity . coalg)
+    {-# INLINE ana #-}
+
+    apo coalg = TermLike . apo0
+      where
+        apo0 =
+            Recursive.apo
+                (\a ->
+                     (Compose . Identity)
+                        (Bifunctor.first getTermLike <$> coalg a)
+                )
+    {-# INLINE apo #-}
+
+    postpro post coalg = TermLike . postpro0
+      where
+        postpro0 =
+            Recursive.postpro
+                (\(Compose (Identity base)) -> (Compose . Identity) (post base))
+                (Compose . Identity . coalg)
+    {-# INLINE postpro #-}
+
+    gpostpro dist post coalg = TermLike . gpostpro0
+      where
+        gpostpro0 =
+            Recursive.gpostpro
+                (Compose . Identity . dist . (<$>) (runIdentity . getCompose))
+                (\(Compose (Identity base)) -> (Compose . Identity) (post base))
+                (Compose . Identity . coalg)
+    {-# INLINE gpostpro #-}
+
+instance TopBottom (TermLike variable) where
+    isTop (Recursive.project -> _ :< TopF Top {}) = True
+    isTop _ = False
+    isBottom (Recursive.project -> _ :< BottomF Bottom {}) = True
+    isBottom _ = False
+
+extractAttributes :: TermLike variable -> Attribute.Pattern variable
+extractAttributes = extract . getTermLike
+
+instance Ord variable => Binding (TermLike variable) where
+    type VariableType (TermLike variable) = variable
+
+    traverseVariable match termLike =
+        case termLikeHead of
+            VariableF variable ->
+                matched <$> match variable
+              where
+                matched variable' =
+                    Recursive.embed (attrs' :< VariableF variable')
+                  where
+                    attrs' =
+                        attrs
+                            { Attribute.freeVariables =
+                                Set.singleton variable'
+                            }
+            _ -> pure termLike
+      where
+        attrs :< termLikeHead = Recursive.project termLike
+
+    traverseBinder match termLike@(Recursive.project -> attrs :< termLikeHead) =
+        case termLikeHead of
+            ExistsF exists -> matched <$> existsBinder match exists
+              where
+                matched exists' = Recursive.embed (attrs' :< ExistsF exists')
+                  where
+                    Exists { existsChild } = exists'
+                    Exists { existsVariable } = exists'
+                    attrs' =
+                        attrs
+                            { Attribute.freeVariables =
+                                Set.delete existsVariable
+                                $ freeVariables existsChild
+                            }
+
+            ForallF forall -> matched <$> forallBinder match forall
+              where
+                matched forall' = Recursive.embed (attrs' :< ForallF forall')
+                  where
+                    Forall { forallChild } = forall'
+                    Forall { forallVariable } = forall'
+                    attrs' =
+                        attrs
+                            { Attribute.freeVariables =
+                                Set.delete forallVariable
+                                $ freeVariables forallChild
+                            }
+
+            _ -> pure termLike
 
 freeVariables :: TermLike variable -> Set variable
-freeVariables termLike = Attribute.freeVariables (extract termLike)
+freeVariables = Attribute.freeVariables . extractAttributes
 
 hasFreeVariable
     :: Ord variable
@@ -195,9 +565,8 @@ mapVariables
 mapVariables mapping =
     Recursive.unfold (mapVariablesWorker . Recursive.project)
   where
-    mapVariablesWorker (valid :< pat) =
-        Attribute.mapVariables mapping valid
-        :< PatternF.mapVariables mapping pat
+    mapVariablesWorker (attrs :< pat) =
+        Attribute.mapVariables mapping attrs :< mapVariablesF mapping pat
 
 {- | Use the provided traversal to replace all variables in a 'TermLike'.
 
@@ -221,44 +590,47 @@ traverseVariables
 traverseVariables traversing =
     Recursive.fold traverseVariablesWorker
   where
-    traverseVariablesWorker (valid :< pat) =
+    traverseVariablesWorker (attrs :< pat) =
         Recursive.embed <$> projected
       where
         projected =
             (:<)
-                <$> Attribute.traverseVariables traversing valid
-                <*> (PatternF.traverseVariables traversing =<< sequence pat)
+                <$> Attribute.traverseVariables traversing attrs
+                <*> (traverseVariablesF traversing =<< sequence pat)
 
-{- | Construct a 'ConcreteStepPattern' from a 'TermLike'.
+{- | Construct a @'TermLike' 'Concrete'@ from any 'TermLike'.
 
 A concrete pattern contains no variables, so @asConcreteStepPattern@ is
 fully polymorphic on the variable type in the pure pattern. If the argument
 contains any variables, the result is @Nothing@.
 
-@asConcreteStepPattern@ is strict, i.e. it traverses its argument entirely,
+@asConcrete@ is strict, i.e. it traverses its argument entirely,
 because the entire tree must be traversed to inspect for variables before
 deciding if the result is @Nothing@ or @Just _@.
 
  -}
-asConcreteStepPattern
+asConcrete
     :: TermLike variable
     -> Maybe (TermLike Concrete)
-asConcreteStepPattern = traverseVariables (\case { _ -> Nothing })
+asConcrete = traverseVariables (\case { _ -> Nothing })
 
-{- | Construct a 'TermLike' from a 'ConcreteStepPattern'.
+isConcrete :: TermLike variable -> Bool
+isConcrete = isJust . asConcrete
+
+{- | Construct any 'TermLike' from a @'TermLike' 'Concrete'@.
 
 The concrete pattern contains no variables, so the result is fully
 polymorphic in the variable type.
 
-@fromConcreteStepPattern@ unfolds the resulting syntax tree lazily, so it
+@fromConcrete@ unfolds the resulting syntax tree lazily, so it
 composes with other tree transformations without allocating intermediates.
 
  -}
-fromConcreteStepPattern
+fromConcrete
     :: Ord variable
     => TermLike Concrete
     -> TermLike variable
-fromConcreteStepPattern = mapVariables (\case {})
+fromConcrete = mapVariables (\case {})
 
 {- | Traverse the pattern from the top down and apply substitutions.
 
@@ -274,14 +646,16 @@ substitute
         , Ord variable
         , SortedVariable variable
         )
-    => Map variable (TermLike variable)
-    -> TermLike variable
-    -> TermLike variable
-substitute = Substitute.substitute (Lens.lens getFreeVariables setFreeVariables)
+    =>  Map variable (TermLike variable)
+    ->  TermLike variable
+    ->  TermLike variable
+substitute = Substitute.substitute lensFreeVariables
+
+lensFreeVariables :: Lens.Lens' (TermLike variable) (Set variable)
+lensFreeVariables mapping (Recursive.project -> attrs :< termLikeHead) =
+    embed <$> Attribute.lensFreeVariables mapping attrs
   where
-    getFreeVariables = Attribute.freeVariables
-    setFreeVariables valid freeVars =
-        valid { Attribute.freeVariables = freeVars }
+    embed = Recursive.embed . (:< termLikeHead)
 
 {- | Reset the 'variableCounter' of all 'Variables'.
 
@@ -352,13 +726,12 @@ externalizeFreshVariables termLike =
                     (Map Variable Variable)
                     (TermLike Variable)
                 )
-        ->  (Reader
+        ->  Reader
                 (Map Variable Variable)
                 (TermLike Variable)
-            )
-    externalizeFreshVariablesWorker (valid :< patt) = do
-        valid' <- Attribute.traverseVariables lookupVariable valid
-        let freeVariables' = Attribute.freeVariables valid'
+    externalizeFreshVariablesWorker (attrs :< patt) = do
+        attrs' <- Attribute.traverseVariables lookupVariable attrs
+        let freeVariables' = Attribute.freeVariables attrs'
         patt' <-
             case patt of
                 ExistsF exists -> do
@@ -388,12 +761,12 @@ externalizeFreshVariables termLike =
                                 }
                     return (ForallF forall')
                 _ ->
-                    PatternF.traverseVariables lookupVariable patt >>= sequence
-        (return . Recursive.embed) (valid' :< patt')
+                    traverseVariablesF lookupVariable patt >>= sequence
+        (return . Recursive.embed) (attrs' :< patt')
 
 -- | Get the 'Sort' of a 'TermLike' from the 'Attribute.Pattern' annotation.
 termLikeSort :: TermLike variable -> Sort
-termLikeSort = Attribute.patternSort . extract
+termLikeSort = Attribute.patternSort . extractAttributes
 
 -- | Attempts to modify p to have sort s.
 forceSort
@@ -403,9 +776,9 @@ forceSort
     -> TermLike variable
 forceSort forcedSort = Recursive.apo forceSortWorker
   where
-    forceSortWorker original@(Recursive.project -> valid :< pattern') =
-        (valid { Attribute.patternSort = forcedSort } :<)
-            (case valid of
+    forceSortWorker original@(Recursive.project -> attrs :< pattern') =
+        (attrs { Attribute.patternSort = forcedSort } :<)
+            (case attrs of
                 Attribute.Pattern { patternSort = sort }
                   | sort == forcedSort    -> Left <$> pattern'
                   | sort == predicateSort -> forceSortWorkerPredicate
@@ -468,6 +841,7 @@ forceSort forcedSort = Recursive.apo forceSortWorker
                     forall'' = forall' { forallSort = forcedSort }
                 -- Rigid: These patterns should never have sort _PREDICATE{}.
                 ApplicationF _ -> illSorted
+                BuiltinF _ -> illSorted
                 DomainValueF _ -> illSorted
                 CharLiteralF _ -> illSorted
                 StringLiteralF _ -> illSorted
@@ -522,16 +896,16 @@ mkAnd
 mkAnd = makeSortsAgree mkAndWorker
   where
     mkAndWorker andFirst andSecond andSort =
-        asPattern (valid :< AndF and')
+        Recursive.embed (attrs :< AndF and')
       where
-        valid =
+        attrs =
             Attribute.Pattern
                 { patternSort = andSort
                 , freeVariables = Set.union freeVariables1 freeVariables2
                 }
         and' = And { andSort, andFirst, andSecond }
-        freeVariables1 = Attribute.freeVariables (extract andFirst)
-        freeVariables2 = Attribute.freeVariables (extract andSecond)
+        freeVariables1 = freeVariables andFirst
+        freeVariables2 = freeVariables andSecond
 
 {- | Construct an 'Application' pattern.
 
@@ -553,9 +927,9 @@ mkApp
     -- ^ Application arguments
     -> TermLike variable
 mkApp resultSort applicationSymbolOrAlias applicationChildren =
-    asPattern (valid :< ApplicationF application)
+    Recursive.embed (attrs :< ApplicationF application)
   where
-    valid =
+    attrs =
         Attribute.Pattern
             { patternSort = resultSort
             , freeVariables = Set.unions (freeVariables <$> applicationChildren)
@@ -580,9 +954,9 @@ sortSubstitution variables sorts =
                 (error . show . Pretty.vsep) ("Too many parameters:" : expected)
     expected =
         [ "Expected:"
-        , Pretty.indent 4 (Unparse.parameters variables)
+        , Pretty.indent 4 (Unparser.parameters variables)
         , "but found:"
-        , Pretty.indent 4 (Unparse.parameters sorts)
+        , Pretty.indent 4 (Unparser.parameters sorts)
         ]
 
 {- | Construct an 'Application' pattern from a 'Alias' declaration.
@@ -634,9 +1008,9 @@ applyAlias sentence params children =
                         ("Too many parameters:" : expected)
         expected =
             [ "Expected:"
-            , Pretty.indent 4 (Unparse.arguments childSorts)
+            , Pretty.indent 4 (Unparser.arguments childSorts)
             , "but found:"
-            , Pretty.indent 4 (Unparse.arguments children)
+            , Pretty.indent 4 (Unparser.arguments children)
             ]
 
 {- | Construct an 'Application' pattern from a 'Alias' declaration.
@@ -703,9 +1077,9 @@ applySymbol sentence params children =
                         ("Too many parameters:" : expected)
         expected =
             [ "Expected:"
-            , Pretty.indent 4 (Unparse.arguments childSorts)
+            , Pretty.indent 4 (Unparser.arguments childSorts)
             , "but found:"
-            , Pretty.indent 4 (Unparse.arguments children)
+            , Pretty.indent 4 (Unparser.arguments children)
             ]
 
 {- | Construct an 'Application' pattern from a 'Symbol' declaration.
@@ -729,9 +1103,9 @@ See also: 'mkBottom_'
  -}
 mkBottom :: Sort -> TermLike variable
 mkBottom bottomSort =
-    asPattern (valid :< BottomF bottom)
+    Recursive.embed (attrs :< BottomF bottom)
   where
-    valid =
+    attrs =
         Attribute.Pattern
             { patternSort = bottomSort
             , freeVariables = Set.empty
@@ -756,10 +1130,10 @@ See also: 'mkCeil_'
  -}
 mkCeil :: Sort -> TermLike variable -> TermLike variable
 mkCeil ceilResultSort ceilChild =
-    asPattern (valid :< CeilF ceil)
+    Recursive.embed (attrs :< CeilF ceil)
   where
     ceilOperandSort = termLikeSort ceilChild
-    valid =
+    attrs =
         Attribute.Pattern
             { patternSort = ceilResultSort
             , freeVariables = freeVariables ceilChild
@@ -777,22 +1151,38 @@ See also: 'mkCeil'
 mkCeil_ :: TermLike variable -> TermLike variable
 mkCeil_ = mkCeil predicateSort
 
-{- | Construct a 'DomainValue' pattern.
+{- | Construct a builtin pattern.
  -}
-mkDomainValue
+mkBuiltin
     :: Ord variable
-    => Domain.Builtin (TermLike variable)
+    => Domain.Builtin (TermLike Concrete) (TermLike variable)
     -> TermLike variable
-mkDomainValue domain =
-    asPattern (valid :< DomainValueF domain)
+mkBuiltin domain =
+    Recursive.embed (attrs :< BuiltinF domain)
   where
-    valid =
+    attrs =
         Attribute.Pattern
             { patternSort = domainValueSort
             , freeVariables =
                 (Set.unions . Foldable.toList) (freeVariables <$> domain)
             }
     DomainValue { domainValueSort } = Lens.view lensDomainValue domain
+
+{- | Construct a 'DomainValue' pattern.
+ -}
+mkDomainValue
+    :: Ord variable
+    => DomainValue Sort (TermLike variable)
+    -> TermLike variable
+mkDomainValue domain =
+    Recursive.embed (attrs :< DomainValueF domain)
+  where
+    attrs =
+        Attribute.Pattern
+            { patternSort = domainValueSort domain
+            , freeVariables =
+                (Set.unions . Foldable.toList) (freeVariables <$> domain)
+            }
 
 {- | Construct an 'Equals' pattern in the given sort.
 
@@ -809,9 +1199,9 @@ mkEquals equalsResultSort =
     makeSortsAgree mkEquals'Worker
   where
     mkEquals'Worker equalsFirst equalsSecond equalsOperandSort =
-        asPattern (valid :< EqualsF equals)
+        Recursive.embed (attrs :< EqualsF equals)
       where
-        valid =
+        attrs =
             Attribute.Pattern
                 { patternSort = equalsResultSort
                 , freeVariables = Set.union freeVariables1 freeVariables2
@@ -853,9 +1243,9 @@ mkExists
     -> TermLike variable
     -> TermLike variable
 mkExists existsVariable existsChild =
-    asPattern (valid :< ExistsF exists)
+    Recursive.embed (attrs :< ExistsF exists)
   where
-    valid =
+    attrs =
         Attribute.Pattern
             { patternSort = existsSort
             , freeVariables  = Set.delete existsVariable freeVariablesChild
@@ -874,9 +1264,9 @@ mkFloor
     -> TermLike variable
     -> TermLike variable
 mkFloor floorResultSort floorChild =
-    asPattern (valid :< FloorF floor')
+    Recursive.embed (attrs :< FloorF floor')
   where
-    valid =
+    attrs =
         Attribute.Pattern
             { patternSort = floorResultSort
             , freeVariables = freeVariables floorChild
@@ -903,9 +1293,9 @@ mkForall
     -> TermLike variable
     -> TermLike variable
 mkForall forallVariable forallChild =
-    asPattern (valid :< ForallF forall)
+    Recursive.embed (attrs :< ForallF forall)
   where
-    valid =
+    attrs =
         Attribute.Pattern
             { patternSort = forallSort
             , freeVariables =
@@ -925,9 +1315,9 @@ mkIff
 mkIff = makeSortsAgree mkIffWorker
   where
     mkIffWorker iffFirst iffSecond iffSort =
-        asPattern (valid :< IffF iff')
+        Recursive.embed (attrs :< IffF iff')
       where
-        valid =
+        attrs =
             Attribute.Pattern
                 { patternSort = iffSort
                 , freeVariables =  Set.union freeVariables1 freeVariables2
@@ -946,9 +1336,9 @@ mkImplies
 mkImplies = makeSortsAgree mkImpliesWorker
   where
     mkImpliesWorker impliesFirst impliesSecond impliesSort =
-        asPattern (valid :< ImpliesF implies')
+        Recursive.embed (attrs :< ImpliesF implies')
       where
-        valid =
+        attrs =
             Attribute.Pattern
                 { patternSort = impliesSort
                 , freeVariables = Set.union freeVariables1 freeVariables2
@@ -971,9 +1361,9 @@ mkIn
 mkIn inResultSort = makeSortsAgree mkInWorker
   where
     mkInWorker inContainedChild inContainingChild inOperandSort =
-        asPattern (valid :< InF in')
+        Recursive.embed (attrs :< InF in')
       where
-        valid =
+        attrs =
             Attribute.Pattern
                 { patternSort = inResultSort
                 , freeVariables = Set.union freeVariables1 freeVariables2
@@ -1007,9 +1397,9 @@ mkIn_ = mkIn predicateSort
  -}
 mkNext :: TermLike variable -> TermLike variable
 mkNext nextChild =
-    asPattern (valid :< NextF next)
+    Recursive.embed (attrs :< NextF next)
   where
-    valid =
+    attrs =
         Attribute.Pattern
             { patternSort = nextSort
             , freeVariables = freeVariables nextChild
@@ -1021,9 +1411,9 @@ mkNext nextChild =
  -}
 mkNot :: TermLike variable -> TermLike variable
 mkNot notChild =
-    asPattern (valid :< NotF not')
+    Recursive.embed (attrs :< NotF not')
   where
-    valid =
+    attrs =
         Attribute.Pattern
             { patternSort = notSort
             , freeVariables = freeVariables notChild
@@ -1041,9 +1431,9 @@ mkOr
 mkOr = makeSortsAgree mkOrWorker
   where
     mkOrWorker orFirst orSecond orSort =
-        asPattern (valid :< OrF or')
+        Recursive.embed (attrs :< OrF or')
       where
-        valid =
+        attrs =
             Attribute.Pattern
                 { patternSort = orSort
                 , freeVariables = Set.union freeVariables1 freeVariables2
@@ -1062,9 +1452,9 @@ mkRewrites
 mkRewrites = makeSortsAgree mkRewritesWorker
   where
     mkRewritesWorker rewritesFirst rewritesSecond rewritesSort =
-        asPattern (valid :< RewritesF rewrites')
+        Recursive.embed (attrs :< RewritesF rewrites')
       where
-        valid =
+        attrs =
             Attribute.Pattern
                 { patternSort = rewritesSort
                 , freeVariables = Set.union freeVariables1 freeVariables2
@@ -1080,9 +1470,9 @@ See also: 'mkTop_'
  -}
 mkTop :: Sort -> TermLike variable
 mkTop topSort =
-    asPattern (valid :< TopF top)
+    Recursive.embed (attrs :< TopF top)
   where
-    valid =
+    attrs =
         Attribute.Pattern
             { patternSort = topSort
             , freeVariables = Set.empty
@@ -1103,7 +1493,7 @@ mkTop_ = mkTop predicateSort
 {- | Construct a variable pattern.
  -}
 mkVar :: SortedVariable variable => variable -> TermLike variable
-mkVar var = asPattern (validVar var :< VariableF var)
+mkVar var = Recursive.embed (validVar var :< VariableF var)
 
 validVar
     :: SortedVariable variable
@@ -1119,20 +1509,15 @@ validVar var =
  -}
 mkSetVar :: SortedVariable variable => variable -> TermLike variable
 mkSetVar var =
-    asPattern (validVar var :< SetVariableF (SetVariable var))
+    Recursive.embed (validVar var :< SetVariableF (SetVariable var))
 
 {- | Construct a 'StringLiteral' pattern.
  -}
-mkStringLiteral
-    ::  ( Functor domain
-        , valid ~ Attribute.Pattern variable
-        )
-    => Text
-    -> Pattern domain variable valid
+mkStringLiteral :: Text -> TermLike variable
 mkStringLiteral string =
-    asPattern (valid :< StringLiteralF stringLiteral)
+    Recursive.embed (attrs :< StringLiteralF stringLiteral)
   where
-    valid =
+    attrs =
         Attribute.Pattern
             { patternSort = stringMetaSort
             , freeVariables = Set.empty
@@ -1141,31 +1526,21 @@ mkStringLiteral string =
 
 {- | Construct a 'CharLiteral' pattern.
  -}
-mkCharLiteral
-    ::  ( Functor domain
-        , valid ~ Attribute.Pattern variable
-        )
-    => Char
-    -> Pattern domain variable valid
+mkCharLiteral :: Char -> TermLike variable
 mkCharLiteral char =
-    asPattern (valid :< CharLiteralF charLiteral)
+    Recursive.embed (attrs :< CharLiteralF charLiteral)
   where
-    valid = Attribute.Pattern
+    attrs = Attribute.Pattern
         { patternSort = charMetaSort
         , freeVariables = Set.empty
         }
     charLiteral = CharLiteral char
 
-mkInhabitant
-    ::  ( Functor domain
-        , valid ~ Attribute.Pattern variable
-        )
-    => Sort
-    -> Pattern domain variable valid
+mkInhabitant :: Sort -> TermLike variable
 mkInhabitant sort =
-    asPattern (valid :< InhabitantF sort)
+    Recursive.embed (attrs :< InhabitantF sort)
   where
-    valid =
+    attrs =
         Attribute.Pattern
             { patternSort = sort
             , freeVariables = Set.empty
@@ -1198,12 +1573,9 @@ symS x s =
 {- | Construct an axiom declaration with the given parameters and pattern.
  -}
 mkAxiom
-    ::  ( valid ~ Attribute.Pattern variable
-        , patternType ~ Pattern domain variable valid
-        )
-    => [SortVariable]
-    -> patternType
-    -> SentenceAxiom patternType
+    :: [SortVariable]
+    -> TermLike variable
+    -> SentenceAxiom (TermLike variable)
 mkAxiom sentenceAxiomParameters sentenceAxiomPattern =
     SentenceAxiom
         { sentenceAxiomParameters
@@ -1216,26 +1588,17 @@ mkAxiom sentenceAxiomParameters sentenceAxiomPattern =
 See also: 'mkAxiom'
 
  -}
-mkAxiom_
-    ::  ( valid ~ Attribute.Pattern variable
-        , patternType ~ Pattern domain variable valid
-        )
-    => patternType
-    -> SentenceAxiom patternType
+mkAxiom_ :: TermLike variable -> SentenceAxiom (TermLike variable)
 mkAxiom_ = mkAxiom []
 
 {- | Construct a symbol declaration with the given parameters and sorts.
  -}
 mkSymbol
-    ::  ( valid ~ Attribute.Pattern variable
-        , patternType ~ Pattern domain variable valid
-        , sortParam ~ SortVariable
-        )
-    => Id
-    -> [sortParam]
+    :: Id
+    -> [SortVariable]
     -> [Sort]
     -> Sort
-    -> SentenceSymbol patternType
+    -> SentenceSymbol (TermLike variable)
 mkSymbol symbolConstructor symbolParams argumentSorts resultSort' =
     SentenceSymbol
         { sentenceSymbolSymbol =
@@ -1254,29 +1617,21 @@ See also: 'mkSymbol'
 
  -}
 mkSymbol_
-    ::  ( valid ~ Attribute.Pattern variable
-        , patternType ~ Pattern domain variable valid
-        , sortParam ~ SortVariable
-        )
-    => Id
+    :: Id
     -> [Sort]
     -> Sort
-    -> SentenceSymbol patternType
+    -> SentenceSymbol (TermLike variable)
 mkSymbol_ symbolConstructor = mkSymbol symbolConstructor []
 
 {- | Construct an alias declaration with the given parameters and sorts.
  -}
 mkAlias
-    ::  ( valid ~ Attribute.Pattern variable
-        , patternType ~ Pattern domain Variable valid
-        , sortParam ~ SortVariable
-        )
-    => Id
-    -> [sortParam]
+    :: Id
+    -> [SortVariable]
     -> Sort
     -> [Variable]
-    -> patternType
-    -> SentenceAlias patternType
+    -> TermLike Variable
+    -> SentenceAlias (TermLike Variable)
 mkAlias aliasConstructor aliasParams resultSort' arguments right =
     SentenceAlias
         { sentenceAliasAlias =
@@ -1308,148 +1663,116 @@ See also: 'mkAlias'
 
  -}
 mkAlias_
-    ::  ( valid ~ Attribute.Pattern variable
-        , patternType ~ Pattern domain Variable valid
-        , sortParam ~ SortVariable
-        )
-    => Id
+    :: Id
     -> Sort
     -> [Variable]
-    -> patternType
-    -> SentenceAlias patternType
+    -> (TermLike Variable)
+    -> SentenceAlias (TermLike Variable)
 mkAlias_ aliasConstructor = mkAlias aliasConstructor []
 
 pattern And_
-    :: Functor dom
-    => Sort
-    -> Pattern dom var annotation
-    -> Pattern dom var annotation
-    -> Pattern dom var annotation
+    :: Sort
+    -> TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 
 pattern App_
-    :: Functor dom
-    => SymbolOrAlias
-    -> [Pattern dom var annotation]
-    -> Pattern dom var annotation
+    :: SymbolOrAlias
+    -> [TermLike variable]
+    -> TermLike variable
 
 pattern Bottom_
-    :: Functor dom
-    => Sort
-    -> Pattern dom var annotation
+    :: Sort
+    -> TermLike variable
 
 pattern Ceil_
-    :: Functor dom
-    => Sort
+    :: Sort
     -> Sort
-    -> Pattern dom var annotation
-    -> Pattern dom var annotation
+    -> TermLike variable
+    -> TermLike variable
 
 pattern DV_
-  :: Domain dom
-  => Sort
-  -> dom (Pattern dom var annotation)
-  -> Pattern dom var annotation
+    :: Sort
+    -> TermLike variable
+    -> TermLike variable
+
+pattern Builtin_
+    :: Domain.Builtin (TermLike Concrete) (TermLike variable)
+    -> TermLike variable
 
 pattern Equals_
-    :: Functor dom
-    => Sort
+    :: Sort
     -> Sort
-    -> Pattern dom var annotation
-    -> Pattern dom var annotation
-    -> Pattern dom var annotation
+    -> TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 
 pattern Exists_
-    :: Functor dom
-    => Sort
-    -> var
-    -> Pattern dom var annotation
-    -> Pattern dom var annotation
+    :: Sort
+    -> variable
+    -> TermLike variable
+    -> TermLike variable
 
 pattern Floor_
-    :: Functor dom
-    => Sort
+    :: Sort
     -> Sort
-    -> Pattern dom var annotation
-    -> Pattern dom var annotation
+    -> TermLike variable
+    -> TermLike variable
 
 pattern Forall_
-    :: Functor dom
-    => Sort
-    -> var
-    -> Pattern dom var annotation
-    -> Pattern dom var annotation
+    :: Sort
+    -> variable
+    -> TermLike variable
+    -> TermLike variable
 
 pattern Iff_
-    :: Functor dom
-    => Sort
-    -> Pattern dom var annotation
-    -> Pattern dom var annotation
-    -> Pattern dom var annotation
+    :: Sort
+    -> TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 
 pattern Implies_
-    :: Functor dom
-    => Sort
-    -> Pattern dom var annotation
-    -> Pattern dom var annotation
-    -> Pattern dom var annotation
+    :: Sort
+    -> TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 
 pattern In_
-    :: Functor dom
-    => Sort
+    :: Sort
     -> Sort
-    -> Pattern dom var annotation
-    -> Pattern dom var annotation
-    -> Pattern dom var annotation
+    -> TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 
 pattern Next_
-    :: Functor dom
-    => Sort
-    -> Pattern dom var annotation
-    -> Pattern dom var annotation
+    :: Sort
+    -> TermLike variable
+    -> TermLike variable
 
 pattern Not_
-    :: Functor dom
-    => Sort
-    -> Pattern dom var annotation
-    -> Pattern dom var annotation
+    :: Sort
+    -> TermLike variable
+    -> TermLike variable
 
 pattern Or_
-    :: Functor dom
-    => Sort
-    -> Pattern dom var annotation
-    -> Pattern dom var annotation
-    -> Pattern dom var annotation
+    :: Sort
+    -> TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 
 pattern Rewrites_
-  :: Functor dom
-  => Sort
-  -> Pattern dom var annotation
-  -> Pattern dom var annotation
-  -> Pattern dom var annotation
+  :: Sort
+  -> TermLike variable
+  -> TermLike variable
+  -> TermLike variable
 
-pattern Top_
-    :: Functor dom
-    => Sort
-    -> Pattern dom var annotation
+pattern Top_ :: Sort -> TermLike variable
 
-pattern Var_
-    :: Functor dom
-    => var
-    -> Pattern dom var annotation
+pattern Var_ :: variable -> TermLike variable
 
-pattern StringLiteral_
-  :: Functor dom
-  => Text
-  -> Pattern dom var annotation
+pattern StringLiteral_ :: Text -> TermLike variable
 
-pattern CharLiteral_
-  :: Functor dom
-  => Char
-  -> Pattern dom var annotation
-
--- No way to make multiline pragma?
--- NOTE: If you add a case to the AST type, add another synonym here.
-{-# COMPLETE And_, App_, Bottom_, Ceil_, DV_, Equals_, Exists_, Floor_, Forall_, Iff_, Implies_, In_, Next_, Not_, Or_, Rewrites_, Top_, Var_, StringLiteral_, CharLiteral_ #-}
+pattern CharLiteral_ :: Char -> TermLike variable
 
 pattern And_ andSort andFirst andSecond <-
     (Recursive.project -> _ :< AndF And { andSort, andFirst, andSecond })
@@ -1471,11 +1794,11 @@ pattern Ceil_ ceilOperandSort ceilResultSort ceilChild <-
     )
 
 pattern DV_ domainValueSort domainValueChild <-
-    (Recursive.project -> _ :< DomainValueF
-        (Lens.view lensDomainValue ->
-            DomainValue { domainValueSort, domainValueChild }
-        )
+    (Recursive.project ->
+        _ :< DomainValueF DomainValue { domainValueSort, domainValueChild }
     )
+
+pattern Builtin_ builtin <- (Recursive.project -> _ :< BuiltinF builtin)
 
 pattern Equals_ equalsOperandSort equalsResultSort equalsFirst equalsSecond <-
     (Recursive.project ->
@@ -1552,10 +1875,7 @@ pattern Top_ topSort <-
 pattern Var_ variable <-
     (Recursive.project -> _ :< VariableF variable)
 
-pattern V
-    :: Functor dom
-    => var
-    -> Pattern dom var annotation
+pattern V :: variable -> TermLike variable
 pattern V x <- Var_ x
 
 pattern StringLiteral_ str <-

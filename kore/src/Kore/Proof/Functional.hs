@@ -19,11 +19,14 @@ import Data.Hashable
 import GHC.Generics
        ( Generic )
 
-import qualified Kore.Domain.Builtin as Domain
-import           Kore.Syntax.Application
-                 ( SymbolOrAlias )
-import           Kore.Syntax.CharLiteral
-import           Kore.Syntax.StringLiteral
+import Kore.Internal.TermLike
+       ( Builtin )
+import Kore.Sort
+import Kore.Syntax.Application
+       ( SymbolOrAlias )
+import Kore.Syntax.CharLiteral
+import Kore.Syntax.DomainValue
+import Kore.Syntax.StringLiteral
 
 -- |'FunctionalProof' is used for providing arguments that a pattern is
 -- functional.  Currently we only support arguments stating that a
@@ -36,7 +39,10 @@ data FunctionalProof variable
     -- ^Variables are functional as per Corollary 5.19
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     -- |= ∃y . x = y
-    | FunctionalDomainValue (Domain.Builtin ())
+    | FunctionalBuiltin (Builtin ())
+    -- ^ Builtin pattern without children are functional: they represent
+    -- one value in the model.
+    | FunctionalDomainValue (DomainValue Sort ())
     -- ^ Domain value pattern without children are functional: they represent
     -- one value in the model.
     | FunctionalHead SymbolOrAlias
@@ -99,6 +105,7 @@ mapVariables
 mapVariables mapping =
     \case
         FunctionalVariable variable -> FunctionalVariable (mapping variable)
+        FunctionalBuiltin value -> FunctionalBuiltin value
         FunctionalDomainValue value -> FunctionalDomainValue value
         FunctionalHead symbol -> FunctionalHead symbol
         FunctionalStringLiteral string -> FunctionalStringLiteral string

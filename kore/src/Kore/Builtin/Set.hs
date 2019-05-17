@@ -95,7 +95,6 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), SimplificationType,
                  TermLikeSimplifier )
-import           Kore.Syntax.Definition
 import           Kore.Unification.Error
                  ( errorIfConcreteIncompletelyUnified )
 import           Kore.Unification.Unify
@@ -117,7 +116,7 @@ sort = "SET.Set"
 
  -}
 assertSort :: Builtin.SortVerifier
-assertSort findSort = Builtin.verifySort findSort sort
+assertSort = Builtin.verifySort sort
 
 {- | Verify that hooked sort declarations are well-formed.
 
@@ -178,8 +177,6 @@ symbolVerifiers =
       )
     ]
 
-type Builtin = Set (TermLike Concrete)
-
 {- | Abort function evaluation if the argument is not a @Set@ domain value.
 
     If the operand pattern is not a domain value, the function is simply
@@ -192,26 +189,25 @@ expectBuiltinSet
     => Text  -- ^ Context for error message
     -> SmtMetadataTools StepperAttributes
     -> TermLike variable  -- ^ Operand pattern
-    -> MaybeT m Builtin
+    -> MaybeT m (Set (TermLike Concrete))
 expectBuiltinSet ctx tools _set =
     do
         _set <- Builtin.expectNormalConcreteTerm tools _set
         case _set of
-            DV_ _ domain ->
+            Builtin_ domain ->
                 case domain of
                     Domain.BuiltinSet Domain.InternalSet { builtinSetChild } ->
                         return builtinSetChild
                     _ ->
                         Builtin.verifierBug
                         $ Text.unpack ctx ++ ": Domain value is not a set"
-            _ ->
-                empty
+            _ -> empty
 
 returnSet
     :: (Monad m, Ord variable)
     => SmtMetadataTools attrs
     -> Sort
-    -> Builtin
+    -> Set (TermLike Concrete)
     -> m (AttemptedAxiom variable)
 returnSet tools resultSort set =
     Builtin.appliedFunction
@@ -333,7 +329,7 @@ evalToList = Builtin.functionEvaluator evalToList0
                             _      -> Builtin.wrongArity toListKey
             _set <- expectBuiltinSet toListKey tools _set
             List.returnList tools resultSort
-                . fmap fromConcreteStepPattern
+                . fmap fromConcrete
                 . Seq.fromList
                 . Set.toList
                 $ _set
@@ -398,10 +394,10 @@ asInternal
     :: Ord variable
     => SmtMetadataTools attrs
     -> Sort
-    -> Builtin
+    -> Set (TermLike Concrete)
     -> TermLike variable
 asInternal tools builtinSetSort builtinSetChild =
-    (mkDomainValue . Domain.BuiltinSet)
+    (mkBuiltin . Domain.BuiltinSet)
         Domain.InternalSet
             { builtinSetSort
             , builtinSetUnit =
@@ -419,7 +415,7 @@ asInternal tools builtinSetSort builtinSetChild =
  -}
 asTermLike
     :: Ord variable
-    => Domain.InternalSet
+    => Domain.InternalSet (TermLike Concrete)
     -> TermLike variable
 asTermLike builtin =
     foldr concat' unit (element <$> Foldable.toList set)
@@ -432,7 +428,7 @@ asTermLike builtin =
 
     apply = mkApp builtinSort
     unit = apply unitSymbol []
-    element elem' = apply elementSymbol [fromConcreteStepPattern elem']
+    element elem' = apply elementSymbol [fromConcrete elem']
     concat' set1 set2 = apply concatSymbol [set1, set2]
 
 {- | Render a 'Seq' as an extended domain value pattern.
@@ -445,7 +441,7 @@ asPattern
         , Given (SmtMetadataTools StepperAttributes)
         )
     => Sort
-    -> Builtin
+    -> Set (TermLike Concrete)
     -> Pattern variable
 asPattern resultSort =
     Pattern.fromTermLike . asInternal tools resultSort
@@ -573,20 +569,20 @@ unifyEquals
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
     unifyEquals0
-        (DV_ _ (Domain.BuiltinSet builtin1))
-        (DV_ _ (Domain.BuiltinSet builtin2))
+        (Builtin_ (Domain.BuiltinSet builtin1))
+        (Builtin_ (Domain.BuiltinSet builtin2))
       =
         Monad.Trans.lift (unifyEqualsConcrete builtin1 builtin2)
 
     unifyEquals0
-        dv1@(DV_ _ (Domain.BuiltinSet builtin1))
+        dv1@(Builtin_ (Domain.BuiltinSet builtin1))
         app2@(App_ symbol2 args2)
       | isSymbolConcat hookTools symbol2 =
         Monad.Trans.lift
            (case args2 of
-                [DV_ _ (Domain.BuiltinSet builtin2), x@(Var_ _)] ->
+                [Builtin_ (Domain.BuiltinSet builtin2), x@(Var_ _)] ->
                     unifyEqualsFramed builtin1 builtin2 x
-                [x@(Var_ _), DV_ _ (Domain.BuiltinSet builtin2)] ->
+                [x@(Var_ _), Builtin_ (Domain.BuiltinSet builtin2)] ->
                     unifyEqualsFramed builtin1 builtin2 x
                 [App_ symbol3 [ key3 ], x]
                   | isSymbolElement hookTools symbol3 ->
@@ -630,10 +626,10 @@ unifyEquals
         -- Note that x an s can be proper symbolic patterns (not just variables)
         -- TODO(traiansf): move it from where once the otherwise is not needed
         unifyEqualsSelect
-            :: Domain.InternalSet  -- ^ concrete set
-            -> SymbolOrAlias       -- ^ 'element' symbol
-            -> TermLike variable   -- ^ key
-            -> TermLike variable   -- ^ framing variable
+            :: Domain.InternalSet (TermLike Concrete) -- ^ concrete set
+            -> SymbolOrAlias                          -- ^ 'element' symbol
+            -> TermLike variable                      -- ^ key
+            -> TermLike variable                      -- ^ framing variable
             -> unifier (Pattern variable)
         unifyEqualsSelect builtin1' _ key2 set2
           | set1 == Set.empty = bottomWithExplanation
@@ -643,7 +639,7 @@ unifyEquals
                 let
                     remainderSet = Set.delete concreteKey1 set1
                     remainderSetPat = asInternal tools sort1 remainderSet
-                    key1 = fromConcreteStepPattern concreteKey1
+                    key1 = fromConcrete concreteKey1
                 elemUnifier <- unifyEqualsChildren key1 key2
                 -- error when subunification problem returns partial result.
                 -- More details at 'errorIfIncompletelyUnified'.
@@ -671,14 +667,15 @@ unifyEquals
                 , builtinSetSort = sort1
                 } = builtin1'
 
-    unifyEquals0 app_@(App_ _ _) dv_@(DV_ _ _) = unifyEquals0 dv_ app_
+    unifyEquals0 app_@(App_ _ _) builtin_@(Builtin_ _) =
+        unifyEquals0 builtin_ app_
 
     unifyEquals0 _ _ = empty
 
     -- | Unify two concrete sets
     unifyEqualsConcrete
-        :: Domain.InternalSet
-        -> Domain.InternalSet
+        :: Domain.InternalSet (TermLike Concrete)
+        -> Domain.InternalSet (TermLike Concrete)
         -> unifier (Pattern variable)
     unifyEqualsConcrete builtin1 builtin2
       | set1 == set2 = return unified
@@ -693,9 +690,9 @@ unifyEquals
 
     -- | Unify one concrete set with one framed concrete set.
     unifyEqualsFramed
-        :: Domain.InternalSet  -- ^ concrete set
-        -> Domain.InternalSet -- ^ framed concrete set
-        -> TermLike variable  -- ^ framing variable
+        :: Domain.InternalSet (TermLike Concrete) -- ^ concrete set
+        -> Domain.InternalSet (TermLike Concrete) -- ^ framed concrete set
+        -> TermLike variable                      -- ^ framing variable
         -> unifier (Pattern variable)
     unifyEqualsFramed builtin1 builtin2 var
       | Set.isSubsetOf set2 set1 =
@@ -715,13 +712,13 @@ unifyEquals
         Domain.InternalSet { builtinSetChild = set2 } = builtin2
 
     unifyEqualsElement
-        :: Domain.InternalSet  -- ^ concrete set
-        -> SymbolOrAlias  -- ^ 'element' symbol
-        -> TermLike variable  -- ^ key
+        :: Domain.InternalSet (TermLike Concrete) -- ^ concrete set
+        -> SymbolOrAlias                          -- ^ 'element' symbol
+        -> TermLike variable                      -- ^ key
         -> unifier (Pattern variable)
     unifyEqualsElement builtin1 element' key2 =
         case Set.toList set1 of
-            [fromConcreteStepPattern -> key1] ->
+            [fromConcrete -> key1] ->
                 do
                     key <- unifyEqualsChildren key1 key2
                     let result =

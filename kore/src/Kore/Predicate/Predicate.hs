@@ -31,9 +31,8 @@ module Kore.Predicate.Predicate
     , makeOrPredicate
     , makeMultipleOrPredicate
     , makeTruePredicate
-    , allVariables
     , Kore.Predicate.Predicate.freeVariables
-    , hasFreeVariable
+    , Kore.Predicate.Predicate.hasFreeVariable
     , Kore.Predicate.Predicate.mapVariables
     , stringFromPredicate
     , substitutionToPredicate
@@ -41,11 +40,13 @@ module Kore.Predicate.Predicate
     , fromSubstitution
     , unwrapPredicate
     , wrapPredicate
-    , substitute
+    , Kore.Predicate.Predicate.substitute
     ) where
 
 import           Control.DeepSeq
                  ( NFData )
+import           Data.Functor.Foldable
+                 ( Base )
 import qualified Data.Functor.Foldable as Recursive
 import           Data.Hashable
 import           Data.List
@@ -62,19 +63,13 @@ import           GHC.Stack
 
 import           Kore.Error
                  ( Error, koreFail )
-import           Kore.Internal.TermLike
-                 ( TermLike )
-import qualified Kore.Internal.TermLike as TermLike
-import           Kore.Sort
-import           Kore.Syntax
+import           Kore.Internal.TermLike as TermLike
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
-import           Kore.Variables.Free
-                 ( pureAllVariables )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
@@ -456,14 +451,6 @@ makePredicate = Recursive.elgot makePredicateBottomUp makePredicateTopDown
 -}
 mapVariables :: Ord to => (from -> to) -> Predicate from -> Predicate to
 mapVariables f = fmap (TermLike.mapVariables f)
-
-{- | Extract the set of all (free and bound) variables from a @Predicate@.
--}
-allVariables
-    :: Ord variable
-    => Predicate variable
-    -> Set variable
-allVariables = pureAllVariables . unwrapPredicate
 
 {- | Extract the set of free variables from a @Predicate@.
 -}

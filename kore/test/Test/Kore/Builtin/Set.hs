@@ -29,8 +29,7 @@ import           Kore.Internal.MultiOr
                  ( MultiOr (..) )
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-                 ( TermLike, fromConcreteStepPattern, mkAnd, mkApp, mkEquals_,
-                 mkVar )
+                 ( TermLike, fromConcrete, mkAnd, mkApp, mkEquals_, mkVar )
 import           Kore.Predicate.Predicate as Predicate
 import           Kore.Sort
                  ( Sort )
@@ -68,7 +67,7 @@ genSetConcreteIntegerPattern :: Gen (Set (TermLike Concrete))
 genSetConcreteIntegerPattern =
     Set.map Test.Int.asInternal <$> genSetInteger
 
-genConcreteSet :: Gen Set.Builtin
+genConcreteSet :: Gen (Set (TermLike Concrete))
 genConcreteSet = genSetConcreteIntegerPattern
 
 genSetPattern :: Gen (TermLike Variable)
@@ -116,7 +115,7 @@ test_inConcat =
             values <- forAll genSetConcreteIntegerPattern
             let patIn = mkApp boolSort inSetSymbol [ patElem , patSet ]
                 patSet = asTermLike $ Set.insert elem' values
-                patElem = fromConcreteStepPattern elem'
+                patElem = fromConcrete elem'
                 patTrue = Test.Bool.asInternal True
                 predicate = mkEquals_ patTrue patIn
             (===) (Test.Bool.asPattern True) =<< evaluate patIn
@@ -190,9 +189,7 @@ test_toList =
         "SET.set2list is set2list"
         (do
             set1 <- forAll genSetConcreteIntegerPattern
-            let set2 =
-                    fmap fromConcreteStepPattern
-                    . Seq.fromList . Set.toList $ set1
+            let set2 = fmap fromConcrete . Seq.fromList . Set.toList $ set1
                 patSet2 = Test.List.asTermLike set2
                 patToList =
                     mkApp
@@ -403,8 +400,10 @@ test_unifySelectFromEmpty =
         fnSelectPatRev `doesNotUnifyWith` emptySet
   where
     emptySet = asTermLike Set.empty
-    doesNotUnifyWith pat1 pat2 =
-            (===) Pattern.bottom =<< evaluate (mkAnd pat1 pat2)
+    doesNotUnifyWith pat1 pat2 = do
+        annotateShow pat1
+        annotateShow pat2
+        (===) Pattern.bottom =<< evaluate (mkAnd pat1 pat2)
 
 test_unifySelectFromSingleton :: TestTree
 test_unifySelectFromSingleton =
@@ -418,7 +417,7 @@ test_unifySelectFromSingleton =
             let selectPat       = selectPattern elementVar setVar id
                 selectPatRev    = selectPattern elementVar setVar reverse
                 singleton       = asInternal (Set.singleton concreteElem)
-                elemStepPattern = fromConcreteStepPattern concreteElem
+                elemStepPattern = fromConcrete concreteElem
                 expect =
                     Conditional
                         { term = singleton
@@ -446,7 +445,7 @@ test_unifySelectFromSingletonWithoutLeftovers =
             elementVar <- forAll (standaloneGen $ variableGen intSort)
             let selectPat       = makeElementVariable elementVar
                 singleton       = asInternal (Set.singleton concreteElem)
-                elemStepPattern = fromConcreteStepPattern concreteElem
+                elemStepPattern = fromConcrete concreteElem
                 unsimplifiedSingleton =
                     mkApp setSort elementSetSymbol [elemStepPattern]
                 expect =
@@ -478,8 +477,8 @@ test_unifySelectFromTwoElementSet =
             let selectPat = selectPattern elementVar setVar id
                 selectPatRev = selectPattern elementVar setVar reverse
                 set = asInternal (Set.fromList [concreteElem1, concreteElem2])
-                elemStepPattern1 = fromConcreteStepPattern concreteElem1
-                elemStepPattern2 = fromConcreteStepPattern concreteElem2
+                elemStepPattern1 = fromConcrete concreteElem1
+                elemStepPattern2 = fromConcrete concreteElem2
                 expect1 =
                     Conditional
                         { term = set
@@ -533,8 +532,8 @@ test_unifySelectTwoFromTwoElementSet =
                     $ addSelectElement elementVar2
                     $ mkVar setVar
                 set = asInternal (Set.fromList [concreteElem1, concreteElem2])
-                elemStepPattern1 = fromConcreteStepPattern concreteElem1
-                elemStepPattern2 = fromConcreteStepPattern concreteElem2
+                elemStepPattern1 = fromConcrete concreteElem1
+                elemStepPattern2 = fromConcrete concreteElem2
                 expect1 =
                     Conditional
                         { term = set
@@ -617,7 +616,7 @@ test_unifyFnSelectFromSingleton =
             let fnSelectPat    = selectFunctionPattern elementVar setVar id
                 fnSelectPatRev = selectFunctionPattern elementVar setVar reverse
                 singleton      = asInternal (Set.singleton concreteElem)
-                elemStepPatt = fromConcreteStepPattern concreteElem
+                elemStepPatt   = fromConcrete concreteElem
                 elementVarPatt = mkApp intSort absIntSymbol  [mkVar elementVar]
                 expect =
                     Conditional
@@ -762,12 +761,11 @@ asTermLike =
     . Foldable.toList
 
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
-asPattern :: Set.Builtin -> Pattern Variable
-asPattern =
-    Reflection.give testMetadataTools Set.asPattern setSort
+asPattern :: Set (TermLike Concrete) -> Pattern Variable
+asPattern = Reflection.give testMetadataTools Set.asPattern setSort
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
-asInternal :: Set.Builtin -> TermLike Variable
+asInternal :: Set (TermLike Concrete) -> TermLike Variable
 asInternal = Set.asInternal testMetadataTools setSort
 
 -- * Constructors

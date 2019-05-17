@@ -12,8 +12,6 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Internal.TermLike
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import           Kore.Step.Axiom.Registry
-import           Kore.Syntax.Definition
-import           Kore.Syntax.Pattern as Pure
 
 import           Test.Kore
 import           Test.Kore.Attribute.Parser
@@ -74,14 +72,7 @@ test_arguments =
     $ parseOverload $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationF)
-            Application
-                { applicationSymbolOrAlias = overloadSymbol
-                , applicationChildren =
-                    [ (asAttributePattern . StringLiteralF)
-                        (StringLiteral "illegal")
-                    ]
-                }
+        attributePattern overloadSymbol [ attributeString "illegal" ]
 
 test_parameters :: TestTree
 test_parameters =
@@ -90,15 +81,10 @@ test_parameters =
     $ parseOverload $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationF)
-            Application
-                { applicationSymbolOrAlias =
-                    SymbolOrAlias
-                        { symbolOrAliasConstructor = overloadId
-                        , symbolOrAliasParams =
-                            [ SortVariableSort (SortVariable "illegal") ]
-                        }
-                , applicationChildren = []
+        attributePattern_
+            overloadSymbol
+                { symbolOrAliasParams =
+                    [ SortVariableSort (SortVariable "illegal") ]
                 }
 
 test_ignore :: TestTree
@@ -146,7 +132,7 @@ test_ignore =
             , sentenceAxiomAttributes =
                 Attributes [ overloadAttribute superSymbol subSymbol ]
             , sentenceAxiomPattern =
-                Pure.eraseAnnotations
+                Builtin.externalizePattern
                 $ mkEquals sortS
                     (mkApp Mock.testSort superSymbol [])
                     (mkApp Mock.testSort subSymbol   [])

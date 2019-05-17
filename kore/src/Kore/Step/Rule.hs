@@ -33,7 +33,6 @@ module Kore.Step.Rule
     , Kore.Step.Rule.substitute
     ) where
 
-import           Control.Comonad
 import qualified Data.Default as Default
 import           Data.Map.Strict
                  ( Map )
@@ -47,14 +46,12 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
-import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Syntax.Definition
 import           Kore.Unparser
                  ( Unparse, unparse, unparse2 )
 import           Kore.Variables.Fresh
@@ -415,7 +412,7 @@ mkRewriteAxiom lhs rhs requires =
             (mkAnd (mkTop patternSort) rhs)
         )
   where
-    Attribute.Pattern { Attribute.patternSort = patternSort } = extract lhs
+    patternSort = termLikeSort lhs
 
 {- | Construct a 'VerifiedKoreSentence' corresponding to 'EqualityRule'.
 
@@ -492,8 +489,8 @@ freeVariables
     -> Set variable
 freeVariables RulePattern { left, right, requires } =
     Set.unions
-        [ (Attribute.freeVariables . extract) left
-        , (Attribute.freeVariables . extract) right
+        [ TermLike.freeVariables left
+        , TermLike.freeVariables right
         , Predicate.freeVariables requires
         ]
 

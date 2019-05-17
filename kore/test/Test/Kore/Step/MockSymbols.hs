@@ -48,11 +48,14 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import           Kore.Internal.TermLike
+                 ( TermLike )
+import qualified Kore.Internal.TermLike as Internal
+import           Kore.Sort
 import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT
                  ( resolve )
-import           Kore.Syntax.Pattern
-                 ( asConcretePattern )
+import           Kore.Syntax.Application
+import           Kore.Syntax.Variable
 import qualified SMT.AST as SMT
 import qualified SMT.SimpleSMT as SMT
 
@@ -532,109 +535,109 @@ xInt :: Variable
 xInt = Variable (testId "xInt") mempty intSort
 
 a :: Ord variable => TermLike variable
-a = mkApp testSort aSymbol []
+a = Internal.mkApp testSort aSymbol []
 
 aConcrete :: TermLike Concrete
-aConcrete = let Just r = asConcretePattern a in r
+Just aConcrete = Internal.asConcrete (a :: TermLike Variable)
 
 aSort0 :: Ord variable => TermLike variable
-aSort0 = mkApp testSort0 aSort0Symbol []
+aSort0 = Internal.mkApp testSort0 aSort0Symbol []
 
 aSort1 :: Ord variable => TermLike variable
-aSort1 = mkApp testSort1 aSort1Symbol []
+aSort1 = Internal.mkApp testSort1 aSort1Symbol []
 
 aSubsort :: Ord variable => TermLike variable
-aSubsort = mkApp subSort aSubsortSymbol []
+aSubsort = Internal.mkApp subSort aSubsortSymbol []
 
 aSubSubsort :: Ord variable => TermLike variable
-aSubSubsort = mkApp subSubsort aSubSubsortSymbol []
+aSubSubsort = Internal.mkApp subSubsort aSubSubsortSymbol []
 
 aOtherSort :: Ord variable => TermLike variable
-aOtherSort = mkApp otherSort aOtherSortSymbol []
+aOtherSort = Internal.mkApp otherSort aOtherSortSymbol []
 
 b :: Ord variable => TermLike variable
-b = mkApp testSort bSymbol []
+b = Internal.mkApp testSort bSymbol []
 
 bConcrete :: TermLike Concrete
-bConcrete = let Just r = asConcretePattern b in r
+Just bConcrete = Internal.asConcrete (b :: TermLike Variable)
 
 bSort0 :: Ord variable => TermLike variable
-bSort0 = mkApp testSort0 bSort0Symbol []
+bSort0 = Internal.mkApp testSort0 bSort0Symbol []
 
 c :: Ord variable => TermLike variable
-c = mkApp testSort cSymbol []
+c = Internal.mkApp testSort cSymbol []
 
 d :: Ord variable => TermLike variable
-d = mkApp testSort dSymbol []
+d = Internal.mkApp testSort dSymbol []
 
 e :: Ord variable => TermLike variable
-e = mkApp testSort eSymbol []
+e = Internal.mkApp testSort eSymbol []
 
 f, g, h
     :: Ord variable
     => TermLike variable
     -> TermLike variable
-f arg = mkApp testSort fSymbol [arg]
-g arg = mkApp testSort gSymbol [arg]
-h arg = mkApp testSort hSymbol [arg]
+f arg = Internal.mkApp testSort fSymbol [arg]
+g arg = Internal.mkApp testSort gSymbol [arg]
+h arg = Internal.mkApp testSort hSymbol [arg]
 
 cf :: Ord variable => TermLike variable
-cf = mkApp testSort cfSymbol []
+cf = Internal.mkApp testSort cfSymbol []
 
 cfSort0 :: Ord variable => TermLike variable
-cfSort0 = mkApp testSort0 cfSort0Symbol []
+cfSort0 = Internal.mkApp testSort0 cfSort0Symbol []
 
 cfSort1 :: Ord variable => TermLike variable
-cfSort1 = mkApp testSort1 cfSort1Symbol []
+cfSort1 = Internal.mkApp testSort1 cfSort1Symbol []
 
 cg :: Ord variable => TermLike variable
-cg = mkApp testSort cgSymbol []
+cg = Internal.mkApp testSort cgSymbol []
 
 cgSort0 :: Ord variable => TermLike variable
-cgSort0 = mkApp testSort0 cgSort0Symbol []
+cgSort0 = Internal.mkApp testSort0 cgSort0Symbol []
 
 ch :: Ord variable => TermLike variable
-ch = mkApp testSort chSymbol []
+ch = Internal.mkApp testSort chSymbol []
 
 plain00 :: Ord variable => TermLike variable
-plain00 = mkApp testSort plain00Symbol []
+plain00 = Internal.mkApp testSort plain00Symbol []
 
 plain00Sort0 :: Ord variable => TermLike variable
-plain00Sort0 = mkApp testSort0 plain00Sort0Symbol []
+plain00Sort0 = Internal.mkApp testSort0 plain00Sort0Symbol []
 
 plain00Subsort :: Ord variable => TermLike variable
-plain00Subsort = mkApp subSort plain00SubsortSymbol []
+plain00Subsort = Internal.mkApp subSort plain00SubsortSymbol []
 
 plain00SubSubsort :: Ord variable => TermLike variable
-plain00SubSubsort = mkApp subSubsort plain00SubSubsortSymbol []
+plain00SubSubsort = Internal.mkApp subSubsort plain00SubSubsortSymbol []
 
 plain10, plain11
     :: Ord variable
     => TermLike variable
     -> TermLike variable
-plain10 arg = mkApp testSort plain10Symbol [arg]
-plain11 arg = mkApp testSort plain11Symbol [arg]
+plain10 arg = Internal.mkApp testSort plain10Symbol [arg]
+plain11 arg = Internal.mkApp testSort plain11Symbol [arg]
 
 plain20
     :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-plain20 arg1 arg2 = mkApp testSort plain20Symbol [arg1, arg2]
+plain20 arg1 arg2 = Internal.mkApp testSort plain20Symbol [arg1, arg2]
 
 constr10, constr11
     :: Ord variable
     => TermLike variable
     -> TermLike variable
-constr10 arg = mkApp testSort constr10Symbol [arg]
-constr11 arg = mkApp testSort constr11Symbol [arg]
+constr10 arg = Internal.mkApp testSort constr10Symbol [arg]
+constr11 arg = Internal.mkApp testSort constr11Symbol [arg]
 
 constr20
     :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-constr20 arg1 arg2 = mkApp testSort constr20Symbol [arg1, arg2]
+constr20 arg1 arg2 = Internal.mkApp testSort constr20Symbol [arg1, arg2]
 
 function20MapTest
     :: Ord variable
@@ -642,54 +645,55 @@ function20MapTest
     -> TermLike variable
     -> TermLike variable
 function20MapTest arg1 arg2 =
-    mkApp testSort function20MapTestSymbol [arg1, arg2]
+    Internal.mkApp testSort function20MapTestSymbol [arg1, arg2]
 
 functional00 :: Ord variable => TermLike variable
-functional00 = mkApp testSort functional00Symbol []
+functional00 = Internal.mkApp testSort functional00Symbol []
 
 functional01 :: Ord variable => TermLike variable
-functional01 = mkApp testSort functional01Symbol []
+functional01 = Internal.mkApp testSort functional01Symbol []
 
 functional10
     :: Ord variable
     => TermLike variable
     -> TermLike variable
-functional10 arg = mkApp testSort functional10Symbol [arg]
+functional10 arg = Internal.mkApp testSort functional10Symbol [arg]
 
 functional11
     :: Ord variable
     => TermLike variable
     -> TermLike variable
-functional11 arg = mkApp testSort functional11Symbol [arg]
+functional11 arg = Internal.mkApp testSort functional11Symbol [arg]
 
 functional20
     :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-functional20 arg1 arg2 = mkApp testSort functional20Symbol [arg1, arg2]
+functional20 arg1 arg2 = Internal.mkApp testSort functional20Symbol [arg1, arg2]
 
 functional00SubSubSort :: Ord variable => TermLike variable
-functional00SubSubSort = mkApp subSubsort functional00SubSubSortSymbol []
+functional00SubSubSort =
+    Internal.mkApp subSubsort functional00SubSubSortSymbol []
 
 functionalConstr10
     :: Ord variable
     => TermLike variable
     -> TermLike variable
 functionalConstr10 arg =
-    mkApp testSort functionalConstr10Symbol [arg]
+    Internal.mkApp testSort functionalConstr10Symbol [arg]
 
 functionalConstr11
     :: Ord variable
     => TermLike variable
     -> TermLike variable
-functionalConstr11 arg = mkApp testSort functionalConstr11Symbol [arg]
+functionalConstr11 arg = Internal.mkApp testSort functionalConstr11Symbol [arg]
 
 functionalConstr12
     :: Ord variable
     => TermLike variable
     -> TermLike variable
-functionalConstr12 arg = mkApp testSort functionalConstr12Symbol [arg]
+functionalConstr12 arg = Internal.mkApp testSort functionalConstr12Symbol [arg]
 
 functionalConstr20
     :: Ord variable
@@ -697,7 +701,7 @@ functionalConstr20
     -> TermLike variable
     -> TermLike variable
 functionalConstr20 arg1 arg2 =
-    mkApp testSort functionalConstr20Symbol [arg1, arg2]
+    Internal.mkApp testSort functionalConstr20Symbol [arg1, arg2]
 
 functionalConstr30
     :: Ord variable
@@ -706,7 +710,7 @@ functionalConstr30
     -> TermLike variable
     -> TermLike variable
 functionalConstr30 arg1 arg2 arg3 =
-    mkApp testSort functionalConstr30Symbol [arg1, arg2, arg3]
+    Internal.mkApp testSort functionalConstr30Symbol [arg1, arg2, arg3]
 
 functionalTopConstr20
     :: Ord variable
@@ -714,7 +718,7 @@ functionalTopConstr20
     -> TermLike variable
     -> TermLike variable
 functionalTopConstr20 arg1 arg2 =
-    mkApp testSort functionalTopConstr20Symbol [arg1, arg2]
+    Internal.mkApp testSort functionalTopConstr20Symbol [arg1, arg2]
 
 functionalTopConstr21
     :: Ord variable
@@ -722,132 +726,133 @@ functionalTopConstr21
     -> TermLike variable
     -> TermLike variable
 functionalTopConstr21 arg1 arg2 =
-    mkApp testSort functionalTopConstr21Symbol [arg1, arg2]
+    Internal.mkApp testSort functionalTopConstr21Symbol [arg1, arg2]
 
 injective10
     :: Ord variable
     => TermLike variable
     -> TermLike variable
-injective10 arg = mkApp testSort injective10Symbol [arg]
+injective10 arg = Internal.mkApp testSort injective10Symbol [arg]
 
 injective11
     :: Ord variable
     => TermLike variable
     -> TermLike variable
-injective11 arg = mkApp testSort injective11Symbol [arg]
+injective11 arg = Internal.mkApp testSort injective11Symbol [arg]
 
 sortInjection10
     :: Ord variable
     => TermLike variable
     -> TermLike variable
 sortInjection10 arg =
-    mkApp testSort sortInjection10Symbol [arg]
+    Internal.mkApp testSort sortInjection10Symbol [arg]
 
 sortInjection11
     :: Ord variable
     => TermLike variable
     -> TermLike variable
 sortInjection11 arg =
-    mkApp testSort sortInjection11Symbol [arg]
+    Internal.mkApp testSort sortInjection11Symbol [arg]
 
 sortInjection0ToTop
     :: Ord variable
     => TermLike variable
     -> TermLike variable
 sortInjection0ToTop arg =
-    mkApp topSort sortInjection0ToTopSymbol [arg]
+    Internal.mkApp topSort sortInjection0ToTopSymbol [arg]
 
 sortInjectionSubToTop
     :: Ord variable
     => TermLike variable
     -> TermLike variable
-sortInjectionSubToTop arg = mkApp topSort sortInjectionSubToTopSymbol [arg]
+sortInjectionSubToTop arg =
+    Internal.mkApp topSort sortInjectionSubToTopSymbol [arg]
 
 sortInjectionSubSubToTop
     :: Ord variable
     => TermLike variable
     -> TermLike variable
 sortInjectionSubSubToTop arg =
-    mkApp topSort sortInjectionSubSubToTopSymbol [arg]
+    Internal.mkApp topSort sortInjectionSubSubToTopSymbol [arg]
 
 sortInjectionSubSubToSub
     :: Ord variable
     => TermLike variable
     -> TermLike variable
 sortInjectionSubSubToSub arg =
-    mkApp subSort sortInjectionSubSubToSubSymbol [arg]
+    Internal.mkApp subSort sortInjectionSubSubToSubSymbol [arg]
 
 sortInjectionOtherToTop
     :: Ord variable
     => TermLike variable
     -> TermLike variable
 sortInjectionOtherToTop arg =
-    mkApp topSort sortInjectionOtherToTopSymbol [arg]
+    Internal.mkApp topSort sortInjectionOtherToTopSymbol [arg]
 
 unitMap
     :: Ord variable
     => TermLike variable
-unitMap = mkApp mapSort unitMapSymbol []
+unitMap = Internal.mkApp mapSort unitMapSymbol []
 
 elementMap
     :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-elementMap m1 m2 = mkApp mapSort elementMapSymbol [m1, m2]
+elementMap m1 m2 = Internal.mkApp mapSort elementMapSymbol [m1, m2]
 
 concatMap
     :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-concatMap m1 m2 = mkApp mapSort concatMapSymbol [m1, m2]
+concatMap m1 m2 = Internal.mkApp mapSort concatMapSymbol [m1, m2]
 
 unitSet
     :: Ord variable
     => TermLike variable
-unitSet = mkApp setSort unitSetSymbol []
+unitSet = Internal.mkApp setSort unitSetSymbol []
 
 elementSet
     :: Ord variable
     => TermLike variable
     -> TermLike variable
-elementSet s1 = mkApp setSort elementSetSymbol [s1]
+elementSet s1 = Internal.mkApp setSort elementSetSymbol [s1]
 
 concatSet
     :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-concatSet s1 s2 = mkApp setSort concatSetSymbol [s1, s2]
+concatSet s1 s2 = Internal.mkApp setSort concatSetSymbol [s1, s2]
 
 lessInt
     :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-lessInt i1 i2 = mkApp boolSort lessIntSymbol [i1, i2]
+lessInt i1 i2 = Internal.mkApp boolSort lessIntSymbol [i1, i2]
 
 greaterEqInt
     :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-greaterEqInt i1 i2 = mkApp boolSort greaterEqIntSymbol [i1, i2]
+greaterEqInt i1 i2 = Internal.mkApp boolSort greaterEqIntSymbol [i1, i2]
 
 concatList
     :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-concatList l1 l2 = mkApp listSort concatListSymbol [l1, l2]
+concatList l1 l2 = Internal.mkApp listSort concatListSymbol [l1, l2]
 
 sigma
     :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-sigma child1 child2 = mkApp testSort sigmaSymbol [child1, child2]
+sigma child1 child2 = Internal.mkApp testSort sigmaSymbol [child1, child2]
 
 attributesMapping :: [(SymbolOrAlias, StepperAttributes)]
 attributesMapping =
@@ -1938,7 +1943,7 @@ builtinMap
     => [(TermLike Concrete, TermLike variable)]
     -> TermLike variable
 builtinMap child =
-    mkDomainValue $ Domain.BuiltinMap Domain.InternalMap
+    Internal.mkBuiltin $ Domain.BuiltinMap Domain.InternalMap
         { builtinMapSort = mapSort
         , builtinMapUnit = unitMapSymbol
         , builtinMapElement = elementMapSymbol
@@ -1951,7 +1956,7 @@ builtinList
     => [TermLike variable]
     -> TermLike variable
 builtinList child =
-    mkDomainValue $ Domain.BuiltinList Domain.InternalList
+    Internal.mkBuiltin $ Domain.BuiltinList Domain.InternalList
         { builtinListSort = listSort
         , builtinListUnit = unitListSymbol
         , builtinListElement = elementListSymbol
@@ -1964,7 +1969,7 @@ builtinSet
     => [TermLike Concrete]
     -> TermLike variable
 builtinSet child =
-    mkDomainValue $ Domain.BuiltinSet Domain.InternalSet
+    Internal.mkBuiltin $ Domain.BuiltinSet Domain.InternalSet
         { builtinSetSort = setSort
         , builtinSetUnit = unitSetSymbol
         , builtinSetElement = elementSetSymbol

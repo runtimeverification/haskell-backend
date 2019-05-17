@@ -3,7 +3,10 @@ module Test.Kore.Proof.Value where
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import qualified GHC.Stack as GHC
+
 import           Kore.Attribute.Symbol
+import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
@@ -15,15 +18,27 @@ import qualified Kore.Proof.Value as Value
 
 import           Test.Kore
 import           Test.Kore.Builtin.Definition
-                 ( intSort )
+                 ( boolSort, builtinList, builtinMap, builtinSet, intSort )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 
 unit_constructorUnit :: Assertion
 unit_constructorUnit = assertValue unitPattern
 
-unit_domainValue :: Assertion
-unit_domainValue = assertValue onePattern
+unit_DomainValue :: Assertion
+unit_DomainValue = assertValue oneTermLike
+
+test_Builtin_InternalInt :: [TestTree]
+test_Builtin_InternalInt =
+    [ testValue "1" oneInternal
+    , testValue "0" zeroInternal
+    ]
+
+test_Builtin_InternalBool :: [TestTree]
+test_Builtin_InternalBool =
+    [ testValue "true" trueInternal
+    , testValue "fales" falseInternal
+    ]
 
 unit_injConstructor :: Assertion
 unit_injConstructor = assertValue (mkInj unitPattern)
@@ -34,17 +49,47 @@ unit_injInj = assertNotValue (mkInj (mkInj unitPattern))
 unit_pairConstructor :: Assertion
 unit_pairConstructor = assertValue (mkPair unitPattern unitPattern)
 
-test_pairDomainValue :: [TestTree]
-test_pairDomainValue =
-    [ testValue "(0, 0)" (mkPair zeroPattern zeroPattern)
-    , testValue "(0, 1)" (mkPair zeroPattern onePattern)
-    , testValue "(1, 1)" (mkPair onePattern onePattern)
-    , testValue "(1, 0)" (mkPair onePattern zeroPattern)
+test_Pair_Builtin :: [TestTree]
+test_Pair_Builtin =
+    [ testValue "(0, 0)" (mkPair zeroInternal zeroInternal)
+    , testValue "(0, 1)" (mkPair zeroInternal oneInternal)
+    , testValue "(1, 1)" (mkPair oneInternal  oneInternal)
+    , testValue "(1, 0)" (mkPair oneInternal  zeroInternal)
     ]
 
-unit_fun :: Assertion
-unit_fun =
-    assertNotValue (mkApp intSort funSymbol [onePattern])
+test_Pair_DomainValue :: [TestTree]
+test_Pair_DomainValue =
+    [ testValue "(0, 0)" (mkPair zeroTermLike zeroTermLike)
+    , testValue "(0, 1)" (mkPair zeroTermLike oneTermLike)
+    , testValue "(1, 1)" (mkPair oneTermLike  oneTermLike)
+    , testValue "(1, 0)" (mkPair oneTermLike  zeroTermLike)
+    ]
+
+test_Builtin_InternalMap :: [TestTree]
+test_Builtin_InternalMap =
+    [ testValue "0 |-> 1" (mkMap [(zeroInternal, oneInternal)])
+    , testNotValue "0 |-> X" (mkMap [(zeroInternal, mkVar varX)])
+    ]
+
+test_Builtin_InternalList :: [TestTree]
+test_Builtin_InternalList =
+    [ testValue "[1]" (mkList [oneInternal])
+    , testNotValue "[X]" (mkList [mkVar varX])
+    ]
+
+test_Builtin_InternalSet :: [TestTree]
+test_Builtin_InternalSet =
+    [ testValue "[1]" (mkSet [oneInternal])
+    ]
+
+varX :: Variable
+varX = varS "X" intSort
+
+test_fun :: [TestTree]
+test_fun =
+    [ testNotValue "fun(1)" (mkApp intSort funSymbol [oneTermLike])
+    , testNotValue "fun(1)" (mkApp intSort funSymbol [oneInternal])
+    ]
 
 mkInj :: TermLike Variable -> TermLike Variable
 mkInj input =
@@ -59,24 +104,43 @@ mkPair a b =
   where
     inputSort' = termLikeSort a
 
+mkMap :: [(TermLike Concrete, TermLike Variable)] -> TermLike Variable
+mkMap = mkBuiltin . Domain.BuiltinMap . builtinMap
+
+mkList :: [TermLike Variable] -> TermLike Variable
+mkList = mkBuiltin . Domain.BuiltinList . builtinList
+
+mkSet :: [TermLike Concrete] -> TermLike Variable
+mkSet = mkBuiltin . Domain.BuiltinSet . builtinSet
+
 unitPattern :: TermLike Variable
 unitPattern = mkApp unitSort unitSymbol []
 
-onePattern :: TermLike Variable
-onePattern =
-    Builtin.Int.asTermLike
-        Domain.InternalInt
-            { builtinIntSort = intSort
-            , builtinIntValue = 1
-            }
+oneInternal :: Ord variable => TermLike variable
+oneInternal = Builtin.Int.asInternal intSort 1
 
-zeroPattern :: TermLike Variable
-zeroPattern =
-    Builtin.Int.asTermLike
-        Domain.InternalInt
-            { builtinIntSort = intSort
-            , builtinIntValue = 0
-            }
+zeroInternal :: Ord variable => TermLike variable
+zeroInternal = Builtin.Int.asInternal intSort 0
+
+oneTermLike :: TermLike Variable
+oneTermLike =
+    Builtin.Int.asTermLike Domain.InternalInt
+        { builtinIntSort = intSort
+        , builtinIntValue = 1
+        }
+
+zeroTermLike :: TermLike Variable
+zeroTermLike =
+    Builtin.Int.asTermLike Domain.InternalInt
+        { builtinIntSort = intSort
+        , builtinIntValue = 0
+        }
+
+trueInternal :: TermLike Variable
+trueInternal = Builtin.Bool.asInternal boolSort True
+
+falseInternal :: TermLike Variable
+falseInternal = Builtin.Bool.asInternal boolSort False
 
 unitSort :: Sort
 unitSort =
@@ -158,24 +222,27 @@ tools =
         []
         Mock.emptySmtDeclarations
 
-assertValue :: TermLike Variable -> Assertion
-assertValue purePattern =
+assertValue :: GHC.HasCallStack => TermLike Variable -> Assertion
+assertValue termLike =
     assertEqual "Expected normalized pattern"
-        concretePattern
-        (concretePattern >>= roundTrip)
+        concrete
+        (concrete >>= roundTrip)
   where
-    concretePattern = asConcreteStepPattern purePattern
+    concrete = asConcrete termLike
     roundTrip patt = do
         value <- Value.fromConcreteStepPattern tools patt
         return (Value.asConcreteStepPattern value)
 
-testValue :: TestName -> TermLike Variable -> TestTree
+testValue :: GHC.HasCallStack => TestName -> TermLike Variable -> TestTree
 testValue name = testCase name . assertValue
 
-assertNotValue :: TermLike Variable -> Assertion
+assertNotValue :: GHC.HasCallStack => TermLike Variable -> Assertion
 assertNotValue purePattern =
     assertEqual "Unexpected normalized pattern"
         Nothing
         (concretePattern >>= Value.fromConcreteStepPattern tools)
   where
-    concretePattern = asConcreteStepPattern purePattern
+    concretePattern = asConcrete purePattern
+
+testNotValue :: GHC.HasCallStack => TestName -> TermLike Variable -> TestTree
+testNotValue name = testCase name . assertNotValue

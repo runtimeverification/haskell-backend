@@ -61,6 +61,7 @@ import           GHC.Exts
                  ( toList )
 import           GHC.IO.Handle
                  ( hGetContents, hPutStr )
+
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -70,6 +71,7 @@ import           Kore.Internal.Pattern
                  ( Conditional (..) )
 import           Kore.Internal.TermLike
                  ( TermLike )
+import qualified Kore.Internal.TermLike as TermLike
 import           Kore.OnePath.StrategyPattern
                  ( CommonStrategyPattern, StrategyPattern (..),
                  StrategyPatternTransformer (StrategyPatternTransformer),
@@ -95,8 +97,6 @@ import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
                  ( Id (..) )
-import           Kore.Syntax.PatternF
-                 ( PatternF (..) )
 import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unparser
@@ -824,10 +824,10 @@ unparseStrategy omitList =
     hide =
         Recursive.unfold $ \termLike ->
             case Recursive.project termLike of
-                ann :< ApplicationF app
+                ann :< TermLike.ApplicationF app
                   | shouldBeExcluded (applicationSymbolOrAlias app) ->
                     -- Do not display children
-                    ann :< ApplicationF (withoutChildren app)
+                    ann :< TermLike.ApplicationF (withoutChildren app)
                 projected -> projected
 
     withoutChildren app = app { applicationChildren = [] }

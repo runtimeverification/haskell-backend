@@ -340,9 +340,9 @@ intLiteral = asInternal
 asInternal :: Ord variable => Integer -> TermLike variable
 asInternal = Int.asInternal intSort
 
--- | Specialize 'Int.asConcretePattern' to the builtin sort 'intSort'.
+-- | Specialize 'asInternal' to the builtin sort 'intSort'.
 asConcretePattern :: Integer -> TermLike Concrete
-asConcretePattern = Int.asConcretePattern intSort
+asConcretePattern = asInternal
 
 -- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
 asPattern :: Integer -> Pattern Variable

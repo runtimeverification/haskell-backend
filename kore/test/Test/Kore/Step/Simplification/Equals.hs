@@ -12,7 +12,6 @@ import qualified Data.Map as Map
 
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -39,7 +38,6 @@ import           Kore.Step.Simplification.Equals
                  ( makeEvaluate, makeEvaluateTermsToPredicate, simplify )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Syntax.Equals
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import qualified SMT
@@ -417,57 +415,45 @@ test_equalsSimplification_TermLike =
         (assertTermEquals
             Mock.metadataTools
             Predicate.topPredicate
-            (mkDomainValue
-                (Domain.BuiltinExternal Domain.External
-                    { domainValueSort = testSort
-                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
-                    }
-                )
+            (mkDomainValue DomainValue
+                { domainValueSort = testSort
+                , domainValueChild = mkStringLiteral "a"
+                }
             )
-            (mkDomainValue
-                (Domain.BuiltinExternal Domain.External
-                    { domainValueSort = testSort
-                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
-                    }
-                )
+            (mkDomainValue DomainValue
+                { domainValueSort = testSort
+                , domainValueChild = mkStringLiteral "a"
+                }
             )
         )
     , testCase "domain-value != domain-value"
         (assertTermEquals
             Mock.metadataTools
             Predicate.bottomPredicate
-            (mkDomainValue
-                (Domain.BuiltinExternal Domain.External
-                    { domainValueSort = testSort
-                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
-                    }
-                )
+            (mkDomainValue DomainValue
+                { domainValueSort = testSort
+                , domainValueChild = mkStringLiteral "a"
+                }
             )
-            (mkDomainValue
-                (Domain.BuiltinExternal Domain.External
-                    { domainValueSort = testSort
-                    , domainValueChild = eraseAnnotations $ mkStringLiteral "b"
-                    }
-                )
+            (mkDomainValue DomainValue
+                { domainValueSort = testSort
+                , domainValueChild = mkStringLiteral "b"
+                }
             )
         )
     , testCase "domain-value != domain-value because of sorts"
         (assertTermEquals
             Mock.metadataTools
             Predicate.bottomPredicate
-            (mkDomainValue
-                (Domain.BuiltinExternal Domain.External
-                    { domainValueSort = testSort
-                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
-                    }
-                )
+            (mkDomainValue DomainValue
+                { domainValueSort = testSort
+                , domainValueChild = mkStringLiteral "a"
+                }
             )
-            (mkDomainValue
-                (Domain.BuiltinExternal Domain.External
-                    { domainValueSort = testSort2
-                    , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
-                    }
-                )
+            (mkDomainValue DomainValue
+                { domainValueSort = testSort2
+                , domainValueChild = mkStringLiteral "a"
+                }
             )
         )
     , testCase "\"a\" == \"a\""

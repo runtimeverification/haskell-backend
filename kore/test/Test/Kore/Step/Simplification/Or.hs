@@ -23,7 +23,6 @@ import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Simplification.Or
                  ( simplify, simplifyEvaluated )
-import           Kore.Syntax.Or
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution

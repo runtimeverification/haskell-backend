@@ -26,7 +26,6 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Exists as Exists
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Syntax.Exists
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 

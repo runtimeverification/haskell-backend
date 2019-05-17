@@ -10,11 +10,15 @@ module Kore.Syntax.Sentence
     , Alias (..)
     , SentenceAlias (..)
     , SentenceSymbol (..)
+    , coerceSentenceSymbol
     , SentenceImport (..)
+    , coerceSentenceImport
     , SentenceSort (..)
+    , coerceSentenceSort
     , SentenceAxiom (..)
     , SentenceClaim (..)
     , SentenceHook (..)
+    , coerceSentenceHook
     , Sentence (..)
     , sentenceAttributes
     , eraseSentenceAnnotations
@@ -44,6 +48,7 @@ module Kore.Syntax.Sentence
 
 import           Control.DeepSeq
                  ( NFData (..) )
+import           Data.Coerce
 import           Data.Hashable
                  ( Hashable (..) )
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -267,6 +272,17 @@ instance Unparse (SentenceSymbol patternType) where
                         (Pretty.parens (Pretty.fillSep ["\\inh", unparse2 s]))
                         <> (unparse2Inhabitant rest)
 
+{- | Coerce the pattern type of a 'SentenceSymbol' to any other type.
+
+This is trivial because the pattern type is a phantom parameter, that is,
+'SentenceSymbol' does not contain any patterns.
+
+See also: 'coerce'
+
+ -}
+coerceSentenceSymbol :: SentenceSymbol pattern1 -> SentenceSymbol pattern2
+coerceSentenceSymbol = coerce
+
 {- | 'SentenceImport' corresponds to the @import-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
@@ -308,6 +324,17 @@ instance Unparse (SentenceImport patternType) where
             [ "import", unparse2 sentenceImportModuleName
             , unparse2 sentenceImportAttributes
             ]
+
+{- | Coerce the pattern type of a 'SentenceImport' to any other type.
+
+This is trivial because the pattern type is a phantom parameter, that is,
+'SentenceImport' does not contain any patterns.
+
+See also: 'coerce'
+
+ -}
+coerceSentenceImport :: SentenceImport pattern1 -> SentenceImport pattern2
+coerceSentenceImport = coerce
 
 {- | 'SentenceSort' corresponds to the @sort-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
@@ -365,6 +392,17 @@ instance Unparse (SentenceSort patternType) where
               case n of
                   0 -> ""
                   m -> Pretty.fillSep["(\\inh Sorts)", printLbSortsRb (m - 1)]
+
+{- | Coerce the pattern type of a 'SentenceSort' to any other type.
+
+This is trivial because the pattern type is a phantom parameter, that is,
+'SentenceSort' does not contain any patterns.
+
+See also: 'coerce'
+
+ -}
+coerceSentenceSort :: SentenceSort pattern1 -> SentenceSort pattern2
+coerceSentenceSort = coerce
 
 {- | 'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
@@ -484,6 +522,17 @@ instance Unparse (SentenceHook patternType) where
             SentenceHookedSort a -> "hooked-" <> unparse2 a
             SentenceHookedSymbol a -> "hooked-" <> unparse2 a
 
+{- | Coerce the pattern type of a 'SentenceHook' to any other type.
+
+This is trivial because the pattern type is a phantom parameter, that is,
+'SentenceHook' does not contain any patterns.
+
+See also: 'coerce'
+
+ -}
+coerceSentenceHook :: SentenceHook pattern1 -> SentenceHook pattern2
+coerceSentenceHook = coerce
+
 {- | @Sentence@ is the @declaration@ syntactic category from the Semantics of K,
 Section 9.1.6 (Declaration and Definitions).
 
@@ -547,9 +596,8 @@ sentenceAttributes =
 
 -- | Erase the pattern annotations within a 'Sentence'.
 eraseSentenceAnnotations
-    :: Functor domain
-    => Sentence (Pattern domain variable erased)
-    -> Sentence (Pattern domain variable Attribute.Null)
+    :: Sentence (Pattern variable erased)
+    -> Sentence (Pattern variable Attribute.Null)
 eraseSentenceAnnotations sentence = (<$) Attribute.Null <$> sentence
 
 class AsSentence sentenceType where

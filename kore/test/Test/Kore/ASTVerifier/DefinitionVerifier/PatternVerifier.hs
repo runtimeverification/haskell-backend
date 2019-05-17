@@ -7,23 +7,21 @@ import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
 
-import qualified Data.Foldable as Foldable
+import           Data.Function
 import qualified Data.List as List
 import qualified Data.Set as Set
 
 import           Kore.AST.AstWithLocation
 import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Hook as Attribute.Hook
-import qualified Kore.Attribute.Pattern as Attribute
-import qualified Kore.Domain.Builtin as Domain
+import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.Error
                  ( noSort )
-import           Kore.Internal.TermLike hiding
-                 ( freeVariables )
+import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import qualified Kore.Internal.TermLike as Internal
 import           Kore.Syntax
 import           Kore.Syntax.Definition
-import qualified Kore.Verified as Verified
 
 import           Test.Kore
 import           Test.Kore.ASTVerifier.DefinitionVerifier as Helpers
@@ -35,8 +33,7 @@ data PatternRestrict
     | NeedsSortedParent
 
 data TestPattern = TestPattern
-    { testPatternPattern
-        :: !(PatternF Domain.Builtin Variable (TermLike Variable))
+    { testPatternPattern    :: !(PatternF Variable ParsedPattern)
     , testPatternSort       :: !Sort
     , testPatternErrorStack :: !ErrorStack
     }
@@ -49,19 +46,9 @@ testPatternErrorStackStrings
   =
     strings
 
-testPatternUnifiedPattern :: TestPattern -> TermLike Variable
-testPatternUnifiedPattern
-    TestPattern { testPatternPattern, testPatternSort }
-  =
-    asPattern (valid :< testPatternPattern)
-  where
-    valid =
-        Attribute.Pattern
-            { patternSort = testPatternSort
-            , freeVariables =
-                Foldable.foldl' Set.union Set.empty
-                    (Attribute.freeVariables . extract <$> testPatternPattern)
-            }
+testPatternUnverifiedPattern :: TestPattern -> ParsedPattern
+testPatternUnverifiedPattern TestPattern { testPatternPattern } =
+    asParsedPattern testPatternPattern
 
 test_patternVerifier :: [TestTree]
 test_patternVerifier =
@@ -100,15 +87,7 @@ test_patternVerifier =
             { existsSort = anotherSort
             , existsVariable = anotherVariable
             , existsChild =
-                let
-                    valid =
-                        Attribute.Pattern
-                            { patternSort = objectSort
-                            , freeVariables = Set.empty
-                            }
-                    pattern' = simpleExistsPattern objectVariable' objectSort
-                in
-                    asPattern (valid :< pattern')
+                asParsedPattern $ simpleExistsPattern objectVariable' objectSort
             }
         )
         (NamePrefix "dummy")
@@ -129,7 +108,8 @@ test_patternVerifier =
         (ExistsF Exists
             { existsSort = objectSort
             , existsVariable = objectVariable'
-            , existsChild = (mkVar anotherVariable)
+            , existsChild =
+                Builtin.externalizePattern $ Internal.mkVar anotherVariable
             }
         )
         (NamePrefix "dummy")
@@ -162,17 +142,10 @@ test_patternVerifier =
             { existsSort = objectSort
             , existsVariable = objectVariable'
             , existsChild =
-                asPattern
-                    ((:<)
-                        Attribute.Pattern
-                            { patternSort = objectSortVariableSort
-                            , freeVariables = Set.empty
-                            }
-                        (simpleExistsPattern
-                            objectVariableSortVariable
-                            objectSortVariableSort
-                        )
-                    )
+                asParsedPattern
+                $ simpleExistsPattern
+                    objectVariableSortVariable
+                    objectSortVariableSort
             }
         )
         (NamePrefix "dummy")
@@ -236,8 +209,7 @@ test_patternVerifier =
     , successTestsForObjectPattern "Application pattern - symbol"
         (applicationPatternWithChildren
             objectSymbolName
-            [ simpleExistsObjectUnifiedPattern
-                objectVariableName anotherObjectSort2]
+            [simpleExistsParsedPattern objectVariableName anotherObjectSort2]
         )
         (NamePrefix "dummy")
         (TestedPatternSort objectSort)
@@ -252,7 +224,7 @@ test_patternVerifier =
     , successTestsForObjectPattern "Application pattern - alias"
         (applicationPatternWithChildren
             objectAliasNameAsSymbol
-            [ simpleExistsObjectUnifiedPattern
+            [ simpleExistsParsedPattern
                 objectVariableName anotherObjectSort2]
         )
         (NamePrefix "dummy")
@@ -275,7 +247,7 @@ test_patternVerifier =
         )
         (applicationPatternWithChildren
             objectSymbolName
-            [ simpleExistsObjectUnifiedPattern
+            [ simpleExistsParsedPattern
                 objectVariableName anotherObjectSort2]
         )
         (NamePrefix "dummy")
@@ -308,9 +280,9 @@ test_patternVerifier =
         (ErrorStack ["symbol or alias 'ObjectSymbol' (<test data>)"])
         (applicationPatternWithChildren
             objectSymbolName
-            [ simpleExistsObjectUnifiedPattern
+            [ simpleExistsParsedPattern
                 objectVariableName anotherObjectSort2
-            , simpleExistsObjectUnifiedPattern
+            , simpleExistsParsedPattern
                 objectVariableName anotherObjectSort2
             ]
         )
@@ -330,9 +302,9 @@ test_patternVerifier =
         (ErrorStack ["symbol or alias 'ObjectAlias' (<test data>)"])
         (applicationPatternWithChildren
             objectAliasNameAsSymbol
-            [ simpleExistsObjectUnifiedPattern
+            [ simpleExistsParsedPattern
                 objectVariableName anotherObjectSort2
-            , simpleExistsObjectUnifiedPattern
+            , simpleExistsParsedPattern
                 objectVariableName anotherObjectSort2
             ]
         )
@@ -368,7 +340,7 @@ test_patternVerifier =
                 , symbolOrAliasParams = []
                 }
             , applicationChildren =
-                [ simpleExistsObjectUnifiedPattern
+                [ simpleExistsParsedPattern
                     objectVariableName anotherObjectSort2]
             }
         )
@@ -392,8 +364,9 @@ test_patternVerifier =
                 , symbolOrAliasParams = [objectSort, objectSort]
                 }
             , applicationChildren =
-                [ simpleExistsObjectUnifiedPattern
-                    objectVariableName anotherObjectSort2]
+                [ simpleExistsParsedPattern
+                    objectVariableName anotherObjectSort2
+                ]
             }
         )
         (NamePrefix "dummy")
@@ -499,13 +472,12 @@ test_patternVerifier =
             , "While parsing domain value"
             ]
         )
-        (DomainValueF $ Domain.BuiltinExternal
-            Domain.External
-                { domainValueSort = intSort
-                , domainValueChild =
-                    eraseAnnotations
-                    $ mkStringLiteral "abcd"  -- Not a decimal integer
-                }
+        (DomainValueF DomainValue
+            { domainValueSort = intSort
+            , domainValueChild =
+                Builtin.externalizePattern
+                $ Internal.mkStringLiteral "abcd"  -- Not a decimal integer
+            }
         )
         (NamePrefix "dummy")
         (TestedPatternSort (updateAstLocation intSort AstLocationTest))
@@ -514,13 +486,12 @@ test_patternVerifier =
         [ asSentence intSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - INT.Int - Negative"
-        (DomainValueF $ Domain.BuiltinExternal
-            Domain.External
-                { domainValueSort = intSort
-                , domainValueChild =
-                    eraseAnnotations
-                    $ mkStringLiteral "-256"
-                }
+        (DomainValueF DomainValue
+            { domainValueSort = intSort
+            , domainValueChild =
+                Builtin.externalizePattern
+                $ Internal.mkStringLiteral "-256"
+            }
         )
         (NamePrefix "dummy")
         (TestedPatternSort intSort)
@@ -529,13 +500,12 @@ test_patternVerifier =
         [ asSentence intSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - INT.Int - Positive (unsigned)"
-        (DomainValueF $ Domain.BuiltinExternal
-            Domain.External
-                { domainValueSort = intSort
-                , domainValueChild =
-                    eraseAnnotations
-                    $ mkStringLiteral "1024"
-                }
+        (DomainValueF DomainValue
+            { domainValueSort = intSort
+            , domainValueChild =
+                Builtin.externalizePattern
+                $ Internal.mkStringLiteral "1024"
+            }
         )
         (NamePrefix "dummy")
         (TestedPatternSort intSort)
@@ -544,13 +514,12 @@ test_patternVerifier =
         [ asSentence intSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - INT.Int - Positive (signed)"
-        (DomainValueF $ Domain.BuiltinExternal
-            Domain.External
-                { domainValueSort = intSort
-                , domainValueChild =
-                    eraseAnnotations
-                    $ mkStringLiteral "+128"
-                }
+        (DomainValueF DomainValue
+            { domainValueSort = intSort
+            , domainValueChild =
+                Builtin.externalizePattern
+                $ Internal.mkStringLiteral "+128"
+            }
         )
         (NamePrefix "dummy")
         (TestedPatternSort intSort)
@@ -572,13 +541,12 @@ test_patternVerifier =
             , "While parsing domain value"
             ]
         )
-        (DomainValueF $ Domain.BuiltinExternal
-            Domain.External
-                { domainValueSort = boolSort
-                , domainValueChild =
-                    eraseAnnotations
-                    $ mkStringLiteral "untrue"  -- Not a BOOL.Bool
-                }
+        (DomainValueF DomainValue
+            { domainValueSort = boolSort
+            , domainValueChild =
+                Builtin.externalizePattern
+                $ Internal.mkStringLiteral "untrue"  -- Not a BOOL.Bool
+            }
         )
         (NamePrefix "dummy")
         (TestedPatternSort (updateAstLocation boolSort AstLocationTest))
@@ -587,13 +555,12 @@ test_patternVerifier =
         [ asSentence boolSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - BOOL.Bool - true"
-        (DomainValueF $ Domain.BuiltinExternal
-            Domain.External
-                { domainValueSort = boolSort
-                , domainValueChild =
-                    eraseAnnotations
-                    $ mkStringLiteral "true"
-                }
+        (DomainValueF DomainValue
+            { domainValueSort = boolSort
+            , domainValueChild =
+                Builtin.externalizePattern
+                $ Internal.mkStringLiteral "true"
+            }
         )
         (NamePrefix "dummy")
         (TestedPatternSort (updateAstLocation boolSort AstLocationTest))
@@ -602,13 +569,12 @@ test_patternVerifier =
         [ asSentence boolSortSentence ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Domain value - BOOL.Bool - false"
-        (DomainValueF $ Domain.BuiltinExternal
-            Domain.External
-                { domainValueSort = boolSort
-                , domainValueChild =
-                    eraseAnnotations
-                    $ mkStringLiteral "false"
-                }
+        (DomainValueF DomainValue
+            { domainValueSort = boolSort
+            , domainValueChild =
+                Builtin.externalizePattern
+                $ Internal.mkStringLiteral "false"
+            }
         )
         (NamePrefix "dummy")
         (TestedPatternSort (updateAstLocation boolSort AstLocationTest))
@@ -667,23 +633,21 @@ test_patternVerifier =
     objectVariableSortVariable =
         variable objectVariableName objectSortVariableSort
     oneSortSymbolRawName = "ObjectSymbol"
+    oneSortSymbolSentence :: ParsedSentence
     oneSortSymbolSentence =
-        asSentence
-            (SentenceSymbol
-                { sentenceSymbolSymbol = Symbol
-                    { symbolConstructor = testId oneSortSymbolRawName
-                    , symbolParams = [objectSortVariable]
-                    }
-                , sentenceSymbolSorts = [anotherObjectSort2]
-                , sentenceSymbolResultSort = objectSort
-                , sentenceSymbolAttributes =
-                    Attributes []
+        asSentence SentenceSymbol
+            { sentenceSymbolSymbol = Symbol
+                { symbolConstructor = testId oneSortSymbolRawName
+                , symbolParams = [objectSortVariable]
                 }
-            :: Verified.SentenceSymbol)
+            , sentenceSymbolSorts = [anotherObjectSort2]
+            , sentenceSymbolResultSort = objectSort
+            , sentenceSymbolAttributes = Attributes []
+            }
     intSortName = SortName "Int"
     intSort :: Sort
     intSort = simpleSort intSortName
-    intSortSentence :: Verified.SentenceHook
+    intSortSentence :: ParsedSentenceHook
     intSortSentence =
         SentenceHookedSort SentenceSort
             { sentenceSortName = testId name
@@ -696,7 +660,7 @@ test_patternVerifier =
     boolSortName = SortName "Int"
     boolSort :: Sort
     boolSort = simpleSort boolSortName
-    boolSortSentence :: Verified.SentenceHook
+    boolSortSentence :: ParsedSentenceHook
     boolSortSentence =
         SentenceHookedSort SentenceSort
             { sentenceSortName = testId name
@@ -717,31 +681,31 @@ test_verifyBinder =
         PatternVerifier.Context
             { declaredVariables = PatternVerifier.emptyDeclaredVariables
             , declaredSortVariables = Set.empty
-            , indexedModule = Builtin.indexedModule
+            , indexedModule =
+                Builtin.indexedModule
+                & IndexedModule.erasePatterns
             , builtinDomainValueVerifiers = mempty
             }
     testVerifyBinder name expect =
         testCase name $ do
             let
-                original = eraseAnnotations expect
+                original = Builtin.externalizePattern expect
                 verifier = verifyStandalonePattern Nothing original
                 Right actual = runPatternVerifier context verifier
             assertEqual "" expect actual
-            assertEqual "" (extract expect) (extract actual)
+            on (assertEqual "") Internal.extractAttributes expect actual
     testVerifyExists =
         testVerifyBinder "verifyExists" expect
       where
-        x = varS "x" Builtin.intSort
-        expect = mkExists x (mkVar x)
+        x = Internal.varS "x" Builtin.intSort
+        expect = Internal.mkExists x (Internal.mkVar x)
     testVerifyForall =
         testVerifyBinder "verifyForall" expect
       where
-        x = varS "x" Builtin.intSort
-        expect = mkForall x (mkVar x)
+        x = Internal.varS "x" Builtin.intSort
+        expect = Internal.mkForall x (Internal.mkVar x)
 
-dummyVariableAndSentences
-    :: NamePrefix
-    -> (Variable, [Verified.Sentence])
+dummyVariableAndSentences :: NamePrefix -> (Variable, [ParsedSentence])
 dummyVariableAndSentences (NamePrefix namePrefix) =
     (dummyVariable, [simpleSortSentence dummySortName])
   where
@@ -753,12 +717,12 @@ dummyVariableAndSentences (NamePrefix namePrefix) =
 
 successTestsForObjectPattern
     :: String
-    -> PatternF Domain.Builtin Variable (TermLike Variable)
+    -> PatternF Variable ParsedPattern
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
     -> DeclaredSort
-    -> [Verified.Sentence]
+    -> [ParsedSentence]
     -> PatternRestrict
     -> TestTree
 successTestsForObjectPattern
@@ -797,14 +761,14 @@ successTestsForObjectPattern
 
 successTestsForMetaPattern
     :: String
-    -> PatternF Domain.Builtin Variable (TermLike Variable)
+    -> PatternF Variable ParsedPattern
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
     -> SortVariablesThatMustBeDeclared
     -> DeclaredSort
     -> VariableOfDeclaredSort
-    -> [Verified.Sentence]
+    -> [ParsedSentence]
     -> PatternRestrict
     -> TestTree
 successTestsForMetaPattern
@@ -838,12 +802,12 @@ failureTestsForObjectPattern
     => String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> PatternF Domain.Builtin Variable (TermLike Variable)
+    -> PatternF Variable ParsedPattern
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
     -> DeclaredSort
-    -> [Verified.Sentence]
+    -> [ParsedSentence]
     -> PatternRestrict
     -> TestTree
 failureTestsForObjectPattern
@@ -894,14 +858,14 @@ failureTestsForMetaPattern
     => String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> PatternF Domain.Builtin Variable (TermLike Variable)
+    -> PatternF Variable ParsedPattern
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
     -> SortVariablesThatMustBeDeclared
     -> DeclaredSort
     -> VariableOfDeclaredSort
-    -> [Verified.Sentence]
+    -> [ParsedSentence]
     -> PatternRestrict
     -> TestTree
 failureTestsForMetaPattern
@@ -937,14 +901,14 @@ failureTestsForMetaPattern
             patternRestrict
 
 genericPatternInAllContexts
-    :: PatternF Domain.Builtin Variable (TermLike Variable)
+    :: PatternF Variable ParsedPattern
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
     -> SortVariablesThatMustBeDeclared
     -> DeclaredSort
     -> VariableOfDeclaredSort
-    -> [Verified.Sentence]
+    -> [ParsedSentence]
     -> PatternRestrict
     -> [TestData]
 genericPatternInAllContexts
@@ -981,7 +945,8 @@ genericPatternInAllContexts
         ExistsF Exists
             { existsSort = testedSort
             , existsVariable = anotherVariable
-            , existsChild = (mkVar anotherVariable)
+            , existsChild =
+                Builtin.externalizePattern $ Internal.mkVar anotherVariable
             }
     anotherVariable =
         Variable
@@ -1003,12 +968,12 @@ genericPatternInAllContexts
             }
 
 objectPatternInAllContexts
-    :: PatternF Domain.Builtin Variable (TermLike Variable)
+    :: PatternF Variable ParsedPattern
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
     -> DeclaredSort
-    -> [Verified.Sentence]
+    -> [ParsedSentence]
     -> PatternRestrict
     -> [TestData]
 objectPatternInAllContexts
@@ -1034,7 +999,9 @@ objectPatternInAllContexts
         ExistsF Exists
             { existsSort = testedSort
             , existsVariable = anotherVariable
-            , existsChild = (mkVar anotherVariable)
+            , existsChild =
+                Builtin.externalizePattern
+                $ Internal.mkVar anotherVariable
             }
     anotherVariable =
         Variable
@@ -1049,7 +1016,7 @@ patternsInAllContexts
     -> SortVariablesThatMustBeDeclared
     -> SortVariablesThatMustBeDeclared
     -> DeclaredSort
-    -> [Verified.Sentence]
+    -> [ParsedSentence]
     -> PatternRestrict
     -> [TestData]
 patternsInAllContexts
@@ -1081,47 +1048,46 @@ patternsInAllContexts
     symbolAliasSort = sortVariableSort rawSortVariableName
     symbolSentence =
         SentenceSymbolSentence SentenceSymbol
-                { sentenceSymbolSymbol = Symbol
-                    { symbolConstructor = testId rawSymbolName
-                    , symbolParams = [SortVariable (testId rawSortVariableName)]
-                    }
-                , sentenceSymbolSorts = [symbolAliasSort]
-                , sentenceSymbolResultSort = anotherSort
-                , sentenceSymbolAttributes =
-                    Attributes []
+            { sentenceSymbolSymbol = Symbol
+                { symbolConstructor = testId rawSymbolName
+                , symbolParams = [SortVariable (testId rawSortVariableName)]
                 }
-    aliasSentence :: Verified.Sentence
+            , sentenceSymbolSorts = [symbolAliasSort]
+            , sentenceSymbolResultSort = anotherSort
+            , sentenceSymbolAttributes = Attributes []
+            }
+    aliasSentence :: ParsedSentence
     aliasSentence =
         let aliasConstructor = testId rawAliasName
             aliasParams = [SortVariable (testId rawSortVariableName)]
-        in SentenceAliasSentence
-            SentenceAlias
-                { sentenceAliasAlias = Alias { aliasConstructor, aliasParams }
-                , sentenceAliasSorts = [symbolAliasSort]
-                , sentenceAliasResultSort = anotherSort
-                , sentenceAliasLeftPattern =
-                    Application
-                        { applicationSymbolOrAlias =
-                            SymbolOrAlias
-                                { symbolOrAliasConstructor = aliasConstructor
-                                , symbolOrAliasParams =
-                                    SortVariableSort <$> aliasParams
-                                }
-                        , applicationChildren =
-                            [ Variable
-                                { variableName = testId "x"
-                                , variableCounter = mempty
-                                , variableSort = symbolAliasSort
-                                }
-                            ]
-                        }
-                , sentenceAliasRightPattern = mkTop anotherSort
-                , sentenceAliasAttributes = Attributes []
-                }
+        in SentenceAliasSentence SentenceAlias
+            { sentenceAliasAlias = Alias { aliasConstructor, aliasParams }
+            , sentenceAliasSorts = [symbolAliasSort]
+            , sentenceAliasResultSort = anotherSort
+            , sentenceAliasLeftPattern =
+                Application
+                    { applicationSymbolOrAlias =
+                        SymbolOrAlias
+                            { symbolOrAliasConstructor = aliasConstructor
+                            , symbolOrAliasParams =
+                                SortVariableSort <$> aliasParams
+                            }
+                    , applicationChildren =
+                        [ Variable
+                            { variableName = testId "x"
+                            , variableCounter = mempty
+                            , variableSort = symbolAliasSort
+                            }
+                        ]
+                    }
+            , sentenceAliasRightPattern =
+                Builtin.externalizePattern $ Internal.mkTop anotherSort
+            , sentenceAliasAttributes = Attributes []
+            }
 
 genericPatternInPatterns
-    :: PatternF Domain.Builtin Variable (TermLike Variable)
-    -> PatternF Domain.Builtin Variable (TermLike Variable)
+    :: PatternF Variable ParsedPattern
+    -> PatternF Variable ParsedPattern
     -> OperandSort
     -> Helpers.ResultSort
     -> VariableOfDeclaredSort
@@ -1155,7 +1121,7 @@ genericPatternInPatterns
         [ TestPattern
             { testPatternPattern = ApplicationF Application
                 { applicationSymbolOrAlias = symbol
-                , applicationChildren = [asPattern (valid :< testedPattern)]
+                , applicationChildren = [asParsedPattern testedPattern]
                 }
             , testPatternSort = testedSort
             , testPatternErrorStack =
@@ -1168,7 +1134,7 @@ genericPatternInPatterns
         , TestPattern
             { testPatternPattern = ApplicationF Application
                 { applicationSymbolOrAlias = alias
-                , applicationChildren = [asPattern (valid :< testedPattern)]
+                , applicationChildren = [asParsedPattern testedPattern]
                 }
             , testPatternSort = testedSort
             , testPatternErrorStack =
@@ -1179,24 +1145,16 @@ genericPatternInPatterns
                     ]
             }
         ]
-  where
-    valid =
-        Attribute.Pattern
-            { patternSort = testedSort
-            , freeVariables =
-                Foldable.foldl' Set.union Set.empty
-                    (Attribute.freeVariables . extract <$> testedPattern)
-            }
 
 objectPatternInPatterns
-    :: PatternF Domain.Builtin Variable (TermLike Variable)
-    -> PatternF Domain.Builtin Variable (TermLike Variable)
+    :: PatternF Variable ParsedPattern
+    -> PatternF Variable ParsedPattern
     -> OperandSort
     -> [TestPattern]
 objectPatternInPatterns = patternInUnquantifiedObjectPatterns
 
 patternInQuantifiedPatterns
-    :: PatternF Domain.Builtin Variable (TermLike Variable)
+    :: PatternF Variable ParsedPattern
     -> Sort
     -> Variable
     -> [TestPattern]
@@ -1231,18 +1189,11 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
         }
     ]
   where
-    valid =
-        Attribute.Pattern
-            { patternSort = testedSort
-            , freeVariables =
-                Foldable.foldl' Set.union Set.empty
-                    (Attribute.freeVariables . extract <$> testedPattern)
-            }
-    testedKorePattern = asPattern (valid :< testedPattern)
+    testedKorePattern = asParsedPattern testedPattern
 
 patternInUnquantifiedGenericPatterns
-    :: PatternF Domain.Builtin Variable (TermLike Variable)
-    -> PatternF Domain.Builtin Variable (TermLike Variable)
+    :: PatternF Variable ParsedPattern
+    -> PatternF Variable ParsedPattern
     -> OperandSort
     -> Helpers.ResultSort
     -> [TestPattern]
@@ -1392,19 +1343,12 @@ patternInUnquantifiedGenericPatterns
         }
     ]
   where
-    valid =
-        Attribute.Pattern
-            { patternSort = testedSort
-            , freeVariables =
-                Foldable.foldl' Set.union Set.empty
-                    (Attribute.freeVariables . extract <$> testedPattern)
-            }
-    anotherUnifiedPattern = asPattern (valid :< anotherPattern)
-    testedUnifiedPattern = asPattern (valid :< testedPattern)
+    anotherUnifiedPattern = asParsedPattern anotherPattern
+    testedUnifiedPattern = asParsedPattern testedPattern
 
 patternInUnquantifiedObjectPatterns
-    :: PatternF Domain.Builtin Variable (TermLike Variable)
-    -> PatternF Domain.Builtin Variable (TermLike Variable)
+    :: PatternF Variable ParsedPattern
+    -> PatternF Variable ParsedPattern
     -> OperandSort
     -> [TestPattern]
 patternInUnquantifiedObjectPatterns
@@ -1441,22 +1385,15 @@ patternInUnquantifiedObjectPatterns
 
     ]
   where
-    valid =
-        Attribute.Pattern
-            { patternSort = testedSort
-            , freeVariables =
-                Foldable.foldl' Set.union Set.empty
-                    (Attribute.freeVariables . extract <$> testedPattern)
-            }
-    anotherUnifiedPattern = asPattern (valid :< anotherPattern)
-    testedUnifiedPattern = asPattern (valid :< testedPattern)
+    anotherUnifiedPattern = asParsedPattern anotherPattern
+    testedUnifiedPattern = asParsedPattern testedPattern
 
 testsForUnifiedPatternInTopLevelContext
     :: NamePrefix
     -> DeclaredSort
     -> SortVariablesThatMustBeDeclared
     -> SortVariablesThatMustBeDeclared
-    -> [Verified.Sentence]
+    -> [ParsedSentence]
     -> PatternRestrict
     -> [TestPattern -> TestData]
 testsForUnifiedPatternInTopLevelContext
@@ -1474,7 +1411,7 @@ testsForUnifiedPatternInTopLevelGenericContext
     :: NamePrefix
     -> DeclaredSort
     -> SortVariablesThatMustBeDeclared
-    -> [Verified.Sentence]
+    -> [ParsedSentence]
     -> PatternRestrict
     -> [TestPattern -> TestData]
 testsForUnifiedPatternInTopLevelGenericContext
@@ -1497,7 +1434,7 @@ testsForUnifiedPatternInTopLevelGenericContext
             , testDataDefinition =
                 simpleDefinitionFromSentences (ModuleName "MODULE")
                     ( axiomSentenceWithSortParameters
-                        (testPatternUnifiedPattern testPattern)
+                        (testPatternUnverifiedPattern testPattern)
                         sortVariables
                     : additionalSentences
                     )

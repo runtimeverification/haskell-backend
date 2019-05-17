@@ -1,4 +1,3 @@
-{-# LANGUAGE GADTs #-}
 {-|
 Module      : Kore.ASTVerifier.SortVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Sort'.
@@ -15,14 +14,13 @@ import qualified Data.Set as Set
 import Kore.AST.Error
 import Kore.ASTVerifier.Error
 import Kore.Error
-import Kore.IndexedModule.IndexedModule
 import Kore.Syntax
 import Kore.Syntax.Definition
 
 {-|'verifySort' verifies the welformedness of a Kore 'Sort'. -}
 verifySort
     :: MonadError (Error VerifyError) m
-    => (Id -> m (SortDescription dom))
+    => (Id -> m (SentenceSort patternType))
     -- ^ Provides a sortMetaSorts description.
     -> Set.Set SortVariable
     -- ^ Sort variables visible here.
@@ -64,10 +62,10 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort)
 
 verifySortMatchesDeclaration
     :: MonadError (Error VerifyError) m
-    => (Id -> m (SortDescription dom))
+    => (Id -> m (SentenceSort patternType))
     -> Set.Set SortVariable
     -> SortActual
-    -> SortDescription dom
+    -> SentenceSort patternType'
     -> m VerifySuccess
 verifySortMatchesDeclaration
     findSortDescription declaredSortVariables sort sortDescription

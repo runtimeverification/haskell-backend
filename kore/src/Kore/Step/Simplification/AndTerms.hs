@@ -1345,10 +1345,30 @@ domainValueAndConstructorErrors
             )
 domainValueAndConstructorErrors
     tools
+    term1@(Builtin_ _)
+    term2@(App_ secondHead _)
+    | give tools Attribute.isConstructor_ secondHead =
+      error (unlines [ "Cannot handle builtin and Constructor:"
+                     , unparseToString term1
+                     , unparseToString term2
+                     ]
+            )
+domainValueAndConstructorErrors
+    tools
     term1@(App_ firstHead _)
     term2@(DV_ _ _)
     | give tools Attribute.isConstructor_ firstHead =
       error (unlines [ "Cannot handle Constructor and DomainValue:"
+                     , unparseToString term1
+                     , unparseToString term2
+                     ]
+            )
+domainValueAndConstructorErrors
+    tools
+    term1@(App_ firstHead _)
+    term2@(Builtin_ _)
+    | give tools Attribute.isConstructor_ firstHead =
+      error (unlines [ "Cannot handle Constructor and builtin:"
                      , unparseToString term1
                      , unparseToString term2
                      ]
@@ -1374,16 +1394,20 @@ domainValueAndEqualsAssumesDifferent
     -> TermLike variable
     -> MaybeT unifier (TermLike variable)
 domainValueAndEqualsAssumesDifferent
-    first@(DV_ _ (Domain.BuiltinExternal _))
-    second@(DV_ _ (Domain.BuiltinExternal _))
+    first@(DV_ _ _)
+    second@(DV_ _ _)
   = Monad.Trans.lift $ cannotUnifyDomainValues first second
 domainValueAndEqualsAssumesDifferent
-    first@(DV_ _ (Domain.BuiltinBool _))
-    second@(DV_ _ (Domain.BuiltinBool _))
+    first@(Builtin_ (Domain.BuiltinBool _))
+    second@(Builtin_ (Domain.BuiltinBool _))
   = Monad.Trans.lift $ cannotUnifyDomainValues first second
 domainValueAndEqualsAssumesDifferent
-    first@(DV_ _ (Domain.BuiltinInt _))
-    second@(DV_ _ (Domain.BuiltinInt _))
+    first@(Builtin_ (Domain.BuiltinInt _))
+    second@(Builtin_ (Domain.BuiltinInt _))
+  = Monad.Trans.lift $ cannotUnifyDomainValues first second
+domainValueAndEqualsAssumesDifferent
+    first@(Builtin_ (Domain.BuiltinString _))
+    second@(Builtin_ (Domain.BuiltinString _))
   = Monad.Trans.lift $ cannotUnifyDomainValues first second
 domainValueAndEqualsAssumesDifferent _ _ = empty
 

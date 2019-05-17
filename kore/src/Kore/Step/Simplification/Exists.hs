@@ -41,7 +41,6 @@ import qualified Kore.Step.Simplification.Data as BranchT
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.Syntax.Exists
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Substitution
                  ( Substitution )

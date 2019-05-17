@@ -15,6 +15,8 @@ module Kore.Unification.SubstitutionNormalization
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Control.Monad.Except
                  ( ExceptT (..) )
+import           Data.Functor.Foldable
+                 ( Base )
 import qualified Data.Functor.Foldable as Recursive
 import           Data.Map.Strict
                  ( Map )
@@ -34,12 +36,9 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Internal.Predicate
                  ( Conditional (..), Predicate )
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
-                 ( TermLike )
-import qualified Kore.Internal.TermLike as TermLike
+import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
-import           Kore.Syntax
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution

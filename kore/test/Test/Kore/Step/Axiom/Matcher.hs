@@ -18,7 +18,6 @@ import           Kore.Attribute.Simplification
                  ( Simplification (Simplification) )
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -165,20 +164,34 @@ test_matcherEqualHeads =
                 (mkCharLiteral 'a')
         assertEqualWithExplanation "" expect actual
 
+    , testCase "Builtin" $ do
+        let expect = Just $ MultiOr.make [Conditional.topPredicate]
+        actual <-
+            matchDefinition Mock.metadataTools
+                (mkDomainValue DomainValue
+                    { domainValueSort = Mock.testSort1
+                    , domainValueChild = mkStringLiteral "10"
+                    }
+                )
+                (mkDomainValue DomainValue
+                    { domainValueSort = Mock.testSort1
+                    , domainValueChild = mkStringLiteral "10"
+                    }
+                )
+        assertEqualWithExplanation "" expect actual
+
     , testCase "DomainValue" $ do
         let expect = Just $ MultiOr.make [Conditional.topPredicate]
         actual <-
             matchDefinition Mock.metadataTools
-                (mkDomainValue $ Domain.BuiltinExternal Domain.External
+                (mkDomainValue DomainValue
                     { domainValueSort = Mock.testSort1
-                    , domainValueChild =
-                        eraseAnnotations $ mkStringLiteral "10"
+                    , domainValueChild = mkStringLiteral "10"
                     }
                 )
-                (mkDomainValue $ Domain.BuiltinExternal Domain.External
+                (mkDomainValue DomainValue
                     { domainValueSort = Mock.testSort1
-                    , domainValueChild =
-                        eraseAnnotations $ mkStringLiteral "10"
+                    , domainValueChild = mkStringLiteral "10"
                     }
                 )
         assertEqualWithExplanation "" expect actual

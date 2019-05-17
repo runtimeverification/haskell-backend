@@ -4,8 +4,12 @@ License     : NCSA
 
  -}
 
+{-# LANGUAGE TemplateHaskell #-}
+
 module Kore.Attribute.Pattern
     ( Pattern (..)
+    , lensFreeVariables
+    , lensPatternSort
     , mapVariables
     , traverseVariables
     , deleteFreeVariable
@@ -13,6 +17,8 @@ module Kore.Attribute.Pattern
 
 import           Control.DeepSeq
                  ( NFData )
+import           Control.Lens.TH.Rules
+                 ( makeLenses )
 import           Data.Hashable
                  ( Hashable (..) )
 import           Data.Set
@@ -35,6 +41,8 @@ data Pattern variable =
         -- ^ The free variables of the pattern.
         }
     deriving (Eq, GHC.Generic, Ord, Show)
+
+makeLenses ''Pattern
 
 instance NFData variable => NFData (Pattern variable)
 

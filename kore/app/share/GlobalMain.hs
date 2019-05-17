@@ -63,8 +63,8 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
-                 ( IndexedModule (..), VerifiedModule,
-                 makeIndexedModuleAttributesNull, mapIndexedModulePatterns )
+                 ( IndexedModule (..), KoreIndexedModule, VerifiedModule )
+import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.Parser
                  ( ParsedPattern, parseKoreDefinition )
 import           Kore.Step.Strategy
@@ -277,11 +277,12 @@ mainPatternVerify verifiedModule patt = do
     either (error . printError) return verifyResult
   where
     Builtin.Verifiers { domainValueVerifiers } = Builtin.koreVerifiers
-    indexedModule =
-        mapIndexedModulePatterns eraseAnnotations verifiedModule
     context =
         PatternVerifier.Context
-            { indexedModule = makeIndexedModuleAttributesNull indexedModule
+            { indexedModule =
+                verifiedModule
+                & IndexedModule.eraseAttributes
+                & IndexedModule.erasePatterns
             , declaredSortVariables = Set.empty
             , declaredVariables = emptyDeclaredVariables
             , builtinDomainValueVerifiers = domainValueVerifiers
@@ -346,9 +347,8 @@ Also prints timing information; see 'mainParse'.
  -}
 verifyDefinitionWithBase
     :: Maybe
-        ( Map.Map
-            ModuleName
-            (VerifiedModule StepperAttributes Attribute.Axiom)
+        ( Map.Map ModuleName
+            (KoreIndexedModule StepperAttributes Attribute.Axiom)
         , Map.Map Text AstLocation
         )
     -- ^ base definition to use for verification
@@ -357,8 +357,7 @@ verifyDefinitionWithBase
     -> ParsedDefinition
     -- ^ Parsed definition to check well-formedness
     -> IO
-        ( Map.Map
-            ModuleName
+        ( Map.Map ModuleName
             (VerifiedModule StepperAttributes Attribute.Axiom)
         , Map.Map Text AstLocation
         )

@@ -25,8 +25,8 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-import           Kore.Internal.TermLike
                  ( TermLike )
+import qualified Kore.Internal.TermLike as TermLike
 import           Kore.OnePath.Step
 import           Kore.OnePath.StrategyPattern
 import           Kore.Predicate.Predicate
@@ -195,7 +195,7 @@ test_onePathStrategy =
                 Mock.metadataTools
                 (Limit 2)
                 (Pattern.fromTermLike
-                    (Mock.functionalConstr10 (mkVar Mock.x))
+                    (Mock.functionalConstr10 (TermLike.mkVar Mock.x))
                 )
                 (Mock.functionalConstr11 Mock.a)
                 [ simpleRewrite (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
@@ -205,11 +205,11 @@ test_onePathStrategy =
                 , simpleRewrite (Mock.functionalConstr11 Mock.b) (Mock.g Mock.b)
                 , simpleRewrite (Mock.functionalConstr11 Mock.c) (Mock.f Mock.c)
                 , simpleRewrite
-                    (Mock.functionalConstr11 (mkVar Mock.y))
-                    (Mock.h (mkVar Mock.y))
+                    (Mock.functionalConstr11 (TermLike.mkVar Mock.y))
+                    (Mock.h (TermLike.mkVar Mock.y))
                 , simpleRewrite
-                    (Mock.functionalConstr10 (mkVar Mock.y))
-                    (Mock.functionalConstr11 (mkVar Mock.y))
+                    (Mock.functionalConstr10 (TermLike.mkVar Mock.y))
+                    (Mock.functionalConstr11 (TermLike.mkVar Mock.y))
                 ]
         assertEqualWithExplanation ""
             [ RewritePattern Conditional
@@ -223,23 +223,23 @@ test_onePathStrategy =
                 , substitution = Substitution.unsafeWrap [(Mock.x, Mock.c)]
                 }
             , RewritePattern Conditional
-                { term = Mock.h (mkVar Mock.x)
+                { term = Mock.h (TermLike.mkVar Mock.x)
                 , predicate =  -- TODO(virgil): Better and simplification.
                     makeAndPredicate
                         (makeAndPredicate
                             (makeNotPredicate
                                 (makeEqualsPredicate
-                                    (mkVar Mock.x) Mock.a
+                                    (TermLike.mkVar Mock.x) Mock.a
                                 )
                             )
                             (makeNotPredicate
                                 (makeEqualsPredicate
-                                    (mkVar Mock.x) Mock.b
+                                    (TermLike.mkVar Mock.x) Mock.b
                                 )
                             )
                         )
                         (makeNotPredicate
-                            (makeEqualsPredicate (mkVar Mock.x) Mock.c)
+                            (makeEqualsPredicate (TermLike.mkVar Mock.x) Mock.c)
                         )
                 , substitution = mempty
                 }
@@ -266,15 +266,15 @@ test_onePathStrategy =
                 Mock.metadataTools
                 (Limit 2)
                 (Pattern.fromTermLike
-                    (Mock.functionalConstr10 (mkVar Mock.x))
+                    (Mock.functionalConstr10 (TermLike.mkVar Mock.x))
                 )
                 (Mock.functionalConstr11 Mock.a)
                 [ simpleRewrite (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
                 ]
                 [ simpleRewrite (Mock.functionalConstr11 Mock.c) (Mock.f Mock.c)
                 , simpleRewrite
-                    (Mock.functionalConstr10 (mkVar Mock.y))
-                    (Mock.functionalConstr11 (mkVar Mock.y))
+                    (Mock.functionalConstr10 (TermLike.mkVar Mock.y))
+                    (Mock.functionalConstr11 (TermLike.mkVar Mock.y))
                 ]
         assertEqualWithExplanation ""
             [ RewritePattern Conditional
@@ -288,23 +288,23 @@ test_onePathStrategy =
                 , substitution = Substitution.unsafeWrap [(Mock.x, Mock.c)]
                 }
             , Stuck Conditional
-                { term = Mock.functionalConstr11 (mkVar Mock.x)
+                { term = Mock.functionalConstr11 (TermLike.mkVar Mock.x)
                 , predicate =
                     makeAndPredicate
                         (makeAndPredicate
                             (makeNotPredicate
                                 (makeEqualsPredicate
-                                    (mkVar Mock.x) Mock.a
+                                    (TermLike.mkVar Mock.x) Mock.a
                                 )
                             )
                             (makeNotPredicate
                                 (makeEqualsPredicate
-                                    (mkVar Mock.x) Mock.b
+                                    (TermLike.mkVar Mock.x) Mock.b
                                 )
                             )
                         )
                         (makeNotPredicate
-                            (makeEqualsPredicate (mkVar Mock.x) Mock.c)
+                            (makeEqualsPredicate (TermLike.mkVar Mock.x) Mock.c)
                         )
                 , substitution = mempty
                 }
@@ -362,11 +362,11 @@ test_onePathStrategy =
                 (Mock.builtinInt 1)
                 []
                 [ rewriteWithPredicate
-                    (mkVar Mock.xInt)
+                    (TermLike.mkVar Mock.xInt)
                     (Mock.builtinInt 1)
                     (makeEqualsPredicate
                         (Mock.lessInt
-                            (mkVar Mock.xInt) (Mock.builtinInt 2)
+                            (TermLike.mkVar Mock.xInt) (Mock.builtinInt 2)
                         )
                         (Mock.builtinBool True)
                     )
