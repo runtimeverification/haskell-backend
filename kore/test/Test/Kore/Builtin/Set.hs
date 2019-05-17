@@ -446,11 +446,9 @@ test_unifySelectFromSingletonWithoutLeftovers =
             let selectPat       = makeElementVariable elementVar
                 singleton       = asInternal (Set.singleton concreteElem)
                 elemStepPattern = fromConcrete concreteElem
-                unsimplifiedSingleton =
-                    mkApp setSort elementSetSymbol [elemStepPattern]
                 expect =
                     Conditional
-                        { term = unsimplifiedSingleton
+                        { term = singleton
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
@@ -571,7 +569,7 @@ unifiesWith
 unifiesWith pat1 pat2 expected =
     unifiesWithMulti pat1 pat2 [expected]
 
--- use as (pat1 `unifiesWith` pat2) expect
+-- use as (pat1 `unifiesWithMulti` pat2) expect
 unifiesWithMulti
     :: HasCallStack
     => TermLike Variable
@@ -672,7 +670,7 @@ test_concretizeKeys =
             { term =
                 mkPair intSort setSort
                     symbolicKey
-                    (asSymbolicPattern $ Set.fromList [symbolicKey])
+                    (asInternal $ Set.fromList [concreteKey])
             , predicate = Predicate.makeTruePredicate
             , substitution = Substitution.unsafeWrap
                 [ (x, symbolicKey) ]

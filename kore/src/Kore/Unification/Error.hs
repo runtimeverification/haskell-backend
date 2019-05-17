@@ -11,7 +11,7 @@ module Kore.Unification.Error
     ( SubstitutionError (..)
     , UnificationError (..)
     , UnificationOrSubstitutionError (..)
-    , errorIfConcreteIncompletelyUnified
+    , errorIfIncompletelyUnified
     , substitutionToUnifyOrSubError
     , unificationToUnifyOrSubError
     ) where
@@ -93,16 +93,20 @@ unificationToUnifyOrSubError
     -> UnificationOrSubstitutionError
 unificationToUnifyOrSubError = UnificationError
 
--- Setup: we are unifying against a concrete (no variables) pattern
+-- | Hypothetical setup: We want to ignore the unification term. That's iffy,
+-- but one thing that we could do is to check that the unification fully
+-- succeeded.
+--
 -- If the unification problem is completely solved, we expect that
 -- the term of the unifier is precisely the concrete pattern.
--- If not, this is probably because the term contains an and coming from
+-- If not, this is probably because the term contains an 'and' coming from
 -- an incomplete unification problem.
+--
 -- An example of how this might happen is unifying a concrete pattern
 -- against a non-functional term.
 -- Since this case is not yet handled by the unification algorithm
 -- we choose to throw an error here.
-errorIfConcreteIncompletelyUnified
+errorIfIncompletelyUnified
     ::  ( Monad m
         , Ord variable
         , Show variable
@@ -114,16 +118,16 @@ errorIfConcreteIncompletelyUnified
     -> TermLike variable
     -> Pattern variable
     -> m ()
-errorIfConcreteIncompletelyUnified expected patt unifiedPattern =
+errorIfIncompletelyUnified expected patt unifiedPattern =
     Monad.when (Pattern.term unifiedPattern /= expected)
         $ error
             (  "Unification problem not completely solved. "
-            ++ "When unfying against concrete pattern\n\t"
-            ++ show (unparseToString expected)
+            ++ "When unifying against concrete pattern\n\t"
+            ++ unparseToString expected
             ++ "\nwith pattern\n\t"
-            ++ show (unparseToString patt)
+            ++ unparseToString patt
             ++ "\nExpecting to get the concrete pattern back but got\n\t"
-            ++ show (unparseToString unifiedPattern)
+            ++ unparseToString unifiedPattern
             ++ "\nHandling this is currently not implemented."
             ++ "\nPlease file an issue if this should work for you."
             )
