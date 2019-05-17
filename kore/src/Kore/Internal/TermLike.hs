@@ -9,6 +9,7 @@ License     : NCSA
 module Kore.Internal.TermLike
     ( TermLikeF (..)
     , TermLike (..)
+    , Evaluated (..)
     , Builtin
     , extractAttributes
     , freeVariables
@@ -50,6 +51,7 @@ module Kore.Internal.TermLike
     , mkSort
     , mkSortVariable
     , mkInhabitant
+    , mkEvaluated
     , varS
     , symS
     -- * Predicate constructors
@@ -94,6 +96,7 @@ module Kore.Internal.TermLike
     , pattern V
     , pattern StringLiteral_
     , pattern CharLiteral_
+    , pattern Evaluated_
     -- * Re-exports
     , SymbolOrAlias (..)
     , SortedVariable (..)
@@ -198,6 +201,33 @@ import qualified Kore.Unparser as Unparser
 import           Kore.Variables.Binding
 import           Kore.Variables.Fresh
 
+{- | @Evaluated@ wraps patterns which are fully evaluated.
+
+Fully-evaluated patterns will not be simplified further because no progress
+could be made.
+
+ -}
+newtype Evaluated child = Evaluated { getEvaluated :: child }
+    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
+
+Deriving.deriveEq1 ''Evaluated
+Deriving.deriveOrd1 ''Evaluated
+Deriving.deriveShow1 ''Evaluated
+
+instance SOP.Generic (Evaluated child)
+
+instance SOP.HasDatatypeInfo (Evaluated child)
+
+instance Hashable child => Hashable (Evaluated child)
+
+instance NFData child => NFData (Evaluated child)
+
+instance Unparse child => Unparse (Evaluated child) where
+    unparse evaluated =
+        Pretty.vsep ["/* evaluated: */", Unparser.unparseGeneric evaluated]
+    unparse2 evaluated =
+        Pretty.vsep ["/* evaluated: */", Unparser.unparse2Generic evaluated]
+
 -- | The type of internal domain values.
 type Builtin = Domain.Builtin (TermLike Concrete)
 
@@ -228,6 +258,7 @@ data TermLikeF variable child
     | InhabitantF    !Sort
     | SetVariableF   !(SetVariable variable)
     | BuiltinF       !(Builtin child)
+    | EvaluatedF     !(Evaluated child)
     deriving (Foldable, Functor, GHC.Generic, Traversable)
 
 instance (Eq variable, Eq child) => Eq (TermLikeF variable child) where
@@ -243,6 +274,8 @@ instance (Show variable, Show child) => Show (TermLikeF variable child) where
     {-# INLINE showsPrec #-}
 
 instance SOP.Generic (TermLikeF variable child)
+
+instance SOP.HasDatatypeInfo (TermLikeF variable child)
 
 instance
     (Hashable child, Hashable variable) =>
@@ -310,6 +343,7 @@ traverseVariablesF traversing =
         CharLiteralF charP -> pure (CharLiteralF charP)
         TopF topP -> pure (TopF topP)
         InhabitantF s -> pure (InhabitantF s)
+        EvaluatedF childP -> pure (EvaluatedF childP)
   where
     traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
         Exists existsSort <$> traversing existsVariable <*> pure existsChild
@@ -796,6 +830,8 @@ forceSort forcedSort = Recursive.apo forceSortWorker
             ]
         forceSortWorkerPredicate =
             case pattern' of
+                -- Recurse
+                EvaluatedF evaluated -> EvaluatedF (Right <$> evaluated)
                 -- Predicates: Force sort and stop.
                 BottomF bottom' -> BottomF bottom' { bottomSort = forcedSort }
                 TopF top' -> TopF top' { topSort = forcedSort }
@@ -1546,6 +1582,11 @@ mkInhabitant sort =
             , freeVariables = Set.empty
             }
 
+mkEvaluated :: TermLike variable -> TermLike variable
+mkEvaluated termLike =
+    Recursive.embed
+        (extractAttributes termLike :< EvaluatedF (Evaluated termLike))
+
 mkSort :: Id -> Sort
 mkSort name = SortActualSort $ SortActual name []
 
@@ -1774,6 +1815,8 @@ pattern StringLiteral_ :: Text -> TermLike variable
 
 pattern CharLiteral_ :: Char -> TermLike variable
 
+pattern Evaluated_ :: TermLike variable -> TermLike variable
+
 pattern And_ andSort andFirst andSecond <-
     (Recursive.project -> _ :< AndF And { andSort, andFirst, andSecond })
 
@@ -1883,3 +1926,6 @@ pattern StringLiteral_ str <-
 
 pattern CharLiteral_ char <-
     (Recursive.project -> _ :< CharLiteralF (CharLiteral char))
+
+pattern Evaluated_ child <-
+    (Recursive.project -> _ :< EvaluatedF (Evaluated child))

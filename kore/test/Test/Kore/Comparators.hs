@@ -2085,6 +2085,12 @@ instance
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
+    sumConstructorPair (TermLike.EvaluatedF a1) (TermLike.EvaluatedF a2) =
+        SumConstructorSameWithArguments (EqWrap "EvaluatedF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.EvaluatedF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
 instance
     ( EqualWithExplanation child
     , Eq child, Eq variable
@@ -2095,3 +2101,17 @@ instance
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
+
+instance
+    (EqualWithExplanation child, Show child) =>
+    EqualWithExplanation (TermLike.Evaluated child)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    (EqualWithExplanation child, Show child) =>
+    WrapperEqualWithExplanation (TermLike.Evaluated child)
+  where
+    wrapperField = Function.on (EqWrap "getEvaluated = ") getEvaluated
+    wrapperConstructorName _ = "Evaluated"

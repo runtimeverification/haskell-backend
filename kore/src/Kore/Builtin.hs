@@ -29,6 +29,7 @@ module Kore.Builtin
     , externalizePattern
     ) where
 
+import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
@@ -219,8 +220,10 @@ externalizePattern =
 
     toPatternF
         :: GHC.HasCallStack
-        => Recursive.Base (TermLike variable) child
-        -> Recursive.Base (Syntax.Pattern variable Attribute.Null) child
+        => Recursive.Base (TermLike variable) (TermLike variable)
+        -> Recursive.Base
+            (Syntax.Pattern variable Attribute.Null)
+            (TermLike variable)
     toPatternF (_ :< termLikeF) =
         (Attribute.Null :<)
         $ case termLikeF of
@@ -240,10 +243,15 @@ externalizePattern =
             NotF notF -> Syntax.NotF notF
             OrF orF -> Syntax.OrF orF
             RewritesF rewritesF -> Syntax.RewritesF rewritesF
-            StringLiteralF stringLiteralF -> Syntax.StringLiteralF stringLiteralF
+            StringLiteralF stringLiteralF ->
+                Syntax.StringLiteralF stringLiteralF
             CharLiteralF charLiteralF -> Syntax.CharLiteralF charLiteralF
             TopF topF -> Syntax.TopF topF
             VariableF variableF -> Syntax.VariableF variableF
             InhabitantF inhabitantF -> Syntax.InhabitantF inhabitantF
             SetVariableF setVariableF -> Syntax.SetVariableF setVariableF
+            EvaluatedF evaluatedF ->
+                Cofree.tailF
+                $ externalizePatternWorker
+                $ getEvaluated evaluatedF
             BuiltinF _ -> error "Unexpected internal builtin"

@@ -6,6 +6,7 @@ License     : NCSA
 module Kore.Step.Simplification.TermLike
     ( simplify
     , simplifyToOr
+    , simplifyInternal
     ) where
 
 import qualified Data.Functor.Foldable as Recursive
@@ -111,13 +112,12 @@ simplifyToOr
     -> PredicateSimplifier
     -> TermLike variable
     -> Simplifier (OrPattern variable)
-simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt =
+simplifyToOr tools axiomIdToEvaluator substitutionSimplifier =
     simplifyInternal
         tools
         substitutionSimplifier
         simplifier
         axiomIdToEvaluator
-        (Recursive.project patt)
   where
     simplifier = termLikeSimplifier
         (simplifyToOr tools axiomIdToEvaluator)
@@ -134,16 +134,20 @@ simplifyInternal
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Recursive.Base (TermLike variable) (TermLike variable)
+    -> TermLike variable
     -> Simplifier (OrPattern variable)
 simplifyInternal
     tools
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
-    (valid :< patt)
-  =
-    traverse simplifyTerm' patt >>= \case
+    termLike@(Recursive.project -> attrs :< termLikeF)
+
+  | EvaluatedF _ <- termLikeF =
+    return (OrPattern.fromTermLike termLike)
+
+  | otherwise =
+    traverse simplifyTerm' termLikeF >>= \case
         AndF p ->
             And.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
@@ -155,7 +159,7 @@ simplifyInternal
                 substitutionSimplifier
                 simplifier
                 axiomIdToEvaluator
-                (valid :< p)
+                (attrs :< p)
         BottomF p -> return $ Bottom.simplify p
         BuiltinF p -> return $ Builtin.simplify tools p
         CeilF p ->
@@ -192,5 +196,12 @@ simplifyInternal
         TopF p -> return $ Top.simplify p
         VariableF p -> return $ Variable.simplify p
         SetVariableF p -> return $ SetVariable.simplify p
+        EvaluatedF patterns ->
+            -- This is technically impossible because this branch would not be
+            -- chosen if termLikeF matched 'EvaluatedF', and 'traverse' (above)
+            -- does not change the head of termLikeF. However, it is harmless to
+            -- include this case here to convince the compiler that the case
+            -- statement is complete.
+            return (getEvaluated patterns)
   where
     simplifyTerm' = simplifyTerm simplifier substitutionSimplifier

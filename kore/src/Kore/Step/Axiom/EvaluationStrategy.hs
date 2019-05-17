@@ -20,6 +20,7 @@ import           Control.Monad
 import           Control.Monad.Trans.Except
                  ( ExceptT (ExceptT) )
 import qualified Data.Foldable as Foldable
+import           Data.Function
 import           Data.Maybe
                  ( isJust )
 import qualified Data.Text as Text
@@ -48,7 +49,6 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiom
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
 import qualified Kore.Step.Result as Result
-                 ( mergeResults )
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
 import qualified Kore.Step.Rule as RulePattern
@@ -353,7 +353,13 @@ evaluateWithDefinitionAxioms
             (map unwrapEqualityRule definitionRules)
 
     let
-        result = Result.mergeResults results
+        result =
+            Result.mergeResults results
+            & Result.mapConfigs
+                keepResultUnchanged
+                markRemainderEvaluated
+        keepResultUnchanged = id
+        markRemainderEvaluated = fmap mkEvaluated
 
     return $ AttemptedAxiom.Applied AttemptedAxiomResults
         { results = Step.gatherResults result

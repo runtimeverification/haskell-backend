@@ -548,10 +548,12 @@ test_functionIntegration =
                         Foldable.foldr1 mkOr
                             [ mkAnd Mock.a equalsXA
                             , mkAnd Mock.b equalsXB
-                            , mkAnd (Mock.f (mkVar Mock.x))
-                                $ mkAnd
+                            , mkAnd
+                                (mkEvaluated $ Mock.f (mkVar Mock.x))
+                                (mkAnd
                                     (mkNot equalsXA)
                                     (mkNot equalsXB)
+                                )
                             ]
                     , predicate = makeTruePredicate
                     , substitution = mempty
