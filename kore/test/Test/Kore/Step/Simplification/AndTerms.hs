@@ -681,6 +681,27 @@ test_andTermsSimplification =
                         ]
                     )
             assertEqualWithExplanation "" expect actual
+
+        , testCase "concrete Map with element+unit" $ do
+            let expect = Just
+                    [ Conditional
+                        { term = Mock.builtinMap [ (Mock.aConcrete, fOfA) ]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.wrap
+                            [ (Mock.x, Mock.a)
+                            , (Mock.y, fOfA)
+                            ]
+                        }
+                    ]
+            actual <-
+                unify
+                    Mock.metadataTools
+                    (Mock.builtinMap [ (Mock.aConcrete, fOfA) ])
+                    (Mock.concatMap
+                        (Mock.elementMap (mkVar Mock.x) (mkVar Mock.y))
+                        Mock.unitMap
+                    )
+            assertEqualWithExplanation "" expect actual
         -- TODO: Add tests with non-trivial predicates.
         ]
 
@@ -735,7 +756,25 @@ test_andTermsSimplification =
         ]
 
     , testGroup "Builtin Set domain"
-        [ testCase "handles set ambiguity" $ do
+        [ testCase "set singleton + unit" $ do
+            let
+                expected = Just
+                    [ Conditional
+                        { term = Mock.builtinSet [Mock.a]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.x, Mock.a) ]
+                        }
+                    ]
+            actual <- unify
+                Mock.metadataTools
+                (Mock.concatSet
+                    (Mock.elementSet (mkVar Mock.x))
+                    Mock.unitSet
+                )
+                (Mock.builtinSet [Mock.a])
+            assertEqualWithExplanation "" expected actual
+        ,  testCase "handles set ambiguity" $ do
             let
                 expected = Just
                     [ Conditional

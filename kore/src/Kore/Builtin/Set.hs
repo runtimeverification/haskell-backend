@@ -606,6 +606,10 @@ unifyEquals
                 _ ->
                     Builtin.wrongArity "SET.element"
             )
+      | isSymbolUnit hookTools symbol2 =
+        Monad.Trans.lift $ case args2 of
+            [] -> unifyEqualsUnit builtin1 symbol2
+            _ -> Builtin.wrongArity "SET.unit"
       | otherwise =
         (error . unlines)
             [ "Unimplemented set unification for domain value vs application. "
@@ -720,6 +724,20 @@ unifyEquals
       where
         Domain.InternalSet { builtinSetSort } = builtin1
         Domain.InternalSet { builtinSetChild = set1 } = builtin1
+
+    unifyEqualsUnit
+        :: Domain.InternalSet  -- ^ concrete set
+        -> SymbolOrAlias  -- ^ 'unit' symbol
+        -> unifier (Pattern variable)
+    unifyEqualsUnit builtin1 unit' =
+        if null set1
+            then return (Pattern.fromTermLike (mkApp builtinSetSort unit' []))
+            else bottomWithExplanation
+            -- Cannot unify a non-element Set with an element Set
+      where
+        Domain.InternalSet { builtinSetSort } = builtin1
+        Domain.InternalSet { builtinSetChild = set1 } = builtin1
+
     bottomWithExplanation = do
         Monad.Unify.explainBottom
             "Cannot unify sets with different sizes."

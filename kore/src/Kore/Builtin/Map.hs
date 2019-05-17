@@ -636,6 +636,10 @@ unifyEquals
                     value2
             _ ->
                 Builtin.wrongArity "MAP.element"
+      | isSymbolUnit hookTools symbol2 =
+        Monad.Trans.lift $ case args2 of
+            [] -> unifyEqualsUnit builtin1 symbol2
+            _ -> Builtin.wrongArity "MAP.unit"
       | otherwise =
         empty
       where
@@ -783,7 +787,18 @@ unifyEquals
       where
         Domain.InternalMap { builtinMapSort } = builtin1
         Domain.InternalMap { builtinMapChild = map1 } = builtin1
-
+    unifyEqualsUnit
+        :: Domain.InternalMap (TermLike variable)  -- ^ concrete map
+        -> SymbolOrAlias  -- ^ 'unit' symbol
+        -> unifier (Pattern variable)
+    unifyEqualsUnit builtin1 unit' =
+        if null map1
+            then return (Pattern.fromTermLike (mkApp builtinMapSort unit' []))
+            else bottomWithExplanation
+            -- Cannot unify a non-element Map with an element Map
+      where
+        Domain.InternalMap { builtinMapSort } = builtin1
+        Domain.InternalMap { builtinMapChild = map1 } = builtin1
     bottomWithExplanation = do
         Monad.Unify.explainBottom
             "Cannot unify a non-element map with an element map."

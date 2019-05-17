@@ -413,6 +413,23 @@ addSelectElement keyVar valueVar mapPattern  =
   where
     element = makeElementSelect keyVar valueVar
 
+test_unifyEmptyWithEmpty :: TestTree
+test_unifyEmptyWithEmpty =
+    testPropertyWithSolver "Unify empty map pattern with empty map DV" $ do
+        -- Map.empty /\ mapUnit
+        (emptyMapDV `unifiesWithMulti` emptyMapPattern) [expect]
+        -- mapUnit /\ Map.empty
+        (emptyMapPattern `unifiesWithMulti` emptyMapDV) [expect]
+  where
+    emptyMapDV = asInternal Map.empty
+    emptyMapPattern = asTermLike Map.empty
+    expect =
+        Conditional
+            { term = emptyMapDV
+            , predicate = makeTruePredicate
+            , substitution = Substitution.unsafeWrap []
+            }
+
 test_unifySelectFromEmpty :: TestTree
 test_unifySelectFromEmpty =
     testPropertyWithSolver "unify an empty map with a selection pattern" $ do
@@ -481,6 +498,38 @@ test_unifySelectFromSingleton =
             -- { 5 -> 7 } /\ Rest:Map MapItem(K:Int, V:Int)
             (singleton `unifiesWith` selectPatRev) expect
             (selectPatRev `unifiesWith` singleton) expect
+        )
+
+test_unifySelectSingletonFromSingleton :: TestTree
+test_unifySelectSingletonFromSingleton =
+    testPropertyWithSolver
+        "unify a singleton map with a singleton variable selection pattern"
+        (do
+            concreteKey <- forAll genConcreteIntegerPattern
+            value <- forAll genIntegerPattern
+            keyVar <- forAll (standaloneGen $ variableGen intSort)
+            valueVar <- forAll (standaloneGen $ variableGen intSort)
+            Monad.when (variableName keyVar == variableName valueVar) discard
+            let
+                emptyMapPat    = asTermLike Map.empty
+                selectPat      = addSelectElement keyVar valueVar emptyMapPat
+                singleton      = asInternal (Map.singleton concreteKey value)
+                keyStepPattern = fromConcreteStepPattern concreteKey
+                singletonPat =
+                    mkApp mapSort elementMapSymbol [keyStepPattern, value]
+                expect =
+                    Conditional
+                        { term = singletonPat
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [ (keyVar, keyStepPattern)
+                                , (valueVar, value)
+                                ]
+                        }
+            -- { 5 -> 7 } /\ Item(K:Int, V:Int) Map.unit
+            (singleton `unifiesWith` selectPat) expect
+            (selectPat `unifiesWith` singleton) expect
         )
 
 test_unifySelectFromSingletonWithoutLeftovers :: TestTree
