@@ -20,17 +20,20 @@ module Kore.Repl.Data
     , getNodeState
     , InnerGraph
     , lensAxioms, lensClaims, lensClaim
-    , lensGraph, lensNode, lensStepper
+    , lensGraphs, lensNode, lensStepper
     , lensLabels, lensOmit, lensUnifier
-    , lensCommands, lensAliases, shouldStore
+    , lensCommands, lensAliases, lensClaimIndex
+    , shouldStore
     , UnifierWithExplanation (..)
     , runUnifierWithExplanation
     , emptyExecutionGraph
     , getClaimByIndex, getAxiomByIndex, getAxiomOrClaimByIndex
-    , initializeProofFor
-    , getTargetNode, getInnerGraph, getConfigAt, getRuleFor
-    , StepResult(..), runStepper, runStepper'
-    , updateInnerGraph
+    , switchToProof
+    , getTargetNode, getInnerGraph, getExecutionGraph
+    , getConfigAt, getRuleFor, getLabels, setLabels
+    , StepResult(..)
+    , runStepper, runStepper'
+    , updateInnerGraph, updateExecutionGraph
     , addOrUpdateAlias, findAlias, substituteAlias
     ) where
 
@@ -104,7 +107,7 @@ newtype AxiomIndex = AxiomIndex
 
 newtype ClaimIndex = ClaimIndex
     { unClaimIndex :: Int
-    } deriving (Eq, Show)
+    } deriving (Eq, Ord, Show)
 
 newtype ReplNode = ReplNode
     { unReplNode :: Graph.Node
@@ -304,20 +307,22 @@ type InnerGraph =
 
 -- | State for the rep.
 data ReplState claim = ReplState
-    { axioms   :: [Axiom]
+    { axioms     :: [Axiom]
     -- ^ List of available axioms
-    , claims   :: [claim]
+    , claims     :: [claim]
     -- ^ List of claims to be proven
-    , claim    :: claim
+    , claim      :: claim
     -- ^ Currently focused claim in the repl
-    , graph    :: ExecutionGraph
+    , claimIndex :: ClaimIndex
+    -- ^ Index of the currently focused claim in the repl
+    , graphs     :: Map ClaimIndex ExecutionGraph
     -- ^ Execution graph for the current proof; initialized with root = claim
-    , node     :: ReplNode
+    , node       :: ReplNode
     -- ^ Currently selected node in the graph; initialized with node = root
-    , commands :: Seq String
+    , commands   :: Seq String
     -- ^ All commands evaluated by the current repl session
     -- TODO(Vladimir): This should be a Set String instead.
-    , omit     :: [String]
+    , omit       :: [String]
     -- ^ The omit list, initially empty
     , stepper
         :: Claim claim
@@ -335,7 +340,7 @@ data ReplState claim = ReplState
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
     --   failures
-    , labels  :: Map String ReplNode
+    , labels  :: Map ClaimIndex (Map String ReplNode)
     -- ^ Map from labels to nodes
     , aliases :: Map String AliasDefinition
     -- ^ Map of command aliases
@@ -436,41 +441,85 @@ getAxiomOrClaimByIndex =
             (getAxiomByIndex . coerce)
             (getClaimByIndex . coerce)
 
--- | Initialize the execution graph with selected claim.
-initializeProofFor
+-- | Update the currently selected claim to prove.
+switchToProof
     :: MonadState (ReplState claim) m
     => Claim claim
     => claim
+    -> ClaimIndex
     -> m ()
-initializeProofFor claim =
+switchToProof claim cindex = do
     modify (\st -> st
-        { graph  = emptyExecutionGraph claim
-        , claim  = claim
-        , node   = ReplNode 0
-        , labels = Map.empty
+        { claim = claim
+        , claimIndex = cindex
+        , node = ReplNode 0
         })
 
 -- | Get the internal representation of the execution graph.
 getInnerGraph
     :: MonadState (ReplState claim) m
+    => Claim claim
     => m InnerGraph
-getInnerGraph = Strategy.graph . graph <$> get
+getInnerGraph =
+    fmap Strategy.graph getExecutionGraph
 
--- | Update the internal representation of the execution graph.
+-- | Get the current execution graph
+getExecutionGraph
+    :: MonadState (ReplState claim) m
+    => Claim claim
+    => m ExecutionGraph
+getExecutionGraph = do
+    ReplState { claimIndex, graphs, claim } <- get
+    let mgraph = Map.lookup claimIndex graphs
+    return $ maybe (emptyExecutionGraph claim) id mgraph
+
+-- | Update the internal representation of the current execution graph.
 updateInnerGraph
     :: MonadState (ReplState claim) m
     => InnerGraph
     -> m ()
-updateInnerGraph ig = lensGraph Lens.%= updateInnerGraph0 ig
+updateInnerGraph ig = do
+    ReplState { claimIndex, graphs } <- get
+    lensGraphs Lens..=
+        Map.adjust (updateInnerGraph0 ig) claimIndex graphs
   where
     updateInnerGraph0 :: InnerGraph -> ExecutionGraph -> ExecutionGraph
     updateInnerGraph0 graph Strategy.ExecutionGraph { root } =
         Strategy.ExecutionGraph { root, graph }
 
+-- | Update the current execution graph.
+updateExecutionGraph
+    :: MonadState (ReplState claim) m
+    => ExecutionGraph
+    -> m ()
+updateExecutionGraph gph = do
+    ReplState { claimIndex, graphs } <- get
+    lensGraphs Lens..= Map.insert claimIndex gph graphs
+
+-- | Get the node labels for the current claim.
+getLabels
+    :: MonadState (ReplState claim) m
+    => m (Map String ReplNode)
+getLabels = do
+    ReplState { claimIndex, labels } <- get
+    let mlabels = Map.lookup claimIndex labels
+    return $ maybe Map.empty id mlabels
+
+-- | Update the node labels for the current claim.
+setLabels
+    :: MonadState (ReplState claim) m
+    => Map String ReplNode
+    -> m ()
+setLabels lbls = do
+    ReplState { claimIndex, labels } <- get
+    lensLabels Lens..= Map.insert claimIndex lbls labels
+
+
 -- | Get selected node (or current node for 'Nothing') and validate that it's
 -- part of the execution graph.
 getTargetNode
     :: MonadState (ReplState claim) m
+    => Claim claim
     => Maybe ReplNode
     -- ^ node index
     -> m (Maybe ReplNode)
@@ -485,6 +534,7 @@ getTargetNode maybeNode = do
 -- | Get the configuration at selected node (or current node for 'Nothing').
 getConfigAt
     :: MonadState (ReplState claim) m
+    => Claim claim
     => Maybe ReplNode
     -> m (Maybe (ReplNode, CommonStrategyPattern))
 getConfigAt maybeNode = do
@@ -500,6 +550,7 @@ getConfigAt maybeNode = do
 -- | Get the rule used to reach selected node.
 getRuleFor
     :: MonadState (ReplState claim) m
+    => Claim claim
     => Maybe ReplNode
     -- ^ node index
     -> m (Maybe (RewriteRule Variable))
@@ -519,6 +570,7 @@ getRuleFor maybeNode = do
 
     third :: forall a b c. (a, b, c) -> c
     third (_, _, c) = c
+
 
 -- | Result after running one or multiple proof steps.
 data StepResult
@@ -540,7 +592,7 @@ runStepper
 runStepper = do
     ReplState { claims, axioms, node } <- get
     (graph', res) <- runStepper' claims axioms node
-    lensGraph Lens..= graph'
+    updateExecutionGraph graph'
     case res of
         SingleResult nextNode -> do
             lensNode Lens..= nextNode
@@ -558,9 +610,10 @@ runStepper'
     -> ReplNode
     -> m Simplifier (ExecutionGraph, StepResult)
 runStepper' claims axioms node = do
-    ReplState { claim, graph, stepper } <- get
+    ReplState { claim, stepper } <- get
+    gph <- getExecutionGraph
     gr@Strategy.ExecutionGraph { graph = innerGraph } <-
-        Monad.Trans.lift $ stepper claim claims axioms graph node
+        Monad.Trans.lift $ stepper claim claims axioms gph node
     pure . (,) gr $ case Graph.suc innerGraph (unReplNode node) of
         []       -> NoResult
         [single] -> case getNodeState innerGraph single of
