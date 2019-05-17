@@ -225,16 +225,19 @@ prove
     -> m ()
 prove cindex = do
     claim' <- getClaimByIndex . unClaimIndex $ cindex
-    maybe printNotFound initProof claim'
+    maybe printNotFound (startProving cindex) claim'
   where
-    initProof :: claim -> m ()
-    initProof claim = do
-            initializeProofFor claim
-            putStrLn' "Execution Graph initiated"
+    startProving :: ClaimIndex -> claim -> m ()
+    startProving ci claim = do
+        switchToProof claim ci
+        putStrLn'
+            $ "Switched to proving claim "
+            <> show (unClaimIndex ci)
 
 showGraph
     :: MonadIO m
     => MonadWriter String m
+    => Claim claim
     => Maybe FilePath
     -> MonadState (ReplState claim) m
     => m ()
@@ -271,10 +274,10 @@ proveStepsF
     -- ^ maximum number of steps to perform
     -> ReplM claim ()
 proveStepsF n = do
-    graph  <- Lens.use lensGraph
+    graph  <- getExecutionGraph
     node   <- Lens.use lensNode
     graph' <- recursiveForcedStep n graph node
-    lensGraph .= graph'
+    updateExecutionGraph graph'
 
 -- | Loads a script from a file.
 loadScript
@@ -290,6 +293,7 @@ loadScript file = do
 -- | Focuses the node with id equals to 'n'.
 selectNode
     :: MonadState (ReplState claim) m
+    => Claim claim
     => MonadWriter String m
     => ReplNode
     -- ^ node identifier
@@ -303,7 +307,8 @@ selectNode rnode = do
 
 -- | Shows configuration at node 'n', or current node if 'Nothing' is passed.
 showConfig
-    :: Maybe ReplNode
+    :: Claim claim
+    => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM claim ()
 showConfig configNode = do
@@ -344,7 +349,10 @@ omitCell =
 
 -- | Shows all leaf nodes identifiers which are either stuck or can be
 -- evaluated further.
-showLeafs :: forall claim. ReplM claim ()
+showLeafs
+    :: forall claim
+    . Claim claim
+    => ReplM claim ()
 showLeafs = do
     leafsByType <- sortLeafsByType <$> getInnerGraph
     case foldMap showPair leafsByType of
@@ -363,13 +371,13 @@ showLeafs = do
     findLeafNodes graph =
         filter ((==) 0 . Graph.outdeg graph) $ Graph.nodes graph
 
-
     showPair :: (NodeState, [Graph.Node]) -> String
     showPair (ns, xs) = show ns <> ": " <> show xs
 
 showRule
     :: MonadState (ReplState claim) m
     => MonadWriter String m
+    => Claim claim
     => Maybe ReplNode
     -> m ()
 showRule configNode = do
@@ -390,7 +398,8 @@ showRule configNode = do
 
 -- | Shows the previous branching point.
 showPrecBranch
-    :: Maybe ReplNode
+    :: Claim claim
+    => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM claim ()
 showPrecBranch maybeNode = do
@@ -411,7 +420,8 @@ showPrecBranch maybeNode = do
 
 -- | Shows the next node(s) for the selected node.
 showChildren
-    :: Maybe ReplNode
+    :: Claim claim
+    => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM claim ()
 showChildren maybeNode = do
@@ -426,6 +436,7 @@ label
     :: forall m claim
     .  MonadState (ReplState claim) m
     => MonadWriter String m
+    => Claim claim
     => Maybe String
     -- ^ 'Nothing' for show labels, @Just str@ for jumping to the string label.
     -> m ()
@@ -436,15 +447,13 @@ label =
   where
     showLabels :: m ()
     showLabels = do
-        labels <- Lens.use lensLabels
-        if null labels
-           then putStrLn' "No labels are set."
-           else putStrLn' $ Map.foldrWithKey acc "Labels: " labels
+        lbls <- getLabels
+        putStrLn' $ Map.foldrWithKey acc "Labels: " lbls
 
     gotoLabel :: String -> m ()
     gotoLabel l = do
-        labels <- Lens.use lensLabels
-        selectNode $ maybe (ReplNode $ -1) id (Map.lookup l labels)
+        lbls <- getLabels
+        selectNode $ maybe (ReplNode $ -1) id (Map.lookup l lbls)
 
     acc :: String -> ReplNode -> String -> String
     acc key node res =
@@ -454,6 +463,7 @@ label =
 labelAdd
     :: MonadState (ReplState claim) m
     => MonadWriter String m
+    => Claim claim
     => String
     -- ^ label
     -> Maybe ReplNode
@@ -464,10 +474,10 @@ labelAdd lbl maybeNode = do
     case node' of
         Nothing -> putStrLn' "Target node is not in the graph."
         Just node -> do
-            labels <- Lens.use lensLabels
+            labels <- getLabels
             if lbl `Map.notMember` labels
                 then do
-                    lensLabels .= Map.insert lbl node labels
+                    setLabels $ Map.insert lbl node labels
                     putStrLn' "Label added."
                 else
                     putStrLn' "Label already exists."
@@ -480,10 +490,10 @@ labelDel
     -- ^ label
     -> m ()
 labelDel lbl = do
-    labels <- Lens.use lensLabels
+    labels <- getLabels
     if lbl `Map.member` labels
        then do
-           lensLabels .= Map.delete lbl labels
+           setLabels $ Map.delete lbl labels
            putStrLn' "Removed label."
        else
            putStrLn' "Label doesn't exist."
@@ -531,7 +541,7 @@ tryAxiomClaim eac = do
                     showUnificationFailure axiomOrClaim node
                 SingleResult node' -> do
                     lensNode .= node'
-                    lensGraph .= graph
+                    updateExecutionGraph graph
                     putStrLn' "Unification successful."
                 BranchResult nodes -> do
                     stuckToUnstuck nodes graph
@@ -594,6 +604,7 @@ tryAxiomClaim eac = do
 clear
     :: forall m claim
     .  MonadState (ReplState claim) m
+    => Claim claim
     => MonadWriter String m
     => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
