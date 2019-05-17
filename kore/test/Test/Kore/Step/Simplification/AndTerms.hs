@@ -558,7 +558,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
 
         , testCase "concrete Map, different keys" $ do
-            let expect = Just [Pattern.bottom]
+            let expect = Just []
             actual <-
                 unify
                     Mock.metadataTools
