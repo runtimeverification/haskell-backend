@@ -6,8 +6,9 @@ import Numeric.Natural
 import Test.Tasty
        ( TestTree, testGroup )
 
-import Kore.Repl.Data
-import Kore.Repl.Parser
+import qualified Kore.Logger as Logger
+import           Kore.Repl.Data
+import           Kore.Repl.Parser
 
 import Test.Kore.Parser
 
@@ -42,6 +43,7 @@ test_replParser =
     , loadScriptTests   `tests`       "load file"
     , initScriptTests   `testsScript` "repl script"
     , aliasesWithArgs   `tests`       "aliases with arguments"
+    , logTests          `tests`       "log"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -371,4 +373,11 @@ initScriptTests =
             ]
       in
         script1 `parsesTo_` commands1
+    ]
+
+logTests :: [ParserTest ReplCommand]
+logTests =
+    [ "log debug none"        `parsesTo_` Log Logger.Debug    NoLogging
+    , "log critical stdout"   `parsesTo_` Log Logger.Critical LogToStdOut
+    , "log info file \"f s\"" `parsesTo_` Log Logger.Info     (LogToFile "f s")
     ]

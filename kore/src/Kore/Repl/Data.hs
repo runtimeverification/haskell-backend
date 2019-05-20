@@ -23,6 +23,7 @@ module Kore.Repl.Data
     , lensGraphs, lensNode, lensStepper
     , lensLabels, lensOmit, lensUnifier
     , lensCommands, lensAliases, lensClaimIndex
+    , lensLogging
     , shouldStore
     , UnifierWithExplanation (..)
     , runUnifierWithExplanation
@@ -33,8 +34,10 @@ module Kore.Repl.Data
     , getConfigAt, getRuleFor, getLabels, setLabels
     , StepResult(..)
     , runStepper, runStepper'
+    , runUnifier
     , updateInnerGraph, updateExecutionGraph
     , addOrUpdateAlias, findAlias, substituteAlias
+    , LogType (..)
     ) where
 
 import           Control.Applicative
@@ -49,6 +52,9 @@ import           Control.Monad
 import           Control.Monad.Error.Class
                  ( MonadError )
 import qualified Control.Monad.Error.Class as Monad.Error
+import           Control.Monad.IO.Class
+                 ( liftIO )
+import qualified Control.Monad.Reader.Class as Reader
 import           Control.Monad.State.Strict
                  ( MonadState, get, modify )
 import           Control.Monad.Trans.Accum
@@ -74,17 +80,22 @@ import           Data.Sequence
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
 import           Data.Text.Prettyprint.Doc
                  ( Doc )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Exts
                  ( toList )
 import           Numeric.Natural
+import           System.IO
+                 ( Handle, IOMode (AppendMode), hClose, openFile )
 
 import           Kore.Internal.Pattern
                  ( Conditional (..) )
 import           Kore.Internal.TermLike
                  ( TermLike )
+import qualified Kore.Logger.Output as Logger
 import           Kore.OnePath.StrategyPattern
 import           Kore.OnePath.Verification
                  ( Axiom (..), Claim )
@@ -92,6 +103,7 @@ import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Variable
                  ( Variable )
@@ -128,6 +140,12 @@ data ReplAlias = ReplAlias
     { name      :: String
     , arguments :: [AliasArgument]
     } deriving (Eq, Show)
+
+data LogType
+    = NoLogging
+    | LogToStdOut
+    | LogToFile !FilePath
+    deriving (Eq, Show)
 
 -- | List of available commands for the Repl. Note that we are always in a proof
 -- state. We pick the first available Claim when we initialize the state.
@@ -186,6 +204,8 @@ data ReplCommand
     -- ^ Try running an alias.
     | LoadScript FilePath
     -- ^ Load script from file
+    | Log Logger.Severity LogType
+    -- ^ Setup the Kore logger.
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -211,6 +231,7 @@ commandSet = Set.fromList
     , "save-session"
     , "alias"
     , "load"
+    , "log"
     , "exit"
     ]
 
@@ -258,6 +279,11 @@ helpText =
     \alias <name> = <command>              adds as an alias for <command>\n\
     \<alias>                               runs an existing alias\n\
     \load file                             loads the file as a repl script\n\
+    \log <severity> <type>                 configures the logging outout\n\
+                                           \<severity> can be debug, info, warning,\
+                                           \error, or critical\n\
+    \                                      <type> can be NoLogging, LogToStdOut,\
+                                           \or LogToFile filename\n\
     \exit                                  exits the repl\
     \\n\
     \Available modifiers:\n\
@@ -344,6 +370,7 @@ data ReplState claim = ReplState
     -- ^ Map from labels to nodes
     , aliases :: Map String AliasDefinition
     -- ^ Map of command aliases
+    , logging :: (Logger.Severity, LogType)
     }
 
 -- | Unifier that stores the first 'explainBottom'.
@@ -571,6 +598,39 @@ getRuleFor maybeNode = do
     third :: forall a b c. (a, b, c) -> c
     third (_, _, c) = c
 
+-- | Lifting function that takes logging into account.
+liftSimplifierWithLogger
+    :: forall a t claim
+    .  MonadState (ReplState claim) (t Simplifier)
+    => Monad.Trans.MonadTrans t
+    => Simplifier a
+    -> t Simplifier a
+liftSimplifierWithLogger sa = do
+   (severity, logType) <- logging <$> get
+   (textLogger, maybeHandle) <- logTypeToLogger logType
+   let logger = Logger.makeKoreLogger severity textLogger
+   result <- Monad.Trans.lift
+       . Reader.local (setLogger logger)
+       $ sa
+   maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
+   pure result
+  where
+    setLogger
+        :: Logger.LogAction Simplifier Logger.LogMessage
+        -> Simplifier.Environment
+        -> Simplifier.Environment
+    setLogger la env = env { Simplifier.logger = la }
+
+    logTypeToLogger
+        :: LogType
+        -> t Simplifier (Logger.LogAction Simplifier Text, Maybe Handle)
+    logTypeToLogger =
+        \case
+            NoLogging   -> pure (mempty, Nothing)
+            LogToStdOut -> pure (Logger.logTextStdout, Nothing)
+            LogToFile file -> do
+                handle <- Monad.Trans.lift . liftIO $ openFile file AppendMode
+                pure (Logger.logTextHandle handle, Just handle)
 
 -- | Result after running one or multiple proof steps.
 data StepResult
@@ -613,7 +673,7 @@ runStepper' claims axioms node = do
     ReplState { claim, stepper } <- get
     gph <- getExecutionGraph
     gr@Strategy.ExecutionGraph { graph = innerGraph } <-
-        Monad.Trans.lift $ stepper claim claims axioms gph node
+        liftSimplifierWithLogger $ stepper claim claims axioms gph node
     pure . (,) gr $ case Graph.suc innerGraph (unReplNode node) of
         []       -> NoResult
         [single] -> case getNodeState innerGraph single of
@@ -621,6 +681,18 @@ runStepper' claims axioms node = do
                         Just (StuckNode, _) -> NoResult
                         _ -> SingleResult . ReplNode $ single
         nodes    -> BranchResult $ fmap ReplNode nodes
+
+runUnifier
+    :: MonadState (ReplState claim) (m Simplifier)
+    => Monad.Trans.MonadTrans m
+    => TermLike Variable
+    -> TermLike Variable
+    -> m Simplifier (Maybe (Pretty.Doc ()))
+runUnifier first second = do
+    unifier <- Lens.use lensUnifier
+    liftSimplifierWithLogger
+        . runUnifierWithExplanation
+        $ unifier first second
 
 getNodeState :: InnerGraph -> Graph.Node -> Maybe (NodeState, Graph.Node)
 getNodeState graph node =
