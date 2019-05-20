@@ -69,7 +69,7 @@ showUsage =
         claim   = emptyClaim
         command = ShowUsage
     in do
-        Result { output, continue } <- run command axioms claim
+        Result { output, continue } <- run command axioms [claim] claim
         output   `equalsOutput` showUsageMessage
         continue `equals`       True
 
@@ -80,7 +80,7 @@ help =
         claim   = emptyClaim
         command = Help
     in do
-        Result { output, continue } <- run command axioms claim
+        Result { output, continue } <- run command axioms [claim] claim
         output   `equalsOutput` helpText
         continue `equals`       True
 
@@ -91,7 +91,7 @@ step5 =
         claim  = zeroToTen
         command = ProveSteps 5
     in do
-        Result { output, continue, state } <- run command axioms claim
+        Result { output, continue, state } <- run command axioms [claim] claim
         output     `equalsOutput`   ""
         continue   `equals`         True
         state      `hasCurrentNode` ReplNode 5
@@ -103,7 +103,7 @@ step100 =
         claim  = zeroToTen
         command = ProveSteps 100
     in do
-        Result { output, continue, state } <- run command axioms claim
+        Result { output, continue, state } <- run command axioms [claim] claim
         output     `equalsOutput`   showStepStoppedMessage 10 NoResult
         continue   `equals`         True
         state      `hasCurrentNode` ReplNode 10
@@ -116,7 +116,7 @@ makeSimpleAlias =
         alias   = AliasDefinition { name = "a", arguments = [], command = "help" }
         command = Alias alias
     in do
-        Result { output, continue, state } <- run command axioms claim
+        Result { output, continue, state } <- run command axioms [claim] claim
         output   `equalsOutput` ""
         continue `equals`       True
         state    `hasAlias`     alias
@@ -132,7 +132,7 @@ trySimpleAlias =
         command = TryAlias $ ReplAlias "h" []
     in do
         Result { output, continue } <-
-            runWithState command axioms claim stateT
+            runWithState command axioms [claim] claim stateT
         output   `equalsOutput` helpText
         continue `equals` True
 
@@ -148,7 +148,7 @@ makeAlias =
                     }
         command = Alias alias
     in do
-        Result { output, continue, state } <- run command axioms claim
+        Result { output, continue, state } <- run command axioms [claim] claim
         output   `equalsOutput` ""
         continue `equals`       True
         state    `hasAlias`     alias
@@ -165,7 +165,7 @@ aliasOfExistingCommand =
                     }
         command = Alias alias
     in do
-        Result { output, continue } <- run command axioms claim
+        Result { output, continue } <- run command axioms [claim] claim
         output   `equalsOutput` showAliasError NameAlreadyDefined
         continue `equals`       True
 
@@ -181,7 +181,7 @@ aliasOfUnknownCommand =
                     }
         command = Alias alias
     in do
-        Result { output, continue } <- run command axioms claim
+        Result { output, continue } <- run command axioms [claim] claim
         output   `equalsOutput` showAliasError UnknownCommand
         continue `equals`       True
 
@@ -197,7 +197,7 @@ recursiveAlias =
                     }
         command = Alias alias
     in do
-        Result { output, continue } <- run command axioms claim
+        Result { output, continue } <- run command axioms [claim] claim
         output   `equalsOutput` showAliasError UnknownCommand
         continue `equals`       True
 
@@ -216,7 +216,7 @@ tryAlias =
         command = TryAlias $ ReplAlias "c" [SimpleArgument "0"]
     in do
         Result { output, continue } <-
-            runWithState command axioms claim stateT
+            runWithState command axioms [claim] claim stateT
         output   `equalsOutput` showRewriteRule claim
         continue `equals` True
 
@@ -230,7 +230,7 @@ unificationFailure =
         claim = zeroToTen
         command = Try . Left $ AxiomIndex 0
     in do
-        Result { output, continue, state } <- run command axioms claim
+        Result { output, continue, state } <- run command axioms [claim] claim
         expectedOutput <-
             unificationErrorMessage cannotUnifyDistinctDomainValues one zero
         output `equalsOutput` expectedOutput
@@ -246,7 +246,7 @@ proofStatus =
         command = ProofStatus
     in do
         Result { output, continue } <-
-            multiClaimRun command axioms claims claim
+            run command axioms claims claim
         output `equalsOutput` "Current proof status: \n  \
                               \claim 1: NotStarted\n  \
                               \claim 0: InProgress [0]"
@@ -268,12 +268,9 @@ zeroToTen = coerce $ rulePattern zero ten
 emptyClaim :: Claim
 emptyClaim = coerce $ rulePattern mkBottom_ mkBottom_
 
-run :: ReplCommand -> [Axiom] -> Claim -> IO Result
-run command axioms claim =  runWithState command axioms claim id
-
-multiClaimRun :: ReplCommand -> [Axiom] -> [Claim] -> Claim -> IO Result
-multiClaimRun command axioms claims claim =
-    multiClaimRunWithState command axioms claims claim id
+run :: ReplCommand -> [Axiom] -> [Claim] -> Claim -> IO Result
+run command axioms claims claim =
+    runWithState command axioms claims claim id
 
 runSimplifier
     :: Simplifier a
@@ -284,35 +281,11 @@ runSimplifier =
 runWithState
     :: ReplCommand
     -> [Axiom]
-    -> Claim
-    -> (ReplState Claim -> ReplState Claim)
-    -> IO Result
-runWithState command axioms claim stateTransformer
-  = Logger.withLogger logOptions $ \logger -> do
-        output <- newIORef ""
-        (c, s) <- liftSimplifier logger
-            $ replInterpreter (writeIORefIfNotEmpty output) command
-                `runStateT` state
-        output' <- readIORef output
-        return $ Result output' c s
-  where
-    logOptions = Logger.KoreLogOptions Logger.LogNone Logger.Debug
-    liftSimplifier logger =
-        SMT.runSMT SMT.defaultConfig . evalSimplifier logger
-    state = stateTransformer $ mkState axioms claim
-    writeIORefIfNotEmpty out =
-        \case
-            "" -> pure ()
-            xs -> writeIORef out xs
-
-multiClaimRunWithState
-    :: ReplCommand
-    -> [Axiom]
     -> [Claim]
     -> Claim
     -> (ReplState Claim -> ReplState Claim)
     -> IO Result
-multiClaimRunWithState command axioms claims claim stateTransformer
+runWithState command axioms claims claim stateTransformer
   = Logger.withLogger logOptions $ \logger -> do
         output <- newIORef ""
         (c, s) <- liftSimplifier logger
@@ -324,7 +297,7 @@ multiClaimRunWithState command axioms claims claim stateTransformer
     logOptions = Logger.KoreLogOptions Logger.LogNone Logger.Debug
     liftSimplifier logger =
         SMT.runSMT SMT.defaultConfig . evalSimplifier logger
-    state = stateTransformer $ mkMultiClaimState axioms claims claim
+    state = stateTransformer $ mkState axioms claims claim
     writeIORefIfNotEmpty out =
         \case
             "" -> pure ()
@@ -362,51 +335,8 @@ hasAlias st alias@AliasDefinition { name } =
 tests :: IO () -> String -> TestTree
 tests = flip testCase
 
-mkState :: [Axiom] -> Claim -> ReplState Claim
-mkState axioms claim =
-    ReplState
-        { axioms      = axioms
-        , claims      = [claim]
-        , claim       = claim
-        , claimIndex  = ClaimIndex 0
-        , graphs      = Map.singleton (ClaimIndex 0) graph'
-        , node        = ReplNode 0
-        , commands    = Seq.empty
-        , omit        = []
-        , stepper     = stepper0
-        , unifier     = unifier0
-        , labels      = Map.singleton (ClaimIndex 0) Map.empty
-        , aliases     = Map.empty
-        }
-  where
-    graph' = emptyExecutionGraph claim
-    stepper0 claim' claims' axioms' graph (ReplNode node) =
-        verifyClaimStep
-            testMetadataTools
-            testTermLikeSimplifier
-            testSubstitutionSimplifier
-            testEvaluators
-            claim'
-            claims'
-            axioms'
-            graph
-            node
-    unifier0
-        :: TermLike Variable
-        -> TermLike Variable
-        -> UnifierWithExplanation ()
-    unifier0 first second =
-        () <$ unificationProcedure
-            testMetadataTools
-            testSubstitutionSimplifier
-            testTermLikeSimplifier
-            testEvaluators
-            first
-            second
-
-
-mkMultiClaimState :: [Axiom] -> [Claim] -> Claim -> ReplState Claim
-mkMultiClaimState axioms claims claim =
+mkState :: [Axiom] -> [Claim] -> Claim -> ReplState Claim
+mkState axioms claims claim =
     ReplState
         { axioms      = axioms
         , claims      = claims
