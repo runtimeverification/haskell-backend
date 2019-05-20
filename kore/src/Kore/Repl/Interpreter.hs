@@ -55,6 +55,7 @@ import           Data.Maybe
                  ( catMaybes, listToMaybe )
 import           Data.Sequence
                  ( Seq )
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as Text.Lazy
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -372,18 +373,6 @@ showLeafs = do
     showPair :: NodeState -> [Graph.Node] -> String
     showPair ns xs = show ns <> ": " <> show xs
 
-showProofStatus :: Map.Map ClaimIndex GraphProofStatus -> String
-showProofStatus m =
-    Map.foldrWithKey acc "Current proof status: " m
-  where
-    acc :: ClaimIndex -> GraphProofStatus -> String -> String
-    acc key elm res =
-        res
-        <> "\n  claim "
-        <> (show . unClaimIndex) key
-        <> ": "
-        <> show elm
-
 proofStatus
     :: forall claim
     .  Claim claim
@@ -412,11 +401,11 @@ proofStatus = do
         -> [ClaimIndex]
         -> Map.Map ClaimIndex GraphProofStatus
     notStartedProofs gphs cs =
-        Map.fromList
-            [ (x, NotStarted) |
-                x <- cs,
-                (x `elem` Map.keys gphs) == False
-            ]
+        let
+            existingKeys = Set.fromList . Map.keys $ gphs
+            allKeys = Set.fromList cs
+            missingKeys = allKeys `Set.difference` existingKeys
+        in Map.fromList $ (\idx -> (idx, NotStarted)) <$> Set.toList missingKeys
     findProofStatus :: Map.Map NodeState [Graph.Node] -> GraphProofStatus
     findProofStatus m =
         case Map.lookup StuckNode m of
@@ -998,3 +987,16 @@ sortLeafsByType graph =
         . fmap (getNodeState graph)
         . findLeafNodes
         $ graph
+
+showProofStatus :: Map.Map ClaimIndex GraphProofStatus -> String
+showProofStatus m =
+    Map.foldrWithKey acc "Current proof status: " m
+  where
+    acc :: ClaimIndex -> GraphProofStatus -> String -> String
+    acc key elm res =
+        res
+        <> "\n  claim "
+        <> (show . unClaimIndex) key
+        <> ": "
+        <> show elm
+
