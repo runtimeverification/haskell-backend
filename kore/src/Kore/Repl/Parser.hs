@@ -18,13 +18,16 @@ import           Data.Functor
                  ( void, ($>) )
 import           Data.List
                  ( nub )
+import           Prelude hiding
+                 ( log )
 import           Text.Megaparsec
                  ( Parsec, customFailure, eof, many, manyTill, noneOf, oneOf,
                  option, optional, try )
 import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
-import Kore.Repl.Data
+import qualified Kore.Logger as Logger
+import           Kore.Repl.Data
 
 type Parser = Parsec String String
 
@@ -51,7 +54,7 @@ commandParser = commandParser0 eof
 
 commandParser0 :: Parser () -> Parser ReplCommand
 commandParser0 endParser =
-    alias <|> commandParserExceptAlias endParser <|> tryAlias
+    alias <|> log <|> commandParserExceptAlias endParser <|> tryAlias
 
 commandParserExceptAlias :: Parser () -> Parser ReplCommand
 commandParserExceptAlias endParser = do
@@ -197,6 +200,28 @@ clear = do
 saveSession :: Parser ReplCommand
 saveSession =
     SaveSession <$$> literal "save-session" *> quotedOrWordWithout ""
+
+log :: Parser ReplCommand
+log =
+    Log
+        <$$> literal "log" *> severity
+        <**> logType
+
+severity :: Parser Logger.Severity
+severity = sDebug <|> sInfo <|> sWarning <|> sError <|> sCritical
+  where
+    sDebug    = Logger.Debug    <$ literal "debug"
+    sInfo     = Logger.Info     <$ literal "info"
+    sWarning  = Logger.Warning  <$ literal "warning"
+    sError    = Logger.Error    <$ literal "error"
+    sCritical = Logger.Critical <$ literal "critical"
+
+logType :: Parser LogType
+logType = noLogging <|> logStdOut <|> logFile
+  where
+    noLogging = NoLogging   <$  literal "none"
+    logStdOut = LogToStdOut <$  literal "stdout"
+    logFile   = LogToFile   <$$> literal "file" *> quotedOrWordWithout ""
 
 redirect :: ReplCommand -> Parser ReplCommand
 redirect cmd =
