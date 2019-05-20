@@ -53,7 +53,7 @@ import           Control.Monad.Error.Class
                  ( MonadError )
 import qualified Control.Monad.Error.Class as Monad.Error
 import           Control.Monad.IO.Class
-                 ( MonadIO, liftIO )
+                 ( liftIO )
 import qualified Control.Monad.Reader.Class as Reader
 import           Control.Monad.State.Strict
                  ( MonadState, get, modify )
@@ -603,7 +603,6 @@ liftSimplifierWithLogger
     :: forall a m claim
     .  MonadState (ReplState claim) (m Simplifier)
     => Monad.Trans.MonadTrans m
-    => MonadIO (m Simplifier)
     => Simplifier a
     -> m Simplifier a
 liftSimplifierWithLogger sa = do
@@ -613,7 +612,7 @@ liftSimplifierWithLogger sa = do
    result <- Monad.Trans.lift
        . Reader.local (setLogger logger)
        $ sa
-   maybe (pure ()) (liftIO . hClose) maybeHandle
+   maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
    pure result
   where
     setLogger
@@ -630,7 +629,7 @@ liftSimplifierWithLogger sa = do
             NoLogging   -> pure (mempty, Nothing)
             LogToStdOut -> pure (Logger.logTextStdout, Nothing)
             LogToFile file -> do
-                handle <- liftIO $ openFile file AppendMode
+                handle <- Monad.Trans.lift . liftIO $ openFile file AppendMode
                 pure (Logger.logTextHandle handle, Just handle)
 
 -- | Result after running one or multiple proof steps.
@@ -648,7 +647,6 @@ data StepResult
 runStepper
     :: MonadState (ReplState claim) (m Simplifier)
     => Monad.Trans.MonadTrans m
-    => MonadIO (m Simplifier)
     => Claim claim
     => m Simplifier StepResult
 runStepper = do
@@ -666,7 +664,6 @@ runStepper = do
 runStepper'
     :: MonadState (ReplState claim) (m Simplifier)
     => Monad.Trans.MonadTrans m
-    => MonadIO (m Simplifier)
     => Claim claim
     => [claim]
     -> [Axiom]
@@ -688,7 +685,6 @@ runStepper' claims axioms node = do
 runUnifier
     :: MonadState (ReplState claim) (m Simplifier)
     => Monad.Trans.MonadTrans m
-    => MonadIO (m Simplifier)
     => TermLike Variable
     -> TermLike Variable
     -> m Simplifier (Maybe (Pretty.Doc ()))
