@@ -5,22 +5,23 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( HasCallStack, assertEqual, assertFailure, testCase )
 
-import qualified Data.Set as Set
-import           Data.Text
-                 ( Text )
+import Data.Text
+       ( Text )
 
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Null as Attribute
-import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Debug
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
-import           Kore.Internal.TermLike hiding
-                 ( freeVariables )
-import           Kore.Syntax
+import           Kore.Internal.TermLike
+                 ( TermLike )
+import qualified Kore.Internal.TermLike as Internal
+import           Kore.Sort
+import           Kore.Syntax hiding
+                 ( PatternF (..) )
 import           Kore.Syntax.Definition
+import qualified Kore.Syntax.PatternF as Syntax
 import           Kore.Unparser
                  ( unparseToString )
 import qualified Kore.Verified as Verified
@@ -33,7 +34,7 @@ newtype ErrorStack = ErrorStack [String]
 data TestData = TestData
     { testDataDescription :: !String
     , testDataError       :: !(Error VerifyError)
-    , testDataDefinition  :: !(Definition Verified.Sentence)
+    , testDataDefinition  :: !(Definition ParsedSentence)
     }
 
 addPrefixToDescription :: String -> [TestData] -> [TestData]
@@ -78,20 +79,20 @@ successTestData testData =
 expectSuccess
     :: HasCallStack
     => String
-    -> Definition Verified.Sentence
+    -> Definition ParsedSentence
     -> TestTree
-expectSuccess description (fmap eraseSentenceAnnotations -> definition) =
+expectSuccess description unverifiedDefinition =
     testCase
         description
         (assertEqual
             (  "Expecting verification success! Definition:\n"
-            ++ printDefinition definition
+            ++ printDefinition unverifiedDefinition
             )
             verifySuccess
             (verifyDefinition
                 attributesVerificationForTests
                 Builtin.koreVerifiers
-                definition
+                unverifiedDefinition
             )
         )
 
@@ -99,31 +100,29 @@ expectFailureWithError
     :: HasCallStack
     => String
     -> Error VerifyError
-    -> Definition Verified.Sentence
+    -> Definition ParsedSentence
     -> TestTree
-expectFailureWithError description expectedError definition =
+expectFailureWithError description expectedError unverifiedDefinition =
     testCase
         description
         (case
             verifyDefinition
                 attributesVerificationForTests
                 Builtin.koreVerifiers
-                definition'
+                unverifiedDefinition
           of
             Right _ ->
                 assertFailure
                     (  "Expecting verification failure! Definition:\n"
-                    ++ printDefinition definition'
+                    ++ printDefinition unverifiedDefinition
                     )
             Left actualError ->
                 assertEqual
                     ( "Expecting a certain error! Definition:\n"
-                    ++ printDefinition definition'
+                    ++ printDefinition unverifiedDefinition
                     )
                     expectedError actualError
         )
-  where
-    definition' = eraseSentenceAnnotations <$> definition
 
 attributesVerificationForTests
     :: AttributesVerification Attribute.Null Attribute.Null
@@ -153,8 +152,8 @@ newtype SortVariablesThatMustBeDeclared =
 
 simpleDefinitionFromSentences
     :: ModuleName
-    -> [Verified.Sentence]
-    -> Definition Verified.Sentence
+    -> [sentence]
+    -> Definition sentence
 simpleDefinitionFromSentences name sentences =
     Definition
         { definitionAttributes = Attributes []
@@ -168,35 +167,26 @@ simpleDefinitionFromSentences name sentences =
         }
 
 -- TODO: simple meta sort sentence?
-simpleSortSentence :: SortName -> Verified.Sentence
+simpleSortSentence :: SortName -> ParsedSentence
 simpleSortSentence (SortName name) =
-    asSentence
-        (SentenceSort
-            { sentenceSortName = testId name :: Id
-            , sentenceSortParameters = []
-            , sentenceSortAttributes = Attributes []
-            }
-            :: Verified.SentenceSort
-        )
+    asSentence SentenceSort
+        { sentenceSortName = testId name :: Id
+        , sentenceSortParameters = []
+        , sentenceSortAttributes = Attributes []
+        }
 
-simpleMetaAliasSentence :: AliasName -> SortName -> Verified.Sentence
-simpleMetaAliasSentence alias sort =
-    asSentence (simpleAliasSentence alias sort r)
+simpleAliasSentence :: AliasName -> SortName -> ParsedSentence
+simpleAliasSentence alias sort =
+    asSentence (simpleAliasSentenceAux alias sort r)
   where
-    r = mkTop (simpleSort sort :: Sort)
+    r = Builtin.externalizePattern $ Internal.mkTop (simpleSort sort)
 
-simpleObjectAliasSentence :: AliasName -> SortName -> Verified.Sentence
-simpleObjectAliasSentence alias sort =
-   asSentence (simpleAliasSentence alias sort r)
-  where
-    r = mkTop (simpleSort sort :: Sort)
-
-simpleAliasSentence
+simpleAliasSentenceAux
     :: AliasName
     -> SortName
-    -> Verified.Pattern
-    -> Verified.SentenceAlias
-simpleAliasSentence (AliasName name) (SortName sort) r =
+    -> patternType
+    -> SentenceAlias patternType
+simpleAliasSentenceAux (AliasName name) (SortName sort) r =
     SentenceAlias
         { sentenceAliasAlias = Alias
             { aliasConstructor = testId name
@@ -221,19 +211,15 @@ simpleAliasSentence (AliasName name) (SortName sort) r =
         , sentenceAliasAttributes = Attributes []
         }
 
-simpleMetaSymbolSentence :: SymbolName -> SortName -> Verified.Sentence
-simpleMetaSymbolSentence name sort =
-    asSentence (simpleSymbolSentence name sort)
+simpleSymbolSentence :: SymbolName -> SortName -> ParsedSentence
+simpleSymbolSentence name sort =
+    asSentence (simpleSymbolSentenceAux name sort)
 
-simpleObjectSymbolSentence :: SymbolName -> SortName -> Verified.Sentence
-simpleObjectSymbolSentence name sort =
-    asSentence (simpleSymbolSentence name sort)
-
-simpleSymbolSentence
+simpleSymbolSentenceAux
     :: SymbolName
     -> SortName
-    -> Verified.SentenceSymbol
-simpleSymbolSentence (SymbolName name) (SortName sort) =
+    -> SentenceSymbol patternType
+simpleSymbolSentenceAux (SymbolName name) (SortName sort) =
     SentenceSymbol
         { sentenceSymbolSymbol = Symbol
             { symbolConstructor = testId name
@@ -259,27 +245,21 @@ simpleAxiomSentence unifiedPattern =
             :: Verified.SentenceAxiom
         )
 
-importSentence :: ModuleName -> Verified.Sentence
+importSentence :: ModuleName -> ParsedSentence
 importSentence name =
-    asSentence
-        (SentenceImport
-            { sentenceImportModuleName = name
-            , sentenceImportAttributes = Attributes []
-            }
-            :: Verified.SentenceImport
-        )
+    asSentence SentenceImport
+        { sentenceImportModuleName = name
+        , sentenceImportAttributes = Attributes []
+        }
 
 sortSentenceWithSortParameters
-    :: SortName -> [SortVariable] -> Verified.Sentence
+    :: SortName -> [SortVariable] -> ParsedSentence
 sortSentenceWithSortParameters (SortName name) parameters =
-    asSentence
-        (SentenceSort
-            { sentenceSortName = testId name
-            , sentenceSortParameters = parameters
-            , sentenceSortAttributes = Attributes []
-            }
-            :: Verified.SentenceSort
-        )
+    asSentence SentenceSort
+        { sentenceSortName = testId name
+        , sentenceSortParameters = parameters
+        , sentenceSortAttributes = Attributes []
+        }
 
 aliasSentenceWithSort
     :: AliasName -> Sort -> Verified.Sentence
@@ -301,46 +281,43 @@ aliasSentenceWithSort (AliasName name) sort =
                             }
                     , applicationChildren = []
                     }
-            , sentenceAliasRightPattern = mkTop sort
+            , sentenceAliasRightPattern = Internal.mkTop sort
             , sentenceAliasAttributes = Attributes []
             }
 
 metaAliasSentenceWithSortParameters
-    :: AliasName -> Sort -> [SortVariable] -> Verified.Sentence
+    :: AliasName -> Sort -> [SortVariable] -> ParsedSentence
 metaAliasSentenceWithSortParameters
     (AliasName name) sort parameters
   =
-    asSentence
-        (SentenceAlias
-            { sentenceAliasAlias = Alias
-                { aliasConstructor = testId name
-                , aliasParams = parameters
-                }
-            , sentenceAliasSorts = []
-            , sentenceAliasResultSort = sort
-            , sentenceAliasLeftPattern =
-                Application
-                    { applicationSymbolOrAlias =
-                        SymbolOrAlias
-                            { symbolOrAliasConstructor = testId name
-                            , symbolOrAliasParams =
-                                SortVariableSort <$> parameters
-                            }
-                    , applicationChildren = []
-                    }
-            , sentenceAliasRightPattern = mkTop sort
-            , sentenceAliasAttributes = Attributes []
+    asSentence SentenceAlias
+        { sentenceAliasAlias = Alias
+            { aliasConstructor = testId name
+            , aliasParams = parameters
             }
-            :: Verified.SentenceAlias
-        )
-
+        , sentenceAliasSorts = []
+        , sentenceAliasResultSort = sort
+        , sentenceAliasLeftPattern =
+            Application
+                { applicationSymbolOrAlias =
+                    SymbolOrAlias
+                        { symbolOrAliasConstructor = testId name
+                        , symbolOrAliasParams =
+                            SortVariableSort <$> parameters
+                        }
+                , applicationChildren = []
+                }
+        , sentenceAliasRightPattern =
+            Builtin.externalizePattern $ Internal.mkTop sort
+        , sentenceAliasAttributes = Attributes []
+        }
 
 aliasSentenceWithSortParameters
     :: AliasName
     -> SortName
     -> [SortVariable]
-    -> Verified.Pattern
-    -> Verified.SentenceAlias
+    -> patternType
+    -> SentenceAlias patternType
 aliasSentenceWithSortParameters (AliasName name) (SortName sort) parameters r =
     SentenceAlias
         { sentenceAliasAlias = Alias
@@ -371,8 +348,8 @@ sentenceAliasWithSortArgument
     -> Sort
     -> Sort
     -> [SortVariable]
-    -> Verified.Pattern
-    -> Verified.SentenceAlias
+    -> patternType
+    -> SentenceAlias patternType
 sentenceAliasWithSortArgument
     (AliasName name)
     sortArgument
@@ -445,57 +422,35 @@ sentenceSymbolWithAttributes (SymbolName name) params sort attributes =
         , sentenceSymbolAttributes = Attributes attributes
         }
 
-metaSymbolSentenceWithSortParameters
-    :: SymbolName -> Sort -> [SortVariable] -> Verified.Sentence
-metaSymbolSentenceWithSortParameters
-    (SymbolName name) sort parameters
-  =
-    asSentence
-        (SentenceSymbol
-            { sentenceSymbolSymbol = Symbol
-                { symbolConstructor = testId name
-                , symbolParams = parameters
-                }
-            , sentenceSymbolSorts = []
-            , sentenceSymbolResultSort = sort
-            , sentenceSymbolAttributes = Attributes []
-            }
-            :: Verified.SentenceSymbol
-        )
+symbolSentenceWithSortParameters
+    :: SymbolName -> Sort -> [SortVariable] -> ParsedSentence
+symbolSentenceWithSortParameters name sort params =
+    asSentence $ symbolSentenceWithSortParametersAux name sort params
 
-symbolSentenceWithSortParameters
+symbolSentenceWithSortParametersAux
     :: SymbolName
-    -> SortName
+    -> Sort
     -> [SortVariable]
-    -> Verified.SentenceSymbol
-symbolSentenceWithSortParameters
-    (SymbolName name) (SortName sort) parameters
-  =
+    -> SentenceSymbol patternType
+symbolSentenceWithSortParametersAux (SymbolName name) sort parameters =
     SentenceSymbol
         { sentenceSymbolSymbol = Symbol
             { symbolConstructor = testId name
             , symbolParams = parameters
             }
         , sentenceSymbolSorts = []
-        , sentenceSymbolResultSort =
-            SortActualSort SortActual
-                { sortActualName = testId sort
-                , sortActualSorts = []
-                }
+        , sentenceSymbolResultSort = sort
         , sentenceSymbolAttributes = Attributes []
         }
 
 axiomSentenceWithSortParameters
-    :: Verified.Pattern -> [SortVariable] -> Verified.Sentence
-axiomSentenceWithSortParameters unifiedPattern parameters =
-    SentenceAxiomSentence
-        (SentenceAxiom
-            { sentenceAxiomParameters = parameters
-            , sentenceAxiomPattern = unifiedPattern
-            , sentenceAxiomAttributes = Attributes []
-            }
-            :: Verified.SentenceAxiom
-        )
+    :: patternType -> [SortVariable] -> Sentence patternType
+axiomSentenceWithSortParameters pattern' parameters =
+    SentenceAxiomSentence SentenceAxiom
+        { sentenceAxiomParameters = parameters
+        , sentenceAxiomPattern = pattern'
+        , sentenceAxiomAttributes = Attributes []
+        }
 
 axiomSentenceWithAttributes
     :: [SortVariable]
@@ -515,8 +470,8 @@ sentenceAliasWithResultSort
     :: AliasName
     -> Sort
     -> [SortVariable]
-    -> Verified.Pattern
-    -> Verified.SentenceAlias
+    -> patternType
+    -> SentenceAlias patternType
 sentenceAliasWithResultSort (AliasName name) sort parameters r =
     SentenceAlias
         { sentenceAliasAlias = Alias
@@ -540,7 +495,7 @@ sentenceAliasWithResultSort (AliasName name) sort parameters r =
         }
 
 symbolSentenceWithResultSort
-    :: SymbolName -> Sort -> [SortVariable] -> Verified.Sentence
+    :: SymbolName -> Sort -> [SortVariable] -> ParsedSentence
 symbolSentenceWithResultSort
     (SymbolName name) sort parameters
   = SentenceSymbolSentence
@@ -556,11 +511,11 @@ symbolSentenceWithResultSort
             }
 
 objectSymbolSentenceWithArguments
-    :: SymbolName -> Sort -> [Sort] -> Verified.Sentence
+    :: SymbolName -> Sort -> [Sort] -> ParsedSentence
 objectSymbolSentenceWithArguments = symbolSentenceWithArguments
 
 symbolSentenceWithArguments
-    :: SymbolName -> Sort -> [Sort] -> Verified.Sentence
+    :: SymbolName -> Sort -> [Sort] -> ParsedSentence
 symbolSentenceWithArguments name
   = symbolSentenceWithParametersAndArguments name []
 
@@ -578,7 +533,7 @@ symbolSentenceWithParametersAndArguments
     -> [SortVariable]
     -> Sort
     -> [Sort]
-    -> Verified.Sentence
+    -> Sentence patternType
 symbolSentenceWithParametersAndArguments
     (SymbolName name) params sort operandSorts
   = SentenceSymbolSentence
@@ -594,27 +549,20 @@ symbolSentenceWithParametersAndArguments
             }
 
 objectAliasSentenceWithArguments
-    :: AliasName -> Sort -> [Variable] -> Verified.Sentence
+    :: AliasName -> Sort -> [Variable] -> ParsedSentence
 objectAliasSentenceWithArguments a b c =
     aliasSentenceWithArguments
         a
         b
         c
-        (asPattern $ valid :< top')
-  where
-    top' = TopF Top { topSort = b }
-    valid =
-        Attribute.Pattern
-            { Attribute.patternSort = b
-            , Attribute.freeVariables = Set.empty
-            }
+        (Builtin.externalizePattern $ Internal.mkTop b)
 
 aliasSentenceWithArguments
     :: AliasName
     -> Sort
     -> [Variable]
-    -> Verified.Pattern
-    -> Verified.Sentence
+    -> patternType
+    -> Sentence patternType
 aliasSentenceWithArguments (AliasName name) sort operands r =
     SentenceAliasSentence
         SentenceAlias
@@ -655,8 +603,9 @@ objectVariableSort name = sortVariableSort name
 namedSortVariable :: SortVariableName -> SortVariable
 namedSortVariable (SortVariableName name) = sortVariable name
 
-stringUnifiedPattern :: Text -> TermLike Variable
-stringUnifiedPattern s = (mkStringLiteral s)
+stringParsedPattern :: Text -> ParsedPattern
+stringParsedPattern =
+    Builtin.externalizePattern . Internal.mkStringLiteral
 
 variable :: VariableName -> Sort -> Variable
 variable (VariableName name) sort =
@@ -670,52 +619,66 @@ unifiedVariable :: VariableName -> Sort -> Variable
 unifiedVariable name sort =
     variable name sort
 
-variablePattern :: VariableName -> Sort -> PatternF domain Variable p
-variablePattern name sort = VariableF (variable name sort)
+variablePattern :: VariableName -> Sort -> Syntax.PatternF Variable p
+variablePattern name sort = Syntax.VariableF (variable name sort)
 
 variableTermLike :: VariableName -> Sort -> TermLike Variable
-variableTermLike name sort = mkVar (variable name sort)
+variableTermLike name sort = Internal.mkVar (variable name sort)
+
+variableParsedPattern :: VariableName -> Sort -> ParsedPattern
+variableParsedPattern name sort =
+    Builtin.externalizePattern $ variableTermLike name sort
 
 simpleExistsPattern
     :: Variable
     -> Sort
-    -> PatternF domain Variable (TermLike Variable)
+    -> Syntax.PatternF Variable ParsedPattern
 simpleExistsPattern quantifiedVariable resultSort =
-    ExistsF Exists
+    Syntax.ExistsF Exists
         { existsSort = resultSort
         , existsVariable = quantifiedVariable
-        , existsChild = mkVar quantifiedVariable
+        , existsChild =
+            Builtin.externalizePattern $ Internal.mkVar quantifiedVariable
         }
 
 simpleExistsUnifiedPattern
     :: VariableName -> Sort -> TermLike Variable
 simpleExistsUnifiedPattern name sort =
-    asPattern $ valid :< simpleExistsPattern (variable name sort) sort
+    Internal.mkExists quantifiedVariable (Internal.mkVar quantifiedVariable)
   where
-    valid = Attribute.Pattern { patternSort = sort, freeVariables = Set.empty }
+    quantifiedVariable = variable name sort
 
-simpleExistsObjectUnifiedPattern
-    :: VariableName -> Sort -> TermLike Variable
-simpleExistsObjectUnifiedPattern = simpleExistsUnifiedPattern
+simpleExistsParsedPattern :: VariableName -> Sort -> ParsedPattern
+simpleExistsParsedPattern name sort =
+    Builtin.externalizePattern $ simpleExistsUnifiedPattern name sort
 
 simpleExistsUnifiedPatternWithType
     :: VariableName -> Sort -> TermLike Variable
 simpleExistsUnifiedPatternWithType = simpleExistsUnifiedPattern
 
-simpleExistsEqualsUnifiedPattern
+simpleExistsEqualsParsedPattern
+    :: VariableName
+    -> OperandSort
+    -> ResultSort
+    -> ParsedPattern
+simpleExistsEqualsParsedPattern name operandSort resultSort =
+    Builtin.externalizePattern
+    $ simpleExistsEqualsTermLike name operandSort resultSort
+
+simpleExistsEqualsTermLike
     :: VariableName
     -> OperandSort
     -> ResultSort
     -> TermLike Variable
-simpleExistsEqualsUnifiedPattern
+simpleExistsEqualsTermLike
     (VariableName name)
     (OperandSort operandSort)
     (ResultSort resultSort)
   =
-    mkExists var
-    $ mkEquals resultSort variablePattern' variablePattern'
+    Internal.mkExists var
+    $ Internal.mkEquals resultSort variablePattern' variablePattern'
   where
-    variablePattern' = mkVar var
+    variablePattern' = Internal.mkVar var
     var =
         Variable
             { variableName = testId name
@@ -727,15 +690,14 @@ applicationObjectUnifiedPatternWithChildren
     :: SymbolName -> [ParsedPattern] -> ParsedPattern
 applicationObjectUnifiedPatternWithChildren name unifiedPatterns =
     asParsedPattern
-        ( applicationPatternWithChildren name unifiedPatterns
-        :: PatternF Domain.Builtin Variable ParsedPattern)
+        (applicationPatternWithChildren name unifiedPatterns)
 
 applicationPatternWithChildren
     :: SymbolName
     -> [child]
-    -> PatternF dom v child
+    -> Syntax.PatternF v child
 applicationPatternWithChildren (SymbolName name) unifiedPatterns =
-    ApplicationF Application
+    Syntax.ApplicationF Application
         { applicationSymbolOrAlias = SymbolOrAlias
             { symbolOrAliasConstructor = testId name
             , symbolOrAliasParams = []
@@ -743,13 +705,22 @@ applicationPatternWithChildren (SymbolName name) unifiedPatterns =
         , applicationChildren = unifiedPatterns
         }
 
+applicationParsedPatternWithParams
+    :: Sort
+    -> SymbolName
+    -> [Sort]
+    -> ParsedPattern
+applicationParsedPatternWithParams resultSort name params =
+    Builtin.externalizePattern
+    $ applicationUnifiedPatternWithParams resultSort name params
+
 applicationUnifiedPatternWithParams
     :: Sort
     -> SymbolName
     -> [Sort]
     -> TermLike Variable
 applicationUnifiedPatternWithParams resultSort (SymbolName name) params =
-    mkApp
+    Internal.mkApp
         resultSort
         SymbolOrAlias
             { symbolOrAliasConstructor = testId name

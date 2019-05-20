@@ -35,8 +35,6 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), TermLikeSimplifier )
-import           Kore.Syntax.And
-import qualified Kore.Syntax.PatternF as Syntax
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -83,7 +81,7 @@ simplifyAnds
         -> unifier (Pattern variable)
     simplifyAnds' intermediate pat =
         case Cofree.tailF (Recursive.project pat) of
-            Syntax.AndF And { andFirst = lhs, andSecond = rhs } ->
+            AndF And { andFirst = lhs, andSecond = rhs } ->
                 foldM simplifyAnds' intermediate [lhs, rhs]
             _ -> do
                 result <-
@@ -120,9 +118,9 @@ groupSubstitutionByVariable
 groupSubstitutionByVariable =
     groupBy ((==) `on` fst) . sortBy (compare `on` fst) . map sortRenaming
   where
-    sortRenaming (var, Recursive.project -> ann :< Syntax.VariableF var')
+    sortRenaming (var, Recursive.project -> ann :< VariableF var')
         | var' < var =
-          (var', Recursive.embed (ann :< Syntax.VariableF var))
+          (var', Recursive.embed (ann :< VariableF var))
     sortRenaming eq = eq
 
 -- simplifies x = t1 /\ x = t2 /\ ... /\ x = tn by transforming it into

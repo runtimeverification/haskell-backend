@@ -6,8 +6,8 @@ import Test.Tasty
 import Data.Text
        ( Text )
 
-import qualified Kore.Domain.Builtin as Domain
-import           Kore.Internal.TermLike
+import qualified Kore.Builtin as Builtin
+import qualified Kore.Internal.TermLike as Internal
 import           Kore.Parser.Parser
 import           Kore.Syntax
 import           Kore.Syntax.Definition
@@ -439,11 +439,10 @@ domainValuePatternParserTests :: [TestTree]
 domainValuePatternParserTests =
     parseTree korePatternParser
         [ success "\\dv{s1}(\"a\")"
-            $ eraseAnnotations
-            $ mkDomainValue
-            $ Domain.BuiltinExternal Domain.External
+            $ Builtin.externalizePattern
+            $ Internal.mkDomainValue DomainValue
                 { domainValueSort = sortVariableSort "s1"
-                , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
+                , domainValueChild = Internal.mkStringLiteral "a"
                 }
         , FailureWithoutMessage
             [ ""
@@ -931,12 +930,10 @@ sentenceAliasParserTests =
                             , applicationChildren = []
                             }
                     , sentenceAliasRightPattern =
-                        eraseAnnotations
-                        $ mkDomainValue
-                        $ Domain.BuiltinExternal Domain.External
+                        Builtin.externalizePattern
+                        $ Internal.mkDomainValue DomainValue
                             { domainValueSort = resultSort
-                            , domainValueChild =
-                                eraseAnnotations $ mkStringLiteral "f"
+                            , domainValueChild = Internal.mkStringLiteral "f"
                             }
                     , sentenceAliasAttributes = Attributes []
                     }
@@ -960,7 +957,7 @@ sentenceAliasParserTests =
                             , variableSort = resultSort
                             , variableCounter = mempty
                             }
-                    argument name = mkVar (var name)
+                    argument name = Internal.mkVar (var name)
                     varA = var "a"
                     varB = var "b"
                     argA = argument "a"
@@ -978,7 +975,8 @@ sentenceAliasParserTests =
                             , applicationChildren = [varA, varB]
                             }
                     , sentenceAliasRightPattern =
-                        eraseAnnotations $ mkRewrites argA argB
+                        Builtin.externalizePattern
+                        $ Internal.mkRewrites argA argB
                     , sentenceAliasAttributes = Attributes []
                     }
             )
@@ -1001,7 +999,7 @@ sentenceAliasParserTests =
                             , variableSort = resultSort
                             , variableCounter = mempty
                             }
-                    arg = mkVar var
+                    arg = Internal.mkVar var
                 in SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = aliasId
@@ -1015,7 +1013,7 @@ sentenceAliasParserTests =
                             , applicationChildren = [var]
                             }
                     , sentenceAliasRightPattern =
-                        eraseAnnotations $ mkNext arg
+                        Builtin.externalizePattern $ Internal.mkNext arg
                     , sentenceAliasAttributes = Attributes []
                     }
             )

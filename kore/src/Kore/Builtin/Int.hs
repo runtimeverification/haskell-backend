@@ -28,7 +28,6 @@ module Kore.Builtin.Int
     , extractIntDomainValue
     , asTermLike
     , asInternal
-    , asConcretePattern
     , asPattern
     , asPartialPattern
     , parse
@@ -93,7 +92,6 @@ import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike as TermLike
-import qualified Kore.Syntax.Pattern as AST
 
 {- | Builtin name of the @Int@ sort.
  -}
@@ -106,7 +104,7 @@ sort = "INT.Int"
 
  -}
 assertSort :: Builtin.SortVerifier
-assertSort findSort = Builtin.verifySort findSort sort
+assertSort = Builtin.verifySort sort
 
 {- | Verify that hooked sort declarations are well-formed.
 
@@ -135,7 +133,6 @@ symbolVerifiers =
     , (randKey, Builtin.verifySymbol assertSort [assertSort])
     , (srandKey, Builtin.verifySymbolArguments [assertSort])
 
-      -- TODO (thomas.tuegel): Implement builtin BOOL
     , (gtKey, Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
     , (geKey, Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
     , (eqKey, Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
@@ -175,31 +172,28 @@ symbolVerifiers =
 
 {- | Verify that domain value patterns are well-formed.
  -}
-patternVerifier :: Builtin.DomainValueVerifier child
+patternVerifier :: Builtin.DomainValueVerifier (TermLike variable)
 patternVerifier =
     Builtin.makeEncodedDomainValueVerifier sort patternVerifierWorker
   where
-    patternVerifierWorker domain =
-        case domain of
-            Domain.BuiltinExternal external
-              | StringLiteral_ lit <- externalChild -> do
+    patternVerifierWorker external =
+        case externalChild of
+            StringLiteral_ lit -> do
                 builtinIntValue <- Builtin.parseString parse lit
                 (return . Domain.BuiltinInt)
                     Domain.InternalInt
                         { builtinIntSort = domainValueSort
                         , builtinIntValue
                         }
-              where
-                Domain.External { domainValueSort } = external
-                Domain.External { domainValueChild = externalChild } = external
-            Domain.BuiltinInt _ -> return domain
-            _ -> Kore.Error.koreFail
-                    "Expected literal string or internal value"
+            _ -> Kore.Error.koreFail "Expected literal string"
+      where
+        DomainValue { domainValueSort } = external
+        DomainValue { domainValueChild = externalChild } = external
 
 -- | get the value from a (possibly encoded) domain value
 extractIntDomainValue
     :: Text -- ^ error message Context
-    -> Domain.Builtin child
+    -> Builtin child
     -> Integer
 extractIntDomainValue ctx =
     \case
@@ -230,22 +224,15 @@ expectBuiltinInt
     -> MaybeT m Integer
 expectBuiltinInt ctx =
     \case
-        DV_ _ domain ->
+        Builtin_ domain ->
             case domain of
-                Domain.BuiltinExternal external
-                  | StringLiteral_ lit <- domainValueChild ->
-                    (return . Builtin.runParser ctx)
-                        (Builtin.parseString parse lit)
-                  where
-                    Domain.External { domainValueChild } = external
                 Domain.BuiltinInt Domain.InternalInt { builtinIntValue } ->
                     return builtinIntValue
                 _ ->
                     Builtin.verifierBug
                     $ Text.unpack ctx
                     ++ ": Domain value is not a string or internal value"
-        _ ->
-            empty
+        _ -> empty
 
 {- | Render an 'Integer' as an internal domain value pattern of the given sort.
 
@@ -261,7 +248,7 @@ asInternal
     -> Integer  -- ^ builtin value to render
     -> TermLike variable
 asInternal builtinIntSort builtinIntValue =
-    (TermLike.fromConcreteStepPattern . mkDomainValue . Domain.BuiltinInt)
+    (TermLike.fromConcrete . mkBuiltin . Domain.BuiltinInt)
         Domain.InternalInt
             { builtinIntSort
             , builtinIntValue
@@ -280,39 +267,13 @@ asTermLike
     => Domain.InternalInt  -- ^ builtin value to render
     -> TermLike variable
 asTermLike builtin =
-    (mkDomainValue . Domain.BuiltinExternal)
-        Domain.External
-            { domainValueSort = builtinIntSort
-            , domainValueChild =
-                AST.eraseAnnotations
-                $ mkStringLiteral . Text.pack
-                $ show int
-            }
+    mkDomainValue DomainValue
+        { domainValueSort = builtinIntSort
+        , domainValueChild = mkStringLiteral . Text.pack $ show int
+        }
   where
     Domain.InternalInt { builtinIntSort } = builtin
     Domain.InternalInt { builtinIntValue = int } = builtin
-
-{- | Render an 'Integer' as a concrete domain value pattern of the given sort.
-
-  The result sort should be hooked to the builtin @Int@ sort, but this is not
-  checked.
-
-  See also: 'sort'
-
- -}
-asConcretePattern
-    :: Sort  -- ^ resulting sort
-    -> Integer  -- ^ builtin value to render
-    -> TermLike Concrete
-asConcretePattern domainValueSort builtinIntChild =
-    (mkDomainValue . Domain.BuiltinExternal)
-        Domain.External
-            { domainValueSort
-            , domainValueChild =
-                AST.eraseAnnotations
-                $ mkStringLiteral . Text.pack
-                $ show builtinIntChild
-            }
 
 asPattern
     :: Ord variable

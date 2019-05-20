@@ -15,14 +15,10 @@ module Kore.Step.PatternAttributes
     , isFunctionPattern
     , isFunctionalPattern
     , isTotalPattern
-    , mapFunctionalProofVariables
     ) where
 
 import           Control.Exception
                  ( assert )
-import           Control.Lens
-                 ( Prism )
-import qualified Control.Lens as Lens
 import           Data.Either
                  ( isRight )
 import qualified Data.Functor.Foldable as Recursive
@@ -41,30 +37,6 @@ import           Kore.Proof.Functional
 import           Kore.Step.PatternAttributesError
                  ( ConstructorLikeError (..), FunctionError (..),
                  FunctionalError (..), TotalError (..) )
-import           Kore.Syntax
-
-functionalProofVars
-    :: Prism
-         (FunctionalProof variableFrom)
-         (FunctionalProof variableTo)
-         variableFrom
-         variableTo
-functionalProofVars = Lens.prism FunctionalVariable isVar
-  where
-    isVar (FunctionalVariable v) = Right v
-    isVar (FunctionalDomainValue dv) = Left (FunctionalDomainValue dv)
-    isVar (FunctionalHead sym) = Left (FunctionalHead sym)
-    isVar (FunctionalStringLiteral str) = Left (FunctionalStringLiteral str)
-    isVar (FunctionalCharLiteral char) = Left (FunctionalCharLiteral char)
-
-{-| 'mapFunctionalProofVariables' replaces all variables in a 'FunctionalProof'
-using the provided mapping.
--}
-mapFunctionalProofVariables
-    :: (variableFrom -> variableTo)
-    -> FunctionalProof variableFrom
-    -> FunctionalProof variableTo
-mapFunctionalProofVariables mapper = Lens.over functionalProofVars mapper
 
 {-| Checks whether a pattern is functional or not and, if it is, returns a proof
     certifying that.
@@ -139,6 +111,8 @@ isPreconstructedPattern err (_ :< pattern') =
     case pattern' of
         DomainValueF domain ->
             (Right . Descend) (FunctionalDomainValue $ () <$ domain)
+        BuiltinF domain ->
+            (Right . Descend) (FunctionalBuiltin $ () <$ domain)
         StringLiteralF str ->
             Right (DoNotDescend (FunctionalStringLiteral str))
         CharLiteralF char ->

@@ -328,6 +328,8 @@ matchEqualHeadPatterns
                 _ -> nothing
         (CharLiteral_ _) ->
             topWhenEqualOrNothing first second
+        (Builtin_ _) ->
+            topWhenEqualOrNothing first second
         (DV_ _ _) ->
             topWhenEqualOrNothing first second
         (Equals_ _ _ firstFirst firstSecond) ->

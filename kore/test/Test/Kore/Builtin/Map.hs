@@ -384,6 +384,10 @@ selectFunctionPattern keyVar valueVar mapVar permutation  =
     value = mkApp intSort absIntSymbol  [mkVar valueVar]
     singleton = mkApp mapSort elementMapSymbol [ key, value ]
 
+makeElementSelect :: Variable -> Variable -> TermLike Variable
+makeElementSelect keyVar valueVar =
+    mkApp mapSort elementMapSymbol [mkVar keyVar, mkVar valueVar]
+
 -- Given a function to scramble the arguments to concat, i.e.,
 -- @id@ or @reverse@, produces a pattern of the form
 -- `MapItem(K:Int, V:Int) Rest:Map`, or `Rest:Map MapItem(K:Int, V:Int)`,
@@ -397,7 +401,34 @@ selectPattern
 selectPattern keyVar valueVar mapVar permutation  =
     mkApp mapSort concatMapSymbol $ permutation [element, mkVar mapVar]
   where
-    element = mkApp mapSort elementMapSymbol [mkVar keyVar, mkVar valueVar]
+    element = makeElementSelect keyVar valueVar
+
+addSelectElement
+    :: Variable          -- ^key variable
+    -> Variable          -- ^value variable
+    -> TermLike Variable
+    -> TermLike Variable
+addSelectElement keyVar valueVar mapPattern  =
+    mkApp mapSort concatMapSymbol [element, mapPattern]
+  where
+    element = makeElementSelect keyVar valueVar
+
+test_unifyEmptyWithEmpty :: TestTree
+test_unifyEmptyWithEmpty =
+    testPropertyWithSolver "Unify empty map pattern with empty map DV" $ do
+        -- Map.empty /\ mapUnit
+        (emptyMapDV `unifiesWithMulti` emptyMapPattern) [expect]
+        -- mapUnit /\ Map.empty
+        (emptyMapPattern `unifiesWithMulti` emptyMapDV) [expect]
+  where
+    emptyMapDV = asInternal Map.empty
+    emptyMapPattern = asTermLike Map.empty
+    expect =
+        Conditional
+            { term = emptyMapDV
+            , predicate = makeTruePredicate
+            , substitution = Substitution.unsafeWrap []
+            }
 
 test_unifySelectFromEmpty :: TestTree
 test_unifySelectFromEmpty =
@@ -446,11 +477,10 @@ test_unifySelectFromSingleton =
             Monad.when (variableName keyVar == variableName valueVar) discard
             Monad.when (variableName keyVar == variableName mapVar) discard
             Monad.when (variableName valueVar == variableName mapVar) discard
-            let selectPat       = selectPattern keyVar valueVar mapVar id
-                selectPatRev    = selectPattern keyVar valueVar mapVar reverse
-                singleton       =
-                    asInternal (Map.singleton concreteKey value)
-                keyStepPattern = fromConcreteStepPattern concreteKey
+            let selectPat      = selectPattern keyVar valueVar mapVar id
+                selectPatRev   = selectPattern keyVar valueVar mapVar reverse
+                singleton      = asInternal (Map.singleton concreteKey value)
+                keyStepPattern = fromConcrete concreteKey
                 expect =
                     Conditional
                         { term = singleton
@@ -470,6 +500,194 @@ test_unifySelectFromSingleton =
             (selectPatRev `unifiesWith` singleton) expect
         )
 
+test_unifySelectSingletonFromSingleton :: TestTree
+test_unifySelectSingletonFromSingleton =
+    testPropertyWithSolver
+        "unify a singleton map with a singleton variable selection pattern"
+        (do
+            concreteKey <- forAll genConcreteIntegerPattern
+            value <- forAll genIntegerPattern
+            keyVar <- forAll (standaloneGen $ variableGen intSort)
+            valueVar <- forAll (standaloneGen $ variableGen intSort)
+            Monad.when (variableName keyVar == variableName valueVar) discard
+            let
+                emptyMapPat    = asTermLike Map.empty
+                selectPat      = addSelectElement keyVar valueVar emptyMapPat
+                singleton      = asInternal (Map.singleton concreteKey value)
+                keyStepPattern = fromConcrete concreteKey
+                expect =
+                    Conditional
+                        { term = singleton
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [ (keyVar, keyStepPattern)
+                                , (valueVar, value)
+                                ]
+                        }
+            -- { 5 -> 7 } /\ Item(K:Int, V:Int) Map.unit
+            (singleton `unifiesWith` selectPat) expect
+            (selectPat `unifiesWith` singleton) expect
+        )
+
+test_unifySelectFromSingletonWithoutLeftovers :: TestTree
+test_unifySelectFromSingletonWithoutLeftovers =
+    testPropertyWithSolver
+        "unify a singleton map with an element selection pattern"
+        (do
+            concreteKey <- forAll genConcreteIntegerPattern
+            value <- forAll genIntegerPattern
+            keyVar <- forAll (standaloneGen $ variableGen intSort)
+            valueVar <- forAll (standaloneGen $ variableGen intSort)
+            Monad.when (variableName keyVar == variableName valueVar) discard
+            let selectPat = makeElementSelect keyVar valueVar
+                singleton =
+                    asInternal (Map.singleton concreteKey value)
+                keyStepPattern = fromConcrete concreteKey
+                expect =
+                    Conditional
+                        { term = singleton
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [ (keyVar, keyStepPattern)
+                                , (valueVar, value)
+                                ]
+                        }
+            -- { 5 -> 7 } /\ Item(K:Int, V:Int)
+            (singleton `unifiesWith` selectPat) expect
+            (selectPat `unifiesWith` singleton) expect
+        )
+
+test_unifySelectFromTwoElementMap :: TestTree
+test_unifySelectFromTwoElementMap =
+    testPropertyWithSolver
+        "unify a two element map with a variable selection pattern"
+        (do
+            concreteKey1 <- forAll genConcreteIntegerPattern
+            value1 <- forAll genIntegerPattern
+            concreteKey2 <- forAll genConcreteIntegerPattern
+            value2 <- forAll genIntegerPattern
+            Monad.when (concreteKey1 == concreteKey2) discard
+
+            keyVar <- forAll (standaloneGen $ variableGen intSort)
+            valueVar <- forAll (standaloneGen $ variableGen intSort)
+            mapVar <- forAll (standaloneGen $ variableGen mapSort)
+            let variables = [keyVar, valueVar, mapVar]
+            Monad.when (variables /= List.nub variables) discard
+
+            let selectPat       = selectPattern keyVar valueVar mapVar id
+                selectPatRev    = selectPattern keyVar valueVar mapVar reverse
+                mapDV =
+                    asInternal
+                        (Map.fromList
+                            [(concreteKey1, value1), (concreteKey2, value2)]
+                        )
+                keyStepPattern1 = fromConcrete concreteKey1
+                keyStepPattern2 = fromConcrete concreteKey2
+                expect1 =
+                    Conditional
+                        { term = mapDV
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [   ( mapVar
+                                    , asInternal
+                                        (Map.singleton concreteKey2 value2)
+                                    )
+                                , (keyVar, keyStepPattern1)
+                                , (valueVar, value1)
+                                ]
+                        }
+                expect2 =
+                    Conditional
+                        { term = mapDV
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [   ( mapVar
+                                    , asInternal
+                                        (Map.singleton concreteKey1 value1)
+                                    )
+                                , (keyVar, keyStepPattern2)
+                                , (valueVar, value2)
+                                ]
+                        }
+            -- { 5 -> 6, 7 -> 8 } /\ Item(K:Int, V:Int) Rest:Map
+            (mapDV `unifiesWithMulti` selectPat) [expect1, expect2]
+            (selectPat `unifiesWithMulti` mapDV) [expect1, expect2]
+            -- { 5 -> 6, 7 -> 8 } /\ Rest:Map Item(K:Int, V:Int)
+            (mapDV `unifiesWithMulti` selectPatRev) [expect1, expect2]
+            (selectPatRev `unifiesWithMulti` mapDV) [expect1, expect2]
+        )
+
+test_unifySelectTwoFromTwoElementMap :: TestTree
+test_unifySelectTwoFromTwoElementMap =
+    testPropertyWithSolver
+        "unify a two element map with a binary variable selection pattern"
+        (do
+            concreteKey1 <- forAll genConcreteIntegerPattern
+            value1 <- forAll genIntegerPattern
+            concreteKey2 <- forAll genConcreteIntegerPattern
+            value2 <- forAll genIntegerPattern
+            Monad.when (concreteKey1 == concreteKey2) discard
+
+            keyVar1 <- forAll (standaloneGen $ variableGen intSort)
+            valueVar1 <- forAll (standaloneGen $ variableGen intSort)
+            keyVar2 <- forAll (standaloneGen $ variableGen intSort)
+            valueVar2 <- forAll (standaloneGen $ variableGen intSort)
+            mapVar <- forAll (standaloneGen $ variableGen mapSort)
+            let variables = [keyVar1, keyVar2, valueVar1, valueVar2, mapVar]
+            Monad.when (variables /= List.nub variables) discard
+
+            let selectPat =
+                    addSelectElement keyVar1 valueVar1
+                    $ addSelectElement keyVar2 valueVar2
+                    $ mkVar mapVar
+                mapDV =
+                    asInternal
+                        (Map.fromList
+                            [(concreteKey1, value1), (concreteKey2, value2)]
+                        )
+                keyStepPattern1 = fromConcrete concreteKey1
+                keyStepPattern2 = fromConcrete concreteKey2
+                expect1 =
+                    Conditional
+                        { term = mapDV
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [   ( mapVar
+                                    , asInternal Map.empty
+                                    )
+                                , (keyVar1, keyStepPattern1)
+                                , (keyVar2, keyStepPattern2)
+                                , (valueVar1, value1)
+                                , (valueVar2, value2)
+                                ]
+                        }
+                expect2 =
+                    Conditional
+                        { term = mapDV
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [   ( mapVar
+                                    , asInternal Map.empty
+                                    )
+                                , (keyVar1, keyStepPattern2)
+                                , (keyVar2, keyStepPattern1)
+                                , (valueVar1, value2)
+                                , (valueVar2, value1)
+                                ]
+                        }
+
+            -- { 5 } /\ MapItem(X:Int) Rest:Map
+            (mapDV `unifiesWithMulti` selectPat) [expect1, expect2]
+            (selectPat `unifiesWithMulti` mapDV) [expect1, expect2]
+        )
+
+
 -- use as (pat1 `unifiesWith` pat2) expect
 unifiesWith
     :: HasCallStack
@@ -477,12 +695,41 @@ unifiesWith
     -> TermLike Variable
     -> Pattern Variable
     -> PropertyT SMT.SMT ()
-unifiesWith pat1 pat2 Conditional { term, predicate, substitution } = do
-    Conditional { term = uTerm, predicate = uPred, substitution = uSubst } <-
-        evaluate (mkAnd pat1 pat2)
-    Substitution.toMap substitution === Substitution.toMap uSubst
-    predicate === uPred
-    term === uTerm
+unifiesWith pat1 pat2 expected =
+    unifiesWithMulti pat1 pat2 [expected]
+
+-- use as (pat1 `unifiesWithMulti` pat2) expect
+unifiesWithMulti
+    :: HasCallStack
+    => TermLike Variable
+    -> TermLike Variable
+    -> [Pattern Variable]
+    -> PropertyT SMT.SMT ()
+unifiesWithMulti pat1 pat2 expectedResults = do
+    actualResults <- evaluateToList (mkAnd pat1 pat2)
+    compareElements (List.sort expectedResults) actualResults
+  where
+    compareElements [] actuals = [] === actuals
+    compareElements expecteds [] =  expecteds === []
+    compareElements (expected : expecteds) (actual : actuals) = do
+        compareElement expected actual
+        compareElements expecteds actuals
+    compareElement
+        Conditional
+            { term = expectedTerm
+            , predicate = expectedPredicate
+            , substitution = expectedSubstitution
+            }
+        Conditional
+            { term = actualTerm
+            , predicate = actualPredicate
+            , substitution = actualSubstitution
+            }
+      = do
+        Substitution.toMap expectedSubstitution
+            === Substitution.toMap actualSubstitution
+        expectedPredicate === actualPredicate
+        expectedTerm === actualTerm
 
 {- | Unify a concrete map with symbolic-keyed map.
 
@@ -517,7 +764,7 @@ test_concretizeKeys =
             , variableSort = intSort
             }
     key = Test.Int.asInternal 1
-    symbolicKey = fromConcreteStepPattern key
+    symbolicKey = fromConcrete key
     val = Test.Int.asInternal 2
     concreteMap = asTermLike $ Map.fromList [(key, val)]
     symbolic = asSymbolicPattern $ Map.fromList [(mkVar x, mkVar v)]
@@ -530,7 +777,7 @@ test_concretizeKeys =
             { term =
                 mkPair intSort mapSort
                     symbolicKey
-                    (asSymbolicPattern $ Map.fromList [(symbolicKey, val)])
+                    (asInternal $ Map.fromList [(key, val)])
             , predicate = Predicate.makeTruePredicate
             , substitution =
                 Substitution.unsafeWrap
@@ -573,7 +820,7 @@ test_concretizeKeysAxiom =
     x = mkIntVar (testId "x")
     v = mkIntVar (testId "v")
     key = Test.Int.asInternal 1
-    symbolicKey = fromConcreteStepPattern key
+    symbolicKey = fromConcrete key
     val = Test.Int.asInternal 2
     symbolicMap = asSymbolicPattern $ Map.fromList [(x, v)]
     axiom =
@@ -593,20 +840,20 @@ hprop_unparse =
     genValue = Test.Int.asInternal <$> genInteger
 
 -- | Specialize 'Map.asTermLike' to the builtin sort 'mapSort'.
-asTermLike :: Map.Builtin Variable -> TermLike Variable
+asTermLike :: Map (TermLike Concrete) (TermLike Variable) -> TermLike Variable
 asTermLike =
     Reflection.give testMetadataTools Map.asTermLike
     . builtinMap
     . Map.toAscList
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
-asPattern :: Map.Builtin Variable -> Pattern Variable
+asPattern :: Map (TermLike Concrete) (TermLike Variable) -> Pattern Variable
 asPattern =
     Reflection.give testMetadataTools Map.asPattern mapSort
 
 -- | Specialize 'Map.asInternal' to the builtin sort 'mapSort'.
 asInternal
-    :: Map.Builtin Variable
+    :: Map (TermLike Concrete) (TermLike Variable)
     -> TermLike Variable
 asInternal = Map.asInternal testMetadataTools mapSort
 

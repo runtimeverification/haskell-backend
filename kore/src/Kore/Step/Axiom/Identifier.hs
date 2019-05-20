@@ -25,13 +25,11 @@ module Kore.Step.Axiom.Identifier
     ) where
 
 import Kore.Internal.TermLike
-       ( pattern App_, pattern Ceil_ )
+       ( pattern App_, pattern Ceil_, TermLike )
 import Kore.Syntax.Application
        ( SymbolOrAlias (..) )
 import Kore.Syntax.Id
        ( Id (..) )
-import Kore.Syntax.Pattern
-       ( Pattern )
 
 {-| Identifer for the left-hand-side of axioms and for the terms with which
 these can be identified.
@@ -52,10 +50,8 @@ Returns Nothing if it will not handle the current pattern.
 
 Currently parameters of parameterized symbols are ignored.
 -}
-extract
-    :: (Functor domain)
-    => Pattern domain variable annotation
-    -> Maybe AxiomIdentifier
+-- TODO (thomas.tuegel): Rename this to avoid conflicting with Comonad.
+extract :: TermLike variable -> Maybe AxiomIdentifier
 extract (App_ symbolOrAlias _children) =
     Just (Application (symbolOrAliasConstructor symbolOrAlias))
 extract (Ceil_ _sort1 _sort2 (App_ symbolOrAlias _children)) =

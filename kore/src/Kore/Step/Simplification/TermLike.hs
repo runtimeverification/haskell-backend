@@ -6,6 +6,7 @@ License     : NCSA
 module Kore.Step.Simplification.TermLike
     ( simplify
     , simplifyToOr
+    , simplifyInternal
     ) where
 
 import qualified Data.Functor.Foldable as Recursive
@@ -26,6 +27,8 @@ import qualified Kore.Step.Simplification.And as And
 import qualified Kore.Step.Simplification.Application as Application
                  ( simplify )
 import qualified Kore.Step.Simplification.Bottom as Bottom
+                 ( simplify )
+import qualified Kore.Step.Simplification.Builtin as Builtin
                  ( simplify )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( simplify )
@@ -68,7 +71,6 @@ import qualified Kore.Step.Simplification.Top as Top
                  ( simplify )
 import qualified Kore.Step.Simplification.Variable as Variable
                  ( simplify )
-import qualified Kore.Syntax.PatternF as Syntax
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -110,13 +112,12 @@ simplifyToOr
     -> PredicateSimplifier
     -> TermLike variable
     -> Simplifier (OrPattern variable)
-simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt =
+simplifyToOr tools axiomIdToEvaluator substitutionSimplifier =
     simplifyInternal
         tools
         substitutionSimplifier
         simplifier
         axiomIdToEvaluator
-        (Recursive.project patt)
   where
     simplifier = termLikeSimplifier
         (simplifyToOr tools axiomIdToEvaluator)
@@ -133,22 +134,24 @@ simplifyInternal
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Recursive.Base (TermLike variable) (TermLike variable)
+    -> TermLike variable
     -> Simplifier (OrPattern variable)
 simplifyInternal
     tools
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
-    (valid :< patt)
-  = do
-    halfSimplified <- traverse simplifyTerm' patt
-    -- TODO: Remove fst
-    case halfSimplified of
-        Syntax.AndF p ->
+    termLike@(Recursive.project -> attrs :< termLikeF)
+
+  | EvaluatedF _ <- termLikeF =
+    return (OrPattern.fromTermLike termLike)
+
+  | otherwise =
+    traverse simplifyTerm' termLikeF >>= \case
+        AndF p ->
             And.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Syntax.ApplicationF p ->
+        ApplicationF p ->
             --  TODO: Re-evaluate outside of the application and stop passing
             -- the simplifier.
             Application.simplify
@@ -156,41 +159,49 @@ simplifyInternal
                 substitutionSimplifier
                 simplifier
                 axiomIdToEvaluator
-                (valid :< p)
-        Syntax.BottomF p -> return $ Bottom.simplify p
-        Syntax.CeilF p ->
+                (attrs :< p)
+        BottomF p -> return $ Bottom.simplify p
+        BuiltinF p -> return $ Builtin.simplify tools p
+        CeilF p ->
             Ceil.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Syntax.DomainValueF p -> return $ DomainValue.simplify tools p
-        Syntax.EqualsF p ->
+        DomainValueF p -> return $ DomainValue.simplify tools p
+        EqualsF p ->
             Equals.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Syntax.ExistsF p ->
+        ExistsF p ->
             Exists.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Syntax.FloorF p -> return $ Floor.simplify p
-        Syntax.ForallF p -> return $ Forall.simplify p
-        Syntax.IffF p ->
+        FloorF p -> return $ Floor.simplify p
+        ForallF p -> return $ Forall.simplify p
+        IffF p ->
             Iff.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Syntax.ImpliesF p ->
+        ImpliesF p ->
             Implies.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Syntax.InF p ->
+        InF p ->
             In.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Syntax.InhabitantF s -> return $ Inhabitant.simplify s
+        InhabitantF s -> return $ Inhabitant.simplify s
         -- TODO(virgil): Move next up through patterns.
-        Syntax.NextF p -> return $ Next.simplify p
-        Syntax.NotF p ->
+        NextF p -> return $ Next.simplify p
+        NotF p ->
             Not.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        Syntax.OrF p -> return $ Or.simplify p
-        Syntax.RewritesF p -> return $ Rewrites.simplify p
-        Syntax.StringLiteralF p -> return $ StringLiteral.simplify p
-        Syntax.CharLiteralF p -> return $ CharLiteral.simplify p
-        Syntax.TopF p -> return $ Top.simplify p
-        Syntax.VariableF p -> return $ Variable.simplify p
-        Syntax.SetVariableF p -> return $ SetVariable.simplify p
+        OrF p -> return $ Or.simplify p
+        RewritesF p -> return $ Rewrites.simplify p
+        StringLiteralF p -> return $ StringLiteral.simplify p
+        CharLiteralF p -> return $ CharLiteral.simplify p
+        TopF p -> return $ Top.simplify p
+        VariableF p -> return $ Variable.simplify p
+        SetVariableF p -> return $ SetVariable.simplify p
+        EvaluatedF patterns ->
+            -- This is technically impossible because this branch would not be
+            -- chosen if termLikeF matched 'EvaluatedF', and 'traverse' (above)
+            -- does not change the head of termLikeF. However, it is harmless to
+            -- include this case here to convince the compiler that the case
+            -- statement is complete.
+            return (getEvaluated patterns)
   where
     simplifyTerm' = simplifyTerm simplifier substitutionSimplifier

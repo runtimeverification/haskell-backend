@@ -41,7 +41,6 @@ import           Kore.Step.Simplification.Data
                  ( BranchT, PredicateSimplifier, Simplifier,
                  TermLikeSimplifier, gather, scatter )
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.Syntax.And
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 

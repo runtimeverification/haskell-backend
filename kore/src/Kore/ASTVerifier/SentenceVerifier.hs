@@ -14,6 +14,7 @@ module Kore.ASTVerifier.SentenceVerifier
 
 import           Control.Monad
                  ( foldM )
+import           Data.Function
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import           Data.Text
@@ -28,7 +29,7 @@ import           Kore.ASTVerifier.SortVerifier
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
-import           Kore.IndexedModule.IndexedModule
+import           Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.IndexedModule.Resolvers
 import           Kore.Syntax
 import           Kore.Syntax.Definition
@@ -222,7 +223,7 @@ verifyHookSentence
         Builtin.sortDeclVerifier
             builtinVerifiers
             hook
-            (makeIndexedModuleAttributesNull indexedModule)
+            (IndexedModule.eraseAttributes indexedModule)
             sentence
             attrs
         return verified
@@ -235,7 +236,7 @@ verifyHookSentence
             verifySymbolHookAttribute
                 attributesVerification
                 sentenceSymbolAttributes
-        Builtin.symbolVerifier builtinVerifiers hook findSort sentence
+        Builtin.runSymbolVerifier (Builtin.symbolVerifier builtinVerifiers hook) findSort sentence
         return verified
 
     findSort = findIndexedSort indexedModule
@@ -274,7 +275,8 @@ verifyAliasSentence builtinVerifiers indexedModule sentence =
                     { builtinDomainValueVerifiers =
                         Builtin.domainValueVerifiers builtinVerifiers
                     , indexedModule =
-                        makeIndexedModuleAttributesNull indexedModule
+                        IndexedModule.eraseAttributes
+                        $ IndexedModule.erasePatterns indexedModule
                     , declaredSortVariables = variables
                     , declaredVariables = emptyDeclaredVariables
                     }
@@ -293,8 +295,8 @@ verifyAliasSentence builtinVerifiers indexedModule sentence =
     SentenceAlias { sentenceAliasRightPattern = rightPattern } = sentence
     SentenceAlias { sentenceAliasSorts } = sentence
     SentenceAlias { sentenceAliasResultSort } = sentence
-    findSort         = findIndexedSort indexedModule
-    sortParams       = (aliasParams . sentenceAliasAlias) sentence
+    findSort     = findIndexedSort indexedModule
+    sortParams   = (aliasParams . sentenceAliasAlias) sentence
     expectedSort = sentenceAliasResultSort
 
 verifyAxiomSentence
@@ -310,7 +312,9 @@ verifyAxiomSentence axiom builtinVerifiers indexedModule =
                     { builtinDomainValueVerifiers =
                         Builtin.domainValueVerifiers builtinVerifiers
                     , indexedModule =
-                        makeIndexedModuleAttributesNull indexedModule
+                        indexedModule
+                        & IndexedModule.erasePatterns
+                        & IndexedModule.eraseAttributes
                     , declaredSortVariables = variables
                     , declaredVariables = emptyDeclaredVariables
                     }

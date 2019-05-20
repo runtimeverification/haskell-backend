@@ -17,7 +17,6 @@ import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Simplification.StringLiteral
                  ( simplify )
-import           Kore.Syntax.StringLiteral
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions

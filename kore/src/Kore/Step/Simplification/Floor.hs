@@ -21,7 +21,6 @@ import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeFloorPredicate )
-import           Kore.Syntax.Floor
 import           Kore.Unparser
 
 {-| 'simplify' simplifies a 'Floor' of 'OrPattern'.

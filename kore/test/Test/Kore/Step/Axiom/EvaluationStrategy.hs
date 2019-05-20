@@ -89,18 +89,21 @@ test_definitionEvaluation =
                                     [(Mock.x, Mock.a)]
                                 }
                             ]
-                        , remainders = OrPattern.fromPatterns
-                            [ Conditional
-                                { term = Mock.functionalConstr10 (mkVar Mock.x)
-                                , predicate =
-                                    makeNotPredicate
-                                        (makeEqualsPredicate
-                                            (mkVar Mock.x)
-                                            Mock.a
-                                        )
-                                , substitution = mempty
-                                }
-                            ]
+                        , remainders =
+                            OrPattern.fromPatterns
+                            $ map (fmap mkEvaluated)
+                                [ Conditional
+                                    { term =
+                                        Mock.functionalConstr10 (mkVar Mock.x)
+                                    , predicate =
+                                        makeNotPredicate
+                                            (makeEqualsPredicate
+                                                (mkVar Mock.x)
+                                                Mock.a
+                                            )
+                                    , substitution = mempty
+                                    }
+                                ]
                         }
         actual <-
             evaluate
@@ -119,13 +122,9 @@ test_definitionEvaluation =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
                         { results = OrPattern.fromPatterns []
-                        , remainders = OrPattern.fromPatterns
-                            [ Conditional
-                                { term = Mock.functionalConstr10 Mock.b
-                                , predicate = makeTruePredicate
-                                , substitution = mempty
-                                }
-                            ]
+                        , remainders =
+                            OrPattern.fromTermLike
+                            $ mkEvaluated $ Mock.functionalConstr10 Mock.b
                         }
         actual <-
             evaluate
@@ -157,25 +156,28 @@ test_definitionEvaluation =
                                     [(Mock.x, Mock.b)]
                                 }
                             ]
-                        , remainders = OrPattern.fromPatterns
-                            [ Conditional
-                                { term = Mock.functionalConstr10 (mkVar Mock.x)
-                                , predicate = makeAndPredicate
-                                    (makeNotPredicate
-                                        (makeEqualsPredicate
-                                            (mkVar Mock.x)
-                                            Mock.a
+                        , remainders =
+                            OrPattern.fromPatterns
+                            $ map (fmap mkEvaluated)
+                                [ Conditional
+                                    { term =
+                                        Mock.functionalConstr10 (mkVar Mock.x)
+                                    , predicate = makeAndPredicate
+                                        (makeNotPredicate
+                                            (makeEqualsPredicate
+                                                (mkVar Mock.x)
+                                                Mock.a
+                                            )
                                         )
-                                    )
-                                    (makeNotPredicate
-                                        (makeEqualsPredicate
-                                            (mkVar Mock.x)
-                                            Mock.b
+                                        (makeNotPredicate
+                                            (makeEqualsPredicate
+                                                (mkVar Mock.x)
+                                                Mock.b
+                                            )
                                         )
-                                    )
-                                , substitution = mempty
-                                }
-                            ]
+                                    , substitution = mempty
+                                    }
+                                ]
                         }
         actual <-
             evaluate
@@ -383,18 +385,21 @@ test_simplifierWithFallback =
                                     [(Mock.x, Mock.b)]
                                 }
                             ]
-                        , remainders = OrPattern.fromPatterns
-                            [ Conditional
-                                { term = Mock.functionalConstr10 (mkVar Mock.x)
-                                , predicate =
-                                    makeNotPredicate
-                                        (makeEqualsPredicate
-                                            (mkVar Mock.x)
-                                            Mock.b
-                                        )
-                                , substitution = mempty
-                                }
-                            ]
+                        , remainders =
+                            OrPattern.fromPatterns
+                            $ map (fmap mkEvaluated)
+                                [ Conditional
+                                    { term =
+                                        Mock.functionalConstr10 (mkVar Mock.x)
+                                    , predicate =
+                                        makeNotPredicate
+                                            (makeEqualsPredicate
+                                                (mkVar Mock.x)
+                                                Mock.b
+                                            )
+                                    , substitution = mempty
+                                    }
+                                ]
                         }
         actual <-
             evaluate

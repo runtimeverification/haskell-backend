@@ -15,7 +15,6 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.TermLike
-import           Kore.Syntax.StringLiteral
 
 {-| 'simplify' simplifies a 'StringLiteral' pattern, which means returning
 an or containing a term made of that literal.

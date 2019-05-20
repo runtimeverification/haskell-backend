@@ -3,16 +3,12 @@ module Test.Kore.Internal.Pattern
     ) where
 
 import Test.Tasty
-       ( TestTree )
 import Test.Tasty.HUnit
-       ( assertEqual, testCase )
 
-import qualified Data.Set as Set
-import           Data.Text.Prettyprint.Doc
-                 ( Pretty (..) )
+import Data.Text.Prettyprint.Doc
 
 import           Kore.Internal.Pattern as Pattern
-                 ( Conditional (..), allVariables, mapVariables, toTermLike )
+                 ( Conditional (..), mapVariables, toTermLike )
 import           Kore.Internal.TermLike hiding
                  ( V )
 import           Kore.Predicate.Predicate
@@ -39,19 +35,6 @@ test_expandedPattern =
                     , predicate = makeEquals (var 2) (var 3)
                     , substitution = Substitution.wrap [(V 4, var 5)]
                     }
-            )
-        )
-    , testCase "Extracting variables"
-        (assertEqual ""
-            [V 1, V 2, V 3, V 4, V 5]
-            (Set.toList
-                (Pattern.allVariables
-                    Conditional
-                        { term = var 1
-                        , predicate = makeEquals (var 2) (var 3)
-                        , substitution = Substitution.wrap [(V 4, var 5)]
-                        }
-                )
             )
         )
     , testCase "Converting to a ML pattern"

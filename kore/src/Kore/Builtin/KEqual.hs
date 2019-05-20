@@ -54,7 +54,6 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Or as Or
-import           Kore.Syntax.Application
 import           Kore.Syntax.Definition
                  ( SentenceSymbol (..) )
 import           Kore.Unparser
@@ -77,17 +76,14 @@ symbolVerifiers =
     ]
   where
     iteVerifier :: Builtin.SymbolVerifier
-    iteVerifier
-        findSort
-        SentenceSymbol
-            { sentenceSymbolSorts = sorts
-            , sentenceSymbolResultSort = result
-            }
-      =
+    iteVerifier = Builtin.SymbolVerifier $ \findSort decl -> do
+        let SentenceSymbol { sentenceSymbolSorts = sorts } = decl
+            SentenceSymbol { sentenceSymbolResultSort = result } = decl
+            arity = length sorts
         Kore.Error.withContext "In argument sorts" $
             case sorts of
                 [firstSort, secondSort, thirdSort] -> do
-                    Bool.assertSort findSort firstSort
+                    Builtin.runSortVerifier Bool.assertSort findSort firstSort
                     Kore.Error.koreFailWhen
                         (secondSort /= thirdSort)
                         "Expected continuations to match"
@@ -100,8 +96,6 @@ symbolVerifiers =
                         ( "Wrong arity, expected 3 but got "
                         ++ show arity ++ " in KEQUAL.ite"
                         )
-      where
-        arity = length sorts
 
 {- | @builtinFunctions@ defines the hooks for @KEQUAL.eq@, @KEQUAL.neq@, and
 @KEQUAL.ite@.
@@ -196,7 +190,7 @@ evalKIte _ _ _ _ (_ :< app) =
         -> Maybe Bool
     evaluate (Recursive.project -> _ :< pat) =
         case pat of
-            DomainValueF dv ->
+            BuiltinF dv ->
                 Just (Bool.extractBoolDomainValue iteKey dv)
             _ -> Nothing
 

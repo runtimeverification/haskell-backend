@@ -34,7 +34,7 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike
 import           Kore.OnePath.StrategyPattern
 import           Kore.Predicate.Predicate
                  ( Predicate )
@@ -52,6 +52,7 @@ import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Syntax.Variable
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
@@ -306,7 +307,7 @@ removalPredicate destination config =
         Predicate.makeNotPredicate
         $ quantifyPredicate
         $ Predicate.makeCeilPredicate
-        $ mkAnd
+        $ TermLike.mkAnd
             (Pattern.toTermLike destination)
             (Pattern.toTermLike config)
 

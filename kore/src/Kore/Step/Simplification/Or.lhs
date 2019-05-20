@@ -29,7 +29,6 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.TermLike
-import           Kore.Syntax.Or
 import           Kore.Unparser
 \end{code}
 
