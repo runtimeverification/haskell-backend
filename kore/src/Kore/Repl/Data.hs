@@ -600,11 +600,11 @@ getRuleFor maybeNode = do
 
 -- | Lifting function that takes logging into account.
 liftSimplifierWithLogger
-    :: forall a m claim
-    .  MonadState (ReplState claim) (m Simplifier)
-    => Monad.Trans.MonadTrans m
+    :: forall a t claim
+    .  MonadState (ReplState claim) (t Simplifier)
+    => Monad.Trans.MonadTrans t
     => Simplifier a
-    -> m Simplifier a
+    -> t Simplifier a
 liftSimplifierWithLogger sa = do
    (severity, logType) <- logging <$> get
    (textLogger, maybeHandle) <- logTypeToLogger logType
@@ -623,7 +623,7 @@ liftSimplifierWithLogger sa = do
 
     logTypeToLogger
         :: LogType
-        -> m Simplifier (Logger.LogAction Simplifier Text, Maybe Handle)
+        -> t Simplifier (Logger.LogAction Simplifier Text, Maybe Handle)
     logTypeToLogger =
         \case
             NoLogging   -> pure (mempty, Nothing)
