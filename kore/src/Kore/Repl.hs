@@ -45,6 +45,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Internal.TermLike
                  ( TermLike, Variable )
+import qualified Kore.Logger as Logger
 import           Kore.OnePath.Verification
                  ( verifyClaimStep )
 import           Kore.OnePath.Verification
@@ -133,6 +134,7 @@ runRepl
             , unifier    = unifier0
             , labels     = Map.empty
             , aliases    = Map.empty
+            , logging    = (Logger.Debug, NoLogging)
             }
 
     firstClaimIndex :: ClaimIndex

@@ -332,6 +332,7 @@ mkState axioms claim =
         , unifier     = unifier0
         , labels      = Map.singleton (ClaimIndex 0) Map.empty
         , aliases     = Map.empty
+        , logging     = (Logger.Debug, NoLogging)
         }
   where
     graph' = emptyExecutionGraph claim
