@@ -356,12 +356,12 @@ showLeafs
     => ReplM claim ()
 showLeafs = do
     leafsByType <- sortLeafsByType <$> getInnerGraph
-    case foldMap showPair leafsByType of
+    case Map.foldMapWithKey showPair leafsByType of
         "" -> putStrLn' "No leafs found, proof is complete."
         xs -> putStrLn' xs
   where
-    showPair :: (NodeState, [Graph.Node]) -> String
-    showPair (ns, xs) = show ns <> ": " <> show xs
+    showPair :: NodeState -> [Graph.Node] -> String
+    showPair ns xs = show ns <> ": " <> show xs
 
 proofStatus
     :: forall claim
@@ -403,13 +403,13 @@ proofStatus = do
                 x <- cs,
                 (x `elem` Map.keys gphs) == False
             ]
-    findProofStatus :: [(NodeState, [Graph.Node])] -> GraphProofStatus
-    findProofStatus =
-        \case
-            [] -> Completed
-            xs -> case filter isStuck xs of
-                      [] -> InProgress $ xs >>= snd
-                      stuckNodes -> StuckProof $ stuckNodes >>= snd
+    findProofStatus :: Map.Map NodeState [Graph.Node] -> GraphProofStatus
+    findProofStatus m =
+        case Map.lookup StuckNode m of
+            Nothing -> case Map.lookup UnevaluatedNode m of
+                           Nothing -> Completed
+                           Just ns -> InProgress ns
+            Just ns -> StuckProof ns
     isStuck :: (NodeState, [Graph.Node]) -> Bool
     isStuck (x, _) = x == StuckNode
 
@@ -986,9 +986,10 @@ findLeafNodes graph =
     filter ((==) 0 . Graph.outdeg graph) $ Graph.nodes graph
 
 -- TODO: maybe this should be InnerGraph -> Map NodeState [Graph.Node]
-sortLeafsByType :: InnerGraph -> [(NodeState, [Graph.Node])]
+sortLeafsByType :: InnerGraph -> Map.Map NodeState [Graph.Node]
 sortLeafsByType graph =
-    groupSort
+    Map.fromList
+        . groupSort
         . catMaybes
         . fmap (getNodeState graph)
         . findLeafNodes
