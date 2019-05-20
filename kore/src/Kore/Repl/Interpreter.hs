@@ -410,9 +410,6 @@ proofStatus = do
                            Nothing -> Completed
                            Just ns -> InProgress ns
             Just ns -> StuckProof ns
-    isStuck :: (NodeState, [Graph.Node]) -> Bool
-    isStuck (x, _) = x == StuckNode
-
 
 showRule
     :: MonadState (ReplState claim) m
