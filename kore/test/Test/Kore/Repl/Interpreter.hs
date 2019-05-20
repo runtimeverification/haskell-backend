@@ -59,6 +59,7 @@ test_replInterpreter =
     , recursiveAlias         `tests` "Create alias of unknown command"
     , tryAlias               `tests` "Executing an existing alias with arguments"
     , unificationFailure     `tests` "Force axiom that doesn't unify"
+    , proofStatus            `tests` "Multi claim proof status"
     ]
 
 showUsage :: IO ()
@@ -236,6 +237,21 @@ unificationFailure =
         continue `equals` True
         state `hasCurrentNode` ReplNode 0
 
+proofStatus :: IO ()
+proofStatus =
+    let
+        claims = [zeroToTen, emptyClaim]
+        claim = zeroToTen
+        axioms = [add1]
+        command = ProofStatus
+    in do
+        Result { output, continue } <-
+            multiClaimRun command axioms claims claim
+        output `equalsOutput` "Current proof status: \n  \
+                              \claim 1: NotStarted\n  \
+                              \claim 0: InProgress [0]"
+        continue `equals` True
+
 add1 :: Axiom
 add1 = coerce $ rulePattern n plusOne
   where
@@ -254,6 +270,10 @@ emptyClaim = coerce $ rulePattern mkBottom_ mkBottom_
 
 run :: ReplCommand -> [Axiom] -> Claim -> IO Result
 run command axioms claim =  runWithState command axioms claim id
+
+multiClaimRun :: ReplCommand -> [Axiom] -> [Claim] -> Claim -> IO Result
+multiClaimRun command axioms claims claim =
+    multiClaimRunWithState command axioms claims claim id
 
 runSimplifier
     :: Simplifier a
@@ -280,6 +300,31 @@ runWithState command axioms claim stateTransformer
     liftSimplifier logger =
         SMT.runSMT SMT.defaultConfig . evalSimplifier logger
     state = stateTransformer $ mkState axioms claim
+    writeIORefIfNotEmpty out =
+        \case
+            "" -> pure ()
+            xs -> writeIORef out xs
+
+multiClaimRunWithState
+    :: ReplCommand
+    -> [Axiom]
+    -> [Claim]
+    -> Claim
+    -> (ReplState Claim -> ReplState Claim)
+    -> IO Result
+multiClaimRunWithState command axioms claims claim stateTransformer
+  = Logger.withLogger logOptions $ \logger -> do
+        output <- newIORef ""
+        (c, s) <- liftSimplifier logger
+            $ replInterpreter (writeIORefIfNotEmpty output) command
+                `runStateT` state
+        output' <- readIORef output
+        return $ Result output' c s
+  where
+    logOptions = Logger.KoreLogOptions Logger.LogNone Logger.Debug
+    liftSimplifier logger =
+        SMT.runSMT SMT.defaultConfig . evalSimplifier logger
+    state = stateTransformer $ mkMultiClaimState axioms claims claim
     writeIORefIfNotEmpty out =
         \case
             "" -> pure ()
@@ -322,6 +367,49 @@ mkState axioms claim =
     ReplState
         { axioms      = axioms
         , claims      = [claim]
+        , claim       = claim
+        , claimIndex  = ClaimIndex 0
+        , graphs      = Map.singleton (ClaimIndex 0) graph'
+        , node        = ReplNode 0
+        , commands    = Seq.empty
+        , omit        = []
+        , stepper     = stepper0
+        , unifier     = unifier0
+        , labels      = Map.singleton (ClaimIndex 0) Map.empty
+        , aliases     = Map.empty
+        }
+  where
+    graph' = emptyExecutionGraph claim
+    stepper0 claim' claims' axioms' graph (ReplNode node) =
+        verifyClaimStep
+            testMetadataTools
+            testTermLikeSimplifier
+            testSubstitutionSimplifier
+            testEvaluators
+            claim'
+            claims'
+            axioms'
+            graph
+            node
+    unifier0
+        :: TermLike Variable
+        -> TermLike Variable
+        -> UnifierWithExplanation ()
+    unifier0 first second =
+        () <$ unificationProcedure
+            testMetadataTools
+            testSubstitutionSimplifier
+            testTermLikeSimplifier
+            testEvaluators
+            first
+            second
+
+
+mkMultiClaimState :: [Axiom] -> [Claim] -> Claim -> ReplState Claim
+mkMultiClaimState axioms claims claim =
+    ReplState
+        { axioms      = axioms
+        , claims      = claims
         , claim       = claim
         , claimIndex  = ClaimIndex 0
         , graphs      = Map.singleton (ClaimIndex 0) graph'
