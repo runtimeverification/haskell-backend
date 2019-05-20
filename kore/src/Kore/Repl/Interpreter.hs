@@ -382,20 +382,17 @@ proofStatus = do
     claims <- Lens.use lensClaims
     let cindexes = ClaimIndex <$> [0..length claims - 1]
     let allProofs = Map.union
-                        (inProgressProofs graphs)
+                        (fmap inProgressProofs graphs)
                         (notStartedProofs graphs cindexes)
     putStrLn' $ showProofStatus allProofs
   where
     inProgressProofs
-        :: Map.Map ClaimIndex ExecutionGraph
-        -> Map.Map ClaimIndex GraphProofStatus
-    inProgressProofs gphs =
-        Map.map
-            ( findProofStatus
-            . sortLeafsByType
-            . Strategy.graph
-            )
-            gphs
+        :: ExecutionGraph
+        -> GraphProofStatus
+    inProgressProofs =
+        findProofStatus
+        . sortLeafsByType
+        . Strategy.graph
     notStartedProofs
         :: Map.Map ClaimIndex ExecutionGraph
         -> [ClaimIndex]
