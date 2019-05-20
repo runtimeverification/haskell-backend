@@ -10,6 +10,7 @@ module Kore.Repl.Interpreter
     ( replInterpreter
     , showUsageMessage
     , showStepStoppedMessage
+    , showProofStatus
     , printIfNotEmpty
     , showRewriteRule
     , parseEvalScript
@@ -363,18 +364,9 @@ showLeafs = do
     showPair :: NodeState -> [Graph.Node] -> String
     showPair ns xs = show ns <> ": " <> show xs
 
-proofStatus
-    :: forall claim
-    . Claim claim
-    => ReplM claim ()
-proofStatus = do
-    graphs <- Lens.use lensGraphs
-    claims <- Lens.use lensClaims
-    let cindexes = ClaimIndex <$> [0..length claims - 1]
-    let allProofs = Map.union
-                        (inProgressProofs graphs)
-                        (notStartedProofs graphs cindexes)
-    putStrLn' $ Map.foldrWithKey acc "Current proof status: " allProofs
+showProofStatus :: Map.Map ClaimIndex GraphProofStatus -> String
+showProofStatus m =
+    Map.foldrWithKey acc "Current proof status: " m
   where
     acc :: ClaimIndex -> GraphProofStatus -> String -> String
     acc key elm res =
@@ -383,6 +375,20 @@ proofStatus = do
         <> (show . unClaimIndex) key
         <> ": "
         <> show elm
+
+proofStatus
+    :: forall claim
+    .  Claim claim
+    => ReplM claim ()
+proofStatus = do
+    graphs <- Lens.use lensGraphs
+    claims <- Lens.use lensClaims
+    let cindexes = ClaimIndex <$> [0..length claims - 1]
+    let allProofs = Map.union
+                        (inProgressProofs graphs)
+                        (notStartedProofs graphs cindexes)
+    putStrLn' $ showProofStatus allProofs
+  where
     inProgressProofs
         :: Map.Map ClaimIndex ExecutionGraph
         -> Map.Map ClaimIndex GraphProofStatus

@@ -17,6 +17,7 @@ import qualified Data.Map as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import qualified Data.Map.Strict as StrictMap
 import qualified Kore.Builtin.Int as Int
 import           Kore.Internal.TermLike
                  ( TermLike, mkApp, mkBottom_, mkVar, varS )
@@ -27,6 +28,7 @@ import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
 import           Kore.Step.Rule
                  ( OnePathRule (..), RewriteRule (..), rulePattern )
+
 import           Kore.Step.Simplification.AndTerms
                  ( cannotUnifyDistinctDomainValues )
 import           Kore.Step.Simplification.Data
@@ -244,12 +246,15 @@ proofStatus =
         claim = zeroToTen
         axioms = [add1]
         command = ProofStatus
+        expectedProofStatus =
+            StrictMap.fromList
+                [ (ClaimIndex 0, InProgress [0])
+                , (ClaimIndex 1, NotStarted)
+                ]
     in do
         Result { output, continue } <-
             run command axioms claims claim
-        output `equalsOutput` "Current proof status: \n  \
-                              \claim 1: NotStarted\n  \
-                              \claim 0: InProgress [0]"
+        output `equalsOutput` showProofStatus expectedProofStatus
         continue `equals` True
 
 add1 :: Axiom
