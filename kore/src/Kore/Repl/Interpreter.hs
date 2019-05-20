@@ -93,7 +93,7 @@ import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as Axiom
                  ( attributes )
 import           Kore.Step.Simplification.Data
-                 ( Simplifier (..) )
+                 ( Simplifier )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
