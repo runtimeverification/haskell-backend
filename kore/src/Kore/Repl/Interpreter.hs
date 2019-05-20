@@ -10,6 +10,7 @@ module Kore.Repl.Interpreter
     ( replInterpreter
     , showUsageMessage
     , showStepStoppedMessage
+    , showProofStatus
     , printIfNotEmpty
     , showRewriteRule
     , parseEvalScript
@@ -54,6 +55,7 @@ import           Data.Maybe
                  ( catMaybes, listToMaybe )
 import           Data.Sequence
                  ( Seq )
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as Text.Lazy
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -154,6 +156,7 @@ replInterpreter printFn replCmd = do
                 Alias a            -> alias a            $> True
                 TryAlias name      -> tryAlias name printFn
                 LoadScript file    -> loadScript file    $> True
+                ProofStatus        -> proofStatus        $> True
                 Log s t            -> handleLog (s,t)    $> True
                 Exit               -> pure                  False
     (output, shouldContinue) <- evaluateCommand command
@@ -363,24 +366,50 @@ showLeafs
     => ReplM claim ()
 showLeafs = do
     leafsByType <- sortLeafsByType <$> getInnerGraph
-    case foldMap showPair leafsByType of
+    case Map.foldMapWithKey showPair leafsByType of
         "" -> putStrLn' "No leafs found, proof is complete."
         xs -> putStrLn' xs
   where
-    sortLeafsByType :: InnerGraph -> [(NodeState, [Graph.Node])]
-    sortLeafsByType graph =
-        groupSort
-            . catMaybes
-            . fmap (getNodeState graph)
-            . findLeafNodes
-            $ graph
+    showPair :: NodeState -> [Graph.Node] -> String
+    showPair ns xs = show ns <> ": " <> show xs
 
-    findLeafNodes :: InnerGraph -> [Graph.Node]
-    findLeafNodes graph =
-        filter ((==) 0 . Graph.outdeg graph) $ Graph.nodes graph
-
-    showPair :: (NodeState, [Graph.Node]) -> String
-    showPair (ns, xs) = show ns <> ": " <> show xs
+proofStatus
+    :: forall claim
+    .  Claim claim
+    => ReplM claim ()
+proofStatus = do
+    graphs <- Lens.use lensGraphs
+    claims <- Lens.use lensClaims
+    let cindexes = ClaimIndex <$> [0..length claims - 1]
+    let allProofs = Map.union
+                        (fmap inProgressProofs graphs)
+                        (notStartedProofs graphs cindexes)
+    putStrLn' $ showProofStatus allProofs
+  where
+    inProgressProofs
+        :: ExecutionGraph
+        -> GraphProofStatus
+    inProgressProofs =
+        findProofStatus
+        . sortLeafsByType
+        . Strategy.graph
+    notStartedProofs
+        :: Map.Map ClaimIndex ExecutionGraph
+        -> [ClaimIndex]
+        -> Map.Map ClaimIndex GraphProofStatus
+    notStartedProofs gphs cs =
+        let
+            existingKeys = Set.fromList . Map.keys $ gphs
+            allKeys = Set.fromList cs
+            missingKeys = allKeys `Set.difference` existingKeys
+        in Map.fromList $ (\idx -> (idx, NotStarted)) <$> Set.toList missingKeys
+    findProofStatus :: Map.Map NodeState [Graph.Node] -> GraphProofStatus
+    findProofStatus m =
+        case Map.lookup StuckNode m of
+            Nothing -> case Map.lookup UnevaluatedNode m of
+                           Nothing -> Completed
+                           Just ns -> InProgress ns
+            Just ns -> StuckProof ns
 
 showRule
     :: MonadState (ReplState claim) m
@@ -747,7 +776,6 @@ tryAlias replAlias@ReplAlias { name } printFn = do
     runInterpreter cmd =
         lift . runStateT (replInterpreter printFn cmd)
 
-
 -- | Performs n proof steps, picking the next node unless branching occurs.
 -- Returns 'Left' while it has to continue looping, and 'Right' when done
 -- or when execution branches or proof finishes earlier than the counter.
@@ -943,3 +971,29 @@ parseEvalScript state file = do
 formatUnificationMessage :: Maybe (Pretty.Doc ()) -> String
 formatUnificationMessage =
     maybe "No unification error found." show
+
+findLeafNodes :: InnerGraph -> [Graph.Node]
+findLeafNodes graph =
+    filter ((==) 0 . Graph.outdeg graph) $ Graph.nodes graph
+
+sortLeafsByType :: InnerGraph -> Map.Map NodeState [Graph.Node]
+sortLeafsByType graph =
+    Map.fromList
+        . groupSort
+        . catMaybes
+        . fmap (getNodeState graph)
+        . findLeafNodes
+        $ graph
+
+showProofStatus :: Map.Map ClaimIndex GraphProofStatus -> String
+showProofStatus m =
+    Map.foldrWithKey acc "Current proof status: " m
+  where
+    acc :: ClaimIndex -> GraphProofStatus -> String -> String
+    acc key elm res =
+        res
+        <> "\n  claim "
+        <> (show . unClaimIndex) key
+        <> ": "
+        <> show elm
+

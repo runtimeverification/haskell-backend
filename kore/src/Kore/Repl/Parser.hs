@@ -90,6 +90,7 @@ nonRecursiveCommand =
         , clear
         , saveSession
         , loadScript
+        , proofStatus
         , exit
         ]
 
@@ -104,6 +105,9 @@ endOfInput cmd p = p $> cmd
 
 help :: Parser ReplCommand
 help = const Help <$$> literal "help"
+
+proofStatus :: Parser ReplCommand
+proofStatus = const ProofStatus <$$> literal "proof-status"
 
 loadScript :: Parser ReplCommand
 loadScript = LoadScript <$$> literal "load" *> quotedOrWordWithout ""

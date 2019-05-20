@@ -43,6 +43,7 @@ test_replParser =
     , loadScriptTests   `tests`       "load file"
     , initScriptTests   `testsScript` "repl script"
     , aliasesWithArgs   `tests`       "aliases with arguments"
+    , proofStatus       `tests`       "proof-status"
     , logTests          `tests`       "log"
     ]
 
@@ -64,6 +65,12 @@ helpTests :: [ParserTest ReplCommand]
 helpTests =
     [ "help"  `parsesTo_` Help
     , "help " `parsesTo_` Help
+    ]
+
+proofStatus :: [ParserTest ReplCommand]
+proofStatus =
+    [ "proof-status"  `parsesTo_` ProofStatus
+    , "proof-status " `parsesTo_` ProofStatus
     ]
 
 claimTests :: [ParserTest ReplCommand]

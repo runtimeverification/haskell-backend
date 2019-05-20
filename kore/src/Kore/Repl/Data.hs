@@ -16,6 +16,7 @@ module Kore.Repl.Data
     , ReplNode (..)
     , ReplState (..)
     , NodeState (..)
+    , GraphProofStatus (..)
     , AliasDefinition (..), ReplAlias (..), AliasArgument(..), AliasError (..)
     , getNodeState
     , InnerGraph
@@ -204,6 +205,8 @@ data ReplCommand
     -- ^ Try running an alias.
     | LoadScript FilePath
     -- ^ Load script from file
+    | ProofStatus
+    -- ^ Show proof status of each claim
     | Log Logger.Severity LogType
     -- ^ Setup the Kore logger.
     | Exit
@@ -279,6 +282,7 @@ helpText =
     \alias <name> = <command>              adds as an alias for <command>\n\
     \<alias>                               runs an existing alias\n\
     \load file                             loads the file as a repl script\n\
+    \proof-status                          shows status for each claim\
     \log <severity> <type>                 configures the logging outout\n\
                                            \<severity> can be debug, info, warning,\
                                            \error, or critical\n\
@@ -319,6 +323,7 @@ shouldStore =
         ShowPrecBranch _ -> False
         ShowChildren _   -> False
         SaveSession _    -> False
+        ProofStatus      -> False
         Exit             -> False
         _                -> True
 
@@ -712,6 +717,13 @@ data NodeState = StuckNode | UnevaluatedNode
 data AliasError
     = NameAlreadyDefined
     | UnknownCommand
+
+data GraphProofStatus
+    = NotStarted
+    | Completed
+    | InProgress [Graph.Node]
+    | StuckProof [Graph.Node]
+    deriving (Eq, Show)
 
 -- | Adds or updates the provided alias.
 addOrUpdateAlias
