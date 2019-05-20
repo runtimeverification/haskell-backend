@@ -360,18 +360,6 @@ showLeafs = do
         "" -> putStrLn' "No leafs found, proof is complete."
         xs -> putStrLn' xs
   where
-    sortLeafsByType :: InnerGraph -> [(NodeState, [Graph.Node])]
-    sortLeafsByType graph =
-        groupSort
-            . catMaybes
-            . fmap (getNodeState graph)
-            . findLeafNodes
-            $ graph
-
-    findLeafNodes :: InnerGraph -> [Graph.Node]
-    findLeafNodes graph =
-        filter ((==) 0 . Graph.outdeg graph) $ Graph.nodes graph
-
     showPair :: (NodeState, [Graph.Node]) -> String
     showPair (ns, xs) = show ns <> ": " <> show xs
 
@@ -382,21 +370,48 @@ proofStatus
 proofStatus = do
     graphs <- Lens.use lensGraphs
     claims <- Lens.use lensClaims
-    let x = fmap ( \cindex -> (cindex, Map.lookup cindex graphs) )
-            $ fmap ClaimIndex [0..length claims]
-    --let y = fmap getStatus x
-    return ()
-  --where
-    --getStatus :: (ClaimIndex, Maybe ExecutionGraph) -> ([], ProofStatus)
-    --getStatus (ci, mgr) =
-    --    case mgr of
-    --        Nothing -> (ci, NotStarted)
-    --        Just gr -> case (sortLeafsByType . Strategy.graph $ gr) of
-    --                     [] -> (ci, Completed)
-    --                     xs -> case filter (\(nst, _) -> nst == StuckNode) xs of
-    --                             [] ->
-
--- case filter (\(nst, _) -> nst == StuckNode) (sortLeafsByType . Strategy.graph $ gr) of
+    let cindexes = ClaimIndex <$> [0..length claims - 1]
+    let allProofs = Map.union
+                        (inProgressProofs graphs)
+                        (notStartedProofs graphs cindexes)
+    putStrLn' $ Map.foldrWithKey acc "Current proof status: " allProofs
+  where
+    acc :: ClaimIndex -> GraphProofStatus -> String -> String
+    acc key elm res =
+        res
+        <> "\n  claim "
+        <> (show . unClaimIndex) key
+        <> ": "
+        <> show elm
+    inProgressProofs
+        :: Map.Map ClaimIndex ExecutionGraph
+        -> Map.Map ClaimIndex GraphProofStatus
+    inProgressProofs gphs =
+        Map.map
+            ( findProofStatus
+            . sortLeafsByType
+            . Strategy.graph
+            )
+            gphs
+    notStartedProofs
+        :: Map.Map ClaimIndex ExecutionGraph
+        -> [ClaimIndex]
+        -> Map.Map ClaimIndex GraphProofStatus
+    notStartedProofs gphs cs =
+        Map.fromList
+            [ (x, NotStarted) |
+                x <- cs,
+                (x `elem` Map.keys gphs) == False
+            ]
+    findProofStatus :: [(NodeState, [Graph.Node])] -> GraphProofStatus
+    findProofStatus =
+        \case
+            [] -> Completed
+            xs -> case filter isStuck xs of
+                      [] -> InProgress $ xs >>= snd
+                      stuckNodes -> StuckProof $ stuckNodes >>= snd
+    isStuck :: (NodeState, [Graph.Node]) -> Bool
+    isStuck (x, _) = x == StuckNode
 
 
 showRule
@@ -965,3 +980,16 @@ parseEvalScript state file = do
 formatUnificationMessage :: Maybe (Pretty.Doc ()) -> String
 formatUnificationMessage =
     maybe "No unification error found." show
+
+findLeafNodes :: InnerGraph -> [Graph.Node]
+findLeafNodes graph =
+    filter ((==) 0 . Graph.outdeg graph) $ Graph.nodes graph
+
+-- TODO: maybe this should be InnerGraph -> Map NodeState [Graph.Node]
+sortLeafsByType :: InnerGraph -> [(NodeState, [Graph.Node])]
+sortLeafsByType graph =
+    groupSort
+        . catMaybes
+        . fmap (getNodeState graph)
+        . findLeafNodes
+        $ graph

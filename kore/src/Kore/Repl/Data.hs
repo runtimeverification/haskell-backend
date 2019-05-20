@@ -16,6 +16,7 @@ module Kore.Repl.Data
     , ReplNode (..)
     , ReplState (..)
     , NodeState (..)
+    , GraphProofStatus (..)
     , AliasDefinition (..), ReplAlias (..), AliasArgument(..), AliasError (..)
     , getNodeState
     , InnerGraph
@@ -645,11 +646,12 @@ data AliasError
     = NameAlreadyDefined
     | UnknownCommand
 
-data ProofStatus
+data GraphProofStatus
     = NotStarted
     | Completed
-    | InProgress [Int]
-    | Stuck [Int]
+    | InProgress [Graph.Node]
+    | StuckProof [Graph.Node]
+    deriving (Eq, Show)
 
 -- | Adds or updates the provided alias.
 addOrUpdateAlias
