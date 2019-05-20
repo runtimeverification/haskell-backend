@@ -59,6 +59,7 @@ test_replInterpreter =
     , recursiveAlias         `tests` "Create alias of unknown command"
     , tryAlias               `tests` "Executing an existing alias with arguments"
     , unificationFailure     `tests` "Force axiom that doesn't unify"
+    , logUpdatesState        `tests` "Log command updates the state"
     ]
 
 showUsage :: IO ()
@@ -236,6 +237,18 @@ unificationFailure =
         continue `equals` True
         state `hasCurrentNode` ReplNode 0
 
+logUpdatesState :: IO ()
+logUpdatesState =
+    let
+        axioms  = []
+        claim   = emptyClaim
+        command = Log Logger.Info LogToStdOut
+    in do
+        Result { output, continue, state } <- run command axioms claim
+        output   `equalsOutput`  ""
+        continue `equals`     True
+        state    `hasLogging` (Logger.Info, LogToStdOut)
+
 add1 :: Axiom
 add1 = coerce $ rulePattern n plusOne
   where
@@ -314,6 +327,13 @@ hasAlias st alias@AliasDefinition { name } =
     in
         actual `equals` Just alias
 
+hasLogging :: ReplState Claim -> (Logger.Severity, LogType) -> IO ()
+hasLogging st expectedLogging =
+    let
+        actualLogging = logging st
+    in
+        actualLogging `equals` expectedLogging
+
 tests :: IO () -> String -> TestTree
 tests = flip testCase
 
@@ -332,6 +352,7 @@ mkState axioms claim =
         , unifier     = unifier0
         , labels      = Map.singleton (ClaimIndex 0) Map.empty
         , aliases     = Map.empty
+        , logging     = (Logger.Debug, NoLogging)
         }
   where
     graph' = emptyExecutionGraph claim

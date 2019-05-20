@@ -72,6 +72,7 @@ import           Kore.Internal.Pattern
 import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Internal.TermLike as TermLike
+import qualified Kore.Logger as Logger
 import           Kore.OnePath.StrategyPattern
                  ( CommonStrategyPattern, StrategyPattern (..),
                  StrategyPatternTransformer (StrategyPatternTransformer),
@@ -153,6 +154,7 @@ replInterpreter printFn replCmd = do
                 Alias a            -> alias a            $> True
                 TryAlias name      -> tryAlias name printFn
                 LoadScript file    -> loadScript file    $> True
+                Log s t            -> handleLog (s,t)    $> True
                 Exit               -> pure                  False
     (output, shouldContinue) <- evaluateCommand command
     liftIO $ printFn output
@@ -289,6 +291,12 @@ loadScript
 loadScript file = do
     state <- get
     lift (parseEvalScript state file) >>= put
+
+handleLog
+    :: MonadState (ReplState claim) m
+    => (Logger.Severity, LogType)
+    -> m ()
+handleLog t = lensLogging .= t
 
 -- | Focuses the node with id equals to 'n'.
 selectNode
@@ -581,19 +589,13 @@ tryAxiomClaim eac = do
                 strategyPattern
                     StrategyPatternTransformer
                         { bottomValue        = putStrLn' "Cannot unify bottom"
-                        , rewriteTransformer = unify first . term
-                        , stuckTransformer   = unify first . term
+                        , rewriteTransformer = runUnifier' first . term
+                        , stuckTransformer   = runUnifier' first . term
                         }
                     second
-    unify
-        :: TermLike Variable
-        -> TermLike Variable
-        -> ReplM claim ()
-    unify first second = do
-        unifier <- Lens.use lensUnifier
-        mdoc <-
-            Monad.Trans.lift . runUnifierWithExplanation $ unifier first second
-        putStrLn' $ formatUnificationMessage mdoc
+    runUnifier' first second =
+        runUnifier first second >>= putStrLn' . formatUnificationMessage
+
     extractLeftPattern
         :: Either (Axiom) claim
         -> TermLike Variable
