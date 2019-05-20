@@ -6,9 +6,7 @@
     3
   </acct>
   <accounts>
-    AccountCellMapItem ( <acctID>
-      3
-    </acctID> , <account>
+    <account>
       <acctID>
         3
       </acctID>
@@ -22,9 +20,7 @@
         3 |-> 8
         5 |-> 5
       </origStorage>
-    </account> ) AccountCellMapItem ( <acctID>
-      5
-    </acctID> , <account>
+    </account> <account>
       <acctID>
         5
       </acctID>
@@ -36,6 +32,6 @@
       <origStorage>
         .Map
       </origStorage>
-    </account> )
+    </account>
   </accounts>
 </generatedTop>
