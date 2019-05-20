@@ -14,6 +14,7 @@ module Kore.Internal.Conditional
     , fromSingleSubstitution
     , andPredicate
     , Kore.Internal.Conditional.freeVariables
+    , splitTerm
     , toPredicate
     , Kore.Internal.Conditional.mapVariables
     ) where
@@ -337,3 +338,6 @@ mapVariables
         , predicate = Predicate.mapVariables mapVariable predicate
         , substitution = Substitution.mapVariables mapVariable substitution
         }
+
+splitTerm :: Conditional variable term -> (term, Conditional variable ())
+splitTerm patt@Conditional { term } = (term, withoutTerm patt)
