@@ -982,7 +982,6 @@ findLeafNodes :: InnerGraph -> [Graph.Node]
 findLeafNodes graph =
     filter ((==) 0 . Graph.outdeg graph) $ Graph.nodes graph
 
--- TODO: maybe this should be InnerGraph -> Map NodeState [Graph.Node]
 sortLeafsByType :: InnerGraph -> Map.Map NodeState [Graph.Node]
 sortLeafsByType graph =
     Map.fromList
