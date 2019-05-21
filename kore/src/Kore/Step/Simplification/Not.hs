@@ -116,9 +116,7 @@ simplifyEvaluated
     termSimplifier
     axiomSimplifiers
     simplified
-  | OrPattern.isFalse simplified = return (OrPattern.fromPatterns [Pattern.top])
-  | OrPattern.isTrue  simplified = return (OrPattern.fromPatterns [])
-  | otherwise =
+  =
     fmap OrPattern.fromPatterns $ gather $ do
         let not' = Not { notChild = simplified, notSort = () }
         andPattern <- scatterAnd (evaluateNotPattern <$> distributeNot not')
