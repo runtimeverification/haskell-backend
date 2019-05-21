@@ -144,6 +144,25 @@ makeEvaluate
     -> OrPattern variable
 makeEvaluate = evaluateNotPattern . Not ()
 
+evaluateNotPattern
+    :: (Ord variable, Show variable, SortedVariable variable, Unparse variable)
+    => Not sort (Pattern variable)
+    -> OrPattern variable
+evaluateNotPattern Not { notChild } =
+    OrPattern.fromPatterns
+        [ Pattern.fromTermLike $ makeTermNot term
+        , Conditional
+            { term = mkTop (termLikeSort term)
+            , predicate =
+                makeNotPredicate
+                $ makeAndPredicate predicate
+                $ Predicate.fromSubstitution substitution
+            , substitution = mempty
+            }
+        ]
+  where
+    Conditional { term, predicate, substitution } = notChild
+
 makeTermNot
     ::  ( SortedVariable variable
         , Ord variable
@@ -169,24 +188,6 @@ distributeNot notOr@Not { notChild } =
   where
     worker child = notOr { notChild = child }
 
-evaluateNotPattern
-    :: (Ord variable, Show variable, SortedVariable variable, Unparse variable)
-    => Not sort (Pattern variable) -> OrPattern variable
-evaluateNotPattern Not { notChild } =
-    OrPattern.fromPatterns
-        [ Pattern.fromTermLike $ makeTermNot term
-        , Conditional
-            { term = mkTop (termLikeSort term)
-            , predicate =
-                makeNotPredicate
-                $ makeAndPredicate predicate
-                $ Predicate.fromSubstitution substitution
-            , substitution = mempty
-            }
-        ]
-  where
-    Conditional { term, predicate, substitution } = notChild
-
 distributeAnd
     :: MultiAnd (OrPattern variable)
     -> MultiOr (MultiAnd (Pattern variable))
@@ -198,6 +199,8 @@ scatterAnd
     -> BranchT m (MultiAnd (Pattern variable))
 scatterAnd = scatter . distributeAnd
 
+{- | Conjoin and simplify a 'MultiAnd' of 'Pattern'.
+ -}
 mkMultiAndPattern
     ::  ( FreshVariable variable
         , Ord variable
