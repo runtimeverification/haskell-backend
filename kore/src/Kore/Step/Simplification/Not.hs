@@ -18,6 +18,12 @@ import qualified Data.Foldable as Foldable
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.Conditional as Conditional
+import           Kore.Internal.MultiAnd
+                 ( MultiAnd )
+import qualified Kore.Internal.MultiAnd as MultiAnd
+import           Kore.Internal.MultiOr
+                 ( MultiOr )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -25,14 +31,14 @@ import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike hiding
                  ( mkAnd )
 import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeNotPredicate, makeTruePredicate )
+                 ( makeAndPredicate, makeNotPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Simplification.And as And
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
-                 gather )
+                 ( BranchT, PredicateSimplifier, Simplifier,
+                 TermLikeSimplifier, gather, scatter )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -64,14 +70,14 @@ simplify
     predicateSimplifier
     termSimplifier
     axiomSimplifiers
-    Not { notChild = child }
+    Not { notChild }
   =
     simplifyEvaluated
         tools
         predicateSimplifier
         termSimplifier
         axiomSimplifiers
-        child
+        notChild
 
 {-|'simplifyEvaluated' simplifies a 'Not' pattern given its
 'OrPattern' child.
@@ -113,11 +119,13 @@ simplifyEvaluated
   | OrPattern.isFalse simplified = return (OrPattern.fromPatterns [Pattern.top])
   | OrPattern.isTrue  simplified = return (OrPattern.fromPatterns [])
   | otherwise =
-    fmap OrPattern.fromPatterns . gather
-    $ Foldable.foldrM mkAnd Pattern.top (simplified >>= makeEvaluate)
+    fmap OrPattern.fromPatterns $ gather $ do
+        let not' = Not { notChild = simplified, notSort = () }
+        andPattern <- scatterAnd (evaluateNotPattern <$> distributeNot not')
+        mkMultiAndPattern' andPattern
   where
-    mkAnd =
-        And.makeEvaluate
+    mkMultiAndPattern' =
+        mkMultiAndPattern
             tools
             predicateSimplifier
             termSimplifier
@@ -138,11 +146,7 @@ makeEvaluate
     -> OrPattern variable
 makeEvaluate Conditional { term, predicate, substitution } =
     OrPattern.fromPatterns
-        [ Conditional
-            { term = makeTermNot term
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
+        [ Pattern.fromTermLike $ makeTermNot term
         , Conditional
             { term = mkTop (termLikeSort term)
             , predicate =
@@ -167,4 +171,71 @@ makeTermNot
 makeTermNot term
   | isBottom term = mkTop    (termLikeSort term)
   | isTop term    = mkBottom (termLikeSort term)
-  | otherwise = mkNot term
+  | otherwise     = mkNot term
+
+distributeNot
+    :: (Ord sort, Ord variable)
+    => Not sort (OrPattern variable)
+    -> MultiAnd (Not sort (Pattern variable))
+distributeNot notOr@Not { notChild } =
+    MultiAnd.make $ worker <$> Foldable.toList notChild
+  where
+    worker child = notOr { notChild = child }
+
+evaluateNotPattern
+    :: (Ord variable, Show variable, SortedVariable variable, Unparse variable)
+    => Not sort (Pattern variable) -> OrPattern variable
+evaluateNotPattern Not { notChild } =
+    OrPattern.fromPatterns
+        [ Pattern.fromTermLike $ makeTermNot term
+        , Conditional
+            { term = mkTop (termLikeSort term)
+            , predicate =
+                makeNotPredicate
+                $ makeAndPredicate predicate
+                $ Predicate.fromSubstitution substitution
+            , substitution = mempty
+            }
+        ]
+  where
+    Conditional { term, predicate, substitution } = notChild
+
+distributeAnd
+    :: MultiAnd (OrPattern variable)
+    -> MultiOr (MultiAnd (Pattern variable))
+distributeAnd = sequenceA
+
+scatterAnd
+    :: Monad m
+    => MultiAnd (OrPattern variable)
+    -> BranchT m (MultiAnd (Pattern variable))
+scatterAnd = scatter . distributeAnd
+
+mkMultiAndPattern
+    ::  ( FreshVariable variable
+        , Ord variable
+        , SortedVariable variable
+        , Show variable
+        , Unparse variable
+        )
+    => SmtMetadataTools Attribute.Symbol
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
+
+    -> MultiAnd (Pattern variable)
+    -> BranchT Simplifier (Pattern variable)
+mkMultiAndPattern
+    tools
+    predicateSimplifier
+    termSimplifier
+    axiomSimplifiers
+  =
+    Foldable.foldrM mkAnd Pattern.top
+  where
+    mkAnd =
+        And.makeEvaluate
+            tools
+            predicateSimplifier
+            termSimplifier
+            axiomSimplifiers

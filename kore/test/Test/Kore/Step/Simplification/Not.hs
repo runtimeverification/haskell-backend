@@ -5,7 +5,10 @@ module Test.Kore.Step.Simplification.Not
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
+import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified GHC.Stack as GHC
 
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -25,31 +28,57 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unparser
 import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
 
 test_simplifyEvaluated :: [TestTree]
 test_simplifyEvaluated =
     [ [Pattern.top] `becomes_` []
     , [] `becomes_` [Pattern.top]
-    , [termX] `becomes_` [mkNot <$> termX]
+    , [termX] `becomes_` [termNotX]
     , [equalsXA] `becomes_` [notEqualsXA]
     , [substXA] `becomes_` [notEqualsXA]
     , [equalsXA, equalsXB] `becomes_` [neitherXAB]
+    , [xAndEqualsXA] `becomes_` [termNotX, notEqualsXA]
     ]
   where
-    becomes_ original expected =
+    becomes_
+        :: GHC.HasCallStack
+        => [Pattern Variable]
+        -> [Pattern Variable]
+        -> TestTree
+    becomes_ originals expecteds =
         testCase "becomes" $ do
-            actual <- simplifyEvaluated (OrPattern.fromPatterns original)
-            assertEqualWithExplanation "" (OrPattern.fromPatterns expected) actual
+            actual <- simplifyEvaluated original
+            assertBool (message actual) (expected == actual)
+      where
+        original = OrPattern.fromPatterns originals
+        expected = OrPattern.fromPatterns expecteds
+        message actual =
+            (show . Pretty.vsep)
+                [ "expected simplification of:"
+                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> originals
+                , "would give:"
+                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> expecteds
+                , "but got:"
+                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> actuals
+                ]
+          where
+            actuals = Foldable.toList actual
 
 termX :: Pattern Variable
 termX = Pattern.fromTermLike (mkVar Mock.x)
+
+termNotX :: Pattern Variable
+termNotX = mkNot <$> termX
+
+xAndEqualsXA :: Pattern Variable
+xAndEqualsXA = const <$> termX <*> equalsXA
 
 equalsXA :: Pattern Variable
 equalsXA = fromPredicate equalsXA_
@@ -76,16 +105,21 @@ neitherXAB =
 substXA :: Pattern Variable
 substXA = fromSubstitution $ Substitution.unsafeWrap [(Mock.x, Mock.a)]
 
+forceTermSort :: Pattern Variable -> Pattern Variable
+forceTermSort = fmap (forceSort Mock.testSort)
+
 fromPredicate :: Syntax.Predicate Variable -> Pattern Variable
 fromPredicate =
-    Pattern.fromPredicate
+    forceTermSort
+    . Pattern.fromPredicate
     . Predicate.fromPredicate
 
 fromSubstitution
     :: Substitution Variable
     -> Pattern Variable
 fromSubstitution =
-    Pattern.fromPredicate
+    forceTermSort
+    . Pattern.fromPredicate
     . Predicate.fromSubstitution
 
 simplifyEvaluated
