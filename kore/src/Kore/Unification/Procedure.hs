@@ -77,7 +77,12 @@ unificationProcedure
     -> unifier (Predicate variable)
 unificationProcedure
     tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2
-  | p1Sort /= p2Sort = empty
+  | p1Sort /= p2Sort = do
+    Monad.Unify.explainBottom
+        "Cannot unify different sorts."
+        p1
+        p2
+    empty
   | otherwise = do
     Monad.Unify.liftSimplifier
         . Logger.withLogScope (Logger.Scope "UnificationProcedure")
