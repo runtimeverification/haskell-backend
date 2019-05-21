@@ -144,18 +144,7 @@ makeEvaluate
         )
     => Pattern variable
     -> OrPattern variable
-makeEvaluate Conditional { term, predicate, substitution } =
-    OrPattern.fromPatterns
-        [ Pattern.fromTermLike $ makeTermNot term
-        , Conditional
-            { term = mkTop (termLikeSort term)
-            , predicate =
-                makeNotPredicate
-                $ makeAndPredicate predicate
-                $ Predicate.fromSubstitution substitution
-            , substitution = mempty
-            }
-        ]
+makeEvaluate = evaluateNotPattern . Not ()
 
 makeTermNot
     ::  ( SortedVariable variable
