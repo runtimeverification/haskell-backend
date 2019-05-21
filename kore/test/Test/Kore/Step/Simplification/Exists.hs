@@ -37,12 +37,20 @@ import           Test.Tasty.HUnit.Extensions
 
 test_simplify :: [TestTree]
 test_simplify =
-    [ [plain10, plain11] `simplifies` [plain10', plain11']            $ "\\or distribution"
-    , [top]              `simplifies` [top]                           $ "\\top"
-    , []                 `simplifies` []                              $ "\\bottom"
-    , [equals]           `simplifies` [quantifyPredicate equals]      $ "\\equals"
-    , [substForX]        `simplifies` [top]                           $ "discharge substitution"
-    , [substOfX]         `simplifies` [quantifySubstitution substOfX] $ "substitution"
+    [ [plain10, plain11] `simplifiesTo` [plain10', plain11']
+        $ "\\or distribution"
+    , [top]              `simplifiesTo` [top]
+        $ "\\top"
+    , []                 `simplifiesTo` []
+        $ "\\bottom"
+    , [equals]           `simplifiesTo` [quantifyPredicate equals]
+        $ "\\equals"
+    , [substForX]        `simplifiesTo` [top]
+        $ "discharge substitution"
+    , [substToX]         `simplifiesTo` [top]
+        $ "discharge reverse substitution"
+    , [substOfX]         `simplifiesTo` [quantifySubstitution substOfX]
+        $ "substitution"
     ]
   where
     plain10 = pure $ Mock.plain10 (mkVar Mock.x)
@@ -73,19 +81,22 @@ test_simplify =
                 Substitution.unsafeWrap
                     [(Mock.x, Mock.sigma (mkVar Mock.y) (mkVar Mock.z))]
             }
+    substToX =
+        (Pattern.topOf Mock.testSort)
+            { substitution = Substitution.unsafeWrap [(Mock.y, mkVar Mock.x)] }
     substOfX =
         (Pattern.topOf Mock.testSort)
             { substitution =
                 Substitution.unsafeWrap
                     [(Mock.y, Mock.sigma (mkVar Mock.x) (mkVar Mock.z))]
             }
-    simplifies
+    simplifiesTo
         :: HasCallStack
         => [Pattern Variable]
         -> [Pattern Variable]
         -> String
         -> TestTree
-    simplifies original expected message =
+    simplifiesTo original expected message =
         testCase message $ do
             actual <- simplify Mock.metadataTools (makeExists Mock.x original)
             assertEqualWithExplanation "expected simplification"

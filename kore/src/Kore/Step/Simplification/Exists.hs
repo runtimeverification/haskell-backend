@@ -309,7 +309,13 @@ The result is a pair of:
 
  -}
 splitSubstitution
-    :: (HasCallStack, Ord variable)
+    ::  ( FreshVariable variable
+        , HasCallStack
+        , Ord variable
+        , Show variable
+        , SortedVariable variable
+        , Unparse variable
+        )
     => variable
     -> Substitution variable
     ->  ( Either (TermLike variable) (Substitution variable)
@@ -318,7 +324,9 @@ splitSubstitution
 splitSubstitution variable substitution =
     (bound, independent)
   where
-    (dependent, independent) = Substitution.partition hasVariable substitution
+    reversedSubstitution = Substitution.reverseIfRhsIsVar variable substitution
+    (dependent, independent) =
+        Substitution.partition hasVariable reversedSubstitution
     hasVariable variable' term =
         variable == variable' || Pattern.hasFreeVariable variable term
     bound =
