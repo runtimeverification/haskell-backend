@@ -47,7 +47,7 @@ module Kore.Builtin.Set
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
-                 ( MaybeT )
+                 ( MaybeT, fromMaybe )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
@@ -85,18 +85,18 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools, sortAttributes )
 import           Kore.Internal.Conditional
-                 ( andCondition, withoutTerm )
+                 ( andCondition )
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Predicate
+                 ( Predicate )
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), SimplificationType,
                  TermLikeSimplifier )
-import           Kore.Unification.Error
-                 ( errorIfIncompletelyUnified )
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -629,29 +629,42 @@ unifyEquals
                     remainderSetPat = asInternal tools sort1 remainderSet
                     key1 = fromConcrete concreteKey1
                 elemUnifier <- unifyEqualsChildren key1 key2
-                -- error when subunification problem returns partial result,
-                -- which makes 'withoutTerm' below unsafe.
-                -- More details at 'errorIfIncompletelyUnified'.
-                errorIfIncompletelyUnified key1 key2 elemUnifier
 
                 setUnifier <- unifyEqualsChildren remainderSetPat set2
-                -- error when subunification problem returns partial result,
-                -- which makes 'withoutTerm' below unsafe.
-                -- More details at 'errorIfIncompletelyUnified'.
-                errorIfIncompletelyUnified remainderSetPat set2 setUnifier
 
-                -- Return the concrete set, but capture any predicates and
-                -- substitutions from unifying the element
-                -- and framing variable.
-                let result =
-                        pure dv1
-                            -- TODO (virgil): Using withoutTerm here looks
-                            -- fragile. Consider replacing that with a ceil,
-                            -- if only to remove an assumption on the
-                            -- set values (i.e. that they're functional).
-                            `andCondition` withoutTerm elemUnifier
-                            `andCondition` withoutTerm setUnifier
-                return result
+                let
+                    setUnifierTerm :: TermLike variable
+                    setUnifierPredicate :: Predicate variable
+                    (setUnifierTerm, setUnifierPredicate) =
+                        Pattern.splitTerm setUnifier
+                    setUnifierSet :: Set (TermLike Concrete)
+                    setUnifierSet = case setUnifierTerm of
+                        (Builtin_
+                            (Domain.BuiltinSet
+                                Domain.InternalSet { builtinSetChild }
+                            )
+                         ) -> builtinSetChild
+                        _ -> (error . unlines)
+                            [ "Unexpected set unification term."
+                            , "builtin=" ++ unparseToString builtin1
+                            , "key2=" ++ unparseToString key2
+                            , "unifier=" ++ unparseToString setUnifier
+                            ]
+
+                    eitherResult :: Either ElemInSet (Pattern variable)
+                    eitherResult =
+                        addElemPatternToSet
+                            tools sort1 elemUnifier setUnifierSet
+
+                case eitherResult of
+                    Left ElemInSet -> do
+                        Monad.Unify.explainBottom
+                            "After unification the key was found in the set."
+                            first
+                            second
+                        empty
+                    Right result ->
+                        return (result `andCondition` setUnifierPredicate)
           where
             Domain.InternalSet
                 { builtinSetChild = set1
@@ -710,24 +723,21 @@ unifyEquals
         case Set.toList set1 of
             [fromConcrete -> key1] -> do
                 elemUnifier <- unifyEqualsChildren key1 key2
-                -- error when subunification problem returns partial result,
-                -- which makes 'withoutTerm' below unsafe.
-                -- More details at 'errorIfIncompletelyUnified'.
-                errorIfIncompletelyUnified key1 key2 elemUnifier
 
-                -- Return the concrete set, but capture any predicates and
-                -- substitutions from unifying the element
-                -- and framing variable.
-                let result =
-                        pure (mkBuiltin $ Domain.BuiltinSet builtin1)
-                            -- TODO (virgil): Using withoutTerm here looks
-                            -- fragile. Consider replacing that with a ceil,
-                            -- if only to remove an assumption on the
-                            -- set values (i.e. that they're functional).
-                            `andCondition` withoutTerm elemUnifier
-                return result
+                let
+                    eitherResult :: Either ElemInSet (Pattern variable)
+                    eitherResult =
+                        addElemPatternToSet tools sort1 elemUnifier Set.empty
+
+                case eitherResult of
+                    Left ElemInSet -> (error.unlines)
+                        [ "Unexpected element in empty set."
+                        , "elem=" ++ unparseToString elemUnifier
+                        ]
+                    Right result -> return result
             _ -> bottomWithExplanation
       where
+        Domain.InternalSet { builtinSetSort = sort1 } = builtin1
         Domain.InternalSet { builtinSetChild = set1 } = builtin1
 
     unifyEqualsUnit
@@ -751,3 +761,43 @@ unifyEquals
             first
             second
         empty
+
+data ElemInSet = ElemInSet
+
+addElemPatternToSet
+    :: forall variable
+    .   ( Ord variable
+        , Show variable
+        , SortedVariable variable
+        , Unparse variable
+        )
+    => SmtMetadataTools StepperAttributes
+    -> Sort
+    -> Pattern variable
+    -> Set (TermLike Concrete)
+    -> Either ElemInSet (Pattern variable)
+addElemPatternToSet tools sort1 elemPattern existingSet =
+    if Set.member concreteElemTerm existingSet
+    then Left ElemInSet
+    else Right (pure newBuiltin `andCondition` elemPredicate)
+  where
+    elemTerm :: TermLike variable
+    elemPredicate :: Predicate variable
+    (elemTerm, elemPredicate) = Pattern.splitTerm elemPattern
+
+    concreteElemTerm :: TermLike Concrete
+    concreteElemTerm =
+        fromMaybe
+            ((error . unlines)
+                [ "Unexpected variable in concrete element"
+                , "elem=" ++ unparseToString elemPattern
+                ]
+            )
+            (asConcrete elemTerm)
+
+    newBuiltin :: TermLike variable
+    newBuiltin =
+        asInternal
+            tools
+            sort1
+            (Set.insert concreteElemTerm existingSet)

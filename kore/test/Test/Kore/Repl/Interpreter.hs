@@ -17,6 +17,7 @@ import qualified Data.Map as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import qualified Data.Map.Strict as StrictMap
 import qualified Kore.Builtin.Int as Int
 import           Kore.Internal.TermLike
                  ( TermLike, mkApp, mkBottom_, mkVar, varS )
@@ -27,6 +28,7 @@ import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
 import           Kore.Step.Rule
                  ( OnePathRule (..), RewriteRule (..), rulePattern )
+
 import           Kore.Step.Simplification.AndTerms
                  ( cannotUnifyDistinctDomainValues )
 import           Kore.Step.Simplification.Data
@@ -59,6 +61,7 @@ test_replInterpreter =
     , recursiveAlias         `tests` "Create alias of unknown command"
     , tryAlias               `tests` "Executing an existing alias with arguments"
     , unificationFailure     `tests` "Force axiom that doesn't unify"
+    , proofStatus            `tests` "Multi claim proof status"
     , logUpdatesState        `tests` "Log command updates the state"
     ]
 
@@ -69,7 +72,7 @@ showUsage =
         claim   = emptyClaim
         command = ShowUsage
     in do
-        Result { output, continue } <- run command axioms claim
+        Result { output, continue } <- run command axioms [claim] claim
         output   `equalsOutput` showUsageMessage
         continue `equals`       True
 
@@ -80,7 +83,7 @@ help =
         claim   = emptyClaim
         command = Help
     in do
-        Result { output, continue } <- run command axioms claim
+        Result { output, continue } <- run command axioms [claim] claim
         output   `equalsOutput` helpText
         continue `equals`       True
 
@@ -91,7 +94,7 @@ step5 =
         claim  = zeroToTen
         command = ProveSteps 5
     in do
-        Result { output, continue, state } <- run command axioms claim
+        Result { output, continue, state } <- run command axioms [claim] claim
         output     `equalsOutput`   ""
         continue   `equals`         True
         state      `hasCurrentNode` ReplNode 5
@@ -103,7 +106,7 @@ step100 =
         claim  = zeroToTen
         command = ProveSteps 100
     in do
-        Result { output, continue, state } <- run command axioms claim
+        Result { output, continue, state } <- run command axioms [claim] claim
         output     `equalsOutput`   showStepStoppedMessage 10 NoResult
         continue   `equals`         True
         state      `hasCurrentNode` ReplNode 10
@@ -116,7 +119,7 @@ makeSimpleAlias =
         alias   = AliasDefinition { name = "a", arguments = [], command = "help" }
         command = Alias alias
     in do
-        Result { output, continue, state } <- run command axioms claim
+        Result { output, continue, state } <- run command axioms [claim] claim
         output   `equalsOutput` ""
         continue `equals`       True
         state    `hasAlias`     alias
@@ -132,7 +135,7 @@ trySimpleAlias =
         command = TryAlias $ ReplAlias "h" []
     in do
         Result { output, continue } <-
-            runWithState command axioms claim stateT
+            runWithState command axioms [claim] claim stateT
         output   `equalsOutput` helpText
         continue `equals` True
 
@@ -148,7 +151,7 @@ makeAlias =
                     }
         command = Alias alias
     in do
-        Result { output, continue, state } <- run command axioms claim
+        Result { output, continue, state } <- run command axioms [claim] claim
         output   `equalsOutput` ""
         continue `equals`       True
         state    `hasAlias`     alias
@@ -165,7 +168,7 @@ aliasOfExistingCommand =
                     }
         command = Alias alias
     in do
-        Result { output, continue } <- run command axioms claim
+        Result { output, continue } <- run command axioms [claim] claim
         output   `equalsOutput` showAliasError NameAlreadyDefined
         continue `equals`       True
 
@@ -181,7 +184,7 @@ aliasOfUnknownCommand =
                     }
         command = Alias alias
     in do
-        Result { output, continue } <- run command axioms claim
+        Result { output, continue } <- run command axioms [claim] claim
         output   `equalsOutput` showAliasError UnknownCommand
         continue `equals`       True
 
@@ -197,7 +200,7 @@ recursiveAlias =
                     }
         command = Alias alias
     in do
-        Result { output, continue } <- run command axioms claim
+        Result { output, continue } <- run command axioms [claim] claim
         output   `equalsOutput` showAliasError UnknownCommand
         continue `equals`       True
 
@@ -216,7 +219,7 @@ tryAlias =
         command = TryAlias $ ReplAlias "c" [SimpleArgument "0"]
     in do
         Result { output, continue } <-
-            runWithState command axioms claim stateT
+            runWithState command axioms [claim] claim stateT
         output   `equalsOutput` showRewriteRule claim
         continue `equals` True
 
@@ -230,12 +233,30 @@ unificationFailure =
         claim = zeroToTen
         command = Try . Left $ AxiomIndex 0
     in do
-        Result { output, continue, state } <- run command axioms claim
+        Result { output, continue, state } <- run command axioms [claim] claim
         expectedOutput <-
             unificationErrorMessage cannotUnifyDistinctDomainValues one zero
         output `equalsOutput` expectedOutput
         continue `equals` True
         state `hasCurrentNode` ReplNode 0
+
+proofStatus :: IO ()
+proofStatus =
+    let
+        claims = [zeroToTen, emptyClaim]
+        claim = zeroToTen
+        axioms = [add1]
+        command = ProofStatus
+        expectedProofStatus =
+            StrictMap.fromList
+                [ (ClaimIndex 0, InProgress [0])
+                , (ClaimIndex 1, NotStarted)
+                ]
+    in do
+        Result { output, continue } <-
+            run command axioms claims claim
+        output `equalsOutput` showProofStatus expectedProofStatus
+        continue `equals` True
 
 logUpdatesState :: IO ()
 logUpdatesState =
@@ -244,7 +265,7 @@ logUpdatesState =
         claim   = emptyClaim
         command = Log Logger.Info LogToStdOut
     in do
-        Result { output, continue, state } <- run command axioms claim
+        Result { output, continue, state } <- run command axioms [claim] claim
         output   `equalsOutput`  ""
         continue `equals`     True
         state    `hasLogging` (Logger.Info, LogToStdOut)
@@ -265,8 +286,9 @@ zeroToTen = coerce $ rulePattern zero ten
 emptyClaim :: Claim
 emptyClaim = coerce $ rulePattern mkBottom_ mkBottom_
 
-run :: ReplCommand -> [Axiom] -> Claim -> IO Result
-run command axioms claim =  runWithState command axioms claim id
+run :: ReplCommand -> [Axiom] -> [Claim] -> Claim -> IO Result
+run command axioms claims claim =
+    runWithState command axioms claims claim id
 
 runSimplifier
     :: Simplifier a
@@ -277,10 +299,11 @@ runSimplifier =
 runWithState
     :: ReplCommand
     -> [Axiom]
+    -> [Claim]
     -> Claim
     -> (ReplState Claim -> ReplState Claim)
     -> IO Result
-runWithState command axioms claim stateTransformer
+runWithState command axioms claims claim stateTransformer
   = Logger.withLogger logOptions $ \logger -> do
         output <- newIORef ""
         (c, s) <- liftSimplifier logger
@@ -292,7 +315,7 @@ runWithState command axioms claim stateTransformer
     logOptions = Logger.KoreLogOptions Logger.LogNone Logger.Debug
     liftSimplifier logger =
         SMT.runSMT SMT.defaultConfig . evalSimplifier logger
-    state = stateTransformer $ mkState axioms claim
+    state = stateTransformer $ mkState axioms claims claim
     writeIORefIfNotEmpty out =
         \case
             "" -> pure ()
@@ -337,11 +360,11 @@ hasLogging st expectedLogging =
 tests :: IO () -> String -> TestTree
 tests = flip testCase
 
-mkState :: [Axiom] -> Claim -> ReplState Claim
-mkState axioms claim =
+mkState :: [Axiom] -> [Claim] -> Claim -> ReplState Claim
+mkState axioms claims claim =
     ReplState
         { axioms      = axioms
-        , claims      = [claim]
+        , claims      = claims
         , claim       = claim
         , claimIndex  = ClaimIndex 0
         , graphs      = Map.singleton (ClaimIndex 0) graph'

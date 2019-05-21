@@ -702,6 +702,138 @@ test_andTermsSimplification =
                         Mock.unitMap
                     )
             assertEqualWithExplanation "" expect actual
+        , testCase "map elem key inj splitting" $ do
+            let
+                expected = Just
+                    [ Conditional
+                        { term = Mock.builtinMap
+                            [   ( Mock.sortInjectionSubToTop
+                                    (Mock.sortInjectionSubSubToSub
+                                        Mock.aSubSubsort
+                                    )
+                                , fOfA
+                                )
+                            ]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [   ( Mock.xSubSort
+                                , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
+                                )
+                            ,   ( Mock.y, fOfA )
+                            ]
+                        }
+                    ]
+            actual <- unify
+                Mock.metadataTools
+                (Mock.builtinMap
+                    [ (Mock.sortInjectionSubSubToTop Mock.aSubSubsort, fOfA) ]
+                )
+                (Mock.elementMap
+                    (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
+                    (mkVar Mock.y)
+                )
+            assertEqualWithExplanation "" expected actual
+        , testCase "map elem value inj splitting" $ do
+            let
+                expected = Just
+                    [ Conditional
+                        { term = Mock.builtinMap
+                            [   ( Mock.a
+                                , Mock.sortInjectionSubToTop
+                                    (Mock.sortInjectionSubSubToSub
+                                        Mock.aSubSubsort
+                                    )
+                                )
+                            ]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [   ( Mock.xSubSort
+                                , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
+                                )
+                            ,   ( Mock.y, Mock.a )
+                            ]
+                        }
+                    ]
+            actual <- unify
+                Mock.metadataTools
+                (Mock.builtinMap
+                    [ (Mock.a, Mock.sortInjectionSubSubToTop Mock.aSubSubsort) ]
+                )
+                (Mock.elementMap
+                    (mkVar Mock.y)
+                    (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
+                )
+            assertEqualWithExplanation "" expected actual
+        , testCase "map concat key inj splitting" $ do
+            let
+                expected = Just
+                    [ Conditional
+                        { term = Mock.builtinMap
+                            [   ( Mock.sortInjectionSubToTop
+                                    (Mock.sortInjectionSubSubToSub
+                                        Mock.aSubSubsort
+                                    )
+                                , fOfA
+                                )
+                            ]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [   ( Mock.xSubSort
+                                , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
+                                )
+                            ,   ( Mock.y, fOfA )
+                            ,   ( Mock.m, Mock.builtinMap [])
+                            ]
+                        }
+                    ]
+            actual <- unify
+                Mock.metadataTools
+                (Mock.builtinMap
+                    [ (Mock.sortInjectionSubSubToTop Mock.aSubSubsort, fOfA) ]
+                )
+                (Mock.concatMap
+                    (Mock.elementMap
+                        (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
+                        (mkVar Mock.y)
+                    )
+                    (mkVar Mock.m)
+                )
+            assertEqualWithExplanation "" expected actual
+        , testCase "map elem value inj splitting" $ do
+            let
+                expected = Just
+                    [ Conditional
+                        { term = Mock.builtinMap
+                            [   ( Mock.a
+                                , Mock.sortInjectionSubToTop
+                                    (Mock.sortInjectionSubSubToSub
+                                        Mock.aSubSubsort
+                                    )
+                                )
+                            ]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [   ( Mock.xSubSort
+                                , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
+                                )
+                            ,   ( Mock.y, Mock.a )
+                            ,   ( Mock.m, Mock.builtinMap [])
+                            ]
+                        }
+                    ]
+            actual <- unify
+                Mock.metadataTools
+                (Mock.builtinMap
+                    [ (Mock.a, Mock.sortInjectionSubSubToTop Mock.aSubSubsort) ]
+                )
+                (Mock.concatMap
+                    (Mock.elementMap
+                        (mkVar Mock.y)
+                        (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
+                    )
+                    (mkVar Mock.m)
+                )
+            assertEqualWithExplanation "" expected actual
         -- TODO: Add tests with non-trivial predicates.
         ]
 
@@ -801,6 +933,98 @@ test_andTermsSimplification =
                     (mkVar Mock.xSet)
                 )
                 (Mock.builtinSet [Mock.a, Mock.b])
+            assertEqualWithExplanation "" expected actual
+        , testCase "set elem inj splitting" $ do
+            let
+                expected = Just
+                    [ Conditional
+                        { term = Mock.builtinSet
+                            [ Mock.sortInjectionSubToTop
+                                (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
+                            ]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [   ( Mock.xSubSort
+                                , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
+                                )
+                            ]
+                        }
+                    ]
+            actual <- unify
+                Mock.metadataTools
+                (Mock.elementSet
+                    (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
+                )
+                (Mock.builtinSet
+                    [Mock.sortInjectionSubSubToTop Mock.aSubSubsort]
+                )
+            assertEqualWithExplanation "" expected actual
+        , testCase "set concat inj splitting" $ do
+            let
+                expected = Just
+                    [ Conditional
+                        { term = Mock.builtinSet
+                            [ Mock.sortInjectionSubToTop
+                                (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
+                            ]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [   ( Mock.xSubSort
+                                , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
+                                )
+                            ,   ( Mock.xSet
+                                , Mock.builtinSet []
+                                )
+                            ]
+                        }
+                    ]
+            actual <- unify
+                Mock.metadataTools
+                (Mock.concatSet
+                    (Mock.elementSet
+                        (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
+                    )
+                    (mkVar Mock.xSet)
+                )
+                (Mock.builtinSet
+                    [Mock.sortInjectionSubSubToTop Mock.aSubSubsort]
+                )
+            assertEqualWithExplanation "" expected actual
+        , testCase "set concat 2 inj splitting" $ do
+            let
+                expected = Just
+                    [ Conditional
+                        { term = Mock.builtinSet
+                            [ Mock.a
+                            , Mock.sortInjectionSubToTop
+                                (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
+                            ]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [   (Mock.x, Mock.a)
+                            ,   ( Mock.xSubSort
+                                , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
+                                )
+                            ,   ( Mock.xSet
+                                , Mock.builtinSet []
+                                )
+                            ]
+                        }
+                    ]
+            actual <- unify
+                Mock.metadataTools
+                (Mock.concatSet
+                    (Mock.elementSet (mkVar Mock.x))
+                    (Mock.concatSet
+                        (Mock.elementSet
+                            (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
+                        )
+                        (mkVar Mock.xSet)
+                    )
+                )
+                (Mock.builtinSet
+                    [Mock.a, Mock.sortInjectionSubSubToTop Mock.aSubSubsort]
+                )
             assertEqualWithExplanation "" expected actual
         ]
     ]
