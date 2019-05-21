@@ -49,7 +49,7 @@ module Kore.Builtin.Map
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
-                 ( MaybeT )
+                 ( MaybeT, fromMaybe )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -82,16 +82,16 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
 import           Kore.Internal.Conditional
-                 ( Conditional, andCondition, withoutTerm )
+                 ( Conditional, andCondition )
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Predicate
+                 ( Predicate )
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-import           Kore.Unification.Error
-                 ( errorIfIncompletelyUnified )
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -397,8 +397,9 @@ asTermLike
     :: Ord variable
     => Domain.InternalMap (TermLike Concrete) (TermLike variable)
     -> TermLike variable
-asTermLike builtin =
-    foldr concat' unit (element <$> Map.toAscList map')
+asTermLike builtin
+  | Map.null map' = unit
+  | otherwise = foldr1 concat' (element <$> Map.toAscList map')
   where
     Domain.InternalMap { builtinMapSort = builtinSort } = builtin
     Domain.InternalMap { builtinMapChild = map' } = builtin
@@ -669,36 +670,42 @@ unifyEquals
                     key1 = fromConcrete concreteKey1
 
                 keyUnifier <- unifyEqualsChildren key1 key2
-                -- error when subunification problem returns partial result,
-                -- which makes 'withoutTerm' below unsafe.
-                -- More details at 'errorIfIncompletelyUnified'.
-                errorIfIncompletelyUnified key1 key2 keyUnifier
-
                 valueUnifier <- unifyEqualsChildren value1 value2
-                -- error when subunification problem returns partial result,
-                -- which makes 'withoutTerm' below unsafe.
-                -- More details at 'errorIfIncompletelyUnified'.
-                errorIfIncompletelyUnified value1 value2 valueUnifier
 
                 mapUnifier <- unifyEqualsChildren remainderMapPat map2
-                -- error when subunification problem returns partial result,
-                -- which makes 'withoutTerm' below unsafe.
-                -- More details at 'errorIfIncompletelyUnified'.
-                errorIfIncompletelyUnified remainderMapPat map2 mapUnifier
 
-                -- Return the concrete map, but capture any predicates and
-                -- substitutions from unifying the element
-                -- and framing variable.
-                let result =
-                        -- TODO (virgil): Using withoutTerm here looks
-                        -- fragile. Consider replacing that with a ceil,
-                        -- if only to remove an assumption on the
-                        -- set values (i.e. that they're functional).
-                        pure dv1
-                            `andCondition` withoutTerm keyUnifier
-                            `andCondition` withoutTerm valueUnifier
-                            `andCondition` withoutTerm mapUnifier
-                return result
+                let
+                    mapUnifierTerm :: TermLike variable
+                    mapUnifierPredicate :: Predicate variable
+                    (mapUnifierTerm, mapUnifierPredicate) =
+                        Pattern.splitTerm mapUnifier
+                    mapUnifierMap :: Map (TermLike Concrete) (TermLike variable)
+                    mapUnifierMap = case mapUnifierTerm of
+                        (Builtin_
+                            (Domain.BuiltinMap
+                                Domain.InternalMap { builtinMapChild }
+                            )
+                         ) -> builtinMapChild
+                        _ -> (error . unlines)
+                            [ "Unexpected map unification term."
+                            , "builtin=" ++ unparseToString builtin1
+                            , "key2=" ++ unparseToString key2
+                            , "unifier=" ++ unparseToString mapUnifier
+                            ]
+
+                    eitherResult =
+                        addKeyValuePatternsToMap
+                            tools sort1 keyUnifier valueUnifier mapUnifierMap
+                case eitherResult of
+                    Left KeyInMap -> do
+                        Monad.Unify.explainBottom
+                            "After unification the key was found in the map."
+                            first
+                            second
+                        empty
+                    Right result ->
+                        return (result `andCondition` mapUnifierPredicate)
+
           | otherwise =
             Builtin.unifyEqualsUnsolved simplificationType dv1 app2
           where
@@ -790,35 +797,25 @@ unifyEquals
         -> unifier (Pattern variable)
     unifyEqualsElement builtin1 key2 value2 =
         case Map.toList map1 of
-            [(fromConcrete -> key1, value1)] ->
-                do
-                    keyUnifier <- unifyEqualsChildren key1 key2
-                    -- error when subunification problem returns partial result,
-                    -- which makes 'withoutTerm' below unsafe.
-                    -- More details at 'errorIfIncompletelyUnified'.
-                    errorIfIncompletelyUnified key1 key2 keyUnifier
+            [(fromConcrete -> key1, value1)] -> do
+                keyUnifier <- unifyEqualsChildren key1 key2
+                valueUnifier <- unifyEqualsChildren value1 value2
 
-                    valueUnifier <- unifyEqualsChildren value1 value2
-                    -- error when subunification problem returns partial result,
-                    -- which makes 'withoutTerm' below unsafe.
-                    -- More details at 'errorIfIncompletelyUnified'.
-                    errorIfIncompletelyUnified value1 value2 valueUnifier
-
-                    -- Return the concrete map, but capture any predicates and
-                    -- substitutions from unifying the element
-                    -- and framing variable.
-                    let result =
-                            -- TODO (virgil): Using withoutTerm here looks
-                            -- fragile. Consider replacing that with a ceil,
-                            -- if only to remove an assumption on the
-                            -- set values (i.e. that they're functional).
-                            pure (mkBuiltin $ Domain.BuiltinMap builtin1)
-                                `andCondition` withoutTerm keyUnifier
-                                `andCondition` withoutTerm valueUnifier
-                    return result
+                let
+                    eitherResult =
+                        addKeyValuePatternsToMap
+                            tools sort1 keyUnifier valueUnifier Map.empty
+                case eitherResult of
+                    Left KeyInMap -> (error . unlines)
+                        [ "Unexpected key in empty map."
+                        , "key=" ++ unparseToString keyUnifier
+                        , "value=" ++ unparseToString valueUnifier
+                        ]
+                    Right result -> return result
             _ -> bottomWithExplanation
             -- Cannot unify a non-element Map with an element Map
       where
+        Domain.InternalMap { builtinMapSort = sort1 } = builtin1
         Domain.InternalMap { builtinMapChild = map1 } = builtin1
 
     unifyEqualsUnit
@@ -843,3 +840,47 @@ unifyEquals
             first
             second
         empty
+
+data KeyInMap = KeyInMap
+
+addKeyValuePatternsToMap
+    :: forall variable
+    .   ( Ord variable
+        , Show variable
+        , SortedVariable variable
+        , Unparse variable
+        )
+    => SmtMetadataTools StepperAttributes
+    -> Sort
+    -> Pattern variable
+    -> Pattern variable
+    -> Map (TermLike Concrete) (TermLike variable)
+    -> Either KeyInMap (Pattern variable)
+addKeyValuePatternsToMap tools sort1 keyPattern valuePattern existingMap =
+    if Map.member concreteKeyTerm existingMap
+    then Left KeyInMap
+    else Right
+        (pure (asInternal tools sort1 newMap)
+            `andCondition` keyPredicate
+            `andCondition` valuePredicate
+        )
+  where
+    keyTerm :: TermLike variable
+    keyPredicate :: Predicate variable
+    (keyTerm, keyPredicate) = Pattern.splitTerm keyPattern
+    concreteKeyTerm :: TermLike Concrete
+    concreteKeyTerm =
+        fromMaybe
+            ((error . unlines)
+                [ "Unexpected variable in map key term"
+                , "key=" ++ unparseToString keyPattern
+                ]
+            )
+            (asConcrete keyTerm)
+
+    valueTerm :: TermLike variable
+    valuePredicate :: Predicate variable
+    (valueTerm, valuePredicate) = Pattern.splitTerm valuePattern
+
+    newMap :: Map (TermLike Concrete) (TermLike variable)
+    newMap = Map.insert concreteKeyTerm valueTerm existingMap

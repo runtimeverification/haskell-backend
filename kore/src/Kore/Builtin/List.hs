@@ -297,8 +297,9 @@ asTermLike
     :: Ord variable
     => Domain.InternalList (TermLike variable)
     -> TermLike variable
-asTermLike builtin =
-    foldr concat' unit (element <$> list)
+asTermLike builtin
+  | Seq.null list = unit
+  | otherwise = foldr1 concat' (element <$> list)
   where
     Domain.InternalList { builtinListSort = builtinSort } = builtin
     Domain.InternalList { builtinListChild = list } = builtin

@@ -79,8 +79,10 @@ unparseCollection
     -> SymbolOrAlias  -- ^ concat symbol
     -> [Pretty.Doc ann]      -- ^ children
     -> Pretty.Doc ann
-unparseCollection unitSymbol elementSymbol concatSymbol builtinChildren =
-    foldr applyConcat applyUnit (applyElement <$> builtinChildren)
+unparseCollection unitSymbol elementSymbol concatSymbol =
+    \case
+        [] -> applyUnit
+        xs -> foldr1 applyConcat (applyElement <$> xs)
   where
     applyUnit = unparse unitSymbol <> noArguments
     applyElement elem' = unparse elementSymbol <> elem'

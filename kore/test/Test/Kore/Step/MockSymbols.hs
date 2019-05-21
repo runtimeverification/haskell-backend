@@ -533,6 +533,8 @@ xSet :: Variable
 xSet = Variable (testId "xSet") mempty setSort
 xInt :: Variable
 xInt = Variable (testId "xInt") mempty intSort
+xSubSort :: Variable
+xSubSort = Variable (testId "xSubSort") mempty subSort
 
 a :: Ord variable => TermLike variable
 a = Internal.mkApp testSort aSymbol []

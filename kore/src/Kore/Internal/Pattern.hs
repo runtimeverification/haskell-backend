@@ -13,6 +13,7 @@ module Kore.Internal.Pattern
     , isBottom
     , isTop
     , Kore.Internal.Pattern.mapVariables
+    , splitTerm
     , toTermLike
     , top
     , topOf
@@ -192,3 +193,6 @@ toPredicate
     => Pattern variable
     -> Syntax.Predicate variable
 toPredicate = Conditional.toPredicate
+
+splitTerm :: Pattern variable -> (TermLike variable, Predicate variable)
+splitTerm = Conditional.splitTerm
