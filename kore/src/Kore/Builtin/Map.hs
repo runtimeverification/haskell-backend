@@ -397,8 +397,9 @@ asTermLike
     :: Ord variable
     => Domain.InternalMap (TermLike Concrete) (TermLike variable)
     -> TermLike variable
-asTermLike builtin =
-    foldr concat' unit (element <$> Map.toAscList map')
+asTermLike builtin
+  | Map.null map' = unit
+  | otherwise = foldr1 concat' (element <$> Map.toAscList map')
   where
     Domain.InternalMap { builtinMapSort = builtinSort } = builtin
     Domain.InternalMap { builtinMapChild = map' } = builtin

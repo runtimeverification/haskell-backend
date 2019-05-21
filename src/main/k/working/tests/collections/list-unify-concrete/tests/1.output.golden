@@ -6,12 +6,10 @@
     ListItem ( x )
     ListItem ( y )
     ListItem ( z )
-    .List
   </a>
   <b>
     ListItem ( x )
     ListItem ( y )
     ListItem ( z )
-    .List
   </b>
 </T>

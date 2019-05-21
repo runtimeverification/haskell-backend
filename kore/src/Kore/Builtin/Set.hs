@@ -417,8 +417,9 @@ asTermLike
     :: Ord variable
     => Domain.InternalSet (TermLike Concrete)
     -> TermLike variable
-asTermLike builtin =
-    foldr concat' unit (element <$> Foldable.toList set)
+asTermLike builtin
+  | Set.null set = unit
+  | otherwise = foldr1 concat' (element <$> Foldable.toList set)
   where
     Domain.InternalSet { builtinSetSort = builtinSort } = builtin
     Domain.InternalSet { builtinSetChild = set } = builtin
