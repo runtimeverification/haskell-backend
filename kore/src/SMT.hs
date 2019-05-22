@@ -58,11 +58,15 @@ import           Control.Applicative
                  ( empty )
 import           Control.Concurrent.MVar
 import qualified Control.Monad as Monad
+import           Control.Monad.Catch
+                 ( MonadCatch, MonadThrow )
 import qualified Control.Monad.Counter as Counter
 import qualified Control.Monad.Except as Except
 import qualified Control.Monad.Identity as Identity
+import           Control.Monad.IO.Class
+                 ( MonadIO, liftIO )
 import           Control.Monad.Reader
-                 ( ReaderT, runReaderT )
+                 ( MonadReader, ReaderT, runReaderT )
 import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.RWS.Lazy as RWS.Lazy
 import qualified Control.Monad.RWS.Strict as RWS.Strict
@@ -136,7 +140,16 @@ access to the solver for a sequence of commands.
 
  -}
 newtype SMT a = SMT { getSMT :: ReaderT Environment IO a }
-    deriving (Alternative, Applicative, Functor, Monad)
+    deriving
+        ( Alternative
+        , Applicative
+        , Functor
+        , Monad
+        , MonadCatch
+        , MonadIO
+        , MonadReader Environment
+        , MonadThrow
+        )
 
 -- | Access 'SMT' through monad transformers.
 class Monad m => MonadSMT m where
@@ -316,15 +329,6 @@ inNewScope SMT { getSMT } logger = do
 
 -- --------------------------------
 -- Internal
-
-{- | Lift 'IO' actions 'SMT'.
-
-All the interfaces provided by "SimpleSMT" use a 'Solver' in 'IO'. 'SMT'
-encapsulates this access pattern.
-
- -}
-liftIO :: IO a -> SMT a
-liftIO = SMT . Trans.lift
 
 -- | A command with an uninteresting result.
 ackCommand :: MonadSMT m => SExpr -> m ()
