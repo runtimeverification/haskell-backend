@@ -350,8 +350,8 @@ loadFile path =
 -- | Run an 'SMT' computation with the given solver.
 withSolver :: (Solver -> IO a) -> SMT a
 withSolver within = do
-    mvar <- SMT $ Reader.ask
-    liftIO $ withMVar mvar within
+    Environment { solver } <- SMT $ Reader.ask
+    liftIO $ withMVar solver within
 
 withSolver' :: (MVar Solver -> IO a) -> SMT a
-withSolver' = Reader.ReaderT . Profunctor.lmap solver
+withSolver' = SMT . Reader.ReaderT . Profunctor.lmap solver
