@@ -20,6 +20,7 @@ import qualified GHC.Generics as GHC
 
 import Kore.Debug
 import Kore.Sort
+import Kore.TopBottom
 import Kore.Unparser
 
 {-|'Not' corresponds to the @\not@ branches of the @object-pattern@ and
@@ -57,3 +58,7 @@ instance Unparse child => Unparse (Not Sort child) where
 
     unparse2 Not { notChild } =
         Pretty.parens (Pretty.fillSep ["\\not", unparse2 notChild])
+
+instance TopBottom child => TopBottom (Not sort child) where
+    isTop = isBottom . notChild
+    isBottom = isTop . notChild
