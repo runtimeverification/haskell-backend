@@ -299,7 +299,15 @@ termUnification tools substitutionSimplifier simplifier axiomIdToSimplifier =
                     pat1
                     pat2
             unsupportedPatternsError =
-                Monad.Unify.throwUnificationError UnsupportedPatterns
+                Monad.Unify.throwUnificationError
+                    (UnsupportedPatterns
+                        (unlines
+                            [ "Unknown unification case."
+                            , "pat1=" ++ unparseToString pat1
+                            , "pat2=" ++ unparseToString pat2
+                            ]
+                        )
+                    )
         Error.maybeT unsupportedPatternsError pure $ maybeTermUnification
 
 {- | Simplify the conjunction (@\\and@) of two terms.
@@ -1081,7 +1089,15 @@ sortInjectionAndEqualsAssumesDifferentHeads
     second
   = case simplifySortInjections tools first second of
     Nothing ->
-        Monad.Trans.lift (Monad.Unify.throwUnificationError UnsupportedPatterns)
+        Monad.Trans.lift
+            (Monad.Unify.throwUnificationError
+                (UnsupportedPatterns $ unlines
+                    [ "Unimplemented sort injection unification"
+                    , "first=" ++ unparseToString first
+                    , "second=" ++ unparseToString second
+                    ]
+                )
+            )
     Just NotInjection -> empty
     Just NotMatching -> Monad.Trans.lift $ do
         Monad.Unify.explainBottom

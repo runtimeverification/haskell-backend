@@ -374,7 +374,11 @@ test_applyRewriteRule_ =
     -- vs
     -- sigma(a, i(b)) with substitution b=a
     , testCase "non-function substitution error" $ do
-        let expect = Left $ UnificationError UnsupportedPatterns
+        let expect = Left $ UnificationError $ UnsupportedPatterns $ unlines
+                [ "Unknown unification case."
+                , "pat1=x0:testSort{}"
+                , "pat2=plain10{}(y:testSort{})"
+                ]
             initial =
                 pure $ Mock.sigma (mkVar Mock.x) (Mock.plain10 (mkVar Mock.y))
         actual <- applyRewriteRule_ initial axiomSigmaId

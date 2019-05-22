@@ -107,7 +107,9 @@ matchAsUnification
   = do
     result <- runMaybeT matchResult
     maybe
-        (Monad.Unify.throwUnificationError UnsupportedPatterns)
+        (Monad.Unify.throwUnificationError
+            (UnsupportedPatterns "Unknown match case.")
+        )
         return
         result
   where
@@ -160,7 +162,15 @@ unificationWithAppMatchOnTop
                 -- The application heads have the same symbol or alias
                 -- constructor with different parameters,
                 -- but we do not handle unification of symbol parameters.
-                  -> Monad.Unify.throwUnificationError UnsupportedPatterns
+                    -> Monad.Unify.throwUnificationError
+                        (UnsupportedPatterns
+                            (  "Unknown application head match case for "
+                            ++ unparseToString firstHead
+                            ++ " and "
+                            ++ unparseToString secondHead
+                            ++ "."
+                            )
+                        )
                 | otherwise
                   -> error
                     (  "Unexpected unequal heads: "

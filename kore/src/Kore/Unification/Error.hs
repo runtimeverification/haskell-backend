@@ -36,11 +36,12 @@ instance Pretty UnificationOrSubstitutionError where
 
 -- |'UnificationError' specifies various error cases encountered during
 -- unification
-data UnificationError = UnsupportedPatterns
+data UnificationError = UnsupportedPatterns String
     deriving (Eq, Show)
 
 instance Pretty UnificationError where
-    pretty UnsupportedPatterns = "Unsupported patterns"
+    pretty (UnsupportedPatterns err) =
+        "Unsupported patterns: " <> Pretty.pretty err
 
 -- |@ClashReason@ describes the head of a pattern involved in a clash.
 data ClashReason

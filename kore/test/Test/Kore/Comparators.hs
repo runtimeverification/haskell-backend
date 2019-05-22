@@ -786,8 +786,9 @@ instance EqualWithExplanation SymbolOrAlias where
     printWithExplanation = show
 
 instance SumEqualWithExplanation UnificationError where
-    sumConstructorPair UnsupportedPatterns UnsupportedPatterns =
-        SumConstructorSameNoArguments
+    sumConstructorPair (UnsupportedPatterns a1) (UnsupportedPatterns a2) =
+        SumConstructorSameWithArguments
+        $ EqWrap "UnsupportedPatterns" a1 a2
 
 instance EqualWithExplanation UnificationError where
     compareWithExplanation = sumCompareWithExplanation
