@@ -23,6 +23,7 @@ module Kore.Unification.Substitution
     , Kore.Unification.Substitution.filter
     , Kore.Unification.Substitution.freeVariables
     , partition
+    , reverseIfRhsIsVar
     ) where
 
 import           Control.DeepSeq
@@ -45,10 +46,16 @@ import           Prelude hiding
                  ( null )
 
 import           Kore.Internal.TermLike
-                 ( TermLike )
+                 ( TermLike, pattern Var_, mkVar )
 import qualified Kore.Internal.TermLike as TermLike
+import           Kore.Syntax.Variable
+                 ( SortedVariable )
 import           Kore.TopBottom
                  ( TopBottom (..) )
+import           Kore.Unparser
+                 ( Unparse, unparseToString )
+import           Kore.Variables.Fresh
+                 ( FreshVariable )
 
 {- | @Substitution@ represents a collection @[xᵢ=φᵢ]@ of substitutions.
 
@@ -218,6 +225,98 @@ partition criterion (Substitution substitution) =
 partition criterion (NormalizedSubstitution substitution) =
     let (true, false) = Map.partitionWithKey criterion substitution
     in (NormalizedSubstitution true, NormalizedSubstitution false)
+
+{- | Reverses all `var = givenVar` assignments in the substitution and
+renormalizes, if needed.
+-}
+reverseIfRhsIsVar
+    :: forall variable
+    .   ( Eq variable
+        , FreshVariable variable
+        , Show variable
+        , SortedVariable variable
+        , Unparse variable
+        )
+    => variable
+    -> Substitution variable
+    -> Substitution variable
+reverseIfRhsIsVar variable (Substitution substitution) =
+    Substitution (map (reversePairIfRhsVar variable) substitution)
+  where
+    reversePairIfRhsVar
+        :: variable
+        -> (variable, TermLike variable)
+        -> (variable, TermLike variable)
+    reversePairIfRhsVar var original@(substitutedVar, Var_ substitutionVar)
+      | var == substitutionVar = (substitutionVar, mkVar substitutedVar)
+      | otherwise = original
+    reversePairIfRhsVar _ original = original
+reverseIfRhsIsVar variable original@(NormalizedSubstitution substitution) =
+    case reversableVars of
+        [] -> original
+        (v:vs) ->
+            let
+                replacementVar :: variable
+                replacementVar = foldr max v vs
+
+                replacement :: TermLike variable
+                replacement = mkVar replacementVar
+
+                replacedSubstitution :: Map variable (TermLike variable)
+                replacedSubstitution =
+                    fmap
+                        (TermLike.substitute
+                            (Map.singleton variable replacement)
+                        )
+                        (assertNoneAreFreeVarsInRhs
+                            (Set.fromList reversableVars)
+                            (Map.delete replacementVar substitution)
+                        )
+            in
+                NormalizedSubstitution
+                    (Map.insert variable replacement replacedSubstitution)
+  where
+    reversable :: [(variable, TermLike variable)]
+    reversable = List.filter (rhsIsVar variable) (Map.toList substitution)
+
+    reversableVars :: [variable]
+    reversableVars = map fst reversable
+
+    rhsIsVar :: variable -> (thing, TermLike variable) -> Bool
+    rhsIsVar var (_, Var_ otherVar) = var == otherVar
+    rhsIsVar _ _ = False
+
+assertNoneAreFreeVarsInRhs
+    ::  ( Ord variable
+        , SortedVariable variable
+        , Unparse variable
+        )
+    => Set variable
+    -> Map variable (TermLike variable)
+    -> Map variable (TermLike variable)
+assertNoneAreFreeVarsInRhs lhsVariables =
+    fmap assertNoneAreFree
+  where
+    assertNoneAreFree patt =
+        if Set.null commonVars
+        then patt
+        else (error . unlines)
+            [ "Unexpected lhs variable in rhs term "
+            , "in normalized substitution. While this can"
+            , "be a valid case sometimes, i.e. x=f(x),"
+            , "we don't handle that right now."
+            , "patt=" ++ unparseToString patt
+            , "commonVars="
+                ++ show
+                    ( unparseToString
+                    <$> Set.toList commonVars
+                    )
+            ]
+      where
+        commonVars =
+            Set.intersection
+                lhsVariables
+                (TermLike.freeVariables patt)
 
 {- | Return the free variables of the 'Substitution'.
 
