@@ -8,6 +8,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 
 module SMT
     ( SMT, getSMT
+    , Environment (..)
     , Solver
     , newSolver, stopSolver, withSolver, withSolver'
     , runSMT
@@ -53,6 +54,8 @@ module SMT
     , SimpleSMT.forallQ
     ) where
 
+import           Control.Applicative
+                 ( empty )
 import           Control.Concurrent.MVar
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Counter as Counter
@@ -70,9 +73,11 @@ import qualified Control.Monad.Trans.Maybe as Maybe
 import qualified Control.Monad.Writer.Lazy as Writer.Lazy
 import qualified Control.Monad.Writer.Strict as Writer.Strict
 import           Data.Limit
+import qualified Data.Profunctor as Profunctor
 import           Data.Text
                  ( Text )
 
+import qualified Kore.Logger as Logger
 import           ListT
 import           SMT.SimpleSMT
                  ( Constructor (..), ConstructorArgument (..),
@@ -115,6 +120,13 @@ defaultConfig =
         , timeOut = TimeOut (Limit 40)
         }
 
+type Logger = Logger.LogAction IO Logger.LogMessage
+
+data Environment = Environment
+    { solver     :: !(MVar Solver)
+    , logger     :: !Logger
+    }
+
 {- | Query an external SMT solver.
 
 The solver may be shared among multiple threads. Individual commands will
@@ -123,8 +135,8 @@ different threads may be interleaved; use 'inNewScope' to acquire exclusive
 access to the solver for a sequence of commands.
 
  -}
-newtype SMT a = SMT { getSMT :: ReaderT (MVar Solver) IO a }
-    deriving (Applicative, Functor, Monad)
+newtype SMT a = SMT { getSMT :: ReaderT Environment IO a }
+    deriving (Alternative, Applicative, Functor, Monad)
 
 -- | Access 'SMT' through monad transformers.
 class Monad m => MonadSMT m where
@@ -174,12 +186,13 @@ instance MonadSMT m => MonadSMT (ListT m) where
 The new solver is returned in an 'MVar' for thread-safety.
 
  -}
-newSolver :: Config -> IO (MVar Solver)
-newSolver config = do
-    solver <- SimpleSMT.newSolver exe args Nothing
+newSolver :: Config -> Logger -> IO Environment
+newSolver config logger = do
+    solver <- SimpleSMT.newSolver exe args logger
     mvar <- newMVar solver
-    runReaderT getSMT mvar
-    return mvar
+    let env = Environment { logger = logger, solver = mvar }
+    runReaderT getSMT env
+    return env
   where
     -- TODO (thomas.tuegel): Set up logging using logFile.
     -- TODO (thomas.tuegel): Initialize solver from preludeFile.
@@ -188,7 +201,7 @@ newSolver config = do
     Config { preludeFile } = config
     SMT { getSMT } = do
         setTimeOut timeOut
-        maybe (pure ()) loadFile preludeFile
+        maybe empty loadFile preludeFile
 
 {- | Shut down a solver.
 
@@ -197,18 +210,18 @@ the 'Solver' is never returned to the 'MVar', so any threads waiting for the
 solver will hang.
 
  -}
-stopSolver :: MVar Solver -> IO ()
-stopSolver mvar = do
+stopSolver :: Environment -> IO ()
+stopSolver Environment { solver = mvar } = do
     solver <- takeMVar mvar
     _ <- SimpleSMT.stop solver
     return ()
 
 -- | Run an external SMT solver.
-runSMT :: Config -> SMT a -> IO a
-runSMT config SMT { getSMT } = do
-    solver <- newSolver config
-    a <- runReaderT getSMT solver
-    stopSolver solver
+runSMT :: Config -> Logger -> SMT a -> IO a
+runSMT config logger SMT { getSMT } = do
+    env <- newSolver config logger
+    a <- runReaderT getSMT env
+    stopSolver env
     return a
 
 {- | Declare a constant.
@@ -291,14 +304,15 @@ The query will have exclusive access to the solver, so it is safe to send
 multiple commands in sequence.
 
  -}
-inNewScope :: MonadSMT m => SMT a -> m a
-inNewScope SMT { getSMT } =
+inNewScope :: MonadSMT m => SMT a -> Logger -> m a
+inNewScope SMT { getSMT } logger = do
     liftSMT $ withSolver $ \solver -> do
         -- Create an unshared "dummy" mutex for the solver.
         mvar <- newMVar solver
         -- Run the inner query with the unshared mutex.
         -- The inner query will never block waiting to acquire the solver.
-        SimpleSMT.inNewScope solver (runReaderT getSMT mvar)
+        SimpleSMT.inNewScope solver
+            $ runReaderT getSMT Environment { solver = mvar, logger }
 
 -- --------------------------------
 -- Internal
@@ -340,4 +354,4 @@ withSolver within = do
     liftIO $ withMVar mvar within
 
 withSolver' :: (MVar Solver -> IO a) -> SMT a
-withSolver' = SMT . Reader.ReaderT
+withSolver' = Reader.ReaderT . Profunctor.lmap solver
