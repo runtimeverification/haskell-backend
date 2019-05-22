@@ -184,6 +184,12 @@ instance
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
+    sumConstructorPair (Syntax.MuF a1) (Syntax.MuF a2) =
+        SumConstructorSameWithArguments (EqWrap "MuF" a1 a2)
+    sumConstructorPair pattern1@(Syntax.MuF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
     sumConstructorPair (Syntax.NextF a1) (Syntax.NextF a2) =
         SumConstructorSameWithArguments (EqWrap "NextF" a1 a2)
     sumConstructorPair pattern1@(Syntax.NextF _) pattern2 =
@@ -193,6 +199,12 @@ instance
     sumConstructorPair (Syntax.NotF a1) (Syntax.NotF a2) =
         SumConstructorSameWithArguments (EqWrap "NotF" a1 a2)
     sumConstructorPair pattern1@(Syntax.NotF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (Syntax.NuF a1) (Syntax.NuF a2) =
+        SumConstructorSameWithArguments (EqWrap "NuF" a1 a2)
+    sumConstructorPair pattern1@(Syntax.NuF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
@@ -627,6 +639,41 @@ instance
     printWithExplanation = show
 
 instance
+    ( Eq child
+    , Eq variable
+    , Show child
+    , Show variable
+    , EqualWithExplanation child
+    , EqualWithExplanation variable
+    )
+    => StructEqualWithExplanation (Mu variable child)
+  where
+    structFieldsWithNames
+        expected@(Mu _ _)
+        actual@(Mu _ _)
+      = [ EqWrap
+            "muVariable = "
+            (muVariable expected)
+            (muVariable actual)
+        , EqWrap
+            "muChild = "
+            (muChild expected)
+            (muChild actual)
+        ]
+    structConstructorName _ = "Mu"
+instance
+    ( EqualWithExplanation child
+    , Eq child
+    , Show child
+    , EqualWithExplanation variable
+    , Eq variable
+    , Show variable
+    ) => EqualWithExplanation (Mu variable child)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
     (EqualWithExplanation child, Eq child, Show child)
     => EqualWithExplanation (Next Sort child)
   where
@@ -653,6 +700,41 @@ instance (Show child, Eq child, EqualWithExplanation child)
 instance
     (EqualWithExplanation child, Eq child, Show child)
     => EqualWithExplanation (Not Sort child)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( Eq child
+    , Eq variable
+    , Show child
+    , Show variable
+    , EqualWithExplanation child
+    , EqualWithExplanation variable
+    )
+    => StructEqualWithExplanation (Nu variable child)
+  where
+    structFieldsWithNames
+        expected@(Nu _ _)
+        actual@(Nu _ _)
+      = [ EqWrap
+            "nuVariable = "
+            (nuVariable expected)
+            (nuVariable actual)
+        , EqWrap
+            "nuChild = "
+            (nuChild expected)
+            (nuChild actual)
+        ]
+    structConstructorName _ = "Nu"
+instance
+    ( EqualWithExplanation child
+    , Eq child
+    , Show child
+    , EqualWithExplanation variable
+    , Eq variable
+    , Show variable
+    ) => EqualWithExplanation (Nu variable child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
@@ -2024,6 +2106,12 @@ instance
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
+    sumConstructorPair (TermLike.MuF a1) (TermLike.MuF a2) =
+        SumConstructorSameWithArguments (EqWrap "MuF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.MuF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
     sumConstructorPair (TermLike.NextF a1) (TermLike.NextF a2) =
         SumConstructorSameWithArguments (EqWrap "NextF" a1 a2)
     sumConstructorPair pattern1@(TermLike.NextF _) pattern2 =
@@ -2033,6 +2121,12 @@ instance
     sumConstructorPair (TermLike.NotF a1) (TermLike.NotF a2) =
         SumConstructorSameWithArguments (EqWrap "NotF" a1 a2)
     sumConstructorPair pattern1@(TermLike.NotF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.NuF a1) (TermLike.NuF a2) =
+        SumConstructorSameWithArguments (EqWrap "NuF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.NuF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 

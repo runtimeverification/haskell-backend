@@ -31,6 +31,7 @@ module Kore.Parser.Lexeme
     , idFirstChars
     , idOtherChars
     , openCurlyBraceParser
+    , closedCurlyBraceParser
     , inCurlyBracesParser
     , inCurlyBracesRemainderParser
     , inParenthesesParser

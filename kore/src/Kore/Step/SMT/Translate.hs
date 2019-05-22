@@ -104,6 +104,8 @@ translatePredicate translateUninterpreted predicate =
             InF _ -> translateUninterpreted SMT.tBool pat
 
             -- Invalid: no translation, should not occur in predicates
+            MuF _ -> empty
+            NuF _ -> empty
             ApplicationF _ -> empty
             BuiltinF _ -> empty
             DomainValueF _ -> empty

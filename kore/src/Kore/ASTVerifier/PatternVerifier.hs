@@ -300,10 +300,14 @@ verifyPatternHead (_ :< patternF) =
             transCofreeF Internal.ImpliesF <$> verifyImplies implies
         Syntax.InF in' ->
             transCofreeF Internal.InF <$> verifyIn in'
+        Syntax.MuF mu ->
+            transCofreeF Internal.MuF <$> verifyMu mu
         Syntax.NextF next ->
             transCofreeF Internal.NextF <$> verifyNext next
         Syntax.NotF not' ->
             transCofreeF Internal.NotF <$> verifyNot not'
+        Syntax.NuF nu ->
+            transCofreeF Internal.NuF <$> verifyNu nu
         Syntax.OrF or' ->
             transCofreeF Internal.OrF <$> verifyOr or'
         Syntax.RewritesF rewrites ->
@@ -568,6 +572,28 @@ verifyForall
     -> PatternVerifier (CofreeF binder valid Verified.Pattern)
 verifyForall = verifyBinder forallSort forallVariable
 
+verifyMu
+    ::  ( binder ~ Mu Variable
+        , valid ~ Attribute.Pattern Variable
+        )
+    => binder (PatternVerifier Verified.Pattern)
+    -> PatternVerifier (CofreeF binder valid Verified.Pattern)
+verifyMu = verifyBinder muSort muVar
+  where
+    muVar = getVariable . muVariable
+    muSort = variableSort . muVar
+
+verifyNu
+    ::  ( binder ~ Nu Variable
+        , valid ~ Attribute.Pattern Variable
+        )
+    => binder (PatternVerifier Verified.Pattern)
+    -> PatternVerifier (CofreeF binder valid Verified.Pattern)
+verifyNu = verifyBinder nuSort nuVar
+  where
+    nuVar = getVariable . nuVariable
+    nuSort = variableSort . nuVar
+
 verifyVariable
     ::  ( base ~ Const (Variable)
         , valid ~ Attribute.Pattern Variable
@@ -759,8 +785,10 @@ patternNameForContext (ForallF forall) =
 patternNameForContext (IffF _) = "\\iff"
 patternNameForContext (ImpliesF _) = "\\implies"
 patternNameForContext (InF _) = "\\in"
+patternNameForContext (MuF _) = "\\mu"
 patternNameForContext (NextF _) = "\\next"
 patternNameForContext (NotF _) = "\\not"
+patternNameForContext (NuF _) = "\\nu"
 patternNameForContext (OrF _) = "\\or"
 patternNameForContext (RewritesF _) = "\\rewrites"
 patternNameForContext (StringLiteralF _) = "<string>"

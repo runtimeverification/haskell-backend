@@ -103,8 +103,12 @@ instance
                 locationFromAst impliesSort
             InF In { inResultSort } ->
                 locationFromAst inResultSort
+            MuF Mu { muVariable = SetVariable variable } ->
+                locationFromAst variable
             NextF Next { nextSort } -> locationFromAst nextSort
             NotF Not { notSort } -> locationFromAst notSort
+            NuF Nu { nuVariable = SetVariable variable } ->
+                locationFromAst variable
             OrF Or { orSort } -> locationFromAst orSort
             RewritesF Rewrites { rewritesSort } ->
                 locationFromAst rewritesSort
