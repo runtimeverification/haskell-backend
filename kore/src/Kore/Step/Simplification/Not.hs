@@ -119,7 +119,7 @@ simplifyEvaluated
   =
     fmap OrPattern.fromPatterns $ gather $ do
         let not' = Not { notChild = simplified, notSort = () }
-        andPattern <- scatterAnd (evaluateNotPattern <$> distributeNot not')
+        andPattern <- scatterAnd (makeEvaluateNot <$> distributeNot not')
         mkMultiAndPattern' andPattern
   where
     mkMultiAndPattern' =
@@ -142,13 +142,13 @@ makeEvaluate
         )
     => Pattern variable
     -> OrPattern variable
-makeEvaluate = evaluateNotPattern . Not ()
+makeEvaluate = makeEvaluateNot . Not ()
 
-evaluateNotPattern
+makeEvaluateNot
     :: (Ord variable, Show variable, SortedVariable variable, Unparse variable)
     => Not sort (Pattern variable)
     -> OrPattern variable
-evaluateNotPattern Not { notChild } =
+makeEvaluateNot Not { notChild } =
     OrPattern.fromPatterns
         [ Pattern.fromTermLike $ makeTermNot term
         , Conditional
@@ -179,6 +179,8 @@ makeTermNot term
   | isTop term    = mkBottom (termLikeSort term)
   | otherwise     = mkNot term
 
+{- | Distribute 'Not' over 'MultiOr' using de Morgan's identity.
+ -}
 distributeNot
     :: (Ord sort, Ord variable)
     => Not sort (OrPattern variable)
@@ -188,11 +190,15 @@ distributeNot notOr@Not { notChild } =
   where
     worker child = notOr { notChild = child }
 
+{- | Distribute 'MultiAnd' over 'MultiOr'.
+ -}
 distributeAnd
     :: MultiAnd (OrPattern variable)
     -> MultiOr (MultiAnd (Pattern variable))
 distributeAnd = sequenceA
 
+{- | Distribute 'MultiAnd' over 'MultiOr' and 'scatter' into 'BranchT'.
+ -}
 scatterAnd
     :: Monad m
     => MultiAnd (OrPattern variable)
