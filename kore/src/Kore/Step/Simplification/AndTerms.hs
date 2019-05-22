@@ -80,7 +80,7 @@ import           Kore.Step.Substitution
                  createPredicatesAndSubstitutionsMergerExcept )
 import           Kore.TopBottom
 import           Kore.Unification.Error
-                 ( UnificationError (..) )
+                 ( unsupportedPatterns )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
                  ( MonadUnify, Unifier )
@@ -300,13 +300,10 @@ termUnification tools substitutionSimplifier simplifier axiomIdToSimplifier =
                     pat2
             unsupportedPatternsError =
                 Monad.Unify.throwUnificationError
-                    (UnsupportedPatterns
-                        (unlines
-                            [ "Unknown unification case."
-                            , "pat1=" ++ unparseToString pat1
-                            , "pat2=" ++ unparseToString pat2
-                            ]
-                        )
+                    (unsupportedPatterns
+                        "Unknown unification case."
+                        pat1
+                        pat2
                     )
         Error.maybeT unsupportedPatternsError pure $ maybeTermUnification
 
@@ -1091,11 +1088,10 @@ sortInjectionAndEqualsAssumesDifferentHeads
     Nothing ->
         Monad.Trans.lift
             (Monad.Unify.throwUnificationError
-                (UnsupportedPatterns $ unlines
-                    [ "Unimplemented sort injection unification"
-                    , "first=" ++ unparseToString first
-                    , "second=" ++ unparseToString second
-                    ]
+                (unsupportedPatterns
+                    "Unimplemented sort injection unification"
+                    first
+                    second
                 )
             )
     Just NotInjection -> empty

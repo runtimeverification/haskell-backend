@@ -13,12 +13,15 @@ module Kore.Unification.Error
     , UnificationOrSubstitutionError (..)
     , substitutionToUnifyOrSubError
     , unificationToUnifyOrSubError
+    , unsupportedPatterns
     ) where
 
 import           Data.Text.Prettyprint.Doc
                  ( Pretty )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import Kore.Internal.TermLike
+       ( TermLike )
 import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.Variable
@@ -38,6 +41,18 @@ instance Pretty UnificationOrSubstitutionError where
 -- unification
 data UnificationError = UnsupportedPatterns String
     deriving (Eq, Show)
+
+unsupportedPatterns
+    ::  ( SortedVariable variable
+        , Unparse variable
+        )
+    => String -> TermLike variable -> TermLike variable -> UnificationError
+unsupportedPatterns message first second =
+    UnsupportedPatterns $ unlines
+        [ message
+        , "first=" ++ unparseToString first
+        , "second=" ++ unparseToString second
+        ]
 
 instance Pretty UnificationError where
     pretty (UnsupportedPatterns err) =

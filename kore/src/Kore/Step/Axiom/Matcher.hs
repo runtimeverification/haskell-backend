@@ -55,7 +55,7 @@ import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMergerExcept,
                  mergePredicatesAndSubstitutionsExcept )
 import           Kore.Unification.Error
-                 ( UnificationError (..) )
+                 ( unsupportedPatterns )
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import qualified Kore.Unification.Substitution as Substitution
@@ -108,7 +108,7 @@ matchAsUnification
     result <- runMaybeT matchResult
     maybe
         (Monad.Unify.throwUnificationError
-            (UnsupportedPatterns "Unknown match case.")
+            (unsupportedPatterns "Unknown match case." first second)
         )
         return
         result
@@ -163,13 +163,10 @@ unificationWithAppMatchOnTop
                 -- constructor with different parameters,
                 -- but we do not handle unification of symbol parameters.
                     -> Monad.Unify.throwUnificationError
-                        (UnsupportedPatterns
-                            (  "Unknown application head match case for "
-                            ++ unparseToString firstHead
-                            ++ " and "
-                            ++ unparseToString secondHead
-                            ++ "."
-                            )
+                        (unsupportedPatterns
+                            "Unknown application head match case for "
+                            first
+                            second
                         )
                 | otherwise
                   -> error

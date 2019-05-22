@@ -133,11 +133,10 @@ test_mergeAndNormalizeSubstitutions =
     , testCase "Double constructor is bottom with variables"
         -- [x=constructor(y)] + [x=constructor(constructor(y))]  === bottom?
         $ do
-            let expect = Left $ UnificationError $ UnsupportedPatterns $ unlines
-                    [ "Unknown unification case."
-                    , "pat1=y:testSort{}"
-                    , "pat2=constr10{}(y:testSort{})"
-                    ]
+            let expect = Left $ UnificationError $ unsupportedPatterns
+                    "Unknown unification case."
+                    (mkVar Mock.y)
+                    (Mock.constr10 (mkVar Mock.y))
             actual <-
                 merge
                     [   ( Mock.x
@@ -225,13 +224,10 @@ test_mergeAndNormalizeSubstitutions =
     , testCase "Constructor circular dependency?"
         -- [x=y] + [y=constructor(x)]  === error
         $ do
-            let expect = Left $ UnificationError
-                    (UnsupportedPatterns $ unlines
-                        [ "Unknown unification case."
-                        , "pat1=y:testSort{}"
-                        , "pat2=constr10{}(x:testSort{})"
-                        ]
-                    )
+            let expect = Left $ UnificationError $ unsupportedPatterns
+                    "Unknown unification case."
+                    (mkVar Mock.y)
+                    (Mock.constr10 (mkVar Mock.x))
             actual <-
                 merge
                     [   ( Mock.x

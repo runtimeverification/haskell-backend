@@ -47,12 +47,10 @@ import           Kore.Step.Step hiding
                  applyRule, sequenceRewriteRules, unifyRule )
 import qualified Kore.Step.Step as Step
 import           Kore.Unification.Error
-                 ( SubstitutionError (..),
-                 UnificationOrSubstitutionError (..) )
+                 ( SubstitutionError (..), UnificationOrSubstitutionError (..),
+                 unsupportedPatterns )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.Unifier
-                 ( UnificationError (..) )
 import           Kore.Unification.Unify
                  ( Unifier )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -374,11 +372,10 @@ test_applyRewriteRule_ =
     -- vs
     -- sigma(a, i(b)) with substitution b=a
     , testCase "non-function substitution error" $ do
-        let expect = Left $ UnificationError $ UnsupportedPatterns $ unlines
-                [ "Unknown unification case."
-                , "pat1=x0:testSort{}"
-                , "pat2=plain10{}(y:testSort{})"
-                ]
+        let expect = Left $ UnificationError $ unsupportedPatterns
+                "Unknown unification case."
+                (mkVar (nextVariable Mock.x))
+                (Mock.plain10 (mkVar Mock.y))
             initial =
                 pure $ Mock.sigma (mkVar Mock.x) (Mock.plain10 (mkVar Mock.y))
         actual <- applyRewriteRule_ initial axiomSigmaId
