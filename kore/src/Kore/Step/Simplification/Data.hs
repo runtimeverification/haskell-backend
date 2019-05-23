@@ -58,7 +58,7 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 import qualified ListT
 import           SMT
-                 ( MonadSMT, SMT (..), liftSMT, withSolver' )
+                 ( MonadSMT (..), SMT (..), withSolver' )
 import           SMT.SimpleSMT
                  ( Solver )
 

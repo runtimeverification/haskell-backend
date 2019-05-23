@@ -6,6 +6,8 @@ License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 
+{-# LANGUAGE TemplateHaskell #-}
+
 module SMT
     ( SMT, getSMT
     , Solver
@@ -34,7 +36,6 @@ module SMT
     , check
     , setInfo
     , loadFile
-    , inNewScope
     -- * Expressions
     , SExpr (..)
     , SimpleSMT.nameFromSExpr
@@ -54,10 +55,15 @@ module SMT
     ) where
 
 import           Control.Concurrent.MVar
+import qualified Control.Lens as Lens hiding
+                 ( makeLenses )
+import qualified Control.Lens.TH.Rules as Lens
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Counter as Counter
 import qualified Control.Monad.Except as Except
 import qualified Control.Monad.Identity as Identity
+import           Control.Monad.IO.Class
+                 ( MonadIO, liftIO )
 import           Control.Monad.Reader
                  ( ReaderT, runReaderT )
 import qualified Control.Monad.Reader as Reader
@@ -73,6 +79,7 @@ import           Data.Limit
 import           Data.Text
                  ( Text )
 
+import qualified Kore.Logger as Logger
 import           ListT
 import           SMT.SimpleSMT
                  ( Constructor (..), ConstructorArgument (..),
@@ -81,6 +88,8 @@ import           SMT.SimpleSMT
                  SmtFunctionDeclaration, SmtSortDeclaration, Solver,
                  SortDeclaration (..) )
 import qualified SMT.SimpleSMT as SimpleSMT
+import           Template.Tools
+                 ( newDefinitionGroup )
 
 -- | Time-limit for SMT queries.
 newtype TimeOut = TimeOut { getTimeOut :: Limit Integer }
@@ -115,6 +124,14 @@ defaultConfig =
         , timeOut = TimeOut (Limit 40)
         }
 
+type Logger = Logger.LogAction SMT Logger.LogMessage
+
+data Environment = Environment
+    { solver     :: !(MVar Solver)
+    , logger     :: !Logger
+    }
+
+
 {- | Query an external SMT solver.
 
 The solver may be shared among multiple threads. Individual commands will
@@ -123,63 +140,186 @@ different threads may be interleaved; use 'inNewScope' to acquire exclusive
 access to the solver for a sequence of commands.
 
  -}
-newtype SMT a = SMT { getSMT :: ReaderT (MVar Solver) IO a }
-    deriving (Applicative, Functor, Monad)
+newtype SMT a = SMT { getSMT :: ReaderT Environment IO a }
+    deriving
+        ( Applicative
+        , Functor
+        , Monad
+        , MonadIO
+        , Reader.MonadReader Environment
+        )
+
+Lens.makeLenses ''Environment
+
+withSolver' :: (Solver -> IO a) -> SMT a
+withSolver' action = do
+    solver'   <- solver <$> Reader.ask
+    liftIO $ withMVar solver' action
 
 -- | Access 'SMT' through monad transformers.
 class Monad m => MonadSMT m where
-    liftSMT :: SMT a -> m a
+    withSolver :: m a -> m a
+
+    -- push :: m ()
+    -- pop :: m ()
+
+    -- | Declares a general SExpr to SMT.
+    declare :: Text -> SExpr -> m SExpr
+    default declare
+        :: (Trans.MonadTrans t, MonadSMT n, Monad n, m ~ t n)
+        => Text
+        -> SExpr
+        -> m SExpr
+    declare text = Trans.lift . declare text
+
+    -- | Declares a function symbol to SMT.
+    declareFun :: SmtFunctionDeclaration -> m SExpr
+    default declareFun
+        :: (Trans.MonadTrans t, MonadSMT n, Monad n, m ~ t n)
+        => SmtFunctionDeclaration
+        -> m SExpr
+    declareFun = Trans.lift . declareFun
+
+    -- | Declares a sort to SMT.
+    declareSort :: SmtSortDeclaration -> m SExpr
+    default declareSort
+        :: (Trans.MonadTrans t, MonadSMT n, Monad n, m ~ t n)
+        => SmtSortDeclaration
+        -> m SExpr
+    declareSort = Trans.lift . declareSort
+
+    -- | Declares a constructor-based sort to SMT.
+    declareDatatype :: SmtDataTypeDeclaration -> m ()
+    default declareDatatype
+        :: (Trans.MonadTrans t, MonadSMT n, Monad n, m ~ t n)
+        => SmtDataTypeDeclaration
+        -> m ()
+    declareDatatype = Trans.lift . declareDatatype
+
+    -- | Declares a constructor-based sort to SMT.
+    declareDatatypes ::  [SmtDataTypeDeclaration] -> m ()
+    default declareDatatypes
+        :: (Trans.MonadTrans t, MonadSMT n, Monad n, m ~ t n)
+        => [SmtDataTypeDeclaration]
+        -> m ()
+    declareDatatypes = Trans.lift . declareDatatypes
+
+    -- | Assume a fact.
+    assert :: SExpr -> m ()
+    default assert
+        :: (Trans.MonadTrans t, MonadSMT n, Monad n, m ~ t n)
+        => SExpr
+        -> m ()
+    assert = Trans.lift . assert
+
+    {- | Check if the current set of assertions is satisfiable.
+
+    See also: 'assert'
+
+    -}
+    check :: m Result
+    default check
+        :: (Trans.MonadTrans t, MonadSMT n, Monad n, m ~ t n)
+        => m Result
+    check = Trans.lift check
+
+    -- | A command with an uninteresting result.
+    ackCommand :: SExpr -> m ()
+    default ackCommand
+        :: (Trans.MonadTrans t, MonadSMT n, Monad n, m ~ t n)
+        => SExpr
+        -> m ()
+    ackCommand = Trans.lift . ackCommand
+
+    -- | Load a .smt2 file
+    loadFile :: FilePath -> m ()
+    default loadFile
+        :: (Trans.MonadTrans t, MonadSMT n, Monad n, m ~ t n)
+        => FilePath
+        -> m ()
+    loadFile = Trans.lift . loadFile
+
 
 instance MonadSMT SMT where
-    liftSMT = id
+    withSolver action = do
+        solver'   <- solver <$> Reader.ask
+        newSolver <- liftIO $ readMVar solver' >>= newMVar
+        Reader.local (lensSolver Lens..~ newSolver) action
 
-instance MonadSMT m => MonadSMT (Counter.CounterT m) where
-    liftSMT = Trans.lift . liftSMT
+    declare name typ =
+        withSolver' $ \solver -> SimpleSMT.declare solver name typ
 
-instance MonadSMT m => MonadSMT (Except.ExceptT r m) where
-    liftSMT = Trans.lift . liftSMT
+    declareFun declaration = do
+        withSolver' $ \solver -> SimpleSMT.declareFun solver declaration
 
-instance MonadSMT m => MonadSMT (Identity.IdentityT m) where
-    liftSMT = Trans.lift . liftSMT
+    declareSort declaration =
+        withSolver' $ \solver -> SimpleSMT.declareSort solver declaration
 
-instance MonadSMT m => MonadSMT (Maybe.MaybeT m) where
-    liftSMT = Trans.lift . liftSMT
+    declareDatatype declaration =
+        withSolver' $ \solver -> SimpleSMT.declareDatatype solver declaration
 
-instance MonadSMT m => MonadSMT (Reader.ReaderT r m) where
-    liftSMT = Trans.lift . liftSMT
+    declareDatatypes datatypes =
+        withSolver' $ \solver -> SimpleSMT.declareDatatypes solver datatypes
 
-instance (MonadSMT m, Monoid w) => MonadSMT (RWS.Lazy.RWST r w s m) where
-    liftSMT = Trans.lift . liftSMT
+    assert fact =
+        withSolver' $ \solver -> SimpleSMT.assert solver fact
 
-instance (MonadSMT m, Monoid w) => MonadSMT (RWS.Strict.RWST r w s m) where
-    liftSMT = Trans.lift . liftSMT
+    check = withSolver' SimpleSMT.check
 
-instance MonadSMT m => MonadSMT (State.Lazy.StateT s m) where
-    liftSMT = Trans.lift . liftSMT
+    ackCommand command =
+        withSolver' $ \solver -> SimpleSMT.ackCommand solver command
 
-instance MonadSMT m => MonadSMT (State.Strict.StateT s m) where
-    liftSMT = Trans.lift . liftSMT
+    loadFile path =
+        withSolver' $ \solver -> SimpleSMT.loadFile solver path
 
-instance (MonadSMT m, Monoid w) => MonadSMT (Writer.Lazy.WriterT w m) where
-    liftSMT = Trans.lift . liftSMT
+-- instance MonadSMT m => MonadSMT (Counter.CounterT m) where
+--     liftSMT = Trans.lift . liftSMT
 
-instance (MonadSMT m, Monoid w) => MonadSMT (Writer.Strict.WriterT w m) where
-    liftSMT = Trans.lift . liftSMT
+-- instance MonadSMT m => MonadSMT (Except.ExceptT r m) where
+--     liftSMT = Trans.lift . liftSMT
 
-instance MonadSMT m => MonadSMT (ListT m) where
-    liftSMT = Trans.lift . liftSMT
+-- instance MonadSMT m => MonadSMT (Identity.IdentityT m) where
+--     liftSMT = Trans.lift . liftSMT
+
+-- instance MonadSMT m => MonadSMT (Maybe.MaybeT m) where
+--     liftSMT = Trans.lift . liftSMT
+
+-- instance MonadSMT m => MonadSMT (Reader.ReaderT r m) where
+--     liftSMT = Trans.lift . liftSMT
+
+-- instance (MonadSMT m, Monoid w) => MonadSMT (RWS.Lazy.RWST r w s m) where
+--     liftSMT = Trans.lift . liftSMT
+
+-- instance (MonadSMT m, Monoid w) => MonadSMT (RWS.Strict.RWST r w s m) where
+--     liftSMT = Trans.lift . liftSMT
+
+-- instance MonadSMT m => MonadSMT (State.Lazy.StateT s m) where
+--     liftSMT = Trans.lift . liftSMT
+
+-- instance MonadSMT m => MonadSMT (State.Strict.StateT s m) where
+--     liftSMT = Trans.lift . liftSMT
+
+-- instance (MonadSMT m, Monoid w) => MonadSMT (Writer.Lazy.WriterT w m) where
+--     liftSMT = Trans.lift . liftSMT
+
+-- instance (MonadSMT m, Monoid w) => MonadSMT (Writer.Strict.WriterT w m) where
+--     liftSMT = Trans.lift . liftSMT
+
+-- instance MonadSMT m => MonadSMT (ListT m) where
+--     liftSMT = Trans.lift . liftSMT
 
 {- | Initialize a new solver with the given 'Config'.
 
 The new solver is returned in an 'MVar' for thread-safety.
 
  -}
-newSolver :: Config -> IO (MVar Solver)
-newSolver config = do
+newSolver :: Config -> Logger -> IO Environment
+newSolver config logger = do
     solver <- SimpleSMT.newSolver exe args Nothing
     mvar <- newMVar solver
-    runReaderT getSMT mvar
-    return mvar
+    let env = Environment { solver = mvar, logger }
+    runReaderT getSMT env
+    return env
   where
     -- TODO (thomas.tuegel): Set up logging using logFile.
     -- TODO (thomas.tuegel): Initialize solver from preludeFile.
@@ -204,11 +344,11 @@ stopSolver mvar = do
     return ()
 
 -- | Run an external SMT solver.
-runSMT :: Config -> SMT a -> IO a
-runSMT config SMT { getSMT } = do
-    solver <- newSolver config
-    a <- runReaderT getSMT solver
-    stopSolver solver
+runSMT :: Config -> Logger -> SMT a -> IO a
+runSMT config logger SMT { getSMT } = do
+    env <- newSolver config logger
+    a <- runReaderT getSMT env
+    stopSolver (solver env)
     return a
 
 {- | Declare a constant.
@@ -222,101 +362,19 @@ The declared name is returned as an expression for convenience.
 escapeId :: Text -> Text
 escapeId name = "|" <> name <> "|"
 
--- | Declares a general SExpr to SMT.
-declare :: MonadSMT m => Text -> SExpr -> m SExpr
-declare name typ =
-    liftSMT $ withSolver $ \solver ->
-        SimpleSMT.declare solver name typ
-
--- | Declares a function symbol to SMT.
-declareFun :: MonadSMT m => SmtFunctionDeclaration -> m SExpr
-declareFun declaration =
-    liftSMT $ withSolver $ \solver ->
-        SimpleSMT.declareFun solver declaration
 
 -- | Declares a function symbol to SMT, returning ().
 declareFun_ :: MonadSMT m => SmtFunctionDeclaration -> m ()
 declareFun_ declaration =
     Monad.void $ declareFun declaration
 
--- | Declares a sort to SMT.
-declareSort
-    :: MonadSMT m
-    => SmtSortDeclaration
-    -> m SExpr
-declareSort declaration =
-    liftSMT $ withSolver $ \solver ->
-        SimpleSMT.declareSort solver declaration
-
--- | Declares a constructor-based sort to SMT.
-declareDatatype
-    :: MonadSMT m
-    => SmtDataTypeDeclaration
-    -> m ()
-declareDatatype declaration =
-    liftSMT $ withSolver $ \solver ->
-        SimpleSMT.declareDatatype solver declaration
-
--- | Declares a constructor-based sort to SMT.
-declareDatatypes
-    :: MonadSMT m
-    =>  [ SmtDataTypeDeclaration ]
-    -> m ()
-declareDatatypes datatypes =
-    liftSMT $ withSolver $ \solver ->
-        SimpleSMT.declareDatatypes solver datatypes
-
--- | Assume a fact.
-assert :: MonadSMT m => SExpr -> m ()
-assert fact =
-    liftSMT $ withSolver $ \solver ->
-        SimpleSMT.assert solver fact
-
-{- | Check if the current set of assertions is satisfiable.
-
-See also: 'assert'
-
- -}
-check :: MonadSMT m => m Result
-check = liftSMT $ withSolver SimpleSMT.check
-
 -- | SMT-LIB @set-info@ command.
 setInfo :: MonadSMT m => Text -> SExpr -> m ()
 setInfo infoFlag expr =
     ackCommand $ List (Atom "set-info" : Atom infoFlag : [expr])
 
-{- | Run a query in a new solver scope.
-
-The query will have exclusive access to the solver, so it is safe to send
-multiple commands in sequence.
-
- -}
-inNewScope :: MonadSMT m => SMT a -> m a
-inNewScope SMT { getSMT } =
-    liftSMT $ withSolver $ \solver -> do
-        -- Create an unshared "dummy" mutex for the solver.
-        mvar <- newMVar solver
-        -- Run the inner query with the unshared mutex.
-        -- The inner query will never block waiting to acquire the solver.
-        SimpleSMT.inNewScope solver (runReaderT getSMT mvar)
-
 -- --------------------------------
 -- Internal
-
-{- | Lift 'IO' actions 'SMT'.
-
-All the interfaces provided by "SimpleSMT" use a 'Solver' in 'IO'. 'SMT'
-encapsulates this access pattern.
-
- -}
-liftIO :: IO a -> SMT a
-liftIO = SMT . Trans.lift
-
--- | A command with an uninteresting result.
-ackCommand :: MonadSMT m => SExpr -> m ()
-ackCommand command =
-    liftSMT $ withSolver $ \solver ->
-        SimpleSMT.ackCommand solver command
 
 -- | Set the query time limit.
 setTimeOut :: MonadSMT m => TimeOut -> m ()
@@ -326,18 +384,3 @@ setTimeOut TimeOut { getTimeOut } =
             setInfo ":time" (SimpleSMT.int timeOut)
         Unlimited ->
             return ()
-
--- | Load a .smt2 file
-loadFile :: MonadSMT m => FilePath -> m ()
-loadFile path =
-    liftSMT $ withSolver $ \solver ->
-        SimpleSMT.loadFile solver path
-
--- | Run an 'SMT' computation with the given solver.
-withSolver :: (Solver -> IO a) -> SMT a
-withSolver within = do
-    mvar <- SMT $ Reader.ask
-    liftIO $ withMVar mvar within
-
-withSolver' :: (MVar Solver -> IO a) -> SMT a
-withSolver' = SMT . Reader.ReaderT

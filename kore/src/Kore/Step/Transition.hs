@@ -35,7 +35,7 @@ import           ListT
                  ( ListT )
 import qualified ListT
 import           SMT
-                 ( MonadSMT, liftSMT )
+                 ( MonadSMT (..) )
 
 {- | @TransitionT@ represents a transition between program states.
 
@@ -76,8 +76,8 @@ instance MonadError e m => MonadError e (TransitionT rule m) where
     {-# INLINE catchError #-}
 
 instance MonadSMT m => MonadSMT (TransitionT rule m) where
-    liftSMT = lift . liftSMT
-    {-# INLINE liftSMT #-}
+    withSolver action = undefined
+    {-# INLINE withSolver #-}
 
 runTransitionT :: Monad m => TransitionT rule m a -> m [(a, Seq rule)]
 runTransitionT (TransitionT edge) = ListT.gather (runAccumT edge mempty)
