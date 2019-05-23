@@ -11,6 +11,7 @@ This module implements the list monad transformer.
 
 module ListT
     ( ListT (..)
+    , mapListT
     , cons
     , gather
     , scatter
@@ -76,8 +77,8 @@ newtype ListT m a =
         }
     deriving (Typeable)
 
-mapListT :: (m a -> m a) -> ListT m a -> ListT m a
-mapListT f as = ListT $ (\nbind yield -> foldListT as nbind yield)
+mapListT :: (m a -> n b) -> ListT m a -> ListT n b
+mapListT f as = undefined
 
 instance Functor (ListT m) where
     fmap f as =

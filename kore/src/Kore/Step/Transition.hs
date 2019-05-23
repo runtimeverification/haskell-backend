@@ -78,10 +78,10 @@ runTransitionT :: Monad m => TransitionT rule m a -> m [(a, Seq rule)]
 runTransitionT (TransitionT edge) = ListT.gather (runAccumT edge mempty)
 
 mapTransitionT
-    :: (m (a, w) -> n (b, w))
+    :: (m (a, Seq rule) -> n (b, Seq rule))
     -> TransitionT rule m a
     -> TransitionT rule n b
-mapTransitionT f = TransitionT . mapAccumT f . getTransitionT
+mapTransitionT f = TransitionT . mapAccumT (ListT.mapListT f) . getTransitionT
 
 tryTransitionT
     :: Monad m

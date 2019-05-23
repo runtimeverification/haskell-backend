@@ -203,7 +203,7 @@ instance MonadSMT m => MonadSMT (ListT m) where
     liftSMT = Trans.lift . liftSMT
 
 instance MonadSMT m => MonadSMT (Transition.TransitionT rule m) where
-    liftSMT = lift . liftSMT
+    liftSMT = Trans.lift . liftSMT
     {-# INLINE liftSMT #-}
 
 {- | Initialize a new solver with the given 'Config'.
@@ -329,15 +329,21 @@ The query will have exclusive access to the solver, so it is safe to send
 multiple commands in sequence.
 
  -}
-inNewScope :: MonadSMT m => SMT a -> Logger -> m a
-inNewScope SMT { getSMT } logger = do
-    liftSMT $ withSolver $ \solver -> do
-        -- Create an unshared "dummy" mutex for the solver.
-        mvar <- newMVar solver
-        -- Run the inner query with the unshared mutex.
-        -- The inner query will never block waiting to acquire the solver.
-        SimpleSMT.inNewScope solver
-            $ runReaderT getSMT Environment { solver = mvar, logger }
+inNewScope :: MonadSMT m => SMT a -> m a
+inNewScope SMT { getSMT } = do
+    liftSMT $ do
+        logger <- Logger.askLogAction
+        withSolver $ \solver -> do
+            -- Create an unshared "dummy" mutex for the solver.
+            mvar <- newMVar solver
+            -- Run the inner query with the unshared mutex.
+            -- The inner query will never block waiting to acquire the solver.
+            SimpleSMT.inNewScope solver
+                $ runReaderT getSMT
+                    Environment
+                        { solver = mvar
+                        , logger = Logger.hoistLogAction (_ :: SMT a -> IO a) logger
+                        }
 
 -- --------------------------------
 -- Internal
