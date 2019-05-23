@@ -79,6 +79,7 @@ newtype ReplScript = ReplScript
     } deriving (Eq, Show)
 
 data ReplMode = Interactive | RunScript
+    deriving (Eq, Show)
 
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
 -- that would otherwise be required in the proof and allows for step-by-step

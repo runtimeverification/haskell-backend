@@ -12,6 +12,8 @@ import           Options.Applicative
                  ( InfoMod, Parser, argument, auto, flag, fullDesc, header,
                  help, long, metavar, option, progDesc, readerError, short,
                  str, strOption, value )
+import           System.Exit
+                 ( exitFailure )
 
 import           Data.Limit
                  ( Limit (..) )
@@ -183,9 +185,14 @@ mainWithOptions
                 { SMT.timeOut = smtTimeOut
                 , SMT.preludeFile = smtPrelude
                 }
-    SMT.runSMT smtConfig
-        $ evalSimplifier emptyLogger
-        $ proveWithRepl indexedModule specDefIndexedModule replScript replMode
+    if replMode == RunScript && (unReplScript replScript) == Nothing
+       then do
+           putStrLn "You must supply the path to the repl script in order to run the repl in run-script mode."
+           exitFailure
+       else do
+           SMT.runSMT smtConfig
+               $ evalSimplifier emptyLogger
+               $ proveWithRepl indexedModule specDefIndexedModule replScript replMode
 
   where
     mainModuleName :: ModuleName
