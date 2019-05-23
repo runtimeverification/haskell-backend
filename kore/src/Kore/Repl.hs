@@ -8,8 +8,8 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 
 module Kore.Repl
     ( runRepl
-    , InitialScript (..)
-    , Script (..)
+    , ReplScript (..)
+    , ReplMode (..)
     ) where
 
 import           Control.Exception
@@ -74,13 +74,11 @@ import           Kore.Unparser
 
 -- | Represents an optional file name which contains a sequence of
 -- repl commands.
-newtype InitialScript = InitialScript
-    { unInitialScript :: Maybe FilePath
+newtype ReplScript = ReplScript
+    { unReplScript :: Maybe FilePath
     } deriving (Eq, Show)
 
-newtype Script = Script
-    { unScript :: FilePath
-    } deriving (Eq, Show)
+data ReplMode = Interactive | RunScript
 
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
 -- that would otherwise be required in the proof and allows for step-by-step
@@ -101,23 +99,22 @@ runRepl
     -- ^ list of axioms to used in the proof
     -> [claim]
     -- ^ list of claims to be proven
-    -> InitialScript
-    -- ^ optional initial script
-    -> Maybe Script
-    -- ^ script for run script mode
+    -> ReplScript
+    -- ^ optional script
+    -> ReplMode
+    -- ^ mode to run in
     -> Simplifier ()
 runRepl
     tools simplifier predicateSimplifier axiomToIdSimplifier
-    axioms' claims' initScript mRunScript
+    axioms' claims' initScript replMode
   = do
-    case mRunScript of
-        Nothing -> do
-            let mscript = unInitialScript initScript
-            newState <- maybe (pure state) (parseEvalScript state) mscript
+    let mscript = unReplScript initScript
+    newState <- maybe (pure state) (parseEvalScript state) mscript
+    case replMode of
+        Interactive -> do
             replGreeting
             evalStateT (whileM repl0) newState
-        Just runScript -> do
-            newState <- parseEvalScript state (unScript runScript)
+        RunScript -> do
             void $ evalStateT (replInterpreter printIfNotEmpty ProofStatus) newState
 
   where

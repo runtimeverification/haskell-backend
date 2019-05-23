@@ -4,14 +4,14 @@
 module Main (main) where
 
 import           Control.Applicative
-                 ( optional, (<|>) )
+                 ( optional )
 import qualified Data.Bifunctor as Bifunctor
 import           Data.Semigroup
                  ( (<>) )
 import           Options.Applicative
-                 ( InfoMod, Parser, argument, auto, fullDesc, header, help,
-                 long, metavar, option, progDesc, readerError, str, strOption,
-                 value )
+                 ( InfoMod, Parser, argument, auto, flag, fullDesc, header,
+                 help, long, metavar, option, progDesc, readerError, short,
+                 str, strOption, value )
 
 import           Data.Limit
                  ( Limit (..) )
@@ -47,8 +47,8 @@ data KoreReplOptions = KoreReplOptions
     { definitionModule :: !KoreModule
     , proveOptions     :: !KoreProveOptions
     , smtOptions       :: !SmtOptions
-    , initialScript    :: !InitialScript
-    , script           :: !(Maybe Script)
+    , replMode         :: !ReplMode
+    , replScript       :: !ReplScript
     }
 
 parseKoreReplOptions :: Parser KoreReplOptions
@@ -57,8 +57,8 @@ parseKoreReplOptions =
     <$> parseMainModule
     <*> parseKoreProveOptions
     <*> parseSmtOptions
-    <*> parseInitialScript
-    <*> parseScript
+    <*> parseReplMode
+    <*> parseReplScript
     <* parseIgnoredOutput
   where
     parseMainModule :: Parser KoreModule
@@ -96,26 +96,24 @@ parseKoreReplOptions =
                 )
             )
 
-    parseScript :: Parser (Maybe Script)
-    parseScript =
-        optional
-            $ Script
-            <$>
-            ( strOption
-                ( metavar "RUN_SCRIPT"
-                <> long "run-script"
-                <> help "Path to the repl script file"
-                )
+    parseReplMode :: Parser ReplMode
+    parseReplMode =
+        flag
+            Interactive
+            RunScript
+            ( long "run-mode"
+            <> short 'r'
+            <> help "Repl run script mode"
             )
 
-    parseInitialScript :: Parser InitialScript
-    parseInitialScript =
-        InitialScript
+    parseReplScript :: Parser ReplScript
+    parseReplScript =
+        ReplScript
         <$> optional
             ( strOption
-                ( metavar "INIT_SCRIPT"
-                <> long "init-script"
-                <> help "Path to the initial repl script file"
+                ( metavar "REPL_SCRIPT"
+                <> long "repl-script"
+                <> help "Path to the repl script file"
                 )
             )
 
@@ -153,7 +151,7 @@ main = do
 mainWithOptions :: KoreReplOptions -> IO ()
 mainWithOptions
     KoreReplOptions
-        { definitionModule, proveOptions, smtOptions, initialScript, script }
+        { definitionModule, proveOptions, smtOptions, replScript, replMode }
   = do
     parsedDefinition <- parseDefinition definitionFileName
     indexedDefinition@(indexedModules, _) <-
@@ -187,7 +185,7 @@ mainWithOptions
                 }
     SMT.runSMT smtConfig
         $ evalSimplifier emptyLogger
-        $ proveWithRepl indexedModule specDefIndexedModule initialScript script
+        $ proveWithRepl indexedModule specDefIndexedModule replScript replMode
 
   where
     mainModuleName :: ModuleName
