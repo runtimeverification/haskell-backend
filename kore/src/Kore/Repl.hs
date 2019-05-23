@@ -9,6 +9,7 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 module Kore.Repl
     ( runRepl
     , InitialScript (..)
+    , Script (..)
     ) where
 
 import           Control.Exception
@@ -16,7 +17,7 @@ import           Control.Exception
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import           Control.Monad
-                 ( when )
+                 ( void, when )
 import           Control.Monad.Catch
                  ( MonadCatch, catch )
 import           Control.Monad.Extra
@@ -77,6 +78,10 @@ newtype InitialScript = InitialScript
     { unInitialScript :: Maybe FilePath
     } deriving (Eq, Show)
 
+newtype Script = Script
+    { unScript :: FilePath
+    } deriving (Eq, Show)
+
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
 -- that would otherwise be required in the proof and allows for step-by-step
 -- execution of proofs. Currently works via stdin/stdout interaction.
@@ -98,15 +103,22 @@ runRepl
     -- ^ list of claims to be proven
     -> InitialScript
     -- ^ optional initial script
+    -> Maybe Script
+    -- ^ script for run script mode
     -> Simplifier ()
 runRepl
     tools simplifier predicateSimplifier axiomToIdSimplifier
-    axioms' claims' initScript
+    axioms' claims' initScript mRunScript
   = do
-    let mscript = unInitialScript initScript
-    newState <- maybe (pure state) (parseEvalScript state) mscript
-    replGreeting
-    evalStateT (whileM repl0) newState
+    case mRunScript of
+        Nothing -> do
+            let mscript = unInitialScript initScript
+            newState <- maybe (pure state) (parseEvalScript state) mscript
+            replGreeting
+            evalStateT (whileM repl0) newState
+        Just runScript -> do
+            newState <- parseEvalScript state (unScript runScript)
+            void $ evalStateT (replInterpreter printIfNotEmpty ProofStatus) newState
 
   where
 

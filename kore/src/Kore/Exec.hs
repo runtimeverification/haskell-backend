@@ -246,8 +246,10 @@ proveWithRepl
     -- ^ The spec module
     -> Repl.InitialScript
     -- ^ Optional script
+    -> Maybe Repl.Script
+    -- ^ Run in script mode or not
     -> Simplifier ()
-proveWithRepl definitionModule specModule initScript = do
+proveWithRepl definitionModule specModule initScript mRunScript = do
     let tools = MetadataTools.build definitionModule
     Initialized
         { rewriteRules
@@ -271,6 +273,7 @@ proveWithRepl definitionModule specModule initScript = do
         axioms
         claims
         initScript
+        mRunScript
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck

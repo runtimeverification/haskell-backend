@@ -4,7 +4,7 @@
 module Main (main) where
 
 import           Control.Applicative
-                 ( optional )
+                 ( optional, (<|>) )
 import qualified Data.Bifunctor as Bifunctor
 import           Data.Semigroup
                  ( (<>) )
@@ -48,6 +48,7 @@ data KoreReplOptions = KoreReplOptions
     , proveOptions     :: !KoreProveOptions
     , smtOptions       :: !SmtOptions
     , initialScript    :: !InitialScript
+    , script           :: !(Maybe Script)
     }
 
 parseKoreReplOptions :: Parser KoreReplOptions
@@ -57,6 +58,7 @@ parseKoreReplOptions =
     <*> parseKoreProveOptions
     <*> parseSmtOptions
     <*> parseInitialScript
+    <*> parseScript
     <* parseIgnoredOutput
   where
     parseMainModule :: Parser KoreModule
@@ -91,6 +93,18 @@ parseKoreReplOptions =
                 (  metavar "SMT_PRELUDE"
                 <> long "smt-prelude"
                 <> help "Path to the SMT prelude file"
+                )
+            )
+
+    parseScript :: Parser (Maybe Script)
+    parseScript =
+        optional
+            $ Script
+            <$>
+            ( strOption
+                ( metavar "RUN_SCRIPT"
+                <> long "run-script"
+                <> help "Path to the repl script file"
                 )
             )
 
@@ -139,7 +153,7 @@ main = do
 mainWithOptions :: KoreReplOptions -> IO ()
 mainWithOptions
     KoreReplOptions
-        { definitionModule, proveOptions, smtOptions, initialScript }
+        { definitionModule, proveOptions, smtOptions, initialScript, script }
   = do
     parsedDefinition <- parseDefinition definitionFileName
     indexedDefinition@(indexedModules, _) <-
@@ -173,7 +187,7 @@ mainWithOptions
                 }
     SMT.runSMT smtConfig
         $ evalSimplifier emptyLogger
-        $ proveWithRepl indexedModule specDefIndexedModule initialScript
+        $ proveWithRepl indexedModule specDefIndexedModule initialScript script
 
   where
     mainModuleName :: ModuleName
