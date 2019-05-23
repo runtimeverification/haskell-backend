@@ -76,8 +76,8 @@ newtype ListT m a =
         }
     deriving (Typeable)
 
-mapListT :: (m a -> n a) -> ListT m a -> ListT n a
-mapListT f = ListT . _ f . foldListT
+mapListT :: (m a -> m a) -> ListT m a -> ListT m a
+mapListT f as = ListT $ (\nbind yield -> foldListT as nbind yield)
 
 instance Functor (ListT m) where
     fmap f as =
