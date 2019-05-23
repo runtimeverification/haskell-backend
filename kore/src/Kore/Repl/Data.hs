@@ -282,7 +282,7 @@ helpText =
     \alias <name> = <command>              adds as an alias for <command>\n\
     \<alias>                               runs an existing alias\n\
     \load file                             loads the file as a repl script\n\
-    \proof-status                          shows status for each claim\
+    \proof-status                          shows status for each claim\n\
     \log <severity> <type>                 configures the logging outout\n\
                                            \<severity> can be debug, info, warning,\
                                            \error, or critical\n\
