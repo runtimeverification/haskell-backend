@@ -25,13 +25,23 @@ module Kore.Logger
 
 import           Colog
                  ( LogAction (..) )
+import qualified Control.Monad.Counter as Counter
 import qualified Control.Monad.Except as Except
 import qualified Control.Monad.Morph as Monad.Morph
+import qualified Control.Monad.Reader as Reader
+import qualified Control.Monad.RWS.Lazy as Monad.RWS.Lazy
+import qualified Control.Monad.RWS.Strict as Monad.RWS.Strict
+import qualified Control.Monad.State.Lazy as State.Lazy
+import qualified Control.Monad.State.Strict as State.Strict
+import qualified Control.Monad.State.Strict as Monad.State.Strict
 import           Control.Monad.Trans
                  ( MonadTrans )
 import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Identity
                  ( IdentityT, runIdentityT )
+import qualified Control.Monad.Trans.Maybe as Maybe
+import qualified Control.Monad.Writer.Lazy as Writer.Lazy
+import qualified Control.Monad.Writer.Strict as Writer.Strict
 import           Data.Functor.Contravariant
                  ( contramap )
 import           Data.String
@@ -40,6 +50,7 @@ import           Data.Text
                  ( Text )
 import           GHC.Stack
                  ( CallStack, HasCallStack, callStack )
+import qualified Kore.Step.Transition as Transition
 import           Prelude hiding
                  ( log )
 
@@ -99,6 +110,53 @@ instance (WithLog msg m, Monad m) => WithLog msg (IdentityT m) where
         -> IdentityT m a
     withLog mapping =
         Monad.Trans.lift . withLog mapping . runIdentityT
+
+instance (WithLog msg m, Monad m) => WithLog msg (Counter.CounterT m) where
+    askLogAction = liftLogAction <$> Monad.Trans.lift askLogAction
+    withLog mapping = Counter.mapCounterT (withLog mapping)
+
+instance (WithLog msg m, Monad m) => WithLog msg (Maybe.MaybeT m) where
+    askLogAction = liftLogAction <$> Monad.Trans.lift askLogAction
+    withLog mapping = Maybe.mapMaybeT (withLog mapping)
+
+instance (WithLog msg m, Monad m) => WithLog msg (Reader.ReaderT r m) where
+    askLogAction = liftLogAction <$> Monad.Trans.lift askLogAction
+    withLog mapping = Reader.mapReaderT (withLog mapping)
+
+instance (WithLog msg m, Monad m, Monoid w)
+        => WithLog msg (Monad.RWS.Lazy.RWST r w s m) where
+    askLogAction = liftLogAction <$> Monad.Trans.lift askLogAction
+    withLog mapping = Monad.RWS.Lazy.mapRWST (withLog mapping)
+
+instance (WithLog msg m, Monad m, Monoid w)
+        => WithLog msg (Monad.RWS.Strict.RWST r w s m) where
+    askLogAction = liftLogAction <$> Monad.Trans.lift askLogAction
+    withLog mapping = Monad.RWS.Strict.mapRWST (withLog mapping)
+
+instance (WithLog msg m, Monad m)
+        => WithLog msg (State.Lazy.StateT s m) where
+    askLogAction = liftLogAction <$> Monad.Trans.lift askLogAction
+    withLog mapping = State.Lazy.mapStateT (withLog mapping)
+
+instance (WithLog msg m, Monad m)
+        => WithLog msg (State.Strict.StateT s m) where
+    askLogAction = liftLogAction <$> Monad.Trans.lift askLogAction
+    withLog mapping = State.Strict.mapStateT (withLog mapping)
+
+instance (WithLog msg m, Monad m, Monoid w)
+        => WithLog msg (Writer.Lazy.WriterT w m) where
+    askLogAction = liftLogAction <$> Monad.Trans.lift askLogAction
+    withLog mapping = Writer.Lazy.mapWriterT (withLog mapping)
+
+instance (WithLog msg m, Monad m, Monoid w)
+        => WithLog msg (Writer.Strict.WriterT w m) where
+    askLogAction = liftLogAction <$> Monad.Trans.lift askLogAction
+    withLog mapping = Writer.Strict.mapWriterT (withLog mapping)
+
+instance (WithLog msg m, Monad m)
+        => WithLog msg (Transition.TransitionT rule m) where
+    askLogAction = liftLogAction <$> Monad.Trans.lift askLogAction
+    withLog mapping = Transition.mapTransitionT (withLog mapping)
 
 -- | 'Monad.Trans.lift' any 'LogAction' into a monad transformer.
 liftLogAction

@@ -8,6 +8,7 @@ module Kore.Step.Transition
     ( TransitionT (..)
     , runTransitionT
     , tryTransitionT
+    , mapTransitionT
     , scatter
     , addRule
     , addRules
@@ -22,7 +23,7 @@ import qualified Control.Monad.Morph as Monad.Morph
 import           Control.Monad.Reader
 import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Accum
-                 ( AccumT, runAccumT )
+                 ( AccumT, mapAccumT, runAccumT )
 import qualified Control.Monad.Trans.Accum as Accum
 import qualified Data.Foldable as Foldable
 import           Data.Sequence
@@ -34,8 +35,6 @@ import           Data.Typeable
 import           ListT
                  ( ListT )
 import qualified ListT
-import           SMT
-                 ( MonadSMT, liftSMT )
 
 {- | @TransitionT@ represents a transition between program states.
 
@@ -75,12 +74,14 @@ instance MonadError e m => MonadError e (TransitionT rule m) where
         handler' e = runTransitionT (handler e)
     {-# INLINE catchError #-}
 
-instance MonadSMT m => MonadSMT (TransitionT rule m) where
-    liftSMT = lift . liftSMT
-    {-# INLINE liftSMT #-}
-
 runTransitionT :: Monad m => TransitionT rule m a -> m [(a, Seq rule)]
 runTransitionT (TransitionT edge) = ListT.gather (runAccumT edge mempty)
+
+mapTransitionT
+    :: (m (a, w) -> n (b, w))
+    -> TransitionT rule m a
+    -> TransitionT rule n b
+mapTransitionT f = TransitionT . mapAccumT f . getTransitionT
 
 tryTransitionT
     :: Monad m

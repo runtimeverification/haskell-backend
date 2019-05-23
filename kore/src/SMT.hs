@@ -82,6 +82,7 @@ import           Data.Text
                  ( Text )
 
 import qualified Kore.Logger as Logger
+import qualified Kore.Step.Transition as Transition
 import           ListT
 import           SMT.SimpleSMT
                  ( Constructor (..), ConstructorArgument (..),
@@ -151,8 +152,15 @@ newtype SMT a = SMT { getSMT :: ReaderT Environment IO a }
         , MonadThrow
         )
 
+instance Logger.WithLog Logger.LogMessage SMT where
+    askLogAction = do
+        action <- Logger.unLogAction <$> Reader.asks logger
+        return . Logger.LogAction $ fmap liftIO action
+
+    withLog f = Reader.local (\env -> env { logger = f (logger env) })
+
 -- | Access 'SMT' through monad transformers.
-class Monad m => MonadSMT m where
+class (Logger.WithLog Logger.LogMessage m, Monad m) => MonadSMT m where
     liftSMT :: SMT a -> m a
 
 instance MonadSMT SMT where
@@ -193,6 +201,10 @@ instance (MonadSMT m, Monoid w) => MonadSMT (Writer.Strict.WriterT w m) where
 
 instance MonadSMT m => MonadSMT (ListT m) where
     liftSMT = Trans.lift . liftSMT
+
+instance MonadSMT m => MonadSMT (Transition.TransitionT rule m) where
+    liftSMT = lift . liftSMT
+    {-# INLINE liftSMT #-}
 
 {- | Initialize a new solver with the given 'Config'.
 

@@ -10,6 +10,8 @@ import           Control.Applicative
 import           Control.Monad
                  ( MonadPlus )
 import qualified Control.Monad.Except as Error
+import           Control.Monad.IO.Class
+                 ( liftIO )
 import           Control.Monad.Reader.Class
                  ( MonadReader (..) )
 import           Control.Monad.Trans.Class
@@ -133,7 +135,7 @@ instance
   where
     askLogAction = do
         Log.LogAction logger <- liftSimplifier $ logger <$> ask
-        return $ Log.LogAction (\msg -> liftSimplifier $ logger msg)
+        return $ Log.LogAction (\msg -> liftSimplifier . liftIO $ logger msg)
 
     withLog f = UnifierTT . Log.withLog f . getUnifier
 

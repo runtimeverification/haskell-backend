@@ -18,7 +18,7 @@ module Control.Monad.Counter
     , module Numeric.Natural
       -- * Implementation
     , CounterT (..)
-    , runCounterT, evalCounterT
+    , runCounterT, evalCounterT, mapCounterT
     , Counter
     , runCounter, evalCounter
     ) where
@@ -112,6 +112,14 @@ runCounter counter = Monad.Identity.runIdentity . runCounterT counter
  -}
 evalCounter :: Counter a -> a
 evalCounter counter = let (a, _) = runCounter counter 0 in a
+
+{- | Map both the return value and the final state of a computation
+-}
+mapCounterT
+    :: (m (a, Natural) -> n (b, Natural))
+    -> CounterT m a
+    -> CounterT n b
+mapCounterT f = CounterT . Monad.State.Strict.mapStateT f . getCounterT
 
 {- | @MonadCounter@ abstracts a state monad carrying a monotonic counter.
 
