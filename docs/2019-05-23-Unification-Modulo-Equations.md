@@ -16,11 +16,11 @@ The most general unifier of `φ` and `ψ` is `⌈φ∧ψ⌉`
 There are some unification cases that are easy to solve, e.g. if `C` is a
 constructor (actually, it only needs to be injective), then
 ```
-⌈C(φ_1, …, φ_n) ∧ C(ψ_1, …, ψ_n)⌉=⌈φ_1∧ψ_1⌉∧…∧⌈φ_n∧ψ_n⌉
+⌈C(φ₁, …, φ_n) ∧ C(ψ₁, …, ψ_n)⌉=⌈φ₁∧ψ₁⌉∧…∧⌈φ_n∧ψ_n⌉
 ```
 
 However, if `f` and `g` are random symbols, without any properties, then
-`⌈f(φ_1, …, φ_n) ∧ g(ψ_1, …, ψ_m)⌉` cannot be reduced to a nicer form.
+`⌈f(φ₁, …, φ_n) ∧ g(ψ₁, …, ψ_m)⌉` cannot be reduced to a nicer form.
 
 If `f` is, say, an associative binary operation with neutral element (i.e. the
 concatenation for a list), then we have a reasonable intuition about how to
@@ -85,8 +85,8 @@ For lists, we could have the following axioms
 ```
 ⌈elem(x)∧unit⌉ = ⊥
 ⌈elem(x)∧elem(y)⌉ = ⌈x∧y⌉
-⌈concat(x,y)∧unit⌉ = ⌈x∧unit⌉ ∧ ⌈y∧unit⌉
-⌈concat(elem(x),y) ∧ concat(elem(z),t)⌉ = ⌈x∧z⌉ ∧ ⌈y∧t⌉
+⌈concat(l₁,l₂) ∧ unit⌉ = ⌈l₁∧unit⌉ ∧ ⌈l₂∧unit⌉
+⌈concat(elem(x),l₁) ∧ concat(elem(z), l₂)⌉ = ⌈x∧z⌉ ∧ ⌈l₁∧l₂⌉
 ```
 This is missing some axioms (e.g. the ones unifying at the end of the list,
 or splitting the list), but it looks like these, together with the usual list
@@ -98,35 +98,35 @@ simpler ones, without worrying about how many terms are equivalent to the
 one we have: we just have to bring the term in one of the forms required for
 one of these axioms, then we apply the axiom and that’s it.
 
-As an example, say we need to unify `concat(concat(elem(φ_1), elem(φ_2)), φ_3)`
-with `concat(concat(unit, elem(ψ_1)), concat(elem(ψ_2), ψ_3))`. We first use
+As an example, say we need to unify `concat(concat(elem(φ₁), elem(φ₂)), φ₃)`
+with `concat(concat(unit, elem(ψ₁)), concat(elem(ψ₂), ψ₃))`. We first use
 the list axioms to rewrite the first term as
-`concat(elem(φ_1), concat(elem(φ_2), φ_3))`, the second one as
-`concat(elem(ψ_1), concat(elem(ψ_2), ψ_3))`, then we apply the
-`⌈concat(elem(x),y) ∧ concat(elem(z),t)⌉ = ⌈x∧z⌉ ∧ ⌈y∧t⌉` axiom repeatedly
+`concat(elem(φ₁), concat(elem(φ₂), φ₃))`, the second one as
+`concat(elem(ψ₁), concat(elem(ψ₂), ψ₃))`, then we apply the
+`⌈concat(elem(x),l₁) ∧ concat(elem(z),l₂)⌉ = ⌈x∧z⌉ ∧ ⌈l₁∧l₂⌉` axiom repeatedly
 to compute
 ```
-⌈ concat(elem(φ_1), concat(elem(φ_2), φ_3))
-∧ concat(elem(ψ_1), concat(elem(ψ_2), ψ_3)) ⌉
-    = ⌈φ_1∧ψ_1⌉ ∧ ⌈concat(elem(φ_2), φ_3) ∧ concat(elem(ψ_2), ψ_3)⌉
-    = ⌈φ_1∧ψ_1⌉ ∧ ⌈φ_2∧ψ_2⌉ ∧ ⌈φ_3∧ψ_3⌉
+⌈ concat(elem(φ₁), concat(elem(φ₂), φ₃))
+∧ concat(elem(ψ₁), concat(elem(ψ₂), ψ₃)) ⌉
+    = ⌈φ₁∧ψ₁⌉ ∧ ⌈concat(elem(φ₂), φ₃) ∧ concat(elem(ψ₂), ψ₃)⌉
+    = ⌈φ₁∧ψ₁⌉ ∧ ⌈φ₂∧ψ₂⌉ ∧ ⌈φ₃∧ψ₃⌉
 ```
 
 Use-case: sets
 --------------
 
 Let us try to define the axioms for set lookup through unification, i.e.
-for unifying `concat(elem(x), y)` with a set. Assuming that our terms are
+for unifying `concat(elem(x), s)` with a set. Assuming that our terms are
 normalized (elems moved to the left, concats represented as
 `concat(a, concat(b, concat(...)))`), then the following axioms should be
 enough:
 
 ```
-⌈concat(x, y) ∧ unit⌉ = ⌈x∧unit⌉ ∧ ⌈y∧unit⌉
-⌈concat(elem(x), y) ∧ elem(a)⌉ = ⌈x∧a⌉ ∧ ⌈y∧unit⌉
-⌈concat(elem(x), y) ∧ concat(elem(a), b)⌉
-   = ⌈x∧a⌉ ∧ ⌈y∧b⌉
-     ∨ ∃ z . ⌈concat(elem(x),z)∧b⌉ ∧ ⌈y∧concat(elem(a),z)⌉
+⌈concat(s₁,s₂) ∧ unit⌉ = ⌈s₁∧unit⌉ ∧ ⌈s₂∧unit⌉
+⌈concat(elem(x), s) ∧ elem(a)⌉ = ⌈x∧a⌉ ∧ ⌈s∧unit⌉
+⌈concat(elem(x), s₁) ∧ concat(elem(a), s₂)⌉
+   = ⌈x∧a⌉ ∧ ⌈s₁∧s₂⌉
+     ∨ ∃ s₃ . ⌈concat(elem(x),s₃)∧s₂⌉ ∧ ⌈s₁∧concat(elem(a),s₃)⌉
 ```
 
 Use case: heating and cooling
