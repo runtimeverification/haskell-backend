@@ -1,6 +1,6 @@
 require "harness.k"
 
-module PARTIAL
+module FUNCTIONS
 
   imports HARNESS
   imports INT
