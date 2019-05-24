@@ -17,6 +17,7 @@ module Kore.Repl.Interpreter
     , showAliasError
     , formatUnificationMessage
     , allProofs
+    , ReplStatus(..)
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -64,6 +65,7 @@ import           GHC.Exts
                  ( toList )
 import           GHC.IO.Handle
                  ( hGetContents, hPutStr )
+import           System.Exit
 
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
@@ -121,60 +123,66 @@ import           Text.Megaparsec
 -- 'replInterpreter'.
 type ReplM claim a = RWST () String (ReplState claim) Simplifier a
 
+data ReplStatus = Continue | SuccessStop | FailStop
+    deriving (Eq, Show)
+
 -- | Interprets a REPL command in a stateful Simplifier context.
 replInterpreter
     :: forall claim
     .  Claim claim
     => (String -> IO ())
     -> ReplCommand
-    -> StateT (ReplState claim) Simplifier Bool
+    -> StateT (ReplState claim) Simplifier ReplStatus
 replInterpreter printFn replCmd = do
     let command = case replCmd of
-                ShowUsage          -> showUsage          $> True
-                Help               -> help               $> True
-                ShowClaim c        -> showClaim c        $> True
-                ShowAxiom a        -> showAxiom a        $> True
-                Prove i            -> prove i            $> True
-                ShowGraph mfile    -> showGraph mfile    $> True
-                ProveSteps n       -> proveSteps n       $> True
-                ProveStepsF n      -> proveStepsF n      $> True
-                SelectNode i       -> selectNode i       $> True
-                ShowConfig mc      -> showConfig mc      $> True
-                OmitCell c         -> omitCell c         $> True
-                ShowLeafs          -> showLeafs          $> True
-                ShowRule   mc      -> showRule mc        $> True
-                ShowPrecBranch mn  -> showPrecBranch mn  $> True
-                ShowChildren mn    -> showChildren mn    $> True
-                Label ms           -> label ms           $> True
-                LabelAdd l mn      -> labelAdd l mn      $> True
-                LabelDel l         -> labelDel l         $> True
-                Redirect inn file  -> redirect inn file  $> True
-                Try ac             -> tryAxiomClaim ac   $> True
-                Clear n            -> clear n            $> True
-                SaveSession file   -> saveSession file   $> True
-                Pipe inn file args -> pipe inn file args $> True
-                AppendTo inn file  -> appendTo inn file  $> True
-                Alias a            -> alias a            $> True
+                ShowUsage          -> showUsage          $> Continue
+                Help               -> help               $> Continue
+                ShowClaim c        -> showClaim c        $> Continue
+                ShowAxiom a        -> showAxiom a        $> Continue
+                Prove i            -> prove i            $> Continue
+                ShowGraph mfile    -> showGraph mfile    $> Continue
+                ProveSteps n       -> proveSteps n       $> Continue
+                ProveStepsF n      -> proveStepsF n      $> Continue
+                SelectNode i       -> selectNode i       $> Continue
+                ShowConfig mc      -> showConfig mc      $> Continue
+                OmitCell c         -> omitCell c         $> Continue
+                ShowLeafs          -> showLeafs          $> Continue
+                ShowRule   mc      -> showRule mc        $> Continue
+                ShowPrecBranch mn  -> showPrecBranch mn  $> Continue
+                ShowChildren mn    -> showChildren mn    $> Continue
+                Label ms           -> label ms           $> Continue
+                LabelAdd l mn      -> labelAdd l mn      $> Continue
+                LabelDel l         -> labelDel l         $> Continue
+                Redirect inn file  -> redirect inn file  $> Continue
+                Try ac             -> tryAxiomClaim ac   $> Continue
+                Clear n            -> clear n            $> Continue
+                SaveSession file   -> saveSession file   $> Continue
+                Pipe inn file args -> pipe inn file args $> Continue
+                AppendTo inn file  -> appendTo inn file  $> Continue
+                Alias a            -> alias a            $> Continue
                 TryAlias name      -> tryAlias name printFn
-                LoadScript file    -> loadScript file    $> True
-                ProofStatus        -> proofStatus        $> True
-                Log s t            -> handleLog (s,t)    $> True
-                Exit               -> pure                  False
+                LoadScript file    -> loadScript file    $> Continue
+                ProofStatus        -> proofStatus        $> Continue
+                Log s t            -> handleLog (s,t)    $> Continue
+                Exit               -> exit
     (output, shouldContinue) <- evaluateCommand command
     liftIO $ printFn output
-    pure shouldContinue
+    case shouldContinue of
+        Continue -> pure Continue
+        SuccessStop -> liftIO exitSuccess
+        FailStop -> liftIO . exitWith $ ExitFailure 2
   where
     -- Extracts the Writer out of the RWST monad using the current state
     -- and updates the state, returning the writer output along with the
     -- monadic result.
     evaluateCommand
-        :: ReplM claim Bool
-        -> StateT (ReplState claim) Simplifier (String, Bool)
+        :: ReplM claim ReplStatus
+        -> StateT (ReplState claim) Simplifier (String, ReplStatus)
     evaluateCommand c = do
         st <- get
-        (exit, st', w) <- Monad.Trans.lift $ runRWST c () st
+        (ext, st', w) <- Monad.Trans.lift $ runRWST c () st
         put st'
-        pure (w, exit)
+        pure (w, ext)
 
 showUsageMessage :: String
 showUsageMessage = "Could not parse command, try using 'help'."
@@ -194,6 +202,20 @@ showStepStoppedMessage n sr =
 
 showUsage :: MonadWriter String m => m ()
 showUsage = putStrLn' showUsageMessage
+
+exit
+    :: Claim claim
+    => ReplM claim ReplStatus
+exit = do
+    proofs <- allProofs
+    let isCompleted = foldr (&&) True
+                        ( fmap
+                          (\x -> x == Completed)
+                          (Map.elems proofs)
+                        )
+    if isCompleted == True
+       then return SuccessStop
+       else return FailStop
 
 help :: MonadWriter String m => m ()
 help = putStrLn' helpText
@@ -380,23 +402,21 @@ proofStatus
     .  Claim claim
     => ReplM claim ()
 proofStatus = do
-    graphs <- Lens.use lensGraphs
-    claims <- Lens.use lensClaims
-    let cindexes = ClaimIndex <$> [0..length claims - 1]
-    putStrLn' . showProofStatus
-        $ allProofs graphs claims cindexes
+    proofs <- allProofs
+    putStrLn' . showProofStatus $ proofs
 
 allProofs
     :: forall claim
     .  Claim claim
-    => Map.Map ClaimIndex ExecutionGraph
-    -> [claim]
-    -> [ClaimIndex]
-    -> Map.Map ClaimIndex GraphProofStatus
-allProofs graphs claims cindexes =
-    Map.union
-        (fmap inProgressProofs graphs)
-        (notStartedProofs graphs cindexes)
+    => ReplM claim (Map.Map ClaimIndex GraphProofStatus)
+allProofs = do
+    graphs <- Lens.use lensGraphs
+    claims <- Lens.use lensClaims
+    let cindexes = ClaimIndex <$> [0..length claims - 1]
+    return
+        $ Map.union
+            (fmap inProgressProofs graphs)
+            (notStartedProofs graphs cindexes)
   where
     inProgressProofs
         :: ExecutionGraph
@@ -769,11 +789,11 @@ tryAlias
     .  Claim claim
     => ReplAlias
     -> (String -> IO ())
-    -> ReplM claim Bool
+    -> ReplM claim ReplStatus
 tryAlias replAlias@ReplAlias { name } printFn = do
     res <- findAlias name
     case res of
-        Nothing  -> showUsage $> True
+        Nothing  -> showUsage $> Continue
         Just aliasDef -> do
             let
                 command = substituteAlias aliasDef replAlias
@@ -786,7 +806,7 @@ tryAlias replAlias@ReplAlias { name } printFn = do
     runInterpreter
         :: ReplCommand
         -> ReplState claim
-        -> ReplM claim (Bool, ReplState claim)
+        -> ReplM claim (ReplStatus, ReplState claim)
     runInterpreter cmd =
         lift . runStateT (replInterpreter printFn cmd)
 
@@ -956,7 +976,7 @@ parseEvalScript state file = do
         then do
             contents <- liftIO $ readFile file
             let result = runParser scriptParser file contents
-            either (parseFailed state) (executeScript state) result
+            either parseFailed (executeScript state) result
         else do
             liftIO . putStrLn
                 $ "Cannot find " <> file
@@ -965,10 +985,9 @@ parseEvalScript state file = do
   where
 
     parseFailed
-        :: ReplState claim
-        -> ParseErrorBundle String String
+        :: ParseErrorBundle String String
         -> Simplifier (Maybe (ReplState claim))
-    parseFailed st err = do
+    parseFailed err = do
         liftIO . putStrLn
             $ "\nCouldn't parse initial script file."
             <> "\nParser error at: "

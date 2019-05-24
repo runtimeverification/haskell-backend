@@ -111,7 +111,8 @@ runRepl
     axioms' claims' initScript replMode
   = do
     let mscript = unReplScript initScript
-    mNewState <- maybe (pure . pure $ state) (parseEvalScript state) mscript
+    mNewState <-
+        maybe (pure . pure $ state) (parseEvalScript state) mscript
     case replMode of
         Interactive -> do
             replGreeting
@@ -119,22 +120,11 @@ runRepl
         RunScript ->
             case mNewState of
                 Nothing -> liftIO exitFailure
-                Just newState -> do
-                    -- void
-                    -- $ evalStateT (replInterpreter printIfNotEmpty ProofStatus) newState
-                    let pstatus = allProofs
-                                    (graphs newState)
-                                    (claims newState)
-                                    (ClaimIndex <$> [0..length (claims newState) - 1])
-                    let isCompleted = foldr (&&) True
-                                        ( fmap
-                                          (\x -> x == Completed)
-                                          (Map.elems pstatus)
-                                        )
-                    liftIO . putStrLn . showProofStatus $ pstatus
-                    if isCompleted == True
-                       then liftIO exitSuccess
-                       else liftIO . exitWith $ ExitFailure 2
+                Just newState ->
+                    void
+                    $ evalStateT
+                        (replInterpreter printIfNotEmpty Exit)
+                        newState
 
   where
 
@@ -143,7 +133,8 @@ runRepl
         str <- prompt
         let command = maybe ShowUsage id $ parseMaybe commandParser str
         when (shouldStore command) $ lensCommands Lens.%= (Seq.|> str)
-        replInterpreter printIfNotEmpty command
+        void $ replInterpreter printIfNotEmpty command
+        return True
 
     state :: ReplState claim
     state =
