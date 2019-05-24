@@ -1450,20 +1450,24 @@ mkIn_ = mkIn predicateSort
 mkMu
     :: Ord variable
     => SortedVariable variable
+    => Unparse variable
     => SetVariable variable
     -> TermLike variable
     -> TermLike variable
-mkMu muVariable muChild =
-    Recursive.embed (attrs :< MuF mu)
+mkMu muVar = makeSortsAgree mkMuWorker (mkSetVar muVar)
   where
-    attrs =
-        Attribute.Pattern
-            { patternSort = sortedVariableSort v
-            , freeVariables  = Set.delete (getVariable muVariable) freeVariablesChild
-            }
-    v = getVariable muVariable
-    freeVariablesChild = freeVariables muChild
-    mu = Mu { muVariable, muChild }
+    mkMuWorker (SetVar_ muVariable) muChild _ =
+           Recursive.embed (attrs :< MuF mu)
+      where
+        attrs =
+            Attribute.Pattern
+                { patternSort = sortedVariableSort v
+                , freeVariables  = Set.delete v freeVariablesChild
+                }
+        v = getVariable muVariable
+        freeVariablesChild = freeVariables muChild
+        mu = Mu { muVariable, muChild }
+    mkMuWorker _ _ _ = error "Unreachable code"
 
 {- | Construct a 'Next' pattern.
  -}
@@ -1498,20 +1502,24 @@ mkNot notChild =
 mkNu
     :: Ord variable
     => SortedVariable variable
+    => Unparse variable
     => SetVariable variable
     -> TermLike variable
     -> TermLike variable
-mkNu nuVariable nuChild =
-    Recursive.embed (attrs :< NuF nu)
+mkNu nuVar = makeSortsAgree mkNuWorker (mkSetVar nuVar)
   where
-    attrs =
-        Attribute.Pattern
-            { patternSort = sortedVariableSort v
-            , freeVariables  = Set.delete v freeVariablesChild
-            }
-    v = getVariable nuVariable
-    freeVariablesChild = freeVariables nuChild
-    nu = Nu { nuVariable, nuChild }
+    mkNuWorker (SetVar_ nuVariable) nuChild _ =
+           Recursive.embed (attrs :< NuF nu)
+      where
+        attrs =
+            Attribute.Pattern
+                { patternSort = sortedVariableSort v
+                , freeVariables  = Set.delete v freeVariablesChild
+                }
+        v = getVariable nuVariable
+        freeVariablesChild = freeVariables nuChild
+        nu = Nu { nuVariable, nuChild }
+    mkNuWorker _ _ _ = error "Unreachable code"
 
 {- | Construct an 'Or' pattern.
  -}
@@ -1599,9 +1607,9 @@ validVar var =
 
 {- | Construct a set variable pattern.
  -}
-mkSetVar :: SortedVariable variable => variable -> TermLike variable
-mkSetVar var =
-    Recursive.embed (validVar var :< SetVariableF (SetVariable var))
+mkSetVar :: SortedVariable variable => SetVariable variable -> TermLike variable
+mkSetVar setVar@(SetVariable var) =
+    Recursive.embed (validVar var :< SetVariableF setVar)
 
 {- | Construct a 'StringLiteral' pattern.
  -}
@@ -1867,6 +1875,8 @@ pattern Top_ :: Sort -> TermLike variable
 
 pattern Var_ :: variable -> TermLike variable
 
+pattern SetVar_ :: SetVariable variable -> TermLike variable
+
 pattern StringLiteral_ :: Text -> TermLike variable
 
 pattern CharLiteral_ :: Char -> TermLike variable
@@ -1973,6 +1983,9 @@ pattern Top_ topSort <-
 
 pattern Var_ variable <-
     (Recursive.project -> _ :< VariableF variable)
+
+pattern SetVar_ setVariable <-
+    (Recursive.project -> _ :< SetVariableF setVariable)
 
 pattern V :: variable -> TermLike variable
 pattern V x <- Var_ x

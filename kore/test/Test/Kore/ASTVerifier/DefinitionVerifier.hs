@@ -646,20 +646,22 @@ simpleMuPattern
     -> Syntax.PatternF Variable ParsedPattern
 simpleMuPattern quantifiedVariable =
     Syntax.MuF Mu
-        { muVariable = SetVariable quantifiedVariable
+        { muVariable = setVar
         , muChild =
-            Builtin.externalizePattern $ Internal.mkSetVar quantifiedVariable
+            Builtin.externalizePattern $ Internal.mkSetVar setVar
         }
+    where setVar = SetVariable quantifiedVariable
 
 simpleNuPattern
     :: Variable
     -> Syntax.PatternF Variable ParsedPattern
 simpleNuPattern quantifiedVariable =
     Syntax.NuF Nu
-        { nuVariable = SetVariable quantifiedVariable
+        { nuVariable = setVar
         , nuChild =
-            Builtin.externalizePattern $ Internal.mkSetVar quantifiedVariable
+            Builtin.externalizePattern $ Internal.mkSetVar setVar
         }
+    where setVar = SetVariable quantifiedVariable
 
 simpleExistsUnifiedPattern
     :: VariableName -> Sort -> TermLike Variable
