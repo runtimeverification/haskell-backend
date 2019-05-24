@@ -3,8 +3,7 @@ require "harness.k"
 module FUNCTIONS
 
   imports HARNESS
-  imports BOOL
-  imports INT
+  imports DOMAINS
 
   rule <k> begin => next true </k>
 
@@ -12,5 +11,11 @@ module FUNCTIONS
   syntax Bool ::= positive(Int) [function]
   rule positive(M) => true
     requires M >Int 0
+
+  syntax ConsList ::= ".ConsList" | KItem ":" ConsList
+  // `length` is recursively defined.
+  syntax Int ::= length(ConsList) [function, functional]
+  rule length(.ConsList) => 0
+  rule length(_ : TAIL) => 1 +Int length(TAIL)
 
 endmodule
