@@ -51,11 +51,19 @@ this is the most general unifier, i.e. there is no way of showing that we
 truly expanded the term in all possible ways. Second, this would be really
 inefficient.
 
+### Actual proposal
+
 The second attempt, however, would be to define some unification axioms (I
 think that they are, indeed, axioms, but they could be theorems if we find
 a way to infer them), specifying how to solve certain unification cases
-in away that can be used almost directly by the Haskell backend (some small
-changes needed). See the use-cases below for examples and explanations.
+in a way that can be used almost directly by the Haskell backend (some
+changes needed).
+
+These axioms would allow us to reduce the hard to handle
+unification cases to unambiguous ones (e.g. reduce AC unification to
+constructor-based unification).
+
+See the use-cases below for examples and explanations.
 
 We could write these in a way that we don't duplicate unification cases.
 Then we could apply these as simplification axioms, defining our unification
@@ -71,10 +79,10 @@ Use-case: lists
 
 For lists, we could have the following axioms
 ```
-⌈elem(x)∧unit⌉=⊥
-⌈elem(x)∧elem(y)⌉=⌈x∧y⌉
-⌈concat(x,y)∧unit⌉=⌈x∧unit⌉∧⌈y∧unit⌉
-⌈concat(elem(x),y)∧concat(elem(z),t)⌉=⌈x∧z⌉∧⌈y∧t⌉
+⌈elem(x)∧unit⌉ = ⊥
+⌈elem(x)∧elem(y)⌉ = ⌈x∧y⌉
+⌈concat(x,y)∧unit⌉ = ⌈x∧unit⌉ ∧ ⌈y∧unit⌉
+⌈concat(elem(x),y) ∧ concat(elem(z),t)⌉ = ⌈x∧z⌉ ∧ ⌈y∧t⌉
 ```
 This is missing some axioms (e.g. the ones unifying at the end of the list,
 or splitting the list), but it looks like these, together with the usual list
@@ -91,12 +99,30 @@ with `concat(concat(unit, elem(ψ_1)), concat(elem(ψ_2), ψ_3))`. We first use
 the list axioms to rewrite the first term as
 `concat(elem(φ_1), concat(elem(φ_2), φ_3))`, the second one as
 `concat(elem(ψ_1), concat(elem(ψ_2), ψ_3))`, then we apply the
-`⌈concat(elem(x),y)∧concat(elem(z),t)⌉=⌈x∧z⌉∧⌈y∧t⌉` axiom repeatedly to compute
+`⌈concat(elem(x),y) ∧ concat(elem(z),t)⌉ = ⌈x∧z⌉ ∧ ⌈y∧t⌉` axiom repeatedly
+to compute
 ```
 ⌈ concat(elem(φ_1), concat(elem(φ_2), φ_3))
 ∧ concat(elem(ψ_1), concat(elem(ψ_2), ψ_3)) ⌉
-    = ⌈φ_1∧ψ_1⌉∧⌈concat(elem(φ_2), φ_3)∧concat(elem(ψ_2), ψ_3)⌉
-    = ⌈φ_1∧ψ_1⌉∧⌈φ_2∧ψ_2⌉∧⌈φ_3∧ψ_3⌉
+    = ⌈φ_1∧ψ_1⌉ ∧ ⌈concat(elem(φ_2), φ_3) ∧ concat(elem(ψ_2), ψ_3)⌉
+    = ⌈φ_1∧ψ_1⌉ ∧ ⌈φ_2∧ψ_2⌉ ∧ ⌈φ_3∧ψ_3⌉
+```
+
+Use-case: sets
+--------------
+
+Let us try to define the axioms for set lookup through unification, i.e.
+for unifying `concat(elem(x), y)` with a set. Assuming that our terms are
+normalized (elems moved to the left, concats represented as
+`concat(a, concat(b, concat(...)))`), then the following axioms should be
+enough:
+
+```
+⌈concat(x, y) ∧ unit⌉ = ⌈x∧unit⌉ ∧ ⌈y∧unit⌉
+⌈concat(elem(x), y) ∧ elem(a)⌉ = ⌈x∧a⌉ ∧ ⌈y∧unit⌉
+⌈concat(elem(x), y) ∧ concat(elem(a), b)⌉
+   = ⌈x∧a⌉ ∧ ⌈y∧b⌉
+     ∨ ∃ z . ⌈concat(elem(x),z)∧b⌉ ∧ ⌈y∧concat(elem(a),z)⌉
 ```
 
 Use case: heating and cooling
@@ -121,11 +147,13 @@ we need to unify `x + y ~> z` with `((1 + 2) + (3 + 4))`. While we could expand
 the expression in all possible ways and apply matching for the top `~>`, we
 could do this in a more principled way if we had the following axiom:
 ```
-⌈(a+b)~>c ∧ (d+e)~>f⌉ =
-    (⌈a∧d⌉ ∧ ⌈b∧e⌉ ∧ ⌈c∧f⌉)
-    ∨ (⌈(a+b)~>g ∧ d⌉ ∧ ⌈c ∧ (g~>[]+e~>f)⌉)
-    ∨ (⌈(a+b)~>g ∧ e⌉ ∧ ⌈c ∧ (g~>d+[]~>f)⌉)
+⌈x~>y ∧ (a+b)~>c⌉ =
+    (⌈x ∧ (a+b)⌉ ∧ ⌈y∧c⌉)
+    ∨ ∃ d . (⌈x~>d ∧ a⌉ ∧ ⌈y ∧ (d~>[]+b~>c)⌉)
+    ∨ ∃ d . (⌈x~>d ∧ e⌉ ∧ ⌈y ∧ (d~>a+[]~>c)⌉)
+  if isKItem(x)
 ```
+
 This would give us a clear way of doing unification, in which we'd be sure that
 we're not missing any terms when expanding, and which would make it easy to
 prove that we're doing the right thing.
