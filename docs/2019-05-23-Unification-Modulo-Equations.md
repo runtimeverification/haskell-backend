@@ -150,7 +150,7 @@ could do this in a more principled way if we had the following axiom:
 ⌈x~>y ∧ (a+b)~>c⌉ =
     (⌈x ∧ (a+b)⌉ ∧ ⌈y∧c⌉)
     ∨ ∃ d . (⌈x~>d ∧ a⌉ ∧ ⌈y ∧ (d~>[]+b~>c)⌉)
-    ∨ ∃ d . (⌈x~>d ∧ e⌉ ∧ ⌈y ∧ (d~>a+[]~>c)⌉)
+    ∨ ∃ d . (⌈x~>d ∧ b⌉ ∧ ⌈y ∧ (d~>a+[]~>c)⌉)
   if isKItem(x)
 ```
 
