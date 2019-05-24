@@ -35,7 +35,6 @@ import           Data.Maybe
 import qualified Data.Sequence as Seq
 import           Kore.Attribute.RuleIndex
 import           System.Exit
-                 ( exitFailure )
 import           System.IO
                  ( hFlush, stdout )
 import           Text.Megaparsec
@@ -117,13 +116,25 @@ runRepl
         Interactive -> do
             replGreeting
             evalStateT (whileM repl0) (maybe state id mNewState)
-        RunScript -> do
+        RunScript ->
             case mNewState of
-                Nothing ->
-                    liftIO exitFailure
-                Just newState ->
-                    void
-                    $ evalStateT (replInterpreter printIfNotEmpty ProofStatus) newState
+                Nothing -> liftIO exitFailure
+                Just newState -> do
+                    -- void
+                    -- $ evalStateT (replInterpreter printIfNotEmpty ProofStatus) newState
+                    let pstatus = allProofs
+                                    (graphs newState)
+                                    (claims newState)
+                                    (ClaimIndex <$> [0..length (claims newState) - 1])
+                    let isCompleted = foldr (&&) True
+                                        ( fmap
+                                          (\x -> x == Completed)
+                                          (Map.elems pstatus)
+                                        )
+                    liftIO . putStrLn . showProofStatus $ pstatus
+                    if isCompleted == True
+                       then liftIO exitSuccess
+                       else liftIO . exitWith $ ExitFailure 2
 
   where
 

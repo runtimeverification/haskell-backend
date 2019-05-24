@@ -16,6 +16,7 @@ module Kore.Repl.Interpreter
     , parseEvalScript
     , showAliasError
     , formatUnificationMessage
+    , allProofs
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -382,10 +383,20 @@ proofStatus = do
     graphs <- Lens.use lensGraphs
     claims <- Lens.use lensClaims
     let cindexes = ClaimIndex <$> [0..length claims - 1]
-    let allProofs = Map.union
-                        (fmap inProgressProofs graphs)
-                        (notStartedProofs graphs cindexes)
-    putStrLn' $ showProofStatus allProofs
+    putStrLn' . showProofStatus
+        $ allProofs graphs claims cindexes
+
+allProofs
+    :: forall claim
+    .  Claim claim
+    => Map.Map ClaimIndex ExecutionGraph
+    -> [claim]
+    -> [ClaimIndex]
+    -> Map.Map ClaimIndex GraphProofStatus
+allProofs graphs claims cindexes =
+    Map.union
+        (fmap inProgressProofs graphs)
+        (notStartedProofs graphs cindexes)
   where
     inProgressProofs
         :: ExecutionGraph
@@ -394,6 +405,7 @@ proofStatus = do
         findProofStatus
         . sortLeafsByType
         . Strategy.graph
+
     notStartedProofs
         :: Map.Map ClaimIndex ExecutionGraph
         -> [ClaimIndex]
@@ -404,6 +416,7 @@ proofStatus = do
             allKeys = Set.fromList cs
             missingKeys = allKeys `Set.difference` existingKeys
         in Map.fromList $ (\idx -> (idx, NotStarted)) <$> Set.toList missingKeys
+
     findProofStatus :: Map.Map NodeState [Graph.Node] -> GraphProofStatus
     findProofStatus m =
         case Map.lookup StuckNode m of
