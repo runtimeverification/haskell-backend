@@ -18,8 +18,8 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
-                 ( makeCeilPredicate, makeEqualsPredicate, makeExistsPredicate,
-                 makeTruePredicate )
+                 ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
+                 makeExistsPredicate, makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
@@ -62,7 +62,7 @@ test_simplify =
             { predicate =
                 Predicate.makeEqualsPredicate
                     (Mock.sigma (mkVar Mock.x) (mkVar Mock.z))
-                    (Mock.sigma (mkVar Mock.y) (mkVar Mock.z))
+                    (Mock.functional20 (mkVar Mock.y) (mkVar Mock.z))
             }
     quantifyPredicate predicated@Conditional { predicate } =
         predicated
@@ -213,21 +213,9 @@ test_makeEvaluate =
                     }
         assertEqualWithExplanation "exists on predicate" expect actual
 
-    , testCase "exists moves substitution above" $ do
-        -- exists x . (t(x) and p(x) and s)
-        --    = exists x . (t(x) and p(x)) and Top and s
-        --    if s do not depend on x.
-        let expect =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term =
-                            mkExists Mock.x (mkAnd fOfX (mkEquals_ fOfX gOfA))
-                        , predicate = makeTruePredicate
-                        , substitution =
-                            Substitution.unsafeWrap [(Mock.y, hOfA)]
-                        }
-                    ]
-        actual <-
+    , testCase "exists moves substitution above" $
+        -- error for exists x . (t(x) and p(x) and s)
+        assertErrorIO (const (return ())) $
             makeEvaluate Mock.metadataTools
                 Mock.x
                 Conditional
@@ -235,7 +223,6 @@ test_makeEvaluate =
                     , predicate = makeEqualsPredicate fOfX gOfA
                     , substitution = Substitution.wrap [(Mock.y, hOfA)]
                     }
-        assertEqualWithExplanation "exists moves substitution" expect actual
 
     , testCase "exists reevaluates" $ do
         -- exists x . (top and (f(x) = f(g(a)) and [x=g(a)])
@@ -250,6 +237,61 @@ test_makeEvaluate =
                     , substitution = Substitution.wrap [(Mock.x, gOfA)]
                     }
         assertEqualWithExplanation "exists reevaluates" expect actual
+    , testCase "exists matches equality if result is top" $ do
+        -- exists x . (f(x) = f(a))
+        --    = top.s
+        let expect = OrPattern.fromPatterns
+                [ Conditional
+                    { term = fOfA
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.wrap [(Mock.y, fOfA)]
+                    }
+                ]
+        actual <-
+            makeEvaluate Mock.metadataTools
+                Mock.x
+                Conditional
+                    { term = fOfA
+                    , predicate = makeEqualsPredicate fOfX (Mock.f Mock.a)
+                    , substitution = Substitution.wrap [(Mock.y, fOfA)]
+                    }
+        assertEqualWithExplanation "exists matching" expect actual
+    , testCase "exists does not match equality if free var in subst" $ do
+        -- exists x . (f(x) = f(a)) and (y=f(x))
+        --    = exists x . (f(x) = f(a)) and (y=f(x))
+        let expect = OrPattern.fromPatterns
+                [ Conditional
+                    { term = fOfA
+                    , predicate =
+                        makeExistsPredicate
+                            Mock.x
+                            (makeAndPredicate
+                                (makeEqualsPredicate fOfX (Mock.f Mock.a))
+                                (makeEqualsPredicate (mkVar Mock.y) fOfX)
+                            )
+                    , substitution = Substitution.wrap [(Mock.z, fOfA)]
+                    }
+                ]
+        actual <-
+            makeEvaluate Mock.metadataTools
+                Mock.x
+                Conditional
+                    { term = fOfA
+                    , predicate = makeEqualsPredicate fOfX (Mock.f Mock.a)
+                    , substitution =
+                        Substitution.wrap [(Mock.y, fOfX), (Mock.z, fOfA)]
+                    }
+        assertEqualWithExplanation "exists matching" expect actual
+    , testCase "exists does not match equality if free var in term" $
+        -- error for exists x . (f(x) = f(a)) and (y=f(x))
+        assertErrorIO (const (return ())) $
+            makeEvaluate Mock.metadataTools
+                Mock.x
+                Conditional
+                    { term = fOfX
+                    , predicate = makeEqualsPredicate fOfX (Mock.f Mock.a)
+                    , substitution = Substitution.wrap [(Mock.y, fOfA)]
+                    }
     ]
   where
     fOfA = Mock.f Mock.a
