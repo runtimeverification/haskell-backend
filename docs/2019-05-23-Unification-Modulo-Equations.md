@@ -1,6 +1,13 @@
 Unification with equations
 ==========================
 
+Summary
+-------
+
+Proposal: Write k/kore axioms/theorems allowing us both to solve unification
+in a principled way without changing the backend for each of these cases,
+and to easily generate proofs if/when that will be desirable.
+
 Background
 ----------
 
@@ -29,8 +36,8 @@ which have something resembling constructors. An example is a list, which has:
 `concat` - concatenates two lists.
 Heating and cooling could be another example.
 
-Solution
---------
+Proposed Solution
+-----------------
 
 The first attempt to solve this would be to define some sort of
 no-junk/no-confusion axiom
@@ -46,8 +53,23 @@ inefficient.
 
 The second attempt, however, would be to define some unification axioms (I
 think that they are, indeed, axioms, but they could be theorems if we find
-a way to infer them), specifying how to solve certain unifications. As an
-example, for lists, we could have
+a way to infer them), specifying how to solve certain unification cases
+in away that can be used almost directly by the Haskell backend (some small
+changes needed). See the use-cases below for examples and explanations.
+
+We could write these in a way that we don't duplicate unification cases.
+Then we could apply these as simplification axioms, defining our unification
+strategy in k. When we need performance, we could implement the ones that are
+used more frequently in Haskell.
+
+Or, if that ever becomes desirable (e.g. if we want it to make proof
+certificates easier to generate), we could give up on performance and define
+all simplification cases as axioms/theorems.
+
+Use-case: lists
+---------------
+
+For lists, we could have the following axioms
 ```
 ⌈elem(x)∧unit⌉=⊥
 ⌈elem(x)∧elem(y)⌉=⌈x∧y⌉
@@ -55,7 +77,7 @@ example, for lists, we could have
 ⌈concat(elem(x),y)∧concat(elem(z),t)⌉=⌈x∧z⌉∧⌈y∧t⌉
 ```
 This is missing some axioms (e.g. the ones unifying at the end of the list,
-or splitting the list), but it looks like this, together with the usual list
+or splitting the list), but it looks like these, together with the usual list
 axioms and the `and` commutativity axioms could be enough to solve list
 unification.
 
