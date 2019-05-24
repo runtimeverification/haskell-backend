@@ -49,7 +49,7 @@ the same sort, then use unification for the remainders.
 However, this has a few problems. First, there is no way of proving that
 this is the most general unifier, i.e. there is no way of showing that we
 truly expanded the term in all possible ways. Second, this would be really
-inefficient.
+inefficient. Also, the no-confusion axioms might be hard to write.
 
 ### Actual proposal
 
@@ -112,11 +112,13 @@ to compute
     = ⌈φ₁∧ψ₁⌉ ∧ ⌈φ₂∧ψ₂⌉ ∧ ⌈φ₃∧ψ₃⌉
 ```
 
-Use-case: sets
---------------
+Use-case: multi-sets
+--------------------
 
-Let us try to define the axioms for set lookup through unification, i.e.
-for unifying `concat(elem(x), s)` with a set. Assuming that our terms are
+These are associative, commutative, with neutral element.
+
+Let us try to define the axioms for multi-set lookup through unification, i.e.
+for unifying `concat(elem(x), s)` with a multi-set. Assuming that our terms are
 normalized (elems moved to the left, concats represented as
 `concat(a, concat(b, concat(...)))`), then the following axioms should be
 enough:
@@ -125,8 +127,64 @@ enough:
 ⌈concat(s₁,s₂) ∧ unit⌉ = ⌈s₁∧unit⌉ ∧ ⌈s₂∧unit⌉
 ⌈concat(elem(x), s) ∧ elem(a)⌉ = ⌈x∧a⌉ ∧ ⌈s∧unit⌉
 ⌈concat(elem(x), s₁) ∧ concat(elem(a), s₂)⌉
-   = ⌈x∧a⌉ ∧ ⌈s₁∧s₂⌉
-     ∨ ∃ s₃ . ⌈concat(elem(x),s₃)∧s₂⌉ ∧ ⌈s₁∧concat(elem(a),s₃)⌉
+    = ⌈x∧a⌉ ∧ ⌈s₁∧s₂⌉
+      ∨ ∃ s₃ . ⌈concat(elem(x),s₃)∧s₂⌉ ∧ ⌈s₁∧concat(elem(a),s₃)⌉
+```
+
+As an example, the left-to-right implication for the equality above can be
+shown like this (predicate equality is equivalence):
+```
+x\and⌈x∧a⌉ = a\and⌈x∧a⌉
+s₁\and⌈s₁∧s₂⌉ = s₂\and⌈s₁∧s₂⌉
+
+concat(elem(x), s₁)\and⌈x∧a⌉\and⌈s₁∧s₂⌉
+    = concat(elem(x\and⌈x∧a⌉), s₁\and⌈s₁∧s₂⌉)\and⌈x∧a⌉\and⌈s₁∧s₂⌉
+    = concat(elem(a\and⌈x∧a⌉), s₂\and⌈s₁∧s₂⌉)\and⌈x∧a⌉\and⌈s₁∧s₂⌉
+    = concat(elem(a), s₂)\and⌈x∧a⌉\and⌈s₁∧s₂⌉
+```
+therefore `⌈x∧a⌉\and⌈s₁∧s₂⌉` is a unifier of `concat(elem(x), s₁)` and
+`concat(elem(a), s₂)`.
+Similarly, we have
+```
+concat(elem(x),s₃)\and⌈concat(elem(x),s₃)∧s₂⌉=s₂\and⌈concat(elem(x),s₃)∧s₂⌉
+therefore
+concat(elem(a), concat(elem(x),s₃))\and⌈concat(elem(x),s₃)∧s₂⌉
+    =concat(elem(a),s₂)\and⌈concat(elem(x),s₃)∧s₂⌉
+
+also,
+s₁∧⌈s₁∧concat(elem(a),s₃)⌉=concat(elem(a),s₃)∧⌈s₁∧concat(elem(a),s₃)⌉
+therefore
+concat(elem(x), s₁)∧⌈s₁∧concat(elem(a),s₃)⌉
+    = concat(elem(x), concat(elem(a),s₃))∧⌈s₁∧concat(elem(a),s₃)⌉
+
+but this means that we have
+concat(elem(x), s₁)\and⌈concat(elem(x),s₃)∧s₂⌉∧⌈s₁∧concat(elem(a),s₃)⌉
+    = concat(elem(x), concat(elem(a),s₃))
+      \and ⌈concat(elem(x),s₃)∧s₂⌉ ∧ ⌈s₁∧concat(elem(a),s₃)⌉
+    = concat(elem(a),s₃)\and⌈concat(elem(x),s₃)∧s₂⌉∧⌈s₁∧concat(elem(a),s₃)⌉
+```
+therefore `⌈concat(elem(x),s₃)∧s₂⌉∧⌈s₁∧concat(elem(a),s₃)⌉` is a unifier of
+`concat(elem(x), s₁)` and `concat(elem(a), s₂)`, which means that the RHS of the
+equality is included in the LHS, since that is the most general unifier of the
+two.
+
+Use-case: sets
+--------------
+
+These are associative, commutative, idempotent, with neutral element.
+
+Let us try to define the axioms for unifying `concat(elem(x), s)` with a set.
+As above, we are assuming that our terms are normalized (elems moved to the
+left, concats represented as `concat(a, concat(b, concat(...)))`, identical
+elements removed). The following axioms should be enough:
+
+```
+⌈concat(s₁,s₂) ∧ unit⌉ = ⌈s₁∧unit⌉ ∧ ⌈s₂∧unit⌉
+⌈concat(elem(x), s) ∧ elem(a)⌉ = ⌈x∧a⌉ ∧ (⌈s∧unit⌉ ∨ ⌈s∧a⌉)
+⌈concat(elem(x), s₁) ∧ concat(elem(a), s₂)⌉
+    = ⌈x∧a⌉ ∧ (⌈s₁∧s₂⌉ ∨ ⌈s₁∧ concat(elem(a), s₂)⌉)
+      ∨
+      (¬⌈x∧a⌉ ∧ ∃ s₃ . ⌈concat(elem(x),s₃)∧s₂⌉ ∧ ⌈s₁∧concat(elem(a),s₃)⌉)
 ```
 
 Use case: heating and cooling
