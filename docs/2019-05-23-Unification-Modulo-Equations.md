@@ -74,6 +74,10 @@ Or, if that ever becomes desirable (e.g. if we want it to make proof
 certificates easier to generate), we could give up on performance and define
 all simplification cases as axioms/theorems.
 
+Also, we should probably use set variables, to avoid the large number of
+checks needed when working with normal variables (though, of course, we
+need to make sure that the axioms still hold).
+
 Use-case: lists
 ---------------
 
@@ -147,10 +151,10 @@ we need to unify `x + y ~> z` with `((1 + 2) + (3 + 4))`. While we could expand
 the expression in all possible ways and apply matching for the top `~>`, we
 could do this in a more principled way if we had the following axiom:
 ```
-⌈x~>y ∧ (a+b)~>c⌉ =
-    (⌈x ∧ (a+b)⌉ ∧ ⌈y∧c⌉)
-    ∨ ∃ d . (⌈x~>d ∧ a⌉ ∧ ⌈y ∧ (d~>[]+b~>c)⌉)
-    ∨ ∃ d . (⌈x~>d ∧ b⌉ ∧ ⌈y ∧ (d~>a+[]~>c)⌉)
+⌈x~>y ∧ (a+b)⌉ =
+    (⌈x ∧ (a+b)⌉ ∧ ⌈y ∧ unit⌉)
+    ∨ ∃ d . (⌈x~>d ∧ a⌉ ∧ ⌈y ∧ (d~>[]+b)⌉)
+    ∨ ∃ d . (⌈x~>d ∧ b⌉ ∧ ⌈y ∧ (d~>a+[])⌉)
   if isKItem(x)
 ```
 
