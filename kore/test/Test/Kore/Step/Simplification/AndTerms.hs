@@ -1233,8 +1233,8 @@ unify
     -> TermLike Variable
     -> IO (Maybe [Pattern Variable])
 unify tools first second =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ runMaybeT unification
   where
     substitutionSimplifier = Mock.substitutionSimplifier tools
@@ -1256,8 +1256,8 @@ simplify
     -> TermLike Variable
     -> IO [Pattern Variable]
 simplify tools first second =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ BranchT.gather
     $ termAnd
         tools
@@ -1275,8 +1275,8 @@ simplifyEquals
     -> IO (Maybe [Predicate Variable])
 simplifyEquals tools axiomIdToSimplifier first second =
     fmap MultiOr.extractPatterns
-    <$> SMT.runSMT SMT.defaultConfig
-        ( evalSimplifier emptyLogger
+    <$> SMT.runSMT SMT.defaultConfig emptyLogger
+        ( evalSimplifier
         $ runMaybeT
         $ termEquals
             tools

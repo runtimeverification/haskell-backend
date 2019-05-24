@@ -8,7 +8,7 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.Data
-    ( Simplifier
+    ( Simplifier (..)
     , runSimplifier
     , evalSimplifier
     , BranchT
@@ -58,7 +58,7 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 import qualified ListT
 import           SMT
-                 ( MonadSMT (..), SMT (..), withSolver' )
+                 ( Environment (..), MonadSMT (..), SMT (..), withSolver' )
 import           SMT.SimpleSMT
                  ( Solver )
 
@@ -117,8 +117,8 @@ deriving instance MonadState s m => MonadState s (BranchT m)
 deriving instance WithLog msg m => WithLog msg (BranchT m)
 
 instance MonadSMT m => MonadSMT (BranchT m) where
-    liftSMT = lift . liftSMT
-    {-# INLINE liftSMT #-}
+    withSolver _ = undefined
+    {-# INLINE withSolver #-}
 
 {- | Collect results from many simplification branches into one result.
 
@@ -172,11 +172,6 @@ scatter = BranchT . ListT.scatter . Foldable.toList
 
 -- * Simplifier
 
-data Environment = Environment
-    { solver     :: !(MVar Solver)
-    , logger     :: !(LogAction Simplifier LogMessage)
-    }
-
 {- | @Simplifier@ represents a simplification action.
 
 A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.
@@ -185,17 +180,25 @@ A @Simplifier@ can write to the log through 'HasLog'.
 
  -}
 newtype Simplifier a = Simplifier
-    { getSimplifier :: ReaderT Environment IO a
+    { getSimplifier :: SMT a
     }
     deriving (Applicative, Functor, Monad)
 
 instance MonadSMT Simplifier where
-    liftSMT :: SMT a -> Simplifier a
-    liftSMT = Simplifier . withReaderT solver . getSMT
+    withSolver       = Simplifier . withSolver . getSimplifier
+    declare text     = Simplifier . declare text
+    declareFun       = Simplifier . declareFun
+    declareSort      = Simplifier . declareSort
+    declareDatatype  = Simplifier . declareDatatype
+    declareDatatypes = Simplifier . declareDatatypes
+    assert           = Simplifier . assert
+    check            = Simplifier check
+    ackCommand       = Simplifier . ackCommand
+    loadFile         = Simplifier . loadFile
 
 instance MonadIO Simplifier where
     liftIO :: IO a -> Simplifier a
-    liftIO ma = Simplifier . ReaderT $ const ma
+    liftIO = Simplifier . liftIO
 
 instance MonadThrow Simplifier where
     throwM :: Exception e => e -> Simplifier a
@@ -213,19 +216,16 @@ instance MonadReader Environment Simplifier where
     local f s = Simplifier $ local f $ getSimplifier s
 
 instance WithLog LogMessage Simplifier where
-    askLogAction = asks logger
+    askLogAction = hoistLogAction Simplifier <$> asks logger
     withLog f = local (\env -> env { logger = f (logger env) })
 
 {- | Run a simplification, returning the results along all branches.
  -}
 evalSimplifierBranch
-    :: LogAction Simplifier LogMessage
-    -- ^ initial counter for fresh variables
-    -> BranchT Simplifier a
+    :: BranchT Simplifier a
     -- ^ simplifier computation
     -> SMT [a]
-evalSimplifierBranch logger =
-    evalSimplifier logger . gather
+evalSimplifierBranch = evalSimplifier . gather
 
 {- | Run a simplification, returning the result of only one branch.
 
@@ -238,11 +238,8 @@ runSimplifier
     :: HasCallStack
     => Simplifier a
     -- ^ simplifier computation
-    -> LogAction Simplifier LogMessage
-    -- ^ initial counter for fresh variables
     -> SMT a
-runSimplifier simpl logger =
-    evalSimplifier logger simpl
+runSimplifier = evalSimplifier
 
 {- | Evaluate a simplifier computation, returning the result of only one branch.
 
@@ -253,12 +250,9 @@ that may branch.
   -}
 evalSimplifier
     :: HasCallStack
-    => LogAction Simplifier LogMessage
-    -> Simplifier a
+    => Simplifier a
     -> SMT a
-evalSimplifier logger (Simplifier simpl) =
-    withSolver' $ \solver ->
-        runReaderT simpl (Environment solver logger)
+evalSimplifier = getSimplifier
 
 -- * Implementation
 

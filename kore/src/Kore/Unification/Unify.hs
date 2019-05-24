@@ -25,7 +25,7 @@ import           Kore.Internal.TermLike
                  ( SortedVariable, TermLike )
 import qualified Kore.Logger as Log
 import           Kore.Step.Simplification.Data
-                 ( BranchT, Environment (..), Simplifier )
+                 ( BranchT, Environment (..), Simplifier (..) )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather, scatter )
 import           Kore.Unification.Error
@@ -133,7 +133,9 @@ instance
   where
     askLogAction = do
         Log.LogAction logger <- liftSimplifier $ logger <$> ask
-        return $ Log.LogAction (\msg -> liftSimplifier $ logger msg)
+        return
+            . Log.hoistLogAction (liftSimplifier . Simplifier)
+            $ Log.LogAction logger
 
     withLog f = UnifierTT . Log.withLog f . getUnifier
 

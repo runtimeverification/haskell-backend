@@ -22,7 +22,6 @@ import           SMT
 import qualified SMT
 
 instance MonadSMT (PropertyT SMT) where
-    liftSMT = Trans.lift
 
 propertyWithSolver
     :: HasCallStack

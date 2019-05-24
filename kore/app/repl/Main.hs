@@ -171,8 +171,8 @@ mainWithOptions
                 { SMT.timeOut = smtTimeOut
                 , SMT.preludeFile = smtPrelude
                 }
-    SMT.runSMT smtConfig
-        $ evalSimplifier emptyLogger
+    SMT.runSMT smtConfig emptyLogger
+        $ evalSimplifier
         $ proveWithRepl indexedModule specDefIndexedModule initialScript
 
   where

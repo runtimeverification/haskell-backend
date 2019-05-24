@@ -259,7 +259,7 @@ andSimplifySuccess term1 term2 results = do
     let expect = map unificationResult results
     Right subst' <-
         runSMT
-        $ evalSimplifier emptyLogger
+        $ evalSimplifier
         $ Monad.Unify.runUnifier
         $ simplifyAnds
             tools
@@ -280,7 +280,7 @@ andSimplifyFailure term1 term2 err = do
         expect = Left (UnificationError err)
     actual <-
         runSMT
-        $ evalSimplifier emptyLogger
+        $ evalSimplifier
         $ Monad.Unify.runUnifier
         $ simplifyAnds
             tools
@@ -305,7 +305,7 @@ andSimplifyException message term1 term2 exceptionMessage =
         test = do
             var <-
                 runSMT
-                $ evalSimplifier emptyLogger
+                $ evalSimplifier
                 $ Monad.Unify.runUnifier
                 $ simplifyAnds
                     tools
@@ -343,7 +343,7 @@ unificationProcedureSuccessWithSimplifiers
     testCase message $ do
         Right results <-
             runSMT
-            $ evalSimplifier emptyLogger
+            $ evalSimplifier
             $ Monad.Unify.runUnifier
             $ unificationProcedure
                 mockTools
@@ -758,7 +758,7 @@ injUnificationTests =
 
 simplifyPattern :: UnificationTerm -> IO UnificationTerm
 simplifyPattern (UnificationTerm term) = do
-    Conditional { term = term' } <- runSMT $ evalSimplifier emptyLogger simplifier
+    Conditional { term = term' } <- runSMT $ evalSimplifier simplifier
     return $ UnificationTerm term'
   where
     simplifier = do
@@ -782,4 +782,4 @@ makeEqualsPredicate
 makeEqualsPredicate = Syntax.Predicate.makeEqualsPredicate
 
 runSMT :: SMT a -> IO a
-runSMT = SMT.runSMT SMT.defaultConfig
+runSMT = SMT.runSMT SMT.defaultConfig emptyLogger

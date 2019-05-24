@@ -113,6 +113,8 @@ import           Kore.Unification.Unify
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( unparse )
+import           SMT
+                 ( SMT )
 
 newtype AxiomIndex = AxiomIndex
     { unAxiomIndex :: Int
@@ -621,14 +623,14 @@ liftSimplifierWithLogger sa = do
    pure result
   where
     setLogger
-        :: Logger.LogAction Simplifier Logger.LogMessage
+        :: Logger.LogAction SMT Logger.LogMessage
         -> Simplifier.Environment
         -> Simplifier.Environment
     setLogger la env = env { Simplifier.logger = la }
 
     logTypeToLogger
         :: LogType
-        -> t Simplifier (Logger.LogAction Simplifier Text, Maybe Handle)
+        -> t Simplifier (Logger.LogAction SMT Text, Maybe Handle)
     logTypeToLogger =
         \case
             NoLogging   -> pure (mempty, Nothing)

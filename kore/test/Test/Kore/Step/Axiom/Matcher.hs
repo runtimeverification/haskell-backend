@@ -1025,8 +1025,8 @@ unificationWithMatchSimplifiers
     -> TermLike Variable
     -> IO (Maybe (OrPredicate Variable))
 unificationWithMatchSimplifiers tools axiomIdToSimplifier first second = do
-    result <- SMT.runSMT SMT.defaultConfig
-        $ evalSimplifier emptyLogger
+    result <- SMT.runSMT SMT.defaultConfig emptyLogger
+        $ evalSimplifier
         $ Monad.Unify.runUnifier
         $ unificationWithAppMatchOnTop
             tools
@@ -1057,8 +1057,8 @@ match tools first second = do
     matchAsEither
         :: IO (Either UnificationOrSubstitutionError (OrPredicate Variable))
     matchAsEither =
-        SMT.runSMT SMT.defaultConfig
-            $ evalSimplifier emptyLogger matchResult
+        SMT.runSMT SMT.defaultConfig emptyLogger
+            $ evalSimplifier matchResult
     matchResult
         :: Simplifier
             (Either UnificationOrSubstitutionError (OrPredicate Variable))

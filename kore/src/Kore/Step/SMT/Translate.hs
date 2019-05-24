@@ -63,21 +63,22 @@ the predicate from being sent to SMT.
 
  -}
 translatePredicate
-    :: forall p variable .
+    :: forall p variable m .
         ( Ord variable
         , Unparse variable
         , Given (SmtMetadataTools StepperAttributes)
         , p ~ TermLike variable
+        , Monad m
         )
-    => (SExpr -> p -> Translator p SExpr)
+    => (SExpr -> p -> Translator m p SExpr)
     -> Predicate variable
-    -> Translator p SExpr
+    -> Translator m p SExpr
 translatePredicate translateUninterpreted predicate =
     translatePredicatePattern $ unwrapPredicate predicate
   where
     translatePredicatePattern
         :: TermLike variable
-        -> Translator (TermLike variable) SExpr
+        -> Translator m (TermLike variable) SExpr
     translatePredicatePattern pat =
         case Cofree.tailF (Recursive.project pat) of
             EvaluatedF child -> translatePredicatePattern (getEvaluated child)
@@ -165,7 +166,7 @@ translatePredicate translateUninterpreted predicate =
             , p ~ TermLike variable
             )
         => p
-        -> Translator p SExpr
+        -> Translator m p SExpr
     translateInt pat =
         case Cofree.tailF (Recursive.project pat) of
             VariableF _ -> translateUninterpreted SMT.tInt pat
@@ -185,7 +186,7 @@ translatePredicate translateUninterpreted predicate =
             , p ~ TermLike variable
             )
         => p
-        -> Translator p SExpr
+        -> Translator m p SExpr
     translateBool pat =
         case Cofree.tailF (Recursive.project pat) of
             VariableF _ -> translateUninterpreted SMT.tBool pat
@@ -209,7 +210,7 @@ translatePredicate translateUninterpreted predicate =
             , p ~ TermLike variable
             )
         => Application SymbolOrAlias p
-        -> Translator p SExpr
+        -> Translator m p SExpr
     translateApplication
         Application
             { applicationSymbolOrAlias
@@ -232,7 +233,7 @@ translatePredicate translateUninterpreted predicate =
             )
         => Sort
         -> p
-        -> Translator p SExpr
+        -> Translator m p SExpr
     translatePattern sort pat =
         case getHook of
             Just builtinSort
@@ -252,12 +253,20 @@ translatePredicate translateUninterpreted predicate =
 -- Translator
 type VarContext p = Map p (SExpr, SExpr)
 
-type Translator p = MaybeT (StateT (VarContext p) (CounterT SMT))
+type Translator m p = MaybeT (StateT (VarContext p) (CounterT m))
 
-evalTranslator :: Ord p => Translator p a -> MaybeT SMT a
+evalTranslator
+    :: Ord p
+    => Monad m
+    => Translator m p a
+    -> MaybeT m a
 evalTranslator = Morph.hoist (evalCounterT . flip evalStateT Map.empty)
 
-runTranslator :: Ord p => Translator p a -> MaybeT SMT (a, VarContext p)
+runTranslator
+    :: Ord p
+    => Monad m
+    => Translator m p a
+    -> MaybeT m (a, VarContext p)
 runTranslator = evalTranslator . includeState
   where includeState comp = do
             comp' <- comp

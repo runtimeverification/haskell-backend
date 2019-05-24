@@ -633,8 +633,8 @@ evaluate
     -> TermLike Variable
     -> IO (Pattern Variable)
 evaluate metadataTools functionIdToEvaluator patt =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ TermLike.simplify
         metadataTools substitutionSimplifier functionIdToEvaluator patt
   where

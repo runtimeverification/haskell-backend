@@ -286,8 +286,8 @@ test_functionRegistry =
     , testCase "Checking that evaluator simplifies correctly" $ do
         let expect = mkApp sortS sHead []
         simplified <-
-            SMT.runSMT SMT.defaultConfig
-            $ evalSimplifier emptyLogger
+            SMT.runSMT SMT.defaultConfig emptyLogger
+            $ evalSimplifier
             $ Pattern.simplify
                 testMetadataTools
                 (Mock.substitutionSimplifier testMetadataTools)

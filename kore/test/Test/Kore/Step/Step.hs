@@ -67,8 +67,8 @@ evalUnifier
     :: Unifier a
     -> IO (Either UnificationOrSubstitutionError [a])
 evalUnifier =
-    SMT.runSMT SMT.defaultConfig
-    . evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    . evalSimplifier
     . Monad.Unify.runUnifier
 
 applyInitialConditions
@@ -668,8 +668,8 @@ applyRewriteRules
     -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
 applyRewriteRules initial rules =
     (fmap . fmap) Result.mergeResults
-        $ SMT.runSMT SMT.defaultConfig
-        $ evalSimplifier emptyLogger
+        $ SMT.runSMT SMT.defaultConfig emptyLogger
+        $ evalSimplifier
         $ Monad.Unify.runUnifier
         $ Step.applyRewriteRules
             metadataTools
@@ -1041,8 +1041,8 @@ sequenceRewriteRules
     -> IO (Either UnificationOrSubstitutionError (Results Variable))
 sequenceRewriteRules initial rules =
     (fmap . fmap) Result.mergeResults
-        $ SMT.runSMT SMT.defaultConfig
-        $ evalSimplifier emptyLogger
+        $ SMT.runSMT SMT.defaultConfig emptyLogger
+        $ evalSimplifier
         $ Monad.Unify.runUnifier
         $ Step.sequenceRewriteRules
             metadataTools
@@ -1162,8 +1162,8 @@ sequenceMatchingRules
     -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
 sequenceMatchingRules initial rules =
     fmap (fmap Foldable.fold)
-    $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    $ SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ Monad.Unify.runUnifier
     $ Step.sequenceRules
         metadataTools

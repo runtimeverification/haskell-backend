@@ -10,6 +10,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 
 module SMT
     ( SMT, getSMT
+    , Environment (..)
     , Solver
     , newSolver, stopSolver, withSolver, withSolver'
     , runSMT
@@ -59,6 +60,8 @@ import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import qualified Control.Lens.TH.Rules as Lens
 import qualified Control.Monad as Monad
+import           Control.Monad.Catch
+                 ( MonadCatch, MonadThrow )
 import qualified Control.Monad.Counter as Counter
 import qualified Control.Monad.Except as Except
 import qualified Control.Monad.Identity as Identity
@@ -145,7 +148,9 @@ newtype SMT a = SMT { getSMT :: ReaderT Environment IO a }
         ( Applicative
         , Functor
         , Monad
+        , MonadCatch
         , MonadIO
+        , MonadThrow
         , Reader.MonadReader Environment
         )
 
@@ -159,6 +164,19 @@ withSolver' action = do
 -- | Access 'SMT' through monad transformers.
 class Monad m => MonadSMT m where
     withSolver :: m a -> m a
+    default withSolver
+        ::  ( Trans.MonadTrans t
+            , MonadSMT n
+            , MonadIO n
+            , Reader.MonadReader Environment m
+            , m ~ t n
+            )
+        => m a
+        -> m a
+    withSolver action = do
+        solver'   <- solver <$> Reader.ask
+        newSolver <- Trans.lift . liftIO $ readMVar solver' >>= newMVar
+        Reader.local (lensSolver Lens..~ newSolver) action
 
     -- push :: m ()
     -- pop :: m ()
@@ -272,16 +290,34 @@ instance MonadSMT SMT where
     loadFile path =
         withSolver' $ \solver -> SimpleSMT.loadFile solver path
 
--- instance MonadSMT m => MonadSMT (Counter.CounterT m) where
---     liftSMT = Trans.lift . liftSMT
+instance
+    ( Reader.MonadReader Environment m
+    , MonadSMT m
+    , MonadIO m
+    ) => MonadSMT (Maybe.MaybeT m) where
+
+instance
+    ( Reader.MonadReader Environment m
+    , MonadSMT m
+    , MonadIO m
+    ) => MonadSMT (State.Lazy.StateT s m) where
+
+instance
+    ( Reader.MonadReader Environment m
+    , MonadSMT m
+    , MonadIO m
+    ) => MonadSMT (Counter.CounterT m) where
+
+instance
+    ( Reader.MonadReader Environment m
+    , MonadSMT m
+    , MonadIO m
+    ) => MonadSMT (State.Strict.StateT s m) where
 
 -- instance MonadSMT m => MonadSMT (Except.ExceptT r m) where
 --     liftSMT = Trans.lift . liftSMT
 
 -- instance MonadSMT m => MonadSMT (Identity.IdentityT m) where
---     liftSMT = Trans.lift . liftSMT
-
--- instance MonadSMT m => MonadSMT (Maybe.MaybeT m) where
 --     liftSMT = Trans.lift . liftSMT
 
 -- instance MonadSMT m => MonadSMT (Reader.ReaderT r m) where
@@ -291,12 +327,6 @@ instance MonadSMT SMT where
 --     liftSMT = Trans.lift . liftSMT
 
 -- instance (MonadSMT m, Monoid w) => MonadSMT (RWS.Strict.RWST r w s m) where
---     liftSMT = Trans.lift . liftSMT
-
--- instance MonadSMT m => MonadSMT (State.Lazy.StateT s m) where
---     liftSMT = Trans.lift . liftSMT
-
--- instance MonadSMT m => MonadSMT (State.Strict.StateT s m) where
 --     liftSMT = Trans.lift . liftSMT
 
 -- instance (MonadSMT m, Monoid w) => MonadSMT (Writer.Lazy.WriterT w m) where
