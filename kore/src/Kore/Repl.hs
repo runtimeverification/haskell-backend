@@ -34,6 +34,8 @@ import           Data.Maybe
                  ( listToMaybe )
 import qualified Data.Sequence as Seq
 import           Kore.Attribute.RuleIndex
+import           System.Exit
+                 ( exitFailure )
 import           System.IO
                  ( hFlush, stdout )
 import           Text.Megaparsec
@@ -110,13 +112,18 @@ runRepl
     axioms' claims' initScript replMode
   = do
     let mscript = unReplScript initScript
-    newState <- maybe (pure state) (parseEvalScript state) mscript
+    mNewState <- maybe (pure . pure $ state) (parseEvalScript state) mscript
     case replMode of
         Interactive -> do
             replGreeting
-            evalStateT (whileM repl0) newState
+            evalStateT (whileM repl0) (maybe state id mNewState)
         RunScript -> do
-            void $ evalStateT (replInterpreter printIfNotEmpty ProofStatus) newState
+            case mNewState of
+                Nothing ->
+                    liftIO exitFailure
+                Just newState ->
+                    void
+                    $ evalStateT (replInterpreter printIfNotEmpty ProofStatus) newState
 
   where
 

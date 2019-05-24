@@ -293,7 +293,8 @@ loadScript
     -> ReplM claim ()
 loadScript file = do
     state <- get
-    lift (parseEvalScript state file) >>= put
+    mstate <- lift $ parseEvalScript state file
+    put $ maybe state id mstate
 
 handleLog
     :: MonadState (ReplState claim) m
@@ -935,7 +936,7 @@ parseEvalScript
     .  Claim claim
     => ReplState claim
     -> FilePath
-    -> Simplifier (ReplState claim)
+    -> Simplifier (Maybe (ReplState claim))
 parseEvalScript state file = do
     exists <- liftIO . doesFileExist $ file
     if exists == True
@@ -946,27 +947,28 @@ parseEvalScript state file = do
         else do
             liftIO . putStrLn
                 $ "Cannot find " <> file
-            return state
+            return Nothing
 
   where
 
     parseFailed
         :: ReplState claim
         -> ParseErrorBundle String String
-        -> Simplifier (ReplState claim)
+        -> Simplifier (Maybe (ReplState claim))
     parseFailed st err = do
         liftIO . putStrLn
             $ "\nCouldn't parse initial script file."
             <> "\nParser error at: "
             <> errorBundlePretty err
-        return st
+        return Nothing
 
     executeScript
         :: ReplState claim
         -> [ReplCommand]
-        -> Simplifier (ReplState claim)
-    executeScript st cmds =
-        execStateT (traverse_ (replInterpreter $ \_ -> return () ) cmds) st
+        -> Simplifier (Maybe (ReplState claim))
+    executeScript st cmds = do
+        newSt <- execStateT (traverse_ (replInterpreter $ \_ -> return () ) cmds) st
+        return . return $ newSt
 
 formatUnificationMessage :: Maybe (Pretty.Doc ()) -> String
 formatUnificationMessage =
