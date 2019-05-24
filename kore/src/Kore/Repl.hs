@@ -17,11 +17,9 @@ import           Control.Exception
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import           Control.Monad
-                 ( void, when )
+                 ( forever, void, when )
 import           Control.Monad.Catch
                  ( MonadCatch, catch )
-import           Control.Monad.Extra
-                 ( whileM )
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.State.Strict
@@ -116,7 +114,7 @@ runRepl
     case replMode of
         Interactive -> do
             replGreeting
-            evalStateT (whileM repl0) (maybe state id mNewState)
+            evalStateT (forever repl0) (maybe state id mNewState)
         RunScript ->
             case mNewState of
                 Nothing -> liftIO exitFailure
@@ -128,13 +126,12 @@ runRepl
 
   where
 
-    repl0 :: StateT (ReplState claim) Simplifier Bool
+    repl0 :: StateT (ReplState claim) Simplifier ()
     repl0 = do
         str <- prompt
         let command = maybe ShowUsage id $ parseMaybe commandParser str
         when (shouldStore command) $ lensCommands Lens.%= (Seq.|> str)
         void $ replInterpreter printIfNotEmpty command
-        return True
 
     state :: ReplState claim
     state =
