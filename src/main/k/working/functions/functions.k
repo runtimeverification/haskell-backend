@@ -3,17 +3,14 @@ require "harness.k"
 module FUNCTIONS
 
   imports HARNESS
+  imports BOOL
   imports INT
 
-  rule <k> begin => next 0 </k>
+  rule <k> begin => next true </k>
 
-  syntax Int ::= partially(Int, Int) [function]
-
-  rule partially(M, I) => 0  requires I >Int M
-
-  rule
-    <k> next partially(N, N +Int 1) => end partially(N, 1) </k>
-    <n> N </n>
-    requires N >=Int 0
+  // `positive` is defined if its argument is positive.
+  syntax Bool ::= positive(Int) [function]
+  rule positive(M) => true
+    requires M >Int 0
 
 endmodule
