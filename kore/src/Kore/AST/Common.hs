@@ -40,8 +40,10 @@ data MLPatternType
     | IffPatternType
     | ImpliesPatternType
     | InPatternType
+    | MuPatternType
     | NextPatternType
     | NotPatternType
+    | NuPatternType
     | OrPatternType
     | RewritesPatternType
     | TopPatternType
@@ -66,8 +68,10 @@ allPatternTypes =
     , IffPatternType
     , ImpliesPatternType
     , InPatternType
+    , MuPatternType
     , NextPatternType
     , NotPatternType
+    , NuPatternType
     , OrPatternType
     , RewritesPatternType
     , TopPatternType
@@ -86,8 +90,10 @@ patternString pt = case pt of
     IffPatternType         -> "iff"
     ImpliesPatternType     -> "implies"
     InPatternType          -> "in"
+    MuPatternType          -> "mu"
     NextPatternType        -> "next"
     NotPatternType         -> "not"
+    NuPatternType          -> "nu"
     OrPatternType          -> "or"
     RewritesPatternType    -> "rewrites"
     TopPatternType         -> "top"
