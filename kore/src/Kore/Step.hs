@@ -133,13 +133,14 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                 [rule]
                 config
         case eitherResults of
-            Left _ ->
+            Left err ->
                 (error . show . Pretty.vsep)
                     [ "Could not apply the axiom:"
                     , unparse rule
                     , "to the configuration:"
                     , unparse config
                     , "Un-implemented unification case; aborting execution."
+                    , "err=" <> Pretty.pretty err
                     ]
             Right results ->
                 Foldable.asum
