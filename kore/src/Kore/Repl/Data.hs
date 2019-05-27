@@ -249,7 +249,8 @@ helpText =
                                            \claim\n\
     \graph [file]                          shows the current proof graph (*)\n\
     \                                      (saves image in .jpeg format if file\
-                                           \ argument is given)\n\
+                                           \ argument is given; file extension is\
+                                           \ added automatically)\n\
     \step [n]                              attempts to run 'n' proof steps at\
                                            \the current node (n=1 by default)\n\
     \stepf [n]                             attempts to run 'n' proof steps at\
