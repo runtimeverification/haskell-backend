@@ -67,6 +67,7 @@ import qualified Control.Monad.Except as Except
 import qualified Control.Monad.Identity as Identity
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
+import qualified Control.Monad.Morph as Morph
 import           Control.Monad.Reader
                  ( ReaderT, runReaderT )
 import qualified Control.Monad.Reader as Reader
@@ -159,17 +160,14 @@ Lens.makeLenses ''Environment
 class Monad m => MonadSMT m where
     withSolver :: m a -> m a
     default withSolver
-        ::  ( Trans.MonadTrans t
+        ::  ( Morph.MFunctor t
             , MonadSMT n
             , MonadIO n
             , m ~ t n
             )
         => m a
         -> m a
-    withSolver action = undefined
-        -- solver'   <- solver <$> Reader.ask
-        -- newSolver <- Trans.lift . liftIO $ readMVar solver' >>= newMVar
-        -- Reader.local (lensSolver Lens..~ newSolver) action
+    withSolver action = Morph.hoist withSolver action
 
     -- push :: m ()
     -- pop :: m ()

@@ -31,6 +31,7 @@ import qualified Control.Monad.Except as Monad.Except
 import qualified Control.Monad.Identity as Monad.Identity
 import           Control.Monad.IO.Class
                  ( MonadIO (..) )
+import qualified Control.Monad.Morph as Morph
 import           Control.Monad.Reader
                  ( MonadReader )
 import qualified Control.Monad.Reader as Monad.Reader
@@ -71,6 +72,9 @@ instance MonadIO m => MonadIO (CounterT m) where
 instance MonadReader e m => MonadReader e (CounterT m) where
     ask = Monad.Trans.lift Monad.Reader.ask
     local f =  CounterT . Monad.Reader.local f . getCounterT
+
+instance Morph.MFunctor CounterT where
+    hoist f = CounterT . Morph.hoist f . getCounterT
 
 {- | Run a computation using a monotonic counter.
 

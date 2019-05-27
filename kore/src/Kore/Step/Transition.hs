@@ -18,7 +18,7 @@ module Kore.Step.Transition
 import           Control.Applicative
 import           Control.Monad.Except
                  ( MonadError (..) )
-import qualified Control.Monad.Morph as Monad.Morph
+import qualified Control.Monad.Morph as Morph
 import           Control.Monad.Reader
 import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Accum
@@ -35,7 +35,7 @@ import           ListT
                  ( ListT )
 import qualified ListT
 import           SMT
-                 ( Environment, MonadSMT (..) )
+                 ( MonadSMT )
 
 {- | @TransitionT@ represents a transition between program states.
 
@@ -80,9 +80,14 @@ instance MonadReader e m
     ask     = Monad.Trans.lift ask
     local f = TransitionT . Accum.mapAccumT (local f) . getTransitionT
 
+instance Morph.MFunctor (AccumT w) where
+    hoist = Accum.mapAccumT
+
+instance Morph.MFunctor (TransitionT rule) where
+    hoist morph = TransitionT . Morph.hoist (Morph.hoist morph) . getTransitionT
+
 instance
-    ( MonadReader Environment m
-    , MonadSMT m
+    ( MonadSMT m
     , MonadIO m
     ) => MonadSMT (TransitionT rule m) where
 
