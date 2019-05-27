@@ -248,8 +248,8 @@ helpText =
     \prove <n>                             initializes proof mode for the nth \
                                            \claim\n\
     \graph [file]                          shows the current proof graph (*)\n\
-    \                                      (saves image if file argument is\
-                                           \ given)\n\
+    \                                      (saves image in .jpeg format if file\
+                                           \ argument is given)\n\
     \step [n]                              attempts to run 'n' proof steps at\
                                            \the current node (n=1 by default)\n\
     \stepf [n]                             attempts to run 'n' proof steps at\

@@ -889,10 +889,11 @@ showDotGraph len =
         . Graph.graphToDot (graphParams len)
 
 saveDotGraph :: Int -> InnerGraph -> FilePath -> IO ()
-saveDotGraph len gr =
+saveDotGraph len gr file =
     void
     . Graph.runGraphviz
         (Graph.graphToDot (graphParams len) gr) Graph.Jpeg
+    $ file <> ".jpeg"
 
 graphParams
     :: Int
