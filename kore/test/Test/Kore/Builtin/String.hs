@@ -6,10 +6,11 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
 
-import Data.Text
-       ( Text )
-import GHC.Stack
-       ( HasCallStack )
+import qualified Control.Monad.Trans as Trans
+import           Data.Text
+                 ( Text )
+import           GHC.Stack
+                 ( HasCallStack )
 
 import qualified Kore.Builtin.String as String
 import           Kore.Internal.Pattern
@@ -38,7 +39,10 @@ testComparison name impl symb =
             a <- forAll genString
             b <- forAll genString
             let expect = Test.Bool.asPattern (impl a b)
-            actual <- evaluate $ mkApp boolSort symb (asInternal <$> [a, b])
+            actual <-
+                Trans.lift
+                    . evaluate
+                    $ mkApp boolSort symb (asInternal <$> [a, b])
             (===) expect actual
         )
 

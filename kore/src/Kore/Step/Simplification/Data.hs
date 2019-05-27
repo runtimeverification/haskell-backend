@@ -119,9 +119,7 @@ deriving instance MonadState s m => MonadState s (BranchT m)
 
 deriving instance WithLog msg m => WithLog msg (BranchT m)
 
-instance MonadSMT m => MonadSMT (BranchT m) where
-    withSolver _ = undefined
-    {-# INLINE withSolver #-}
+instance (MonadSMT m, MonadIO m) => MonadSMT (BranchT m) where
 
 {- | Collect results from many simplification branches into one result.
 
@@ -228,7 +226,7 @@ evalSimplifier
     :: HasCallStack
     => Simplifier a
     -> SMT a
-evalSimplifier = getSimplifier
+evalSimplifier = withSolver . getSimplifier
 
 -- * Implementation
 

@@ -53,7 +53,6 @@ declareSMTLemmas
     .   ( Given (SmtMetadataTools StepperAttributes)
         , MonadIO m
         , MonadSMT m
-        , MonadReader SMT.Environment m
         )
     => VerifiedModule StepperAttributes Attribute.Axiom
     -> m ()

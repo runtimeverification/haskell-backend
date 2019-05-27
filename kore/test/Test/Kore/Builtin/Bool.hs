@@ -3,9 +3,12 @@ module Test.Kore.Builtin.Bool where
 import           Hedgehog
 import qualified Hedgehog.Gen as Gen
 import           Test.Tasty
+import           Test.Tasty.Hedgehog
 import           Test.Tasty.HUnit
 import           Test.Terse
 
+import qualified Control.Monad.Morph as Morph
+import qualified Control.Monad.Trans as Trans
 import qualified Data.Text as Text
 
 import           Kore.Attribute.Hook
@@ -14,10 +17,13 @@ import qualified Kore.Builtin.Bool as Bool
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Internal.Pattern
 import           Kore.Internal.TermLike
+import qualified SMT as SMT
 
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.Kore.Comparators ()
+import Test.SMT
+import Test.Tasty.HUnit.Extensions
 
 test_or :: TestTree
 test_or = testBinary orBoolSymbol (||)
@@ -70,7 +76,7 @@ testBinary symb impl =
         a <- forAll Gen.bool
         b <- forAll Gen.bool
         let expect = asPattern $ impl a b
-        actual <- evaluate $ mkApp boolSort symb (asInternal <$> [a, b])
+        actual <- Trans.lift . evaluate $ mkApp boolSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
     Attribute.Symbol { Attribute.hook = Hook { getHook = Just name } } =
@@ -87,7 +93,7 @@ testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
         let expect = asPattern $ impl a
-        actual <- evaluate $ mkApp boolSort symb (asInternal <$> [a])
+        actual <- Trans.lift . evaluate $ mkApp boolSort symb (asInternal <$> [a])
         (===) expect actual
   where
     Attribute.Symbol { Attribute.hook = Hook { getHook = Just name } } =
@@ -117,9 +123,13 @@ test_simplification =
                 => TermLike Variable
                 -> Pattern Variable
                 -> TestTree
-        becomes makerInput =
-            wrapped_maker_expected withSolver
-                (\solver -> evaluateWith solver makerInput)
+        becomes makerInput expected = testCase "" $ do
+            actual <-
+                SMT.runSMT SMT.defaultConfig mempty
+                $ SMT.withSolver
+                $ evaluate makerInput
+            assertEqualWithExplanation "" expected actual
+
 
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> Gen.bool)

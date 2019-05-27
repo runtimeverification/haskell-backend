@@ -7,6 +7,7 @@ module Test.Kore.Builtin.Builtin
     , testEvaluators
     , testSymbolWithSolver
     , evaluate
+    , evaluateT
     , evaluateToList
     -- , evaluateWith
     , indexedModule
@@ -25,6 +26,7 @@ import           Control.Concurrent.MVar
 import qualified Control.Lens as Lens
 import           Control.Monad.Reader
                  ( runReaderT )
+import qualified Control.Monad.Trans as Trans
 import           Data.Function
                  ( (&) )
 import           Data.Map
@@ -201,6 +203,12 @@ evaluate =
         testSubstitutionSimplifier
         testEvaluators
 
+evaluateT
+    :: Trans.MonadTrans t
+    => TermLike Variable
+    -> t SMT (Pattern Variable)
+evaluateT = Trans.lift . evaluate
+
 evaluateToList
     :: TermLike Variable
     -> SMT [Pattern Variable]
@@ -223,24 +231,22 @@ runSMT :: SMT a -> IO a
 runSMT = SMT.runSMT SMT.defaultConfig emptyLogger
 
 runStepWith
-    :: MVar Solver
-    -> Pattern Variable
+    :: Pattern Variable
     -- ^ configuration
     -> RewriteRule Variable
     -- ^ axiom
     -> IO (Either UnificationOrSubstitutionError (OrPattern Variable))
-runStepWith solver configuration axiom = do
-    result <- runStepResultWith solver configuration axiom
+runStepWith configuration axiom = do
+    result <- runStepResultWith configuration axiom
     return (Step.gatherResults <$> result)
 
 runStepResultWith
-    :: MVar Solver
-    -> Pattern Variable
+    :: Pattern Variable
     -- ^ configuration
     -> RewriteRule Variable
     -- ^ axiom
     -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
-runStepResultWith solver configuration axiom =
+runStepResultWith configuration axiom =
     let smt =
             runSMT
             $ evalSimplifier
