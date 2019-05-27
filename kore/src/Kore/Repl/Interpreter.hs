@@ -208,7 +208,7 @@ exit
     => ReplM claim ReplStatus
 exit = do
     proofs <- allProofs
-    if isCompleted (Map.elems proofs) == True
+    if isCompleted (Map.elems proofs)
        then return SuccessStop
        else return FailStop
   where
