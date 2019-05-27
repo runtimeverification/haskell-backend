@@ -248,8 +248,30 @@ existsForallRemainderParser
     -> Parser (m child)
 existsForallRemainderParser childParser constructor = do
     sort <- inCurlyBracesRemainderParser sortParser
-    (variable, qChild) <- parenPairParser variableParser childParser
+    (variable, qChild) <- parenPairParser singletonVariableParser childParser
     return (constructor sort variable qChild)
+
+{-|'muNuRemainderParser' parses the part after a mu or nu
+operator's name and the first open curly brace and constructs it using the
+provided constructor.
+It uses an open recursion scheme for the children.
+
+BNF fragment:
+
+@
+... ::= ... ‘}’ ‘(’ ⟨set-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
+@
+
+-}
+muNuRemainderParser
+    :: Parser child
+    -> (SetVariable Variable -> child -> m child)
+    -- ^ Element constructor.
+    -> Parser (m child)
+muNuRemainderParser childParser constructor = do
+    closedCurlyBraceParser
+    (variable, qChild) <- parenPairParser setVariableParser childParser
+    return (constructor variable qChild)
 
 {-|'ceilFloorRemainderParser' parses the part after a ceil or floor
 operator's name and the first open curly brace and constructs it using the
@@ -380,19 +402,31 @@ variableRemainderParser identifier = do
         , variableCounter = mempty
         }
 
-{-|'variableParser' parses either an @object-variable@, or a @meta-variable@.
+{-|'variableParser' parses a variable
 
 BNF definitions:
 
 @
-⟨object-variable⟩ ::= ⟨object-identifier⟩ ‘:’ ⟨object-sort⟩
-⟨meta-variable⟩ ::= ⟨meta-identifier⟩ ‘:’ ⟨meta-sort⟩
+⟨variable⟩ ::= ⟨identifier⟩ ‘:’ ⟨sort⟩
+⟨set-variable⟩ ::= ⟨set-variable-identifier⟩ ‘:’ ⟨sort⟩
 @
 
-The @meta-@ version always starts with @#@, while the @object-@ one does not.
+The @set-@ version always starts with @#@, while the regular one does not.
 -}
 variableParser :: Parser Variable
 variableParser = idParser >>= variableRemainderParser
+
+singletonVariableParser :: Parser Variable
+singletonVariableParser = do
+    c <- ParserUtils.peekChar'
+    if c == '#' then fail "Expecting singleton variable token"
+    else variableParser
+
+setVariableParser :: Parser (SetVariable Variable)
+setVariableParser = do
+    c <- ParserUtils.peekChar'
+    if c == '#' then SetVariable <$> variableParser
+    else fail "Expecting set variable token"
 
 {-|'variableOrTermPatternParser' parses an (object or meta) (variable pattern or
 application pattern), using an open recursion scheme for its children.
@@ -616,8 +650,12 @@ mlConstructorRemainderParser childParser domainValueParser' patternType =
             binaryOperatorRemainderParser childParser Implies
         InPatternType -> InF <$>
             equalsInRemainderParser childParser In
+        MuPatternType -> MuF <$>
+            muNuRemainderParser childParser Mu
         NotPatternType -> NotF <$>
             unaryOperatorRemainderParser childParser Not
+        NuPatternType -> NuF <$>
+            muNuRemainderParser childParser Nu
         OrPatternType -> OrF <$>
             binaryOperatorRemainderParser childParser Or
         TopPatternType -> TopF <$>

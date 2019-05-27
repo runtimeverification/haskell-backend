@@ -47,8 +47,10 @@ test_koreParser =
     , testGroup "iffPatternParser" iffPatternParserTests
     , testGroup "impliesPatternParser" impliesPatternParserTests
     , testGroup "memPatternParser" memPatternParserTests
+    , testGroup "muPatternParser" muPatternParserTests
     , testGroup "nextPatternParser" nextPatternParserTests
     , testGroup "notPatternParser" notPatternParserTests
+    , testGroup "nuPatternParser" nuPatternParserTests
     , testGroup "orPatternParser" orPatternParserTests
     , testGroup "rewritesPatternParser" rewritesPatternParserTests
     , testGroup "stringLiteralPatternParser" stringLiteralPatternParserTests
@@ -304,7 +306,7 @@ metaSymbolParserTests =
 
 variableParserTests :: [TestTree]
 variableParserTests =
-    parseTree variableParser
+    parseTree singletonVariableParser
         [ success "v:s"
             Variable
                 { variableName = testId "v"
@@ -321,7 +323,7 @@ variableParserTests =
                         }
                 , variableCounter = mempty
                 }
-        , FailureWithoutMessage ["", "var", "v:", ":s"]
+        , FailureWithoutMessage ["", "var", "v:", ":s", "#v:s"]
         ]
 
 andPatternParserTests :: [TestTree]
@@ -476,13 +478,13 @@ equalsPatternParserTests =
 existsPatternParserTests :: [TestTree]
 existsPatternParserTests =
     parseTree korePatternParser
-        [ success "\\exists{#s}(#v:#Char, \"b\")"
+        [ success "\\exists{s}(v:Char, \"b\")"
             (asParsedPattern $ ExistsF Exists
-                    { existsSort = sortVariableSort "#s" :: Sort
+                    { existsSort = sortVariableSort "s" :: Sort
                     , existsVariable =
                         Variable
-                            { variableName = testId "#v"
-                            , variableSort = sortVariableSort "#Char"
+                            { variableName = testId "v"
+                            , variableSort = sortVariableSort "Char"
                             , variableCounter = mempty
                             }
                     , existsChild =
@@ -502,6 +504,7 @@ existsPatternParserTests =
             , "\\exists{s}"
             , "\\exists"
             , "\\exists(v:s1, \"b\")"
+            , "\\exists{s}(#v:s, \"b\")"
             ]
         ]
 floorPatternParserTests :: [TestTree]
@@ -636,6 +639,38 @@ memPatternParserTests =
             , "\\in(v:s1, \"b\")"
             ]
         ]
+muPatternParserTests :: [TestTree]
+muPatternParserTests =
+    parseTree korePatternParser
+        [ success "\\mu{}(#v:s, \\top{s}())"
+            (asParsedPattern $ MuF Mu
+                    { muVariable =
+                        SetVariable Variable
+                            { variableName = testId "#v"
+                            , variableSort = sortVariableSort "s"
+                            , variableCounter = mempty
+                            }
+                    , muChild =
+                        asParsedPattern $ TopF (Top (sortVariableSort "s"))
+                    }
+            )
+        , FailureWithoutMessage
+            [ ""
+            , "\\mu{}(v:s, \\top{s}())"
+            , "\\mu{}(v:s1, \"b\")"
+            , "\\mu{s,s}(v:s1, \"b\")"
+            , "\\mu{s}(\"b\", \"b\")"
+            , "\\mu{s}(, \"b\")"
+            , "\\mu{s}(\"b\")"
+            , "\\mu{s}(v:s1, )"
+            , "\\mu{s}(v:s1)"
+            , "\\mu{s}()"
+            , "\\mu{s}"
+            , "\\mu"
+            , "\\mu(v:s1, \"b\")"
+            , "\\mu{s}(#v:s, \"b\")"
+            ]
+        ]
 notPatternParserTests :: [TestTree]
 notPatternParserTests =
     parseTree korePatternParser
@@ -674,6 +709,38 @@ nextPatternParserTests =
             , "\\next{s}(\"a\", \"b\")"
             , "\\next{s}"
             , "\\next(\"a\")"
+            ]
+        ]
+nuPatternParserTests :: [TestTree]
+nuPatternParserTests =
+    parseTree korePatternParser
+        [ success "\\nu{}(#v:s, \\top{s}())"
+            (asParsedPattern $ NuF Nu
+                    { nuVariable =
+                        SetVariable Variable
+                            { variableName = testId "#v"
+                            , variableSort = sortVariableSort "s"
+                            , variableCounter = mempty
+                            }
+                    , nuChild =
+                        asParsedPattern $ TopF (Top (sortVariableSort "s"))
+                    }
+            )
+        , FailureWithoutMessage
+            [ ""
+            , "\\nu{}(v:s, \\top{s}())"
+            , "\\nu{}(v:s1, \"b\")"
+            , "\\nu{s,s}(v:s1, \"b\")"
+            , "\\nu{s}(\"b\", \"b\")"
+            , "\\nu{s}(, \"b\")"
+            , "\\nu{s}(\"b\")"
+            , "\\nu{s}(v:s1, )"
+            , "\\nu{s}(v:s1)"
+            , "\\nu{s}()"
+            , "\\nu{s}"
+            , "\\nu"
+            , "\\nu(v:s1, \"b\")"
+            , "\\nu{s}(#v:s, \"b\")"
             ]
         ]
 orPatternParserTests :: [TestTree]
