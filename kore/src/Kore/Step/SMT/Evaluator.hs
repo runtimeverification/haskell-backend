@@ -54,7 +54,6 @@ decidePredicate
         , Unparse variable
         , SortedVariable variable
         , MonadSMT m
-        , MonadReader Environment m
         , MonadIO m
         )
     => Predicate variable
@@ -84,7 +83,6 @@ goTranslatePredicate
         , Unparse variable
         , MonadIO m
         , MonadSMT m
-        , MonadReader Environment m
         )
     => Predicate variable
     -> MaybeT m SExpr
@@ -97,7 +95,6 @@ translateUninterpreted
     :: Ord p
     => MonadIO m
     => MonadSMT m
-    => MonadReader Environment m
     => SExpr  -- ^ type name
     -> p  -- ^ uninterpreted pattern
     -> Translator m p SExpr

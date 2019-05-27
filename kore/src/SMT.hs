@@ -151,15 +151,9 @@ newtype SMT a = SMT { getSMT :: ReaderT Environment IO a }
         , MonadCatch
         , MonadIO
         , MonadThrow
-        , Reader.MonadReader Environment
         )
 
 Lens.makeLenses ''Environment
-
-withSolver' :: (Solver -> IO a) -> SMT a
-withSolver' action = do
-    solver'   <- solver <$> Reader.ask
-    liftIO $ withMVar solver' action
 
 -- | Access 'SMT' through monad transformers.
 class Monad m => MonadSMT m where
@@ -168,15 +162,14 @@ class Monad m => MonadSMT m where
         ::  ( Trans.MonadTrans t
             , MonadSMT n
             , MonadIO n
-            , Reader.MonadReader Environment m
             , m ~ t n
             )
         => m a
         -> m a
-    withSolver action = do
-        solver'   <- solver <$> Reader.ask
-        newSolver <- Trans.lift . liftIO $ readMVar solver' >>= newMVar
-        Reader.local (lensSolver Lens..~ newSolver) action
+    withSolver action = undefined
+        -- solver'   <- solver <$> Reader.ask
+        -- newSolver <- Trans.lift . liftIO $ readMVar solver' >>= newMVar
+        -- Reader.local (lensSolver Lens..~ newSolver) action
 
     -- push :: m ()
     -- pop :: m ()
@@ -257,9 +250,20 @@ class Monad m => MonadSMT m where
         -> m ()
     loadFile = Trans.lift . loadFile
 
+withSolver' :: (Solver -> IO a) -> SMT a
+withSolver' action = SMT $ do
+    solver'   <- solver <$> Reader.ask
+    liftIO $ withMVar solver' action
+
+instance Logger.WithLog Logger.LogMessage SMT where
+    askLogAction = SMT $ logger <$> Reader.ask
+    withLog mapping =
+        SMT
+            . Reader.local (\env -> env { logger = mapping (logger env) })
+            . getSMT
 
 instance MonadSMT SMT where
-    withSolver action = do
+    withSolver (SMT action) = SMT $ do
         solver'   <- solver <$> Reader.ask
         newSolver <- liftIO $ readMVar solver' >>= newMVar
         Reader.local (lensSolver Lens..~ newSolver) action
@@ -291,26 +295,22 @@ instance MonadSMT SMT where
         withSolver' $ \solver -> SimpleSMT.loadFile solver path
 
 instance
-    ( Reader.MonadReader Environment m
-    , MonadSMT m
+    ( MonadSMT m
     , MonadIO m
     ) => MonadSMT (Maybe.MaybeT m) where
 
 instance
-    ( Reader.MonadReader Environment m
-    , MonadSMT m
+    ( MonadSMT m
     , MonadIO m
     ) => MonadSMT (State.Lazy.StateT s m) where
 
 instance
-    ( Reader.MonadReader Environment m
-    , MonadSMT m
+    ( MonadSMT m
     , MonadIO m
     ) => MonadSMT (Counter.CounterT m) where
 
 instance
-    ( Reader.MonadReader Environment m
-    , MonadSMT m
+    ( MonadSMT m
     , MonadIO m
     ) => MonadSMT (State.Strict.StateT s m) where
 

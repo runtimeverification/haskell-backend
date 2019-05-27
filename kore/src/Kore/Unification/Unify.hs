@@ -110,16 +110,6 @@ instance
     gather = UnifierTT . Monad.Trans.lift . BranchT.gather . getUnifier
     scatter = UnifierTT . BranchT.scatter
 
-instance
-    ( MonadReader
-        Environment
-        (m (ExceptT UnificationOrSubstitutionError Simplifier))
-    , MonadTrans m
-    )
-    => MonadReader Environment (UnifierTT m)
-  where
-    ask = liftSimplifier ask
-    local f (UnifierTT ma) = UnifierTT $ local f ma
 
 instance MonadPlus (UnifierTT m) where
 
@@ -132,9 +122,9 @@ instance
     => Log.WithLog Log.LogMessage (UnifierTT m)
   where
     askLogAction = do
-        Log.LogAction logger <- liftSimplifier $ logger <$> ask
+        Log.LogAction logger <- liftSimplifier $ Log.askLogAction
         return
-            . Log.hoistLogAction (liftSimplifier . Simplifier)
+            . Log.hoistLogAction liftSimplifier
             $ Log.LogAction logger
 
     withLog f = UnifierTT . Log.withLog f . getUnifier

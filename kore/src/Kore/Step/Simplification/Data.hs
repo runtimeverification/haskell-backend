@@ -1,3 +1,6 @@
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DerivingVia        #-}
+
 {-|
 Module      : Kore.Step.Simplification.Data
 Description : Data structures used for term simplification.
@@ -182,42 +185,15 @@ A @Simplifier@ can write to the log through 'HasLog'.
 newtype Simplifier a = Simplifier
     { getSimplifier :: SMT a
     }
-    deriving (Applicative, Functor, Monad)
-
-instance MonadSMT Simplifier where
-    withSolver       = Simplifier . withSolver . getSimplifier
-    declare text     = Simplifier . declare text
-    declareFun       = Simplifier . declareFun
-    declareSort      = Simplifier . declareSort
-    declareDatatype  = Simplifier . declareDatatype
-    declareDatatypes = Simplifier . declareDatatypes
-    assert           = Simplifier . assert
-    check            = Simplifier check
-    ackCommand       = Simplifier . ackCommand
-    loadFile         = Simplifier . loadFile
-
-instance MonadIO Simplifier where
-    liftIO :: IO a -> Simplifier a
-    liftIO = Simplifier . liftIO
-
-instance MonadThrow Simplifier where
-    throwM :: Exception e => e -> Simplifier a
-    throwM = Simplifier . throwM
-
-instance MonadCatch Simplifier where
-    catch :: Exception e => Simplifier a -> (e -> Simplifier a) -> Simplifier a
-    catch (Simplifier ra) f = Simplifier $ catch ra (getSimplifier . f)
-
-instance MonadReader Environment Simplifier where
-    ask :: Simplifier Environment
-    ask = Simplifier ask
-
-    local :: (Environment -> Environment) -> Simplifier a -> Simplifier a
-    local f s = Simplifier $ local f $ getSimplifier s
+    deriving (Applicative, Functor, Monad, MonadCatch, MonadIO, MonadThrow)
+    deriving MonadSMT via SMT
 
 instance WithLog LogMessage Simplifier where
-    askLogAction = hoistLogAction Simplifier <$> asks logger
-    withLog f = local (\env -> env { logger = f (logger env) })
+    askLogAction = Simplifier $ hoistLogAction Simplifier <$> askLogAction
+    withLog mapping =
+        Simplifier
+        . withLog mapping
+        . getSimplifier
 
 {- | Run a simplification, returning the results along all branches.
  -}
