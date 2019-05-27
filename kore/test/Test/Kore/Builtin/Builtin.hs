@@ -8,7 +8,7 @@ module Test.Kore.Builtin.Builtin
     , testSymbolWithSolver
     , evaluate
     , evaluateToList
-    , evaluateWith
+    -- , evaluateWith
     , indexedModule
     , runStepWith
     , runSMT
@@ -18,7 +18,7 @@ import qualified Hedgehog
 import           Test.Tasty
                  ( TestTree )
 import           Test.Tasty.HUnit
-                 ( assertEqual )
+                 ( assertEqual, testCase )
 
 import           Control.Concurrent.MVar
                  ( MVar )
@@ -79,7 +79,6 @@ import qualified SMT
 import           Test.Kore
 import           Test.Kore.Builtin.Definition
 import qualified Test.Kore.Step.MockSimplifiers as Mock
-import           Test.SMT
 
 mkPair
     :: Sort
@@ -110,8 +109,8 @@ testSymbolWithSolver
     -- ^ expected result
     -> TestTree
 testSymbolWithSolver eval title resultSort symbol args expected =
-    testCaseWithSolver title $ \solver -> do
-        actual <- runReaderT (SMT.getSMT eval') solver
+    testCase title $ do
+        actual <- runSMT eval'
         assertEqual "" expected actual
   where
     eval' = eval $ mkApp resultSort symbol args
@@ -193,39 +192,35 @@ testTermLikeSimplifier :: TermLikeSimplifier
 testTermLikeSimplifier = Simplifier.create testMetadataTools testEvaluators
 
 evaluate
-    :: MonadSMT m
-    => TermLike Variable
-    -> m (Pattern Variable)
+    :: TermLike Variable
+    -> SMT (Pattern Variable)
 evaluate =
-    liftSMT
-    . evalSimplifier emptyLogger
+    evalSimplifier
     . TermLike.simplify
         testMetadataTools
         testSubstitutionSimplifier
         testEvaluators
 
 evaluateToList
-    :: MonadSMT m
-    => TermLike Variable
-    -> m [Pattern Variable]
+    :: TermLike Variable
+    -> SMT [Pattern Variable]
 evaluateToList =
     fmap MultiOr.extractPatterns
-    . liftSMT
-    . evalSimplifier emptyLogger
+    . evalSimplifier
     . TermLike.simplifyToOr
         testMetadataTools
         testEvaluators
         testSubstitutionSimplifier
 
-evaluateWith
-    :: MVar Solver
-    -> TermLike Variable
-    -> IO (Pattern Variable)
-evaluateWith solver patt =
-    runReaderT (SMT.getSMT $ evaluate patt) solver
+-- evaluateWith
+--     :: MVar Solver
+--     -> TermLike Variable
+--     -> IO (Pattern Variable)
+-- evaluateWith solver patt =
+--     runReaderT (SMT.getSMT $ evaluate patt) solver
 
 runSMT :: SMT a -> IO a
-runSMT = SMT.runSMT SMT.defaultConfig
+runSMT = SMT.runSMT SMT.defaultConfig emptyLogger
 
 runStepWith
     :: MVar Solver
@@ -247,7 +242,8 @@ runStepResultWith
     -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
 runStepResultWith solver configuration axiom =
     let smt =
-            evalSimplifier emptyLogger
+            runSMT
+            $ evalSimplifier
             $ Monad.Unify.runUnifier
             $ Step.applyRewriteRules
                 testMetadataTools
@@ -257,7 +253,7 @@ runStepResultWith solver configuration axiom =
                 (Step.UnificationProcedure Unification.unificationProcedure)
                 [axiom]
                 configuration
-    in runReaderT (SMT.getSMT (fmap Result.mergeResults <$> smt)) solver
+    in fmap Result.mergeResults <$> smt
 
 
 -- | Test unparsing internalized patterns.

@@ -294,7 +294,7 @@ runSimplifier
     :: Simplifier a
     -> IO a
 runSimplifier =
-    SMT.runSMT SMT.defaultConfig . evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger . evalSimplifier
 
 runWithState
     :: ReplCommand
@@ -314,7 +314,7 @@ runWithState command axioms claims claim stateTransformer
   where
     logOptions = Logger.KoreLogOptions Logger.LogNone Logger.Debug
     liftSimplifier logger =
-        SMT.runSMT SMT.defaultConfig . evalSimplifier logger
+        SMT.runSMT SMT.defaultConfig logger . evalSimplifier
     state = stateTransformer $ mkState axioms claims claim
     writeIORefIfNotEmpty out =
         \case

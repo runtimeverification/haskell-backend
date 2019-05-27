@@ -18,7 +18,6 @@ import           Kore.Internal.TermLike
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.Kore.Comparators ()
-import Test.SMT
 
 test_or :: TestTree
 test_or = testBinary orBoolSymbol (||)
