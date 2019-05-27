@@ -8,7 +8,8 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 
 module Kore.Repl
     ( runRepl
-    , InitialScript (..)
+    , ReplScript (..)
+    , ReplMode (..)
     ) where
 
 import           Control.Exception
@@ -16,11 +17,9 @@ import           Control.Exception
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import           Control.Monad
-                 ( when )
+                 ( forever, void, when )
 import           Control.Monad.Catch
                  ( MonadCatch, catch )
-import           Control.Monad.Extra
-                 ( whileM )
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.State.Strict
@@ -33,6 +32,7 @@ import           Data.Maybe
                  ( listToMaybe )
 import qualified Data.Sequence as Seq
 import           Kore.Attribute.RuleIndex
+import           System.Exit
 import           System.IO
                  ( hFlush, stdout )
 import           Text.Megaparsec
@@ -73,9 +73,12 @@ import           Kore.Unparser
 
 -- | Represents an optional file name which contains a sequence of
 -- repl commands.
-newtype InitialScript = InitialScript
-    { unInitialScript :: Maybe FilePath
+newtype ReplScript = ReplScript
+    { unReplScript :: Maybe FilePath
     } deriving (Eq, Show)
+
+data ReplMode = Interactive | RunScript
+    deriving (Eq, Show)
 
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
 -- that would otherwise be required in the proof and allows for step-by-step
@@ -96,26 +99,44 @@ runRepl
     -- ^ list of axioms to used in the proof
     -> [claim]
     -- ^ list of claims to be proven
-    -> InitialScript
-    -- ^ optional initial script
+    -> ReplScript
+    -- ^ optional script
+    -> ReplMode
+    -- ^ mode to run in
     -> Simplifier ()
 runRepl
     tools simplifier predicateSimplifier axiomToIdSimplifier
-    axioms' claims' initScript
+    axioms' claims' replScript replMode
   = do
-    let mscript = unInitialScript initScript
-    newState <- maybe (pure state) (parseEvalScript state) mscript
-    replGreeting
-    evalStateT (whileM repl0) newState
+    mNewState <- evaluateScript replScript
+    case replMode of
+        Interactive -> do
+            replGreeting
+            evalStateT (forever repl0) (maybe state id mNewState)
+        RunScript ->
+            case mNewState of
+                Nothing -> liftIO exitFailure
+                Just newState ->
+                    void
+                    $ evalStateT
+                        (replInterpreter printIfNotEmpty Exit)
+                        newState
 
   where
 
-    repl0 :: StateT (ReplState claim) Simplifier Bool
+    evaluateScript :: ReplScript -> Simplifier (Maybe (ReplState claim))
+    evaluateScript rs =
+        maybe
+            (pure . pure $ state)
+            (parseEvalScript state)
+            (unReplScript rs)
+
+    repl0 :: StateT (ReplState claim) Simplifier ()
     repl0 = do
         str <- prompt
         let command = maybe ShowUsage id $ parseMaybe commandParser str
         when (shouldStore command) $ lensCommands Lens.%= (Seq.|> str)
-        replInterpreter printIfNotEmpty command
+        void $ replInterpreter printIfNotEmpty command
 
     state :: ReplState claim
     state =
