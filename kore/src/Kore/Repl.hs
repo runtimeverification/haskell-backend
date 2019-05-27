@@ -106,11 +106,9 @@ runRepl
     -> Simplifier ()
 runRepl
     tools simplifier predicateSimplifier axiomToIdSimplifier
-    axioms' claims' initScript replMode
+    axioms' claims' replScript replMode
   = do
-    let mscript = unReplScript initScript
-    mNewState <-
-        maybe (pure . pure $ state) (parseEvalScript state) mscript
+    mNewState <- evaluateScript replScript
     case replMode of
         Interactive -> do
             replGreeting
@@ -125,6 +123,13 @@ runRepl
                         newState
 
   where
+
+    evaluateScript :: ReplScript -> Simplifier (Maybe (ReplState claim))
+    evaluateScript rs =
+        maybe
+            (pure . pure $ state)
+            (parseEvalScript state)
+            (unReplScript rs)
 
     repl0 :: StateT (ReplState claim) Simplifier ()
     repl0 = do

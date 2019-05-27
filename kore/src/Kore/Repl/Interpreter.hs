@@ -208,14 +208,13 @@ exit
     => ReplM claim ReplStatus
 exit = do
     proofs <- allProofs
-    let isCompleted = foldr (&&) True
-                        ( fmap
-                          (\x -> x == Completed)
-                          (Map.elems proofs)
-                        )
-    if isCompleted == True
+    if isCompleted (Map.elems proofs) == True
        then return SuccessStop
        else return FailStop
+  where
+    isCompleted :: [GraphProofStatus] -> Bool
+    isCompleted xs =
+        foldr (&&) True (fmap (\x -> x == Completed) xs)
 
 help :: MonadWriter String m => m ()
 help = putStrLn' helpText

@@ -187,12 +187,14 @@ mainWithOptions
                 }
     if replMode == RunScript && (unReplScript replScript) == Nothing
        then do
-           putStrLn "You must supply the path to the repl script in order to run the repl in run-script mode."
+           putStrLn "You must supply the path to the repl script\
+                    \ in order to run the repl in run-script mode."
            exitFailure
        else do
            SMT.runSMT smtConfig
                $ evalSimplifier emptyLogger
-               $ proveWithRepl indexedModule specDefIndexedModule replScript replMode
+               $ proveWithRepl
+                    indexedModule specDefIndexedModule replScript replMode
 
   where
     mainModuleName :: ModuleName
