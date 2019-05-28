@@ -19,8 +19,10 @@ module Kore.Syntax
     , module Kore.Syntax.Iff
     , module Kore.Syntax.Implies
     , module Kore.Syntax.In
+    , module Kore.Syntax.Mu
     , module Kore.Syntax.Next
     , module Kore.Syntax.Not
+    , module Kore.Syntax.Nu
     , module Kore.Syntax.Or
     , PatternF (..)
     , module Kore.Syntax.Pattern
@@ -46,8 +48,10 @@ import Kore.Syntax.Forall
 import Kore.Syntax.Iff
 import Kore.Syntax.Implies
 import Kore.Syntax.In
+import Kore.Syntax.Mu
 import Kore.Syntax.Next
 import Kore.Syntax.Not
+import Kore.Syntax.Nu
 import Kore.Syntax.Or
 import Kore.Syntax.Pattern
 import Kore.Syntax.PatternF

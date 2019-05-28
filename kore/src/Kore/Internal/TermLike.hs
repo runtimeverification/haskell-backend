@@ -39,8 +39,10 @@ module Kore.Internal.TermLike
     , mkIff
     , mkImplies
     , mkIn
+    , mkMu
     , mkNext
     , mkNot
+    , mkNu
     , mkOr
     , mkRewrites
     , mkTop
@@ -117,8 +119,10 @@ module Kore.Internal.TermLike
     , module Kore.Syntax.Iff
     , module Kore.Syntax.Implies
     , module Kore.Syntax.In
+    , module Kore.Syntax.Mu
     , module Kore.Syntax.Next
     , module Kore.Syntax.Not
+    , module Kore.Syntax.Nu
     , module Kore.Syntax.Or
     , module Kore.Syntax.Rewrites
     , module Kore.Syntax.SetVariable
@@ -186,8 +190,10 @@ import           Kore.Syntax.Forall
 import           Kore.Syntax.Iff
 import           Kore.Syntax.Implies
 import           Kore.Syntax.In
+import           Kore.Syntax.Mu
 import           Kore.Syntax.Next
 import           Kore.Syntax.Not
+import           Kore.Syntax.Nu
 import           Kore.Syntax.Or
 import           Kore.Syntax.Rewrites
 import           Kore.Syntax.SetVariable
@@ -247,8 +253,10 @@ data TermLikeF variable child
     | IffF           !(Iff Sort child)
     | ImpliesF       !(Implies Sort child)
     | InF            !(In Sort child)
+    | MuF            !(Mu variable child)
     | NextF          !(Next Sort child)
     | NotF           !(Not Sort child)
+    | NuF            !(Nu variable child)
     | OrF            !(Or Sort child)
     | RewritesF      !(Rewrites Sort child)
     | StringLiteralF !StringLiteral
@@ -320,6 +328,8 @@ traverseVariablesF traversing =
         -- Non-trivial cases
         ExistsF any0 -> ExistsF <$> traverseVariablesExists any0
         ForallF all0 -> ForallF <$> traverseVariablesForall all0
+        MuF any0 -> MuF <$> traverseVariablesMu any0
+        NuF any0 -> NuF <$> traverseVariablesNu any0
         VariableF variable -> VariableF <$> traversing variable
         SetVariableF (SetVariable variable) ->
             SetVariableF . SetVariable <$> traversing variable
@@ -349,6 +359,10 @@ traverseVariablesF traversing =
         Exists existsSort <$> traversing existsVariable <*> pure existsChild
     traverseVariablesForall Forall { forallSort, forallVariable, forallChild } =
         Forall forallSort <$> traversing forallVariable <*> pure forallChild
+    traverseVariablesMu Mu { muVariable = SetVariable v, muChild } =
+        Mu <$> (SetVariable <$> traversing v) <*> pure muChild
+    traverseVariablesNu Nu { nuVariable = SetVariable v, nuChild } =
+        Nu <$> (SetVariable <$> traversing v) <*> pure nuChild
 
 newtype TermLike variable =
     TermLike
@@ -876,6 +890,8 @@ forceSort forcedSort = Recursive.apo forceSortWorker
                   where
                     forall'' = forall' { forallSort = forcedSort }
                 -- Rigid: These patterns should never have sort _PREDICATE{}.
+                MuF _ -> illSorted
+                NuF _ -> illSorted
                 ApplicationF _ -> illSorted
                 BuiltinF _ -> illSorted
                 DomainValueF _ -> illSorted
@@ -1429,6 +1445,30 @@ mkIn_
     -> TermLike variable
 mkIn_ = mkIn predicateSort
 
+{- | Construct a 'Mu' pattern.
+ -}
+mkMu
+    :: Ord variable
+    => SortedVariable variable
+    => Unparse variable
+    => SetVariable variable
+    -> TermLike variable
+    -> TermLike variable
+mkMu muVar = makeSortsAgree mkMuWorker (mkSetVar muVar)
+  where
+    mkMuWorker (SetVar_ muVariable) muChild _ =
+           Recursive.embed (attrs :< MuF mu)
+      where
+        attrs =
+            Attribute.Pattern
+                { patternSort = sortedVariableSort v
+                , freeVariables  = Set.delete v freeVariablesChild
+                }
+        v = getVariable muVariable
+        freeVariablesChild = freeVariables muChild
+        mu = Mu { muVariable, muChild }
+    mkMuWorker _ _ _ = error "Unreachable code"
+
 {- | Construct a 'Next' pattern.
  -}
 mkNext :: TermLike variable -> TermLike variable
@@ -1456,6 +1496,30 @@ mkNot notChild =
             }
     notSort = termLikeSort notChild
     not' = Not { notSort, notChild }
+
+{- | Construct a 'Nu' pattern.
+ -}
+mkNu
+    :: Ord variable
+    => SortedVariable variable
+    => Unparse variable
+    => SetVariable variable
+    -> TermLike variable
+    -> TermLike variable
+mkNu nuVar = makeSortsAgree mkNuWorker (mkSetVar nuVar)
+  where
+    mkNuWorker (SetVar_ nuVariable) nuChild _ =
+           Recursive.embed (attrs :< NuF nu)
+      where
+        attrs =
+            Attribute.Pattern
+                { patternSort = sortedVariableSort v
+                , freeVariables  = Set.delete v freeVariablesChild
+                }
+        v = getVariable nuVariable
+        freeVariablesChild = freeVariables nuChild
+        nu = Nu { nuVariable, nuChild }
+    mkNuWorker _ _ _ = error "Unreachable code"
 
 {- | Construct an 'Or' pattern.
  -}
@@ -1543,9 +1607,9 @@ validVar var =
 
 {- | Construct a set variable pattern.
  -}
-mkSetVar :: SortedVariable variable => variable -> TermLike variable
-mkSetVar var =
-    Recursive.embed (validVar var :< SetVariableF (SetVariable var))
+mkSetVar :: SortedVariable variable => SetVariable variable -> TermLike variable
+mkSetVar setVar@(SetVariable var) =
+    Recursive.embed (validVar var :< SetVariableF setVar)
 
 {- | Construct a 'StringLiteral' pattern.
  -}
@@ -1811,6 +1875,8 @@ pattern Top_ :: Sort -> TermLike variable
 
 pattern Var_ :: variable -> TermLike variable
 
+pattern SetVar_ :: SetVariable variable -> TermLike variable
+
 pattern StringLiteral_ :: Text -> TermLike variable
 
 pattern CharLiteral_ :: Char -> TermLike variable
@@ -1917,6 +1983,9 @@ pattern Top_ topSort <-
 
 pattern Var_ variable <-
     (Recursive.project -> _ :< VariableF variable)
+
+pattern SetVar_ setVariable <-
+    (Recursive.project -> _ :< SetVariableF setVariable)
 
 pattern V :: variable -> TermLike variable
 pattern V x <- Var_ x
