@@ -34,6 +34,9 @@ module Kore.Attribute.Symbol.Symbol
     -- * Hooked symbols
     , lensHook, Hook (..)
     , hookAttribute
+    -- * Inductive symbols
+    , lensInductive, Inductive
+    , inductiveAttribute
     -- * SMT symbols
     , Smthook (..)
     , smthookAttribute
@@ -61,6 +64,8 @@ import Kore.Attribute.Parser
 import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib
 import Kore.Attribute.SortInjection
+import Kore.Attribute.Symbol.Inductive
+       ( Inductive, inductiveAttribute )
 
 {- | Symbol attributes used during Kore execution.
 
@@ -84,6 +89,8 @@ data Symbol =
       -- ^ Whether a symbol is a sort injection
     , hook          :: !Hook
       -- ^ The builtin sort or symbol hooked to a sort or symbol
+    , inductive     :: !Inductive
+      -- ^ The symbol is inductively defined
     , smtlib        :: !Smtlib
     , smthook       :: !Smthook
     }
@@ -103,6 +110,7 @@ instance ParseAttributes Symbol where
         >=> lensSortInjection (parseAttribute attr)
         >=> lensInjective (parseAttribute attr)
         >=> lensHook (parseAttribute attr)
+        >=> lensInductive (parseAttribute attr)
         >=> lensSmtlib (parseAttribute attr)
         >=> lensSmthook (parseAttribute attr)
 
@@ -115,6 +123,7 @@ defaultSymbolAttributes =
         , injective      = def
         , sortInjection  = def
         , hook           = def
+        , inductive      = def
         , smtlib         = def
         , smthook        = def
         }
