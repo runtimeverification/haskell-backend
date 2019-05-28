@@ -709,11 +709,11 @@ unifyEquals
         -- TODO: take all possible subsets
         Reflection.give tools $ do
             let minSet = Set.difference set1 set2
-            additional <- Monad.Unify.scatter $ powerset (Set.toList set2)
+            additional <- Monad.Unify.scatter $ Set.toList (Set.powerSet set2)
             remainder <-
                 unifyEqualsChildren var
                 $ asInternal tools builtinSetSort
-                $ addAll additional minSet
+                $ Set.union additional minSet
             -- Return the concrete set, but capture any predicates and
             -- substitutions from unifying the framing variable.
             return $
@@ -807,12 +807,3 @@ addElemPatternToSet tools sort1 elemPattern existingSet =
             tools
             sort1
             (Set.insert concreteElemTerm existingSet)
-
-addAll :: Ord a => [a] -> Set a -> Set a
-addAll list set = Foldable.foldl' (flip Set.insert) set list
-
-powerset :: [a] -> [[a]]
-powerset [] = [[]]
-powerset (x:xs) = inner ++ map (x:) inner
-  where
-    inner = powerset xs
