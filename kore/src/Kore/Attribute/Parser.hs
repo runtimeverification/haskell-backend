@@ -38,6 +38,9 @@ module Kore.Attribute.Parser
     , getTwoArguments
     , getSymbolOrAlias
     , Kore.Attribute.Parser.getStringLiteral
+    , parseSExpr
+    , parseReadS
+    , parseInteger
       -- * Re-exports
     , AttributePattern
     , asAttributePattern
@@ -69,6 +72,7 @@ import qualified Data.List as List
 import qualified Data.Maybe as Maybe
 import           Data.Text
                  ( Text )
+import qualified Data.Text as Text
 import           GHC.Generics
                  ( Generic )
 
@@ -257,6 +261,36 @@ getStringLiteral kore =
     case Recursive.project kore of
         _ :< StringLiteralF lit -> return lit
         _ -> Kore.Error.koreFail "expected string literal pattern"
+
+{- | Parse a 'Text' through 'ReadS'.
+
+See also: 'parseInteger'
+
+ -}
+parseReadS :: ReadS a -> Text -> Parser a
+parseReadS aReadS (Text.unpack -> syntax) =
+    case aReadS syntax of
+        [ ] -> noParse
+        r : rs ->
+            case rs of
+                _ : _ -> ambiguousParse
+                _ | null unparsed -> return a
+                  | otherwise     -> incompleteParse unparsed
+          where
+            (a, unparsed) = r
+  where
+    noParse = Kore.Error.koreFail ("failed to parse \"" ++ syntax ++ "\"")
+    ambiguousParse =
+        Kore.Error.koreFail
+        $ "parsing \"" ++ syntax ++ "\" was ambiguous"
+    incompleteParse unparsed =
+        Kore.Error.koreFail
+        $ "incomplete parse: failed to parse \"" ++ unparsed ++ "\""
+
+{- | Parse an 'Integer' from a 'StringLiteral'.
+ -}
+parseInteger :: StringLiteral -> Parser Integer
+parseInteger (StringLiteral literal) = parseReadS reads literal
 
 {- | Parse an 'SExpr' for the @smtlib@ attribute.
 
