@@ -35,7 +35,7 @@ module Kore.Attribute.Symbol.Symbol
     , lensHook, Hook (..)
     , hookAttribute
     -- * Inductive symbols
-    , lensInductive, Inductive
+    , lensInductive, Inductive (..)
     , inductiveAttribute
     -- * SMT symbols
     , Smthook (..)
@@ -65,7 +65,7 @@ import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib
 import Kore.Attribute.SortInjection
 import Kore.Attribute.Symbol.Inductive
-       ( Inductive, inductiveAttribute )
+       ( Inductive (..), inductiveAttribute )
 
 {- | Symbol attributes used during Kore execution.
 

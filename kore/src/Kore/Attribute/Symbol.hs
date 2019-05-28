@@ -42,7 +42,7 @@ module Kore.Attribute.Symbol
     , lensHook, Hook (..)
     , hookAttribute
     -- * Inductive symbols
-    , lensInductive, Inductive
+    , lensInductive, Inductive (..)
     , inductiveAttribute
     -- * SMT symbols
     , Smthook (..)
