@@ -12,6 +12,7 @@ import           Test.Tasty.HUnit
 import qualified Control.Monad as Monad
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
+import qualified Data.List as List
 import qualified Data.Reflection as Reflection
 import qualified Data.Sequence as Seq
 import           Data.Set
@@ -20,8 +21,6 @@ import qualified Data.Set as Set
 
 import           Kore.Attribute.Hook
                  ( Hook )
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
 import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.Set as Set
 import           Kore.IndexedModule.MetadataTools
@@ -30,11 +29,20 @@ import           Kore.Internal.MultiOr
                  ( MultiOr (..) )
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
+                 ( TermLike, fromConcrete, mkAnd, mkApp, mkEquals_, mkVar )
 import           Kore.Predicate.Predicate as Predicate
+import           Kore.Sort
+                 ( Sort )
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
+import           Kore.Syntax.Id
+                 ( Id )
+import           Kore.Syntax.Variable
+                 ( Concrete, Variable (Variable, variableName) )
+import qualified Kore.Syntax.Variable as DoNotUse
+                 ( Variable (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -48,8 +56,6 @@ import           Test.Kore.Builtin.Int
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.SMT
 import           Test.Tasty.HUnit.Extensions
@@ -61,7 +67,7 @@ genSetConcreteIntegerPattern :: Gen (Set (TermLike Concrete))
 genSetConcreteIntegerPattern =
     Set.map Test.Int.asInternal <$> genSetInteger
 
-genConcreteSet :: Gen Set.Builtin
+genConcreteSet :: Gen (Set (TermLike Concrete))
 genConcreteSet = genSetConcreteIntegerPattern
 
 genSetPattern :: Gen (TermLike Variable)
@@ -109,7 +115,7 @@ test_inConcat =
             values <- forAll genSetConcreteIntegerPattern
             let patIn = mkApp boolSort inSetSymbol [ patElem , patSet ]
                 patSet = asTermLike $ Set.insert elem' values
-                patElem = fromConcreteStepPattern elem'
+                patElem = fromConcrete elem'
                 patTrue = Test.Bool.asInternal True
                 predicate = mkEquals_ patTrue patIn
             (===) (Test.Bool.asPattern True) =<< evaluate patIn
@@ -183,9 +189,7 @@ test_toList =
         "SET.set2list is set2list"
         (do
             set1 <- forAll genSetConcreteIntegerPattern
-            let set2 =
-                    fmap fromConcreteStepPattern
-                    . Seq.fromList . Set.toList $ set1
+            let set2 = fmap fromConcrete . Seq.fromList . Set.toList $ set1
                 patSet2 = Test.List.asTermLike set2
                 patToList =
                     mkApp
@@ -217,6 +221,27 @@ test_size =
             (===) expect =<< evaluate patActual
             (===) Pattern.top =<< evaluate predicate
         )
+
+test_intersection_unit :: TestTree
+test_intersection_unit =
+    testPropertyWithSolver "intersection(as, unit()) === unit()" $ do
+        as <- forAll genSetPattern
+        let
+            original = intersectionSet as unitSet
+            expect = Pattern.fromTermLike (asInternal Set.empty)
+        (===) expect      =<< evaluate original
+        (===) Pattern.top =<< evaluate (mkEquals_ original unitSet)
+
+test_intersection_idem :: TestTree
+test_intersection_idem =
+    testPropertyWithSolver "intersection(as, as) === as" $ do
+        as <- forAll genConcreteSet
+        let
+            termLike = asTermLike as
+            original = intersectionSet termLike termLike
+            expect = Pattern.fromTermLike (asInternal as)
+        (===) expect      =<< evaluate original
+        (===) Pattern.top =<< evaluate (mkEquals_ original termLike)
 
 setVariableGen :: Sort -> Gen (Set Variable)
 setVariableGen sort =
@@ -328,6 +353,10 @@ selectFunctionPattern elementVar setVar permutation  =
     element = mkApp intSort absIntSymbol  [mkVar elementVar]
     singleton = mkApp setSort elementSetSymbol [ element ]
 
+makeElementVariable :: Variable -> TermLike Variable
+makeElementVariable var =
+    mkApp setSort elementSetSymbol [mkVar var]
+
 -- Given a function to scramble the arguments to concat, i.e.,
 -- @id@ or @reverse@, produces a pattern of the form
 -- `SetItem(X:Int) Rest:Set`, or `Rest:Set SetItem(X:Int)`, respectively.
@@ -337,9 +366,15 @@ selectPattern
     -> (forall a . [a] -> [a])  -- ^scrambling function
     -> TermLike Variable
 selectPattern elementVar setVar permutation  =
-    mkApp setSort concatSetSymbol $ permutation [element, mkVar setVar]
-  where
-    element = mkApp setSort elementSetSymbol [mkVar elementVar]
+    mkApp setSort concatSetSymbol
+    $ permutation [makeElementVariable elementVar, mkVar setVar]
+
+addSelectElement
+    :: Variable           -- ^element variable
+    -> TermLike Variable  -- ^existingPattern
+    -> TermLike Variable
+addSelectElement elementVar setPattern  =
+    mkApp setSort concatSetSymbol [makeElementVariable elementVar, setPattern]
 
 test_unifySelectFromEmpty :: TestTree
 test_unifySelectFromEmpty =
@@ -365,8 +400,10 @@ test_unifySelectFromEmpty =
         fnSelectPatRev `doesNotUnifyWith` emptySet
   where
     emptySet = asTermLike Set.empty
-    doesNotUnifyWith pat1 pat2 =
-            (===) Pattern.bottom =<< evaluate (mkAnd pat1 pat2)
+    doesNotUnifyWith pat1 pat2 = do
+        annotateShow pat1
+        annotateShow pat2
+        (===) Pattern.bottom =<< evaluate (mkAnd pat1 pat2)
 
 test_unifySelectFromSingleton :: TestTree
 test_unifySelectFromSingleton =
@@ -380,7 +417,7 @@ test_unifySelectFromSingleton =
             let selectPat       = selectPattern elementVar setVar id
                 selectPatRev    = selectPattern elementVar setVar reverse
                 singleton       = asInternal (Set.singleton concreteElem)
-                elemStepPattern = fromConcreteStepPattern concreteElem
+                elemStepPattern = fromConcrete concreteElem
                 expect =
                     Conditional
                         { term = singleton
@@ -399,6 +436,129 @@ test_unifySelectFromSingleton =
             (selectPatRev `unifiesWith` singleton) expect
         )
 
+test_unifySelectFromSingletonWithoutLeftovers :: TestTree
+test_unifySelectFromSingletonWithoutLeftovers =
+    testPropertyWithSolver
+        "unify a singleton set with an element variable"
+        (do
+            concreteElem <- forAll genConcreteIntegerPattern
+            elementVar <- forAll (standaloneGen $ variableGen intSort)
+            let selectPat       = makeElementVariable elementVar
+                singleton       = asInternal (Set.singleton concreteElem)
+                elemStepPattern = fromConcrete concreteElem
+                expect =
+                    Conditional
+                        { term = singleton
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [ (elementVar, elemStepPattern) ]
+                        }
+            -- { 5 } /\ SetItem(X:Int)
+            (singleton `unifiesWith` selectPat) expect
+            (selectPat `unifiesWith` singleton) expect
+        )
+
+test_unifySelectFromTwoElementSet :: TestTree
+test_unifySelectFromTwoElementSet =
+    testPropertyWithSolver
+        "unify a two element set with a variable selection pattern"
+        (do
+            concreteElem1 <- forAll genConcreteIntegerPattern
+            concreteElem2 <- forAll genConcreteIntegerPattern
+            Monad.when (concreteElem1 == concreteElem2) discard
+
+            elementVar <- forAll (standaloneGen $ variableGen intSort)
+            setVar <- forAll (standaloneGen $ variableGen setSort)
+            Monad.when (variableName elementVar == variableName setVar) discard
+
+            let selectPat = selectPattern elementVar setVar id
+                selectPatRev = selectPattern elementVar setVar reverse
+                set = asInternal (Set.fromList [concreteElem1, concreteElem2])
+                elemStepPattern1 = fromConcrete concreteElem1
+                elemStepPattern2 = fromConcrete concreteElem2
+                expect1 =
+                    Conditional
+                        { term = set
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [   ( setVar
+                                    , asInternal (Set.fromList [concreteElem2])
+                                    )
+                                , (elementVar, elemStepPattern1)
+                                ]
+                        }
+                expect2 =
+                    Conditional
+                        { term = set
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [   ( setVar
+                                    , asInternal (Set.fromList [concreteElem1])
+                                    )
+                                , (elementVar, elemStepPattern2)
+                                ]
+                        }
+            -- { 5 } /\ SetItem(X:Int) Rest:Set
+            (set `unifiesWithMulti` selectPat) [expect1, expect2]
+            (selectPat `unifiesWithMulti` set) [expect1, expect2]
+            -- { 5 } /\ Rest:Set SetItem(X:Int)
+            (set `unifiesWithMulti` selectPatRev) [expect1, expect2]
+            (selectPatRev `unifiesWithMulti` set) [expect1, expect2]
+        )
+
+test_unifySelectTwoFromTwoElementSet :: TestTree
+test_unifySelectTwoFromTwoElementSet =
+    testPropertyWithSolver
+        "unify a two element set with a variable selection pattern"
+        (do
+            concreteElem1 <- forAll genConcreteIntegerPattern
+            concreteElem2 <- forAll genConcreteIntegerPattern
+            Monad.when (concreteElem1 == concreteElem2) discard
+
+            elementVar1 <- forAll (standaloneGen $ variableGen intSort)
+            elementVar2 <- forAll (standaloneGen $ variableGen intSort)
+            setVar <- forAll (standaloneGen $ variableGen setSort)
+            let allVars = [elementVar1, elementVar2, setVar]
+            Monad.when (allVars /= List.nub allVars) discard
+
+            let
+                selectPat =
+                    addSelectElement elementVar1
+                    $ addSelectElement elementVar2
+                    $ mkVar setVar
+                set = asInternal (Set.fromList [concreteElem1, concreteElem2])
+                elemStepPattern1 = fromConcrete concreteElem1
+                elemStepPattern2 = fromConcrete concreteElem2
+                expect1 =
+                    Conditional
+                        { term = set
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [ (setVar, asInternal Set.empty)
+                                , (elementVar1, elemStepPattern1)
+                                , (elementVar2, elemStepPattern2)
+                                ]
+                        }
+                expect2 =
+                    Conditional
+                        { term = set
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [ (setVar, asInternal Set.empty)
+                                , (elementVar1, elemStepPattern2)
+                                , (elementVar2, elemStepPattern1)
+                                ]
+                    }
+            -- { 5, 6 } /\ SetItem(X:Int) SetItem(Y:Int) Rest:Set
+            (set `unifiesWithMulti` selectPat) [expect1, expect2]
+            (selectPat `unifiesWithMulti` set) [expect1, expect2]
+        )
+
 -- use as (pat1 `unifiesWith` pat2) expect
 unifiesWith
     :: HasCallStack
@@ -406,12 +566,41 @@ unifiesWith
     -> TermLike Variable
     -> Pattern Variable
     -> PropertyT SMT.SMT ()
-unifiesWith pat1 pat2 Conditional { term, predicate, substitution } = do
-    Conditional { term = uTerm, predicate = uPred, substitution = uSubst } <-
-        evaluate (mkAnd pat1 pat2)
-    Substitution.toMap substitution === Substitution.toMap uSubst
-    predicate === uPred
-    term === uTerm
+unifiesWith pat1 pat2 expected =
+    unifiesWithMulti pat1 pat2 [expected]
+
+-- use as (pat1 `unifiesWithMulti` pat2) expect
+unifiesWithMulti
+    :: HasCallStack
+    => TermLike Variable
+    -> TermLike Variable
+    -> [Pattern Variable]
+    -> PropertyT SMT.SMT ()
+unifiesWithMulti pat1 pat2 expectedResults = do
+    actualResults <- evaluateToList (mkAnd pat1 pat2)
+    compareElements (List.sort expectedResults) actualResults
+  where
+    compareElements [] actuals = [] === actuals
+    compareElements expecteds [] =  expecteds === []
+    compareElements (expected : expecteds) (actual : actuals) = do
+        compareElement expected actual
+        compareElements expecteds actuals
+    compareElement
+        Conditional
+            { term = expectedTerm
+            , predicate = expectedPredicate
+            , substitution = expectedSubstitution
+            }
+        Conditional
+            { term = actualTerm
+            , predicate = actualPredicate
+            , substitution = actualSubstitution
+            }
+      = do
+        Substitution.toMap expectedSubstitution
+            === Substitution.toMap actualSubstitution
+        expectedPredicate === actualPredicate
+        expectedTerm === actualTerm
 
 test_unifyFnSelectFromSingleton :: TestTree
 test_unifyFnSelectFromSingleton =
@@ -425,7 +614,7 @@ test_unifyFnSelectFromSingleton =
             let fnSelectPat    = selectFunctionPattern elementVar setVar id
                 fnSelectPatRev = selectFunctionPattern elementVar setVar reverse
                 singleton      = asInternal (Set.singleton concreteElem)
-                elemStepPatt = fromConcreteStepPattern concreteElem
+                elemStepPatt   = fromConcrete concreteElem
                 elementVarPatt = mkApp intSort absIntSymbol  [mkVar elementVar]
                 expect =
                     Conditional
@@ -481,7 +670,7 @@ test_concretizeKeys =
             { term =
                 mkPair intSort setSort
                     symbolicKey
-                    (asSymbolicPattern $ Set.fromList [symbolicKey])
+                    (asInternal $ Set.fromList [concreteKey])
             , predicate = Predicate.makeTruePredicate
             , substitution = Substitution.unsafeWrap
                 [ (x, symbolicKey) ]
@@ -556,18 +745,8 @@ test_isBuiltin =
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> genConcreteSet)
 
-mockMetadataTools :: SmtMetadataTools StepperAttributes
-mockMetadataTools =
-    Mock.makeMetadataTools
-        Mock.attributesMapping
-        Mock.headTypeMapping
-        Mock.sortAttributesMapping
-        Mock.subsorts
-        Mock.headSortsMapping
-        Mock.smtDeclarations
-
 mockHookTools :: SmtMetadataTools Hook
-mockHookTools = StepperAttributes.hook <$> mockMetadataTools
+mockHookTools = StepperAttributes.hook <$> Mock.metadataTools
 
 -- | Specialize 'Set.asTermLike' to the builtin sort 'setSort'.
 asTermLike
@@ -580,12 +759,11 @@ asTermLike =
     . Foldable.toList
 
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort'.
-asPattern :: Set.Builtin -> Pattern Variable
-asPattern =
-    Reflection.give testMetadataTools Set.asPattern setSort
+asPattern :: Set (TermLike Concrete) -> Pattern Variable
+asPattern = Reflection.give testMetadataTools Set.asPattern setSort
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
-asInternal :: Set.Builtin -> TermLike Variable
+asInternal :: Set (TermLike Concrete) -> TermLike Variable
 asInternal = Set.asInternal testMetadataTools setSort
 
 -- * Constructors

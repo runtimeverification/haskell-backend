@@ -12,9 +12,6 @@ module Kore.AST.AstWithLocation
     , prettyPrintLocationFromAst
     ) where
 
-import qualified Control.Lens as Lens
-
-import Kore.Domain.Class
 import Kore.Syntax
 import Kore.Syntax.Definition
 import Kore.Syntax.PatternF
@@ -84,8 +81,8 @@ instance AstWithLocation Symbol where
         s { symbolConstructor = updateAstLocation (symbolConstructor s) loc }
 
 instance
-    (Domain domain, AstWithLocation variable) =>
-    AstWithLocation (PatternF domain variable child)
+    AstWithLocation variable =>
+    AstWithLocation (PatternF variable child)
   where
     locationFromAst =
         \case
@@ -93,12 +90,8 @@ instance
             ApplicationF Application { applicationSymbolOrAlias } ->
                 locationFromAst applicationSymbolOrAlias
             BottomF Bottom { bottomSort } -> locationFromAst bottomSort
-            CeilF Ceil { ceilResultSort } ->
-                locationFromAst ceilResultSort
-            DomainValueF domain ->
-                locationFromAst
-                $ domainValueSort
-                $ Lens.view lensDomainValue domain
+            CeilF Ceil { ceilResultSort } -> locationFromAst ceilResultSort
+            DomainValueF domain -> locationFromAst $ domainValueSort domain
             EqualsF Equals { equalsResultSort } ->
                 locationFromAst equalsResultSort
             ExistsF Exists { existsSort } -> locationFromAst existsSort
@@ -110,8 +103,12 @@ instance
                 locationFromAst impliesSort
             InF In { inResultSort } ->
                 locationFromAst inResultSort
+            MuF Mu { muVariable = SetVariable variable } ->
+                locationFromAst variable
             NextF Next { nextSort } -> locationFromAst nextSort
             NotF Not { notSort } -> locationFromAst notSort
+            NuF Nu { nuVariable = SetVariable variable } ->
+                locationFromAst variable
             OrF Or { orSort } -> locationFromAst orSort
             RewritesF Rewrites { rewritesSort } ->
                 locationFromAst rewritesSort

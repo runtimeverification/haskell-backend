@@ -8,6 +8,8 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 
 module Kore.Repl
     ( runRepl
+    , ReplScript (..)
+    , ReplMode (..)
     ) where
 
 import           Control.Exception
@@ -15,11 +17,9 @@ import           Control.Exception
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import           Control.Monad
-                 ( when )
+                 ( forever, void, when )
 import           Control.Monad.Catch
                  ( MonadCatch, catch )
-import           Control.Monad.Extra
-                 ( whileM )
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.State.Strict
@@ -32,6 +32,7 @@ import           Data.Maybe
                  ( listToMaybe )
 import qualified Data.Sequence as Seq
 import           Kore.Attribute.RuleIndex
+import           System.Exit
 import           System.IO
                  ( hFlush, stdout )
 import           Text.Megaparsec
@@ -44,6 +45,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Internal.TermLike
                  ( TermLike, Variable )
+import qualified Kore.Logger as Logger
 import           Kore.OnePath.Verification
                  ( verifyClaimStep )
 import           Kore.OnePath.Verification
@@ -69,6 +71,15 @@ import           Kore.Unification.Procedure
 import           Kore.Unparser
                  ( Unparse )
 
+-- | Represents an optional file name which contains a sequence of
+-- repl commands.
+newtype ReplScript = ReplScript
+    { unReplScript :: Maybe FilePath
+    } deriving (Eq, Show)
+
+data ReplMode = Interactive | RunScript
+    deriving (Eq, Show)
+
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
 -- that would otherwise be required in the proof and allows for step-by-step
 -- execution of proofs. Currently works via stdin/stdout interaction.
@@ -88,36 +99,67 @@ runRepl
     -- ^ list of axioms to used in the proof
     -> [claim]
     -- ^ list of claims to be proven
+    -> ReplScript
+    -- ^ optional script
+    -> ReplMode
+    -- ^ mode to run in
     -> Simplifier ()
-runRepl tools simplifier predicateSimplifier axiomToIdSimplifier axioms' claims'
+runRepl
+    tools simplifier predicateSimplifier axiomToIdSimplifier
+    axioms' claims' replScript replMode
   = do
-    replGreeting
-    evalStateT (whileM repl0) state
+    mNewState <- evaluateScript replScript
+    case replMode of
+        Interactive -> do
+            replGreeting
+            evalStateT (forever repl0) (maybe state id mNewState)
+        RunScript ->
+            case mNewState of
+                Nothing -> liftIO exitFailure
+                Just newState ->
+                    void
+                    $ evalStateT
+                        (replInterpreter printIfNotEmpty Exit)
+                        newState
 
   where
-    repl0 :: StateT (ReplState claim) Simplifier Bool
+
+    evaluateScript :: ReplScript -> Simplifier (Maybe (ReplState claim))
+    evaluateScript rs =
+        maybe
+            (pure . pure $ state)
+            (parseEvalScript state)
+            (unReplScript rs)
+
+    repl0 :: StateT (ReplState claim) Simplifier ()
     repl0 = do
         str <- prompt
         let command = maybe ShowUsage id $ parseMaybe commandParser str
         when (shouldStore command) $ lensCommands Lens.%= (Seq.|> str)
-        replInterpreter putStrLn command
+        void $ replInterpreter printIfNotEmpty command
 
     state :: ReplState claim
     state =
         ReplState
-            { axioms   = addIndexesToAxioms axioms'
-            , claims   = addIndexesToClaims (length axioms') claims'
-            , claim    = firstClaim
-            , graph    = firstClaimExecutionGraph
-            , node     = ReplNode (Strategy.root firstClaimExecutionGraph)
-            , commands = Seq.empty
+            { axioms     = addIndexesToAxioms axioms'
+            , claims     = addIndexesToClaims (length axioms') claims'
+            , claim      = firstClaim
+            , claimIndex = firstClaimIndex
+            , graphs     = Map.singleton firstClaimIndex firstClaimExecutionGraph
+            , node       = ReplNode (Strategy.root firstClaimExecutionGraph)
+            , commands   = Seq.empty
             -- TODO(Vladimir): should initialize this to the value obtained from
             -- the frontend via '--omit-labels'.
-            , omit    = []
-            , stepper = stepper0
-            , unifier = unifier0
-            , labels  = Map.empty
+            , omit       = []
+            , stepper    = stepper0
+            , unifier    = unifier0
+            , labels     = Map.empty
+            , aliases    = Map.empty
+            , logging    = (Logger.Debug, NoLogging)
             }
+
+    firstClaimIndex :: ClaimIndex
+    firstClaimIndex = ClaimIndex 0
 
     addIndexesToAxioms
         :: [Axiom]

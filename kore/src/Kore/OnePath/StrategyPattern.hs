@@ -17,7 +17,7 @@ import GHC.Generics
 
 import Kore.Internal.Pattern
        ( Pattern )
-import Kore.Internal.TermLike
+import Kore.Syntax.Variable
 
 {- | A pattern on which a rule can be applied or on which a rule was applied.
 

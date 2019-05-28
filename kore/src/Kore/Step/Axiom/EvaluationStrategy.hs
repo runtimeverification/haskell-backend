@@ -17,7 +17,10 @@ module Kore.Step.Axiom.EvaluationStrategy
 
 import           Control.Monad
                  ( when )
+import           Control.Monad.Trans.Except
+                 ( ExceptT (ExceptT) )
 import qualified Data.Foldable as Foldable
+import           Data.Function
 import           Data.Maybe
                  ( isJust )
 import qualified Data.Text as Text
@@ -45,6 +48,7 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiom
                  ( AttemptedAxiom (..), exceptNotApplicable, hasRemainders )
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
+import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
 import qualified Kore.Step.Rule as RulePattern
@@ -53,8 +57,6 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
-import           Kore.Syntax.Pattern
-                 ( asConcretePattern )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse, unparse )
@@ -210,12 +212,12 @@ evaluateBuiltin
                 ++ show patt
                 )
           | otherwise ->
-            return (AttemptedAxiom.NotApplicable)
-        AttemptedAxiom.Applied _ -> return (result)
+            return AttemptedAxiom.NotApplicable
+        AttemptedAxiom.Applied _ -> return result
   where
-    isPattConcrete = isJust (asConcretePattern patt)
+    isPattConcrete = isConcrete patt
     isValue pat = isJust $
-        Value.fromConcreteStepPattern tools =<< asConcreteStepPattern pat
+        Value.fromConcreteStepPattern tools =<< asConcrete pat
     -- TODO(virgil): Send this from outside.
     getAppHookString appHead =
         Text.unpack <$> (getHook . Attribute.hook . symAttributes tools) appHead
@@ -340,7 +342,7 @@ evaluateWithDefinitionAxioms
     let unwrapEqualityRule =
             \(EqualityRule rule) ->
                 RulePattern.mapVariables fromVariable rule
-    result <- Monad.Unify.getUnifier
+    results <- ExceptT $ Monad.Unify.runUnifier
         $ Step.sequenceRules
             tools
             substitutionSimplifier
@@ -349,6 +351,15 @@ evaluateWithDefinitionAxioms
             (UnificationProcedure unificationWithAppMatchOnTop)
             expanded
             (map unwrapEqualityRule definitionRules)
+
+    let
+        result =
+            Result.mergeResults results
+            & Result.mapConfigs
+                keepResultUnchanged
+                markRemainderEvaluated
+        keepResultUnchanged = id
+        markRemainderEvaluated = fmap mkEvaluated
 
     return $ AttemptedAxiom.Applied AttemptedAxiomResults
         { results = Step.gatherResults result

@@ -19,7 +19,6 @@ module Kore.Exec
     , Equality
     ) where
 
-import           Control.Comonad
 import qualified Control.Monad as Monad
 import           Control.Monad.Trans.Except
                  ( runExceptT )
@@ -33,7 +32,6 @@ import           System.Exit
 import           Data.Limit
                  ( Limit (..) )
 import qualified Kore.Attribute.Axiom as Attribute
-import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Builtin as Builtin
@@ -130,14 +128,14 @@ exec
     -> TermLike Variable
     -- ^ The input pattern
     -> Simplifier (TermLike Variable)
-exec indexedModule strategy purePattern = do
-    execution <- execute indexedModule strategy purePattern
+exec indexedModule strategy termLike = do
+    execution <- execute indexedModule strategy termLike
     let
         Execution { executionGraph } = execution
         finalConfig = pickLongest executionGraph
     return (forceSort patternSort $ Pattern.toTermLike finalConfig)
   where
-    patternSort = Attribute.patternSort $ extract purePattern
+    patternSort = termLikeSort termLike
 
 -- | Project the value of the exit cell, if it is present.
 execGetExitCode
@@ -155,9 +153,9 @@ execGetExitCode indexedModule strategy' purePattern =
             exitCodePattern <- exec indexedModule strategy'
                 $ applySymbol_ exitCodeSymbol [purePattern]
             case exitCodePattern of
-                DV_ _ (Domain.BuiltinInt (Domain.InternalInt _ 0)) ->
+                Builtin_ (Domain.BuiltinInt (Domain.InternalInt _ 0)) ->
                     return ExitSuccess
-                DV_ _ (Domain.BuiltinInt (Domain.InternalInt _ exit)) ->
+                Builtin_ (Domain.BuiltinInt (Domain.InternalInt _ exit)) ->
                     return $ ExitFailure $ fromInteger exit
                 _ ->
                     return $ ExitFailure 111
@@ -175,8 +173,8 @@ search
     -> Search.Config
     -- ^ The bound on the number of search matches and the search type
     -> Simplifier (TermLike Variable)
-search verifiedModule strategy purePattern searchPattern searchConfig = do
-    execution <- execute verifiedModule strategy purePattern
+search verifiedModule strategy termLike searchPattern searchConfig = do
+    execution <- execute verifiedModule strategy termLike
     let
         Execution { metadataTools } = execution
         Execution { simplifier, substitutionSimplifier } = execution
@@ -200,7 +198,7 @@ search verifiedModule strategy purePattern searchPattern searchConfig = do
                 (Predicate.toPredicate <$> solutions)
     return (forceSort patternSort $ unwrapPredicate orPredicate)
   where
-    patternSort = Attribute.patternSort $ extract purePattern
+    patternSort = termLikeSort termLike
 
 
 -- | Proving a spec given as a module containing rules to be proven
@@ -246,8 +244,12 @@ proveWithRepl
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
+    -> Repl.ReplScript
+    -- ^ Optional script
+    -> Repl.ReplMode
+    -- ^ Run in a specific repl mode
     -> Simplifier ()
-proveWithRepl definitionModule specModule = do
+proveWithRepl definitionModule specModule replScript replMode = do
     let tools = MetadataTools.build definitionModule
     Initialized
         { rewriteRules
@@ -270,6 +272,8 @@ proveWithRepl definitionModule specModule = do
         axiomIdToSimplifier
         axioms
         claims
+        replScript
+        replMode
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck
@@ -278,8 +282,9 @@ boundedModelCheck
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
+    -> Strategy.GraphSearchOrder
     -> Simplifier [Bounded.CheckResult]
-boundedModelCheck limit definitionModule specModule = do
+boundedModelCheck limit definitionModule specModule searchOrder = do
     let
         tools = MetadataTools.build definitionModule
     Initialized
@@ -300,6 +305,7 @@ boundedModelCheck limit definitionModule specModule = do
             substitutionSimplifier
             axiomIdToSimplifier
             (Bounded.bmcStrategy axioms)
+            searchOrder
             (map (\x -> (x,limit)) specAxioms)
     return result
 
@@ -364,7 +370,7 @@ execute verifiedModule strategy inputPattern
                 [] -> Pattern.bottomOf patternSort
                 (config : _) -> config
           where
-            patternSort = Attribute.patternSort $ extract inputPattern
+            patternSort = termLikeSort inputPattern
         runStrategy' pat =
             runStrategy
                 (transitionRule

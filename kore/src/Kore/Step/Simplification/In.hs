@@ -30,7 +30,6 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplifyEvaluated )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
-import           Kore.Syntax.In
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 

@@ -15,9 +15,10 @@ import           Control.DeepSeq
 import qualified Data.Deriving as Deriving
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
 
@@ -36,7 +37,7 @@ data Equals sort child = Equals
     , equalsFirst       :: child
     , equalsSecond      :: child
     }
-    deriving (Eq, Functor, Foldable, Generic, Ord, Show, Traversable)
+    deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
 
 Deriving.deriveEq1 ''Equals
 Deriving.deriveOrd1 ''Equals
@@ -45,6 +46,12 @@ Deriving.deriveShow1 ''Equals
 instance (Hashable sort, Hashable child) => Hashable (Equals sort child)
 
 instance (NFData sort, NFData child) => NFData (Equals sort child)
+
+instance SOP.Generic (Equals sort child)
+
+instance SOP.HasDatatypeInfo (Equals sort child)
+
+instance (Debug sort, Debug child) => Debug (Equals sort child)
 
 instance Unparse child => Unparse (Equals Sort child) where
     unparse

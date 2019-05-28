@@ -18,7 +18,9 @@ import Kore.TopBottom
        ( isBottom, isTop )
 import Kore.Unification.Substitution
 
+import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
+import           Test.Tasty.HUnit.Extensions
 
 test_substitution :: [TestTree]
 test_substitution =
@@ -30,6 +32,7 @@ test_substitution =
     , nullTests
     , variablesTests
     , propertyTests
+    , reverseRhsTests
     ]
 
 propertyTests:: TestTree
@@ -41,7 +44,7 @@ propertyTests =
   , null `gives_`         [(empty, True),  (normalized, False), (unnormalized, False) ]
   ]
   where
-    empty = (mempty :: Substitution Variable)
+    empty = mempty :: Substitution Variable
     normalized = unsafeWrap [(Mock.x, Mock.a)]
     unnormalized = wrap [(Mock.x, Mock.a)]
 
@@ -188,6 +191,83 @@ variablesTests =
         $ assertEqual ""
            (fst <$> singletonSubst)
            . variables $ wrap singletonSubst
+    ]
+
+reverseRhsTests :: TestTree
+reverseRhsTests =
+    testGroup "Reverse RHS if equal to variable"
+    [ testCase "empty subst unchanged"
+        $ assertEqualWithExplanation ""
+            emptySubst
+            (reverseIfRhsIsVar Mock.x emptySubst)
+    , testCase "unnormalized without RHS unchanged" $ do
+        let
+            subst = wrap [(Mock.x, Mock.a)]
+        assertEqualWithExplanation ""
+            subst
+            (reverseIfRhsIsVar Mock.x subst)
+    , testCase "normalized without RHS unchanged" $ do
+        let
+            subst = unsafeWrap [(Mock.x, Mock.a)]
+        assertEqualWithExplanation ""
+            subst
+            (reverseIfRhsIsVar Mock.x subst)
+    , testCase "unnormalized reverses RHS" $ do
+        let
+            expectedSubst = wrap [(Mock.x, mkVar Mock.y)]
+            originalSubst = wrap [(Mock.y, mkVar Mock.x)]
+        assertEqualWithExplanation ""
+            expectedSubst
+            (reverseIfRhsIsVar Mock.x originalSubst)
+    , testCase "normalized reverses RHS" $ do
+        let
+            expectedSubst = unsafeWrap [(Mock.x, mkVar Mock.y)]
+            originalSubst = unsafeWrap [(Mock.y, mkVar Mock.x)]
+        assertEqualWithExplanation ""
+            expectedSubst
+            (reverseIfRhsIsVar Mock.x originalSubst)
+    , testCase "unnormalized reverses multiple RHS" $ do
+        let
+            expectedSubst =
+                wrap [(Mock.x, mkVar Mock.y), (Mock.x, mkVar Mock.z)]
+            originalSubst =
+                wrap [(Mock.y, mkVar Mock.x), (Mock.z, mkVar Mock.x)]
+        assertEqualWithExplanation ""
+            expectedSubst
+            (reverseIfRhsIsVar Mock.x originalSubst)
+    , testCase "normalized reverses multiple RHS" $ do
+        let
+            expectedSubst =
+                unsafeWrap [(Mock.x, mkVar Mock.z), (Mock.y, mkVar Mock.z)]
+            originalSubst =
+                unsafeWrap [(Mock.y, mkVar Mock.x), (Mock.z, mkVar Mock.x)]
+        assertEqualWithExplanation ""
+            expectedSubst
+            (reverseIfRhsIsVar Mock.x originalSubst)
+    , testCase "unnormalized does not substitute reverse RHS" $ do
+        let
+            expectedSubst =
+                wrap [(Mock.x, mkVar Mock.y), (Mock.z, Mock.f (mkVar Mock.x))]
+            originalSubst =
+                wrap [(Mock.y, mkVar Mock.x), (Mock.z, Mock.f (mkVar Mock.x))]
+        assertEqualWithExplanation ""
+            expectedSubst
+            (reverseIfRhsIsVar Mock.x originalSubst)
+    , testCase "normalized substitutes reverse RHS" $ do
+        let
+            expectedSubst = unsafeWrap
+                [ (Mock.x, mkVar Mock.z)
+                , (Mock.y, mkVar Mock.z)
+                , (Mock.var_x_1, Mock.f (mkVar Mock.z))
+                ]
+            originalSubst = unsafeWrap
+                [ (Mock.y, mkVar Mock.x)
+                , (Mock.z, mkVar Mock.x)
+                , (Mock.var_x_1, Mock.f (mkVar Mock.x))
+                ]
+        assertEqualWithExplanation ""
+            expectedSubst
+            (reverseIfRhsIsVar Mock.x originalSubst)
     ]
 
 emptyRawSubst :: [(Variable, TermLike Variable)]

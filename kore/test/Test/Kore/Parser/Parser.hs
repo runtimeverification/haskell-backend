@@ -6,8 +6,8 @@ import Test.Tasty
 import Data.Text
        ( Text )
 
-import qualified Kore.Domain.Builtin as Domain
-import           Kore.Internal.TermLike
+import qualified Kore.Builtin as Builtin
+import qualified Kore.Internal.TermLike as Internal
 import           Kore.Parser.Parser
 import           Kore.Syntax
 import           Kore.Syntax.Definition
@@ -47,8 +47,10 @@ test_koreParser =
     , testGroup "iffPatternParser" iffPatternParserTests
     , testGroup "impliesPatternParser" impliesPatternParserTests
     , testGroup "memPatternParser" memPatternParserTests
+    , testGroup "muPatternParser" muPatternParserTests
     , testGroup "nextPatternParser" nextPatternParserTests
     , testGroup "notPatternParser" notPatternParserTests
+    , testGroup "nuPatternParser" nuPatternParserTests
     , testGroup "orPatternParser" orPatternParserTests
     , testGroup "rewritesPatternParser" rewritesPatternParserTests
     , testGroup "stringLiteralPatternParser" stringLiteralPatternParserTests
@@ -304,7 +306,7 @@ metaSymbolParserTests =
 
 variableParserTests :: [TestTree]
 variableParserTests =
-    parseTree variableParser
+    parseTree singletonVariableParser
         [ success "v:s"
             Variable
                 { variableName = testId "v"
@@ -321,7 +323,7 @@ variableParserTests =
                         }
                 , variableCounter = mempty
                 }
-        , FailureWithoutMessage ["", "var", "v:", ":s"]
+        , FailureWithoutMessage ["", "var", "v:", ":s", "#v:s"]
         ]
 
 andPatternParserTests :: [TestTree]
@@ -439,11 +441,10 @@ domainValuePatternParserTests :: [TestTree]
 domainValuePatternParserTests =
     parseTree korePatternParser
         [ success "\\dv{s1}(\"a\")"
-            $ eraseAnnotations
-            $ mkDomainValue
-            $ Domain.BuiltinExternal Domain.External
+            $ Builtin.externalizePattern
+            $ Internal.mkDomainValue DomainValue
                 { domainValueSort = sortVariableSort "s1"
-                , domainValueChild = eraseAnnotations $ mkStringLiteral "a"
+                , domainValueChild = Internal.mkStringLiteral "a"
                 }
         , FailureWithoutMessage
             [ ""
@@ -477,13 +478,13 @@ equalsPatternParserTests =
 existsPatternParserTests :: [TestTree]
 existsPatternParserTests =
     parseTree korePatternParser
-        [ success "\\exists{#s}(#v:#Char, \"b\")"
+        [ success "\\exists{s}(v:Char, \"b\")"
             (asParsedPattern $ ExistsF Exists
-                    { existsSort = sortVariableSort "#s" :: Sort
+                    { existsSort = sortVariableSort "s" :: Sort
                     , existsVariable =
                         Variable
-                            { variableName = testId "#v"
-                            , variableSort = sortVariableSort "#Char"
+                            { variableName = testId "v"
+                            , variableSort = sortVariableSort "Char"
                             , variableCounter = mempty
                             }
                     , existsChild =
@@ -503,6 +504,7 @@ existsPatternParserTests =
             , "\\exists{s}"
             , "\\exists"
             , "\\exists(v:s1, \"b\")"
+            , "\\exists{s}(#v:s, \"b\")"
             ]
         ]
 floorPatternParserTests :: [TestTree]
@@ -637,6 +639,38 @@ memPatternParserTests =
             , "\\in(v:s1, \"b\")"
             ]
         ]
+muPatternParserTests :: [TestTree]
+muPatternParserTests =
+    parseTree korePatternParser
+        [ success "\\mu{}(#v:s, \\top{s}())"
+            (asParsedPattern $ MuF Mu
+                    { muVariable =
+                        SetVariable Variable
+                            { variableName = testId "#v"
+                            , variableSort = sortVariableSort "s"
+                            , variableCounter = mempty
+                            }
+                    , muChild =
+                        asParsedPattern $ TopF (Top (sortVariableSort "s"))
+                    }
+            )
+        , FailureWithoutMessage
+            [ ""
+            , "\\mu{}(v:s, \\top{s}())"
+            , "\\mu{}(v:s1, \"b\")"
+            , "\\mu{s,s}(v:s1, \"b\")"
+            , "\\mu{s}(\"b\", \"b\")"
+            , "\\mu{s}(, \"b\")"
+            , "\\mu{s}(\"b\")"
+            , "\\mu{s}(v:s1, )"
+            , "\\mu{s}(v:s1)"
+            , "\\mu{s}()"
+            , "\\mu{s}"
+            , "\\mu"
+            , "\\mu(v:s1, \"b\")"
+            , "\\mu{s}(#v:s, \"b\")"
+            ]
+        ]
 notPatternParserTests :: [TestTree]
 notPatternParserTests =
     parseTree korePatternParser
@@ -675,6 +709,38 @@ nextPatternParserTests =
             , "\\next{s}(\"a\", \"b\")"
             , "\\next{s}"
             , "\\next(\"a\")"
+            ]
+        ]
+nuPatternParserTests :: [TestTree]
+nuPatternParserTests =
+    parseTree korePatternParser
+        [ success "\\nu{}(#v:s, \\top{s}())"
+            (asParsedPattern $ NuF Nu
+                    { nuVariable =
+                        SetVariable Variable
+                            { variableName = testId "#v"
+                            , variableSort = sortVariableSort "s"
+                            , variableCounter = mempty
+                            }
+                    , nuChild =
+                        asParsedPattern $ TopF (Top (sortVariableSort "s"))
+                    }
+            )
+        , FailureWithoutMessage
+            [ ""
+            , "\\nu{}(v:s, \\top{s}())"
+            , "\\nu{}(v:s1, \"b\")"
+            , "\\nu{s,s}(v:s1, \"b\")"
+            , "\\nu{s}(\"b\", \"b\")"
+            , "\\nu{s}(, \"b\")"
+            , "\\nu{s}(\"b\")"
+            , "\\nu{s}(v:s1, )"
+            , "\\nu{s}(v:s1)"
+            , "\\nu{s}()"
+            , "\\nu{s}"
+            , "\\nu"
+            , "\\nu(v:s1, \"b\")"
+            , "\\nu{s}(#v:s, \"b\")"
             ]
         ]
 orPatternParserTests :: [TestTree]
@@ -931,12 +997,10 @@ sentenceAliasParserTests =
                             , applicationChildren = []
                             }
                     , sentenceAliasRightPattern =
-                        eraseAnnotations
-                        $ mkDomainValue
-                        $ Domain.BuiltinExternal Domain.External
+                        Builtin.externalizePattern
+                        $ Internal.mkDomainValue DomainValue
                             { domainValueSort = resultSort
-                            , domainValueChild =
-                                eraseAnnotations $ mkStringLiteral "f"
+                            , domainValueChild = Internal.mkStringLiteral "f"
                             }
                     , sentenceAliasAttributes = Attributes []
                     }
@@ -960,7 +1024,7 @@ sentenceAliasParserTests =
                             , variableSort = resultSort
                             , variableCounter = mempty
                             }
-                    argument name = mkVar (var name)
+                    argument name = Internal.mkVar (var name)
                     varA = var "a"
                     varB = var "b"
                     argA = argument "a"
@@ -978,7 +1042,8 @@ sentenceAliasParserTests =
                             , applicationChildren = [varA, varB]
                             }
                     , sentenceAliasRightPattern =
-                        eraseAnnotations $ mkRewrites argA argB
+                        Builtin.externalizePattern
+                        $ Internal.mkRewrites argA argB
                     , sentenceAliasAttributes = Attributes []
                     }
             )
@@ -1001,7 +1066,7 @@ sentenceAliasParserTests =
                             , variableSort = resultSort
                             , variableCounter = mempty
                             }
-                    arg = mkVar var
+                    arg = Internal.mkVar var
                 in SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = aliasId
@@ -1015,7 +1080,7 @@ sentenceAliasParserTests =
                             , applicationChildren = [var]
                             }
                     , sentenceAliasRightPattern =
-                        eraseAnnotations $ mkNext arg
+                        Builtin.externalizePattern $ Internal.mkNext arg
                     , sentenceAliasAttributes = Attributes []
                     }
             )

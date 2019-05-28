@@ -7,6 +7,7 @@ module Test.Kore.Builtin.Builtin
     , testEvaluators
     , testSymbolWithSolver
     , evaluate
+    , evaluateToList
     , evaluateWith
     , indexedModule
     , runStepWith
@@ -42,11 +43,13 @@ import qualified Kore.Attribute.Null as Attribute
 import           Kore.Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Error
-import           Kore.IndexedModule.IndexedModule
+import           Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
+import qualified Kore.Internal.MultiOr as MultiOr
+                 ( extractPatterns )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import           Kore.Internal.Pattern
@@ -55,14 +58,14 @@ import           Kore.Internal.TermLike
 import           Kore.Parser
                  ( parseKorePattern )
 import           Kore.Step.Axiom.Data
+import qualified Kore.Step.Result as Result
+                 ( mergeResults )
 import           Kore.Step.Rule
                  ( RewriteRule )
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Step.Step as Step
-import           Kore.Syntax.Definition
-import qualified Kore.Syntax.Pattern as AST
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Procedure as Unification
@@ -173,8 +176,9 @@ Just verifiedModule = Map.lookup testModuleName verifiedModules
 
 indexedModule :: KoreIndexedModule Attribute.Null Attribute.Null
 indexedModule =
-    makeIndexedModuleAttributesNull
-    $ mapIndexedModulePatterns AST.eraseAnnotations verifiedModule
+    verifiedModule
+    & IndexedModule.eraseAttributes
+    & IndexedModule.mapPatterns Builtin.externalizePattern
 
 testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build (constructorFunctions verifiedModule)
@@ -199,6 +203,19 @@ evaluate =
         testMetadataTools
         testSubstitutionSimplifier
         testEvaluators
+
+evaluateToList
+    :: MonadSMT m
+    => TermLike Variable
+    -> m [Pattern Variable]
+evaluateToList =
+    fmap MultiOr.extractPatterns
+    . liftSMT
+    . evalSimplifier emptyLogger
+    . TermLike.simplifyToOr
+        testMetadataTools
+        testEvaluators
+        testSubstitutionSimplifier
 
 evaluateWith
     :: MVar Solver
@@ -240,7 +257,7 @@ runStepResultWith solver configuration axiom =
                 (Step.UnificationProcedure Unification.unificationProcedure)
                 [axiom]
                 configuration
-    in runReaderT (SMT.getSMT smt) solver
+    in runReaderT (SMT.getSMT (fmap Result.mergeResults <$> smt)) solver
 
 
 -- | Test unparsing internalized patterns.
@@ -251,5 +268,5 @@ hpropUnparse
 hpropUnparse gen = Hedgehog.property $ do
     builtin <- Hedgehog.forAll gen
     let syntax = unparseToString builtin
-        expected = AST.eraseAnnotations (Builtin.externalizePattern builtin)
+        expected = Builtin.externalizePattern builtin
     Right expected Hedgehog.=== parseKorePattern "<test>" syntax

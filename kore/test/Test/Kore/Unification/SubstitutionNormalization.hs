@@ -194,17 +194,7 @@ runNormalizeSubstitutionObject
 runNormalizeSubstitutionObject substitution =
     fmap (Substitution.unwrap . Conditional.substitution)
     . Except.runExcept
-    $ normalizeSubstitution mockMetadataToolsO (Map.fromList substitution)
-  where
-    mockMetadataToolsO :: SmtMetadataTools StepperAttributes
-    mockMetadataToolsO =
-        Mock.makeMetadataTools
-            Mock.attributesMapping
-            Mock.headTypeMapping
-            Mock.sortAttributesMapping
-            Mock.subsorts
-            Mock.headSortsMapping
-            Mock.smtDeclarations
+    $ normalizeSubstitution Mock.metadataTools (Map.fromList substitution)
 
 mockMetadataTools :: SmtMetadataTools StepperAttributes
 mockMetadataTools = MetadataTools

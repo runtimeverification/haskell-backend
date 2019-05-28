@@ -30,7 +30,7 @@ import           Kore.Debug
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( flatten, merge )
+                 ( flatten, merge, mergeAll )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -52,8 +52,9 @@ import qualified Kore.Step.Merging.OrPattern as OrPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
                  simplifyTerm )
+import qualified Kore.Step.Simplification.Data as BranchT
+                 ( gather )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import           Kore.Syntax.Application
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -370,14 +371,17 @@ reevaluateFunctions
                 , substitution = rewrittenSubstitution
                 }
             pattOr
-    traverse
-        (Pattern.simplifyPredicate
-            tools
-            substitutionSimplifier
-            termSimplifier
-            axiomIdToEvaluator
+    orResults <- BranchT.gather
+        (traverse
+            (Pattern.simplifyPredicate
+                tools
+                substitutionSimplifier
+                termSimplifier
+                axiomIdToEvaluator
+            )
+            mergedPatt
         )
-        mergedPatt
+    return (MultiOr.mergeAll orResults)
   where
     simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
 

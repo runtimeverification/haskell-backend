@@ -80,7 +80,6 @@ import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
 import           Kore.Step.Simplification.Data
-import           Kore.Syntax.Definition
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -99,7 +98,7 @@ sort = "LIST.List"
 
  -}
 assertSort :: Builtin.SortVerifier
-assertSort findSort = Builtin.verifySort findSort sort
+assertSort = Builtin.verifySort sort
 
 {- | Verify that hooked sort declarations are well-formed.
 
@@ -148,8 +147,6 @@ symbolVerifiers =
       )
     ]
 
-type Builtin variable = Seq (TermLike variable)
-
 {- | Abort function evaluation if the argument is not a List domain value.
 
     If the operand pattern is not a domain value, the function is simply
@@ -161,24 +158,23 @@ expectBuiltinList
     :: Monad m
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
-    -> MaybeT m (Builtin variable)
+    -> MaybeT m (Seq (TermLike variable))
 expectBuiltinList ctx =
     \case
-        DV_ _ domain ->
+        Builtin_ domain ->
             case domain of
                 Domain.BuiltinList Domain.InternalList { builtinListChild } ->
                     return builtinListChild
                 _ ->
                     Builtin.verifierBug
                     $ Text.unpack ctx ++ ": Domain value is not a list"
-        _ ->
-            empty
+        _ -> empty
 
 returnList
     :: (Monad m, Ord variable)
     => SmtMetadataTools StepperAttributes
     -> Sort
-    -> Builtin variable
+    -> Seq (TermLike variable)
     -> m (AttemptedAxiom variable)
 returnList tools builtinListSort builtinListChild =
     Builtin.appliedFunction
@@ -301,8 +297,9 @@ asTermLike
     :: Ord variable
     => Domain.InternalList (TermLike variable)
     -> TermLike variable
-asTermLike builtin =
-    foldr concat' unit (element <$> list)
+asTermLike builtin
+  | Seq.null list = unit
+  | otherwise = foldr1 concat' (element <$> list)
   where
     Domain.InternalList { builtinListSort = builtinSort } = builtin
     Domain.InternalList { builtinListChild = list } = builtin
@@ -321,10 +318,10 @@ asInternal
     :: Ord variable
     => SmtMetadataTools attrs
     -> Sort
-    -> Builtin variable
+    -> Seq (TermLike variable)
     -> TermLike variable
 asInternal tools builtinListSort builtinListChild =
-    (mkDomainValue . Domain.BuiltinList)
+    (mkBuiltin . Domain.BuiltinList)
         Domain.InternalList
             { builtinListSort
             , builtinListUnit =
@@ -348,7 +345,7 @@ asPattern
         , Given (SmtMetadataTools StepperAttributes)
         )
     => Sort
-    -> Builtin variable
+    -> Seq (TermLike variable)
     -> Pattern variable
 asPattern resultSort =
     Pattern.fromTermLike . asInternal tools resultSort
@@ -435,9 +432,9 @@ unifyEquals
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
 
-    unifyEquals0 dv1@(DV_ _ (Domain.BuiltinList builtin1)) =
+    unifyEquals0 dv1@(Builtin_ (Domain.BuiltinList builtin1)) =
         \case
-            dv2@(DV_ _ child2)
+            dv2@(Builtin_ child2)
               | Domain.BuiltinList builtin2 <- child2 ->
                 Monad.Trans.lift $ unifyEqualsConcrete builtin1 builtin2
               | otherwise ->
@@ -451,9 +448,9 @@ unifyEquals
             app@(App_ symbol2 args2)
               | isSymbolConcat hookTools symbol2 ->
                 Monad.Trans.lift $ case args2 of
-                    [ DV_ _ (Domain.BuiltinList builtin2), x@(Var_ _) ] ->
+                    [ Builtin_ (Domain.BuiltinList builtin2), x@(Var_ _) ] ->
                         unifyEqualsFramedRight builtin1 builtin2 x
-                    [ x@(Var_ _), DV_ _ (Domain.BuiltinList builtin2) ] ->
+                    [ x@(Var_ _), Builtin_ (Domain.BuiltinList builtin2) ] ->
                         unifyEqualsFramedLeft builtin1 x builtin2
                     [ _, _ ] ->
                         Builtin.unifyEqualsUnsolved
@@ -466,7 +463,7 @@ unifyEquals
 
     unifyEquals0 pat1 =
         \case
-            dv@(DV_ _ (Domain.BuiltinList _)) -> unifyEquals0 dv pat1
+            dv@(Builtin_ (Domain.BuiltinList _)) -> unifyEquals0 dv pat1
             _ -> empty
 
     unifyEqualsConcrete
@@ -505,7 +502,7 @@ unifyEquals
                     builtin2
             suffixUnified <- simplifyChild frame2 listSuffix1
             let result =
-                    pure (mkDomainValue internal1)
+                    pure (mkBuiltin internal1)
                     <* prefixUnified
                     <* suffixUnified
             return result
@@ -537,7 +534,7 @@ unifyEquals
                     builtin1 { Domain.builtinListChild = suffix1 }
                     builtin2
             let result =
-                    pure (mkDomainValue internal1)
+                    pure (mkBuiltin internal1)
                     <* prefixUnified
                     <* suffixUnified
             return result

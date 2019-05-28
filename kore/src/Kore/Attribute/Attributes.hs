@@ -21,22 +21,21 @@ import           Data.Hashable
                  ( Hashable )
 import           Data.Text
                  ( Text )
+import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Null as Attribute
                  ( Null )
-import qualified Kore.Domain.Builtin as Domain
+import           Kore.Debug
 import           Kore.Syntax
 import           Kore.Unparser
 
 -- | A pure pattern which has only been parsed.
-type ParsedPattern = Pattern Domain.Builtin Variable Attribute.Null
+type ParsedPattern = Pattern Variable Attribute.Null
 
 type AttributePattern = ParsedPattern
 
-asAttributePattern
-    :: (PatternF Domain.Builtin Variable) AttributePattern
-    -> AttributePattern
+asAttributePattern :: (PatternF Variable) AttributePattern -> AttributePattern
 asAttributePattern = asPattern . (mempty :<)
 
 -- | An 'AttributePattern' of the attribute symbol applied to its arguments.
@@ -70,6 +69,12 @@ newtype Attributes =
 instance Hashable Attributes
 
 instance NFData Attributes
+
+instance SOP.Generic Attributes
+
+instance SOP.HasDatatypeInfo Attributes
+
+instance Debug Attributes
 
 instance Unparse Attributes where
     unparse = attributes . getAttributes

@@ -26,6 +26,7 @@ import           Control.DeepSeq
                  ( NFData )
 import           Control.Monad.Except
                  ( ExceptT, runExceptT )
+import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
 import           GHC.Generics
                  ( Generic )
@@ -41,16 +42,12 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.TermLike
-                 ( TermLike )
+                 ( TermLike, TermLikeF (..) )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Syntax.Application
-import           Kore.Syntax.Pattern
-                 ( fromPattern )
-import           Kore.Syntax.PatternF
-                 ( PatternF (..) )
 import           Kore.Syntax.Variable
                  ( SortedVariable, Variable (..) )
 import           Kore.Unparser
@@ -225,29 +222,28 @@ applicationAxiomSimplifier applicationSimplifier =
     BuiltinAndAxiomSimplifier helper
   where
     helper
-        ::  ( forall variable
-            .   ( FreshVariable variable
-                , Ord variable
-                , SortedVariable variable
-                , Show variable
-                , Show variable
-                , Unparse variable
-                )
-            => SmtMetadataTools StepperAttributes
-            -> PredicateSimplifier
-            -> TermLikeSimplifier
-            -> BuiltinAndAxiomSimplifierMap
-            -> TermLike variable
-            -> Simplifier (AttemptedAxiom variable)
-        )
+        ::  forall variable
+        .   ( FreshVariable variable
+            , Ord variable
+            , SortedVariable variable
+            , Show variable
+            , Show variable
+            , Unparse variable
+            )
+        => SmtMetadataTools StepperAttributes
+        -> PredicateSimplifier
+        -> TermLikeSimplifier
+        -> BuiltinAndAxiomSimplifierMap
+        -> TermLike variable
+        -> Simplifier (AttemptedAxiom variable)
     helper
         tools
         substitutionSimplifier
         simplifier
         axiomIdToSimplifier
-        patt
+        termLike
       =
-        case fromPattern patt of
+        case Recursive.project termLike of
             (valid :< ApplicationF p) ->
                 applicationSimplifier
                     tools
@@ -256,4 +252,4 @@ applicationAxiomSimplifier applicationSimplifier =
                     axiomIdToSimplifier
                     (valid :< p)
             _ -> error
-                ("Expected an application pattern, but got: " ++ show patt)
+                ("Expected an application pattern, but got: " ++ show termLike)

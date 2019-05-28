@@ -8,6 +8,7 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 
 module Kore.Repl.Parser
     ( commandParser
+    , scriptParser
     ) where
 
 import           Control.Applicative
@@ -15,13 +16,18 @@ import           Control.Applicative
 import qualified Data.Foldable as Foldable
 import           Data.Functor
                  ( void, ($>) )
+import           Data.List
+                 ( nub )
+import           Prelude hiding
+                 ( log )
 import           Text.Megaparsec
-                 ( Parsec, eof, many, manyTill, noneOf, option, optional, try )
+                 ( Parsec, customFailure, eof, many, manyTill, noneOf, oneOf,
+                 option, optional, try )
 import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
-import Kore.Repl.Data
-       ( AxiomIndex (..), ClaimIndex (..), ReplCommand (..), ReplNode (..) )
+import qualified Kore.Logger as Logger
+import           Kore.Repl.Data
 
 type Parser = Parsec String String
 
@@ -29,10 +35,31 @@ type Parser = Parsec String String
 -- @
 -- maybe ShowUsage id . Text.Megaparsec.parseMaybe commandParser
 -- @
+
+scriptParser :: Parser [ReplCommand]
+scriptParser =
+    some ( skipSpacesAndComments
+         *> commandParser0 (void Char.newline)
+         <* many Char.newline
+         <* skipSpacesAndComments
+         )
+    <* eof
+  where
+    skipSpacesAndComments :: Parser (Maybe ())
+    skipSpacesAndComments =
+        optional $ spaceConsumer <* Char.newline
+
 commandParser :: Parser ReplCommand
-commandParser = do
+commandParser = commandParser0 eof
+
+commandParser0 :: Parser () -> Parser ReplCommand
+commandParser0 endParser =
+    alias <|> log <|> commandParserExceptAlias endParser <|> tryAlias
+
+commandParserExceptAlias :: Parser () -> Parser ReplCommand
+commandParserExceptAlias endParser = do
     cmd <- nonRecursiveCommand
-    endOfInput cmd
+    endOfInput cmd endParser
         <|> pipeWith appendTo cmd
         <|> pipeWith redirect cmd
         <|> appendTo cmd
@@ -62,6 +89,8 @@ nonRecursiveCommand =
         , tryAxiomClaim
         , clear
         , saveSession
+        , loadScript
+        , proofStatus
         , exit
         ]
 
@@ -71,11 +100,17 @@ pipeWith
     -> Parser ReplCommand
 pipeWith parserCmd cmd = try (pipe cmd >>= parserCmd)
 
-endOfInput :: ReplCommand -> Parser ReplCommand
-endOfInput cmd = eof $> cmd
+endOfInput :: ReplCommand -> Parser () -> Parser ReplCommand
+endOfInput cmd p = p $> cmd
 
 help :: Parser ReplCommand
 help = const Help <$$> literal "help"
+
+proofStatus :: Parser ReplCommand
+proofStatus = const ProofStatus <$$> literal "proof-status"
+
+loadScript :: Parser ReplCommand
+loadScript = LoadScript <$$> literal "load" *> quotedOrWordWithout ""
 
 showClaim :: Parser ReplCommand
 showClaim = ShowClaim . ClaimIndex <$$> literal "claim" *> decimal
@@ -90,11 +125,12 @@ showGraph :: Parser ReplCommand
 showGraph = ShowGraph <$$> literal "graph" *> optional (quotedOrWordWithout "")
 
 proveSteps :: Parser ReplCommand
-proveSteps = ProveSteps <$$> literal "step" *> option 1 L.decimal <* Char.space
+proveSteps =
+    ProveSteps <$$> literal "step" *> option 1 L.decimal <* spaceNoNewline
 
 proveStepsF :: Parser ReplCommand
 proveStepsF =
-    ProveStepsF <$$> literal "stepf" *> option 1 L.decimal <* Char.space
+    ProveStepsF <$$> literal "stepf" *> option 1 L.decimal <* spaceNoNewline
 
 selectNode :: Parser ReplCommand
 selectNode = SelectNode . ReplNode <$$> literal "select" *> decimal
@@ -144,13 +180,17 @@ exit = const Exit <$$> literal "exit"
 
 tryAxiomClaim :: Parser ReplCommand
 tryAxiomClaim =
-    Try <$$> literal "try" *> (Left <$> axiomIndex <|> Right <$> claimIndex)
+    Try
+    <$$> literal "try"
+    *> ( Left <$> axiomIndexParser
+        <|> Right <$> claimIndexParser
+       )
 
-axiomIndex :: Parser AxiomIndex
-axiomIndex = AxiomIndex <$$> Char.string "a" *> decimal
+axiomIndexParser :: Parser AxiomIndex
+axiomIndexParser = AxiomIndex <$$> Char.string "a" *> decimal
 
-claimIndex :: Parser ClaimIndex
-claimIndex = ClaimIndex <$$> Char.string "c" *> decimal
+claimIndexParser :: Parser ClaimIndex
+claimIndexParser = ClaimIndex <$$> Char.string "c" *> decimal
 
 clear :: Parser ReplCommand
 clear = do
@@ -160,6 +200,28 @@ clear = do
 saveSession :: Parser ReplCommand
 saveSession =
     SaveSession <$$> literal "save-session" *> quotedOrWordWithout ""
+
+log :: Parser ReplCommand
+log =
+    Log
+        <$$> literal "log" *> severity
+        <**> logType
+
+severity :: Parser Logger.Severity
+severity = sDebug <|> sInfo <|> sWarning <|> sError <|> sCritical
+  where
+    sDebug    = Logger.Debug    <$ literal "debug"
+    sInfo     = Logger.Info     <$ literal "info"
+    sWarning  = Logger.Warning  <$ literal "warning"
+    sError    = Logger.Error    <$ literal "error"
+    sCritical = Logger.Critical <$ literal "critical"
+
+logType :: Parser LogType
+logType = noLogging <|> logStdOut <|> logFile
+  where
+    noLogging = NoLogging   <$  literal "none"
+    logStdOut = LogToStdOut <$  literal "stdout"
+    logFile   = LogToFile   <$$> literal "file" *> quotedOrWordWithout ""
 
 redirect :: ReplCommand -> Parser ReplCommand
 redirect cmd =
@@ -178,6 +240,25 @@ appendTo cmd =
     <$$> literal ">>"
     *> quotedOrWordWithout ""
 
+alias :: Parser ReplCommand
+alias = do
+    literal "alias"
+    name <- word
+    arguments <- many $ wordWithout "="
+    if nub arguments /= arguments
+        then customFailure "Error when parsing alias: duplicate argument name."
+        else pure ()
+    literal "="
+    command <- some L.charLiteral
+    return . Alias $ AliasDefinition { name, arguments, command }
+
+tryAlias :: Parser ReplCommand
+tryAlias = do
+    name <- some (noneOf [' ']) <* Char.space
+    arguments <- many
+        (QuotedArgument <$> quotedWord <|> SimpleArgument <$> wordWithout "")
+    return . TryAlias $ ReplAlias { name, arguments }
+
 infixr 2 <$$>
 infixr 1 <**>
 
@@ -190,11 +271,26 @@ infixr 1 <**>
 (<**>) = (<*>)
 
 
+spaceConsumer :: Parser ()
+spaceConsumer =
+    L.space
+        space1NoNewline
+        (L.skipLineComment "//")
+        (L.skipBlockComment "/*" "*/")
+
+space1NoNewline :: Parser ()
+space1NoNewline =
+    void . some $ oneOf [' ', '\t', '\r', '\f', '\v']
+
+spaceNoNewline :: Parser ()
+spaceNoNewline =
+    void . many $ oneOf [' ', '\t', '\r', '\f', '\v']
+
 literal :: String -> Parser ()
-literal str = void $ Char.string str <* Char.space
+literal str = void $ Char.string str <* spaceNoNewline
 
 decimal :: Parser Int
-decimal = L.decimal <* Char.space
+decimal = L.decimal <* spaceNoNewline
 
 maybeDecimal :: Parser (Maybe Int)
 maybeDecimal = optional decimal
@@ -209,10 +305,12 @@ quotedWord :: Parser String
 quotedWord =
     Char.char '"'
     *> manyTill L.charLiteral (Char.char '"')
-    <* Char.space
+    <* spaceNoNewline
 
 wordWithout :: [Char] -> Parser String
-wordWithout xs = some (noneOf $ [' '] <> xs) <* Char.space
+wordWithout xs =
+    some (noneOf $ [' ', '\t', '\r', '\f', '\v', '\n'] <> xs)
+    <* spaceNoNewline
 
 maybeWord :: Parser (Maybe String)
 maybeWord = optional word

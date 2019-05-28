@@ -9,9 +9,6 @@ import Test.Tasty.HUnit
 import qualified Data.Function as Function
 import qualified Data.Map.Strict as Map
 
-import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -25,13 +22,11 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate, simplify )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Syntax.Iff
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
@@ -204,9 +199,9 @@ simplify iff0 =
     SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ Iff.simplify
-        mockMetadataTools
-        (Mock.substitutionSimplifier mockMetadataTools)
-        (Simplifier.create mockMetadataTools Map.empty)
+        Mock.metadataTools
+        (Mock.substitutionSimplifier Mock.metadataTools)
+        (Simplifier.create Mock.metadataTools Map.empty)
         Map.empty
         iff0
 
@@ -215,13 +210,3 @@ makeEvaluate
     -> Pattern Variable
     -> OrPattern Variable
 makeEvaluate = Iff.makeEvaluate
-
-mockMetadataTools :: SmtMetadataTools Attribute.Symbol
-mockMetadataTools =
-    Mock.makeMetadataTools
-        Mock.attributesMapping
-        Mock.headTypeMapping
-        Mock.sortAttributesMapping
-        Mock.subsorts
-        Mock.headSortsMapping
-        Mock.smtDeclarations

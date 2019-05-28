@@ -57,8 +57,6 @@ import           Kore.Parser.Lexeme
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Syntax
-import           Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
                  ( PatternF (..) )
 
@@ -280,15 +278,15 @@ ceilGen = ceilFloorGen Ceil
 equalsGen :: (Sort -> Gen child) -> Sort -> Gen (Equals Sort child)
 equalsGen = equalsInGen Equals
 
-genBuiltinExternal :: Sort -> Gen (Domain.Builtin child)
-genBuiltinExternal domainValueSort =
-    Domain.BuiltinExternal <$> genExternal domainValueSort
+genDomainValue :: (Sort -> Gen child) -> Sort -> Gen (DomainValue Sort child)
+genDomainValue childGen domainValueSort =
+    DomainValue domainValueSort <$> childGen stringMetaSort
 
-genBuiltin :: Sort -> Gen (Domain.Builtin child)
+genBuiltin :: Sort -> Gen (TermLike.Builtin (TermLike variable))
 genBuiltin domainValueSort = Gen.choice
-    [ genBuiltinExternal domainValueSort
-    , Domain.BuiltinInt <$> genInternalInt domainValueSort
+    [ Domain.BuiltinInt <$> genInternalInt domainValueSort
     , Domain.BuiltinBool <$> genInternalBool domainValueSort
+    , Domain.BuiltinString <$> genInternalString domainValueSort
     ]
 
 genInternalInt :: Sort -> Gen Domain.InternalInt
@@ -301,14 +299,10 @@ genInternalBool :: Sort -> Gen Domain.InternalBool
 genInternalBool builtinBoolSort =
     Domain.InternalBool builtinBoolSort <$> Gen.bool
 
-genExternal :: Sort -> Gen (Domain.External child)
-genExternal domainValueSort =
-    Domain.External
-        domainValueSort
-        . TermLike.eraseAnnotations
-        . mkStringLiteral
-        . getStringLiteral
-        <$> stringLiteralGen
+genInternalString :: Sort -> Gen Domain.InternalString
+genInternalString internalStringSort =
+    Domain.InternalString internalStringSort
+    <$> Gen.text (Range.linear 0 1024) Gen.unicode
 
 existsGen :: (Sort -> Gen child) -> Sort -> Gen (Exists Sort Variable child)
 existsGen = existsForallGen Exists
@@ -346,7 +340,7 @@ topGen = topBottomGen Top
 patternGen
     :: (Sort -> Gen child)
     -> Sort
-    -> Gen (Syntax.PatternF dom Variable child)
+    -> Gen (Syntax.PatternF Variable child)
 patternGen childGen patternSort =
     Gen.frequency
         [ (1, Syntax.AndF <$> andGen childGen patternSort)
@@ -384,7 +378,7 @@ termLikeChildGen patternSort =
               | otherwise ->
                 Gen.choice
                     [ mkVar <$> variableGen patternSort
-                    , mkDomainValue <$> genBuiltin patternSort
+                    , mkBuiltin <$> genBuiltin patternSort
                     ]
       | otherwise =
         (Gen.small . Gen.frequency)
@@ -503,7 +497,7 @@ korePatternChildGen patternSort' =
     korePatternGenDomainValue :: Gen ParsedPattern
     korePatternGenDomainValue =
         asParsedPattern . Syntax.DomainValueF
-            <$> genBuiltinExternal patternSort'
+            <$> genDomainValue korePatternChildGen patternSort'
 
     korePatternGenNext :: Gen ParsedPattern
     korePatternGenNext =

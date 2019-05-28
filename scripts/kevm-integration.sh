@@ -13,10 +13,6 @@ rm -f .build/k/bin/kore-*
 
 mkdir -p $(dirname $EVM_SEMANTICS)
 
-ci_git() {
-    git -c user.email='admin@runtimeverification.com' -c user.name='CI Server' "$@"
-}
-
 rm -rf $EVM_SEMANTICS
 git clone --recurse-submodules 'https://github.com/kframework/evm-semantics' $EVM_SEMANTICS --branch 'master'
 
@@ -31,4 +27,4 @@ ln -s $TOP/.build/k .build/k/k-distribution/target/release
 
 make build-haskell -B
 
-make test-vm-haskell -j8
+make test-interactive-run -j8 TEST_CONCRETE_BACKEND=haskell

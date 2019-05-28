@@ -17,7 +17,6 @@ import           Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-import           Kore.Syntax.Forall
 import           Kore.Unparser
 
 -- TODO: Move Forall up in the other simplifiers or something similar. Note

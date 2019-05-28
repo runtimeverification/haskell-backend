@@ -18,7 +18,7 @@ module Kore.Proof.Value
     ) where
 
 import           Control.Comonad.Trans.Cofree
-                 ( Cofree )
+                 ( Cofree, CofreeF (..) )
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Deriving as Deriving
 import           Data.Functor.Compose
@@ -38,11 +38,15 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
 import           Kore.Internal.TermLike
-                 ( Concrete, TermLike )
-import qualified Kore.Syntax as Syntax
-import           Kore.Syntax.Application
-import           Kore.Syntax.Pattern
-                 ( CofreeF (..), PatternF (..) )
+                 ( SymbolOrAlias, TermLike, TermLikeF (..) )
+import           Kore.Sort
+import qualified Kore.Syntax.Application as Syntax
+import           Kore.Syntax.CharLiteral
+                 ( CharLiteral )
+import qualified Kore.Syntax.DomainValue as Syntax
+import           Kore.Syntax.StringLiteral
+                 ( StringLiteral )
+import           Kore.Syntax.Variable
 
 {- | Proof (by construction) that a pattern is a normalized value.
 
@@ -50,9 +54,12 @@ import           Kore.Syntax.Pattern
     value), a sort injection, or a domain value.
  -}
 data ValueF child
-    = Constructor !(Application SymbolOrAlias child)
-    | SortInjection !(Application SymbolOrAlias child)
-    | DomainValue !(Domain.Builtin child)
+    = Constructor !(Syntax.Application SymbolOrAlias child)
+    | SortInjection !(Syntax.Application SymbolOrAlias child)
+    | DomainValue !(Syntax.DomainValue Sort child)
+    | Builtin !(Domain.Builtin (TermLike Concrete) child)
+    | StringLiteral !StringLiteral
+    | CharLiteral !CharLiteral
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
 Deriving.deriveEq1 ''ValueF
@@ -83,11 +90,10 @@ been fully applied.
 
  -}
 eraseSortInjection :: Value -> Maybe Value
-eraseSortInjection (Recursive.project -> ann :< value) =
+eraseSortInjection original@(Recursive.project -> _ :< value) =
     case value of
-        Constructor _ -> (Just . Recursive.embed) (ann :< value)
-        DomainValue _ -> (Just . Recursive.embed) (ann :< value)
         SortInjection _ -> Nothing
+        _               -> Just original
 
 {- | Embed the normalized pattern head if its children are normal values.
 
@@ -98,20 +104,20 @@ fromPattern
     :: SmtMetadataTools StepperAttributes
     -> Base (TermLike Concrete) (Maybe Value)
     -> Maybe Value
-fromPattern tools (ann :< pat) =
-    case pat of
+fromPattern tools (attrs :< termLikeF) =
+    fmap (Recursive.embed . (attrs :<))
+    $ case termLikeF of
         ApplicationF
             appP@Syntax.Application
                 { applicationSymbolOrAlias = symbolOrAlias }
           | isConstructor symbolOrAlias ->
             -- The constructor application is normal if all its children are
             -- normal.
-            Recursive.embed . (ann :<) . Constructor <$> sequence appP
+            Constructor <$> sequence appP
           | isSortInjection symbolOrAlias ->
             -- The sort injection application is normal if all its children are
             -- normal and none are sort injections.
-            Recursive.embed . (ann :<) . SortInjection
-                <$> traverse (>>= eraseSortInjection) appP
+            SortInjection <$> traverse (>>= eraseSortInjection) appP
         DomainValueF dvP ->
             -- A domain value is not technically a constructor, but it is
             -- constructor-like for builtin domains, at least from the
@@ -120,7 +126,18 @@ fromPattern tools (ann :< pat) =
             -- assumption that domain values are concrete. We should remove
             -- BuiltinPattern and always run the stepper with internal
             -- representations only.
-            Recursive.embed . (ann :<) . DomainValue <$> sequence dvP
+            DomainValue <$> sequence dvP
+        BuiltinF builtinP ->
+            -- A domain value is not technically a constructor, but it is
+            -- constructor-like for builtin domains, at least from the
+            -- perspective of normalization.
+            -- TODO (thomas.tuegel): Builtin domain parsers may violate the
+            -- assumption that domain values are concrete. We should remove
+            -- BuiltinPattern and always run the stepper with internal
+            -- representations only.
+            Builtin <$> sequence builtinP
+        StringLiteralF stringL -> Just (StringLiteral stringL)
+        CharLiteralF charL -> Just (CharLiteral charL)
         _ -> Nothing
   where
     isConstructor = give tools isConstructor_
@@ -144,11 +161,14 @@ fromConcreteStepPattern tools =
 {- | Project a 'Value' to a concrete 'Pattern' head.
  -}
 asPattern :: Value -> Base (TermLike Concrete) Value
-asPattern (Recursive.project -> ann :< val) =
-    case val of
-        Constructor appP -> ann :< ApplicationF appP
-        SortInjection appP -> ann :< ApplicationF appP
-        DomainValue dvP -> ann :< DomainValueF dvP
+asPattern (Recursive.project -> attrs :< value) =
+    case value of
+        Constructor appP      -> attrs :< ApplicationF   appP
+        SortInjection appP    -> attrs :< ApplicationF   appP
+        DomainValue dvP       -> attrs :< DomainValueF   dvP
+        Builtin builtinP      -> attrs :< BuiltinF       builtinP
+        StringLiteral stringP -> attrs :< StringLiteralF stringP
+        CharLiteral charP     -> attrs :< CharLiteralF   charP
 
 {- | View a normalized value as a 'ConcreteStepPattern'.
  -}

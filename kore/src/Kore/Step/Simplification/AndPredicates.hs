@@ -11,6 +11,8 @@ module Kore.Step.Simplification.AndPredicates
     ( simplifyEvaluatedMultiPredicate
     ) where
 
+import qualified Data.Foldable as Foldable
+
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -22,19 +24,19 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
 import           Kore.Internal.MultiOr
                  ( MultiOr )
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( fullCrossProduct )
+                 ( fullCrossProduct, mergeAll )
 import           Kore.Internal.OrPredicate
                  ( OrPredicate )
 import           Kore.Internal.Pattern
                  ( Predicate )
-import qualified Kore.Internal.Pattern as Pattern
-                 ( Conditional (..) )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
-import           Kore.Step.Substitution
-                 ( mergePredicatesAndSubstitutions )
+                 ( BranchT, PredicateSimplifier, Simplifier,
+                 TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as BranchT
+                 ( gather )
+import qualified Kore.Step.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -64,14 +66,18 @@ simplifyEvaluatedMultiPredicate
         crossProduct =
             MultiOr.fullCrossProduct
                 (MultiAnd.extractPatterns predicates)
-    traverse andPredicates crossProduct
+    orResults <- BranchT.gather (traverse andPredicates crossProduct)
+    return (MultiOr.mergeAll orResults)
   where
-    andPredicates :: [Predicate variable] -> Simplifier (Predicate variable)
-    andPredicates predicates0 =
-        mergePredicatesAndSubstitutions
+    andPredicates
+        :: [Predicate variable]
+        -> BranchT Simplifier (Predicate variable)
+    andPredicates predicates' =
+        normalize (Foldable.fold predicates')
+
+    normalize =
+        Substitution.normalize
             tools
             substitutionSimplifier
             simplifier
             axiomIdToSubstitution
-            (map Pattern.predicate predicates0)
-            (map Pattern.substitution predicates0)

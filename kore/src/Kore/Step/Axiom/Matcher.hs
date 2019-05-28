@@ -29,11 +29,6 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
-import           Kore.Internal.MultiOr
-                 ( MultiOr )
-import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
 import           Kore.Internal.Predicate as Conditional
                  ( Conditional (..), Predicate )
 import qualified Kore.Internal.Predicate as Predicate
@@ -60,7 +55,7 @@ import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMergerExcept,
                  mergePredicatesAndSubstitutionsExcept )
 import           Kore.Unification.Error
-                 ( UnificationError (..) )
+                 ( unsupportedPatterns )
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import qualified Kore.Unification.Substitution as Substitution
@@ -101,7 +96,7 @@ matchAsUnification
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> TermLike variable
-    -> unifier (OrPredicate variable)
+    -> unifier (Predicate variable)
 matchAsUnification
     tools
     substitutionSimplifier
@@ -111,7 +106,12 @@ matchAsUnification
     second
   = do
     result <- runMaybeT matchResult
-    maybe (Monad.Unify.throwUnificationError UnsupportedPatterns) return result
+    maybe
+        (Monad.Unify.throwUnificationError
+            (unsupportedPatterns "Unknown match case." first second)
+        )
+        return
+        result
   where
     matchResult =
         match
@@ -138,7 +138,7 @@ unificationWithAppMatchOnTop
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> TermLike variable
-    -> unifier (OrPredicate variable)
+    -> unifier (Predicate variable)
 unificationWithAppMatchOnTop
     tools
     substitutionSimplifier
@@ -162,7 +162,12 @@ unificationWithAppMatchOnTop
                 -- The application heads have the same symbol or alias
                 -- constructor with different parameters,
                 -- but we do not handle unification of symbol parameters.
-                  -> Monad.Unify.throwUnificationError UnsupportedPatterns
+                    -> Monad.Unify.throwUnificationError
+                        (unsupportedPatterns
+                            "Unknown application head match case for "
+                            first
+                            second
+                        )
                 | otherwise
                   -> error
                     (  "Unexpected unequal heads: "
@@ -195,8 +200,8 @@ unificationWithAppMatchOnTop
                 ++ show second ++ "."
                 )
     _ -> error
-        (  "Expecting application patterns, but second = "
-        ++ show second ++ "."
+        (  "Expecting application or ceil with sort variable patterns, "
+        ++ "but first = " ++ show first ++ "."
         )
 
 match
@@ -216,7 +221,7 @@ match
     -> TermLike variable
     -> TermLike variable
     -- TODO: Use Result here.
-    -> MaybeT unifier (OrPredicate variable)
+    -> MaybeT unifier (Predicate variable)
 match
     tools
     substitutionSimplifier
@@ -260,7 +265,7 @@ matchEqualHeadPatterns
     -> Map.Map variable variable
     -> TermLike variable
     -> TermLike variable
-    -> MaybeT unifier (OrPredicate variable)
+    -> MaybeT unifier (Predicate variable)
 matchEqualHeadPatterns
     tools
     substitutionSimplifier
@@ -330,6 +335,8 @@ matchEqualHeadPatterns
                 _ -> nothing
         (CharLiteral_ _) ->
             topWhenEqualOrNothing first second
+        (Builtin_ _) ->
+            topWhenEqualOrNothing first second
         (DV_ _ _) ->
             topWhenEqualOrNothing first second
         (Equals_ _ _ firstFirst firstSecond) ->
@@ -348,7 +355,7 @@ matchEqualHeadPatterns
         (Exists_ _ firstVariable firstChild) ->
             case second of
                 (Exists_ _ secondVariable secondChild) ->
-                    checkVariableEscapeOr [firstVariable, secondVariable]
+                    checkVariableEscape [firstVariable, secondVariable]
                     <$> match
                         tools
                         substitutionSimplifier
@@ -376,7 +383,7 @@ matchEqualHeadPatterns
             case second of
                 (Forall_ _ secondVariable secondChild) ->
                     (<$>)
-                        (checkVariableEscapeOr [firstVariable, secondVariable])
+                        (checkVariableEscape [firstVariable, secondVariable])
                         (match
                             tools
                             substitutionSimplifier
@@ -498,11 +505,8 @@ matchEqualHeadPatterns
         if first' == second'
             then justTop
             else nothing
-    justTop
-        :: MaybeT unifier
-            (OrPredicate variable)
-    justTop = just
-        (MultiOr.make [Predicate.top])
+    justTop :: MaybeT unifier (Predicate variable)
+    justTop = just Predicate.top
 
 matchJoin
     ::  forall variable unifier
@@ -520,7 +524,7 @@ matchJoin
     -- ^ Map from axiom IDs to axiom evaluators
     -> Map.Map variable variable
     -> [(TermLike variable, TermLike variable)]
-    -> MaybeT unifier (OrPredicate variable)
+    -> MaybeT unifier (Predicate variable)
 matchJoin
     tools
     substitutionSimplifier
@@ -530,7 +534,7 @@ matchJoin
     patterns
   = do
     matched <-
-        traverse
+        traverse  -- also does a cross-product of the unifier branches
             (uncurry $
                 match
                     tools
@@ -540,19 +544,13 @@ matchJoin
                     quantifiedVariables
             )
             patterns
-    let
-        crossProduct :: MultiOr [Predicate variable]
-        crossProduct = MultiOr.fullCrossProduct matched
-        merge :: [Predicate variable] -> unifier (Predicate variable)
-        merge items =
-            mergePredicatesAndSubstitutionsExcept
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                (map Conditional.predicate items)
-                (map Conditional.substitution items)
-    MultiOr.filterOr <$> traverse (lift . merge) crossProduct
+    lift $ mergePredicatesAndSubstitutionsExcept
+        tools
+        substitutionSimplifier
+        simplifier
+        axiomIdToSimplifier
+        (map Conditional.predicate matched)
+        (map Conditional.substitution matched)
 
 unifyJoin
     ::  forall variable unifier
@@ -569,25 +567,20 @@ unifyJoin
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> [(TermLike variable, TermLike variable)]
-    -> unifier (OrPredicate variable)
+    -> unifier (Predicate variable)
 unifyJoin
     tools substitutionSimplifier simplifier axiomIdToSimplifier patterns
   = do
-    matched <-
-        traverse
-            (uncurry $
-                unificationProcedure
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-            )
-            patterns
-    let
-        crossProduct :: MultiOr [Predicate variable]
-        crossProduct = MultiOr.fullCrossProduct matched
-        merged = Foldable.fold <$> crossProduct
-    return (MultiOr.filterOr merged)
+    predicates <- traverse
+        (uncurry $
+            unificationProcedure
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+        )
+        patterns
+    return (Foldable.fold predicates)
 
 -- Note that we can't match variables to stuff which can have more than one
 -- value, because if we take the axiom
@@ -620,7 +613,7 @@ matchVariableFunction
     -> Map.Map variable variable
     -> TermLike variable
     -> TermLike variable
-    -> MaybeT unifier (OrPredicate variable)
+    -> MaybeT unifier (Predicate variable)
 matchVariableFunction
     tools
     substitutionSimplifier
@@ -653,20 +646,8 @@ matchVariableFunction
                 , substitution = Substitution.wrap [(var, second)]
                 }
             ceilOr
-    return result
+    Monad.Unify.scatter result
 matchVariableFunction _ _ _ _ _ _ _ = nothing
-
-checkVariableEscapeOr
-    ::  ( Show variable
-        , SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
-    => [variable]
-    -> OrPredicate variable
-    -> OrPredicate variable
-checkVariableEscapeOr vars = fmap (checkVariableEscape vars)
 
 checkVariableEscape
     ::  ( Show variable

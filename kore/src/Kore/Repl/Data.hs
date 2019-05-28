@@ -16,22 +16,33 @@ module Kore.Repl.Data
     , ReplNode (..)
     , ReplState (..)
     , NodeState (..)
+    , GraphProofStatus (..)
+    , AliasDefinition (..), ReplAlias (..), AliasArgument(..), AliasError (..)
     , getNodeState
     , InnerGraph
     , lensAxioms, lensClaims, lensClaim
-    , lensGraph, lensNode, lensStepper
+    , lensGraphs, lensNode, lensStepper
     , lensLabels, lensOmit, lensUnifier
-    , lensCommands, shouldStore
+    , lensCommands, lensAliases, lensClaimIndex
+    , lensLogging
+    , shouldStore
     , UnifierWithExplanation (..)
     , runUnifierWithExplanation
     , emptyExecutionGraph
     , getClaimByIndex, getAxiomByIndex, getAxiomOrClaimByIndex
-    , initializeProofFor
-    , getTargetNode, getInnerGraph, getConfigAt, getRuleFor
-    , StepResult(..), runStepper, runStepper'
-    , updateInnerGraph
+    , switchToProof
+    , getTargetNode, getInnerGraph, getExecutionGraph
+    , getConfigAt, getRuleFor, getLabels, setLabels
+    , StepResult(..)
+    , runStepper, runStepper'
+    , runUnifier
+    , updateInnerGraph, updateExecutionGraph
+    , addOrUpdateAlias, findAlias, substituteAlias
+    , LogType (..)
     ) where
 
+import           Control.Applicative
+                 ( Alternative )
 import           Control.Error
                  ( hush )
 import qualified Control.Lens as Lens hiding
@@ -39,10 +50,16 @@ import qualified Control.Lens as Lens hiding
 import qualified Control.Lens.TH.Rules as Lens
 import           Control.Monad
                  ( join )
+import           Control.Monad.Error.Class
+                 ( MonadError )
+import qualified Control.Monad.Error.Class as Monad.Error
+import           Control.Monad.IO.Class
+                 ( liftIO )
+import qualified Control.Monad.Reader.Class as Reader
 import           Control.Monad.State.Strict
                  ( MonadState, get, modify )
 import           Control.Monad.Trans.Accum
-                 ( AccumT )
+                 ( AccumT, runAccumT )
 import qualified Control.Monad.Trans.Accum as Monad.Accum
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import           Data.Bitraversable
@@ -61,31 +78,38 @@ import           Data.Monoid
                  ( First (..) )
 import           Data.Sequence
                  ( Seq )
+import           Data.Set
+                 ( Set )
+import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
 import           Data.Text.Prettyprint.Doc
                  ( Doc )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Exts
                  ( toList )
 import           Numeric.Natural
+import           System.IO
+                 ( Handle, IOMode (AppendMode), hClose, openFile )
 
 import           Kore.Internal.Pattern
                  ( Conditional (..) )
 import           Kore.Internal.TermLike
                  ( TermLike )
+import qualified Kore.Logger.Output as Logger
 import           Kore.OnePath.StrategyPattern
 import           Kore.OnePath.Verification
-                 ( Axiom (..) )
-import           Kore.OnePath.Verification
-                 ( Claim )
+                 ( Axiom (..), Claim )
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unification.Unify
-                 ( MonadUnify, Unifier )
+                 ( MonadUnify, UnifierTT (UnifierTT) )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( unparse )
@@ -96,11 +120,33 @@ newtype AxiomIndex = AxiomIndex
 
 newtype ClaimIndex = ClaimIndex
     { unClaimIndex :: Int
-    } deriving (Eq, Show)
+    } deriving (Eq, Ord, Show)
 
 newtype ReplNode = ReplNode
     { unReplNode :: Graph.Node
     } deriving (Eq, Show)
+
+data AliasDefinition = AliasDefinition
+    { name      :: String
+    , arguments :: [String]
+    , command   :: String
+    } deriving (Eq, Show)
+
+data AliasArgument
+  = SimpleArgument String
+  | QuotedArgument String
+  deriving (Eq, Show)
+
+data ReplAlias = ReplAlias
+    { name      :: String
+    , arguments :: [AliasArgument]
+    } deriving (Eq, Show)
+
+data LogType
+    = NoLogging
+    | LogToStdOut
+    | LogToFile !FilePath
+    deriving (Eq, Show)
 
 -- | List of available commands for the Repl. Note that we are always in a proof
 -- state. We pick the first available Claim when we initialize the state.
@@ -153,9 +199,44 @@ data ReplCommand
     -- ^ Writes all commands executed in this session to a file on disk.
     | AppendTo ReplCommand FilePath
     -- ^ Appends the output of a command to a file.
+    | Alias AliasDefinition
+    -- ^ Alias a command.
+    | TryAlias ReplAlias
+    -- ^ Try running an alias.
+    | LoadScript FilePath
+    -- ^ Load script from file
+    | ProofStatus
+    -- ^ Show proof status of each claim
+    | Log Logger.Severity LogType
+    -- ^ Setup the Kore logger.
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
+
+commandSet :: Set String
+commandSet = Set.fromList
+    [ "help"
+    , "claim"
+    , "axiom"
+    , "prove"
+    , "graph"
+    , "step"
+    , "stepf"
+    , "select"
+    , "omit"
+    , "leafs"
+    , "rule"
+    , "prec-branch"
+    , "children"
+    , "label"
+    , "try"
+    , "clear"
+    , "save-session"
+    , "alias"
+    , "load"
+    , "log"
+    , "exit"
+    ]
 
 -- | Please remember to update this text whenever you update the ADT above.
 helpText :: String
@@ -167,8 +248,9 @@ helpText =
     \prove <n>                             initializes proof mode for the nth \
                                            \claim\n\
     \graph [file]                          shows the current proof graph (*)\n\
-                                           \ (saves image if file argument is\
-                                           \ given)\n\
+    \                                      (saves image in .jpeg format if file\
+                                           \ argument is given; file extension is\
+                                           \ added automatically)\n\
     \step [n]                              attempts to run 'n' proof steps at\
                                            \the current node (n=1 by default)\n\
     \stepf [n]                             attempts to run 'n' proof steps at\
@@ -196,7 +278,17 @@ helpText =
                                            \ index <num>.\n\
     \clear [n]                             removes all node children from the\
                                            \ proof graph\n\
-                                           \ (defaults to current node)\n\
+    \                                      (defaults to current node)\n\
+    \save-session file                     saves the current session to file\n\
+    \alias <name> = <command>              adds as an alias for <command>\n\
+    \<alias>                               runs an existing alias\n\
+    \load file                             loads the file as a repl script\n\
+    \proof-status                          shows status for each claim\
+    \log <severity> <type>                 configures the logging outout\n\
+                                           \<severity> can be debug, info, warning,\
+                                           \error, or critical\n\
+    \                                      <type> can be NoLogging, LogToStdOut,\
+                                           \or LogToFile filename\n\
     \exit                                  exits the repl\
     \\n\
     \Available modifiers:\n\
@@ -232,34 +324,37 @@ shouldStore =
         ShowPrecBranch _ -> False
         ShowChildren _   -> False
         SaveSession _    -> False
+        ProofStatus      -> False
         Exit             -> False
         _                -> True
 
 -- Type synonym for the actual type of the execution graph.
 type ExecutionGraph =
     Strategy.ExecutionGraph
-        (CommonStrategyPattern)
+        CommonStrategyPattern
         (RewriteRule Variable)
 
 type InnerGraph =
-    Gr (CommonStrategyPattern) (Seq (RewriteRule Variable))
+    Gr CommonStrategyPattern (Seq (RewriteRule Variable))
 
 -- | State for the rep.
 data ReplState claim = ReplState
-    { axioms   :: [Axiom]
+    { axioms     :: [Axiom]
     -- ^ List of available axioms
-    , claims   :: [claim]
+    , claims     :: [claim]
     -- ^ List of claims to be proven
-    , claim    :: claim
+    , claim      :: claim
     -- ^ Currently focused claim in the repl
-    , graph    :: ExecutionGraph
+    , claimIndex :: ClaimIndex
+    -- ^ Index of the currently focused claim in the repl
+    , graphs     :: Map ClaimIndex ExecutionGraph
     -- ^ Execution graph for the current proof; initialized with root = claim
-    , node     :: ReplNode
+    , node       :: ReplNode
     -- ^ Currently selected node in the graph; initialized with node = root
-    , commands :: Seq String
+    , commands   :: Seq String
     -- ^ All commands evaluated by the current repl session
     -- TODO(Vladimir): This should be a Set String instead.
-    , omit     :: [String]
+    , omit       :: [String]
     -- ^ The omit list, initially empty
     , stepper
         :: Claim claim
@@ -277,34 +372,42 @@ data ReplState claim = ReplState
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
     --   failures
-    , labels  :: Map String ReplNode
+    , labels  :: Map ClaimIndex (Map String ReplNode)
     -- ^ Map from labels to nodes
+    , aliases :: Map String AliasDefinition
+    -- ^ Map of command aliases
+    , logging :: (Logger.Severity, LogType)
     }
 
 -- | Unifier that stores the first 'explainBottom'.
 -- See 'runUnifierWithExplanation'.
-newtype UnifierWithExplanation a = UnifierWithExplanation
-    { getUnifier :: AccumT (First (Doc ())) Unifier a
-    } deriving (Applicative, Functor, Monad)
+newtype UnifierWithExplanation a =
+    UnifierWithExplanation
+        { getUnifierWithExplanation :: UnifierTT (AccumT (First (Doc ()))) a }
+  deriving (Alternative, Applicative, Functor, Monad)
 
 instance MonadUnify UnifierWithExplanation where
     throwSubstitutionError =
-        UnifierWithExplanation
-            . Monad.Trans.lift
-            . Monad.Unify.throwSubstitutionError
-
+        UnifierWithExplanation . Monad.Unify.throwSubstitutionError
     throwUnificationError =
-        UnifierWithExplanation
-            . Monad.Trans.lift
-            . Monad.Unify.throwUnificationError
+        UnifierWithExplanation . Monad.Unify.throwUnificationError
 
     liftSimplifier =
-        UnifierWithExplanation
-            . Monad.Trans.lift
-            . Monad.Unify.liftSimplifier
+        UnifierWithExplanation . Monad.Unify.liftSimplifier
+    liftBranchedSimplifier =
+        UnifierWithExplanation . Monad.Unify.liftBranchedSimplifier
+
+    gather =
+        UnifierWithExplanation . Monad.Unify.gather . getUnifierWithExplanation
+    scatter = UnifierWithExplanation . Monad.Unify.scatter
 
     explainBottom info first second =
-        UnifierWithExplanation . Monad.Accum.add . First . Just $ Pretty.vsep
+        UnifierWithExplanation
+        . UnifierTT
+        . Monad.Trans.lift
+        . Monad.Accum.add
+        . First
+        . Just $ Pretty.vsep
             [ info
             , "When unifying:"
             , Pretty.indent 4 $ unparse first
@@ -313,15 +416,22 @@ instance MonadUnify UnifierWithExplanation where
             ]
 
 runUnifierWithExplanation
-    :: UnifierWithExplanation a
+    :: forall a
+    .  UnifierWithExplanation a
     -> Simplifier (Maybe (Doc ()))
-runUnifierWithExplanation (UnifierWithExplanation accum)
-    = fmap join
-        . (fmap . fmap) getFirst
-        . (fmap . fmap) snd
-        . fmap hush
-        . Monad.Unify.runUnifier
-        $ Monad.Accum.runAccumT accum mempty
+runUnifierWithExplanation (UnifierWithExplanation unifier)
+  =
+    join <$> fmap (fmap getFirst) unificationExplanations
+  where
+    unificationResults :: Simplifier (Maybe ([a], First (Doc ())))
+    unificationResults =
+        hush
+        <$> Monad.Unify.runUnifierT
+            (\accum -> runAccumT accum mempty)
+            unifier
+    unificationExplanations :: Simplifier (Maybe (First (Doc ())))
+    unificationExplanations =
+        fmap (fmap snd) unificationResults
 
 Lens.makeLenses ''ReplState
 
@@ -349,7 +459,7 @@ getAxiomByIndex
     :: MonadState (ReplState claim) m
     => Int
     -- ^ index in the axioms list
-    -> m (Maybe (Axiom))
+    -> m (Maybe Axiom)
 getAxiomByIndex index = Lens.preuse $ lensAxioms . Lens.element index
 
 -- | Transforms an axiom or claim index into an axiom or claim if they could be
@@ -357,48 +467,92 @@ getAxiomByIndex index = Lens.preuse $ lensAxioms . Lens.element index
 getAxiomOrClaimByIndex
     :: MonadState (ReplState claim) m
     => Either AxiomIndex ClaimIndex
-    -> m (Maybe (Either (Axiom) claim))
+    -> m (Maybe (Either Axiom claim))
 getAxiomOrClaimByIndex =
     fmap bisequence
         . bitraverse
             (getAxiomByIndex . coerce)
             (getClaimByIndex . coerce)
 
--- | Initialize the execution graph with selected claim.
-initializeProofFor
+-- | Update the currently selected claim to prove.
+switchToProof
     :: MonadState (ReplState claim) m
     => Claim claim
     => claim
+    -> ClaimIndex
     -> m ()
-initializeProofFor claim =
+switchToProof claim cindex = do
     modify (\st -> st
-        { graph  = emptyExecutionGraph claim
-        , claim  = claim
-        , node   = ReplNode 0
-        , labels = Map.empty
+        { claim = claim
+        , claimIndex = cindex
+        , node = ReplNode 0
         })
 
 -- | Get the internal representation of the execution graph.
 getInnerGraph
     :: MonadState (ReplState claim) m
+    => Claim claim
     => m InnerGraph
-getInnerGraph = Strategy.graph . graph <$> get
+getInnerGraph =
+    fmap Strategy.graph getExecutionGraph
 
--- | Update the internal representation of the execution graph.
+-- | Get the current execution graph
+getExecutionGraph
+    :: MonadState (ReplState claim) m
+    => Claim claim
+    => m ExecutionGraph
+getExecutionGraph = do
+    ReplState { claimIndex, graphs, claim } <- get
+    let mgraph = Map.lookup claimIndex graphs
+    return $ maybe (emptyExecutionGraph claim) id mgraph
+
+-- | Update the internal representation of the current execution graph.
 updateInnerGraph
     :: MonadState (ReplState claim) m
     => InnerGraph
     -> m ()
-updateInnerGraph ig = lensGraph Lens.%= updateInnerGraph0 ig
+updateInnerGraph ig = do
+    ReplState { claimIndex, graphs } <- get
+    lensGraphs Lens..=
+        Map.adjust (updateInnerGraph0 ig) claimIndex graphs
   where
     updateInnerGraph0 :: InnerGraph -> ExecutionGraph -> ExecutionGraph
     updateInnerGraph0 graph Strategy.ExecutionGraph { root } =
         Strategy.ExecutionGraph { root, graph }
 
+-- | Update the current execution graph.
+updateExecutionGraph
+    :: MonadState (ReplState claim) m
+    => ExecutionGraph
+    -> m ()
+updateExecutionGraph gph = do
+    ReplState { claimIndex, graphs } <- get
+    lensGraphs Lens..= Map.insert claimIndex gph graphs
+
+-- | Get the node labels for the current claim.
+getLabels
+    :: MonadState (ReplState claim) m
+    => m (Map String ReplNode)
+getLabels = do
+    ReplState { claimIndex, labels } <- get
+    let mlabels = Map.lookup claimIndex labels
+    return $ maybe Map.empty id mlabels
+
+-- | Update the node labels for the current claim.
+setLabels
+    :: MonadState (ReplState claim) m
+    => Map String ReplNode
+    -> m ()
+setLabels lbls = do
+    ReplState { claimIndex, labels } <- get
+    lensLabels Lens..= Map.insert claimIndex lbls labels
+
+
 -- | Get selected node (or current node for 'Nothing') and validate that it's
 -- part of the execution graph.
 getTargetNode
     :: MonadState (ReplState claim) m
+    => Claim claim
     => Maybe ReplNode
     -- ^ node index
     -> m (Maybe ReplNode)
@@ -413,6 +567,7 @@ getTargetNode maybeNode = do
 -- | Get the configuration at selected node (or current node for 'Nothing').
 getConfigAt
     :: MonadState (ReplState claim) m
+    => Claim claim
     => Maybe ReplNode
     -> m (Maybe (ReplNode, CommonStrategyPattern))
 getConfigAt maybeNode = do
@@ -428,6 +583,7 @@ getConfigAt maybeNode = do
 -- | Get the rule used to reach selected node.
 getRuleFor
     :: MonadState (ReplState claim) m
+    => Claim claim
     => Maybe ReplNode
     -- ^ node index
     -> m (Maybe (RewriteRule Variable))
@@ -447,6 +603,40 @@ getRuleFor maybeNode = do
 
     third :: forall a b c. (a, b, c) -> c
     third (_, _, c) = c
+
+-- | Lifting function that takes logging into account.
+liftSimplifierWithLogger
+    :: forall a t claim
+    .  MonadState (ReplState claim) (t Simplifier)
+    => Monad.Trans.MonadTrans t
+    => Simplifier a
+    -> t Simplifier a
+liftSimplifierWithLogger sa = do
+   (severity, logType) <- logging <$> get
+   (textLogger, maybeHandle) <- logTypeToLogger logType
+   let logger = Logger.makeKoreLogger severity textLogger
+   result <- Monad.Trans.lift
+       . Reader.local (setLogger logger)
+       $ sa
+   maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
+   pure result
+  where
+    setLogger
+        :: Logger.LogAction Simplifier Logger.LogMessage
+        -> Simplifier.Environment
+        -> Simplifier.Environment
+    setLogger la env = env { Simplifier.logger = la }
+
+    logTypeToLogger
+        :: LogType
+        -> t Simplifier (Logger.LogAction Simplifier Text, Maybe Handle)
+    logTypeToLogger =
+        \case
+            NoLogging   -> pure (mempty, Nothing)
+            LogToStdOut -> pure (Logger.logTextStdout, Nothing)
+            LogToFile file -> do
+                handle <- Monad.Trans.lift . liftIO $ openFile file AppendMode
+                pure (Logger.logTextHandle handle, Just handle)
 
 -- | Result after running one or multiple proof steps.
 data StepResult
@@ -468,7 +658,7 @@ runStepper
 runStepper = do
     ReplState { claims, axioms, node } <- get
     (graph', res) <- runStepper' claims axioms node
-    lensGraph Lens..= graph'
+    updateExecutionGraph graph'
     case res of
         SingleResult nextNode -> do
             lensNode Lens..= nextNode
@@ -486,9 +676,10 @@ runStepper'
     -> ReplNode
     -> m Simplifier (ExecutionGraph, StepResult)
 runStepper' claims axioms node = do
-    ReplState { claim, graph, stepper } <- get
+    ReplState { claim, stepper } <- get
+    gph <- getExecutionGraph
     gr@Strategy.ExecutionGraph { graph = innerGraph } <-
-        Monad.Trans.lift $ stepper claim claims axioms graph node
+        liftSimplifierWithLogger $ stepper claim claims axioms gph node
     pure . (,) gr $ case Graph.suc innerGraph (unReplNode node) of
         []       -> NoResult
         [single] -> case getNodeState innerGraph single of
@@ -496,6 +687,18 @@ runStepper' claims axioms node = do
                         Just (StuckNode, _) -> NoResult
                         _ -> SingleResult . ReplNode $ single
         nodes    -> BranchResult $ fmap ReplNode nodes
+
+runUnifier
+    :: MonadState (ReplState claim) (m Simplifier)
+    => Monad.Trans.MonadTrans m
+    => TermLike Variable
+    -> TermLike Variable
+    -> m Simplifier (Maybe (Pretty.Doc ()))
+runUnifier first second = do
+    unifier <- Lens.use lensUnifier
+    liftSimplifierWithLogger
+        . runUnifierWithExplanation
+        $ unifier first second
 
 getNodeState :: InnerGraph -> Graph.Node -> Maybe (NodeState, Graph.Node)
 getNodeState graph node =
@@ -511,3 +714,86 @@ getNodeState graph node =
 
 data NodeState = StuckNode | UnevaluatedNode
     deriving (Eq, Ord, Show)
+
+data AliasError
+    = NameAlreadyDefined
+    | UnknownCommand
+
+data GraphProofStatus
+    = NotStarted
+    | Completed
+    | InProgress [Graph.Node]
+    | StuckProof [Graph.Node]
+    deriving (Eq, Show)
+
+-- | Adds or updates the provided alias.
+addOrUpdateAlias
+    :: forall m claim
+    .  MonadState (ReplState claim) m
+    => MonadError AliasError m
+    => AliasDefinition
+    -> m ()
+addOrUpdateAlias alias@AliasDefinition { name, command } = do
+    checkNameIsNotUsed
+    checkCommandExists
+    lensAliases Lens.%= Map.insert name alias
+  where
+    checkNameIsNotUsed :: m ()
+    checkNameIsNotUsed =
+        not . Set.member name <$> existingCommands
+            >>= falseToError NameAlreadyDefined
+
+    checkCommandExists :: m ()
+    checkCommandExists = do
+        cmds <- existingCommands
+        let
+            maybeCommand = listToMaybe $ words command
+            maybeExists = Set.member <$> maybeCommand <*> pure cmds
+        maybe
+            (Monad.Error.throwError UnknownCommand)
+            (falseToError UnknownCommand)
+            maybeExists
+
+    existingCommands :: m (Set String)
+    existingCommands =
+        Set.union commandSet
+        . Set.fromList
+        . Map.keys
+        <$> Lens.use lensAliases
+
+    falseToError :: AliasError -> Bool -> m ()
+    falseToError e b =
+        if b then pure () else Monad.Error.throwError e
+
+
+findAlias
+    :: MonadState (ReplState claim) m
+    => String
+    -> m (Maybe AliasDefinition)
+findAlias name = Map.lookup name <$> Lens.use lensAliases
+
+substituteAlias
+    :: AliasDefinition
+    -> ReplAlias
+    -> String
+substituteAlias
+    AliasDefinition { arguments, command }
+    ReplAlias { arguments = actualArguments } =
+    unwords
+      . fmap replaceArguments
+      . words
+      $ command
+  where
+    values :: Map String AliasArgument
+    values
+      | length arguments == length actualArguments
+        = Map.fromList $ zip arguments actualArguments
+      | otherwise = Map.empty
+
+    replaceArguments :: String -> String
+    replaceArguments s = maybe s toString $ Map.lookup s values
+
+    toString :: AliasArgument -> String
+    toString = \case
+        SimpleArgument str -> str
+        QuotedArgument str -> "\"" <> str <> "\""

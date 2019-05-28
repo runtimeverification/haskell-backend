@@ -21,21 +21,21 @@ test_uniqueNames =
         )
     , expectSuccess "Definition with meta alias"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ simpleMetaAliasSentence (AliasName "#a") stringSortName ]
+            [ simpleAliasSentence (AliasName "#a") stringSortName ]
         )
     , expectSuccess "Definition with object alias"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ simpleObjectAliasSentence (AliasName "a") (SortName "s")
+            [ simpleAliasSentence (AliasName "a") (SortName "s")
             , simpleSortSentence (SortName "s")
             ]
         )
     , expectSuccess "Definition with meta symbol"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ simpleMetaSymbolSentence (SymbolName "#a") stringSortName ]
+            [ simpleSymbolSentence (SymbolName "#a") stringSortName ]
         )
     , expectSuccess "Definition with object symbol"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ simpleObjectSymbolSentence (SymbolName "a") (SortName "s")
+            [ simpleSymbolSentence (SymbolName "a") (SortName "s")
             , simpleSortSentence (SortName "s")
             ]
         )
@@ -47,27 +47,27 @@ test_uniqueNames =
         )
     , expectSuccess "Definition with two meta aliases"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ simpleMetaAliasSentence (AliasName "#a1") stringSortName
-            , simpleMetaAliasSentence (AliasName "#a2") stringSortName
+            [ simpleAliasSentence (AliasName "#a1") stringSortName
+            , simpleAliasSentence (AliasName "#a2") stringSortName
             ]
         )
     , expectSuccess "Definition with two object aliases"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ simpleObjectAliasSentence (AliasName "a1") (SortName "s")
-            , simpleObjectAliasSentence (AliasName "a2") (SortName "s")
+            [ simpleAliasSentence (AliasName "a1") (SortName "s")
+            , simpleAliasSentence (AliasName "a2") (SortName "s")
             , simpleSortSentence (SortName "s")
             ]
         )
     , expectSuccess "Definition with two meta symbols"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ simpleMetaAliasSentence (AliasName "#a1") stringSortName
-            , simpleMetaAliasSentence (AliasName "#a2") stringSortName
+            [ simpleAliasSentence (AliasName "#a1") stringSortName
+            , simpleAliasSentence (AliasName "#a2") stringSortName
             ]
         )
     , expectSuccess "Definition with two object symbols"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ simpleObjectSymbolSentence (SymbolName "a1") (SortName "s")
-            , simpleObjectSymbolSentence (SymbolName "a2") (SortName "s")
+            [ simpleSymbolSentence (SymbolName "a1") (SortName "s")
+            , simpleSymbolSentence (SymbolName "a2") (SortName "s")
             , simpleSortSentence (SortName "s")
             ]
         )
@@ -78,7 +78,7 @@ test_uniqueNames =
     -}
         (simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
-                (variableTermLike (VariableName "#a") charMetaSort)
+                (variableParsedPattern (VariableName "#a") charMetaSort)
                 [namedSortVariable (SortVariableName "#a")]
             ]
         )
@@ -103,8 +103,8 @@ test_uniqueNames =
             "Duplicated name: '#a'."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ simpleMetaAliasSentence (AliasName "#a") stringSortName
-            , simpleMetaAliasSentence (AliasName "#a") stringSortName
+            [ simpleAliasSentence (AliasName "#a") stringSortName
+            , simpleAliasSentence (AliasName "#a") stringSortName
             ]
         )
     , expectFailureWithError
@@ -116,8 +116,8 @@ test_uniqueNames =
             "Duplicated name: 'a'."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ simpleObjectAliasSentence (AliasName "a") (SortName "s")
-            , simpleObjectAliasSentence (AliasName "a") (SortName "s")
+            [ simpleAliasSentence (AliasName "a") (SortName "s")
+            , simpleAliasSentence (AliasName "a") (SortName "s")
             , simpleSortSentence (SortName "s")
             ]
         )
@@ -130,8 +130,8 @@ test_uniqueNames =
             "Duplicated name: '#a'."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ simpleMetaAliasSentence (AliasName "#a") stringSortName
-            , simpleMetaAliasSentence (AliasName "#a") stringSortName
+            [ simpleAliasSentence (AliasName "#a") stringSortName
+            , simpleAliasSentence (AliasName "#a") stringSortName
             ]
         )
     , expectFailureWithError
@@ -143,8 +143,8 @@ test_uniqueNames =
             "Duplicated name: 'a'."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ simpleObjectSymbolSentence (SymbolName "a") (SortName "s")
-            , simpleObjectSymbolSentence (SymbolName "a") (SortName "s")
+            [ simpleSymbolSentence (SymbolName "a") (SortName "s")
+            , simpleSymbolSentence (SymbolName "a") (SortName "s")
             , simpleSortSentence (SortName "s")
             ]
         )
@@ -157,7 +157,7 @@ test_uniqueNames =
             "Duplicated name: '#String'."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ simpleMetaAliasSentence (AliasName "#String") stringSortName ]
+            [ simpleAliasSentence (AliasName "#String") stringSortName ]
         )
     , expectFailureWithError
         "Definition with object alias with same name as sort"
@@ -168,7 +168,7 @@ test_uniqueNames =
             "Duplicated name: 's'."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ simpleObjectAliasSentence (AliasName "s") (SortName "s")
+            [ simpleAliasSentence (AliasName "s") (SortName "s")
             , simpleSortSentence (SortName "s")
             ]
         )
@@ -181,8 +181,8 @@ test_uniqueNames =
             "Duplicated name: '#a'."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ simpleMetaAliasSentence (AliasName "#a") stringSortName
-            , simpleMetaSymbolSentence (SymbolName "#a") stringSortName
+            [ simpleAliasSentence (AliasName "#a") stringSortName
+            , simpleSymbolSentence (SymbolName "#a") stringSortName
             ]
         )
     , expectFailureWithError
@@ -194,8 +194,8 @@ test_uniqueNames =
             "Duplicated name: 'a'."
             )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ simpleObjectAliasSentence (AliasName "a") (SortName "s")
-            , simpleObjectSymbolSentence (SymbolName "a") (SortName "s")
+            [ simpleAliasSentence (AliasName "a") (SortName "s")
+            , simpleSymbolSentence (SymbolName "a") (SortName "s")
             , simpleSortSentence (SortName "s")
             ]
         )
@@ -208,7 +208,7 @@ test_uniqueNames =
             "Duplicated name: '#String'."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ simpleMetaSymbolSentence
+            [ simpleSymbolSentence
                 (SymbolName "#String") stringSortName
             ]
         )
@@ -221,7 +221,7 @@ test_uniqueNames =
             "Duplicated name: 's'."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ simpleObjectSymbolSentence (SymbolName "s") (SortName "s")
+            [ simpleSymbolSentence (SymbolName "s") (SortName "s")
             , simpleSortSentence (SortName "s")
             ]
         )

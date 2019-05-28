@@ -24,9 +24,10 @@ import           Kore.Error
                  ( printError )
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
-                 ( IndexedModule (..), VerifiedModule,
-                 makeIndexedModuleAttributesNull, mapIndexedModulePatterns )
+                 ( IndexedModule (..), VerifiedModule )
+import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.Internal.TermLike
+                 ( TermLike, Variable )
 import           Kore.Logger.Output
                  ( emptyLogger )
 import           Kore.Parser
@@ -35,6 +36,7 @@ import           Kore.Step
                  ( anyRewrite )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
+import           Kore.Syntax.Id
 import           Kore.Syntax.Module
                  ( ModuleName (..) )
 import qualified SMT
@@ -151,10 +153,6 @@ execBenchmark root kFile definitionFile mainModuleName test =
             Just verifiedModule =
                 fmap constructorFunctions
                     $ Map.lookup mainModuleName verifiedModules
-            indexedModule =
-                mapIndexedModulePatterns
-                    eraseAnnotations
-                    verifiedModule
         pat <- parseProgram
         let
             parsedPattern = either error id $ parseKorePattern "" pat
@@ -168,7 +166,9 @@ execBenchmark root kFile definitionFile mainModuleName test =
                         { builtinDomainValueVerifiers =
                             Builtin.domainValueVerifiers Builtin.koreVerifiers
                         , indexedModule =
-                            makeIndexedModuleAttributesNull indexedModule
+                            verifiedModule
+                            & IndexedModule.erasePatterns
+                            & IndexedModule.eraseAttributes
                         , declaredSortVariables = Set.empty
                         , declaredVariables =
                             PatternVerifier.emptyDeclaredVariables

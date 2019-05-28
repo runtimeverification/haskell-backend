@@ -4,8 +4,12 @@ License     : NCSA
 
  -}
 
+{-# LANGUAGE TemplateHaskell #-}
+
 module Kore.Attribute.Pattern
     ( Pattern (..)
+    , lensFreeVariables
+    , lensPatternSort
     , mapVariables
     , traverseVariables
     , deleteFreeVariable
@@ -13,14 +17,17 @@ module Kore.Attribute.Pattern
 
 import           Control.DeepSeq
                  ( NFData )
+import           Control.Lens.TH.Rules
+                 ( makeLenses )
 import           Data.Hashable
                  ( Hashable (..) )
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Kore.Debug
 import Kore.Sort
        ( Sort )
 
@@ -33,7 +40,9 @@ data Pattern variable =
         , freeVariables :: !(Set variable)
         -- ^ The free variables of the pattern.
         }
-    deriving (Eq, Generic, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+makeLenses ''Pattern
 
 instance NFData variable => NFData (Pattern variable)
 
@@ -42,6 +51,12 @@ instance Hashable variable => Hashable (Pattern variable) where
         flip hashWithSalt patternSort
         $ flip hashWithSalt (Set.toList freeVariables)
         $ salt
+
+instance SOP.Generic (Pattern variable)
+
+instance SOP.HasDatatypeInfo (Pattern variable)
+
+instance Debug variable => Debug (Pattern variable)
 
 {- | Use the provided mapping to replace all variables in a 'Pattern'.
 

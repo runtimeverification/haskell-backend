@@ -1,6 +1,4 @@
-module Test.Kore.Step.Simplification.AndTerms
-    ( test_andTermsSimplification
-    ) where
+module Test.Kore.Step.Simplification.AndTerms where
 
 import Test.Tasty
        ( TestTree, testGroup )
@@ -10,32 +8,49 @@ import Test.Tasty.HUnit
 import           Control.Error
                  ( MaybeT (..) )
 import qualified Control.Error as Error
+import           Data.Default
+                 ( Default (..) )
 import qualified Data.Map as Map
+import qualified Data.Set as Set
 
+import qualified Kore.Attribute.Axiom as Attribute
+import           Kore.Attribute.Simplification
+                 ( Simplification (Simplification) )
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
-import qualified Kore.Domain.Builtin as Domain
+import qualified Kore.Builtin.Set as Set
+                 ( asInternal )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.Internal.MultiOr as MultiOr
+                 ( extractPatterns )
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
-                 ( makeEqualsPredicate, makeFalsePredicate, makeTruePredicate )
+                 ( makeCeilPredicate, makeEqualsPredicate, makeTruePredicate )
+import           Kore.Step.Axiom.Data
+                 ( BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+import           Kore.Step.Axiom.Registry
+                 ( axiomPatternsToEvaluators )
+import           Kore.Step.Rule
+                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
+import qualified Kore.Step.Rule as RulePattern
+                 ( RulePattern (..) )
 import           Kore.Step.Simplification.AndTerms
-                 ( termAnd, termUnification )
+                 ( termAnd, termEquals, termUnification )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
+import qualified Kore.Step.Simplification.Data as BranchT
+                 ( gather )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import qualified Kore.Syntax.Pattern as AST
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
 import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
@@ -50,8 +65,8 @@ test_andTermsSimplification =
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
-            actual <- simplifyUnify mockMetadataTools fOfA mkTop_
-            assertEqualWithExplanation "" (expected, Just expected) actual
+            actual <- simplifyUnify Mock.metadataTools fOfA mkTop_
+            assertEqualWithExplanation "" ([expected], Just [expected]) actual
 
         , testCase "\\and{s}(\\top{s}(), f{}(a))" $ do
             let expected =
@@ -60,25 +75,25 @@ test_andTermsSimplification =
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
-            actual <- simplifyUnify mockMetadataTools mkTop_ fOfA
-            assertEqualWithExplanation "" (expected, Just expected) actual
+            actual <- simplifyUnify Mock.metadataTools mkTop_ fOfA
+            assertEqualWithExplanation "" ([expected], Just [expected]) actual
 
         , testCase "\\and{s}(f{}(a), \\bottom{s}())" $ do
             let expect =
-                    ( Pattern.bottom
-                    , Just Pattern.bottom
+                    ( [Pattern.bottom]
+                    , Just [Pattern.bottom]
                     )
-            actual <- simplifyUnify mockMetadataTools fOfA mkBottom_
+            actual <- simplifyUnify Mock.metadataTools fOfA mkBottom_
             assertEqualWithExplanation "" expect actual
 
         , testCase "\\and{s}(\\bottom{s}(), f{}(a))" $ do
             let expect =
-                    ( Pattern.bottom
-                    , Just Pattern.bottom
+                    ( [Pattern.bottom]
+                    , Just [Pattern.bottom]
                     )
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     mkBottom_
                     fOfA
             assertEqualWithExplanation "" expect actual
@@ -93,9 +108,9 @@ test_andTermsSimplification =
                     }
         actual <-
             simplifyUnify
-                mockMetadataTools
+                Mock.metadataTools
                 fOfA fOfA
-        assertEqualWithExplanation "" (expect, Just expect) actual
+        assertEqualWithExplanation "" ([expect], Just [expect]) actual
 
     , testGroup "variable function and"
         [ testCase "\\and{s}(x:s, f{}(a))" $ do
@@ -108,9 +123,9 @@ test_andTermsSimplification =
                         }
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (mkVar Mock.x) fOfA
-            assertEqualWithExplanation "" (expect, Just expect) actual
+            assertEqualWithExplanation "" ([expect], Just [expect]) actual
 
         , testCase "\\and{s}(f{}(a), x:s)" $ do
             let expect =
@@ -122,9 +137,9 @@ test_andTermsSimplification =
                         }
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     fOfA (mkVar Mock.x)
-            assertEqualWithExplanation "" (expect, Just expect) actual
+            assertEqualWithExplanation "" ([expect], Just [expect]) actual
         ]
 
     , testGroup "injective head and"
@@ -137,9 +152,9 @@ test_andTermsSimplification =
                         }
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.injective10 fOfA) (Mock.injective10 gOfA)
-            assertEqualWithExplanation "" (expect, Just expect) actual
+            assertEqualWithExplanation "" ([expect], Just [expect]) actual
         , testCase "same head, same child" $ do
             let expected =
                     Conditional
@@ -149,24 +164,25 @@ test_andTermsSimplification =
                         }
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.injective10 fOfA) (Mock.injective10 fOfA)
-            assertEqualWithExplanation "" (expected, Just expected) actual
+            assertEqualWithExplanation "" ([expected], Just [expected]) actual
         , testCase "different head" $ do
             let expect =
-                    ( Conditional
-                        { term =
-                            mkAnd
-                                (Mock.injective10 fOfA)
-                                (Mock.injective11 gOfA)
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
+                    (   [ Conditional
+                            { term =
+                                mkAnd
+                                    (Mock.injective10 fOfA)
+                                    (Mock.injective11 gOfA)
+                            , predicate = makeTruePredicate
+                            , substitution = mempty
+                            }
+                        ]
                     , Nothing
                     )
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.injective10 fOfA) (Mock.injective11 gOfA)
             assertEqualWithExplanation "" expect actual
         ]
@@ -182,10 +198,10 @@ test_andTermsSimplification =
                         }
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.sortInjection10 Mock.cfSort0)
                     (Mock.sortInjection10 Mock.cgSort0)
-            assertEqualWithExplanation "" (expect, Just expect) actual
+            assertEqualWithExplanation "" ([expect], Just [expect]) actual
         , testCase "same head, same child" $ do
             let expect =
                     Conditional
@@ -196,104 +212,93 @@ test_andTermsSimplification =
                         }
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.sortInjection10 Mock.cfSort0)
                     (Mock.sortInjection10 Mock.cfSort0)
-            assertEqualWithExplanation "" (expect, Just expect) actual
+            assertEqualWithExplanation "" ([expect], Just [expect]) actual
         , testCase "different head, not subsort" $ do
-            let expect =
-                    (Pattern.bottom, Just Pattern.bottom)
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.sortInjectionSubToTop Mock.plain00Subsort)
                     (Mock.sortInjection0ToTop Mock.plain00Sort0)
             assertEqualWithExplanation "" expect actual
         , testCase "different head, subsort first" $ do
             let expect =
-                    ( Conditional
-                        { term =
-                            Mock.sortInjectionSubToTop
-                                (mkAnd
-                                    (Mock.sortInjectionSubSubToSub
-                                        Mock.plain00SubSubsort
+                    (   [ Conditional
+                            { term =
+                                Mock.sortInjectionSubToTop
+                                    (mkAnd
+                                        (Mock.sortInjectionSubSubToSub
+                                            Mock.plain00SubSubsort
+                                        )
+                                        Mock.plain00Subsort
                                     )
-                                    Mock.plain00Subsort
-                                )
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
+                            , predicate = makeTruePredicate
+                            , substitution = mempty
+                            }
+                        ]
                     , Nothing
                     )
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.sortInjectionSubSubToTop Mock.plain00SubSubsort)
                     (Mock.sortInjectionSubToTop Mock.plain00Subsort)
             assertEqualWithExplanation "" expect actual
         , testCase "different head, subsort second" $ do
             let expect =
-                    ( Conditional
-                        { term =
-                            Mock.sortInjectionSubToTop
-                                (mkAnd
-                                    Mock.plain00Subsort
-                                    (Mock.sortInjectionSubSubToSub
-                                        Mock.plain00SubSubsort
+                    (   [ Conditional
+                            { term =
+                                Mock.sortInjectionSubToTop
+                                    (mkAnd
+                                        Mock.plain00Subsort
+                                        (Mock.sortInjectionSubSubToSub
+                                            Mock.plain00SubSubsort
+                                        )
                                     )
-                                )
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
+                            , predicate = makeTruePredicate
+                            , substitution = mempty
+                            }
+                        ]
                     , Nothing
                     )
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.sortInjectionSubToTop Mock.plain00Subsort)
                     (Mock.sortInjectionSubSubToTop Mock.plain00SubSubsort)
             assertEqualWithExplanation "" expect actual
         , testCase "different head constructors not subsort" $ do
-            let expect =
-                    ( Pattern.bottom
-                    , Just Pattern.bottom
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.sortInjection10 Mock.aSort0)
                     (Mock.sortInjection11 Mock.aSort1)
             assertEqualWithExplanation "" expect actual
         , testCase "different head constructors subsort" $ do
-            let expect =
-                    ( Pattern.bottom
-                    , Just Pattern.bottom
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.sortInjectionSubToTop Mock.aSubsort)
                     (Mock.sortInjectionSubSubToTop Mock.aSubSubsort)
             assertEqualWithExplanation "" expect actual
         , testCase "different head constructors common subsort" $ do
-            let expect =
-                    ( Pattern.bottom
-                    , Just Pattern.bottom
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.sortInjectionOtherToTop Mock.aOtherSort)
                     (Mock.sortInjectionSubToTop Mock.aSubsort)
             assertEqualWithExplanation "" expect actual
         , testCase "different head constructors common subsort reversed" $ do
-            let expect =
-                    ( Pattern.bottom
-                    , Just Pattern.bottom
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.sortInjectionSubToTop Mock.aSubsort)
                     (Mock.sortInjectionOtherToTop Mock.aOtherSort)
             assertEqualWithExplanation "" expect actual
@@ -308,10 +313,10 @@ test_andTermsSimplification =
                             , predicate = makeEqualsPredicate Mock.cf Mock.cg
                             , substitution = mempty
                             }
-                    in (expected, Just expected)
+                    in ([expected], Just [expected])
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.constr10 Mock.cf)
                     (Mock.constr10 Mock.cg)
             assertEqualWithExplanation "" expect actual
@@ -324,35 +329,29 @@ test_andTermsSimplification =
                             , predicate = makeTruePredicate
                             , substitution = mempty
                             }
-                    in (expected, Just expected)
+                    in ([expected], Just [expected])
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.constr10 Mock.cf)
                     (Mock.constr10 Mock.cf)
             assertEqualWithExplanation "" expect actual
 
         , testCase "different head" $ do
-            let expect =
-                    ( Pattern.bottom
-                    , Just Pattern.bottom
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.constr10 Mock.cf)
                     (Mock.constr11 Mock.cf)
             assertEqualWithExplanation "" expect actual
         ]
 
     , testCase "constructor-sortinjection and" $ do
-        let expect =
-                ( Pattern.bottom
-                , Just Pattern.bottom
-                )
+        let expect = ([], Just [])
         actual <-
             simplifyUnify
-                mockMetadataTools
+                Mock.metadataTools
                 (Mock.constr10 Mock.cf)
                 (Mock.sortInjection11 Mock.cfSort1)
         assertEqualWithExplanation "" expect actual
@@ -366,21 +365,18 @@ test_andTermsSimplification =
                             , predicate = makeTruePredicate
                             , substitution = mempty
                             }
-                    in (expected, Just expected)
+                    in ([expected], Just [expected])
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     aDomainValue aDomainValue
             assertEqualWithExplanation "" expect actual
 
         , testCase "different values" $ do
-            let expect =
-                    ( Pattern.bottom
-                    , Just Pattern.bottom
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     aDomainValue bDomainValue
             assertEqualWithExplanation "" expect actual
         ]
@@ -394,22 +390,19 @@ test_andTermsSimplification =
                             , predicate = makeTruePredicate
                             , substitution = mempty
                             }
-                    in (expected, Just expected)
+                    in ([expected], Just [expected])
             actual <-
                 simplifyUnify
-                    mockMetaMetadataTools
+                    Mock.emptyMetadataTools
                     (mkStringLiteral "a")
                     (mkStringLiteral "a")
             assertEqualWithExplanation "" expect actual
 
         , testCase "different values" $ do
-            let expect =
-                    ( Pattern.bottom
-                    , Just Pattern.bottom
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
-                    mockMetaMetadataTools
+                    Mock.emptyMetadataTools
                     (mkStringLiteral "a")
                     (mkStringLiteral "b")
             assertEqualWithExplanation "" expect actual
@@ -424,22 +417,19 @@ test_andTermsSimplification =
                             , predicate = makeTruePredicate
                             , substitution = mempty
                             }
-                    in (expected, Just expected)
+                    in ([expected], Just [expected])
             actual <-
                 simplifyUnify
-                    mockMetaMetadataTools
+                    Mock.emptyMetadataTools
                     (mkCharLiteral 'a')
                     (mkCharLiteral 'a')
             assertEqualWithExplanation "" expect actual
 
         , testCase "different values" $ do
-            let expect =
-                    ( Pattern.bottom
-                    , Just Pattern.bottom
-                    )
+            let expect = ([], Just [])
             actual <-
                 simplifyUnify
-                    mockMetaMetadataTools
+                    Mock.emptyMetadataTools
                     (mkCharLiteral 'a')
                     (mkCharLiteral 'b')
             assertEqualWithExplanation "" expect actual
@@ -454,10 +444,10 @@ test_andTermsSimplification =
                             , predicate = makeTruePredicate
                             , substitution = mempty
                             }
-                    in (expanded, Just expanded)
+                    in ([expanded], Just [expanded])
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     fOfA fOfA
             assertEqualWithExplanation "" expect actual
 
@@ -469,10 +459,10 @@ test_andTermsSimplification =
                             , predicate = makeEqualsPredicate fOfA gOfA
                             , substitution = mempty
                             }
-                    in (expanded, Just expanded)
+                    in ([expanded], Just [expanded])
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     fOfA gOfA
             assertEqualWithExplanation "" expect actual
         ]
@@ -480,48 +470,51 @@ test_andTermsSimplification =
     , testGroup "unhandled cases"
         [ testCase "top level" $ do
             let expect =
-                    ( Conditional
-                        { term = mkAnd plain0OfA plain1OfA
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
+                    (   [ Conditional
+                            { term = mkAnd plain0OfA plain1OfA
+                            , predicate = makeTruePredicate
+                            , substitution = mempty
+                            }
+                        ]
                     , Nothing
                     )
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     plain0OfA plain1OfA
             assertEqualWithExplanation "" expect actual
 
         , testCase "one level deep" $ do
             let expect =
-                    ( Conditional
-                        { term = Mock.constr10 (mkAnd plain0OfA plain1OfA)
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
+                    (   [ Conditional
+                            { term = Mock.constr10 (mkAnd plain0OfA plain1OfA)
+                            , predicate = makeTruePredicate
+                            , substitution = mempty
+                            }
+                        ]
                     , Nothing
                     )
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.constr10 plain0OfA) (Mock.constr10 plain1OfA)
             assertEqualWithExplanation "" expect actual
 
         , testCase "two levels deep" $ do
             let expect =
-                    ( Conditional
-                        { term =
-                            Mock.constr10
-                                (Mock.constr10 (mkAnd plain0OfA plain1OfA))
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
+                    (   [ Conditional
+                            { term =
+                                Mock.constr10
+                                    (Mock.constr10 (mkAnd plain0OfA plain1OfA))
+                            , predicate = makeTruePredicate
+                            , substitution = mempty
+                            }
+                        ]
                     , Nothing
                     )
             actual <-
                 simplifyUnify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.constr10 (Mock.constr10 plain0OfA))
                     (Mock.constr10 (Mock.constr10 plain1OfA))
             assertEqualWithExplanation "" expect actual
@@ -529,51 +522,53 @@ test_andTermsSimplification =
 
     , testCase "binary constructor of non-specialcased values" $ do
         let expect =
-                ( Conditional
-                    { term =
-                        Mock.functionalConstr20
-                            (mkAnd plain0OfA plain1OfA)
-                            (mkAnd plain0OfB plain1OfB)
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
+                (   [ Conditional
+                        { term =
+                            Mock.functionalConstr20
+                                (mkAnd plain0OfA plain1OfA)
+                                (mkAnd plain0OfB plain1OfB)
+                        , predicate = makeTruePredicate
+                        , substitution = mempty
+                        }
+                    ]
                 , Nothing
                 )
         actual <-
             simplifyUnify
-                mockMetadataTools
+                Mock.metadataTools
                 (Mock.functionalConstr20 plain0OfA plain0OfB)
                 (Mock.functionalConstr20 plain1OfA plain1OfB)
         assertEqualWithExplanation "" expect actual
 
     , testGroup "builtin Map domain"
         [ testCase "concrete Map, same keys" $ do
-            let expect =
-                    Just Conditional
+            let expect = Just
+                    [ Conditional
                         { term = Mock.builtinMap [(Mock.aConcrete, Mock.b)]
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap [(Mock.x, Mock.b)]
                         }
+                    ]
             actual <-
                 unify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.builtinMap [(Mock.aConcrete, Mock.b)])
                     (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
             assertEqualWithExplanation "" expect actual
 
         , testCase "concrete Map, different keys" $ do
-            let expect = Just Pattern.bottom
+            let expect = Just []
             actual <-
                 unify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.builtinMap [(Mock.aConcrete, Mock.b)])
                     (Mock.builtinMap [(Mock.bConcrete, mkVar Mock.x)])
             assertEqualWithExplanation "" expect actual
 
         , testCase "concrete Map with framed Map" $ do
-            let expect =
-                    Just Conditional
+            let expect = Just
+                    [ Conditional
                         { term =
                             Mock.builtinMap
                                 [ (Mock.aConcrete, fOfA)
@@ -585,9 +580,10 @@ test_andTermsSimplification =
                             , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                             ]
                         }
+                    ]
             actual <-
                 unify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.builtinMap
                         [ (Mock.aConcrete, fOfA)
                         , (Mock.bConcrete, fOfB)
@@ -600,8 +596,8 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
 
         , testCase "concrete Map with framed Map" $ do
-            let expect =
-                    Just Conditional
+            let expect = Just
+                    [ Conditional
                         { term =
                             Mock.builtinMap
                                 [ (Mock.aConcrete, fOfA)
@@ -613,9 +609,10 @@ test_andTermsSimplification =
                             , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                             ]
                         }
+                    ]
             actual <-
                 unify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.builtinMap
                         [ (Mock.aConcrete, fOfA)
                         , (Mock.bConcrete, fOfB)
@@ -628,8 +625,8 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
 
         , testCase "framed Map with concrete Map" $ do
-            let expect =
-                    Just Conditional
+            let expect = Just
+                    [ Conditional
                         { term =
                             Mock.builtinMap
                                 [ (Mock.aConcrete, fOfA)
@@ -641,9 +638,10 @@ test_andTermsSimplification =
                             , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                             ]
                         }
+                    ]
             actual <-
                 unify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.concatMap
                         (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
                         (mkVar Mock.m)
@@ -656,8 +654,8 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
 
         , testCase "framed Map with concrete Map" $ do
-            let expect =
-                    Just Conditional
+            let expect = Just
+                    [ Conditional
                         { term =
                             Mock.builtinMap
                                 [ (Mock.aConcrete, fOfA)
@@ -669,9 +667,10 @@ test_andTermsSimplification =
                             , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                             ]
                         }
+                    ]
             actual <-
                 unify
-                    mockMetadataTools
+                    Mock.metadataTools
                     (Mock.concatMap
                         (mkVar Mock.m)
                         (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
@@ -682,6 +681,159 @@ test_andTermsSimplification =
                         ]
                     )
             assertEqualWithExplanation "" expect actual
+
+        , testCase "concrete Map with element+unit" $ do
+            let expect = Just
+                    [ Conditional
+                        { term = Mock.builtinMap [ (Mock.aConcrete, fOfA) ]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.wrap
+                            [ (Mock.x, Mock.a)
+                            , (Mock.y, fOfA)
+                            ]
+                        }
+                    ]
+            actual <-
+                unify
+                    Mock.metadataTools
+                    (Mock.builtinMap [ (Mock.aConcrete, fOfA) ])
+                    (Mock.concatMap
+                        (Mock.elementMap (mkVar Mock.x) (mkVar Mock.y))
+                        Mock.unitMap
+                    )
+            assertEqualWithExplanation "" expect actual
+        , testCase "map elem key inj splitting" $ do
+            let
+                expected = Just
+                    [ Conditional
+                        { term = Mock.builtinMap
+                            [   ( Mock.sortInjectionSubToTop
+                                    (Mock.sortInjectionSubSubToSub
+                                        Mock.aSubSubsort
+                                    )
+                                , fOfA
+                                )
+                            ]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [   ( Mock.xSubSort
+                                , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
+                                )
+                            ,   ( Mock.y, fOfA )
+                            ]
+                        }
+                    ]
+            actual <- unify
+                Mock.metadataTools
+                (Mock.builtinMap
+                    [ (Mock.sortInjectionSubSubToTop Mock.aSubSubsort, fOfA) ]
+                )
+                (Mock.elementMap
+                    (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
+                    (mkVar Mock.y)
+                )
+            assertEqualWithExplanation "" expected actual
+        , testCase "map elem value inj splitting" $ do
+            let
+                expected = Just
+                    [ Conditional
+                        { term = Mock.builtinMap
+                            [   ( Mock.a
+                                , Mock.sortInjectionSubToTop
+                                    (Mock.sortInjectionSubSubToSub
+                                        Mock.aSubSubsort
+                                    )
+                                )
+                            ]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [   ( Mock.xSubSort
+                                , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
+                                )
+                            ,   ( Mock.y, Mock.a )
+                            ]
+                        }
+                    ]
+            actual <- unify
+                Mock.metadataTools
+                (Mock.builtinMap
+                    [ (Mock.a, Mock.sortInjectionSubSubToTop Mock.aSubSubsort) ]
+                )
+                (Mock.elementMap
+                    (mkVar Mock.y)
+                    (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
+                )
+            assertEqualWithExplanation "" expected actual
+        , testCase "map concat key inj splitting" $ do
+            let
+                expected = Just
+                    [ Conditional
+                        { term = Mock.builtinMap
+                            [   ( Mock.sortInjectionSubToTop
+                                    (Mock.sortInjectionSubSubToSub
+                                        Mock.aSubSubsort
+                                    )
+                                , fOfA
+                                )
+                            ]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [   ( Mock.xSubSort
+                                , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
+                                )
+                            ,   ( Mock.y, fOfA )
+                            ,   ( Mock.m, Mock.builtinMap [])
+                            ]
+                        }
+                    ]
+            actual <- unify
+                Mock.metadataTools
+                (Mock.builtinMap
+                    [ (Mock.sortInjectionSubSubToTop Mock.aSubSubsort, fOfA) ]
+                )
+                (Mock.concatMap
+                    (Mock.elementMap
+                        (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
+                        (mkVar Mock.y)
+                    )
+                    (mkVar Mock.m)
+                )
+            assertEqualWithExplanation "" expected actual
+        , testCase "map elem value inj splitting" $ do
+            let
+                expected = Just
+                    [ Conditional
+                        { term = Mock.builtinMap
+                            [   ( Mock.a
+                                , Mock.sortInjectionSubToTop
+                                    (Mock.sortInjectionSubSubToSub
+                                        Mock.aSubSubsort
+                                    )
+                                )
+                            ]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [   ( Mock.xSubSort
+                                , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
+                                )
+                            ,   ( Mock.y, Mock.a )
+                            ,   ( Mock.m, Mock.builtinMap [])
+                            ]
+                        }
+                    ]
+            actual <- unify
+                Mock.metadataTools
+                (Mock.builtinMap
+                    [ (Mock.a, Mock.sortInjectionSubSubToTop Mock.aSubSubsort) ]
+                )
+                (Mock.concatMap
+                    (Mock.elementMap
+                        (mkVar Mock.y)
+                        (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
+                    )
+                    (mkVar Mock.m)
+                )
+            assertEqualWithExplanation "" expected actual
         -- TODO: Add tests with non-trivial predicates.
         ]
 
@@ -692,25 +844,21 @@ test_andTermsSimplification =
                         [ Mock.constr10 Mock.cf
                         , Mock.constr11 Mock.cf
                         ]
-                expect =
-                    Just Conditional
+                expect = Just
+                    [ Conditional
                         { term = term1
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
-            actual <- unify mockMetadataTools term1 term1
+                    ]
+            actual <- unify Mock.metadataTools term1 term1
             assertEqualWithExplanation "" expect actual
 
         , testCase "[same head, different head]" $ do
             let term3 = Mock.builtinList [Mock.a, Mock.a]
                 term4 = Mock.builtinList [Mock.a, Mock.b]
-                expect =
-                    Just Conditional
-                        { term = Mock.builtinList [Mock.a, mkBottom_]
-                        , predicate = makeFalsePredicate
-                        , substitution = mempty
-                        }
-            actual <- unify mockMetadataTools term3 term4
+                expect = Just []
+            actual <- unify Mock.metadataTools term3 term4
             assertEqualWithExplanation "" expect actual
 
         , testCase "[a] `concat` x /\\ [a, b] " $ do
@@ -718,26 +866,320 @@ test_andTermsSimplification =
                         (Mock.builtinList [Mock.a])
                         (mkVar Mock.x)
                 term6 = Mock.builtinList [Mock.a, Mock.b]
-                expect =
-                    Just Conditional
+                expect = Just
+                    [ Conditional
                         { term = Mock.builtinList [Mock.a, Mock.b]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [(Mock.x, Mock.builtinList [Mock.b])]
                         }
-            actual <- unify mockMetadataTools term5 term6
+                    ]
+            actual <- unify Mock.metadataTools term5 term6
             assertEqualWithExplanation "" expect actual
 
         , testCase "different lengths" $ do
             let term7 = Mock.builtinList [Mock.a, Mock.a]
                 term8 = Mock.builtinList [Mock.a]
-                expect = Just Pattern.bottom
-            actual <- unify mockMetadataTools term7 term8
+                expect = Just [Pattern.bottom]
+            actual <- unify Mock.metadataTools term7 term8
             assertEqualWithExplanation "" expect actual
 
         -- TODO: Add tests with non-trivial unifications and predicates.
         ]
-    -- TODO: Add tests for set unification.
+
+    , testGroup "Builtin Set domain"
+        [ testCase "set singleton + unit" $ do
+            let
+                expected = Just
+                    [ Conditional
+                        { term = Mock.builtinSet [Mock.a]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.x, Mock.a) ]
+                        }
+                    ]
+            actual <- unify
+                Mock.metadataTools
+                (Mock.concatSet
+                    (Mock.elementSet (mkVar Mock.x))
+                    Mock.unitSet
+                )
+                (Mock.builtinSet [Mock.a])
+            assertEqualWithExplanation "" expected actual
+        ,  testCase "handles set ambiguity" $ do
+            let
+                expected = Just
+                    [ Conditional
+                        { term = Mock.builtinSet [Mock.a, Mock.b]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.x, Mock.a)
+                            , (Mock.xSet, Mock.builtinSet [Mock.b])
+                            ]
+                        }
+                    , Conditional
+                        { term = Mock.builtinSet [Mock.a, Mock.b]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.x, Mock.b)
+                            , (Mock.xSet, Mock.builtinSet [Mock.a])
+                            ]
+                        }
+                    ]
+            actual <- unify
+                Mock.metadataTools
+                (Mock.concatSet
+                    (Mock.elementSet (mkVar Mock.x))
+                    (mkVar Mock.xSet)
+                )
+                (Mock.builtinSet [Mock.a, Mock.b])
+            assertEqualWithExplanation "" expected actual
+        , testCase "set elem inj splitting" $ do
+            let
+                expected = Just
+                    [ Conditional
+                        { term = Mock.builtinSet
+                            [ Mock.sortInjectionSubToTop
+                                (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
+                            ]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [   ( Mock.xSubSort
+                                , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
+                                )
+                            ]
+                        }
+                    ]
+            actual <- unify
+                Mock.metadataTools
+                (Mock.elementSet
+                    (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
+                )
+                (Mock.builtinSet
+                    [Mock.sortInjectionSubSubToTop Mock.aSubSubsort]
+                )
+            assertEqualWithExplanation "" expected actual
+        , testCase "set concat inj splitting" $ do
+            let
+                expected = Just
+                    [ Conditional
+                        { term = Mock.builtinSet
+                            [ Mock.sortInjectionSubToTop
+                                (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
+                            ]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [   ( Mock.xSubSort
+                                , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
+                                )
+                            ,   ( Mock.xSet
+                                , Mock.builtinSet []
+                                )
+                            ]
+                        }
+                    ]
+            actual <- unify
+                Mock.metadataTools
+                (Mock.concatSet
+                    (Mock.elementSet
+                        (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
+                    )
+                    (mkVar Mock.xSet)
+                )
+                (Mock.builtinSet
+                    [Mock.sortInjectionSubSubToTop Mock.aSubSubsort]
+                )
+            assertEqualWithExplanation "" expected actual
+        , testCase "set concat 2 inj splitting" $ do
+            let
+                expected = Just
+                    [ Conditional
+                        { term = Mock.builtinSet
+                            [ Mock.a
+                            , Mock.sortInjectionSubToTop
+                                (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
+                            ]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [   (Mock.x, Mock.a)
+                            ,   ( Mock.xSubSort
+                                , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
+                                )
+                            ,   ( Mock.xSet
+                                , Mock.builtinSet []
+                                )
+                            ]
+                        }
+                    ]
+            actual <- unify
+                Mock.metadataTools
+                (Mock.concatSet
+                    (Mock.elementSet (mkVar Mock.x))
+                    (Mock.concatSet
+                        (Mock.elementSet
+                            (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
+                        )
+                        (mkVar Mock.xSet)
+                    )
+                )
+                (Mock.builtinSet
+                    [Mock.a, Mock.sortInjectionSubSubToTop Mock.aSubSubsort]
+                )
+            assertEqualWithExplanation "" expected actual
+        ]
+    ]
+
+test_equalsTermsSimplification :: [TestTree]
+test_equalsTermsSimplification =
+    [ testCase "adds ceil when producing substitutions" $ do
+        let expected = Just
+                [ Conditional
+                    { term = ()
+                    , predicate = makeCeilPredicate Mock.cf
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.cf)]
+                    }
+                ]
+        actual <- simplifyEquals
+            Mock.metadataTools Map.empty (mkVar Mock.x) Mock.cf
+        assertEqualWithExplanation "" expected actual
+    , testCase "handles ambiguity" $ do
+        let
+            expected = Just
+                [ Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [(Mock.x, Mock.cf), (Mock.y, Mock.a)]
+                    }
+                , Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                    }
+                ]
+            sortVar = SortVariableSort (SortVariable (testId "S"))
+            simplifiers = axiomPatternsToEvaluators $ Map.fromList
+                [   (   AxiomIdentifier.Ceil
+                            (AxiomIdentifier.Application Mock.cfId)
+                    ,   [ EqualityRule RulePattern
+                            { left = mkCeil sortVar Mock.cf
+                            , right =
+                                mkOr
+                                    (mkEquals_ (mkVar Mock.y) Mock.a)
+                                    (mkEquals_ (mkVar Mock.y) Mock.b)
+                            , requires = makeTruePredicate
+                            , ensures = makeTruePredicate
+                            , attributes = def
+                                {Attribute.simplification = Simplification True}
+                            }
+                        ]
+                    )
+                ]
+        actual <- simplifyEquals
+            Mock.metadataTools simplifiers (mkVar Mock.x) Mock.cf
+        assertEqualWithExplanation "" expected actual
+    , testCase "handles multiple ambiguity" $ do
+        let
+            expected = Just
+                [ Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg)
+                        , (Mock.y, Mock.a), (Mock.z, Mock.a)
+                        ]
+                    }
+                , Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg)
+                        , (Mock.y, Mock.a), (Mock.z, Mock.b)
+                        ]
+                    }
+                , Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg)
+                        , (Mock.y, Mock.b), (Mock.z, Mock.a)
+                        ]
+                    }
+                , Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg)
+                        , (Mock.y, Mock.b), (Mock.z, Mock.b)
+                        ]
+                    }
+                ]
+            sortVar = SortVariableSort (SortVariable (testId "S"))
+            simplifiers = axiomPatternsToEvaluators $ Map.fromList
+                [   (   AxiomIdentifier.Ceil
+                            (AxiomIdentifier.Application Mock.cfId)
+                    ,   [ EqualityRule RulePattern
+                            { left = mkCeil sortVar Mock.cf
+                            , right =
+                                mkOr
+                                    (mkEquals_ (mkVar Mock.y) Mock.a)
+                                    (mkEquals_ (mkVar Mock.y) Mock.b)
+                            , requires = makeTruePredicate
+                            , ensures = makeTruePredicate
+                            , attributes = def
+                                {Attribute.simplification = Simplification True}
+                            }
+                        ]
+                    )
+                ,   (   AxiomIdentifier.Ceil
+                            (AxiomIdentifier.Application Mock.cgId)
+                    ,   [ EqualityRule RulePattern
+                            { left = mkCeil sortVar Mock.cg
+                            , right =
+                                mkOr
+                                    (mkEquals_ (mkVar Mock.z) Mock.a)
+                                    (mkEquals_ (mkVar Mock.z) Mock.b)
+                            , requires = makeTruePredicate
+                            , ensures = makeTruePredicate
+                            , attributes = def
+                                {Attribute.simplification = Simplification True}
+                            }
+                        ]
+                    )
+                ]
+        actual <- simplifyEquals
+            Mock.metadataTools simplifiers
+            (Mock.functionalConstr20 (mkVar Mock.x) (mkVar Mock.var_x_1))
+            (Mock.functionalConstr20 Mock.cf Mock.cg)
+        assertEqualWithExplanation "" expected actual
+    , testCase "handles set ambiguity" $ do
+        let
+            asInternal = Set.asInternal Mock.metadataTools Mock.setSort
+            expected = Just
+                [ Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (Mock.x, Mock.a)
+                        , (Mock.xSet, asInternal (Set.fromList [Mock.b]))
+                        ]
+                    }
+                , Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (Mock.x, Mock.b)
+                        , (Mock.xSet, asInternal (Set.fromList [Mock.a]))
+                        ]
+                    }
+                ]
+        actual <- simplifyEquals
+            Mock.metadataTools
+            Map.empty
+            (Mock.concatSet (Mock.elementSet (mkVar Mock.x)) (mkVar Mock.xSet))
+            (asInternal (Set.fromList [Mock.a, Mock.b]))
+        assertEqualWithExplanation "" expected actual
     ]
 
 fOfA :: TermLike Variable
@@ -761,39 +1203,25 @@ plain0OfB = Mock.plain10 Mock.b
 plain1OfB :: TermLike Variable
 plain1OfB = Mock.plain11 Mock.b
 
-mockMetadataTools :: SmtMetadataTools StepperAttributes
-mockMetadataTools =
-    Mock.makeMetadataTools
-        Mock.attributesMapping
-        Mock.headTypeMapping
-        Mock.sortAttributesMapping
-        Mock.subsorts
-        Mock.headSortsMapping
-        Mock.smtDeclarations
-
-mockMetaMetadataTools :: SmtMetadataTools StepperAttributes
-mockMetaMetadataTools =
-    Mock.makeMetadataTools [] [] [] [] [] Mock.emptySmtDeclarations
-
 aDomainValue :: TermLike Variable
 aDomainValue =
-    mkDomainValue $ Domain.BuiltinExternal Domain.External
+    mkDomainValue DomainValue
         { domainValueSort = Mock.testSort
-        , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "a"
+        , domainValueChild = mkStringLiteral "a"
         }
 
 bDomainValue :: TermLike Variable
 bDomainValue =
-    mkDomainValue $ Domain.BuiltinExternal Domain.External
+    mkDomainValue DomainValue
         { domainValueSort = Mock.testSort
-        , domainValueChild = AST.eraseAnnotations $ mkStringLiteral "b"
+        , domainValueChild = mkStringLiteral "b"
         }
 
 simplifyUnify
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Pattern Variable, Maybe (Pattern Variable))
+    -> IO ([Pattern Variable], Maybe [Pattern Variable])
 simplifyUnify tools first second =
     (,)
         <$> simplify tools first second
@@ -803,12 +1231,11 @@ unify
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (Pattern Variable))
+    -> IO (Maybe [Pattern Variable])
 unify tools first second =
     SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
-    $ runMaybeT
-    $ unification
+    $ runMaybeT unification
   where
     substitutionSimplifier = Mock.substitutionSimplifier tools
     unification =
@@ -827,10 +1254,11 @@ simplify
     :: SmtMetadataTools StepperAttributes
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Pattern Variable)
+    -> IO [Pattern Variable]
 simplify tools first second =
     SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
+    $ BranchT.gather
     $ termAnd
         tools
         (Mock.substitutionSimplifier tools)
@@ -838,3 +1266,23 @@ simplify tools first second =
         Map.empty
         first
         second
+
+simplifyEquals
+    :: SmtMetadataTools StepperAttributes
+    -> BuiltinAndAxiomSimplifierMap
+    -> TermLike Variable
+    -> TermLike Variable
+    -> IO (Maybe [Predicate Variable])
+simplifyEquals tools axiomIdToSimplifier first second =
+    fmap MultiOr.extractPatterns
+    <$> SMT.runSMT SMT.defaultConfig
+        ( evalSimplifier emptyLogger
+        $ runMaybeT
+        $ termEquals
+            tools
+            (Mock.substitutionSimplifier tools)
+            (Simplifier.create tools axiomIdToSimplifier)
+            axiomIdToSimplifier
+            first
+            second
+        )

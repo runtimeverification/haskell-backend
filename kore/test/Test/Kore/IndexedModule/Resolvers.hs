@@ -8,12 +8,10 @@ import qualified Data.List as List
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
-import qualified Data.Set as Set
 
 import           Kore.ASTHelpers
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Null as Attribute
-import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
@@ -22,11 +20,8 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
 import           Kore.Internal.TermLike hiding
                  ( freeVariables )
-import           Kore.Syntax
-import           Kore.Syntax.Definition
 import           Kore.Syntax.PatternF
                  ( groundHead )
-import qualified Kore.Verified as Verified
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -34,14 +29,19 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 objectS1 :: Sort
 objectS1 = simpleSort (SortName "s1")
 
-objectA :: SentenceSymbol (TermLike Variable)
-objectA = mkSymbol_ (testId "a") [] objectS1
+objectA :: SentenceSymbol ParsedPattern
+objectA =
+    fmap Builtin.externalizePattern
+    $ mkSymbol_ (testId "a") [] objectS1
 
 -- Two variations on a constructor axiom for 'objectA'.
-axiomA, axiomA' :: SentenceAxiom (TermLike Variable)
-axiomA = mkAxiom_ $ applySymbol_ objectA []
+axiomA, axiomA' :: SentenceAxiom ParsedPattern
+axiomA =
+    fmap Builtin.externalizePattern
+    $ mkAxiom_ $ applySymbol_ objectA []
 axiomA' =
-    mkAxiom [sortVariableR]
+    fmap Builtin.externalizePattern
+    $ mkAxiom [sortVariableR]
     $ mkForall x
     $ mkEquals sortR (mkVar x) (applySymbol_ objectA [])
   where
@@ -49,14 +49,21 @@ axiomA' =
     sortVariableR = SortVariable (testId "R")
     sortR = SortVariableSort sortVariableR
 
-objectB :: SentenceAlias (TermLike Variable)
-objectB = mkAlias_ (testId "b") objectS1 [] $ mkTop objectS1
+objectB :: SentenceAlias ParsedPattern
+objectB =
+    fmap Builtin.externalizePattern
+    $ mkAlias_ (testId "b") objectS1 [] $ mkTop objectS1
 
-metaA :: SentenceSymbol (TermLike Variable)
-metaA = mkSymbol_ (testId "#a") [] stringMetaSort
+metaA :: SentenceSymbol ParsedPattern
+metaA =
+    fmap Builtin.externalizePattern
+    $ mkSymbol_ (testId "#a") [] stringMetaSort
 
-metaB :: SentenceAlias (TermLike Variable)
-metaB = mkAlias_ (testId "#b") stringMetaSort [] $ mkTop stringMetaSort
+metaB :: SentenceAlias ParsedPattern
+metaB =
+    fmap Builtin.externalizePattern
+    $ mkAlias_ (testId "#b") stringMetaSort []
+    $ mkTop stringMetaSort
 
 testObjectModuleName :: ModuleName
 testObjectModuleName = ModuleName "TEST-OBJECT-MODULE"
@@ -71,14 +78,9 @@ testMainModuleName :: ModuleName
 testMainModuleName = ModuleName "TEST-MAIN-MODULE"
 
 strictAttribute :: ParsedPattern
-strictAttribute =
-    (asParsedPattern . ApplicationF)
-        Application
-            { applicationSymbolOrAlias = groundHead "strict" AstLocationTest
-            , applicationChildren = []
-            }
+strictAttribute = attributePattern_ (groundHead "strict" AstLocationTest)
 
-testObjectModule :: Module Verified.Sentence
+testObjectModule :: Module ParsedSentence
 testObjectModule =
     Module
         { moduleName = testObjectModuleName
@@ -97,7 +99,7 @@ testObjectModule =
         , moduleAttributes = Attributes [strictAttribute]
         }
 
-testMetaModule :: Module Verified.Sentence
+testMetaModule :: Module ParsedSentence
 testMetaModule =
     Module
         { moduleName = testMetaModuleName
@@ -108,7 +110,7 @@ testMetaModule =
         , moduleAttributes = Attributes []
         }
 
-subMainModule :: Module Verified.Sentence
+subMainModule :: Module ParsedSentence
 subMainModule =
     Module
         { moduleName = testSubMainModuleName
@@ -119,7 +121,7 @@ subMainModule =
         , moduleAttributes = Attributes [strictAttribute]
         }
 
-mainModule :: Module Verified.Sentence
+mainModule :: Module ParsedSentence
 mainModule =
     Module
         { moduleName = testMainModuleName
@@ -131,7 +133,7 @@ mainModule =
         }
 
 
-testDefinition :: Definition Verified.Sentence
+testDefinition :: Definition ParsedSentence
 testDefinition =
     Definition
         { definitionAttributes = Attributes [strictAttribute]
@@ -148,7 +150,7 @@ Right indexedModules =
     verifyAndIndexDefinition
         DoNotVerifyAttributes
         Builtin.koreVerifiers
-        (eraseSentenceAnnotations <$> testDefinition)
+        testDefinition
 
 testIndexedModule, testIndexedObjectModule
     :: VerifiedModule Attribute.Null Attribute.Null
@@ -223,16 +225,7 @@ test_resolvers =
                                     }
                             , applicationChildren = []
                             }
-                    , sentenceAliasRightPattern =
-                        let
-                            valid =
-                                Attribute.Pattern
-                                    { patternSort = objectS1
-                                    , freeVariables = Set.empty
-                                    }
-                            top' = TopF Top { topSort = objectS1 }
-                        in
-                            asPattern (valid :< top')
+                    , sentenceAliasRightPattern = mkTop objectS1
                     , sentenceAliasResultSort = objectS1
                     }
                 )
@@ -261,15 +254,7 @@ test_resolvers =
                                 }
                         , applicationChildren = []
                         }
-                , sentenceAliasRightPattern =
-                    let
-                        valid = Attribute.Pattern { patternSort, freeVariables }
-                          where
-                            patternSort = stringMetaSort
-                            freeVariables = Set.empty
-                        top' = TopF Top { topSort = stringMetaSort }
-                    in
-                        asPattern (valid :< top')
+                , sentenceAliasRightPattern = mkTop stringMetaSort
                 , sentenceAliasResultSort = stringMetaSort
                 }
             ))
@@ -300,7 +285,8 @@ test_resolvers =
     , testCase "sort indexed axioms"
         (assertEqual ""
             (reverse $ List.sort [axiomA, axiomA'])
-            (getIndexedSentence <$> indexedModuleAxioms testIndexedObjectModule)
+            (fmap Builtin.externalizePattern . getIndexedSentence
+                <$> indexedModuleAxioms testIndexedObjectModule)
         )
     ]
   where

@@ -49,8 +49,6 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
@@ -65,7 +63,7 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (axiomEvaluator
@@ -85,7 +83,7 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (builtinEvaluation $ axiomEvaluator
@@ -106,7 +104,7 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (simplifierWithFallback
@@ -133,7 +131,7 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (simplifierWithFallback
@@ -158,7 +156,7 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     ( axiomEvaluator
@@ -181,7 +179,7 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     ( axiomEvaluator
@@ -211,7 +209,7 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     ( axiomEvaluator
@@ -236,7 +234,7 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.cId)
                     ( appliedMockEvaluator Conditional
@@ -261,7 +259,7 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.cId
                         , appliedMockEvaluator Conditional
@@ -296,7 +294,7 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.cId
                         , axiomEvaluator Mock.c Mock.d
@@ -330,7 +328,7 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.cId
                         , appliedMockEvaluator Conditional
@@ -375,7 +373,7 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.fId
                         , appliedMockEvaluator Conditional
@@ -410,7 +408,7 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.fId
                         , simplifierWithFallback
@@ -442,7 +440,7 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.fId
                         , simplifierWithFallback
@@ -484,7 +482,7 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.fId
                         , simplifierWithFallback
@@ -516,7 +514,7 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.fId
                         , simplifierWithFallback
@@ -550,17 +548,19 @@ test_functionIntegration =
                         Foldable.foldr1 mkOr
                             [ mkAnd Mock.a equalsXA
                             , mkAnd Mock.b equalsXB
-                            , mkAnd (Mock.f (mkVar Mock.x))
-                                $ mkAnd
+                            , mkAnd
+                                (mkEvaluated $ Mock.f (mkVar Mock.x))
+                                (mkAnd
                                     (mkNot equalsXA)
                                     (mkNot equalsXB)
+                                )
                             ]
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.fId
                         , definitionEvaluation
@@ -644,13 +644,3 @@ evaluate metadataTools functionIdToEvaluator patt =
             metadataTools patternSimplifier functionIdToEvaluator
     patternSimplifier :: TermLikeSimplifier
     patternSimplifier = Simplifier.create metadataTools functionIdToEvaluator
-
-mockMetadataTools :: SmtMetadataTools StepperAttributes
-mockMetadataTools =
-    Mock.makeMetadataTools
-        Mock.attributesMapping
-        Mock.headTypeMapping
-        Mock.sortAttributesMapping
-        Mock.subsorts
-        Mock.headSortsMapping
-        Mock.smtDeclarations

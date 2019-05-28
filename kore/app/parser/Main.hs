@@ -9,13 +9,13 @@ import           Data.Semigroup
                  ( (<>) )
 import           Data.Text
                  ( Text )
+import           Data.Text.Prettyprint.Doc.Render.Text
+                 ( putDoc )
 import           Options.Applicative
                  ( InfoMod, Parser, argument, fullDesc, header, help, long,
                  metavar, progDesc, str, strOption, value )
 
 import           Kore.AST.ApplicativeKore
-import           Kore.ASTPrettyPrint
-                 ( prettyPrintToString )
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
                  defaultAttributesVerification, verifyAndIndexDefinition )
@@ -23,6 +23,7 @@ import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Builtin as Builtin
+import           Kore.Debug
 import           Kore.Error
                  ( printError )
 import           Kore.IndexedModule.IndexedModule
@@ -133,7 +134,7 @@ main = do
                     $ unparseToString2
                     $ completeDefinition
                     $ toVerifiedDefinition indexedModules
-            else putStrLn (prettyPrintToString parsedDefinition)
+            else putDoc (debug parsedDefinition)
 
         when (patternFileName /= "") $ do
             parsedPattern <- mainPatternParse patternFileName
@@ -143,7 +144,7 @@ main = do
                 _ <- mainPatternVerify indexedModule parsedPattern
                 return ()
             when willPrintPattern $
-                putStrLn (prettyPrintToString parsedPattern)
+                putDoc (debug parsedPattern)
 
 -- | IO action that parses a kore definition from a filename and prints timing
 -- information.

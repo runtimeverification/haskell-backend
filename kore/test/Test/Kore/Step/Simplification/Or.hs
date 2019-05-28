@@ -17,13 +17,12 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
-                 makeOrPredicate, makeTruePredicate, substitutionToPredicate )
+                 ( makeEqualsPredicate, makeFalsePredicate, makeOrPredicate,
+                 makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Simplification.Or
                  ( simplify, simplifyEvaluated )
-import           Kore.Syntax.Or
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -75,16 +74,9 @@ test_disjoinPredicates =
             -- If the terms are equal, expect the given simplification.
             -- Otherwise, the predicates should not be merged.
             expectation
-              | t1 == t2  = simplifiesTo
+              | t1 == t2 && s1 == s2  = simplifiesTo
               | otherwise = \initial _ -> doesNotSimplify initial
-            (p', s')
-              | s1 == s2  = (makeOrPredicate p1 p2, s1)
-              | otherwise =
-                ( makeOrPredicate
-                    (makeAndPredicate p1 (substitutionToPredicate s1))
-                    (makeAndPredicate p2 (substitutionToPredicate s2))
-                , mempty
-                )
+            (p', s') = (makeOrPredicate p1 p2, s1)
         ]
   where
     terms = [ tM, tm ]

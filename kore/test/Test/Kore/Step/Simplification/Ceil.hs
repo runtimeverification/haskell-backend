@@ -12,14 +12,13 @@ import qualified Data.Map as Map
 import qualified Data.Sup as Sup
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
-import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
+import           Kore.Internal.TermLike as TermLike
 import           Kore.Logger.Output as Logger
                  ( emptyLogger )
 import           Kore.Predicate.Predicate
@@ -43,15 +42,12 @@ import           Kore.Step.Simplification.Data
                  evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Syntax.Ceil
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 import qualified SMT
 
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Kore.Step.MockSymbols
                  ( testSort )
@@ -75,7 +71,7 @@ test_ceilSimplification =
                     , substitution = mempty
                     }
                 ]
-        actual <- evaluate mockMetadataTools
+        actual <- evaluate Mock.metadataTools
             (makeCeil
                 [somethingOfAExpanded, somethingOfBExpanded]
             )
@@ -83,7 +79,7 @@ test_ceilSimplification =
     , testCase "Ceil - bool operations"
         (do
             -- ceil(top) = top
-            actual1 <- evaluate mockMetadataTools
+            actual1 <- evaluate Mock.metadataTools
                 (makeCeil
                     [Pattern.top]
                 )
@@ -93,7 +89,7 @@ test_ceilSimplification =
                 )
                 actual1
             -- ceil(bottom) = bottom
-            actual2 <- evaluate mockMetadataTools
+            actual2 <- evaluate Mock.metadataTools
                 (makeCeil
                     []
                 )
@@ -106,7 +102,7 @@ test_ceilSimplification =
     , testCase "expanded Ceil - bool operations"
         (do
             -- ceil(top) = top
-            actual1 <- makeEvaluate mockMetadataTools
+            actual1 <- makeEvaluate Mock.metadataTools
                 (Pattern.top :: Pattern Variable)
             assertEqualWithExplanation "ceil(top)"
                 (OrPattern.fromPatterns
@@ -114,7 +110,7 @@ test_ceilSimplification =
                 )
                 actual1
             -- ceil(bottom) = bottom
-            actual2 <- makeEvaluate mockMetadataTools
+            actual2 <- makeEvaluate Mock.metadataTools
                 (Pattern.bottom :: Pattern Variable)
             assertEqualWithExplanation "ceil(bottom)"
                 (OrPattern.fromPatterns
@@ -137,7 +133,7 @@ test_ceilSimplification =
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
-        actual <- makeEvaluate mockMetadataTools
+        actual <- makeEvaluate Mock.metadataTools
             Conditional
                 { term = somethingOfA
                 , predicate = makeEqualsPredicate fOfA gOfA
@@ -168,7 +164,7 @@ test_ceilSimplification =
                             Substitution.unsafeWrap [(Mock.x, fOfB)]
                         }
                     ]
-            actual <- makeEvaluate mockMetadataTools
+            actual <- makeEvaluate Mock.metadataTools
                 Conditional
                     { term = constructorTerm
                     , predicate = makeEqualsPredicate fOfA gOfA
@@ -181,7 +177,7 @@ test_ceilSimplification =
     , testCase "ceil of constructors is top" $ do
         let
             expected = OrPattern.fromPatterns [Pattern.top]
-        actual <- makeEvaluate mockMetadataTools
+        actual <- makeEvaluate Mock.metadataTools
             Conditional
                 { term = Mock.constr10 Mock.a
                 , predicate = makeTruePredicate
@@ -206,7 +202,7 @@ test_ceilSimplification =
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
-        actual <- makeEvaluate mockMetadataTools
+        actual <- makeEvaluate Mock.metadataTools
             Conditional
                 { term = Mock.functional20 somethingOfA somethingOfB
                 , predicate = makeEqualsPredicate fOfA gOfA
@@ -231,7 +227,7 @@ test_ceilSimplification =
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
-        actual <- makeEvaluate mockMetadataTools
+        actual <- makeEvaluate Mock.metadataTools
             Conditional
                 { term = fOfA
                 , predicate = makeEqualsPredicate fOfA gOfA
@@ -256,7 +252,7 @@ test_ceilSimplification =
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
-        actual <- makeEvaluate mockMetadataTools
+        actual <- makeEvaluate Mock.metadataTools
             Conditional
                 { term = fOfA
                 , predicate = makeEqualsPredicate fOfA gOfA
@@ -278,7 +274,7 @@ test_ceilSimplification =
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
-        actual <- makeEvaluate mockMetadataTools
+        actual <- makeEvaluate Mock.metadataTools
             Conditional
                 { term = Mock.a
                 , predicate = makeEqualsPredicate fOfA gOfA
@@ -308,7 +304,7 @@ test_ceilSimplification =
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
-        actual <- makeEvaluate mockMetadataTools
+        actual <- makeEvaluate Mock.metadataTools
             Conditional
                 { term = Mock.functional20 fOfA fOfB
                 , predicate = makeEqualsPredicate fOfA gOfA
@@ -336,7 +332,7 @@ test_ceilSimplification =
                     }
                 ]
         actual <- makeEvaluateWithAxioms
-            mockMetadataTools
+            Mock.metadataTools
             (Map.singleton
                 (AxiomIdentifier.Ceil
                     (AxiomIdentifier.Application Mock.fId)
@@ -368,18 +364,11 @@ test_ceilSimplification =
                     , substitution = mempty
                     }
                 ]
-        actual <- makeEvaluate mockMetadataTools
-            Conditional
-                { term =
-                    mkDomainValue
-                        (Domain.BuiltinExternal Domain.External
-                            { domainValueSort = Mock.testSort
-                            , domainValueChild =
-                                eraseAnnotations $ mkStringLiteral "a"
-                            }
-                        )
-                , predicate = makeTruePredicate
-                , substitution = mempty
+        actual <- makeEvaluate Mock.metadataTools
+            $ Pattern.fromTermLike
+            $ mkDomainValue DomainValue
+                { domainValueSort = Mock.testSort
+                , domainValueChild = mkStringLiteral "a"
                 }
         assertEqualWithExplanation "ceil(1)" expected actual
     , testCase "ceil with map domain value" $ do
@@ -396,11 +385,11 @@ test_ceilSimplification =
                     , substitution = mempty
                     }
                 ]
-        actual <- makeEvaluate mockMetadataTools
+        actual <- makeEvaluate Mock.metadataTools
             Conditional
                 { term =
                     Mock.builtinMap
-                        [(asConcrete fOfA, fOfB), (asConcrete gOfA, gOfB)]
+                        [(asConcrete' fOfA, fOfB), (asConcrete' gOfA, gOfB)]
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
@@ -418,7 +407,7 @@ test_ceilSimplification =
                     , substitution = mempty
                     }
                 ]
-        actual <- makeEvaluate mockMetadataTools
+        actual <- makeEvaluate Mock.metadataTools
             Conditional
                 { term = Mock.builtinList [fOfA, fOfB]
                 , predicate = makeTruePredicate
@@ -430,9 +419,9 @@ test_ceilSimplification =
         -- so ceil({a, b}) = top
         let
             expected = OrPattern.fromPatterns [ Pattern.top ]
-        actual <- makeEvaluate mockMetadataTools
+        actual <- makeEvaluate Mock.metadataTools
             Conditional
-                { term = Mock.builtinSet [asConcrete fOfA, asConcrete fOfB]
+                { term = Mock.builtinSet [asConcrete' fOfA, asConcrete' fOfB]
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
@@ -457,16 +446,7 @@ test_ceilSimplification =
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    mockMetadataTools =
-        Mock.makeMetadataTools
-            Mock.attributesMapping
-            Mock.headTypeMapping
-            Mock.sortAttributesMapping
-            Mock.subsorts
-            Mock.headSortsMapping
-            Mock.smtDeclarations
-    asConcrete p =
-        let Just r = asConcreteStepPattern p in r
+    asConcrete' p = let Just r = TermLike.asConcrete p in r
 
 appliedMockEvaluator
     :: Pattern Variable -> BuiltinAndAxiomSimplifier

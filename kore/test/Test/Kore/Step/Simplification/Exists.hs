@@ -18,34 +18,39 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
-                 ( makeCeilPredicate, makeEqualsPredicate, makeExistsPredicate,
-                 makeTruePredicate )
+                 ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
+                 makeExistsPredicate, makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Exists as Exists
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import           Kore.Syntax.Exists
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 test_simplify :: [TestTree]
 test_simplify =
-    [ [plain10, plain11] `simplifies` [plain10', plain11']            $ "\\or distribution"
-    , [top]              `simplifies` [top]                           $ "\\top"
-    , []                 `simplifies` []                              $ "\\bottom"
-    , [equals]           `simplifies` [quantifyPredicate equals]      $ "\\equals"
-    , [substForX]        `simplifies` [top]                           $ "discharge substitution"
-    , [substOfX]         `simplifies` [quantifySubstitution substOfX] $ "substitution"
+    [ [plain10, plain11] `simplifiesTo` [plain10', plain11']
+        $ "\\or distribution"
+    , [top]              `simplifiesTo` [top]
+        $ "\\top"
+    , []                 `simplifiesTo` []
+        $ "\\bottom"
+    , [equals]           `simplifiesTo` [quantifyPredicate equals]
+        $ "\\equals"
+    , [substForX]        `simplifiesTo` [top]
+        $ "discharge substitution"
+    , [substToX]         `simplifiesTo` [top]
+        $ "discharge reverse substitution"
+    , [substOfX]         `simplifiesTo` [quantifySubstitution substOfX]
+        $ "substitution"
     ]
   where
     plain10 = pure $ Mock.plain10 (mkVar Mock.x)
@@ -57,7 +62,7 @@ test_simplify =
             { predicate =
                 Predicate.makeEqualsPredicate
                     (Mock.sigma (mkVar Mock.x) (mkVar Mock.z))
-                    (Mock.sigma (mkVar Mock.y) (mkVar Mock.z))
+                    (Mock.functional20 (mkVar Mock.y) (mkVar Mock.z))
             }
     quantifyPredicate predicated@Conditional { predicate } =
         predicated
@@ -76,21 +81,24 @@ test_simplify =
                 Substitution.unsafeWrap
                     [(Mock.x, Mock.sigma (mkVar Mock.y) (mkVar Mock.z))]
             }
+    substToX =
+        (Pattern.topOf Mock.testSort)
+            { substitution = Substitution.unsafeWrap [(Mock.y, mkVar Mock.x)] }
     substOfX =
         (Pattern.topOf Mock.testSort)
             { substitution =
                 Substitution.unsafeWrap
                     [(Mock.y, Mock.sigma (mkVar Mock.x) (mkVar Mock.z))]
             }
-    simplifies
+    simplifiesTo
         :: HasCallStack
         => [Pattern Variable]
         -> [Pattern Variable]
         -> String
         -> TestTree
-    simplifies original expected message =
+    simplifiesTo original expected message =
         testCase message $ do
-            actual <- simplify mockMetadataTools (makeExists Mock.x original)
+            actual <- simplify Mock.metadataTools (makeExists Mock.x original)
             assertEqualWithExplanation "expected simplification"
                 (OrPattern.fromPatterns expected) actual
 
@@ -100,7 +108,7 @@ test_makeEvaluate =
         [ testCase "Top" $ do
             let expect = OrPattern.fromPatterns [ Pattern.top ]
             actual <-
-                makeEvaluate mockMetadataTools
+                makeEvaluate Mock.metadataTools
                     Mock.x
                     (Pattern.top :: Pattern Variable)
             assertEqualWithExplanation "" expect actual
@@ -108,7 +116,7 @@ test_makeEvaluate =
         , testCase " Bottom" $ do
             let expect = OrPattern.fromPatterns []
             actual <-
-                makeEvaluate mockMetadataTools
+                makeEvaluate Mock.metadataTools
                     Mock.x
                     (Pattern.bottom :: Pattern Variable)
             assertEqualWithExplanation "" expect actual
@@ -128,7 +136,7 @@ test_makeEvaluate =
                         }
                     ]
         actual <-
-            makeEvaluate mockMetadataTools
+            makeEvaluate Mock.metadataTools
                 Mock.x
                 Conditional
                     { term = Mock.f (mkVar Mock.x)
@@ -151,7 +159,7 @@ test_makeEvaluate =
                         }
                     ]
         actual <-
-            makeEvaluate mockMetadataTools
+            makeEvaluate Mock.metadataTools
                 Mock.x
                 Conditional
                     { term = fOfA
@@ -173,7 +181,7 @@ test_makeEvaluate =
                         }
                     ]
         actual <-
-            makeEvaluate mockMetadataTools
+            makeEvaluate Mock.metadataTools
                 Mock.x
                 Conditional
                     { term = fOfX
@@ -196,7 +204,7 @@ test_makeEvaluate =
                         }
                     ]
         actual <-
-            makeEvaluate mockMetadataTools
+            makeEvaluate Mock.metadataTools
                 Mock.x
                 Conditional
                     { term = fOfA
@@ -205,36 +213,23 @@ test_makeEvaluate =
                     }
         assertEqualWithExplanation "exists on predicate" expect actual
 
-    , testCase "exists moves substitution above" $ do
-        -- exists x . (t(x) and p(x) and s)
-        --    = exists x . (t(x) and p(x)) and Top and s
-        --    if s do not depend on x.
-        let expect =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term =
-                            mkExists Mock.x (mkAnd fOfX (mkEquals_ fOfX gOfA))
-                        , predicate = makeTruePredicate
-                        , substitution =
-                            Substitution.unsafeWrap [(Mock.y, hOfA)]
-                        }
-                    ]
-        actual <-
-            makeEvaluate mockMetadataTools
+    , testCase "exists moves substitution above" $
+        -- error for exists x . (t(x) and p(x) and s)
+        assertErrorIO (const (return ())) $
+            makeEvaluate Mock.metadataTools
                 Mock.x
                 Conditional
                     { term = fOfX
                     , predicate = makeEqualsPredicate fOfX gOfA
                     , substitution = Substitution.wrap [(Mock.y, hOfA)]
                     }
-        assertEqualWithExplanation "exists moves substitution" expect actual
 
     , testCase "exists reevaluates" $ do
         -- exists x . (top and (f(x) = f(g(a)) and [x=g(a)])
         --    = top.s
         let expect = OrPattern.fromPatterns [ Pattern.top ]
         actual <-
-            makeEvaluate mockMetadataTools
+            makeEvaluate Mock.metadataTools
                 Mock.x
                 Conditional
                     { term = mkTop_
@@ -242,22 +237,67 @@ test_makeEvaluate =
                     , substitution = Substitution.wrap [(Mock.x, gOfA)]
                     }
         assertEqualWithExplanation "exists reevaluates" expect actual
+    , testCase "exists matches equality if result is top" $ do
+        -- exists x . (f(x) = f(a))
+        --    = top.s
+        let expect = OrPattern.fromPatterns
+                [ Conditional
+                    { term = fOfA
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.wrap [(Mock.y, fOfA)]
+                    }
+                ]
+        actual <-
+            makeEvaluate Mock.metadataTools
+                Mock.x
+                Conditional
+                    { term = fOfA
+                    , predicate = makeEqualsPredicate fOfX (Mock.f Mock.a)
+                    , substitution = Substitution.wrap [(Mock.y, fOfA)]
+                    }
+        assertEqualWithExplanation "exists matching" expect actual
+    , testCase "exists does not match equality if free var in subst" $ do
+        -- exists x . (f(x) = f(a)) and (y=f(x))
+        --    = exists x . (f(x) = f(a)) and (y=f(x))
+        let expect = OrPattern.fromPatterns
+                [ Conditional
+                    { term = fOfA
+                    , predicate =
+                        makeExistsPredicate
+                            Mock.x
+                            (makeAndPredicate
+                                (makeEqualsPredicate fOfX (Mock.f Mock.a))
+                                (makeEqualsPredicate (mkVar Mock.y) fOfX)
+                            )
+                    , substitution = Substitution.wrap [(Mock.z, fOfA)]
+                    }
+                ]
+        actual <-
+            makeEvaluate Mock.metadataTools
+                Mock.x
+                Conditional
+                    { term = fOfA
+                    , predicate = makeEqualsPredicate fOfX (Mock.f Mock.a)
+                    , substitution =
+                        Substitution.wrap [(Mock.y, fOfX), (Mock.z, fOfA)]
+                    }
+        assertEqualWithExplanation "exists matching" expect actual
+    , testCase "exists does not match equality if free var in term" $
+        -- error for exists x . (f(x) = f(a)) and (y=f(x))
+        assertErrorIO (const (return ())) $
+            makeEvaluate Mock.metadataTools
+                Mock.x
+                Conditional
+                    { term = fOfX
+                    , predicate = makeEqualsPredicate fOfX (Mock.f Mock.a)
+                    , substitution = Substitution.wrap [(Mock.y, fOfA)]
+                    }
     ]
   where
     fOfA = Mock.f Mock.a
     fOfX = Mock.f (mkVar Mock.x)
     gOfA = Mock.g Mock.a
     hOfA = Mock.h Mock.a
-
-mockMetadataTools :: SmtMetadataTools StepperAttributes
-mockMetadataTools =
-    Mock.makeMetadataTools
-        Mock.attributesMapping
-        Mock.headTypeMapping
-        Mock.sortAttributesMapping
-        Mock.subsorts
-        Mock.headSortsMapping
-        Mock.smtDeclarations
 
 makeExists
     :: Ord variable

@@ -10,11 +10,15 @@ module Kore.Syntax.Sentence
     , Alias (..)
     , SentenceAlias (..)
     , SentenceSymbol (..)
+    , coerceSentenceSymbol
     , SentenceImport (..)
+    , coerceSentenceImport
     , SentenceSort (..)
+    , coerceSentenceSort
     , SentenceAxiom (..)
     , SentenceClaim (..)
     , SentenceHook (..)
+    , coerceSentenceHook
     , Sentence (..)
     , sentenceAttributes
     , eraseSentenceAnnotations
@@ -44,15 +48,17 @@ module Kore.Syntax.Sentence
 
 import           Control.DeepSeq
                  ( NFData (..) )
+import           Data.Coerce
 import           Data.Hashable
                  ( Hashable (..) )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import           Kore.Attribute.Attributes
 import qualified Kore.Attribute.Null as Attribute
                  ( Null (..) )
+import           Kore.Debug
 import           Kore.Sort
 import           Kore.Syntax.Application
 import           Kore.Syntax.Module
@@ -72,11 +78,17 @@ data Symbol = Symbol
     { symbolConstructor :: !Id
     , symbolParams      :: ![SortVariable]
     }
-    deriving (Show, Eq, Ord, Generic)
+    deriving (Eq, GHC.Generic, Ord, Show)
 
 instance Hashable Symbol
 
 instance NFData Symbol
+
+instance SOP.Generic Symbol
+
+instance SOP.HasDatatypeInfo Symbol
+
+instance Debug Symbol
 
 instance Unparse Symbol where
     unparse Symbol { symbolConstructor, symbolParams } =
@@ -106,11 +118,17 @@ data Alias = Alias
     { aliasConstructor :: !Id
     , aliasParams      :: ![SortVariable]
     }
-    deriving (Show, Eq, Ord, Generic)
+    deriving (Eq, GHC.Generic, Ord, Show)
 
 instance Hashable Alias
 
 instance NFData Alias
+
+instance SOP.Generic Alias
+
+instance SOP.HasDatatypeInfo Alias
+
+instance Debug Alias
 
 instance Unparse Alias where
     unparse Alias { aliasConstructor, aliasParams } =
@@ -131,11 +149,17 @@ data SentenceAlias (patternType :: *) =
         , sentenceAliasRightPattern :: !patternType
         , sentenceAliasAttributes   :: !Attributes
         }
-    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
+    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance Hashable patternType => Hashable (SentenceAlias patternType)
 
 instance NFData patternType => NFData (SentenceAlias patternType)
+
+instance SOP.Generic (SentenceAlias patternType)
+
+instance SOP.HasDatatypeInfo (SentenceAlias patternType)
+
+instance Debug patternType => Debug (SentenceAlias patternType)
 
 instance Unparse patternType => Unparse (SentenceAlias patternType) where
     unparse
@@ -193,11 +217,17 @@ data SentenceSymbol (patternType :: *) =
         , sentenceSymbolResultSort :: !Sort
         , sentenceSymbolAttributes :: !Attributes
         }
-    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
+    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance Hashable (SentenceSymbol patternType)
 
 instance NFData (SentenceSymbol patternType)
+
+instance SOP.Generic (SentenceSymbol patternType)
+
+instance SOP.HasDatatypeInfo (SentenceSymbol patternType)
+
+instance Debug (SentenceSymbol patternType)
 
 instance Unparse (SentenceSymbol patternType) where
     unparse
@@ -242,6 +272,17 @@ instance Unparse (SentenceSymbol patternType) where
                         (Pretty.parens (Pretty.fillSep ["\\inh", unparse2 s]))
                         <> (unparse2Inhabitant rest)
 
+{- | Coerce the pattern type of a 'SentenceSymbol' to any other type.
+
+This is trivial because the pattern type is a phantom parameter, that is,
+'SentenceSymbol' does not contain any patterns.
+
+See also: 'coerce'
+
+ -}
+coerceSentenceSymbol :: SentenceSymbol pattern1 -> SentenceSymbol pattern2
+coerceSentenceSymbol = coerce
+
 {- | 'SentenceImport' corresponds to the @import-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
@@ -255,11 +296,17 @@ data SentenceImport (patternType :: *) =
         { sentenceImportModuleName :: !ModuleName
         , sentenceImportAttributes :: !Attributes
         }
-    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
+    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance Hashable (SentenceImport patternType)
 
 instance NFData (SentenceImport patternType)
+
+instance SOP.Generic (SentenceImport patternType)
+
+instance SOP.HasDatatypeInfo (SentenceImport patternType)
+
+instance Debug (SentenceImport patternType)
 
 instance Unparse (SentenceImport patternType) where
     unparse
@@ -278,6 +325,17 @@ instance Unparse (SentenceImport patternType) where
             , unparse2 sentenceImportAttributes
             ]
 
+{- | Coerce the pattern type of a 'SentenceImport' to any other type.
+
+This is trivial because the pattern type is a phantom parameter, that is,
+'SentenceImport' does not contain any patterns.
+
+See also: 'coerce'
+
+ -}
+coerceSentenceImport :: SentenceImport pattern1 -> SentenceImport pattern2
+coerceSentenceImport = coerce
+
 {- | 'SentenceSort' corresponds to the @sort-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
@@ -288,11 +346,17 @@ data SentenceSort (patternType :: *) =
         , sentenceSortParameters :: ![SortVariable]
         , sentenceSortAttributes :: !Attributes
         }
-    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
+    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance Hashable (SentenceSort patternType)
 
 instance NFData (SentenceSort patternType)
+
+instance SOP.Generic (SentenceSort patternType)
+
+instance SOP.HasDatatypeInfo (SentenceSort patternType)
+
+instance Debug (SentenceSort patternType)
 
 instance Unparse (SentenceSort patternType) where
     unparse
@@ -329,6 +393,17 @@ instance Unparse (SentenceSort patternType) where
                   0 -> ""
                   m -> Pretty.fillSep["(\\inh Sorts)", printLbSortsRb (m - 1)]
 
+{- | Coerce the pattern type of a 'SentenceSort' to any other type.
+
+This is trivial because the pattern type is a phantom parameter, that is,
+'SentenceSort' does not contain any patterns.
+
+See also: 'coerce'
+
+ -}
+coerceSentenceSort :: SentenceSort pattern1 -> SentenceSort pattern2
+coerceSentenceSort = coerce
+
 {- | 'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
@@ -339,11 +414,17 @@ data SentenceAxiom (patternType :: *) =
         , sentenceAxiomPattern    :: !patternType
         , sentenceAxiomAttributes :: !Attributes
         }
-    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
+    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance Hashable patternType => Hashable (SentenceAxiom patternType)
 
 instance NFData patternType => NFData (SentenceAxiom patternType)
+
+instance SOP.Generic (SentenceAxiom patternType)
+
+instance SOP.HasDatatypeInfo (SentenceAxiom patternType)
+
+instance Debug patternType => Debug (SentenceAxiom patternType)
 
 instance Unparse patternType => Unparse (SentenceAxiom patternType) where
     unparse = unparseAxiom "axiom"
@@ -393,11 +474,17 @@ from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
  -}
 newtype SentenceClaim (patternType :: *) =
     SentenceClaim { getSentenceClaim :: SentenceAxiom patternType }
-    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
+    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance Hashable patternType => Hashable (SentenceClaim patternType)
 
 instance NFData patternType => NFData (SentenceClaim patternType)
+
+instance SOP.Generic (SentenceClaim patternType)
+
+instance SOP.HasDatatypeInfo (SentenceClaim patternType)
+
+instance Debug patternType => Debug (SentenceClaim patternType)
 
 instance Unparse patternType => Unparse (SentenceClaim patternType) where
     unparse = unparseAxiom "claim" . getSentenceClaim
@@ -412,11 +499,17 @@ See also: 'SentenceSort', 'SentenceSymbol'
 data SentenceHook (patternType :: *)
     = SentenceHookedSort !(SentenceSort patternType)
     | SentenceHookedSymbol !(SentenceSymbol patternType)
-    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
+    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance Hashable (SentenceHook patternType)
 
 instance NFData (SentenceHook patternType)
+
+instance SOP.Generic (SentenceHook patternType)
+
+instance SOP.HasDatatypeInfo (SentenceHook patternType)
+
+instance Debug (SentenceHook patternType)
 
 instance Unparse (SentenceHook patternType) where
     unparse =
@@ -429,56 +522,42 @@ instance Unparse (SentenceHook patternType) where
             SentenceHookedSort a -> "hooked-" <> unparse2 a
             SentenceHookedSymbol a -> "hooked-" <> unparse2 a
 
+{- | Coerce the pattern type of a 'SentenceHook' to any other type.
+
+This is trivial because the pattern type is a phantom parameter, that is,
+'SentenceHook' does not contain any patterns.
+
+See also: 'coerce'
+
+ -}
+coerceSentenceHook :: SentenceHook pattern1 -> SentenceHook pattern2
+coerceSentenceHook = coerce
+
 {- | @Sentence@ is the @declaration@ syntactic category from the Semantics of K,
 Section 9.1.6 (Declaration and Definitions).
 
 -}
-data Sentence (patternType :: *) where
-    SentenceAliasSentence
-        :: !(SentenceAlias patternType)
-        -> Sentence patternType
-    SentenceSymbolSentence
-        :: !(SentenceSymbol patternType)
-        -> Sentence patternType
-    SentenceImportSentence
-        :: !(SentenceImport patternType)
-        -> Sentence patternType
-    SentenceAxiomSentence
-        :: !(SentenceAxiom patternType)
-        -> Sentence patternType
-    SentenceClaimSentence
-        :: !(SentenceClaim patternType)
-        -> Sentence patternType
-    SentenceSortSentence
-        :: !(SentenceSort patternType)
-        -> Sentence patternType
-    SentenceHookSentence
-        :: !(SentenceHook patternType)
-        -> Sentence patternType
-    deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
+data Sentence (patternType :: *)
+    = SentenceAliasSentence  !(SentenceAlias patternType)
+    | SentenceSymbolSentence !(SentenceSymbol patternType)
+    | SentenceImportSentence !(SentenceImport patternType)
+    | SentenceAxiomSentence  !(SentenceAxiom patternType)
+    | SentenceClaimSentence  !(SentenceClaim patternType)
+    | SentenceSortSentence   !(SentenceSort patternType)
+    | SentenceHookSentence   !(SentenceHook patternType)
+    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance NFData patternType => NFData (Sentence patternType)
 
-instance Unparse patternType => Unparse (Sentence patternType) where
-     unparse =
-        \case
-            SentenceAliasSentence s -> unparse s
-            SentenceSymbolSentence s -> unparse s
-            SentenceImportSentence s -> unparse s
-            SentenceAxiomSentence s -> unparse s
-            SentenceClaimSentence s -> unparse s
-            SentenceSortSentence s -> unparse s
-            SentenceHookSentence s -> unparse s
+instance SOP.Generic (Sentence patternType)
 
-     unparse2 =
-        \case
-            SentenceAliasSentence s -> unparse2 s
-            SentenceSymbolSentence s -> unparse2 s
-            SentenceImportSentence s -> unparse2 s
-            SentenceAxiomSentence s -> unparse2 s
-            SentenceClaimSentence s -> unparse2 s
-            SentenceSortSentence s -> unparse2 s
-            SentenceHookSentence s -> unparse2 s
+instance SOP.HasDatatypeInfo (Sentence patternType)
+
+instance Debug patternType => Debug (Sentence patternType)
+
+instance Unparse patternType => Unparse (Sentence patternType) where
+     unparse = unparseGeneric
+     unparse2 = unparse2Generic
 
 {- | The attributes associated with a sentence.
 
@@ -517,9 +596,8 @@ sentenceAttributes =
 
 -- | Erase the pattern annotations within a 'Sentence'.
 eraseSentenceAnnotations
-    :: Functor domain
-    => Sentence (Pattern domain variable erased)
-    -> Sentence (Pattern domain variable Attribute.Null)
+    :: Sentence (Pattern variable erased)
+    -> Sentence (Pattern variable Attribute.Null)
 eraseSentenceAnnotations sentence = (<$) Attribute.Null <$> sentence
 
 class AsSentence sentenceType where

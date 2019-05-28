@@ -18,7 +18,6 @@ import qualified Kore.Attribute.Sort.Unit as Sort
 import qualified Kore.Builtin.Set as Set
 import           Kore.Domain.Builtin
 import           Kore.Internal.TermLike
-import           Kore.Syntax.Definition
 
 import Test.Kore
 
@@ -269,6 +268,9 @@ pairSymbol lSort rSort =
 unitSetSymbol :: SymbolOrAlias
 unitSetSymbol = builtinSymbol "unitSet"
 
+unitSet :: TermLike Variable
+unitSet = mkApp setSort unitSetSymbol []
+
 elementSetSymbol :: SymbolOrAlias
 elementSetSymbol = builtinSymbol "elementSet"
 
@@ -286,6 +288,16 @@ toListSetSymbol = builtinSymbol "toListSet"
 
 sizeSetSymbol :: SymbolOrAlias
 sizeSetSymbol = builtinSymbol "sizeSet"
+
+intersectionSetSymbol :: SymbolOrAlias
+intersectionSetSymbol = builtinSymbol "intersectionSet"
+
+intersectionSet
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+intersectionSet set1 set2 =
+    mkApp setSort intersectionSetSymbol [set1, set2]
 
 -- ** String
 
@@ -501,7 +513,7 @@ mapSortDecl =
 
 builtinMap
     :: [(TermLike Concrete, TermLike Variable)]
-    -> InternalMap (TermLike Variable)
+    -> InternalMap (TermLike Concrete) (TermLike Variable)
 builtinMap children =
     InternalMap
         { builtinMapSort = mapSort
@@ -563,7 +575,7 @@ setSortDecl =
 
 builtinSet
     :: [TermLike Concrete]
-    -> InternalSet
+    -> InternalSet (TermLike Concrete)
 builtinSet children =
     InternalSet
         { builtinSetSort = setSort
@@ -1112,6 +1124,11 @@ setModule =
                 intSort
                 [setSort]
                 [hookAttribute Set.sizeKey]
+            , hookedSymbolDecl
+                intersectionSetSymbol
+                setSort
+                [setSort, setSort]
+                [hookAttribute Set.intersectionKey]
             ]
         }
 

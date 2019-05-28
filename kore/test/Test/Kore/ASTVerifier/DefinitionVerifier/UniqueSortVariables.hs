@@ -5,10 +5,9 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.UniqueSortVariables
 import Test.Tasty
        ( TestTree )
 
+import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.Internal.TermLike
-import           Kore.Syntax.Definition
-import qualified Kore.Verified as Verified
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -96,7 +95,6 @@ test_uniqueSortVariables =
                     (SortName "s")
                     []
                     topS
-                    :: Verified.SentenceAlias
                 )
             , simpleSortSentence (SortName "s")
             ]
@@ -155,13 +153,13 @@ test_uniqueSortVariables =
     ------------------------------------------------------------------
     , expectSuccess "Definition with meta symbol"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ metaSymbolSentenceWithSortParameters
+            [ symbolSentenceWithSortParameters
                 (SymbolName "#a") stringMetaSort []
             ]
         )
     , expectSuccess "Meta symbol with one sort parameter"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ metaSymbolSentenceWithSortParameters
+            [ symbolSentenceWithSortParameters
                 (SymbolName "#a")
                 stringMetaSort
                 [ sortVariable "#sv" ]
@@ -169,7 +167,7 @@ test_uniqueSortVariables =
         )
     , expectSuccess "Meta symbol with one sort parameter with same name"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ metaSymbolSentenceWithSortParameters
+            [ symbolSentenceWithSortParameters
                 (SymbolName "#a")
                 stringMetaSort
                 [ sortVariable "#a" ]
@@ -178,7 +176,7 @@ test_uniqueSortVariables =
     , expectSuccess
         "Meta symbol with one sort parameter with same name as sort"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ metaSymbolSentenceWithSortParameters
+            [ symbolSentenceWithSortParameters
                 (SymbolName "#a")
                 stringMetaSort
                 [ sortVariable "#String" ]
@@ -187,7 +185,7 @@ test_uniqueSortVariables =
     , expectSuccess
         "Meta symbol with two sort parameters"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ metaSymbolSentenceWithSortParameters
+            [ symbolSentenceWithSortParameters
                 (SymbolName "#a")
                 stringMetaSort
                 [ sortVariable "#sv1"
@@ -198,58 +196,49 @@ test_uniqueSortVariables =
     ------------------------------------------------------------------
     , expectSuccess "Definition with object symbol"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ asSentence
-                (symbolSentenceWithSortParameters
-                    (SymbolName "a") (SortName "s") []
-                :: Verified.SentenceSymbol
-                )
+            [ symbolSentenceWithSortParameters
+                (SymbolName "a")
+                (simpleSort $ SortName "s")
+                []
             , simpleSortSentence (SortName "s")
             ]
         )
     , expectSuccess "Object symbol with one sort parameter"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ asSentence
-                (symbolSentenceWithSortParameters
-                    (SymbolName "a")
-                    (SortName "s")
-                    [ sortVariable "sv" ]
-                )
+            [ symbolSentenceWithSortParameters
+                (SymbolName "a")
+                (simpleSort $ SortName "s")
+                [ sortVariable "sv" ]
             , simpleSortSentence (SortName "s")
             ]
         )
     , expectSuccess "Object symbol with one sort parameter with same name"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ asSentence
-                (symbolSentenceWithSortParameters
-                    (SymbolName "a")
-                    (SortName "s")
-                    [ sortVariable  "a" ]
-                )
+            [ symbolSentenceWithSortParameters
+                (SymbolName "a")
+                (simpleSort $ SortName "s")
+                [ sortVariable  "a" ]
             , simpleSortSentence (SortName "s")
             ]
         )
     , expectSuccess
         "Object symbol with one sort parameter with same name as sort"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ asSentence
-                (symbolSentenceWithSortParameters
-                    (SymbolName "a")
-                    (SortName "s")
-                    [ sortVariable "s" ]
-                )
+            [ symbolSentenceWithSortParameters
+                (SymbolName "a")
+                (simpleSort $ SortName "s")
+                [ sortVariable "s" ]
             , simpleSortSentence (SortName "s")
             ]
         )
     , expectSuccess "Object symbol with two sort parameters"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ asSentence
-                (symbolSentenceWithSortParameters
-                    (SymbolName "a")
-                    (SortName "s")
-                    [ sortVariable  "sv1"
-                    , sortVariable  "sv2"
-                    ]
-                )
+            [ symbolSentenceWithSortParameters
+                (SymbolName "a")
+                (simpleSort $ SortName "s")
+                [ sortVariable  "sv1"
+                , sortVariable  "sv2"
+                ]
             , simpleSortSentence (SortName "s")
             ]
         )
@@ -257,27 +246,27 @@ test_uniqueSortVariables =
     , expectSuccess "Definition with axiom"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
-                (stringUnifiedPattern "hello") []
+                (stringParsedPattern "hello") []
             ]
         )
     , expectSuccess "Axiom with one object sort parameter"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
-                (stringUnifiedPattern "hello")
+                (stringParsedPattern "hello")
                 [ namedSortVariable (SortVariableName "sv") ]
             ]
         )
     , expectSuccess "Axiom with one meta sort parameter"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
-                (stringUnifiedPattern "hello")
+                (stringParsedPattern "hello")
                 [ namedSortVariable (SortVariableName "#sv") ]
             ]
         )
     , expectSuccess "Axiom with two object sort parameters"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
-                (stringUnifiedPattern "hello")
+                (stringParsedPattern "hello")
                 [ namedSortVariable (SortVariableName "sv1")
                 , namedSortVariable (SortVariableName "sv2")
                 ]
@@ -286,7 +275,7 @@ test_uniqueSortVariables =
     , expectSuccess "Axiom with two meta sort parameters"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
-                (stringUnifiedPattern "hello")
+                (stringParsedPattern "hello")
                 [ namedSortVariable (SortVariableName "#sv1")
                 , namedSortVariable (SortVariableName "#sv2")
                 ]
@@ -295,7 +284,7 @@ test_uniqueSortVariables =
     , expectSuccess "Axiom with mixed sort parameters"
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
-                (stringUnifiedPattern "hello")
+                (stringParsedPattern "hello")
                 [ namedSortVariable (SortVariableName "sv")
                 , namedSortVariable (SortVariableName "#sv")
                 ]
@@ -369,7 +358,7 @@ test_uniqueSortVariables =
             "Duplicated sort variable: '#sv'."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ metaSymbolSentenceWithSortParameters
+            [ symbolSentenceWithSortParameters
                 (SymbolName "#a")
                 stringMetaSort
                 [ sortVariable "#sv"
@@ -387,14 +376,12 @@ test_uniqueSortVariables =
             "Duplicated sort variable: 'sv'."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
-            [ asSentence
-                (symbolSentenceWithSortParameters
+            [ symbolSentenceWithSortParameters
                     (SymbolName "a")
-                    (SortName "s")
+                    (simpleSort $ SortName "s")
                     [ sortVariable "sv"
                     , sortVariable "sv"
                     ]
-                )
             , simpleSortSentence (SortName "s")
             ]
         )
@@ -406,7 +393,7 @@ test_uniqueSortVariables =
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
-                (stringUnifiedPattern "hello")
+                (stringParsedPattern "hello")
                 [ namedSortVariable (SortVariableName "sv")
                 , namedSortVariable (SortVariableName "sv")
                 ]
@@ -420,7 +407,7 @@ test_uniqueSortVariables =
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
-                (stringUnifiedPattern "hello")
+                (stringParsedPattern "hello")
                 [ namedSortVariable (SortVariableName "#sv")
                 , namedSortVariable (SortVariableName "#sv")
                 ]
@@ -428,11 +415,5 @@ test_uniqueSortVariables =
         )
     ]
   where
-    topS =
-            (mkTop
-                (simpleSort $ SortName "s" :: Sort)
-            )
-    topS1 =
-            (mkTop
-                (simpleSort $ SortName "s1" :: Sort)
-            )
+    topS  = Builtin.externalizePattern $ mkTop $ simpleSort $ SortName "s"
+    topS1 = Builtin.externalizePattern $ mkTop $ simpleSort $ SortName "s1"

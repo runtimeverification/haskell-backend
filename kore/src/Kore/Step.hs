@@ -42,6 +42,8 @@ import           Kore.Internal.Pattern
                  ( Pattern )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Result as Result
+                 ( mergeResults )
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern, isCoolingRule,
                  isHeatingRule, isNormalRule )
@@ -57,6 +59,7 @@ import           Kore.Syntax.Variable
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
+
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}
@@ -118,7 +121,7 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
             Foldable.asum (pure <$> nonEmptyConfigs)
     transitionRewrite rule config = do
         Transition.addRule rule
-        result <-
+        eitherResults <-
             Monad.Trans.lift
             $ Monad.Unify.runUnifier
             $ Step.applyRewriteRules
@@ -129,17 +132,19 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                 (Step.UnificationProcedure Unification.unificationProcedure)
                 [rule]
                 config
-        case result of
-            Left _ ->
+        case eitherResults of
+            Left err ->
                 (error . show . Pretty.vsep)
                     [ "Could not apply the axiom:"
                     , unparse rule
                     , "to the configuration:"
                     , unparse config
                     , "Un-implemented unification case; aborting execution."
+                    , "err=" <> Pretty.pretty err
                     ]
             Right results ->
-                Foldable.asum (pure <$> Step.gatherResults results)
+                Foldable.asum
+                    (pure <$> Step.gatherResults (Result.mergeResults results))
 
 
 {- | A strategy that applies all the rewrites in parallel.

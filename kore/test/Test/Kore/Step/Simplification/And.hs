@@ -7,10 +7,6 @@ import Test.Tasty.HUnit
 
 import qualified Data.Map as Map
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.MultiOr
                  ( MultiOr (MultiOr) )
 import           Kore.Internal.OrPattern
@@ -31,8 +27,6 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Kore.Step.MockSymbols
                  ( testSort )
@@ -420,9 +414,9 @@ evaluate patt =
     SMT.runSMT SMT.defaultConfig
     $ evalSimplifier emptyLogger
     $ simplify
-        mockMetadataTools
-        (Mock.substitutionSimplifier mockMetadataTools)
-        (Simplifier.create mockMetadataTools Map.empty)
+        Mock.metadataTools
+        (Mock.substitutionSimplifier Mock.metadataTools)
+        (Simplifier.create Mock.metadataTools Map.empty)
         Map.empty
         patt
 
@@ -436,19 +430,9 @@ evaluatePatterns first second =
     $ evalSimplifier emptyLogger
     $ gather
     $ makeEvaluate
-        mockMetadataTools
-        (Mock.substitutionSimplifier mockMetadataTools)
-        (Simplifier.create mockMetadataTools Map.empty)
+        Mock.metadataTools
+        (Mock.substitutionSimplifier Mock.metadataTools)
+        (Simplifier.create Mock.metadataTools Map.empty)
         Map.empty
         first
         second
-
-mockMetadataTools :: SmtMetadataTools StepperAttributes
-mockMetadataTools =
-    Mock.makeMetadataTools
-        Mock.attributesMapping
-        Mock.headTypeMapping
-        Mock.sortAttributesMapping
-        Mock.subsorts
-        Mock.headSortsMapping
-        Mock.smtDeclarations

@@ -22,7 +22,7 @@ import qualified Kore.IndexedModule.MetadataTools as HeadType
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( fullCrossProduct )
+                 ( fullCrossProduct, mergeAll )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -35,10 +35,12 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.Function.Evaluator
                  ( evaluateApplication )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+                 ( BranchT, PredicateSimplifier, Simplifier,
+                 TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as BranchT
+                 ( gather )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Syntax.Application
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -171,7 +173,7 @@ makeAndEvaluateSymbolApplications
     symbol
     children
   = do
-    expandedApplication <-
+    expandedApplications <- BranchT.gather $
         makeExpandedApplication
             tools
             substitutionSimplifier
@@ -180,12 +182,16 @@ makeAndEvaluateSymbolApplications
             valid
             symbol
             children
-    evaluateApplicationFunction
-        tools
-        substitutionSimplifier
-        simplifier
-        axiomIdToEvaluator
-        expandedApplication
+    orResults <-
+        traverse
+            (evaluateApplicationFunction
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToEvaluator
+            )
+            expandedApplications
+    return (MultiOr.mergeAll orResults)
 
 evaluateApplicationFunction
     ::  ( Ord variable
@@ -235,7 +241,7 @@ makeExpandedApplication
     -> Attribute.Pattern variable
     -> SymbolOrAlias
     -> [Pattern variable]
-    -> Simplifier (ExpandedApplication variable)
+    -> BranchT Simplifier (ExpandedApplication variable)
 makeExpandedApplication
     tools
     substitutionSimplifier

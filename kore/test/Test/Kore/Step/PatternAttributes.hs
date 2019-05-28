@@ -7,23 +7,13 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import qualified Kore.Domain.Builtin as Domain
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
-import           Kore.Internal.TermLike
-import           Kore.Proof.Functional
-import           Kore.Step.PatternAttributes
-import           Kore.Step.PatternAttributesError
-                 ( ConstructorLikeError (..), FunctionError (..),
-                 FunctionalError (..) )
-import           Kore.Syntax.CharLiteral
-import           Kore.Syntax.StringLiteral
+import Kore.Internal.TermLike
+import Kore.Proof.Functional as Proof.Functional
+import Kore.Step.PatternAttributes
+import Kore.Step.PatternAttributesError
+       ( ConstructorLikeError (..), FunctionError (..), FunctionalError (..) )
 
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSymbols as MockSymbols
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
@@ -41,38 +31,25 @@ test_patternAttributes =
         (do
             assertEqualWithExplanation "FunctionalVariable"
                 (FunctionalVariable (LevelString "10"))
-                (mapFunctionalProofVariables
+                (Proof.Functional.mapVariables
                     levelShow
                     (FunctionalVariable (LevelInt 10))
                 )
-            let
-                dv =
-                    Domain.BuiltinExternal Domain.External
-                        { domainValueSort = Mock.testSort
-                        , domainValueChild =
-                            eraseAnnotations $ mkStringLiteral "10"
-                        }
-            assertEqualWithExplanation "FunctionalDomainValue"
-                (FunctionalDomainValue dv)
-                (mapFunctionalProofVariables
-                    levelShow
-                    (FunctionalDomainValue dv)
-                )
             assertEqualWithExplanation "FunctionalHead"
                 (FunctionalHead MockSymbols.aSymbol)
-                (mapFunctionalProofVariables
+                (Proof.Functional.mapVariables
                     levelShow
                     (FunctionalHead MockSymbols.aSymbol)
                 )
             assertEqualWithExplanation "FunctionalStringLiteral"
                 (FunctionalStringLiteral (StringLiteral "10"))
-                (mapFunctionalProofVariables
+                (Proof.Functional.mapVariables
                     levelShow
                     (FunctionalStringLiteral (StringLiteral "10"))
                 )
             assertEqualWithExplanation "FunctionalCharLiteral"
                 (FunctionalCharLiteral (CharLiteral 'a'))
-                (mapFunctionalProofVariables
+                (Proof.Functional.mapVariables
                     levelShow
                     (FunctionalCharLiteral (CharLiteral 'a'))
                 )
@@ -82,7 +59,7 @@ test_patternAttributes =
             assertEqualWithExplanation "variables are functional"
                 (Right [FunctionalVariable Mock.x])
                 (isFunctionalPattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     (mkVar Mock.x)
                 )
             let
@@ -91,7 +68,7 @@ test_patternAttributes =
             assertEqualWithExplanation "functional symbols are functional"
                 (Right [FunctionalHead Mock.functional00Symbol])
                 (isFunctionalPattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     functionalConstant
                 )
             let
@@ -100,7 +77,7 @@ test_patternAttributes =
             assertEqualWithExplanation "string literals are functional"
                 (Right [FunctionalStringLiteral (StringLiteral "10")])
                 (isFunctionalPattern
-                    mockMetaMetadataTools
+                    Mock.metadataTools
                     str
                 )
             let
@@ -109,7 +86,7 @@ test_patternAttributes =
             assertEqualWithExplanation "char literals are functional"
                 (Right [FunctionalCharLiteral (CharLiteral 'a')])
                 (isFunctionalPattern
-                    mockMetaMetadataTools
+                    Mock.metadataTools
                     chr
                 )
             let
@@ -118,7 +95,7 @@ test_patternAttributes =
             assertEqualWithExplanation "function symbols are not functional"
                 (Left (NonFunctionalHead Mock.cfSymbol))
                 (isFunctionalPattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     functionConstant
                 )
             let
@@ -127,7 +104,7 @@ test_patternAttributes =
             assertEqualWithExplanation "plain symbols are not functional"
                 (Left (NonFunctionalHead Mock.plain00Symbol))
                 (isFunctionalPattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     plainConstant
                 )
             let
@@ -140,7 +117,7 @@ test_patternAttributes =
                     ]
                 )
                 (isFunctionalPattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     functionalPatt
                 )
             let
@@ -150,7 +127,7 @@ test_patternAttributes =
             assertEqualWithExplanation "or is not functional"
                 (Left NonFunctionalPattern)
                 (isFunctionalPattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     nonFunctionalPatt
                 )
         )
@@ -159,7 +136,7 @@ test_patternAttributes =
             assertEqualWithExplanation "variables are function-like"
                 (Right [FunctionProofFunctional (FunctionalVariable Mock.x)])
                 (isFunctionPattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     (mkVar Mock.x)
                 )
             let
@@ -171,7 +148,7 @@ test_patternAttributes =
                     ]
                 )
                 (isFunctionPattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     functionalConstant
                 )
             let
@@ -184,7 +161,7 @@ test_patternAttributes =
                     ]
                 )
                 (isFunctionPattern
-                    mockMetaMetadataTools
+                    Mock.metadataTools
                     str
                 )
             let
@@ -197,7 +174,7 @@ test_patternAttributes =
                     ]
                 )
                 (isFunctionPattern
-                    mockMetaMetadataTools
+                    Mock.metadataTools
                     chr
                 )
             let
@@ -206,7 +183,7 @@ test_patternAttributes =
             assertEqualWithExplanation "function symbols are function-like"
                 (Right [FunctionHead Mock.cfSymbol])
                 (isFunctionPattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     functionConstant
                 )
             let
@@ -215,7 +192,7 @@ test_patternAttributes =
             assertEqualWithExplanation "plain symbols are not function-like"
                 (Left (NonFunctionHead Mock.plain00Symbol))
                 (isFunctionPattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     plainConstant
                 )
             let
@@ -228,7 +205,7 @@ test_patternAttributes =
                     ]
                 )
                 (isFunctionPattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     functionalPatt
                 )
             let
@@ -238,7 +215,7 @@ test_patternAttributes =
             assertEqualWithExplanation "or is not function-like"
                 (Left NonFunctionPattern)
                 (isFunctionPattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     nonFunctionPatt
                 )
         )
@@ -247,7 +224,7 @@ test_patternAttributes =
             assertEqualWithExplanation "variables are constructor-like"
                 (Right [ConstructorLikeProof])
                 (isConstructorLikePattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     (mkVar Mock.x)
                 )
             let
@@ -256,7 +233,7 @@ test_patternAttributes =
             assertEqualWithExplanation "constructors are constructor-like"
                 (Right [ConstructorLikeProof])
                 (isConstructorLikePattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     constructor
                 )
             let
@@ -265,7 +242,7 @@ test_patternAttributes =
             assertEqualWithExplanation "sort injections are constructor-like"
                 (Right [ConstructorLikeProof, ConstructorLikeProof])
                 (isConstructorLikePattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     sortInjection
                 )
             let
@@ -275,7 +252,7 @@ test_patternAttributes =
                 "constructors-modulo are not constructor-like"
                 (Left NonConstructorLikeHead)
                 (isConstructorLikePattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     mapElement
                 )
             let
@@ -284,7 +261,7 @@ test_patternAttributes =
             assertEqualWithExplanation "string literals are constructor-like"
                 (Right [ConstructorLikeProof])
                 (isConstructorLikePattern
-                    mockMetaMetadataTools
+                    Mock.metadataTools
                     str
                 )
             let
@@ -293,22 +270,20 @@ test_patternAttributes =
             assertEqualWithExplanation "char literals are constructor-like"
                 (Right [ConstructorLikeProof])
                 (isConstructorLikePattern
-                    mockMetaMetadataTools
+                    Mock.metadataTools
                     chr
                 )
             let
                 dv :: TermLike Variable
-                dv = mkDomainValue
-                        (Domain.BuiltinExternal Domain.External
-                            { domainValueSort = Mock.testSort
-                            , domainValueChild =
-                                eraseAnnotations $ mkStringLiteral "a"
-                            }
-                        )
+                dv =
+                    mkDomainValue DomainValue
+                        { domainValueSort = Mock.testSort
+                        , domainValueChild = mkStringLiteral "a"
+                        }
             assertEqualWithExplanation "domain values are constructor-like"
                 (Right [ConstructorLikeProof])
                 (isConstructorLikePattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     dv
                 )
 
@@ -319,7 +294,7 @@ test_patternAttributes =
                 "function symbols are not constructor-like"
                 (Left NonConstructorLikeHead)
                 (isConstructorLikePattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     functionConstant
                 )
             let
@@ -328,7 +303,7 @@ test_patternAttributes =
             assertEqualWithExplanation "injections are not constructor-like"
                 (Left NonConstructorLikeHead)
                 (isConstructorLikePattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     injectionConstant
                 )
         )
@@ -337,7 +312,7 @@ test_patternAttributes =
             assertEqualWithExplanation "variables are constructor-modulo-like"
                 (Right [ConstructorLikeProof])
                 (isConstructorModuloLikePattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     (mkVar Mock.x)
                 )
             let
@@ -347,7 +322,7 @@ test_patternAttributes =
                 "constructors are constructor-modulo-like"
                 (Right [ConstructorLikeProof])
                 (isConstructorModuloLikePattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     constructor
                 )
             let
@@ -357,7 +332,7 @@ test_patternAttributes =
                 "sort injections are constructor-modulo-like"
                 (Right [ConstructorLikeProof, ConstructorLikeProof])
                 (isConstructorModuloLikePattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     sortInjection
                 )
             let
@@ -372,7 +347,7 @@ test_patternAttributes =
                     ]
                 )
                 (isConstructorModuloLikePattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     mapElement
                 )
             let
@@ -382,7 +357,7 @@ test_patternAttributes =
                 "string literals are constructor-modulo-like"
                 (Right [ConstructorLikeProof])
                 (isConstructorModuloLikePattern
-                    mockMetaMetadataTools
+                    Mock.metadataTools
                     str
                 )
             let
@@ -392,23 +367,21 @@ test_patternAttributes =
                 "char literals are constructor-modulo-like"
                 (Right [ConstructorLikeProof])
                 (isConstructorModuloLikePattern
-                    mockMetaMetadataTools
+                    Mock.metadataTools
                     chr
                 )
             let
                 dv :: TermLike Variable
-                dv = mkDomainValue
-                        (Domain.BuiltinExternal Domain.External
-                            { domainValueSort = Mock.testSort
-                            , domainValueChild =
-                                eraseAnnotations $ mkStringLiteral "a"
-                            }
-                        )
+                dv =
+                    mkDomainValue DomainValue
+                        { domainValueSort = Mock.testSort
+                        , domainValueChild = mkStringLiteral "a"
+                        }
             assertEqualWithExplanation
                 "domain values are constructor-modulo-like"
                 (Right [ConstructorLikeProof])
                 (isConstructorModuloLikePattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     dv
                 )
 
@@ -419,7 +392,7 @@ test_patternAttributes =
                 "function symbols are not constructor-modulo-like"
                 (Left NonConstructorLikeHead)
                 (isConstructorModuloLikePattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     functionConstant
                 )
             let
@@ -429,22 +402,8 @@ test_patternAttributes =
                 "injections are not constructor-modulo-like"
                 (Left NonConstructorLikeHead)
                 (isConstructorModuloLikePattern
-                    mockMetadataTools
+                    Mock.metadataTools
                     injectionConstant
                 )
         )
     ]
-  where
-    mockMetadataTools :: SmtMetadataTools StepperAttributes
-    mockMetadataTools =
-        Mock.makeMetadataTools
-            Mock.attributesMapping
-            Mock.headTypeMapping
-            Mock.sortAttributesMapping
-            Mock.subsorts
-            Mock.headSortsMapping
-            Mock.smtDeclarations
-
-    mockMetaMetadataTools :: SmtMetadataTools StepperAttributes
-    mockMetaMetadataTools =
-        Mock.makeMetadataTools [] [] [] [] [] Mock.emptySmtDeclarations

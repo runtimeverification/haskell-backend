@@ -14,9 +14,8 @@ module Test.Kore.Comparators where
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Comonad.Trans.Cofree
-                 ( Cofree, CofreeF (..), CofreeT (..) )
+                 ( CofreeF (..), CofreeT (..) )
 import qualified Data.Function as Function
-import           Data.Functor.Classes
 import           Data.Functor.Identity
                  ( Identity (..) )
 import           Numeric.Natural
@@ -28,12 +27,12 @@ import qualified Kore.Attribute.Location as Attribute
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Source as Attribute
-import           Kore.Domain.Builtin
+import           Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Internal.MultiOr
 import           Kore.Internal.Pattern
                  ( Conditional (..) )
-import           Kore.Internal.TermLike
+import           Kore.Internal.TermLike as TermLike
 import           Kore.OnePath.StrategyPattern
                  ( StrategyPattern )
 import qualified Kore.OnePath.StrategyPattern as StrategyPattern
@@ -67,8 +66,7 @@ import qualified Kore.Step.SMT.AST as SMT.SymbolReference
                  ( SymbolReference (..) )
 import qualified Kore.Step.SMT.AST as SMT.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
-import           Kore.Syntax
-import           Kore.Syntax.Definition
+import           Kore.Syntax as Syntax
 import qualified Kore.Syntax.SetVariable as SetVariable
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution
@@ -108,145 +106,154 @@ instance
     ( EqualWithExplanation child
     , Eq child
     , Show child
-    , Eq1 domain
-    , Show1 domain
     , EqualWithExplanation variable
-    , EqualWithExplanation (domain child)
     , Eq variable
     , Show variable
     )
-    => SumEqualWithExplanation (PatternF domain variable child)
+    => SumEqualWithExplanation (PatternF variable child)
   where
-    sumConstructorPair (AndF a1) (AndF a2) =
+    sumConstructorPair (Syntax.AndF a1) (Syntax.AndF a2) =
         SumConstructorSameWithArguments (EqWrap "AndF" a1 a2)
-    sumConstructorPair pattern1@(AndF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.AndF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (ApplicationF a1) (ApplicationF a2) =
+    sumConstructorPair (Syntax.ApplicationF a1) (Syntax.ApplicationF a2) =
         SumConstructorSameWithArguments (EqWrap "ApplicationF" a1 a2)
-    sumConstructorPair pattern1@(ApplicationF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.ApplicationF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (BottomF a1) (BottomF a2) =
+    sumConstructorPair (Syntax.BottomF a1) (Syntax.BottomF a2) =
         SumConstructorSameWithArguments (EqWrap "BottomF" a1 a2)
-    sumConstructorPair pattern1@(BottomF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.BottomF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (CeilF a1) (CeilF a2) =
+    sumConstructorPair (Syntax.CeilF a1) (Syntax.CeilF a2) =
         SumConstructorSameWithArguments (EqWrap "CeilF" a1 a2)
-    sumConstructorPair pattern1@(CeilF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.CeilF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (DomainValueF a1) (DomainValueF a2) =
+    sumConstructorPair (Syntax.DomainValueF a1) (Syntax.DomainValueF a2) =
         SumConstructorSameWithArguments (EqWrap "DomainValueF" a1 a2)
-    sumConstructorPair pattern1@(DomainValueF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.DomainValueF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (EqualsF a1) (EqualsF a2) =
+    sumConstructorPair (Syntax.EqualsF a1) (Syntax.EqualsF a2) =
         SumConstructorSameWithArguments (EqWrap "EqualsF" a1 a2)
-    sumConstructorPair pattern1@(EqualsF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.EqualsF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (ExistsF a1) (ExistsF a2) =
+    sumConstructorPair (Syntax.ExistsF a1) (Syntax.ExistsF a2) =
         SumConstructorSameWithArguments (EqWrap "ExistsF" a1 a2)
-    sumConstructorPair pattern1@(ExistsF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.ExistsF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (FloorF a1) (FloorF a2) =
+    sumConstructorPair (Syntax.FloorF a1) (Syntax.FloorF a2) =
         SumConstructorSameWithArguments (EqWrap "FloorF" a1 a2)
-    sumConstructorPair pattern1@(FloorF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.FloorF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (ForallF a1) (ForallF a2) =
+    sumConstructorPair (Syntax.ForallF a1) (Syntax.ForallF a2) =
         SumConstructorSameWithArguments (EqWrap "ForallF" a1 a2)
-    sumConstructorPair pattern1@(ForallF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.ForallF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (IffF a1) (IffF a2) =
+    sumConstructorPair (Syntax.IffF a1) (Syntax.IffF a2) =
         SumConstructorSameWithArguments (EqWrap "IffF" a1 a2)
-    sumConstructorPair pattern1@(IffF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.IffF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (ImpliesF a1) (ImpliesF a2) =
+    sumConstructorPair (Syntax.ImpliesF a1) (Syntax.ImpliesF a2) =
         SumConstructorSameWithArguments (EqWrap "ImpliesF" a1 a2)
-    sumConstructorPair pattern1@(ImpliesF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.ImpliesF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (InF a1) (InF a2) =
+    sumConstructorPair (Syntax.InF a1) (Syntax.InF a2) =
         SumConstructorSameWithArguments (EqWrap "InF" a1 a2)
-    sumConstructorPair pattern1@(InF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.InF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (NextF a1) (NextF a2) =
+    sumConstructorPair (Syntax.MuF a1) (Syntax.MuF a2) =
+        SumConstructorSameWithArguments (EqWrap "MuF" a1 a2)
+    sumConstructorPair pattern1@(Syntax.MuF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (Syntax.NextF a1) (Syntax.NextF a2) =
         SumConstructorSameWithArguments (EqWrap "NextF" a1 a2)
-    sumConstructorPair pattern1@(NextF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.NextF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (NotF a1) (NotF a2) =
+    sumConstructorPair (Syntax.NotF a1) (Syntax.NotF a2) =
         SumConstructorSameWithArguments (EqWrap "NotF" a1 a2)
-    sumConstructorPair pattern1@(NotF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.NotF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (OrF a1) (OrF a2) =
+    sumConstructorPair (Syntax.NuF a1) (Syntax.NuF a2) =
+        SumConstructorSameWithArguments (EqWrap "NuF" a1 a2)
+    sumConstructorPair pattern1@(Syntax.NuF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (Syntax.OrF a1) (Syntax.OrF a2) =
         SumConstructorSameWithArguments (EqWrap "OrF" a1 a2)
-    sumConstructorPair pattern1@(OrF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.OrF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (RewritesF a1) (RewritesF a2) =
+    sumConstructorPair (Syntax.RewritesF a1) (Syntax.RewritesF a2) =
         SumConstructorSameWithArguments (EqWrap "RewritesF" a1 a2)
-    sumConstructorPair pattern1@(RewritesF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.RewritesF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (StringLiteralF a1) (StringLiteralF a2) =
+    sumConstructorPair (Syntax.StringLiteralF a1) (Syntax.StringLiteralF a2) =
         SumConstructorSameWithArguments (EqWrap "StringLiteralF" a1 a2)
-    sumConstructorPair pattern1@(StringLiteralF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.StringLiteralF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (CharLiteralF a1) (CharLiteralF a2) =
+    sumConstructorPair (Syntax.CharLiteralF a1) (Syntax.CharLiteralF a2) =
         SumConstructorSameWithArguments (EqWrap "CharLiteralF" a1 a2)
-    sumConstructorPair pattern1@(CharLiteralF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.CharLiteralF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (TopF a1) (TopF a2) =
+    sumConstructorPair (Syntax.TopF a1) (Syntax.TopF a2) =
         SumConstructorSameWithArguments (EqWrap "TopF" a1 a2)
-    sumConstructorPair pattern1@(TopF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.TopF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (VariableF a1) (VariableF a2) =
+    sumConstructorPair (Syntax.VariableF a1) (Syntax.VariableF a2) =
         SumConstructorSameWithArguments (EqWrap "VariableF" a1 a2)
-    sumConstructorPair pattern1@(VariableF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.VariableF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (InhabitantF s1) (InhabitantF s2) =
+    sumConstructorPair (Syntax.InhabitantF s1) (Syntax.InhabitantF s2) =
         SumConstructorSameWithArguments (EqWrap "InhabitantF" s1 s2)
-    sumConstructorPair pattern1@(InhabitantF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.InhabitantF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1)
             (printWithExplanation pattern2)
 
-    sumConstructorPair (SetVariableF a1) (SetVariableF a2) =
+    sumConstructorPair (Syntax.SetVariableF a1) (Syntax.SetVariableF a2) =
         SumConstructorSameWithArguments (EqWrap "SetVariableF" a1 a2)
-    sumConstructorPair pattern1@(SetVariableF _) pattern2 =
+    sumConstructorPair pattern1@(Syntax.SetVariableF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
@@ -255,45 +262,60 @@ instance
     , Eq child, Eq variable
     , Show child
     , EqualWithExplanation variable
-    , EqualWithExplanation (domain child)
     , Show variable
-    , Show1 domain
-    , Eq1 domain
-    ) => EqualWithExplanation (PatternF domain variable child)
+    ) => EqualWithExplanation (TermLikeF variable child)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
 instance
-    ( Show (Pattern domain variable annotation)
-    , Show1 domain
-    , Eq1 domain
+    ( Show variable
+    , Eq variable
+    , EqualWithExplanation variable
+    ) =>
+    EqualWithExplanation (TermLike variable)
+  where
+    compareWithExplanation a@(TermLike _) = wrapperCompareWithExplanation a
+    printWithExplanation = show
+
+instance
+    ( Show variable
+    , Eq variable
+    , EqualWithExplanation variable
+    ) =>
+    WrapperEqualWithExplanation (TermLike variable)
+  where
+    wrapperField expected actual =
+        EqWrap
+            "getTermLike = "
+            (getTermLike expected)
+            (getTermLike actual)
+    wrapperConstructorName _ = "TermLike"
+
+instance
+    ( Show (Pattern variable annotation)
     , Show variable
     , Eq variable
     , EqualWithExplanation variable
     , Show annotation
     , Eq annotation
     , EqualWithExplanation annotation
-    , EqualWithExplanation (domain (Cofree (PatternF domain variable) annotation))
     ) =>
-    EqualWithExplanation (Pattern domain variable annotation)
+    EqualWithExplanation (Pattern variable annotation)
   where
     compareWithExplanation a@(Pattern _) = wrapperCompareWithExplanation a
     printWithExplanation = show
 
 instance
-    ( Show (Pattern domain variable annotation)
-    , Show1 domain
-    , Eq1 domain
+    ( Show (Pattern variable annotation)
     , Show variable
     , Eq variable
     , EqualWithExplanation variable
     , Show annotation
     , Eq annotation
     , EqualWithExplanation annotation
-    , EqualWithExplanation (domain (Cofree (PatternF domain variable) annotation))
     ) =>
-    WrapperEqualWithExplanation (Pattern domain variable annotation)
+    WrapperEqualWithExplanation (Pattern variable annotation)
   where
     wrapperField expected actual =
         EqWrap
@@ -617,6 +639,41 @@ instance
     printWithExplanation = show
 
 instance
+    ( Eq child
+    , Eq variable
+    , Show child
+    , Show variable
+    , EqualWithExplanation child
+    , EqualWithExplanation variable
+    )
+    => StructEqualWithExplanation (Mu variable child)
+  where
+    structFieldsWithNames
+        expected@(Mu _ _)
+        actual@(Mu _ _)
+      = [ EqWrap
+            "muVariable = "
+            (muVariable expected)
+            (muVariable actual)
+        , EqWrap
+            "muChild = "
+            (muChild expected)
+            (muChild actual)
+        ]
+    structConstructorName _ = "Mu"
+instance
+    ( EqualWithExplanation child
+    , Eq child
+    , Show child
+    , EqualWithExplanation variable
+    , Eq variable
+    , Show variable
+    ) => EqualWithExplanation (Mu variable child)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
     (EqualWithExplanation child, Eq child, Show child)
     => EqualWithExplanation (Next Sort child)
   where
@@ -643,6 +700,41 @@ instance (Show child, Eq child, EqualWithExplanation child)
 instance
     (EqualWithExplanation child, Eq child, Show child)
     => EqualWithExplanation (Not Sort child)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( Eq child
+    , Eq variable
+    , Show child
+    , Show variable
+    , EqualWithExplanation child
+    , EqualWithExplanation variable
+    )
+    => StructEqualWithExplanation (Nu variable child)
+  where
+    structFieldsWithNames
+        expected@(Nu _ _)
+        actual@(Nu _ _)
+      = [ EqWrap
+            "nuVariable = "
+            (nuVariable expected)
+            (nuVariable actual)
+        , EqWrap
+            "nuChild = "
+            (nuChild expected)
+            (nuChild actual)
+        ]
+    structConstructorName _ = "Nu"
+instance
+    ( EqualWithExplanation child
+    , Eq child
+    , Show child
+    , EqualWithExplanation variable
+    , Eq variable
+    , Show variable
+    ) => EqualWithExplanation (Nu variable child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
@@ -776,8 +868,9 @@ instance EqualWithExplanation SymbolOrAlias where
     printWithExplanation = show
 
 instance SumEqualWithExplanation UnificationError where
-    sumConstructorPair UnsupportedPatterns UnsupportedPatterns =
-        SumConstructorSameNoArguments
+    sumConstructorPair (UnsupportedPatterns a1) (UnsupportedPatterns a2) =
+        SumConstructorSameWithArguments
+        $ EqWrap "UnsupportedPatterns" a1 a2
 
 instance EqualWithExplanation UnificationError where
     compareWithExplanation = sumCompareWithExplanation
@@ -847,28 +940,13 @@ instance
     printWithExplanation = show
 
 instance
-    (EqualWithExplanation child, Show child) =>
-    EqualWithExplanation (Builtin child)
+    ( EqualWithExplanation key, Show key
+    , EqualWithExplanation child, Show child
+    ) =>
+    EqualWithExplanation (Domain.Builtin key child)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
-
-instance EqualWithExplanation (External child) where
-    compareWithExplanation = structCompareWithExplanation
-    printWithExplanation = show
-
-instance StructEqualWithExplanation (External child) where
-    structFieldsWithNames expect actual =
-        [ Function.on (EqWrap "domainValueSort = ")
-            Kore.Domain.Builtin.domainValueSort
-            expect
-            actual
-        , Function.on (EqWrap "domainValueChild = ")
-            Kore.Domain.Builtin.domainValueChild
-            expect
-            actual
-        ]
-    structConstructorName _ = "External"
 
 instance EqualWithExplanation InternalInt where
     compareWithExplanation = structCompareWithExplanation
@@ -892,16 +970,31 @@ instance StructEqualWithExplanation InternalBool where
         ]
     structConstructorName _ = "InternalBool"
 
+instance EqualWithExplanation InternalString where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance StructEqualWithExplanation InternalString where
+    structFieldsWithNames expect actual =
+        [ Function.on (EqWrap "internalStringSort = ") internalStringSort expect actual
+        , Function.on (EqWrap "internalStringValue = ") internalStringValue expect actual
+        ]
+    structConstructorName _ = "InternalString"
+
 instance
-    (EqualWithExplanation child, Show child) =>
-    EqualWithExplanation (InternalMap child)
+    ( EqualWithExplanation key, Show key
+    , EqualWithExplanation child, Show child
+    ) =>
+    EqualWithExplanation (InternalMap key child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance
-    (EqualWithExplanation child, Show child) =>
-    StructEqualWithExplanation (InternalMap child)
+    ( EqualWithExplanation key, Show key
+    , EqualWithExplanation child, Show child
+    ) =>
+    StructEqualWithExplanation (InternalMap key child)
   where
     structFieldsWithNames expect actual =
         [ Function.on (EqWrap "builtinMapSort = ") builtinMapSort expect actual
@@ -932,11 +1025,17 @@ instance
         ]
     structConstructorName _ = "InternalList"
 
-instance EqualWithExplanation InternalSet where
+instance
+    (EqualWithExplanation key, Show key) =>
+    EqualWithExplanation (InternalSet key)
+  where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance StructEqualWithExplanation InternalSet where
+instance
+    (EqualWithExplanation key, Show key) =>
+    StructEqualWithExplanation (InternalSet key)
+  where
     structFieldsWithNames expect actual =
         [ Function.on (EqWrap "builtinSetSort = ") builtinSetSort expect actual
         , Function.on (EqWrap "builtinSetUnit = ") builtinSetUnit expect actual
@@ -947,18 +1046,20 @@ instance StructEqualWithExplanation InternalSet where
     structConstructorName _ = "InternalSet"
 
 instance
-    (EqualWithExplanation child, Show child) =>
-    SumEqualWithExplanation (Builtin child)
+    ( EqualWithExplanation key, Show key
+    , EqualWithExplanation child, Show child
+    ) =>
+    SumEqualWithExplanation (Domain.Builtin key child)
   where
-    sumConstructorPair (BuiltinExternal ext1) (BuiltinExternal ext2) =
-        SumConstructorSameWithArguments
-            (EqWrap "BuiltinExternal" ext1 ext2)
     sumConstructorPair (BuiltinInt int1) (BuiltinInt int2) =
         SumConstructorSameWithArguments
             (EqWrap "BuiltinInt" int1 int2)
     sumConstructorPair (BuiltinBool bool1) (BuiltinBool bool2) =
         SumConstructorSameWithArguments
             (EqWrap "BuiltinBool" bool1 bool2)
+    sumConstructorPair (BuiltinString string1) (BuiltinString string2) =
+        SumConstructorSameWithArguments
+            (EqWrap "BuiltinString" string1 string2)
     sumConstructorPair (BuiltinMap map1) (BuiltinMap map2) =
         SumConstructorSameWithArguments
             (EqWrap "BuiltinMap" map1 map2)
@@ -1917,3 +2018,195 @@ instance WrapperEqualWithExplanation SMT.SymbolReference
 instance EqualWithExplanation SMT.Encodable where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
+
+instance
+    ( EqualWithExplanation child
+    , Eq child
+    , Show child
+    , EqualWithExplanation variable
+    , Eq variable
+    , Show variable
+    )
+    => SumEqualWithExplanation (TermLikeF variable child)
+  where
+    sumConstructorPair (TermLike.AndF a1) (TermLike.AndF a2) =
+        SumConstructorSameWithArguments (EqWrap "AndF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.AndF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.ApplicationF a1) (TermLike.ApplicationF a2) =
+        SumConstructorSameWithArguments (EqWrap "ApplicationF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.ApplicationF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.BottomF a1) (TermLike.BottomF a2) =
+        SumConstructorSameWithArguments (EqWrap "BottomF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.BottomF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.BuiltinF a1) (TermLike.BuiltinF a2) =
+        SumConstructorSameWithArguments (EqWrap "BuiltinF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.BuiltinF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.CeilF a1) (TermLike.CeilF a2) =
+        SumConstructorSameWithArguments (EqWrap "CeilF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.CeilF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.DomainValueF a1) (TermLike.DomainValueF a2) =
+        SumConstructorSameWithArguments (EqWrap "DomainValueF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.DomainValueF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.EqualsF a1) (TermLike.EqualsF a2) =
+        SumConstructorSameWithArguments (EqWrap "EqualsF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.EqualsF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.ExistsF a1) (TermLike.ExistsF a2) =
+        SumConstructorSameWithArguments (EqWrap "ExistsF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.ExistsF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.FloorF a1) (TermLike.FloorF a2) =
+        SumConstructorSameWithArguments (EqWrap "FloorF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.FloorF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.ForallF a1) (TermLike.ForallF a2) =
+        SumConstructorSameWithArguments (EqWrap "ForallF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.ForallF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.IffF a1) (TermLike.IffF a2) =
+        SumConstructorSameWithArguments (EqWrap "IffF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.IffF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.ImpliesF a1) (TermLike.ImpliesF a2) =
+        SumConstructorSameWithArguments (EqWrap "ImpliesF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.ImpliesF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.InF a1) (TermLike.InF a2) =
+        SumConstructorSameWithArguments (EqWrap "InF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.InF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.MuF a1) (TermLike.MuF a2) =
+        SumConstructorSameWithArguments (EqWrap "MuF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.MuF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.NextF a1) (TermLike.NextF a2) =
+        SumConstructorSameWithArguments (EqWrap "NextF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.NextF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.NotF a1) (TermLike.NotF a2) =
+        SumConstructorSameWithArguments (EqWrap "NotF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.NotF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.NuF a1) (TermLike.NuF a2) =
+        SumConstructorSameWithArguments (EqWrap "NuF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.NuF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.OrF a1) (TermLike.OrF a2) =
+        SumConstructorSameWithArguments (EqWrap "OrF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.OrF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.RewritesF a1) (TermLike.RewritesF a2) =
+        SumConstructorSameWithArguments (EqWrap "RewritesF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.RewritesF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.StringLiteralF a1) (TermLike.StringLiteralF a2) =
+        SumConstructorSameWithArguments (EqWrap "StringLiteralF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.StringLiteralF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.CharLiteralF a1) (TermLike.CharLiteralF a2) =
+        SumConstructorSameWithArguments (EqWrap "CharLiteralF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.CharLiteralF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.TopF a1) (TermLike.TopF a2) =
+        SumConstructorSameWithArguments (EqWrap "TopF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.TopF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.VariableF a1) (TermLike.VariableF a2) =
+        SumConstructorSameWithArguments (EqWrap "VariableF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.VariableF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.InhabitantF s1) (TermLike.InhabitantF s2) =
+        SumConstructorSameWithArguments (EqWrap "InhabitantF" s1 s2)
+    sumConstructorPair pattern1@(TermLike.InhabitantF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1)
+            (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.SetVariableF a1) (TermLike.SetVariableF a2) =
+        SumConstructorSameWithArguments (EqWrap "SetVariableF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.SetVariableF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.EvaluatedF a1) (TermLike.EvaluatedF a2) =
+        SumConstructorSameWithArguments (EqWrap "EvaluatedF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.EvaluatedF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+instance
+    ( EqualWithExplanation child
+    , Eq child, Eq variable
+    , Show child
+    , EqualWithExplanation variable
+    , Show variable
+    ) => EqualWithExplanation (PatternF variable child)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    (EqualWithExplanation child, Show child) =>
+    EqualWithExplanation (TermLike.Evaluated child)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    (EqualWithExplanation child, Show child) =>
+    WrapperEqualWithExplanation (TermLike.Evaluated child)
+  where
+    wrapperField = Function.on (EqWrap "getEvaluated = ") getEvaluated
+    wrapperConstructorName _ = "Evaluated"

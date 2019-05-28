@@ -3,24 +3,31 @@
 
 module Main (main) where
 
-import Control.Applicative
-       ( optional )
-import Data.Semigroup
-       ( (<>) )
-import Options.Applicative
-       ( InfoMod, Parser, argument, auto, fullDesc, header, help, long,
-       metavar, option, progDesc, readerError, str, strOption, value )
+import           Control.Applicative
+                 ( optional )
+import qualified Data.Bifunctor as Bifunctor
+import           Data.Semigroup
+                 ( (<>) )
+import           Options.Applicative
+                 ( InfoMod, Parser, argument, auto, flag, fullDesc, header,
+                 help, long, metavar, option, progDesc, readerError, short,
+                 str, strOption, value )
+import           System.Exit
+                 ( exitFailure )
 
-import Data.Limit
-       ( Limit (..) )
-import Kore.Exec
-       ( proveWithRepl )
-import Kore.Logger.Output
-       ( emptyLogger )
-import Kore.Step.Simplification.Data
-       ( evalSimplifier )
-import Kore.Syntax.Module
-       ( ModuleName (..) )
+import           Data.Limit
+                 ( Limit (..) )
+import qualified Kore.Builtin as Builtin
+import           Kore.Exec
+                 ( proveWithRepl )
+import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import           Kore.Logger.Output
+                 ( emptyLogger )
+import           Kore.Repl
+import           Kore.Step.Simplification.Data
+                 ( evalSimplifier )
+import           Kore.Syntax.Module
+                 ( ModuleName (..) )
 
 import           GlobalMain
 import qualified SMT as SMT
@@ -42,6 +49,8 @@ data KoreReplOptions = KoreReplOptions
     { definitionModule :: !KoreModule
     , proveOptions     :: !KoreProveOptions
     , smtOptions       :: !SmtOptions
+    , replMode         :: !ReplMode
+    , replScript       :: !ReplScript
     }
 
 parseKoreReplOptions :: Parser KoreReplOptions
@@ -50,6 +59,8 @@ parseKoreReplOptions =
     <$> parseMainModule
     <*> parseKoreProveOptions
     <*> parseSmtOptions
+    <*> parseReplMode
+    <*> parseReplScript
     <* parseIgnoredOutput
   where
     parseMainModule :: Parser KoreModule
@@ -87,6 +98,27 @@ parseKoreReplOptions =
                 )
             )
 
+    parseReplMode :: Parser ReplMode
+    parseReplMode =
+        flag
+            Interactive
+            RunScript
+            ( long "run-mode"
+            <> short 'r'
+            <> help "Repl run script mode"
+            )
+
+    parseReplScript :: Parser ReplScript
+    parseReplScript =
+        ReplScript
+        <$> optional
+            ( strOption
+                ( metavar "REPL_SCRIPT"
+                <> long "repl-script"
+                <> help "Path to the repl script file"
+                )
+            )
+
     SMT.Config { timeOut = defaultTimeOut } = SMT.defaultConfig
 
     readSMTTimeOut = do
@@ -120,7 +152,8 @@ main = do
 
 mainWithOptions :: KoreReplOptions -> IO ()
 mainWithOptions
-    KoreReplOptions { definitionModule, proveOptions, smtOptions }
+    KoreReplOptions
+        { definitionModule, proveOptions, smtOptions, replScript, replMode }
   = do
     parsedDefinition <- parseDefinition definitionFileName
     indexedDefinition@(indexedModules, _) <-
@@ -132,9 +165,15 @@ mainWithOptions
         constructorFunctions <$> mainModule mainModuleName indexedModules
 
     specDef <- parseDefinition specFile
+    let unverifiedDefinition =
+            Bifunctor.first
+                ((fmap . IndexedModule.mapPatterns)
+                    Builtin.externalizePattern
+                )
+                indexedDefinition
     (specDefIndexedModules, _) <-
         verifyDefinitionWithBase
-            (Just indexedDefinition)
+            (Just unverifiedDefinition)
             True
             specDef
     specDefIndexedModule <-
@@ -146,9 +185,16 @@ mainWithOptions
                 { SMT.timeOut = smtTimeOut
                 , SMT.preludeFile = smtPrelude
                 }
-    SMT.runSMT smtConfig
-        $ evalSimplifier emptyLogger
-        $ proveWithRepl indexedModule specDefIndexedModule
+    if replMode == RunScript && (unReplScript replScript) == Nothing
+       then do
+           putStrLn "You must supply the path to the repl script\
+                    \ in order to run the repl in run-script mode."
+           exitFailure
+       else do
+           SMT.runSMT smtConfig
+               $ evalSimplifier emptyLogger
+               $ proveWithRepl
+                    indexedModule specDefIndexedModule replScript replMode
 
   where
     mainModuleName :: ModuleName

@@ -8,12 +8,12 @@ module Kore.Internal.Pattern
     ( Pattern
     , fromPredicate
     , toPredicate
-    , Kore.Internal.Pattern.allVariables
     , bottom
     , bottomOf
     , isBottom
     , isTop
     , Kore.Internal.Pattern.mapVariables
+    , splitTerm
     , toTermLike
     , top
     , topOf
@@ -26,11 +26,10 @@ module Kore.Internal.Pattern
     , Predicate
     ) where
 
-import           Data.Set
-                 ( Set )
-import qualified Data.Set as Set
-import           GHC.Stack
-                 ( HasCallStack )
+import Data.Set
+       ( Set )
+import GHC.Stack
+       ( HasCallStack )
 
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
@@ -45,8 +44,6 @@ import           Kore.TopBottom
                  ( TopBottom (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
-import           Kore.Variables.Free
-                 ( pureAllVariables )
 
 {- | The conjunction of a pattern, predicate, and substitution.
 
@@ -83,30 +80,6 @@ mapVariables
         , substitution =
             Substitution.mapVariables variableMapper substitution
         }
-
-{-|'allVariables' extracts all variables, including the quantified ones,
-from an Pattern.
--}
-allVariables
-    :: (Ord variable, Unparse variable)
-    => Pattern variable
-    -> Set.Set variable
-allVariables
-    Conditional { term, predicate, substitution }
-  =
-    pureAllVariables term
-    <> Syntax.Predicate.allVariables predicate
-    <> allSubstitutionVars (Substitution.unwrap substitution)
-  where
-    allSubstitutionVars sub =
-        foldl
-            (\ x y -> x <> Set.singleton (fst y))
-            Set.empty
-            sub
-        <> foldl
-            (\ x y -> x <> pureAllVariables (snd y))
-            Set.empty
-            sub
 
 {- | Convert an 'Pattern' to an ordinary 'TermLike'.
 
@@ -220,3 +193,6 @@ toPredicate
     => Pattern variable
     -> Syntax.Predicate variable
 toPredicate = Conditional.toPredicate
+
+splitTerm :: Pattern variable -> (TermLike variable, Predicate variable)
+splitTerm = Conditional.splitTerm

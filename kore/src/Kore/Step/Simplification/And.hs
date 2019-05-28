@@ -14,13 +14,12 @@ module Kore.Step.Simplification.And
     , And (..)
     ) where
 
-import           Control.Applicative
-                 ( Alternative (empty) )
-import qualified Control.Monad.Trans as Monad.Trans
-import           Data.List
-                 ( foldl1', nub )
-import           GHC.Stack
-                 ( HasCallStack )
+import Control.Applicative
+       ( Alternative (empty) )
+import Data.List
+       ( foldl1', nub )
+import GHC.Stack
+       ( HasCallStack )
 
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
@@ -42,7 +41,6 @@ import           Kore.Step.Simplification.Data
                  ( BranchT, PredicateSimplifier, Simplifier,
                  TermLikeSimplifier, gather, scatter )
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.Syntax.And
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -234,7 +232,7 @@ makeEvaluateNonBool
     second@Conditional { term = secondTerm }
   = do
     terms <-
-        Monad.Trans.lift $ makeTermAnd
+        makeTermAnd
             tools
             substitutionSimplifier
             simplifier
@@ -287,5 +285,5 @@ makeTermAnd
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> TermLike variable
-    -> Simplifier (Pattern variable)
+    -> BranchT Simplifier (Pattern variable)
 makeTermAnd = AndTerms.termAnd

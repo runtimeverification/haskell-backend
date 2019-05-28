@@ -42,8 +42,6 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-                 ( makeMetadataTools )
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Kore.Step.MockSymbols
                  ( testSort )
@@ -82,7 +80,7 @@ test_applicationSimplification =
                     ]
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (mockSimplifier noSimplification)
                 Map.empty
                 (makeApplication
@@ -99,7 +97,7 @@ test_applicationSimplification =
         let expect = OrPattern.fromPatterns [ Pattern.bottom ]
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (mockSimplifier noSimplification)
                 Map.empty
                 (makeApplication
@@ -116,7 +114,7 @@ test_applicationSimplification =
         let expect = OrPattern.fromPatterns [ gOfAExpanded ]
         actual <-
             evaluate
-                mockMetadataTools
+                Mock.metadataTools
                 (mockSimplifier noSimplification)
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.fId)
@@ -156,7 +154,7 @@ test_applicationSimplification =
                         ]
             actual <-
                 evaluate
-                    mockMetadataTools
+                    Mock.metadataTools
                     (mockSimplifier noSimplification)
                     Map.empty
                     (makeApplication
@@ -240,7 +238,7 @@ test_applicationSimplification =
                         }
                 in
                     evaluate
-                        mockMetadataTools
+                        Mock.metadataTools
                         (mockSimplifier noSimplification)
                         (Map.singleton
                             (AxiomIdentifier.Application Mock.sigmaId)
@@ -308,15 +306,6 @@ test_applicationSimplification =
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-
-    mockMetadataTools =
-        Mock.makeMetadataTools
-            Mock.attributesMapping
-            Mock.headTypeMapping
-            Mock.sortAttributesMapping
-            Mock.subsorts
-            Mock.headSortsMapping
-            Mock.smtDeclarations
 
     noSimplification :: [(TermLike Variable, [Pattern Variable])]
     noSimplification = []

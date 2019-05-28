@@ -39,6 +39,7 @@ module Kore.Builtin.Set
     , differenceKey
     , toListKey
     , sizeKey
+    , intersectionKey
       -- * Unification
     , unifyEquals
     ) where
@@ -46,8 +47,7 @@ module Kore.Builtin.Set
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
-                 ( MaybeT )
-import qualified Control.Monad as Monad
+                 ( MaybeT, fromMaybe )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
@@ -66,8 +66,6 @@ import           Data.String
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
-import           GHC.Stack
-                 ( HasCallStack )
 
 import           Kore.Attribute.Hook
                  ( Hook )
@@ -86,16 +84,19 @@ import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools, sortAttributes )
+import           Kore.Internal.Conditional
+                 ( andCondition )
 import           Kore.Internal.Pattern
-                 ( Conditional (..), Pattern )
+                 ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Predicate
+                 ( Predicate )
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), SimplificationType,
                  TermLikeSimplifier )
-import           Kore.Syntax.Definition
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -115,7 +116,7 @@ sort = "SET.Set"
 
  -}
 assertSort :: Builtin.SortVerifier
-assertSort findSort = Builtin.verifySort findSort sort
+assertSort = Builtin.verifySort sort
 
 {- | Verify that hooked sort declarations are well-formed.
 
@@ -171,9 +172,10 @@ symbolVerifiers =
     , ( sizeKey
       , Builtin.verifySymbol Int.assertSort [assertSort]
       )
+    , ( intersectionKey
+      , Builtin.verifySymbol assertSort [assertSort, assertSort]
+      )
     ]
-
-type Builtin = Set (TermLike Concrete)
 
 {- | Abort function evaluation if the argument is not a @Set@ domain value.
 
@@ -187,26 +189,25 @@ expectBuiltinSet
     => Text  -- ^ Context for error message
     -> SmtMetadataTools StepperAttributes
     -> TermLike variable  -- ^ Operand pattern
-    -> MaybeT m Builtin
+    -> MaybeT m (Set (TermLike Concrete))
 expectBuiltinSet ctx tools _set =
     do
         _set <- Builtin.expectNormalConcreteTerm tools _set
         case _set of
-            DV_ _ domain ->
+            Builtin_ domain ->
                 case domain of
                     Domain.BuiltinSet Domain.InternalSet { builtinSetChild } ->
                         return builtinSetChild
                     _ ->
                         Builtin.verifierBug
                         $ Text.unpack ctx ++ ": Domain value is not a set"
-            _ ->
-                empty
+            _ -> empty
 
 returnSet
     :: (Monad m, Ord variable)
     => SmtMetadataTools attrs
     -> Sort
-    -> Builtin
+    -> Set (TermLike Concrete)
     -> m (AttemptedAxiom variable)
 returnSet tools resultSort set =
     Builtin.appliedFunction
@@ -328,7 +329,7 @@ evalToList = Builtin.functionEvaluator evalToList0
                             _      -> Builtin.wrongArity toListKey
             _set <- expectBuiltinSet toListKey tools _set
             List.returnList tools resultSort
-                . fmap fromConcreteStepPattern
+                . fmap fromConcrete
                 . Seq.fromList
                 . Set.toList
                 $ _set
@@ -350,6 +351,22 @@ evalSize = Builtin.functionEvaluator evalSize0
                 . Set.size
                 $ _set
 
+evalIntersection :: Builtin.Function
+evalIntersection =
+    Builtin.functionEvaluator evalIntersection0
+  where
+    ctx = intersectionKey
+    evalIntersection0 :: Builtin.FunctionImplementation
+    evalIntersection0 tools _ resultSort = \arguments ->
+        Builtin.getAttemptedAxiom $ do
+            let (_set1, _set2) =
+                    case arguments of
+                        [_set1, _set2] -> (_set1, _set2)
+                        _ -> Builtin.wrongArity intersectionKey
+            _set1 <- expectBuiltinSet ctx tools _set1
+            _set2 <- expectBuiltinSet ctx tools _set2
+            returnSet tools resultSort (Set.intersection _set1 _set2)
+
 {- | Implement builtin function evaluation.
  -}
 builtinFunctions :: Map Text Builtin.Function
@@ -362,6 +379,7 @@ builtinFunctions =
         , (differenceKey, evalDifference)
         , (toListKey, evalToList)
         , (sizeKey, evalSize)
+        , (intersectionKey, evalIntersection)
         ]
 
 {- | Render a 'Set' as an internal domain value pattern of the given sort.
@@ -376,10 +394,10 @@ asInternal
     :: Ord variable
     => SmtMetadataTools attrs
     -> Sort
-    -> Builtin
+    -> Set (TermLike Concrete)
     -> TermLike variable
 asInternal tools builtinSetSort builtinSetChild =
-    (mkDomainValue . Domain.BuiltinSet)
+    (mkBuiltin . Domain.BuiltinSet)
         Domain.InternalSet
             { builtinSetSort
             , builtinSetUnit =
@@ -397,10 +415,11 @@ asInternal tools builtinSetSort builtinSetChild =
  -}
 asTermLike
     :: Ord variable
-    => Domain.InternalSet
+    => Domain.InternalSet (TermLike Concrete)
     -> TermLike variable
-asTermLike builtin =
-    foldr concat' unit (element <$> Foldable.toList set)
+asTermLike builtin
+  | Set.null set = unit
+  | otherwise = foldr1 concat' (element <$> Foldable.toList set)
   where
     Domain.InternalSet { builtinSetSort = builtinSort } = builtin
     Domain.InternalSet { builtinSetChild = set } = builtin
@@ -410,7 +429,7 @@ asTermLike builtin =
 
     apply = mkApp builtinSort
     unit = apply unitSymbol []
-    element elem' = apply elementSymbol [fromConcreteStepPattern elem']
+    element elem' = apply elementSymbol [fromConcrete elem']
     concat' set1 set2 = apply concatSymbol [set1, set2]
 
 {- | Render a 'Seq' as an extended domain value pattern.
@@ -423,7 +442,7 @@ asPattern
         , Given (SmtMetadataTools StepperAttributes)
         )
     => Sort
-    -> Builtin
+    -> Set (TermLike Concrete)
     -> Pattern variable
 asPattern resultSort =
     Pattern.fromTermLike . asInternal tools resultSort
@@ -451,6 +470,9 @@ toListKey = "SET.set2list"
 
 sizeKey :: IsString s => s
 sizeKey = "SET.size"
+
+intersectionKey :: IsString s => s
+intersectionKey = "SET.intersection"
 
 {- | Find the symbol hooked to @SET.get@ in an indexed module.
  -}
@@ -534,39 +556,31 @@ unifyEquals
   where
     hookTools = StepperAttributes.hook <$> tools
 
-    -- | Given a collection 't' of 'Conditional' values, propagate all the
-    -- predicates to the top, returning a 'Conditional' collection.
-    propagatePredicates
-        :: Traversable t
-        => t (Conditional variable a)
-        -> Conditional variable (t a)
-    propagatePredicates = sequenceA
-
     -- | Unify the two argument patterns.
     unifyEquals0
         :: TermLike variable
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
     unifyEquals0
-        (DV_ _ (Domain.BuiltinSet builtin1))
-        (DV_ _ (Domain.BuiltinSet builtin2))
+        (Builtin_ (Domain.BuiltinSet builtin1))
+        (Builtin_ (Domain.BuiltinSet builtin2))
       =
         Monad.Trans.lift (unifyEqualsConcrete builtin1 builtin2)
 
     unifyEquals0
-        dv1@(DV_ _ (Domain.BuiltinSet builtin1))
+        dv1@(Builtin_ (Domain.BuiltinSet builtin1))
         app2@(App_ symbol2 args2)
       | isSymbolConcat hookTools symbol2 =
         Monad.Trans.lift
            (case args2 of
-                [DV_ _ (Domain.BuiltinSet builtin2), x@(Var_ _)] ->
+                [Builtin_ (Domain.BuiltinSet builtin2), x@(Var_ _)] ->
                     unifyEqualsFramed builtin1 builtin2 x
-                [x@(Var_ _), DV_ _ (Domain.BuiltinSet builtin2)] ->
+                [x@(Var_ _), Builtin_ (Domain.BuiltinSet builtin2)] ->
                     unifyEqualsFramed builtin1 builtin2 x
-                [(App_ symbol3 [ key3 ]), x@(Var_ _)]
+                [App_ symbol3 [ key3 ], x]
                   | isSymbolElement hookTools symbol3 ->
                         unifyEqualsSelect builtin1 symbol3 key3 x
-                [x@(Var_ _), (App_ symbol3 [ key3 ])]
+                [x, App_ symbol3 [ key3 ]]
                   | isSymbolElement hookTools symbol3 ->
                         unifyEqualsSelect builtin1 symbol3 key3 x
                 _ ->
@@ -581,62 +595,91 @@ unifyEquals
                 [ key2 ] ->
                     -- The key is not concrete yet, or SET.element would
                     -- have evaluated to a domain value.
-                    unifyEqualsElement builtin1 symbol2 key2
+                    unifyEqualsElement builtin1 key2
                 _ ->
                     Builtin.wrongArity "SET.element"
             )
+      | isSymbolUnit hookTools symbol2 =
+        Monad.Trans.lift $ case args2 of
+            [] -> unifyEqualsUnit builtin1
+            _ -> Builtin.wrongArity "SET.unit"
       | otherwise =
-        -- TODO (virgil): This should be an error, since Set.unifyEquals is the
-        -- proper handler for set DV unification. Returning empty would
-        -- mean it could not identify its input, which is not the case here.
-        --
-        -- The same applies to the similar places in Map and List, but not
-        -- to the empty result a few lines below.
-        empty
+        (error . unlines)
+            [ "Unimplemented set unification for domain value vs application. "
+            , "dv=" ++ unparseToString dv1
+            , "app=" ++ unparseToString app2
+            ]
       where
         -- Unify one concrete set with a select pattern (x:elem s:set)
-        -- Note that x can be a proper symbolic pattern (not just a variable)
+        -- Note that x an s can be proper symbolic patterns (not just variables)
         -- TODO(traiansf): move it from where once the otherwise is not needed
         unifyEqualsSelect
-            :: Domain.InternalSet  -- ^ concrete set
-            -> SymbolOrAlias       -- ^ 'element' symbol
-            -> TermLike variable   -- ^ key
-            -> TermLike variable   -- ^ framing variable
+            :: Domain.InternalSet (TermLike Concrete) -- ^ concrete set
+            -> SymbolOrAlias                          -- ^ 'element' symbol
+            -> TermLike variable                      -- ^ key
+            -> TermLike variable                      -- ^ framing variable
             -> unifier (Pattern variable)
         unifyEqualsSelect builtin1' _ key2 set2
           | set1 == Set.empty = bottomWithExplanation
-          | otherwise = case Set.toList set1 of
-            [fromConcreteStepPattern -> key1] ->
-                Reflection.give tools $ do
-                    let emptySetPat = asInternal tools sort1 Set.empty
-                    elemUnifier <- unifyEqualsChildren key1 key2
-                    -- error when subunification problem returns partial result.
-                    -- More details at 'errorIfIncompletelyUnified'.
-                    errorIfIncompletelyUnified key1 key2 elemUnifier
-                    setUnifier <- unifyEqualsChildren emptySetPat set2
-                    -- error when subunification problem returns partial result
-                    -- More details at 'errorIfIncompletelyUnified'.
-                    errorIfIncompletelyUnified emptySetPat set2 setUnifier
-                    -- Return the concrete set, but capture any predicates and
-                    -- substitutions from unifying the element
-                    -- and framing variable.
-                    let result = pure dv1 <* elemUnifier <* setUnifier
-                    return (result)
-            _ -> Builtin.unifyEqualsUnsolved simplificationType dv1 app2
+          | otherwise =
+            Reflection.give tools $ do
+                concreteKey1 <- Monad.Unify.scatter (Set.toList set1)
+                let
+                    remainderSet = Set.delete concreteKey1 set1
+                    remainderSetPat = asInternal tools sort1 remainderSet
+                    key1 = fromConcrete concreteKey1
+                elemUnifier <- unifyEqualsChildren key1 key2
+
+                setUnifier <- unifyEqualsChildren remainderSetPat set2
+
+                let
+                    setUnifierTerm :: TermLike variable
+                    setUnifierPredicate :: Predicate variable
+                    (setUnifierTerm, setUnifierPredicate) =
+                        Pattern.splitTerm setUnifier
+                    setUnifierSet :: Set (TermLike Concrete)
+                    setUnifierSet = case setUnifierTerm of
+                        (Builtin_
+                            (Domain.BuiltinSet
+                                Domain.InternalSet { builtinSetChild }
+                            )
+                         ) -> builtinSetChild
+                        _ -> (error . unlines)
+                            [ "Unexpected set unification term."
+                            , "builtin=" ++ unparseToString builtin1
+                            , "key2=" ++ unparseToString key2
+                            , "unifier=" ++ unparseToString setUnifier
+                            ]
+
+                    eitherResult :: Either ElemInSet (Pattern variable)
+                    eitherResult =
+                        addElemPatternToSet
+                            tools sort1 elemUnifier setUnifierSet
+
+                case eitherResult of
+                    Left ElemInSet -> do
+                        Monad.Unify.explainBottom
+                            "After unification the key was found in the set."
+                            first
+                            second
+                        empty
+                    Right result ->
+                        return (result `andCondition` setUnifierPredicate)
           where
             Domain.InternalSet
                 { builtinSetChild = set1
                 , builtinSetSort = sort1
                 } = builtin1'
 
-    unifyEquals0 app_@(App_ _ _) dv_@(DV_ _ _) = unifyEquals0 dv_ app_
+    unifyEquals0 app_@(App_ _ _) builtin_@(Builtin_ _) =
+        unifyEquals0 builtin_ app_
 
     unifyEquals0 _ _ = empty
 
     -- | Unify two concrete sets
     unifyEqualsConcrete
-        :: Domain.InternalSet
-        -> Domain.InternalSet
+        :: Domain.InternalSet (TermLike Concrete)
+        -> Domain.InternalSet (TermLike Concrete)
         -> unifier (Pattern variable)
     unifyEqualsConcrete builtin1 builtin2
       | set1 == set2 = return unified
@@ -651,9 +694,9 @@ unifyEquals
 
     -- | Unify one concrete set with one framed concrete set.
     unifyEqualsFramed
-        :: Domain.InternalSet  -- ^ concrete set
-        -> Domain.InternalSet -- ^ framed concrete set
-        -> TermLike variable  -- ^ framing variable
+        :: Domain.InternalSet (TermLike Concrete) -- ^ concrete set
+        -> Domain.InternalSet (TermLike Concrete) -- ^ framed concrete set
+        -> TermLike variable                      -- ^ framing variable
         -> unifier (Pattern variable)
     unifyEqualsFramed builtin1 builtin2 var
       | Set.isSubsetOf set2 set1 =
@@ -673,61 +716,88 @@ unifyEquals
         Domain.InternalSet { builtinSetChild = set2 } = builtin2
 
     unifyEqualsElement
-        :: Domain.InternalSet  -- ^ concrete set
-        -> SymbolOrAlias  -- ^ 'element' symbol
-        -> TermLike variable  -- ^ key
+        :: Domain.InternalSet (TermLike Concrete) -- ^ concrete set
+        -> TermLike variable                      -- ^ key
         -> unifier (Pattern variable)
-    unifyEqualsElement builtin1 element' key2 =
+    unifyEqualsElement builtin1 key2 =
         case Set.toList set1 of
-            [fromConcreteStepPattern -> key1] ->
-                do
-                    key <- unifyEqualsChildren key1 key2
-                    let result =
-                            mkApp builtinSetSort element'
-                                <$> propagatePredicates [key]
-                    return result
+            [fromConcrete -> key1] -> do
+                elemUnifier <- unifyEqualsChildren key1 key2
+
+                let
+                    eitherResult :: Either ElemInSet (Pattern variable)
+                    eitherResult =
+                        addElemPatternToSet tools sort1 elemUnifier Set.empty
+
+                case eitherResult of
+                    Left ElemInSet -> (error.unlines)
+                        [ "Unexpected element in empty set."
+                        , "elem=" ++ unparseToString elemUnifier
+                        ]
+                    Right result -> return result
             _ -> bottomWithExplanation
       where
-        Domain.InternalSet { builtinSetSort } = builtin1
+        Domain.InternalSet { builtinSetSort = sort1 } = builtin1
         Domain.InternalSet { builtinSetChild = set1 } = builtin1
+
+    unifyEqualsUnit
+        :: Domain.InternalSet (TermLike Concrete) -- ^ concrete set
+        -> unifier (Pattern variable)
+    unifyEqualsUnit builtin1 =
+        if null set1
+            then return
+                (Pattern.fromTermLike
+                    (mkBuiltin $ Domain.BuiltinSet builtin1)
+                )
+            else bottomWithExplanation
+            -- Cannot unify a non-element Set with an element Set
+      where
+        Domain.InternalSet { builtinSetChild = set1 } = builtin1
+
+    bottomWithExplanation :: unifier (Pattern variable)
     bottomWithExplanation = do
         Monad.Unify.explainBottom
             "Cannot unify sets with different sizes."
             first
             second
-        return Pattern.bottom
+        empty
 
--- Setup: we are unifying against a concrete (no variables) pattern
--- If the unification problem is completely solved, we expect that
--- the term of the unifier is precisely the concrete pattern.
--- If not, this is probably because the term contains an and coming from
--- an incomplete unification problem.
--- An example of how this might happen is unifying a concrete pattern
--- against a non-functional term.
--- Since this case is not yet handled by the unification algorithm
--- we choose to throw an error here.
-errorIfIncompletelyUnified
-    ::  ( Monad m
-        , Ord variable
+data ElemInSet = ElemInSet
+
+addElemPatternToSet
+    :: forall variable
+    .   ( Ord variable
         , Show variable
         , SortedVariable variable
         , Unparse variable
-        , HasCallStack
         )
-    => TermLike variable
-    -> TermLike variable
+    => SmtMetadataTools StepperAttributes
+    -> Sort
     -> Pattern variable
-    -> m ()
-errorIfIncompletelyUnified expected patt unifiedPattern =
-    Monad.when (term unifiedPattern /= expected)
-        $ error
-            (  "Unification problem not completely solved. "
-            ++ "When unfying against concrete pattern\n\t"
-            ++ show (unparseToString expected)
-            ++ "\nwith pattern\n\t"
-            ++ show (unparseToString patt)
-            ++ "\nExpecting to get the concrete pattern back but got\n\t"
-            ++ show (unparseToString unifiedPattern)
-            ++ "\nHandling this is currently not implemented."
-            ++ "\nPlease file an issue if this should work for you."
+    -> Set (TermLike Concrete)
+    -> Either ElemInSet (Pattern variable)
+addElemPatternToSet tools sort1 elemPattern existingSet =
+    if Set.member concreteElemTerm existingSet
+    then Left ElemInSet
+    else Right (pure newBuiltin `andCondition` elemPredicate)
+  where
+    elemTerm :: TermLike variable
+    elemPredicate :: Predicate variable
+    (elemTerm, elemPredicate) = Pattern.splitTerm elemPattern
+
+    concreteElemTerm :: TermLike Concrete
+    concreteElemTerm =
+        fromMaybe
+            ((error . unlines)
+                [ "Unexpected variable in concrete element"
+                , "elem=" ++ unparseToString elemPattern
+                ]
             )
+            (asConcrete elemTerm)
+
+    newBuiltin :: TermLike variable
+    newBuiltin =
+        asInternal
+            tools
+            sort1
+            (Set.insert concreteElemTerm existingSet)

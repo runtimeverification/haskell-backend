@@ -15,9 +15,10 @@ import           Control.DeepSeq
 import qualified Data.Deriving as Deriving
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Kore.Debug
 import Kore.Sort
 import Kore.Syntax.Variable
 import Kore.Unparser
@@ -34,7 +35,7 @@ data Exists sort variable child = Exists
     , existsVariable :: !variable
     , existsChild    :: child
     }
-    deriving (Eq, Functor, Foldable, Generic, Ord, Show, Traversable)
+    deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
 
 Deriving.deriveEq1 ''Exists
 Deriving.deriveOrd1 ''Exists
@@ -47,6 +48,14 @@ instance
 instance
     (NFData sort, NFData variable, NFData child) =>
     NFData (Exists sort variable child)
+
+instance SOP.Generic (Exists sort variable child)
+
+instance SOP.HasDatatypeInfo (Exists sort variable child)
+
+instance
+    (Debug sort, Debug variable, Debug child) =>
+    Debug (Exists sort variable child)
 
 instance
     (SortedVariable variable, Unparse variable, Unparse child) =>
