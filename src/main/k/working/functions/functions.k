@@ -14,7 +14,7 @@ module FUNCTIONS
 
   syntax ConsList ::= ".ConsList" | KItem ":" ConsList
   // `length` is recursively defined.
-  syntax Int ::= length(ConsList) [function, functional]
+  syntax Int ::= length(ConsList) [function, functional, inductive(1)]
   rule length(.ConsList) => 0
   rule length(_ : TAIL) => 1 +Int length(TAIL)
 
