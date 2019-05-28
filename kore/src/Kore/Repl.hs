@@ -27,6 +27,8 @@ import           Control.Monad.State.Strict
 import           Data.Coerce
                  ( coerce )
 import qualified Data.Graph.Inductive.Graph as Graph
+import           Data.List
+                 ( find, findIndex )
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
                  ( listToMaybe )
@@ -49,9 +51,7 @@ import qualified Kore.Logger as Logger
 import           Kore.OnePath.Verification
                  ( verifyClaimStep )
 import           Kore.OnePath.Verification
-                 ( Axiom )
-import           Kore.OnePath.Verification
-                 ( Claim )
+                 ( Axiom, Claim, isTrusted )
 import           Kore.OnePath.Verification
 import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
@@ -159,7 +159,10 @@ runRepl
             }
 
     firstClaimIndex :: ClaimIndex
-    firstClaimIndex = ClaimIndex 0
+    firstClaimIndex =
+        ClaimIndex
+        . maybe (error "No claims found") id
+        $ findIndex (not . isTrusted) claims'
 
     addIndexesToAxioms
         :: [Axiom]
@@ -200,7 +203,9 @@ runRepl
     makeRuleIndex n _ = RuleIndex (Just n)
 
     firstClaim :: Claim claim => claim
-    firstClaim = maybe (error "No claims found") id $ listToMaybe claims'
+    firstClaim =
+        maybe (error "No claims found") id
+        $ find (not . isTrusted) claims'
 
     firstClaimExecutionGraph :: ExecutionGraph
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
