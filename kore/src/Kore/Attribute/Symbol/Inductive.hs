@@ -11,7 +11,7 @@ import Kore.Attribute.Parser as Parser
 
 {- | @Inductive@ represents the @inductive@ attribute for symbols.
  -}
-newtype Inductive = Inductive { inductiveArguments :: Set Integer }
+newtype Inductive = Inductive { inductiveArguments :: Set Int }
     deriving (Eq, Ord, Show, Generic)
 
 instance NFData Inductive
@@ -23,7 +23,7 @@ deriving instance Monoid Inductive
 instance Default Inductive where
     def = mempty
 
-inductive :: Integer -> Inductive
+inductive :: Int -> Inductive
 inductive = Inductive . Set.singleton
 
 -- | Kore identifier representing the @inductive@ attribute symbol.
@@ -47,10 +47,10 @@ instance ParseAttributes Inductive where
     parseAttribute =
         withApplication' $ \params args accum -> do
             Parser.getZeroParams params
-            arg <-
+            ix <-
                 Parser.getOneArgument args
                 >>= Parser.getStringLiteral
                 >>= Parser.parseInteger
-            return (accum <> inductive arg)
+            return (accum <> inductive (fromInteger ix))
       where
         withApplication' = Parser.withApplication inductiveId
