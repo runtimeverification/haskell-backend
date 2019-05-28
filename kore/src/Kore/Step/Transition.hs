@@ -80,11 +80,8 @@ instance MonadReader e m
     ask     = Monad.Trans.lift ask
     local f = TransitionT . Accum.mapAccumT (local f) . getTransitionT
 
-instance Morph.MFunctor (AccumT w) where
-    hoist = Accum.mapAccumT
-
 instance Morph.MFunctor (TransitionT rule) where
-    hoist morph = TransitionT . Morph.hoist (Morph.hoist morph) . getTransitionT
+    hoist morph = TransitionT . Accum.mapAccumT (Morph.hoist morph) . getTransitionT
 
 instance
     ( MonadSMT m

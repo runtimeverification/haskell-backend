@@ -3,11 +3,8 @@ module Test.Kore.Builtin.Bool where
 import           Hedgehog
 import qualified Hedgehog.Gen as Gen
 import           Test.Tasty
-import           Test.Tasty.Hedgehog
 import           Test.Tasty.HUnit
-import           Test.Terse
 
-import qualified Control.Monad.Morph as Morph
 import qualified Control.Monad.Trans as Trans
 import qualified Data.Text as Text
 

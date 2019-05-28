@@ -21,11 +21,7 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
                  ( assertEqual, testCase )
 
-import           Control.Concurrent.MVar
-                 ( MVar )
 import qualified Control.Lens as Lens
-import           Control.Monad.Reader
-                 ( runReaderT )
 import qualified Control.Monad.Trans as Trans
 import           Data.Function
                  ( (&) )
@@ -75,7 +71,7 @@ import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( unparseToString )
 import           SMT
-                 ( MonadSMT (..), SMT, Solver )
+                 ( SMT )
 import qualified SMT
 
 import           Test.Kore

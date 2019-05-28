@@ -12,7 +12,7 @@ module SMT
     ( SMT, getSMT
     , Environment (..)
     , Solver
-    , newSolver, stopSolver, withSolver, withSolver', withLogger
+    , newSolver, stopSolver, withSolver', withLogger
     , runSMT
     , MonadSMT (..)
     , Config (..)
@@ -27,16 +27,8 @@ module SMT
     , SortDeclaration (..)
     , SmtSortDeclaration
     , escapeId
-    , declare
-    , declareDatatype
-    , declareDatatypes
-    , declareFun
     , declareFun_
-    , declareSort
-    , assert
-    , check
     , setInfo
-    , loadFile
     -- * Expressions
     , SExpr (..)
     , SimpleSMT.nameFromSExpr
@@ -63,28 +55,21 @@ import qualified Control.Monad as Monad
 import           Control.Monad.Catch
                  ( MonadCatch, MonadThrow )
 import qualified Control.Monad.Counter as Counter
-import qualified Control.Monad.Except as Except
-import qualified Control.Monad.Identity as Identity
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import qualified Control.Monad.Morph as Morph
 import           Control.Monad.Reader
                  ( ReaderT, runReaderT )
 import qualified Control.Monad.Reader as Reader
-import qualified Control.Monad.RWS.Lazy as RWS.Lazy
-import qualified Control.Monad.RWS.Strict as RWS.Strict
 import qualified Control.Monad.State.Lazy as State.Lazy
 import qualified Control.Monad.State.Strict as State.Strict
 import qualified Control.Monad.Trans as Trans
 import qualified Control.Monad.Trans.Maybe as Maybe
-import qualified Control.Monad.Writer.Lazy as Writer.Lazy
-import qualified Control.Monad.Writer.Strict as Writer.Strict
 import           Data.Limit
 import           Data.Text
                  ( Text )
 
 import qualified Kore.Logger as Logger
-import           ListT
 import           SMT.SimpleSMT
                  ( Constructor (..), ConstructorArgument (..),
                  DataTypeDeclaration (..), FunctionDeclaration (..),
@@ -92,8 +77,6 @@ import           SMT.SimpleSMT
                  SmtFunctionDeclaration, SmtSortDeclaration, Solver,
                  SortDeclaration (..) )
 import qualified SMT.SimpleSMT as SimpleSMT
-import           Template.Tools
-                 ( newDefinitionGroup )
 
 -- | Time-limit for SMT queries.
 newtype TimeOut = TimeOut { getTimeOut :: Limit Integer }
@@ -267,10 +250,13 @@ instance Logger.WithLog Logger.LogMessage SMT where
             . getSMT
 
 instance MonadSMT SMT where
-    withSolver (SMT action) = SMT $ do
-        solver'   <- solver <$> Reader.ask
-        newSolver <- liftIO $ readMVar solver' >>= newMVar
-        Reader.local (lensSolver Lens..~ newSolver) action
+    withSolver (SMT action) = do
+        env <- SMT $ Reader.ask
+        liftIO $ do
+            mvar <- readMVar (solver env)
+            mvar' <- newMVar mvar
+            let env' = Lens.set lensSolver mvar' env
+            SimpleSMT.inNewScope mvar (runReaderT action env')
 
     declare name typ =
         withSolver' $ \solver -> SimpleSMT.declare solver name typ
@@ -317,30 +303,6 @@ instance
     ( MonadSMT m
     , MonadIO m
     ) => MonadSMT (State.Strict.StateT s m) where
-
--- instance MonadSMT m => MonadSMT (Except.ExceptT r m) where
---     liftSMT = Trans.lift . liftSMT
-
--- instance MonadSMT m => MonadSMT (Identity.IdentityT m) where
---     liftSMT = Trans.lift . liftSMT
-
--- instance MonadSMT m => MonadSMT (Reader.ReaderT r m) where
---     liftSMT = Trans.lift . liftSMT
-
--- instance (MonadSMT m, Monoid w) => MonadSMT (RWS.Lazy.RWST r w s m) where
---     liftSMT = Trans.lift . liftSMT
-
--- instance (MonadSMT m, Monoid w) => MonadSMT (RWS.Strict.RWST r w s m) where
---     liftSMT = Trans.lift . liftSMT
-
--- instance (MonadSMT m, Monoid w) => MonadSMT (Writer.Lazy.WriterT w m) where
---     liftSMT = Trans.lift . liftSMT
-
--- instance (MonadSMT m, Monoid w) => MonadSMT (Writer.Strict.WriterT w m) where
---     liftSMT = Trans.lift . liftSMT
-
--- instance MonadSMT m => MonadSMT (ListT m) where
---     liftSMT = Trans.lift . liftSMT
 
 {- | Initialize a new solver with the given 'Config'.
 

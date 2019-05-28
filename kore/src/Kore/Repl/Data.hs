@@ -55,7 +55,6 @@ import           Control.Monad.Error.Class
 import qualified Control.Monad.Error.Class as Monad.Error
 import           Control.Monad.IO.Class
                  ( liftIO )
-import qualified Control.Monad.Reader.Class as Reader
 import           Control.Monad.State.Strict
                  ( MonadState, get, modify )
 import           Control.Monad.Trans.Accum
@@ -113,8 +112,6 @@ import           Kore.Unification.Unify
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( unparse )
-import           SMT
-                 ( SMT )
 
 newtype AxiomIndex = AxiomIndex
     { unAxiomIndex :: Int

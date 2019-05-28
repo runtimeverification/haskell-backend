@@ -15,8 +15,6 @@ import           Control.Error
                  ( MaybeT, runMaybeT )
 import           Control.Monad.IO.Class
                  ( MonadIO )
-import           Control.Monad.Reader
-                 ( MonadReader )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
@@ -37,7 +35,7 @@ import           Kore.Syntax.Variable
 import           Kore.Unparser
                  ( Unparse )
 import           SMT
-                 ( Environment, MonadSMT, Result (..), SExpr (..), SMT )
+                 ( MonadSMT, Result (..), SExpr (..) )
 import qualified SMT
 
 

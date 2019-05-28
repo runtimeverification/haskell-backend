@@ -15,12 +15,8 @@ module Test.Kore.Step.SMT.Helpers
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Control.Concurrent.MVar
-       ( MVar )
 import Control.Exception
        ( ErrorCall, catch )
-import Control.Monad.Reader
-       ( runReaderT )
 import Data.Reflection
        ( Given, give )
 import Data.Sup
@@ -57,7 +53,7 @@ import           SMT
 import qualified SMT
 
 import Test.Kore
-       ( emptyLogger, testId )
+       ( testId )
 import Test.Kore.Builtin.Builtin
        ( runSMT )
 import Test.Kore.Step.SMT.Builders

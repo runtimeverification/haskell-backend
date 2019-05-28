@@ -7,7 +7,6 @@ import           Hedgehog hiding
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
-import           Test.Tasty.HUnit
 
 import qualified Control.Monad.Trans as Trans
 import           Data.Bits

@@ -47,7 +47,7 @@ import           Kore.Step.SMT.Resolvers
                  ( translateSymbol )
 import           Kore.Unparser
 import           SMT
-                 ( SExpr (..), SMT )
+                 ( SExpr (..) )
 import qualified SMT
 
 -- ----------------------------------------------------------------

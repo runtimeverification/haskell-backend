@@ -20,8 +20,6 @@ import qualified Control.Monad.Counter as Counter
 import           Control.Monad.Except
 import           Control.Monad.IO.Class
                  ( MonadIO )
-import           Control.Monad.Reader
-                 ( MonadReader )
 import qualified Control.Monad.State as State
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
@@ -40,8 +38,7 @@ import qualified Kore.Step.SMT.Declaration.All as SMT.All
 import           Kore.Step.SMT.Translate
 import           Kore.Unparser
 import           SMT
-                 ( MonadSMT (..), SExpr (..), SMT )
-import qualified SMT
+                 ( MonadSMT (..), SExpr (..) )
 
 -- | Given an indexed module, `declareSMTLemmas` translates all
 -- rewrite rules marked with the smt-lemma attribute into the

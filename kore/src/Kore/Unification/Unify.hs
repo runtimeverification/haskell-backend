@@ -10,8 +10,6 @@ import           Control.Applicative
 import           Control.Monad
                  ( MonadPlus )
 import qualified Control.Monad.Except as Error
-import           Control.Monad.Reader.Class
-                 ( MonadReader (..) )
 import           Control.Monad.Trans.Class
                  ( MonadTrans )
 import qualified Control.Monad.Trans.Class as Monad.Trans
@@ -25,7 +23,7 @@ import           Kore.Internal.TermLike
                  ( SortedVariable, TermLike )
 import qualified Kore.Logger as Log
 import           Kore.Step.Simplification.Data
-                 ( BranchT, Environment (..), Simplifier (..) )
+                 ( BranchT, Simplifier (..) )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather, scatter )
 import           Kore.Unification.Error

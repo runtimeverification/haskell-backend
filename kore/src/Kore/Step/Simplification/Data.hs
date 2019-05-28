@@ -29,8 +29,6 @@ module Kore.Step.Simplification.Data
     ) where
 
 import           Control.Applicative
-import           Control.Concurrent.MVar
-                 ( MVar )
 import qualified Control.Monad as Monad
 import           Control.Monad.Morph
                  ( MFunctor, MMonad )
@@ -44,7 +42,7 @@ import           GHC.Stack
                  ( HasCallStack )
 
 import           Control.Monad.Catch
-                 ( Exception, MonadCatch, MonadThrow, catch, throwM )
+                 ( MonadCatch, MonadThrow )
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -61,10 +59,8 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 import qualified ListT
 import           SMT
-                 ( Environment (..), MonadSMT (..), SMT (..), withSolver' )
+                 ( Environment (..), MonadSMT (..), SMT (..))
 import qualified SMT
-import           SMT.SimpleSMT
-                 ( Solver )
 
 {-| 'And' simplification is very similar to 'Equals' simplification.
 This type is used to distinguish between the two in the common code.

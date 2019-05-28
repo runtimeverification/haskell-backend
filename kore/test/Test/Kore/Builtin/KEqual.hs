@@ -10,7 +10,6 @@ import qualified Data.Text as Text
 import           Hedgehog
 import qualified Hedgehog.Gen as Gen
 import           Test.Tasty
-import           Test.Tasty.HUnit
 
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
