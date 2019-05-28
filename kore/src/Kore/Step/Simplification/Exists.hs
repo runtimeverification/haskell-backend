@@ -31,8 +31,12 @@ import           Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike as Pattern
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import           Kore.Sort
+                 ( predicateSort )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.Axiom.Matcher
+                 ( matchAsUnification )
 import           Kore.Step.Simplification.Data
                  ( BranchT, PredicateSimplifier, Simplifier,
                  TermLikeSimplifier )
@@ -45,6 +49,8 @@ import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unification.Unify
+                 ( runUnifier )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -57,17 +63,29 @@ child.
 
 The simplification of exists x . (pat and pred and subst) is equivalent to:
 
+* If the subst contains an assignment y=x, then reverse that and continue with
+  the next step.
 * If the subst contains an assignment for x, then substitute that in pat and
   pred, reevaluate them and return
   (reevaluated-pat and reevaluated-pred and subst-without-x).
-* Otherwise, if x does not occur free in pat and pred, return
-  (pat and pred and subst)
-* Otherwise, if x does not occur free in pat, return
-  (pat and (exists x . pred) and subst)
-* Otherwise, if x does not occur free in pred, return
-  ((exists x . pat) and pred and subst)
-* Otherwise return
-  ((exists x . pat and pred) and subst)
+* Otherwise, if x occurs free in pred, but not in the term or the subst,
+  and pred has the form phi=psi, then we try to match phi and psi. If the
+  match result has the form `x=alpha`, then we return `top`.
+  ( exists x . f(x)=f(alpha) is equivalent to
+    exists x . (x=alpha) or (not(x==alpha) and f(x)=f(alpha)), which becomes
+    (exists x . (x=alpha))
+      or (exists x . (not(x==alpha) and f(x)=f(alpha)).
+    But exists x . (x=alpha) == top, so the original term is top.
+  )
+* Let patX = pat if x occurs free in pat, top otherwise
+      pat' = pat if x does not occur free in pat, top otherwise
+  Let predX, pred' be defined in a similar way.
+  Let substX = those substitutions in which x occurs free,
+      subst' = the other substitutions
+  + If patX is not top, then return
+    (exists x . patX and predX and substX) and pred' and subst'
+  + otherwise, return
+    (pat' and (pred' and (exists x . predX and substX)) and subst')
 -}
 simplify
     ::  ( Ord variable
@@ -190,11 +208,19 @@ makeEvaluate
                 variable
                 boundTerm
                 normalized { substitution = freeSubstitution }
-        (Right boundSubstitution, freeSubstitution) ->
-            makeEvaluateBoundRight
+        (Right boundSubstitution, freeSubstitution) -> do
+            matched <- Monad.Trans.lift $ matchesToVariableSubstitution'
                 variable
-                freeSubstitution
                 normalized { substitution = boundSubstitution }
+            if matched
+                then return normalized
+                    { predicate = Syntax.Predicate.makeTruePredicate
+                    , substitution = freeSubstitution
+                    }
+                else makeEvaluateBoundRight
+                    variable
+                    freeSubstitution
+                    normalized { substitution = boundSubstitution }
   where
     normalize =
         Substitution.normalize
@@ -202,6 +228,79 @@ makeEvaluate
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
+    matchesToVariableSubstitution' =
+        matchesToVariableSubstitution
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+
+matchesToVariableSubstitution
+    ::  ( FreshVariable variable
+        , Show variable
+        , Unparse variable
+        , SortedVariable variable
+        )
+    => SmtMetadataTools StepperAttributes
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap
+    -- ^ Map from axiom IDs to axiom evaluators
+
+    -> variable
+    -> Pattern variable
+    -> Simplifier Bool
+matchesToVariableSubstitution
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
+
+    variable
+    Conditional {term, predicate, substitution = boundSubstitution}
+  | Equals_ _sort1 _sort2 first second <-
+        Syntax.Predicate.fromPredicate predicateSort predicate
+  , Substitution.null boundSubstitution
+    && not (hasFreeVariable variable term)
+  = do
+    matchResult <- runUnifier $ matchAsUnification' first second
+    case matchResult of
+        Left _ -> return False
+        Right results ->
+            return (all (singleVariableSubstitution variable) results)
+  where
+    matchAsUnification' =
+        matchAsUnification
+            tools substitutionSimplifier simplifier axiomIdToSimplifier
+
+matchesToVariableSubstitution _ _ _ _ _ _ = return False
+
+singleVariableSubstitution
+    ::  ( Ord variable
+        , SortedVariable variable
+        , Unparse variable
+        )
+    => variable -> Predicate variable -> Bool
+singleVariableSubstitution
+    variable
+    Conditional
+        { term = ()
+        , predicate = Syntax.Predicate.PredicateTrue
+        , substitution
+        }
+  = case Substitution.unwrap substitution of
+    [] -> (error . unlines)
+        [ "This should not happen. This is called with matching results, and,"
+        , "if matching can be resolved without generating predicates or "
+        , "substitutions, then the equality should have already been resolved."
+        ]
+    [(substVariable, substTerm)]
+        | substVariable == variable ->
+            Pattern.withoutFreeVariable variable substTerm
+                True
+    _ -> False
+singleVariableSubstitution _ _ = False
 
 {- | Existentially quantify a variable in the given 'Pattern'.
 
@@ -350,9 +449,11 @@ quantifyPattern
     -> Pattern variable
 quantifyPattern variable original@Conditional { term, predicate, substitution }
   | quantifyTerm, quantifyPredicate
-  = Pattern.fromTermLike
-    $ mkExists variable
-    $ mkAnd term (Syntax.Predicate.unwrapPredicate predicate')
+  = (error . unlines)
+    [ "Quantifying both the term and the predicate probably means that there's"
+    , "an error somewhere else."
+    , "patt=" ++ unparseToString original
+    ]
   | quantifyTerm = mkExists variable <$> original
   | quantifyPredicate =
     Conditional.withCondition term

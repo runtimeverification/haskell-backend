@@ -55,9 +55,13 @@ import qualified Kore.Step.Simplification.In as In
                  ( simplify )
 import qualified Kore.Step.Simplification.Inhabitant as Inhabitant
                  ( simplify )
+import qualified Kore.Step.Simplification.Mu as Mu
+                 ( simplify )
 import qualified Kore.Step.Simplification.Next as Next
                  ( simplify )
 import qualified Kore.Step.Simplification.Not as Not
+                 ( simplify )
+import qualified Kore.Step.Simplification.Nu as Nu
                  ( simplify )
 import qualified Kore.Step.Simplification.Or as Or
                  ( simplify )
@@ -146,6 +150,12 @@ simplifyInternal
   | EvaluatedF _ <- termLikeF =
     return (OrPattern.fromTermLike termLike)
 
+  | MuF _ <- termLikeF =
+    return (OrPattern.fromTermLike termLike)
+
+  | NuF _ <- termLikeF =
+    return (OrPattern.fromTermLike termLike)
+
   | otherwise =
     traverse simplifyTerm' termLikeF >>= \case
         AndF p ->
@@ -184,11 +194,13 @@ simplifyInternal
             In.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
         InhabitantF s -> return $ Inhabitant.simplify s
+        MuF p -> return $ Mu.simplify p
         -- TODO(virgil): Move next up through patterns.
         NextF p -> return $ Next.simplify p
         NotF p ->
             Not.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
+        NuF p -> return $ Nu.simplify p
         OrF p -> return $ Or.simplify p
         RewritesF p -> return $ Rewrites.simplify p
         StringLiteralF p -> return $ StringLiteral.simplify p
