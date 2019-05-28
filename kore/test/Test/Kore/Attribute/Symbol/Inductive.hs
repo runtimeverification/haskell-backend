@@ -1,35 +1,48 @@
-module Test.Kore.Attribute.Inductive where
+module Test.Kore.Attribute.Symbol.Inductive where
 
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import qualified Data.Set as Set
-
-import Kore.Attribute.Inductive
+import Kore.Attribute.Symbol.Inductive
 import Kore.Syntax.Pattern
+import Kore.Unparser
 
 import Test.Kore.Attribute.Parser
 
 parseInductive :: Attributes -> Parser Inductive
 parseInductive = parseAttributes
 
+test_Monoid :: [TestTree]
+test_Monoid =
+    [ testCase "right unit" $ assertEqual "" (inductive 1 <> mempty) (inductive 1)
+    , testCase "left unit"  $ assertEqual "" (mempty <> inductive 1) (inductive 1)
+    , testCase "idempotent" $ assertEqual "" (inductive 1 <> inductive 1) (inductive 1)
+    ]
+
+test_Attributes :: [TestTree]
+test_Attributes =
+    [ expectIdem [ inductiveAttribute 1 ]
+    ]
+  where
+    expectIdem (Attributes -> attrs) =
+        testCase name $ expectSuccess attrs (parseAttributes attrs)
+      where
+        name = show (unparse attrs <> " :: Attributes")
+
 test_inductive :: [TestTree]
 test_inductive =
-    [ testCase "[inductive{}(1)] :: Inductive"
-        $ expectSuccess Inductive { inductiveArguments = Set.singleton 1 }
-        $ parseInductive $ Attributes [ inductiveAttribute 1 ]
-    , testCase "[inductive{}(1)] :: Attributes"
-        $ expectSuccess Attributes [ inductiveAttribute 1 ]
-        $ parseAttributes Attributes [ inductiveAttribute 1 ]
-    , testCase "[inductive{}(1), inductive{}(1)]"
-        $ expectSuccess Inductive { inductiveArguments = Set.singleton 1 }
-        $ parseInductive
-        $ Attributes [ inductiveAttribute 1, inductiveAttribute 1 ]
-    , testCase "[inductive{}(1), inductive{}(2)]"
-        $ expectSuccess Inductive { inductiveArguments = Set.fromList [1, 2] }
-        $ parseInductive
-        $ Attributes [ inductiveAttribute 1, inductiveAttribute 2 ]
+    [ expecting (inductive 1)
+        [ inductiveAttribute 1 ]
+    , expecting (inductive 1)
+        [ inductiveAttribute 1, inductiveAttribute 1 ]
+    , expecting (inductive 1 <> inductive 2)
+        [ inductiveAttribute 1, inductiveAttribute 2 ]
     ]
+  where
+    expecting expect (Attributes -> attrs) =
+        testCase name $ expectSuccess expect $ parseInductive attrs
+      where
+        name = show (unparse attrs <> " :: Inductive")
 
 test_arguments :: TestTree
 test_arguments =
