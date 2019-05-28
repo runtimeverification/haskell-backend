@@ -1,5 +1,4 @@
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE DerivingVia        #-}
+{-# LANGUAGE DerivingVia #-}
 
 {-|
 Module      : Kore.Step.Simplification.Data
@@ -14,6 +13,7 @@ module Kore.Step.Simplification.Data
     ( Simplifier (..)
     , runSimplifier
     , evalSimplifier
+    , withLogger
     , BranchT
     , evalSimplifierBranch
     , gather
@@ -62,6 +62,7 @@ import           Kore.Variables.Fresh
 import qualified ListT
 import           SMT
                  ( Environment (..), MonadSMT (..), SMT (..), withSolver' )
+import qualified SMT
 import           SMT.SimpleSMT
                  ( Solver )
 
@@ -200,6 +201,13 @@ evalSimplifierBranch
     -- ^ simplifier computation
     -> SMT [a]
 evalSimplifierBranch = evalSimplifier . gather
+
+-- | Use a different logger in the provided context.
+withLogger :: LogAction Simplifier LogMessage -> Simplifier a  -> Simplifier a
+withLogger l =
+    Simplifier
+        . SMT.withLogger (hoistLogAction getSimplifier l)
+        . getSimplifier
 
 {- | Run a simplification, returning the result of only one branch.
 

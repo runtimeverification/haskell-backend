@@ -616,22 +616,13 @@ liftSimplifierWithLogger sa = do
    (severity, logType) <- logging <$> get
    (textLogger, maybeHandle) <- logTypeToLogger logType
    let logger = Logger.makeKoreLogger severity textLogger
-   result <-
-       Monad.Trans.lift
-           . Logger.withLog (const (undefined :: Logger.LogAction n Logger.LogMessage))
-           $ sa
+   result <- Monad.Trans.lift $ Simplifier.withLogger logger sa
    maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
    pure result
   where
-    setLogger
-        :: Logger.LogAction SMT Logger.LogMessage
-        -> Simplifier.Environment
-        -> Simplifier.Environment
-    setLogger la env = env { Simplifier.logger = la }
-
     logTypeToLogger
         :: LogType
-        -> t Simplifier (Logger.LogAction SMT Text, Maybe Handle)
+        -> t Simplifier (Logger.LogAction Simplifier Text, Maybe Handle)
     logTypeToLogger =
         \case
             NoLogging   -> pure (mempty, Nothing)

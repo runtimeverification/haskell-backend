@@ -12,7 +12,7 @@ module SMT
     ( SMT, getSMT
     , Environment (..)
     , Solver
-    , newSolver, stopSolver, withSolver, withSolver'
+    , newSolver, stopSolver, withSolver, withSolver', withLogger
     , runSMT
     , MonadSMT (..)
     , Config (..)
@@ -155,6 +155,12 @@ newtype SMT a = SMT { getSMT :: ReaderT Environment IO a }
         )
 
 Lens.makeLenses ''Environment
+
+withLogger :: Logger -> SMT a  -> SMT a
+withLogger l =
+    SMT
+        . Reader.local (lensLogger `Lens.set` l)
+        . getSMT
 
 -- | Access 'SMT' through monad transformers.
 class Monad m => MonadSMT m where
