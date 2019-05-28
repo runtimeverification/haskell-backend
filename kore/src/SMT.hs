@@ -112,6 +112,7 @@ defaultConfig =
         }
 
 type Logger = Logger.LogAction SMT Logger.LogMessage
+type IOLogger = Logger.LogAction IO Logger.LogMessage
 
 data Environment = Environment
     { solver     :: !(MVar Solver)
@@ -309,11 +310,15 @@ instance
 The new solver is returned in an 'MVar' for thread-safety.
 
  -}
-newSolver :: Config -> Logger -> IO Environment
+newSolver :: Config -> IOLogger -> IO Environment
 newSolver config logger = do
-    solver <- SimpleSMT.newSolver exe args Nothing
+    solver <- SimpleSMT.newSolver exe args logger
     mvar <- newMVar solver
-    let env = Environment { solver = mvar, logger }
+    let env =
+            Environment
+                { solver = mvar
+                , logger = Logger.hoistLogAction liftIO logger
+                }
     runReaderT getSMT env
     return env
   where
@@ -340,7 +345,7 @@ stopSolver mvar = do
     return ()
 
 -- | Run an external SMT solver.
-runSMT :: Config -> Logger -> SMT a -> IO a
+runSMT :: Config -> IOLogger -> SMT a -> IO a
 runSMT config logger SMT { getSMT } = do
     env <- newSolver config logger
     a <- runReaderT getSMT env
