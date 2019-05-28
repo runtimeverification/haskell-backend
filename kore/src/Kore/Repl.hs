@@ -30,8 +30,6 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.List
                  ( find, findIndex )
 import qualified Data.Map.Strict as Map
-import           Data.Maybe
-                 ( listToMaybe )
 import qualified Data.Sequence as Seq
 import           Kore.Attribute.RuleIndex
 import           System.Exit
