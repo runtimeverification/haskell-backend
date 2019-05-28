@@ -59,7 +59,7 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 import qualified ListT
 import           SMT
-                 ( Environment (..), MonadSMT (..), SMT (..))
+                 ( Environment (..), MonadSMT (..), SMT (..) )
 import qualified SMT
 
 {-| 'And' simplification is very similar to 'Equals' simplification.
