@@ -427,7 +427,7 @@ applyRules
     ExceptT $ Monad.Unify.runUnifier $ do
         unifiedRules <- unifyRules initial rules
         rejectNarrowing unifiedRules
-        finalizeRulesInSequence initial unifiedRules
+        finalizeRulesSequence initial unifiedRules
   where
     unifyRules =
         Step.unifyRules
@@ -436,8 +436,8 @@ applyRules
             termSimplifier
             axiomSimplifiers
             unificationProcedure
-    finalizeRulesInSequence =
-        Step.finalizeRulesInSequence
+    finalizeRulesSequence =
+        Step.finalizeRulesSequence
             metadataTools
             predicateSimplifier
             termSimplifier

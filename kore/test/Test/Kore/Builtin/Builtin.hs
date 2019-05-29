@@ -249,7 +249,7 @@ runStepResultWith solver configuration axiom =
     let smt =
             evalSimplifier emptyLogger
             $ Monad.Unify.runUnifier
-            $ Step.applyRewriteRules
+            $ Step.applyRewriteRulesParallel
                 testMetadataTools
                 testSubstitutionSimplifier
                 testTermLikeSimplifier

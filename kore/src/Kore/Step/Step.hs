@@ -20,18 +20,18 @@ module Kore.Step.Step
     , Step.result
     , Step.gatherResults
     , Step.withoutRemainders
-    , finalizeRulesInSequence
-    , finalizeRulesInParallel
     , checkSubstitutionCoverage
     , unifyRule
     , unifyRules
     , applyInitialConditions
     , finalizeAppliedRule
     , unwrapRule
-    , applyRulesInParallel
-    , applyRewriteRules
-    , sequenceRules
-    , sequenceRewriteRules
+    , finalizeRulesParallel
+    , applyRulesParallel
+    , applyRewriteRulesParallel
+    , finalizeRulesSequence
+    , applyRulesSequence
+    , applyRewriteRulesSequence
     , toConfigurationVariables
     , toAxiomVariables
     ) where
@@ -501,7 +501,7 @@ finalizeRule
             patternSimplifier
             axiomSimplifiers
 
-finalizeRulesInParallel
+finalizeRulesParallel
     ::  forall unifier variable
     .   ( Ord     variable
         , Show    variable
@@ -519,7 +519,7 @@ finalizeRulesInParallel
     -> Pattern (Target variable)
     -> [UnifiedRule (Target variable)]
     -> unifier (Results variable)
-finalizeRulesInParallel
+finalizeRulesParallel
     metadataTools
     predicateSimplifier
     termSimplifier
@@ -552,7 +552,7 @@ finalizeRulesInParallel
             termSimplifier
             axiomSimplifiers
 
-finalizeRulesInSequence
+finalizeRulesSequence
     ::  forall unifier variable
     .   ( Ord     variable
         , Show    variable
@@ -570,7 +570,7 @@ finalizeRulesInSequence
     -> Pattern (Target variable)
     -> [UnifiedRule (Target variable)]
     -> unifier (Results variable)
-finalizeRulesInSequence
+finalizeRulesSequence
     metadataTools
     predicateSimplifier
     termSimplifier
@@ -673,7 +673,7 @@ checkSubstitutionCoverage initial unified
 See also: 'applyRewriteRule'
 
  -}
-applyRulesInParallel
+applyRulesParallel
     ::  forall unifier variable
     .   ( Ord variable
         , Show variable
@@ -696,7 +696,7 @@ applyRulesInParallel
     -> Pattern variable
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
-applyRulesInParallel
+applyRulesParallel
     metadataTools
     predicateSimplifier
     patternSimplifier
@@ -708,7 +708,7 @@ applyRulesInParallel
     (map toAxiomVariables -> rules)
     (toConfigurationVariables -> initial)
   =
-    unifyRules' initial rules >>= finalizeRulesInParallel' initial
+    unifyRules' initial rules >>= finalizeRulesParallel' initial
   where
     unifyRules' =
         unifyRules
@@ -717,8 +717,8 @@ applyRulesInParallel
             patternSimplifier
             axiomSimplifiers
             unificationProcedure
-    finalizeRulesInParallel' =
-        finalizeRulesInParallel
+    finalizeRulesParallel' =
+        finalizeRulesParallel
             metadataTools
             predicateSimplifier
             patternSimplifier
@@ -729,7 +729,7 @@ applyRulesInParallel
 See also: 'applyRewriteRule'
 
  -}
-applyRewriteRules
+applyRewriteRulesParallel
     ::  forall unifier variable
     .   ( Ord variable
         , Show variable
@@ -752,7 +752,7 @@ applyRewriteRules
     -> Pattern variable
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
-applyRewriteRules
+applyRewriteRulesParallel
     metadataTools
     predicateSimplifier
     patternSimplifier
@@ -761,7 +761,7 @@ applyRewriteRules
 
     rewriteRules
   =
-    applyRulesInParallel
+    applyRulesParallel
         metadataTools
         predicateSimplifier
         patternSimplifier
@@ -774,7 +774,7 @@ applyRewriteRules
 See also: 'applyRewriteRule'
 
  -}
-sequenceRules
+applyRulesSequence
     ::  forall unifier variable
     .   ( Ord     variable
         , Show    variable
@@ -797,7 +797,7 @@ sequenceRules
     -> [RulePattern variable]
     -- ^ Rewrite rules
     -> unifier (Results variable)
-sequenceRules
+applyRulesSequence
     metadataTools
     predicateSimplifier
     patternSimplifier
@@ -809,7 +809,7 @@ sequenceRules
     (toConfigurationVariables -> initial)
     (map toAxiomVariables -> rules)
   =
-    unifyRules' initial rules >>= finalizeRulesInSequence' initial
+    unifyRules' initial rules >>= finalizeRulesSequence' initial
   where
     unifyRules' =
         unifyRules
@@ -818,8 +818,8 @@ sequenceRules
             patternSimplifier
             axiomSimplifiers
             unificationProcedure
-    finalizeRulesInSequence' =
-        finalizeRulesInSequence
+    finalizeRulesSequence' =
+        finalizeRulesSequence
             metadataTools
             predicateSimplifier
             patternSimplifier
@@ -827,10 +827,10 @@ sequenceRules
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
-See also: 'applyRewriteRule'
+See also: 'applyRewriteRulesParallel'
 
  -}
-sequenceRewriteRules
+applyRewriteRulesSequence
     ::  forall unifier variable
     .   ( Ord     variable
         , Show    variable
@@ -853,7 +853,7 @@ sequenceRewriteRules
     -> [RewriteRule variable]
     -- ^ Rewrite rules
     -> unifier (Results variable)
-sequenceRewriteRules
+applyRewriteRulesSequence
     metadataTools
     predicateSimplifier
     patternSimplifier
@@ -863,7 +863,7 @@ sequenceRewriteRules
     initialConfig
     rewriteRules
   =
-    sequenceRules
+    applyRulesSequence
         metadataTools
         predicateSimplifier
         patternSimplifier
