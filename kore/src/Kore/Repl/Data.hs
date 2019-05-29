@@ -156,7 +156,7 @@ data ReplCommand
     | Help
     -- ^ Shows the help message.
     | ShowClaim !(Maybe ClaimIndex)
-    -- ^ Show the nth claim.
+    -- ^ Show the nth claim or the current claim.
     | ShowAxiom !AxiomIndex
     -- ^ Show the nth axiom.
     | Prove !ClaimIndex
