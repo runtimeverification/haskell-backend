@@ -27,11 +27,12 @@ import           Colog
                  ( LogAction (..) )
 import qualified Control.Monad.Except as Except
 import qualified Control.Monad.Morph as Monad.Morph
+import qualified Control.Monad.State.Strict as Strict
 import           Control.Monad.Trans
                  ( MonadTrans )
 import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Identity
-                 ( IdentityT, runIdentityT )
+                 ( IdentityT )
 import           Data.Functor.Contravariant
                  ( contramap )
 import           Data.String
@@ -82,6 +83,9 @@ data LogMessage = LogMessage
 class Monad m => WithLog msg m where
     -- | Retrieve the 'LogAction' in scope.
     askLogAction :: m (LogAction m msg)
+    default askLogAction
+        :: (MonadTrans t, WithLog msg n, m ~ t n) => m (LogAction m msg)
+    askLogAction = liftLogAction <$> Monad.Trans.lift askLogAction
 
     -- | Modify the 'LogAction' over the scope of an action.
     withLog
@@ -89,16 +93,15 @@ class Monad m => WithLog msg m where
         .  (forall n. LogAction n msg -> LogAction n msg)
         -> m a
         -> m a
+    default withLog
+        :: (Monad.Morph.MFunctor t, WithLog msg m', m ~ t m')
+        => (forall n. LogAction n msg -> LogAction n msg)
+        -> m a -> m a
+    withLog mapping = Monad.Morph.hoist (withLog mapping)
 
-instance (WithLog msg m, Monad m) => WithLog msg (IdentityT m) where
-    askLogAction = liftLogAction <$> Monad.Trans.lift askLogAction
-    withLog
-        :: forall a
-        .  (forall n. LogAction n msg -> LogAction n msg)
-        -> IdentityT m a
-        -> IdentityT m a
-    withLog mapping =
-        Monad.Trans.lift . withLog mapping . runIdentityT
+instance (WithLog msg m, Monad m) => WithLog msg (IdentityT m)
+
+instance (WithLog msg m, Monad m) => WithLog msg (Strict.StateT s m)
 
 -- | 'Monad.Trans.lift' any 'LogAction' into a monad transformer.
 liftLogAction
