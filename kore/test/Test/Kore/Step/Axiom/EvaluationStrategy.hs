@@ -42,7 +42,6 @@ import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
-import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
 import           Test.Kore
@@ -78,33 +77,25 @@ test_definitionEvaluation =
                 (Mock.functionalConstr10 Mock.c)
         assertEqualWithExplanation "" expect actual
     , testCase "Evaluation with remainder" $ do
-        let expect =
-                AttemptedAxiom.Applied
-                    AttemptedAxiomResults
-                        { results = OrPattern.fromPatterns
+        let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
+            expect =
+                AttemptedAxiom.Applied AttemptedAxiomResults
+                    { results =
+                        OrPattern.fromPattern Conditional
+                            { term = Mock.g Mock.a
+                            , predicate = requirement
+                            , substitution = mempty
+                            }
+                    , remainders =
+                        OrPattern.fromPatterns
+                        $ map (fmap mkEvaluated)
                             [ Conditional
-                                { term = Mock.g Mock.a
-                                , predicate = makeTruePredicate
-                                , substitution = Substitution.wrap
-                                    [(Mock.x, Mock.a)]
+                                { term = Mock.functionalConstr10 Mock.a
+                                , predicate = makeNotPredicate requirement
+                                , substitution = mempty
                                 }
                             ]
-                        , remainders =
-                            OrPattern.fromPatterns
-                            $ map (fmap mkEvaluated)
-                                [ Conditional
-                                    { term =
-                                        Mock.functionalConstr10 (mkVar Mock.x)
-                                    , predicate =
-                                        makeNotPredicate
-                                            (makeEqualsPredicate
-                                                (mkVar Mock.x)
-                                                Mock.a
-                                            )
-                                    , substitution = mempty
-                                    }
-                                ]
-                        }
+                    }
         actual <-
             evaluate
                 Mock.metadataTools
@@ -112,10 +103,10 @@ test_definitionEvaluation =
                     [ axiom
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.a)
-                        makeTruePredicate
+                        requirement
                     ]
                 )
-                (Mock.functionalConstr10 (mkVar Mock.x))
+                (Mock.functionalConstr10 Mock.a)
         assertEqualWithExplanation "" expect actual
     , testCase "Failed evaluation" $ do
         let expect =
@@ -139,61 +130,41 @@ test_definitionEvaluation =
                 (Mock.functionalConstr10 Mock.b)
         assertEqualWithExplanation "" expect actual
     , testCase "Evaluation with multiple branches" $ do
-        let expect =
-                AttemptedAxiom.Applied
-                    AttemptedAxiomResults
-                        { results = OrPattern.fromPatterns
+        let initial = Mock.functionalConstr10 Mock.a
+            final1 = Mock.g Mock.a
+            final2 = Mock.g Mock.b
+            requirement1 = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
+            requirement2 = makeNotPredicate requirement1
+            axiom1 = axiom initial final1 requirement1
+            axiom2 = axiom initial final2 requirement2
+            evaluator = definitionEvaluation [axiom1, axiom2]
+            expect =
+                AttemptedAxiom.Applied AttemptedAxiomResults
+                    { results = OrPattern.fromPatterns
+                        [ Conditional
+                            { term = final1
+                            , predicate = requirement1
+                            , substitution = mempty
+                            }
+                        , Conditional
+                            { term = final2
+                            , predicate = requirement2
+                            , substitution = mempty
+                            }
+                        ]
+                    , remainders =
+                        OrPattern.fromPatterns $ (map . fmap) mkEvaluated
                             [ Conditional
-                                { term = Mock.g Mock.a
-                                , predicate = makeTruePredicate
-                                , substitution = Substitution.wrap
-                                    [(Mock.x, Mock.a)]
-                                }
-                            , Conditional
-                                { term = Mock.g Mock.b
-                                , predicate = makeTruePredicate
-                                , substitution = Substitution.wrap
-                                    [(Mock.x, Mock.b)]
+                                { term = initial
+                                , predicate =
+                                    makeAndPredicate
+                                        (makeNotPredicate requirement1)
+                                        (makeNotPredicate requirement2)
+                                , substitution = mempty
                                 }
                             ]
-                        , remainders =
-                            OrPattern.fromPatterns
-                            $ map (fmap mkEvaluated)
-                                [ Conditional
-                                    { term =
-                                        Mock.functionalConstr10 (mkVar Mock.x)
-                                    , predicate = makeAndPredicate
-                                        (makeNotPredicate
-                                            (makeEqualsPredicate
-                                                (mkVar Mock.x)
-                                                Mock.a
-                                            )
-                                        )
-                                        (makeNotPredicate
-                                            (makeEqualsPredicate
-                                                (mkVar Mock.x)
-                                                Mock.b
-                                            )
-                                        )
-                                    , substitution = mempty
-                                    }
-                                ]
-                        }
-        actual <-
-            evaluate
-                Mock.metadataTools
-                (definitionEvaluation
-                    [ axiom
-                        (Mock.functionalConstr10 Mock.a)
-                        (Mock.g Mock.a)
-                        makeTruePredicate
-                    , axiom
-                        (Mock.functionalConstr10 Mock.b)
-                        (Mock.g Mock.b)
-                        makeTruePredicate
-                    ]
-                )
-                (Mock.functionalConstr10 (mkVar Mock.x))
+                    }
+        actual <- evaluate Mock.metadataTools evaluator initial
         assertEqualWithExplanation "" expect actual
     ]
 
@@ -300,24 +271,28 @@ test_firstFullEvaluation =
                 )
                 (Mock.functionalConstr10 (mkVar Mock.x))
         assertEqualWithExplanation "" expect actual
-    , testCase "Error when not fully rewriting"
-        (assertErrorIO
+    , testCase "Error when not fully rewriting" $ do
+        let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
+        assertErrorIO
             (assertSubstring ""
                 "Unexpected simplification result with remainder"
             )
             (evaluate
                 Mock.metadataTools
                 (firstFullEvaluation
-                    [ axiomEvaluatorWithRemainder
-                        (Mock.functionalConstr10 Mock.b)
-                        (Mock.g Mock.a)
+                    [ definitionEvaluation
+                        [ axiom
+                            (Mock.functionalConstr10 Mock.a)
+                            (Mock.g Mock.a)
+                            requirement
+                        ]
                     ]
                 )
-                (Mock.functionalConstr10 (mkVar Mock.x))
+                (Mock.functionalConstr10 Mock.a)
             )
-        )
-    , testCase "Error with multiple results"
-        (assertErrorIO
+    , testCase "Error with multiple results" $ do
+        let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
+        assertErrorIO
             (assertSubstring ""
                 (  "Unexpected simplification result with more than one "
                 ++ "configuration"
@@ -329,18 +304,17 @@ test_firstFullEvaluation =
                     [ definitionEvaluation
                         [ axiom
                             (Mock.functionalConstr10 Mock.a)
-                            (Mock.f Mock.a)
-                            makeTruePredicate
+                            (Mock.g Mock.a)
+                            requirement
                         , axiom
-                            (Mock.functionalConstr10 (mkVar Mock.x))
+                            (Mock.functionalConstr10 Mock.a)
                             (Mock.g Mock.b)
-                            makeTruePredicate
+                            (makeNotPredicate requirement)
                         ]
                     ]
                 )
-                (Mock.functionalConstr10 (mkVar Mock.x))
+                (Mock.functionalConstr10 Mock.a)
             )
-        )
     ]
 
 test_simplifierWithFallback :: [TestTree]
@@ -374,47 +348,45 @@ test_simplifierWithFallback =
                 (Mock.functionalConstr10 Mock.a)
         assertEqualWithExplanation "" expect actual
     , testCase "Uses first with remainder" $ do
-        let expect =
-                AttemptedAxiom.Applied
-                    AttemptedAxiomResults
-                        { results = OrPattern.fromPatterns
+        let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
+            expect =
+                AttemptedAxiom.Applied AttemptedAxiomResults
+                    { results = OrPattern.fromPatterns
+                        [ Conditional
+                            { term = Mock.g Mock.a
+                            , predicate = requirement
+                            , substitution = mempty
+                            }
+                        ]
+                    , remainders =
+                        OrPattern.fromPatterns $ (map . fmap) mkEvaluated
                             [ Conditional
-                                { term = Mock.g Mock.a
-                                , predicate = makeTruePredicate
-                                , substitution = Substitution.wrap
-                                    [(Mock.x, Mock.b)]
+                                { term = Mock.functionalConstr10 Mock.a
+                                , predicate = makeNotPredicate requirement
+                                , substitution = mempty
                                 }
                             ]
-                        , remainders =
-                            OrPattern.fromPatterns
-                            $ map (fmap mkEvaluated)
-                                [ Conditional
-                                    { term =
-                                        Mock.functionalConstr10 (mkVar Mock.x)
-                                    , predicate =
-                                        makeNotPredicate
-                                            (makeEqualsPredicate
-                                                (mkVar Mock.x)
-                                                Mock.b
-                                            )
-                                    , substitution = mempty
-                                    }
-                                ]
-                        }
+                    }
         actual <-
             evaluate
                 Mock.metadataTools
                 (simplifierWithFallback
-                    (axiomEvaluatorWithRemainder
-                        (Mock.functionalConstr10 Mock.b)
-                        (Mock.g Mock.a)
+                    (definitionEvaluation
+                        [ axiom
+                            (Mock.functionalConstr10 Mock.a)
+                            (Mock.g Mock.a)
+                            requirement
+                        ]
                     )
-                    (axiomEvaluator
-                        (Mock.functionalConstr10 (mkVar Mock.x))
-                        (Mock.f Mock.a)
+                    (definitionEvaluation
+                        [ axiom
+                            (Mock.functionalConstr10 Mock.a)
+                            (Mock.f Mock.a)
+                            (makeNotPredicate requirement)
+                        ]
                     )
                 )
-                (Mock.functionalConstr10 (mkVar Mock.x))
+                (Mock.functionalConstr10 Mock.a)
         assertEqualWithExplanation "" expect actual
     , testCase "Falls back to second" $ do
         let expect =
