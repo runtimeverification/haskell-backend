@@ -24,6 +24,7 @@ module Kore.Step.Step
     , finalizeRulesInParallel
     , checkSubstitutionCoverage
     , unifyRule
+    , unifyRules
     , applyInitialConditions
     , finalizeAppliedRule
     , unwrapRule
@@ -218,6 +219,50 @@ unifyRule
     normalize =
         Substitution.normalizeExcept
             metadataTools
+            predicateSimplifier
+            patternSimplifier
+            axiomSimplifiers
+
+unifyRules
+    ::  forall unifier variable
+    .   ( Ord     variable
+        , Show    variable
+        , Unparse variable
+        , FreshVariable  variable
+        , SortedVariable variable
+        , MonadUnify unifier
+        )
+    => SmtMetadataTools StepperAttributes
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
+    -> UnificationProcedure
+
+    -> Pattern (Target variable)
+    -- ^ Initial configuration
+    -> [RulePattern (Target variable)]
+    -- ^ Rule
+    -> unifier [UnifiedRule (Target variable)]
+unifyRules
+    metadataTools
+    predicateSimplifier
+    patternSimplifier
+    axiomSimplifiers
+    unificationProcedure
+
+    initial
+    rules
+  =
+    Monad.Unify.gather $ do
+        rule <- Monad.Unify.scatter rules
+        unified <- unifyRule' initial rule
+        checkSubstitutionCoverage initial unified
+        return unified
+  where
+    unifyRule' =
+        unifyRule
+            metadataTools
+            unificationProcedure
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
@@ -534,7 +579,8 @@ finalizeRulesInSequence
     initial
     unifiedRules
   = do
-    (results, remainder) <- State.runStateT (traverse finalizeRuleInSequence' unifiedRules) initial
+    (results, remainder) <-
+        State.runStateT (traverse finalizeRuleInSequence' unifiedRules) initial
     return Step.Results
         { results = Seq.fromList $ Foldable.fold results
         , remainders =
@@ -661,21 +707,16 @@ applyRulesInParallel
     -- axiom variables.
     (map toAxiomVariables -> rules)
     (toConfigurationVariables -> initial)
-  = do
-    unifiedRules <-
-        Monad.Unify.gather $ do
-            rule <- Monad.Unify.scatter rules
-            unifyRule' initial rule
-    mapM_ (checkSubstitutionCoverage initial) unifiedRules
-    finalizeRulesInParallel' initial unifiedRules
+  =
+    unifyRules' initial rules >>= finalizeRulesInParallel' initial
   where
-    unifyRule' =
-        unifyRule
+    unifyRules' =
+        unifyRules
             metadataTools
-            unificationProcedure
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
+            unificationProcedure
     finalizeRulesInParallel' =
         finalizeRulesInParallel
             metadataTools
@@ -767,21 +808,16 @@ sequenceRules
     -- axiom variables.
     (toConfigurationVariables -> initial)
     (map toAxiomVariables -> rules)
-  = do
-    unifiedRules <-
-        Monad.Unify.gather $ do
-            rule <- Monad.Unify.scatter rules
-            unifyRule' initial rule
-    mapM_ (checkSubstitutionCoverage initial) unifiedRules
-    finalizeRulesInSequence' initial unifiedRules
+  =
+    unifyRules' initial rules >>= finalizeRulesInSequence' initial
   where
-    unifyRule' =
-        unifyRule
+    unifyRules' =
+        unifyRules
             metadataTools
-            unificationProcedure
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
+            unificationProcedure
     finalizeRulesInSequence' =
         finalizeRulesInSequence
             metadataTools
