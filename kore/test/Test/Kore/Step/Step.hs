@@ -43,8 +43,8 @@ import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import           Kore.Step.Step hiding
-                 ( applyInitialConditions, applyRewriteRule, applyRewriteRules,
-                 applyRule, sequenceRewriteRules, unifyRule )
+                 ( applyInitialConditions, applyRewriteRules,
+                 sequenceRewriteRules, unifyRule )
 import qualified Kore.Step.Step as Step
 import           Kore.Unification.Error
                  ( SubstitutionError (..), UnificationOrSubstitutionError (..),
