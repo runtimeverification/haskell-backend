@@ -13,5 +13,5 @@ module SET-UNIFY-FRAMING-VARIABLE
   rule
     <k> V:Val </k>
     <s1> (SetItem(V) => .Set) X:Set </s1>
-
+    requires notBool (V in X)
 endmodule
