@@ -5,7 +5,7 @@ License     : NCSA
  -}
 
 module Kore.Step.Remainder
-    ( remainder
+    ( remainder, remainder'
     , existentiallyQuantifyTarget
     ) where
 
@@ -41,6 +41,10 @@ import qualified Kore.Variables.Target as Target
 The /remainder/ is the parts of the initial configuration that is not matched
 by any applied rule.
 
+The resulting predicate has the 'Target' variables unwrapped.
+
+See also: 'remainder\''
+
  -}
 remainder
     ::  ( Ord     variable
@@ -50,7 +54,24 @@ remainder
         )
     => MultiOr (Predicate (Target variable))
     -> Syntax.Predicate variable
-remainder results =
+remainder =
+    Syntax.Predicate.mapVariables Target.unwrapVariable . remainder'
+
+{- | Negate the disjunction of unification solutions to form the /remainder/.
+
+The /remainder/ is the parts of the initial configuration that is not matched
+by any applied rule.
+
+ -}
+remainder'
+    ::  ( Ord     variable
+        , Show    variable
+        , Unparse variable
+        , SortedVariable variable
+        )
+    => MultiOr (Predicate (Target variable))
+    -> Syntax.Predicate (Target variable)
+remainder' results =
     mkMultiAndPredicate $ mkNotExists conditions
   where
     conditions = mkMultiAndPredicate . unificationConditions <$> results
@@ -64,10 +85,9 @@ existentiallyQuantifyTarget
         , SortedVariable variable
         )
     => Syntax.Predicate (Target variable)
-    -> Syntax.Predicate variable
+    -> Syntax.Predicate (Target variable)
 existentiallyQuantifyTarget predicate =
-    Syntax.Predicate.mapVariables Target.unwrapVariable
-    $ Syntax.Predicate.makeMultipleExists freeTargetVariables predicate
+    Syntax.Predicate.makeMultipleExists freeTargetVariables predicate
   where
     freeTargetVariables =
         Set.filter Target.isTarget
