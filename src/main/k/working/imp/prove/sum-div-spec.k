@@ -42,9 +42,10 @@ module SUM-DIV-SPEC
       => .K
     </k>
     <state>
-      .Map =>
-       n   |-> 0
-       sum |-> (((N +Int 1) *Int N) /Int 2)
+        .Map
+      =>
+        n   |-> 0
+        sum |-> (((N +Int 1) *Int N) /Int 2)
     </state>
   requires N >=Int 0
 endmodule
