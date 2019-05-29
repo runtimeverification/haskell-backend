@@ -423,30 +423,29 @@ applyRules
     unificationProcedure
     (Step.toConfigurationVariables -> initial)
     (map Step.toAxiomVariables -> rules)
-  = ExceptT $ Monad.Unify.runUnifier $ do
-    unifiedRules <-
-        Monad.Unify.gather $ do
-            rule <- Monad.Unify.scatter rules
-            unifyRule initial rule
-    mapM_ (Step.checkSubstitutionCoverage initial) unifiedRules
-    Monad.when (Foldable.any isNarrowing unifiedRules)
-        $ Monad.Unify.throwUnificationError
-        $ UnsupportedPatterns "Will not symbolically rewrite function patterns"
-    finalizeRulesInSequence initial unifiedRules
+  =
+    ExceptT $ Monad.Unify.runUnifier $ do
+        unifiedRules <- unifyRules initial rules
+        rejectNarrowing unifiedRules
+        finalizeRulesInSequence initial unifiedRules
   where
-    unifyRule =
-        Step.unifyRule
+    unifyRules =
+        Step.unifyRules
             metadataTools
-            unificationProcedure
             predicateSimplifier
             termSimplifier
             axiomSimplifiers
+            unificationProcedure
     finalizeRulesInSequence =
         Step.finalizeRulesInSequence
             metadataTools
             predicateSimplifier
             termSimplifier
             axiomSimplifiers
+    rejectNarrowing unifiedRules =
+        Monad.when (Foldable.any isNarrowing unifiedRules)
+        $ Monad.Unify.throwUnificationError
+        $ UnsupportedPatterns "Will not symbolically rewrite function patterns"
     isNarrowing =
         Foldable.any Target.isNonTarget
         . Substitution.variables
