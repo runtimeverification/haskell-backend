@@ -129,6 +129,66 @@ test_patternVerifier =
         [anotherSortSentence]
         NeedsInternalDefinitions
     , failureTestsForObjectPattern
+        "Mu pattern - different variable sort"
+        (ExpectedErrorMessage "The declared sort is different.")
+        (ErrorStack
+            [ "\\mu (<test data>)"
+            , "variable 'ObjectVariable' (<test data>)"
+            , "(<test data>, <test data>)"
+            ]
+        )
+        (MuF Mu
+            { muVariable = SetVariable objectVariable'
+            , muChild =
+                Builtin.externalizePattern $ Internal.mkVar anotherVariable
+            }
+        )
+        (NamePrefix "dummy")
+        (TestedPatternSort objectSort)
+        (SortVariablesThatMustBeDeclared [])
+        (DeclaredSort anotherSort)
+        [objectSortSentence, anotherSortSentence]
+        NeedsInternalDefinitions
+    , successTestsForObjectPattern
+        "Mu pattern - sort variable defined"
+        (simpleMuPattern objectVariableSortVariable)
+        (NamePrefix "dummy")
+        (TestedPatternSort objectSortVariableSort)
+        (SortVariablesThatMustBeDeclared [objectSortVariable])
+        (DeclaredSort anotherSort)
+        [anotherSortSentence]
+        NeedsInternalDefinitions
+    , failureTestsForObjectPattern
+        "Nu pattern - different variable sort"
+        (ExpectedErrorMessage "The declared sort is different.")
+        (ErrorStack
+            [ "\\nu (<test data>)"
+            , "variable 'ObjectVariable' (<test data>)"
+            , "(<test data>, <test data>)"
+            ]
+        )
+        (NuF Nu
+            { nuVariable = SetVariable objectVariable'
+            , nuChild =
+                Builtin.externalizePattern $ Internal.mkVar anotherVariable
+            }
+        )
+        (NamePrefix "dummy")
+        (TestedPatternSort objectSort)
+        (SortVariablesThatMustBeDeclared [])
+        (DeclaredSort anotherSort)
+        [objectSortSentence, anotherSortSentence]
+        NeedsInternalDefinitions
+    , successTestsForObjectPattern
+        "Nu pattern - sort variable defined"
+        (simpleNuPattern objectVariableSortVariable)
+        (NamePrefix "dummy")
+        (TestedPatternSort objectSortVariableSort)
+        (SortVariablesThatMustBeDeclared [objectSortVariable])
+        (DeclaredSort anotherSort)
+        [anotherSortSentence]
+        NeedsInternalDefinitions
+    , failureTestsForObjectPattern
         "Object pattern - sort variable not defined"
         (ExpectedErrorMessage
             "Sort variable 'ObjectSortVariable' not declared.")

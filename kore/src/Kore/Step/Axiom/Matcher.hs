@@ -55,7 +55,7 @@ import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMergerExcept,
                  mergePredicatesAndSubstitutionsExcept )
 import           Kore.Unification.Error
-                 ( UnificationError (..) )
+                 ( unsupportedPatterns )
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import qualified Kore.Unification.Substitution as Substitution
@@ -107,7 +107,9 @@ matchAsUnification
   = do
     result <- runMaybeT matchResult
     maybe
-        (Monad.Unify.throwUnificationError UnsupportedPatterns)
+        (Monad.Unify.throwUnificationError
+            (unsupportedPatterns "Unknown match case." first second)
+        )
         return
         result
   where
@@ -160,7 +162,12 @@ unificationWithAppMatchOnTop
                 -- The application heads have the same symbol or alias
                 -- constructor with different parameters,
                 -- but we do not handle unification of symbol parameters.
-                  -> Monad.Unify.throwUnificationError UnsupportedPatterns
+                    -> Monad.Unify.throwUnificationError
+                        (unsupportedPatterns
+                            "Unknown application head match case for "
+                            first
+                            second
+                        )
                 | otherwise
                   -> error
                     (  "Unexpected unequal heads: "

@@ -572,7 +572,11 @@ test_unification =
         andSimplifyFailure
             (UnificationTerm x)
             (UnificationTerm a3A)
-            UnsupportedPatterns
+            (unsupportedPatterns
+                "Unknown unification case."
+                x
+                a3A
+            )
     , testCase "non-constructor symbolHead right" $
         andSimplifySuccess
             (UnificationTerm aA)
@@ -622,7 +626,11 @@ test_unsupportedConstructs =
         andSimplifyFailure
             (UnificationTerm (applySymbol_ f [aA]))
             (UnificationTerm (applySymbol_ f [mkImplies aA (mkNext a1A)]))
-            UnsupportedPatterns
+            (unsupportedPatterns
+                "Unknown unification case."
+                aA
+                (mkImplies aA (mkNext a1A))
+            )
 
 newtype V = V Integer
     deriving (Show, Eq, Ord)

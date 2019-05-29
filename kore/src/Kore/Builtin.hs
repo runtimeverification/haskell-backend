@@ -239,8 +239,10 @@ externalizePattern =
             IffF iffF -> Syntax.IffF iffF
             ImpliesF impliesF -> Syntax.ImpliesF impliesF
             InF inF -> Syntax.InF inF
+            MuF muF -> Syntax.MuF muF
             NextF nextF -> Syntax.NextF nextF
             NotF notF -> Syntax.NotF notF
+            NuF nuF -> Syntax.NuF nuF
             OrF orF -> Syntax.OrF orF
             RewritesF rewritesF -> Syntax.RewritesF rewritesF
             StringLiteralF stringLiteralF ->
