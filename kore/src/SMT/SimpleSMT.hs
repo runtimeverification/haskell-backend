@@ -9,7 +9,6 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 A module for interacting with an external SMT solver, using SMT-LIB 2 format.
 -}
 
-{-# LANGUAGE PatternGuards   #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module SMT.SimpleSMT
@@ -222,9 +221,9 @@ Lens.makeLenses ''Solver
 
 -- | Start a new solver process.
 newSolver
-    :: FilePath  -- ^ Executable
-    -> [String]  -- ^ Arguments
-    -> IORef Logger    -- ^ Logger
+    :: FilePath     -- ^ Executable
+    -> [String]     -- ^ Arguments
+    -> IORef Logger -- ^ Logger
     -> IO Solver
 newSolver exe opts loggerRef = do
     (hIn, hOut, hErr, h) <- runInteractiveProcess exe opts Nothing Nothing

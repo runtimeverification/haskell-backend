@@ -18,7 +18,7 @@ module Kore.Step.Transition
 import           Control.Applicative
 import           Control.Monad.Except
                  ( MonadError (..) )
-import qualified Control.Monad.Morph as Morph
+import qualified Control.Monad.Morph as Monad.Morph
 import           Control.Monad.Reader
 import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Accum
@@ -75,13 +75,15 @@ instance MonadError e m => MonadError e (TransitionT rule m) where
         handler' e = runTransitionT (handler e)
     {-# INLINE catchError #-}
 
-instance MonadReader e m
-    => MonadReader e (TransitionT rule m) where
+instance MonadReader e m => MonadReader e (TransitionT rule m) where
     ask     = Monad.Trans.lift ask
     local f = TransitionT . Accum.mapAccumT (local f) . getTransitionT
 
-instance Morph.MFunctor (TransitionT rule) where
-    hoist morph = TransitionT . Accum.mapAccumT (Morph.hoist morph) . getTransitionT
+instance Monad.Morph.MFunctor (TransitionT rule) where
+    hoist morph =
+        TransitionT
+            . Accum.mapAccumT (Monad.Morph.hoist morph)
+            . getTransitionT
 
 instance
     ( MonadSMT m

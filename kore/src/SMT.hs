@@ -64,7 +64,7 @@ import qualified Control.Monad.State.Strict as State.Strict
 import qualified Control.Monad.Trans as Trans
 import qualified Control.Monad.Trans.Maybe as Maybe
 import           Data.IORef
-                 ( newIORef, readIORef, writeIORef )
+                 ( IORef, newIORef, readIORef, writeIORef )
 import           Data.Limit
 import           Data.Text
                  ( Text )
@@ -122,25 +122,7 @@ access to the solver for a sequence of commands.
 
  -}
 newtype SMT a = SMT { getSMT :: ReaderT (MVar Solver) IO a }
-    deriving
-        ( Applicative
-        , Functor
-        , Monad
-        , MonadCatch
-        , MonadIO
-        , MonadThrow
-        )
-
-withLogger :: Logger -> SMT a  -> SMT a
-withLogger l action = do
-    mvar <- SMT $ Reader.ask
-    solver <- liftIO $ readMVar mvar
-    let loggerRef = solver Lens.^. SimpleSMT.lensLogger
-    originalLogger <- liftIO $ readIORef loggerRef
-    liftIO $ writeIORef loggerRef l
-    result <- action
-    liftIO $ writeIORef loggerRef originalLogger
-    return result
+    deriving (Applicative, Functor, Monad, MonadCatch, MonadIO, MonadThrow)
 
 -- | Access 'SMT' through monad transformers.
 class Monad m => MonadSMT m where
@@ -241,15 +223,11 @@ withSolver' action = do
 
 instance Logger.WithLog Logger.LogMessage SMT where
     askLogAction = do
-        mvar <- SMT $ Reader.ask
-        solver <- liftIO $ readMVar mvar
-        let loggerRef = solver Lens.^. SimpleSMT.lensLogger
+        loggerRef <- getLoggerRef
         originalLogger <- liftIO $ readIORef loggerRef
         return (Logger.hoistLogAction liftIO originalLogger)
     withLog mapping action = do
-        mvar <- SMT $ Reader.ask
-        solver <- liftIO $ readMVar mvar
-        let loggerRef = solver Lens.^. SimpleSMT.lensLogger
+        loggerRef <- getLoggerRef
         originalLogger <- liftIO $ readIORef loggerRef
         liftIO $ writeIORef loggerRef (mapping originalLogger)
         result <- action
@@ -386,3 +364,18 @@ setTimeOut TimeOut { getTimeOut } =
             setInfo ":time" (SimpleSMT.int timeOut)
         Unlimited ->
             return ()
+
+getLoggerRef :: SMT (IORef Logger)
+getLoggerRef = do
+    mvar <- SMT $ Reader.ask
+    solver <- liftIO $ readMVar mvar
+    return $ solver Lens.^. SimpleSMT.lensLogger
+
+withLogger :: Logger -> SMT a  -> SMT a
+withLogger l action = do
+    loggerRef <- getLoggerRef
+    originalLogger <- liftIO $ readIORef loggerRef
+    liftIO $ writeIORef loggerRef l
+    result <- action
+    liftIO $ writeIORef loggerRef originalLogger
+    return result
