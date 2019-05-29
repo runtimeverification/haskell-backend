@@ -25,7 +25,6 @@ module Kore.Step.Simplification.Data
     , simplifyTerm
     , simplifyConditionalTerm
     , SimplificationType (..)
-    , Environment (..)
     ) where
 
 import           Control.Applicative
@@ -59,7 +58,7 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 import qualified ListT
 import           SMT
-                 ( Environment (..), MonadSMT (..), SMT (..) )
+                 ( MonadSMT (..), SMT (..) )
 import qualified SMT
 
 {-| 'And' simplification is very similar to 'Equals' simplification.
@@ -199,10 +198,10 @@ evalSimplifierBranch
 evalSimplifierBranch = evalSimplifier . gather
 
 -- | Use a different logger in the provided context.
-withLogger :: LogAction Simplifier LogMessage -> Simplifier a  -> Simplifier a
+withLogger :: LogAction IO LogMessage -> Simplifier a  -> Simplifier a
 withLogger l =
     Simplifier
-        . SMT.withLogger (hoistLogAction getSimplifier l)
+        . SMT.withLogger l
         . getSimplifier
 
 {- | Run a simplification, returning the result of only one branch.

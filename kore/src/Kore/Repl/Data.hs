@@ -619,7 +619,7 @@ liftSimplifierWithLogger sa = do
   where
     logTypeToLogger
         :: LogType
-        -> t Simplifier (Logger.LogAction Simplifier Text, Maybe Handle)
+        -> t Simplifier (Logger.LogAction IO Text, Maybe Handle)
     logTypeToLogger =
         \case
             NoLogging   -> pure (mempty, Nothing)

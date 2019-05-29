@@ -6,13 +6,11 @@ License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
 
 module SMT
     ( SMT, getSMT
-    , Environment (..)
     , Solver
-    , newSolver, stopSolver, withSolver', withLogger
+    , newSolver, stopSolver, withLogger
     , runSMT
     , MonadSMT (..)
     , Config (..)
@@ -31,6 +29,7 @@ module SMT
     , setInfo
     -- * Expressions
     , SExpr (..)
+    , SimpleSMT.Logger
     , SimpleSMT.nameFromSExpr
     , SimpleSMT.showSExpr
     , SimpleSMT.tBool
@@ -50,7 +49,6 @@ module SMT
 import           Control.Concurrent.MVar
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
-import qualified Control.Lens.TH.Rules as Lens
 import qualified Control.Monad as Monad
 import           Control.Monad.Catch
                  ( MonadCatch, MonadThrow )
@@ -65,6 +63,8 @@ import qualified Control.Monad.State.Lazy as State.Lazy
 import qualified Control.Monad.State.Strict as State.Strict
 import qualified Control.Monad.Trans as Trans
 import qualified Control.Monad.Trans.Maybe as Maybe
+import           Data.IORef
+                 ( newIORef, readIORef, writeIORef )
 import           Data.Limit
 import           Data.Text
                  ( Text )
@@ -76,6 +76,8 @@ import           SMT.SimpleSMT
                  Result (..), SExpr (..), SmtDataTypeDeclaration,
                  SmtFunctionDeclaration, SmtSortDeclaration, Solver,
                  SortDeclaration (..) )
+import           SMT.SimpleSMT
+                 ( Logger )
 import qualified SMT.SimpleSMT as SimpleSMT
 
 -- | Time-limit for SMT queries.
@@ -111,15 +113,6 @@ defaultConfig =
         , timeOut = TimeOut (Limit 40)
         }
 
-type Logger = Logger.LogAction SMT Logger.LogMessage
-type IOLogger = Logger.LogAction IO Logger.LogMessage
-
-data Environment = Environment
-    { solver     :: !(MVar Solver)
-    , logger     :: !Logger
-    }
-
-
 {- | Query an external SMT solver.
 
 The solver may be shared among multiple threads. Individual commands will
@@ -128,7 +121,7 @@ different threads may be interleaved; use 'inNewScope' to acquire exclusive
 access to the solver for a sequence of commands.
 
  -}
-newtype SMT a = SMT { getSMT :: ReaderT Environment IO a }
+newtype SMT a = SMT { getSMT :: ReaderT (MVar Solver) IO a }
     deriving
         ( Applicative
         , Functor
@@ -138,13 +131,16 @@ newtype SMT a = SMT { getSMT :: ReaderT Environment IO a }
         , MonadThrow
         )
 
-Lens.makeLenses ''Environment
-
 withLogger :: Logger -> SMT a  -> SMT a
-withLogger l =
-    SMT
-        . Reader.local (lensLogger `Lens.set` l)
-        . getSMT
+withLogger l action = do
+    mvar <- SMT $ Reader.ask
+    solver <- liftIO $ readMVar mvar
+    let loggerRef = solver Lens.^. SimpleSMT.lensLogger
+    originalLogger <- liftIO $ readIORef loggerRef
+    liftIO $ writeIORef loggerRef l
+    result <- action
+    liftIO $ writeIORef loggerRef originalLogger
+    return result
 
 -- | Access 'SMT' through monad transformers.
 class Monad m => MonadSMT m where
@@ -239,25 +235,34 @@ class Monad m => MonadSMT m where
     loadFile = Trans.lift . loadFile
 
 withSolver' :: (Solver -> IO a) -> SMT a
-withSolver' action = SMT $ do
-    solver'   <- solver <$> Reader.ask
-    liftIO $ withMVar solver' action
+withSolver' action = do
+    mvar <- SMT $ Reader.ask
+    liftIO $ withMVar mvar action
 
 instance Logger.WithLog Logger.LogMessage SMT where
-    askLogAction = SMT $ logger <$> Reader.ask
-    withLog mapping =
-        SMT
-            . Reader.local (\env -> env { logger = mapping (logger env) })
-            . getSMT
+    askLogAction = do
+        mvar <- SMT $ Reader.ask
+        solver <- liftIO $ readMVar mvar
+        let loggerRef = solver Lens.^. SimpleSMT.lensLogger
+        originalLogger <- liftIO $ readIORef loggerRef
+        return (Logger.hoistLogAction liftIO originalLogger)
+    withLog mapping action = do
+        mvar <- SMT $ Reader.ask
+        solver <- liftIO $ readMVar mvar
+        let loggerRef = solver Lens.^. SimpleSMT.lensLogger
+        originalLogger <- liftIO $ readIORef loggerRef
+        liftIO $ writeIORef loggerRef (mapping originalLogger)
+        result <- action
+        liftIO $ writeIORef loggerRef originalLogger
+        return result
 
 instance MonadSMT SMT where
     withSolver (SMT action) = do
-        env <- SMT $ Reader.ask
+        mvar <- SMT $ Reader.ask
         liftIO $ do
-            mvar <- readMVar (solver env)
-            mvar' <- newMVar mvar
-            let env' = Lens.set lensSolver mvar' env
-            SimpleSMT.inNewScope mvar (runReaderT action env')
+            solver <- readMVar mvar
+            newSolver' <- newMVar solver
+            SimpleSMT.inNewScope solver (runReaderT action newSolver')
 
     declare name typ =
         withSolver' $ \solver -> SimpleSMT.declare solver name typ
@@ -310,17 +315,13 @@ instance
 The new solver is returned in an 'MVar' for thread-safety.
 
  -}
-newSolver :: Config -> IOLogger -> IO Environment
+newSolver :: Config -> Logger -> IO (MVar Solver)
 newSolver config logger = do
-    solver <- SimpleSMT.newSolver exe args logger
+    loggerRef <- liftIO $ newIORef logger
+    solver <- SimpleSMT.newSolver exe args loggerRef
     mvar <- newMVar solver
-    let env =
-            Environment
-                { solver = mvar
-                , logger = Logger.hoistLogAction liftIO logger
-                }
-    runReaderT getSMT env
-    return env
+    runReaderT getSMT mvar
+    return mvar
   where
     -- TODO (thomas.tuegel): Set up logging using logFile.
     -- TODO (thomas.tuegel): Initialize solver from preludeFile.
@@ -345,11 +346,11 @@ stopSolver mvar = do
     return ()
 
 -- | Run an external SMT solver.
-runSMT :: Config -> IOLogger -> SMT a -> IO a
+runSMT :: Config -> Logger -> SMT a -> IO a
 runSMT config logger SMT { getSMT } = do
-    env <- newSolver config logger
-    a <- runReaderT getSMT env
-    stopSolver (solver env)
+    solver <- newSolver config logger
+    a <- runReaderT getSMT solver
+    stopSolver solver
     return a
 
 {- | Declare a constant.

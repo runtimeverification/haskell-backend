@@ -9,12 +9,15 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 A module for interacting with an external SMT solver, using SMT-LIB 2 format.
 -}
 
-{-# LANGUAGE PatternGuards #-}
+{-# LANGUAGE PatternGuards   #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module SMT.SimpleSMT
     (
     -- * Basic Solver Interface
       Solver(..)
+    , lensLogger, lensStop, lensCommand
+    , Logger
     , newSolver
     , ackCommand
     , ackCommandIgnoreErr
@@ -149,12 +152,13 @@ module SMT.SimpleSMT
 import           Control.Concurrent
                  ( forkIO )
 import qualified Control.Exception as X
+import qualified Control.Lens.TH.Rules as Lens
 import           Control.Monad
-                 ( forever, when )
+                 ( forever )
 import           Data.Bits
                  ( testBit )
 import           Data.IORef
-                 ( modifyIORef', newIORef, readIORef, writeIORef )
+                 ( IORef, readIORef )
 import           Data.Ratio
                  ( denominator, numerator, (%) )
 import           Data.Text
@@ -173,7 +177,7 @@ import qualified Prelude
 import           System.Exit
                  ( ExitCode )
 import           System.IO
-                 ( hClose, hFlush, hPutChar, stdout )
+                 ( hClose, hFlush, hPutChar )
 import           System.Process
                  ( runInteractiveProcess, waitForProcess )
 import qualified Text.Megaparsec as Parser
@@ -200,6 +204,8 @@ data Value =  Bool  !Bool           -- ^ Boolean value
 
 --------------------------------------------------------------------------------
 
+type Logger = Logger.LogAction IO Logger.LogMessage
+
 -- | An interactive solver process.
 data Solver = Solver
   { command   :: SExpr -> IO SExpr
@@ -207,21 +213,25 @@ data Solver = Solver
 
   , stop :: IO ExitCode
     -- ^ Terminate the solver.
+  , logger :: IORef Logger
+    -- ^ Logger instance, can be changed by the SMT wrapper.
   }
+
+Lens.makeLenses ''Solver
 
 
 -- | Start a new solver process.
 newSolver
     :: FilePath  -- ^ Executable
     -> [String]  -- ^ Arguments
-    -> Logger    -- ^ Logger
+    -> IORef Logger    -- ^ Logger
     -> IO Solver
-newSolver exe opts logger = do
+newSolver exe opts loggerRef = do
     (hIn, hOut, hErr, h) <- runInteractiveProcess exe opts Nothing Nothing
 
-    let info a =
-            Logger.unLogAction logger
-                $ Logger.LogMessage a Logger.Info mempty callStack
+    let info a = do
+            log' <- Logger.unLogAction <$> readIORef loggerRef
+            log' $ Logger.LogMessage a Logger.Error mempty callStack
 
     _ <- forkIO $ do
         let handler X.SomeException {} = return ()
@@ -258,7 +268,7 @@ newSolver exe opts logger = do
                 hClose hErr
             return ec
 
-        solver = Solver { command, stop }
+        solver = Solver { command, stop, logger = loggerRef }
 
     setOption solver ":print-success" "true"
     setOption solver ":produce-models" "true"
@@ -980,5 +990,3 @@ named x e = fun "!" [e, Atom ":named", Atom x ]
 
 
 --------------------------------------------------------------------------------
-
-type Logger = Logger.LogAction IO Logger.LogMessage
