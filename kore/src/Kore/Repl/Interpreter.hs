@@ -231,7 +231,7 @@ showClaim mcindex =
         Nothing -> do
             currentCindex <- Lens.use lensClaimIndex
             putStrLn'
-                $ "The currently focused claim is claim "
+                $ "You are currently proving claim "
                 <> show (unClaimIndex currentCindex)
         Just cindex -> do
             claim <- getClaimByIndex . unClaimIndex $ cindex
