@@ -20,6 +20,9 @@ module Kore.Step.Step
     , Step.result
     , Step.gatherResults
     , Step.withoutRemainders
+    , finalizeRulesInSequence
+    , finalizeRulesInParallel
+    , checkSubstitutionCoverage
     , unifyRule
     , applyInitialConditions
     , finalizeAppliedRule

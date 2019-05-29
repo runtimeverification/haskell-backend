@@ -15,10 +15,9 @@ module Kore.Step.Axiom.EvaluationStrategy
     , simplifierWithFallback
     ) where
 
-import           Control.Error
-                 ( atZ )
-import           Control.Monad
-                 ( when )
+-- import           Control.Error
+--                  ( atZ )
+import qualified Control.Monad as Monad
 import           Control.Monad.Trans.Except
                  ( ExceptT (ExceptT) )
 import qualified Data.Foldable as Foldable
@@ -33,6 +32,7 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
+import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -59,11 +59,15 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
+import           Kore.Unification.Error
+                 ( UnificationError (..), UnificationOrSubstitutionError )
+import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse, unparse )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
+import qualified Kore.Variables.Target as Target
 
 import qualified Kore.Proof.Value as Value
 
@@ -262,7 +266,7 @@ applyFirstSimplifierThatWorks
             { results = orResults
             , remainders = orRemainders
             } -> do
-                when
+                Monad.when
                     (length (MultiOr.extractPatterns orResults) > 1
                     && not (acceptsMultipleResults multipleResults)
                     )
@@ -277,7 +281,7 @@ applyFirstSimplifierThatWorks
                         ++ show applicationResult
                         )
                     )
-                when
+                Monad.when
                     (not (OrPattern.isFalse orRemainders)
                     && not (acceptsMultipleResults multipleResults)
                     )
@@ -333,7 +337,6 @@ evaluateWithDefinitionAxioms
     simplifier
     axiomIdToSimplifier
     patt
-  | invalidCoinduction = return AttemptedAxiom.NotApplicable
   | otherwise =
     AttemptedAxiom.exceptNotApplicable $ do
     let
@@ -345,8 +348,8 @@ evaluateWithDefinitionAxioms
     let unwrapEqualityRule =
             \(EqualityRule rule) ->
                 RulePattern.mapVariables fromVariable rule
-    results <- ExceptT $ Monad.Unify.runUnifier
-        $ Step.sequenceRules
+    results <- do
+        applyRules
             tools
             substitutionSimplifier
             simplifier
@@ -373,20 +376,78 @@ evaluateWithDefinitionAxioms
     -- If the pattern is an application of a inductively-defined symbol,
     -- applying the definition axioms will not terminate, so we consider this
     -- case invalid.
-    invalidCoinduction
-      | App_ symbol children <- patt =
-        let
-            Attribute.Inductive { inductiveArguments } =
-                Attribute.inductive (symAttributes tools symbol)
-            hasInvalidArgument ix =
-                maybe False (not . isConstructorPattern) (atZ children (ix - 1))
-        in
-            Foldable.any hasInvalidArgument inductiveArguments
-      | otherwise = False
+    -- invalidCoinduction
+    --   | App_ symbol children <- patt =
+    --     let
+    --         Attribute.Inductive { inductiveArguments } =
+    --             Attribute.inductive (symAttributes tools symbol)
+    --         hasInvalidArgument ix =
+    --             maybe False (not . isConstructorPattern) (atZ children (ix - 1))
+    --     in
+    --         Foldable.any hasInvalidArgument inductiveArguments
+    --   | otherwise = False
 
-    isConstructorPattern termLike
-      | App_ symbol _ <- termLike =
-            symAttributes tools symbol
-            & Attribute.constructor
-            & Attribute.isConstructor
-      | otherwise = False
+    -- isConstructorPattern termLike
+    --   | App_ symbol _ <- termLike =
+    --         symAttributes tools symbol
+    --         & Attribute.constructor
+    --         & Attribute.isConstructor
+    --   | otherwise = False
+
+applyRules
+    ::  forall variable
+    .   ( Ord     variable
+        , Show    variable
+        , Unparse variable
+        , FreshVariable  variable
+        , SortedVariable variable
+        )
+    => SmtMetadataTools StepperAttributes
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap
+    -- ^ Map from symbol IDs to defined functions
+    -> UnificationProcedure
+
+    -> Pattern variable
+    -- ^ Configuration being rewritten
+    -> [Step.RulePattern variable]
+    -- ^ Rewrite rules
+    -> ExceptT UnificationOrSubstitutionError Simplifier [Step.Results variable]
+applyRules
+    metadataTools
+    predicateSimplifier
+    termSimplifier
+    axiomSimplifiers
+    unificationProcedure
+    (Step.toConfigurationVariables -> initial)
+    (map Step.toAxiomVariables -> rules)
+  = ExceptT $ Monad.Unify.runUnifier $ do
+    unifiedRules <-
+        Monad.Unify.gather $ do
+            rule <- Monad.Unify.scatter rules
+            unifyRule initial rule
+    mapM_ (Step.checkSubstitutionCoverage initial) unifiedRules
+    Monad.when (Foldable.any isNarrowing unifiedRules)
+        $ Monad.Unify.throwUnificationError
+        $ UnsupportedPatterns "Will not symbolically rewrite function patterns"
+    finalizeRulesInSequence initial unifiedRules
+  where
+    unifyRule =
+        Step.unifyRule
+            metadataTools
+            unificationProcedure
+            predicateSimplifier
+            termSimplifier
+            axiomSimplifiers
+    finalizeRulesInSequence =
+        Step.finalizeRulesInSequence
+            metadataTools
+            predicateSimplifier
+            termSimplifier
+            axiomSimplifiers
+    isNarrowing =
+        Foldable.any Target.isNonTarget
+        . Substitution.variables
+        . Conditional.substitution
