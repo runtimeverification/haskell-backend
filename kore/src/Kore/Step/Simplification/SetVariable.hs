@@ -23,4 +23,4 @@ simplify
     :: (Ord variable, SortedVariable variable)
     => SetVariable variable
     -> OrPattern variable
-simplify (SetVariable var) = OrPattern.fromTermLike $ mkSetVar var
+simplify setVar = OrPattern.fromTermLike $ mkSetVar setVar

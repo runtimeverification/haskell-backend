@@ -42,8 +42,10 @@ import Kore.Syntax.Forall
 import Kore.Syntax.Iff
 import Kore.Syntax.Implies
 import Kore.Syntax.In
+import Kore.Syntax.Mu
 import Kore.Syntax.Next
 import Kore.Syntax.Not
+import Kore.Syntax.Nu
 import Kore.Syntax.Or
 import Kore.Syntax.Rewrites
 import Kore.Syntax.SetVariable
@@ -68,8 +70,10 @@ data PatternF variable child
     | IffF           !(Iff Sort child)
     | ImpliesF       !(Implies Sort child)
     | InF            !(In Sort child)
+    | MuF            !(Mu variable child)
     | NextF          !(Next Sort child)
     | NotF           !(Not Sort child)
+    | NuF            !(Nu variable child)
     | OrF            !(Or Sort child)
     | RewritesF      !(Rewrites Sort child)
     | StringLiteralF !StringLiteral
@@ -145,6 +149,8 @@ traverseVariables traversing =
         -- Non-trivial cases
         ExistsF any0 -> ExistsF <$> traverseVariablesExists any0
         ForallF all0 -> ForallF <$> traverseVariablesForall all0
+        MuF any0 -> MuF <$> traverseVariablesMu any0
+        NuF any0 -> NuF <$> traverseVariablesNu any0
         VariableF variable -> VariableF <$> traversing variable
         SetVariableF (SetVariable variable) ->
             SetVariableF . SetVariable <$> traversing variable
@@ -172,6 +178,10 @@ traverseVariables traversing =
         Exists existsSort <$> traversing existsVariable <*> pure existsChild
     traverseVariablesForall Forall { forallSort, forallVariable, forallChild } =
         Forall forallSort <$> traversing forallVariable <*> pure forallChild
+    traverseVariablesMu Mu { muVariable = SetVariable v, muChild } =
+        Mu <$> (SetVariable <$> traversing v) <*> pure muChild
+    traverseVariablesNu Nu { nuVariable = SetVariable v, nuChild } =
+        Nu <$> (SetVariable <$> traversing v) <*> pure nuChild
 
 -- | Given an 'Id', 'groundHead' produces the head of an 'Application'
 -- corresponding to that argument.

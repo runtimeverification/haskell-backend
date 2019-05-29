@@ -283,6 +283,38 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
         assertEqualWithExplanation "" expect actual
+    , testCase "exists variable equality" $ do
+        let
+            expect = OrPattern.top
+        actual <-
+            evaluateWithAxioms
+                Mock.metadataTools
+                Map.empty
+                Conditional
+                    { term =
+                        mkExists
+                            Mock.x
+                            (mkEquals_ (mkVar Mock.x) (mkVar Mock.y))
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+        assertEqualWithExplanation "" expect actual
+    , testCase "exists variable equality reverse" $ do
+        let
+            expect = OrPattern.top
+        actual <-
+            evaluateWithAxioms
+                Mock.metadataTools
+                Map.empty
+                Conditional
+                    { term =
+                        mkExists
+                            Mock.x
+                            (mkEquals_ (mkVar Mock.y) (mkVar Mock.x))
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+        assertEqualWithExplanation "" expect actual
     ]
 
 test_substitute :: [TestTree]

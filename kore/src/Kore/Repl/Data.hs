@@ -247,8 +247,9 @@ helpText =
     \prove <n>                             initializes proof mode for the nth \
                                            \claim\n\
     \graph [file]                          shows the current proof graph (*)\n\
-    \                                      (saves image if file argument is\
-                                           \ given)\n\
+    \                                      (saves image in .jpeg format if file\
+                                           \ argument is given; file extension is\
+                                           \ added automatically)\n\
     \step [n]                              attempts to run 'n' proof steps at\
                                            \the current node (n=1 by default)\n\
     \stepf [n]                             attempts to run 'n' proof steps at\
@@ -281,7 +282,7 @@ helpText =
     \alias <name> = <command>              adds as an alias for <command>\n\
     \<alias>                               runs an existing alias\n\
     \load file                             loads the file as a repl script\n\
-    \proof-status                          shows status for each claim\
+    \proof-status                          shows status for each claim\n\
     \log <severity> <type>                 configures the logging outout\n\
                                            \<severity> can be debug, info, warning,\
                                            \error, or critical\n\

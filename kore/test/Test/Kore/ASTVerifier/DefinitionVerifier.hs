@@ -641,6 +641,28 @@ simpleExistsPattern quantifiedVariable resultSort =
             Builtin.externalizePattern $ Internal.mkVar quantifiedVariable
         }
 
+simpleMuPattern
+    :: Variable
+    -> Syntax.PatternF Variable ParsedPattern
+simpleMuPattern quantifiedVariable =
+    Syntax.MuF Mu
+        { muVariable = setVar
+        , muChild =
+            Builtin.externalizePattern $ Internal.mkSetVar setVar
+        }
+    where setVar = SetVariable quantifiedVariable
+
+simpleNuPattern
+    :: Variable
+    -> Syntax.PatternF Variable ParsedPattern
+simpleNuPattern quantifiedVariable =
+    Syntax.NuF Nu
+        { nuVariable = setVar
+        , nuChild =
+            Builtin.externalizePattern $ Internal.mkSetVar setVar
+        }
+    where setVar = SetVariable quantifiedVariable
+
 simpleExistsUnifiedPattern
     :: VariableName -> Sort -> TermLike Variable
 simpleExistsUnifiedPattern name sort =

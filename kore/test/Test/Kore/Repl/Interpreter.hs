@@ -74,7 +74,7 @@ showUsage =
     in do
         Result { output, continue } <- run command axioms [claim] claim
         output   `equalsOutput` showUsageMessage
-        continue `equals`       True
+        continue `equals`       Continue
 
 help :: IO ()
 help =
@@ -85,7 +85,7 @@ help =
     in do
         Result { output, continue } <- run command axioms [claim] claim
         output   `equalsOutput` helpText
-        continue `equals`       True
+        continue `equals`       Continue
 
 step5 :: IO ()
 step5 =
@@ -96,7 +96,7 @@ step5 =
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
         output     `equalsOutput`   ""
-        continue   `equals`         True
+        continue   `equals`         Continue
         state      `hasCurrentNode` ReplNode 5
 
 step100 :: IO ()
@@ -108,7 +108,7 @@ step100 =
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
         output     `equalsOutput`   showStepStoppedMessage 10 NoResult
-        continue   `equals`         True
+        continue   `equals`         Continue
         state      `hasCurrentNode` ReplNode 10
 
 makeSimpleAlias :: IO ()
@@ -121,7 +121,7 @@ makeSimpleAlias =
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
         output   `equalsOutput` ""
-        continue `equals`       True
+        continue `equals`       Continue
         state    `hasAlias`     alias
 
 trySimpleAlias :: IO ()
@@ -137,7 +137,7 @@ trySimpleAlias =
         Result { output, continue } <-
             runWithState command axioms [claim] claim stateT
         output   `equalsOutput` helpText
-        continue `equals` True
+        continue `equals` Continue
 
 makeAlias :: IO ()
 makeAlias =
@@ -153,7 +153,7 @@ makeAlias =
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
         output   `equalsOutput` ""
-        continue `equals`       True
+        continue `equals`       Continue
         state    `hasAlias`     alias
 
 aliasOfExistingCommand :: IO ()
@@ -170,7 +170,7 @@ aliasOfExistingCommand =
     in do
         Result { output, continue } <- run command axioms [claim] claim
         output   `equalsOutput` showAliasError NameAlreadyDefined
-        continue `equals`       True
+        continue `equals`       Continue
 
 aliasOfUnknownCommand :: IO ()
 aliasOfUnknownCommand =
@@ -186,7 +186,7 @@ aliasOfUnknownCommand =
     in do
         Result { output, continue } <- run command axioms [claim] claim
         output   `equalsOutput` showAliasError UnknownCommand
-        continue `equals`       True
+        continue `equals`       Continue
 
 recursiveAlias :: IO ()
 recursiveAlias =
@@ -202,7 +202,7 @@ recursiveAlias =
     in do
         Result { output, continue } <- run command axioms [claim] claim
         output   `equalsOutput` showAliasError UnknownCommand
-        continue `equals`       True
+        continue `equals`       Continue
 
 tryAlias :: IO ()
 tryAlias =
@@ -221,7 +221,7 @@ tryAlias =
         Result { output, continue } <-
             runWithState command axioms [claim] claim stateT
         output   `equalsOutput` showRewriteRule claim
-        continue `equals` True
+        continue `equals` Continue
 
 unificationFailure :: IO ()
 unificationFailure =
@@ -237,7 +237,7 @@ unificationFailure =
         expectedOutput <-
             unificationErrorMessage cannotUnifyDistinctDomainValues one zero
         output `equalsOutput` expectedOutput
-        continue `equals` True
+        continue `equals` Continue
         state `hasCurrentNode` ReplNode 0
 
 proofStatus :: IO ()
@@ -256,7 +256,7 @@ proofStatus =
         Result { output, continue } <-
             run command axioms claims claim
         output `equalsOutput` showProofStatus expectedProofStatus
-        continue `equals` True
+        continue `equals` Continue
 
 logUpdatesState :: IO ()
 logUpdatesState =
@@ -267,7 +267,7 @@ logUpdatesState =
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
         output   `equalsOutput`  ""
-        continue `equals`     True
+        continue `equals`     Continue
         state    `hasLogging` (Logger.Info, LogToStdOut)
 
 add1 :: Axiom
@@ -323,7 +323,7 @@ runWithState command axioms claims claim stateTransformer
 
 data Result = Result
     { output   :: String
-    , continue :: Bool
+    , continue :: ReplStatus
     , state    :: ReplState Claim
     }
 
