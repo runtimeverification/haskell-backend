@@ -1,3 +1,9 @@
+{- |
+Copyright   : (c) Runtime Verification, 2019
+License     : NCSA
+
+ -}
+
 module Kore.Attribute.Symbol.Inductive
     ( Inductive (..)
     , inductive, inductiveId, inductiveSymbol, inductiveAttribute
