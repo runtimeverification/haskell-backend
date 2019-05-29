@@ -155,7 +155,7 @@ data ReplCommand
     -- ^ This is the default action in case parsing all others fail.
     | Help
     -- ^ Shows the help message.
-    | ShowClaim !ClaimIndex
+    | ShowClaim !(Maybe ClaimIndex)
     -- ^ Show the nth claim.
     | ShowAxiom !AxiomIndex
     -- ^ Show the nth axiom.
@@ -243,7 +243,9 @@ helpText :: String
 helpText =
     "Available commands in the Kore REPL: \n\
     \help                                  shows this help message\n\
-    \claim <n>                             shows the nth claim\n\
+    \claim [n]                             shows the nth claim or if \
+                                           \used without args shows the \
+                                           \currently focused claim\n\
     \axiom <n>                             shows the nth axiom\n\
     \prove <n>                             initializes proof mode for the nth \
                                            \claim\n\
