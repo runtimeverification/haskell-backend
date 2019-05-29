@@ -327,15 +327,17 @@ test_unifyFramingVariable =
                         ]
                 remainder = Set.delete framedElem concreteSet
             let
-                expect =
-                    Conditional
+                expect = do  -- list monad
+                    set <- [remainder, concreteSet]
+                    return Conditional
                         { term = asInternal concreteSet
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [(frameVar, asInternal remainder)]
+                                [(frameVar, asInternal set)]
                         }
-            (===) expect =<< evaluate (mkAnd patConcreteSet patFramedSet)
+            actual <- evaluateToList (mkAnd patConcreteSet patFramedSet)
+            (===) (List.sort expect) actual
         )
 
 -- Given a function to scramble the arguments to concat, i.e.,
@@ -418,7 +420,7 @@ test_unifySelectFromSingleton =
                 selectPatRev    = selectPattern elementVar setVar reverse
                 singleton       = asInternal (Set.singleton concreteElem)
                 elemStepPattern = fromConcrete concreteElem
-                expect =
+                expect1 =
                     Conditional
                         { term = singleton
                         , predicate = makeTruePredicate
@@ -428,12 +430,22 @@ test_unifySelectFromSingleton =
                                 , (elementVar, elemStepPattern)
                                 ]
                         }
+                expect2 =
+                    Conditional
+                        { term = singleton
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [ (setVar, singleton)
+                                , (elementVar, elemStepPattern)
+                                ]
+                        }
             -- { 5 } /\ SetItem(X:Int) Rest:Set
-            (singleton `unifiesWith` selectPat) expect
-            (selectPat `unifiesWith` singleton) expect
+            (singleton `unifiesWithMulti` selectPat) [expect1, expect2]
+            (selectPat `unifiesWithMulti` singleton) [expect1, expect2]
             -- { 5 } /\ Rest:Set SetItem(X:Int)
-            (singleton `unifiesWith` selectPatRev) expect
-            (selectPatRev `unifiesWith` singleton) expect
+            (singleton `unifiesWithMulti` selectPatRev) [expect1, expect2]
+            (selectPatRev `unifiesWithMulti` singleton) [expect1, expect2]
         )
 
 test_unifySelectFromSingletonWithoutLeftovers :: TestTree
@@ -495,18 +507,42 @@ test_unifySelectFromTwoElementSet =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
+                                [ (setVar, set)
+                                , (elementVar, elemStepPattern1)
+                                ]
+                        }
+                expect3 =
+                    Conditional
+                        { term = set
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
                                 [   ( setVar
                                     , asInternal (Set.fromList [concreteElem1])
                                     )
                                 , (elementVar, elemStepPattern2)
                                 ]
                         }
+                expect4 =
+                    Conditional
+                        { term = set
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [ (setVar, set)
+                                , (elementVar, elemStepPattern2)
+                                ]
+                        }
             -- { 5 } /\ SetItem(X:Int) Rest:Set
-            (set `unifiesWithMulti` selectPat) [expect1, expect2]
-            (selectPat `unifiesWithMulti` set) [expect1, expect2]
+            (set `unifiesWithMulti` selectPat)
+                [expect1, expect2, expect3, expect4]
+            (selectPat `unifiesWithMulti` set)
+                [expect1, expect2, expect3, expect4]
             -- { 5 } /\ Rest:Set SetItem(X:Int)
-            (set `unifiesWithMulti` selectPatRev) [expect1, expect2]
-            (selectPatRev `unifiesWithMulti` set) [expect1, expect2]
+            (set `unifiesWithMulti` selectPatRev)
+                [expect1, expect2, expect3, expect4]
+            (selectPatRev `unifiesWithMulti` set)
+                [expect1, expect2, expect3, expect4]
         )
 
 test_unifySelectTwoFromTwoElementSet :: TestTree
@@ -532,31 +568,50 @@ test_unifySelectTwoFromTwoElementSet =
                 set = asInternal (Set.fromList [concreteElem1, concreteElem2])
                 elemStepPattern1 = fromConcrete concreteElem1
                 elemStepPattern2 = fromConcrete concreteElem2
-                expect1 =
-                    Conditional
+                expect = do -- list monad
+                    (elementUnifier1, elementUnifier2, setUnifier) <-
+                        [   ( elemStepPattern1
+                            , elemStepPattern1
+                            , [concreteElem2]
+                            )
+                        ,   ( elemStepPattern1
+                            , elemStepPattern1
+                            , [concreteElem1, concreteElem2]
+                            )
+                        ,   ( elemStepPattern2
+                            , elemStepPattern2
+                            , [concreteElem1]
+                            )
+                        ,   ( elemStepPattern2
+                            , elemStepPattern2
+                            , [concreteElem1, concreteElem2]
+                            )
+                        ]
+                        ++ do
+                            (eu1, eu2) <-
+                                [ (elemStepPattern1, elemStepPattern2)
+                                , (elemStepPattern2, elemStepPattern1)
+                                ]
+                            su <-
+                                [ []
+                                , [concreteElem1]
+                                , [concreteElem2]
+                                , [concreteElem1, concreteElem2]
+                                ]
+                            return (eu1, eu2, su)
+                    return Conditional
                         { term = set
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (setVar, asInternal Set.empty)
-                                , (elementVar1, elemStepPattern1)
-                                , (elementVar2, elemStepPattern2)
+                                [ (setVar, asInternal (Set.fromList setUnifier))
+                                , (elementVar1, elementUnifier1)
+                                , (elementVar2, elementUnifier2)
                                 ]
                         }
-                expect2 =
-                    Conditional
-                        { term = set
-                        , predicate = makeTruePredicate
-                        , substitution =
-                            Substitution.unsafeWrap
-                                [ (setVar, asInternal Set.empty)
-                                , (elementVar1, elemStepPattern2)
-                                , (elementVar2, elemStepPattern1)
-                                ]
-                    }
             -- { 5, 6 } /\ SetItem(X:Int) SetItem(Y:Int) Rest:Set
-            (set `unifiesWithMulti` selectPat) [expect1, expect2]
-            (selectPat `unifiesWithMulti` set) [expect1, expect2]
+            (set `unifiesWithMulti` selectPat) expect
+            (selectPat `unifiesWithMulti` set) expect
         )
 
 -- use as (pat1 `unifiesWith` pat2) expect
@@ -616,21 +671,25 @@ test_unifyFnSelectFromSingleton =
                 singleton      = asInternal (Set.singleton concreteElem)
                 elemStepPatt   = fromConcrete concreteElem
                 elementVarPatt = mkApp intSort absIntSymbol  [mkVar elementVar]
-                expect =
-                    Conditional
+                expect = do  -- list monad
+                    expectedSet <- [[], [concreteElem]]
+                    return Conditional
                         { term = singleton
                         , predicate =
                             makeEqualsPredicate elemStepPatt elementVarPatt
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (setVar, asInternal Set.empty) ]
+                                [   ( setVar
+                                    , asInternal (Set.fromList expectedSet)
+                                    )
+                                ]
                         }
             -- { 5 } /\ SetItem(absInt(X:Int)) Rest:Set
-            (singleton `unifiesWith` fnSelectPat) expect
-            (fnSelectPat `unifiesWith` singleton) expect
+            (singleton `unifiesWithMulti` fnSelectPat) expect
+            (fnSelectPat `unifiesWithMulti` singleton) expect
             -- { 5 } /\ Rest:Set SetItem(absInt(X:Int))
-            (singleton `unifiesWith` fnSelectPatRev) expect
-            (fnSelectPatRev `unifiesWith` singleton) expect
+            (singleton `unifiesWithMulti` fnSelectPatRev) expect
+            (fnSelectPatRev `unifiesWithMulti` singleton) expect
          )
 
 {- | Unify a concrete Set with symbolic-keyed Set.

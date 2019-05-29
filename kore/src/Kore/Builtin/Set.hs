@@ -96,7 +96,7 @@ import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), SimplificationType,
-                 TermLikeSimplifier )
+                 TermLikeSimplifier, simplifyConditionalTerm )
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -545,8 +545,8 @@ unifyEquals
 unifyEquals
     simplificationType
     tools
-    _
-    _
+    substitutionSimplifier
+    simplifier
     _
     unifyEqualsChildren
     first
@@ -612,7 +612,7 @@ unifyEquals
       where
         -- Unify one concrete set with a select pattern (x:elem s:set)
         -- Note that x an s can be proper symbolic patterns (not just variables)
-        -- TODO(traiansf): move it from where once the otherwise is not needed
+        -- TODO(traiansf): move it from here once the otherwise is not needed
         unifyEqualsSelect
             :: Domain.InternalSet (TermLike Concrete) -- ^ concrete set
             -> SymbolOrAlias                          -- ^ 'element' symbol
@@ -627,49 +627,55 @@ unifyEquals
                 let
                     remainderSet = Set.delete concreteKey1 set1
                     remainderSetPat = asInternal tools sort1 remainderSet
+                    originalSetPat = asInternal tools sort1 set1
                     key1 = fromConcrete concreteKey1
                 elemUnifier <- unifyEqualsChildren key1 key2
+                simplifiedElemUnifier <- simplify elemUnifier
 
-                setUnifier <- unifyEqualsChildren remainderSetPat set2
 
-                let
-                    setUnifierTerm :: TermLike variable
-                    setUnifierPredicate :: Predicate variable
-                    (setUnifierTerm, setUnifierPredicate) =
-                        Pattern.splitTerm setUnifier
-                    setUnifierSet :: Set (TermLike Concrete)
-                    setUnifierSet = case setUnifierTerm of
-                        (Builtin_
-                            (Domain.BuiltinSet
-                                Domain.InternalSet { builtinSetChild }
-                            )
-                         ) -> builtinSetChild
-                        _ -> (error . unlines)
-                            [ "Unexpected set unification term."
-                            , "builtin=" ++ unparseToString builtin1
-                            , "key2=" ++ unparseToString key2
-                            , "unifier=" ++ unparseToString setUnifier
-                            ]
-
-                    eitherResult :: Either ElemInSet (Pattern variable)
-                    eitherResult =
-                        addElemPatternToSet
-                            tools sort1 elemUnifier setUnifierSet
-
-                case eitherResult of
-                    Left ElemInSet -> do
-                        Monad.Unify.explainBottom
-                            "After unification the key was found in the set."
-                            first
-                            second
-                        empty
-                    Right result ->
-                        return (result `andCondition` setUnifierPredicate)
+                unifySetSplit sort1 simplifiedElemUnifier remainderSetPat set2
+                    <|> unifySetSplit
+                        sort1 simplifiedElemUnifier originalSetPat set2
           where
             Domain.InternalSet
                 { builtinSetChild = set1
                 , builtinSetSort = sort1
                 } = builtin1'
+
+        unifySetSplit
+            :: Sort
+            -> Pattern variable
+            -> TermLike variable
+            -> TermLike variable
+            -> unifier (Pattern variable)
+        unifySetSplit setSort elemUnifier setPat set2 = do
+            setUnifier <- unifyEqualsChildren setPat set2
+
+            let
+                setUnifierTerm :: TermLike variable
+                setUnifierPredicate :: Predicate variable
+                (setUnifierTerm, setUnifierPredicate) =
+                    Pattern.splitTerm setUnifier
+                setUnifierSet :: Set (TermLike Concrete)
+                setUnifierSet = case setUnifierTerm of
+                    (Builtin_
+                        (Domain.BuiltinSet
+                            Domain.InternalSet { builtinSetChild }
+                        )
+                     ) -> builtinSetChild
+                    _ -> (error . unlines)
+                        [ "Unexpected set unification term."
+                        , "set2=" ++ unparseToString set2
+                        , "setPat=" ++ unparseToString builtin1
+                        , "unifier=" ++ unparseToString setUnifier
+                        ]
+
+                result :: Pattern variable
+                result =
+                    addElemPatternToSet
+                        tools setSort elemUnifier setUnifierSet
+
+            return (result `andCondition` setUnifierPredicate)
 
     unifyEquals0 app_@(App_ _ _) builtin_@(Builtin_ _) =
         unifyEquals0 builtin_ app_
@@ -700,14 +706,19 @@ unifyEquals
         -> unifier (Pattern variable)
     unifyEqualsFramed builtin1 builtin2 var
       | Set.isSubsetOf set2 set1 =
+        -- TODO: take all possible subsets
         Reflection.give tools $ do
+            let minSet = Set.difference set1 set2
+            additional <- Monad.Unify.scatter $ Set.toList (Set.powerSet set2)
             remainder <-
                 unifyEqualsChildren var
                 $ asInternal tools builtinSetSort
-                $ Set.difference set1 set2
+                $ Set.union additional minSet
             -- Return the concrete set, but capture any predicates and
             -- substitutions from unifying the framing variable.
-            return $ asPattern builtinSetSort set1 <* remainder
+            return $
+                asPattern builtinSetSort set1
+                    `andCondition` Pattern.withoutTerm remainder
 
       | otherwise = bottomWithExplanation
       where
@@ -723,18 +734,10 @@ unifyEquals
         case Set.toList set1 of
             [fromConcrete -> key1] -> do
                 elemUnifier <- unifyEqualsChildren key1 key2
+                simplifiedElemUnifier <- simplify elemUnifier
+                return $ addElemPatternToSet
+                    tools sort1 simplifiedElemUnifier Set.empty
 
-                let
-                    eitherResult :: Either ElemInSet (Pattern variable)
-                    eitherResult =
-                        addElemPatternToSet tools sort1 elemUnifier Set.empty
-
-                case eitherResult of
-                    Left ElemInSet -> (error.unlines)
-                        [ "Unexpected element in empty set."
-                        , "elem=" ++ unparseToString elemUnifier
-                        ]
-                    Right result -> return result
             _ -> bottomWithExplanation
       where
         Domain.InternalSet { builtinSetSort = sort1 } = builtin1
@@ -754,6 +757,13 @@ unifyEquals
       where
         Domain.InternalSet { builtinSetChild = set1 } = builtin1
 
+    simplify :: Pattern variable -> unifier (Pattern variable)
+    simplify patt =
+        let (term, predicate) = Pattern.splitTerm patt
+        in Monad.Unify.liftBranchedSimplifier
+            $ simplifyConditionalTerm
+                simplifier substitutionSimplifier term predicate
+
     bottomWithExplanation :: unifier (Pattern variable)
     bottomWithExplanation = do
         Monad.Unify.explainBottom
@@ -761,8 +771,6 @@ unifyEquals
             first
             second
         empty
-
-data ElemInSet = ElemInSet
 
 addElemPatternToSet
     :: forall variable
@@ -775,11 +783,9 @@ addElemPatternToSet
     -> Sort
     -> Pattern variable
     -> Set (TermLike Concrete)
-    -> Either ElemInSet (Pattern variable)
+    -> Pattern variable
 addElemPatternToSet tools sort1 elemPattern existingSet =
-    if Set.member concreteElemTerm existingSet
-    then Left ElemInSet
-    else Right (pure newBuiltin `andCondition` elemPredicate)
+    pure newBuiltin `andCondition` elemPredicate
   where
     elemTerm :: TermLike variable
     elemPredicate :: Predicate variable
