@@ -114,13 +114,15 @@ runRepl
         RunScript ->
             case mNewState of
                 Nothing -> liftIO exitFailure
-                Just newState ->
-                    void
-                    $ evalStateT
-                        (replInterpreter printIfNotEmpty Exit)
-                        newState
+                Just newState -> do
+                    runReplCommand ProofStatus newState
+                    runReplCommand Exit newState
 
   where
+
+    runReplCommand :: ReplCommand -> ReplState claim -> Simplifier ()
+    runReplCommand cmd st =
+        void $ evalStateT (replInterpreter printIfNotEmpty cmd) st
 
     evaluateScript :: ReplScript -> Simplifier (Maybe (ReplState claim))
     evaluateScript rs =
