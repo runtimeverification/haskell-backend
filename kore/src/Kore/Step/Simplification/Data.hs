@@ -11,7 +11,6 @@ module Kore.Step.Simplification.Data
     ( Simplifier
     , runSimplifier
     , evalSimplifier
-    , withLogger
     , BranchT
     , evalSimplifierBranch
     , gather
@@ -57,7 +56,6 @@ import           Kore.Variables.Fresh
 import qualified ListT
 import           SMT
                  ( MonadSMT (..), SMT (..) )
-import qualified SMT
 
 {-| 'And' simplification is very similar to 'Equals' simplification.
 This type is used to distinguish between the two in the common code.
@@ -193,13 +191,6 @@ evalSimplifierBranch
     -- ^ simplifier computation
     -> SMT [a]
 evalSimplifierBranch = evalSimplifier . gather
-
--- | Use a different logger in the provided context.
-withLogger :: LogAction IO LogMessage -> Simplifier a  -> Simplifier a
-withLogger l =
-    Simplifier
-        . SMT.withLogger l
-        . getSimplifier
 
 {- | Run a simplification, returning the result of only one branch.
 

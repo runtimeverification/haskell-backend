@@ -10,7 +10,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 module SMT
     ( SMT, getSMT
     , Solver
-    , newSolver, stopSolver, withLogger
+    , newSolver, stopSolver
     , runSMT
     , MonadSMT (..)
     , Config (..)
@@ -364,12 +364,3 @@ getLoggerRef = do
     mvar <- SMT $ Reader.ask
     solver <- liftIO $ readMVar mvar
     return $ solver Lens.^. SimpleSMT.lensLogger
-
-withLogger :: Logger -> SMT a  -> SMT a
-withLogger l action = do
-    loggerRef <- getLoggerRef
-    originalLogger <- liftIO $ readIORef loggerRef
-    liftIO $ writeIORef loggerRef l
-    result <- action
-    liftIO $ writeIORef loggerRef originalLogger
-    return result
