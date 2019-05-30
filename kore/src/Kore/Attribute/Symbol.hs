@@ -13,39 +13,19 @@ import qualified Kore.Attribute.Symbol as Attribute
  -}
 
 module Kore.Attribute.Symbol
-    ( Symbol (..)
-    , StepperAttributes
-    , defaultSymbolAttributes
+    ( module Kore.Attribute.Symbol.Symbol
     -- * Function symbols
-    , lensFunction, Function (..)
-    , functionAttribute
     , isFunction_, isFunction
     -- * Functional symbols
-    , lensFunctional, Functional (..)
-    , functionalAttribute
     , isFunctional_, isFunctional
     -- * Constructor symbols
-    , lensConstructor, Constructor (..)
-    , constructorAttribute
     , isConstructor_
     -- * Injective symbols
-    , lensInjective, Injective (..)
-    , injectiveAttribute
     , isInjective_, isInjective
     -- * Non-simplifiable symbols
     , isNonSimplifiable_, isNonSimplifiable
     -- * Sort injection symbols
-    , lensSortInjection, SortInjection (..)
-    , sortInjectionAttribute
     , isSortInjection_
-    -- * Hooked symbols
-    , lensHook, Hook (..)
-    , hookAttribute
-    -- * SMT symbols
-    , Smthook (..)
-    , smthookAttribute
-    , Smtlib (..)
-    , smtlibAttribute
     -- * Total symbols
     , isTotal_, isTotal
     ) where
