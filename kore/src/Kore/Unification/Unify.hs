@@ -10,8 +10,6 @@ import           Control.Applicative
 import           Control.Monad
                  ( MonadPlus )
 import qualified Control.Monad.Except as Error
-import           Control.Monad.Reader.Class
-                 ( MonadReader (..) )
 import           Control.Monad.Trans.Class
                  ( MonadTrans )
 import qualified Control.Monad.Trans.Class as Monad.Trans
@@ -25,7 +23,7 @@ import           Kore.Internal.TermLike
                  ( SortedVariable, TermLike )
 import qualified Kore.Logger as Log
 import           Kore.Step.Simplification.Data
-                 ( BranchT, Environment (..), Simplifier )
+                 ( BranchT, Simplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather, scatter )
 import           Kore.Unification.Error
@@ -110,16 +108,6 @@ instance
     gather = UnifierTT . Monad.Trans.lift . BranchT.gather . getUnifier
     scatter = UnifierTT . BranchT.scatter
 
-instance
-    ( MonadReader
-        Environment
-        (m (ExceptT UnificationOrSubstitutionError Simplifier))
-    , MonadTrans m
-    )
-    => MonadReader Environment (UnifierTT m)
-  where
-    ask = liftSimplifier ask
-    local f (UnifierTT ma) = UnifierTT $ local f ma
 
 instance MonadPlus (UnifierTT m) where
 
@@ -132,8 +120,10 @@ instance
     => Log.WithLog Log.LogMessage (UnifierTT m)
   where
     askLogAction = do
-        Log.LogAction logger <- liftSimplifier $ logger <$> ask
-        return $ Log.LogAction (\msg -> liftSimplifier $ logger msg)
+        Log.LogAction logger <- liftSimplifier $ Log.askLogAction
+        return
+            . Log.hoistLogAction liftSimplifier
+            $ Log.LogAction logger
 
     withLog f = UnifierTT . Log.withLog f . getUnifier
 

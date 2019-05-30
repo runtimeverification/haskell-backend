@@ -38,7 +38,7 @@ testComparison name impl symb =
             a <- forAll genString
             b <- forAll genString
             let expect = Test.Bool.asPattern (impl a b)
-            actual <- evaluate $ mkApp boolSort symb (asInternal <$> [a, b])
+            actual <- evaluateT $ mkApp boolSort symb (asInternal <$> [a, b])
             (===) expect actual
         )
 

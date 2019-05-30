@@ -11,6 +11,7 @@ module Kore.Step.Simplification.Data
     ( Simplifier
     , runSimplifier
     , evalSimplifier
+    , withLogger
     , BranchT
     , evalSimplifierBranch
     , gather
@@ -22,12 +23,9 @@ module Kore.Step.Simplification.Data
     , simplifyTerm
     , simplifyConditionalTerm
     , SimplificationType (..)
-    , Environment (..)
     ) where
 
 import           Control.Applicative
-import           Control.Concurrent.MVar
-                 ( MVar )
 import qualified Control.Monad as Monad
 import           Control.Monad.Morph
                  ( MFunctor, MMonad )
@@ -41,7 +39,7 @@ import           GHC.Stack
                  ( HasCallStack )
 
 import           Control.Monad.Catch
-                 ( Exception, MonadCatch, MonadThrow, catch, throwM )
+                 ( MonadCatch, MonadThrow )
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -58,9 +56,8 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 import qualified ListT
 import           SMT
-                 ( MonadSMT, SMT (..), liftSMT, withSolver' )
-import           SMT.SimpleSMT
-                 ( Solver )
+                 ( MonadSMT (..), SMT (..) )
+import qualified SMT
 
 {-| 'And' simplification is very similar to 'Equals' simplification.
 This type is used to distinguish between the two in the common code.
@@ -116,9 +113,7 @@ deriving instance MonadState s m => MonadState s (BranchT m)
 
 deriving instance WithLog msg m => WithLog msg (BranchT m)
 
-instance MonadSMT m => MonadSMT (BranchT m) where
-    liftSMT = lift . liftSMT
-    {-# INLINE liftSMT #-}
+instance (MonadSMT m, MonadIO m) => MonadSMT (BranchT m) where
 
 {- | Collect results from many simplification branches into one result.
 
@@ -172,11 +167,6 @@ scatter = BranchT . ListT.scatter . Foldable.toList
 
 -- * Simplifier
 
-data Environment = Environment
-    { solver     :: !(MVar Solver)
-    , logger     :: !(LogAction Simplifier LogMessage)
-    }
-
 {- | @Simplifier@ represents a simplification action.
 
 A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.
@@ -185,47 +175,31 @@ A @Simplifier@ can write to the log through 'HasLog'.
 
  -}
 newtype Simplifier a = Simplifier
-    { getSimplifier :: ReaderT Environment IO a
+    { getSimplifier :: SMT a
     }
-    deriving (Applicative, Functor, Monad)
-
-instance MonadSMT Simplifier where
-    liftSMT :: SMT a -> Simplifier a
-    liftSMT = Simplifier . withReaderT solver . getSMT
-
-instance MonadIO Simplifier where
-    liftIO :: IO a -> Simplifier a
-    liftIO ma = Simplifier . ReaderT $ const ma
-
-instance MonadThrow Simplifier where
-    throwM :: Exception e => e -> Simplifier a
-    throwM = Simplifier . throwM
-
-instance MonadCatch Simplifier where
-    catch :: Exception e => Simplifier a -> (e -> Simplifier a) -> Simplifier a
-    catch (Simplifier ra) f = Simplifier $ catch ra (getSimplifier . f)
-
-instance MonadReader Environment Simplifier where
-    ask :: Simplifier Environment
-    ask = Simplifier ask
-
-    local :: (Environment -> Environment) -> Simplifier a -> Simplifier a
-    local f s = Simplifier $ local f $ getSimplifier s
+    deriving (Applicative, Functor, Monad, MonadCatch, MonadIO, MonadSMT, MonadThrow)
 
 instance WithLog LogMessage Simplifier where
-    askLogAction = asks logger
-    withLog f = local (\env -> env { logger = f (logger env) })
+    askLogAction = Simplifier $ hoistLogAction Simplifier <$> askLogAction
+    withLog mapping =
+        Simplifier
+        . withLog mapping
+        . getSimplifier
 
 {- | Run a simplification, returning the results along all branches.
  -}
 evalSimplifierBranch
-    :: LogAction Simplifier LogMessage
-    -- ^ initial counter for fresh variables
-    -> BranchT Simplifier a
+    :: BranchT Simplifier a
     -- ^ simplifier computation
     -> SMT [a]
-evalSimplifierBranch logger =
-    evalSimplifier logger . gather
+evalSimplifierBranch = evalSimplifier . gather
+
+-- | Use a different logger in the provided context.
+withLogger :: LogAction IO LogMessage -> Simplifier a  -> Simplifier a
+withLogger l =
+    Simplifier
+        . SMT.withLogger l
+        . getSimplifier
 
 {- | Run a simplification, returning the result of only one branch.
 
@@ -238,11 +212,8 @@ runSimplifier
     :: HasCallStack
     => Simplifier a
     -- ^ simplifier computation
-    -> LogAction Simplifier LogMessage
-    -- ^ initial counter for fresh variables
     -> SMT a
-runSimplifier simpl logger =
-    evalSimplifier logger simpl
+runSimplifier = evalSimplifier
 
 {- | Evaluate a simplifier computation, returning the result of only one branch.
 
@@ -253,12 +224,9 @@ that may branch.
   -}
 evalSimplifier
     :: HasCallStack
-    => LogAction Simplifier LogMessage
-    -> Simplifier a
+    => Simplifier a
     -> SMT a
-evalSimplifier logger (Simplifier simpl) =
-    withSolver' $ \solver ->
-        runReaderT simpl (Environment solver logger)
+evalSimplifier = withSolver . getSimplifier
 
 -- * Implementation
 

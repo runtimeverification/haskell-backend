@@ -67,7 +67,7 @@ evaluate
 evaluate predicate =
     give testMetadataTools
     $ Trans.lift
-    $ evalSimplifier emptyLogger
+    $ evalSimplifier
     $ Evaluator.evaluate
         testSubstitutionSimplifier
         (mockSimplifier noSimplification)
@@ -106,7 +106,9 @@ div i j = mkApp intSort Builtin.tdivIntSymbol [i, j]
 assertRefuted :: Syntax.Predicate Variable -> Assertion
 assertRefuted prop = give testMetadataTools $ do
     let expect = Just False
-    actual <- SMT.runSMT SMT.defaultConfig $ SMT.Evaluator.decidePredicate prop
+    actual <-
+        SMT.runSMT SMT.defaultConfig emptyLogger
+        $ SMT.Evaluator.decidePredicate prop
     assertEqual "" expect actual
 
 unit_1 :: Assertion

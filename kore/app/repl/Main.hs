@@ -191,8 +191,8 @@ mainWithOptions
                     \ in order to run the repl in run-script mode."
            exitFailure
        else do
-           SMT.runSMT smtConfig
-               $ evalSimplifier emptyLogger
+           SMT.runSMT smtConfig emptyLogger
+               $ evalSimplifier
                $ proveWithRepl
                     indexedModule specDefIndexedModule replScript replMode
 

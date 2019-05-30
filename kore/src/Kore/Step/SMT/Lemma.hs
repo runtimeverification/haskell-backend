@@ -18,6 +18,8 @@ import           Control.Error
                  ( runMaybeT )
 import qualified Control.Monad.Counter as Counter
 import           Control.Monad.Except
+import           Control.Monad.IO.Class
+                 ( MonadIO )
 import qualified Control.Monad.State as State
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
@@ -36,8 +38,7 @@ import qualified Kore.Step.SMT.Declaration.All as SMT.All
 import           Kore.Step.SMT.Translate
 import           Kore.Unparser
 import           SMT
-                 ( MonadSMT, SExpr (..), SMT )
-import qualified SMT
+                 ( MonadSMT (..), SExpr (..) )
 
 -- | Given an indexed module, `declareSMTLemmas` translates all
 -- rewrite rules marked with the smt-lemma attribute into the
@@ -46,12 +47,13 @@ import qualified SMT
 -- declared in the smt prelude or they have an smtlib attribute.
 declareSMTLemmas
     :: forall m
-    .   ( MonadSMT m
-        , Given (SmtMetadataTools StepperAttributes)
+    .   ( Given (SmtMetadataTools StepperAttributes)
+        , MonadIO m
+        , MonadSMT m
         )
     => VerifiedModule StepperAttributes Attribute.Axiom
     -> m ()
-declareSMTLemmas m = SMT.liftSMT $ do
+declareSMTLemmas m = do
     SMT.All.declare (smtData tools)
     mapM_ declareRule (indexedModuleAxioms m)
   where
@@ -61,7 +63,7 @@ declareSMTLemmas m = SMT.liftSMT $ do
     declareRule
         :: Given (SmtMetadataTools StepperAttributes)
         => ( Attribute.Axiom , SentenceAxiom (TermLike Variable) )
-        -> SMT (Maybe ())
+        -> m (Maybe ())
     declareRule (atts, axiomDeclaration) = runMaybeT $ do
         guard (isSmtLemma $ Attribute.smtLemma atts)
         (lemma, vars) <-
@@ -82,10 +84,11 @@ translateUninterpreted
     :: ( Ord p
        , p ~ TermLike variable
        , Unparse variable
+       , Monad m
        )
     => SExpr  -- ^ type name
     -> p  -- ^ uninterpreted pattern
-    -> Translator p SExpr
+    -> Translator m p SExpr
 translateUninterpreted t pat | isVariable pat =
     lookupPattern <|> freeVariable
   where

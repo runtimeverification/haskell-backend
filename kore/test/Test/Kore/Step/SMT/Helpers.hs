@@ -15,12 +15,8 @@ module Test.Kore.Step.SMT.Helpers
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Control.Concurrent.MVar
-       ( MVar )
 import Control.Exception
        ( ErrorCall, catch )
-import Control.Monad.Reader
-       ( runReaderT )
 import Data.Reflection
        ( Given, give )
 import Data.Sup
@@ -58,12 +54,12 @@ import qualified SMT
 
 import Test.Kore
        ( testId )
+import Test.Kore.Builtin.Builtin
+       ( runSMT )
 import Test.Kore.Step.SMT.Builders
        ( noJunk )
 import Test.Kore.With
        ( with )
-import Test.SMT
-       ( withSolver )
 
 newtype SmtPrelude = SmtPrelude { getSmtPrelude :: SMT () }
 
@@ -91,7 +87,6 @@ isSatisfiable
     :: HasCallStack
     => [SMT ()]
     -> SmtPrelude
-    -> IO (MVar SMT.Solver)
     -> TestTree
 isSatisfiable = assertSmtTestCase "isSatisfiable" SMT.Sat
 
@@ -99,7 +94,6 @@ isNotSatisfiable
     :: HasCallStack
     => [SMT ()]
     -> SmtPrelude
-    -> IO (MVar SMT.Solver)
     -> TestTree
 isNotSatisfiable = assertSmtTestCase "isNotSatisfiable" SMT.Unsat
 
@@ -107,14 +101,13 @@ isError
     :: HasCallStack
     => [SMT ()]
     -> SmtPrelude
-    -> IO (MVar SMT.Solver)
     -> TestTree
-isError actions prelude solver =
+isError actions prelude =
     testCase "isError" $
         catch (catch runSolver ignoreIOError) ignoreErrorCall
     where
     runSolver = do
-        _ <- getSmtResult actions prelude solver
+        _ <- getSmtResult actions prelude
         assertFailure "No `error` was raised."
 
     ignoreIOError :: IOError -> IO ()
@@ -128,12 +121,10 @@ isError actions prelude solver =
 getSmtResult
     :: [SMT ()]
     -> SmtPrelude
-    -> IO (MVar SMT.Solver)
     -> IO SMT.Result
 getSmtResult
     actions
     SmtPrelude {getSmtPrelude = preludeAction}
-    solverAction
   = do
     let
         smtResult :: SMT SMT.Result
@@ -141,18 +132,16 @@ getSmtResult
             preludeAction
             sequence_ actions
             SMT.check
-    solver <- solverAction
-    runReaderT (SMT.getSMT (SMT.inNewScope smtResult)) solver
+    runSMT smtResult
 
 assertSmtResult
     :: HasCallStack
     => SMT.Result
     -> [SMT ()]
     -> SmtPrelude
-    -> IO (MVar SMT.Solver)
     -> Assertion
-assertSmtResult expected actions prelude solver = do
-    result <- getSmtResult actions prelude solver
+assertSmtResult expected actions prelude = do
+    result <- getSmtResult actions prelude
     assertEqual "" expected result
 
 assertSmtTestCase
@@ -161,10 +150,9 @@ assertSmtTestCase
     -> SMT.Result
     -> [SMT ()]
     -> SmtPrelude
-    -> IO (MVar SMT.Solver)
     -> TestTree
-assertSmtTestCase name expected actions prelude solver =
-    testCase name $ assertSmtResult expected actions prelude solver
+assertSmtTestCase name expected actions prelude =
+    testCase name $ assertSmtResult expected actions prelude
 
 testsForModule
     :: String
@@ -176,10 +164,10 @@ testsForModule
         -> m ()
         )
     -> VerifiedModule Attribute.Symbol Attribute.Axiom
-    -> [SmtPrelude -> IO (MVar SMT.Solver) -> TestTree]
+    -> [SmtPrelude -> TestTree]
     -> TestTree
 testsForModule name functionToTest indexedModule tests =
-    testGroup name (map (\f -> withSolver $ f prelude) tests)
+    testGroup name (map (\f -> f prelude) tests)
   where
     prelude = SmtPrelude
         (give tools $ functionToTest indexedModule)
