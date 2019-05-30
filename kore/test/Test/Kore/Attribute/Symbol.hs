@@ -1,4 +1,7 @@
-module Test.Kore.Attribute.Symbol (test_stepperAttributes) where
+module Test.Kore.Attribute.Symbol
+    ( test_stepperAttributes
+    , test_Anywhere
+    ) where
 
 import Test.Tasty
        ( TestTree )
@@ -110,4 +113,17 @@ test_stepperAttributes =
                 ]
             )
         )
+    ]
+
+test_Anywhere :: [TestTree]
+test_Anywhere =
+    [ testCase "parseAttribute" $ assertEqual "[anywhere{}()]"
+        (Right Anywhere { isAnywhere = True })
+        (anywhere <$> parse [ anywhereAttribute ])
+    , testCase "defaultSymbolAttributes" $ assertEqual "[]"
+        (Right def)
+        (anywhere <$> parse [])
+    , testCase "isInjective" $ assertEqual ""
+        (Right True)
+        (isInjective <$> parse [ anywhereAttribute ])
     ]
