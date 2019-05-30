@@ -497,8 +497,8 @@ evaluate
     -> Ceil Sort (OrPattern Variable)
     -> IO (OrPattern Variable)
 evaluate tools ceil =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ Ceil.simplify
         tools
         (Mock.substitutionSimplifier tools)
@@ -520,8 +520,8 @@ makeEvaluateWithAxioms
     -> Pattern Variable
     -> IO (OrPattern Variable)
 makeEvaluateWithAxioms tools axiomIdToSimplifier child =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ Ceil.makeEvaluate
         tools
         (Mock.substitutionSimplifier tools)

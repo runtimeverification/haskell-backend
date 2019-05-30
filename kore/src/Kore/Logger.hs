@@ -85,8 +85,7 @@ class Monad m => WithLog msg m where
 
     -- | Modify the 'LogAction' over the scope of an action.
     withLog
-        :: forall a
-        .  (forall n. LogAction n msg -> LogAction n msg)
+        :: (forall n. LogAction n msg -> LogAction n msg)
         -> m a
         -> m a
 

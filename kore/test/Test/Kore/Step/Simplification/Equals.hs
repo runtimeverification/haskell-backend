@@ -983,8 +983,8 @@ evaluateOr
     -> Equals Sort (OrPattern Variable)
     -> IO (OrPattern Variable)
 evaluateOr tools equals =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ simplify
         tools
         (Mock.substitutionSimplifier tools)
@@ -1005,8 +1005,8 @@ evaluateGeneric
     -> Pattern Variable
     -> IO (OrPattern Variable)
 evaluateGeneric tools first second =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ makeEvaluate
         tools
         (Mock.substitutionSimplifier tools)
@@ -1021,8 +1021,8 @@ evaluateTermsGeneric
     -> TermLike Variable
     -> IO (OrPredicate Variable)
 evaluateTermsGeneric tools first second =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ makeEvaluateTermsToPredicate
         tools
         (Mock.substitutionSimplifier tools)

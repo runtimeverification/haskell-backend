@@ -319,8 +319,8 @@ simplify
     -> Exists Sort Variable (OrPattern Variable)
     -> IO (OrPattern Variable)
 simplify tools exists =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ Exists.simplify
         tools
         (Mock.substitutionSimplifier tools)
@@ -334,8 +334,8 @@ makeEvaluate
     -> Pattern Variable
     -> IO (OrPattern Variable)
 makeEvaluate tools variable child =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ Exists.makeEvaluate
         tools
         (Mock.substitutionSimplifier tools)

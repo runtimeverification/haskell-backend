@@ -416,8 +416,8 @@ runSteps
     -> IO a
 runSteps metadataTools graphFilter picker configuration strategy =
     (<$>) picker
-    $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    $ SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ (fromMaybe (error "Unexpected missing tree") . graphFilter)
     <$> runStrategy
         (transitionRule

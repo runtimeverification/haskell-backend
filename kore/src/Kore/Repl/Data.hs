@@ -55,7 +55,6 @@ import           Control.Monad.Error.Class
 import qualified Control.Monad.Error.Class as Monad.Error
 import           Control.Monad.IO.Class
                  ( liftIO )
-import qualified Control.Monad.Reader.Class as Reader
 import           Control.Monad.State.Strict
                  ( MonadState, get, modify )
 import           Control.Monad.Trans.Accum
@@ -617,21 +616,13 @@ liftSimplifierWithLogger sa = do
    (severity, logType) <- logging <$> get
    (textLogger, maybeHandle) <- logTypeToLogger logType
    let logger = Logger.makeKoreLogger severity textLogger
-   result <- Monad.Trans.lift
-       . Reader.local (setLogger logger)
-       $ sa
+   result <- Monad.Trans.lift $ Simplifier.withLogger logger sa
    maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
    pure result
   where
-    setLogger
-        :: Logger.LogAction Simplifier Logger.LogMessage
-        -> Simplifier.Environment
-        -> Simplifier.Environment
-    setLogger la env = env { Simplifier.logger = la }
-
     logTypeToLogger
         :: LogType
-        -> t Simplifier (Logger.LogAction Simplifier Text, Maybe Handle)
+        -> t Simplifier (Logger.LogAction IO Text, Maybe Handle)
     logTypeToLogger =
         \case
             NoLogging   -> pure (mempty, Nothing)

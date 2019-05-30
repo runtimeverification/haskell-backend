@@ -465,8 +465,8 @@ evaluateWithAxioms
     -> Pattern Variable
     -> IO (OrPattern Variable)
 evaluateWithAxioms tools axioms patt =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ Pattern.simplify
         tools
         (Predicate.create tools simplifier axiomIdToSimplifier)
