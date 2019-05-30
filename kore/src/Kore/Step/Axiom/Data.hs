@@ -14,6 +14,7 @@ module Kore.Step.Axiom.Data
     , AttemptedAxiomResults (..)
     , CommonAttemptedAxiom
     , hasRemainders
+    , maybeNotApplicable
     , exceptNotApplicable
     , applicationAxiomSimplifier
     , notApplicableAxiomEvaluator
@@ -26,6 +27,8 @@ import           Control.DeepSeq
                  ( NFData )
 import           Control.Monad.Except
                  ( ExceptT, runExceptT )
+import           Control.Monad.Trans.Maybe
+                 ( MaybeT, runMaybeT )
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
 import           GHC.Generics
@@ -165,6 +168,15 @@ A 'NotApplicable' result is not considered to have remainders.
 hasRemainders :: AttemptedAxiom variable -> Bool
 hasRemainders (Applied axiomResults) = (not . null) (remainders axiomResults)
 hasRemainders NotApplicable = False
+
+{- | Return a 'NotApplicable' result for a failing 'MaybeT' action.
+ -}
+maybeNotApplicable
+    :: Functor m
+    => MaybeT m (AttemptedAxiom variable)
+    ->        m (AttemptedAxiom variable)
+maybeNotApplicable =
+    fmap (maybe NotApplicable id) . runMaybeT
 
 {- | Return a 'NotApplicable' result for a failing 'ExceptT' action.
  -}
