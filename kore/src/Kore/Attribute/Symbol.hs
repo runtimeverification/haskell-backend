@@ -137,10 +137,12 @@ isConstructor_ =
 {- | Is the symbol injective?
 
 A symbol is injective if it is given the @injective@ attribute, the
-@constructor@ attribute, or the @sortInjection@ attribute.
+@constructor@ attribute, the @anywhere@ attribute, or the @sortInjection@
+attribute.
 
 See also: 'isInjective', 'injectiveAttribute', 'constructorAttribute',
-'sortInjectionAttribute'
+'sortInjectionAttribute', 'anywhereAttribute'
+
  -}
 isInjective_
     :: Given (SmtMetadataTools StepperAttributes)
@@ -153,17 +155,21 @@ isInjective_ =
 {- | Is the symbol injective?
 
 A symbol is injective if it is given the @injective@ attribute, the
-@constructor@ attribute, or the @sortInjection@ attribute.
+@constructor@ attribute, the @anywhere@ attribute, or the @sortInjection@
+attribute.
 
-See also: 'injectiveAttribute', 'constructorAttribute', 'sortInjectionAttribute'
+See also: 'injectiveAttribute', 'constructorAttribute',
+'sortInjectionAttribute', 'anywhereAttribute'
 
  -}
 isInjective :: StepperAttributes -> Bool
-isInjective = do
-    Injective isInjective' <- injective
-    Constructor isConstructor' <- constructor
-    SortInjection isSortInjection' <- sortInjection
-    return (isInjective' || isConstructor' || isSortInjection')
+isInjective =
+    or . sequence
+        [ isDeclaredInjective . injective
+        , isConstructor       . constructor
+        , isAnywhere          . anywhere
+        , isSortInjection     . sortInjection
+        ]
 
 {- | Is the symbol a sort injection?
 
