@@ -70,9 +70,11 @@ aSort0Id = testId "aSort0"
 aSort1Id :: Id
 aSort1Id = testId "aSort1"
 aSubsortId :: Id
-aSubsortId = testId "aSubSubsort"
+aSubsortId = testId "aSubsort"
 aSubSubsortId :: Id
 aSubSubsortId = testId "aSubSubsort"
+aTopSortId :: Id
+aTopSortId = testId "aTopSort"
 aOtherSortId :: Id
 aOtherSortId = testId "aOtherSort"
 bId :: Id
@@ -205,6 +207,11 @@ aSubsortSymbol = SymbolOrAlias
 aSubSubsortSymbol :: SymbolOrAlias
 aSubSubsortSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = aSubSubsortId
+    , symbolOrAliasParams      = []
+    }
+aTopSortSymbol :: SymbolOrAlias
+aTopSortSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = aTopSortId
     , symbolOrAliasParams      = []
     }
 aOtherSortSymbol :: SymbolOrAlias
@@ -535,6 +542,8 @@ xInt :: Variable
 xInt = Variable (testId "xInt") mempty intSort
 xSubSort :: Variable
 xSubSort = Variable (testId "xSubSort") mempty subSort
+xTopSort :: Variable
+xTopSort = Variable (testId "xTopSort") mempty topSort
 
 a :: Ord variable => TermLike variable
 a = Internal.mkApp testSort aSymbol []
@@ -553,6 +562,9 @@ aSubsort = Internal.mkApp subSort aSubsortSymbol []
 
 aSubSubsort :: Ord variable => TermLike variable
 aSubSubsort = Internal.mkApp subSubsort aSubSubsortSymbol []
+
+aTopSort :: Ord variable => TermLike variable
+aTopSort = Internal.mkApp topSort aTopSortSymbol []
 
 aOtherSort :: Ord variable => TermLike variable
 aOtherSort = Internal.mkApp otherSort aOtherSortSymbol []
@@ -873,6 +885,9 @@ attributesMapping =
     ,   ( aSubSubsortSymbol
         , Mock.constructorFunctionalAttributes
         )
+    ,   ( aTopSortSymbol
+        , Mock.constructorFunctionalAttributes
+        )
     ,   ( aOtherSortSymbol
         , Mock.constructorFunctionalAttributes
         )
@@ -1076,6 +1091,9 @@ headTypeMapping =
         , HeadType.Symbol
         )
     ,   ( aSubSubsortSymbol
+        , HeadType.Symbol
+        )
+    ,   ( aTopSortSymbol
         , HeadType.Symbol
         )
     ,   ( aOtherSortSymbol
@@ -1345,6 +1363,12 @@ headSortsMapping =
         , ApplicationSorts
             { applicationSortsOperands = []
             , applicationSortsResult   = subSubsort
+            }
+        )
+    ,   ( aTopSortSymbol
+        , ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = topSort
             }
         )
     ,   ( aOtherSortSymbol
@@ -1787,6 +1811,7 @@ smtUnresolvedDeclarations = SMT.Declarations
         , ( aSort1Id, smtConstructor aSort1Id [] testSort1)
         , ( aSubsortId, smtConstructor aSubsortId [] subSort)
         , ( aSubSubsortId, smtConstructor aSubSubsortId [] subSubsort)
+        , ( aTopSortId, smtConstructor aTopSortId [] topSort)
         , ( aOtherSortId, smtConstructor aOtherSortId [] otherSort)
         , ( bId, smtConstructor bId [] testSort)
         , ( bSort0Id, smtConstructor bSort0Id [] testSort0)
