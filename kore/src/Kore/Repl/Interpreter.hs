@@ -18,6 +18,7 @@ module Kore.Repl.Interpreter
     , formatUnificationMessage
     , allProofs
     , ReplStatus(..)
+    , showCurrentClaimIndex
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -134,7 +135,7 @@ replInterpreter printFn replCmd = do
     let command = case replCmd of
                 ShowUsage          -> showUsage          $> Continue
                 Help               -> help               $> Continue
-                ShowClaim c        -> showClaim c        $> Continue
+                ShowClaim mc       -> showClaim mc       $> Continue
                 ShowAxiom a        -> showAxiom a        $> Continue
                 Prove i            -> prove i            $> Continue
                 ShowGraph mfile    -> showGraph mfile    $> Continue
@@ -224,11 +225,16 @@ showClaim
     :: Claim claim
     => MonadState (ReplState claim) m
     => MonadWriter String m
-    => ClaimIndex
+    => Maybe ClaimIndex
     -> m ()
-showClaim cindex = do
-    claim <- getClaimByIndex . unClaimIndex $ cindex
-    maybe printNotFound (putStrLn' . showRewriteRule) $ claim
+showClaim =
+    \case
+        Nothing -> do
+            currentCindex <- Lens.use lensClaimIndex
+            putStrLn' . showCurrentClaimIndex $ currentCindex
+        Just cindex -> do
+            claim <- getClaimByIndex . unClaimIndex $ cindex
+            maybe printNotFound (putStrLn' . showRewriteRule) $ claim
 
 -- | Prints an axiom using an index in the axioms list.
 showAxiom
@@ -1040,3 +1046,7 @@ showProofStatus m =
         <> ": "
         <> show elm
 
+showCurrentClaimIndex :: ClaimIndex -> String
+showCurrentClaimIndex ci =
+    "You are currently proving claim "
+    <> show (unClaimIndex ci)
