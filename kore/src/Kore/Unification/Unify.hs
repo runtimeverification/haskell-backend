@@ -3,7 +3,15 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
 
-module Kore.Unification.Unify where
+module Kore.Unification.Unify
+    ( MonadUnify (..)
+    , UnifierTT (..)
+    , fromExceptT
+    , runUnifierT
+    , Unifier
+    , runUnifier
+    , maybeUnifier
+    ) where
 
 import           Control.Applicative
                  ( Alternative )
@@ -16,6 +24,8 @@ import qualified Control.Monad.Trans.Class as Monad.Trans
 import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Identity
                  ( IdentityT, runIdentityT )
+import           Control.Monad.Trans.Maybe
+                 ( MaybeT (MaybeT) )
 import           Data.Text.Prettyprint.Doc
                  ( Doc )
 
@@ -30,12 +40,9 @@ import           Kore.Unification.Error
 import           Kore.Unparser
                  ( Unparse )
 
--- | This monad is used throughout the step and unification modules. Its main
+-- | @MonadUnify@ is used throughout the step and unification modules. Its main
 -- goal is to abstract over an 'ExceptT' over a 'UnificationOrSubstitutionError'
 -- running in a 'Simplifier' monad.
---
--- The variable parameter is required in order to allow mapping the variable
--- type via 'mapVariable'.
 --
 -- 'MonadUnify' chooses its error/left type to 'UnificationOrSubstitutionError'
 -- and provides functions to throw these errors. The point of this is to be able
@@ -150,3 +157,9 @@ runUnifierT
     -> UnifierTT m a
     -> Simplifier (Either UnificationOrSubstitutionError b)
 runUnifierT runM = runExceptT . runM . BranchT.gather . getUnifier
+
+{- | Run a 'Unifier', returning 'Nothing' upon error.
+ -}
+maybeUnifier :: Unifier a -> MaybeT Simplifier [a]
+maybeUnifier =
+    MaybeT . fmap (either (const Nothing) Just) . runUnifier
