@@ -119,11 +119,17 @@ hoistLogAction f (LogAction logger) = LogAction $ \msg -> f (logger msg)
 
 instance WithLog msg m => WithLog msg (Except.ExceptT e m) where
     askLogAction = Monad.Trans.lift (liftLogAction <$> askLogAction)
+    {-# INLINE askLogAction #-}
+
     withLog f = Monad.Morph.hoist (withLog f)
+    {-# INLINE withLog #-}
 
 instance WithLog msg m => WithLog msg (ListT m) where
     askLogAction = Monad.Trans.lift (liftLogAction <$> askLogAction)
+    {-# INLINE askLogAction #-}
+
     withLog f = Monad.Morph.hoist (withLog f)
+    {-# INLINE withLog #-}
 
 -- | Log any message.
 logMsg :: WithLog msg m => msg -> m ()

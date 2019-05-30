@@ -136,6 +136,7 @@ class Monad m => MonadSMT m where
         => m a
         -> m a
     withSolver action = Morph.hoist withSolver action
+    {-# INLINE withSolver #-}
 
     -- | Declares a general SExpr to SMT.
     declare :: Text -> SExpr -> m SExpr
@@ -145,6 +146,7 @@ class Monad m => MonadSMT m where
         -> SExpr
         -> m SExpr
     declare text = Trans.lift . declare text
+    {-# INLINE declare #-}
 
     -- | Declares a function symbol to SMT.
     declareFun :: SmtFunctionDeclaration -> m SExpr
@@ -153,6 +155,7 @@ class Monad m => MonadSMT m where
         => SmtFunctionDeclaration
         -> m SExpr
     declareFun = Trans.lift . declareFun
+    {-# INLINE declareFun #-}
 
     -- | Declares a sort to SMT.
     declareSort :: SmtSortDeclaration -> m SExpr
@@ -161,6 +164,7 @@ class Monad m => MonadSMT m where
         => SmtSortDeclaration
         -> m SExpr
     declareSort = Trans.lift . declareSort
+    {-# INLINE declareSort #-}
 
     -- | Declares a constructor-based sort to SMT.
     declareDatatype :: SmtDataTypeDeclaration -> m ()
@@ -169,6 +173,7 @@ class Monad m => MonadSMT m where
         => SmtDataTypeDeclaration
         -> m ()
     declareDatatype = Trans.lift . declareDatatype
+    {-# INLINE declareDatatype #-}
 
     -- | Declares a constructor-based sort to SMT.
     declareDatatypes ::  [SmtDataTypeDeclaration] -> m ()
@@ -177,6 +182,7 @@ class Monad m => MonadSMT m where
         => [SmtDataTypeDeclaration]
         -> m ()
     declareDatatypes = Trans.lift . declareDatatypes
+    {-# INLINE declareDatatypes #-}
 
     -- | Assume a fact.
     assert :: SExpr -> m ()
@@ -185,6 +191,7 @@ class Monad m => MonadSMT m where
         => SExpr
         -> m ()
     assert = Trans.lift . assert
+    {-# INLINE assert #-}
 
     {- | Check if the current set of assertions is satisfiable.
 
@@ -196,6 +203,7 @@ class Monad m => MonadSMT m where
         :: (Trans.MonadTrans t, MonadSMT n, Monad n, m ~ t n)
         => m Result
     check = Trans.lift check
+    {-# INLINE check #-}
 
     -- | A command with an uninteresting result.
     ackCommand :: SExpr -> m ()
@@ -204,6 +212,7 @@ class Monad m => MonadSMT m where
         => SExpr
         -> m ()
     ackCommand = Trans.lift . ackCommand
+    {-# INLINE ackCommand #-}
 
     -- | Load a .smt2 file
     loadFile :: FilePath -> m ()
@@ -212,6 +221,7 @@ class Monad m => MonadSMT m where
         => FilePath
         -> m ()
     loadFile = Trans.lift . loadFile
+    {-# INLINE loadFile #-}
 
 withSolver' :: (Solver -> IO a) -> SMT a
 withSolver' action = do
@@ -232,12 +242,12 @@ instance Logger.WithLog Logger.LogMessage SMT where
         return result
 
 instance MonadSMT SMT where
-    withSolver (SMT action) = do
-        mvar <- SMT $ Reader.ask
-        liftIO $ do
-            solver <- readMVar mvar
-            newSolver' <- newMVar solver
-            SimpleSMT.inNewScope solver (runReaderT action newSolver')
+    withSolver (SMT action) = withSolver' $ \solver -> do
+        -- Create an unshared "dummy" mutex for the solver.
+        mvar <- newMVar solver
+        -- Run the inner action with the unshared mutex.
+        -- The action will never block waiting to acquire the solver.
+        SimpleSMT.inNewScope solver (runReaderT action mvar)
 
     declare name typ =
         withSolver' $ \solver -> SimpleSMT.declare solver name typ
@@ -265,25 +275,13 @@ instance MonadSMT SMT where
     loadFile path =
         withSolver' $ \solver -> SimpleSMT.loadFile solver path
 
-instance
-    ( MonadSMT m
-    , MonadIO m
-    ) => MonadSMT (Maybe.MaybeT m) where
+instance (MonadSMT m, MonadIO m) => MonadSMT (Maybe.MaybeT m)
 
-instance
-    ( MonadSMT m
-    , MonadIO m
-    ) => MonadSMT (State.Lazy.StateT s m) where
+instance (MonadSMT m, MonadIO m) => MonadSMT (State.Lazy.StateT s m)
 
-instance
-    ( MonadSMT m
-    , MonadIO m
-    ) => MonadSMT (Counter.CounterT m) where
+instance (MonadSMT m, MonadIO m) => MonadSMT (Counter.CounterT m)
 
-instance
-    ( MonadSMT m
-    , MonadIO m
-    ) => MonadSMT (State.Strict.StateT s m) where
+instance (MonadSMT m, MonadIO m) => MonadSMT (State.Strict.StateT s m)
 
 {- | Initialize a new solver with the given 'Config'.
 

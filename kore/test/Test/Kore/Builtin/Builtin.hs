@@ -10,7 +10,7 @@ module Test.Kore.Builtin.Builtin
     , evaluateT
     , evaluateToList
     , indexedModule
-    , runStepWith
+    , runStep
     , runSMT
     ) where
 
@@ -218,36 +218,35 @@ evaluateToList =
 runSMT :: SMT a -> IO a
 runSMT = SMT.runSMT SMT.defaultConfig emptyLogger
 
-runStepWith
+runStep
     :: Pattern Variable
     -- ^ configuration
     -> RewriteRule Variable
     -- ^ axiom
-    -> IO (Either UnificationOrSubstitutionError (OrPattern Variable))
-runStepWith configuration axiom = do
-    result <- runStepResultWith configuration axiom
-    return (Step.gatherResults <$> result)
+    -> SMT (Either UnificationOrSubstitutionError (OrPattern Variable))
+runStep configuration axiom = do
+    results <- runStepResult configuration axiom
+    return (Step.gatherResults <$> results)
 
-runStepResultWith
+runStepResult
     :: Pattern Variable
     -- ^ configuration
     -> RewriteRule Variable
     -- ^ axiom
-    -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
-runStepResultWith configuration axiom =
-    let smt =
-            runSMT
-            $ evalSimplifier
-            $ Monad.Unify.runUnifier
-            $ Step.applyRewriteRulesParallel
-                testMetadataTools
-                testSubstitutionSimplifier
-                testTermLikeSimplifier
-                testEvaluators
-                (Step.UnificationProcedure Unification.unificationProcedure)
-                [axiom]
-                configuration
-    in fmap Result.mergeResults <$> smt
+    -> SMT (Either UnificationOrSubstitutionError (Step.Results Variable))
+runStepResult configuration axiom = do
+    results <-
+        evalSimplifier
+        $ Monad.Unify.runUnifier
+        $ Step.applyRewriteRulesParallel
+            testMetadataTools
+            testSubstitutionSimplifier
+            testTermLikeSimplifier
+            testEvaluators
+            (Step.UnificationProcedure Unification.unificationProcedure)
+            [axiom]
+            configuration
+    return (Result.mergeResults <$> results)
 
 
 -- | Test unparsing internalized patterns.

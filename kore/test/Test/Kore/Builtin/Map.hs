@@ -8,8 +8,6 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 
 import qualified Control.Monad as Monad
-import           Control.Monad.IO.Class
-                 ( liftIO )
 import qualified Control.Monad.Trans as Trans
 import qualified Data.Default as Default
 import qualified Data.List as List
@@ -813,7 +811,7 @@ test_concretizeKeysAxiom =
                         symbolicKey
                         (asTermLike $ Map.fromList [(key, val)])
             config <- evaluate pair
-            actual <- liftIO $ runStepWith config axiom
+            actual <- runStep config axiom
             assertEqualWithExplanation "expected MAP.lookup" expected actual
   where
     x = mkIntVar (testId "x")
