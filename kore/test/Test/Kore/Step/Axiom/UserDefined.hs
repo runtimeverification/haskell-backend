@@ -258,8 +258,8 @@ evaluateWithAxiom
             }
     evaluated :: IO CommonAttemptedAxiom
     evaluated =
-        SMT.runSMT SMT.defaultConfig
-        $ evalSimplifier emptyLogger
+        SMT.runSMT SMT.defaultConfig emptyLogger
+        $ evalSimplifier
         $ equalityRuleEvaluator
             axiom
             metadataTools

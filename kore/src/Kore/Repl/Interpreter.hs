@@ -18,6 +18,7 @@ module Kore.Repl.Interpreter
     , formatUnificationMessage
     , allProofs
     , ReplStatus(..)
+    , showCurrentClaimIndex
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -57,7 +58,6 @@ import           Data.Maybe
                  ( catMaybes, listToMaybe )
 import           Data.Sequence
                  ( Seq )
-import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as Text.Lazy
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -85,9 +85,7 @@ import           Kore.OnePath.StrategyPattern
 import qualified Kore.OnePath.StrategyPattern as StrategyPatternTransformer
                  ( StrategyPatternTransformer (..) )
 import           Kore.OnePath.Verification
-                 ( Axiom (..) )
-import           Kore.OnePath.Verification
-                 ( Claim )
+                 ( Axiom (..), Claim, isTrusted )
 import           Kore.Repl.Data
 import           Kore.Repl.Parser
 import           Kore.Repl.Parser
@@ -137,7 +135,7 @@ replInterpreter printFn replCmd = do
     let command = case replCmd of
                 ShowUsage          -> showUsage          $> Continue
                 Help               -> help               $> Continue
-                ShowClaim c        -> showClaim c        $> Continue
+                ShowClaim mc       -> showClaim mc       $> Continue
                 ShowAxiom a        -> showAxiom a        $> Continue
                 Prove i            -> prove i            $> Continue
                 ShowGraph mfile    -> showGraph mfile    $> Continue
@@ -214,7 +212,10 @@ exit = do
   where
     isCompleted :: [GraphProofStatus] -> Bool
     isCompleted xs =
-        foldr (&&) True (fmap (\x -> x == Completed) xs)
+        foldr
+            (&&)
+            True
+            (fmap (\x -> x == Completed || x == TrustedClaim) xs)
 
 help :: MonadWriter String m => m ()
 help = putStrLn' helpText
@@ -224,11 +225,16 @@ showClaim
     :: Claim claim
     => MonadState (ReplState claim) m
     => MonadWriter String m
-    => ClaimIndex
+    => Maybe ClaimIndex
     -> m ()
-showClaim cindex = do
-    claim <- getClaimByIndex . unClaimIndex $ cindex
-    maybe printNotFound (putStrLn' . showRewriteRule) $ claim
+showClaim =
+    \case
+        Nothing -> do
+            currentCindex <- Lens.use lensClaimIndex
+            putStrLn' . showCurrentClaimIndex $ currentCindex
+        Just cindex -> do
+            claim <- getClaimByIndex . unClaimIndex $ cindex
+            maybe printNotFound (putStrLn' . showRewriteRule) $ claim
 
 -- | Prints an axiom using an index in the axioms list.
 showAxiom
@@ -256,10 +262,16 @@ prove cindex = do
   where
     startProving :: ClaimIndex -> claim -> m ()
     startProving ci claim = do
-        switchToProof claim ci
-        putStrLn'
-            $ "Switched to proving claim "
-            <> show (unClaimIndex ci)
+        if isTrusted claim
+            then putStrLn'
+                    $ "Cannot switch to proving claim "
+                    <> show (unClaimIndex ci)
+                    <> ". Claim is trusted."
+            else do
+                switchToProof claim ci
+                putStrLn'
+                    $ "Switched to proving claim "
+                    <> show (unClaimIndex ci)
 
 showGraph
     :: MonadIO m
@@ -415,7 +427,7 @@ allProofs = do
     return
         $ Map.union
             (fmap inProgressProofs graphs)
-            (notStartedProofs graphs cindexes)
+            (notStartedProofs graphs (Map.fromList $ zip cindexes claims))
   where
     inProgressProofs
         :: ExecutionGraph
@@ -426,15 +438,18 @@ allProofs = do
         . Strategy.graph
 
     notStartedProofs
-        :: Map.Map ClaimIndex ExecutionGraph
-        -> [ClaimIndex]
+        :: Claim claim
+        => Map.Map ClaimIndex ExecutionGraph
+        -> Map.Map ClaimIndex claim
         -> Map.Map ClaimIndex GraphProofStatus
-    notStartedProofs gphs cs =
-        let
-            existingKeys = Set.fromList . Map.keys $ gphs
-            allKeys = Set.fromList cs
-            missingKeys = allKeys `Set.difference` existingKeys
-        in Map.fromList $ (\idx -> (idx, NotStarted)) <$> Set.toList missingKeys
+    notStartedProofs gphs cls =
+        notStartedOrTrusted <$> cls `Map.difference` gphs
+
+    notStartedOrTrusted :: claim -> GraphProofStatus
+    notStartedOrTrusted cl =
+        if isTrusted cl
+           then TrustedClaim
+           else NotStarted
 
     findProofStatus :: Map.Map NodeState [Graph.Node] -> GraphProofStatus
     findProofStatus m =
@@ -1031,3 +1046,7 @@ showProofStatus m =
         <> ": "
         <> show elm
 
+showCurrentClaimIndex :: ClaimIndex -> String
+showCurrentClaimIndex ci =
+    "You are currently proving claim "
+    <> show (unClaimIndex ci)

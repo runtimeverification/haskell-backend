@@ -35,7 +35,7 @@ import           ListT
                  ( ListT )
 import qualified ListT
 import           SMT
-                 ( MonadSMT, liftSMT )
+                 ( MonadSMT )
 
 {- | @TransitionT@ represents a transition between program states.
 
@@ -63,6 +63,7 @@ newtype TransitionT rule m a =
 
 instance MonadTrans (TransitionT rule) where
     lift = TransitionT . Monad.Trans.lift . Monad.Trans.lift
+    {-# INLINE lift #-}
 
 instance MonadError e m => MonadError e (TransitionT rule m) where
     throwError = Monad.Trans.lift . throwError
@@ -75,9 +76,21 @@ instance MonadError e m => MonadError e (TransitionT rule m) where
         handler' e = runTransitionT (handler e)
     {-# INLINE catchError #-}
 
-instance MonadSMT m => MonadSMT (TransitionT rule m) where
-    liftSMT = lift . liftSMT
-    {-# INLINE liftSMT #-}
+instance MonadReader e m => MonadReader e (TransitionT rule m) where
+    ask     = Monad.Trans.lift ask
+    {-# INLINE ask #-}
+
+    local f = TransitionT . Accum.mapAccumT (local f) . getTransitionT
+    {-# INLINE local #-}
+
+instance Monad.Morph.MFunctor (TransitionT rule) where
+    hoist morph =
+        TransitionT
+        . Accum.mapAccumT (Monad.Morph.hoist morph)
+        . getTransitionT
+    {-# INLINE hoist #-}
+
+instance (MonadSMT m, MonadIO m) => MonadSMT (TransitionT rule m)
 
 runTransitionT :: Monad m => TransitionT rule m a -> m [(a, Seq rule)]
 runTransitionT (TransitionT edge) = ListT.gather (runAccumT edge mempty)

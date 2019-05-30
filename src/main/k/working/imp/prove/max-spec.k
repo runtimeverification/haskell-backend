@@ -16,17 +16,19 @@ module MAX-SPEC
 
   rule
     <k>
-if (a <= b)
-{ max = b; }
-else
-{ max = a; }
-=> .K
+      if (a <= b) {
+          max = b;
+      } else {
+          max = a;
+      }
+      => .K
     </k>
     <state>
-    a |-> A:Int
-    b |-> B:Int
-    max |-> (_ => ?M:Int)
+      a   |-> A:Int
+      b   |-> B:Int
+      max |-> (_ => M:Int)
     </state>
-    ensures (A >=Int B andBool ?M ==Int A) orBool (B >=Int A andBool ?M ==Int B)
+  ensures
+    (A >=Int B andBool M ==Int A) orBool (B >=Int A andBool M ==Int B)
 
 endmodule

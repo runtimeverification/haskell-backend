@@ -89,8 +89,8 @@ applyStrategy testName start axioms expected =
 takeSteps :: (Start, [Axiom]) -> IO Actual
 takeSteps (Start start, wrappedAxioms) =
     (<$>) pickLongest
-    $ SMT.runSMT SMT.defaultConfig
-    $ Simplification.evalSimplifier emptyLogger
+    $ SMT.runSMT SMT.defaultConfig emptyLogger
+    $ Simplification.evalSimplifier
     $ makeExecutionGraph start (unAxiom <$> wrappedAxioms)
   where
     makeExecutionGraph configuration axioms =
@@ -472,8 +472,8 @@ runStep
     -> IO [Pattern Variable]
 runStep metadataTools configuration axioms =
     (<$>) pickFinal
-    $ SMT.runSMT SMT.defaultConfig
-    $ Simplification.evalSimplifier emptyLogger
+    $ SMT.runSMT SMT.defaultConfig emptyLogger
+    $ Simplification.evalSimplifier
     $ runStrategy
         (transitionRule
             metadataTools
@@ -495,8 +495,8 @@ runSteps
     -> IO (Pattern Variable)
 runSteps metadataTools configuration axioms =
     (<$>) pickLongest
-    $ SMT.runSMT SMT.defaultConfig
-    $ Simplification.evalSimplifier emptyLogger
+    $ SMT.runSMT SMT.defaultConfig emptyLogger
+    $ Simplification.evalSimplifier
     $ runStrategy
         (transitionRule
             metadataTools

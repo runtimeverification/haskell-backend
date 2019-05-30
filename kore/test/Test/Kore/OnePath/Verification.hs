@@ -403,8 +403,8 @@ runVerification
     axioms
     claims
   =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ runExceptT
     $ OnePath.verify
         metadataTools

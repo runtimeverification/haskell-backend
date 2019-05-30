@@ -544,8 +544,8 @@ evaluate
     -> TermLike Variable
     -> IO (CommonAttemptedAxiom)
 evaluate metadataTools (BuiltinAndAxiomSimplifier simplifier) patt =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ simplifier
         metadataTools substitutionSimplifier patternSimplifier Map.empty patt
   where

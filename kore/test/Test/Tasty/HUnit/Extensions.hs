@@ -8,6 +8,8 @@ import           Control.DeepSeq
 import           Control.Exception
                  ( SomeException, catch, evaluate )
 import           Control.Monad
+import           Control.Monad.IO.Class
+                 ( MonadIO, liftIO )
 import           Data.CallStack
 import qualified Data.Foldable as Foldable
 import           Data.Functor.Classes
@@ -126,15 +128,15 @@ class EqualWithExplanation a where
     printWithExplanation :: a -> String
 
 assertEqualWithExplanation
-    :: (EqualWithExplanation a, HasCallStack)
+    :: (EqualWithExplanation a, HasCallStack, MonadIO m)
     => String -- ^ The message prefix
     -> a      -- ^ The expected value
     -> a      -- ^ The actual value
-    -> IO ()
+    -> m ()
 assertEqualWithExplanation prefix expected actual =
     case compareWithExplanation expected actual of
         Just explanation ->
-            assertFailure
+            liftIO $ assertFailure
                 ((if null prefix then "" else prefix ++ "\n") ++ explanation)
         Nothing -> pure ()
 

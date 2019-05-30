@@ -196,8 +196,8 @@ simplify
     :: Iff Sort (OrPattern Variable)
     -> IO (OrPattern Variable)
 simplify iff0 =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ Iff.simplify
         Mock.metadataTools
         (Mock.substitutionSimplifier Mock.metadataTools)

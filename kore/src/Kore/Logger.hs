@@ -85,8 +85,7 @@ class Monad m => WithLog msg m where
 
     -- | Modify the 'LogAction' over the scope of an action.
     withLog
-        :: forall a
-        .  (forall n. LogAction n msg -> LogAction n msg)
+        :: (forall n. LogAction n msg -> LogAction n msg)
         -> m a
         -> m a
 
@@ -117,11 +116,17 @@ hoistLogAction f (LogAction logger) = LogAction $ \msg -> f (logger msg)
 
 instance WithLog msg m => WithLog msg (Except.ExceptT e m) where
     askLogAction = Monad.Trans.lift (liftLogAction <$> askLogAction)
+    {-# INLINE askLogAction #-}
+
     withLog f = Monad.Morph.hoist (withLog f)
+    {-# INLINE withLog #-}
 
 instance WithLog msg m => WithLog msg (ListT m) where
     askLogAction = Monad.Trans.lift (liftLogAction <$> askLogAction)
+    {-# INLINE askLogAction #-}
+
     withLog f = Monad.Morph.hoist (withLog f)
+    {-# INLINE withLog #-}
 
 -- | Log any message.
 logMsg :: WithLog msg m => msg -> m ()

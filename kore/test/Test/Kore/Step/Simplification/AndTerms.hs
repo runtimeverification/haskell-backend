@@ -908,24 +908,26 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expected actual
         ,  testCase "handles set ambiguity" $ do
             let
-                expected = Just
-                    [ Conditional
+                expected1 = do -- list monad
+                    set <- [[Mock.b], [Mock.a, Mock.b]]
+                    return Conditional
                         { term = Mock.builtinSet [Mock.a, Mock.b]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [ (Mock.x, Mock.a)
-                            , (Mock.xSet, Mock.builtinSet [Mock.b])
+                            , (Mock.xSet, Mock.builtinSet set)
                             ]
                         }
-                    , Conditional
+                expected2 = do -- list monad
+                    set <- [[Mock.a], [Mock.a, Mock.b]]
+                    return Conditional
                         { term = Mock.builtinSet [Mock.a, Mock.b]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [ (Mock.x, Mock.b)
-                            , (Mock.xSet, Mock.builtinSet [Mock.a])
+                            , (Mock.xSet, Mock.builtinSet set)
                             ]
                         }
-                    ]
             actual <- unify
                 Mock.metadataTools
                 (Mock.concatSet
@@ -933,15 +935,13 @@ test_andTermsSimplification =
                     (mkVar Mock.xSet)
                 )
                 (Mock.builtinSet [Mock.a, Mock.b])
-            assertEqualWithExplanation "" expected actual
+            assertEqualWithExplanation "" (Just $ expected1 ++ expected2) actual
         , testCase "set elem inj splitting" $ do
             let
                 expected = Just
                     [ Conditional
                         { term = Mock.builtinSet
-                            [ Mock.sortInjectionSubToTop
-                                (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
-                            ]
+                            [ Mock.sortInjectionSubSubToTop Mock.aSubSubsort ]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [   ( Mock.xSubSort
@@ -961,23 +961,22 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expected actual
         , testCase "set concat inj splitting" $ do
             let
-                expected = Just
-                    [ Conditional
+                expected = Just $ do -- list monad
+                    set <-
+                        [[], [Mock.sortInjectionSubSubToTop Mock.aSubSubsort]]
+                    return Conditional
                         { term = Mock.builtinSet
-                            [ Mock.sortInjectionSubToTop
-                                (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
-                            ]
+                            [ Mock.sortInjectionSubSubToTop Mock.aSubSubsort ]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [   ( Mock.xSubSort
                                 , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
                                 )
                             ,   ( Mock.xSet
-                                , Mock.builtinSet []
+                                , Mock.builtinSet set
                                 )
                             ]
                         }
-                    ]
             actual <- unify
                 Mock.metadataTools
                 (Mock.concatSet
@@ -992,29 +991,59 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expected actual
         , testCase "set concat 2 inj splitting" $ do
             let
-                expected = Just
-                    [ Conditional
-                        { term = Mock.builtinSet
-                            [ Mock.a
-                            , Mock.sortInjectionSubToTop
-                                (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
+                expected1 = do -- list monad
+                    set <-
+                        [ []
+                        , [Mock.sortInjectionSubSubToTop Mock.aSubSubsort]
+                        , [Mock.aTopSort]
+                        ,   [ Mock.aTopSort
+                            , Mock.sortInjectionSubSubToTop Mock.aSubSubsort
                             ]
-                        , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
-                            [   (Mock.x, Mock.a)
-                            ,   ( Mock.xSubSort
-                                , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
-                                )
-                            ,   ( Mock.xSet
-                                , Mock.builtinSet []
-                                )
+                        ]
+                    return Conditional
+                            { term = Mock.builtinSet
+                                [ Mock.aTopSort
+                                , Mock.sortInjectionSubSubToTop Mock.aSubSubsort
+                                ]
+                            , predicate = makeTruePredicate
+                            , substitution = Substitution.unsafeWrap
+                                [   (Mock.xTopSort, Mock.aTopSort)
+                                ,   ( Mock.xSubSort
+                                    , Mock.sortInjectionSubSubToSub
+                                        Mock.aSubSubsort
+                                    )
+                                ,   (Mock.xSet, Mock.builtinSet set)
+                                ]
+                            }
+                expected2 = do -- list monad
+                    set <-
+                        [ [Mock.aTopSort]
+                        ,   [ Mock.aTopSort
+                            , Mock.sortInjectionSubSubToTop Mock.aSubSubsort
                             ]
-                        }
-                    ]
+                        ]
+                    return Conditional
+                            { term = Mock.builtinSet
+                                [ Mock.aTopSort
+                                , Mock.sortInjectionSubSubToTop Mock.aSubSubsort
+                                ]
+                            , predicate = makeTruePredicate
+                            , substitution = Substitution.unsafeWrap
+                                [   ( Mock.xTopSort
+                                    , Mock.sortInjectionSubSubToTop
+                                        Mock.aSubSubsort
+                                    )
+                                ,   ( Mock.xSubSort
+                                    , Mock.sortInjectionSubSubToSub
+                                        Mock.aSubSubsort
+                                    )
+                                ,   (Mock.xSet, Mock.builtinSet set)
+                                ]
+                            }
             actual <- unify
                 Mock.metadataTools
                 (Mock.concatSet
-                    (Mock.elementSet (mkVar Mock.x))
+                    (Mock.elementSet (mkVar Mock.xTopSort))
                     (Mock.concatSet
                         (Mock.elementSet
                             (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
@@ -1023,9 +1052,11 @@ test_andTermsSimplification =
                     )
                 )
                 (Mock.builtinSet
-                    [Mock.a, Mock.sortInjectionSubSubToTop Mock.aSubSubsort]
+                    [ Mock.aTopSort
+                    , Mock.sortInjectionSubSubToTop Mock.aSubSubsort
+                    ]
                 )
-            assertEqualWithExplanation "" expected actual
+            assertEqualWithExplanation "" (Just $ expected1 ++ expected2) actual
         ]
     ]
 
@@ -1156,24 +1187,21 @@ test_equalsTermsSimplification =
     , testCase "handles set ambiguity" $ do
         let
             asInternal = Set.asInternal Mock.metadataTools Mock.setSort
-            expected = Just
-                [ Conditional
+            expected = Just $ do -- list monad
+                (xValue, xSetValue) <-
+                    [ (Mock.a, [Mock.a, Mock.b])
+                    , (Mock.a, [Mock.b])
+                    , (Mock.b, [Mock.a])
+                    , (Mock.b, [Mock.a, Mock.b])
+                    ]
+                return Conditional
                     { term = ()
                     , predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.a)
-                        , (Mock.xSet, asInternal (Set.fromList [Mock.b]))
+                        [ (Mock.x, xValue)
+                        , (Mock.xSet, asInternal (Set.fromList xSetValue))
                         ]
                     }
-                , Conditional
-                    { term = ()
-                    , predicate = makeTruePredicate
-                    , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.b)
-                        , (Mock.xSet, asInternal (Set.fromList [Mock.a]))
-                        ]
-                    }
-                ]
         actual <- simplifyEquals
             Mock.metadataTools
             Map.empty
@@ -1233,8 +1261,8 @@ unify
     -> TermLike Variable
     -> IO (Maybe [Pattern Variable])
 unify tools first second =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ runMaybeT unification
   where
     substitutionSimplifier = Mock.substitutionSimplifier tools
@@ -1256,8 +1284,8 @@ simplify
     -> TermLike Variable
     -> IO [Pattern Variable]
 simplify tools first second =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ BranchT.gather
     $ termAnd
         tools
@@ -1275,8 +1303,8 @@ simplifyEquals
     -> IO (Maybe [Predicate Variable])
 simplifyEquals tools axiomIdToSimplifier first second =
     fmap MultiOr.extractPatterns
-    <$> SMT.runSMT SMT.defaultConfig
-        ( evalSimplifier emptyLogger
+    <$> SMT.runSMT SMT.defaultConfig emptyLogger
+        ( evalSimplifier
         $ runMaybeT
         $ termEquals
             tools

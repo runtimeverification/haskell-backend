@@ -61,8 +61,8 @@ test_exec = testCase "exec" $ actual >>= assertEqualWithExplanation "" expected
     unlimited :: Limit Integer
     unlimited = Unlimited
     actual =
-        SMT.runSMT SMT.defaultConfig
-            $ evalSimplifier emptyLogger
+        SMT.runSMT SMT.defaultConfig emptyLogger
+            $ evalSimplifier
             $ exec
                 verifiedModule
                 (Limit.replicate unlimited . anyRewrite)
@@ -109,8 +109,8 @@ test_search =
                 searchPattern
                 Search.Config { bound = Unlimited, searchType }
         finalPattern <-
-            SMT.runSMT SMT.defaultConfig
-                $ evalSimplifier emptyLogger simplifier
+            SMT.runSMT SMT.defaultConfig emptyLogger
+                $ evalSimplifier simplifier
         let Just results = extractSearchResults finalPattern
         return results
     verifiedModule = verifiedMyModule Module
@@ -301,8 +301,8 @@ test_execGetExitCode =
             $ actual testModule inputInteger >>= assertEqual "" expectedCode
 
     actual testModule exitCode =
-        SMT.runSMT SMT.defaultConfig
-            $ evalSimplifier emptyLogger
+        SMT.runSMT SMT.defaultConfig emptyLogger
+            $ evalSimplifier
             $ execGetExitCode
                 (verifiedMyModule testModule)
                 (Limit.replicate unlimited . anyRewrite)

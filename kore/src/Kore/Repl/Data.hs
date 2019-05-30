@@ -55,7 +55,6 @@ import           Control.Monad.Error.Class
 import qualified Control.Monad.Error.Class as Monad.Error
 import           Control.Monad.IO.Class
                  ( liftIO )
-import qualified Control.Monad.Reader.Class as Reader
 import           Control.Monad.State.Strict
                  ( MonadState, get, modify )
 import           Control.Monad.Trans.Accum
@@ -155,8 +154,8 @@ data ReplCommand
     -- ^ This is the default action in case parsing all others fail.
     | Help
     -- ^ Shows the help message.
-    | ShowClaim !ClaimIndex
-    -- ^ Show the nth claim.
+    | ShowClaim !(Maybe ClaimIndex)
+    -- ^ Show the nth claim or the current claim.
     | ShowAxiom !AxiomIndex
     -- ^ Show the nth axiom.
     | Prove !ClaimIndex
@@ -243,10 +242,12 @@ helpText :: String
 helpText =
     "Available commands in the Kore REPL: \n\
     \help                                  shows this help message\n\
-    \claim <n>                             shows the nth claim\n\
+    \claim [n]                             shows the nth claim or if\
+                                           \ used without args shows the\
+                                           \ currently focused claim\n\
     \axiom <n>                             shows the nth axiom\n\
-    \prove <n>                             initializes proof mode for the nth \
-                                           \claim\n\
+    \prove <n>                             initializes proof mode for the nth\
+                                           \ claim\n\
     \graph [file]                          shows the current proof graph (*)\n\
     \                                      (saves image in .jpeg format if file\
                                            \ argument is given; file extension is\
@@ -283,7 +284,7 @@ helpText =
     \alias <name> = <command>              adds as an alias for <command>\n\
     \<alias>                               runs an existing alias\n\
     \load file                             loads the file as a repl script\n\
-    \proof-status                          shows status for each claim\
+    \proof-status                          shows status for each claim\n\
     \log <severity> <type>                 configures the logging outout\n\
                                            \<severity> can be debug, info, warning,\
                                            \error, or critical\n\
@@ -481,7 +482,7 @@ switchToProof
     => claim
     -> ClaimIndex
     -> m ()
-switchToProof claim cindex = do
+switchToProof claim cindex =
     modify (\st -> st
         { claim = claim
         , claimIndex = cindex
@@ -615,21 +616,13 @@ liftSimplifierWithLogger sa = do
    (severity, logType) <- logging <$> get
    (textLogger, maybeHandle) <- logTypeToLogger logType
    let logger = Logger.makeKoreLogger severity textLogger
-   result <- Monad.Trans.lift
-       . Reader.local (setLogger logger)
-       $ sa
+   result <- Monad.Trans.lift $ Simplifier.withLogger logger sa
    maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
    pure result
   where
-    setLogger
-        :: Logger.LogAction Simplifier Logger.LogMessage
-        -> Simplifier.Environment
-        -> Simplifier.Environment
-    setLogger la env = env { Simplifier.logger = la }
-
     logTypeToLogger
         :: LogType
-        -> t Simplifier (Logger.LogAction Simplifier Text, Maybe Handle)
+        -> t Simplifier (Logger.LogAction IO Text, Maybe Handle)
     logTypeToLogger =
         \case
             NoLogging   -> pure (mempty, Nothing)
@@ -724,6 +717,7 @@ data GraphProofStatus
     | Completed
     | InProgress [Graph.Node]
     | StuckProof [Graph.Node]
+    | TrustedClaim
     deriving (Eq, Show)
 
 -- | Adds or updates the provided alias.

@@ -13,6 +13,8 @@ import           Control.Applicative
 import qualified Control.Applicative as Applicative
 import           Control.Error
                  ( MaybeT, runMaybeT )
+import           Control.Monad.IO.Class
+                 ( MonadIO )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
@@ -33,7 +35,7 @@ import           Kore.Syntax.Variable
 import           Kore.Unparser
                  ( Unparse )
 import           SMT
-                 ( MonadSMT, Result (..), SExpr (..), SMT )
+                 ( MonadSMT, Result (..), SExpr (..) )
 import qualified SMT
 
 
@@ -50,35 +52,30 @@ decidePredicate
         , Unparse variable
         , SortedVariable variable
         , MonadSMT m
+        , MonadIO m
         )
     => Predicate variable
     -> m (Maybe Bool)
 decidePredicate korePredicate =
-    SMT.inNewScope $ runMaybeT $ do
+    SMT.withSolver $ runMaybeT $ do
         smtPredicate <-
             goTranslatePredicate korePredicate
-        -- smtPredicate' <-
-        --     goTranslatePredicate (makeNotPredicate korePredicate)
-        result <- SMT.inNewScope
+        result <- SMT.withSolver
             (SMT.assert smtPredicate >> SMT.check)
-        -- result' <- SMT.inNewScope
-        --     (SMT.assert smtPredicate' >> SMT.check)
-        -- case (result, result') of
-        --     (Unsat, _) -> return False
-        --     (_, Unsat) -> return True
-        --     _ -> empty
         case result of
             Unsat -> return False
             _ -> Applicative.empty
 
 goTranslatePredicate
-    :: forall variable.
+    :: forall variable m.
         ( Ord variable
         , Given (SmtMetadataTools StepperAttributes)
         , Unparse variable
+        , MonadIO m
+        , MonadSMT m
         )
     => Predicate variable
-    -> MaybeT SMT SExpr
+    -> MaybeT m SExpr
 goTranslatePredicate predicate = do
     let
         translator = translatePredicate translateUninterpreted predicate
@@ -86,9 +83,11 @@ goTranslatePredicate predicate = do
 
 translateUninterpreted
     :: Ord p
+    => MonadIO m
+    => MonadSMT m
     => SExpr  -- ^ type name
     -> p  -- ^ uninterpreted pattern
-    -> Translator p SExpr
+    -> Translator m p SExpr
 translateUninterpreted t pat =
     lookupPattern <|> freeVariable
   where

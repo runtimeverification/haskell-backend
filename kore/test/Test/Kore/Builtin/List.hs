@@ -45,8 +45,8 @@ test_getUnit =
                     , Test.Int.asInternal k
                     ]
             predicate = mkEquals_ mkBottom_ patGet
-        (===) Pattern.bottom =<< evaluate patGet
-        (===) Pattern.top =<< evaluate predicate
+        (===) Pattern.bottom =<< evaluateT patGet
+        (===) Pattern.top    =<< evaluateT predicate
 
 test_getFirstElement :: TestTree
 test_getFirstElement =
@@ -66,8 +66,8 @@ test_getFirstElement =
             patFirst = maybe mkBottom_ Test.Int.asInternal value
             predicate = mkEquals_ patGet patFirst
         let expectGet = Test.Int.asPartialPattern value
-        (===) expectGet =<< evaluate patGet
-        (===) Pattern.top =<< evaluate predicate
+        (===) expectGet   =<< evaluateT patGet
+        (===) Pattern.top =<< evaluateT predicate
 
 test_getLastElement :: TestTree
 test_getLastElement =
@@ -90,8 +90,8 @@ test_getLastElement =
             patFirst = maybe mkBottom_ Test.Int.asInternal value
             predicate = mkEquals_ patGet patFirst
         let expectGet = Test.Int.asPartialPattern value
-        (===) expectGet =<< evaluate patGet
-        (===) Pattern.top =<< evaluate predicate
+        (===) expectGet   =<< evaluateT patGet
+        (===) Pattern.top =<< evaluateT predicate
 
 test_concatUnit :: TestTree
 test_concatUnit =
@@ -107,11 +107,11 @@ test_concatUnit =
             patConcat2 = mkApp listSort concatListSymbol [ patValues, patUnit ]
             predicate1 = mkEquals_ patValues patConcat1
             predicate2 = mkEquals_ patValues patConcat2
-        expectValues <- evaluate patValues
-        (===) expectValues =<< evaluate patConcat1
-        (===) expectValues =<< evaluate patConcat2
-        (===) Pattern.top =<< evaluate predicate1
-        (===) Pattern.top =<< evaluate predicate2
+        expectValues <- evaluateT patValues
+        (===) expectValues =<< evaluateT patConcat1
+        (===) expectValues =<< evaluateT patConcat2
+        (===) Pattern.top  =<< evaluateT predicate1
+        (===) Pattern.top  =<< evaluateT predicate2
 
 test_concatAssociates :: TestTree
 test_concatAssociates =
@@ -133,10 +133,10 @@ test_concatAssociates =
             patConcat1_23 =
                 mkApp listSort concatListSymbol [ patList1, patConcat23 ]
             predicate = mkEquals_ patConcat12_3 patConcat1_23
-        evalConcat12_3 <- evaluate patConcat12_3
-        evalConcat1_23 <- evaluate patConcat1_23
+        evalConcat12_3 <- evaluateT patConcat12_3
+        evalConcat1_23 <- evaluateT patConcat1_23
         (===) evalConcat12_3 evalConcat1_23
-        (===) Pattern.top =<< evaluate predicate
+        (===) Pattern.top =<< evaluateT predicate
 
 -- | Check that simplification is carried out on list elements.
 test_simplify :: TestTree
@@ -151,7 +151,7 @@ test_simplify =
                     }
             original = asInternal [mkAnd x mkTop_]
             expected = asPattern [x]
-        (===) expected =<< evaluate original
+        (===) expected =<< evaluateT original
 
 test_isBuiltin :: [TestTree]
 test_isBuiltin =

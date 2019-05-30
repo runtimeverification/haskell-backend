@@ -9,7 +9,6 @@ import qualified Data.Text as Text
 import           Hedgehog
 import qualified Hedgehog.Gen as Gen
 import           Test.Tasty
-import           Test.Tasty.HUnit
 
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
@@ -19,7 +18,8 @@ import           Kore.Internal.TermLike
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
 import           Test.Kore.Builtin.Definition
-import           Test.SMT
+
+import Test.SMT
 
 test_kneq :: TestTree
 test_kneq = testBinary kneqBoolSymbol (/=)
@@ -40,8 +40,8 @@ testBinary symb impl =
         b <- forAll Gen.bool
         let expect = Test.Bool.asPattern (impl a b)
         actual <-
-            evaluate
-            $ mkApp boolSort symb
+            evaluateT
+            . mkApp boolSort symb
             $ Test.Bool.asInternal <$> [a, b]
         (===) expect actual
   where
@@ -55,7 +55,7 @@ testBinary symb impl =
 
 test_KEqual :: [TestTree]
 test_KEqual =
-    [ testCaseWithSolver "dotk equals dotk" $ \solver -> do
+    [ testCaseWithSMT "dotk equals dotk" $ do
         let expect =
                 Pattern.fromTermLike
                 $ Test.Bool.asInternal True
@@ -66,10 +66,10 @@ test_KEqual =
                     [ mkApp kSort dotkSymbol []
                     , mkApp kSort dotkSymbol []
                     ]
-        actual <- evaluateWith solver original
-        assertEqual "" expect actual
+        actual <- evaluate original
+        assertEqual' "" expect actual
 
-    , testCaseWithSolver "distinct domain values" $ \solver -> do
+    , testCaseWithSMT "distinct domain values" $ do
         let expect =
                 Pattern.fromTermLike
                 $ Test.Bool.asInternal False
@@ -86,10 +86,10 @@ test_KEqual =
                         , domainValueChild = mkStringLiteral "x"
                         }
                     ]
-        actual <- evaluateWith solver original
-        assertEqual "" expect actual
+        actual <- evaluate original
+        assertEqual' "" expect actual
 
-    , testCaseWithSolver "injected distinct domain values" $ \solver -> do
+    , testCaseWithSMT "injected distinct domain values" $ do
         let expect =
                 Pattern.fromTermLike
                 $ Test.Bool.asInternal False
@@ -114,10 +114,10 @@ test_KEqual =
                             }
                         ]
                     ]
-        actual <- evaluateWith solver original
-        assertEqual "" expect actual
+        actual <- evaluate original
+        assertEqual' "" expect actual
 
-    , testCase "distinct Id domain values casted to K" $ do
+    , testCaseWithSMT "distinct Id domain values casted to K" $ do
         let expect =
                 Pattern.fromTermLike
                 $ Test.Bool.asInternal False
@@ -152,13 +152,13 @@ test_KEqual =
                         , mkApp kSort dotkSymbol []
                         ]
                     ]
-        actual <- runSMT $ evaluate original
-        assertEqual "" expect actual
+        actual <- evaluate original
+        assertEqual' "" expect actual
     ]
 
 test_KIte :: [TestTree]
 test_KIte =
-    [ testCaseWithSolver "ite true" $ \solver -> do
+    [ testCaseWithSMT "ite true" $ do
         let expect =
                 Pattern.fromTermLike
                 $ Test.Bool.asInternal False
@@ -170,10 +170,10 @@ test_KIte =
                     , Test.Bool.asInternal False
                     , Test.Bool.asInternal True
                     ]
-        actual <- evaluateWith solver original
-        assertEqual "" expect actual
+        actual <- evaluate original
+        assertEqual' "" expect actual
 
-    , testCaseWithSolver "ite false" $ \solver -> do
+    , testCaseWithSMT "ite false" $ do
         let expect =
                 Pattern.fromTermLike
                 $ Test.Bool.asInternal True
@@ -185,6 +185,6 @@ test_KIte =
                     , Test.Bool.asInternal False
                     , Test.Bool.asInternal True
                     ]
-        actual <- evaluateWith solver original
-        assertEqual "" expect actual
+        actual <- evaluate original
+        assertEqual' "" expect actual
     ]

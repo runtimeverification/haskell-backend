@@ -50,8 +50,8 @@ test_Pattern_simplify =
 
 simplify :: Pattern Variable -> IO (OrPattern Variable)
 simplify original =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ Pattern.simplify
         Mock.metadataTools
         predicateSimplifier
