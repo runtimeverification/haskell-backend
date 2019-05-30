@@ -15,8 +15,6 @@ module Kore.Step.Axiom.EvaluationStrategy
     , simplifierWithFallback
     ) where
 
--- import           Control.Error
---                  ( atZ )
 import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
 import           Data.Function
@@ -356,27 +354,6 @@ evaluateWithDefinitionAxioms
         }
 
   where
-    -- If the pattern is an application of a inductively-defined symbol,
-    -- applying the definition axioms will not terminate, so we consider this
-    -- case invalid.
-    -- invalidCoinduction
-    --   | App_ symbol children <- patt =
-    --     let
-    --         Attribute.Inductive { inductiveArguments } =
-    --             Attribute.inductive (symAttributes tools symbol)
-    --         hasInvalidArgument ix =
-    --             maybe False (not . isConstructorPattern) (atZ children (ix - 1))
-    --     in
-    --         Foldable.any hasInvalidArgument inductiveArguments
-    --   | otherwise = False
-
-    -- isConstructorPattern termLike
-    --   | App_ symbol _ <- termLike =
-    --         symAttributes tools symbol
-    --         & Attribute.constructor
-    --         & Attribute.isConstructor
-    --   | otherwise = False
-
     unwrapEqualityRule (EqualityRule rule) =
         RulePattern.mapVariables fromVariable rule
 
