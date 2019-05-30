@@ -542,8 +542,22 @@ test_applyRewriteRule_ =
                 makeEqualsPredicate
                     (Mock.functional11 (mkVar Mock.x))
                     (Mock.functional10 (mkVar Mock.x))
-            expect = Right [ OrPattern.fromPatterns [initial { predicate = ensures }] ]
-            initial = pure (mkVar Mock.x)
+            expect :: Either
+                UnificationOrSubstitutionError [OrPattern Variable]
+            expect = Right
+                [ OrPattern.fromTermLike
+                    (mkExists
+                        Mock.x
+                        (mkAnd
+                            (mkVar Mock.x)
+                            (mkEquals_
+                                (Mock.functional11 (mkVar Mock.x))
+                                (Mock.functional10 (mkVar Mock.x))
+                            )
+                        )
+                    )
+                ]
+            initial = Pattern.fromTermLike (mkVar Mock.x)
             axiom = RewriteRule ruleId { ensures }
         actual <- applyRewriteRule_ initial axiom
         assertEqualWithExplanation "" expect actual
@@ -558,7 +572,8 @@ test_applyRewriteRule_ =
                 makeEqualsPredicate
                     (Mock.functional11 (mkVar Mock.x))
                     (Mock.functional10 (mkVar Mock.x))
-            expect = Right [ OrPattern.fromPatterns [initial { predicate = requires }] ]
+            expect = Right
+                [ OrPattern.fromPatterns [initial { predicate = requires }] ]
             initial = pure (mkVar Mock.x)
             axiom = RewriteRule ruleId { requires }
         actual <- applyRewriteRule_ initial axiom
@@ -978,6 +993,27 @@ test_applyRewriteRules =
         Right actual <- applyRewriteRules initial [axiomIfThen]
         checkResults results actual
         checkRemainders remainders actual
+
+    , testCase "adding variables" $ do
+        -- Term: a
+        -- Rule: a => x
+        -- Expected: exists x . x
+        let
+            results = OrPattern.fromTermLike (mkExists Mock.x (mkVar Mock.x))
+            remainders = OrPattern.bottom
+            initialTerm = Mock.a
+            initial = Pattern.fromTermLike initialTerm
+        Right actual <- applyRewriteRules initial
+            [ RewriteRule RulePattern
+                { left = Mock.a
+                , right = mkVar Mock.x
+                , requires = makeTruePredicate
+                , ensures = makeTruePredicate
+                , attributes = def
+                }
+            ]
+        checkResults results actual
+        checkRemainders remainders actual
     ]
 
 axiomIfThen :: RewriteRule Variable
@@ -1138,6 +1174,27 @@ test_sequenceRewriteRules =
         Right actual <- sequenceRewriteRules initial axiomsCase
         checkResults results actual
         checkRemainders remainders actual
+
+    , testCase "adding variables" $ do
+        -- Term: a
+        -- Rule: a => x
+        -- Expected: exists x . x
+        let
+            results = OrPattern.fromTermLike (mkExists Mock.x (mkVar Mock.x))
+            remainders = OrPattern.bottom
+            initialTerm = Mock.a
+            initial = Pattern.fromTermLike initialTerm
+        Right actual <- sequenceRewriteRules initial
+            [ RewriteRule RulePattern
+                { left = Mock.a
+                , right = mkVar Mock.x
+                , requires = makeTruePredicate
+                , ensures = makeTruePredicate
+                , attributes = def
+                }
+            ]
+        checkResults results actual
+        checkRemainders remainders actual
     ]
 
 axiomFunctionalSigma :: EqualityRule Variable
@@ -1199,9 +1256,17 @@ test_sequenceMatchingRules =
             results =
                 OrPattern.fromPatterns
                     [ Conditional
-                        { term = Mock.a
+                        { term =
+                            mkExists
+                                Mock.y
+                                (mkExists
+                                    x'
+                                    (mkAnd
+                                        Mock.a (mkEquals_ (mkVar Mock.x) sigma)
+                                    )
+                                )
                         , predicate = Predicate.makeTruePredicate
-                        , substitution = Substitution.wrap [(Mock.x, sigma)]
+                        , substitution = mempty
                         }
                     ]
             remainders =
@@ -1215,6 +1280,28 @@ test_sequenceMatchingRules =
                         }
                     ]
         Right actual <- sequenceMatchingRules initial [axiomFunctionalSigma]
+        checkResults results actual
+        checkRemainders remainders actual
+
+    , testCase "adding variables" $ do
+        -- Term: a
+        -- Rule: a => f(x)
+        -- Expected: exists x . f(x)
+        let
+            results =
+                OrPattern.fromTermLike (mkExists Mock.x (Mock.f (mkVar Mock.x)))
+            remainders = OrPattern.bottom
+            initialTerm = Mock.a
+            initial = Pattern.fromTermLike initialTerm
+        Right actual <- sequenceRewriteRules initial
+            [ RewriteRule RulePattern
+                { left = Mock.a
+                , right = Mock.f (mkVar Mock.x)
+                , requires = makeTruePredicate
+                , ensures = makeTruePredicate
+                , attributes = def
+                }
+            ]
         checkResults results actual
         checkRemainders remainders actual
     ]
