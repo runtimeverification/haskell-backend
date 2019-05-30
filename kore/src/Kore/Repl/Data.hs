@@ -480,7 +480,7 @@ switchToProof
     => claim
     -> ClaimIndex
     -> m ()
-switchToProof claim cindex = do
+switchToProof claim cindex =
     modify (\st -> st
         { claim = claim
         , claimIndex = cindex
@@ -715,6 +715,7 @@ data GraphProofStatus
     | Completed
     | InProgress [Graph.Node]
     | StuckProof [Graph.Node]
+    | TrustedClaim
     deriving (Eq, Show)
 
 -- | Adds or updates the provided alias.

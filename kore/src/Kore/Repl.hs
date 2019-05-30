@@ -27,9 +27,9 @@ import           Control.Monad.State.Strict
 import           Data.Coerce
                  ( coerce )
 import qualified Data.Graph.Inductive.Graph as Graph
+import           Data.List
+                 ( findIndex )
 import qualified Data.Map.Strict as Map
-import           Data.Maybe
-                 ( listToMaybe )
 import qualified Data.Sequence as Seq
 import           Kore.Attribute.RuleIndex
 import           System.Exit
@@ -49,9 +49,7 @@ import qualified Kore.Logger as Logger
 import           Kore.OnePath.Verification
                  ( verifyClaimStep )
 import           Kore.OnePath.Verification
-                 ( Axiom )
-import           Kore.OnePath.Verification
-                 ( Claim )
+                 ( Axiom, Claim, isTrusted )
 import           Kore.OnePath.Verification
 import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
@@ -116,13 +114,15 @@ runRepl
         RunScript ->
             case mNewState of
                 Nothing -> liftIO exitFailure
-                Just newState ->
-                    void
-                    $ evalStateT
-                        (replInterpreter printIfNotEmpty Exit)
-                        newState
+                Just newState -> do
+                    runReplCommand ProofStatus newState
+                    runReplCommand Exit newState
 
   where
+
+    runReplCommand :: ReplCommand -> ReplState claim -> Simplifier ()
+    runReplCommand cmd st =
+        void $ evalStateT (replInterpreter printIfNotEmpty cmd) st
 
     evaluateScript :: ReplScript -> Simplifier (Maybe (ReplState claim))
     evaluateScript rs =
@@ -159,7 +159,10 @@ runRepl
             }
 
     firstClaimIndex :: ClaimIndex
-    firstClaimIndex = ClaimIndex 0
+    firstClaimIndex =
+        ClaimIndex
+        . maybe (error "No claims found") id
+        $ findIndex (not . isTrusted) claims'
 
     addIndexesToAxioms
         :: [Axiom]
@@ -200,7 +203,8 @@ runRepl
     makeRuleIndex n _ = RuleIndex (Just n)
 
     firstClaim :: Claim claim => claim
-    firstClaim = maybe (error "No claims found") id $ listToMaybe claims'
+    firstClaim =
+        claims' !! unClaimIndex firstClaimIndex
 
     firstClaimExecutionGraph :: ExecutionGraph
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
