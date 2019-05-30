@@ -102,8 +102,7 @@ class Monad m => WithLog msg m where
         => (forall n. LogAction n msg -> LogAction n msg)
         -> m a
         -> m a
-    localLogAction mapping =
-        Monad.Morph.hoist (localLogAction mapping)
+    localLogAction mapping = Monad.Morph.hoist (localLogAction mapping)
     {-# INLINE localLogAction #-}
 
 instance (WithLog msg m, Monad m) => WithLog msg (IdentityT m)

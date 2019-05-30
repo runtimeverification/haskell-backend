@@ -9,6 +9,7 @@ Portability : portable
 -}
 module Kore.Step.Simplification.Data
     ( Simplifier
+    , Env (..)
     , runSimplifier
     , evalSimplifier
     , BranchT
@@ -39,6 +40,10 @@ import           Data.Typeable
 import           GHC.Stack
                  ( HasCallStack )
 
+import qualified Kore.Attribute.Symbol as Attribute
+                 ( Symbol )
+import           Kore.IndexedModule.MetadataTools
+                 ( SmtMetadataTools )
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -165,7 +170,10 @@ scatter = BranchT . ListT.scatter . Foldable.toList
 
 -- * Simplifier
 
-data Env = Env
+data Env =
+    Env
+        { metadataTools :: !(SmtMetadataTools Attribute.Symbol)
+        }
 
 {- | @Simplifier@ represents a simplification action.
 
@@ -192,10 +200,11 @@ instance WithLog LogMessage Simplifier where
 {- | Run a simplification, returning the results along all branches.
  -}
 evalSimplifierBranch
-    :: BranchT Simplifier a
+    :: Env
+    -> BranchT Simplifier a
     -- ^ simplifier computation
     -> SMT [a]
-evalSimplifierBranch = evalSimplifier . gather
+evalSimplifierBranch env = evalSimplifier env . gather
 
 {- | Run a simplification, returning the result of only one branch.
 
@@ -206,10 +215,11 @@ that may branch.
  -}
 runSimplifier
     :: HasCallStack
-    => Simplifier a
+    => Env
+    -> Simplifier a
     -- ^ simplifier computation
     -> SMT a
-runSimplifier = evalSimplifier
+runSimplifier env = evalSimplifier env
 
 {- | Evaluate a simplifier computation, returning the result of only one branch.
 
@@ -220,9 +230,10 @@ that may branch.
   -}
 evalSimplifier
     :: HasCallStack
-    => Simplifier a
+    => Env
+    -> Simplifier a
     -> SMT a
-evalSimplifier = withSolver . flip runReaderT Env . getSimplifier
+evalSimplifier env = withSolver . flip runReaderT env . getSimplifier
 
 -- * Implementation
 

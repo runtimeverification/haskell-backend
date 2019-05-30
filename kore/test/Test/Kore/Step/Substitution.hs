@@ -338,7 +338,7 @@ merge
     -> IO (Either UnificationOrSubstitutionError [Predicate Variable])
 merge s1 s2 =
     runSMT
-    $ evalSimplifier
+    $ evalSimplifier Mock.env
     $ Monad.Unify.runUnifier
     $ mergePredicatesAndSubstitutionsExcept
         Mock.metadataTools
@@ -353,7 +353,7 @@ normalize
     -> IO [Conditional Variable term]
 normalize predicated =
     runSMT
-    $ evalSimplifier
+    $ evalSimplifier Mock.env
     $ gather
     $ Substitution.normalize
         Mock.metadataTools
@@ -372,7 +372,7 @@ normalizeExcept
 normalizeExcept predicated =
     (fmap . fmap) MultiOr.make
     $ runSMT
-    $ evalSimplifier
+    $ evalSimplifier Mock.env
     $ Monad.Unify.runUnifier
     $ Substitution.normalizeExcept
         Mock.metadataTools

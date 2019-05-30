@@ -90,7 +90,7 @@ takeSteps :: (Start, [Axiom]) -> IO Actual
 takeSteps (Start start, wrappedAxioms) =
     (<$>) pickLongest
     $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ Simplification.evalSimplifier
+    $ Simplification.evalSimplifier Mock.env
     $ makeExecutionGraph start (unAxiom <$> wrappedAxioms)
   where
     makeExecutionGraph configuration axioms =
@@ -224,7 +224,6 @@ expectTwoAxioms =
 actualTwoAxioms :: IO [Pattern Variable]
 actualTwoAxioms =
     runStep
-        mockMetadataTools
         Conditional
             { term = mkVar (v1 Mock.testSort)
             , predicate = makeTruePredicate
@@ -251,7 +250,6 @@ expectFailSimple = [initialFailSimple]
 actualFailSimple :: IO [Pattern Variable]
 actualFailSimple =
     runStep
-        mockMetadataTools
         initialFailSimple
         [ RewriteRule $ RulePattern
             { left =
@@ -283,7 +281,6 @@ expectFailCycle = [initialFailCycle]
 actualFailCycle :: IO [Pattern Variable]
 actualFailCycle =
     runStep
-        mockMetadataTools
         initialFailCycle
         [ RewriteRule $ RulePattern
             { left =
@@ -312,7 +309,6 @@ expectIdentity = [initialIdentity]
 actualIdentity :: IO [Pattern Variable]
 actualIdentity =
     runStep
-        mockMetadataTools
         initialIdentity
         [ rewriteIdentity ]
 
@@ -354,7 +350,6 @@ test_unificationError =
 actualUnificationError :: IO [Pattern Variable]
 actualUnificationError =
     runStep
-        mockMetadataTools
         Conditional
             { term =
                 metaSigma
@@ -389,6 +384,9 @@ mockMetadataTools = MetadataTools
     , applicationSorts = undefined
     , smtData = undefined
     }
+
+mockEnv :: Env
+mockEnv = Env { metadataTools = mockMetadataTools }
 
 sigmaSymbol :: SymbolOrAlias
 sigmaSymbol = SymbolOrAlias
@@ -464,16 +462,14 @@ metaI
 metaI p = mkApp Mock.testSort iSymbol [p]
 
 runStep
-    :: SmtMetadataTools StepperAttributes
-    -- ^functions yielding metadata for pattern heads
-    -> Pattern Variable
+    :: Pattern Variable
     -- ^left-hand-side of unification
     -> [RewriteRule Variable]
     -> IO [Pattern Variable]
-runStep metadataTools configuration axioms =
+runStep configuration axioms =
     (<$>) pickFinal
     $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ Simplification.evalSimplifier
+    $ Simplification.evalSimplifier mockEnv
     $ runStrategy
         (transitionRule
             metadataTools
@@ -484,19 +480,18 @@ runStep metadataTools configuration axioms =
         [allRewrites axioms]
         configuration
   where
+    metadataTools = mockMetadataTools
     simplifier = Simplifier.create metadataTools Map.empty
 
 runSteps
-    :: SmtMetadataTools StepperAttributes
-    -- ^functions yielding metadata for pattern heads
-    -> Pattern Variable
+    :: Pattern Variable
     -- ^left-hand-side of unification
     -> [RewriteRule Variable]
     -> IO (Pattern Variable)
-runSteps metadataTools configuration axioms =
+runSteps configuration axioms =
     (<$>) pickLongest
     $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ Simplification.evalSimplifier
+    $ Simplification.evalSimplifier mockEnv
     $ runStrategy
         (transitionRule
             metadataTools
@@ -507,4 +502,5 @@ runSteps metadataTools configuration axioms =
         (repeat $ allRewrites axioms)
         configuration
   where
+    metadataTools = mockMetadataTools
     simplifier = Simplifier.create metadataTools Map.empty

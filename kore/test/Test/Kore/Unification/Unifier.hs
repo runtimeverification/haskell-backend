@@ -37,7 +37,7 @@ import qualified Kore.Predicate.Predicate as Syntax
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
+                 ( Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Unification.Error
@@ -207,6 +207,9 @@ tools = MetadataTools
     , smtData = undefined
     }
 
+testEnv :: Env
+testEnv = Env { metadataTools = tools }
+
 unificationProblem
     :: UnificationTerm
     -> UnificationTerm
@@ -259,7 +262,7 @@ andSimplifySuccess term1 term2 results = do
     let expect = map unificationResult results
     Right subst' <-
         runSMT
-        $ evalSimplifier
+        $ evalSimplifier testEnv
         $ Monad.Unify.runUnifier
         $ simplifyAnds
             tools
@@ -280,7 +283,7 @@ andSimplifyFailure term1 term2 err = do
         expect = Left (UnificationError err)
     actual <-
         runSMT
-        $ evalSimplifier
+        $ evalSimplifier testEnv
         $ Monad.Unify.runUnifier
         $ simplifyAnds
             tools
@@ -305,7 +308,7 @@ andSimplifyException message term1 term2 exceptionMessage =
         test = do
             var <-
                 runSMT
-                $ evalSimplifier
+                $ evalSimplifier testEnv
                 $ Monad.Unify.runUnifier
                 $ simplifyAnds
                     tools
@@ -323,10 +326,6 @@ andSimplifyException message term1 term2 exceptionMessage =
 unificationProcedureSuccessWithSimplifiers
     :: HasCallStack
     => TestName
-    -> SmtMetadataTools StepperAttributes
-    -- TODO(virgil): The above should not be here, we should just be using
-    -- `mockMetadataTools`, but while we are also using 'tools' below,
-    -- not passing it explicitly might be too confusing.
     -> BuiltinAndAxiomSimplifierMap
     -> UnificationTerm
     -> UnificationTerm
@@ -334,7 +333,6 @@ unificationProcedureSuccessWithSimplifiers
     -> TestTree
 unificationProcedureSuccessWithSimplifiers
     message
-    mockTools
     axiomIdToSimplifier
     (UnificationTerm term1)
     (UnificationTerm term2)
@@ -343,10 +341,10 @@ unificationProcedureSuccessWithSimplifiers
     testCase message $ do
         Right results <-
             runSMT
-            $ evalSimplifier
+            $ evalSimplifier testEnv
             $ Monad.Unify.runUnifier
             $ unificationProcedure
-                mockTools
+                tools
                 (Mock.substitutionSimplifier tools)
                 (Simplifier.create tools axiomIdToSimplifier)
                 axiomIdToSimplifier
@@ -372,7 +370,6 @@ unificationProcedureSuccess
 unificationProcedureSuccess message term1 term2 substPredicate =
     unificationProcedureSuccessWithSimplifiers
         message
-        tools
         Map.empty
         term1
         term2
@@ -758,7 +755,7 @@ injUnificationTests =
 
 simplifyPattern :: UnificationTerm -> IO UnificationTerm
 simplifyPattern (UnificationTerm term) = do
-    Conditional { term = term' } <- runSMT $ evalSimplifier simplifier
+    Conditional { term = term' } <- runSMT $ evalSimplifier testEnv simplifier
     return $ UnificationTerm term'
   where
     simplifier = do

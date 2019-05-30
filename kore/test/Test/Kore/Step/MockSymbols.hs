@@ -51,6 +51,8 @@ import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Internal.TermLike as Internal
 import           Kore.Sort
+import           Kore.Step.Simplification.Data
+                 ( Env (..) )
 import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT
                  ( resolve )
@@ -2035,3 +2037,6 @@ metadataTools =
         subsorts
         headSortsMapping
         smtDeclarations
+
+env :: Env
+env = Env { metadataTools = Test.Kore.Step.MockSymbols.metadataTools }

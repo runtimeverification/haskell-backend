@@ -25,8 +25,6 @@ import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.Logger.Output
                  ( emptyLogger, swappableLogger )
 import           Kore.Repl
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
 import           Kore.Syntax.Module
                  ( ModuleName (..) )
 
@@ -195,7 +193,6 @@ mainWithOptions
         else do
             mLogger <- newMVar emptyLogger
             SMT.runSMT smtConfig (swappableLogger mLogger)
-               $ evalSimplifier
                $ proveWithRepl
                     indexedModule
                     specDefIndexedModule

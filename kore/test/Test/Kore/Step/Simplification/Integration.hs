@@ -14,11 +14,7 @@ import           Data.Default
                  ( Default (..) )
 import qualified Data.Map.Strict as Map
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
 import qualified Kore.Builtin.Map as Map
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -58,7 +54,6 @@ test_simplificationIntegration =
         let expect = OrPattern.fromPatterns []
         actual <-
             evaluate
-                Mock.metadataTools
                 Conditional
                     { term =
                         -- Use the exact form we expect from an owise condition
@@ -96,7 +91,6 @@ test_simplificationIntegration =
         let expect = OrPattern.fromPatterns [Pattern.top]
         actual <-
             evaluate
-                Mock.metadataTools
                 Conditional
                     { term =
                         -- Use the exact form we expect from an owise condition
@@ -146,7 +140,6 @@ test_simplificationIntegration =
                     ]
         actual <-
             evaluate
-                Mock.metadataTools
                 Conditional
                     { term = mkCeil_
                         (mkAnd
@@ -174,7 +167,6 @@ test_simplificationIntegration =
                 ]
         actual <-
             evaluateWithAxioms
-                Mock.metadataTools
                 (axiomPatternsToEvaluators
                     (Map.fromList
                         [   ( AxiomIdentifier.Application
@@ -217,7 +209,6 @@ test_simplificationIntegration =
                 ]
         actual <-
             evaluateWithAxioms
-                Mock.metadataTools
                 (axiomPatternsToEvaluators
                     (Map.fromList
                         [   ( AxiomIdentifier.Application
@@ -256,7 +247,6 @@ test_simplificationIntegration =
             expect = OrPattern.top
         actual <-
             evaluateWithAxioms
-                Mock.metadataTools
                 Map.empty
                 Conditional
                     { term =
@@ -272,7 +262,6 @@ test_simplificationIntegration =
             expect = OrPattern.top
         actual <-
             evaluateWithAxioms
-                Mock.metadataTools
                 Map.empty
                 Conditional
                     { term =
@@ -288,7 +277,6 @@ test_simplificationIntegration =
             expect = OrPattern.top
         actual <-
             evaluateWithAxioms
-                Mock.metadataTools
                 Map.empty
                 Conditional
                     { term =
@@ -304,7 +292,6 @@ test_simplificationIntegration =
             expect = OrPattern.top
         actual <-
             evaluateWithAxioms
-                Mock.metadataTools
                 Map.empty
                 Conditional
                     { term =
@@ -336,7 +323,6 @@ test_substitute =
                     ]
         actual <-
             evaluate
-                Mock.metadataTools
                 (Pattern.fromTermLike
                     (mkAnd
                         (Mock.functionalConstr20
@@ -365,7 +351,6 @@ test_substitute =
                     ]
         actual <-
             evaluate
-                Mock.metadataTools
                 (Pattern.fromTermLike
                     (mkAnd
                         (Mock.functionalConstr20
@@ -397,7 +382,6 @@ test_substituteMap =
                     ]
         actual <-
             evaluate
-                Mock.metadataTools
                 (Pattern.fromTermLike
                     (mkAnd
                         (Mock.functionalConstr20
@@ -434,7 +418,6 @@ test_substituteList =
                     ]
         actual <-
             evaluate
-                Mock.metadataTools
                 ( Pattern.fromTermLike
                     (mkAnd
                         (Mock.functionalConstr20
@@ -452,21 +435,17 @@ test_substituteList =
   where
     mkDomainBuiltinList = Mock.builtinList
 
-evaluate
-    :: SmtMetadataTools StepperAttributes
-    -> Pattern Variable
-    -> IO (OrPattern Variable)
-evaluate tools patt =
-    evaluateWithAxioms tools Map.empty patt
+evaluate :: Pattern Variable -> IO (OrPattern Variable)
+evaluate patt =
+    evaluateWithAxioms Map.empty patt
 
 evaluateWithAxioms
-    :: SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifierMap
+    :: BuiltinAndAxiomSimplifierMap
     -> Pattern Variable
     -> IO (OrPattern Variable)
-evaluateWithAxioms tools axioms patt =
+evaluateWithAxioms axioms patt =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
+    $ evalSimplifier Mock.env
     $ Pattern.simplify
         tools
         (Predicate.create tools simplifier axiomIdToSimplifier)
@@ -474,6 +453,7 @@ evaluateWithAxioms tools axioms patt =
         axiomIdToSimplifier
         patt
   where
+    tools = Mock.metadataTools
     simplifier :: TermLikeSimplifier
     simplifier = Simplifier.create tools axiomIdToSimplifier
     axiomIdToSimplifier :: BuiltinAndAxiomSimplifierMap

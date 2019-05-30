@@ -13,9 +13,6 @@ import qualified Data.Map as Map
 
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Axiom.Concrete
-import           Kore.Attribute.Symbol
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
                  ( Conditional (..), Pattern, bottom )
@@ -65,7 +62,6 @@ test_userDefinedFunction =
                     }
         actual <-
             evaluateWithAxiom
-                Mock.metadataTools
                 (EqualityRule RulePattern
                     { left = Mock.functionalConstr10 (mkVar Mock.x)
                     , right = Mock.functionalConstr11 (mkVar Mock.x)
@@ -82,7 +78,6 @@ test_userDefinedFunction =
                 AttemptedAxiom.NotApplicable
         actual <-
             evaluateWithAxiom
-                Mock.metadataTools
                 (EqualityRule RulePattern
                     { left = Mock.functionalConstr10 (mkVar Mock.x)
                     , right = Mock.functionalConstr11 (mkVar Mock.x)
@@ -99,7 +94,6 @@ test_userDefinedFunction =
                 AttemptedAxiom.NotApplicable
         actual <-
             evaluateWithAxiom
-                Mock.metadataTools
                 (EqualityRule RulePattern
                     { left = Mock.functionalConstr10 Mock.a
                     , right = Mock.functionalConstr11 Mock.a
@@ -125,7 +119,6 @@ test_userDefinedFunction =
                     }
         actual <-
             evaluateWithAxiom
-                Mock.metadataTools
                 (EqualityRule RulePattern
                     { left = Mock.functionalConstr10 (mkVar Mock.x)
                     , right = Mock.functionalConstr11 (mkVar Mock.x)
@@ -147,7 +140,6 @@ test_userDefinedFunction =
                     }
         actual <-
             evaluateWithAxiom
-                Mock.metadataTools
                 (EqualityRule RulePattern
                     { left = Mock.functionalConstr10 (mkVar Mock.x)
                     , right = Mock.functionalConstr11 (mkVar Mock.x)
@@ -190,7 +182,6 @@ test_userDefinedFunction =
                     }
         actual <-
             evaluateWithAxiom
-                Mock.metadataTools
                 (EqualityRule RulePattern
                     { left  =
                         Mock.functionalConstr20
@@ -225,20 +216,14 @@ asSimplification
 asSimplification = id
 
 evaluateWithAxiom
-    :: SmtMetadataTools StepperAttributes
-    -> EqualityRule Variable
+    :: EqualityRule Variable
     -> TermLikeSimplifier
     -> TermLike Variable
     -> IO (CommonAttemptedAxiom)
-evaluateWithAxiom
-    metadataTools
-    axiom
-    simplifier
-    patt
-  = do
-    results <- evaluated
-    return (normalizeResult results)
+evaluateWithAxiom axiom simplifier patt =
+    normalizeResult <$> evaluated
   where
+    metadataTools = Mock.metadataTools
     normalizeResult :: CommonAttemptedAxiom -> CommonAttemptedAxiom
     normalizeResult =
         \case
@@ -259,7 +244,7 @@ evaluateWithAxiom
     evaluated :: IO CommonAttemptedAxiom
     evaluated =
         SMT.runSMT SMT.defaultConfig emptyLogger
-        $ evalSimplifier
+        $ evalSimplifier Mock.env
         $ equalityRuleEvaluator
             axiom
             metadataTools

@@ -35,7 +35,7 @@ import           Kore.Step.Axiom.Registry
 import           Kore.Step.Rule
                  ( extractRewriteAxioms )
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
+                 ( Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
@@ -245,6 +245,9 @@ testEvaluators =
 testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build testIndexedModule
 
+testEnv :: Env
+testEnv = Env { metadataTools = testMetadataTools }
+
 test_functionRegistry :: [TestTree]
 test_functionRegistry =
     [ testCase "Checking that a simplifier is found for f"
@@ -287,7 +290,7 @@ test_functionRegistry =
         let expect = mkApp sortS sHead []
         simplified <-
             SMT.runSMT SMT.defaultConfig emptyLogger
-            $ evalSimplifier
+            $ evalSimplifier testEnv
             $ Pattern.simplify
                 testMetadataTools
                 (Mock.substitutionSimplifier testMetadataTools)

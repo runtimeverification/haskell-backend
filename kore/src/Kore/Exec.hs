@@ -21,6 +21,7 @@ module Kore.Exec
 
 import           Control.Concurrent.MVar
 import qualified Control.Monad as Monad
+import           Control.Monad.Reader as Reader
 import           Control.Monad.Trans.Except
                  ( runExceptT )
 import qualified Data.Bifunctor as Bifunctor
@@ -82,13 +83,18 @@ import           Kore.Step.Search
                  ( searchGraph )
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier (..), Simplifier, TermLikeSimplifier )
+                 ( PredicateSimplifier (..), Simplifier, TermLikeSimplifier,
+                 evalSimplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
+                 ( Env (..) )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Unification.Substitution as Substitution
+import           SMT
+                 ( SMT )
 
 -- | Configuration used in symbolic execution.
 type Config = Pattern Variable
@@ -113,8 +119,7 @@ data Initialized =
 -- | The products of execution: an execution graph, and assorted simplifiers.
 data Execution =
     Execution
-        { metadataTools :: !(SmtMetadataTools StepperAttributes)
-        , simplifier :: !TermLikeSimplifier
+        { simplifier :: !TermLikeSimplifier
         , substitutionSimplifier :: !PredicateSimplifier
         , axiomIdToSimplifier :: !BuiltinAndAxiomSimplifierMap
         , executionGraph :: !ExecutionGraph
@@ -128,15 +133,21 @@ exec
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike Variable
     -- ^ The input pattern
-    -> Simplifier (TermLike Variable)
-exec indexedModule strategy termLike = do
-    execution <- execute indexedModule strategy termLike
-    let
-        Execution { executionGraph } = execution
-        finalConfig = pickLongest executionGraph
-    return (forceSort patternSort $ Pattern.toTermLike finalConfig)
+    -> SMT (TermLike Variable)
+exec indexedModule strategy initialTerm =
+    evalSimplifier env $ do
+        execution <- execute indexedModule strategy initialTerm
+        let
+            Execution { executionGraph } = execution
+            finalConfig = pickLongest executionGraph
+            finalTerm =
+                forceSort patternSort
+                $ Pattern.toTermLike finalConfig
+        return finalTerm
   where
-    patternSort = termLikeSort termLike
+    metadataTools = MetadataTools.build indexedModule
+    env = Simplifier.Env { metadataTools }
+    patternSort = termLikeSort initialTerm
 
 -- | Project the value of the exit cell, if it is present.
 execGetExitCode
@@ -146,13 +157,13 @@ execGetExitCode
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike Variable
     -- ^ The final pattern (top cell) to extract the exit code
-    -> Simplifier ExitCode
-execGetExitCode indexedModule strategy' purePattern =
+    -> SMT ExitCode
+execGetExitCode indexedModule strategy' finalTerm =
     case resolveSymbol indexedModule $ noLocationId "LblgetExitCode" of
         Left _ -> return ExitSuccess
         Right (_,  exitCodeSymbol) -> do
             exitCodePattern <- exec indexedModule strategy'
-                $ applySymbol_ exitCodeSymbol [purePattern]
+                $ applySymbol_ exitCodeSymbol [finalTerm]
             case exitCodePattern of
                 Builtin_ (Domain.BuiltinInt (Domain.InternalInt _ 0)) ->
                     return ExitSuccess
@@ -173,32 +184,34 @@ search
     -- ^ The pattern to match during execution
     -> Search.Config
     -- ^ The bound on the number of search matches and the search type
-    -> Simplifier (TermLike Variable)
-search verifiedModule strategy termLike searchPattern searchConfig = do
-    execution <- execute verifiedModule strategy termLike
-    let
-        Execution { metadataTools } = execution
-        Execution { simplifier, substitutionSimplifier } = execution
-        Execution { axiomIdToSimplifier } = execution
-        Execution { executionGraph } = execution
-        match target config =
-            Search.matchWith
-                metadataTools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                target
-                config
-    solutionsLists <-
-        searchGraph searchConfig (match searchPattern) executionGraph
-    let
-        solutions =
-            concatMap MultiOr.extractPatterns solutionsLists
-        orPredicate =
-            makeMultipleOrPredicate
-                (Predicate.toPredicate <$> solutions)
-    return (forceSort patternSort $ unwrapPredicate orPredicate)
+    -> SMT (TermLike Variable)
+search verifiedModule strategy termLike searchPattern searchConfig =
+    evalSimplifier env $ do
+        execution <- execute verifiedModule strategy termLike
+        let
+            Execution { simplifier, substitutionSimplifier } = execution
+            Execution { axiomIdToSimplifier } = execution
+            Execution { executionGraph } = execution
+            match target config =
+                Search.matchWith
+                    metadataTools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
+                    target
+                    config
+        solutionsLists <-
+            searchGraph searchConfig (match searchPattern) executionGraph
+        let
+            solutions =
+                concatMap MultiOr.extractPatterns solutionsLists
+            orPredicate =
+                makeMultipleOrPredicate
+                    (Predicate.toPredicate <$> solutions)
+        return (forceSort patternSort $ unwrapPredicate orPredicate)
   where
+    metadataTools = MetadataTools.build verifiedModule
+    env = Simplifier.Env { metadataTools }
     patternSort = termLikeSort termLike
 
 
@@ -209,34 +222,37 @@ prove
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
-    -> Simplifier (Either (TermLike Variable) ())
-prove limit definitionModule specModule = do
-    let tools = MetadataTools.build definitionModule
-    Initialized
-        { rewriteRules
-        , simplifier
-        , substitutionSimplifier
-        , axiomIdToSimplifier
-        } <-
-            initialize definitionModule tools
-    specAxioms <-
-        mapM (simplifyRuleOnSecond tools)
-            (extractOnePathClaims specModule)
-    assertSomeClaims specAxioms
-    let
-        axioms = fmap Axiom rewriteRules
-        claims = fmap makeClaim specAxioms
+    -> SMT (Either (TermLike Variable) ())
+prove limit definitionModule specModule =
+    evalSimplifier env $ do
+        Initialized
+            { rewriteRules
+            , simplifier
+            , substitutionSimplifier
+            , axiomIdToSimplifier
+            } <-
+                initialize definitionModule metadataTools
+        specAxioms <-
+            mapM (simplifyRuleOnSecond metadataTools)
+                (extractOnePathClaims specModule)
+        assertSomeClaims specAxioms
+        let
+            axioms = fmap Axiom rewriteRules
+            claims = fmap makeClaim specAxioms
 
-    result <-
-        runExceptT
-        $ verify
-            tools
-            simplifier
-            substitutionSimplifier
-            axiomIdToSimplifier
-            (defaultStrategy claims axioms)
-            (map (\x -> (x,limit)) (extractUntrustedClaims claims))
-    return $ Bifunctor.first Pattern.toTermLike result
+        result <-
+            runExceptT
+            $ verify
+                metadataTools
+                simplifier
+                substitutionSimplifier
+                axiomIdToSimplifier
+                (defaultStrategy claims axioms)
+                (map (\x -> (x,limit)) (extractUntrustedClaims claims))
+        return $ Bifunctor.first Pattern.toTermLike result
+  where
+    metadataTools = MetadataTools.build definitionModule
+    env = Simplifier.Env { metadataTools }
 
 -- | Initialize and run the repl with the main and spec modules. This will loop
 -- the repl until the user exits.
@@ -250,33 +266,36 @@ proveWithRepl
     -- ^ Optional script
     -> Repl.ReplMode
     -- ^ Run in a specific repl mode
-    -> Simplifier ()
-proveWithRepl definitionModule specModule mvar replScript replMode = do
-    let tools = MetadataTools.build definitionModule
-    Initialized
-        { rewriteRules
-        , simplifier
-        , substitutionSimplifier
-        , axiomIdToSimplifier
-        } <- initialize definitionModule tools
-    specAxioms <-
-        mapM (simplifyRuleOnSecond tools)
-            (extractOnePathClaims specModule)
-    assertSomeClaims specAxioms
-    let
-        axioms = fmap Axiom rewriteRules
-        claims = fmap makeClaim specAxioms
+    -> SMT ()
+proveWithRepl definitionModule specModule mvar replScript replMode =
+    evalSimplifier env $ do
+        Initialized
+            { rewriteRules
+            , simplifier
+            , substitutionSimplifier
+            , axiomIdToSimplifier
+            } <- initialize definitionModule metadataTools
+        specAxioms <-
+            mapM (simplifyRuleOnSecond metadataTools)
+                (extractOnePathClaims specModule)
+        assertSomeClaims specAxioms
+        let
+            axioms = fmap Axiom rewriteRules
+            claims = fmap makeClaim specAxioms
 
-    Repl.runRepl
-        tools
-        simplifier
-        substitutionSimplifier
-        axiomIdToSimplifier
-        axioms
-        claims
-        mvar
-        replScript
-        replMode
+        Repl.runRepl
+            metadataTools
+            simplifier
+            substitutionSimplifier
+            axiomIdToSimplifier
+            axioms
+            claims
+            mvar
+            replScript
+            replMode
+  where
+    metadataTools = MetadataTools.build definitionModule
+    env = Simplifier.Env { metadataTools }
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck
@@ -286,31 +305,31 @@ boundedModelCheck
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
     -> Strategy.GraphSearchOrder
-    -> Simplifier [Bounded.CheckResult]
-boundedModelCheck limit definitionModule specModule searchOrder = do
-    let
-        tools = MetadataTools.build definitionModule
-    Initialized
-        { rewriteRules
-        , simplifier
-        , substitutionSimplifier
-        , axiomIdToSimplifier
-        } <-
-            initialize definitionModule tools
-    let
-        axioms = fmap Axiom rewriteRules
-        specAxioms = fmap snd $ (extractImplicationClaims specModule)
+    -> SMT [Bounded.CheckResult]
+boundedModelCheck limit definitionModule specModule searchOrder =
+    evalSimplifier env $ do
+        Initialized
+            { rewriteRules
+            , simplifier
+            , substitutionSimplifier
+            , axiomIdToSimplifier
+            } <-
+                initialize definitionModule metadataTools
+        let
+            axioms = fmap Axiom rewriteRules
+            specAxioms = fmap snd $ extractImplicationClaims specModule
 
-    result <-
         Bounded.check
-            tools
+            metadataTools
             simplifier
             substitutionSimplifier
             axiomIdToSimplifier
             (Bounded.bmcStrategy axioms)
             searchOrder
             (map (\x -> (x,limit)) specAxioms)
-    return result
+  where
+    metadataTools = MetadataTools.build definitionModule
+    env = Simplifier.Env { metadataTools }
 
 assertSomeClaims :: Monad m => [claim] -> m ()
 assertSomeClaims claims =
@@ -353,7 +372,7 @@ execute
     -> Simplifier Execution
 execute verifiedModule strategy inputPattern
   = Log.withLogScope "setUpConcreteExecution" $ do
-    let metadataTools = MetadataTools.build verifiedModule
+    metadataTools <- Reader.asks Simplifier.metadataTools
     initialized <- initialize verifiedModule metadataTools
     let
         Initialized { rewriteRules } = initialized
@@ -386,8 +405,7 @@ execute verifiedModule strategy inputPattern
                 pat
     executionGraph <- runStrategy' initialPattern
     return Execution
-        { metadataTools
-        , simplifier
+        { simplifier
         , substitutionSimplifier
         , axiomIdToSimplifier
         , executionGraph

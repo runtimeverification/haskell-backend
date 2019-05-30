@@ -412,7 +412,7 @@ findSort ( Conditional {term} : _ ) = termLikeSort term
 evaluate :: And Sort (OrPattern Variable) -> IO (OrPattern Variable)
 evaluate patt =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
+    $ evalSimplifier Mock.env
     $ simplify
         Mock.metadataTools
         (Mock.substitutionSimplifier Mock.metadataTools)
@@ -427,7 +427,7 @@ evaluatePatterns
 evaluatePatterns first second =
     fmap OrPattern.fromPatterns
     $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
+    $ evalSimplifier Mock.env
     $ gather
     $ makeEvaluate
         Mock.metadataTools

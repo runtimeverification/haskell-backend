@@ -2,6 +2,7 @@ module Test.Kore.Builtin.Builtin
     ( mkPair
     , hpropUnparse
     , testMetadataTools
+    , testEnv
     , testSubstitutionSimplifier
     , testTermLikeSimplifier
     , testEvaluators
@@ -188,11 +189,14 @@ testEvaluators = Builtin.koreEvaluators verifiedModule
 testTermLikeSimplifier :: TermLikeSimplifier
 testTermLikeSimplifier = Simplifier.create testMetadataTools testEvaluators
 
+testEnv :: Env
+testEnv = Env { metadataTools = testMetadataTools }
+
 evaluate
     :: TermLike Variable
     -> SMT (Pattern Variable)
 evaluate =
-    evalSimplifier
+    evalSimplifier testEnv
     . TermLike.simplify
         testMetadataTools
         testSubstitutionSimplifier
@@ -209,7 +213,7 @@ evaluateToList
     -> SMT [Pattern Variable]
 evaluateToList =
     fmap MultiOr.extractPatterns
-    . evalSimplifier
+    . evalSimplifier testEnv
     . TermLike.simplifyToOr
         testMetadataTools
         testEvaluators
@@ -236,7 +240,7 @@ runStepResult
     -> SMT (Either UnificationOrSubstitutionError (Step.Results Variable))
 runStepResult configuration axiom = do
     results <-
-        evalSimplifier
+        evalSimplifier testEnv
         $ Monad.Unify.runUnifier
         $ Step.applyRewriteRules
             testMetadataTools

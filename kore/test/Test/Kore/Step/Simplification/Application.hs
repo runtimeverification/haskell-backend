@@ -13,10 +13,6 @@ import qualified Data.Set as Set
 
 import           Data.Sup
 import qualified Kore.Attribute.Pattern as Attribute
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -80,7 +76,6 @@ test_applicationSimplification =
                     ]
         actual <-
             evaluate
-                Mock.metadataTools
                 (mockSimplifier noSimplification)
                 Map.empty
                 (makeApplication
@@ -97,7 +92,6 @@ test_applicationSimplification =
         let expect = OrPattern.fromPatterns [ Pattern.bottom ]
         actual <-
             evaluate
-                Mock.metadataTools
                 (mockSimplifier noSimplification)
                 Map.empty
                 (makeApplication
@@ -114,7 +108,6 @@ test_applicationSimplification =
         let expect = OrPattern.fromPatterns [ gOfAExpanded ]
         actual <-
             evaluate
-                Mock.metadataTools
                 (mockSimplifier noSimplification)
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.fId)
@@ -154,7 +147,6 @@ test_applicationSimplification =
                         ]
             actual <-
                 evaluate
-                    Mock.metadataTools
                     (mockSimplifier noSimplification)
                     Map.empty
                     (makeApplication
@@ -238,7 +230,6 @@ test_applicationSimplification =
                         }
                 in
                     evaluate
-                        Mock.metadataTools
                         (mockSimplifier noSimplification)
                         (Map.singleton
                             (AxiomIdentifier.Application Mock.sigmaId)
@@ -341,8 +332,7 @@ makeApplication patternSort symbol patterns =
             }
 
 evaluate
-    :: SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier
+    :: TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
@@ -351,12 +341,14 @@ evaluate
         (Attribute.Pattern Variable)
         (OrPattern Variable)
     -> IO (OrPattern Variable)
-evaluate tools simplifier axiomIdToEvaluator application =
+evaluate simplifier axiomIdToEvaluator application =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
+    $ evalSimplifier Mock.env
     $ simplify
         tools
         (Mock.substitutionSimplifier tools)
         simplifier
         axiomIdToEvaluator
         application
+  where
+    tools = Mock.metadataTools

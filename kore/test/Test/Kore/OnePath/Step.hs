@@ -20,9 +20,6 @@ import           Numeric.Natural
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
-import           Kore.Attribute.Symbol
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
                  ( TermLike )
@@ -66,7 +63,6 @@ test_onePathStrategy =
         -- Start pattern: a
         -- Expected: a
         [ actual ] <- runOnePathSteps
-            Mock.metadataTools
             (Limit 0)
             (Pattern.fromTermLike Mock.a)
             Mock.a
@@ -82,7 +78,6 @@ test_onePathStrategy =
         -- Start pattern: a
         -- Expected: bottom, since a->bottom
         [ _actual ] <- runOnePathSteps
-            Mock.metadataTools
             (Limit 1)
             (Pattern.fromTermLike Mock.a)
             Mock.a
@@ -97,7 +92,6 @@ test_onePathStrategy =
         -- Expected: c, since coinductive axioms are applied only at the second
         -- step
         [ _actual ] <- runOnePathSteps
-            Mock.metadataTools
             (Limit 1)
             (Pattern.fromTermLike Mock.a)
             Mock.d
@@ -114,7 +108,6 @@ test_onePathStrategy =
         -- Start pattern: a
         -- Expected: bottom, since a->b = target
         [ _actual ] <- runOnePathSteps
-            Mock.metadataTools
             (Limit 2)
             (Pattern.fromTermLike Mock.a)
             Mock.b
@@ -133,7 +126,6 @@ test_onePathStrategy =
         -- Start pattern: a
         -- Expected: c, since a->b->c and b->d is ignored
         [ _actual1 ] <- runOnePathSteps
-            Mock.metadataTools
             (Limit 2)
             (Pattern.fromTermLike Mock.a)
             Mock.e
@@ -158,7 +150,6 @@ test_onePathStrategy =
         -- Start pattern: a
         -- Expected: d, since a->b->d
         [ _actual ] <- runOnePathSteps
-            Mock.metadataTools
             (Limit 2)
             (Pattern.fromTermLike Mock.a)
             Mock.e
@@ -192,7 +183,6 @@ test_onePathStrategy =
         --   or (h(x) and x!=a and x!=b and x!=c )
         [ _actual1, _actual2, _actual3, _actual4 ] <-
             runOnePathSteps
-                Mock.metadataTools
                 (Limit 2)
                 (Pattern.fromTermLike
                     (Mock.functionalConstr10 (TermLike.mkVar Mock.x))
@@ -263,7 +253,6 @@ test_onePathStrategy =
         --   Stuck (functionalConstr11(x) and x!=a and x!=b and x!=c )
         [ _actual1, _actual2, _actual3 ] <-
             runOnePathSteps
-                Mock.metadataTools
                 (Limit 2)
                 (Pattern.fromTermLike
                     (Mock.functionalConstr10 (TermLike.mkVar Mock.x))
@@ -320,7 +309,6 @@ test_onePathStrategy =
         -- Start pattern: constr10(b)
         -- Expected: a | f(b) == c
         [ _actual1, _actual2 ] <- runOnePathSteps
-            Mock.metadataTools
             (Limit 2)
             (Pattern.fromTermLike
                 (Mock.functionalConstr10 Mock.b)
@@ -356,7 +344,6 @@ test_onePathStrategy =
         -- Start pattern: 0
         [ _actual ] <-
             runOnePathSteps
-                Mock.metadataTools
                 (Limit 2)
                 (Pattern.fromTermLike (Mock.builtinInt 0))
                 (Mock.builtinInt 1)
@@ -404,20 +391,16 @@ rewriteWithPredicate left right predicate =
         }
 
 runSteps
-    :: SmtMetadataTools StepperAttributes
-    -- ^functions yielding metadata for pattern heads
-    ->  (  ExecutionGraph (CommonStrategyPattern)
-        -> Maybe (ExecutionGraph b)
-        )
+    :: (ExecutionGraph (CommonStrategyPattern) -> Maybe (ExecutionGraph b))
     -> (ExecutionGraph b -> a)
     -> Pattern Variable
     -- ^left-hand-side of unification
     -> [Strategy (Prim (Pattern Variable) (RewriteRule Variable))]
     -> IO a
-runSteps metadataTools graphFilter picker configuration strategy =
+runSteps graphFilter picker configuration strategy =
     (<$>) picker
     $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
+    $ evalSimplifier Mock.env
     $ (fromMaybe (error "Unexpected missing tree") . graphFilter)
     <$> runStrategy
         (transitionRule
@@ -429,12 +412,11 @@ runSteps metadataTools graphFilter picker configuration strategy =
         strategy
         (RewritePattern configuration)
   where
+    metadataTools = Mock.metadataTools
     simplifier = Simplifier.create metadataTools Map.empty
 
 runOnePathSteps
-    :: SmtMetadataTools StepperAttributes
-    -- ^functions yielding metadata for pattern heads
-    -> Limit Natural
+    :: Limit Natural
     -> Pattern Variable
     -- ^left-hand-side of unification
     -> TermLike Variable
@@ -442,7 +424,6 @@ runOnePathSteps
     -> [RewriteRule Variable]
     -> IO [CommonStrategyPattern]
 runOnePathSteps
-    metadataTools
     stepLimit
     configuration
     target
@@ -450,7 +431,6 @@ runOnePathSteps
     rewrites
   = do
     result <- runSteps
-        metadataTools
         Just
         pickFinal
         configuration

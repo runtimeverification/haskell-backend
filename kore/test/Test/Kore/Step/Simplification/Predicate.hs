@@ -273,7 +273,7 @@ runSimplifier
 runSimplifier patternSimplifierMap predicate =
     fmap MultiOr.make
     $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
+    $ evalSimplifier Mock.env
     $ gather
     $ simplifier predicate
   where

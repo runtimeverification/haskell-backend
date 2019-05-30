@@ -29,7 +29,7 @@ test_simplifyInternal =
 simplifyInternalEvaluated :: TermLike Variable -> IO (OrPattern Variable)
 simplifyInternalEvaluated original =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
+    $ evalSimplifier Mock.env
     $ TermLike.simplifyInternal
         Mock.metadataTools
         undefined  -- Throw an error if any predicate would be simplified.

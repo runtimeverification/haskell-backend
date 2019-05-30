@@ -127,7 +127,7 @@ simplifyEvaluated
     -> IO (OrPattern Variable)
 simplifyEvaluated =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    . evalSimplifier
+    . evalSimplifier Mock.env
     . Not.simplifyEvaluated
         Mock.metadataTools
         (Mock.substitutionSimplifier Mock.metadataTools)

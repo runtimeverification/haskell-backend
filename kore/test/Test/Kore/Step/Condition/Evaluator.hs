@@ -27,7 +27,7 @@ import qualified SMT
 import           Test.Kore
 import qualified Test.Kore.Builtin.Bool as Builtin.Bool
 import           Test.Kore.Builtin.Builtin
-                 ( testMetadataTools, testSubstitutionSimplifier )
+                 ( testEnv, testMetadataTools, testSubstitutionSimplifier )
 import           Test.Kore.Builtin.Definition
                  ( boolSort, intSort )
 import qualified Test.Kore.Builtin.Definition as Builtin
@@ -67,7 +67,7 @@ evaluate
 evaluate predicate =
     give testMetadataTools
     $ Trans.lift
-    $ evalSimplifier
+    $ evalSimplifier testEnv
     $ Evaluator.evaluate
         testSubstitutionSimplifier
         (mockSimplifier noSimplification)
