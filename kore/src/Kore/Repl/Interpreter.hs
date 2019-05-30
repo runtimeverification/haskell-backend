@@ -18,6 +18,7 @@ module Kore.Repl.Interpreter
     , formatUnificationMessage
     , allProofs
     , ReplStatus(..)
+    , showCurrentClaimIndex
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -226,13 +227,11 @@ showClaim
     => MonadWriter String m
     => Maybe ClaimIndex
     -> m ()
-showClaim mcindex =
-    case mcindex of
+showClaim =
+    \case
         Nothing -> do
             currentCindex <- Lens.use lensClaimIndex
-            putStrLn'
-                $ "You are currently proving claim "
-                <> show (unClaimIndex currentCindex)
+            putStrLn' . showCurrentClaimIndex $ currentCindex
         Just cindex -> do
             claim <- getClaimByIndex . unClaimIndex $ cindex
             maybe printNotFound (putStrLn' . showRewriteRule) $ claim
@@ -1038,3 +1037,7 @@ showProofStatus m =
         <> ": "
         <> show elm
 
+showCurrentClaimIndex :: ClaimIndex -> String
+showCurrentClaimIndex ci =
+    "You are currently proving claim "
+    <> show (unClaimIndex ci)

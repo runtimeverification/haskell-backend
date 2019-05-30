@@ -243,12 +243,12 @@ helpText :: String
 helpText =
     "Available commands in the Kore REPL: \n\
     \help                                  shows this help message\n\
-    \claim [n]                             shows the nth claim or if \
-                                           \used without args shows the \
-                                           \currently focused claim\n\
+    \claim [n]                             shows the nth claim or if\
+                                           \ used without args shows the\
+                                           \ currently focused claim\n\
     \axiom <n>                             shows the nth axiom\n\
-    \prove <n>                             initializes proof mode for the nth \
-                                           \claim\n\
+    \prove <n>                             initializes proof mode for the nth\
+                                           \ claim\n\
     \graph [file]                          shows the current proof graph (*)\n\
     \                                      (saves image in .jpeg format if file\
                                            \ argument is given; file extension is\
