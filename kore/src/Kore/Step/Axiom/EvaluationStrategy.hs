@@ -18,6 +18,7 @@ module Kore.Step.Axiom.EvaluationStrategy
 -- import           Control.Error
 --                  ( atZ )
 import qualified Control.Monad as Monad
+import qualified Control.Monad.Error.Class as Error
 import           Control.Monad.Trans.Except
                  ( ExceptT (ExceptT) )
 import qualified Data.Foldable as Foldable
@@ -32,7 +33,6 @@ import           Kore.Attribute.Symbol
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
-import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -60,14 +60,12 @@ import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
 import           Kore.Unification.Error
-                 ( UnificationError (..), UnificationOrSubstitutionError )
-import qualified Kore.Unification.Substitution as Substitution
+                 ( UnificationError (..), UnificationOrSubstitutionError (..) )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse, unparse )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
-import qualified Kore.Variables.Target as Target
 
 import qualified Kore.Proof.Value as Value
 
@@ -332,12 +330,13 @@ evaluateWithDefinitionAxioms
     -> Simplifier (AttemptedAxiom variable)
 evaluateWithDefinitionAxioms
     definitionRules
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
+    metadataTools
+    predicateSimplifier
+    termSimplifier
+    axiomSimplifiers
     patt
-  | otherwise =
+  =
+    -- TODO (thomas.tuegel): maybeNotApplicable
     AttemptedAxiom.exceptNotApplicable $ do
     let
         -- TODO (thomas.tuegel): Figure out how to get the initial conditions
@@ -345,18 +344,8 @@ evaluateWithDefinitionAxioms
         expanded :: Pattern variable
         expanded = Pattern.fromTermLike patt
 
-    let unwrapEqualityRule =
-            \(EqualityRule rule) ->
-                RulePattern.mapVariables fromVariable rule
-    results <- do
-        applyRules
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            (UnificationProcedure unificationWithAppMatchOnTop)
-            expanded
-            (map unwrapEqualityRule definitionRules)
+    results <- applyRules expanded (map unwrapEqualityRule definitionRules)
+    mapM_ rejectNarrowing results
 
     let
         result =
@@ -394,59 +383,22 @@ evaluateWithDefinitionAxioms
     --         & Attribute.isConstructor
     --   | otherwise = False
 
-applyRules
-    ::  forall variable
-    .   ( Ord     variable
-        , Show    variable
-        , Unparse variable
-        , FreshVariable  variable
-        , SortedVariable variable
-        )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> UnificationProcedure
+    unwrapEqualityRule (EqualityRule rule) =
+        RulePattern.mapVariables fromVariable rule
 
-    -> Pattern variable
-    -- ^ Configuration being rewritten
-    -> [Step.RulePattern variable]
-    -- ^ Rewrite rules
-    -> ExceptT UnificationOrSubstitutionError Simplifier [Step.Results variable]
-applyRules
-    metadataTools
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
-    unificationProcedure
-    (Step.toConfigurationVariables -> initial)
-    (map Step.toAxiomVariables -> rules)
-  =
-    ExceptT $ Monad.Unify.runUnifier $ do
-        unifiedRules <- unifyRules initial rules
-        rejectNarrowing unifiedRules
-        finalizeRulesSequence initial unifiedRules
-  where
-    unifyRules =
-        Step.unifyRules
+    rejectNarrowing (Result.results -> results) =
+        Monad.when (Foldable.any Step.isNarrowingResult results)
+        $ Error.throwError $ UnificationError
+        $ UnsupportedPatterns "Will not narrow function patterns"
+
+    applyRules initial rules =
+        ExceptT
+        $ Monad.Unify.runUnifier
+        $ Step.applyRulesSequence
             metadataTools
             predicateSimplifier
             termSimplifier
             axiomSimplifiers
-            unificationProcedure
-    finalizeRulesSequence =
-        Step.finalizeRulesSequence
-            metadataTools
-            predicateSimplifier
-            termSimplifier
-            axiomSimplifiers
-    rejectNarrowing unifiedRules =
-        Monad.when (Foldable.any isNarrowing unifiedRules)
-        $ Monad.Unify.throwUnificationError
-        $ UnsupportedPatterns "Will not symbolically rewrite function patterns"
-    isNarrowing =
-        Foldable.any Target.isNonTarget
-        . Substitution.variables
-        . Conditional.substitution
+            (UnificationProcedure unificationWithAppMatchOnTop)
+            initial
+            rules
