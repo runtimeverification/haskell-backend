@@ -233,7 +233,7 @@ instance Logger.WithLog Logger.LogMessage SMT where
         loggerRef <- getLoggerRef
         originalLogger <- liftIO $ readIORef loggerRef
         return (Logger.hoistLogAction liftIO originalLogger)
-    withLog mapping action = do
+    localLogAction mapping action = do
         loggerRef <- getLoggerRef
         originalLogger <- liftIO $ readIORef loggerRef
         liftIO $ writeIORef loggerRef (mapping originalLogger)

@@ -181,9 +181,9 @@ newtype Simplifier a = Simplifier
 
 instance WithLog LogMessage Simplifier where
     askLogAction = Simplifier $ hoistLogAction Simplifier <$> askLogAction
-    withLog mapping =
+    localLogAction mapping =
         Simplifier
-        . withLog mapping
+        . localLogAction mapping
         . getSimplifier
 
 {- | Run a simplification, returning the results along all branches.
