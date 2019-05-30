@@ -242,12 +242,12 @@ instance Logger.WithLog Logger.LogMessage SMT where
         return result
 
 instance MonadSMT SMT where
-    withSolver (SMT action) = do
-        mvar <- SMT $ Reader.ask
-        liftIO $ do
-            solver <- readMVar mvar
-            newSolver' <- newMVar solver
-            SimpleSMT.inNewScope solver (runReaderT action newSolver')
+    withSolver (SMT action) = withSolver' $ \solver -> do
+        -- Create an unshared "dummy" mutex for the solver.
+        mvar <- newMVar solver
+        -- Run the inner action with the unshared mutex.
+        -- The action will never block waiting to acquire the solver.
+        SimpleSMT.inNewScope solver (runReaderT action mvar)
 
     declare name typ =
         withSolver' $ \solver -> SimpleSMT.declare solver name typ
