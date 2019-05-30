@@ -16,6 +16,7 @@ module Kore.Step.Step
     , Step.remainders
     , Step.results
     , Result
+    , isNarrowingResult
     , Step.appliedRule
     , Step.result
     , Step.gatherResults
@@ -126,6 +127,20 @@ type Result variable =
 
 type Results variable =
     Step.Results (UnifiedRule (Target variable)) (Pattern variable)
+
+{- | Is the result a symbolic rewrite, i.e. a narrowing result?
+
+The result is narrowing if it contains any variable from the left-hand side of
+the rule.
+
+ -}
+isNarrowingResult :: Ord variable => Result variable -> Bool
+isNarrowingResult Step.Result { appliedRule, result } =
+    Foldable.any hasLeftVariable result
+  where
+    hasLeftVariable = not . Set.disjoint leftVariables . Pattern.freeVariables
+    left = (Rule.left . unwrapRule) (Conditional.term appliedRule)
+    leftVariables = TermLike.freeVariables left
 
 {- | Unwrap the variables in a 'RulePattern'.
  -}
