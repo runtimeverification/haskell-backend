@@ -26,6 +26,8 @@ module Kore.Step.Simplification.Data
 
 import           Control.Applicative
 import qualified Control.Monad as Monad
+import           Control.Monad.Catch
+                 ( MonadCatch, MonadThrow )
 import           Control.Monad.Morph
                  ( MFunctor, MMonad )
 import           Control.Monad.Reader
@@ -37,8 +39,6 @@ import           Data.Typeable
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Control.Monad.Catch
-                 ( MonadCatch, MonadThrow )
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -165,6 +165,8 @@ scatter = BranchT . ListT.scatter . Foldable.toList
 
 -- * Simplifier
 
+data Env = Env
+
 {- | @Simplifier@ represents a simplification action.
 
 A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.
@@ -173,16 +175,19 @@ A @Simplifier@ can write to the log through 'HasLog'.
 
  -}
 newtype Simplifier a = Simplifier
-    { getSimplifier :: SMT a
+    { getSimplifier :: ReaderT Env SMT a
     }
-    deriving (Applicative, Functor, Monad, MonadCatch, MonadIO, MonadSMT, MonadThrow)
+    deriving (Functor, Applicative, Monad, MonadSMT)
+    deriving (MonadIO, MonadCatch, MonadThrow)
+    deriving (MonadReader Env)
 
 instance WithLog LogMessage Simplifier where
-    askLogAction = Simplifier $ hoistLogAction Simplifier <$> askLogAction
+    askLogAction = Simplifier (hoistLogAction Simplifier <$> askLogAction)
+    {-# INLINE askLogAction #-}
+
     localLogAction mapping =
-        Simplifier
-        . localLogAction mapping
-        . getSimplifier
+        Simplifier . localLogAction mapping . getSimplifier
+    {-# INLINE localLogAction #-}
 
 {- | Run a simplification, returning the results along all branches.
  -}
@@ -217,7 +222,7 @@ evalSimplifier
     :: HasCallStack
     => Simplifier a
     -> SMT a
-evalSimplifier = withSolver . getSimplifier
+evalSimplifier = withSolver . flip runReaderT Env . getSimplifier
 
 -- * Implementation
 

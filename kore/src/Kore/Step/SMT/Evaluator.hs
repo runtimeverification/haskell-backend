@@ -13,8 +13,6 @@ import           Control.Applicative
 import qualified Control.Applicative as Applicative
 import           Control.Error
                  ( MaybeT, runMaybeT )
-import           Control.Monad.IO.Class
-                 ( MonadIO )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
@@ -52,7 +50,6 @@ decidePredicate
         , Unparse variable
         , SortedVariable variable
         , MonadSMT m
-        , MonadIO m
         )
     => Predicate variable
     -> m (Maybe Bool)
@@ -60,8 +57,7 @@ decidePredicate korePredicate =
     SMT.withSolver $ runMaybeT $ do
         smtPredicate <-
             goTranslatePredicate korePredicate
-        result <- SMT.withSolver
-            (SMT.assert smtPredicate >> SMT.check)
+        result <- SMT.withSolver (SMT.assert smtPredicate >> SMT.check)
         case result of
             Unsat -> return False
             _ -> Applicative.empty
@@ -71,7 +67,6 @@ goTranslatePredicate
         ( Ord variable
         , Given (SmtMetadataTools StepperAttributes)
         , Unparse variable
-        , MonadIO m
         , MonadSMT m
         )
     => Predicate variable
@@ -83,7 +78,6 @@ goTranslatePredicate predicate = do
 
 translateUninterpreted
     :: Ord p
-    => MonadIO m
     => MonadSMT m
     => SExpr  -- ^ type name
     -> p  -- ^ uninterpreted pattern

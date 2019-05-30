@@ -128,7 +128,6 @@ class Monad m => MonadSMT m where
     default withSolver
         ::  ( Morph.MFunctor t
             , MonadSMT n
-            , MonadIO n
             , m ~ t n
             )
         => m a
@@ -221,6 +220,8 @@ class Monad m => MonadSMT m where
     loadFile = Trans.lift . loadFile
     {-# INLINE loadFile #-}
 
+instance MonadSMT m => MonadSMT (ReaderT r m)
+
 withSolver' :: (Solver -> IO a) -> SMT a
 withSolver' action = SMT $ do
     mvar <- Reader.ask
@@ -271,13 +272,13 @@ instance MonadSMT SMT where
     loadFile path =
         withSolver' $ \solver -> SimpleSMT.loadFile solver path
 
-instance (MonadSMT m, MonadIO m) => MonadSMT (Maybe.MaybeT m)
+instance MonadSMT m => MonadSMT (Maybe.MaybeT m)
 
-instance (MonadSMT m, MonadIO m) => MonadSMT (State.Lazy.StateT s m)
+instance MonadSMT m => MonadSMT (State.Lazy.StateT s m)
 
-instance (MonadSMT m, MonadIO m) => MonadSMT (Counter.CounterT m)
+instance MonadSMT m => MonadSMT (Counter.CounterT m)
 
-instance (MonadSMT m, MonadIO m) => MonadSMT (State.Strict.StateT s m)
+instance MonadSMT m => MonadSMT (State.Strict.StateT s m)
 
 {- | Initialize a new solver with the given 'Config'.
 

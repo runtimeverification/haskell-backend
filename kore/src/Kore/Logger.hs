@@ -26,12 +26,16 @@ module Kore.Logger
 import           Colog
                  ( LogAction (..) )
 import qualified Control.Monad.Except as Except
+import           Control.Monad.Morph
+                 ( MFunctor )
 import qualified Control.Monad.Morph as Monad.Morph
 import           Control.Monad.Trans
                  ( MonadTrans )
 import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Identity
-                 ( IdentityT, runIdentityT )
+                 ( IdentityT )
+import           Control.Monad.Trans.Reader
+                 ( ReaderT )
 import           Data.Functor.Contravariant
                  ( contramap )
 import           Data.String
@@ -82,22 +86,29 @@ data LogMessage = LogMessage
 class Monad m => WithLog msg m where
     -- | Retrieve the 'LogAction' in scope.
     askLogAction :: m (LogAction m msg)
+    default askLogAction
+        :: (WithLog msg n, Monad n, MonadTrans t, m ~ t n)
+        => m (LogAction m msg)
+    askLogAction = liftLogAction <$> Monad.Trans.lift askLogAction
+    {-# INLINE askLogAction #-}
 
     -- | Modify the 'LogAction' over the scope of an action.
     localLogAction
         :: (forall n. LogAction n msg -> LogAction n msg)
         -> m a
         -> m a
-
-instance (WithLog msg m, Monad m) => WithLog msg (IdentityT m) where
-    askLogAction = liftLogAction <$> Monad.Trans.lift askLogAction
-    localLogAction
-        :: forall a
-        .  (forall n. LogAction n msg -> LogAction n msg)
-        -> IdentityT m a
-        -> IdentityT m a
+    default localLogAction
+        :: (WithLog msg m', Monad m', MFunctor t, m ~ t m')
+        => (forall n. LogAction n msg -> LogAction n msg)
+        -> m a
+        -> m a
     localLogAction mapping =
-        Monad.Trans.lift . localLogAction mapping . runIdentityT
+        Monad.Morph.hoist (localLogAction mapping)
+    {-# INLINE localLogAction #-}
+
+instance (WithLog msg m, Monad m) => WithLog msg (IdentityT m)
+
+instance (WithLog msg m, Monad m) => WithLog msg (ReaderT r m)
 
 -- | 'Monad.Trans.lift' any 'LogAction' into a monad transformer.
 liftLogAction
