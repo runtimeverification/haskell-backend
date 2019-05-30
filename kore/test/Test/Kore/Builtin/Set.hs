@@ -10,8 +10,6 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 
 import qualified Control.Monad as Monad
-import           Control.Monad.IO.Class
-                 ( liftIO )
 import qualified Control.Monad.Trans as Trans
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
@@ -760,7 +758,7 @@ test_concretizeKeysAxiom =
     testCaseWithSMT "unify Set with symbolic keys in axiom" $ do
         let pair = mkPair intSort setSort symbolicKey concreteSet
         config <- evaluate pair
-        actual <- liftIO $ runStepWith config axiom
+        actual <- runStep config axiom
         assertEqualWithExplanation "" expected actual
   where
     x = mkIntVar (testId "x")

@@ -63,18 +63,24 @@ newtype CounterT m a =
 
 instance Monad m => MonadCounter (CounterT m) where
     increment = CounterT incrementState
+    {-# INLINE increment #-}
 
 deriving instance Monad m => MonadState Natural (CounterT m)
 
 instance MonadIO m => MonadIO (CounterT m) where
     liftIO = CounterT . liftIO
+    {-# INLINE liftIO #-}
 
 instance MonadReader e m => MonadReader e (CounterT m) where
     ask = Monad.Trans.lift Monad.Reader.ask
+    {-# INLINE ask #-}
+
     local f =  CounterT . Monad.Reader.local f . getCounterT
+    {-# INLINE local #-}
 
 instance Morph.MFunctor CounterT where
     hoist f = CounterT . Morph.hoist f . getCounterT
+    {-# INLINE hoist #-}
 
 {- | Run a computation using a monotonic counter.
 
