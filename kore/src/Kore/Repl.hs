@@ -28,7 +28,7 @@ import           Data.Coerce
                  ( coerce )
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.List
-                 ( find, findIndex )
+                 ( findIndex )
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import           Kore.Attribute.RuleIndex
@@ -204,8 +204,7 @@ runRepl
 
     firstClaim :: Claim claim => claim
     firstClaim =
-        maybe (error "No claims found") id
-        $ find (not . isTrusted) claims'
+        claims' !! unClaimIndex firstClaimIndex
 
     firstClaimExecutionGraph :: ExecutionGraph
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
