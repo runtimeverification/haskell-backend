@@ -125,7 +125,7 @@ instance
             . Log.hoistLogAction liftSimplifier
             $ Log.LogAction logger
 
-    withLog f = UnifierTT . Log.withLog f . getUnifier
+    localLogAction f = UnifierTT . Log.localLogAction f . getUnifier
 
 -- | Lift an 'ExceptT' to a 'MonadUnify'.
 fromExceptT

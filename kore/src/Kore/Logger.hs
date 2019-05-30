@@ -84,20 +84,20 @@ class Monad m => WithLog msg m where
     askLogAction :: m (LogAction m msg)
 
     -- | Modify the 'LogAction' over the scope of an action.
-    withLog
+    localLogAction
         :: (forall n. LogAction n msg -> LogAction n msg)
         -> m a
         -> m a
 
 instance (WithLog msg m, Monad m) => WithLog msg (IdentityT m) where
     askLogAction = liftLogAction <$> Monad.Trans.lift askLogAction
-    withLog
+    localLogAction
         :: forall a
         .  (forall n. LogAction n msg -> LogAction n msg)
         -> IdentityT m a
         -> IdentityT m a
-    withLog mapping =
-        Monad.Trans.lift . withLog mapping . runIdentityT
+    localLogAction mapping =
+        Monad.Trans.lift . localLogAction mapping . runIdentityT
 
 -- | 'Monad.Trans.lift' any 'LogAction' into a monad transformer.
 liftLogAction
@@ -118,15 +118,15 @@ instance WithLog msg m => WithLog msg (Except.ExceptT e m) where
     askLogAction = Monad.Trans.lift (liftLogAction <$> askLogAction)
     {-# INLINE askLogAction #-}
 
-    withLog f = Monad.Morph.hoist (withLog f)
-    {-# INLINE withLog #-}
+    localLogAction f = Monad.Morph.hoist (localLogAction f)
+    {-# INLINE localLogAction #-}
 
 instance WithLog msg m => WithLog msg (ListT m) where
     askLogAction = Monad.Trans.lift (liftLogAction <$> askLogAction)
     {-# INLINE askLogAction #-}
 
-    withLog f = Monad.Morph.hoist (withLog f)
-    {-# INLINE withLog #-}
+    localLogAction f = Monad.Morph.hoist (localLogAction f)
+    {-# INLINE localLogAction #-}
 
 -- | Log any message.
 logMsg :: WithLog msg m => msg -> m ()
@@ -196,7 +196,7 @@ withLogScope
     -> m a
     -- ^ continuation / enclosure for the new scope
     -> m a
-withLogScope newScope = withLog (contramap appendScope)
+withLogScope newScope = localLogAction (contramap appendScope)
   where
     appendScope (LogMessage msg sev scope callstack) =
         LogMessage msg sev (newScope : scope) callstack

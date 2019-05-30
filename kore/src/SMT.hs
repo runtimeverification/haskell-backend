@@ -10,7 +10,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 module SMT
     ( SMT, getSMT
     , Solver
-    , newSolver, stopSolver, withLogger
+    , newSolver, stopSolver
     , runSMT
     , MonadSMT (..)
     , Config (..)
@@ -63,8 +63,6 @@ import qualified Control.Monad.State.Lazy as State.Lazy
 import qualified Control.Monad.State.Strict as State.Strict
 import qualified Control.Monad.Trans as Trans
 import qualified Control.Monad.Trans.Maybe as Maybe
-import           Data.IORef
-                 ( IORef, readIORef, writeIORef )
 import           Data.Limit
 import           Data.Text
                  ( Text )
@@ -224,22 +222,20 @@ class Monad m => MonadSMT m where
     {-# INLINE loadFile #-}
 
 withSolver' :: (Solver -> IO a) -> SMT a
-withSolver' action = do
-    mvar <- SMT $ Reader.ask
+withSolver' action = SMT $ do
+    mvar <- Reader.ask
     liftIO $ withMVar mvar action
 
 instance Logger.WithLog Logger.LogMessage SMT where
-    askLogAction = do
-        loggerRef <- getLoggerRef
-        originalLogger <- liftIO $ readIORef loggerRef
-        return (Logger.hoistLogAction liftIO originalLogger)
-    withLog mapping action = do
-        loggerRef <- getLoggerRef
-        originalLogger <- liftIO $ readIORef loggerRef
-        liftIO $ writeIORef loggerRef (mapping originalLogger)
-        result <- action
-        liftIO $ writeIORef loggerRef originalLogger
-        return result
+    askLogAction =
+        withSolver' (return . hoistLogAction . SimpleSMT.logger)
+      where
+        hoistLogAction = Logger.hoistLogAction (SMT . liftIO)
+
+    localLogAction mapping (SMT action) =
+        withSolver' $ \solver -> do
+            let solver' = Lens.over SimpleSMT.lensLogger mapping solver
+            runReaderT action =<< newMVar solver'
 
 instance MonadSMT SMT where
     withSolver (SMT action) = withSolver' $ \solver -> do
@@ -295,8 +291,6 @@ newSolver config logger = do
     runReaderT getSMT mvar
     return mvar
   where
-    -- TODO (thomas.tuegel): Set up logging using logFile.
-    -- TODO (thomas.tuegel): Initialize solver from preludeFile.
     Config { timeOut } = config
     Config { executable = exe, arguments = args } = config
     Config { preludeFile } = config
@@ -358,18 +352,3 @@ setTimeOut TimeOut { getTimeOut } =
             setInfo ":time" (SimpleSMT.int timeOut)
         Unlimited ->
             return ()
-
-getLoggerRef :: SMT (IORef Logger)
-getLoggerRef = do
-    mvar <- SMT $ Reader.ask
-    solver <- liftIO $ readMVar mvar
-    return $ solver Lens.^. SimpleSMT.lensLogger
-
-withLogger :: Logger -> SMT a  -> SMT a
-withLogger l action = do
-    loggerRef <- getLoggerRef
-    originalLogger <- liftIO $ readIORef loggerRef
-    liftIO $ writeIORef loggerRef l
-    result <- action
-    liftIO $ writeIORef loggerRef originalLogger
-    return result

@@ -14,8 +14,17 @@ A module for interacting with an external SMT solver, using SMT-LIB 2 format.
 module SMT.SimpleSMT
     (
     -- * Basic Solver Interface
-      Solver(..)
-    , lensLogger, lensStop, lensCommand
+      Solver (..)
+    , lensLogger
+    , lensHIn
+    , lensHOut
+    , lensHErr
+    , lensHProc
+    , send
+    , recv
+    , info
+    , command
+    , stop
     , Logger
     , newSolver
     , ackCommand
@@ -148,16 +157,14 @@ module SMT.SimpleSMT
     , forallQ
     ) where
 
+import qualified Colog
 import           Control.Concurrent
                  ( forkIO )
 import qualified Control.Exception as X
-import qualified Control.Lens.TH.Rules as Lens
 import           Control.Monad
                  ( forever )
 import           Data.Bits
                  ( testBit )
-import           Data.IORef
-                 ( IORef, newIORef, readIORef )
 import           Data.Ratio
                  ( denominator, numerator, (%) )
 import           Data.Text
@@ -168,6 +175,7 @@ import qualified Data.Text.IO as Text
 import qualified Data.Text.Lazy as Text.Lazy
 import           GHC.Stack
                  ( callStack )
+import qualified GHC.Stack as GHC
 import           Numeric
                  ( readHex, showFFloat, showHex )
 import           Prelude hiding
@@ -176,13 +184,15 @@ import qualified Prelude
 import           System.Exit
                  ( ExitCode )
 import           System.IO
-                 ( hClose, hFlush, hPutChar )
+                 ( Handle, hClose, hFlush, hPutChar )
 import           System.Process
-                 ( runInteractiveProcess, waitForProcess )
+                 ( ProcessHandle, runInteractiveProcess, waitForProcess )
 import qualified Text.Megaparsec as Parser
 import           Text.Read
                  ( readMaybe )
 
+import           Control.Lens.TH.Rules
+                 ( makeLenses )
 import           Kore.Debug
 import qualified Kore.Logger as Logger
 import           SMT.AST
@@ -207,17 +217,14 @@ type Logger = Logger.LogAction IO Logger.LogMessage
 
 -- | An interactive solver process.
 data Solver = Solver
-  { command   :: SExpr -> IO SExpr
-    -- ^ Send a command to the solver.
+    { hIn    :: !Handle
+    , hOut   :: !Handle
+    , hErr   :: !Handle
+    , hProc  :: !ProcessHandle
+    , logger :: !Logger
+    }
 
-  , stop :: IO ExitCode
-    -- ^ Terminate the solver.
-  , logger :: IORef Logger
-    -- ^ Logger instance, can be changed by the SMT wrapper.
-  }
-
-Lens.makeLenses ''Solver
-
+makeLenses ''Solver
 
 -- | Start a new solver process.
 newSolver
@@ -226,54 +233,57 @@ newSolver
     -> Logger   -- ^ Logger
     -> IO Solver
 newSolver exe opts logger = do
-    (hIn, hOut, hErr, h) <- runInteractiveProcess exe opts Nothing Nothing
-    loggerRef <- newIORef logger
-
-    let info a = do
-            log' <- Logger.unLogAction <$> readIORef loggerRef
-            log' $ Logger.LogMessage a Logger.Error mempty callStack
+    (hIn, hOut, hErr, hProc) <- runInteractiveProcess exe opts Nothing Nothing
+    let solver = Solver { hIn, hOut, hErr, hProc, logger }
 
     _ <- forkIO $ do
         let handler X.SomeException {} = return ()
         X.handle handler $ forever $ do
             errs <- Text.hGetLine hErr
-            info ("[stderr] " <> errs)
-
-    let send c = do
-            (info . Text.Lazy.toStrict . Text.Builder.toLazyText)
-                ("[send] " <> buildSExpr c)
-            sendSExpr hIn c
-            hPutChar hIn '\n'
-            hFlush hIn
-
-        recv = do
-            resp <- Text.hGetLine hOut
-            info ("[recv] " <> resp)
-            readSExpr resp
-
-        command c =
-            traceNonErrorMonad D_SMT_command [debugArg "c" (showSExpr c)]
-            $ do
-              send c
-              recv
-
-        stop = do
-            send (List [Atom "exit"])
-            ec <- waitForProcess h
-            let handler :: X.IOException -> IO ()
-                handler ex = (info . Text.pack) (show ex)
-            X.handle handler $ do
-                hClose hIn
-                hClose hOut
-                hClose hErr
-            return ec
-
-        solver = Solver { command, stop, logger = loggerRef }
+            info solver ["stderr"] errs
 
     setOption solver ":print-success" "true"
     setOption solver ":produce-models" "true"
 
     return solver
+
+info :: GHC.HasCallStack => Solver -> [Logger.Scope] -> Text -> IO ()
+info Solver { logger } scope a =
+    logger Colog.<& message
+  where
+    message = Logger.LogMessage a Logger.Info ("SimpleSMT" : scope) callStack
+
+send :: Solver -> SExpr -> IO ()
+send solver@Solver { hIn } command' = do
+    (info solver ["send"] . Text.Lazy.toStrict . Text.Builder.toLazyText)
+        (buildSExpr command')
+    sendSExpr hIn command'
+    hPutChar hIn '\n'
+    hFlush hIn
+
+recv :: Solver -> IO SExpr
+recv solver@Solver { hOut } = do
+    resp <- Text.hGetLine hOut
+    info solver ["recv"] resp
+    readSExpr resp
+
+command :: Solver -> SExpr -> IO SExpr
+command solver c =
+    traceNonErrorMonad D_SMT_command [debugArg "c" (showSExpr c)] $ do
+        send solver c
+        recv solver
+
+stop :: Solver -> IO ExitCode
+stop solver@Solver { hIn, hOut, hErr, hProc } = do
+    send solver (List [Atom "exit"])
+    ec <- waitForProcess hProc
+    let handler :: X.IOException -> IO ()
+        handler ex = (info solver ["stop"] . Text.pack) (show ex)
+    X.handle handler $ do
+        hClose hIn
+        hClose hOut
+        hClose hErr
+    return ec
 
 
 -- | Load the contents of a file.
