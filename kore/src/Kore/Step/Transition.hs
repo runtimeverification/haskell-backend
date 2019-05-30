@@ -63,6 +63,7 @@ newtype TransitionT rule m a =
 
 instance MonadTrans (TransitionT rule) where
     lift = TransitionT . Monad.Trans.lift . Monad.Trans.lift
+    {-# INLINE lift #-}
 
 instance MonadError e m => MonadError e (TransitionT rule m) where
     throwError = Monad.Trans.lift . throwError
@@ -77,18 +78,19 @@ instance MonadError e m => MonadError e (TransitionT rule m) where
 
 instance MonadReader e m => MonadReader e (TransitionT rule m) where
     ask     = Monad.Trans.lift ask
+    {-# INLINE ask #-}
+
     local f = TransitionT . Accum.mapAccumT (local f) . getTransitionT
+    {-# INLINE local #-}
 
 instance Monad.Morph.MFunctor (TransitionT rule) where
     hoist morph =
         TransitionT
-            . Accum.mapAccumT (Monad.Morph.hoist morph)
-            . getTransitionT
+        . Accum.mapAccumT (Monad.Morph.hoist morph)
+        . getTransitionT
+    {-# INLINE hoist #-}
 
-instance
-    ( MonadSMT m
-    , MonadIO m
-    ) => MonadSMT (TransitionT rule m) where
+instance (MonadSMT m, MonadIO m) => MonadSMT (TransitionT rule m)
 
 runTransitionT :: Monad m => TransitionT rule m a -> m [(a, Seq rule)]
 runTransitionT (TransitionT edge) = ListT.gather (runAccumT edge mempty)
