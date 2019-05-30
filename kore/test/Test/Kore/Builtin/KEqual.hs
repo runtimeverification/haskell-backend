@@ -5,7 +5,6 @@ module Test.Kore.Builtin.KEqual
     , test_KIte
     ) where
 
-import qualified Control.Monad.Trans as Trans
 import qualified Data.Text as Text
 import           Hedgehog
 import qualified Hedgehog.Gen as Gen
@@ -41,8 +40,7 @@ testBinary symb impl =
         b <- forAll Gen.bool
         let expect = Test.Bool.asPattern (impl a b)
         actual <-
-            Trans.lift
-            . evaluate
+            evaluateT
             . mkApp boolSort symb
             $ Test.Bool.asInternal <$> [a, b]
         (===) expect actual

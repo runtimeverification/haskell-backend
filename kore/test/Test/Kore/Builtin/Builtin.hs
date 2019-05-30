@@ -9,7 +9,6 @@ module Test.Kore.Builtin.Builtin
     , evaluate
     , evaluateT
     , evaluateToList
-    -- , evaluateWith
     , indexedModule
     , runStepWith
     , runSMT
@@ -215,13 +214,6 @@ evaluateToList =
         testMetadataTools
         testEvaluators
         testSubstitutionSimplifier
-
--- evaluateWith
---     :: MVar Solver
---     -> TermLike Variable
---     -> IO (Pattern Variable)
--- evaluateWith solver patt =
---     runReaderT (SMT.getSMT $ evaluate patt) solver
 
 runSMT :: SMT a -> IO a
 runSMT = SMT.runSMT SMT.defaultConfig emptyLogger

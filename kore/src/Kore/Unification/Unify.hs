@@ -23,7 +23,7 @@ import           Kore.Internal.TermLike
                  ( SortedVariable, TermLike )
 import qualified Kore.Logger as Log
 import           Kore.Step.Simplification.Data
-                 ( BranchT, Simplifier (..) )
+                 ( BranchT, Simplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather, scatter )
 import           Kore.Unification.Error

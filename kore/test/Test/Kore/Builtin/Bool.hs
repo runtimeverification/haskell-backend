@@ -5,7 +5,6 @@ import qualified Hedgehog.Gen as Gen
 import           Test.Tasty
 import           Test.Tasty.HUnit
 
-import qualified Control.Monad.Trans as Trans
 import qualified Data.Text as Text
 
 import           Kore.Attribute.Hook
@@ -73,7 +72,7 @@ testBinary symb impl =
         a <- forAll Gen.bool
         b <- forAll Gen.bool
         let expect = asPattern $ impl a b
-        actual <- Trans.lift . evaluate $ mkApp boolSort symb (asInternal <$> [a, b])
+        actual <- evaluateT $ mkApp boolSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
     Attribute.Symbol { Attribute.hook = Hook { getHook = Just name } } =
@@ -90,7 +89,7 @@ testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
         let expect = asPattern $ impl a
-        actual <- Trans.lift . evaluate $ mkApp boolSort symb (asInternal <$> [a])
+        actual <- evaluateT $ mkApp boolSort symb (asInternal <$> [a])
         (===) expect actual
   where
     Attribute.Symbol { Attribute.hook = Hook { getHook = Just name } } =

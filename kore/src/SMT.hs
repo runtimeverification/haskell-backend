@@ -64,7 +64,7 @@ import qualified Control.Monad.State.Strict as State.Strict
 import qualified Control.Monad.Trans as Trans
 import qualified Control.Monad.Trans.Maybe as Maybe
 import           Data.IORef
-                 ( IORef, newIORef, readIORef, writeIORef )
+                 ( IORef, readIORef, writeIORef )
 import           Data.Limit
 import           Data.Text
                  ( Text )
@@ -136,9 +136,6 @@ class Monad m => MonadSMT m where
         => m a
         -> m a
     withSolver action = Morph.hoist withSolver action
-
-    -- push :: m ()
-    -- pop :: m ()
 
     -- | Declares a general SExpr to SMT.
     declare :: Text -> SExpr -> m SExpr
@@ -295,8 +292,7 @@ The new solver is returned in an 'MVar' for thread-safety.
  -}
 newSolver :: Config -> Logger -> IO (MVar Solver)
 newSolver config logger = do
-    loggerRef <- liftIO $ newIORef logger
-    solver <- SimpleSMT.newSolver exe args loggerRef
+    solver <- SimpleSMT.newSolver exe args logger
     mvar <- newMVar solver
     runReaderT getSMT mvar
     return mvar

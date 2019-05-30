@@ -157,7 +157,7 @@ import           Control.Monad
 import           Data.Bits
                  ( testBit )
 import           Data.IORef
-                 ( IORef, readIORef )
+                 ( IORef, newIORef, readIORef )
 import           Data.Ratio
                  ( denominator, numerator, (%) )
 import           Data.Text
@@ -221,12 +221,13 @@ Lens.makeLenses ''Solver
 
 -- | Start a new solver process.
 newSolver
-    :: FilePath     -- ^ Executable
-    -> [String]     -- ^ Arguments
-    -> IORef Logger -- ^ Logger
+    :: FilePath -- ^ Executable
+    -> [String] -- ^ Arguments
+    -> Logger   -- ^ Logger
     -> IO Solver
-newSolver exe opts loggerRef = do
+newSolver exe opts logger = do
     (hIn, hOut, hErr, h) <- runInteractiveProcess exe opts Nothing Nothing
+    loggerRef <- newIORef logger
 
     let info a = do
             log' <- Logger.unLogAction <$> readIORef loggerRef

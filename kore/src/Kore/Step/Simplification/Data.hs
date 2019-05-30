@@ -1,5 +1,3 @@
-{-# LANGUAGE DerivingVia #-}
-
 {-|
 Module      : Kore.Step.Simplification.Data
 Description : Data structures used for term simplification.
@@ -10,7 +8,7 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.Data
-    ( Simplifier (..)
+    ( Simplifier
     , runSimplifier
     , evalSimplifier
     , withLogger
@@ -179,8 +177,7 @@ A @Simplifier@ can write to the log through 'HasLog'.
 newtype Simplifier a = Simplifier
     { getSimplifier :: SMT a
     }
-    deriving (Applicative, Functor, Monad, MonadCatch, MonadIO, MonadThrow)
-    deriving MonadSMT via SMT
+    deriving (Applicative, Functor, Monad, MonadCatch, MonadIO, MonadSMT, MonadThrow)
 
 instance WithLog LogMessage Simplifier where
     askLogAction = Simplifier $ hoistLogAction Simplifier <$> askLogAction

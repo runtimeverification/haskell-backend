@@ -8,7 +8,6 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
 
-import qualified Control.Monad.Trans as Trans
 import           Data.Bits
                  ( complement, shift, xor, (.&.), (.|.) )
 import qualified Data.Text as Text
@@ -52,10 +51,7 @@ testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         let expect = asPattern $ impl a
-        actual <-
-            Trans.lift
-                . evaluate
-                $ mkApp intSort symb (asInternal <$> [a])
+        actual <- evaluateT $ mkApp intSort symb (asInternal <$> [a])
         (===) expect actual
   where
     Attribute.Symbol
@@ -77,10 +73,7 @@ testBinary symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = asPattern $ impl a b
-        actual <-
-            Trans.lift
-                . evaluate
-                $ mkApp intSort symb (asInternal <$> [a, b])
+        actual <- evaluateT $ mkApp intSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
     Attribute.Symbol
@@ -102,10 +95,7 @@ testComparison symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = Test.Bool.asPattern $ impl a b
-        actual <-
-            Trans.lift
-                . evaluate
-                $ mkApp boolSort symb (asInternal <$> [a, b])
+        actual <- evaluateT $ mkApp boolSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
     Attribute.Symbol
@@ -126,10 +116,7 @@ testPartialUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         let expect = asPartialPattern $ impl a
-        actual <-
-            Trans.lift
-                . evaluate
-                $ mkApp intSort symb (asInternal <$> [a])
+        actual <- evaluateT $ mkApp intSort symb (asInternal <$> [a])
         (===) expect actual
   where
     Attribute.Symbol
@@ -151,10 +138,7 @@ testPartialBinary symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = asPartialPattern $ impl a b
-        actual <-
-            Trans.lift
-                . evaluate
-                $ mkApp intSort symb (asInternal <$> [a, b])
+        actual <- evaluateT $ mkApp intSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
     Attribute.Symbol
@@ -176,10 +160,7 @@ testPartialBinaryZero symb impl =
     testPropertyWithSolver (Text.unpack name ++ " zero") $ do
         a <- forAll genInteger
         let expect = asPartialPattern $ impl a 0
-        actual <-
-            Trans.lift
-                . evaluate
-                $ mkApp intSort symb (asInternal <$> [a, 0])
+        actual <- evaluateT $ mkApp intSort symb (asInternal <$> [a, 0])
         (===) expect actual
   where
     Attribute.Symbol
@@ -202,10 +183,7 @@ testPartialTernary symb impl =
         b <- forAll genInteger
         c <- forAll genInteger
         let expect = asPartialPattern $ impl a b c
-        actual <-
-            Trans.lift
-                . evaluate
-                $ mkApp intSort symb (asInternal <$> [a, b, c])
+        actual <- evaluateT $ mkApp intSort symb (asInternal <$> [a, b, c])
         (===) expect actual
   where
     Attribute.Symbol
@@ -436,10 +414,7 @@ test_unifyAnd_Fn =
                     , predicate = makeEqualsPredicate dv fnPat
                     , substitution = mempty
                     }
-        actual <-
-            Trans.lift
-                . evaluate
-                $ mkAnd dv fnPat
+        actual <- evaluateT $ mkAnd dv fnPat
         (===) expect actual
 
 

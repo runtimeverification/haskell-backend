@@ -60,16 +60,8 @@ decidePredicate korePredicate =
     SMT.withSolver $ runMaybeT $ do
         smtPredicate <-
             goTranslatePredicate korePredicate
-        -- smtPredicate' <-
-        --     goTranslatePredicate (makeNotPredicate korePredicate)
         result <- SMT.withSolver
             (SMT.assert smtPredicate >> SMT.check)
-        -- result' <- SMT.inNewScope
-        --     (SMT.assert smtPredicate' >> SMT.check)
-        -- case (result, result') of
-        --     (Unsat, _) -> return False
-        --     (_, Unsat) -> return True
-        --     _ -> empty
         case result of
             Unsat -> return False
             _ -> Applicative.empty
