@@ -63,6 +63,8 @@ test_replInterpreter =
     , unificationFailure     `tests` "Force axiom that doesn't unify"
     , proofStatus            `tests` "Multi claim proof status"
     , logUpdatesState        `tests` "Log command updates the state"
+    , showCurrentClaim       `tests` "Showing current claim"
+    , showClaim1             `tests` "Showing the claim at index 1"
     ]
 
 showUsage :: IO ()
@@ -256,6 +258,34 @@ proofStatus =
         Result { output, continue } <-
             run command axioms claims claim
         output `equalsOutput` showProofStatus expectedProofStatus
+        continue `equals` Continue
+
+showCurrentClaim :: IO ()
+showCurrentClaim =
+    let
+        claims = [zeroToTen, emptyClaim]
+        claim = zeroToTen
+        axioms = []
+        command = ShowClaim Nothing
+        expectedCindex = ClaimIndex 0
+    in do
+        Result { output, continue } <-
+            run command axioms claims claim
+        output `equalsOutput` showCurrentClaimIndex expectedCindex
+        continue `equals` Continue
+
+showClaim1 :: IO ()
+showClaim1 =
+    let
+        claims = [zeroToTen, emptyClaim]
+        claim = zeroToTen
+        axioms = []
+        command = ShowClaim (Just . ClaimIndex $ 1)
+        expectedClaim = emptyClaim
+    in do
+        Result { output, continue } <-
+            run command axioms claims claim
+        output `equalsOutput` showRewriteRule expectedClaim
         continue `equals` Continue
 
 logUpdatesState :: IO ()
