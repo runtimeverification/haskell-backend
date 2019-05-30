@@ -11,15 +11,14 @@ import           Data.Default
 import           Data.Function
                  ( (&) )
 
-import           Kore.Attribute.Attributes
-                 ( Attributes (..) )
-import           Kore.Attribute.Hook
-import           Kore.Attribute.Parser
-import           Kore.Attribute.Symbol
-import qualified Kore.Attribute.Symbol.Inductive as Inductive
-import           Kore.Error
-                 ( Error )
-import           Kore.Syntax.Pattern
+import Kore.Attribute.Attributes
+       ( Attributes (..) )
+import Kore.Attribute.Hook
+import Kore.Attribute.Parser
+import Kore.Attribute.Symbol
+import Kore.Error
+       ( Error )
+import Kore.Syntax.Pattern
 
 import Test.Kore.Comparators ()
 
@@ -80,14 +79,6 @@ test_stepperAttributes =
         (assertEqual "[function{}(),hook{}(\"builtin\")]"
             (Right Hook { getHook = Just "builtin" })
             (hook <$> parse [ hookAttribute "builtin" ])
-        )
-    , testCase "Parsing an inductive attribute"
-        (assertEqual "[inductive{}(\"1\")]"
-            (defaultSymbolAttributes
-                & Lens.set lensInductive (Inductive.inductive 1)
-                & Right
-            )
-            (parse [ inductiveAttribute 1 ])
         )
     , testCase "Parsing an illegal hook attribute"
         (expectError "[hook{}()]"
