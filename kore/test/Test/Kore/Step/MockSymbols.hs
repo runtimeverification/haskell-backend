@@ -183,6 +183,8 @@ unitSetId :: Id
 unitSetId = testId "unitSet"
 sigmaId :: Id
 sigmaId = testId "sigma"
+anywhereId :: Id
+anywhereId = testId "anywhere"
 
 aSymbol :: SymbolOrAlias
 aSymbol = SymbolOrAlias
@@ -519,6 +521,12 @@ unitSetSymbol = SymbolOrAlias
 sigmaSymbol :: SymbolOrAlias
 sigmaSymbol = SymbolOrAlias
     { symbolOrAliasConstructor = sigmaId
+    , symbolOrAliasParams      = []
+    }
+
+anywhereSymbol :: SymbolOrAlias
+anywhereSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = anywhereId
     , symbolOrAliasParams      = []
     }
 
@@ -868,6 +876,9 @@ sigma
     -> TermLike variable
 sigma child1 child2 = Internal.mkApp testSort sigmaSymbol [child1, child2]
 
+anywhere :: Ord variable => TermLike variable
+anywhere = Internal.mkApp testSort anywhereSymbol []
+
 attributesMapping :: [(SymbolOrAlias, StepperAttributes)]
 attributesMapping =
     [   ( aSymbol
@@ -1074,6 +1085,9 @@ attributesMapping =
     ,   ( sigmaSymbol
         , Mock.constructorFunctionalAttributes
         )
+    ,   ( anywhereSymbol
+        , Mock.functionalAttributes { Attribute.anywhere = Anywhere True }
+        )
     ]
 
 headTypeMapping :: [(SymbolOrAlias, HeadType)]
@@ -1274,6 +1288,9 @@ headTypeMapping =
         , HeadType.Symbol
         )
     ,   ( sigmaSymbol
+        , HeadType.Symbol
+        )
+    ,   ( anywhereSymbol
         , HeadType.Symbol
         )
     ]
@@ -1728,6 +1745,12 @@ headSortsMapping =
     ,   ( sigmaSymbol
         , ApplicationSorts
              { applicationSortsOperands = [testSort, testSort]
+             , applicationSortsResult   = testSort
+             }
+        )
+    ,   ( anywhereSymbol
+        , ApplicationSorts
+             { applicationSortsOperands = []
              , applicationSortsResult   = testSort
              }
         )
