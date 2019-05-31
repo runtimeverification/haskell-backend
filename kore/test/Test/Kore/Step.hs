@@ -131,7 +131,7 @@ mockTransitionRule
 mockTransitionRule =
     transitionRule substitutionSimplifier simplifier Map.empty
   where
-    simplifier = Simplifier.create Map.empty
+    simplifier = Simplifier.create
     substitutionSimplifier = Mock.substitutionSimplifier
 
 -- Builders -- should these find a better home?
@@ -470,7 +470,7 @@ runStep configuration axioms =
         [allRewrites axioms]
         configuration
   where
-    simplifier = Simplifier.create Map.empty
+    simplifier = Simplifier.create
 
 runSteps
     :: Pattern Variable
@@ -486,4 +486,4 @@ runSteps configuration axioms =
         (repeat $ allRewrites axioms)
         configuration
   where
-    simplifier = Simplifier.create Map.empty
+    simplifier = Simplifier.create

@@ -533,8 +533,8 @@ unifyEquals
 unifyEquals
     simplificationType
     tools
-    substitutionSimplifier
-    simplifier
+    _substitutionSimplifier
+    _simplifier
     _
     unifyEqualsChildren
     first
@@ -749,8 +749,7 @@ unifyEquals
     simplify patt =
         let (term, predicate) = Pattern.splitTerm patt
         in Monad.Unify.liftBranchedSimplifier
-            $ simplifyConditionalTerm
-                simplifier substitutionSimplifier term predicate
+            $ simplifyConditionalTerm term predicate
 
     bottomWithExplanation :: unifier (Pattern variable)
     bottomWithExplanation = do

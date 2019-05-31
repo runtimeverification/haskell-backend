@@ -200,7 +200,7 @@ simplify iff0 =
     $ evalSimplifier Mock.env
     $ Iff.simplify
         Mock.substitutionSimplifier
-        (Simplifier.create Map.empty)
+        Simplifier.create
         Map.empty
         iff0
 

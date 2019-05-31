@@ -87,8 +87,8 @@ simplify
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> Simplifier (Pattern variable)
-simplify substitutionSimplifier axiomIdToEvaluator patt = do
-    orPatt <- simplifyToOr axiomIdToEvaluator substitutionSimplifier patt
+simplify _substitutionSimplifier _axiomIdToEvaluator patt = do
+    orPatt <- simplifyToOr patt
     return (OrPattern.toPattern orPatt)
 
 {-|'simplifyToOr' simplifies a TermLike variable, returning an
@@ -101,18 +101,12 @@ simplifyToOr
         , Unparse variable
         , FreshVariable variable
         )
-    => BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> PredicateSimplifier
-    -> TermLike variable
+    => TermLike variable
     -> Simplifier (OrPattern variable)
-simplifyToOr axiomIdToEvaluator substitutionSimplifier =
-    simplifyInternal
-        substitutionSimplifier
-        simplifier
-        axiomIdToEvaluator
+simplifyToOr =
+    localSimplifierTermLike (const simplifier) . simplifyInternal
   where
-    simplifier = termLikeSimplifier (simplifyToOr axiomIdToEvaluator)
+    simplifier = termLikeSimplifier simplifyToOr
 
 simplifyInternal
     ::  ( SortedVariable variable
@@ -121,16 +115,9 @@ simplifyInternal
         , Unparse variable
         , FreshVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> TermLike variable
+    => TermLike variable
     -> Simplifier (OrPattern variable)
 simplifyInternal
-    substitutionSimplifier
-    simplifier
-    axiomIdToEvaluator
     termLike@(Recursive.project -> attrs :< termLikeF)
 
   | EvaluatedF _ <- termLikeF =
@@ -143,7 +130,10 @@ simplifyInternal
     return (OrPattern.fromTermLike termLike)
 
   | otherwise = do
-    traverse simplifyTerm' termLikeF >>= \case
+    substitutionSimplifier <- askSimplifierPredicate
+    simplifier <- askSimplifierTermLike
+    axiomIdToEvaluator <- askSimplifierAxioms
+    traverse simplifyTerm termLikeF >>= \case
         AndF p ->
             And.simplify substitutionSimplifier simplifier axiomIdToEvaluator p
         ApplicationF p ->
@@ -195,5 +185,3 @@ simplifyInternal
             -- include this case here to convince the compiler that the case
             -- statement is complete.
             return (getEvaluated patterns)
-  where
-    simplifyTerm' = simplifyTerm simplifier substitutionSimplifier

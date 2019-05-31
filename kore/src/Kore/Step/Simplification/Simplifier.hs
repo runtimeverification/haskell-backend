@@ -16,9 +16,5 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.TermLike as TermLike
                  ( simplifyToOr )
 
-create
-    :: BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> TermLikeSimplifier
-create axiomIdToEvaluator =
-    termLikeSimplifier (TermLike.simplifyToOr axiomIdToEvaluator)
+create :: TermLikeSimplifier
+create = termLikeSimplifier TermLike.simplifyToOr

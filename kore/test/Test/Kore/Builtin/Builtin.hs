@@ -186,7 +186,7 @@ testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators = Builtin.koreEvaluators verifiedModule
 
 testTermLikeSimplifier :: TermLikeSimplifier
-testTermLikeSimplifier = Simplifier.create testEvaluators
+testTermLikeSimplifier = Simplifier.create
 
 testEnv :: Env
 testEnv =
@@ -216,7 +216,7 @@ evaluateToList
 evaluateToList =
     fmap MultiOr.extractPatterns
     . evalSimplifier testEnv
-    . TermLike.simplifyToOr testEvaluators testSubstitutionSimplifier
+    . TermLike.simplifyToOr
 
 runSMT :: SMT a -> IO a
 runSMT = SMT.runSMT SMT.defaultConfig emptyLogger

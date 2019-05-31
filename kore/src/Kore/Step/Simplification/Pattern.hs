@@ -9,7 +9,6 @@ module Kore.Step.Simplification.Pattern
     ) where
 
 import qualified Control.Monad.Trans.Class as Monad.Trans
-import           Data.Reflection
 
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
@@ -45,8 +44,7 @@ simplify Conditional {term, predicate, substitution} = do
     termSimplifier <- Simplifier.askSimplifierTermLike
     substitutionSimplifier <- Simplifier.askSimplifierPredicate
     axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
-    let simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
-    simplifiedTerm <- simplifyTerm' term
+    simplifiedTerm <- simplifyTerm term
     orPatterns <- BranchT.gather
         (traverse
             (Pattern.mergeWithPredicate
@@ -72,27 +70,14 @@ simplifyPredicate
         , FreshVariable variable
         , SortedVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions in a pattern.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern variable
+    => Pattern variable
     -- ^ The condition to be evaluated.
     -> BranchT Simplifier (Pattern variable)
-simplifyPredicate
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    Conditional {term, predicate, substitution}
-  = do
-    tools <- Simplifier.askMetadataTools
-    evaluated <-
-        give tools $ Monad.Trans.lift
-        $ Predicate.evaluate
-            substitutionSimplifier
-            simplifier
-            predicate
+simplifyPredicate Conditional {term, predicate, substitution} = do
+    substitutionSimplifier <- Simplifier.askSimplifierPredicate
+    simplifier <- Simplifier.askSimplifierTermLike
+    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
+    evaluated <- Monad.Trans.lift $ Predicate.evaluate predicate
     let Conditional { predicate = evaluatedPredicate } = evaluated
         Conditional { substitution = evaluatedSubstitution } = evaluated
     merged <-

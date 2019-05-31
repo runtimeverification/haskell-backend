@@ -407,7 +407,7 @@ runSteps graphFilter picker configuration strategy =
         strategy
         (RewritePattern configuration)
   where
-    simplifier = Simplifier.create Map.empty
+    simplifier = Simplifier.create
 
 runOnePathSteps
     :: Limit Natural

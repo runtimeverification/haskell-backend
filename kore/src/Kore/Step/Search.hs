@@ -161,8 +161,7 @@ matchWith substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
                     [ Conditional.substitution predSubst]
             evaluated <-
                 Monad.Trans.lift
-                $ Predicate.evaluate substitutionSimplifier simplifier
-                $ Conditional.predicate merged
+                $ Predicate.evaluate $ Conditional.predicate merged
             mergePredicatesAndSubstitutions
                 substitutionSimplifier
                 simplifier

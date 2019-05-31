@@ -9,7 +9,6 @@ module Kore.Step.Merging.Pattern
     ) where
 
 import qualified Control.Monad.Trans.Class as Monad.Trans
-import           Data.Reflection
 
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern, Predicate )
@@ -66,11 +65,7 @@ mergeWithPredicate
             [pattPredicate, conditionToMerge]
             [pattSubstitution, substitutionToMerge]
     let Conditional { predicate = mergedCondition } = merged
-    tools <- Simplifier.askMetadataTools
-    evaluatedCondition <-
-        Monad.Trans.lift
-        $ give tools
-        $ Predicate.evaluate substitutionSimplifier simplifier mergedCondition
+    evaluatedCondition <- Monad.Trans.lift $ Predicate.evaluate mergedCondition
     let Conditional { substitution = mergedSubstitution } = merged
     mergeWithEvaluatedCondition
         substitutionSimplifier

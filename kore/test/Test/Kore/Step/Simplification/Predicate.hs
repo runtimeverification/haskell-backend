@@ -27,8 +27,6 @@ import           Kore.Step.Simplification.Data hiding
                  ( runSimplifier )
 import qualified Kore.Step.Simplification.Predicate as PSSimplifier
                  ( create )
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
-                 ( create )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -269,17 +267,14 @@ runSimplifier
     :: BuiltinAndAxiomSimplifierMap
     -> Predicate Variable
     -> IO (OrPredicate Variable)
-runSimplifier patternSimplifierMap predicate =
+runSimplifier _patternSimplifierMap predicate =
     fmap MultiOr.make
     $ SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
     $ gather
     $ simplifier predicate
   where
-    PredicateSimplifier simplifier =
-        PSSimplifier.create
-            (Simplifier.create patternSimplifierMap)
-            patternSimplifierMap
+    PredicateSimplifier simplifier = PSSimplifier.create
 
 simplificationEvaluator
     :: [BuiltinAndAxiomSimplifier]

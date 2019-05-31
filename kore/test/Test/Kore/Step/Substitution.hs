@@ -342,7 +342,7 @@ merge s1 s2 =
     $ Monad.Unify.runUnifier
     $ mergePredicatesAndSubstitutionsExcept
         Mock.substitutionSimplifier
-        (Simplifier.create Map.empty)
+        Simplifier.create
         Map.empty
         []
         $ Substitution.wrap <$> [s1, s2]
@@ -356,7 +356,7 @@ normalize predicated =
     $ gather
     $ Substitution.normalize
         Mock.substitutionSimplifier
-        (Simplifier.create Map.empty)
+        Simplifier.create
         Map.empty
         predicated
 
@@ -374,7 +374,7 @@ normalizeExcept predicated =
     $ Monad.Unify.runUnifier
     $ Substitution.normalizeExcept
         Mock.substitutionSimplifier
-        (Simplifier.create Map.empty)
+        Simplifier.create
         Map.empty
         predicated
 

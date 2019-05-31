@@ -25,13 +25,12 @@ import           SMT
 import           Test.Kore
 import qualified Test.Kore.Builtin.Bool as Builtin.Bool
 import           Test.Kore.Builtin.Builtin
-                 ( testEnv, testSubstitutionSimplifier )
+                 ( testEnv )
 import           Test.Kore.Builtin.Definition
                  ( boolSort, intSort )
 import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Builtin.Int
 import           Test.Kore.Predicate.Predicate ()
-import           Test.Kore.Step.Simplifier
 import           Test.SMT
 
 test_andNegation :: TestTree
@@ -62,13 +61,7 @@ test_andNegation =
 evaluate
     :: Syntax.Predicate Variable
     -> PropertyT SMT (Predicate Variable)
-evaluate predicate =
-    Trans.lift
-    $ evalSimplifier testEnv
-    $ Evaluator.evaluate
-        testSubstitutionSimplifier
-        (mockSimplifier noSimplification)
-        predicate
+evaluate = Trans.lift . evalSimplifier testEnv . Evaluator.evaluate
 
 noSimplification :: [(TermLike Variable, [Pattern Variable])]
 noSimplification = []

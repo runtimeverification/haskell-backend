@@ -155,11 +155,10 @@ emptyAxiomSimplifiers :: BuiltinAndAxiomSimplifierMap
 emptyAxiomSimplifiers = Map.empty
 
 emptyTermLikeSimplifier :: TermLikeSimplifier
-emptyTermLikeSimplifier = Simplifier.create emptyAxiomSimplifiers
+emptyTermLikeSimplifier = Simplifier.create
 
 emptyPredicateSimplifier :: PredicateSimplifier
-emptyPredicateSimplifier =
-    Predicate.create emptyTermLikeSimplifier emptyAxiomSimplifiers
+emptyPredicateSimplifier = Predicate.create
 
 -- | Project the value of the exit cell, if it is present.
 execGetExitCode
@@ -462,8 +461,8 @@ initialize verifiedModule within = do
                 )
                 -- user-defined functions
                 functionEvaluators
-        simplifier = Simplifier.create axiomIdToSimplifier
-        substitutionSimplifier = Predicate.create simplifier axiomIdToSimplifier
+        simplifier = Simplifier.create
+        substitutionSimplifier = Predicate.create
         initialized =
             Initialized
                 { rewriteRules

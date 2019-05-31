@@ -415,7 +415,7 @@ evaluate patt =
     $ evalSimplifier Mock.env
     $ simplify
         Mock.substitutionSimplifier
-        (Simplifier.create Map.empty)
+        Simplifier.create
         Map.empty
         patt
 
@@ -430,7 +430,7 @@ evaluatePatterns first second =
     $ gather
     $ makeEvaluate
         Mock.substitutionSimplifier
-        (Simplifier.create Map.empty)
+        Simplifier.create
         Map.empty
         first
         second

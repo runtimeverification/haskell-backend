@@ -130,5 +130,5 @@ simplifyEvaluated =
     . evalSimplifier Mock.env
     . Not.simplifyEvaluated
         Mock.substitutionSimplifier
-        (Simplifier.create Map.empty)
+        Simplifier.create
         Map.empty

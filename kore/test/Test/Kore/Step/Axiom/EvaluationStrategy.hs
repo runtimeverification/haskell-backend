@@ -500,5 +500,5 @@ evaluate (BuiltinAndAxiomSimplifier simplifier) patt =
     $ evalSimplifier Mock.env
     $ simplifier substitutionSimplifier patternSimplifier Map.empty patt
   where
-    substitutionSimplifier = Predicate.create patternSimplifier Map.empty
-    patternSimplifier = Simplifier.create Map.empty
+    substitutionSimplifier = Predicate.create
+    patternSimplifier = Simplifier.create

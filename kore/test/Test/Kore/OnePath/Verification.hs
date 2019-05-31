@@ -392,4 +392,4 @@ runVerification
         . filter (not . Claim.isTrusted)
         $ claims)
   where
-    simplifier = Simplifier.create Map.empty
+    simplifier = Simplifier.create

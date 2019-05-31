@@ -2041,14 +2041,13 @@ metadataTools =
         smtDeclarations
 
 termLikeSimplifier :: TermLikeSimplifier
-termLikeSimplifier = Simplifier.create Map.empty
+termLikeSimplifier = Simplifier.create
 
 axiomSimplifiers :: BuiltinAndAxiomSimplifierMap
 axiomSimplifiers = Map.empty
 
 predicateSimplifier :: PredicateSimplifier
-predicateSimplifier =
-    Simplifier.Predicate.create termLikeSimplifier axiomSimplifiers
+predicateSimplifier = Simplifier.Predicate.create
 
 env :: Env
 env =

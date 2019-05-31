@@ -18,8 +18,7 @@ import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
-                 simplifyTerm )
+                 ( Simplifier, simplifyTerm )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -39,20 +38,15 @@ evaluate
         , Show variable
         , Unparse variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions in a pattern.
-    -> Syntax.Predicate variable
+    => Syntax.Predicate variable
     -- ^ The condition to be evaluated.
     -- TODO: Can't it happen that I also get a substitution when evaluating
     -- functions? See the Equals case.
     -> Simplifier (Predicate variable)
 evaluate
-    substitutionSimplifier
-    termSimplifier
     predicate
   = do
-    simplified <- simplifyTerm' (Syntax.Predicate.unwrapPredicate predicate)
+    simplified <- simplifyTerm (Syntax.Predicate.unwrapPredicate predicate)
     refute <-
         case () of
             _ | OrPattern.isTrue simplified  -> return (Just True)
@@ -64,8 +58,6 @@ evaluate
                 Just True -> Pattern.top
                 _ -> OrPattern.toPattern simplified
     return $ asPredicate simplified'
-  where
-    simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
 
 asPredicate
     ::  ( SortedVariable variable

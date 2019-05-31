@@ -267,7 +267,7 @@ andSimplifySuccess term1 term2 results = do
         $ Monad.Unify.runUnifier
         $ simplifyAnds
             Mock.substitutionSimplifier
-            (Simplifier.create Map.empty)
+            Simplifier.create
             Map.empty
             (unificationProblem term1 term2 :| [])
     assertEqualWithExplanation "" expect subst'
@@ -287,7 +287,7 @@ andSimplifyFailure term1 term2 err = do
         $ Monad.Unify.runUnifier
         $ simplifyAnds
             Mock.substitutionSimplifier
-            (Simplifier.create Map.empty)
+            Simplifier.create
             Map.empty
             (unificationProblem term1 term2 :| [])
     assertEqual "" (show expect) (show actual)
@@ -308,7 +308,7 @@ andSimplifyException message term1 term2 exceptionMessage =
                 $ Monad.Unify.runUnifier
                 $ simplifyAnds
                     Mock.substitutionSimplifier
-                    (Simplifier.create Map.empty)
+                    Simplifier.create
                     Map.empty
                     (unificationProblem term1 term2 :| [])
             _ <- evaluate var
@@ -337,7 +337,7 @@ unificationProcedureSuccessWithSimplifiers
             $ Monad.Unify.runUnifier
             $ unificationProcedure
                 Mock.substitutionSimplifier
-                (Simplifier.create axiomIdToSimplifier)
+                Simplifier.create
                 axiomIdToSimplifier
                 term1
                 term2

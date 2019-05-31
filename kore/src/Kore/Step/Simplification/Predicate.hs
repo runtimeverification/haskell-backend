@@ -40,13 +40,8 @@ import           Kore.Variables.Fresh
 
 {- | Create a 'PredicateSimplifier' using 'simplify'.
 -}
-create
-    :: TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> PredicateSimplifier
-create simplifier axiomIdToSimplifier =
-    PredicateSimplifier
-        (simplify simplifier axiomIdToSimplifier 0)
+create :: PredicateSimplifier
+create = PredicateSimplifier (simplify 0)
 
 {- | Simplify a 'Predicate'.
 
@@ -61,15 +56,10 @@ simplify
         , Unparse variable
         , FreshVariable variable
         )
-    => TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Int
+    => Int
     -> Predicate variable
     -> BranchT Simplifier (Predicate variable)
 simplify
-    simplifier
-    axiomIdToSimplifier
     times
     initialValue@Conditional { predicate, substitution }
   = do
@@ -81,12 +71,8 @@ simplify
     -- this needs to run more than once.
     if substitutedPredicate == predicate && times > 1
         then return initialValue
-        else do
-            simplified <-
-                simplifyPartial
-                    substitutionSimplifier
-                    simplifier
-                    substitutedPredicate
+        else localPredicateSimplifier $ do
+            simplified <- simplifyPartial substitutedPredicate
 
             let Conditional { predicate = simplifiedPredicate } = simplified
                 Conditional { substitution = simplifiedSubstitution } =
@@ -95,6 +81,8 @@ simplify
             if Substitution.null simplifiedSubstitution
                 then return simplified { substitution }
                 else do
+                    simplifier <- askSimplifierTermLike
+                    axiomIdToSimplifier <- askSimplifierAxioms
                     -- TODO(virgil): Optimize. Since both substitution and
                     -- simplifiedSubstitution have distinct variables, it is
                     -- enough to check that, say, simplifiedSubstitution's
@@ -111,9 +99,9 @@ simplify
                     TopBottom.guardAgainstBottom mergedPredicate
                     return mergedPredicate
   where
-    substitutionSimplifier =
-        PredicateSimplifier
-            (simplify simplifier axiomIdToSimplifier (times + 1))
+    substitutionSimplifier = PredicateSimplifier (simplify (times + 1))
+    localPredicateSimplifier =
+        localSimplifierPredicate (const substitutionSimplifier)
 
 assertDistinctVariables
     :: forall variable m
@@ -151,24 +139,17 @@ simplifyPartial
         , Unparse variable
         , SortedVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> Syntax.Predicate variable
+    => Syntax.Predicate variable
     -> BranchT Simplifier (Predicate variable)
 simplifyPartial
-    substitutionSimplifier
-    termSimplifier
     predicate
   = do
     patternOr <-
-        Monad.Trans.lift
-        $ simplifyTerm'
-        $ Syntax.unwrapPredicate predicate
+        Monad.Trans.lift $ simplifyTerm $ Syntax.unwrapPredicate predicate
     -- Despite using Monad.Trans.lift above, we do not need to explicitly check
     -- for \bottom because patternOr is an OrPattern.
     scatter (eraseTerm <$> patternOr)
   where
-    simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
     eraseTerm conditional
       | TopBottom.isTop (Pattern.term conditional)
       = Conditional.withoutTerm conditional

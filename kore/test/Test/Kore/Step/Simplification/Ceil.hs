@@ -30,8 +30,8 @@ import           Kore.Step.Simplification.Data
                  BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
                  BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
-                 evalSimplifier )
+                 ( Env (..), PredicateSimplifier, Simplifier,
+                 TermLikeSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiom
@@ -492,7 +492,7 @@ evaluate ceil =
     $ evalSimplifier Mock.env
     $ Ceil.simplify
         Mock.substitutionSimplifier
-        (Simplifier.create Map.empty)
+        Simplifier.create
         Map.empty
         ceil
 
@@ -508,9 +508,9 @@ makeEvaluateWithAxioms
     -> IO (OrPattern Variable)
 makeEvaluateWithAxioms axiomIdToSimplifier child =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
+    $ evalSimplifier Mock.env { simplifierAxioms = axiomIdToSimplifier }
     $ Ceil.makeEvaluate
         Mock.substitutionSimplifier
-        (Simplifier.create axiomIdToSimplifier)
+        Simplifier.create
         axiomIdToSimplifier
         child

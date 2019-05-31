@@ -330,7 +330,7 @@ reevaluateFunctions
         , substitution = rewrittenSubstitution
         }
   = do
-    pattOr <- simplifyTerm' rewrittenPattern
+    pattOr <- simplifyTerm rewrittenPattern
     mergedPatt <-
         OrPattern.mergeWithPredicate
             substitutionSimplifier
@@ -342,18 +342,8 @@ reevaluateFunctions
                 , substitution = rewrittenSubstitution
                 }
             pattOr
-    orResults <- BranchT.gather
-        (traverse
-            (Pattern.simplifyPredicate
-                substitutionSimplifier
-                termSimplifier
-                axiomIdToEvaluator
-            )
-            mergedPatt
-        )
+    orResults <- BranchT.gather $ traverse Pattern.simplifyPredicate mergedPatt
     return (MultiOr.mergeAll orResults)
-  where
-    simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
 
 {-| Ands the given condition-substitution to the given function evaluation.
 -}

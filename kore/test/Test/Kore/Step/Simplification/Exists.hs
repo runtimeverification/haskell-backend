@@ -312,7 +312,7 @@ simplify exists =
     $ evalSimplifier Mock.env
     $ Exists.simplify
         Mock.substitutionSimplifier
-        (Simplifier.create Map.empty)
+        Simplifier.create
         Map.empty
         exists
 
@@ -325,7 +325,7 @@ makeEvaluate variable child =
     $ evalSimplifier Mock.env
     $ Exists.makeEvaluate
         Mock.substitutionSimplifier
-        (Simplifier.create Map.empty)
+        Simplifier.create
         Map.empty
         variable
         child

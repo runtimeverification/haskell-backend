@@ -19,8 +19,10 @@ module Kore.Step.Simplification.Data
     , gatherAll
     , scatter
     , PredicateSimplifier (..)
+    , emptyPredicateSimplifier
     , TermLikeSimplifier
     , termLikeSimplifier
+    , emptyTermLikeSimplifier
     , simplifyTerm
     , simplifyConditionalTerm
     , SimplificationType (..)
@@ -376,11 +378,15 @@ newtype TermLikeSimplifier =
             , Unparse variable
             , SortedVariable variable
             )
-        => PredicateSimplifier
-        -> TermLike variable
+        => TermLike variable
         -> Predicate variable
         -> BranchT Simplifier (Pattern variable)
         )
+
+emptyTermLikeSimplifier :: TermLikeSimplifier
+emptyTermLikeSimplifier =
+    TermLikeSimplifier $ \term condition ->
+        return (Conditional.withCondition term condition)
 
 {- | Use a 'TermLikeSimplifier' to simplify a pattern.
 
@@ -395,20 +401,11 @@ simplifyTerm
         , Unparse variable
         , SortedVariable variable
         )
-    => TermLikeSimplifier
-    -> PredicateSimplifier
-    -> TermLike variable
+    => TermLike variable
     -> Simplifier (OrPattern variable)
-simplifyTerm
-    (TermLikeSimplifier simplify)
-    predicateSimplifier
-    termLike
-  = do
-    results <-
-        gather $ simplify
-            predicateSimplifier
-            termLike
-            Predicate.top
+simplifyTerm termLike = do
+    TermLikeSimplifier simplify <- askSimplifierTermLike
+    results <- gather $ simplify termLike Predicate.top
     return (OrPattern.fromPatterns results)
 
 
@@ -422,12 +419,12 @@ simplifyConditionalTerm
         , Unparse variable
         , SortedVariable variable
         )
-    => TermLikeSimplifier
-    -> PredicateSimplifier
-    -> TermLike variable
+    => TermLike variable
     -> Predicate variable
     -> BranchT Simplifier (Pattern variable)
-simplifyConditionalTerm (TermLikeSimplifier simplify) = simplify
+simplifyConditionalTerm termLike predicate = do
+    TermLikeSimplifier simplify <- askSimplifierTermLike
+    simplify termLike predicate
 
 {- | Construct a 'TermLikeSimplifier' from a term simplifier.
 
@@ -443,8 +440,7 @@ termLikeSimplifier
             , Unparse variable
             , SortedVariable variable
             )
-        => PredicateSimplifier
-        -> TermLike variable
+        => TermLike variable
         -> Simplifier (OrPattern variable)
         )
     -> TermLikeSimplifier
@@ -459,18 +455,14 @@ termLikeSimplifier simplifier =
             , Unparse variable
             , SortedVariable variable
             )
-        => PredicateSimplifier
-        -> TermLike variable
+        => TermLike variable
         -> Predicate variable
         -> BranchT Simplifier (Pattern variable)
     termLikeSimplifierWorker
-        predicateSimplifier
         termLike
         initialCondition
       = do
-        results <-
-            Monad.Trans.lift
-            $ simplifier predicateSimplifier termLike
+        results <- Monad.Trans.lift $ simplifier termLike
         result <- scatter results
         return (result `Conditional.andCondition` initialCondition)
 
@@ -491,6 +483,9 @@ newtype PredicateSimplifier =
             => Predicate variable
             -> BranchT Simplifier (Predicate variable)
         }
+
+emptyPredicateSimplifier :: PredicateSimplifier
+emptyPredicateSimplifier = PredicateSimplifier return
 
 {-| 'BuiltinAndAxiomSimplifier' simplifies patterns using either an axiom
 or builtin code.
@@ -564,8 +559,7 @@ instance Ord variable => Semigroup (AttemptedAxiomResults variable) where
       =
         AttemptedAxiomResults
             { results = MultiOr.merge firstResults secondResults
-            , remainders =
-                    MultiOr.merge firstRemainders secondRemainders
+            , remainders = MultiOr.merge firstRemainders secondRemainders
             }
 
 instance Ord variable => Monoid (AttemptedAxiomResults variable) where

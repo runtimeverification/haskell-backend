@@ -5,9 +5,8 @@ module Test.Kore.Step.Simplification.TermLike
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Control.Monad
-                 ( void )
-import qualified Data.Map as Map
+import Control.Monad
+       ( void )
 
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -29,11 +28,15 @@ test_simplifyInternal =
 simplifyInternalEvaluated :: TermLike Variable -> IO (OrPattern Variable)
 simplifyInternalEvaluated original =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
+    $ evalSimplifier env
     $ TermLike.simplifyInternal
-        undefined  -- Throw an error if any predicate would be simplified.
-        undefined  -- Throw an error if any term would be simplified.
-        axiomSimplifiers
         original
   where
-    axiomSimplifiers = Map.empty
+    env = Mock.env
+        { simplifierTermLike =
+            -- Throw an error if any term would be simplified.
+            termLikeSimplifier $ \_ -> undefined
+        , simplifierPredicate =
+            -- Throw an error if any predicate would be simplified.
+            PredicateSimplifier $ \_ -> undefined
+        }

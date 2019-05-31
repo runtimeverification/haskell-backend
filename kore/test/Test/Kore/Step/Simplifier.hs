@@ -13,8 +13,7 @@ import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( wrapPredicate )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
-                 termLikeSimplifier )
+                 ( Simplifier, TermLikeSimplifier, termLikeSimplifier )
 import           Kore.Syntax.Variable
                  ( SortedVariable (..) )
 import           Kore.Variables.Fresh
@@ -56,10 +55,9 @@ mockSimplifierHelper
         )
     => (TermLike variable -> Pattern variable)
     -> [(TermLike variable, [Pattern variable])]
-    -> PredicateSimplifier
     -> TermLike variable0
     -> Simplifier (OrPattern variable0)
-mockSimplifierHelper unevaluatedConverter [] _ patt =
+mockSimplifierHelper unevaluatedConverter [] patt =
     return
         ( OrPattern.fromPatterns
             [ convertPatternVariables
@@ -70,7 +68,6 @@ mockSimplifierHelper unevaluatedConverter [] _ patt =
 mockSimplifierHelper
     unevaluatedConverter
     ((patt, patts) : reminder)
-    substitutionSimplifier
     unevaluatedPatt
   | patt == convertTermLikeVariables unevaluatedPatt
   = return $ OrPattern.fromPatterns $ map convertPatternVariables patts
@@ -78,7 +75,6 @@ mockSimplifierHelper
     mockSimplifierHelper
         unevaluatedConverter
         reminder
-        substitutionSimplifier
         unevaluatedPatt
 
 convertTermLikeVariables

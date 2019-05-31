@@ -1190,7 +1190,7 @@ unify first second =
         -- the failure is almost always due to unsupported patterns anyway.
         MaybeT . fmap Error.hush . Monad.Unify.runUnifier $ termUnification
             substitutionSimplifier
-            (Simplifier.create Map.empty)
+            Simplifier.create
             Map.empty
             first
             second
@@ -1205,7 +1205,7 @@ simplify first second =
     $ BranchT.gather
     $ termAnd
         Mock.substitutionSimplifier
-        (Simplifier.create Map.empty)
+        Simplifier.create
         Map.empty
         first
         second
@@ -1222,7 +1222,7 @@ simplifyEquals axiomIdToSimplifier first second =
         $ runMaybeT
         $ termEquals
             Mock.substitutionSimplifier
-            (Simplifier.create axiomIdToSimplifier)
+            Simplifier.create
             axiomIdToSimplifier
             first
             second

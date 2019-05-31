@@ -85,8 +85,8 @@ applyInitialConditions initial unification =
         initial
         unification
   where
-    predicateSimplifier = Predicate.create patternSimplifier axiomSimplifiers
-    patternSimplifier = Simplifier.create axiomSimplifiers
+    predicateSimplifier = Predicate.create
+    patternSimplifier = Simplifier.create
     axiomSimplifiers = Map.empty
 
 test_applyInitialConditions :: [TestTree]
@@ -158,8 +158,8 @@ unifyRule initial rule =
         rule
   where
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
-    predicateSimplifier = Predicate.create patternSimplifier axiomSimplifiers
-    patternSimplifier = Simplifier.create axiomSimplifiers
+    predicateSimplifier = Predicate.create
+    patternSimplifier = Simplifier.create
     axiomSimplifiers = Map.empty
 
 test_unifyRule :: [TestTree]
@@ -661,8 +661,8 @@ applyRewriteRulesParallel initial rules =
             rules
             initial
   where
-    predicateSimplifier = Predicate.create patternSimplifier axiomSimplifiers
-    patternSimplifier = Simplifier.create axiomSimplifiers
+    predicateSimplifier = Predicate.create
+    patternSimplifier = Simplifier.create
     axiomSimplifiers = Map.empty
     unificationProcedure =
         UnificationProcedure Unification.unificationProcedure
@@ -1025,8 +1025,8 @@ applyRewriteRulesSequence initial rules =
             initial
             rules
   where
-    predicateSimplifier = Predicate.create patternSimplifier axiomSimplifiers
-    patternSimplifier = Simplifier.create axiomSimplifiers
+    predicateSimplifier = Predicate.create
+    patternSimplifier = Simplifier.create
     axiomSimplifiers = Map.empty
     unificationProcedure =
         UnificationProcedure Unification.unificationProcedure
@@ -1137,8 +1137,8 @@ sequenceMatchingRules initial rules =
         initial
         (getEqualityRule <$> rules)
   where
-    predicateSimplifier = Predicate.create patternSimplifier axiomSimplifiers
-    patternSimplifier = Simplifier.create axiomSimplifiers
+    predicateSimplifier = Predicate.create
+    patternSimplifier = Simplifier.create
     axiomSimplifiers = Map.empty
     unificationProcedure =
         UnificationProcedure Matcher.unificationWithAppMatchOnTop

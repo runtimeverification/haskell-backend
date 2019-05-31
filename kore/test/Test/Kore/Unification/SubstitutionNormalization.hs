@@ -112,8 +112,7 @@ test_substitutionNormalization =
     , testCase "Constructor with side function cycle" $ do
         assertEqualWithExplanation "" (Right [])
             =<< runNormalizeSubstitution
-                [ (Mock.x, Mock.constr20 (Mock.f (mkVar Mock.x)) (mkVar Mock.x))
-                ]
+                [(Mock.x, Mock.constr20 (Mock.f (mkVar Mock.x)) (mkVar Mock.x))]
     , testCase "Constructor with function cycle" $ do
         assertEqualWithExplanation ""
             (Left (NonCtorCircularVariableDependency [Mock.x]))

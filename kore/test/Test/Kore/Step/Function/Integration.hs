@@ -35,8 +35,6 @@ import           Kore.Step.Simplification.Data
                  evalSimplifier )
 import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
-                 ( create )
 import qualified Kore.Step.Simplification.TermLike as TermLike
                  ( simplify )
 import qualified Kore.Unification.Substitution as Substitution
@@ -572,10 +570,7 @@ evaluate
     -> IO (Pattern Variable)
 evaluate functionIdToEvaluator patt =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
+    $ evalSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
     $ TermLike.simplify substitutionSimplifier functionIdToEvaluator patt
   where
-    substitutionSimplifier =
-        Predicate.create
-            patternSimplifier functionIdToEvaluator
-    patternSimplifier = Simplifier.create functionIdToEvaluator
+    substitutionSimplifier = Predicate.create
