@@ -664,7 +664,6 @@ applyRewriteRules initial rules =
         $ evalSimplifier Mock.env
         $ Monad.Unify.runUnifier
         $ Step.applyRewriteRules
-            metadataTools
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers

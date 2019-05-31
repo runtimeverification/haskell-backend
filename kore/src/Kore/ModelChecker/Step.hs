@@ -126,7 +126,7 @@ transitionRule
     -> CommonProofState
     -> Transition CommonProofState
 transitionRule
-    tools
+    _tools
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers
@@ -240,7 +240,6 @@ transitionRule
             Monad.Trans.lift . Monad.Trans.lift
             $ Monad.Unify.runUnifier
             $ Step.applyRewriteRules
-                tools
                 predicateSimplifier
                 patternSimplifier
                 axiomSimplifiers

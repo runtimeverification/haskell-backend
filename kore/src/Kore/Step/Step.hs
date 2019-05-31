@@ -652,8 +652,7 @@ applyRewriteRules
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -666,7 +665,6 @@ applyRewriteRules
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
 applyRewriteRules
-    _metadataTools
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers

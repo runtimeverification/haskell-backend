@@ -25,7 +25,6 @@ module Kore.Step
     , runStrategy
     ) where
 
-import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -45,7 +44,6 @@ import           Kore.Step.Rule
                  isHeatingRule, isNormalRule )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
-import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Step as Step
@@ -115,13 +113,11 @@ transitionRule substitutionSimplifier simplifier axiomIdToSimplifier =
                 nonEmptyConfigs = MultiOr.filterOr configs
             Foldable.asum (pure <$> nonEmptyConfigs)
     transitionRewrite rule config = do
-        tools <- Reader.asks Simplifier.metadataTools
         Transition.addRule rule
         eitherResults <-
             Monad.Trans.lift
             $ Monad.Unify.runUnifier
             $ Step.applyRewriteRules
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
