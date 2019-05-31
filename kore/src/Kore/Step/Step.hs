@@ -294,8 +294,7 @@ finalizeAppliedRule
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
 
@@ -305,7 +304,6 @@ finalizeAppliedRule
     -- ^ Conditions of applied rule
     -> unifier (OrPattern variable)
 finalizeAppliedRule
-    _metadataTools
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers
@@ -428,7 +426,7 @@ applyRule
     -- TODO (virgil): This is broken, it should take advantage of the unifier's
     -- branching and not return a list.
 applyRule
-    metadataTools
+    _metadataTools
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers
@@ -472,7 +470,6 @@ applyRule
             axiomSimplifiers
     finalizeAppliedRule' =
         finalizeAppliedRule
-            metadataTools
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
