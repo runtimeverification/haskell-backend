@@ -449,12 +449,11 @@ evaluateWithAxioms axioms patt =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
     $ Pattern.simplify
-        (Predicate.create tools simplifier axiomIdToSimplifier)
+        (Predicate.create simplifier axiomIdToSimplifier)
         simplifier
         axiomIdToSimplifier
         patt
   where
-    tools = Mock.metadataTools
     simplifier :: TermLikeSimplifier
     simplifier = Simplifier.create axiomIdToSimplifier
     axiomIdToSimplifier :: BuiltinAndAxiomSimplifierMap

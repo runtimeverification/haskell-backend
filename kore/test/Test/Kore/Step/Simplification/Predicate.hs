@@ -279,7 +279,6 @@ runSimplifier patternSimplifierMap predicate =
   where
     PredicateSimplifier simplifier =
         PSSimplifier.create
-            Mock.metadataTools
             (Simplifier.create patternSimplifierMap)
             patternSimplifierMap
 

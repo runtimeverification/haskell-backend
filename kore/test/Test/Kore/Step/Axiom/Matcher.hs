@@ -1003,14 +1003,12 @@ unificationWithMatchSimplifiers axiomIdToSimplifier first second = do
         $ evalSimplifier Mock.env
         $ Monad.Unify.runUnifier
         $ unificationWithAppMatchOnTop
-            (Mock.substitutionSimplifier tools)
+            Mock.substitutionSimplifier
             (Simplifier.create axiomIdToSimplifier)
             axiomIdToSimplifier
             first
             second
     return $ either (const Nothing) Just (MultiOr.make <$> result)
-  where
-    tools = Mock.metadataTools
 
 unificationWithMatch
     :: TermLike Variable
@@ -1026,7 +1024,6 @@ match first second = do
     result <- matchAsEither
     return $ either (const Nothing) Just result
   where
-    tools = Mock.metadataTools
     matchAsEither
         :: IO (Either UnificationOrSubstitutionError (OrPredicate Variable))
     matchAsEither =
@@ -1038,7 +1035,7 @@ match first second = do
     matchResult =
         fmap MultiOr.make <$> Monad.Unify.runUnifier
             (matchAsUnification
-                (Mock.substitutionSimplifier tools)
+                Mock.substitutionSimplifier
                 (Simplifier.create Map.empty)
                 Map.empty
                 first

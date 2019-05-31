@@ -2,10 +2,6 @@ module Test.Kore.Step.MockSimplifiers where
 
 import qualified Data.Map as Map
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (Conditional) )
@@ -19,12 +15,9 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
 
-substitutionSimplifier
-    :: SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-substitutionSimplifier tools =
+substitutionSimplifier :: PredicateSimplifier
+substitutionSimplifier =
     Predicate.create
-        tools
         (termLikeSimplifier $ \_ p ->
             return $ OrPattern.fromPattern
                 Conditional

@@ -575,10 +575,7 @@ evaluate functionIdToEvaluator patt =
     $ evalSimplifier Mock.env
     $ TermLike.simplify substitutionSimplifier functionIdToEvaluator patt
   where
-    metadataTools = Mock.metadataTools
-    substitutionSimplifier :: PredicateSimplifier
     substitutionSimplifier =
         Predicate.create
-            metadataTools patternSimplifier functionIdToEvaluator
-    patternSimplifier :: TermLikeSimplifier
+            patternSimplifier functionIdToEvaluator
     patternSimplifier = Simplifier.create functionIdToEvaluator

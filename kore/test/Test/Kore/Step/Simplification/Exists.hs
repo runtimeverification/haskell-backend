@@ -311,12 +311,10 @@ simplify exists =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
     $ Exists.simplify
-        (Mock.substitutionSimplifier tools)
+        Mock.substitutionSimplifier
         (Simplifier.create Map.empty)
         Map.empty
         exists
-  where
-    tools = Mock.metadataTools
 
 makeEvaluate
     :: Variable
@@ -326,10 +324,8 @@ makeEvaluate variable child =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
     $ Exists.makeEvaluate
-        (Mock.substitutionSimplifier tools)
+        Mock.substitutionSimplifier
         (Simplifier.create Map.empty)
         Map.empty
         variable
         child
-  where
-    tools = Mock.metadataTools

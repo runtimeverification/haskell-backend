@@ -223,7 +223,6 @@ evaluateWithAxiom
 evaluateWithAxiom axiom simplifier patt =
     normalizeResult <$> evaluated
   where
-    metadataTools = Mock.metadataTools
     normalizeResult :: CommonAttemptedAxiom -> CommonAttemptedAxiom
     normalizeResult =
         \case
@@ -247,7 +246,7 @@ evaluateWithAxiom axiom simplifier patt =
         $ evalSimplifier Mock.env
         $ equalityRuleEvaluator
             axiom
-            (Mock.substitutionSimplifier metadataTools)
+            Mock.substitutionSimplifier
             simplifier
             Map.empty
             patt

@@ -18,10 +18,6 @@ import           Data.List
                  ( group )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.Pattern
                  ( Conditional (..), Predicate )
@@ -47,13 +43,12 @@ import           Kore.Variables.Fresh
 {- | Create a 'PredicateSimplifier' using 'simplify'.
 -}
 create
-    :: SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier
+    :: TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> PredicateSimplifier
-create tools simplifier axiomIdToSimplifier =
+create simplifier axiomIdToSimplifier =
     PredicateSimplifier
-        (simplify tools simplifier axiomIdToSimplifier 0)
+        (simplify simplifier axiomIdToSimplifier 0)
 
 {- | Simplify a 'Predicate'.
 
@@ -68,15 +63,13 @@ simplify
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier
+    => TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Int
     -> Predicate variable
     -> BranchT Simplifier (Predicate variable)
 simplify
-    tools
     simplifier
     axiomIdToSimplifier
     times
@@ -122,7 +115,7 @@ simplify
   where
     substitutionSimplifier =
         PredicateSimplifier
-            (simplify tools simplifier axiomIdToSimplifier (times + 1))
+            (simplify simplifier axiomIdToSimplifier (times + 1))
 
 assertDistinctVariables
     :: forall variable m

@@ -265,7 +265,7 @@ andSimplifySuccess term1 term2 results = do
         $ evalSimplifier testEnv
         $ Monad.Unify.runUnifier
         $ simplifyAnds
-            (Mock.substitutionSimplifier tools)
+            Mock.substitutionSimplifier
             (Simplifier.create Map.empty)
             Map.empty
             (unificationProblem term1 term2 :| [])
@@ -285,7 +285,7 @@ andSimplifyFailure term1 term2 err = do
         $ evalSimplifier testEnv
         $ Monad.Unify.runUnifier
         $ simplifyAnds
-            (Mock.substitutionSimplifier tools)
+            Mock.substitutionSimplifier
             (Simplifier.create Map.empty)
             Map.empty
             (unificationProblem term1 term2 :| [])
@@ -306,7 +306,7 @@ andSimplifyException message term1 term2 exceptionMessage =
                 runSMT $ evalSimplifier testEnv
                 $ Monad.Unify.runUnifier
                 $ simplifyAnds
-                    (Mock.substitutionSimplifier tools)
+                    Mock.substitutionSimplifier
                     (Simplifier.create Map.empty)
                     Map.empty
                     (unificationProblem term1 term2 :| [])
@@ -335,7 +335,7 @@ unificationProcedureSuccessWithSimplifiers
             $ evalSimplifier testEnv
             $ Monad.Unify.runUnifier
             $ unificationProcedure
-                (Mock.substitutionSimplifier tools)
+                Mock.substitutionSimplifier
                 (Simplifier.create axiomIdToSimplifier)
                 axiomIdToSimplifier
                 term1
@@ -751,7 +751,7 @@ simplifyPattern (UnificationTerm term) = do
     simplifier = do
         simplifiedPatterns <-
             Pattern.simplify
-                (Mock.substitutionSimplifier tools)
+                Mock.substitutionSimplifier
                 (Simplifier.create functionRegistry)
                 functionRegistry
                 expandedPattern

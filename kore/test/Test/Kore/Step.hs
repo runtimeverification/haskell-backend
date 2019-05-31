@@ -129,14 +129,10 @@ mockTransitionRule
     -> CommonPattern
     -> Strategy.TransitionT (RewriteRule Variable) Simplifier CommonPattern
 mockTransitionRule =
-    transitionRule
-        substitutionSimplifier
-        simplifier
-        Map.empty
+    transitionRule substitutionSimplifier simplifier Map.empty
   where
-    metadataTools = mockMetadataTools
     simplifier = Simplifier.create Map.empty
-    substitutionSimplifier = Mock.substitutionSimplifier metadataTools
+    substitutionSimplifier = Mock.substitutionSimplifier
 
 -- Builders -- should these find a better home?
 
@@ -470,15 +466,10 @@ runStep configuration axioms =
     $ SMT.runSMT SMT.defaultConfig emptyLogger
     $ Simplification.evalSimplifier mockEnv
     $ runStrategy
-        (transitionRule
-            (Mock.substitutionSimplifier metadataTools)
-            simplifier
-            Map.empty
-        )
+        (transitionRule Mock.substitutionSimplifier simplifier Map.empty)
         [allRewrites axioms]
         configuration
   where
-    metadataTools = mockMetadataTools
     simplifier = Simplifier.create Map.empty
 
 runSteps
@@ -491,13 +482,8 @@ runSteps configuration axioms =
     $ SMT.runSMT SMT.defaultConfig emptyLogger
     $ Simplification.evalSimplifier mockEnv
     $ runStrategy
-        (transitionRule
-            (Mock.substitutionSimplifier metadataTools)
-            simplifier
-            Map.empty
-        )
+        (transitionRule Mock.substitutionSimplifier simplifier Map.empty)
         (repeat $ allRewrites axioms)
         configuration
   where
-    metadataTools = mockMetadataTools
     simplifier = Simplifier.create Map.empty

@@ -929,12 +929,10 @@ evaluateOr equals =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
     $ simplify
-        (Mock.substitutionSimplifier tools)
+        Mock.substitutionSimplifier
         (Simplifier.create Map.empty)
         Map.empty
         equals
-  where
-    tools = Mock.metadataTools
 
 evaluate
     :: Pattern Variable
@@ -944,13 +942,11 @@ evaluate first second =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
     $ makeEvaluate
-        (Mock.substitutionSimplifier tools)
+        Mock.substitutionSimplifier
         (Simplifier.create Map.empty)
         Map.empty
         first
         second
-  where
-    tools = Mock.metadataTools
 
 evaluateTermsGeneric
     :: TermLike Variable
@@ -960,10 +956,8 @@ evaluateTermsGeneric first second =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
     $ makeEvaluateTermsToPredicate
-        (Mock.substitutionSimplifier tools)
+        Mock.substitutionSimplifier
         (Simplifier.create Map.empty)
         Map.empty
         first
         second
-  where
-    tools = Mock.metadataTools

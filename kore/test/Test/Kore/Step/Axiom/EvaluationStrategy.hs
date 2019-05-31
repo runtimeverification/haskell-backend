@@ -33,8 +33,7 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier (..), TermLikeSimplifier,
-                 evalSimplifier )
+                 ( evalSimplifier )
 import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -501,9 +500,5 @@ evaluate (BuiltinAndAxiomSimplifier simplifier) patt =
     $ evalSimplifier Mock.env
     $ simplifier substitutionSimplifier patternSimplifier Map.empty patt
   where
-    metadataTools = Mock.metadataTools
-    substitutionSimplifier :: PredicateSimplifier
-    substitutionSimplifier =
-        Predicate.create metadataTools patternSimplifier Map.empty
-    patternSimplifier :: TermLikeSimplifier
+    substitutionSimplifier = Predicate.create patternSimplifier Map.empty
     patternSimplifier = Simplifier.create Map.empty

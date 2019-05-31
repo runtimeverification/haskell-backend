@@ -85,12 +85,7 @@ applyInitialConditions initial unification =
         initial
         unification
   where
-    metadataTools = Mock.metadataTools
-    predicateSimplifier =
-        Predicate.create
-            metadataTools
-            patternSimplifier
-            axiomSimplifiers
+    predicateSimplifier = Predicate.create patternSimplifier axiomSimplifiers
     patternSimplifier = Simplifier.create axiomSimplifiers
     axiomSimplifiers = Map.empty
 
@@ -162,13 +157,8 @@ unifyRule initial rule =
         initial
         rule
   where
-    metadataTools = Mock.metadataTools
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
-    predicateSimplifier =
-        Predicate.create
-            metadataTools
-            patternSimplifier
-            axiomSimplifiers
+    predicateSimplifier = Predicate.create patternSimplifier axiomSimplifiers
     patternSimplifier = Simplifier.create axiomSimplifiers
     axiomSimplifiers = Map.empty
 
@@ -671,12 +661,7 @@ applyRewriteRulesParallel initial rules =
             rules
             initial
   where
-    metadataTools = Mock.metadataTools
-    predicateSimplifier =
-        Predicate.create
-            metadataTools
-            patternSimplifier
-            axiomSimplifiers
+    predicateSimplifier = Predicate.create patternSimplifier axiomSimplifiers
     patternSimplifier = Simplifier.create axiomSimplifiers
     axiomSimplifiers = Map.empty
     unificationProcedure =
@@ -1040,12 +1025,7 @@ applyRewriteRulesSequence initial rules =
             initial
             rules
   where
-    metadataTools = Mock.metadataTools
-    predicateSimplifier =
-        Predicate.create
-            metadataTools
-            patternSimplifier
-            axiomSimplifiers
+    predicateSimplifier = Predicate.create patternSimplifier axiomSimplifiers
     patternSimplifier = Simplifier.create axiomSimplifiers
     axiomSimplifiers = Map.empty
     unificationProcedure =
@@ -1157,12 +1137,7 @@ sequenceMatchingRules initial rules =
         initial
         (getEqualityRule <$> rules)
   where
-    metadataTools = Mock.metadataTools
-    predicateSimplifier =
-        Predicate.create
-            metadataTools
-            patternSimplifier
-            axiomSimplifiers
+    predicateSimplifier = Predicate.create patternSimplifier axiomSimplifiers
     patternSimplifier = Simplifier.create axiomSimplifiers
     axiomSimplifiers = Map.empty
     unificationProcedure =

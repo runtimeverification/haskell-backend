@@ -1183,8 +1183,7 @@ unify first second =
     $ evalSimplifier Mock.env
     $ runMaybeT unification
   where
-    tools = Mock.metadataTools
-    substitutionSimplifier = Mock.substitutionSimplifier tools
+    substitutionSimplifier = Mock.substitutionSimplifier
     unification =
         -- The unification error is discarded because, for testing purposes, we
         -- are not interested in the /reason/ unification failed. For the tests,
@@ -1205,13 +1204,11 @@ simplify first second =
     $ evalSimplifier Mock.env
     $ BranchT.gather
     $ termAnd
-        (Mock.substitutionSimplifier tools)
+        Mock.substitutionSimplifier
         (Simplifier.create Map.empty)
         Map.empty
         first
         second
-  where
-    tools = Mock.metadataTools
 
 simplifyEquals
     :: BuiltinAndAxiomSimplifierMap
@@ -1224,11 +1221,9 @@ simplifyEquals axiomIdToSimplifier first second =
         ( evalSimplifier Mock.env
         $ runMaybeT
         $ termEquals
-            (Mock.substitutionSimplifier tools)
+            Mock.substitutionSimplifier
             (Simplifier.create axiomIdToSimplifier)
             axiomIdToSimplifier
             first
             second
         )
-  where
-    tools = Mock.metadataTools

@@ -402,7 +402,6 @@ initialize
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -> Simplifier Initialized
 initialize verifiedModule = do
-    tools <- Simplifier.askMetadataTools
     functionAxioms <-
         simplifyFunctionAxioms (extractEqualityAxioms verifiedModule)
     rewriteRules <-
@@ -421,13 +420,8 @@ initialize verifiedModule = do
                 )
                 -- user-defined functions
                 functionEvaluators
-        simplifier :: TermLikeSimplifier
         simplifier = Simplifier.create axiomIdToSimplifier
-        substitutionSimplifier
-            :: PredicateSimplifier
-        substitutionSimplifier =
-            Predicate.create
-                tools simplifier axiomIdToSimplifier
+        substitutionSimplifier = Predicate.create simplifier axiomIdToSimplifier
     return Initialized
         { rewriteRules
         , simplifier
@@ -500,11 +494,9 @@ simplifyRulePattern rulePattern = do
 -- | Simplify a 'TermLike' using only matching logic rules.
 simplifyPattern :: TermLike Variable -> Simplifier (OrPattern Variable)
 simplifyPattern termLike = do
-    tools <- Simplifier.askMetadataTools
     let
         emptySimplifier = Simplifier.create Map.empty
-        emptySubstitutionSimplifier =
-            Predicate.create tools emptySimplifier Map.empty
+        emptySubstitutionSimplifier = Predicate.create emptySimplifier Map.empty
     Pattern.simplify
         emptySubstitutionSimplifier
         emptySimplifier

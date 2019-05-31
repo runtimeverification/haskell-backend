@@ -385,12 +385,11 @@ runVerification
     $ runExceptT
     $ OnePath.verify
         simplifier
-        (Mock.substitutionSimplifier metadataTools)
+        Mock.substitutionSimplifier
         Map.empty
         (OnePath.defaultStrategy claims axioms)
         ( map (\c -> (RewriteRule . coerce $ c, stepLimit))
         . filter (not . Claim.isTrusted)
         $ claims)
   where
-    metadataTools = Mock.metadataTools
     simplifier = Simplifier.create Map.empty

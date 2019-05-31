@@ -292,7 +292,7 @@ test_functionRegistry =
             SMT.runSMT SMT.defaultConfig emptyLogger
             $ evalSimplifier testEnv
             $ Pattern.simplify
-                (Mock.substitutionSimplifier testMetadataTools)
+                Mock.substitutionSimplifier
                 (Simplifier.create testEvaluators)
                 testEvaluators
                 (makePattern (mkApp sortS gHead []))

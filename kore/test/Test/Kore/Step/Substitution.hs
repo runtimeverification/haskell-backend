@@ -341,7 +341,7 @@ merge s1 s2 =
     $ evalSimplifier Mock.env
     $ Monad.Unify.runUnifier
     $ mergePredicatesAndSubstitutionsExcept
-        (Mock.substitutionSimplifier Mock.metadataTools)
+        Mock.substitutionSimplifier
         (Simplifier.create Map.empty)
         Map.empty
         []
@@ -355,7 +355,7 @@ normalize predicated =
     $ evalSimplifier Mock.env
     $ gather
     $ Substitution.normalize
-        (Mock.substitutionSimplifier Mock.metadataTools)
+        Mock.substitutionSimplifier
         (Simplifier.create Map.empty)
         Map.empty
         predicated
@@ -373,7 +373,7 @@ normalizeExcept predicated =
     $ evalSimplifier Mock.env
     $ Monad.Unify.runUnifier
     $ Substitution.normalizeExcept
-        (Mock.substitutionSimplifier Mock.metadataTools)
+        Mock.substitutionSimplifier
         (Simplifier.create Map.empty)
         Map.empty
         predicated

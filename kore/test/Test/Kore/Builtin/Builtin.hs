@@ -181,7 +181,7 @@ testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build (constructorFunctions verifiedModule)
 
 testSubstitutionSimplifier :: PredicateSimplifier
-testSubstitutionSimplifier = Mock.substitutionSimplifier testMetadataTools
+testSubstitutionSimplifier = Mock.substitutionSimplifier
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators = Builtin.koreEvaluators verifiedModule

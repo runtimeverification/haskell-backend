@@ -403,15 +403,10 @@ runSteps graphFilter picker configuration strategy =
     $ evalSimplifier Mock.env
     $ (fromMaybe (error "Unexpected missing tree") . graphFilter)
     <$> runStrategy
-        (transitionRule
-            (Mock.substitutionSimplifier metadataTools)
-            simplifier
-            Map.empty
-        )
+        (transitionRule Mock.substitutionSimplifier simplifier Map.empty)
         strategy
         (RewritePattern configuration)
   where
-    metadataTools = Mock.metadataTools
     simplifier = Simplifier.create Map.empty
 
 runOnePathSteps
