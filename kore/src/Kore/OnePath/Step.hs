@@ -152,7 +152,7 @@ transitionRule
     -- ^ Configuration being rewritten and its accompanying proof
     -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
 transitionRule
-    tools
+    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -209,7 +209,6 @@ transitionRule
             Monad.Trans.lift
             $ Monad.Unify.runUnifier
             $ Step.sequenceRewriteRules
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier

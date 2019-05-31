@@ -1033,7 +1033,6 @@ sequenceRewriteRules initial rules =
         $ evalSimplifier Mock.env
         $ Monad.Unify.runUnifier
         $ Step.sequenceRewriteRules
-            metadataTools
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers

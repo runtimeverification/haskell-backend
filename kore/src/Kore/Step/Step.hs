@@ -41,10 +41,6 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.Conditional
                  ( Conditional (Conditional) )
 import qualified Kore.Internal.Conditional as Conditional
@@ -780,8 +776,7 @@ sequenceRewriteRules
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -794,7 +789,6 @@ sequenceRewriteRules
     -- ^ Rewrite rules
     -> unifier (Results variable)
 sequenceRewriteRules
-    _metadataTools
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers
