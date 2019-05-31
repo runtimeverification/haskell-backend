@@ -40,8 +40,6 @@ import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
 import           Kore.IndexedModule.Resolvers
@@ -476,9 +474,8 @@ simplifyRulePattern
     :: RulePattern Variable
     -> Simplifier (RulePattern Variable)
 simplifyRulePattern rulePattern = do
-    tools <- Reader.asks Simplifier.metadataTools
     let RulePattern { left } = rulePattern
-    simplifiedLeft <- simplifyPattern tools left
+    simplifiedLeft <- simplifyPattern left
     case MultiOr.extractPatterns simplifiedLeft of
         [ Conditional { term, predicate, substitution } ]
           | PredicateTrue <- predicate -> do
@@ -508,19 +505,16 @@ simplifyRulePattern rulePattern = do
             return rulePattern
 
 -- | Simplify a 'TermLike' using only matching logic rules.
-simplifyPattern
-    :: SmtMetadataTools StepperAttributes
-    -> TermLike Variable
-    -> Simplifier (OrPattern Variable)
-simplifyPattern tools =
+simplifyPattern :: TermLike Variable -> Simplifier (OrPattern Variable)
+simplifyPattern termLike = do
+    tools <- Reader.asks Simplifier.metadataTools
+    let
+        emptySimplifier = Simplifier.create tools Map.empty
+        emptySubstitutionSimplifier =
+            Predicate.create tools emptySimplifier Map.empty
     Pattern.simplify
         tools
         emptySubstitutionSimplifier
         emptySimplifier
         Map.empty
-    . Pattern.fromTermLike
-  where
-    emptySimplifier :: TermLikeSimplifier
-    emptySimplifier = Simplifier.create tools Map.empty
-    emptySubstitutionSimplifier =
-        Predicate.create tools emptySimplifier Map.empty
+        (Pattern.fromTermLike termLike)
