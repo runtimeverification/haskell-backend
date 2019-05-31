@@ -243,7 +243,7 @@ makeExpandedApplication
     -> [Pattern variable]
     -> BranchT Simplifier (ExpandedApplication variable)
 makeExpandedApplication
-    tools
+    _tools
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
@@ -253,7 +253,6 @@ makeExpandedApplication
   = do
     merged <-
         mergePredicatesAndSubstitutions
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToEvaluator

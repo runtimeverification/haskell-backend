@@ -112,7 +112,6 @@ simplifyPredicate
         Conditional { substitution = evaluatedSubstitution } = evaluated
     merged <-
         mergePredicatesAndSubstitutions
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier

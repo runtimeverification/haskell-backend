@@ -112,7 +112,6 @@ simplify
                         (substitution <> simplifiedSubstitution)
                     mergedPredicate <-
                         mergePredicatesAndSubstitutions
-                            tools
                             substitutionSimplifier
                             simplifier
                             axiomIdToSimplifier

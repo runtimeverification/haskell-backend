@@ -162,7 +162,6 @@ matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
         mergeAndEvaluateBranches predSubst = do
             merged <-
                 mergePredicatesAndSubstitutions
-                    tools
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplifier
@@ -177,7 +176,6 @@ matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
                 $ Predicate.evaluate substitutionSimplifier simplifier
                 $ Conditional.predicate merged
             mergePredicatesAndSubstitutions
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier

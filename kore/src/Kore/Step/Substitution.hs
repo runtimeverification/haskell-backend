@@ -26,9 +26,6 @@ import qualified Data.Map as Map
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.Attribute.Symbol
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.Predicate
                  ( Conditional (..), Predicate )
 import qualified Kore.Internal.Predicate as Predicate
@@ -183,15 +180,13 @@ mergePredicatesAndSubstitutions
        , FreshVariable variable
        , HasCallStack
        )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> [Syntax.Predicate variable]
     -> [Substitution variable]
     -> BranchT Simplifier (Predicate variable)
 mergePredicatesAndSubstitutions
-    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier

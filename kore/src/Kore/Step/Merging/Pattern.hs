@@ -73,7 +73,6 @@ mergeWithPredicate
   = do
     merged <-
         mergePredicatesAndSubstitutions
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
@@ -108,7 +107,7 @@ mergeWithEvaluatedCondition
     -> Predicate variable
     -> BranchT Simplifier (Pattern variable)
 mergeWithEvaluatedCondition
-    tools
+    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -120,7 +119,6 @@ mergeWithEvaluatedCondition
         { predicate = predPredicate, substitution = predSubstitution }
   = do
     merged <- mergePredicatesAndSubstitutions
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
