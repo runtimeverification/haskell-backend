@@ -95,7 +95,6 @@ simplifyAnds
                         pat
                 predSubst <-
                     mergePredicatesAndSubstitutionsExcept
-                        tools
                         substitutionSimplifier
                         simplifier
                         axiomIdToSimplifier

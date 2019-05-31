@@ -3,10 +3,6 @@ module Kore.Step.Substitution where
 import GHC.Stack
        ( HasCallStack )
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.Pattern
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax
@@ -34,8 +30,7 @@ mergePredicatesAndSubstitutionsExcept
         , HasCallStack
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> [Syntax.Predicate variable]

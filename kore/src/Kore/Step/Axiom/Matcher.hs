@@ -542,7 +542,6 @@ matchJoin
             )
             patterns
     lift $ mergePredicatesAndSubstitutionsExcept
-        tools
         substitutionSimplifier
         simplifier
         axiomIdToSimplifier

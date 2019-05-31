@@ -341,7 +341,6 @@ merge s1 s2 =
     $ evalSimplifier Mock.env
     $ Monad.Unify.runUnifier
     $ mergePredicatesAndSubstitutionsExcept
-        Mock.metadataTools
         (Mock.substitutionSimplifier Mock.metadataTools)
         (Simplifier.create Map.empty)
         Map.empty

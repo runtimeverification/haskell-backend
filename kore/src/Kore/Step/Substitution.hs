@@ -191,7 +191,7 @@ mergePredicatesAndSubstitutions
     -> [Substitution variable]
     -> BranchT Simplifier (Predicate variable)
 mergePredicatesAndSubstitutions
-    tools
+    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -200,7 +200,6 @@ mergePredicatesAndSubstitutions
   = do
     result <- Monad.Trans.lift $ Monad.Unify.runUnifier $
         mergePredicatesAndSubstitutionsExcept
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
@@ -227,15 +226,13 @@ mergePredicatesAndSubstitutionsExcept
         , HasCallStack
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> [Syntax.Predicate variable]
     -> [Substitution variable]
     -> unifier (Predicate variable)
 mergePredicatesAndSubstitutionsExcept
-    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
