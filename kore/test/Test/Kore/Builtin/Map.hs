@@ -94,6 +94,19 @@ test_lookupUpdate =
             (===) Pattern.top =<< evaluate predicate
         )
 
+test_removeUnit :: TestTree
+test_removeUnit =
+    testPropertyWithSolver
+        "remove{}(unit{}(), key) === unit{}()"
+        (do
+            key <- forAll genIntegerPattern
+            let patRemove = removeMap unitMap key
+                predicate = mkEquals_ unitMap patRemove
+            expect <- evaluate unitMap
+            (===) expect =<< evaluate patRemove
+            (===) Pattern.top =<< evaluate predicate
+        )
+
 test_concatUnit :: TestTree
 test_concatUnit =
     testPropertyWithSolver

@@ -386,6 +386,7 @@ builtinFunctions =
         , (updateKey, evalUpdate)
         , (in_keysKey, evalInKeys)
         , (keysKey, evalKeys)
+        , (removeKey, evalRemove)
         ]
 
 {- | Render a 'Map' as an internal pattern of the given sort.
