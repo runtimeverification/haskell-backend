@@ -235,8 +235,7 @@ applyInitialConditions
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
 
@@ -248,7 +247,6 @@ applyInitialConditions
     -- TODO(virgil): This should take advantage of the unifier's branching and
     -- not return an Or.
 applyInitialConditions
-    _metadataTools
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers
@@ -469,7 +467,6 @@ applyRule
             axiomSimplifiers
     applyInitialConditions' =
         applyInitialConditions
-            metadataTools
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers

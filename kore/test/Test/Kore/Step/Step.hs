@@ -79,7 +79,6 @@ applyInitialConditions initial unification =
     (fmap . fmap) Foldable.toList
     $ evalUnifier
     $ Step.applyInitialConditions
-        metadataTools
         predicateSimplifier
         patternSimplifier
         axiomSimplifiers
