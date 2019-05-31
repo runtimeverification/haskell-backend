@@ -58,14 +58,12 @@ simplifyAnds
         , FreshVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> NonEmpty (TermLike variable)
     -> unifier (Pattern variable)
 simplifyAnds
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -85,6 +83,7 @@ simplifyAnds
             AndF And { andFirst = lhs, andSecond = rhs } ->
                 foldM simplifyAnds' intermediate [lhs, rhs]
             _ -> do
+                tools <- Simplifier.askMetadataTools
                 result <-
                     termUnification
                         tools
@@ -141,7 +140,7 @@ solveGroupedSubstitution
     -> NonEmpty (TermLike variable)
     -> unifier (Predicate variable)
 solveGroupedSubstitution
-    tools
+    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -150,7 +149,6 @@ solveGroupedSubstitution
   = do
     predSubst <-
         simplifyAnds
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier

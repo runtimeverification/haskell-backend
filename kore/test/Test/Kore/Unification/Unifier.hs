@@ -265,7 +265,6 @@ andSimplifySuccess term1 term2 results = do
         $ evalSimplifier testEnv
         $ Monad.Unify.runUnifier
         $ simplifyAnds
-            tools
             (Mock.substitutionSimplifier tools)
             (Simplifier.create Map.empty)
             Map.empty
@@ -286,7 +285,6 @@ andSimplifyFailure term1 term2 err = do
         $ evalSimplifier testEnv
         $ Monad.Unify.runUnifier
         $ simplifyAnds
-            tools
             (Mock.substitutionSimplifier tools)
             (Simplifier.create Map.empty)
             Map.empty
@@ -301,27 +299,20 @@ andSimplifyException
     -> String
     -> TestTree
 andSimplifyException message term1 term2 exceptionMessage =
-    testCase
-        message
-        ( catch test handler )
+    testCase message (catch test handler)
     where
         test = do
             var <-
-                runSMT
-                $ evalSimplifier testEnv
+                runSMT $ evalSimplifier testEnv
                 $ Monad.Unify.runUnifier
                 $ simplifyAnds
-                    tools
                     (Mock.substitutionSimplifier tools)
                     (Simplifier.create Map.empty)
                     Map.empty
                     (unificationProblem term1 term2 :| [])
             _ <- evaluate var
             assertFailure "This evaluation should fail"
-        handler (ErrorCall s) =
-            assertEqual ""
-                exceptionMessage
-                s
+        handler (ErrorCall s) = assertEqual "" exceptionMessage s
 
 unificationProcedureSuccessWithSimplifiers
     :: HasCallStack
