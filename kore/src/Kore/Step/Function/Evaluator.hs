@@ -106,7 +106,6 @@ evaluateApplication
 
     maybeEvaluatedPattSimplifier =
         maybeEvaluatePattern
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToEvaluator
@@ -161,7 +160,7 @@ evaluatePattern
     -> Simplifier
         (OrPattern variable)
 evaluatePattern
-    tools
+    _tools
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
@@ -172,7 +171,6 @@ evaluatePattern
     fromMaybe
         (return defaultValue)
         (maybeEvaluatePattern
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToEvaluator
@@ -193,10 +191,7 @@ maybeEvaluatePattern
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -- ^ Tools for finding additional information about patterns
-    -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -209,7 +204,6 @@ maybeEvaluatePattern
     -- ^ The default value
     -> Maybe (Simplifier (OrPattern variable))
 maybeEvaluatePattern
-    _tools
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
