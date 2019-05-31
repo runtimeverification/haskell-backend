@@ -332,15 +332,14 @@ evalKeys :: Builtin.Function
 evalKeys =
     Builtin.functionEvaluator evalKeys0
   where
-    evalKeys0 _ resultSort = \arguments -> do
-        tools <- Simplifier.askMetadataTools
+    evalKeys0 _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let _map =
                     case arguments of
                         [_map] -> _map
                         _ -> Builtin.wrongArity lookupKey
             _map <- expectBuiltinMap lookupKey _map
-            Builtin.Set.returnSet tools resultSort (Map.keysSet _map)
+            Builtin.Set.returnSet resultSort (Map.keysSet _map)
 
 {- | Implement builtin function evaluation.
  -}

@@ -203,27 +203,26 @@ expectBuiltinSet ctx _set = do
         _ -> empty
 
 returnSet
-    :: (Monad m, Ord variable)
-    => SmtMetadataTools attrs
-    -> Sort
+    :: (MonadSimplify m, Ord variable)
+    => Sort
     -> Set (TermLike Concrete)
     -> m (AttemptedAxiom variable)
-returnSet tools resultSort set =
+returnSet resultSort set = do
+    tools <- Simplifier.askMetadataTools
     Builtin.appliedFunction
-    $ Pattern.fromTermLike
-    $ asInternal tools resultSort set
+        $ Pattern.fromTermLike
+        $ asInternal tools resultSort set
 
 evalElement :: Builtin.Function
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
-    evalElement0 _ resultSort = \arguments -> do
-        tools <- Simplifier.askMetadataTools
+    evalElement0 _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom
             (case arguments of
                 [_elem] -> do
                     _elem <- Builtin.expectNormalConcreteTerm _elem
-                    returnSet tools resultSort (Set.singleton _elem)
+                    returnSet resultSort (Set.singleton _elem)
                 _ -> Builtin.wrongArity elementKey
             )
 
@@ -251,9 +250,7 @@ evalUnit =
   where
     evalUnit0 _ resultSort =
         \case
-            [] -> do
-                tools <- Simplifier.askMetadataTools
-                returnSet tools resultSort Set.empty
+            [] -> returnSet resultSort Set.empty
             _ -> Builtin.wrongArity unitKey
 
 evalConcat :: Builtin.Function
@@ -262,8 +259,7 @@ evalConcat =
   where
     ctx = concatKey
     evalConcat0 :: Builtin.FunctionImplementation
-    evalConcat0 _ resultSort = \arguments -> do
-        tools <- Simplifier.askMetadataTools
+    evalConcat0 _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let (_set1, _set2) =
                     case arguments of
@@ -286,7 +282,7 @@ evalConcat =
                 bothConcrete = do
                     _set1 <- expectBuiltinSet ctx _set1
                     _set2 <- expectBuiltinSet ctx _set2
-                    returnSet tools resultSort (_set1 <> _set2)
+                    returnSet resultSort (_set1 <> _set2)
             leftIdentity <|> rightIdentity <|> bothConcrete
 
 evalDifference :: Builtin.Function
@@ -295,8 +291,7 @@ evalDifference =
   where
     ctx = differenceKey
     evalDifference0 :: Builtin.FunctionImplementation
-    evalDifference0 _ resultSort = \arguments -> do
-        tools <- Simplifier.askMetadataTools
+    evalDifference0 _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let (_set1, _set2) =
                     case arguments of
@@ -312,7 +307,7 @@ evalDifference =
                 bothConcrete = do
                     _set1 <- expectBuiltinSet ctx _set1
                     _set2 <- expectBuiltinSet ctx _set2
-                    returnSet tools resultSort (Set.difference _set1 _set2)
+                    returnSet resultSort (Set.difference _set1 _set2)
             rightIdentity <|> bothConcrete
 
 evalToList :: Builtin.Function
@@ -355,8 +350,7 @@ evalIntersection =
   where
     ctx = intersectionKey
     evalIntersection0 :: Builtin.FunctionImplementation
-    evalIntersection0 _ resultSort = \arguments -> do
-        tools <- Simplifier.askMetadataTools
+    evalIntersection0 _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let (_set1, _set2) =
                     case arguments of
@@ -364,7 +358,7 @@ evalIntersection =
                         _ -> Builtin.wrongArity intersectionKey
             _set1 <- expectBuiltinSet ctx _set1
             _set2 <- expectBuiltinSet ctx _set2
-            returnSet tools resultSort (Set.intersection _set1 _set2)
+            returnSet resultSort (Set.intersection _set1 _set2)
 
 {- | Implement builtin function evaluation.
  -}
