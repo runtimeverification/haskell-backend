@@ -29,13 +29,12 @@ import qualified Control.Monad.Except as Except
 import           Control.Monad.Morph
                  ( MFunctor )
 import qualified Control.Monad.Morph as Monad.Morph
+import qualified Control.Monad.State.Strict as Strict
 import           Control.Monad.Trans
                  ( MonadTrans )
 import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Identity
-                 ( IdentityT )
 import           Control.Monad.Trans.Reader
-                 ( ReaderT )
 import           Data.Functor.Contravariant
                  ( contramap )
 import           Data.String
@@ -87,8 +86,7 @@ class Monad m => WithLog msg m where
     -- | Retrieve the 'LogAction' in scope.
     askLogAction :: m (LogAction m msg)
     default askLogAction
-        :: (WithLog msg n, Monad n, MonadTrans t, m ~ t n)
-        => m (LogAction m msg)
+        :: (MonadTrans t, WithLog msg n, m ~ t n) => m (LogAction m msg)
     askLogAction = liftLogAction <$> Monad.Trans.lift askLogAction
     {-# INLINE askLogAction #-}
 
@@ -98,7 +96,7 @@ class Monad m => WithLog msg m where
         -> m a
         -> m a
     default localLogAction
-        :: (WithLog msg m', Monad m', MFunctor t, m ~ t m')
+        :: (WithLog msg m', MFunctor t, m ~ t m')
         => (forall n. LogAction n msg -> LogAction n msg)
         -> m a
         -> m a
@@ -108,6 +106,8 @@ class Monad m => WithLog msg m where
 instance (WithLog msg m, Monad m) => WithLog msg (IdentityT m)
 
 instance (WithLog msg m, Monad m) => WithLog msg (ReaderT r m)
+
+instance (WithLog msg m, Monad m) => WithLog msg (Strict.StateT s m)
 
 -- | 'Monad.Trans.lift' any 'LogAction' into a monad transformer.
 liftLogAction

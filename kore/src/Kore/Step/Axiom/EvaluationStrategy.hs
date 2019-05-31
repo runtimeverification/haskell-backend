@@ -15,10 +15,7 @@ module Kore.Step.Axiom.EvaluationStrategy
     , simplifierWithFallback
     ) where
 
-import           Control.Monad
-                 ( when )
-import           Control.Monad.Trans.Except
-                 ( ExceptT (ExceptT) )
+import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
 import           Data.Function
 import           Data.Maybe
@@ -45,7 +42,7 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Axiom.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..), exceptNotApplicable, hasRemainders )
+                 ( AttemptedAxiom (..), hasRemainders, maybeNotApplicable )
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
 import qualified Kore.Step.Result as Result
@@ -254,7 +251,7 @@ applyFirstSimplifierThatWorks
             { results = orResults
             , remainders = orRemainders
             } -> do
-                when
+                Monad.when
                     (length (MultiOr.extractPatterns orResults) > 1
                     && not (acceptsMultipleResults multipleResults)
                     )
@@ -269,7 +266,7 @@ applyFirstSimplifierThatWorks
                         ++ show applicationResult
                         )
                     )
-                when
+                Monad.when
                     (not (OrPattern.isFalse orRemainders)
                     && not (acceptsMultipleResults multipleResults)
                     )
@@ -318,29 +315,20 @@ evaluateWithDefinitionAxioms
     -> Simplifier (AttemptedAxiom variable)
 evaluateWithDefinitionAxioms
     definitionRules
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
+    predicateSimplifier
+    termSimplifier
+    axiomSimplifiers
     patt
   =
-    AttemptedAxiom.exceptNotApplicable $ do
+    AttemptedAxiom.maybeNotApplicable $ do
     let
         -- TODO (thomas.tuegel): Figure out how to get the initial conditions
         -- and apply them here, to remove remainder branches sooner.
         expanded :: Pattern variable
         expanded = Pattern.fromTermLike patt
 
-    let unwrapEqualityRule =
-            \(EqualityRule rule) ->
-                RulePattern.mapVariables fromVariable rule
-    results <- ExceptT $ Monad.Unify.runUnifier
-        $ Step.sequenceRules
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            (UnificationProcedure unificationWithAppMatchOnTop)
-            expanded
-            (map unwrapEqualityRule definitionRules)
+    results <- applyRules expanded (map unwrapEqualityRule definitionRules)
+    mapM_ rejectNarrowing results
 
     let
         result =
@@ -355,3 +343,20 @@ evaluateWithDefinitionAxioms
         { results = Step.gatherResults result
         , remainders = Step.remainders result
         }
+
+  where
+    unwrapEqualityRule (EqualityRule rule) =
+        RulePattern.mapVariables fromVariable rule
+
+    rejectNarrowing (Result.results -> results) =
+        (Monad.guard . not) (Foldable.any Step.isNarrowingResult results)
+
+    applyRules initial rules =
+        Monad.Unify.maybeUnifier
+        $ Step.applyRulesSequence
+            predicateSimplifier
+            termSimplifier
+            axiomSimplifiers
+            (UnificationProcedure unificationWithAppMatchOnTop)
+            initial
+            rules

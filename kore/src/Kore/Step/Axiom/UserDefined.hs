@@ -96,15 +96,15 @@ equalityRuleEvaluator
         -> RulePattern Variable
         -> Simplifier
             (Either UnificationOrSubstitutionError [Step.Results variable])
-    applyRule patt' rule' = do
+    applyRule patt' rule' =
         Monad.Unify.runUnifier
-            $ Step.applyRulesInParallel
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                unificationProcedure
-                [RulePattern.mapVariables fromVariable rule']
-                (Pattern.fromTermLike patt')
+        $ Step.applyRulesParallel
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            unificationProcedure
+            [RulePattern.mapVariables fromVariable rule']
+            (Pattern.fromTermLike patt')
 
     simplifyOrPatterns
         :: [OrPattern variable] -> Simplifier (OrPattern variable)
