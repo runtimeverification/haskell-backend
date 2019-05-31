@@ -313,7 +313,7 @@ simplify exists =
     $ Exists.simplify
         tools
         (Mock.substitutionSimplifier tools)
-        (Simplifier.create tools Map.empty)
+        (Simplifier.create Map.empty)
         Map.empty
         exists
   where
@@ -329,7 +329,7 @@ makeEvaluate variable child =
     $ Exists.makeEvaluate
         tools
         (Mock.substitutionSimplifier tools)
-        (Simplifier.create tools Map.empty)
+        (Simplifier.create Map.empty)
         Map.empty
         variable
         child

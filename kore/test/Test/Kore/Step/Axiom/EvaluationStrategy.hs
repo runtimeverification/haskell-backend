@@ -533,4 +533,4 @@ evaluate (BuiltinAndAxiomSimplifier simplifier) patt =
     substitutionSimplifier =
         Predicate.create metadataTools patternSimplifier Map.empty
     patternSimplifier :: TermLikeSimplifier
-    patternSimplifier = Simplifier.create metadataTools Map.empty
+    patternSimplifier = Simplifier.create Map.empty

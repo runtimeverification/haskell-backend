@@ -59,5 +59,5 @@ simplify original =
         original
   where
     predicateSimplifier = Mock.substitutionSimplifier Mock.metadataTools
-    termLikeSimplifier = Simplifier.create Mock.metadataTools axiomSimplifiers
+    termLikeSimplifier = Simplifier.create axiomSimplifiers
     axiomSimplifiers = Map.empty

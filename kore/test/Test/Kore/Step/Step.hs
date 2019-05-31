@@ -92,10 +92,7 @@ applyInitialConditions initial unification =
             metadataTools
             patternSimplifier
             axiomSimplifiers
-    patternSimplifier =
-        Simplifier.create
-            metadataTools
-            axiomSimplifiers
+    patternSimplifier = Simplifier.create axiomSimplifiers
     axiomSimplifiers = Map.empty
 
 test_applyInitialConditions :: [TestTree]
@@ -174,10 +171,7 @@ unifyRule initial rule =
             metadataTools
             patternSimplifier
             axiomSimplifiers
-    patternSimplifier =
-        Simplifier.create
-            metadataTools
-            axiomSimplifiers
+    patternSimplifier = Simplifier.create axiomSimplifiers
     axiomSimplifiers = Map.empty
 
 test_unifyRule :: [TestTree]
@@ -686,10 +680,7 @@ applyRewriteRules initial rules =
             metadataTools
             patternSimplifier
             axiomSimplifiers
-    patternSimplifier =
-        Simplifier.create
-            metadataTools
-            axiomSimplifiers
+    patternSimplifier = Simplifier.create axiomSimplifiers
     axiomSimplifiers = Map.empty
     unificationProcedure =
         UnificationProcedure Unification.unificationProcedure
@@ -1059,10 +1050,7 @@ sequenceRewriteRules initial rules =
             metadataTools
             patternSimplifier
             axiomSimplifiers
-    patternSimplifier =
-        Simplifier.create
-            metadataTools
-            axiomSimplifiers
+    patternSimplifier = Simplifier.create axiomSimplifiers
     axiomSimplifiers = Map.empty
     unificationProcedure =
         UnificationProcedure Unification.unificationProcedure
@@ -1180,10 +1168,7 @@ sequenceMatchingRules initial rules =
             metadataTools
             patternSimplifier
             axiomSimplifiers
-    patternSimplifier =
-        Simplifier.create
-            metadataTools
-            axiomSimplifiers
+    patternSimplifier = Simplifier.create axiomSimplifiers
     axiomSimplifiers = Map.empty
     unificationProcedure =
         UnificationProcedure Matcher.unificationWithAppMatchOnTop

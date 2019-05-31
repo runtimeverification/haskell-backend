@@ -135,7 +135,7 @@ mockTransitionRule =
         Map.empty
   where
     metadataTools = mockMetadataTools
-    simplifier = Simplifier.create metadataTools Map.empty
+    simplifier = Simplifier.create Map.empty
     substitutionSimplifier = Mock.substitutionSimplifier metadataTools
 
 -- Builders -- should these find a better home?
@@ -479,7 +479,7 @@ runStep configuration axioms =
         configuration
   where
     metadataTools = mockMetadataTools
-    simplifier = Simplifier.create metadataTools Map.empty
+    simplifier = Simplifier.create Map.empty
 
 runSteps
     :: Pattern Variable
@@ -500,4 +500,4 @@ runSteps configuration axioms =
         configuration
   where
     metadataTools = mockMetadataTools
-    simplifier = Simplifier.create metadataTools Map.empty
+    simplifier = Simplifier.create Map.empty

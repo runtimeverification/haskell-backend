@@ -131,5 +131,5 @@ simplifyEvaluated =
     . Not.simplifyEvaluated
         Mock.metadataTools
         (Mock.substitutionSimplifier Mock.metadataTools)
-        (Simplifier.create Mock.metadataTools Map.empty)
+        (Simplifier.create Map.empty)
         Map.empty

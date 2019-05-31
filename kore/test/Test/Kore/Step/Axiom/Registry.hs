@@ -293,7 +293,7 @@ test_functionRegistry =
             $ evalSimplifier testEnv
             $ Pattern.simplify
                 (Mock.substitutionSimplifier testMetadataTools)
-                (Simplifier.create testMetadataTools testEvaluators)
+                (Simplifier.create testEvaluators)
                 testEvaluators
                 (makePattern (mkApp sortS gHead []))
         let actual =

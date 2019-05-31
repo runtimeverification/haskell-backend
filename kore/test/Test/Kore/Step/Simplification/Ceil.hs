@@ -493,7 +493,7 @@ evaluate ceil =
     $ Ceil.simplify
         tools
         (Mock.substitutionSimplifier tools)
-        (Simplifier.create tools Map.empty)
+        (Simplifier.create Map.empty)
         Map.empty
         ceil
   where
@@ -515,7 +515,7 @@ makeEvaluateWithAxioms axiomIdToSimplifier child =
     $ Ceil.makeEvaluate
         tools
         (Mock.substitutionSimplifier tools)
-        (Simplifier.create tools axiomIdToSimplifier)
+        (Simplifier.create axiomIdToSimplifier)
         axiomIdToSimplifier
         child
   where

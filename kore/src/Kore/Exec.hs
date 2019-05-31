@@ -425,7 +425,7 @@ initialize verifiedModule = do
                 -- user-defined functions
                 functionEvaluators
         simplifier :: TermLikeSimplifier
-        simplifier = Simplifier.create tools axiomIdToSimplifier
+        simplifier = Simplifier.create axiomIdToSimplifier
         substitutionSimplifier
             :: PredicateSimplifier
         substitutionSimplifier =
@@ -505,7 +505,7 @@ simplifyPattern :: TermLike Variable -> Simplifier (OrPattern Variable)
 simplifyPattern termLike = do
     tools <- Simplifier.askMetadataTools
     let
-        emptySimplifier = Simplifier.create tools Map.empty
+        emptySimplifier = Simplifier.create Map.empty
         emptySubstitutionSimplifier =
             Predicate.create tools emptySimplifier Map.empty
     Pattern.simplify

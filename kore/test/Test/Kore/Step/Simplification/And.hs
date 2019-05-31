@@ -416,7 +416,7 @@ evaluate patt =
     $ simplify
         Mock.metadataTools
         (Mock.substitutionSimplifier Mock.metadataTools)
-        (Simplifier.create Mock.metadataTools Map.empty)
+        (Simplifier.create Map.empty)
         Map.empty
         patt
 
@@ -432,7 +432,7 @@ evaluatePatterns first second =
     $ makeEvaluate
         Mock.metadataTools
         (Mock.substitutionSimplifier Mock.metadataTools)
-        (Simplifier.create Mock.metadataTools Map.empty)
+        (Simplifier.create Map.empty)
         Map.empty
         first
         second

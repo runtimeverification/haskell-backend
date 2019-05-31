@@ -267,7 +267,7 @@ andSimplifySuccess term1 term2 results = do
         $ simplifyAnds
             tools
             (Mock.substitutionSimplifier tools)
-            (Simplifier.create tools Map.empty)
+            (Simplifier.create Map.empty)
             Map.empty
             (unificationProblem term1 term2 :| [])
     assertEqualWithExplanation "" expect subst'
@@ -288,7 +288,7 @@ andSimplifyFailure term1 term2 err = do
         $ simplifyAnds
             tools
             (Mock.substitutionSimplifier tools)
-            (Simplifier.create tools Map.empty)
+            (Simplifier.create Map.empty)
             Map.empty
             (unificationProblem term1 term2 :| [])
     assertEqual "" (show expect) (show actual)
@@ -313,7 +313,7 @@ andSimplifyException message term1 term2 exceptionMessage =
                 $ simplifyAnds
                     tools
                     (Mock.substitutionSimplifier tools)
-                    (Simplifier.create tools Map.empty)
+                    (Simplifier.create Map.empty)
                     Map.empty
                     (unificationProblem term1 term2 :| [])
             _ <- evaluate var
@@ -345,7 +345,7 @@ unificationProcedureSuccessWithSimplifiers
             $ Monad.Unify.runUnifier
             $ unificationProcedure
                 (Mock.substitutionSimplifier tools)
-                (Simplifier.create tools axiomIdToSimplifier)
+                (Simplifier.create axiomIdToSimplifier)
                 axiomIdToSimplifier
                 term1
                 term2
@@ -761,7 +761,7 @@ simplifyPattern (UnificationTerm term) = do
         simplifiedPatterns <-
             Pattern.simplify
                 (Mock.substitutionSimplifier tools)
-                (Simplifier.create tools functionRegistry)
+                (Simplifier.create functionRegistry)
                 functionRegistry
                 expandedPattern
         case MultiOr.extractPatterns simplifiedPatterns of

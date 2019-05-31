@@ -343,7 +343,7 @@ merge s1 s2 =
     $ mergePredicatesAndSubstitutionsExcept
         Mock.metadataTools
         (Mock.substitutionSimplifier Mock.metadataTools)
-        (Simplifier.create Mock.metadataTools Map.empty)
+        (Simplifier.create Map.empty)
         Map.empty
         []
         $ Substitution.wrap <$> [s1, s2]
@@ -358,7 +358,7 @@ normalize predicated =
     $ Substitution.normalize
         Mock.metadataTools
         (Mock.substitutionSimplifier Mock.metadataTools)
-        (Simplifier.create Mock.metadataTools Map.empty)
+        (Simplifier.create Map.empty)
         Map.empty
         predicated
 
@@ -377,7 +377,7 @@ normalizeExcept predicated =
     $ Substitution.normalizeExcept
         Mock.metadataTools
         (Mock.substitutionSimplifier Mock.metadataTools)
-        (Simplifier.create Mock.metadataTools Map.empty)
+        (Simplifier.create Map.empty)
         Map.empty
         predicated
 

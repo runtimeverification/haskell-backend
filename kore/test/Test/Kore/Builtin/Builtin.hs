@@ -187,7 +187,7 @@ testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators = Builtin.koreEvaluators verifiedModule
 
 testTermLikeSimplifier :: TermLikeSimplifier
-testTermLikeSimplifier = Simplifier.create testMetadataTools testEvaluators
+testTermLikeSimplifier = Simplifier.create testEvaluators
 
 testEnv :: Env
 testEnv = Env { metadataTools = testMetadataTools }

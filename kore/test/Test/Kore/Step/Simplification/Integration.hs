@@ -454,7 +454,7 @@ evaluateWithAxioms axioms patt =
   where
     tools = Mock.metadataTools
     simplifier :: TermLikeSimplifier
-    simplifier = Simplifier.create tools axiomIdToSimplifier
+    simplifier = Simplifier.create axiomIdToSimplifier
     axiomIdToSimplifier :: BuiltinAndAxiomSimplifierMap
     axiomIdToSimplifier =
         Map.unionWith

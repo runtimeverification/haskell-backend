@@ -931,7 +931,7 @@ evaluateOr equals =
     $ simplify
         tools
         (Mock.substitutionSimplifier tools)
-        (Simplifier.create tools Map.empty)
+        (Simplifier.create Map.empty)
         Map.empty
         equals
   where
@@ -947,7 +947,7 @@ evaluate first second =
     $ makeEvaluate
         tools
         (Mock.substitutionSimplifier tools)
-        (Simplifier.create tools Map.empty)
+        (Simplifier.create Map.empty)
         Map.empty
         first
         second
@@ -964,7 +964,7 @@ evaluateTermsGeneric first second =
     $ makeEvaluateTermsToPredicate
         tools
         (Mock.substitutionSimplifier tools)
-        (Simplifier.create tools Map.empty)
+        (Simplifier.create Map.empty)
         Map.empty
         first
         second

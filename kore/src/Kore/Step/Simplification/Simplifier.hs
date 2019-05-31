@@ -12,10 +12,6 @@ module Kore.Step.Simplification.Simplifier
     ( create
     ) where
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
@@ -24,9 +20,8 @@ import qualified Kore.Step.Simplification.TermLike as TermLike
                  ( simplifyToOr )
 
 create
-    :: SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifierMap
+    :: BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLikeSimplifier
-create _tools axiomIdToEvaluator =
+create axiomIdToEvaluator =
     termLikeSimplifier (TermLike.simplifyToOr axiomIdToEvaluator)

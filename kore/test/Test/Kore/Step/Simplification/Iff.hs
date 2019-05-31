@@ -201,7 +201,7 @@ simplify iff0 =
     $ Iff.simplify
         Mock.metadataTools
         (Mock.substitutionSimplifier Mock.metadataTools)
-        (Simplifier.create Mock.metadataTools Map.empty)
+        (Simplifier.create Map.empty)
         Map.empty
         iff0
 

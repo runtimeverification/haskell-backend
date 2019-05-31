@@ -621,4 +621,4 @@ evaluate functionIdToEvaluator patt =
         Predicate.create
             metadataTools patternSimplifier functionIdToEvaluator
     patternSimplifier :: TermLikeSimplifier
-    patternSimplifier = Simplifier.create metadataTools functionIdToEvaluator
+    patternSimplifier = Simplifier.create functionIdToEvaluator

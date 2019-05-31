@@ -1192,7 +1192,7 @@ unify first second =
         MaybeT . fmap Error.hush . Monad.Unify.runUnifier $ termUnification
             tools
             substitutionSimplifier
-            (Simplifier.create tools Map.empty)
+            (Simplifier.create Map.empty)
             Map.empty
             first
             second
@@ -1208,7 +1208,7 @@ simplify first second =
     $ termAnd
         tools
         (Mock.substitutionSimplifier tools)
-        (Simplifier.create tools Map.empty)
+        (Simplifier.create Map.empty)
         Map.empty
         first
         second
@@ -1228,7 +1228,7 @@ simplifyEquals axiomIdToSimplifier first second =
         $ termEquals
             tools
             (Mock.substitutionSimplifier tools)
-            (Simplifier.create tools axiomIdToSimplifier)
+            (Simplifier.create axiomIdToSimplifier)
             axiomIdToSimplifier
             first
             second

@@ -394,4 +394,4 @@ runVerification
         $ claims)
   where
     metadataTools = Mock.metadataTools
-    simplifier = Simplifier.create metadataTools Map.empty
+    simplifier = Simplifier.create Map.empty

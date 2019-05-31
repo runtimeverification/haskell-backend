@@ -413,7 +413,7 @@ runSteps graphFilter picker configuration strategy =
         (RewritePattern configuration)
   where
     metadataTools = Mock.metadataTools
-    simplifier = Simplifier.create metadataTools Map.empty
+    simplifier = Simplifier.create Map.empty
 
 runOnePathSteps
     :: Limit Natural
