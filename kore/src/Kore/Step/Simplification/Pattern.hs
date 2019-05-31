@@ -11,10 +11,6 @@ module Kore.Step.Simplification.Pattern
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import           Data.Reflection
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -91,10 +87,7 @@ simplifyPredicate
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -- ^ Tools for finding additional information about patterns
-    -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions in a pattern.
     -> BuiltinAndAxiomSimplifierMap
@@ -103,12 +96,12 @@ simplifyPredicate
     -- ^ The condition to be evaluated.
     -> BranchT Simplifier (Pattern variable)
 simplifyPredicate
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
     Conditional {term, predicate, substitution}
   = do
+    tools <- Simplifier.askMetadataTools
     evaluated <-
         give tools $ Monad.Trans.lift
         $ Predicate.evaluate

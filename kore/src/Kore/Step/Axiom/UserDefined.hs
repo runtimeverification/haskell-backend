@@ -122,10 +122,8 @@ equalityRuleEvaluator
         -- ^ The condition to be evaluated.
         -> Simplifier (OrPattern variable)
     simplifyPattern config = do
-        tools <- Simplifier.askMetadataTools
         patterns <- BranchT.gather
             $ Pattern.simplifyPredicate
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier

@@ -373,7 +373,6 @@ reevaluateFunctions
     orResults <- BranchT.gather
         (traverse
             (Pattern.simplifyPredicate
-                tools
                 substitutionSimplifier
                 termSimplifier
                 axiomIdToEvaluator
