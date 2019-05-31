@@ -199,7 +199,6 @@ simplify iff0 =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
     $ Iff.simplify
-        Mock.metadataTools
         (Mock.substitutionSimplifier Mock.metadataTools)
         (Simplifier.create Map.empty)
         Map.empty

@@ -13,9 +13,6 @@ module Kore.Step.Simplification.Iff
     , simplifyEvaluated
     ) where
 
-import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -46,14 +43,12 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> Iff Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
 simplify
-    _tools
     predicateSimplifier
     termSimplifier
     axiomSimplifiers

@@ -177,8 +177,7 @@ simplifyInternal
         FloorF p -> return $ Floor.simplify p
         ForallF p -> return $ Forall.simplify p
         IffF p ->
-            Iff.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
+            Iff.simplify substitutionSimplifier simplifier axiomIdToEvaluator p
         ImpliesF p ->
             Implies.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
