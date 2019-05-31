@@ -285,7 +285,6 @@ maybeEvaluatePattern
         return (OrPattern.fromPattern unchangedPatt)
       | otherwise =
         reevaluateFunctions
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToEvaluator
@@ -335,10 +334,7 @@ reevaluateFunctions
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -- ^ Tools for finding additional information about patterns
-    -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions in patterns.
     -> BuiltinAndAxiomSimplifierMap
@@ -347,7 +343,6 @@ reevaluateFunctions
     -- ^ Function evaluation result.
     -> Simplifier (OrPattern variable)
 reevaluateFunctions
-    _tools
     substitutionSimplifier
     termSimplifier
     axiomIdToEvaluator
