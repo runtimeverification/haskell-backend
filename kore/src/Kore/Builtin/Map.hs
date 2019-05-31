@@ -58,7 +58,6 @@ import qualified Data.Map.Strict as Map
 import           Data.Reflection
                  ( Given )
 import qualified Data.Reflection as Reflection
-import qualified Data.Set as Set
 import           Data.String
                  ( IsString )
 import           Data.Text
@@ -83,6 +82,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
 import           Kore.Internal.Conditional
                  ( Conditional, andCondition )
+import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
@@ -90,7 +90,10 @@ import           Kore.Internal.Predicate
                  ( Predicate )
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
-                 ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
+                 ( AttemptedAxiom (..),
+                 AttemptedAxiomResults (AttemptedAxiomResults),
+                 BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Axiom.Data as Axiom.Data.DoNotUse
 import           Kore.Step.Simplification.Data
 import           Kore.Unification.Unify
                  ( MonadUnify )
@@ -206,7 +209,7 @@ evalLookup =
     Builtin.functionEvaluator evalLookup0
   where
     evalLookup0 :: Builtin.FunctionImplementation
-    evalLookup0 tools _ _ arguments =
+    evalLookup0 tools _ _ _ arguments =
         Builtin.getAttemptedAxiom
         (do
             let (_map, _key) =
@@ -233,7 +236,7 @@ evalElement :: Builtin.Function
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
-    evalElement0 tools _ resultSort = \arguments ->
+    evalElement0 tools _ _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom
         (do
             let (_key, _value) =
@@ -249,7 +252,21 @@ evalConcat :: Builtin.Function
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
-    evalConcat0 tools _ resultSort = \arguments ->
+    evalConcat0
+        :: forall variable
+        .   ( FreshVariable variable
+            , Ord variable
+            , Show variable
+            , SortedVariable variable
+            , Unparse variable
+            )
+        => SmtMetadataTools StepperAttributes
+        -> PredicateSimplifier
+        -> TermLikeSimplifier
+        -> Sort
+        -> [TermLike variable]
+        -> Simplifier (AttemptedAxiom variable)
+    evalConcat0 tools predicateSimplifier simplifier resultSort arguments =
         Builtin.getAttemptedAxiom
         (do
             let (_map1, _map2) =
@@ -275,19 +292,39 @@ evalConcat =
                 bothConcrete = do
                     _map1 <- expectBuiltinMap concatKey _map1
                     _map2 <- expectBuiltinMap concatKey _map2
-                    let overlapping =
-                            (not . Set.null)
-                                (Set.intersection
-                                    (Map.keysSet _map1)
-                                    (Map.keysSet _map2)
+                    let
+                        unify a b = mkCeil_ (mkAnd a b)
+                        overlapping
+                            :: Map (TermLike Concrete) (TermLike variable)
+                        overlapping = Map.intersectionWith unify _map1 _map2
+                        predicate = Map.foldr mkAnd mkTop_ overlapping
+                    simplified <- Monad.Trans.lift $
+                        simplifyTerm simplifier predicateSimplifier predicate
+                    let
+                        toPredicate :: Pattern variable -> Predicate variable
+                        toPredicate patt =
+                            case term of
+                                Top_ _ -> pattPredicate
+                                _ -> (error . unlines)
+                                    [ "Unexpected non-top predicate from \
+                                        \simplifying ceils:"
+                                    , "predicate=" ++ unparseToString predicate
+                                    , "patt=" ++ unparseToString patt
+                                    ]
+                          where
+                            (term, pattPredicate) = Pattern.splitTerm patt
+                        simplifiedPredicates = toPredicate <$> simplified
+                    return $ Applied AttemptedAxiomResults
+                        { results =
+                            fmap
+                                (Pattern.withCondition
+                                    ( asInternal tools resultSort
+                                    $ Map.union _map1 _map2
+                                    )
                                 )
-                    if overlapping
-                        then
-                            -- Result is ‘\bottom{}()’ when there is overlap
-                            -- between the keys of the operands.
-                            Builtin.appliedFunction Pattern.bottom
-                        else
-                            returnMap tools resultSort (Map.union _map1 _map2)
+                                simplifiedPredicates
+                        , remainders = OrPattern.bottom
+                        }
             leftIdentity <|> rightIdentity <|> bothConcrete
         )
 
@@ -295,7 +332,7 @@ evalUnit :: Builtin.Function
 evalUnit =
     Builtin.functionEvaluator evalUnit0
   where
-    evalUnit0 tools _ resultSort =
+    evalUnit0 tools _ _ resultSort =
         \case
             [] -> returnMap tools resultSort Map.empty
             _ -> Builtin.wrongArity unitKey
@@ -304,7 +341,7 @@ evalUpdate :: Builtin.Function
 evalUpdate =
     Builtin.functionEvaluator evalUpdate0
   where
-    evalUpdate0 tools _ resultSort = \arguments ->
+    evalUpdate0 tools _ _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom
         (do
             let (_map, _key, value) =
@@ -320,7 +357,7 @@ evalInKeys :: Builtin.Function
 evalInKeys =
     Builtin.functionEvaluator evalInKeys0
   where
-    evalInKeys0 tools _ resultSort = \arguments ->
+    evalInKeys0 tools _ _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom
         (do
             let (_key, _map) =
@@ -338,7 +375,7 @@ evalKeys :: Builtin.Function
 evalKeys =
     Builtin.functionEvaluator evalKeys0
   where
-    evalKeys0 tools _ resultSort = \arguments ->
+    evalKeys0 tools _ _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom
         (do
             let _map =

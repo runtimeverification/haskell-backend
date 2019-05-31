@@ -129,6 +129,8 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import           Kore.Unparser
+import           Kore.Variables.Fresh
+                 ( FreshVariable )
 import qualified Kore.Verified as Verified
 
 type Parser = Parsec Void Text
@@ -559,11 +561,12 @@ unaryOperator
     unaryOperator0
         :: Ord variable
         => SmtMetadataTools StepperAttributes
+        -> PredicateSimplifier
         -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom variable)
-    unaryOperator0 _ _ resultSort children =
+    unaryOperator0 _ _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [BuiltinF a] -> do
                 -- Apply the operator to a domain value
@@ -606,11 +609,12 @@ binaryOperator
     binaryOperator0
         :: Ord variable
         => SmtMetadataTools StepperAttributes
+        -> PredicateSimplifier
         -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom variable)
-    binaryOperator0 _ _ resultSort children =
+    binaryOperator0 _ _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [BuiltinF a, BuiltinF b] -> do
                 -- Apply the operator to two domain values
@@ -653,11 +657,12 @@ ternaryOperator
     ternaryOperator0
         :: Ord variable
         => SmtMetadataTools StepperAttributes
+        -> PredicateSimplifier
         -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom variable)
-    ternaryOperator0 _ _ resultSort children =
+    ternaryOperator0 _ _ _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [ BuiltinF a, BuiltinF b, BuiltinF c ] -> do
                 -- Apply the operator to three domain values
@@ -668,8 +673,14 @@ ternaryOperator
 
 type FunctionImplementation
     = forall variable
-        .  Ord variable
+        .   ( FreshVariable variable
+            , Ord variable
+            , Show variable
+            , SortedVariable variable
+            , Unparse variable
+            )
         => SmtMetadataTools StepperAttributes
+        -> PredicateSimplifier
         -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
@@ -680,7 +691,12 @@ functionEvaluator impl =
     applicationAxiomSimplifier evaluator
   where
     evaluator
-        :: (Ord variable, Show variable)
+        ::  ( FreshVariable variable
+            , Ord variable
+            , Show variable
+            , SortedVariable variable
+            , Unparse variable
+            )
         => SmtMetadataTools StepperAttributes
         -> PredicateSimplifier
         -> TermLikeSimplifier
@@ -690,8 +706,14 @@ functionEvaluator impl =
             (Attribute.Pattern variable)
             (TermLike variable)
         -> Simplifier (AttemptedAxiom variable)
-    evaluator tools _ simplifier _axiomIdToSimplifier (valid :< app) =
-        impl tools simplifier resultSort applicationChildren
+    evaluator
+        tools
+        predicateSimplifier
+        simplifier
+        _axiomIdToSimplifier
+        (valid :< app)
+      =
+        impl tools predicateSimplifier simplifier resultSort applicationChildren
       where
         Application { applicationChildren } = app
         Attribute.Pattern { Attribute.patternSort = resultSort } = valid

@@ -185,7 +185,7 @@ evalElement :: Builtin.Function
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
-    evalElement0 tools _ resultSort = \arguments ->
+    evalElement0 tools _ _ resultSort = \arguments ->
         case arguments of
             [elem'] -> returnList tools resultSort (Seq.singleton elem')
             _ -> Builtin.wrongArity elementKey
@@ -197,11 +197,12 @@ evalGet =
     evalGet0
         :: Ord variable
         => SmtMetadataTools StepperAttributes
+        -> PredicateSimplifier
         -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom variable)
-    evalGet0 _ _ _ = \arguments ->
+    evalGet0 _ _ _ _ = \arguments ->
         Builtin.getAttemptedAxiom
         (do
             let (_list, _ix) =
@@ -233,7 +234,7 @@ evalUnit :: Builtin.Function
 evalUnit =
     Builtin.functionEvaluator evalUnit0
   where
-    evalUnit0 tools _ resultSort =
+    evalUnit0 tools _ _ resultSort =
         \case
             [] -> returnList tools resultSort Seq.empty
             _ -> Builtin.wrongArity "LIST.unit"
@@ -245,11 +246,12 @@ evalConcat =
     evalConcat0
         :: Ord variable
         => SmtMetadataTools StepperAttributes
+        -> PredicateSimplifier
         -> TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom variable)
-    evalConcat0 tools _ resultSort = \arguments ->
+    evalConcat0 tools _ _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom
         (do
             let (_list1, _list2) =

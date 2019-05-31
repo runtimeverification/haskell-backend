@@ -218,7 +218,7 @@ evalElement :: Builtin.Function
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
-    evalElement0 tools _ resultSort = \arguments ->
+    evalElement0 tools _ _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom
         (case arguments of
             [_elem] -> do
@@ -232,7 +232,7 @@ evalIn =
     Builtin.functionEvaluator evalIn0
   where
     evalIn0 :: Builtin.FunctionImplementation
-    evalIn0 tools _ resultSort = \arguments ->
+    evalIn0 tools _ _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom
         (do
             let (_elem, _set) =
@@ -251,7 +251,7 @@ evalUnit :: Builtin.Function
 evalUnit =
     Builtin.functionEvaluator evalUnit0
   where
-    evalUnit0 tools _ resultSort =
+    evalUnit0 tools _ _ resultSort =
         \case
             [] -> returnSet tools resultSort Set.empty
             _ -> Builtin.wrongArity unitKey
@@ -262,7 +262,7 @@ evalConcat =
   where
     ctx = concatKey
     evalConcat0 :: Builtin.FunctionImplementation
-    evalConcat0 tools _ resultSort = \arguments ->
+    evalConcat0 tools _ _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom
         (do
             let (_set1, _set2) =
@@ -296,7 +296,7 @@ evalDifference =
   where
     ctx = differenceKey
     evalDifference0 :: Builtin.FunctionImplementation
-    evalDifference0 tools _ resultSort = \arguments ->
+    evalDifference0 tools _ _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom
         (do
             let (_set1, _set2) =
@@ -321,7 +321,7 @@ evalToList :: Builtin.Function
 evalToList = Builtin.functionEvaluator evalToList0
   where
     evalToList0 :: Builtin.FunctionImplementation
-    evalToList0 tools _ resultSort arguments =
+    evalToList0 tools _ _ resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let _set =
                         case arguments of
@@ -338,7 +338,7 @@ evalSize :: Builtin.Function
 evalSize = Builtin.functionEvaluator evalSize0
   where
     evalSize0 :: Builtin.FunctionImplementation
-    evalSize0 tools _ resultSort arguments =
+    evalSize0 tools _ _ resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let _set =
                         case arguments of
@@ -357,7 +357,7 @@ evalIntersection =
   where
     ctx = intersectionKey
     evalIntersection0 :: Builtin.FunctionImplementation
-    evalIntersection0 tools _ resultSort = \arguments ->
+    evalIntersection0 tools _ _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let (_set1, _set2) =
                     case arguments of
