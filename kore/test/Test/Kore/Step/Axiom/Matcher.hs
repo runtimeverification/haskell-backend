@@ -1003,7 +1003,6 @@ unificationWithMatchSimplifiers axiomIdToSimplifier first second = do
         $ evalSimplifier Mock.env
         $ Monad.Unify.runUnifier
         $ unificationWithAppMatchOnTop
-            tools
             (Mock.substitutionSimplifier tools)
             (Simplifier.create tools axiomIdToSimplifier)
             axiomIdToSimplifier
@@ -1039,7 +1038,6 @@ match first second = do
     matchResult =
         fmap MultiOr.make <$> Monad.Unify.runUnifier
             (matchAsUnification
-                tools
                 (Mock.substitutionSimplifier tools)
                 (Simplifier.create tools Map.empty)
                 Map.empty

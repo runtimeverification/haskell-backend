@@ -99,8 +99,7 @@ newtype UnificationProcedure =
             , FreshVariable variable
             , MonadUnify unifier
             )
-        => SmtMetadataTools StepperAttributes
-        -> PredicateSimplifier
+        => PredicateSimplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
@@ -215,7 +214,6 @@ unifyRule
         -> unifier (Conditional variable ())
     unifyPatterns =
         unificationProcedure
-            metadataTools
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers

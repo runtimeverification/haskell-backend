@@ -17,10 +17,6 @@ import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
 import           Kore.Internal.Pattern
@@ -39,6 +35,7 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( scatter )
 import           Kore.Step.Substitution
@@ -64,9 +61,7 @@ unificationProcedure
         , FreshVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -- ^functions yielding metadata for pattern heads
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -75,8 +70,7 @@ unificationProcedure
     -- ^left-hand-side of unification
     -> TermLike variable
     -> unifier (Predicate variable)
-unificationProcedure
-    tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2
+unificationProcedure substitutionSimplifier simplifier axiomIdToSimplifier p1 p2
   | p1Sort /= p2Sort = do
     Monad.Unify.explainBottom
         "Cannot unify different sorts."
@@ -95,6 +89,7 @@ unificationProcedure
             , "with"
             , Pretty.indent 4 $ unparse p2
             ]
+    tools <- Monad.Unify.liftSimplifier Simplifier.askMetadataTools
     let
         getUnifiedTerm =
             termUnification

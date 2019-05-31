@@ -252,7 +252,7 @@ matchesToVariableSubstitution
     -> Pattern variable
     -> Simplifier Bool
 matchesToVariableSubstitution
-    tools
+    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -271,8 +271,7 @@ matchesToVariableSubstitution
             return (all (singleVariableSubstitution variable) results)
   where
     matchAsUnification' =
-        matchAsUnification
-            tools substitutionSimplifier simplifier axiomIdToSimplifier
+        matchAsUnification substitutionSimplifier simplifier axiomIdToSimplifier
 
 matchesToVariableSubstitution _ _ _ _ _ _ = return False
 

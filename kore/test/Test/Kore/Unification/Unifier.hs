@@ -344,7 +344,6 @@ unificationProcedureSuccessWithSimplifiers
             $ evalSimplifier testEnv
             $ Monad.Unify.runUnifier
             $ unificationProcedure
-                tools
                 (Mock.substitutionSimplifier tools)
                 (Simplifier.create tools axiomIdToSimplifier)
                 axiomIdToSimplifier

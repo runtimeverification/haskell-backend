@@ -65,7 +65,6 @@ import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
-import qualified Kore.Unification.Unify as Unify
 import           Kore.Unparser
                  ( Unparse )
 
@@ -238,10 +237,8 @@ runRepl
         :: TermLike Variable
         -> TermLike Variable
         -> UnifierWithExplanation ()
-    unifier0 first second = do
-        tools <- Unify.liftSimplifier $ Reader.asks Simplifier.metadataTools
+    unifier0 first second =
         () <$ unificationProcedure
-            tools
             predicateSimplifier
             simplifier
             axiomToIdSimplifier

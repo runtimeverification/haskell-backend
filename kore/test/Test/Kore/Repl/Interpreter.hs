@@ -435,7 +435,6 @@ mkState axioms claims claim logger =
         -> UnifierWithExplanation ()
     unifier0 first second =
         () <$ unificationProcedure
-            testMetadataTools
             testSubstitutionSimplifier
             testTermLikeSimplifier
             testEvaluators

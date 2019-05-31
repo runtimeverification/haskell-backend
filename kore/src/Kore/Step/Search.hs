@@ -142,7 +142,6 @@ matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
     eitherUnifiers <-
         Monad.Trans.lift $ Monad.Unify.runUnifier
         $ unificationProcedure
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier

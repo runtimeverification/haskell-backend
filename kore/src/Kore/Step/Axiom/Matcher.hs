@@ -51,6 +51,7 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMergerExcept,
                  mergePredicatesAndSubstitutionsExcept )
@@ -88,8 +89,7 @@ matchAsUnification
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -98,23 +98,15 @@ matchAsUnification
     -> TermLike variable
     -> unifier (Predicate variable)
 matchAsUnification
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
     first
     second
   = do
-    result <- runMaybeT matchResult
-    maybe
-        (Monad.Unify.throwUnificationError
-            (unsupportedPatterns "Unknown match case." first second)
-        )
-        return
-        result
-  where
-    matchResult =
-        match
+    tools <- Monad.Unify.liftSimplifier Simplifier.askMetadataTools
+    result <-
+        runMaybeT $ match
             tools
             substitutionSimplifier
             simplifier
@@ -122,6 +114,12 @@ matchAsUnification
             Map.empty
             first
             second
+    maybe
+        (Monad.Unify.throwUnificationError
+            (unsupportedPatterns "Unknown match case." first second)
+        )
+        return
+        result
 
 unificationWithAppMatchOnTop
     ::  ( FreshVariable variable
@@ -130,8 +128,7 @@ unificationWithAppMatchOnTop
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -140,69 +137,69 @@ unificationWithAppMatchOnTop
     -> TermLike variable
     -> unifier (Predicate variable)
 unificationWithAppMatchOnTop
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
     first
     second
-  = case first of
-    (App_ firstHead firstChildren) ->
-        case second of
-            (App_ secondHead secondChildren)
-                | firstHead == secondHead
-                  -> unifyJoin
-                        tools
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
-                        (zip firstChildren secondChildren)
-                | symbolOrAliasConstructor firstHead
-                    == symbolOrAliasConstructor secondHead
-                -- The application heads have the same symbol or alias
-                -- constructor with different parameters,
-                -- but we do not handle unification of symbol parameters.
-                    -> Monad.Unify.throwUnificationError
-                        (unsupportedPatterns
-                            "Unknown application head match case for "
-                            first
-                            second
-                        )
-                | otherwise
-                  -> error
-                    (  "Unexpected unequal heads: "
-                    ++ show firstHead ++ " and "
-                    ++ show secondHead ++ "."
-                    )
-            _ -> error
-                (  "Expecting application patterns, but second = "
-                ++ show second ++ "."
-                )
-    (Ceil_ firstOperandSort (SortVariableSort _) firstChild) ->
-        case second of
-            (Ceil_ secondOperandSort _resultSort secondChild)
-                | firstOperandSort == secondOperandSort
-                    -> unificationWithAppMatchOnTop
-                        tools
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
-                        firstChild
-                        secondChild
-                | otherwise
+  = do
+    tools <- Monad.Unify.liftSimplifier Simplifier.askMetadataTools
+    case first of
+        (App_ firstHead firstChildren) ->
+            case second of
+                (App_ secondHead secondChildren)
+                    | firstHead == secondHead
+                    -> unifyJoin
+                            tools
+                            substitutionSimplifier
+                            simplifier
+                            axiomIdToSimplifier
+                            (zip firstChildren secondChildren)
+                    | symbolOrAliasConstructor firstHead
+                        == symbolOrAliasConstructor secondHead
+                    -- The application heads have the same symbol or alias
+                    -- constructor with different parameters,
+                    -- but we do not handle unification of symbol parameters.
+                        -> Monad.Unify.throwUnificationError
+                            (unsupportedPatterns
+                                "Unknown application head match case for "
+                                first
+                                second
+                            )
+                    | otherwise
                     -> error
-                        (  "Unexpected unequal child sorts: "
-                        ++ show firstOperandSort ++ " and "
-                        ++ show secondOperandSort ++ "."
+                        (  "Unexpected unequal heads: "
+                        ++ show firstHead ++ " and "
+                        ++ show secondHead ++ "."
                         )
-            _ -> error
-                (  "Expecting ceil patterns, but second = "
-                ++ show second ++ "."
-                )
-    _ -> error
-        (  "Expecting application or ceil with sort variable patterns, "
-        ++ "but first = " ++ show first ++ "."
-        )
+                _ -> error
+                    (  "Expecting application patterns, but second = "
+                    ++ show second ++ "."
+                    )
+        (Ceil_ firstOperandSort (SortVariableSort _) firstChild) ->
+            case second of
+                (Ceil_ secondOperandSort _resultSort secondChild)
+                    | firstOperandSort == secondOperandSort
+                        -> unificationWithAppMatchOnTop
+                            substitutionSimplifier
+                            simplifier
+                            axiomIdToSimplifier
+                            firstChild
+                            secondChild
+                    | otherwise
+                        -> error
+                            (  "Unexpected unequal child sorts: "
+                            ++ show firstOperandSort ++ " and "
+                            ++ show secondOperandSort ++ "."
+                            )
+                _ -> error
+                    (  "Expecting ceil patterns, but second = "
+                    ++ show second ++ "."
+                    )
+        _ -> error
+            (  "Expecting application or ceil with sort variable patterns, "
+            ++ "but first = " ++ show first ++ "."
+            )
 
 match
     ::  ( FreshVariable variable
@@ -569,12 +566,11 @@ unifyJoin
     -> [(TermLike variable, TermLike variable)]
     -> unifier (Predicate variable)
 unifyJoin
-    tools substitutionSimplifier simplifier axiomIdToSimplifier patterns
+    _tools substitutionSimplifier simplifier axiomIdToSimplifier patterns
   = do
     predicates <- traverse
         (uncurry $
             unificationProcedure
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
