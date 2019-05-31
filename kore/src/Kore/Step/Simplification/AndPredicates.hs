@@ -13,10 +13,6 @@ module Kore.Step.Simplification.AndPredicates
 
 import qualified Data.Foldable as Foldable
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.MultiAnd
                  ( MultiAnd )
 import qualified Kore.Internal.MultiAnd as MultiAnd
@@ -48,14 +44,12 @@ simplifyEvaluatedMultiPredicate
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> MultiAnd (OrPredicate variable)
     -> Simplifier (OrPredicate variable)
 simplifyEvaluatedMultiPredicate
-    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSubstitution

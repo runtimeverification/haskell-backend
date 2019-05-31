@@ -192,7 +192,6 @@ makeEvaluateNonBoolCeil
             term
     result <-
         And.simplifyEvaluatedMultiPredicate
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToEvaluator
@@ -244,7 +243,6 @@ makeEvaluateTerm
                 children
             let ceils = simplifiedChildren
             And.simplifyEvaluatedMultiPredicate
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToEvaluator
@@ -323,7 +321,6 @@ makeEvaluateBuiltin
         ceils :: [OrPredicate variable]
         ceils = children
     And.simplifyEvaluatedMultiPredicate
-        tools
         substitutionSimplifier
         simplifier
         axiomIdToEvaluator
@@ -348,7 +345,6 @@ makeEvaluateBuiltin
         ceils :: [OrPredicate variable]
         ceils = children
     And.simplifyEvaluatedMultiPredicate
-        tools
         substitutionSimplifier
         simplifier
         axiomIdToEvaluator
