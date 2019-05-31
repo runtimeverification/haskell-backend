@@ -161,7 +161,7 @@ simplifyInternal
                 axiomIdToEvaluator
                 (attrs :< p)
         BottomF p -> return $ Bottom.simplify p
-        BuiltinF p -> return $ Builtin.simplify tools p
+        BuiltinF p -> return $ Builtin.simplify p
         CeilF p ->
             Ceil.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p
