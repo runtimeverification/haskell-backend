@@ -95,7 +95,7 @@ import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier (..), SimplificationType,
+                 ( MonadSimplify, PredicateSimplifier (..), SimplificationType,
                  TermLikeSimplifier, simplifyConditionalTerm )
 import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Unification.Unify
@@ -186,23 +186,21 @@ symbolVerifiers =
 
  -}
 expectBuiltinSet
-    :: Monad m
+    :: MonadSimplify m
     => Text  -- ^ Context for error message
-    -> SmtMetadataTools StepperAttributes
     -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m (Set (TermLike Concrete))
-expectBuiltinSet ctx tools _set =
-    do
-        _set <- Builtin.expectNormalConcreteTerm tools _set
-        case _set of
-            Builtin_ domain ->
-                case domain of
-                    Domain.BuiltinSet Domain.InternalSet { builtinSetChild } ->
-                        return builtinSetChild
-                    _ ->
-                        Builtin.verifierBug
-                        $ Text.unpack ctx ++ ": Domain value is not a set"
-            _ -> empty
+expectBuiltinSet ctx _set = do
+    _set <- Builtin.expectNormalConcreteTerm _set
+    case _set of
+        Builtin_ domain ->
+            case domain of
+                Domain.BuiltinSet Domain.InternalSet { builtinSetChild } ->
+                    return builtinSetChild
+                _ ->
+                    Builtin.verifierBug
+                    $ Text.unpack ctx ++ ": Domain value is not a set"
+        _ -> empty
 
 returnSet
     :: (Monad m, Ord variable)
@@ -224,7 +222,7 @@ evalElement =
         Builtin.getAttemptedAxiom
             (case arguments of
                 [_elem] -> do
-                    _elem <- Builtin.expectNormalConcreteTerm tools _elem
+                    _elem <- Builtin.expectNormalConcreteTerm _elem
                     returnSet tools resultSort (Set.singleton _elem)
                 _ -> Builtin.wrongArity elementKey
             )
@@ -234,15 +232,14 @@ evalIn =
     Builtin.functionEvaluator evalIn0
   where
     evalIn0 :: Builtin.FunctionImplementation
-    evalIn0 _ resultSort = \arguments -> do
-        tools <- Simplifier.askMetadataTools
+    evalIn0 _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let (_elem, _set) =
                     case arguments of
                         [_elem, _set] -> (_elem, _set)
                         _ -> Builtin.wrongArity inKey
-            _elem <- Builtin.expectNormalConcreteTerm tools _elem
-            _set <- expectBuiltinSet inKey tools _set
+            _elem <- Builtin.expectNormalConcreteTerm _elem
+            _set <- expectBuiltinSet inKey _set
             (Builtin.appliedFunction . asExpandedBoolPattern)
                 (Set.member _elem _set)
       where
@@ -273,22 +270,22 @@ evalConcat =
                         [_set1, _set2] -> (_set1, _set2)
                         _ -> Builtin.wrongArity concatKey
                 leftIdentity = do
-                    _set1 <- expectBuiltinSet ctx tools _set1
+                    _set1 <- expectBuiltinSet ctx _set1
                     if Set.null _set1
                         then
                             Builtin.appliedFunction
                             $ Pattern.fromTermLike _set2
                         else empty
                 rightIdentity = do
-                    _set2 <- expectBuiltinSet ctx tools _set2
+                    _set2 <- expectBuiltinSet ctx _set2
                     if Set.null _set2
                         then
                             Builtin.appliedFunction
                             $ Pattern.fromTermLike _set1
                         else empty
                 bothConcrete = do
-                    _set1 <- expectBuiltinSet ctx tools _set1
-                    _set2 <- expectBuiltinSet ctx tools _set2
+                    _set1 <- expectBuiltinSet ctx _set1
+                    _set2 <- expectBuiltinSet ctx _set2
                     returnSet tools resultSort (_set1 <> _set2)
             leftIdentity <|> rightIdentity <|> bothConcrete
 
@@ -306,15 +303,15 @@ evalDifference =
                         [_set1, _set2] -> (_set1, _set2)
                         _ -> Builtin.wrongArity differenceKey
                 rightIdentity = do
-                    _set2 <- expectBuiltinSet ctx tools _set2
+                    _set2 <- expectBuiltinSet ctx _set2
                     if Set.null _set2
                         then
                             Builtin.appliedFunction
                             $ Pattern.fromTermLike _set1
                         else empty
                 bothConcrete = do
-                    _set1 <- expectBuiltinSet ctx tools _set1
-                    _set2 <- expectBuiltinSet ctx tools _set2
+                    _set1 <- expectBuiltinSet ctx _set1
+                    _set2 <- expectBuiltinSet ctx _set2
                     returnSet tools resultSort (Set.difference _set1 _set2)
             rightIdentity <|> bothConcrete
 
@@ -322,14 +319,13 @@ evalToList :: Builtin.Function
 evalToList = Builtin.functionEvaluator evalToList0
   where
     evalToList0 :: Builtin.FunctionImplementation
-    evalToList0 _ resultSort arguments = do
-        tools <- Simplifier.askMetadataTools
+    evalToList0 _ resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let _set =
                         case arguments of
                             [_set] -> _set
                             _      -> Builtin.wrongArity toListKey
-            _set <- expectBuiltinSet toListKey tools _set
+            _set <- expectBuiltinSet toListKey _set
             List.returnList resultSort
                 . fmap fromConcrete
                 . Seq.fromList
@@ -340,14 +336,13 @@ evalSize :: Builtin.Function
 evalSize = Builtin.functionEvaluator evalSize0
   where
     evalSize0 :: Builtin.FunctionImplementation
-    evalSize0 _ resultSort arguments = do
-        tools <- Simplifier.askMetadataTools
+    evalSize0 _ resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let _set =
                         case arguments of
                             [_set] -> _set
                             _      -> Builtin.wrongArity sizeKey
-            _set <- expectBuiltinSet sizeKey tools _set
+            _set <- expectBuiltinSet sizeKey _set
             Builtin.appliedFunction
                 . Int.asPattern resultSort
                 . toInteger
@@ -367,8 +362,8 @@ evalIntersection =
                     case arguments of
                         [_set1, _set2] -> (_set1, _set2)
                         _ -> Builtin.wrongArity intersectionKey
-            _set1 <- expectBuiltinSet ctx tools _set1
-            _set2 <- expectBuiltinSet ctx tools _set2
+            _set1 <- expectBuiltinSet ctx _set1
+            _set2 <- expectBuiltinSet ctx _set2
             returnSet tools resultSort (Set.intersection _set1 _set2)
 
 {- | Implement builtin function evaluation.

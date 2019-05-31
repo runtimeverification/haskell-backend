@@ -96,8 +96,6 @@ import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
 import qualified Kore.Attribute.Sort.Element as Attribute.Sort
 import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
 import           Kore.Builtin.Error
 import           Kore.Error
                  ( Error )
@@ -124,8 +122,9 @@ import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationType, Simplifier,
-                 TermLikeSimplifier )
+                 ( MonadSimplify, PredicateSimplifier, SimplificationType,
+                 Simplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import           Kore.Unparser
@@ -801,11 +800,11 @@ isSymbol builtinName MetadataTools { symAttributes } sym =
 
  -}
 expectNormalConcreteTerm
-    :: Monad m
-    => SmtMetadataTools StepperAttributes
-    -> TermLike variable
+    :: MonadSimplify m
+    => TermLike variable
     -> MaybeT m (TermLike Concrete)
-expectNormalConcreteTerm tools purePattern =
+expectNormalConcreteTerm purePattern = do
+    tools <- Simplifier.askMetadataTools
     MaybeT $ return $ do
         p <- TermLike.asConcrete purePattern
         -- TODO (thomas.tuegel): Use the return value as the term.

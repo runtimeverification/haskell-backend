@@ -206,8 +206,7 @@ evalLookup =
     Builtin.functionEvaluator evalLookup0
   where
     evalLookup0 :: Builtin.FunctionImplementation
-    evalLookup0 _ _ arguments = do
-        tools <- Simplifier.askMetadataTools
+    evalLookup0 _ _ arguments =
         Builtin.getAttemptedAxiom $ do
             let (_map, _key) =
                     case arguments of
@@ -219,7 +218,7 @@ evalLookup =
                         then Builtin.appliedFunction Pattern.bottom
                         else empty
                 bothConcrete = do
-                    _key <- Builtin.expectNormalConcreteTerm tools _key
+                    _key <- Builtin.expectNormalConcreteTerm _key
                     _map <- expectBuiltinMap lookupKey _map
                     Builtin.appliedFunction $ maybeBottom $ Map.lookup _key _map
             emptyMap <|> bothConcrete
@@ -238,7 +237,7 @@ evalElement =
                     case arguments of
                         [_key, _value] -> (_key, _value)
                         _ -> Builtin.wrongArity elementKey
-            _key <- Builtin.expectNormalConcreteTerm tools _key
+            _key <- Builtin.expectNormalConcreteTerm _key
             returnMap tools resultSort (Map.singleton _key _value)
 
 -- | evaluates the map concat builtin.
@@ -309,7 +308,7 @@ evalUpdate =
                     case arguments of
                         [_map, _key, value'] -> (_map, _key, value')
                         _ -> Builtin.wrongArity updateKey
-            _key <- Builtin.expectNormalConcreteTerm tools _key
+            _key <- Builtin.expectNormalConcreteTerm _key
             _map <- expectBuiltinMap updateKey _map
             returnMap tools resultSort (Map.insert _key value _map)
 
@@ -317,14 +316,13 @@ evalInKeys :: Builtin.Function
 evalInKeys =
     Builtin.functionEvaluator evalInKeys0
   where
-    evalInKeys0 _ resultSort = \arguments -> do
-        tools <- Simplifier.askMetadataTools
+    evalInKeys0 _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let (_key, _map) =
                     case arguments of
                         [_key, _map] -> (_key, _map)
                         _ -> Builtin.wrongArity in_keysKey
-            _key <- Builtin.expectNormalConcreteTerm tools _key
+            _key <- Builtin.expectNormalConcreteTerm _key
             _map <- expectBuiltinMap in_keysKey _map
             Builtin.appliedFunction
                 $ Bool.asPattern resultSort
