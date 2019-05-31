@@ -190,8 +190,7 @@ simplifyInternal
         -- TODO(virgil): Move next up through patterns.
         NextF p -> return $ Next.simplify p
         NotF p ->
-            Not.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
+            Not.simplify substitutionSimplifier simplifier axiomIdToEvaluator p
         NuF p -> return $ Nu.simplify p
         OrF p -> return $ Or.simplify p
         RewritesF p -> return $ Rewrites.simplify p

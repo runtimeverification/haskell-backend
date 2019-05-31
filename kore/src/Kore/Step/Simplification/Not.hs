@@ -60,14 +60,12 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> Not Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
 simplify
-    _tools
     predicateSimplifier
     termSimplifier
     axiomSimplifiers
