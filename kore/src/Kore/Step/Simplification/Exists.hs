@@ -17,10 +17,6 @@ import qualified Data.Map.Strict as Map
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
@@ -94,8 +90,7 @@ simplify
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Simplifies patterns.
     -> BuiltinAndAxiomSimplifierMap
@@ -103,14 +98,12 @@ simplify
     -> Exists Sort variable (OrPattern variable)
     -> Simplifier (OrPattern variable)
 simplify
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
     Exists { existsVariable = variable, existsChild = child }
   =
     simplifyEvaluated
-        tools
         substitutionSimplifier
         simplifier
         axiomIdToSimplifier
@@ -137,8 +130,7 @@ simplifyEvaluated
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Simplifies patterns.
     -> BuiltinAndAxiomSimplifierMap
@@ -147,7 +139,6 @@ simplifyEvaluated
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
 simplifyEvaluated
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -159,7 +150,6 @@ simplifyEvaluated
     evaluated <-
         traverse
             (makeEvaluate
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
@@ -179,8 +169,7 @@ makeEvaluate
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Simplifies patterns.
     -> BuiltinAndAxiomSimplifierMap
@@ -189,7 +178,6 @@ makeEvaluate
     -> Pattern variable
     -> Simplifier (OrPattern variable)
 makeEvaluate
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -201,7 +189,6 @@ makeEvaluate
     case splitSubstitution variable normalizedSubstitution of
         (Left boundTerm, freeSubstitution) ->
             makeEvaluateBoundLeft
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
@@ -229,7 +216,6 @@ makeEvaluate
             axiomIdToSimplifier
     matchesToVariableSubstitution' =
         matchesToVariableSubstitution
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
@@ -240,8 +226,7 @@ matchesToVariableSubstitution
         , Unparse variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -251,7 +236,6 @@ matchesToVariableSubstitution
     -> Pattern variable
     -> Simplifier Bool
 matchesToVariableSubstitution
-    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -272,7 +256,7 @@ matchesToVariableSubstitution
     matchAsUnification' =
         matchAsUnification substitutionSimplifier simplifier axiomIdToSimplifier
 
-matchesToVariableSubstitution _ _ _ _ _ _ = return False
+matchesToVariableSubstitution _ _ _ _ _ = return False
 
 singleVariableSubstitution
     ::  ( Ord variable
@@ -319,8 +303,7 @@ makeEvaluateBoundLeft
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Simplifies patterns.
     -> BuiltinAndAxiomSimplifierMap
@@ -330,7 +313,6 @@ makeEvaluateBoundLeft
     -> Pattern variable
     -> BranchT Simplifier (Pattern variable)
 makeEvaluateBoundLeft
-    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier

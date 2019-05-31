@@ -170,7 +170,7 @@ simplifyInternal
                 substitutionSimplifier simplifier axiomIdToEvaluator p
         ExistsF p ->
             Exists.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
+                substitutionSimplifier simplifier axiomIdToEvaluator p
         FloorF p -> return $ Floor.simplify p
         ForallF p -> return $ Forall.simplify p
         IffF p ->

@@ -311,7 +311,6 @@ simplify exists =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
     $ Exists.simplify
-        tools
         (Mock.substitutionSimplifier tools)
         (Simplifier.create Map.empty)
         Map.empty
@@ -327,7 +326,6 @@ makeEvaluate variable child =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
     $ Exists.makeEvaluate
-        tools
         (Mock.substitutionSimplifier tools)
         (Simplifier.create Map.empty)
         Map.empty
