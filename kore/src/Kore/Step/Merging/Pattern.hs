@@ -58,7 +58,7 @@ mergeWithPredicate
     -- ^ pattern to which the above should be added.
     -> BranchT Simplifier (Pattern variable)
 mergeWithPredicate
-    tools
+    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -83,7 +83,6 @@ mergeWithPredicate
         Predicate.evaluate substitutionSimplifier simplifier mergedCondition
     let Conditional { substitution = mergedSubstitution } = merged
     mergeWithEvaluatedCondition
-        tools
         substitutionSimplifier
         simplifier
         axiomIdToSimplifier
@@ -97,8 +96,7 @@ mergeWithEvaluatedCondition
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -107,7 +105,6 @@ mergeWithEvaluatedCondition
     -> Predicate variable
     -> BranchT Simplifier (Pattern variable)
 mergeWithEvaluatedCondition
-    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
