@@ -79,7 +79,7 @@ import           Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
-import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.Data as Simplifier
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -185,9 +185,11 @@ evalElement :: Builtin.Function
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
-    evalElement0 tools _ resultSort = \arguments ->
+    evalElement0 _ resultSort = \arguments ->
         case arguments of
-            [elem'] -> returnList tools resultSort (Seq.singleton elem')
+            [elem'] -> do
+                tools <- Simplifier.askMetadataTools
+                returnList tools resultSort (Seq.singleton elem')
             _ -> Builtin.wrongArity elementKey
 
 evalGet :: Builtin.Function
@@ -196,12 +198,11 @@ evalGet =
   where
     evalGet0
         :: Ord variable
-        => SmtMetadataTools StepperAttributes
-        -> TermLikeSimplifier
+        => TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom variable)
-    evalGet0 _ _ _ = \arguments ->
+    evalGet0 _ _ = \arguments ->
         Builtin.getAttemptedAxiom
         (do
             let (_list, _ix) =
@@ -233,9 +234,11 @@ evalUnit :: Builtin.Function
 evalUnit =
     Builtin.functionEvaluator evalUnit0
   where
-    evalUnit0 tools _ resultSort =
+    evalUnit0 _ resultSort =
         \case
-            [] -> returnList tools resultSort Seq.empty
+            [] -> do
+                tools <- Simplifier.askMetadataTools
+                returnList tools resultSort Seq.empty
             _ -> Builtin.wrongArity "LIST.unit"
 
 evalConcat :: Builtin.Function
@@ -244,14 +247,13 @@ evalConcat =
   where
     evalConcat0
         :: Ord variable
-        => SmtMetadataTools StepperAttributes
-        -> TermLikeSimplifier
+        => TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom variable)
-    evalConcat0 tools _ resultSort = \arguments ->
-        Builtin.getAttemptedAxiom
-        (do
+    evalConcat0 _ resultSort = \arguments -> do
+        tools <- Simplifier.askMetadataTools
+        Builtin.getAttemptedAxiom $ do
             let (_list1, _list2) =
                     case arguments of
                         [_list1, _list2] -> (_list1, _list2)
@@ -277,7 +279,6 @@ evalConcat =
                     _list2 <- expectBuiltinList concatKey _list2
                     returnList tools resultSort (_list1 <> _list2)
             leftIdentity <|> rightIdentity <|> bothConcrete
-        )
 
 {- | Implement builtin function evaluation.
  -}

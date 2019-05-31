@@ -91,7 +91,7 @@ import           Kore.Internal.Predicate
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Data
                  ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.Data as Simplifier
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -206,9 +206,9 @@ evalLookup =
     Builtin.functionEvaluator evalLookup0
   where
     evalLookup0 :: Builtin.FunctionImplementation
-    evalLookup0 tools _ _ arguments =
-        Builtin.getAttemptedAxiom
-        (do
+    evalLookup0 _ _ arguments = do
+        tools <- Simplifier.askMetadataTools
+        Builtin.getAttemptedAxiom $ do
             let (_map, _key) =
                     case arguments of
                         [_map, _key] -> (_map, _key)
@@ -223,35 +223,32 @@ evalLookup =
                     _map <- expectBuiltinMap lookupKey _map
                     Builtin.appliedFunction $ maybeBottom $ Map.lookup _key _map
             emptyMap <|> bothConcrete
-        )
       where
-        maybeBottom =
-            maybe Pattern.bottom Pattern.fromTermLike
+        maybeBottom = maybe Pattern.bottom Pattern.fromTermLike
 
 -- | evaluates the map element builtin.
 evalElement :: Builtin.Function
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
-    evalElement0 tools _ resultSort = \arguments ->
-        Builtin.getAttemptedAxiom
-        (do
+    evalElement0 _ resultSort = \arguments -> do
+        tools <- Simplifier.askMetadataTools
+        Builtin.getAttemptedAxiom $ do
             let (_key, _value) =
                     case arguments of
                         [_key, _value] -> (_key, _value)
                         _ -> Builtin.wrongArity elementKey
             _key <- Builtin.expectNormalConcreteTerm tools _key
             returnMap tools resultSort (Map.singleton _key _value)
-        )
 
 -- | evaluates the map concat builtin.
 evalConcat :: Builtin.Function
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
-    evalConcat0 tools _ resultSort = \arguments ->
-        Builtin.getAttemptedAxiom
-        (do
+    evalConcat0 _ resultSort = \arguments -> do
+        tools <- Simplifier.askMetadataTools
+        Builtin.getAttemptedAxiom $ do
             let (_map1, _map2) =
                     case arguments of
                         [_map1, _map2] -> (_map1, _map2)
@@ -289,24 +286,25 @@ evalConcat =
                         else
                             returnMap tools resultSort (Map.union _map1 _map2)
             leftIdentity <|> rightIdentity <|> bothConcrete
-        )
 
 evalUnit :: Builtin.Function
 evalUnit =
     Builtin.functionEvaluator evalUnit0
   where
-    evalUnit0 tools _ resultSort =
+    evalUnit0 _ resultSort =
         \case
-            [] -> returnMap tools resultSort Map.empty
+            [] -> do
+                tools <- Simplifier.askMetadataTools
+                returnMap tools resultSort Map.empty
             _ -> Builtin.wrongArity unitKey
 
 evalUpdate :: Builtin.Function
 evalUpdate =
     Builtin.functionEvaluator evalUpdate0
   where
-    evalUpdate0 tools _ resultSort = \arguments ->
-        Builtin.getAttemptedAxiom
-        (do
+    evalUpdate0 _ resultSort = \arguments -> do
+        tools <- Simplifier.askMetadataTools
+        Builtin.getAttemptedAxiom $ do
             let (_map, _key, value) =
                     case arguments of
                         [_map, _key, value'] -> (_map, _key, value')
@@ -314,15 +312,14 @@ evalUpdate =
             _key <- Builtin.expectNormalConcreteTerm tools _key
             _map <- expectBuiltinMap updateKey _map
             returnMap tools resultSort (Map.insert _key value _map)
-        )
 
 evalInKeys :: Builtin.Function
 evalInKeys =
     Builtin.functionEvaluator evalInKeys0
   where
-    evalInKeys0 tools _ resultSort = \arguments ->
-        Builtin.getAttemptedAxiom
-        (do
+    evalInKeys0 _ resultSort = \arguments -> do
+        tools <- Simplifier.askMetadataTools
+        Builtin.getAttemptedAxiom $ do
             let (_key, _map) =
                     case arguments of
                         [_key, _map] -> (_key, _map)
@@ -332,22 +329,20 @@ evalInKeys =
             Builtin.appliedFunction
                 $ Bool.asPattern resultSort
                 $ Map.member _key _map
-        )
 
 evalKeys :: Builtin.Function
 evalKeys =
     Builtin.functionEvaluator evalKeys0
   where
-    evalKeys0 tools _ resultSort = \arguments ->
-        Builtin.getAttemptedAxiom
-        (do
+    evalKeys0 _ resultSort = \arguments -> do
+        tools <- Simplifier.askMetadataTools
+        Builtin.getAttemptedAxiom $ do
             let _map =
                     case arguments of
                         [_map] -> _map
                         _ -> Builtin.wrongArity lookupKey
             _map <- expectBuiltinMap lookupKey _map
             Builtin.Set.returnSet tools resultSort (Map.keysSet _map)
-        )
 
 {- | Implement builtin function evaluation.
  -}
