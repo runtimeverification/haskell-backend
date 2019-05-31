@@ -57,12 +57,10 @@ simplify
     axiomIdToSimplifier
     Conditional {term, predicate, substitution}
   = do
-    tools <- Simplifier.askMetadataTools
     simplifiedTerm <- simplifyTerm' term
     orPatterns <- BranchT.gather
         (traverse
-            (give tools $ Pattern.mergeWithPredicate
-                tools
+            (Pattern.mergeWithPredicate
                 substitutionSimplifier
                 termSimplifier
                 axiomIdToSimplifier

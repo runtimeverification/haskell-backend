@@ -11,10 +11,6 @@ module Kore.Step.Merging.Pattern
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import           Data.Reflection
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern, Predicate )
 import qualified Kore.Internal.Pattern as Pattern
@@ -25,6 +21,7 @@ import qualified Kore.Step.Condition.Evaluator as Predicate
 import           Kore.Step.Simplification.Data
                  ( BranchT, PredicateSimplifier, Simplifier,
                  TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Substitution
                  ( PredicateMerger (PredicateMerger),
                  mergePredicatesAndSubstitutions )
@@ -42,12 +39,8 @@ mergeWithPredicate
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
-        , Given (SmtMetadataTools StepperAttributes)
         )
-    => SmtMetadataTools StepperAttributes
-    -- ^ Tools for finding additional information about patterns
-    -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions in a pattern.
     -> BuiltinAndAxiomSimplifierMap
@@ -58,7 +51,6 @@ mergeWithPredicate
     -- ^ pattern to which the above should be added.
     -> BranchT Simplifier (Pattern variable)
 mergeWithPredicate
-    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -79,8 +71,11 @@ mergeWithPredicate
             [pattPredicate, conditionToMerge]
             [pattSubstitution, substitutionToMerge]
     let Conditional { predicate = mergedCondition } = merged
-    evaluatedCondition <- Monad.Trans.lift $
-        Predicate.evaluate substitutionSimplifier simplifier mergedCondition
+    tools <- Simplifier.askMetadataTools
+    evaluatedCondition <-
+        Monad.Trans.lift
+        $ give tools
+        $ Predicate.evaluate substitutionSimplifier simplifier mergedCondition
     let Conditional { substitution = mergedSubstitution } = merged
     mergeWithEvaluatedCondition
         substitutionSimplifier

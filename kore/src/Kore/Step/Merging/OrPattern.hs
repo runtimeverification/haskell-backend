@@ -8,8 +8,6 @@ module Kore.Step.Merging.OrPattern
     , mergeWithPredicateAssumesEvaluated
     ) where
 
-import Data.Reflection
-
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
@@ -62,7 +60,7 @@ mergeWithPredicate
     -- ^ Pattern to which the condition should be added.
     -> Simplifier (OrPattern variable)
 mergeWithPredicate
-    tools
+    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -71,8 +69,7 @@ mergeWithPredicate
   = do
     patterns <- BranchT.gather
         (traverse
-            (give tools $ Pattern.mergeWithPredicate
-                tools
+            (Pattern.mergeWithPredicate
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
