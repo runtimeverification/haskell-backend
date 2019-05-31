@@ -384,7 +384,6 @@ runVerification
     $ evalSimplifier Mock.env
     $ runExceptT
     $ OnePath.verify
-        metadataTools
         simplifier
         (Mock.substitutionSimplifier metadataTools)
         Map.empty

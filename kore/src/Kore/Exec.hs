@@ -237,7 +237,6 @@ prove limit definitionModule specModule =
         result <-
             runExceptT
             $ verify
-                metadataTools
                 simplifier
                 substitutionSimplifier
                 axiomIdToSimplifier

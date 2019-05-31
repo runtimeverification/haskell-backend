@@ -31,12 +31,8 @@ import qualified Data.Limit as Limit
 import           Data.Maybe
 
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
 import qualified Kore.Attribute.Trusted as Trusted
 import           Kore.Debug
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
                  ( Conditional (Conditional), Pattern )
@@ -145,8 +141,7 @@ didn't manage to verify a claim within the its maximum number of steps.
 If the verification succeeds, it returns ().
 -}
 verify
-    :: SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier
+    :: TermLikeSimplifier
     -- ^ Simplifies normal patterns through, e.g., function evaluation
     -> PredicateSimplifier
     -- ^ Simplifies predicates
@@ -167,7 +162,6 @@ verify
     -- for each.
     -> ExceptT (Pattern Variable) Simplifier ()
 verify
-    _metadataTools
     simplifier
     substitutionSimplifier
     axiomIdToSimplifier
