@@ -232,9 +232,8 @@ prove limit definitionModule specModule =
             , axiomIdToSimplifier
             } <-
                 initialize definitionModule metadataTools
-        specAxioms <-
-            mapM (simplifyRuleOnSecond metadataTools)
-                (extractOnePathClaims specModule)
+        let specClaims = extractOnePathClaims specModule
+        specAxioms <- traverse simplifyRuleOnSecond specClaims
         assertSomeClaims specAxioms
         let
             axioms = fmap Axiom rewriteRules
@@ -275,9 +274,8 @@ proveWithRepl definitionModule specModule mvar replScript replMode =
             , substitutionSimplifier
             , axiomIdToSimplifier
             } <- initialize definitionModule metadataTools
-        specAxioms <-
-            mapM (simplifyRuleOnSecond metadataTools)
-                (extractOnePathClaims specModule)
+        let specClaims = extractOnePathClaims specModule
+        specAxioms <- traverse simplifyRuleOnSecond specClaims
         assertSomeClaims specAxioms
         let
             axioms = fmap Axiom rewriteRules
@@ -349,10 +347,10 @@ makeClaim (attributes, rule) =
 
 simplifyRuleOnSecond
     :: Claim claim
-    => SmtMetadataTools StepperAttributes
-    -> (Attribute.Axiom, claim)
+    => (Attribute.Axiom, claim)
     -> Simplifier (Attribute.Axiom, claim)
-simplifyRuleOnSecond tools (atts, rule) = do
+simplifyRuleOnSecond (atts, rule) = do
+    tools <- Reader.asks Simplifier.metadataTools
     rule' <- simplifyRewriteRule tools (RewriteRule . coerce $ rule)
     return (atts, coerce . getRewriteRule $ rule')
 
