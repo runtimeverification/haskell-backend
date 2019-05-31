@@ -103,7 +103,7 @@ import           Kore.OnePath.Verification
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( Simplifier )
+                 ( MonadSimplify, Simplifier )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Variable
                  ( Variable )
@@ -112,6 +112,8 @@ import           Kore.Unification.Unify
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( unparse )
+import           SMT
+                 ( MonadSMT )
 
 newtype AxiomIndex = AxiomIndex
     { unAxiomIndex :: Int
@@ -387,6 +389,10 @@ newtype UnifierWithExplanation a =
     UnifierWithExplanation
         { getUnifierWithExplanation :: UnifierTT (AccumT (First (Doc ()))) a }
   deriving (Alternative, Applicative, Functor, Monad)
+
+deriving instance MonadSMT UnifierWithExplanation
+
+deriving instance MonadSimplify UnifierWithExplanation
 
 instance MonadUnify UnifierWithExplanation where
     throwSubstitutionError =

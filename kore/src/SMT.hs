@@ -62,6 +62,9 @@ import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.State.Lazy as State.Lazy
 import qualified Control.Monad.State.Strict as State.Strict
 import qualified Control.Monad.Trans as Trans
+import           Control.Monad.Trans.Accum
+import           Control.Monad.Trans.Except
+import           Control.Monad.Trans.Identity
 import qualified Control.Monad.Trans.Maybe as Maybe
 import           Data.Limit
 import           Data.Text
@@ -220,8 +223,6 @@ class Monad m => MonadSMT m where
     loadFile = Trans.lift . loadFile
     {-# INLINE loadFile #-}
 
-instance MonadSMT m => MonadSMT (ReaderT r m)
-
 withSolver' :: (Solver -> IO a) -> SMT a
 withSolver' action = SMT $ do
     mvar <- Reader.ask
@@ -272,6 +273,14 @@ instance MonadSMT SMT where
     loadFile path =
         withSolver' $ \solver -> SimpleSMT.loadFile solver path
 
+instance (MonadSMT m, Monoid w) => MonadSMT (AccumT w m) where
+    withSolver = mapAccumT withSolver
+    {-# INLINE withSolver #-}
+
+instance MonadSMT m => MonadSMT (IdentityT m)
+
+instance MonadSMT m => MonadSMT (ReaderT r m)
+
 instance MonadSMT m => MonadSMT (Maybe.MaybeT m)
 
 instance MonadSMT m => MonadSMT (State.Lazy.StateT s m)
@@ -279,6 +288,8 @@ instance MonadSMT m => MonadSMT (State.Lazy.StateT s m)
 instance MonadSMT m => MonadSMT (Counter.CounterT m)
 
 instance MonadSMT m => MonadSMT (State.Strict.StateT s m)
+
+instance MonadSMT m => MonadSMT (ExceptT e m)
 
 {- | Initialize a new solver with the given 'Config'.
 

@@ -8,7 +8,8 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.Data
-    ( Simplifier
+    ( MonadSimplify
+    , Simplifier
     , askMetadataTools
     , Env (..)
     , runSimplifier
@@ -36,6 +37,10 @@ import           Control.Monad.Reader
 import           Control.Monad.State.Class
                  ( MonadState )
 import qualified Control.Monad.Trans as Monad.Trans
+import           Control.Monad.Trans.Accum
+import           Control.Monad.Trans.Except
+import           Control.Monad.Trans.Identity
+import           Control.Monad.Trans.Maybe
 import qualified Data.Foldable as Foldable
 import           Data.Typeable
 import           GHC.Stack
@@ -68,6 +73,22 @@ This type is used to distinguish between the two in the common code.
 -}
 data SimplificationType = And | Equals
 
+class MonadSMT m => MonadSimplify m where
+    -- | Retrieve the 'MetadataTools' for the Kore context.
+    askMetadataTools :: m (SmtMetadataTools Attribute.Symbol)
+    default askMetadataTools
+        :: (MonadTrans t, MonadSimplify n, m ~ t n)
+        => m (SmtMetadataTools Attribute.Symbol)
+    askMetadataTools = Monad.Trans.lift askMetadataTools
+
+instance (MonadSimplify m, Monoid w) => MonadSimplify (AccumT w m)
+
+instance MonadSimplify m => MonadSimplify (IdentityT m)
+
+instance MonadSimplify m => MonadSimplify (ExceptT e m)
+
+instance MonadSimplify m => MonadSimplify (MaybeT m)
+
 -- * Branching
 
 {- | 'BranchT' extends any 'Monad' with disjoint branches.
@@ -98,18 +119,11 @@ Use 'scatter' and 'gather' to translate between the two forms of branches.
 newtype BranchT m a =
     -- Pay no attention to the ListT behind the curtain!
     BranchT (ListT.ListT m a)
-    deriving
-        ( Alternative
-        , Applicative
-        , Functor
-        , MFunctor
-        , MMonad
-        , Monad
-        , MonadIO
-        , MonadPlus
-        , MonadTrans
-        , Typeable
-        )
+    deriving (Functor, Applicative, Monad)
+    deriving (Alternative, MonadPlus)
+    deriving (MonadTrans, MFunctor, MMonad)
+    deriving MonadIO
+    deriving Typeable
 
 deriving instance MonadReader r m => MonadReader r (BranchT m)
 
@@ -117,7 +131,9 @@ deriving instance MonadState s m => MonadState s (BranchT m)
 
 deriving instance WithLog msg m => WithLog msg (BranchT m)
 
-instance (MonadSMT m, MonadIO m) => MonadSMT (BranchT m) where
+instance MonadSMT m => MonadSMT (BranchT m)
+
+instance MonadSimplify m => MonadSimplify (BranchT m)
 
 {- | Collect results from many simplification branches into one result.
 
@@ -198,10 +214,9 @@ instance WithLog LogMessage Simplifier where
         Simplifier . localLogAction mapping . getSimplifier
     {-# INLINE localLogAction #-}
 
-{- | Retrieve the 'SmtMetadataTools'.
- -}
-askMetadataTools :: Simplifier (SmtMetadataTools Attribute.Symbol)
-askMetadataTools = asks metadataTools
+instance MonadSimplify Simplifier where
+    askMetadataTools = asks metadataTools
+    {-# INLINE askMetadataTools #-}
 
 {- | Run a simplification, returning the results along all branches.
  -}
