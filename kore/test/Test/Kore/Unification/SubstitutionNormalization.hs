@@ -5,19 +5,12 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Control.Monad.Except as Except
-import qualified Data.Default as Default
 import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
 
-import           Kore.Attribute.Symbol
-import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SmtMetadataTools )
-import qualified Kore.IndexedModule.MetadataTools as HeadType
-                 ( HeadType (..) )
 import qualified Kore.Internal.Pattern as Conditional
 import           Kore.Internal.TermLike
 import           Kore.Step.Simplification.Data
-                 ( Env (..), evalSimplifier )
+                 ( evalSimplifier )
 import           Kore.Syntax.PatternF
                  ( groundHead )
 import           Kore.Unification.Error
@@ -27,7 +20,6 @@ import           Kore.Unification.SubstitutionNormalization
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.SMT
 import           Test.Tasty.HUnit.Extensions
@@ -141,20 +133,6 @@ runNormalizeSubstitution
 runNormalizeSubstitution substitution =
     (fmap . fmap) (Substitution.unwrap . Conditional.substitution)
     $ Test.SMT.runSMT
-    $ evalSimplifier mockEnv
+    $ evalSimplifier Mock.env
     $ Except.runExceptT
     $ normalizeSubstitution (Map.fromList substitution)
-
-mockEnv :: Env
-mockEnv = Mock.env { metadataTools = mockMetadataTools }
-
-mockMetadataTools :: SmtMetadataTools StepperAttributes
-mockMetadataTools = MetadataTools
-    { symAttributes = const Mock.functionalAttributes
-    , symbolOrAliasType = const HeadType.Symbol
-    , sortAttributes = const Default.def
-    , isSubsortOf = const $ const False
-    , subsorts = Set.singleton
-    , applicationSorts = undefined
-    , smtData = undefined
-    }
