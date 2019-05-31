@@ -23,7 +23,6 @@ import           Control.Monad.Catch
                  ( MonadCatch, catch )
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
-import qualified Control.Monad.Reader as Reader
 import           Control.Monad.State.Strict
                  ( MonadState, StateT, evalStateT )
 import           Data.Coerce
@@ -61,7 +60,6 @@ import           Kore.Step.Simplification.Data
                  ( TermLikeSimplifier )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier )
-import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
@@ -216,13 +214,11 @@ runRepl
         -> ReplNode
         -> Simplifier ExecutionGraph
     stepper0 claim claims axioms graph rnode = do
-        tools <- Reader.asks Simplifier.metadataTools
         let node = unReplNode rnode
         if Graph.outdeg (Strategy.graph graph) node == 0
             then
                 catchInterruptWithDefault graph
                 $ verifyClaimStep
-                    tools
                     simplifier
                     predicateSimplifier
                     axiomToIdSimplifier

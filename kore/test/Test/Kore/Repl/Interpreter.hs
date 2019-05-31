@@ -420,7 +420,6 @@ mkState axioms claims claim logger =
     graph' = emptyExecutionGraph claim
     stepper0 claim' claims' axioms' graph (ReplNode node) =
         verifyClaimStep
-            testMetadataTools
             testTermLikeSimplifier
             testSubstitutionSimplifier
             testEvaluators

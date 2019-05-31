@@ -298,8 +298,7 @@ unprovenNodes executionGraph =
 verifyClaimStep
     :: forall claim
     .  Claim claim
-    => SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier
+    => TermLikeSimplifier
     -> PredicateSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> claim
@@ -318,7 +317,6 @@ verifyClaimStep
             (RewriteRule Variable)
         )
 verifyClaimStep
-    _tools
     simplifier
     predicateSimplifier
     axiomIdToSimplifier
