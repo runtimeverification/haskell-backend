@@ -595,7 +595,7 @@ finalizeRulesSequence
   = do
     (results, remainder) <-
         State.runStateT
-            (traverse finalizeRuleInSequence' unifiedRules)
+            (traverse finalizeRuleSequence' unifiedRules)
             (Conditional.withoutTerm initial)
     remainders' <- Monad.Unify.gather $ applyRemainder' initial remainder
     return Step.Results
@@ -605,7 +605,10 @@ finalizeRulesSequence
             $ Pattern.mapVariables Target.unwrapVariable <$> remainders'
         }
   where
-    finalizeRuleInSequence' unifiedRule = do
+    finalizeRuleSequence'
+        :: UnifiedRule (Target variable)
+        -> State.StateT (Predicate (Target variable)) unifier [Result variable]
+    finalizeRuleSequence' unifiedRule = do
         remainder <- State.get
         results <- Monad.Trans.lift $ finalizeRule' remainder unifiedRule
         let unification = Conditional.withoutTerm unifiedRule
