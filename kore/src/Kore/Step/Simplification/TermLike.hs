@@ -33,7 +33,6 @@ import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
                  simplifyTerm, termLikeSimplifier )
-import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
                  ( simplify )
 import qualified Kore.Step.Simplification.Equals as Equals
@@ -148,7 +147,6 @@ simplifyInternal
     return (OrPattern.fromTermLike termLike)
 
   | otherwise = do
-    tools <- Simplifier.askMetadataTools
     traverse simplifyTerm' termLikeF >>= \case
         AndF p ->
             And.simplify substitutionSimplifier simplifier axiomIdToEvaluator p
@@ -164,7 +162,7 @@ simplifyInternal
         BuiltinF p -> return $ Builtin.simplify p
         CeilF p ->
             Ceil.simplify substitutionSimplifier simplifier axiomIdToEvaluator p
-        DomainValueF p -> return $ DomainValue.simplify tools p
+        DomainValueF p -> return $ DomainValue.simplify p
         EqualsF p ->
             Equals.simplify
                 substitutionSimplifier simplifier axiomIdToEvaluator p

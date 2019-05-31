@@ -14,11 +14,10 @@ import           Kore.Internal.TermLike
 import           Kore.Step.Simplification.DomainValue
                  ( simplify )
 
-import           Test.Kore.Comparators ()
-import           Test.Kore.Step.MockSymbols
-                 ( testSort )
-import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Kore.Comparators ()
+import Test.Kore.Step.MockSymbols
+       ( testSort )
+import Test.Tasty.HUnit.Extensions
 
 test_simplify :: [TestTree]
 test_simplify =
@@ -39,7 +38,5 @@ test_simplify =
         )
     ]
 
-evaluate
-    :: DomainValue Sort (OrPattern Variable)
-    -> OrPattern Variable
-evaluate = simplify Mock.emptyMetadataTools
+evaluate :: DomainValue Sort (OrPattern Variable) -> OrPattern Variable
+evaluate = simplify
