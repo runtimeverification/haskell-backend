@@ -24,11 +24,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
 import           Kore.Debug
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
@@ -141,8 +137,7 @@ which is actually, exactly the form we want, since we are working with a
 and n destinations.
  -}
 transitionRule
-    :: SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    :: PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions in patterns
     -> BuiltinAndAxiomSimplifierMap
@@ -152,7 +147,6 @@ transitionRule
     -- ^ Configuration being rewritten and its accompanying proof
     -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
 transitionRule
-    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier

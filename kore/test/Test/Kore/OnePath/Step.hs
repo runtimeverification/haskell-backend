@@ -404,7 +404,6 @@ runSteps graphFilter picker configuration strategy =
     $ (fromMaybe (error "Unexpected missing tree") . graphFilter)
     <$> runStrategy
         (transitionRule
-            metadataTools
             (Mock.substitutionSimplifier metadataTools)
             simplifier
             Map.empty

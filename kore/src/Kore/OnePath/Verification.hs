@@ -58,7 +58,6 @@ import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
-import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Strategy
                  ( executionHistoryStep )
 import           Kore.Step.Strategy
@@ -270,12 +269,10 @@ verifyClaim
         -> CommonStrategyPattern
         -> TransitionT (RewriteRule Variable) Verifier CommonStrategyPattern
     transitionRule' prim proofState = do
-        metadataTools <- Simplifier.askMetadataTools
         transitions <-
             Monad.Trans.lift . Monad.Trans.lift
             $ runTransitionT
             $ OnePath.transitionRule
-                metadataTools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
@@ -321,7 +318,7 @@ verifyClaimStep
             (RewriteRule Variable)
         )
 verifyClaimStep
-    tools
+    _tools
     simplifier
     predicateSimplifier
     axiomIdToSimplifier
@@ -343,7 +340,6 @@ verifyClaimStep
             (CommonStrategyPattern)
     transitionRule' =
         OnePath.transitionRule
-            tools
             predicateSimplifier
             simplifier
             axiomIdToSimplifier
