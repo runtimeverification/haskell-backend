@@ -11,10 +11,6 @@ module Kore.Step.Simplification.TermLike
 
 import qualified Data.Functor.Foldable as Recursive
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -91,14 +87,13 @@ simplify
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> Simplifier (Pattern variable)
-simplify tools substitutionSimplifier axiomIdToEvaluator patt = do
-    orPatt <- simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt
+simplify substitutionSimplifier axiomIdToEvaluator patt = do
+    orPatt <- simplifyToOr axiomIdToEvaluator substitutionSimplifier patt
     return (OrPattern.toPattern orPatt)
 
 {-|'simplifyToOr' simplifies a TermLike variable, returning an
@@ -111,20 +106,18 @@ simplifyToOr
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifierMap
+    => BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> PredicateSimplifier
     -> TermLike variable
     -> Simplifier (OrPattern variable)
-simplifyToOr tools axiomIdToEvaluator substitutionSimplifier =
+simplifyToOr axiomIdToEvaluator substitutionSimplifier =
     simplifyInternal
         substitutionSimplifier
         simplifier
         axiomIdToEvaluator
   where
-    simplifier = termLikeSimplifier
-        (simplifyToOr tools axiomIdToEvaluator)
+    simplifier = termLikeSimplifier (simplifyToOr axiomIdToEvaluator)
 
 simplifyInternal
     ::  ( SortedVariable variable

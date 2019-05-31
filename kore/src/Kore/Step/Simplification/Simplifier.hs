@@ -28,9 +28,5 @@ create
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLikeSimplifier
-create
-    tools
-    axiomIdToEvaluator
-  =
-    termLikeSimplifier
-        (TermLike.simplifyToOr tools axiomIdToEvaluator)
+create _tools axiomIdToEvaluator =
+    termLikeSimplifier (TermLike.simplifyToOr axiomIdToEvaluator)

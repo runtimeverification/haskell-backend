@@ -197,10 +197,7 @@ evaluate
     -> SMT (Pattern Variable)
 evaluate =
     evalSimplifier testEnv
-    . TermLike.simplify
-        testMetadataTools
-        testSubstitutionSimplifier
-        testEvaluators
+    . TermLike.simplify testSubstitutionSimplifier testEvaluators
 
 evaluateT
     :: Trans.MonadTrans t
@@ -214,10 +211,7 @@ evaluateToList
 evaluateToList =
     fmap MultiOr.extractPatterns
     . evalSimplifier testEnv
-    . TermLike.simplifyToOr
-        testMetadataTools
-        testEvaluators
-        testSubstitutionSimplifier
+    . TermLike.simplifyToOr testEvaluators testSubstitutionSimplifier
 
 runSMT :: SMT a -> IO a
 runSMT = SMT.runSMT SMT.defaultConfig emptyLogger

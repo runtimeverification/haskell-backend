@@ -613,8 +613,7 @@ evaluate
 evaluate functionIdToEvaluator patt =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
-    $ TermLike.simplify
-        metadataTools substitutionSimplifier functionIdToEvaluator patt
+    $ TermLike.simplify substitutionSimplifier functionIdToEvaluator patt
   where
     metadataTools = Mock.metadataTools
     substitutionSimplifier :: PredicateSimplifier
