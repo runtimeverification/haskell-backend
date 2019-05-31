@@ -235,7 +235,7 @@ mergePredicatesAndSubstitutionsExcept
     -> [Substitution variable]
     -> unifier (Predicate variable)
 mergePredicatesAndSubstitutionsExcept
-    tools
+    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -246,7 +246,6 @@ mergePredicatesAndSubstitutionsExcept
         mergedSubstitution = Foldable.fold substitutions
         mergedPredicate = Syntax.Predicate.makeMultipleAndPredicate predicates
     normalizeSubstitutionAfterMerge
-        tools
         substitutionSimplifier
         simplifier
         axiomIdToSimplifier
@@ -370,14 +369,12 @@ normalizeSubstitutionAfterMerge
         , HasCallStack
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> Predicate variable
     -> unifier (Predicate variable)
 normalizeSubstitutionAfterMerge
-    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
