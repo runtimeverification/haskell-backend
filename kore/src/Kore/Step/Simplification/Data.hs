@@ -9,6 +9,7 @@ Portability : portable
 -}
 module Kore.Step.Simplification.Data
     ( Simplifier
+    , askMetadataTools
     , Env (..)
     , runSimplifier
     , evalSimplifier
@@ -196,6 +197,11 @@ instance WithLog LogMessage Simplifier where
     localLogAction mapping =
         Simplifier . localLogAction mapping . getSimplifier
     {-# INLINE localLogAction #-}
+
+{- | Retrieve the 'SmtMetadataTools'.
+ -}
+askMetadataTools :: Simplifier (SmtMetadataTools Attribute.Symbol)
+askMetadataTools = asks metadataTools
 
 {- | Run a simplification, returning the results along all branches.
  -}

@@ -21,7 +21,6 @@ module Kore.Exec
 
 import           Control.Concurrent.MVar
 import qualified Control.Monad as Monad
-import           Control.Monad.Reader as Reader
 import           Control.Monad.Trans.Except
                  ( runExceptT )
 import qualified Data.Bifunctor as Bifunctor
@@ -84,7 +83,6 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), Simplifier, TermLikeSimplifier,
                  evalSimplifier )
 import qualified Kore.Step.Simplification.Data as Simplifier
-                 ( Env (..) )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -366,7 +364,7 @@ execute
     -> Simplifier Execution
 execute verifiedModule strategy inputPattern
   = Log.withLogScope "setUpConcreteExecution" $ do
-    metadataTools <- Reader.asks Simplifier.metadataTools
+    metadataTools <- Simplifier.askMetadataTools
     initialized <- initialize verifiedModule
     let
         Initialized { rewriteRules } = initialized
@@ -409,7 +407,7 @@ initialize
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -> Simplifier Initialized
 initialize verifiedModule = do
-    tools <- Reader.asks Simplifier.metadataTools
+    tools <- Simplifier.askMetadataTools
     functionAxioms <-
         simplifyFunctionAxioms (extractEqualityAxioms verifiedModule)
     rewriteRules <-
@@ -507,7 +505,7 @@ simplifyRulePattern rulePattern = do
 -- | Simplify a 'TermLike' using only matching logic rules.
 simplifyPattern :: TermLike Variable -> Simplifier (OrPattern Variable)
 simplifyPattern termLike = do
-    tools <- Reader.asks Simplifier.metadataTools
+    tools <- Simplifier.askMetadataTools
     let
         emptySimplifier = Simplifier.create tools Map.empty
         emptySubstitutionSimplifier =
