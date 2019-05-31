@@ -1151,7 +1151,6 @@ sequenceMatchingRules initial rules =
     $ evalSimplifier Mock.env
     $ Monad.Unify.runUnifier
     $ Step.sequenceRules
-        metadataTools
         predicateSimplifier
         patternSimplifier
         axiomSimplifiers

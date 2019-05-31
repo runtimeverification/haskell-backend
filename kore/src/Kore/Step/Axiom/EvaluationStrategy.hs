@@ -17,7 +17,6 @@ module Kore.Step.Axiom.EvaluationStrategy
 
 import           Control.Monad
                  ( when )
-import qualified Control.Monad.Trans as Trans
 import           Control.Monad.Trans.Except
                  ( ExceptT (ExceptT) )
 import qualified Data.Foldable as Foldable
@@ -334,10 +333,8 @@ evaluateWithDefinitionAxioms
     let unwrapEqualityRule =
             \(EqualityRule rule) ->
                 RulePattern.mapVariables fromVariable rule
-    tools <- Trans.lift Simplifier.askMetadataTools
     results <- ExceptT $ Monad.Unify.runUnifier
         $ Step.sequenceRules
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
