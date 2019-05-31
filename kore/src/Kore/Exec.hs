@@ -19,6 +19,7 @@ module Kore.Exec
     , Equality
     ) where
 
+import           Control.Concurrent.MVar
 import qualified Control.Monad as Monad
 import           Control.Monad.Trans.Except
                  ( runExceptT )
@@ -244,12 +245,13 @@ proveWithRepl
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
+    -> MVar (Log.LogAction IO Log.LogMessage)
     -> Repl.ReplScript
     -- ^ Optional script
     -> Repl.ReplMode
     -- ^ Run in a specific repl mode
     -> Simplifier ()
-proveWithRepl definitionModule specModule replScript replMode = do
+proveWithRepl definitionModule specModule mvar replScript replMode = do
     let tools = MetadataTools.build definitionModule
     Initialized
         { rewriteRules
@@ -272,6 +274,7 @@ proveWithRepl definitionModule specModule replScript replMode = do
         axiomIdToSimplifier
         axioms
         claims
+        mvar
         replScript
         replMode
 
