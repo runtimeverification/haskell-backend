@@ -170,6 +170,9 @@ symbolVerifiers =
     , ( removeKey
       , Builtin.verifySymbol assertSort [assertSort, acceptAnySort]
       )
+    , ( removeAllKey
+      , Builtin.verifySymbol assertSort [assertSort, Builtin.Set.assertSort]
+      )
     ]
 
 {- | Abort function evaluation if the argument is not a Map domain value.
@@ -374,6 +377,29 @@ evalRemove =
                     returnMap tools resultSort $ Map.delete _key _map
             emptyMap <|> bothConcrete
 
+evalRemoveAll :: Builtin.Function
+evalRemoveAll =
+    Builtin.functionEvaluator evalRemoveAll0
+  where
+    evalRemoveAll0 :: Builtin.FunctionImplementation
+    evalRemoveAll0 tools _ resultSort = \arguments ->
+        Builtin.getAttemptedAxiom $ do
+            let (_map, _set) =
+                    case arguments of
+                        [_map, _set] -> (_map, _set)
+                        _ -> Builtin.wrongArity removeAllKey
+                emptyMap = do
+                    _map <- expectBuiltinMap removeAllKey _map
+                    if Map.null _map
+                        then returnMap tools resultSort Map.empty
+                        else empty
+                bothConcrete = do
+                    _map <- expectBuiltinMap removeAllKey _map
+                    _set <- Builtin.Set.expectBuiltinSet removeAllKey tools _set
+                    returnMap tools resultSort $ Map.withoutKeys _map _set
+            emptyMap <|> bothConcrete
+
+
 {- | Implement builtin function evaluation.
  -}
 builtinFunctions :: Map Text Builtin.Function
@@ -387,6 +413,7 @@ builtinFunctions =
         , (in_keysKey, evalInKeys)
         , (keysKey, evalKeys)
         , (removeKey, evalRemove)
+        , (removeAllKey, evalRemoveAll)
         ]
 
 {- | Render a 'Map' as an internal pattern of the given sort.
@@ -479,6 +506,9 @@ keysKey = "MAP.keys"
 
 removeKey :: IsString s => s
 removeKey = "MAP.remove"
+
+removeAllKey :: IsString s => s
+removeAllKey = "MAP.removeAll"
 
 {- | Find the symbol hooked to @MAP.update@ in an indexed module.
  -}

@@ -107,6 +107,19 @@ test_removeUnit =
             (===) Pattern.top =<< evaluate predicate
         )
 
+test_removeAllUnit :: TestTree
+test_removeAllUnit =
+    testPropertyWithSolver
+        "removeAll{}(unit{}(), set) === unit{}()"
+        (do
+            set <- forAll Test.Set.genSetPattern
+            let patRemoveAll = removeAllMap unitMap set
+                predicate = mkEquals_ unitMap patRemoveAll
+            expect <- evaluate unitSet
+            (===) expect =<< evaluate patRemoveAll
+            (===) Pattern.top =<< evaluate predicate
+        )
+
 test_concatUnit :: TestTree
 test_concatUnit =
     testPropertyWithSolver
