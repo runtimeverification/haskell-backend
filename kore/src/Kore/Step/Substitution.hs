@@ -80,7 +80,7 @@ normalize
     -> Conditional variable term
     -> BranchT Simplifier (Conditional variable term)
 normalize
-    tools
+    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -92,7 +92,6 @@ normalize
         Monad.Trans.lift
         $ Monad.Unify.runUnifier
         $ normalizeExcept
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
@@ -118,14 +117,12 @@ normalizeExcept
         , FreshVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> Predicate variable
     -> unifier (Predicate variable)
 normalizeExcept
-    _tools
     predicateSimplifier@(PredicateSimplifier simplifySubstitution)
     simplifier
     axiomIdToSimplifier
@@ -279,7 +276,7 @@ createPredicatesAndSubstitutionsMergerExcept
     -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger variable unifier
 createPredicatesAndSubstitutionsMergerExcept
-    tools substitutionSimplifier simplifier axiomIdToSimplifier
+    _tools substitutionSimplifier simplifier axiomIdToSimplifier
   =
     PredicateMerger worker
   where
@@ -292,7 +289,6 @@ createPredicatesAndSubstitutionsMergerExcept
                 (Predicate.fromPredicate <$> predicates)
                 <> (Predicate.fromSubstitution <$> substitutions)
         normalizeExcept
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
@@ -353,7 +349,7 @@ createLiftedPredicatesAndSubstitutionsMerger
     -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger variable unifier
 createLiftedPredicatesAndSubstitutionsMerger
-    tools substitutionSimplifier simplifier axiomIdToSimplifier
+    _tools substitutionSimplifier simplifier axiomIdToSimplifier
   =
     PredicateMerger worker
   where
@@ -366,7 +362,6 @@ createLiftedPredicatesAndSubstitutionsMerger
                 (Predicate.fromPredicate <$> predicates)
                 <> (Predicate.fromSubstitution <$> substitutions)
         normalizeExcept
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
@@ -388,7 +383,7 @@ normalizeSubstitutionAfterMerge
     -> Predicate variable
     -> unifier (Predicate variable)
 normalizeSubstitutionAfterMerge
-    tools
+    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -397,7 +392,6 @@ normalizeSubstitutionAfterMerge
     results <-
         Monad.Unify.gather
         $ normalizeExcept
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier

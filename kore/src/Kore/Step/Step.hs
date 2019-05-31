@@ -182,7 +182,7 @@ unifyRule
     -- ^ Rule
     -> unifier (UnifiedRule variable)
 unifyRule
-    metadataTools
+    _metadataTools
     (UnificationProcedure unificationProcedure)
     predicateSimplifier
     patternSimplifier
@@ -219,7 +219,6 @@ unifyRule
             axiomSimplifiers
     normalize =
         Substitution.normalizeExcept
-            metadataTools
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
@@ -251,7 +250,7 @@ applyInitialConditions
     -- TODO(virgil): This should take advantage of the unifier's branching and
     -- not return an Or.
 applyInitialConditions
-    metadataTools
+    _metadataTools
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers
@@ -273,7 +272,6 @@ applyInitialConditions
   where
     normalize condition =
         Substitution.normalizeExcept
-            metadataTools
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
@@ -311,7 +309,7 @@ finalizeAppliedRule
     -- ^ Conditions of applied rule
     -> unifier (OrPattern variable)
 finalizeAppliedRule
-    metadataTools
+    _metadataTools
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers
@@ -341,7 +339,6 @@ finalizeAppliedRule
 
     normalize condition =
         Substitution.normalizeExcept
-            metadataTools
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
@@ -370,7 +367,7 @@ applyRemainder
     -- ^ Remainder
     -> unifier (Pattern variable)
 applyRemainder
-    metadataTools
+    _metadataTools
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers
@@ -387,7 +384,6 @@ applyRemainder
   where
     normalize condition =
         Substitution.normalizeExcept
-            metadataTools
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers

@@ -375,7 +375,6 @@ normalizeExcept predicated =
     $ evalSimplifier Mock.env
     $ Monad.Unify.runUnifier
     $ Substitution.normalizeExcept
-        Mock.metadataTools
         (Mock.substitutionSimplifier Mock.metadataTools)
         (Simplifier.create Map.empty)
         Map.empty
