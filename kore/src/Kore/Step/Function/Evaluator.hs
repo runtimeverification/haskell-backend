@@ -209,7 +209,7 @@ maybeEvaluatePattern
     -- ^ The default value
     -> Maybe (Simplifier (OrPattern variable))
 maybeEvaluatePattern
-    tools
+    _tools
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
@@ -248,7 +248,6 @@ maybeEvaluatePattern
                                 )
                 merged <-
                     mergeWithConditionAndSubstitution
-                        tools
                         substitutionSimplifier
                         simplifier
                         axiomIdToEvaluator
@@ -386,8 +385,7 @@ mergeWithConditionAndSubstitution
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions in a pattern.
     -> BuiltinAndAxiomSimplifierMap
@@ -397,10 +395,9 @@ mergeWithConditionAndSubstitution
     -> (AttemptedAxiom variable)
     -- ^ AttemptedAxiom to which the condition should be added.
     -> Simplifier (AttemptedAxiom variable)
-mergeWithConditionAndSubstitution _ _ _ _ _ AttemptedAxiom.NotApplicable =
+mergeWithConditionAndSubstitution _ _ _ _ AttemptedAxiom.NotApplicable =
     return AttemptedAxiom.NotApplicable
 mergeWithConditionAndSubstitution
-    _tools
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
