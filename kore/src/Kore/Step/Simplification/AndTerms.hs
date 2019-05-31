@@ -348,7 +348,6 @@ termAnd tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2 = do
                     simplifier
                     axiomIdToSimplifier
                     (createLiftedPredicatesAndSubstitutionsMerger
-                        tools
                         substitutionSimplifier
                         simplifier
                         axiomIdToSimplifier

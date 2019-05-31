@@ -338,13 +338,12 @@ createLiftedPredicatesAndSubstitutionsMerger
         , FreshVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger variable unifier
 createLiftedPredicatesAndSubstitutionsMerger
-    _tools substitutionSimplifier simplifier axiomIdToSimplifier
+    substitutionSimplifier simplifier axiomIdToSimplifier
   =
     PredicateMerger worker
   where
