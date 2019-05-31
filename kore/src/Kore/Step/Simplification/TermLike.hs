@@ -37,6 +37,7 @@ import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
                  simplifyTerm, termLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
                  ( simplify )
 import qualified Kore.Step.Simplification.Equals as Equals
@@ -118,7 +119,6 @@ simplifyToOr
     -> Simplifier (OrPattern variable)
 simplifyToOr tools axiomIdToEvaluator substitutionSimplifier =
     simplifyInternal
-        tools
         substitutionSimplifier
         simplifier
         axiomIdToEvaluator
@@ -133,15 +133,13 @@ simplifyInternal
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> Simplifier (OrPattern variable)
 simplifyInternal
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
@@ -156,7 +154,8 @@ simplifyInternal
   | NuF _ <- termLikeF =
     return (OrPattern.fromTermLike termLike)
 
-  | otherwise =
+  | otherwise = do
+    tools <- Simplifier.askMetadataTools
     traverse simplifyTerm' termLikeF >>= \case
         AndF p ->
             And.simplify

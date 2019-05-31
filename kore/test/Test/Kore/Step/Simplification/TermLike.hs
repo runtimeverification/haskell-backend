@@ -31,7 +31,6 @@ simplifyInternalEvaluated original =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
     $ TermLike.simplifyInternal
-        Mock.metadataTools
         undefined  -- Throw an error if any predicate would be simplified.
         undefined  -- Throw an error if any term would be simplified.
         axiomSimplifiers
