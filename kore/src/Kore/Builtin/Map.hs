@@ -191,15 +191,15 @@ expectBuiltinMap ctx (Builtin_ builtin) =
 expectBuiltinMap _ _ = empty
 
 returnMap
-    :: (Monad m, Ord variable)
-    => SmtMetadataTools attrs
-    -> Sort
+    :: (MonadSimplify m, Ord variable)
+    => Sort
     -> Map (TermLike Concrete) (TermLike variable)
     -> m (AttemptedAxiom variable)
-returnMap tools resultSort map' =
+returnMap resultSort map' = do
+    tools <- Simplifier.askMetadataTools
     Builtin.appliedFunction
-    $ Pattern.fromTermLike
-    $ asInternal tools resultSort map'
+        $ Pattern.fromTermLike
+        $ asInternal tools resultSort map'
 
 evalLookup :: Builtin.Function
 evalLookup =
@@ -230,23 +230,21 @@ evalElement :: Builtin.Function
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
-    evalElement0 _ resultSort = \arguments -> do
-        tools <- Simplifier.askMetadataTools
+    evalElement0 _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let (_key, _value) =
                     case arguments of
                         [_key, _value] -> (_key, _value)
                         _ -> Builtin.wrongArity elementKey
             _key <- Builtin.expectNormalConcreteTerm _key
-            returnMap tools resultSort (Map.singleton _key _value)
+            returnMap resultSort (Map.singleton _key _value)
 
 -- | evaluates the map concat builtin.
 evalConcat :: Builtin.Function
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
-    evalConcat0 _ resultSort = \arguments -> do
-        tools <- Simplifier.askMetadataTools
+    evalConcat0 _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let (_map1, _map2) =
                     case arguments of
@@ -283,7 +281,7 @@ evalConcat =
                             -- between the keys of the operands.
                             Builtin.appliedFunction Pattern.bottom
                         else
-                            returnMap tools resultSort (Map.union _map1 _map2)
+                            returnMap resultSort (Map.union _map1 _map2)
             leftIdentity <|> rightIdentity <|> bothConcrete
 
 evalUnit :: Builtin.Function
@@ -292,17 +290,14 @@ evalUnit =
   where
     evalUnit0 _ resultSort =
         \case
-            [] -> do
-                tools <- Simplifier.askMetadataTools
-                returnMap tools resultSort Map.empty
+            [] -> returnMap resultSort Map.empty
             _ -> Builtin.wrongArity unitKey
 
 evalUpdate :: Builtin.Function
 evalUpdate =
     Builtin.functionEvaluator evalUpdate0
   where
-    evalUpdate0 _ resultSort = \arguments -> do
-        tools <- Simplifier.askMetadataTools
+    evalUpdate0 _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let (_map, _key, value) =
                     case arguments of
@@ -310,7 +305,7 @@ evalUpdate =
                         _ -> Builtin.wrongArity updateKey
             _key <- Builtin.expectNormalConcreteTerm _key
             _map <- expectBuiltinMap updateKey _map
-            returnMap tools resultSort (Map.insert _key value _map)
+            returnMap resultSort (Map.insert _key value _map)
 
 evalInKeys :: Builtin.Function
 evalInKeys =
