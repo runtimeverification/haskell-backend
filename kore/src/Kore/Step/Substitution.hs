@@ -302,13 +302,12 @@ createPredicatesAndSubstitutionsMerger
         , Ord variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger variable (BranchT Simplifier)
 createPredicatesAndSubstitutionsMerger
-    _tools substitutionSimplifier simplifier axiomIdToSimplifier
+    substitutionSimplifier simplifier axiomIdToSimplifier
   =
     PredicateMerger worker
   where

@@ -113,7 +113,6 @@ unificationProcedure substitutionSimplifier simplifier axiomIdToSimplifier p1 p2
             orResult <-
                 OrPattern.mergeWithPredicateAssumesEvaluated
                     (createPredicatesAndSubstitutionsMerger
-                        tools
                         substitutionSimplifier
                         simplifier
                         axiomIdToSimplifier
