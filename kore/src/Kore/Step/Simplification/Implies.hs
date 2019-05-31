@@ -118,7 +118,6 @@ simplifyEvaluated
   | OrPattern.isTrue second  = return OrPattern.top
   | OrPattern.isFalse second =
     Not.simplifyEvaluated
-        tools
         predicateSimplifier
         termSimplifier
         axiomSimplifiers
@@ -148,7 +147,7 @@ simplifyEvaluateHalfImplies
     -> Pattern variable
     -> Simplifier (OrPattern variable)
 simplifyEvaluateHalfImplies
-    tools
+    _tools
     predicateSimplifier
     termSimplifier
     axiomSimplifiers
@@ -162,7 +161,6 @@ simplifyEvaluateHalfImplies
     return (OrPattern.fromPatterns [Pattern.top])
   | Pattern.isBottom second =
     Not.simplifyEvaluated
-        tools
         predicateSimplifier
         termSimplifier
         axiomSimplifiers

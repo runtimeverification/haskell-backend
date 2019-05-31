@@ -39,6 +39,7 @@ import qualified Kore.Step.Simplification.And as And
 import           Kore.Step.Simplification.Data
                  ( BranchT, PredicateSimplifier, Simplifier,
                  TermLikeSimplifier, gather, scatter )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -66,14 +67,13 @@ simplify
     -> Not Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
 simplify
-    tools
+    _tools
     predicateSimplifier
     termSimplifier
     axiomSimplifiers
     Not { notChild }
   =
     simplifyEvaluated
-        tools
         predicateSimplifier
         termSimplifier
         axiomSimplifiers
@@ -104,30 +104,28 @@ simplifyEvaluated
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
 simplifyEvaluated
-    tools
     predicateSimplifier
     termSimplifier
     axiomSimplifiers
     simplified
-  =
+  = do
+    tools <- Simplifier.askMetadataTools
+    let mkMultiAndPattern' =
+            mkMultiAndPattern
+                tools
+                predicateSimplifier
+                termSimplifier
+                axiomSimplifiers
     fmap OrPattern.fromPatterns $ gather $ do
         let not' = Not { notChild = simplified, notSort = () }
         andPattern <- scatterAnd (makeEvaluateNot <$> distributeNot not')
         mkMultiAndPattern' andPattern
-  where
-    mkMultiAndPattern' =
-        mkMultiAndPattern
-            tools
-            predicateSimplifier
-            termSimplifier
-            axiomSimplifiers
 
 {-|'makeEvaluate' simplifies a 'Not' pattern given its 'Pattern'
 child.

@@ -129,7 +129,6 @@ simplifyEvaluated =
     SMT.runSMT SMT.defaultConfig emptyLogger
     . evalSimplifier Mock.env
     . Not.simplifyEvaluated
-        Mock.metadataTools
         (Mock.substitutionSimplifier Mock.metadataTools)
         (Simplifier.create Map.empty)
         Map.empty

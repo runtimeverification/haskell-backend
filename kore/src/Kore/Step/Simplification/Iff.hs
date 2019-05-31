@@ -99,7 +99,7 @@ simplifyEvaluated
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
 simplifyEvaluated
-    tools
+    _tools
     predicateSimplifier
     termSimplifier
     axiomSimplifiers
@@ -108,7 +108,6 @@ simplifyEvaluated
   | OrPattern.isTrue first = return second
   | OrPattern.isFalse first =
     Not.simplifyEvaluated
-        tools
         predicateSimplifier
         termSimplifier
         axiomSimplifiers
@@ -116,7 +115,6 @@ simplifyEvaluated
   | OrPattern.isTrue second = return first
   | OrPattern.isFalse second =
     Not.simplifyEvaluated
-        tools
         predicateSimplifier
         termSimplifier
         axiomSimplifiers

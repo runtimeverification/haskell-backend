@@ -294,7 +294,6 @@ makeEvaluateFunctionalOr
         seconds
     firstNotCeil <-
         Not.simplifyEvaluated
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplfier
@@ -303,7 +302,6 @@ makeEvaluateFunctionalOr
     secondNotCeils <-
         Traversable.for secondCeils
         $ Not.simplifyEvaluated
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplfier
@@ -437,14 +435,12 @@ makeEvaluate
             second { term = if termsAreEqual then mkTop_ else secondTerm }
     firstCeilNegation <-
         Not.simplifyEvaluated
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplfier
             firstCeil
     secondCeilNegation <-
         Not.simplifyEvaluated
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplfier
