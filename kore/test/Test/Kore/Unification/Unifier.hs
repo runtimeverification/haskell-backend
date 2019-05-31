@@ -760,7 +760,6 @@ simplifyPattern (UnificationTerm term) = do
     simplifier = do
         simplifiedPatterns <-
             Pattern.simplify
-                tools
                 (Mock.substitutionSimplifier tools)
                 (Simplifier.create tools functionRegistry)
                 functionRegistry

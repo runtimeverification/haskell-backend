@@ -331,7 +331,7 @@ makeEvaluateBoundLeft
     -> Pattern variable
     -> BranchT Simplifier (Pattern variable)
 makeEvaluateBoundLeft
-    tools
+    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -355,7 +355,6 @@ makeEvaluateBoundLeft
   where
     simplify' =
         Pattern.simplify
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier

@@ -29,6 +29,7 @@ import qualified Kore.Step.Merging.Pattern as Pattern
 import           Kore.Step.Simplification.Data
                  ( BranchT, PredicateSimplifier, Simplifier,
                  TermLikeSimplifier, simplifyTerm )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import           Kore.Step.Substitution
@@ -47,8 +48,7 @@ simplify
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions in patterns.
     -> BuiltinAndAxiomSimplifierMap
@@ -56,12 +56,12 @@ simplify
     -> Pattern variable
     -> Simplifier (OrPattern variable)
 simplify
-    tools
     substitutionSimplifier
     termSimplifier
     axiomIdToSimplifier
     Conditional {term, predicate, substitution}
   = do
+    tools <- Simplifier.askMetadataTools
     simplifiedTerm <- simplifyTerm' term
     orPatterns <- BranchT.gather
         (traverse

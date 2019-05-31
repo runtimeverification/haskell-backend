@@ -103,11 +103,9 @@ transitionRule substitutionSimplifier simplifier axiomIdToSimplifier =
   where
     transitionSimplify config =
         do
-            tools <- Reader.asks Simplifier.metadataTools
             configs <-
                 Monad.Trans.lift
                 $ Pattern.simplify
-                    tools
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplifier

@@ -177,7 +177,6 @@ transitionRule
         configs <-
             Monad.Trans.lift
             $ Pattern.simplify
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
@@ -270,7 +269,6 @@ transitionRule
         orResult <-
             Monad.Trans.lift
             $ Pattern.simplify
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier

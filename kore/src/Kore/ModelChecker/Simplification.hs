@@ -19,7 +19,6 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
-import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import           Kore.TopBottom
@@ -59,10 +58,8 @@ checkImplicationIsTop
                     , predicate = Predicate.makeTruePredicate
                     , substitution = mempty
                     }
-            tools <- Simplifier.askMetadataTools
             orResult <-
                 Pattern.simplify
-                    tools
                     predicateSimplifier
                     patternSimplifier
                     axiomSimplifers

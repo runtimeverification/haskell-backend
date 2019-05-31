@@ -364,7 +364,6 @@ execute
     -> Simplifier Execution
 execute verifiedModule strategy inputPattern
   = Log.withLogScope "setUpConcreteExecution" $ do
-    metadataTools <- Simplifier.askMetadataTools
     initialized <- initialize verifiedModule
     let
         Initialized { rewriteRules } = initialized
@@ -373,7 +372,6 @@ execute verifiedModule strategy inputPattern
         Initialized { axiomIdToSimplifier } = initialized
     simplifiedPatterns <-
         Pattern.simplify
-            metadataTools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
@@ -511,7 +509,6 @@ simplifyPattern termLike = do
         emptySubstitutionSimplifier =
             Predicate.create tools emptySimplifier Map.empty
     Pattern.simplify
-        tools
         emptySubstitutionSimplifier
         emptySimplifier
         Map.empty

@@ -53,7 +53,6 @@ simplify original =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
     $ Pattern.simplify
-        Mock.metadataTools
         predicateSimplifier
         termLikeSimplifier
         axiomSimplifiers

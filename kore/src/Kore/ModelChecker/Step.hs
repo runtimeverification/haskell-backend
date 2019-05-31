@@ -166,7 +166,6 @@ transitionRule
             configs <-
                 Monad.Trans.lift . Monad.Trans.lift
                 $ Pattern.simplify
-                    tools
                     predicateSimplifier
                     patternSimplifier
                     axiomSimplifiers
