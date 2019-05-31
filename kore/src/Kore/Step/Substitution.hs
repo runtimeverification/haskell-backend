@@ -170,7 +170,7 @@ normalizeExcept
     normalizeSubstitution' =
         Monad.Unify.fromExceptT
         . withExceptT substitutionToUnifyOrSubError
-        . normalizeSubstitution tools
+        . normalizeSubstitution
 
 {-|'mergePredicatesAndSubstitutions' merges a list of substitutions into
 a single one, then merges the merge side condition and the given condition list
