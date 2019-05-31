@@ -170,8 +170,7 @@ unifyRule
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> UnificationProcedure
+    => UnificationProcedure
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
@@ -182,7 +181,6 @@ unifyRule
     -- ^ Rule
     -> unifier (UnifiedRule variable)
 unifyRule
-    _metadataTools
     (UnificationProcedure unificationProcedure)
     predicateSimplifier
     patternSimplifier
@@ -465,7 +463,6 @@ applyRule
   where
     unifyRule' =
         unifyRule
-            metadataTools
             unificationProcedure
             predicateSimplifier
             patternSimplifier

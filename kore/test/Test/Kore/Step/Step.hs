@@ -156,7 +156,6 @@ unifyRule
 unifyRule initial rule =
     evalUnifier
     $ Step.unifyRule
-        metadataTools
         unificationProcedure
         predicateSimplifier
         patternSimplifier
