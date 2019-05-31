@@ -231,7 +231,7 @@ prove limit definitionModule specModule =
             , substitutionSimplifier
             , axiomIdToSimplifier
             } <-
-                initialize definitionModule metadataTools
+                initialize definitionModule
         let specClaims = extractOnePathClaims specModule
         specAxioms <- traverse simplifyRuleOnSecond specClaims
         assertSomeClaims specAxioms
@@ -273,7 +273,7 @@ proveWithRepl definitionModule specModule mvar replScript replMode =
             , simplifier
             , substitutionSimplifier
             , axiomIdToSimplifier
-            } <- initialize definitionModule metadataTools
+            } <- initialize definitionModule
         let specClaims = extractOnePathClaims specModule
         specAxioms <- traverse simplifyRuleOnSecond specClaims
         assertSomeClaims specAxioms
@@ -311,7 +311,7 @@ boundedModelCheck limit definitionModule specModule searchOrder =
             , substitutionSimplifier
             , axiomIdToSimplifier
             } <-
-                initialize definitionModule metadataTools
+                initialize definitionModule
         let
             axioms = fmap Axiom rewriteRules
             specAxioms = fmap snd $ extractImplicationClaims specModule
@@ -370,7 +370,7 @@ execute
 execute verifiedModule strategy inputPattern
   = Log.withLogScope "setUpConcreteExecution" $ do
     metadataTools <- Reader.asks Simplifier.metadataTools
-    initialized <- initialize verifiedModule metadataTools
+    initialized <- initialize verifiedModule
     let
         Initialized { rewriteRules } = initialized
         Initialized { simplifier } = initialized
@@ -410,43 +410,42 @@ execute verifiedModule strategy inputPattern
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize
     :: VerifiedModule StepperAttributes Attribute.Axiom
-    -> SmtMetadataTools StepperAttributes
     -> Simplifier Initialized
-initialize verifiedModule tools =
-    do
-        functionAxioms <-
-            simplifyFunctionAxioms tools
-                (extractEqualityAxioms verifiedModule)
-        rewriteRules <-
-            mapM (simplifyRewriteRule tools)
-                (extractRewriteAxioms verifiedModule)
-        let
-            functionEvaluators :: BuiltinAndAxiomSimplifierMap
-            functionEvaluators =
-                axiomPatternsToEvaluators functionAxioms
-            axiomIdToSimplifier :: BuiltinAndAxiomSimplifierMap
-            axiomIdToSimplifier =
-                Map.unionWith
-                    simplifierWithFallback
-                    -- builtin functions
-                    (Map.map builtinEvaluation
-                        (Builtin.koreEvaluators verifiedModule)
-                    )
-                    -- user-defined functions
-                    functionEvaluators
-            simplifier :: TermLikeSimplifier
-            simplifier = Simplifier.create tools axiomIdToSimplifier
-            substitutionSimplifier
-                :: PredicateSimplifier
-            substitutionSimplifier =
-                Predicate.create
-                    tools simplifier axiomIdToSimplifier
-        return Initialized
-            { rewriteRules
-            , simplifier
-            , substitutionSimplifier
-            , axiomIdToSimplifier
-            }
+initialize verifiedModule = do
+    tools <- Reader.asks Simplifier.metadataTools
+    functionAxioms <-
+        simplifyFunctionAxioms tools
+            (extractEqualityAxioms verifiedModule)
+    rewriteRules <-
+        mapM (simplifyRewriteRule tools)
+            (extractRewriteAxioms verifiedModule)
+    let
+        functionEvaluators :: BuiltinAndAxiomSimplifierMap
+        functionEvaluators =
+            axiomPatternsToEvaluators functionAxioms
+        axiomIdToSimplifier :: BuiltinAndAxiomSimplifierMap
+        axiomIdToSimplifier =
+            Map.unionWith
+                simplifierWithFallback
+                -- builtin functions
+                (Map.map builtinEvaluation
+                    (Builtin.koreEvaluators verifiedModule)
+                )
+                -- user-defined functions
+                functionEvaluators
+        simplifier :: TermLikeSimplifier
+        simplifier = Simplifier.create tools axiomIdToSimplifier
+        substitutionSimplifier
+            :: PredicateSimplifier
+        substitutionSimplifier =
+            Predicate.create
+                tools simplifier axiomIdToSimplifier
+    return Initialized
+        { rewriteRules
+        , simplifier
+        , substitutionSimplifier
+        , axiomIdToSimplifier
+        }
 
 {- | Simplify a 'Map' of 'EqualityRule's using only matching logic rules.
 
