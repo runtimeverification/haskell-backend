@@ -1190,7 +1190,6 @@ unify first second =
         -- are not interested in the /reason/ unification failed. For the tests,
         -- the failure is almost always due to unsupported patterns anyway.
         MaybeT . fmap Error.hush . Monad.Unify.runUnifier $ termUnification
-            tools
             substitutionSimplifier
             (Simplifier.create Map.empty)
             Map.empty
@@ -1206,7 +1205,6 @@ simplify first second =
     $ evalSimplifier Mock.env
     $ BranchT.gather
     $ termAnd
-        tools
         (Mock.substitutionSimplifier tools)
         (Simplifier.create Map.empty)
         Map.empty
@@ -1226,7 +1224,6 @@ simplifyEquals axiomIdToSimplifier first second =
         ( evalSimplifier Mock.env
         $ runMaybeT
         $ termEquals
-            tools
             (Mock.substitutionSimplifier tools)
             (Simplifier.create axiomIdToSimplifier)
             axiomIdToSimplifier

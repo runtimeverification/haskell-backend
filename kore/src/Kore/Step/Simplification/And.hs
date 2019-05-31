@@ -224,7 +224,7 @@ makeEvaluateNonBool
     -> Pattern variable
     -> BranchT Simplifier (Pattern variable)
 makeEvaluateNonBool
-    tools
+    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -233,7 +233,6 @@ makeEvaluateNonBool
   = do
     terms <-
         makeTermAnd
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
@@ -276,8 +275,7 @@ makeTermAnd
         , Unparse variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap

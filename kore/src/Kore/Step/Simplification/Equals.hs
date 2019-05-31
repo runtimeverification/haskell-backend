@@ -545,7 +545,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
     -> TermLike variable
     -> MaybeT Simplifier (OrPattern variable)
 makeEvaluateTermsAssumesNoBottomMaybe
-    tools
+    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplfier
@@ -554,7 +554,6 @@ makeEvaluateTermsAssumesNoBottomMaybe
   = do
     result <-
         AndTerms.termEquals
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplfier
@@ -595,7 +594,6 @@ makeEvaluateTermsToPredicate
     result <-
         runMaybeT
         $ AndTerms.termEquals
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplfier

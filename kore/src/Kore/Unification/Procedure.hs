@@ -93,7 +93,6 @@ unificationProcedure substitutionSimplifier simplifier axiomIdToSimplifier p1 p2
     let
         getUnifiedTerm =
             termUnification
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier

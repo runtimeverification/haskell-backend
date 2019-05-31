@@ -33,7 +33,6 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), TermLikeSimplifier )
-import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -81,10 +80,8 @@ simplifyAnds
             AndF And { andFirst = lhs, andSecond = rhs } ->
                 foldM simplifyAnds' intermediate [lhs, rhs]
             _ -> do
-                tools <- Simplifier.askMetadataTools
                 result <-
                     termUnification
-                        tools
                         substitutionSimplifier
                         simplifier
                         axiomIdToSimplifier

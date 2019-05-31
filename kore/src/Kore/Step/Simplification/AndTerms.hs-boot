@@ -1,9 +1,5 @@
 module Kore.Step.Simplification.AndTerms where
 
-import Kore.Attribute.Symbol
-       ( StepperAttributes )
-import Kore.IndexedModule.MetadataTools
-       ( SmtMetadataTools )
 import Kore.Internal.Pattern
        ( Pattern )
 import Kore.Internal.TermLike
@@ -27,8 +23,7 @@ termAnd
         , Unparse variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
@@ -44,8 +39,7 @@ termUnification
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable

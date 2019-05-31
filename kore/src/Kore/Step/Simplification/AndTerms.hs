@@ -70,6 +70,7 @@ import           Kore.Step.RecursiveAttributes
 import           Kore.Step.Simplification.Data
                  ( BranchT, PredicateSimplifier, SimplificationType,
                  Simplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import qualified Kore.Step.Simplification.Data as BranchT
@@ -114,15 +115,13 @@ termEquals
         , Unparse variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> TermLike variable
     -> MaybeT Simplifier (OrPredicate variable)
 termEquals
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -131,7 +130,6 @@ termEquals
   = MaybeT $ do
     maybeResults <-
         BranchT.gather $ runMaybeT $ termEqualsAnd
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
@@ -150,15 +148,13 @@ termEqualsAnd
         , Unparse variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> TermLike variable
     -> MaybeT (BranchT Simplifier) (Pattern variable)
 termEqualsAnd
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -170,7 +166,6 @@ termEqualsAnd
             Monad.Trans.lift . Monad.Unify.runUnifier
             . runMaybeT
             $ maybeTermEquals
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
@@ -195,7 +190,6 @@ termEqualsAnd
         eitherMaybeTermEqualsAndChild <-
             Monad.Trans.lift $ Monad.Unify.runUnifier $ runMaybeT
             $ maybeTermEquals
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
@@ -229,8 +223,7 @@ maybeTermEquals
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger variable unifier
@@ -264,14 +257,13 @@ termUnification
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> TermLike variable
     -> unifier (Pattern variable)
-termUnification tools substitutionSimplifier simplifier axiomIdToSimplifier =
+termUnification substitutionSimplifier simplifier axiomIdToSimplifier =
     termUnificationWorker
   where
     termUnificationWorker
@@ -283,7 +275,6 @@ termUnification tools substitutionSimplifier simplifier axiomIdToSimplifier =
             maybeTermUnification :: MaybeT unifier (Pattern variable)
             maybeTermUnification =
                 maybeTermAnd
-                    tools
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplifier
@@ -322,14 +313,13 @@ termAnd
         , Unparse variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> TermLike variable
     -> BranchT Simplifier (Pattern variable)
-termAnd tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2 = do
+termAnd substitutionSimplifier simplifier axiomIdToSimplifier p1 p2 = do
     eitherResult <- Monad.Trans.lift $ Monad.Unify.runUnifier $
         termAndWorker p1 p2
     case eitherResult of
@@ -343,7 +333,6 @@ termAnd tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2 = do
     termAndWorker first second = do
         let maybeTermAnd' =
                 maybeTermAnd
-                    tools
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplifier
@@ -368,8 +357,7 @@ maybeTermAnd
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger variable unifier
@@ -446,8 +434,8 @@ andEqualsFunctions = fmap mapEqualsFunctions
     , (BothT,   liftTS functionVariableAndEquals, "functionVariableAndEquals")
     , (BothT,   addT   equalInjectiveHeadsAndEquals, "equalInjectiveHeadsAndEquals")
     , (BothT,   addS   sortInjectionAndEqualsAssumesDifferentHeads, "sortInjectionAndEqualsAssumesDifferentHeads")
-    , (BothT,   liftE1 constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
-    , (BothT,   liftE1 constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
+    , (BothT,   liftE0 constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
+    , (BothT,   liftE0 constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
     , (BothT,   liftB1 Builtin.Map.unifyEquals, "Builtin.Map.unifyEquals")
     , (BothT,   liftB1 Builtin.Set.unifyEquals, "Builtin.Set.unifyEquals")
     , (BothT,   liftB  Builtin.List.unifyEquals, "Builtin.List.unifyEquals")
@@ -548,31 +536,18 @@ andEqualsFunctions = fmap mapEqualsFunctions
         first
         second
       = Pattern.fromTermLike <$> f first second
-    liftE1
-        f
-        _simplificationType
-        tools
-        _substitutionSimplifier
-        _simplifier
-        _axiomIdToSimplifier
-        _substitutionMerger
-        _termSimplifier
-        first
-        second
-      = Pattern.fromTermLike <$> f tools first second
     liftET = liftE . addToolsArg
     addS
         f
         _simplificationType
-        tools
+        _tools
         _substitutionSimplifier
         _simplifier
         _axiomIdToSimplifier
         _substitutionMerger
-      = f tools
+      = f
     addT
-        ::  (  SmtMetadataTools StepperAttributes
-            -> PredicateMerger variable unifier
+        ::  (  PredicateMerger variable unifier
             -> TermSimplifier variable unifier
             -> TermLike variable
             -> TermLike variable
@@ -582,16 +557,16 @@ andEqualsFunctions = fmap mapEqualsFunctions
     addT
         f
         _simplificationType
-        tools
+        _tools
         _substitutionSimplifier
         _simplifier
         _axiomIdToSimplifier
       =
-        f tools
+        f
     lift0
         f
         _simplificationType
-        tools
+        _tools
         substitutionSimplifier
         simplifier
         axiomIdToSimplifier
@@ -599,11 +574,11 @@ andEqualsFunctions = fmap mapEqualsFunctions
         _termSimplifier
         p1
         p2
-      = f tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2
+      = f substitutionSimplifier simplifier axiomIdToSimplifier p1 p2
     liftTS
         f
         simplificationType
-        tools
+        _tools
         substitutionSimplifier
         simplifier
         axiomIdToSimplifier
@@ -612,7 +587,6 @@ andEqualsFunctions = fmap mapEqualsFunctions
       =
         f
             simplificationType
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
@@ -665,7 +639,6 @@ maybeTransformTerm
         , MonadUnify unifier
         )
     => [TermTransformationOld variable unifier]
-    -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
@@ -678,27 +651,28 @@ maybeTransformTerm
 maybeTransformTerm
     topTransformers
     mergeException
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
     childTransformers
     first
     second
-  =
+  = do
+    tools <- Simplifier.askMetadataTools
     foldr
         (<|>)
         empty
         (map
-            (\f -> f
-                mergeException
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                childTransformers
-                first
-                second
+            (\f ->
+                 f
+                    tools
+                    mergeException
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
+                    childTransformers
+                    first
+                    second
             )
             topTransformers
         )
@@ -807,8 +781,7 @@ bottomTermEquals
         , Unparse variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -817,13 +790,13 @@ bottomTermEquals
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 bottomTermEquals
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
     first@(Bottom_ _)
     second
   = Monad.Trans.lift $ do -- MonadUnify
+    tools <- Simplifier.askMetadataTools
     secondCeil <-
         Monad.Unify.liftSimplifier $ Ceil.makeEvaluateTerm
             tools
@@ -850,7 +823,7 @@ bottomTermEquals
                     $ Predicate.toPredicate <$> secondCeil
                 , substitution = mempty
                 }
-bottomTermEquals _ _ _ _ _ _ = empty
+bottomTermEquals _ _ _ _ _ = empty
 
 {- | Unify two patterns where the second is @\\bottom@.
 
@@ -864,8 +837,7 @@ termBottomEquals
         , Unparse variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -874,10 +846,10 @@ termBottomEquals
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 termBottomEquals
-    tools substitutionSimplifier simplifier axiomIdToSimplifier first second
+    substitutionSimplifier simplifier axiomIdToSimplifier first second
   =
     bottomTermEquals
-        tools substitutionSimplifier simplifier axiomIdToSimplifier second first
+        substitutionSimplifier simplifier axiomIdToSimplifier second first
 
 {- | Unify a variable with a function pattern.
 
@@ -892,7 +864,6 @@ variableFunctionAndEquals
         , MonadUnify unifier
         )
     => SimplificationType
-    -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
@@ -904,7 +875,6 @@ variableFunctionAndEquals
     -> MaybeT unifier (Pattern variable)
 variableFunctionAndEquals
     SimplificationType.And
-    _tools
     _substitutionSimplifier
     _simplifier
     _axiomIdToSimplifier
@@ -921,14 +891,15 @@ variableFunctionAndEquals
         }
 variableFunctionAndEquals
     simplificationType
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
     _
     first@(Var_ v)
     second
-  | isFunctionPattern tools second = Monad.Trans.lift $ do -- MonadUnify
+  = Monad.Trans.lift $ do
+    tools <- Simplifier.askMetadataTools
+    Monad.guard (isFunctionPattern tools second)
     predicate <-
         case simplificationType of -- Simplifier
             SimplificationType.And ->
@@ -958,7 +929,7 @@ variableFunctionAndEquals
                     resultPredicates -> Monad.Unify.scatter resultPredicates
     let result = predicate <> Predicate.fromSingleSubstitution (v, second)
     return (Pattern.withCondition second result)
-variableFunctionAndEquals _ _ _ _ _ _ _ _ = empty
+variableFunctionAndEquals _ _ _ _ _ _ _ = empty
 
 {- | Unify a function pattern with a variable.
 
@@ -973,7 +944,6 @@ functionVariableAndEquals
         , MonadUnify unifier
         )
     => SimplificationType
-    -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
@@ -985,7 +955,6 @@ functionVariableAndEquals
     -> MaybeT unifier (Pattern variable)
 functionVariableAndEquals
     simplificationType
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -995,7 +964,6 @@ functionVariableAndEquals
   =
     variableFunctionAndEquals
         simplificationType
-        tools
         substitutionSimplifier
         simplifier
         axiomIdToSimplifier
@@ -1018,20 +986,24 @@ equalInjectiveHeadsAndEquals
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateMerger variable unifier
+    => PredicateMerger variable unifier
     -> TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 equalInjectiveHeadsAndEquals
-    tools
     _
     termMerger
     firstPattern@(App_ firstHead firstChildren)
     (App_ secondHead secondChildren)
-  | isFirstInjective && isSecondInjective && firstHead == secondHead =
+  | firstHead == secondHead = do
+    tools <- Simplifier.askMetadataTools
+    let
+        isFirstInjective = give tools Attribute.isInjective_ firstHead
+        isSecondInjective = give tools Attribute.isInjective_ secondHead
+    Monad.guard isFirstInjective
+    Monad.guard isSecondInjective
     Monad.Trans.lift $ do
         children <- Monad.zipWithM termMerger firstChildren secondChildren
         let merged = Foldable.foldMap Pattern.withoutTerm children
@@ -1041,11 +1013,7 @@ equalInjectiveHeadsAndEquals
                     firstHead
                     (Pattern.term <$> children)
         return (Pattern.withCondition term merged)
-  where
-    isFirstInjective = give tools Attribute.isInjective_ firstHead
-    isSecondInjective = give tools Attribute.isInjective_ secondHead
-
-equalInjectiveHeadsAndEquals _ _ _ _ _ = Error.nothing
+equalInjectiveHeadsAndEquals _ _ _ _ = Error.nothing
 
 {- | Simplify the conjunction of two sort injections.
 
@@ -1070,57 +1038,57 @@ sortInjectionAndEqualsAssumesDifferentHeads
         , SortedVariable variable
         , Unparse variable
         , MonadUnify unifier )
-    => SmtMetadataTools StepperAttributes
-    -> TermSimplifier variable unifier
+    => TermSimplifier variable unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 sortInjectionAndEqualsAssumesDifferentHeads
-    tools
     termMerger
     first
     second
-  = case simplifySortInjections tools first second of
-    Nothing ->
-        Monad.Trans.lift
-            (Monad.Unify.throwUnificationError
-                (unsupportedPatterns
-                    "Unimplemented sort injection unification"
-                    first
-                    second
-                )
-            )
-    Just NotInjection -> empty
-    Just NotMatching -> Monad.Trans.lift $ do
-        Monad.Unify.explainBottom
-           (Pretty.hsep
-               [ "Unification of sort injections failed due to mismatch."
-               , "This can happen either because one of them is a constructor"
-               , "or because their sort intersection is empty."
-               ]
-           )
-           first
-           second
-        Monad.Unify.scatter []
-    Just
-        (Matching SortInjectionMatch
-            { injectionHead, sort, firstChild, secondChild }
-        ) -> Monad.Trans.lift $ do
-            merged <- termMerger firstChild secondChild
-            if Pattern.isBottom merged
-                then do
-                    Monad.Unify.explainBottom
-                        (Pretty.hsep
-                            [ "Unification of sort injections failed when"
-                            , "merging application children:"
-                            , "the result is bottom."
-                            ]
-                        )
+  = do
+    tools <- Simplifier.askMetadataTools
+    case simplifySortInjections tools first second of
+        Nothing ->
+            Monad.Trans.lift
+                (Monad.Unify.throwUnificationError
+                    (unsupportedPatterns
+                        "Unimplemented sort injection unification"
                         first
                         second
-                    Monad.Unify.scatter []
-                else
-                    return $ applyInjection sort injectionHead <$> merged
+                    )
+                )
+        Just NotInjection -> empty
+        Just NotMatching -> Monad.Trans.lift $ do
+            Monad.Unify.explainBottom
+                (Pretty.hsep
+                    [ "Unification of sort injections failed due to mismatch."
+                    , "This can happen either because one of them is a constructor"
+                    , "or because their sort intersection is empty."
+                    ]
+                )
+                first
+                second
+            Monad.Unify.scatter []
+        Just
+            (Matching SortInjectionMatch
+                { injectionHead, sort, firstChild, secondChild }
+            ) -> Monad.Trans.lift $ do
+                merged <- termMerger firstChild secondChild
+                if Pattern.isBottom merged
+                    then do
+                        Monad.Unify.explainBottom
+                            (Pretty.hsep
+                                [ "Unification of sort injections failed when"
+                                , "merging application children:"
+                                , "the result is bottom."
+                                ]
+                            )
+                            first
+                            second
+                        Monad.Unify.scatter []
+                    else
+                        return $ applyInjection sort injectionHead <$> merged
   where
     applyInjection sort injectionHead term = mkApp sort injectionHead [term]
 
@@ -1266,30 +1234,30 @@ constructorSortInjectionAndEquals
         , Unparse variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> MaybeT unifier (TermLike variable)
 constructorSortInjectionAndEquals
-    tools
     first@(App_ firstHead _)
     second@(App_ secondHead _)
-  | isConstructorSortInjection =
+  = do
+    tools <- Simplifier.askMetadataTools
+    let
+        -- Are we asked to unify a constructor with a sort injection?
+        isConstructorSortInjection =
+            (||)
+                (isConstructor   firstHead && isSortInjection secondHead)
+                (isSortInjection firstHead && isConstructor   secondHead)
+        isConstructor = give tools Attribute.isConstructor_
+        isSortInjection = give tools Attribute.isSortInjection_
+    Monad.guard isConstructorSortInjection
     assert (firstHead /= secondHead) $ Monad.Trans.lift $ do
         Monad.Unify.explainBottom
             "Cannot unify constructors with sort injections."
             first
             second
         Monad.Unify.scatter []
-  where
-    -- Are we asked to unify a constructor with a sort injection?
-    isConstructorSortInjection =
-        (||)
-            (isConstructor   firstHead && isSortInjection secondHead)
-            (isSortInjection firstHead && isConstructor   secondHead)
-    isConstructor = give tools Attribute.isConstructor_
-    isSortInjection = give tools Attribute.isSortInjection_
-constructorSortInjectionAndEquals _ _ _ = empty
+constructorSortInjectionAndEquals _ _ = empty
 
 {-| Unify two constructor application patterns.
 
@@ -1303,15 +1271,17 @@ constructorAndEqualsAssumesDifferentHeads
         , Unparse variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> MaybeT unifier (TermLike variable)
 constructorAndEqualsAssumesDifferentHeads
-    tools
     first@(App_ firstHead _)
     second@(App_ secondHead _)
-  | isConstructor firstHead && isConstructor secondHead =
+  = do
+    tools <- Simplifier.askMetadataTools
+    let isConstructor = give tools Attribute.isConstructor_
+    Monad.guard (isConstructor firstHead)
+    Monad.guard (isConstructor secondHead)
     assert (firstHead /= secondHead) $ Monad.Trans.lift $ do
         Monad.Unify.explainBottom
             (Pretty.hsep
@@ -1322,9 +1292,7 @@ constructorAndEqualsAssumesDifferentHeads
             first
             second
         Monad.Unify.scatter []
-  where
-    isConstructor = give tools Attribute.isConstructor_
-constructorAndEqualsAssumesDifferentHeads _ _ _ = empty
+constructorAndEqualsAssumesDifferentHeads _ _ = empty
 
 {- | Unifcation or equality for a domain value pattern vs a constructor
 application.
