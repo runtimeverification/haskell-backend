@@ -180,7 +180,7 @@ simplifyInternal
             Iff.simplify substitutionSimplifier simplifier axiomIdToEvaluator p
         ImpliesF p ->
             Implies.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
+                substitutionSimplifier simplifier axiomIdToEvaluator p
         InF p ->
             In.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p

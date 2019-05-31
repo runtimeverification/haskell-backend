@@ -12,9 +12,6 @@ module Kore.Step.Simplification.Implies
     , simplifyEvaluated
     ) where
 
-import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -51,14 +48,12 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> Implies Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
 simplify
-    tools
     predicateSimplifier
     termSimplifier
     axiomSimplifiers
@@ -68,7 +63,6 @@ simplify
         }
   =
     simplifyEvaluated
-        tools
         predicateSimplifier
         termSimplifier
         axiomSimplifiers
@@ -99,15 +93,13 @@ simplifyEvaluated
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> OrPattern variable
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
 simplifyEvaluated
-    tools
     predicateSimplifier
     termSimplifier
     axiomSimplifiers
@@ -128,7 +120,6 @@ simplifyEvaluated
   where
     simplifyEvaluateHalfImplies' =
         simplifyEvaluateHalfImplies
-            tools
             predicateSimplifier
             termSimplifier
             axiomSimplifiers
@@ -139,15 +130,13 @@ simplifyEvaluateHalfImplies
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> OrPattern variable
     -> Pattern variable
     -> Simplifier (OrPattern variable)
 simplifyEvaluateHalfImplies
-    _tools
     predicateSimplifier
     termSimplifier
     axiomSimplifiers

@@ -346,7 +346,6 @@ makeEvaluateFunctionalOr
                 secondTerm
         result <-
             Implies.simplifyEvaluated
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplfier
