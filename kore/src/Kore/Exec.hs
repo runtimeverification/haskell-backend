@@ -414,8 +414,7 @@ initialize
 initialize verifiedModule = do
     tools <- Reader.asks Simplifier.metadataTools
     functionAxioms <-
-        simplifyFunctionAxioms tools
-            (extractEqualityAxioms verifiedModule)
+        simplifyFunctionAxioms (extractEqualityAxioms verifiedModule)
     rewriteRules <-
         mapM (simplifyRewriteRule tools)
             (extractRewriteAxioms verifiedModule)
@@ -453,13 +452,13 @@ See also: 'simplifyRulePattern'
 
  -}
 simplifyFunctionAxioms
-    :: SmtMetadataTools StepperAttributes
-    -> Map.Map (AxiomIdentifier) [Equality]
+    :: Map.Map (AxiomIdentifier) [Equality]
     -> Simplifier (Map.Map (AxiomIdentifier) [Equality])
-simplifyFunctionAxioms tools = mapM (mapM simplifyEqualityRule)
-  where
-    simplifyEqualityRule (EqualityRule rule) =
-        EqualityRule <$> simplifyRulePattern tools rule
+simplifyFunctionAxioms rules = do
+    tools <- Reader.asks Simplifier.metadataTools
+    let simplifyEqualityRule (EqualityRule rule) =
+            EqualityRule <$> simplifyRulePattern tools rule
+    (traverse . traverse) simplifyEqualityRule rules
 
 {- | Simplify a 'Rule' using only matching logic rules.
 
