@@ -330,7 +330,7 @@ evalToList = Builtin.functionEvaluator evalToList0
                             [_set] -> _set
                             _      -> Builtin.wrongArity toListKey
             _set <- expectBuiltinSet toListKey tools _set
-            List.returnList tools resultSort
+            List.returnList resultSort
                 . fmap fromConcrete
                 . Seq.fromList
                 . Set.toList

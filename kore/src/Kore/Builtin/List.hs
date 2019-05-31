@@ -171,15 +171,15 @@ expectBuiltinList ctx =
         _ -> empty
 
 returnList
-    :: (Monad m, Ord variable)
-    => SmtMetadataTools StepperAttributes
-    -> Sort
+    :: (MonadSimplify m, Ord variable)
+    => Sort
     -> Seq (TermLike variable)
     -> m (AttemptedAxiom variable)
-returnList tools builtinListSort builtinListChild =
+returnList builtinListSort builtinListChild = do
+    tools <- Simplifier.askMetadataTools
     Builtin.appliedFunction
-    $ Reflection.give tools
-    $ asPattern builtinListSort builtinListChild
+        $ Reflection.give tools
+        $ asPattern builtinListSort builtinListChild
 
 evalElement :: Builtin.Function
 evalElement =
@@ -187,9 +187,7 @@ evalElement =
   where
     evalElement0 _ resultSort = \arguments ->
         case arguments of
-            [elem'] -> do
-                tools <- Simplifier.askMetadataTools
-                returnList tools resultSort (Seq.singleton elem')
+            [elem'] -> returnList resultSort (Seq.singleton elem')
             _ -> Builtin.wrongArity elementKey
 
 evalGet :: Builtin.Function
@@ -236,9 +234,7 @@ evalUnit =
   where
     evalUnit0 _ resultSort =
         \case
-            [] -> do
-                tools <- Simplifier.askMetadataTools
-                returnList tools resultSort Seq.empty
+            [] -> returnList resultSort Seq.empty
             _ -> Builtin.wrongArity "LIST.unit"
 
 evalConcat :: Builtin.Function
@@ -251,8 +247,7 @@ evalConcat =
         -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom variable)
-    evalConcat0 _ resultSort = \arguments -> do
-        tools <- Simplifier.askMetadataTools
+    evalConcat0 _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let (_list1, _list2) =
                     case arguments of
@@ -277,7 +272,7 @@ evalConcat =
                 bothConcrete = do
                     _list1 <- expectBuiltinList concatKey _list1
                     _list2 <- expectBuiltinList concatKey _list2
-                    returnList tools resultSort (_list1 <> _list2)
+                    returnList resultSort (_list1 <> _list2)
             leftIdentity <|> rightIdentity <|> bothConcrete
 
 {- | Implement builtin function evaluation.
