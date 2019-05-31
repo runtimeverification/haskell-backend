@@ -452,21 +452,19 @@ See also: 'simplifyRulePattern'
 simplifyFunctionAxioms
     :: Map.Map (AxiomIdentifier) [Equality]
     -> Simplifier (Map.Map (AxiomIdentifier) [Equality])
-simplifyFunctionAxioms rules = do
-    tools <- Reader.asks Simplifier.metadataTools
-    let simplifyEqualityRule (EqualityRule rule) =
-            EqualityRule <$> simplifyRulePattern tools rule
-    (traverse . traverse) simplifyEqualityRule rules
-
+simplifyFunctionAxioms =
+    (traverse . traverse) simplifyEqualityRule
+  where
+      simplifyEqualityRule (EqualityRule rule) =
+        EqualityRule <$> simplifyRulePattern rule
 {- | Simplify a 'Rule' using only matching logic rules.
 
 See also: 'simplifyRulePattern'
 
  -}
 simplifyRewriteRule :: Rewrite -> Simplifier Rewrite
-simplifyRewriteRule (RewriteRule rule) = do
-    tools <- Reader.asks Simplifier.metadataTools
-    RewriteRule <$> simplifyRulePattern tools rule
+simplifyRewriteRule (RewriteRule rule) =
+    RewriteRule <$> simplifyRulePattern rule
 
 {- | Simplify a 'RulePattern' using only matching logic rules.
 
@@ -475,10 +473,10 @@ narrowly-defined criteria.
 
  -}
 simplifyRulePattern
-    :: SmtMetadataTools StepperAttributes
-    -> RulePattern Variable
+    :: RulePattern Variable
     -> Simplifier (RulePattern Variable)
-simplifyRulePattern tools rulePattern = do
+simplifyRulePattern rulePattern = do
+    tools <- Reader.asks Simplifier.metadataTools
     let RulePattern { left } = rulePattern
     simplifiedLeft <- simplifyPattern tools left
     case MultiOr.extractPatterns simplifiedLeft of
