@@ -107,6 +107,22 @@ test_removeUnit =
             (===) Pattern.top =<< evaluate predicate
         )
 
+test_removeKeyIn :: TestTree
+test_removeKeyIn =
+    testPropertyWithSolver
+        "MAP.remove key with key not in map"
+        (do
+            key <- forAll genIntegerPattern
+            map <- forAll genMapPattern
+            isInMap <- evaluate $ lookupMap map key
+            Monad.when (not $ Pattern.bottom == isInMap) discard
+            let patRemove = removeMap map key
+                predicate = mkEquals_ map patRemove
+            expect <- evaluate map
+            (===) expect =<< evaluate patRemove
+            (===) Pattern.top =<< evaluate predicate
+        )
+
 test_removeAllUnit :: TestTree
 test_removeAllUnit =
     testPropertyWithSolver
