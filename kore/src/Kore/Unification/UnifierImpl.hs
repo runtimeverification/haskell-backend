@@ -21,8 +21,6 @@ import           Data.List
 import           Data.List.NonEmpty
                  ( NonEmpty (..) )
 
-import           Kore.Attribute.Symbol
-import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Predicate
@@ -132,15 +130,13 @@ solveGroupedSubstitution
        , FreshVariable variable
        , MonadUnify unifier
       )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> variable
     -> NonEmpty (TermLike variable)
     -> unifier (Predicate variable)
 solveGroupedSubstitution
-    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -190,13 +186,11 @@ normalizeSubstitutionDuplication
   | null nonSingletonSubstitutions || Substitution.isNormalized subst =
     return (Predicate.fromSubstitution subst)
   | otherwise = do
-    tools <- Simplifier.askMetadataTools
     predSubst <-
         mergePredicateList
         <$> mapM
             (uncurry
                 $ solveGroupedSubstitution
-                    tools
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplifier
