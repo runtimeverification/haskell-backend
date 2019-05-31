@@ -347,7 +347,7 @@ reevaluateFunctions
     -- ^ Function evaluation result.
     -> Simplifier (OrPattern variable)
 reevaluateFunctions
-    tools
+    _tools
     substitutionSimplifier
     termSimplifier
     axiomIdToEvaluator
@@ -360,7 +360,6 @@ reevaluateFunctions
     pattOr <- simplifyTerm' rewrittenPattern
     mergedPatt <-
         OrPattern.mergeWithPredicate
-            tools
             substitutionSimplifier
             termSimplifier
             axiomIdToEvaluator
@@ -406,7 +405,7 @@ mergeWithConditionAndSubstitution
 mergeWithConditionAndSubstitution _ _ _ _ _ AttemptedAxiom.NotApplicable =
     return AttemptedAxiom.NotApplicable
 mergeWithConditionAndSubstitution
-    tools
+    _tools
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
@@ -415,7 +414,6 @@ mergeWithConditionAndSubstitution
   = do
     evaluatedResults <-
         OrPattern.mergeWithPredicate
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToEvaluator
@@ -423,7 +421,6 @@ mergeWithConditionAndSubstitution
             results
     evaluatedRemainders <-
         OrPattern.mergeWithPredicate
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToEvaluator

@@ -8,10 +8,6 @@ module Kore.Step.Merging.OrPattern
     , mergeWithPredicateAssumesEvaluated
     ) where
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.MultiOr
                  ( MultiOr )
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -46,10 +42,7 @@ mergeWithPredicate
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -- ^ Tools for finding additional information about patterns
-    -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions in a pattern.
     -> BuiltinAndAxiomSimplifierMap
@@ -60,7 +53,6 @@ mergeWithPredicate
     -- ^ Pattern to which the condition should be added.
     -> Simplifier (OrPattern variable)
 mergeWithPredicate
-    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
