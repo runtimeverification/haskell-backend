@@ -141,7 +141,7 @@ checkClaim
     -> (ImplicationRule Variable, Limit Natural)
     -> Simplifier CheckResult
 checkClaim
-    metadataTools
+    _metadataTools
     simplifier
     substitutionSimplifier
     axiomIdToSimplifier
@@ -183,7 +183,6 @@ checkClaim
         -> ModelChecker.Transition (CommonProofState)
     transitionRule' =
         ModelChecker.transitionRule
-            metadataTools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier

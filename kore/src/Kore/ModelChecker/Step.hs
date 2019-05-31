@@ -33,10 +33,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Debug.Trace
 import           GHC.Generics
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
                  ( Pattern )
@@ -116,8 +112,7 @@ type Transition =
     TransitionT (RewriteRule Variable) (StateT (Maybe ()) Simplifier)
 
 transitionRule
-    :: SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    :: PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions in patterns
     -> BuiltinAndAxiomSimplifierMap
@@ -126,7 +121,6 @@ transitionRule
     -> CommonProofState
     -> Transition CommonProofState
 transitionRule
-    _tools
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers
