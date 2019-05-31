@@ -350,8 +350,7 @@ simplifyRuleOnSecond
     => (Attribute.Axiom, claim)
     -> Simplifier (Attribute.Axiom, claim)
 simplifyRuleOnSecond (atts, rule) = do
-    tools <- Reader.asks Simplifier.metadataTools
-    rule' <- simplifyRewriteRule tools (RewriteRule . coerce $ rule)
+    rule' <- simplifyRewriteRule (RewriteRule . coerce $ rule)
     return (atts, coerce . getRewriteRule $ rule')
 
 extractUntrustedClaims :: Claim claim => [claim] -> [Rewrite]
@@ -416,8 +415,7 @@ initialize verifiedModule = do
     functionAxioms <-
         simplifyFunctionAxioms (extractEqualityAxioms verifiedModule)
     rewriteRules <-
-        mapM (simplifyRewriteRule tools)
-            (extractRewriteAxioms verifiedModule)
+        mapM simplifyRewriteRule (extractRewriteAxioms verifiedModule)
     let
         functionEvaluators :: BuiltinAndAxiomSimplifierMap
         functionEvaluators =
@@ -465,11 +463,9 @@ simplifyFunctionAxioms rules = do
 See also: 'simplifyRulePattern'
 
  -}
-simplifyRewriteRule
-    :: SmtMetadataTools StepperAttributes
-    -> Rewrite
-    -> Simplifier Rewrite
-simplifyRewriteRule tools (RewriteRule rule) =
+simplifyRewriteRule :: Rewrite -> Simplifier Rewrite
+simplifyRewriteRule (RewriteRule rule) = do
+    tools <- Reader.asks Simplifier.metadataTools
     RewriteRule <$> simplifyRulePattern tools rule
 
 {- | Simplify a 'RulePattern' using only matching logic rules.
