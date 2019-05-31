@@ -143,19 +143,17 @@ unificationWithAppMatchOnTop
     first
     second
   = do
-    tools <- Monad.Unify.liftSimplifier Simplifier.askMetadataTools
     case first of
         (App_ firstHead firstChildren) ->
             case second of
                 (App_ secondHead secondChildren)
-                    | firstHead == secondHead
-                    -> unifyJoin
-                            tools
-                            substitutionSimplifier
-                            simplifier
-                            axiomIdToSimplifier
-                            (zip firstChildren secondChildren)
-                    | symbolOrAliasConstructor firstHead
+                  | firstHead == secondHead ->
+                    unifyJoin
+                        substitutionSimplifier
+                        simplifier
+                        axiomIdToSimplifier
+                        (zip firstChildren secondChildren)
+                  | symbolOrAliasConstructor firstHead
                         == symbolOrAliasConstructor secondHead
                     -- The application heads have the same symbol or alias
                     -- constructor with different parameters,
@@ -166,8 +164,8 @@ unificationWithAppMatchOnTop
                                 first
                                 second
                             )
-                    | otherwise
-                    -> error
+                  | otherwise ->
+                    error
                         (  "Unexpected unequal heads: "
                         ++ show firstHead ++ " and "
                         ++ show secondHead ++ "."
@@ -556,17 +554,14 @@ unifyJoin
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> [(TermLike variable, TermLike variable)]
     -> unifier (Predicate variable)
-unifyJoin
-    _tools substitutionSimplifier simplifier axiomIdToSimplifier patterns
-  = do
+unifyJoin substitutionSimplifier simplifier axiomIdToSimplifier patterns = do
     predicates <- traverse
         (uncurry $
             unificationProcedure
