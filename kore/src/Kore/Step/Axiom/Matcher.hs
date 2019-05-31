@@ -631,7 +631,6 @@ matchVariableFunction
     result <-
         OrPattern.mergeWithPredicateAssumesEvaluated
             (createPredicatesAndSubstitutionsMergerExcept
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier

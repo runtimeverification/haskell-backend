@@ -175,7 +175,6 @@ termEqualsAnd
                 simplifier
                 axiomIdToSimplifier
                 (createPredicatesAndSubstitutionsMergerExcept
-                    tools
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplifier
@@ -201,7 +200,6 @@ termEqualsAnd
                 simplifier
                 axiomIdToSimplifier
                 (createPredicatesAndSubstitutionsMergerExcept
-                    tools
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplifier
@@ -290,7 +288,6 @@ termUnification tools substitutionSimplifier simplifier axiomIdToSimplifier =
                     simplifier
                     axiomIdToSimplifier
                     (createPredicatesAndSubstitutionsMergerExcept
-                        tools
                         substitutionSimplifier
                         simplifier
                         axiomIdToSimplifier
