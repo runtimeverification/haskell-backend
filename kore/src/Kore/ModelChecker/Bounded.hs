@@ -16,10 +16,6 @@ import           Data.Limit
 import qualified Data.Limit as Limit
 import           Debug.Trace
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.Pattern
                  ( Conditional (Conditional) )
 import           Kore.Internal.Pattern as Conditional
@@ -42,7 +38,6 @@ import           Kore.Step.Rule
                  RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
-import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Strategy
                  ( GraphSearchOrder, Strategy, pickFinal,
                  runStrategyWithSearchOrder )
@@ -92,19 +87,15 @@ check
     axiomIdToSimplifier
     strategyBuilder
     searchOrder
-    implications
-  = do
-    metadataTools <- Simplifier.askMetadataTools
+  =
     mapM
         (checkClaim
-            metadataTools
             simplifier
             substitutionSimplifier
             axiomIdToSimplifier
             strategyBuilder
             searchOrder
         )
-        implications
 
 bmcStrategy
     :: [Axiom]
@@ -126,8 +117,7 @@ bmcStrategy
         unwrap (Axiom a) = a
 
 checkClaim
-    :: SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier
+    :: TermLikeSimplifier
     -> PredicateSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
@@ -143,7 +133,6 @@ checkClaim
     -> (ImplicationRule Variable, Limit Natural)
     -> Simplifier CheckResult
 checkClaim
-    _metadataTools
     simplifier
     substitutionSimplifier
     axiomIdToSimplifier
