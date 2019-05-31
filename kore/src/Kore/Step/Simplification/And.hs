@@ -245,7 +245,6 @@ makeEvaluateNonBool
         merged = Conditional.andCondition terms initialConditions
     normalized <-
         Substitution.normalize
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier

@@ -55,7 +55,7 @@ simplifyEvaluatedMultiPredicate
     -> MultiAnd (OrPredicate variable)
     -> Simplifier (OrPredicate variable)
 simplifyEvaluatedMultiPredicate
-    tools
+    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSubstitution
@@ -77,7 +77,6 @@ simplifyEvaluatedMultiPredicate
 
     normalize =
         Substitution.normalize
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSubstitution

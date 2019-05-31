@@ -356,7 +356,6 @@ normalize predicated =
     $ evalSimplifier Mock.env
     $ gather
     $ Substitution.normalize
-        Mock.metadataTools
         (Mock.substitutionSimplifier Mock.metadataTools)
         (Simplifier.create Map.empty)
         Map.empty

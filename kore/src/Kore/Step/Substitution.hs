@@ -73,14 +73,12 @@ normalize
         , Unparse variable
         , Show variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> Conditional variable term
     -> BranchT Simplifier (Conditional variable term)
 normalize
-    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -311,7 +309,7 @@ createPredicatesAndSubstitutionsMerger
     -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger variable (BranchT Simplifier)
 createPredicatesAndSubstitutionsMerger
-    tools substitutionSimplifier simplifier axiomIdToSimplifier
+    _tools substitutionSimplifier simplifier axiomIdToSimplifier
   =
     PredicateMerger worker
   where
@@ -324,7 +322,6 @@ createPredicatesAndSubstitutionsMerger
                 (Predicate.fromPredicate <$> predicates)
                 <> (Predicate.fromSubstitution <$> substitutions)
         normalize
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier

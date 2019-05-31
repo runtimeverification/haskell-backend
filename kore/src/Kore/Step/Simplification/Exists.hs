@@ -224,7 +224,6 @@ makeEvaluate
   where
     normalize =
         Substitution.normalize
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
