@@ -13,10 +13,6 @@ module Kore.Step.Simplification.Application
     ) where
 
 import qualified Kore.Attribute.Pattern as Attribute
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -37,6 +33,7 @@ import           Kore.Step.Function.Evaluator
 import           Kore.Step.Simplification.Data
                  ( BranchT, PredicateSimplifier, Simplifier,
                  TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import           Kore.Step.Substitution
@@ -70,8 +67,7 @@ simplify
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -82,7 +78,6 @@ simplify
         (OrPattern variable)
     -> Simplifier (OrPattern variable)
 simplify
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
@@ -91,7 +86,6 @@ simplify
     evaluated <-
         traverse
             (makeAndEvaluateApplications
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToEvaluator
@@ -116,8 +110,7 @@ makeAndEvaluateApplications
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -127,18 +120,17 @@ makeAndEvaluateApplications
     -> [Pattern variable]
     -> Simplifier (OrPattern variable)
 makeAndEvaluateApplications
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
     valid
     symbol
     children
-  =
+  = do
+    tools <- Simplifier.askMetadataTools
     case MetadataTools.symbolOrAliasType tools symbol of
         HeadType.Symbol ->
             makeAndEvaluateSymbolApplications
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToEvaluator
@@ -154,8 +146,7 @@ makeAndEvaluateSymbolApplications
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -165,7 +156,6 @@ makeAndEvaluateSymbolApplications
     -> [Pattern variable]
     -> Simplifier (OrPattern variable)
 makeAndEvaluateSymbolApplications
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
@@ -175,7 +165,6 @@ makeAndEvaluateSymbolApplications
   = do
     expandedApplications <- BranchT.gather $
         makeExpandedApplication
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToEvaluator
@@ -185,7 +174,6 @@ makeAndEvaluateSymbolApplications
     orResults <-
         traverse
             (evaluateApplicationFunction
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToEvaluator
@@ -200,8 +188,7 @@ evaluateApplicationFunction
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -210,7 +197,6 @@ evaluateApplicationFunction
     -- ^ The pattern to be evaluated
     -> Simplifier (OrPattern variable)
 evaluateApplicationFunction
-    _tools
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
@@ -231,8 +217,7 @@ makeExpandedApplication
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -242,7 +227,6 @@ makeExpandedApplication
     -> [Pattern variable]
     -> BranchT Simplifier (ExpandedApplication variable)
 makeExpandedApplication
-    _tools
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator

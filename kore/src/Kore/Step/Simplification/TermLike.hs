@@ -157,7 +157,6 @@ simplifyInternal
             --  TODO: Re-evaluate outside of the application and stop passing
             -- the simplifier.
             Application.simplify
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToEvaluator

@@ -345,7 +345,6 @@ evaluate simplifier axiomIdToEvaluator application =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
     $ simplify
-        tools
         (Mock.substitutionSimplifier tools)
         simplifier
         axiomIdToEvaluator
