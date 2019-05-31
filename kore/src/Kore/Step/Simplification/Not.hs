@@ -15,9 +15,6 @@ module Kore.Step.Simplification.Not
 
 import qualified Data.Foldable as Foldable
 
-import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.MultiAnd
                  ( MultiAnd )
@@ -113,10 +110,8 @@ simplifyEvaluated
     axiomSimplifiers
     simplified
   = do
-    tools <- Simplifier.askMetadataTools
     let mkMultiAndPattern' =
             mkMultiAndPattern
-                tools
                 predicateSimplifier
                 termSimplifier
                 axiomSimplifiers
@@ -210,24 +205,23 @@ mkMultiAndPattern
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
 
     -> MultiAnd (Pattern variable)
     -> BranchT Simplifier (Pattern variable)
 mkMultiAndPattern
-    tools
     predicateSimplifier
     termSimplifier
     axiomSimplifiers
-  =
-    Foldable.foldrM mkAnd Pattern.top
-  where
-    mkAnd =
-        And.makeEvaluate
-            tools
-            predicateSimplifier
-            termSimplifier
-            axiomSimplifiers
+    patterns
+  = do
+    tools <- Simplifier.askMetadataTools
+    let mkAnd =
+            And.makeEvaluate
+                tools
+                predicateSimplifier
+                termSimplifier
+                axiomSimplifiers
+    Foldable.foldrM mkAnd Pattern.top patterns
