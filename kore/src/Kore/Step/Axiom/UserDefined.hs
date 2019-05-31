@@ -14,10 +14,6 @@ module Kore.Step.Axiom.UserDefined
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Axiom.Concrete as Axiom.Concrete
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -40,6 +36,7 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.Step
                  ( UnificationProcedure (..) )
@@ -64,9 +61,6 @@ equalityRuleEvaluator
         )
     => EqualityRule Variable
     -- ^ Axiom defining the current function.
-    -> SmtMetadataTools StepperAttributes
-    -- ^ Tools for finding additional information about patterns
-    -- such as their sorts, whether they are constructors or hooked.
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions in patterns
@@ -77,7 +71,6 @@ equalityRuleEvaluator
     -> Simplifier (AttemptedAxiom variable)
 equalityRuleEvaluator
     (EqualityRule rule)
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -104,16 +97,17 @@ equalityRuleEvaluator
         -> RulePattern Variable
         -> Simplifier
             (Either UnificationOrSubstitutionError [Step.Results variable])
-    applyRule patt' rule' =
-        Monad.Unify.runUnifier $
-        Step.applyRulesInParallel
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            unificationProcedure
-            [RulePattern.mapVariables fromVariable rule']
-            (Pattern.fromTermLike patt')
+    applyRule patt' rule' = do
+        tools <- Simplifier.askMetadataTools
+        Monad.Unify.runUnifier
+            $ Step.applyRulesInParallel
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+                unificationProcedure
+                [RulePattern.mapVariables fromVariable rule']
+                (Pattern.fromTermLike patt')
 
     simplifyOrPatterns
         :: [OrPattern variable] -> Simplifier (OrPattern variable)
@@ -128,6 +122,7 @@ equalityRuleEvaluator
         -- ^ The condition to be evaluated.
         -> Simplifier (OrPattern variable)
     simplifyPattern config = do
+        tools <- Simplifier.askMetadataTools
         patterns <- BranchT.gather
             $ Pattern.simplifyPredicate
                 tools

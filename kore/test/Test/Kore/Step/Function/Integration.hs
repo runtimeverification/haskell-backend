@@ -9,9 +9,6 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 
 import           Data.Sup
-import           Kore.Attribute.Symbol
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
@@ -132,7 +129,7 @@ test_functionIntegration =
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (simplifierWithFallback
                         (builtinEvaluation $ BuiltinAndAxiomSimplifier
-                            (\_ _ _ _ _ -> notApplicableAxiomEvaluator)
+                            (\_ _ _ _ -> notApplicableAxiomEvaluator)
                         )
                         ( axiomEvaluator
                             (Mock.functionalConstr10 (mkVar Mock.x))
@@ -602,13 +599,12 @@ mapVariables =
 
 mockEvaluator
     :: AttemptedAxiom variable
-    -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> Simplifier (AttemptedAxiom variable)
-mockEvaluator evaluation _ _ _ _ _ = return evaluation
+mockEvaluator evaluation _ _ _ _ = return evaluation
 
 evaluate
     :: BuiltinAndAxiomSimplifierMap

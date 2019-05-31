@@ -47,6 +47,7 @@ import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Syntax.Application
 import           Kore.Syntax.Variable
                  ( SortedVariable, Variable (..) )
@@ -85,8 +86,7 @@ newtype BuiltinAndAxiomSimplifier =
             , Show variable
             , Unparse variable
             )
-        => SmtMetadataTools StepperAttributes
-        -> PredicateSimplifier
+        => PredicateSimplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
@@ -230,19 +230,18 @@ applicationAxiomSimplifier applicationSimplifier =
             , Show variable
             , Unparse variable
             )
-        => SmtMetadataTools StepperAttributes
-        -> PredicateSimplifier
+        => PredicateSimplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
         -> Simplifier (AttemptedAxiom variable)
     helper
-        tools
         substitutionSimplifier
         simplifier
         axiomIdToSimplifier
         termLike
-      =
+      = do
+        tools <- Simplifier.askMetadataTools
         case Recursive.project termLike of
             (valid :< ApplicationF p) ->
                 applicationSimplifier

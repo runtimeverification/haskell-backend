@@ -487,7 +487,7 @@ test_builtinEvaluation =
 
 failingEvaluator :: BuiltinAndAxiomSimplifier
 failingEvaluator =
-    BuiltinAndAxiomSimplifier $ \_ _ _ _ _ ->
+    BuiltinAndAxiomSimplifier $ \_ _ _ _ ->
         return AttemptedAxiom.NotApplicable
 
 axiomEvaluator
@@ -526,8 +526,7 @@ evaluate
 evaluate (BuiltinAndAxiomSimplifier simplifier) patt =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
-    $ simplifier
-        metadataTools substitutionSimplifier patternSimplifier Map.empty patt
+    $ simplifier substitutionSimplifier patternSimplifier Map.empty patt
   where
     metadataTools = Mock.metadataTools
     substitutionSimplifier :: PredicateSimplifier

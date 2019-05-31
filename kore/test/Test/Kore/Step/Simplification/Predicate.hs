@@ -298,7 +298,7 @@ makeEvaluator
     -> BuiltinAndAxiomSimplifier
 makeEvaluator mapping =
     BuiltinAndAxiomSimplifier
-        $ const $ const $ const $ const $ simpleEvaluator mapping
+    $ const $ const $ const $ simpleEvaluator mapping
 
 simpleEvaluator
     ::  ( FreshVariable variable

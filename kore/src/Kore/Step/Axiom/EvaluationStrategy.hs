@@ -17,6 +17,7 @@ module Kore.Step.Axiom.EvaluationStrategy
 
 import           Control.Monad
                  ( when )
+import qualified Control.Monad.Trans as Trans
 import           Control.Monad.Trans.Except
                  ( ExceptT (ExceptT) )
 import qualified Data.Foldable as Foldable
@@ -27,10 +28,10 @@ import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import           Kore.Attribute.Symbol
-                 ( Hook (..), StepperAttributes )
+                 ( Hook (..) )
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SmtMetadataTools )
+                 ( MetadataTools (..) )
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -54,6 +55,7 @@ import           Kore.Step.Rule
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
@@ -109,14 +111,12 @@ totalDefinitionEvaluation rules =
             , Show variable
             , Unparse variable
             )
-        => SmtMetadataTools StepperAttributes
-        -> PredicateSimplifier
+        => PredicateSimplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
         -> Simplifier (AttemptedAxiom variable)
     totalDefinitionEvaluationWorker
-        tools
         predicateSimplifier
         termSimplifier
         axiomSimplifiers
@@ -130,7 +130,6 @@ totalDefinitionEvaluation rules =
         evaluate =
             evaluateWithDefinitionAxioms
                 rules
-                tools
                 predicateSimplifier
                 termSimplifier
                 axiomSimplifiers
@@ -178,7 +177,6 @@ evaluateBuiltin
         , Unparse variable
         )
     => BuiltinAndAxiomSimplifier
-    -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
@@ -187,15 +185,20 @@ evaluateBuiltin
     -> Simplifier (AttemptedAxiom variable)
 evaluateBuiltin
     (BuiltinAndAxiomSimplifier builtinEvaluator)
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
     patt
   = do
+    tools <- Simplifier.askMetadataTools
+    let
+        isValue pat = isJust $
+            Value.fromConcreteStepPattern tools =<< asConcrete pat
+        -- TODO(virgil): Send this from outside.
+        getSymbolHook = getHook . Attribute.hook . symAttributes tools
+        getAppHookString appHead = Text.unpack <$> getSymbolHook appHead
     result <-
         builtinEvaluator
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
@@ -216,11 +219,6 @@ evaluateBuiltin
         AttemptedAxiom.Applied _ -> return result
   where
     isPattConcrete = isConcrete patt
-    isValue pat = isJust $
-        Value.fromConcreteStepPattern tools =<< asConcrete pat
-    -- TODO(virgil): Send this from outside.
-    getAppHookString appHead =
-        Text.unpack <$> (getHook . Attribute.hook . symAttributes tools) appHead
 
 applyFirstSimplifierThatWorks
     :: forall variable
@@ -232,7 +230,6 @@ applyFirstSimplifierThatWorks
         )
     => [BuiltinAndAxiomSimplifier]
     -> AcceptsMultipleResults
-    -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
@@ -240,20 +237,18 @@ applyFirstSimplifierThatWorks
     -> TermLike variable
     -> Simplifier
         (AttemptedAxiom variable)
-applyFirstSimplifierThatWorks [] _ _ _ _ _ _ =
+applyFirstSimplifierThatWorks [] _ _ _ _ _ =
     return AttemptedAxiom.NotApplicable
 applyFirstSimplifierThatWorks
     (BuiltinAndAxiomSimplifier evaluator : evaluators)
     multipleResults
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
     patt
   = do
     applicationResult <-
-        evaluator
-            tools substitutionSimplifier simplifier axiomIdToSimplifier patt
+        evaluator substitutionSimplifier simplifier axiomIdToSimplifier patt
 
     case applicationResult of
         AttemptedAxiom.Applied AttemptedAxiomResults
@@ -302,7 +297,6 @@ applyFirstSimplifierThatWorks
             applyFirstSimplifierThatWorks
                 evaluators
                 multipleResults
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
@@ -317,7 +311,6 @@ evaluateWithDefinitionAxioms
         , Unparse variable
         )
     => [EqualityRule Variable]
-    -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
@@ -326,7 +319,6 @@ evaluateWithDefinitionAxioms
     -> Simplifier (AttemptedAxiom variable)
 evaluateWithDefinitionAxioms
     definitionRules
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -342,6 +334,7 @@ evaluateWithDefinitionAxioms
     let unwrapEqualityRule =
             \(EqualityRule rule) ->
                 RulePattern.mapVariables fromVariable rule
+    tools <- Trans.lift Simplifier.askMetadataTools
     results <- ExceptT $ Monad.Unify.runUnifier
         $ Step.sequenceRules
             tools

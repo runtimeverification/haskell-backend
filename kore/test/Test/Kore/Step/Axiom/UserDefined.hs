@@ -247,7 +247,6 @@ evaluateWithAxiom axiom simplifier patt =
         $ evalSimplifier Mock.env
         $ equalityRuleEvaluator
             axiom
-            metadataTools
             (Mock.substitutionSimplifier metadataTools)
             simplifier
             Map.empty

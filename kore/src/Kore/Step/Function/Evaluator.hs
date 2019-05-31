@@ -227,7 +227,6 @@ maybeEvaluatePattern
             $ do
                 result <-
                     evaluator
-                        tools
                         substitutionSimplifier
                         simplifier
                         axiomIdToEvaluator

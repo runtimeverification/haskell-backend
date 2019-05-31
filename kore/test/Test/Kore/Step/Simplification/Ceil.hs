@@ -10,10 +10,6 @@ import Test.Tasty.HUnit
 import qualified Data.Map as Map
 
 import qualified Data.Sup as Sup
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -458,13 +454,12 @@ appliedMockEvaluator result =
 
 mockEvaluator
     :: AttemptedAxiom variable
-    -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> Simplifier (AttemptedAxiom variable)
-mockEvaluator evaluation _ _ _ _ _ =
+mockEvaluator evaluation _ _ _ _ =
     return evaluation
 
 mapVariables
