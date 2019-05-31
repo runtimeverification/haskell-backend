@@ -166,6 +166,23 @@ test_removeAllSetUnit =
             (===) Pattern.top =<< evaluate predicate
         )
 
+-- TODO:
+-- test_removeAll :: TestTree
+-- test_removeAll =
+--     testPropertyWithSolver
+--         "MAP.removeAll and MAP.remove"
+--         (do
+--             map <- forAll genMapPattern
+--             set <- forAll Test.Set.genSetPattern
+--             key <- forAll genIntegerPattern
+--             let diffSet = Set.delete key set
+--                 patRemoveAll1 = removeAllMap map set
+--                 patRemoveAll2 = removeAllMap
+--                                     (removeMap map key)
+--                                     diffSet
+--             return ()
+--         )
+
 test_concatUnit :: TestTree
 test_concatUnit =
     testPropertyWithSolver
