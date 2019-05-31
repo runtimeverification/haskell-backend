@@ -190,7 +190,6 @@ search verifiedModule strategy termLike searchPattern searchConfig =
             Execution { executionGraph } = execution
             match target config =
                 Search.matchWith
-                    metadataTools
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplifier

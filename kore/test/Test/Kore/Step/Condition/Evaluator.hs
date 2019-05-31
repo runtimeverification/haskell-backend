@@ -6,7 +6,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Control.Monad.Trans as Trans
-import           Data.Reflection
 import           Data.Text
                  ( Text )
 
@@ -22,12 +21,11 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import           SMT
                  ( SMT )
-import qualified SMT
 
 import           Test.Kore
 import qualified Test.Kore.Builtin.Bool as Builtin.Bool
 import           Test.Kore.Builtin.Builtin
-                 ( testEnv, testMetadataTools, testSubstitutionSimplifier )
+                 ( testEnv, testSubstitutionSimplifier )
 import           Test.Kore.Builtin.Definition
                  ( boolSort, intSort )
 import qualified Test.Kore.Builtin.Definition as Builtin
@@ -65,8 +63,7 @@ evaluate
     :: Syntax.Predicate Variable
     -> PropertyT SMT (Predicate Variable)
 evaluate predicate =
-    give testMetadataTools
-    $ Trans.lift
+    Trans.lift
     $ evalSimplifier testEnv
     $ Evaluator.evaluate
         testSubstitutionSimplifier
@@ -104,10 +101,10 @@ mul i j = mkApp intSort Builtin.mulIntSymbol  [i, j]
 div i j = mkApp intSort Builtin.tdivIntSymbol [i, j]
 
 assertRefuted :: Syntax.Predicate Variable -> Assertion
-assertRefuted prop = give testMetadataTools $ do
+assertRefuted prop = do
     let expect = Just False
     actual <-
-        SMT.runSMT SMT.defaultConfig emptyLogger
+        Test.SMT.runSMT $ evalSimplifier testEnv
         $ SMT.Evaluator.decidePredicate prop
     assertEqual "" expect actual
 

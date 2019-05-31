@@ -21,18 +21,12 @@ import           Control.Monad.Trans.Class
                  ( lift )
 import           Data.Maybe
                  ( catMaybes )
-import           Data.Reflection
-                 ( give )
 import           Numeric.Natural
                  ( Natural )
 
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( make, mergeAll )
 import           Kore.Internal.OrPredicate
@@ -129,8 +123,7 @@ matchWith
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -138,7 +131,7 @@ matchWith
     -> Pattern variable
     -> Pattern variable
     -> MaybeT Simplifier (OrPredicate variable)
-matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
+matchWith substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
     eitherUnifiers <-
         Monad.Trans.lift $ Monad.Unify.runUnifier
         $ unificationProcedure
@@ -172,7 +165,6 @@ matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
                     [ Conditional.substitution predSubst]
             evaluated <-
                 Monad.Trans.lift
-                $ give tools
                 $ Predicate.evaluate substitutionSimplifier simplifier
                 $ Conditional.predicate merged
             mergePredicatesAndSubstitutions

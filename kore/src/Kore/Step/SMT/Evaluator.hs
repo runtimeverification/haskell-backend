@@ -16,16 +16,14 @@ import           Control.Error
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
-                 ( Given )
 import qualified Data.Text as Text
 
 import qualified Control.Monad.Counter as Counter
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Predicate.Predicate
                  ( Predicate )
+import           Kore.Step.Simplification.Data
+                 ( MonadSimplify )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.SMT.Translate
                  ( Translator, evalTranslator, translatePredicate )
 import           Kore.Syntax.Variable
@@ -33,7 +31,7 @@ import           Kore.Syntax.Variable
 import           Kore.Unparser
                  ( Unparse )
 import           SMT
-                 ( MonadSMT, Result (..), SExpr (..) )
+                 ( Result (..), SExpr (..) )
 import qualified SMT
 
 
@@ -44,19 +42,17 @@ The predicate is always sent to the external solver, even if it is trivial.
 -}
 decidePredicate
     :: forall variable m.
-        ( Given (SmtMetadataTools StepperAttributes)
-        , Ord variable
+        ( Ord variable
         , Show variable
         , Unparse variable
         , SortedVariable variable
-        , MonadSMT m
+        , MonadSimplify m
         )
     => Predicate variable
     -> m (Maybe Bool)
 decidePredicate korePredicate =
     SMT.withSolver $ runMaybeT $ do
-        smtPredicate <-
-            goTranslatePredicate korePredicate
+        smtPredicate <- goTranslatePredicate korePredicate
         result <- SMT.withSolver (SMT.assert smtPredicate >> SMT.check)
         case result of
             Unsat -> return False
@@ -65,20 +61,20 @@ decidePredicate korePredicate =
 goTranslatePredicate
     :: forall variable m.
         ( Ord variable
-        , Given (SmtMetadataTools StepperAttributes)
         , Unparse variable
-        , MonadSMT m
+        , MonadSimplify m
         )
     => Predicate variable
     -> MaybeT m SExpr
 goTranslatePredicate predicate = do
-    let
-        translator = translatePredicate translateUninterpreted predicate
+    tools <- Simplifier.askMetadataTools
+    let translator =
+            give tools $ translatePredicate translateUninterpreted predicate
     evalTranslator translator
 
 translateUninterpreted
     :: Ord p
-    => MonadSMT m
+    => MonadSimplify m
     => SExpr  -- ^ type name
     -> p  -- ^ uninterpreted pattern
     -> Translator m p SExpr

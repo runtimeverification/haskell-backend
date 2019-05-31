@@ -11,10 +11,6 @@ module Kore.Step.Condition.Evaluator
     ( evaluate
     ) where
 
-import Data.Reflection
-
-import           Kore.Attribute.Symbol
-import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
@@ -42,7 +38,6 @@ evaluate
         , Ord variable
         , Show variable
         , Unparse variable
-        , Given (SmtMetadataTools StepperAttributes)
         )
     => PredicateSimplifier
     -> TermLikeSimplifier
