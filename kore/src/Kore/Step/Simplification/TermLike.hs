@@ -179,8 +179,7 @@ simplifyInternal
             Implies.simplify
                 substitutionSimplifier simplifier axiomIdToEvaluator p
         InF p ->
-            In.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
+            In.simplify substitutionSimplifier simplifier axiomIdToEvaluator p
         InhabitantF s -> return $ Inhabitant.simplify s
         MuF p -> return $ Mu.simplify p
         -- TODO(virgil): Move next up through patterns.

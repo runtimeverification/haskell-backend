@@ -11,10 +11,6 @@ module Kore.Step.Simplification.In
     (simplify
     ) where
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( crossProductGeneric )
 import           Kore.Internal.OrPattern
@@ -52,8 +48,7 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -61,7 +56,6 @@ simplify
     -> In Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
 simplify
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -71,7 +65,7 @@ simplify
         }
   =
     simplifyEvaluatedIn
-        tools substitutionSimplifier simplifier axiomIdToSimplifier first second
+        substitutionSimplifier simplifier axiomIdToSimplifier first second
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -94,8 +88,7 @@ simplifyEvaluatedIn
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -104,7 +97,7 @@ simplifyEvaluatedIn
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
 simplifyEvaluatedIn
-    tools substitutionSimplifier simplifier axiomIdToSimplifier first second
+    substitutionSimplifier simplifier axiomIdToSimplifier first second
   | OrPattern.isFalse first  = return OrPattern.bottom
   | OrPattern.isFalse second = return OrPattern.bottom
 
@@ -120,7 +113,7 @@ simplifyEvaluatedIn
         crossProduct =
             MultiOr.crossProductGeneric
                 (makeEvaluateIn
-                    tools substitutionSimplifier simplifier axiomIdToSimplifier
+                    substitutionSimplifier simplifier axiomIdToSimplifier
                 )
                 first
                 second
@@ -133,8 +126,7 @@ makeEvaluateIn
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -143,7 +135,7 @@ makeEvaluateIn
     -> Pattern variable
     -> Simplifier (OrPattern variable)
 makeEvaluateIn
-    _tools substitutionSimplifier simplifier axiomIdToSimplifier first second
+    substitutionSimplifier simplifier axiomIdToSimplifier first second
   | Pattern.isTop first =
     Ceil.makeEvaluate
         substitutionSimplifier simplifier axiomIdToSimplifier second
