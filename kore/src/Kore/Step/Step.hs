@@ -61,8 +61,6 @@ import           Kore.Internal.Predicate
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Log
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Step
 import           Kore.Step.Rule

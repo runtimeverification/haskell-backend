@@ -16,9 +16,6 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
-import           Kore.Step.Axiom.Data
-import           Kore.Step.Axiom.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
 import           Kore.Step.Axiom.EvaluationStrategy
                  ( builtinEvaluation, definitionEvaluation,
                  firstFullEvaluation, simplifierWithFallback )
@@ -30,6 +27,9 @@ import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..), rulePattern )
+import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), Simplifier, TermLikeSimplifier,
                  evalSimplifier )

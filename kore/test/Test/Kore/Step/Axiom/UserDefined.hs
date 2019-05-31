@@ -20,21 +20,21 @@ import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeFalsePredicate, makeNotPredicate,
                  makeTruePredicate )
-import           Kore.Step.Axiom.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import           Kore.Step.Axiom.Data
-                 ( AttemptedAxiomResults (AttemptedAxiomResults),
-                 CommonAttemptedAxiom )
-import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
+import           Kore.Step.Simplification.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import           Kore.Step.Simplification.Data
+                 ( AttemptedAxiomResults (AttemptedAxiomResults),
+                 CommonAttemptedAxiom )
 import           Kore.Step.Simplification.Data
                  ( TermLikeSimplifier, evalSimplifier )
+import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 

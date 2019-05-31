@@ -51,8 +51,10 @@ import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Internal.TermLike as Internal
 import           Kore.Sort
-import           Kore.Step.Simplification.Data
-                 ( Env (..) )
+import           Kore.Step.Simplification.Data hiding
+                 ( termLikeSimplifier )
+import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT
                  ( resolve )
@@ -2038,5 +2040,21 @@ metadataTools =
         headSortsMapping
         smtDeclarations
 
+termLikeSimplifier :: TermLikeSimplifier
+termLikeSimplifier = Simplifier.create Map.empty
+
+axiomSimplifiers :: BuiltinAndAxiomSimplifierMap
+axiomSimplifiers = Map.empty
+
+predicateSimplifier :: PredicateSimplifier
+predicateSimplifier =
+    Simplifier.Predicate.create termLikeSimplifier axiomSimplifiers
+
 env :: Env
-env = Env { metadataTools = Test.Kore.Step.MockSymbols.metadataTools }
+env =
+    Env
+        { metadataTools = Test.Kore.Step.MockSymbols.metadataTools
+        , simplifierTermLike = termLikeSimplifier
+        , simplifierPredicate = predicateSimplifier
+        , simplifierAxioms = axiomSimplifiers
+        }

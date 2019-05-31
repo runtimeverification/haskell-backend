@@ -44,7 +44,7 @@ import           Kore.Internal.Pattern
                  ( Conditional (..) )
 import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Axiom.Data
+import           Kore.Step.Simplification.Data
                  ( AttemptedAxiom (..), AttemptedAxiomResults (..),
                  BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier,
                  notApplicableAxiomEvaluator, purePatternAxiomEvaluator )

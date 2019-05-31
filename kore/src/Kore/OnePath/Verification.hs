@@ -46,14 +46,11 @@ import qualified Kore.OnePath.Step as OnePath
 import           Kore.OnePath.StrategyPattern
                  ( CommonStrategyPattern )
 import qualified Kore.OnePath.StrategyPattern as StrategyPattern
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Strategy
                  ( executionHistoryStep )
 import           Kore.Step.Strategy

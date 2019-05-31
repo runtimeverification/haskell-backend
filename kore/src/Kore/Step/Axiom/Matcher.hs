@@ -32,8 +32,6 @@ import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.OrPattern as OrPattern
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
@@ -46,9 +44,7 @@ import qualified Kore.Step.Simplification.AndTerms as SortInjectionSimplificatio
                  ( SortInjectionSimplification (..) )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
-import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, TermLikeSimplifier )
-import qualified Kore.Step.Simplification.Data as Simplifier
+import           Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMergerExcept,
                  mergePredicatesAndSubstitutionsExcept )

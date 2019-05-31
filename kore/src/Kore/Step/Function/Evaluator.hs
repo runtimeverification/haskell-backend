@@ -37,22 +37,16 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern, Predicate )
 import           Kore.Internal.TermLike
-import           Kore.Step.Axiom.Data
-                 ( AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Axiom.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( extract )
 import qualified Kore.Step.Merging.OrPattern as OrPattern
-import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
-                 simplifyTerm )
-import qualified Kore.Step.Simplification.Data as Simplifier
+import           Kore.Step.Simplification.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import           Kore.Step.Simplification.Data as Simplifier
+import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Simplification.Pattern as Pattern

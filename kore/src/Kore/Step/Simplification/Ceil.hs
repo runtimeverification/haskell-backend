@@ -46,16 +46,12 @@ import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeTruePredicate )
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Function.Evaluator as Axiom
                  ( evaluatePattern )
 import           Kore.Step.RecursiveAttributes
                  ( isTotalPattern )
 import qualified Kore.Step.Simplification.AndPredicates as And
-import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
-import qualified Kore.Step.Simplification.Data as Simplifier
+import           Kore.Step.Simplification.Data as Simplifier
 import           Kore.TopBottom
 import           Kore.Unparser
 import           Kore.Variables.Fresh

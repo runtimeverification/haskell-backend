@@ -20,22 +20,22 @@ import           Kore.Logger.Output as Logger
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
-import           Kore.Step.Axiom.Data
-                 ( AttemptedAxiom,
-                 AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
-                 BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import qualified Kore.Step.Axiom.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplify )
 import           Kore.Step.Simplification.Data
+                 ( AttemptedAxiom,
+                 AttemptedAxiomResults (AttemptedAxiomResults),
+                 BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
+                 BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
                  evalSimplifier )
+import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
+import qualified Kore.Step.Simplification.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import qualified Kore.Unification.Substitution as Substitution

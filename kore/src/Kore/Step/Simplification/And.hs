@@ -29,13 +29,10 @@ import           Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
                  ( termAnd )
-import           Kore.Step.Simplification.Data
-                 ( BranchT, PredicateSimplifier, Simplifier,
-                 TermLikeSimplifier, gather, scatter )
+import           Kore.Step.Simplification.Data hiding
+                 ( And )
 import qualified Kore.Step.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh

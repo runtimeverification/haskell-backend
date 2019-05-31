@@ -17,15 +17,10 @@ import           Kore.Internal.OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import qualified Kore.Step.Merging.Pattern as Pattern
-import           Kore.Step.Simplification.Data
-                 ( BranchT, PredicateSimplifier, Simplifier,
-                 TermLikeSimplifier, simplifyTerm )
-import qualified Kore.Step.Simplification.Data as Simplifier
+import           Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import           Kore.Step.Substitution
@@ -44,19 +39,13 @@ simplify
         , FreshVariable variable
         , SortedVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions in patterns.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern variable
+    => Pattern variable
     -> Simplifier (OrPattern variable)
-simplify
-    substitutionSimplifier
-    termSimplifier
-    axiomIdToSimplifier
-    Conditional {term, predicate, substitution}
-  = do
+simplify Conditional {term, predicate, substitution} = do
+    termSimplifier <- Simplifier.askSimplifierTermLike
+    substitutionSimplifier <- Simplifier.askSimplifierPredicate
+    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
+    let simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
     simplifiedTerm <- simplifyTerm' term
     orPatterns <- BranchT.gather
         (traverse
@@ -73,8 +62,6 @@ simplify
             simplifiedTerm
         )
     return (MultiOr.mergeAll orPatterns)
-  where
-    simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
 
 {-| Simplifies the predicate inside an 'Pattern'.
 -}

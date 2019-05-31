@@ -35,15 +35,12 @@ import           Numeric.Natural
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
                  ( Pattern )
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Result as Result
                  ( mergeResults )
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern, isCoolingRule,
                  isHeatingRule, isNormalRule )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Step as Step
@@ -101,13 +98,7 @@ transitionRule substitutionSimplifier simplifier axiomIdToSimplifier =
   where
     transitionSimplify config =
         do
-            configs <-
-                Monad.Trans.lift
-                $ Pattern.simplify
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-                    config
+            configs <- Monad.Trans.lift $ Pattern.simplify config
             let
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = MultiOr.filterOr configs

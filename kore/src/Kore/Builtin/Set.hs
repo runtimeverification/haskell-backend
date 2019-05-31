@@ -92,12 +92,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Predicate
                  ( Predicate )
 import           Kore.Internal.TermLike
-import           Kore.Step.Axiom.Data
-                 ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify, PredicateSimplifier (..), SimplificationType,
-                 TermLikeSimplifier, simplifyConditionalTerm )
-import qualified Kore.Step.Simplification.Data as Simplifier
+import           Kore.Step.Simplification.Data as Simplifier
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify

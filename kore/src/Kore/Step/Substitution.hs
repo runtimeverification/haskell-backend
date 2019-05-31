@@ -32,8 +32,6 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( scatter )

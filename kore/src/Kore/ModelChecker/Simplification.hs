@@ -15,10 +15,7 @@ import           Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike as TermLike
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import           Kore.TopBottom
@@ -36,9 +33,9 @@ checkImplicationIsTop
     -> TermLike Variable
     -> Simplifier Bool
 checkImplicationIsTop
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifers
+    _predicateSimplifier
+    _patternSimplifier
+    _axiomSimplifers
     lhs
     rhs
   = case stripForallQuantifiers rhs of
@@ -58,12 +55,7 @@ checkImplicationIsTop
                     , predicate = Predicate.makeTruePredicate
                     , substitution = mempty
                     }
-            orResult <-
-                Pattern.simplify
-                    predicateSimplifier
-                    patternSimplifier
-                    axiomSimplifers
-                    result
+            orResult <- Pattern.simplify result
             return (isBottom orResult)
         _ -> (error . show . Pretty.vsep)
              [ "Not implemented error:"

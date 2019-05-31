@@ -25,8 +25,6 @@ import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate, unwrapPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )

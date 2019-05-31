@@ -25,11 +25,9 @@ import           Kore.Internal.OrPredicate
                  ( OrPredicate )
 import           Kore.Internal.Pattern
                  ( Predicate )
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-                 ( BranchT, PredicateSimplifier, Simplifier,
-                 TermLikeSimplifier )
+                 ( BranchT, BuiltinAndAxiomSimplifierMap, PredicateSimplifier,
+                 Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Substitution as Substitution

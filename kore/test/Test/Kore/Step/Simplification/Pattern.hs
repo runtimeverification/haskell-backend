@@ -5,8 +5,6 @@ module Test.Kore.Step.Simplification.Pattern
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import qualified Data.Map as Map
-
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -20,11 +18,9 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import qualified SMT
 
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
@@ -49,15 +45,7 @@ test_Pattern_simplify =
             assertEqualWithExplanation "" expect actual
 
 simplify :: Pattern Variable -> IO (OrPattern Variable)
-simplify original =
+simplify =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
-    $ Pattern.simplify
-        predicateSimplifier
-        termLikeSimplifier
-        axiomSimplifiers
-        original
-  where
-    predicateSimplifier = Mock.substitutionSimplifier
-    termLikeSimplifier = Simplifier.create axiomSimplifiers
-    axiomSimplifiers = Map.empty
+    . evalSimplifier Mock.env
+    . Pattern.simplify

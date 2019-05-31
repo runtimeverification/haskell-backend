@@ -35,14 +35,6 @@ import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-import           Kore.Step.Axiom.Data
-                 ( AttemptedAxiom,
-                 AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import qualified Kore.Step.Axiom.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..), hasRemainders, maybeNotApplicable )
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
 import qualified Kore.Step.Result as Result
@@ -50,7 +42,15 @@ import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
+                 ( AttemptedAxiom,
+                 AttemptedAxiomResults (AttemptedAxiomResults),
+                 BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
+import qualified Kore.Step.Simplification.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..), hasRemainders, maybeNotApplicable )
 import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )

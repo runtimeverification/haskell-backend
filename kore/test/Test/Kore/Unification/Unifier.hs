@@ -34,7 +34,7 @@ import           Kore.Internal.TermLike hiding
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
-import           Kore.Step.Axiom.Data
+import           Kore.Step.Simplification.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( Env (..), evalSimplifier )
@@ -53,6 +53,7 @@ import           Test.Kore
 import           Test.Kore.ASTVerifier.DefinitionVerifier
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
+import qualified Test.Kore.Step.MockSymbols as Mock
 
 applyInj
     :: Sort
@@ -208,7 +209,7 @@ tools = MetadataTools
     }
 
 testEnv :: Env
-testEnv = Env { metadataTools = tools }
+testEnv = Mock.env { metadataTools = tools }
 
 unificationProblem
     :: UnificationTerm
@@ -749,16 +750,10 @@ simplifyPattern (UnificationTerm term) = do
     return $ UnificationTerm term'
   where
     simplifier = do
-        simplifiedPatterns <-
-            Pattern.simplify
-                Mock.substitutionSimplifier
-                (Simplifier.create functionRegistry)
-                functionRegistry
-                expandedPattern
+        simplifiedPatterns <- Pattern.simplify expandedPattern
         case MultiOr.extractPatterns simplifiedPatterns of
             [] -> return Pattern.bottom
             (config : _) -> return config
-    functionRegistry = Map.empty
     expandedPattern = Pattern.fromTermLike term
 
 makeEqualsPredicate

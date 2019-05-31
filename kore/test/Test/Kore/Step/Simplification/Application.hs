@@ -20,16 +20,16 @@ import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
-import           Kore.Step.Axiom.Data
-import qualified Kore.Step.Axiom.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
 import           Kore.Step.Axiom.EvaluationStrategy
                  ( firstFullEvaluation )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Simplification.Application
 import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.Data
                  ( TermLikeSimplifier, evalSimplifier )
+import qualified Kore.Step.Simplification.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
                  ( Unparse )

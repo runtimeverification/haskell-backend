@@ -114,19 +114,19 @@ import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate )
 import qualified Kore.Proof.Value as Value
-import           Kore.Step.Axiom.Data
+import           Kore.Step.Simplification.Data
+                 ( MonadSimplify, PredicateSimplifier, SimplificationType,
+                 Simplifier, TermLikeSimplifier )
+import           Kore.Step.Simplification.Data
                  ( AttemptedAxiom (..),
                  AttemptedAxiomResults (AttemptedAxiomResults),
                  BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
                  BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier )
-import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify, PredicateSimplifier, SimplificationType,
-                 Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
+import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
 import           Kore.Unparser
 import qualified Kore.Verified as Verified
 

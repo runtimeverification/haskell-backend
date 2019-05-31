@@ -29,13 +29,9 @@ import           Kore.Internal.TermLike as Pattern
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Sort
                  ( predicateSort )
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification )
 import           Kore.Step.Simplification.Data
-                 ( BranchT, PredicateSimplifier, Simplifier,
-                 TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather, scatter )
 import qualified Kore.Step.Simplification.Pattern as Pattern
@@ -313,9 +309,9 @@ makeEvaluateBoundLeft
     -> Pattern variable
     -> BranchT Simplifier (Pattern variable)
 makeEvaluateBoundLeft
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSimplifier
     variable
     boundTerm
     normalized
@@ -331,14 +327,8 @@ makeEvaluateBoundLeft
                         Syntax.Predicate.substitute boundSubstitution
                         $ Conditional.predicate normalized
                     }
-        orPattern <- Monad.Trans.lift $ simplify' substituted
+        orPattern <- Monad.Trans.lift $ Pattern.simplify substituted
         BranchT.scatter (MultiOr.extractPatterns orPattern)
-  where
-    simplify' =
-        Pattern.simplify
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
 
 {- | Existentially quantify a variable in the given 'Pattern'.
 

@@ -8,9 +8,8 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.Data
-    ( MonadSimplify
+    ( MonadSimplify (..)
     , Simplifier
-    , askMetadataTools
     , Env (..)
     , runSimplifier
     , evalSimplifier
@@ -25,14 +24,29 @@ module Kore.Step.Simplification.Data
     , simplifyTerm
     , simplifyConditionalTerm
     , SimplificationType (..)
+    -- * Builtin and axiom simplifiers
+    , BuiltinAndAxiomSimplifier (..)
+    , BuiltinAndAxiomSimplifierMap
+    , AttemptedAxiom (..)
+    , AttemptedAxiomResults (..)
+    , CommonAttemptedAxiom
+    , hasRemainders
+    , maybeNotApplicable
+    , exceptNotApplicable
+    , applicationAxiomSimplifier
+    , notApplicableAxiomEvaluator
+    , purePatternAxiomEvaluator
     ) where
 
 import           Control.Applicative
+import           Control.Comonad.Trans.Cofree
+import           Control.DeepSeq
 import qualified Control.Monad as Monad
 import           Control.Monad.Catch
                  ( MonadCatch, MonadThrow )
 import           Control.Monad.Morph
                  ( MFunctor, MMonad )
+import qualified Control.Monad.Morph as Monad.Morph
 import           Control.Monad.Reader
 import           Control.Monad.State.Class
                  ( MonadState )
@@ -42,15 +56,19 @@ import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Identity
 import           Control.Monad.Trans.Maybe
 import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Foldable as Recursive
+import qualified Data.Map as Map
 import           Data.Typeable
-import           GHC.Stack
-                 ( HasCallStack )
+import qualified GHC.Generics as GHC
+import qualified GHC.Stack as GHC
 
+import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
                  ( Symbol )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.Internal.Conditional as Conditional
+import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -58,8 +76,11 @@ import           Kore.Internal.Pattern
                  ( Pattern, Predicate )
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
-                 ( TermLike )
+                 ( TermLike, TermLikeF (..) )
 import           Kore.Logger
+import           Kore.Step.Axiom.Identifier
+                 ( AxiomIdentifier )
+import           Kore.Syntax.Application
 import           Kore.Syntax.Variable
                  ( SortedVariable )
 import           Kore.Unparser
@@ -83,7 +104,62 @@ class MonadSMT m => MonadSimplify m where
         => m (SmtMetadataTools Attribute.Symbol)
     askMetadataTools = Monad.Trans.lift askMetadataTools
 
-instance (MonadSimplify m, Monoid w) => MonadSimplify (AccumT w m)
+    askSimplifierTermLike :: m TermLikeSimplifier
+    default askSimplifierTermLike
+        :: (MonadTrans t, MonadSimplify n, m ~ t n)
+        => m TermLikeSimplifier
+    askSimplifierTermLike = Monad.Trans.lift askSimplifierTermLike
+
+    localSimplifierTermLike
+        :: (TermLikeSimplifier -> TermLikeSimplifier) -> m a -> m a
+    default localSimplifierTermLike
+        :: (MFunctor t, MonadSimplify n, m ~ t n)
+        => (TermLikeSimplifier -> TermLikeSimplifier) -> m a -> m a
+    localSimplifierTermLike locally =
+        Monad.Morph.hoist (localSimplifierTermLike locally)
+
+    askSimplifierPredicate :: m PredicateSimplifier
+    default askSimplifierPredicate
+        :: (MonadTrans t, MonadSimplify n, m ~ t n)
+        => m PredicateSimplifier
+    askSimplifierPredicate = Monad.Trans.lift askSimplifierPredicate
+
+    localSimplifierPredicate
+        :: (PredicateSimplifier -> PredicateSimplifier) -> m a -> m a
+    default localSimplifierPredicate
+        :: (MFunctor t, MonadSimplify n, m ~ t n)
+        => (PredicateSimplifier -> PredicateSimplifier) -> m a -> m a
+    localSimplifierPredicate locally =
+        Monad.Morph.hoist (localSimplifierPredicate locally)
+
+    askSimplifierAxioms :: m BuiltinAndAxiomSimplifierMap
+    default askSimplifierAxioms
+        :: (MonadTrans t, MonadSimplify n, m ~ t n)
+        => m BuiltinAndAxiomSimplifierMap
+    askSimplifierAxioms = Monad.Trans.lift askSimplifierAxioms
+
+    localSimplifierAxioms
+        :: (BuiltinAndAxiomSimplifierMap -> BuiltinAndAxiomSimplifierMap)
+        -> m a -> m a
+    default localSimplifierAxioms
+        :: (MFunctor t, MonadSimplify n, m ~ t n)
+        => (BuiltinAndAxiomSimplifierMap -> BuiltinAndAxiomSimplifierMap)
+        -> m a -> m a
+    localSimplifierAxioms locally =
+        Monad.Morph.hoist (localSimplifierAxioms locally)
+
+instance (MonadSimplify m, Monoid w) => MonadSimplify (AccumT w m) where
+    localSimplifierTermLike locally =
+        mapAccumT (localSimplifierTermLike locally)
+    {-# INLINE localSimplifierTermLike #-}
+
+    localSimplifierPredicate locally =
+        mapAccumT (localSimplifierPredicate locally)
+    {-# INLINE localSimplifierPredicate #-}
+
+    localSimplifierAxioms locally =
+        mapAccumT (localSimplifierAxioms locally)
+    {-# INLINE localSimplifierAxioms #-}
 
 instance MonadSimplify m => MonadSimplify (IdentityT m)
 
@@ -193,7 +269,10 @@ scatter = BranchT . ListT.scatter . Foldable.toList
 
 data Env =
     Env
-        { metadataTools :: !(SmtMetadataTools Attribute.Symbol)
+        { metadataTools       :: !(SmtMetadataTools Attribute.Symbol)
+        , simplifierTermLike  :: !TermLikeSimplifier
+        , simplifierPredicate :: !PredicateSimplifier
+        , simplifierAxioms    :: !BuiltinAndAxiomSimplifierMap
         }
 
 {- | @Simplifier@ represents a simplification action.
@@ -222,6 +301,30 @@ instance MonadSimplify Simplifier where
     askMetadataTools = asks metadataTools
     {-# INLINE askMetadataTools #-}
 
+    askSimplifierTermLike = asks simplifierTermLike
+    {-# INLINE askSimplifierTermLike #-}
+
+    localSimplifierTermLike locally =
+        local $ \env@Env { simplifierTermLike } ->
+            env { simplifierTermLike = locally simplifierTermLike }
+    {-# INLINE localSimplifierTermLike #-}
+
+    askSimplifierPredicate = asks simplifierPredicate
+    {-# INLINE askSimplifierPredicate #-}
+
+    localSimplifierPredicate locally =
+        local $ \env@Env { simplifierPredicate } ->
+            env { simplifierPredicate = locally simplifierPredicate }
+    {-# INLINE localSimplifierPredicate #-}
+
+    askSimplifierAxioms = asks simplifierAxioms
+    {-# INLINE askSimplifierAxioms #-}
+
+    localSimplifierAxioms locally =
+        local $ \env@Env { simplifierAxioms } ->
+            env { simplifierAxioms = locally simplifierAxioms }
+    {-# INLINE localSimplifierAxioms #-}
+
 {- | Run a simplification, returning the results along all branches.
  -}
 evalSimplifierBranch
@@ -239,7 +342,7 @@ that may branch.
 
  -}
 runSimplifier
-    :: HasCallStack
+    :: GHC.HasCallStack
     => Env
     -> Simplifier a
     -- ^ simplifier computation
@@ -254,7 +357,7 @@ that may branch.
 
   -}
 evalSimplifier
-    :: HasCallStack
+    :: GHC.HasCallStack
     => Env
     -> Simplifier a
     -> SMT a
@@ -388,3 +491,201 @@ newtype PredicateSimplifier =
             => Predicate variable
             -> BranchT Simplifier (Predicate variable)
         }
+
+{-| 'BuiltinAndAxiomSimplifier' simplifies patterns using either an axiom
+or builtin code.
+
+Arguments:
+
+* 'MetadataTools' are tools for finding additional information about
+patterns such as their sorts, whether they are constructors or hooked.
+
+* 'TermLikeSimplifier' is a Function for simplifying patterns, used for
+the post-processing of the function application results.
+
+* BuiltinAndAxiomSimplifierMap is a map from pattern identifiers to the
+'BuiltinAndAxiomSimplifier's that handle those patterns.
+
+* 'TermLike' is the pattern to be evaluated.
+
+Return value:
+
+It returns the result of simplifying the pattern with builtins and
+axioms, together with a proof certifying that it was simplified correctly
+(which is only a placeholder right now).
+-}
+newtype BuiltinAndAxiomSimplifier =
+    BuiltinAndAxiomSimplifier
+        (forall variable
+        .   ( FreshVariable variable
+            , SortedVariable variable
+            , Show variable
+            , Unparse variable
+            )
+        => PredicateSimplifier
+        -> TermLikeSimplifier
+        -> BuiltinAndAxiomSimplifierMap
+        -> TermLike variable
+        -> Simplifier (AttemptedAxiom variable)
+        )
+
+{-|A type to abstract away the mapping from symbol identifiers to
+their corresponding evaluators.
+-}
+type BuiltinAndAxiomSimplifierMap =
+    Map.Map AxiomIdentifier BuiltinAndAxiomSimplifier
+
+{-| A type holding the result of applying an axiom to a pattern.
+-}
+data AttemptedAxiomResults variable =
+    AttemptedAxiomResults
+        { results :: !(OrPattern variable)
+        -- ^ The result of applying the axiom
+        , remainders :: !(OrPattern variable)
+        -- ^ The part of the pattern that was not rewritten by the axiom.
+        }
+    deriving GHC.Generic
+
+deriving instance Ord variable => Eq (AttemptedAxiomResults variable)
+deriving instance Show variable => Show (AttemptedAxiomResults variable)
+
+instance (NFData variable) => NFData (AttemptedAxiomResults variable)
+
+instance Ord variable => Semigroup (AttemptedAxiomResults variable) where
+    (<>)
+        AttemptedAxiomResults
+            { results = firstResults
+            , remainders = firstRemainders
+            }
+        AttemptedAxiomResults
+            { results = secondResults
+            , remainders = secondRemainders
+            }
+      =
+        AttemptedAxiomResults
+            { results = MultiOr.merge firstResults secondResults
+            , remainders =
+                    MultiOr.merge firstRemainders secondRemainders
+            }
+
+instance Ord variable => Monoid (AttemptedAxiomResults variable) where
+    mempty =
+        AttemptedAxiomResults
+            { results = OrPattern.bottom
+            , remainders = OrPattern.bottom
+            }
+
+{-| 'AttemptedAxiom' holds the result of axiom-based simplification, with
+a case for axioms that can't be applied.
+-}
+data AttemptedAxiom variable
+    = NotApplicable
+    | Applied !(AttemptedAxiomResults variable)
+    deriving GHC.Generic
+
+deriving instance Ord variable => Eq (AttemptedAxiom variable)
+deriving instance Show variable => Show (AttemptedAxiom variable)
+
+instance (NFData variable) => NFData (AttemptedAxiom variable)
+
+{-| 'CommonAttemptedAxiom' particularizes 'AttemptedAxiom' to 'Variable',
+following the same pattern as the other `Common*` types.
+-}
+type CommonAttemptedAxiom = AttemptedAxiom Variable
+
+{- | Does the 'AttemptedAxiom' have remainders?
+
+A 'NotApplicable' result is not considered to have remainders.
+
+ -}
+hasRemainders :: AttemptedAxiom variable -> Bool
+hasRemainders (Applied axiomResults) = (not . null) (remainders axiomResults)
+hasRemainders NotApplicable = False
+
+{- | Return a 'NotApplicable' result for a failing 'MaybeT' action.
+ -}
+maybeNotApplicable
+    :: Functor m
+    => MaybeT m (AttemptedAxiom variable)
+    ->        m (AttemptedAxiom variable)
+maybeNotApplicable =
+    fmap (maybe NotApplicable id) . runMaybeT
+
+{- | Return a 'NotApplicable' result for a failing 'ExceptT' action.
+ -}
+exceptNotApplicable
+    :: Functor m
+    => ExceptT e m (AttemptedAxiom variable)
+    ->           m (AttemptedAxiom variable)
+exceptNotApplicable =
+    fmap (either (const notApplicable) id) . runExceptT
+  where
+    notApplicable = NotApplicable
+
+-- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
+notApplicableAxiomEvaluator :: Simplifier (AttemptedAxiom variable)
+notApplicableAxiomEvaluator = pure NotApplicable
+
+-- |Yields a pure 'Simplifier' which produces a given 'TermLike'
+purePatternAxiomEvaluator
+    :: Ord variable
+    => TermLike variable
+    -> Simplifier (AttemptedAxiom variable)
+purePatternAxiomEvaluator p =
+    pure
+        ( Applied AttemptedAxiomResults
+            { results = OrPattern.fromTermLike p
+            , remainders = OrPattern.fromPatterns []
+            }
+
+        )
+
+{-| Creates an 'BuiltinAndAxiomSimplifier' from a similar function that takes an
+'Application'.
+-}
+applicationAxiomSimplifier
+    ::  ( forall variable
+        .   ( FreshVariable variable
+            , Ord variable
+            , SortedVariable variable
+            , Show variable
+            , Show variable
+            , Unparse variable
+            )
+        => PredicateSimplifier
+        -> TermLikeSimplifier
+        -> BuiltinAndAxiomSimplifierMap
+        -> CofreeF
+            (Application SymbolOrAlias)
+            (Attribute.Pattern variable)
+            (TermLike variable)
+        -> Simplifier (AttemptedAxiom variable)
+        )
+    -> BuiltinAndAxiomSimplifier
+applicationAxiomSimplifier applicationSimplifier =
+    BuiltinAndAxiomSimplifier helper
+  where
+    helper
+        ::  forall variable
+        .   ( FreshVariable variable
+            , Ord variable
+            , SortedVariable variable
+            , Show variable
+            , Show variable
+            , Unparse variable
+            )
+        => PredicateSimplifier
+        -> TermLikeSimplifier
+        -> BuiltinAndAxiomSimplifierMap
+        -> TermLike variable
+        -> Simplifier (AttemptedAxiom variable)
+    helper substitutionSimplifier simplifier axiomIdToSimplifier termLike =
+        case Recursive.project termLike of
+            (valid :< ApplicationF p) ->
+                applicationSimplifier
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
+                    (valid :< p)
+            _ -> error
+                ("Expected an application pattern, but got: " ++ show termLike)

@@ -381,7 +381,7 @@ mockMetadataTools = MetadataTools
     }
 
 mockEnv :: Env
-mockEnv = Env { metadataTools = mockMetadataTools }
+mockEnv = Mock.env { metadataTools = mockMetadataTools }
 
 sigmaSymbol :: SymbolOrAlias
 sigmaSymbol = SymbolOrAlias

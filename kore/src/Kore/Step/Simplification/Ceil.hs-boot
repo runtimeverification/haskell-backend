@@ -10,10 +10,9 @@ import Kore.Internal.OrPredicate
        ( OrPredicate )
 import Kore.Internal.TermLike
        ( TermLike )
-import Kore.Step.Axiom.Data
-       ( BuiltinAndAxiomSimplifierMap )
 import Kore.Step.Simplification.Data
-       ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+       ( BuiltinAndAxiomSimplifierMap, PredicateSimplifier, Simplifier
+       , TermLikeSimplifier )
 import Kore.Syntax.Variable
        ( SortedVariable )
 import Kore.Unparser

@@ -29,10 +29,9 @@ import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse, makeAndPredicate )
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier (..), TermLikeSimplifier )
+                 ( BuiltinAndAxiomSimplifierMap, PredicateSimplifier (..),
+                 TermLikeSimplifier )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution

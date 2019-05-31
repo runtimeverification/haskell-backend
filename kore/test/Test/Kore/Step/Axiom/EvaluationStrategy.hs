@@ -18,13 +18,6 @@ import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, makeEqualsPredicate,
                  makeNotPredicate, makeTruePredicate )
-import           Kore.Step.Axiom.Data
-                 ( AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (..), CommonAttemptedAxiom )
-import           Kore.Step.Axiom.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
 import           Kore.Step.Axiom.EvaluationStrategy
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
@@ -33,7 +26,14 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.Simplification.Data
+                 ( AttemptedAxiomResults (AttemptedAxiomResults),
+                 BuiltinAndAxiomSimplifier (..), CommonAttemptedAxiom )
+import           Kore.Step.Simplification.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
+import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier

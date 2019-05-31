@@ -12,10 +12,7 @@ module Kore.Step.Simplification.Simplifier
     ( create
     ) where
 
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-                 ( TermLikeSimplifier, termLikeSimplifier )
 import qualified Kore.Step.Simplification.TermLike as TermLike
                  ( simplifyToOr )
 

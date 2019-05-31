@@ -22,7 +22,6 @@ import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeTruePredicate )
-import           Kore.Step.Axiom.Data
 import           Kore.Step.Axiom.EvaluationStrategy
                  ( builtinEvaluation, simplifierWithFallback )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -34,12 +33,8 @@ import           Kore.Step.Rule
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( TermLikeSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
-import qualified Kore.Step.Simplification.Predicate as Predicate
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
-                 ( create )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -445,17 +440,12 @@ evaluateWithAxioms
     :: BuiltinAndAxiomSimplifierMap
     -> Pattern Variable
     -> IO (OrPattern Variable)
-evaluateWithAxioms axioms patt =
+evaluateWithAxioms axioms =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
-    $ Pattern.simplify
-        (Predicate.create simplifier axiomIdToSimplifier)
-        simplifier
-        axiomIdToSimplifier
-        patt
+    . evalSimplifier env
+    . Pattern.simplify
   where
-    simplifier :: TermLikeSimplifier
-    simplifier = Simplifier.create axiomIdToSimplifier
+    env = Mock.env { simplifierAxioms = axiomIdToSimplifier }
     axiomIdToSimplifier :: BuiltinAndAxiomSimplifierMap
     axiomIdToSimplifier =
         Map.unionWith

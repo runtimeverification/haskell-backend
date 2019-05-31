@@ -89,8 +89,6 @@ import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Predicate
                  ( Predicate )
 import           Kore.Internal.TermLike
-import           Kore.Step.Axiom.Data
-                 ( AttemptedAxiom (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data as Simplifier
 import           Kore.Unification.Unify
                  ( MonadUnify )

@@ -61,8 +61,6 @@ import           Kore.Predicate.Predicate
                  unwrapPredicate )
 import qualified Kore.Repl as Repl
 import           Kore.Step
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Axiom.EvaluationStrategy
                  ( builtinEvaluation, simplifierWithFallback )
 import           Kore.Step.Axiom.Identifier
@@ -79,6 +77,8 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Search
                  ( searchGraph )
 import qualified Kore.Step.Search as Search
+import           Kore.Step.Simplification.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), Simplifier, TermLikeSimplifier,
                  evalSimplifier )
@@ -142,8 +142,24 @@ exec indexedModule strategy initialTerm =
         return finalTerm
   where
     metadataTools = MetadataTools.build indexedModule
-    env = Simplifier.Env { metadataTools }
+    env =
+        Simplifier.Env
+            { metadataTools
+            , simplifierTermLike = emptyTermLikeSimplifier
+            , simplifierPredicate = emptyPredicateSimplifier
+            , simplifierAxioms = emptyAxiomSimplifiers
+            }
     patternSort = termLikeSort initialTerm
+
+emptyAxiomSimplifiers :: BuiltinAndAxiomSimplifierMap
+emptyAxiomSimplifiers = Map.empty
+
+emptyTermLikeSimplifier :: TermLikeSimplifier
+emptyTermLikeSimplifier = Simplifier.create emptyAxiomSimplifiers
+
+emptyPredicateSimplifier :: PredicateSimplifier
+emptyPredicateSimplifier =
+    Predicate.create emptyTermLikeSimplifier emptyAxiomSimplifiers
 
 -- | Project the value of the exit cell, if it is present.
 execGetExitCode
@@ -206,7 +222,13 @@ search verifiedModule strategy termLike searchPattern searchConfig =
         return (forceSort patternSort $ unwrapPredicate orPredicate)
   where
     metadataTools = MetadataTools.build verifiedModule
-    env = Simplifier.Env { metadataTools }
+    env =
+        Simplifier.Env
+            { metadataTools
+            , simplifierTermLike = emptyTermLikeSimplifier
+            , simplifierPredicate = emptyPredicateSimplifier
+            , simplifierAxioms = emptyAxiomSimplifiers
+            }
     patternSort = termLikeSort termLike
 
 
@@ -219,15 +241,16 @@ prove
     -- ^ The spec module
     -> SMT (Either (TermLike Variable) ())
 prove limit definitionModule specModule =
-    evalSimplifier env $ do
-        Initialized
-            { rewriteRules
-            , simplifier
-            , substitutionSimplifier
-            , axiomIdToSimplifier
-            } <-
-                initialize definitionModule
-        let specClaims = extractOnePathClaims specModule
+    evalSimplifier env $ initialize definitionModule $ \initialized -> do
+        let
+            Initialized
+                { rewriteRules
+                , simplifier
+                , substitutionSimplifier
+                , axiomIdToSimplifier
+                }
+              = initialized
+            specClaims = extractOnePathClaims specModule
         specAxioms <- traverse simplifyRuleOnSecond specClaims
         assertSomeClaims specAxioms
         let
@@ -245,7 +268,13 @@ prove limit definitionModule specModule =
         return $ Bifunctor.first Pattern.toTermLike result
   where
     metadataTools = MetadataTools.build definitionModule
-    env = Simplifier.Env { metadataTools }
+    env =
+        Simplifier.Env
+            { metadataTools
+            , simplifierTermLike = emptyTermLikeSimplifier
+            , simplifierPredicate = emptyPredicateSimplifier
+            , simplifierAxioms = emptyAxiomSimplifiers
+            }
 
 -- | Initialize and run the repl with the main and spec modules. This will loop
 -- the repl until the user exits.
@@ -261,14 +290,17 @@ proveWithRepl
     -- ^ Run in a specific repl mode
     -> SMT ()
 proveWithRepl definitionModule specModule mvar replScript replMode =
-    evalSimplifier env $ do
-        Initialized
-            { rewriteRules
-            , simplifier
-            , substitutionSimplifier
-            , axiomIdToSimplifier
-            } <- initialize definitionModule
-        let specClaims = extractOnePathClaims specModule
+    evalSimplifier env $ initialize definitionModule $ \initialized -> do
+        let
+            Initialized
+                { rewriteRules
+                , simplifier
+                , substitutionSimplifier
+                , axiomIdToSimplifier
+                }
+              = initialized
+
+            specClaims = extractOnePathClaims specModule
         specAxioms <- traverse simplifyRuleOnSecond specClaims
         assertSomeClaims specAxioms
         let
@@ -286,7 +318,13 @@ proveWithRepl definitionModule specModule mvar replScript replMode =
             replMode
   where
     metadataTools = MetadataTools.build definitionModule
-    env = Simplifier.Env { metadataTools }
+    env =
+        Simplifier.Env
+            { metadataTools
+            , simplifierTermLike = emptyTermLikeSimplifier
+            , simplifierPredicate = emptyPredicateSimplifier
+            , simplifierAxioms = emptyAxiomSimplifiers
+            }
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck
@@ -298,15 +336,16 @@ boundedModelCheck
     -> Strategy.GraphSearchOrder
     -> SMT [Bounded.CheckResult]
 boundedModelCheck limit definitionModule specModule searchOrder =
-    evalSimplifier env $ do
-        Initialized
-            { rewriteRules
-            , simplifier
-            , substitutionSimplifier
-            , axiomIdToSimplifier
-            } <-
-                initialize definitionModule
+    evalSimplifier env $ initialize definitionModule $ \initialized -> do
         let
+            Initialized
+                { rewriteRules
+                , simplifier
+                , substitutionSimplifier
+                , axiomIdToSimplifier
+                }
+              = initialized
+
             axioms = fmap Axiom rewriteRules
             specAxioms = fmap snd $ extractImplicationClaims specModule
 
@@ -319,7 +358,13 @@ boundedModelCheck limit definitionModule specModule searchOrder =
             (map (\x -> (x,limit)) specAxioms)
   where
     metadataTools = MetadataTools.build definitionModule
-    env = Simplifier.Env { metadataTools }
+    env =
+        Simplifier.Env
+            { metadataTools
+            , simplifierTermLike = emptyTermLikeSimplifier
+            , simplifierPredicate = emptyPredicateSimplifier
+            , simplifierAxioms = emptyAxiomSimplifiers
+            }
 
 assertSomeClaims :: Monad m => [claim] -> m ()
 assertSomeClaims claims =
@@ -359,49 +404,46 @@ execute
     -> TermLike Variable
     -- ^ The input pattern
     -> Simplifier Execution
-execute verifiedModule strategy inputPattern
-  = Log.withLogScope "setUpConcreteExecution" $ do
-    initialized <- initialize verifiedModule
-    let
-        Initialized { rewriteRules } = initialized
-        Initialized { simplifier } = initialized
-        Initialized { substitutionSimplifier } = initialized
-        Initialized { axiomIdToSimplifier } = initialized
-    simplifiedPatterns <-
-        Pattern.simplify
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            (Pattern.fromTermLike inputPattern)
-    let
-        initialPattern =
-            case MultiOr.extractPatterns simplifiedPatterns of
-                [] -> Pattern.bottomOf patternSort
-                (config : _) -> config
-          where
-            patternSort = termLikeSort inputPattern
-        runStrategy' pat =
-            runStrategy
-                (transitionRule
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-                )
-                (strategy rewriteRules)
-                pat
-    executionGraph <- runStrategy' initialPattern
-    return Execution
-        { simplifier
-        , substitutionSimplifier
-        , axiomIdToSimplifier
-        , executionGraph
-        }
+execute verifiedModule strategy inputPattern =
+    Log.withLogScope "setUpConcreteExecution"
+    $ initialize verifiedModule $ \initialized -> do
+        let
+            Initialized { rewriteRules } = initialized
+            Initialized { simplifier } = initialized
+            Initialized { substitutionSimplifier } = initialized
+            Initialized { axiomIdToSimplifier } = initialized
+        simplifiedPatterns <-
+            Pattern.simplify (Pattern.fromTermLike inputPattern)
+        let
+            initialPattern =
+                case MultiOr.extractPatterns simplifiedPatterns of
+                    [] -> Pattern.bottomOf patternSort
+                    (config : _) -> config
+              where
+                patternSort = termLikeSort inputPattern
+            runStrategy' pat =
+                runStrategy
+                    (transitionRule
+                        substitutionSimplifier
+                        simplifier
+                        axiomIdToSimplifier
+                    )
+                    (strategy rewriteRules)
+                    pat
+        executionGraph <- runStrategy' initialPattern
+        return Execution
+            { simplifier
+            , substitutionSimplifier
+            , axiomIdToSimplifier
+            , executionGraph
+            }
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize
     :: VerifiedModule StepperAttributes Attribute.Axiom
-    -> Simplifier Initialized
-initialize verifiedModule = do
+    -> (Initialized -> Simplifier a)
+    -> Simplifier a
+initialize verifiedModule within = do
     functionAxioms <-
         simplifyFunctionAxioms (extractEqualityAxioms verifiedModule)
     rewriteRules <-
@@ -422,12 +464,17 @@ initialize verifiedModule = do
                 functionEvaluators
         simplifier = Simplifier.create axiomIdToSimplifier
         substitutionSimplifier = Predicate.create simplifier axiomIdToSimplifier
-    return Initialized
-        { rewriteRules
-        , simplifier
-        , substitutionSimplifier
-        , axiomIdToSimplifier
-        }
+        initialized =
+            Initialized
+                { rewriteRules
+                , simplifier
+                , substitutionSimplifier
+                , axiomIdToSimplifier
+                }
+        locally =
+            Simplifier.localSimplifierTermLike (const simplifier)
+            . Simplifier.localSimplifierPredicate (const substitutionSimplifier)
+    locally (within initialized)
 
 {- | Simplify a 'Map' of 'EqualityRule's using only matching logic rules.
 
@@ -493,12 +540,7 @@ simplifyRulePattern rulePattern = do
 
 -- | Simplify a 'TermLike' using only matching logic rules.
 simplifyPattern :: TermLike Variable -> Simplifier (OrPattern Variable)
-simplifyPattern termLike = do
-    let
-        emptySimplifier = Simplifier.create Map.empty
-        emptySubstitutionSimplifier = Predicate.create emptySimplifier Map.empty
-    Pattern.simplify
-        emptySubstitutionSimplifier
-        emptySimplifier
-        Map.empty
-        (Pattern.fromTermLike termLike)
+simplifyPattern termLike =
+    Simplifier.localSimplifierTermLike (const emptyTermLikeSimplifier)
+    $ Simplifier.localSimplifierPredicate (const emptyPredicateSimplifier)
+    $ Pattern.simplify (Pattern.fromTermLike termLike)

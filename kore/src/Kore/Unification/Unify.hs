@@ -115,6 +115,28 @@ instance
     MonadSimplify (UnifierTT t)
   where
     askMetadataTools = UnifierTT askMetadataTools
+    {-# INLINE askMetadataTools #-}
+
+    askSimplifierTermLike = UnifierTT askSimplifierTermLike
+    {-# INLINE askSimplifierTermLike #-}
+
+    localSimplifierTermLike locally =
+        UnifierTT . localSimplifierTermLike locally . getUnifier
+    {-# INLINE localSimplifierTermLike #-}
+
+    askSimplifierPredicate = UnifierTT askSimplifierPredicate
+    {-# INLINE askSimplifierPredicate #-}
+
+    localSimplifierPredicate locally =
+        UnifierTT . localSimplifierPredicate locally . getUnifier
+    {-# INLINE localSimplifierPredicate #-}
+
+    askSimplifierAxioms = UnifierTT askSimplifierAxioms
+    {-# INLINE askSimplifierAxioms #-}
+
+    localSimplifierAxioms locally =
+        UnifierTT . localSimplifierAxioms locally . getUnifier
+    {-# INLINE localSimplifierAxioms #-}
 
 instance
     ( forall m. MonadSimplify m => MonadSimplify (t m)

@@ -30,12 +30,8 @@ import           Kore.Internal.TermLike hiding
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeNotPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Simplification.And as And
 import           Kore.Step.Simplification.Data
-                 ( BranchT, PredicateSimplifier, Simplifier,
-                 TermLikeSimplifier, gather, scatter )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )

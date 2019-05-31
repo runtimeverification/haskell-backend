@@ -34,13 +34,9 @@ import           Kore.Internal.OrPredicate
 import           Kore.Internal.Pattern
                  ( Pattern, Predicate )
 import qualified Kore.Internal.Pattern as Conditional
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.Simplification.Data
-                 ( BranchT, PredicateSimplifier, Simplifier,
-                 TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Strategy as Strategy

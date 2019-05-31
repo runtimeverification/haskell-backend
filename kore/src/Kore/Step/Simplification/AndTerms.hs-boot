@@ -4,10 +4,9 @@ import Kore.Internal.Pattern
        ( Pattern )
 import Kore.Internal.TermLike
        ( TermLike )
-import Kore.Step.Axiom.Data
-       ( BuiltinAndAxiomSimplifierMap )
 import Kore.Step.Simplification.Data
-       ( BranchT, PredicateSimplifier, Simplifier, TermLikeSimplifier )
+       ( BranchT, BuiltinAndAxiomSimplifierMap, PredicateSimplifier, Simplifier
+       , TermLikeSimplifier )
 import Kore.Syntax.Variable
        ( SortedVariable )
 import Kore.Unification.Unify

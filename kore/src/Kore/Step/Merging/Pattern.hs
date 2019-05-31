@@ -14,14 +14,9 @@ import           Data.Reflection
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern, Predicate )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
-import           Kore.Step.Simplification.Data
-                 ( BranchT, PredicateSimplifier, Simplifier,
-                 TermLikeSimplifier )
-import qualified Kore.Step.Simplification.Data as Simplifier
+import           Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Substitution
                  ( PredicateMerger (PredicateMerger),
                  mergePredicatesAndSubstitutions )

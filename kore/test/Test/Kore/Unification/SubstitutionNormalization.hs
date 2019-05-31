@@ -146,7 +146,7 @@ runNormalizeSubstitution substitution =
     $ normalizeSubstitution (Map.fromList substitution)
 
 mockEnv :: Env
-mockEnv = Env { metadataTools = mockMetadataTools }
+mockEnv = Mock.env { metadataTools = mockMetadataTools }
 
 mockMetadataTools :: SmtMetadataTools StepperAttributes
 mockMetadataTools = MetadataTools

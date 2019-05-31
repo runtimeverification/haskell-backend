@@ -41,11 +41,11 @@ import           Kore.Internal.TermLike
                  ( TermLike )
 import           Kore.ModelChecker.Simplification
                  ( checkImplicationIsTop )
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Result as StepResult
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule) )
+import           Kore.Step.Simplification.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
@@ -159,11 +159,7 @@ transitionRule
         do
             configs <-
                 Monad.Trans.lift . Monad.Trans.lift
-                $ Pattern.simplify
-                    predicateSimplifier
-                    patternSimplifier
-                    axiomSimplifiers
-                    config
+                $ Pattern.simplify config
             let
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = MultiOr.filterOr configs

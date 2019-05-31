@@ -28,17 +28,15 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Axiom.Registry
 import           Kore.Step.Rule
                  ( extractRewriteAxioms )
 import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.Data
                  ( Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
-                 ( create )
 import           Kore.Syntax.PatternF
                  ( groundHead )
 import qualified SMT
@@ -46,7 +44,7 @@ import qualified SMT
 import           Test.Kore
 import           Test.Kore.ASTVerifier.DefinitionVerifier
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.Step.MockSimplifiers as Mock
+import qualified Test.Kore.Step.MockSymbols as Mock
 
 updateAttributes :: Attributes -> Sentence patternType -> Sentence patternType
 updateAttributes attrs = updateAttrs
@@ -237,8 +235,7 @@ testIndexedModule =
                     (error "Module not found. Should not be possible.")
                     (Map.lookup (ModuleName "test") indexedModules)
 
-testEvaluators
-    :: BuiltinAndAxiomSimplifierMap
+testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators =
     axiomPatternsToEvaluators $ extractEqualityAxioms testIndexedModule
 
@@ -246,7 +243,11 @@ testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build testIndexedModule
 
 testEnv :: Env
-testEnv = Env { metadataTools = testMetadataTools }
+testEnv =
+    Mock.env
+        { metadataTools = testMetadataTools
+        , simplifierAxioms = testEvaluators
+        }
 
 test_functionRegistry :: [TestTree]
 test_functionRegistry =
@@ -291,11 +292,7 @@ test_functionRegistry =
         simplified <-
             SMT.runSMT SMT.defaultConfig emptyLogger
             $ evalSimplifier testEnv
-            $ Pattern.simplify
-                Mock.substitutionSimplifier
-                (Simplifier.create testEvaluators)
-                testEvaluators
-                (makePattern (mkApp sortS gHead []))
+            $ Pattern.simplify $ makePattern $ mkApp sortS gHead []
         let actual =
                 Pattern.term $ head
                 $ MultiOr.extractPatterns simplified

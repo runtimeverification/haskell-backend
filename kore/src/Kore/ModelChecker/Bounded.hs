@@ -31,11 +31,11 @@ import qualified Kore.ModelChecker.Step as ModelChecker
 import           Kore.OnePath.Verification
                  ( Axiom (Axiom) )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Rule
                  ( ImplicationRule (ImplicationRule), RewriteRule,
                  RulePattern (..) )
+import           Kore.Step.Simplification.Data
+                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Strategy

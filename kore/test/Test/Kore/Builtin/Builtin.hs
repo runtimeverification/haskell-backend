@@ -55,7 +55,6 @@ import           Kore.Internal.Pattern
 import           Kore.Internal.TermLike
 import           Kore.Parser
                  ( parseKorePattern )
-import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Result as Result
                  ( mergeResults )
 import           Kore.Step.Rule
@@ -190,7 +189,13 @@ testTermLikeSimplifier :: TermLikeSimplifier
 testTermLikeSimplifier = Simplifier.create testEvaluators
 
 testEnv :: Env
-testEnv = Env { metadataTools = testMetadataTools }
+testEnv =
+    Env
+        { metadataTools = testMetadataTools
+        , simplifierTermLike = testTermLikeSimplifier
+        , simplifierPredicate = testSubstitutionSimplifier
+        , simplifierAxioms = testEvaluators
+        }
 
 evaluate
     :: TermLike Variable

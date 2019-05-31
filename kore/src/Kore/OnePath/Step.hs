@@ -35,13 +35,10 @@ import           Kore.OnePath.StrategyPattern
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Step as Step
@@ -168,13 +165,7 @@ transitionRule
     transitionSimplify c = return c
 
     applySimplify wrapper config = do
-        configs <-
-            Monad.Trans.lift
-            $ Pattern.simplify
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                config
+        configs <- Monad.Trans.lift $ Pattern.simplify config
         let
             -- Filter out ⊥ patterns
             nonEmptyConfigs = MultiOr.filterOr configs
@@ -259,13 +250,7 @@ transitionRule
         let
             removal = removalPredicate destination patt
             result = patt `Conditional.andPredicate` removal
-        orResult <-
-            Monad.Trans.lift
-            $ Pattern.simplify
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                result
+        orResult <- Monad.Trans.lift $ Pattern.simplify result
         let nonEmpty = MultiOr.filterOr orResult
         if null nonEmpty
             then return Bottom
