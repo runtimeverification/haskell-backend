@@ -210,7 +210,7 @@ evaluateApplicationFunction
     -- ^ The pattern to be evaluated
     -> Simplifier (OrPattern variable)
 evaluateApplicationFunction
-    tools
+    _tools
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
@@ -218,7 +218,6 @@ evaluateApplicationFunction
         { term, predicate, substitution }
   =
     evaluateApplication
-        tools
         substitutionSimplifier
         simplifier
         axiomIdToEvaluator

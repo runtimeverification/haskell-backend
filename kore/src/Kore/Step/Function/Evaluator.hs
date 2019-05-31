@@ -52,6 +52,7 @@ import qualified Kore.Step.Merging.OrPattern as OrPattern
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
                  simplifyTerm )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Simplification.Pattern as Pattern
@@ -67,10 +68,7 @@ evaluateApplication
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -- ^ Tools for finding additional information about patterns
-    -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -84,13 +82,42 @@ evaluateApplication
     -- ^ The pattern to be evaluated
     -> Simplifier (OrPattern variable)
 evaluateApplication
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
     childrenPredicate
     (valid :< app)
-  = case maybeEvaluatedPattSimplifier of
+  = do
+    tools <- Simplifier.askMetadataTools
+    let
+        afterInj = evaluateSortInjection tools app
+        Application { applicationSymbolOrAlias = appHead } = afterInj
+        SymbolOrAlias { symbolOrAliasConstructor = symbolId } = appHead
+        appPattern = Recursive.embed (valid :< ApplicationF afterInj)
+
+        maybeEvaluatedPattSimplifier =
+            maybeEvaluatePattern
+                substitutionSimplifier
+                simplifier
+                axiomIdToEvaluator
+                childrenPredicate
+                appPattern
+                unchanged
+        unchangedPatt =
+            Conditional
+                { term         = appPattern
+                , predicate    = predicate
+                , substitution = substitution
+                }
+          where
+            Conditional { term = (), predicate, substitution } =
+                childrenPredicate
+        unchanged = OrPattern.fromPattern unchangedPatt
+
+        getSymbolHook = getHook . Attribute.hook . symAttributes tools
+        getAppHookString = Text.unpack <$> getSymbolHook appHead
+
+    case maybeEvaluatedPattSimplifier of
         Nothing
           | Just hook <- getAppHookString
           , not(null axiomIdToEvaluator) ->
@@ -101,37 +128,6 @@ evaluateApplication
           | otherwise ->
             return unchanged
         Just evaluatedPattSimplifier -> evaluatedPattSimplifier
-  where
-    afterInj = evaluateSortInjection tools app
-
-    maybeEvaluatedPattSimplifier =
-        maybeEvaluatePattern
-            substitutionSimplifier
-            simplifier
-            axiomIdToEvaluator
-            childrenPredicate
-            appPattern
-            unchanged
-
-    Application { applicationSymbolOrAlias = appHead } = afterInj
-    SymbolOrAlias { symbolOrAliasConstructor = symbolId } = appHead
-
-    appPattern =
-        Recursive.embed (valid :< ApplicationF afterInj)
-
-    unchangedPatt =
-        Conditional
-            { term         = appPattern
-            , predicate    = predicate
-            , substitution = substitution
-            }
-      where
-        Conditional { term = (), predicate, substitution } =
-            childrenPredicate
-    unchanged = OrPattern.fromPattern unchangedPatt
-
-    getAppHookString =
-        Text.unpack <$> (getHook . Attribute.hook . symAttributes tools) appHead
 
 {-| Evaluates axioms on patterns.
 -}
