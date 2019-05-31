@@ -35,6 +35,7 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -179,52 +180,49 @@ normalizeSubstitutionDuplication
         , FreshVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> Substitution variable
     -> unifier (Predicate variable)
 normalizeSubstitutionDuplication
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
     subst
-  =
-    if null nonSingletonSubstitutions || Substitution.isNormalized subst
-        then return $ Predicate.fromSubstitution subst
-        else do
-            predSubst <-
-                mergePredicateList
-                <$> mapM
-                    (uncurry
-                        $ solveGroupedSubstitution
-                            tools
-                            substitutionSimplifier
-                            simplifier
-                            axiomIdToSimplifier
-                    )
-                    varAndSubstList
-            finalSubst <-
-                normalizeSubstitutionDuplication
+  | null nonSingletonSubstitutions || Substitution.isNormalized subst =
+    return (Predicate.fromSubstitution subst)
+  | otherwise = do
+    tools <- Simplifier.askMetadataTools
+    predSubst <-
+        mergePredicateList
+        <$> mapM
+            (uncurry
+                $ solveGroupedSubstitution
                     tools
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplifier
-                    (  Substitution.wrap (concat singletonSubstitutions)
-                    <> Conditional.substitution predSubst
-                    )
-            let
-                pred' =
-                    Predicate.makeAndPredicate
-                        (Conditional.predicate predSubst)
-                        (Conditional.predicate finalSubst)
-            return Conditional
-                { term = ()
-                , predicate = pred'
-                , substitution = Conditional.substitution finalSubst
-                }
+            )
+            varAndSubstList
+    finalSubst <-
+        normalizeSubstitutionDuplication
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            (  Substitution.wrap (concat singletonSubstitutions)
+            <> Conditional.substitution predSubst
+            )
+    let
+        pred' =
+            Predicate.makeAndPredicate
+                (Conditional.predicate predSubst)
+                (Conditional.predicate finalSubst)
+    return Conditional
+        { term = ()
+        , predicate = pred'
+        , substitution = Conditional.substitution finalSubst
+        }
   where
     groupedSubstitution =
         groupSubstitutionByVariable $ Substitution.unwrap subst

@@ -125,7 +125,7 @@ normalizeExcept
     -> Predicate variable
     -> unifier (Predicate variable)
 normalizeExcept
-    tools
+    _tools
     predicateSimplifier@(PredicateSimplifier simplifySubstitution)
     simplifier
     axiomIdToSimplifier
@@ -162,7 +162,6 @@ normalizeExcept
   where
     normalizeSubstitutionDuplication' =
         normalizeSubstitutionDuplication
-            tools
             predicateSimplifier
             simplifier
             axiomIdToSimplifier
