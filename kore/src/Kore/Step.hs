@@ -25,18 +25,14 @@ module Kore.Step
     , runStrategy
     ) where
 
+import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Stack
-                 ( HasCallStack )
+import qualified GHC.Stack as GHC
 import           Numeric.Natural
                  ( Natural )
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
                  ( Pattern )
@@ -49,6 +45,7 @@ import           Kore.Step.Rule
                  isHeatingRule, isNormalRule )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Step as Step
@@ -89,9 +86,8 @@ rewriteStep a =
 'Strategy.runStrategy'.
  -}
 transitionRule
-    :: HasCallStack
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    :: GHC.HasCallStack
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions in patterns
     -> BuiltinAndAxiomSimplifierMap
@@ -100,13 +96,14 @@ transitionRule
     -> Pattern Variable
     -- ^ Configuration being rewritten and its accompanying proof
     -> TransitionT (RewriteRule Variable) Simplifier (Pattern Variable)
-transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
+transitionRule substitutionSimplifier simplifier axiomIdToSimplifier =
     \case
         Simplify -> transitionSimplify
         Rewrite a -> transitionRewrite a
   where
     transitionSimplify config =
         do
+            tools <- Reader.asks Simplifier.metadataTools
             configs <-
                 Monad.Trans.lift
                 $ Pattern.simplify
@@ -120,6 +117,7 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
                 nonEmptyConfigs = MultiOr.filterOr configs
             Foldable.asum (pure <$> nonEmptyConfigs)
     transitionRewrite rule config = do
+        tools <- Reader.asks Simplifier.metadataTools
         Transition.addRule rule
         eitherResults <-
             Monad.Trans.lift

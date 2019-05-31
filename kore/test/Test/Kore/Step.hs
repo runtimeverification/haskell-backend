@@ -130,7 +130,6 @@ mockTransitionRule
     -> Strategy.TransitionT (RewriteRule Variable) Simplifier CommonPattern
 mockTransitionRule =
     transitionRule
-        metadataTools
         substitutionSimplifier
         simplifier
         Map.empty
@@ -472,7 +471,6 @@ runStep configuration axioms =
     $ Simplification.evalSimplifier mockEnv
     $ runStrategy
         (transitionRule
-            metadataTools
             (Mock.substitutionSimplifier metadataTools)
             simplifier
             Map.empty
@@ -494,7 +492,6 @@ runSteps configuration axioms =
     $ Simplification.evalSimplifier mockEnv
     $ runStrategy
         (transitionRule
-            metadataTools
             (Mock.substitutionSimplifier metadataTools)
             simplifier
             Map.empty

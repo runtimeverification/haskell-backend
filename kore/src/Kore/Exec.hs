@@ -396,7 +396,6 @@ execute verifiedModule strategy inputPattern
         runStrategy' pat =
             runStrategy
                 (transitionRule
-                    metadataTools
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplifier
