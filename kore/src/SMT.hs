@@ -71,6 +71,8 @@ import           Data.Text
                  ( Text )
 
 import qualified Kore.Logger as Logger
+import           ListT
+                 ( ListT )
 import           SMT.SimpleSMT
                  ( Constructor (..), ConstructorArgument (..),
                  DataTypeDeclaration (..), FunctionDeclaration (..),
@@ -278,6 +280,8 @@ instance (MonadSMT m, Monoid w) => MonadSMT (AccumT w m) where
     {-# INLINE withSolver #-}
 
 instance MonadSMT m => MonadSMT (IdentityT m)
+
+instance MonadSMT m => MonadSMT (ListT m)
 
 instance MonadSMT m => MonadSMT (ReaderT r m)
 

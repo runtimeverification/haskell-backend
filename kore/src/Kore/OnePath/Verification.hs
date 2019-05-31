@@ -58,6 +58,7 @@ import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Strategy
                  ( executionHistoryStep )
 import           Kore.Step.Strategy
@@ -167,7 +168,7 @@ verify
     -- for each.
     -> ExceptT (Pattern Variable) Simplifier ()
 verify
-    metadataTools
+    _metadataTools
     simplifier
     substitutionSimplifier
     axiomIdToSimplifier
@@ -175,7 +176,6 @@ verify
   =
     mapM_
         (verifyClaim
-            metadataTools
             simplifier
             substitutionSimplifier
             axiomIdToSimplifier
@@ -225,8 +225,7 @@ defaultStrategy
     coinductiveRewrites = map (RewriteRule . coerce) claims
 
 verifyClaim
-    :: SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier
+    :: TermLikeSimplifier
     -> PredicateSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
@@ -236,7 +235,6 @@ verifyClaim
     -> (RewriteRule Variable, Limit Natural)
     -> ExceptT (Pattern Variable) Simplifier ()
 verifyClaim
-    metadataTools
     simplifier
     substitutionSimplifier
     axiomIdToSimplifier
@@ -272,6 +270,7 @@ verifyClaim
         -> CommonStrategyPattern
         -> TransitionT (RewriteRule Variable) Verifier CommonStrategyPattern
     transitionRule' prim proofState = do
+        metadataTools <- Simplifier.askMetadataTools
         transitions <-
             Monad.Trans.lift . Monad.Trans.lift
             $ runTransitionT

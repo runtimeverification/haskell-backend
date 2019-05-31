@@ -64,6 +64,8 @@ import           Kore.Syntax.Variable
                  ( SortedVariable )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
+import           ListT
+                 ( ListT )
 import qualified ListT
 import           SMT
                  ( MonadSMT (..), SMT (..) )
@@ -86,6 +88,8 @@ instance (MonadSimplify m, Monoid w) => MonadSimplify (AccumT w m)
 instance MonadSimplify m => MonadSimplify (IdentityT m)
 
 instance MonadSimplify m => MonadSimplify (ExceptT e m)
+
+instance MonadSimplify m => MonadSimplify (ListT m)
 
 instance MonadSimplify m => MonadSimplify (MaybeT m)
 
