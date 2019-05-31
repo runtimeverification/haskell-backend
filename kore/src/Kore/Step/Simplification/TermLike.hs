@@ -167,7 +167,7 @@ simplifyInternal
         DomainValueF p -> return $ DomainValue.simplify tools p
         EqualsF p ->
             Equals.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
+                substitutionSimplifier simplifier axiomIdToEvaluator p
         ExistsF p ->
             Exists.simplify
                 tools substitutionSimplifier simplifier axiomIdToEvaluator p

@@ -929,7 +929,6 @@ evaluateOr equals =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
     $ simplify
-        tools
         (Mock.substitutionSimplifier tools)
         (Simplifier.create Map.empty)
         Map.empty
@@ -945,7 +944,6 @@ evaluate first second =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
     $ makeEvaluate
-        tools
         (Mock.substitutionSimplifier tools)
         (Simplifier.create Map.empty)
         Map.empty
@@ -962,7 +960,6 @@ evaluateTermsGeneric first second =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
     $ makeEvaluateTermsToPredicate
-        tools
         (Mock.substitutionSimplifier tools)
         (Simplifier.create Map.empty)
         Map.empty

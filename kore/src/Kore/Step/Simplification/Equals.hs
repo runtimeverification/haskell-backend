@@ -23,10 +23,6 @@ import           Data.Maybe
                  ( fromMaybe )
 import qualified Data.Traversable as Traversable
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -52,6 +48,7 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, makeEvaluateTerm )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate )
 import qualified Kore.Step.Simplification.Implies as Implies
@@ -146,8 +143,7 @@ simplify
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -155,7 +151,6 @@ simplify
     -> Equals Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
 simplify
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplfier
@@ -165,7 +160,6 @@ simplify
         }
   =
     simplifyEvaluated
-        tools
         substitutionSimplifier
         simplifier
         axiomIdToSimplfier
@@ -192,8 +186,7 @@ simplifyEvaluated
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -202,7 +195,6 @@ simplifyEvaluated
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
 simplifyEvaluated
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplfier
@@ -210,12 +202,12 @@ simplifyEvaluated
     second
   | first == second = return OrPattern.top
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
-  | otherwise =
-    case ( firstPatterns, secondPatterns )
-      of
+  | otherwise = do
+    tools <- Simplifier.askMetadataTools
+    let isFunctionConditional Conditional {term} = isFunctionPattern tools term
+    case ( firstPatterns, secondPatterns ) of
         ([firstP], [secondP]) ->
             makeEvaluate
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplfier
@@ -224,7 +216,6 @@ simplifyEvaluated
         ([firstP], _)
             | isFunctionConditional firstP ->
                 makeEvaluateFunctionalOr
-                    tools
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplfier
@@ -233,7 +224,6 @@ simplifyEvaluated
         (_, [secondP])
             | isFunctionConditional secondP ->
                 makeEvaluateFunctionalOr
-                    tools
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplfier
@@ -241,7 +231,6 @@ simplifyEvaluated
                     firstPatterns
         _ ->
             makeEvaluate
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplfier
@@ -250,7 +239,6 @@ simplifyEvaluated
   where
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second
-    isFunctionConditional Conditional {term} = isFunctionPattern tools term
 
 makeEvaluateFunctionalOr
     :: forall variable .
@@ -260,8 +248,7 @@ makeEvaluateFunctionalOr
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -270,7 +257,6 @@ makeEvaluateFunctionalOr
     -> [Pattern variable]
     -> Simplifier (OrPattern variable)
 makeEvaluateFunctionalOr
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplfier
@@ -335,7 +321,6 @@ makeEvaluateFunctionalOr
       = do
         equality <-
             makeEvaluateTermsAssumesNoBottom
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplfier
@@ -361,8 +346,7 @@ makeEvaluate
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -374,15 +358,11 @@ makeEvaluate
     _
     _
     _
-    _
-    first@Conditional
-        { term = Top_ _ }
-    second@Conditional
-        { term = Top_ _ }
+    first@Conditional { term = Top_ _ }
+    second@Conditional { term = Top_ _ }
   =
     return (Iff.makeEvaluate first second)
 makeEvaluate
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplfier
@@ -399,7 +379,6 @@ makeEvaluate
   = do
     result <-
         makeEvaluateTermsToPredicate
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplfier
@@ -408,7 +387,6 @@ makeEvaluate
     return (Pattern.fromPredicate <$> result)
 
 makeEvaluate
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplfier
@@ -441,7 +419,6 @@ makeEvaluate
             secondCeil
     termEquality <-
         makeEvaluateTermsAssumesNoBottom
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplfier
@@ -481,8 +458,7 @@ makeEvaluateTermsAssumesNoBottom
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -491,7 +467,6 @@ makeEvaluateTermsAssumesNoBottom
     -> TermLike variable
     -> Simplifier (OrPattern variable)
 makeEvaluateTermsAssumesNoBottom
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplfier
@@ -501,7 +476,6 @@ makeEvaluateTermsAssumesNoBottom
     result <-
         runMaybeT
         $ makeEvaluateTermsAssumesNoBottomMaybe
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplfier
@@ -527,8 +501,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -537,7 +510,6 @@ makeEvaluateTermsAssumesNoBottomMaybe
     -> TermLike variable
     -> MaybeT Simplifier (OrPattern variable)
 makeEvaluateTermsAssumesNoBottomMaybe
-    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplfier
@@ -570,8 +542,7 @@ makeEvaluateTermsToPredicate
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -580,7 +551,7 @@ makeEvaluateTermsToPredicate
     -> TermLike variable
     -> Simplifier (OrPredicate variable)
 makeEvaluateTermsToPredicate
-    tools substitutionSimplifier simplifier axiomIdToSimplfier first second
+    substitutionSimplifier simplifier axiomIdToSimplfier first second
   | first == second = return OrPredicate.top
   | otherwise = do
     result <-
@@ -598,6 +569,7 @@ makeEvaluateTermsToPredicate
                 $ Predicate.fromPredicate
                 $ makeEqualsPredicate first second
         Just predicatedOr -> do
+            tools <- Simplifier.askMetadataTools
             firstCeilOr <-
                 Ceil.makeEvaluateTerm
                     tools
