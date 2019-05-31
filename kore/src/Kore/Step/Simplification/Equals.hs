@@ -309,7 +309,6 @@ makeEvaluateFunctionalOr
     allAreBottom <-
         foldM
             (And.simplifyEvaluated
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplfier
@@ -323,7 +322,7 @@ makeEvaluateFunctionalOr
     oneIsNotBottomEquals <-
         foldM
             (And.simplifyEvaluated
-                tools substitutionSimplifier simplifier axiomIdToSimplfier
+                substitutionSimplifier simplifier axiomIdToSimplfier
             )
         firstCeil
         (oneNotBottom : firstEqualsSeconds)
@@ -454,7 +453,6 @@ makeEvaluate
             secondTerm
     negationAnd <-
         And.simplifyEvaluated
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplfier
@@ -462,7 +460,6 @@ makeEvaluate
             secondCeilNegation
     ceilAnd <-
         And.simplifyEvaluated
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplfier
@@ -470,7 +467,6 @@ makeEvaluate
             secondCeil
     equalityAnd <-
         And.simplifyEvaluated
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplfier

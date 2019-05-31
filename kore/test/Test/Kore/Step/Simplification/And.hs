@@ -414,7 +414,6 @@ evaluate patt =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
     $ simplify
-        Mock.metadataTools
         (Mock.substitutionSimplifier Mock.metadataTools)
         (Simplifier.create Map.empty)
         Map.empty
@@ -430,7 +429,6 @@ evaluatePatterns first second =
     $ evalSimplifier Mock.env
     $ gather
     $ makeEvaluate
-        Mock.metadataTools
         (Mock.substitutionSimplifier Mock.metadataTools)
         (Simplifier.create Map.empty)
         Map.empty

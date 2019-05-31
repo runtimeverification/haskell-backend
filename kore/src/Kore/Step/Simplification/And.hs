@@ -21,10 +21,6 @@ import Data.List
 import GHC.Stack
        ( HasCallStack )
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
 import qualified Kore.Internal.Conditional as Conditional
@@ -87,8 +83,7 @@ simplify
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -96,7 +91,6 @@ simplify
     -> And Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
 simplify
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -106,7 +100,6 @@ simplify
         }
   =
     simplifyEvaluated
-        tools
         substitutionSimplifier
         simplifier
         axiomIdToSimplifier
@@ -137,8 +130,7 @@ simplifyEvaluated
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -147,7 +139,6 @@ simplifyEvaluated
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
 simplifyEvaluated
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -163,7 +154,6 @@ simplifyEvaluated
             first1 <- scatter first
             second1 <- scatter second
             makeEvaluate
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
@@ -183,8 +173,7 @@ makeEvaluate
         , FreshVariable variable
         , HasCallStack
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -193,13 +182,12 @@ makeEvaluate
     -> Pattern variable
     -> BranchT Simplifier (Pattern variable)
 makeEvaluate
-    tools substitutionSimplifier simplifier axiomIdToSimplifier first second
+    substitutionSimplifier simplifier axiomIdToSimplifier first second
   | Pattern.isBottom first || Pattern.isBottom second = empty
   | Pattern.isTop first = return second
   | Pattern.isTop second = return first
   | otherwise =
     makeEvaluateNonBool
-        tools
         substitutionSimplifier
         simplifier
         axiomIdToSimplifier
@@ -214,8 +202,7 @@ makeEvaluateNonBool
         , FreshVariable variable
         , HasCallStack
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -224,7 +211,6 @@ makeEvaluateNonBool
     -> Pattern variable
     -> BranchT Simplifier (Pattern variable)
 makeEvaluateNonBool
-    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier

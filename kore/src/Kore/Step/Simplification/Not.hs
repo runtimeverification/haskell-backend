@@ -36,7 +36,6 @@ import qualified Kore.Step.Simplification.And as And
 import           Kore.Step.Simplification.Data
                  ( BranchT, PredicateSimplifier, Simplifier,
                  TermLikeSimplifier, gather, scatter )
-import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -217,10 +216,8 @@ mkMultiAndPattern
     axiomSimplifiers
     patterns
   = do
-    tools <- Simplifier.askMetadataTools
     let mkAnd =
             And.makeEvaluate
-                tools
                 predicateSimplifier
                 termSimplifier
                 axiomSimplifiers

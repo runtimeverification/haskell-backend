@@ -151,8 +151,7 @@ simplifyInternal
     tools <- Simplifier.askMetadataTools
     traverse simplifyTerm' termLikeF >>= \case
         AndF p ->
-            And.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
+            And.simplify substitutionSimplifier simplifier axiomIdToEvaluator p
         ApplicationF p ->
             --  TODO: Re-evaluate outside of the application and stop passing
             -- the simplifier.
