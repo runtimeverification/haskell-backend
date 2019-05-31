@@ -408,8 +408,7 @@ applyRule
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -424,7 +423,6 @@ applyRule
     -- TODO (virgil): This is broken, it should take advantage of the unifier's
     -- branching and not return a list.
 applyRule
-    _metadataTools
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers
@@ -501,7 +499,7 @@ applyRewriteRule
     -- ^ Rewriting axiom
     -> unifier [Result variable]
 applyRewriteRule
-    metadataTools
+    _metadataTools
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers
@@ -511,7 +509,6 @@ applyRewriteRule
     (RewriteRule rule)
   = Log.withLogScope "applyRewriteRule"
     $ applyRule
-        metadataTools
         predicateSimplifier
         patternSimplifier
         axiomSimplifiers
@@ -611,7 +608,7 @@ applyRulesInParallel
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
 applyRulesInParallel
-    metadataTools
+    _metadataTools
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers
@@ -633,7 +630,6 @@ applyRulesInParallel
   where
     applyRule' =
         applyRule
-            metadataTools
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
@@ -719,7 +715,7 @@ sequenceRules
     -- ^ Rewrite rules
     -> unifier (Results variable)
 sequenceRules
-    metadataTools
+    _metadataTools
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers
@@ -766,7 +762,6 @@ sequenceRules
     applyRule' rule config = do
         results <-
             applyRule
-                metadataTools
                 predicateSimplifier
                 patternSimplifier
                 axiomSimplifiers
