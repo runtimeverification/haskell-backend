@@ -36,7 +36,6 @@ import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
-import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Step.Step
                  ( UnificationProcedure (..) )
@@ -98,10 +97,8 @@ equalityRuleEvaluator
         -> Simplifier
             (Either UnificationOrSubstitutionError [Step.Results variable])
     applyRule patt' rule' = do
-        tools <- Simplifier.askMetadataTools
         Monad.Unify.runUnifier
             $ Step.applyRulesInParallel
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
