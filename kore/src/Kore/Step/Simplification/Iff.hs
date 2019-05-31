@@ -53,14 +53,13 @@ simplify
     -> Iff Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
 simplify
-    tools
+    _tools
     predicateSimplifier
     termSimplifier
     axiomSimplifiers
     Iff { iffFirst = first, iffSecond = second }
   =
     simplifyEvaluated
-        tools
         predicateSimplifier
         termSimplifier
         axiomSimplifiers
@@ -91,15 +90,13 @@ simplifyEvaluated
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> OrPattern variable
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
 simplifyEvaluated
-    _tools
     predicateSimplifier
     termSimplifier
     axiomSimplifiers
