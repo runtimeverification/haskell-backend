@@ -197,7 +197,6 @@ transitionRule
                 result <-
                     Monad.Trans.lift . Monad.Trans.lift
                     $ checkImplicationIsTop
-                        tools
                         predicateSimplifier
                         patternSimplifier
                         axiomSimplifiers

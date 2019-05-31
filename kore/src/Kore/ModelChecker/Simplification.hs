@@ -10,10 +10,6 @@ module Kore.ModelChecker.Simplification
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Internal.Pattern as Pattern
@@ -23,6 +19,7 @@ import           Kore.Step.Axiom.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import           Kore.TopBottom
@@ -31,8 +28,7 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 checkImplicationIsTop
-    :: SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    :: PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions in patterns
     -> BuiltinAndAxiomSimplifierMap
@@ -41,7 +37,6 @@ checkImplicationIsTop
     -> TermLike Variable
     -> Simplifier Bool
 checkImplicationIsTop
-    tools
     predicateSimplifier
     patternSimplifier
     axiomSimplifers
@@ -64,6 +59,7 @@ checkImplicationIsTop
                     , predicate = Predicate.makeTruePredicate
                     , substitution = mempty
                     }
+            tools <- Simplifier.askMetadataTools
             orResult <-
                 Pattern.simplify
                     tools
