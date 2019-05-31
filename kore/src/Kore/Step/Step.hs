@@ -350,8 +350,7 @@ applyRemainder
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
 
@@ -361,7 +360,6 @@ applyRemainder
     -- ^ Remainder
     -> unifier (Pattern variable)
 applyRemainder
-    _metadataTools
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers
@@ -643,7 +641,6 @@ applyRulesInParallel
             initial
     applyRemainder' =
         applyRemainder
-            metadataTools
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
@@ -752,7 +749,6 @@ sequenceRules
 
     applyRemainder' =
         applyRemainder
-            metadataTools
             predicateSimplifier
             patternSimplifier
             axiomSimplifiers
