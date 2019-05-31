@@ -142,20 +142,37 @@ test_lookupConcatUniqueKeys =
             (===) Pattern.top =<< evaluateT predicate
         )
 
-test_concatDuplicateKeys :: TestTree
-test_concatDuplicateKeys =
+test_concatDuplicateKeysBottom :: TestTree
+test_concatDuplicateKeysBottom =
     testPropertyWithSolver
         "concat{}(element{}(key, val1), element{}(key, val2)) === \\bottom{}()"
         (do
             patKey <- forAll genIntegerPattern
             patVal1 <- forAll genIntegerPattern
             patVal2 <- forAll genIntegerPattern
+            Monad.when (patVal1 == patVal2) discard
             let patMap1 = elementMap patKey patVal1
                 patMap2 = elementMap patKey patVal2
                 patConcat = concatMap patMap1 patMap2
                 predicate = mkEquals_ mkBottom_ patConcat
             (===) Pattern.bottom =<< evaluateT patConcat
             (===) Pattern.top    =<< evaluateT predicate
+        )
+
+test_concatDuplicateKeysIdempotence :: TestTree
+test_concatDuplicateKeysIdempotence =
+    testPropertyWithSolver
+        "concat{}(element{}(k, v), element{}(k, v)) === element{}(k, v)"
+        (do
+            patKey <- forAll genIntegerPattern
+            patVal <- forAll genIntegerPattern
+            let patMap = elementMap patKey patVal
+                patConcat = concatMap patMap patMap
+                predicate = mkEquals_ patMap patConcat
+            actual1 <- evaluateT patMap
+            actual2 <- evaluateT patConcat
+            (===) actual1 actual2
+            (===) Pattern.top =<< evaluateT predicate
         )
 
 test_concatCommutes :: TestTree
@@ -480,23 +497,25 @@ test_unifySelectFromSingleton =
                 selectPatRev   = selectPattern keyVar valueVar mapVar reverse
                 singleton      = asInternal (Map.singleton concreteKey value)
                 keyStepPattern = fromConcrete concreteKey
-                expect =
-                    Conditional
+                expect = do  -- list monad
+                    mapUnifier <-
+                        [ [], [(concreteKey, value)] ]
+                    return Conditional
                         { term = singleton
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (mapVar, asInternal Map.empty)
+                                [ (mapVar, asInternal (Map.fromList mapUnifier))
                                 , (keyVar, keyStepPattern)
                                 , (valueVar, value)
                                 ]
                         }
             -- { 5 -> 7 } /\ Item(K:Int, V:Int) Rest:Map
-            (singleton `unifiesWith` selectPat) expect
-            (selectPat `unifiesWith` singleton) expect
+            (singleton `unifiesWithMulti` selectPat) expect
+            (selectPat `unifiesWithMulti` singleton) expect
             -- { 5 -> 7 } /\ Rest:Map MapItem(K:Int, V:Int)
-            (singleton `unifiesWith` selectPatRev) expect
-            (selectPatRev `unifiesWith` singleton) expect
+            (singleton `unifiesWithMulti` selectPatRev) expect
+            (selectPatRev `unifiesWithMulti` singleton) expect
         )
 
 test_unifySelectSingletonFromSingleton :: TestTree
@@ -584,40 +603,39 @@ test_unifySelectFromTwoElementMap =
                         )
                 keyStepPattern1 = fromConcrete concreteKey1
                 keyStepPattern2 = fromConcrete concreteKey2
-                expect1 =
-                    Conditional
+                expect = do -- list monad
+                    ((keyUnifier1, valueUnifier1), mapUnifier) <-
+                        [   ( (keyStepPattern1, value1)
+                            , [(concreteKey2, value2)]
+                            )
+                        ,   ( (keyStepPattern1, value1)
+                            , [(concreteKey1, value1), (concreteKey2, value2)]
+                            )
+                        ,   ( (keyStepPattern2, value2)
+                            , [(concreteKey1, value1)]
+                            )
+                        ,   ( (keyStepPattern2, value2)
+                            , [(concreteKey1, value1), (concreteKey2, value2)]
+                            )
+                        ]
+                    return Conditional
                         { term = mapDV
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [   ( mapVar
-                                    , asInternal
-                                        (Map.singleton concreteKey2 value2)
+                                    , asInternal (Map.fromList mapUnifier)
                                     )
-                                , (keyVar, keyStepPattern1)
-                                , (valueVar, value1)
-                                ]
-                        }
-                expect2 =
-                    Conditional
-                        { term = mapDV
-                        , predicate = makeTruePredicate
-                        , substitution =
-                            Substitution.unsafeWrap
-                                [   ( mapVar
-                                    , asInternal
-                                        (Map.singleton concreteKey1 value1)
-                                    )
-                                , (keyVar, keyStepPattern2)
-                                , (valueVar, value2)
+                                , (keyVar, keyUnifier1)
+                                , (valueVar, valueUnifier1)
                                 ]
                         }
             -- { 5 -> 6, 7 -> 8 } /\ Item(K:Int, V:Int) Rest:Map
-            (mapDV `unifiesWithMulti` selectPat) [expect1, expect2]
-            (selectPat `unifiesWithMulti` mapDV) [expect1, expect2]
+            (mapDV `unifiesWithMulti` selectPat) expect
+            (selectPat `unifiesWithMulti` mapDV) expect
             -- { 5 -> 6, 7 -> 8 } /\ Rest:Map Item(K:Int, V:Int)
-            (mapDV `unifiesWithMulti` selectPatRev) [expect1, expect2]
-            (selectPatRev `unifiesWithMulti` mapDV) [expect1, expect2]
+            (mapDV `unifiesWithMulti` selectPatRev) expect
+            (selectPatRev `unifiesWithMulti` mapDV) expect
         )
 
 test_unifySelectTwoFromTwoElementMap :: TestTree
@@ -650,40 +668,67 @@ test_unifySelectTwoFromTwoElementMap =
                         )
                 keyStepPattern1 = fromConcrete concreteKey1
                 keyStepPattern2 = fromConcrete concreteKey2
-                expect1 =
-                    Conditional
-                        { term = mapDV
-                        , predicate = makeTruePredicate
-                        , substitution =
-                            Substitution.unsafeWrap
-                                [   ( mapVar
-                                    , asInternal Map.empty
-                                    )
-                                , (keyVar1, keyStepPattern1)
-                                , (keyVar2, keyStepPattern2)
-                                , (valueVar1, value1)
-                                , (valueVar2, value2)
+                expect = do -- list monad
+                    (unifier1, unifier2, mapUnifier) <-
+                        [   ( (keyStepPattern1, value1)
+                            , (keyStepPattern1, value1)
+                            ,   [ (concreteKey1, value1)
+                                , (concreteKey2, value2)
                                 ]
-                        }
-                expect2 =
-                    Conditional
+                            )
+                        ,   ( (keyStepPattern1, value1)
+                            , (keyStepPattern1, value1)
+                            , [ (concreteKey2, value2) ]
+                            )
+                        ,   ( (keyStepPattern2, value2)
+                            , (keyStepPattern2, value2)
+                            ,   [ (concreteKey1, value1)
+                                , (concreteKey2, value2)
+                                ]
+                            )
+                        ,   ( (keyStepPattern2, value2)
+                            , (keyStepPattern2, value2)
+                            , [ (concreteKey1, value1) ]
+                            )
+                        ] ++ do
+                            (u1, u2) <-
+                                [   ( (keyStepPattern1, value1)
+                                    , (keyStepPattern2, value2)
+                                    )
+                                ,   ( (keyStepPattern2, value2)
+                                    , (keyStepPattern1, value1)
+                                    )
+                                ]
+                            mu <-
+                                [   [ (concreteKey1, value1)
+                                    , (concreteKey2, value2)
+                                    ]
+                                ,   [ (concreteKey1, value1) ]
+                                ,   [ (concreteKey2, value2) ]
+                                ,   []
+                                ]
+                            return (u1, u2, mu)
+                    let
+                        (keyUnifier1, valueUnifier1) = unifier1
+                        (keyUnifier2, valueUnifier2) = unifier2
+                    return Conditional
                         { term = mapDV
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [   ( mapVar
-                                    , asInternal Map.empty
+                                    , asInternal (Map.fromList mapUnifier)
                                     )
-                                , (keyVar1, keyStepPattern2)
-                                , (keyVar2, keyStepPattern1)
-                                , (valueVar1, value2)
-                                , (valueVar2, value1)
+                                , (keyVar1, keyUnifier1)
+                                , (keyVar2, keyUnifier2)
+                                , (valueVar1, valueUnifier1)
+                                , (valueVar2, valueUnifier2)
                                 ]
                         }
 
             -- { 5 } /\ MapItem(X:Int) Rest:Map
-            (mapDV `unifiesWithMulti` selectPat) [expect1, expect2]
-            (selectPat `unifiesWithMulti` mapDV) [expect1, expect2]
+            (mapDV `unifiesWithMulti` selectPat) expect
+            (selectPat `unifiesWithMulti` mapDV) expect
         )
 
 
