@@ -23,6 +23,7 @@ import           Control.Monad.Catch
                  ( MonadCatch, catch )
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
+import qualified Control.Monad.Reader as Reader
 import           Control.Monad.State.Strict
                  ( MonadState, StateT, evalStateT )
 import           Data.Coerce
@@ -40,10 +41,6 @@ import           Text.Megaparsec
                  ( parseMaybe )
 
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.TermLike
                  ( TermLike, Variable )
 import qualified Kore.Logger as Logger
@@ -64,9 +61,11 @@ import           Kore.Step.Simplification.Data
                  ( TermLikeSimplifier )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
+import qualified Kore.Unification.Unify as Unify
 import           Kore.Unparser
                  ( Unparse )
 
@@ -86,9 +85,7 @@ runRepl
     :: forall claim
     .  Unparse (Variable)
     => Claim claim
-    => SmtMetadataTools StepperAttributes
-    -- ^ tools required for the proof
-    -> TermLikeSimplifier
+    => TermLikeSimplifier
     -- ^ pattern simplifier
     -> PredicateSimplifier
     -- ^ predicate simplifier
@@ -105,7 +102,7 @@ runRepl
     -- ^ mode to run in
     -> Simplifier ()
 runRepl
-    tools simplifier predicateSimplifier axiomToIdSimplifier
+    simplifier predicateSimplifier axiomToIdSimplifier
     axioms' claims' logger replScript replMode
   = do
     mNewState <- evaluateScript replScript
@@ -220,6 +217,7 @@ runRepl
         -> ReplNode
         -> Simplifier ExecutionGraph
     stepper0 claim claims axioms graph rnode = do
+        tools <- Reader.asks Simplifier.metadataTools
         let node = unReplNode rnode
         if Graph.outdeg (Strategy.graph graph) node == 0
             then
@@ -240,7 +238,8 @@ runRepl
         :: TermLike Variable
         -> TermLike Variable
         -> UnifierWithExplanation ()
-    unifier0 first second =
+    unifier0 first second = do
+        tools <- Unify.liftSimplifier $ Reader.asks Simplifier.metadataTools
         () <$ unificationProcedure
             tools
             predicateSimplifier

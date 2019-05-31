@@ -284,7 +284,6 @@ proveWithRepl definitionModule specModule mvar replScript replMode =
             claims = fmap makeClaim specAxioms
 
         Repl.runRepl
-            metadataTools
             simplifier
             substitutionSimplifier
             axiomIdToSimplifier
