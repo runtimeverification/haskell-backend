@@ -163,8 +163,7 @@ simplifyInternal
         BottomF p -> return $ Bottom.simplify p
         BuiltinF p -> return $ Builtin.simplify p
         CeilF p ->
-            Ceil.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
+            Ceil.simplify substitutionSimplifier simplifier axiomIdToEvaluator p
         DomainValueF p -> return $ DomainValue.simplify tools p
         EqualsF p ->
             Equals.simplify

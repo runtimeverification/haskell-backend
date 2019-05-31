@@ -279,14 +279,12 @@ makeEvaluateFunctionalOr
   = do
     firstCeil <-
         Ceil.makeEvaluate
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplfier
             first
     secondCeilsWithProofs <- mapM
         (Ceil.makeEvaluate
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplfier
@@ -419,14 +417,12 @@ makeEvaluate
   = do
     firstCeil <-
         Ceil.makeEvaluate
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplfier
             first { term = if termsAreEqual then mkTop_ else firstTerm }
     secondCeil <-
         Ceil.makeEvaluate
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplfier

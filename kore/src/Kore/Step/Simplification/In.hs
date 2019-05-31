@@ -110,10 +110,10 @@ simplifyEvaluatedIn
 
   | OrPattern.isTrue first =
     Ceil.simplifyEvaluated
-        tools substitutionSimplifier simplifier axiomIdToSimplifier second
+        substitutionSimplifier simplifier axiomIdToSimplifier second
   | OrPattern.isTrue second =
     Ceil.simplifyEvaluated
-        tools substitutionSimplifier simplifier axiomIdToSimplifier first
+        substitutionSimplifier simplifier axiomIdToSimplifier first
 
   | otherwise = do
     let
@@ -143,13 +143,13 @@ makeEvaluateIn
     -> Pattern variable
     -> Simplifier (OrPattern variable)
 makeEvaluateIn
-    tools substitutionSimplifier simplifier axiomIdToSimplifier first second
+    _tools substitutionSimplifier simplifier axiomIdToSimplifier first second
   | Pattern.isTop first =
     Ceil.makeEvaluate
-        tools substitutionSimplifier simplifier axiomIdToSimplifier second
+        substitutionSimplifier simplifier axiomIdToSimplifier second
   | Pattern.isTop second =
     Ceil.makeEvaluate
-        tools substitutionSimplifier simplifier axiomIdToSimplifier first
+        substitutionSimplifier simplifier axiomIdToSimplifier first
   | Pattern.isBottom first || Pattern.isBottom second =
     return OrPattern.bottom
   | otherwise = return $ makeEvaluateNonBoolIn first second

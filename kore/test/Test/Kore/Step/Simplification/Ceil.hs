@@ -491,7 +491,6 @@ evaluate ceil =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
     $ Ceil.simplify
-        tools
         (Mock.substitutionSimplifier tools)
         (Simplifier.create Map.empty)
         Map.empty
@@ -513,7 +512,6 @@ makeEvaluateWithAxioms axiomIdToSimplifier child =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
     $ Ceil.makeEvaluate
-        tools
         (Mock.substitutionSimplifier tools)
         (Simplifier.create axiomIdToSimplifier)
         axiomIdToSimplifier
