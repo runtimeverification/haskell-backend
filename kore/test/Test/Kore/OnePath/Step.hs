@@ -9,6 +9,7 @@ import Test.Tasty.HUnit
 
 import           Data.Default
                  ( def )
+import qualified Data.Foldable as Foldable
 import           Data.List
                  ( nub, sort )
 import qualified Data.Map as Map
@@ -276,6 +277,9 @@ test_onePathStrategy =
                     (Mock.functionalConstr10 (TermLike.mkVar Mock.y))
                     (Mock.functionalConstr11 (TermLike.mkVar Mock.y))
                 ]
+        let equalsXA = makeEqualsPredicate (TermLike.mkVar Mock.x) Mock.a
+            equalsXB = makeEqualsPredicate (TermLike.mkVar Mock.x) Mock.b
+            equalsXC = makeEqualsPredicate (TermLike.mkVar Mock.x) Mock.c
         assertEqualWithExplanation ""
             [ RewritePattern Conditional
                 { term = Mock.f Mock.b
@@ -290,22 +294,14 @@ test_onePathStrategy =
             , Stuck Conditional
                 { term = Mock.functionalConstr11 (TermLike.mkVar Mock.x)
                 , predicate =
-                    makeAndPredicate
-                        (makeAndPredicate
-                            (makeNotPredicate
-                                (makeEqualsPredicate
-                                    (TermLike.mkVar Mock.x) Mock.a
-                                )
-                            )
-                            (makeNotPredicate
-                                (makeEqualsPredicate
-                                    (TermLike.mkVar Mock.x) Mock.b
-                                )
-                            )
-                        )
-                        (makeNotPredicate
-                            (makeEqualsPredicate (TermLike.mkVar Mock.x) Mock.c)
-                        )
+                    Foldable.foldr1 makeAndPredicate
+                        [ makeNotPredicate equalsXA
+                        -- TODO (thomas.tuegel): Remove this redundancy.
+                        , makeAndPredicate
+                            (makeNotPredicate equalsXA)
+                            (makeNotPredicate equalsXB)
+                        , makeNotPredicate equalsXC
+                        ]
                 , substitution = mempty
                 }
             ]

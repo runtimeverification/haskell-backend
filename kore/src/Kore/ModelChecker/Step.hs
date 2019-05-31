@@ -241,7 +241,7 @@ transitionRule
         eitherResults <-
             Monad.Trans.lift . Monad.Trans.lift
             $ Monad.Unify.runUnifier
-            $ Step.applyRewriteRules
+            $ Step.applyRewriteRulesParallel
                 tools
                 predicateSimplifier
                 patternSimplifier
