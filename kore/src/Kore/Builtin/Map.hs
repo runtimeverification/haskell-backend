@@ -542,6 +542,22 @@ lookupSymbolKeys
     -> Either (Kore.Error e) SymbolOrAlias
 lookupSymbolKeys = Builtin.lookupSymbol keysKey
 
+{- | Find the symbol hooked to @MAP.remove@ in an indexed module.
+ -}
+lookupSymbolRemove
+    :: Sort
+    -> VerifiedModule declAttrs axiomAttrs
+    -> Either (Kore.Error e) SymbolOrAlias
+lookupSymbolRemove = Builtin.lookupSymbol removeKey
+
+{- | Find the symbol hooked to @MAP.removeAll@ in an indexed module.
+ -}
+lookupSymbolRemoveAll
+    :: Sort
+    -> VerifiedModule declAttrs axiomAttrs
+    -> Either (Kore.Error e) SymbolOrAlias
+lookupSymbolRemoveAll = Builtin.lookupSymbol removeAllKey
+
 {- | Check if the given symbol is hooked to @MAP.concat@.
  -}
 isSymbolConcat
@@ -566,6 +582,21 @@ isSymbolUnit
     -> Bool
 isSymbolUnit = Builtin.isSymbol unitKey
 
+{- | Check if the given symbol is hooked to @MAP.remove@.
+-}
+isSymbolRemove
+    :: SmtMetadataTools Hook
+    -> SymbolOrAlias
+    -> Bool
+isSymbolRemove = Builtin.isSymbol removeKey
+
+{- | Check if the given symbol is hooked to @MAP.removeAll@.
+-}
+isSymbolRemoveAll
+    :: SmtMetadataTools Hook
+    -> SymbolOrAlias
+    -> Bool
+isSymbolRemoveAll = Builtin.isSymbol removeAllKey
 
 {- | Simplify the conjunction or equality of two concrete Map domain values.
 

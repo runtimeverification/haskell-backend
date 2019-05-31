@@ -115,7 +115,7 @@ test_removeAllUnit =
             set <- forAll Test.Set.genSetPattern
             let patRemoveAll = removeAllMap unitMap set
                 predicate = mkEquals_ unitMap patRemoveAll
-            expect <- evaluate unitSet
+            expect <- evaluate unitMap
             (===) expect =<< evaluate patRemoveAll
             (===) Pattern.top =<< evaluate predicate
         )
