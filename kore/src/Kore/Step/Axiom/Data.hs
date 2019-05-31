@@ -32,10 +32,6 @@ import           GHC.Generics
                  ( Generic )
 
 import qualified Kore.Attribute.Pattern as Attribute
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( merge )
 import           Kore.Internal.OrPattern
@@ -47,7 +43,6 @@ import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
-import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Syntax.Application
 import           Kore.Syntax.Variable
                  ( SortedVariable, Variable (..) )
@@ -207,8 +202,7 @@ applicationAxiomSimplifier
             , Show variable
             , Unparse variable
             )
-        => SmtMetadataTools StepperAttributes
-        -> PredicateSimplifier
+        => PredicateSimplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> CofreeF
@@ -235,17 +229,10 @@ applicationAxiomSimplifier applicationSimplifier =
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
         -> Simplifier (AttemptedAxiom variable)
-    helper
-        substitutionSimplifier
-        simplifier
-        axiomIdToSimplifier
-        termLike
-      = do
-        tools <- Simplifier.askMetadataTools
+    helper substitutionSimplifier simplifier axiomIdToSimplifier termLike =
         case Recursive.project termLike of
             (valid :< ApplicationF p) ->
                 applicationSimplifier
-                    tools
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplifier

@@ -126,6 +126,7 @@ import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, SimplificationType, Simplifier,
                  TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import           Kore.Unparser
@@ -681,8 +682,7 @@ functionEvaluator impl =
   where
     evaluator
         :: (Ord variable, Show variable)
-        => SmtMetadataTools StepperAttributes
-        -> PredicateSimplifier
+        => PredicateSimplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> CofreeF
@@ -690,7 +690,8 @@ functionEvaluator impl =
             (Attribute.Pattern variable)
             (TermLike variable)
         -> Simplifier (AttemptedAxiom variable)
-    evaluator tools _ simplifier _axiomIdToSimplifier (valid :< app) =
+    evaluator _ simplifier _axiomIdToSimplifier (valid :< app) = do
+        tools <- Simplifier.askMetadataTools
         impl tools simplifier resultSort applicationChildren
       where
         Application { applicationChildren } = app
