@@ -268,7 +268,6 @@ makeEvaluateTerm
                 child
         _ -> do
             evaluation <- Axiom.evaluatePattern
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToEvaluator

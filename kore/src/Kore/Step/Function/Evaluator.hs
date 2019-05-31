@@ -143,10 +143,7 @@ evaluatePattern
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -- ^ Tools for finding additional information about patterns
-    -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -157,10 +154,8 @@ evaluatePattern
     -- ^ The pattern to be evaluated
     -> OrPattern variable
     -- ^ The default value
-    -> Simplifier
-        (OrPattern variable)
+    -> Simplifier (OrPattern variable)
 evaluatePattern
-    _tools
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
