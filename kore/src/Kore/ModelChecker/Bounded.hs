@@ -42,6 +42,7 @@ import           Kore.Step.Rule
                  RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Strategy
                  ( GraphSearchOrder, Strategy, pickFinal,
                  runStrategyWithSearchOrder )
@@ -64,8 +65,7 @@ data CheckResult
     deriving (Show)
 
 check
-    :: SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier
+    :: TermLikeSimplifier
     -- ^ Simplifies normal patterns through, e.g., function evaluation
     -> PredicateSimplifier
     -- ^ Simplifies predicates
@@ -87,13 +87,14 @@ check
     -- for each.
     -> Simplifier [CheckResult]
 check
-    metadataTools
     simplifier
     substitutionSimplifier
     axiomIdToSimplifier
     strategyBuilder
     searchOrder
-  =
+    implications
+  = do
+    metadataTools <- Simplifier.askMetadataTools
     mapM
         (checkClaim
             metadataTools
@@ -103,6 +104,7 @@ check
             strategyBuilder
             searchOrder
         )
+        implications
 
 bmcStrategy
     :: [Axiom]

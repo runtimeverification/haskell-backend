@@ -313,7 +313,6 @@ boundedModelCheck limit definitionModule specModule searchOrder =
             specAxioms = fmap snd $ extractImplicationClaims specModule
 
         Bounded.check
-            metadataTools
             simplifier
             substitutionSimplifier
             axiomIdToSimplifier
