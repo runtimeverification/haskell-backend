@@ -370,13 +370,11 @@ normalizeExcept
 normalizeExcept predicated =
     (fmap . fmap) MultiOr.make
     $ runSMT
-    $ evalSimplifier Mock.env
+    $ evalSimplifier mockEnv
     $ Monad.Unify.runUnifier
-    $ Substitution.normalizeExcept
-        Mock.substitutionSimplifier
-        Simplifier.create
-        Map.empty
-        predicated
+    $ Substitution.normalizeExcept predicated
+  where
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
 
 -- | Run an 'SMT' computation with the default configuration.
 runSMT :: SMT a -> IO a

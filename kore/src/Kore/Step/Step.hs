@@ -183,9 +183,9 @@ unifyRule
     -> unifier (UnifiedRule variable)
 unifyRule
     (UnificationProcedure unifyPatterns)
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
+    _predicateSimplifier
+    _patternSimplifier
+    _axiomSimplifiers
 
     initial@Conditional { term = initialTerm }
     rule
@@ -207,11 +207,7 @@ unifyRule
     unification' <- normalize (unification <> requires')
     return (rule' `Conditional.withCondition` unification')
   where
-    normalize =
-        Substitution.normalizeExcept
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
+    normalize = Substitution.normalizeExcept
 
 unifyRules
     ::  forall unifier variable
@@ -280,9 +276,9 @@ applyInitialConditions
     -- TODO(virgil): This should take advantage of the unifier's branching and
     -- not return an Or.
 applyInitialConditions
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
+    _predicateSimplifier
+    _patternSimplifier
+    _axiomSimplifiers
 
     initial
     unification
@@ -299,12 +295,7 @@ applyInitialConditions
     TopBottom.guardAgainstBottom applied
     return applied
   where
-    normalize condition =
-        Substitution.normalizeExcept
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-            condition
+    normalize = Substitution.normalizeExcept
 
 {- | Produce the final configurations of an applied rule.
 
@@ -337,9 +328,9 @@ finalizeAppliedRule
     -- ^ Conditions of applied rule
     -> unifier (OrPattern variable)
 finalizeAppliedRule
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
+    _predicateSimplifier
+    _patternSimplifier
+    _axiomSimplifiers
 
     renamedRule
     appliedConditions
@@ -364,12 +355,7 @@ finalizeAppliedRule
             finalTerm' = TermLike.substitute substitution' finalTerm
         return finalCondition { Pattern.term = finalTerm' }
 
-    normalize condition =
-        Substitution.normalizeExcept
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-            condition
+    normalize = Substitution.normalizeExcept
 
 {- | Apply the remainder predicate to the given initial configuration.
 
@@ -393,9 +379,9 @@ applyRemainder
     -- ^ Remainder
     -> unifier (Pattern variable)
 applyRemainder
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
+    _predicateSimplifier
+    _patternSimplifier
+    _axiomSimplifiers
 
     initial
     remainder
@@ -407,12 +393,7 @@ applyRemainder
     let normalized = normalizedCondition { Conditional.term = finalTerm }
     return normalized
   where
-    normalize condition =
-        Substitution.normalizeExcept
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-            condition
+    normalize = Substitution.normalizeExcept
 
 toAxiomVariables
     :: Ord variable
