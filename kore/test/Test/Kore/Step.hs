@@ -52,7 +52,7 @@ import           Test.Tasty.HUnit.Extensions
 -- `mockMetadataTools. `
 test_constructorRewriting :: TestTree
 test_constructorRewriting =
-    applyStrategy                              "a constructor appied to a var"
+    applyStrategy                              "a constructor applied to a var"
         ( Start $ cons "c1" ["var"])
         [ Axiom $ cons "c1" ["x1"] `rewritesTo` cons "c2" ["x1"]
         , Axiom $ cons "c2" ["x2"] `rewritesTo` cons "c3" ["x2"]
@@ -90,7 +90,7 @@ takeSteps :: (Start, [Axiom]) -> IO Actual
 takeSteps (Start start, wrappedAxioms) =
     (<$>) pickLongest
     $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ Simplification.evalSimplifier Mock.env
+    $ Simplification.evalSimplifier mockEnv
     $ makeExecutionGraph start (unAxiom <$> wrappedAxioms)
   where
     makeExecutionGraph configuration axioms =
