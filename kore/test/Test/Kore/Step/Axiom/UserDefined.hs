@@ -32,7 +32,7 @@ import           Kore.Step.Simplification.Data
                  ( AttemptedAxiomResults (AttemptedAxiomResults),
                  CommonAttemptedAxiom )
 import           Kore.Step.Simplification.Data
-                 ( TermLikeSimplifier, evalSimplifier )
+                 ( Env (..), TermLikeSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -243,10 +243,15 @@ evaluateWithAxiom axiom simplifier patt =
     evaluated :: IO CommonAttemptedAxiom
     evaluated =
         SMT.runSMT SMT.defaultConfig emptyLogger
-        $ evalSimplifier Mock.env
+        $ evalSimplifier mockEnv
         $ equalityRuleEvaluator
             axiom
             Mock.substitutionSimplifier
             simplifier
             Map.empty
             patt
+    mockEnv =
+        Mock.env
+            { simplifierTermLike = simplifier
+            , simplifierPredicate = Mock.substitutionSimplifier
+            }
