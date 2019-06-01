@@ -19,7 +19,8 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
+                 ( makeAndPredicate, makeEqualsPredicate,
+                 makeMultipleAndPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.EvaluationStrategy
                  ( firstFullEvaluation )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -183,12 +184,11 @@ test_applicationSimplification =
                         [ Conditional
                             { term = fOfA
                             , predicate =
-                                makeAndPredicate
-                                    (makeEqualsPredicate fOfA gOfA)
-                                    (makeAndPredicate
-                                        (makeEqualsPredicate fOfA fOfB)
-                                        (makeEqualsPredicate gOfA gOfB)
-                                    )
+                                makeMultipleAndPredicate
+                                    [ makeEqualsPredicate fOfA gOfA
+                                    , makeEqualsPredicate fOfA fOfB
+                                    , makeEqualsPredicate gOfA gOfB
+                                    ]
                             , substitution =
                                 Substitution.unsafeWrap
                                 $ List.sortBy (comparing fst)
