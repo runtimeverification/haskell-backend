@@ -319,31 +319,17 @@ applyRemainder
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-
-    -> Pattern variable
+    => Pattern variable
     -- ^ Initial configuration
     -> Predicate variable
     -- ^ Remainder
     -> unifier (Pattern variable)
-applyRemainder
-    _predicateSimplifier
-    _patternSimplifier
-    _axiomSimplifiers
-
-    initial
-    remainder
-  = do
+applyRemainder initial remainder = do
     let final = initial `Conditional.andCondition` remainder
         finalCondition = Conditional.withoutTerm final
         Conditional { Conditional.term = finalTerm } = final
-    normalizedCondition <- normalize finalCondition
-    let normalized = normalizedCondition { Conditional.term = finalTerm }
-    return normalized
-  where
-    normalize = Substitution.normalizeExcept
+    normalizedCondition <- Substitution.normalizeExcept finalCondition
+    return normalizedCondition { Conditional.term = finalTerm }
 
 toAxiomVariables
     :: Ord variable
@@ -400,9 +386,9 @@ finalizeRulesParallel
     -> [UnifiedRule (Target variable)]
     -> unifier (Results variable)
 finalizeRulesParallel
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
+    _predicateSimplifier
+    _termSimplifier
+    _axiomSimplifiers
 
     initial
     unifiedRules
@@ -412,19 +398,13 @@ finalizeRulesParallel
         Foldable.fold <$> traverse (finalizeRule initialCondition) unifiedRules
     let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
         remainder = Predicate.fromPredicate (Remainder.remainder' unifications)
-    remainders' <- Monad.Unify.gather $ applyRemainder' initial remainder
+    remainders' <- Monad.Unify.gather $ applyRemainder initial remainder
     return Step.Results
         { results = Seq.fromList results
         , remainders =
             OrPattern.fromPatterns
             $ Pattern.mapVariables Target.unwrapVariable <$> remainders'
         }
-  where
-    applyRemainder' =
-        applyRemainder
-            predicateSimplifier
-            termSimplifier
-            axiomSimplifiers
 
 finalizeRulesSequence
     ::  forall unifier variable
@@ -444,9 +424,9 @@ finalizeRulesSequence
     -> [UnifiedRule (Target variable)]
     -> unifier (Results variable)
 finalizeRulesSequence
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
+    _predicateSimplifier
+    _termSimplifier
+    _axiomSimplifiers
 
     initial
     unifiedRules
@@ -455,7 +435,7 @@ finalizeRulesSequence
         State.runStateT
             (traverse finalizeRuleSequence' unifiedRules)
             (Conditional.withoutTerm initial)
-    remainders' <- Monad.Unify.gather $ applyRemainder' initial remainder
+    remainders' <- Monad.Unify.gather $ applyRemainder initial remainder
     return Step.Results
         { results = Seq.fromList $ Foldable.fold results
         , remainders =
@@ -476,11 +456,6 @@ finalizeRulesSequence
                 $ MultiOr.singleton unification
         State.put (remainder `Conditional.andCondition` remainder')
         return results
-    applyRemainder' =
-        applyRemainder
-            predicateSimplifier
-            termSimplifier
-            axiomSimplifiers
 
 {- | Check that the final substitution covers the applied rule appropriately.
 
