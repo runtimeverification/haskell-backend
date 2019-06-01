@@ -267,13 +267,14 @@ runSimplifier
     :: BuiltinAndAxiomSimplifierMap
     -> Predicate Variable
     -> IO (OrPredicate Variable)
-runSimplifier _patternSimplifierMap predicate =
+runSimplifier patternSimplifierMap predicate =
     fmap MultiOr.make
     $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
+    $ evalSimplifier env
     $ gather
     $ simplifier predicate
   where
+    env = Mock.env { simplifierAxioms = patternSimplifierMap }
     PredicateSimplifier simplifier = PSSimplifier.create
 
 simplificationEvaluator
