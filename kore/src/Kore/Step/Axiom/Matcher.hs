@@ -17,7 +17,6 @@ import           Control.Applicative
                  ( (<|>) )
 import           Control.Error.Util
                  ( just, nothing )
-import qualified Control.Monad as Monad
 import           Control.Monad.Except
 import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Maybe
@@ -26,6 +25,10 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
+import           Kore.IndexedModule.MetadataTools
+                 ( SmtMetadataTools )
 import           Kore.Internal.Predicate as Conditional
                  ( Conditional (..), Predicate )
 import qualified Kore.Internal.Predicate as Predicate
@@ -44,7 +47,11 @@ import qualified Kore.Step.Simplification.AndTerms as SortInjectionSimplificatio
                  ( SortInjectionSimplification (..) )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
-import           Kore.Step.Simplification.Data as Simplifier
+import           Kore.Step.Simplification.Data
+                 ( PredicateSimplifier, TermLikeSimplifier )
+import           Kore.Step.Simplification.Data
+                 ( BuiltinAndAxiomSimplifierMap )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMergerExcept,
                  mergePredicatesAndSubstitutionsExcept )
@@ -97,20 +104,22 @@ matchAsUnification
     first
     second
   = do
-    result <-
-        runMaybeT $ match
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            Map.empty
-            first
-            second
+    result <- runMaybeT matchResult
     maybe
         (Monad.Unify.throwUnificationError
             (unsupportedPatterns "Unknown match case." first second)
         )
         return
         result
+  where
+    matchResult =
+        match
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            Map.empty
+            first
+            second
 
 unificationWithAppMatchOnTop
     ::  ( FreshVariable variable
@@ -134,16 +143,18 @@ unificationWithAppMatchOnTop
     first
     second
   = do
+    tools <- Simplifier.askMetadataTools
     case first of
         (App_ firstHead firstChildren) ->
             case second of
                 (App_ secondHead secondChildren)
-                  | firstHead == secondHead ->
-                    unifyJoin
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
-                        (zip firstChildren secondChildren)
+                  | firstHead == secondHead
+                    -> unifyJoin
+                            tools
+                            substitutionSimplifier
+                            simplifier
+                            axiomIdToSimplifier
+                            (zip firstChildren secondChildren)
                   | symbolOrAliasConstructor firstHead
                         == symbolOrAliasConstructor secondHead
                     -- The application heads have the same symbol or alias
@@ -155,8 +166,8 @@ unificationWithAppMatchOnTop
                                 first
                                 second
                             )
-                  | otherwise ->
-                    error
+                  | otherwise
+                    -> error
                         (  "Unexpected unequal heads: "
                         ++ show firstHead ++ " and "
                         ++ show secondHead ++ "."
@@ -168,14 +179,14 @@ unificationWithAppMatchOnTop
         (Ceil_ firstOperandSort (SortVariableSort _) firstChild) ->
             case second of
                 (Ceil_ secondOperandSort _resultSort secondChild)
-                    | firstOperandSort == secondOperandSort
+                  | firstOperandSort == secondOperandSort
                         -> unificationWithAppMatchOnTop
                             substitutionSimplifier
                             simplifier
                             axiomIdToSimplifier
                             firstChild
                             secondChild
-                    | otherwise
+                  | otherwise
                         -> error
                             (  "Unexpected unequal child sorts: "
                             ++ show firstOperandSort ++ " and "
@@ -214,21 +225,27 @@ match
     quantifiedVariables
     first
     second
-  =
-    matchEqualHeadPatterns
-        substitutionSimplifier
-        simplifier
-        axiomIdToSimplifier
-        quantifiedVariables
-        first
-        second
-    <|> matchVariableFunction
-        substitutionSimplifier
-        simplifier
-        axiomIdToSimplifier
-        quantifiedVariables
-        first
-        second
+  = do
+    tools <- Simplifier.askMetadataTools
+    (<|>)
+        (matchEqualHeadPatterns
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            quantifiedVariables
+            first
+            second
+        )
+        (matchVariableFunction
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            quantifiedVariables
+            first
+            second
+        )
 
 matchEqualHeadPatterns
     ::  forall variable unifier
@@ -238,7 +255,8 @@ matchEqualHeadPatterns
         , FreshVariable variable
         , MonadUnify unifier
         )
-    => PredicateSimplifier
+    => SmtMetadataTools StepperAttributes
+    -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -248,6 +266,7 @@ matchEqualHeadPatterns
     -> TermLike variable
     -> MaybeT unifier (Predicate variable)
 matchEqualHeadPatterns
+    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -260,6 +279,7 @@ matchEqualHeadPatterns
             case second of
                 (And_ _ secondFirst secondSecond) ->
                     matchJoin
+                        tools
                         substitutionSimplifier
                         simplifier
                         axiomIdToSimplifier
@@ -270,17 +290,17 @@ matchEqualHeadPatterns
                 _ -> nothing
         (App_ firstHead firstChildren) ->
             case second of
-                (App_ secondHead secondChildren)
-                  | firstHead == secondHead -> do
-                    matchJoin
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
-                        quantifiedVariables
-                        (zip firstChildren secondChildren)
-                  | otherwise -> do
-                    tools <- Simplifier.askMetadataTools
-                    case simplifySortInjections tools first second of
+                (App_ secondHead secondChildren) ->
+                    if firstHead == secondHead
+                    then
+                        matchJoin
+                            tools
+                            substitutionSimplifier
+                            simplifier
+                            axiomIdToSimplifier
+                            quantifiedVariables
+                            (zip firstChildren secondChildren)
+                    else case simplifySortInjections tools first second of
                         Nothing -> nothing
                         Just SortInjectionSimplification.NotInjection ->
                             nothing
@@ -292,6 +312,7 @@ matchEqualHeadPatterns
                                     { firstChild, secondChild }
                             ) ->
                                 matchJoin
+                                    tools
                                     substitutionSimplifier
                                     simplifier
                                     axiomIdToSimplifier
@@ -320,6 +341,7 @@ matchEqualHeadPatterns
             case second of
                 (Equals_ _ _ secondFirst secondSecond) ->
                     matchJoin
+                        tools
                         substitutionSimplifier
                         simplifier
                         axiomIdToSimplifier
@@ -375,6 +397,7 @@ matchEqualHeadPatterns
             case second of
                 (Iff_ _ secondFirst secondSecond) ->
                     matchJoin
+                        tools
                         substitutionSimplifier
                         simplifier
                         axiomIdToSimplifier
@@ -387,6 +410,7 @@ matchEqualHeadPatterns
             case second of
                 (Implies_ _ secondFirst secondSecond) ->
                     matchJoin
+                        tools
                         substitutionSimplifier
                         simplifier
                         axiomIdToSimplifier
@@ -399,6 +423,7 @@ matchEqualHeadPatterns
             case second of
                 (In_ _ _ secondFirst secondSecond) ->
                     matchJoin
+                        tools
                         substitutionSimplifier
                         simplifier
                         axiomIdToSimplifier
@@ -433,6 +458,7 @@ matchEqualHeadPatterns
             case second of
                 (Or_ _ secondFirst secondSecond) ->
                     matchJoin
+                        tools
                         substitutionSimplifier
                         simplifier
                         axiomIdToSimplifier
@@ -445,6 +471,7 @@ matchEqualHeadPatterns
             case second of
                 (Rewrites_ _ secondFirst secondSecond) ->
                     matchJoin
+                        tools
                         substitutionSimplifier
                         simplifier
                         axiomIdToSimplifier
@@ -482,7 +509,8 @@ matchJoin
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => PredicateSimplifier
+    => SmtMetadataTools StepperAttributes
+    -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -491,6 +519,7 @@ matchJoin
     -> [(TermLike variable, TermLike variable)]
     -> MaybeT unifier (Predicate variable)
 matchJoin
+    _tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
@@ -522,14 +551,17 @@ unifyJoin
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => PredicateSimplifier
+    => SmtMetadataTools StepperAttributes
+    -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> [(TermLike variable, TermLike variable)]
     -> unifier (Predicate variable)
-unifyJoin substitutionSimplifier simplifier axiomIdToSimplifier patterns = do
+unifyJoin
+    _tools substitutionSimplifier simplifier axiomIdToSimplifier patterns
+  = do
     predicates <- traverse
         (uncurry $
             unificationProcedure
@@ -562,7 +594,8 @@ matchVariableFunction
         , Unparse variable
         , MonadUnify unifier
         )
-    => PredicateSimplifier
+    => SmtMetadataTools StepperAttributes
+    -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -572,15 +605,16 @@ matchVariableFunction
     -> TermLike variable
     -> MaybeT unifier (Predicate variable)
 matchVariableFunction
+    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
     quantifiedVariables
     (Var_ var)
     second
-  | not (var `Map.member` quantifiedVariables) = Monad.Trans.lift $ do
-    tools <- Simplifier.askMetadataTools
-    Monad.guard (isFunctionPattern tools second)
+  | not (var `Map.member` quantifiedVariables)
+    && isFunctionPattern tools second
+  = Monad.Trans.lift $ do
     ceilOr <- Monad.Unify.liftSimplifier $
         Ceil.makeEvaluateTerm
             tools
@@ -602,7 +636,7 @@ matchVariableFunction
                 }
             ceilOr
     Monad.Unify.scatter result
-matchVariableFunction _ _ _ _ _ _ = nothing
+matchVariableFunction _ _ _ _ _ _ _ = nothing
 
 checkVariableEscape
     ::  ( Show variable
