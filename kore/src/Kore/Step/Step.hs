@@ -366,33 +366,21 @@ finalizeRule
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-
-    -> Predicate (Target variable)
+    => Predicate (Target variable)
     -- ^ Initial conditions
     -> UnifiedRule (Target variable)
     -- ^ Rewriting axiom
     -> unifier [Result variable]
     -- TODO (virgil): This is broken, it should take advantage of the unifier's
     -- branching and not return a list.
-finalizeRule
-    _predicateSimplifier
-    _patternSimplifier
-    _axiomSimplifiers
-
-    initialCondition
-    unifiedRule
-  = Log.withLogScope "finalizeRule" $ Monad.Unify.gather $ do
-    let unificationCondition = Conditional.withoutTerm unifiedRule
-    applied <- applyInitialConditions initialCondition unificationCondition
-    let renamedRule = Conditional.term unifiedRule
-    final <- finalizeAppliedRule renamedRule applied
-    let result = unwrapConfiguration <$> final
-    return Step.Result { appliedRule = unifiedRule, result }
+finalizeRule initialCondition unifiedRule =
+    Log.withLogScope "finalizeRule" $ Monad.Unify.gather $ do
+        let unificationCondition = Conditional.withoutTerm unifiedRule
+        applied <- applyInitialConditions initialCondition unificationCondition
+        let renamedRule = Conditional.term unifiedRule
+        final <- finalizeAppliedRule renamedRule applied
+        let result = unwrapConfiguration <$> final
+        return Step.Result { appliedRule = unifiedRule, result }
 
 finalizeRulesParallel
     ::  forall unifier variable
@@ -421,7 +409,7 @@ finalizeRulesParallel
   = do
     let initialCondition = Conditional.withoutTerm initial
     results <-
-        Foldable.fold <$> traverse (finalizeRule' initialCondition) unifiedRules
+        Foldable.fold <$> traverse (finalizeRule initialCondition) unifiedRules
     let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
         remainder = Predicate.fromPredicate (Remainder.remainder' unifications)
     remainders' <- Monad.Unify.gather $ applyRemainder' initial remainder
@@ -432,11 +420,6 @@ finalizeRulesParallel
             $ Pattern.mapVariables Target.unwrapVariable <$> remainders'
         }
   where
-    finalizeRule' =
-        finalizeRule
-            predicateSimplifier
-            termSimplifier
-            axiomSimplifiers
     applyRemainder' =
         applyRemainder
             predicateSimplifier
@@ -485,7 +468,7 @@ finalizeRulesSequence
         -> State.StateT (Predicate (Target variable)) unifier [Result variable]
     finalizeRuleSequence' unifiedRule = do
         remainder <- State.get
-        results <- Monad.Trans.lift $ finalizeRule' remainder unifiedRule
+        results <- Monad.Trans.lift $ finalizeRule remainder unifiedRule
         let unification = Conditional.withoutTerm unifiedRule
             remainder' =
                 Predicate.fromPredicate
@@ -493,11 +476,6 @@ finalizeRulesSequence
                 $ MultiOr.singleton unification
         State.put (remainder `Conditional.andCondition` remainder')
         return results
-    finalizeRule' =
-        finalizeRule
-            predicateSimplifier
-            termSimplifier
-            axiomSimplifiers
     applyRemainder' =
         applyRemainder
             predicateSimplifier
