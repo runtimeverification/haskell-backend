@@ -89,21 +89,21 @@ matchAsUnification
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> unifier (Predicate variable)
-matchAsUnification
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    first
-    second
-  = do
+matchAsUnification first second = do
+    substitutionSimplifier <- Simplifier.askSimplifierPredicate
+    simplifier <- Simplifier.askSimplifierTermLike
+    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
+    let matchResult =
+            match
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+                Map.empty
+                first
+                second
     result <- runMaybeT matchResult
     maybe
         (Monad.Unify.throwUnificationError
@@ -112,14 +112,6 @@ matchAsUnification
         return
         result
   where
-    matchResult =
-        match
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            Map.empty
-            first
-            second
 
 unificationWithAppMatchOnTop
     ::  ( FreshVariable variable
@@ -128,22 +120,14 @@ unificationWithAppMatchOnTop
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> unifier (Predicate variable)
-unificationWithAppMatchOnTop
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    first
-    second
-  = do
+unificationWithAppMatchOnTop first second = do
     tools <- Simplifier.askMetadataTools
+    substitutionSimplifier <- Simplifier.askSimplifierPredicate
+    simplifier <- Simplifier.askSimplifierTermLike
+    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
     case first of
         (App_ firstHead firstChildren) ->
             case second of
@@ -179,13 +163,8 @@ unificationWithAppMatchOnTop
         (Ceil_ firstOperandSort (SortVariableSort _) firstChild) ->
             case second of
                 (Ceil_ secondOperandSort _resultSort secondChild)
-                  | firstOperandSort == secondOperandSort
-                        -> unificationWithAppMatchOnTop
-                            substitutionSimplifier
-                            simplifier
-                            axiomIdToSimplifier
-                            firstChild
-                            secondChild
+                  | firstOperandSort == secondOperandSort ->
+                    unificationWithAppMatchOnTop firstChild secondChild
                   | otherwise
                         -> error
                             (  "Unexpected unequal child sorts: "
@@ -560,16 +539,9 @@ unifyJoin
     -> [(TermLike variable, TermLike variable)]
     -> unifier (Predicate variable)
 unifyJoin
-    _tools substitutionSimplifier simplifier axiomIdToSimplifier patterns
+    _tools _substitutionSimplifier _simplifier _axiomIdToSimplifier patterns
   = do
-    predicates <- traverse
-        (uncurry $
-            unificationProcedure
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-        )
-        patterns
+    predicates <- traverse (uncurry unificationProcedure) patterns
     return (Foldable.fold predicates)
 
 -- Note that we can't match variables to stuff which can have more than one

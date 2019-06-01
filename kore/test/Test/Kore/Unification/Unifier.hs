@@ -331,16 +331,12 @@ unificationProcedureSuccessWithSimplifiers
     expect
   =
     testCase message $ do
+        let mockEnv = testEnv { simplifierAxioms = axiomIdToSimplifier }
         Right results <-
             runSMT
-            $ evalSimplifier testEnv
+            $ evalSimplifier mockEnv
             $ Monad.Unify.runUnifier
-            $ unificationProcedure
-                Mock.substitutionSimplifier
-                Simplifier.create
-                axiomIdToSimplifier
-                term1
-                term2
+            $ unificationProcedure term1 term2
         let
             normalize
                 :: Predicate Variable

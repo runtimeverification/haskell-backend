@@ -432,13 +432,7 @@ mkState axioms claims claim logger =
         :: TermLike Variable
         -> TermLike Variable
         -> UnifierWithExplanation ()
-    unifier0 first second =
-        () <$ unificationProcedure
-            testSubstitutionSimplifier
-            testTermLikeSimplifier
-            testEvaluators
-            first
-            second
+    unifier0 first second = () <$ unificationProcedure first second
 
 unificationErrorMessage
     :: Pretty.Doc ()

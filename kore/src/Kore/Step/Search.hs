@@ -130,12 +130,7 @@ matchWith
 matchWith substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
     eitherUnifiers <-
         Monad.Trans.lift $ Monad.Unify.runUnifier
-        $ unificationProcedure
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            t1
-            t2
+        $ unificationProcedure t1 t2
     let
         maybeUnifiers :: Maybe [Predicate variable]
         maybeUnifiers = hush eitherUnifiers

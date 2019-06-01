@@ -94,10 +94,7 @@ newtype UnificationProcedure =
             , FreshVariable variable
             , MonadUnify unifier
             )
-        => PredicateSimplifier
-        -> TermLikeSimplifier
-        -> BuiltinAndAxiomSimplifierMap
-        -> TermLike variable
+        => TermLike variable
         -> TermLike variable
         -> unifier (Predicate variable)
         )
@@ -185,7 +182,7 @@ unifyRule
     -- ^ Rule
     -> unifier (UnifiedRule variable)
 unifyRule
-    (UnificationProcedure unificationProcedure)
+    (UnificationProcedure unifyPatterns)
     predicateSimplifier
     patternSimplifier
     axiomSimplifiers
@@ -210,15 +207,6 @@ unifyRule
     unification' <- normalize (unification <> requires')
     return (rule' `Conditional.withCondition` unification')
   where
-    unifyPatterns
-        :: TermLike variable
-        -> TermLike variable
-        -> unifier (Conditional variable ())
-    unifyPatterns =
-        unificationProcedure
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
     normalize =
         Substitution.normalizeExcept
             predicateSimplifier

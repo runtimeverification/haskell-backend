@@ -57,16 +57,10 @@ unificationProcedure
         , FreshVariable variable
         , MonadUnify unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> TermLike variable
-    -- ^left-hand-side of unification
+    => TermLike variable
     -> TermLike variable
     -> unifier (Predicate variable)
-unificationProcedure substitutionSimplifier simplifier axiomIdToSimplifier p1 p2
+unificationProcedure  p1 p2
   | p1Sort /= p2Sort = do
     Monad.Unify.explainBottom
         "Cannot unify different sorts."
@@ -86,6 +80,9 @@ unificationProcedure substitutionSimplifier simplifier axiomIdToSimplifier p1 p2
             , Pretty.indent 4 $ unparse p2
             ]
     tools <- Monad.Unify.liftSimplifier Simplifier.askMetadataTools
+    substitutionSimplifier <- Simplifier.askSimplifierPredicate
+    simplifier <- Simplifier.askSimplifierTermLike
+    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
     let
         getUnifiedTerm =
             termUnification

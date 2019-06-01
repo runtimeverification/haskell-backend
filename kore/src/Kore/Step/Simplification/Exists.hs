@@ -232,9 +232,9 @@ matchesToVariableSubstitution
     -> Pattern variable
     -> Simplifier Bool
 matchesToVariableSubstitution
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSimplifier
 
     variable
     Conditional {term, predicate, substitution = boundSubstitution}
@@ -243,14 +243,11 @@ matchesToVariableSubstitution
   , Substitution.null boundSubstitution
     && not (hasFreeVariable variable term)
   = do
-    matchResult <- runUnifier $ matchAsUnification' first second
+    matchResult <- runUnifier $ matchAsUnification first second
     case matchResult of
         Left _ -> return False
         Right results ->
             return (all (singleVariableSubstitution variable) results)
-  where
-    matchAsUnification' =
-        matchAsUnification substitutionSimplifier simplifier axiomIdToSimplifier
 
 matchesToVariableSubstitution _ _ _ _ _ = return False
 

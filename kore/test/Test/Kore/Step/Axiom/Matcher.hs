@@ -41,8 +41,6 @@ import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
-                 ( create )
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Substitution as Substitution
@@ -52,7 +50,6 @@ import qualified SMT
 import           Test.Kore
                  ( emptyLogger, testId )
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
@@ -999,15 +996,11 @@ unificationWithMatchSimplifiers
     -> TermLike Variable
     -> IO (Maybe (OrPredicate Variable))
 unificationWithMatchSimplifiers axiomIdToSimplifier first second = do
-    result <- SMT.runSMT SMT.defaultConfig emptyLogger
+    result <-
+        SMT.runSMT SMT.defaultConfig emptyLogger
         $ evalSimplifier Mock.env { simplifierAxioms = axiomIdToSimplifier }
         $ Monad.Unify.runUnifier
-        $ unificationWithAppMatchOnTop
-            Mock.substitutionSimplifier
-            Simplifier.create
-            axiomIdToSimplifier
-            first
-            second
+        $ unificationWithAppMatchOnTop first second
     return $ either (const Nothing) Just (MultiOr.make <$> result)
 
 unificationWithMatch
@@ -1034,10 +1027,4 @@ match first second = do
             (Either UnificationOrSubstitutionError (OrPredicate Variable))
     matchResult =
         fmap MultiOr.make <$> Monad.Unify.runUnifier
-            (matchAsUnification
-                Mock.substitutionSimplifier
-                Simplifier.create
-                Map.empty
-                first
-                second
-            )
+            (matchAsUnification first second)

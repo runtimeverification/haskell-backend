@@ -233,13 +233,7 @@ runRepl
         :: TermLike Variable
         -> TermLike Variable
         -> UnifierWithExplanation ()
-    unifier0 first second =
-        () <$ unificationProcedure
-            predicateSimplifier
-            simplifier
-            axiomToIdSimplifier
-            first
-            second
+    unifier0 first second = () <$ unificationProcedure first second
 
     catchInterruptWithDefault :: MonadCatch m => MonadIO m => a -> m a -> m a
     catchInterruptWithDefault def sa =
