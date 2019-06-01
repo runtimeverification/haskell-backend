@@ -173,15 +173,15 @@ execGetExitCode indexedModule strategy' finalTerm =
     case resolveSymbol indexedModule $ noLocationId "LblgetExitCode" of
         Left _ -> return ExitSuccess
         Right (_,  exitCodeSymbol) -> do
-            exitCodePattern <- exec indexedModule strategy'
+            exitCodePattern <-
+                -- TODO (thomas.tuegel): Run in original execution context.
+                exec indexedModule strategy'
                 $ applySymbol_ exitCodeSymbol [finalTerm]
             case exitCodePattern of
-                Builtin_ (Domain.BuiltinInt (Domain.InternalInt _ 0)) ->
-                    return ExitSuccess
-                Builtin_ (Domain.BuiltinInt (Domain.InternalInt _ exit)) ->
-                    return $ ExitFailure $ fromInteger exit
-                _ ->
-                    return $ ExitFailure 111
+                Builtin_ (Domain.BuiltinInt (Domain.InternalInt _ exit))
+                  | exit == 0 -> return ExitSuccess
+                  | otherwise -> return $ ExitFailure $ fromInteger exit
+                _ -> return $ ExitFailure 111
 
 -- | Symbolic search
 search
@@ -473,6 +473,7 @@ initialize verifiedModule within = do
         locally =
             Simplifier.localSimplifierTermLike (const simplifier)
             . Simplifier.localSimplifierPredicate (const substitutionSimplifier)
+            . Simplifier.localSimplifierAxioms (const axiomIdToSimplifier)
     locally (within initialized)
 
 {- | Simplify a 'Map' of 'EqualityRule's using only matching logic rules.
@@ -486,8 +487,9 @@ simplifyFunctionAxioms
 simplifyFunctionAxioms =
     (traverse . traverse) simplifyEqualityRule
   where
-      simplifyEqualityRule (EqualityRule rule) =
+    simplifyEqualityRule (EqualityRule rule) =
         EqualityRule <$> simplifyRulePattern rule
+
 {- | Simplify a 'Rule' using only matching logic rules.
 
 See also: 'simplifyRulePattern'
