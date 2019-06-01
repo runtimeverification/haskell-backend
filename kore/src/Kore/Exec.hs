@@ -420,15 +420,7 @@ execute verifiedModule strategy inputPattern =
                     (config : _) -> config
               where
                 patternSort = termLikeSort inputPattern
-            runStrategy' pat =
-                runStrategy
-                    (transitionRule
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
-                    )
-                    (strategy rewriteRules)
-                    pat
+            runStrategy' = runStrategy transitionRule (strategy rewriteRules)
         executionGraph <- runStrategy' initialPattern
         return Execution
             { simplifier

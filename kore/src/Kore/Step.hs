@@ -40,7 +40,7 @@ import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern, isCoolingRule,
                  isHeatingRule, isNormalRule )
-import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Step as Step
@@ -82,16 +82,11 @@ rewriteStep a =
  -}
 transitionRule
     :: GHC.HasCallStack
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Prim (RewriteRule Variable)
+    => Prim (RewriteRule Variable)
     -> Pattern Variable
-    -- ^ Configuration being rewritten and its accompanying proof
+    -- ^ Configuration being rewritten
     -> TransitionT (RewriteRule Variable) Simplifier (Pattern Variable)
-transitionRule substitutionSimplifier simplifier axiomIdToSimplifier =
+transitionRule =
     \case
         Simplify -> transitionSimplify
         Rewrite a -> transitionRewrite a
@@ -105,6 +100,9 @@ transitionRule substitutionSimplifier simplifier axiomIdToSimplifier =
             Foldable.asum (pure <$> nonEmptyConfigs)
     transitionRewrite rule config = do
         Transition.addRule rule
+        substitutionSimplifier <- Simplifier.askSimplifierPredicate
+        simplifier <- Simplifier.askSimplifierTermLike
+        axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
         eitherResults <-
             Monad.Trans.lift
             $ Monad.Unify.runUnifier

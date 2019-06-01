@@ -6,7 +6,6 @@ import Test.Tasty.HUnit
 import qualified Control.Exception as Exception
 import           Data.Default
                  ( def )
-import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 import           Data.Text
@@ -25,17 +24,12 @@ import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
-import           Kore.Step.Simplification.Data
-                 ( Simplifier )
 import           Kore.Step.Simplification.Data as Simplification
-
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import qualified Kore.Step.Strategy as Strategy
 import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
@@ -95,7 +89,7 @@ takeSteps (Start start, wrappedAxioms) =
   where
     makeExecutionGraph configuration axioms =
         Strategy.runStrategy
-            mockTransitionRule
+            transitionRule
             (repeat $ allRewrites axioms)
             (pure configuration)
 
@@ -123,16 +117,6 @@ type Actual = Pattern Variable
 
 anySort :: Sort
 anySort = sort "irrelevant"
-
-mockTransitionRule
-    :: Prim (RewriteRule Variable)
-    -> CommonPattern
-    -> Strategy.TransitionT (RewriteRule Variable) Simplifier CommonPattern
-mockTransitionRule =
-    transitionRule substitutionSimplifier simplifier Map.empty
-  where
-    simplifier = Simplifier.create
-    substitutionSimplifier = Mock.substitutionSimplifier
 
 -- Builders -- should these find a better home?
 
@@ -465,12 +449,7 @@ runStep configuration axioms =
     (<$>) pickFinal
     $ SMT.runSMT SMT.defaultConfig emptyLogger
     $ Simplification.evalSimplifier mockEnv
-    $ runStrategy
-        (transitionRule Mock.substitutionSimplifier simplifier Map.empty)
-        [allRewrites axioms]
-        configuration
-  where
-    simplifier = Simplifier.create
+    $ runStrategy transitionRule [allRewrites axioms] configuration
 
 runSteps
     :: Pattern Variable
@@ -481,9 +460,4 @@ runSteps configuration axioms =
     (<$>) pickLongest
     $ SMT.runSMT SMT.defaultConfig emptyLogger
     $ Simplification.evalSimplifier mockEnv
-    $ runStrategy
-        (transitionRule Mock.substitutionSimplifier simplifier Map.empty)
-        (repeat $ allRewrites axioms)
-        configuration
-  where
-    simplifier = Simplifier.create
+    $ runStrategy transitionRule (repeat $ allRewrites axioms) configuration
