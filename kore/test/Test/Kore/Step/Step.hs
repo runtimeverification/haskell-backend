@@ -78,16 +78,7 @@ applyInitialConditions
 applyInitialConditions initial unification =
     (fmap . fmap) Foldable.toList
     $ evalUnifier
-    $ Step.applyInitialConditions
-        predicateSimplifier
-        patternSimplifier
-        axiomSimplifiers
-        initial
-        unification
-  where
-    predicateSimplifier = Predicate.create
-    patternSimplifier = Simplifier.create
-    axiomSimplifiers = Map.empty
+    $ Step.applyInitialConditions initial unification
 
 test_applyInitialConditions :: [TestTree]
 test_applyInitialConditions =

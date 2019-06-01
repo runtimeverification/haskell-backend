@@ -238,38 +238,25 @@ applyInitialConditions
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-
-    -> Predicate variable
+    => Predicate variable
     -- ^ Initial conditions
     -> Predicate variable
     -- ^ Unification conditions
     -> unifier (OrPredicate variable)
     -- TODO(virgil): This should take advantage of the unifier's branching and
     -- not return an Or.
-applyInitialConditions
-    _predicateSimplifier
-    _patternSimplifier
-    _axiomSimplifiers
-
-    initial
-    unification
-  = do
+applyInitialConditions initial unification = do
     -- Combine the initial conditions and the unification conditions.
     -- The axiom requires clause is included in the unification conditions.
     applied <-
         Monad.liftM MultiOr.make
         $ Monad.Unify.gather
-        $ normalize (initial <> unification)
+        $ Substitution.normalizeExcept (initial <> unification)
     -- If 'applied' is \bottom, the rule is considered to not apply and
     -- no result is returned. If the result is \bottom after this check,
     -- then the rule is considered to apply with a \bottom result.
     TopBottom.guardAgainstBottom applied
     return applied
-  where
-    normalize = Substitution.normalizeExcept
 
 {- | Produce the final configurations of an applied rule.
 
@@ -412,17 +399,12 @@ finalizeRule
     unifiedRule
   = Log.withLogScope "finalizeRule" $ Monad.Unify.gather $ do
     let unificationCondition = Conditional.withoutTerm unifiedRule
-    applied <- applyInitialConditions' initialCondition unificationCondition
+    applied <- applyInitialConditions initialCondition unificationCondition
     let renamedRule = Conditional.term unifiedRule
     final <- finalizeAppliedRule' renamedRule applied
     let result = unwrapConfiguration <$> final
     return Step.Result { appliedRule = unifiedRule, result }
   where
-    applyInitialConditions' =
-        applyInitialConditions
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
     finalizeAppliedRule' =
         finalizeAppliedRule
             predicateSimplifier
