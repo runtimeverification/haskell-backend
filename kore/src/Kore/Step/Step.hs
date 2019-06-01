@@ -279,23 +279,12 @@ finalizeAppliedRule
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-
-    -> RulePattern variable
+    => RulePattern variable
     -- ^ Applied rule
     -> OrPredicate variable
     -- ^ Conditions of applied rule
     -> unifier (OrPattern variable)
-finalizeAppliedRule
-    _predicateSimplifier
-    _patternSimplifier
-    _axiomSimplifiers
-
-    renamedRule
-    appliedConditions
-  =
+finalizeAppliedRule renamedRule appliedConditions =
     Monad.liftM OrPattern.fromPatterns . Monad.Unify.gather
     $ finalizeAppliedRuleWorker =<< Monad.Unify.scatter appliedConditions
   where
@@ -391,9 +380,9 @@ finalizeRule
     -- TODO (virgil): This is broken, it should take advantage of the unifier's
     -- branching and not return a list.
 finalizeRule
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
+    _predicateSimplifier
+    _patternSimplifier
+    _axiomSimplifiers
 
     initialCondition
     unifiedRule
@@ -401,15 +390,9 @@ finalizeRule
     let unificationCondition = Conditional.withoutTerm unifiedRule
     applied <- applyInitialConditions initialCondition unificationCondition
     let renamedRule = Conditional.term unifiedRule
-    final <- finalizeAppliedRule' renamedRule applied
+    final <- finalizeAppliedRule renamedRule applied
     let result = unwrapConfiguration <$> final
     return Step.Result { appliedRule = unifiedRule, result }
-  where
-    finalizeAppliedRule' =
-        finalizeAppliedRule
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
 
 finalizeRulesParallel
     ::  forall unifier variable
