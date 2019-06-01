@@ -11,8 +11,8 @@ import Kore.Internal.OrPredicate
 import Kore.Internal.TermLike
        ( TermLike )
 import Kore.Step.Simplification.Data
-       ( BuiltinAndAxiomSimplifierMap, PredicateSimplifier, Simplifier
-       , TermLikeSimplifier )
+       ( BuiltinAndAxiomSimplifierMap, PredicateSimplifier, Simplifier,
+       TermLikeSimplifier )
 import Kore.Syntax.Variable
        ( SortedVariable )
 import Kore.Unparser

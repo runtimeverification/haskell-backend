@@ -8,8 +8,8 @@ import           Kore.Internal.Pattern
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Simplification.Data
-                 ( BuiltinAndAxiomSimplifierMap, PredicateSimplifier
-                 , TermLikeSimplifier )
+                 ( BuiltinAndAxiomSimplifierMap, PredicateSimplifier,
+                 TermLikeSimplifier )
 import           Kore.Syntax.Variable
                  ( SortedVariable )
 import           Kore.Unification.Substitution
