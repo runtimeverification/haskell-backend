@@ -210,25 +210,14 @@ unifyRules
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> UnificationProcedure
+    => UnificationProcedure
 
     -> Pattern (Target variable)
     -- ^ Initial configuration
     -> [RulePattern (Target variable)]
     -- ^ Rule
     -> unifier [UnifiedRule (Target variable)]
-unifyRules
-    _predicateSimplifier
-    _patternSimplifier
-    _axiomSimplifiers
-    unificationProcedure
-
-    initial
-    rules
-  =
+unifyRules unificationProcedure initial rules =
     Monad.Unify.gather $ do
         rule <- Monad.Unify.scatter rules
         unified <- unifyRule unificationProcedure initial rule
@@ -651,14 +640,9 @@ applyRulesParallel
     (map toAxiomVariables -> rules)
     (toConfigurationVariables -> initial)
   =
-    unifyRules' initial rules >>= finalizeRulesParallel' initial
+    unifyRules unificationProcedure initial rules
+    >>= finalizeRulesParallel' initial
   where
-    unifyRules' =
-        unifyRules
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-            unificationProcedure
     finalizeRulesParallel' =
         finalizeRulesParallel
             predicateSimplifier
@@ -745,14 +729,9 @@ applyRulesSequence
     (toConfigurationVariables -> initial)
     (map toAxiomVariables -> rules)
   =
-    unifyRules' initial rules >>= finalizeRulesSequence' initial
+    unifyRules unificationProcedure initial rules
+    >>= finalizeRulesSequence' initial
   where
-    unifyRules' =
-        unifyRules
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-            unificationProcedure
     finalizeRulesSequence' =
         finalizeRulesSequence
             predicateSimplifier
