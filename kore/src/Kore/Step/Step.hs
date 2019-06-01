@@ -172,9 +172,6 @@ unifyRule
         , MonadUnify unifier
         )
     => UnificationProcedure
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
 
     -> Pattern variable
     -- ^ Initial configuration
@@ -183,9 +180,6 @@ unifyRule
     -> unifier (UnifiedRule variable)
 unifyRule
     (UnificationProcedure unifyPatterns)
-    _predicateSimplifier
-    _patternSimplifier
-    _axiomSimplifiers
 
     initial@Conditional { term = initialTerm }
     rule
@@ -204,10 +198,8 @@ unifyRule
     let
         RulePattern { requires = ruleRequires } = rule'
         requires' = Predicate.fromPredicate ruleRequires
-    unification' <- normalize (unification <> requires')
+    unification' <- Substitution.normalizeExcept (unification <> requires')
     return (rule' `Conditional.withCondition` unification')
-  where
-    normalize = Substitution.normalizeExcept
 
 unifyRules
     ::  forall unifier variable
@@ -229,9 +221,9 @@ unifyRules
     -- ^ Rule
     -> unifier [UnifiedRule (Target variable)]
 unifyRules
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
+    _predicateSimplifier
+    _patternSimplifier
+    _axiomSimplifiers
     unificationProcedure
 
     initial
@@ -239,16 +231,9 @@ unifyRules
   =
     Monad.Unify.gather $ do
         rule <- Monad.Unify.scatter rules
-        unified <- unifyRule' initial rule
+        unified <- unifyRule unificationProcedure initial rule
         checkSubstitutionCoverage initial unified
         return unified
-  where
-    unifyRule' =
-        unifyRule
-            unificationProcedure
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
 
 {- | Apply the initial conditions to the results of rule unification.
 

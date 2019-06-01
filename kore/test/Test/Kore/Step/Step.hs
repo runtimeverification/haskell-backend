@@ -148,19 +148,9 @@ unifyRule
             [Conditional Variable (RulePattern Variable)]
         )
 unifyRule initial rule =
-    evalUnifier
-    $ Step.unifyRule
-        unificationProcedure
-        predicateSimplifier
-        patternSimplifier
-        axiomSimplifiers
-        initial
-        rule
+    evalUnifier $ Step.unifyRule unificationProcedure initial rule
   where
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
-    predicateSimplifier = Predicate.create
-    patternSimplifier = Simplifier.create
-    axiomSimplifiers = Map.empty
 
 test_unifyRule :: [TestTree]
 test_unifyRule =
