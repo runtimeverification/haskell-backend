@@ -29,7 +29,7 @@ import           Kore.Predicate.Predicate
                  makeMultipleAndPredicate, makeNotPredicate, makeOrPredicate,
                  makeTruePredicate )
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
+                 ( Env (..), evalSimplifier )
 import           Kore.Step.Simplification.Equals
                  ( makeEvaluate, makeEvaluateTermsToPredicate, simplify )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -927,12 +927,14 @@ evaluateOr
     -> IO (OrPattern Variable)
 evaluateOr equals =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
+    $ evalSimplifier mockEnv
     $ simplify
         Mock.substitutionSimplifier
         Simplifier.create
         Map.empty
         equals
+  where
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
 
 evaluate
     :: Pattern Variable
@@ -940,13 +942,15 @@ evaluate
     -> IO (OrPattern Variable)
 evaluate first second =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
+    $ evalSimplifier mockEnv
     $ makeEvaluate
         Mock.substitutionSimplifier
         Simplifier.create
         Map.empty
         first
         second
+  where
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
 
 evaluateTermsGeneric
     :: TermLike Variable
@@ -954,10 +958,12 @@ evaluateTermsGeneric
     -> IO (OrPredicate Variable)
 evaluateTermsGeneric first second =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
+    $ evalSimplifier mockEnv
     $ makeEvaluateTermsToPredicate
         Mock.substitutionSimplifier
         Simplifier.create
         Map.empty
         first
         second
+  where
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
