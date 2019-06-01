@@ -36,7 +36,7 @@ import           Kore.Step.Rule
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
+                 ( Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.Strategy
                  ( Strategy, pickFinal, runStrategy )
@@ -265,6 +265,9 @@ test_onePathStrategy =
                     (Mock.functionalConstr10 (TermLike.mkVar Mock.y))
                     (Mock.functionalConstr11 (TermLike.mkVar Mock.y))
                 ]
+        let equalsXA = makeEqualsPredicate (TermLike.mkVar Mock.x) Mock.a
+            equalsXB = makeEqualsPredicate (TermLike.mkVar Mock.x) Mock.b
+            equalsXC = makeEqualsPredicate (TermLike.mkVar Mock.x) Mock.c
         assertEqualWithExplanation ""
             [ RewritePattern Conditional
                 { term = Mock.f Mock.b
@@ -279,22 +282,14 @@ test_onePathStrategy =
             , Stuck Conditional
                 { term = Mock.functionalConstr11 (TermLike.mkVar Mock.x)
                 , predicate =
-                    makeAndPredicate
-                        (makeAndPredicate
-                            (makeNotPredicate
-                                (makeEqualsPredicate
-                                    (TermLike.mkVar Mock.x) Mock.a
-                                )
-                            )
-                            (makeNotPredicate
-                                (makeEqualsPredicate
-                                    (TermLike.mkVar Mock.x) Mock.b
-                                )
-                            )
-                        )
-                        (makeNotPredicate
-                            (makeEqualsPredicate (TermLike.mkVar Mock.x) Mock.c)
-                        )
+                    foldr1 makeAndPredicate
+                        [ makeNotPredicate equalsXA
+                        -- TODO (thomas.tuegel): Remove this redundancy.
+                        , makeAndPredicate
+                            (makeNotPredicate equalsXA)
+                            (makeNotPredicate equalsXB)
+                        , makeNotPredicate equalsXC
+                        ]
                 , substitution = mempty
                 }
             ]
@@ -400,7 +395,7 @@ runSteps
 runSteps graphFilter picker configuration strategy =
     (<$>) picker
     $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
+    $ evalSimplifier mockEnv
     $ (fromMaybe (error "Unexpected missing tree") . graphFilter)
     <$> runStrategy
         (transitionRule Mock.substitutionSimplifier simplifier Map.empty)
@@ -408,6 +403,9 @@ runSteps graphFilter picker configuration strategy =
         (RewritePattern configuration)
   where
     simplifier = Simplifier.create
+    mockEnv =
+        Mock.env
+            { simplifierPredicate = Mock.substitutionSimplifier }
 
 runOnePathSteps
     :: Limit Natural
