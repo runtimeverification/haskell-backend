@@ -197,22 +197,13 @@ testEnv =
         , simplifierAxioms = testEvaluators
         }
 
-evaluate
-    :: TermLike Variable
-    -> SMT (Pattern Variable)
-evaluate =
-    evalSimplifier testEnv
-    . TermLike.simplify testSubstitutionSimplifier testEvaluators
+evaluate :: TermLike Variable -> SMT (Pattern Variable)
+evaluate = evalSimplifier testEnv . TermLike.simplify
 
-evaluateT
-    :: Trans.MonadTrans t
-    => TermLike Variable
-    -> t SMT (Pattern Variable)
+evaluateT :: Trans.MonadTrans t => TermLike Variable -> t SMT (Pattern Variable)
 evaluateT = Trans.lift . evaluate
 
-evaluateToList
-    :: TermLike Variable
-    -> SMT [Pattern Variable]
+evaluateToList :: TermLike Variable -> SMT [Pattern Variable]
 evaluateToList =
     fmap MultiOr.extractPatterns
     . evalSimplifier testEnv

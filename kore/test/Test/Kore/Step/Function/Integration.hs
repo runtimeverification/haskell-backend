@@ -33,8 +33,6 @@ import           Kore.Step.Simplification.Data as AttemptedAxiom
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), Simplifier, TermLikeSimplifier,
                  evalSimplifier )
-import qualified Kore.Step.Simplification.Predicate as Predicate
-                 ( create )
 import qualified Kore.Step.Simplification.TermLike as TermLike
                  ( simplify )
 import qualified Kore.Unification.Substitution as Substitution
@@ -571,6 +569,4 @@ evaluate
 evaluate functionIdToEvaluator patt =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
-    $ TermLike.simplify substitutionSimplifier functionIdToEvaluator patt
-  where
-    substitutionSimplifier = Predicate.create
+    $ TermLike.simplify patt

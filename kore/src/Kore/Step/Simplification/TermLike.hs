@@ -82,12 +82,9 @@ simplify
         , Unparse variable
         , FreshVariable variable
         )
-    => PredicateSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> TermLike variable
+    => TermLike variable
     -> Simplifier (Pattern variable)
-simplify _substitutionSimplifier _axiomIdToEvaluator patt = do
+simplify patt = do
     orPatt <- simplifyToOr patt
     return (OrPattern.toPattern orPatt)
 
@@ -117,8 +114,7 @@ simplifyInternal
         )
     => TermLike variable
     -> Simplifier (OrPattern variable)
-simplifyInternal
-    termLike@(Recursive.project -> attrs :< termLikeF)
+simplifyInternal termLike@(Recursive.project -> attrs :< termLikeF)
 
   | EvaluatedF _ <- termLikeF =
     return (OrPattern.fromTermLike termLike)
