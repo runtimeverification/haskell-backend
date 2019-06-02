@@ -17,6 +17,7 @@ import           Control.Applicative
                  ( (<|>) )
 import           Control.Error.Util
                  ( just, nothing )
+import qualified Control.Monad as Monad
 import           Control.Monad.Except
 import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Maybe
@@ -25,16 +26,11 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
-import           Kore.Internal.Predicate as Conditional
-                 ( Conditional (..), Predicate )
+import qualified Kore.Internal.Conditional as Conditional
+import           Kore.Internal.Predicate
+                 ( Predicate )
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
 import qualified Kore.Step.Merging.OrPattern as OrPattern
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
@@ -47,10 +43,6 @@ import qualified Kore.Step.Simplification.AndTerms as SortInjectionSimplificatio
                  ( SortInjectionSimplification (..) )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
-import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, TermLikeSimplifier )
-import           Kore.Step.Simplification.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMergerExcept,
@@ -59,7 +51,6 @@ import           Kore.Unification.Error
                  ( unsupportedPatterns )
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
-import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -93,25 +84,13 @@ matchAsUnification
     -> TermLike variable
     -> unifier (Predicate variable)
 matchAsUnification first second = do
-    substitutionSimplifier <- Simplifier.askSimplifierPredicate
-    simplifier <- Simplifier.askSimplifierTermLike
-    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
-    let matchResult =
-            match
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                Map.empty
-                first
-                second
-    result <- runMaybeT matchResult
+    result <- runMaybeT $ match Map.empty first second
     maybe
         (Monad.Unify.throwUnificationError
             (unsupportedPatterns "Unknown match case." first second)
         )
         return
         result
-  where
 
 unificationWithAppMatchOnTop
     ::  ( FreshVariable variable
@@ -123,22 +102,13 @@ unificationWithAppMatchOnTop
     => TermLike variable
     -> TermLike variable
     -> unifier (Predicate variable)
-unificationWithAppMatchOnTop first second = do
-    tools <- Simplifier.askMetadataTools
-    substitutionSimplifier <- Simplifier.askSimplifierPredicate
-    simplifier <- Simplifier.askSimplifierTermLike
-    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
+unificationWithAppMatchOnTop first second =
     case first of
         (App_ firstHead firstChildren) ->
             case second of
                 (App_ secondHead secondChildren)
                   | firstHead == secondHead
-                    -> unifyJoin
-                            tools
-                            substitutionSimplifier
-                            simplifier
-                            axiomIdToSimplifier
-                            (zip firstChildren secondChildren)
+                    -> unifyJoin (zip firstChildren secondChildren)
                   | symbolOrAliasConstructor firstHead
                         == symbolOrAliasConstructor secondHead
                     -- The application heads have the same symbol or alias
@@ -187,44 +157,16 @@ match
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Map.Map variable variable
+    => Map.Map variable variable
+    -- ^ Quantified variables
     -> TermLike variable
     -> TermLike variable
     -- TODO: Use Result here.
     -> MaybeT unifier (Predicate variable)
-match
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    quantifiedVariables
-    first
-    second
-  = do
-    tools <- Simplifier.askMetadataTools
+match quantifiedVariables first second =
     (<|>)
-        (matchEqualHeadPatterns
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            quantifiedVariables
-            first
-            second
-        )
-        (matchVariableFunction
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            quantifiedVariables
-            first
-            second
-        )
+        (matchEqualHeadPatterns quantifiedVariables first second)
+        (matchVariableFunction quantifiedVariables first second)
 
 matchEqualHeadPatterns
     ::  forall variable unifier
@@ -234,34 +176,18 @@ matchEqualHeadPatterns
         , FreshVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Map.Map variable variable
+    => Map.Map variable variable
+    -- ^ Quantified variables
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Predicate variable)
-matchEqualHeadPatterns
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    quantifiedVariables
-    first
-    second
-  =
+matchEqualHeadPatterns quantifiedVariables first second = do
+    tools <- Simplifier.askMetadataTools
     case first of
         (And_ _ firstFirst firstSecond) ->
             case second of
                 (And_ _ secondFirst secondSecond) ->
                     matchJoin
-                        tools
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
@@ -273,10 +199,6 @@ matchEqualHeadPatterns
                     if firstHead == secondHead
                     then
                         matchJoin
-                            tools
-                            substitutionSimplifier
-                            simplifier
-                            axiomIdToSimplifier
                             quantifiedVariables
                             (zip firstChildren secondChildren)
                     else case simplifySortInjections tools first second of
@@ -291,10 +213,6 @@ matchEqualHeadPatterns
                                     { firstChild, secondChild }
                             ) ->
                                 matchJoin
-                                    tools
-                                    substitutionSimplifier
-                                    simplifier
-                                    axiomIdToSimplifier
                                     quantifiedVariables
                                     [(firstChild, secondChild)]
                 _ -> nothing
@@ -302,13 +220,7 @@ matchEqualHeadPatterns
         (Ceil_ _ _ firstChild) ->
             case second of
                 (Ceil_ _ _ secondChild) ->
-                    match
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
-                        quantifiedVariables
-                        firstChild
-                        secondChild
+                    match quantifiedVariables firstChild secondChild
                 _ -> nothing
         (CharLiteral_ _) ->
             topWhenEqualOrNothing first second
@@ -320,10 +232,6 @@ matchEqualHeadPatterns
             case second of
                 (Equals_ _ _ secondFirst secondSecond) ->
                     matchJoin
-                        tools
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
@@ -334,9 +242,6 @@ matchEqualHeadPatterns
                 (Exists_ _ secondVariable secondChild) ->
                     checkVariableEscape [firstVariable, secondVariable]
                     <$> match
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
                         (Map.insert
                             firstVariable secondVariable quantifiedVariables
                         )
@@ -347,9 +252,6 @@ matchEqualHeadPatterns
             case second of
                 (Floor_ _ _ secondChild) ->
                     match
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
                         quantifiedVariables
                         firstChild
                         secondChild
@@ -360,9 +262,6 @@ matchEqualHeadPatterns
                     (<$>)
                         (checkVariableEscape [firstVariable, secondVariable])
                         (match
-                            substitutionSimplifier
-                            simplifier
-                            axiomIdToSimplifier
                             (Map.insert
                                 firstVariable
                                 secondVariable
@@ -376,10 +275,6 @@ matchEqualHeadPatterns
             case second of
                 (Iff_ _ secondFirst secondSecond) ->
                     matchJoin
-                        tools
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
@@ -389,10 +284,6 @@ matchEqualHeadPatterns
             case second of
                 (Implies_ _ secondFirst secondSecond) ->
                     matchJoin
-                        tools
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
@@ -402,10 +293,6 @@ matchEqualHeadPatterns
             case second of
                 (In_ _ _ secondFirst secondSecond) ->
                     matchJoin
-                        tools
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
@@ -414,33 +301,17 @@ matchEqualHeadPatterns
         (Next_ _ firstChild) ->
             case second of
                 (Next_ _ secondChild) ->
-                    match
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
-                        quantifiedVariables
-                        firstChild
-                        secondChild
+                    match quantifiedVariables firstChild secondChild
                 _ -> nothing
         (Not_ _ firstChild) ->
             case second of
                 (Not_ _ secondChild) ->
-                    match
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
-                        quantifiedVariables
-                        firstChild
-                        secondChild
+                    match quantifiedVariables firstChild secondChild
                 _ -> nothing
         (Or_ _ firstFirst firstSecond) ->
             case second of
                 (Or_ _ secondFirst secondSecond) ->
                     matchJoin
-                        tools
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
@@ -450,10 +321,6 @@ matchEqualHeadPatterns
             case second of
                 (Rewrites_ _ secondFirst secondSecond) ->
                     matchJoin
-                        tools
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
                         quantifiedVariables
                         [ (firstFirst, secondFirst)
                         , (firstSecond, secondSecond)
@@ -488,32 +355,14 @@ matchJoin
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Map.Map variable variable
+    => Map.Map variable variable
+    -- ^ Quantified variables
     -> [(TermLike variable, TermLike variable)]
     -> MaybeT unifier (Predicate variable)
-matchJoin
-    _tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    quantifiedVariables
-    patterns
-  = do
+matchJoin quantifiedVariables patterns = do
     matched <-
         traverse  -- also does a cross-product of the unifier branches
-            (uncurry $
-                match
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-                    quantifiedVariables
-            )
+            (uncurry $ match quantifiedVariables)
             patterns
     lift $ mergePredicatesAndSubstitutionsExcept
         (map Conditional.predicate matched)
@@ -527,17 +376,9 @@ unifyJoin
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> [(TermLike variable, TermLike variable)]
+    => [(TermLike variable, TermLike variable)]
     -> unifier (Predicate variable)
-unifyJoin
-    _tools _substitutionSimplifier _simplifier _axiomIdToSimplifier patterns
-  = do
+unifyJoin patterns = do
     predicates <- traverse (uncurry unificationProcedure) patterns
     return (Foldable.fold predicates)
 
@@ -563,45 +404,34 @@ matchVariableFunction
         , Unparse variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Map.Map variable variable
+    => Map.Map variable variable
+    -- ^ Quantified variables
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Predicate variable)
-matchVariableFunction
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    quantifiedVariables
-    (Var_ var)
-    second
-  | not (var `Map.member` quantifiedVariables)
-    && isFunctionPattern tools second
-  = Monad.Trans.lift $ do
-    ceilOr <- Monad.Unify.liftSimplifier $
-        Ceil.makeEvaluateTerm
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            second
-    result <-
-        OrPattern.mergeWithPredicateAssumesEvaluated
-            createPredicatesAndSubstitutionsMergerExcept
-            Conditional
-                { term = ()
-                , predicate = makeTruePredicate
-                , substitution = Substitution.wrap [(var, second)]
-                }
-            ceilOr
-    Monad.Unify.scatter result
-matchVariableFunction _ _ _ _ _ _ _ = nothing
+matchVariableFunction quantifiedVariables (Var_ var) second
+  | not (var `Map.member` quantifiedVariables) = do
+    tools <- Simplifier.askMetadataTools
+    Monad.guard (isFunctionPattern tools second)
+    substitutionSimplifier <- Simplifier.askSimplifierPredicate
+    simplifier <- Simplifier.askSimplifierTermLike
+    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
+    Monad.Trans.lift $ do
+        ceilOr <-
+            Monad.Unify.liftSimplifier
+            $ Ceil.makeEvaluateTerm
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+                second
+        result <-
+            OrPattern.mergeWithPredicateAssumesEvaluated
+                createPredicatesAndSubstitutionsMergerExcept
+                (Conditional.fromSingleSubstitution (var, second))
+                ceilOr
+        Monad.Unify.scatter result
+matchVariableFunction _ _ _ = nothing
 
 checkVariableEscape
     ::  ( Show variable
