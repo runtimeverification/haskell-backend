@@ -8,11 +8,9 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.In
-    (simplify
+    ( simplify
     ) where
 
-import qualified Kore.Internal.MultiOr as MultiOr
-                 ( crossProductGeneric )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -45,24 +43,10 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> In Sort (OrPattern variable)
+    => In Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
-simplify
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    In
-        { inContainedChild = first
-        , inContainingChild = second
-        }
-  =
-    simplifyEvaluatedIn
-        substitutionSimplifier simplifier axiomIdToSimplifier first second
+simplify In { inContainedChild = first, inContainingChild = second } =
+    simplifyEvaluatedIn first second
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -85,32 +69,18 @@ simplifyEvaluatedIn
         , Show variable
         , Unparse variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> OrPattern variable
+    => OrPattern variable
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
-simplifyEvaluatedIn
-    substitutionSimplifier simplifier axiomIdToSimplifier first second
+simplifyEvaluatedIn first second
   | OrPattern.isFalse first  = return OrPattern.bottom
   | OrPattern.isFalse second = return OrPattern.bottom
 
   | OrPattern.isTrue first = Ceil.simplifyEvaluated second
   | OrPattern.isTrue second = Ceil.simplifyEvaluated first
 
-  | otherwise = do
-    let
-        crossProduct =
-            MultiOr.crossProductGeneric
-                (makeEvaluateIn
-                    substitutionSimplifier simplifier axiomIdToSimplifier
-                )
-                first
-                second
-    OrPattern.flatten <$> sequence crossProduct
+  | otherwise =
+    OrPattern.flatten <$> sequence (makeEvaluateIn <$> first <*> second)
 
 makeEvaluateIn
     ::  ( FreshVariable variable
@@ -119,20 +89,13 @@ makeEvaluateIn
         , Show variable
         , Unparse variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Pattern variable
+    => Pattern variable
     -> Pattern variable
     -> Simplifier (OrPattern variable)
-makeEvaluateIn
-    _substitutionSimplifier _simplifier _axiomIdToSimplifier first second
+makeEvaluateIn first second
   | Pattern.isTop first = Ceil.makeEvaluate second
   | Pattern.isTop second = Ceil.makeEvaluate first
-  | Pattern.isBottom first || Pattern.isBottom second =
-    return OrPattern.bottom
+  | Pattern.isBottom first || Pattern.isBottom second = return OrPattern.bottom
   | otherwise = return $ makeEvaluateNonBoolIn first second
 
 makeEvaluateNonBoolIn

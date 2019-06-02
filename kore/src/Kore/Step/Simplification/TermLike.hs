@@ -129,38 +129,34 @@ simplifyInternal
   | NuF _ <- termLikeF =
     return (OrPattern.fromTermLike termLike)
 
-  | otherwise = do
-    substitutionSimplifier <- askSimplifierPredicate
-    simplifier <- askSimplifierTermLike
-    axiomIdToEvaluator <- askSimplifierAxioms
+  | otherwise =
     traverse simplifyTerm termLikeF >>= \case
-        AndF p         -> And.simplify p
-        ApplicationF p -> Application.simplify (attrs :< p)
-        BottomF p      -> return $ Bottom.simplify p
-        BuiltinF p     -> return $ Builtin.simplify p
-        CeilF p        -> Ceil.simplify p
-        DomainValueF p -> return $ DomainValue.simplify p
-        EqualsF p      -> Equals.simplify p
-        ExistsF p      -> Exists.simplify p
-        FloorF p       -> return $ Floor.simplify p
-        ForallF p      -> return $ Forall.simplify p
-        IffF p         -> Iff.simplify p
-        ImpliesF p     -> Implies.simplify p
-        InF p ->
-            In.simplify substitutionSimplifier simplifier axiomIdToEvaluator p
-        InhabitantF s -> return $ Inhabitant.simplify s
-        MuF p -> return $ Mu.simplify p
+        AndF p              -> And.simplify p
+        ApplicationF p      -> Application.simplify (attrs :< p)
+        BottomF p           -> return $ Bottom.simplify p
+        BuiltinF p          -> return $ Builtin.simplify p
+        CeilF p             -> Ceil.simplify p
+        DomainValueF p      -> return $ DomainValue.simplify p
+        EqualsF p           -> Equals.simplify p
+        ExistsF p           -> Exists.simplify p
+        FloorF p            -> return $ Floor.simplify p
+        ForallF p           -> return $ Forall.simplify p
+        IffF p              -> Iff.simplify p
+        ImpliesF p          -> Implies.simplify p
+        InF p               -> In.simplify p
+        InhabitantF s       -> return $ Inhabitant.simplify s
+        MuF p               -> return $ Mu.simplify p
         -- TODO(virgil): Move next up through patterns.
-        NextF p -> return $ Next.simplify p
-        NotF p -> Not.simplify p
-        NuF p -> return $ Nu.simplify p
-        OrF p -> return $ Or.simplify p
-        RewritesF p -> return $ Rewrites.simplify p
-        StringLiteralF p -> return $ StringLiteral.simplify p
-        CharLiteralF p -> return $ CharLiteral.simplify p
-        TopF p -> return $ Top.simplify p
-        VariableF p -> return $ Variable.simplify p
-        SetVariableF p -> return $ SetVariable.simplify p
+        NextF p             -> return $ Next.simplify p
+        NotF p              -> Not.simplify p
+        NuF p               -> return $ Nu.simplify p
+        OrF p               -> return $ Or.simplify p
+        RewritesF p         -> return $ Rewrites.simplify p
+        StringLiteralF p    -> return $ StringLiteral.simplify p
+        CharLiteralF p      -> return $ CharLiteral.simplify p
+        TopF p              -> return $ Top.simplify p
+        VariableF p         -> return $ Variable.simplify p
+        SetVariableF p      -> return $ SetVariable.simplify p
         EvaluatedF patterns ->
             -- This is technically impossible because this branch would not be
             -- chosen if termLikeF matched 'EvaluatedF', and 'traverse' (above)
