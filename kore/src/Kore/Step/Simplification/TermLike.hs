@@ -134,8 +134,7 @@ simplifyInternal
     simplifier <- askSimplifierTermLike
     axiomIdToEvaluator <- askSimplifierAxioms
     traverse simplifyTerm termLikeF >>= \case
-        AndF p ->
-            And.simplify substitutionSimplifier simplifier axiomIdToEvaluator p
+        AndF p -> And.simplify p
         ApplicationF p -> Application.simplify (attrs :< p)
         BottomF p -> return $ Bottom.simplify p
         BuiltinF p -> return $ Builtin.simplify p

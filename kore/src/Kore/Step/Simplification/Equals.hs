@@ -289,11 +289,7 @@ makeEvaluateFunctionalOr
     let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
     allAreBottom <-
         foldM
-            (And.simplifyEvaluated
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplfier
-            )
+            And.simplifyEvaluated
             (OrPattern.fromPatterns [Pattern.top])
             (firstNotCeil : secondNotCeils)
     firstEqualsSeconds <-
@@ -302,11 +298,9 @@ makeEvaluateFunctionalOr
             (zip seconds secondCeils)
     oneIsNotBottomEquals <-
         foldM
-            (And.simplifyEvaluated
-                substitutionSimplifier simplifier axiomIdToSimplfier
-            )
-        firstCeil
-        (oneNotBottom : firstEqualsSeconds)
+            And.simplifyEvaluated
+            firstCeil
+            (oneNotBottom : firstEqualsSeconds)
     return
         ( MultiOr.merge allAreBottom oneIsNotBottomEquals
 
@@ -421,27 +415,9 @@ makeEvaluate
             axiomIdToSimplfier
             firstTerm
             secondTerm
-    negationAnd <-
-        And.simplifyEvaluated
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            firstCeilNegation
-            secondCeilNegation
-    ceilAnd <-
-        And.simplifyEvaluated
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            firstCeil
-            secondCeil
-    equalityAnd <-
-        And.simplifyEvaluated
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            termEquality
-            ceilAnd
+    negationAnd <- And.simplifyEvaluated firstCeilNegation secondCeilNegation
+    ceilAnd <- And.simplifyEvaluated firstCeil secondCeil
+    equalityAnd <- And.simplifyEvaluated termEquality ceilAnd
     return $ Or.simplifyEvaluated equalityAnd negationAnd
   where
     termsAreEqual = firstTerm == secondTerm

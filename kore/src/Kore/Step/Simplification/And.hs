@@ -80,28 +80,10 @@ simplify
         , Unparse variable
         , FreshVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> And Sort (OrPattern variable)
+    => And Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
-simplify
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    And
-        { andFirst = first
-        , andSecond = second
-        }
-  =
-    simplifyEvaluated
-        substitutionSimplifier
-        simplifier
-        axiomIdToSimplifier
-        first
-        second
+simplify And { andFirst = first, andSecond = second } =
+    simplifyEvaluated first second
 
 {-| simplifies an And given its two 'OrPattern' children.
 
@@ -127,20 +109,10 @@ simplifyEvaluated
         , Unparse variable
         , FreshVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> OrPattern variable
+    => OrPattern variable
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
-simplifyEvaluated
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    first
-    second
+simplifyEvaluated first second
   | OrPattern.isFalse first  = return OrPattern.bottom
   | OrPattern.isFalse second = return OrPattern.bottom
   | OrPattern.isTrue first   = return second
@@ -150,12 +122,7 @@ simplifyEvaluated
         gather $ do
             first1 <- scatter first
             second1 <- scatter second
-            makeEvaluate
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                first1
-                second1
+            makeEvaluate first1 second1
     return (OrPattern.fromPatterns result)
 
 {-|'makeEvaluate' simplifies an 'And' of 'Pattern's.
@@ -170,26 +137,14 @@ makeEvaluate
         , FreshVariable variable
         , HasCallStack
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern variable
+    => Pattern variable
     -> Pattern variable
     -> BranchT Simplifier (Pattern variable)
-makeEvaluate
-    substitutionSimplifier simplifier axiomIdToSimplifier first second
+makeEvaluate first second
   | Pattern.isBottom first || Pattern.isBottom second = empty
   | Pattern.isTop first = return second
   | Pattern.isTop second = return first
-  | otherwise =
-    makeEvaluateNonBool
-        substitutionSimplifier
-        simplifier
-        axiomIdToSimplifier
-        first
-        second
+  | otherwise = makeEvaluateNonBool first second
 
 makeEvaluateNonBool
     ::  ( SortedVariable variable
@@ -199,18 +154,10 @@ makeEvaluateNonBool
         , FreshVariable variable
         , HasCallStack
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern variable
+    => Pattern variable
     -> Pattern variable
     -> BranchT Simplifier (Pattern variable)
 makeEvaluateNonBool
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSimplifier
     first@Conditional { term = firstTerm }
     second@Conditional { term = secondTerm }
   = do

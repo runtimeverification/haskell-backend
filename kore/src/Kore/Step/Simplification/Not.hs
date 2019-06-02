@@ -207,14 +207,9 @@ mkMultiAndPattern
     -> MultiAnd (Pattern variable)
     -> BranchT Simplifier (Pattern variable)
 mkMultiAndPattern
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
+    _predicateSimplifier
+    _termSimplifier
+    _axiomSimplifiers
     patterns
-  = do
-    let mkAnd =
-            And.makeEvaluate
-                predicateSimplifier
-                termSimplifier
-                axiomSimplifiers
-    Foldable.foldrM mkAnd Pattern.top patterns
+  =
+    Foldable.foldrM And.makeEvaluate Pattern.top patterns
