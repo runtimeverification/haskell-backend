@@ -45,9 +45,7 @@ import qualified Kore.Step.Result as StepResult
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule) )
 import           Kore.Step.Simplification.Data
-                 ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+                 ( Simplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Step as Step
@@ -112,18 +110,10 @@ type Transition =
     TransitionT (RewriteRule Variable) (StateT (Maybe ()) Simplifier)
 
 transitionRule
-    :: PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Prim (CommonModalPattern) (RewriteRule Variable)
+    :: Prim (CommonModalPattern) (RewriteRule Variable)
     -> CommonProofState
     -> Transition CommonProofState
 transitionRule
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
     strategyPrim
     proofState
   = case strategyPrim of
@@ -185,12 +175,7 @@ transitionRule
             "ag" -> do
                 result <-
                     Monad.Trans.lift . Monad.Trans.lift
-                    $ checkImplicationIsTop
-                        predicateSimplifier
-                        patternSimplifier
-                        axiomSimplifiers
-                        config
-                        term
+                    $ checkImplicationIsTop config term
                 if result
                     then return (wrapper config)
                     else do

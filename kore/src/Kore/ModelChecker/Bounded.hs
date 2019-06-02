@@ -35,9 +35,7 @@ import           Kore.Step.Rule
                  ( ImplicationRule (ImplicationRule), RewriteRule,
                  RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+                 ( Simplifier )
 import           Kore.Step.Strategy
                  ( GraphSearchOrder, Strategy, pickFinal,
                  runStrategyWithSearchOrder )
@@ -60,13 +58,7 @@ data CheckResult
     deriving (Show)
 
 check
-    :: TermLikeSimplifier
-    -- ^ Simplifies normal patterns through, e.g., function evaluation
-    -> PredicateSimplifier
-    -- ^ Simplifies predicates
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    ->  (  CommonModalPattern
+    ::  (  CommonModalPattern
         -> [Strategy
             (Prim
                 (CommonModalPattern)
@@ -81,31 +73,13 @@ check
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> Simplifier [CheckResult]
-check
-    simplifier
-    substitutionSimplifier
-    axiomIdToSimplifier
-    strategyBuilder
-    searchOrder
-  =
-    mapM
-        (checkClaim
-            simplifier
-            substitutionSimplifier
-            axiomIdToSimplifier
-            strategyBuilder
-            searchOrder
-        )
+check strategyBuilder searchOrder =
+    mapM (checkClaim strategyBuilder searchOrder)
 
 bmcStrategy
     :: [Axiom]
     -> CommonModalPattern
-    -> [Strategy
-        (Prim
-            (CommonModalPattern)
-            (RewriteRule Variable)
-        )
-       ]
+    -> [Strategy (Prim (CommonModalPattern) (RewriteRule Variable))]
 bmcStrategy
     axioms
     goal
@@ -117,11 +91,7 @@ bmcStrategy
         unwrap (Axiom a) = a
 
 checkClaim
-    :: TermLikeSimplifier
-    -> PredicateSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    ->  (  CommonModalPattern
+    ::  (  CommonModalPattern
         -> [Strategy
             (Prim
                 (CommonModalPattern)
@@ -133,9 +103,6 @@ checkClaim
     -> (ImplicationRule Variable, Limit Natural)
     -> Simplifier CheckResult
 checkClaim
-    simplifier
-    substitutionSimplifier
-    axiomIdToSimplifier
     strategyBuilder
     searchOrder
     (ImplicationRule RulePattern { left, right }, stepLimit)
@@ -172,11 +139,7 @@ checkClaim
         :: Prim (CommonModalPattern) (RewriteRule Variable)
         -> (CommonProofState)
         -> ModelChecker.Transition (CommonProofState)
-    transitionRule' =
-        ModelChecker.transitionRule
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
+    transitionRule' = ModelChecker.transitionRule
 
     checkFinalNodes
         :: [CommonProofState]

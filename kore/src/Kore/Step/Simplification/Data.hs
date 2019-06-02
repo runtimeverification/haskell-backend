@@ -52,6 +52,7 @@ import qualified Control.Monad.Morph as Monad.Morph
 import           Control.Monad.Reader
 import           Control.Monad.State.Class
                  ( MonadState )
+import qualified Control.Monad.State.Strict as Strict
 import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Accum
 import           Control.Monad.Trans.Except
@@ -170,6 +171,8 @@ instance MonadSimplify m => MonadSimplify (ExceptT e m)
 instance MonadSimplify m => MonadSimplify (ListT m)
 
 instance MonadSimplify m => MonadSimplify (MaybeT m)
+
+instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
 
 -- * Branching
 

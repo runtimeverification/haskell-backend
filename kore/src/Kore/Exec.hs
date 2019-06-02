@@ -326,22 +326,12 @@ boundedModelCheck
     -> SMT [Bounded.CheckResult]
 boundedModelCheck limit definitionModule specModule searchOrder =
     evalSimplifier env $ initialize definitionModule $ \initialized -> do
-        let
-            Initialized
-                { rewriteRules
-                , simplifier
-                , substitutionSimplifier
-                , axiomIdToSimplifier
-                }
-              = initialized
+        let Initialized { rewriteRules } = initialized
 
             axioms = fmap Axiom rewriteRules
             specAxioms = fmap snd $ extractImplicationClaims specModule
 
         Bounded.check
-            simplifier
-            substitutionSimplifier
-            axiomIdToSimplifier
             (Bounded.bmcStrategy axioms)
             searchOrder
             (map (\x -> (x,limit)) specAxioms)

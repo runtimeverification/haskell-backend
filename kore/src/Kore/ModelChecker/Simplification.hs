@@ -24,21 +24,11 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 checkImplicationIsTop
-    :: PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Pattern Variable
+    :: Pattern Variable
     -> TermLike Variable
     -> Simplifier Bool
-checkImplicationIsTop
-    _predicateSimplifier
-    _patternSimplifier
-    _axiomSimplifers
-    lhs
-    rhs
-  = case stripForallQuantifiers rhs of
+checkImplicationIsTop lhs rhs =
+    case stripForallQuantifiers rhs of
         ( forallQuantifiers, Implies_ _ implicationLHS implicationRHS ) -> do
             let rename = refreshVariables lhsFreeVariables forallQuantifiers
                 subst = mkVar <$> rename
