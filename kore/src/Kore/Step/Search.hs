@@ -119,15 +119,10 @@ matchWith
         , Show variable
         , Unparse variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Pattern variable
+    => Pattern variable
     -> Pattern variable
     -> MaybeT Simplifier (OrPredicate variable)
-matchWith _substitutionSimplifier _simplifier _axiomIdToSimplifier e1 e2 = do
+matchWith e1 e2 = do
     eitherUnifiers <-
         Monad.Trans.lift $ Monad.Unify.runUnifier
         $ unificationProcedure t1 t2

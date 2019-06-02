@@ -200,24 +200,14 @@ search verifiedModule strategy termLike searchPattern searchConfig =
     evalSimplifier env $ do
         execution <- execute verifiedModule strategy termLike
         let
-            Execution { simplifier, substitutionSimplifier } = execution
-            Execution { axiomIdToSimplifier } = execution
             Execution { executionGraph } = execution
-            match target config =
-                Search.matchWith
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-                    target
-                    config
+            match target config = Search.matchWith target config
         solutionsLists <-
             searchGraph searchConfig (match searchPattern) executionGraph
         let
-            solutions =
-                concatMap MultiOr.extractPatterns solutionsLists
+            solutions = concatMap MultiOr.extractPatterns solutionsLists
             orPredicate =
-                makeMultipleOrPredicate
-                    (Predicate.toPredicate <$> solutions)
+                makeMultipleOrPredicate (Predicate.toPredicate <$> solutions)
         return (forceSort patternSort $ unwrapPredicate orPredicate)
   where
     metadataTools = MetadataTools.build verifiedModule
