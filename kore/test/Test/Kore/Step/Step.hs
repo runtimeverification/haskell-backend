@@ -1083,15 +1083,13 @@ sequenceMatchingRules
     -- ^ Rewrite rule
     -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
 sequenceMatchingRules initial rules =
-    fmap (fmap Foldable.fold)
+    (fmap . fmap) Foldable.fold
     $ SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
     $ Monad.Unify.runUnifier
-    $ Step.applyRulesSequence
-        unificationProcedure
-        initial
-        (getEqualityRule <$> rules)
+    $ Step.applyRulesSequence unificationProcedure initial equalityRules
   where
+    equalityRules = getEqualityRule <$> rules
     unificationProcedure =
         UnificationProcedure Matcher.unificationWithAppMatchOnTop
 

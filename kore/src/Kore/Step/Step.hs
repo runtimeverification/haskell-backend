@@ -171,7 +171,6 @@ unifyRule
         , MonadUnify unifier
         )
     => UnificationProcedure
-
     -> Pattern variable
     -- ^ Initial configuration
     -> RulePattern variable
@@ -179,7 +178,6 @@ unifyRule
     -> unifier (UnifiedRule variable)
 unifyRule
     (UnificationProcedure unifyPatterns)
-
     initial@Conditional { term = initialTerm }
     rule
   = do
@@ -210,7 +208,6 @@ unifyRules
         , MonadUnify unifier
         )
     => UnificationProcedure
-
     -> Pattern (Target variable)
     -- ^ Initial configuration
     -> [RulePattern (Target variable)]
