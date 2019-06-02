@@ -86,25 +86,10 @@ simplify
         , FreshVariable variable
         , SortedVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Simplifies patterns.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Exists Sort variable (OrPattern variable)
+    => Exists Sort variable (OrPattern variable)
     -> Simplifier (OrPattern variable)
-simplify
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    Exists { existsVariable = variable, existsChild = child }
-  =
-    simplifyEvaluated
-        substitutionSimplifier
-        simplifier
-        axiomIdToSimplifier
-        variable
-        child
+simplify Exists { existsVariable = variable, existsChild = child } =
+    simplifyEvaluated variable child
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -126,32 +111,14 @@ simplifyEvaluated
         , FreshVariable variable
         , SortedVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Simplifies patterns.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> variable
+    => variable
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
-simplifyEvaluated
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    variable
-    simplified
+simplifyEvaluated variable simplified
   | OrPattern.isTrue simplified  = return simplified
   | OrPattern.isFalse simplified = return simplified
   | otherwise = do
-    evaluated <-
-        traverse
-            (makeEvaluate
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                variable
-            )
-            simplified
+    evaluated <- traverse (makeEvaluate variable) simplified
     return (OrPattern.flatten evaluated)
 
 {-| evaluates an 'Exists' given its two 'Pattern' children.
@@ -165,34 +132,21 @@ makeEvaluate
         , FreshVariable variable
         , SortedVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Simplifies patterns.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> variable
+    => variable
     -> Pattern variable
     -> Simplifier (OrPattern variable)
-makeEvaluate
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    variable
-    original
+makeEvaluate variable original
   = fmap OrPattern.fromPatterns $ BranchT.gather $ do
     normalized <- Substitution.normalize original
     let Conditional { substitution = normalizedSubstitution } = normalized
     case splitSubstitution variable normalizedSubstitution of
         (Left boundTerm, freeSubstitution) ->
             makeEvaluateBoundLeft
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
                 variable
                 boundTerm
                 normalized { substitution = freeSubstitution }
         (Right boundSubstitution, freeSubstitution) -> do
-            matched <- Monad.Trans.lift $ matchesToVariableSubstitution'
+            matched <- Monad.Trans.lift $ matchesToVariableSubstitution
                 variable
                 normalized { substitution = boundSubstitution }
             if matched
@@ -204,12 +158,6 @@ makeEvaluate
                     variable
                     freeSubstitution
                     normalized { substitution = boundSubstitution }
-  where
-    matchesToVariableSubstitution' =
-        matchesToVariableSubstitution
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
 
 matchesToVariableSubstitution
     ::  ( FreshVariable variable
@@ -217,20 +165,10 @@ matchesToVariableSubstitution
         , Unparse variable
         , SortedVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-
-    -> variable
+    => variable
     -> Pattern variable
     -> Simplifier Bool
 matchesToVariableSubstitution
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSimplifier
-
     variable
     Conditional {term, predicate, substitution = boundSubstitution}
   | Equals_ _sort1 _sort2 first second <-
@@ -244,7 +182,7 @@ matchesToVariableSubstitution
         Right results ->
             return (all (singleVariableSubstitution variable) results)
 
-matchesToVariableSubstitution _ _ _ _ _ = return False
+matchesToVariableSubstitution _ _ = return False
 
 singleVariableSubstitution
     ::  ( Ord variable
@@ -291,19 +229,11 @@ makeEvaluateBoundLeft
         , FreshVariable variable
         , SortedVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Simplifies patterns.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> variable  -- ^ quantified variable
+    => variable  -- ^ quantified variable
     -> TermLike variable  -- ^ substituted term
     -> Pattern variable
     -> BranchT Simplifier (Pattern variable)
 makeEvaluateBoundLeft
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSimplifier
     variable
     boundTerm
     normalized

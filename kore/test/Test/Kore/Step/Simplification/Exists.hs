@@ -6,8 +6,6 @@ module Test.Kore.Step.Simplification.Exists
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import qualified Data.Map as Map
-
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -18,10 +16,8 @@ import           Kore.Predicate.Predicate
                  makeExistsPredicate, makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
+                 ( Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Exists as Exists
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
-                 ( create )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -309,12 +305,8 @@ simplify
     -> IO (OrPattern Variable)
 simplify exists =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
-    $ Exists.simplify
-        Mock.substitutionSimplifier
-        Simplifier.create
-        Map.empty
-        exists
+    $ evalSimplifier mockEnv
+    $ Exists.simplify exists
 
 makeEvaluate
     :: Variable
@@ -322,10 +314,8 @@ makeEvaluate
     -> IO (OrPattern Variable)
 makeEvaluate variable child =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
-    $ Exists.makeEvaluate
-        Mock.substitutionSimplifier
-        Simplifier.create
-        Map.empty
-        variable
-        child
+    $ evalSimplifier mockEnv
+    $ Exists.makeEvaluate variable child
+
+mockEnv :: Env
+mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }

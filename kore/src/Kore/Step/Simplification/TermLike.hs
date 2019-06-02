@@ -141,11 +141,9 @@ simplifyInternal
         CeilF p        -> Ceil.simplify p
         DomainValueF p -> return $ DomainValue.simplify p
         EqualsF p      -> Equals.simplify p
-        ExistsF p ->
-            Exists.simplify
-                substitutionSimplifier simplifier axiomIdToEvaluator p
-        FloorF p -> return $ Floor.simplify p
-        ForallF p -> return $ Forall.simplify p
+        ExistsF p      -> Exists.simplify p
+        FloorF p       -> return $ Floor.simplify p
+        ForallF p      -> return $ Forall.simplify p
         IffF p ->
             Iff.simplify substitutionSimplifier simplifier axiomIdToEvaluator p
         ImpliesF p ->
