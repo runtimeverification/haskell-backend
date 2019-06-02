@@ -180,7 +180,7 @@ makeEvaluate
     variable
     original
   = fmap OrPattern.fromPatterns $ BranchT.gather $ do
-    normalized <- normalize original
+    normalized <- Substitution.normalize original
     let Conditional { substitution = normalizedSubstitution } = normalized
     case splitSubstitution variable normalizedSubstitution of
         (Left boundTerm, freeSubstitution) ->
@@ -205,11 +205,6 @@ makeEvaluate
                     freeSubstitution
                     normalized { substitution = boundSubstitution }
   where
-    normalize =
-        Substitution.normalize
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
     matchesToVariableSubstitution' =
         matchesToVariableSubstitution
             substitutionSimplifier

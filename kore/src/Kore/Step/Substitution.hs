@@ -68,17 +68,9 @@ normalize
         , Unparse variable
         , Show variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> Conditional variable term
+    => Conditional variable term
     -> BranchT Simplifier (Conditional variable term)
-normalize
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSimplifier
-    Conditional { term, predicate, substitution }
-  = do
+normalize Conditional { term, predicate, substitution } = do
     -- We collect all the results here because we should promote the
     -- substitution to the predicate when there is an error on *any* branch.
     results <-
@@ -279,13 +271,8 @@ createPredicatesAndSubstitutionsMerger
         , Ord variable
         , FreshVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> PredicateMerger variable (BranchT Simplifier)
-createPredicatesAndSubstitutionsMerger
-    substitutionSimplifier simplifier axiomIdToSimplifier
-  =
+    => PredicateMerger variable (BranchT Simplifier)
+createPredicatesAndSubstitutionsMerger =
     PredicateMerger worker
   where
     worker
@@ -296,11 +283,7 @@ createPredicatesAndSubstitutionsMerger
         let merged =
                 (Predicate.fromPredicate <$> predicates)
                 <> (Predicate.fromSubstitution <$> substitutions)
-        normalize
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            (Foldable.fold merged)
+        normalize (Foldable.fold merged)
 
 {-| Creates a 'PredicateMerger' that creates predicates for
 unifications it can't handle and whose result is in any monad transformer

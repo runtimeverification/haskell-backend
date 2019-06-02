@@ -48,9 +48,9 @@ simplifyEvaluatedMultiPredicate
     -> MultiAnd (OrPredicate variable)
     -> Simplifier (OrPredicate variable)
 simplifyEvaluatedMultiPredicate
-    substitutionSimplifier
-    simplifier
-    axiomIdToSubstitution
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSubstitution
     predicates
   = do
     let
@@ -65,10 +65,4 @@ simplifyEvaluatedMultiPredicate
         :: [Predicate variable]
         -> BranchT Simplifier (Predicate variable)
     andPredicates predicates' =
-        normalize (Foldable.fold predicates')
-
-    normalize =
-        Substitution.normalize
-            substitutionSimplifier
-            simplifier
-            axiomIdToSubstitution
+        Substitution.normalize (Foldable.fold predicates')

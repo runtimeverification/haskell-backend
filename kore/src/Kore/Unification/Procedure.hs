@@ -104,11 +104,7 @@ unificationProcedure  p1 p2
                     term
             orResult <-
                 OrPattern.mergeWithPredicateAssumesEvaluated
-                    (createPredicatesAndSubstitutionsMerger
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
-                    )
+                    createPredicatesAndSubstitutionsMerger
                     (Conditional.withoutTerm pat)
                     orCeil
             BranchT.scatter (MultiOr.extractPatterns orResult)

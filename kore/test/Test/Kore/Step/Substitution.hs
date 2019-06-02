@@ -347,18 +347,14 @@ merge s1 s2 =
         []
         $ Substitution.wrap <$> [s1, s2]
 
-normalize
-    :: Conditional Variable term
-    -> IO [Conditional Variable term]
+normalize :: Conditional Variable term -> IO [Conditional Variable term]
 normalize predicated =
     runSMT
-    $ evalSimplifier Mock.env
+    $ evalSimplifier mockEnv
     $ gather
-    $ Substitution.normalize
-        Mock.substitutionSimplifier
-        Simplifier.create
-        Map.empty
-        predicated
+    $ Substitution.normalize predicated
+  where
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
 
 normalizeExcept
     :: Conditional Variable ()

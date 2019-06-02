@@ -225,17 +225,9 @@ makeEvaluateNonBool
         secondCondition = Conditional.withoutTerm second
         initialConditions = firstCondition <> secondCondition
         merged = Conditional.andCondition terms initialConditions
-    normalized <-
-        Substitution.normalize
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            merged
-    return
-        (applyAndIdempotence <$> normalized)
-            { predicate =
-                applyAndIdempotence <$> Conditional.predicate normalized
-            }
+    normalized <- Substitution.normalize merged
+    return (applyAndIdempotence <$> normalized)
+        { predicate = applyAndIdempotence <$> Conditional.predicate normalized }
 
 applyAndIdempotence
     ::  ( Ord variable
