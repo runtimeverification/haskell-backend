@@ -36,6 +36,7 @@ import           Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern, Predicate )
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
@@ -62,12 +63,7 @@ evaluateApplication
         , FreshVariable variable
         , SortedVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate variable
+    => Predicate variable
     -- ^ Aggregated children predicate and substitution.
     -> CofreeF
         (Application SymbolOrAlias)
@@ -76,13 +72,13 @@ evaluateApplication
     -- ^ The pattern to be evaluated
     -> Simplifier (OrPattern variable)
 evaluateApplication
-    substitutionSimplifier
-    simplifier
-    axiomIdToEvaluator
     childrenPredicate
     (valid :< app)
   = do
     tools <- Simplifier.askMetadataTools
+    substitutionSimplifier <- Simplifier.askSimplifierPredicate
+    simplifier <- Simplifier.askSimplifierTermLike
+    axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
     let
         afterInj = evaluateSortInjection tools app
         Application { applicationSymbolOrAlias = appHead } = afterInj
@@ -227,9 +223,6 @@ maybeEvaluatePattern
                                 )
                 merged <-
                     mergeWithConditionAndSubstitution
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToEvaluator
                         childrenPredicate
                         flattened
                 case merged of
@@ -262,11 +255,7 @@ maybeEvaluatePattern
       | toSimplify == unchangedPatt =
         return (OrPattern.fromPattern unchangedPatt)
       | otherwise =
-        reevaluateFunctions
-            substitutionSimplifier
-            simplifier
-            axiomIdToEvaluator
-            toSimplify
+        reevaluateFunctions toSimplify
 
 evaluateSortInjection
     :: Ord variable
@@ -312,33 +301,13 @@ reevaluateFunctions
         , Unparse variable
         , FreshVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions in patterns.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern variable
+    => Pattern variable
     -- ^ Function evaluation result.
     -> Simplifier (OrPattern variable)
-reevaluateFunctions
-    _substitutionSimplifier
-    _termSimplifier
-    _axiomIdToEvaluator
-    Conditional
-        { term   = rewrittenPattern
-        , predicate = rewritingCondition
-        , substitution = rewrittenSubstitution
-        }
-  = do
-    pattOr <- simplifyTerm rewrittenPattern
+reevaluateFunctions rewriting = do
+    pattOr <- simplifyTerm (Pattern.term rewriting)
     mergedPatt <-
-        OrPattern.mergeWithPredicate
-            Conditional
-                { term = ()
-                , predicate = rewritingCondition
-                , substitution = rewrittenSubstitution
-                }
-            pattOr
+        OrPattern.mergeWithPredicate (Pattern.withoutTerm rewriting) pattOr
     orResults <- BranchT.gather $ traverse Pattern.simplifyPredicate mergedPatt
     return (MultiOr.mergeAll orResults)
 
@@ -351,22 +320,14 @@ mergeWithConditionAndSubstitution
         , FreshVariable variable
         , SortedVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions in a pattern.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate variable
+    => Predicate variable
     -- ^ Condition and substitution to add.
-    -> (AttemptedAxiom variable)
+    -> AttemptedAxiom variable
     -- ^ AttemptedAxiom to which the condition should be added.
     -> Simplifier (AttemptedAxiom variable)
-mergeWithConditionAndSubstitution _ _ _ _ AttemptedAxiom.NotApplicable =
+mergeWithConditionAndSubstitution _ AttemptedAxiom.NotApplicable =
     return AttemptedAxiom.NotApplicable
 mergeWithConditionAndSubstitution
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToEvaluator
     toMerge
     (AttemptedAxiom.Applied AttemptedAxiomResults { results, remainders })
   = do

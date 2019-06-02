@@ -192,16 +192,12 @@ evaluateApplicationFunction
     -- ^ The pattern to be evaluated
     -> Simplifier (OrPattern variable)
 evaluateApplicationFunction
-    substitutionSimplifier
-    simplifier
-    axiomIdToEvaluator
-    Conditional
-        { term, predicate, substitution }
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToEvaluator
+    Conditional { term, predicate, substitution }
   =
     evaluateApplication
-        substitutionSimplifier
-        simplifier
-        axiomIdToEvaluator
         Conditional { term = (), predicate, substitution }
         term
 

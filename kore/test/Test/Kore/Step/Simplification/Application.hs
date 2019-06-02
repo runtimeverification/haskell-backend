@@ -19,8 +19,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeEqualsPredicate,
-                 makeMultipleAndPredicate, makeTruePredicate )
+                 ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.EvaluationStrategy
                  ( firstFullEvaluation )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -184,11 +183,12 @@ test_applicationSimplification =
                         [ Conditional
                             { term = fOfA
                             , predicate =
-                                makeMultipleAndPredicate
-                                    [ makeEqualsPredicate fOfA gOfA
-                                    , makeEqualsPredicate fOfA fOfB
-                                    , makeEqualsPredicate gOfA gOfB
-                                    ]
+                                makeAndPredicate
+                                    (makeEqualsPredicate fOfA gOfA)
+                                    (makeAndPredicate
+                                        (makeEqualsPredicate fOfA fOfB)
+                                        (makeEqualsPredicate gOfA gOfB)
+                                    )
                             , substitution =
                                 Substitution.unsafeWrap
                                 $ List.sortBy (comparing fst)
@@ -343,9 +343,16 @@ evaluate
     -> IO (OrPattern Variable)
 evaluate simplifier axiomIdToEvaluator application =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
+    $ evalSimplifier mockEnv
     $ simplify
         Mock.substitutionSimplifier
         simplifier
         axiomIdToEvaluator
         application
+  where
+    mockEnv =
+        Mock.env
+            { simplifierPredicate = Mock.substitutionSimplifier
+            , simplifierAxioms = axiomIdToEvaluator
+            , simplifierTermLike = simplifier
+            }
