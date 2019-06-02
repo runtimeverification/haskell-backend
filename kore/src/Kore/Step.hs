@@ -100,19 +100,12 @@ transitionRule =
             Foldable.asum (pure <$> nonEmptyConfigs)
     transitionRewrite rule config = do
         Transition.addRule rule
-        substitutionSimplifier <- Simplifier.askSimplifierPredicate
-        simplifier <- Simplifier.askSimplifierTermLike
-        axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
+        let unificationProcedure =
+                Step.UnificationProcedure Unification.unificationProcedure
         eitherResults <-
             Monad.Trans.lift
             $ Monad.Unify.runUnifier
-            $ Step.applyRewriteRulesParallel
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                (Step.UnificationProcedure Unification.unificationProcedure)
-                [rule]
-                config
+            $ Step.applyRewriteRulesParallel unificationProcedure [rule] config
         case eitherResults of
             Left err ->
                 (error . show . Pretty.vsep)

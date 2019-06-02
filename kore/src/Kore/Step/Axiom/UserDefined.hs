@@ -70,9 +70,9 @@ equalityRuleEvaluator
     -> Simplifier (AttemptedAxiom variable)
 equalityRuleEvaluator
     (EqualityRule rule)
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSimplifier
     patt
   -- TODO(traiansf): never apply smt-lemma axioms,
   -- neither as simplification rules nor as function definition rules
@@ -99,9 +99,6 @@ equalityRuleEvaluator
     applyRule patt' rule' =
         Monad.Unify.runUnifier
         $ Step.applyRulesParallel
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
             unificationProcedure
             [RulePattern.mapVariables fromVariable rule']
             (Pattern.fromTermLike patt')

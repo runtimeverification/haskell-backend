@@ -13,7 +13,6 @@ import Test.Tasty.HUnit
 import           Data.Default as Default
                  ( def )
 import qualified Data.Foldable as Foldable
-import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 import qualified Kore.Internal.Conditional as Conditional
@@ -39,9 +38,6 @@ import           Kore.Step.Rule
                  ( EqualityRule (..), RewriteRule (..), RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Predicate as Predicate
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
-                 ( create )
 import           Kore.Step.Step hiding
                  ( applyInitialConditions, applyRewriteRulesParallel,
                  applyRewriteRulesSequence, unifyRule )
@@ -631,20 +627,11 @@ applyRewriteRulesParallel
     -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
 applyRewriteRulesParallel initial rules =
     (fmap . fmap) Result.mergeResults
-        $ SMT.runSMT SMT.defaultConfig emptyLogger
-        $ evalSimplifier Mock.env
-        $ Monad.Unify.runUnifier
-        $ Step.applyRewriteRulesParallel
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-            unificationProcedure
-            rules
-            initial
+    $ SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier Mock.env
+    $ Monad.Unify.runUnifier
+    $ Step.applyRewriteRulesParallel unificationProcedure rules initial
   where
-    predicateSimplifier = Predicate.create
-    patternSimplifier = Simplifier.create
-    axiomSimplifiers = Map.empty
     unificationProcedure =
         UnificationProcedure Unification.unificationProcedure
 

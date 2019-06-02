@@ -67,7 +67,6 @@ import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (RulePattern) )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
-import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Substitution as Substitution
 import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
@@ -513,24 +512,14 @@ applyRulesParallel
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> UnificationProcedure
-
+    => UnificationProcedure
     -> [RulePattern variable]
     -- ^ Rewrite rules
     -> Pattern variable
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
 applyRulesParallel
-    _predicateSimplifier
-    _patternSimplifier
-    _axiomSimplifiers
     unificationProcedure
-
     -- Wrap the rule and configuration so that unification prefers to substitute
     -- axiom variables.
     (map toAxiomVariables -> rules)
@@ -554,32 +543,14 @@ applyRewriteRulesParallel
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> UnificationProcedure
-
+    => UnificationProcedure
     -> [RewriteRule variable]
     -- ^ Rewrite rules
     -> Pattern variable
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
-applyRewriteRulesParallel
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
-    unificationProcedure
-
-    rewriteRules
-  =
-    applyRulesParallel
-        predicateSimplifier
-        patternSimplifier
-        axiomSimplifiers
-        unificationProcedure
-        (getRewriteRule <$> rewriteRules)
+applyRewriteRulesParallel unificationProcedure rewriteRules =
+    applyRulesParallel unificationProcedure (getRewriteRule <$> rewriteRules)
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 

@@ -230,9 +230,6 @@ transitionRule
             Monad.Trans.lift . Monad.Trans.lift
             $ Monad.Unify.runUnifier
             $ Step.applyRewriteRulesParallel
-                predicateSimplifier
-                patternSimplifier
-                axiomSimplifiers
                 (Step.UnificationProcedure Unification.unificationProcedure)
                 rules
                 config

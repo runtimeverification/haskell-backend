@@ -242,14 +242,10 @@ runStepResult configuration axiom = do
         evalSimplifier testEnv
         $ Monad.Unify.runUnifier
         $ Step.applyRewriteRulesParallel
-            testSubstitutionSimplifier
-            testTermLikeSimplifier
-            testEvaluators
             (Step.UnificationProcedure Unification.unificationProcedure)
             [axiom]
             configuration
     return (Result.mergeResults <$> results)
-
 
 -- | Test unparsing internalized patterns.
 hpropUnparse
