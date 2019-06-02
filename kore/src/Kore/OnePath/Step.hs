@@ -144,9 +144,9 @@ transitionRule
     -- ^ Configuration being rewritten and its accompanying proof
     -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
 transitionRule
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSimplifier
     strategy
     expandedPattern
   =
@@ -194,9 +194,6 @@ transitionRule
             Monad.Trans.lift
             $ Monad.Unify.runUnifier
             $ Step.applyRewriteRulesSequence
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
                 (Step.UnificationProcedure Unification.unificationProcedure)
                 config
                 rules

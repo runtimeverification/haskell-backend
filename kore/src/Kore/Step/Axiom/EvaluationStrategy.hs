@@ -315,9 +315,9 @@ evaluateWithDefinitionAxioms
     -> Simplifier (AttemptedAxiom variable)
 evaluateWithDefinitionAxioms
     definitionRules
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
+    _predicateSimplifier
+    _termSimplifier
+    _axiomSimplifiers
     patt
   =
     AttemptedAxiom.maybeNotApplicable $ do
@@ -353,10 +353,6 @@ evaluateWithDefinitionAxioms
 
     applyRules initial rules =
         Monad.Unify.maybeUnifier
-        $ Step.applyRulesSequence
-            predicateSimplifier
-            termSimplifier
-            axiomSimplifiers
-            (UnificationProcedure unificationWithAppMatchOnTop)
-            initial
-            rules
+        $ Step.applyRulesSequence unificationProcedure initial rules
+
+    unificationProcedure = UnificationProcedure unificationWithAppMatchOnTop

@@ -596,24 +596,14 @@ applyRulesSequence
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> UnificationProcedure
-
+    => UnificationProcedure
     -> Pattern variable
     -- ^ Configuration being rewritten
     -> [RulePattern variable]
     -- ^ Rewrite rules
     -> unifier (Results variable)
 applyRulesSequence
-    _predicateSimplifier
-    _patternSimplifier
-    _axiomSimplifiers
     unificationProcedure
-
     -- Wrap the rule and configuration so that unification prefers to substitute
     -- axiom variables.
     (toConfigurationVariables -> initial)
@@ -637,31 +627,14 @@ applyRewriteRulesSequence
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> UnificationProcedure
-
+    => UnificationProcedure
     -> Pattern variable
     -- ^ Configuration being rewritten
     -> [RewriteRule variable]
     -- ^ Rewrite rules
     -> unifier (Results variable)
-applyRewriteRulesSequence
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
-    unificationProcedure
-
-    initialConfig
-    rewriteRules
-  =
+applyRewriteRulesSequence unificationProcedure initialConfig rewriteRules =
     applyRulesSequence
-        predicateSimplifier
-        patternSimplifier
-        axiomSimplifiers
         unificationProcedure
         initialConfig
         (getRewriteRule <$> rewriteRules)

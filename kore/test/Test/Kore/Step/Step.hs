@@ -998,19 +998,9 @@ applyRewriteRulesSequence initial rules =
         $ SMT.runSMT SMT.defaultConfig emptyLogger
         $ evalSimplifier Mock.env
         $ Monad.Unify.runUnifier
-        $ Step.applyRewriteRulesSequence
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-            unificationProcedure
-            initial
-            rules
+        $ Step.applyRewriteRulesSequence unificationProcedure initial rules
   where
-    predicateSimplifier = Predicate.create
-    patternSimplifier = Simplifier.create
-    axiomSimplifiers = Map.empty
-    unificationProcedure =
-        UnificationProcedure Unification.unificationProcedure
+    unificationProcedure = UnificationProcedure Unification.unificationProcedure
 
 test_applyRewriteRulesSequence :: [TestTree]
 test_applyRewriteRulesSequence =
@@ -1111,16 +1101,10 @@ sequenceMatchingRules initial rules =
     $ evalSimplifier Mock.env
     $ Monad.Unify.runUnifier
     $ Step.applyRulesSequence
-        predicateSimplifier
-        patternSimplifier
-        axiomSimplifiers
         unificationProcedure
         initial
         (getEqualityRule <$> rules)
   where
-    predicateSimplifier = Predicate.create
-    patternSimplifier = Simplifier.create
-    axiomSimplifiers = Map.empty
     unificationProcedure =
         UnificationProcedure Matcher.unificationWithAppMatchOnTop
 
