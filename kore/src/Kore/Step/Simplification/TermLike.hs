@@ -138,8 +138,7 @@ simplifyInternal
         ApplicationF p -> Application.simplify (attrs :< p)
         BottomF p -> return $ Bottom.simplify p
         BuiltinF p -> return $ Builtin.simplify p
-        CeilF p ->
-            Ceil.simplify substitutionSimplifier simplifier axiomIdToEvaluator p
+        CeilF p -> Ceil.simplify p
         DomainValueF p -> return $ DomainValue.simplify p
         EqualsF p ->
             Equals.simplify

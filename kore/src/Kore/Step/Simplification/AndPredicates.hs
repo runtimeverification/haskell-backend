@@ -26,8 +26,7 @@ import           Kore.Internal.OrPredicate
 import           Kore.Internal.Pattern
                  ( Predicate )
 import           Kore.Step.Simplification.Data
-                 ( BranchT, BuiltinAndAxiomSimplifierMap, PredicateSimplifier,
-                 Simplifier, TermLikeSimplifier )
+                 ( BranchT, Simplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Substitution as Substitution
@@ -42,17 +41,9 @@ simplifyEvaluatedMultiPredicate
         , Unparse variable
         , FreshVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> MultiAnd (OrPredicate variable)
+    => MultiAnd (OrPredicate variable)
     -> Simplifier (OrPredicate variable)
-simplifyEvaluatedMultiPredicate
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSubstitution
-    predicates
-  = do
+simplifyEvaluatedMultiPredicate predicates = do
     let
         crossProduct :: MultiOr [Predicate variable]
         crossProduct =

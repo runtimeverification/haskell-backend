@@ -413,18 +413,8 @@ matchVariableFunction quantifiedVariables (Var_ var) second
   | not (var `Map.member` quantifiedVariables) = do
     tools <- Simplifier.askMetadataTools
     Monad.guard (isFunctionPattern tools second)
-    substitutionSimplifier <- Simplifier.askSimplifierPredicate
-    simplifier <- Simplifier.askSimplifierTermLike
-    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
     Monad.Trans.lift $ do
-        ceilOr <-
-            Monad.Unify.liftSimplifier
-            $ Ceil.makeEvaluateTerm
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                second
+        ceilOr <- Monad.Unify.liftSimplifier $ Ceil.makeEvaluateTerm second
         result <-
             OrPattern.mergeWithPredicateAssumesEvaluated
                 createPredicatesAndSubstitutionsMergerExcept

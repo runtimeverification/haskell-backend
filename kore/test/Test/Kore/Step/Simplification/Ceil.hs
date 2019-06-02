@@ -36,8 +36,6 @@ import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
-                 ( create )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -489,12 +487,10 @@ evaluate
     -> IO (OrPattern Variable)
 evaluate ceil =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
-    $ Ceil.simplify
-        Mock.substitutionSimplifier
-        Simplifier.create
-        Map.empty
-        ceil
+    $ evalSimplifier mockEnv
+    $ Ceil.simplify ceil
+  where
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
 
 makeEvaluate
     :: Pattern Variable
@@ -508,9 +504,11 @@ makeEvaluateWithAxioms
     -> IO (OrPattern Variable)
 makeEvaluateWithAxioms axiomIdToSimplifier child =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env { simplifierAxioms = axiomIdToSimplifier }
-    $ Ceil.makeEvaluate
-        Mock.substitutionSimplifier
-        Simplifier.create
-        axiomIdToSimplifier
-        child
+    $ evalSimplifier mockEnv
+    $ Ceil.makeEvaluate child
+  where
+    mockEnv =
+        Mock.env
+            { simplifierAxioms = axiomIdToSimplifier
+            , simplifierPredicate = Mock.substitutionSimplifier
+            }

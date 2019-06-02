@@ -794,20 +794,14 @@ bottomTermEquals
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 bottomTermEquals
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
+    _tools
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSimplifier
     first@(Bottom_ _)
     second
   = Monad.Trans.lift $ do -- MonadUnify
-    secondCeil <-
-        Monad.Unify.liftSimplifier $ Ceil.makeEvaluateTerm
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            second
+    secondCeil <- Monad.Unify.liftSimplifier $ Ceil.makeEvaluateTerm second
 
     case MultiOr.extractPatterns secondCeil of
         [] -> return Pattern.top
@@ -899,9 +893,9 @@ variableFunctionAndEquals
 variableFunctionAndEquals
     simplificationType
     tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSimplifier
     _
     first@(Var_ v)
     second
@@ -914,13 +908,8 @@ variableFunctionAndEquals
                 -- be careful to not just drop the term.
                 return Predicate.top
             SimplificationType.Equals -> do
-                resultOr <- Monad.Unify.liftSimplifier
-                    $ Ceil.makeEvaluateTerm
-                        tools
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
-                        second
+                resultOr <-
+                    Monad.Unify.liftSimplifier $ Ceil.makeEvaluateTerm second
                 case MultiOr.extractPatterns resultOr of
                     [] -> do
                         Monad.Unify.explainBottom

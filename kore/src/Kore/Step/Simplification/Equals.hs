@@ -260,19 +260,8 @@ makeEvaluateFunctionalOr
     first
     seconds
   = do
-    firstCeil <-
-        Ceil.makeEvaluate
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            first
-    secondCeilsWithProofs <- mapM
-        (Ceil.makeEvaluate
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-        )
-        seconds
+    firstCeil <- Ceil.makeEvaluate first
+    secondCeilsWithProofs <- mapM Ceil.makeEvaluate seconds
     firstNotCeil <-
         Not.simplifyEvaluated
             substitutionSimplifier
@@ -386,15 +375,9 @@ makeEvaluate
   = do
     firstCeil <-
         Ceil.makeEvaluate
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
             first { term = if termsAreEqual then mkTop_ else firstTerm }
     secondCeil <-
         Ceil.makeEvaluate
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
             second { term = if termsAreEqual then mkTop_ else secondTerm }
     firstCeilNegation <-
         Not.simplifyEvaluated
@@ -518,7 +501,7 @@ makeEvaluateTermsToPredicate
     -> TermLike variable
     -> Simplifier (OrPredicate variable)
 makeEvaluateTermsToPredicate
-    substitutionSimplifier simplifier axiomIdToSimplfier first second
+    _substitutionSimplifier _simplifier _axiomIdToSimplfier first second
   | first == second = return OrPredicate.top
   | otherwise = do
     result <- runMaybeT $ AndTerms.termEquals first second
@@ -529,21 +512,8 @@ makeEvaluateTermsToPredicate
                 $ Predicate.fromPredicate
                 $ makeEqualsPredicate first second
         Just predicatedOr -> do
-            tools <- Simplifier.askMetadataTools
-            firstCeilOr <-
-                Ceil.makeEvaluateTerm
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplfier
-                    first
-            secondCeilOr <-
-                Ceil.makeEvaluateTerm
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplfier
-                    second
+            firstCeilOr <- Ceil.makeEvaluateTerm first
+            secondCeilOr <- Ceil.makeEvaluateTerm second
             let
                 toPredicateSafe
                     ps@Conditional {term = (), predicate, substitution}

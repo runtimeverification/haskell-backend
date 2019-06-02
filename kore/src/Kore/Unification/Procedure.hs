@@ -31,7 +31,6 @@ import           Kore.Step.Simplification.AndTerms
                  ( termUnification )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
-import           Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( scatter )
 import           Kore.Step.Substitution
@@ -79,21 +78,11 @@ unificationProcedure  p1 p2
             , "with"
             , Pretty.indent 4 $ unparse p2
             ]
-    tools <- Monad.Unify.liftSimplifier Simplifier.askMetadataTools
-    substitutionSimplifier <- Simplifier.askSimplifierPredicate
-    simplifier <- Simplifier.askSimplifierTermLike
-    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
     pat@Conditional { term } <- termUnification p1 p2
     if Conditional.isBottom pat
         then empty
         else Monad.Unify.liftBranchedSimplifier $ do
-            orCeil <-
-                Monad.Trans.lift $ Ceil.makeEvaluateTerm
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-                    term
+            orCeil <- Monad.Trans.lift $ Ceil.makeEvaluateTerm term
             orResult <-
                 OrPattern.mergeWithPredicateAssumesEvaluated
                     createPredicatesAndSubstitutionsMerger
