@@ -136,14 +136,7 @@ simplifyInternal
     traverse simplifyTerm termLikeF >>= \case
         AndF p ->
             And.simplify substitutionSimplifier simplifier axiomIdToEvaluator p
-        ApplicationF p ->
-            --  TODO: Re-evaluate outside of the application and stop passing
-            -- the simplifier.
-            Application.simplify
-                substitutionSimplifier
-                simplifier
-                axiomIdToEvaluator
-                (attrs :< p)
+        ApplicationF p -> Application.simplify (attrs :< p)
         BottomF p -> return $ Bottom.simplify p
         BuiltinF p -> return $ Builtin.simplify p
         CeilF p ->
