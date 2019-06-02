@@ -50,22 +50,14 @@ mergeWithPredicate
     -- ^ Pattern to which the condition should be added.
     -> Simplifier (OrPattern variable)
 mergeWithPredicate
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSimplifier
     toMerge
     patt
   = do
-    patterns <- BranchT.gather
-        (traverse
-            (Pattern.mergeWithPredicate
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                toMerge
-            )
-            patt
-        )
+    patterns <-
+        BranchT.gather $ traverse (Pattern.mergeWithPredicate toMerge) patt
     return (MultiOr.mergeAll patterns)
 
 {-| Ands the given predicate/substitution with the given 'MultiOr'.

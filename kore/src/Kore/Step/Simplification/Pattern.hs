@@ -40,25 +40,13 @@ simplify
         )
     => Pattern variable
     -> Simplifier (OrPattern variable)
-simplify Conditional {term, predicate, substitution} = do
-    termSimplifier <- Simplifier.askSimplifierTermLike
-    substitutionSimplifier <- Simplifier.askSimplifierPredicate
-    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
+simplify pattern'@Conditional { term } = do
     simplifiedTerm <- simplifyTerm term
-    orPatterns <- BranchT.gather
-        (traverse
-            (Pattern.mergeWithPredicate
-                substitutionSimplifier
-                termSimplifier
-                axiomIdToSimplifier
-                Conditional
-                    { term = ()
-                    , predicate
-                    , substitution
-                    }
-            )
+    orPatterns <-
+        BranchT.gather
+        $ traverse
+            (Pattern.mergeWithPredicate $ Pattern.withoutTerm pattern')
             simplifiedTerm
-        )
     return (MultiOr.mergeAll orPatterns)
 
 {-| Simplifies the predicate inside an 'Pattern'.

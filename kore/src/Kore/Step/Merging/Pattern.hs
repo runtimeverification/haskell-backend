@@ -34,20 +34,12 @@ mergeWithPredicate
         , FreshVariable variable
         , SortedVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions in a pattern.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate variable
+    => Predicate variable
     -- ^ Condition and substitution to add.
     -> Pattern variable
     -- ^ pattern to which the above should be added.
     -> BranchT Simplifier (Pattern variable)
 mergeWithPredicate
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
     Conditional
         { predicate = conditionToMerge
         , substitution = substitutionToMerge
@@ -65,9 +57,6 @@ mergeWithPredicate
     evaluatedCondition <- Monad.Trans.lift $ Predicate.evaluate mergedCondition
     let Conditional { substitution = mergedSubstitution } = merged
     mergeWithEvaluatedCondition
-        substitutionSimplifier
-        simplifier
-        axiomIdToSimplifier
         patt {substitution = mergedSubstitution}
         evaluatedCondition
 
@@ -78,18 +67,10 @@ mergeWithEvaluatedCondition
         , FreshVariable variable
         , SortedVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern variable
+    => Pattern variable
     -> Predicate variable
     -> BranchT Simplifier (Pattern variable)
 mergeWithEvaluatedCondition
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSimplifier
     Conditional
         { term = pattTerm
         , substitution = pattSubstitution
