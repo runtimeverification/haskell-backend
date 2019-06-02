@@ -419,15 +419,7 @@ mkState axioms claims claim logger =
   where
     graph' = emptyExecutionGraph claim
     stepper0 claim' claims' axioms' graph (ReplNode node) =
-        verifyClaimStep
-            testTermLikeSimplifier
-            testSubstitutionSimplifier
-            testEvaluators
-            claim'
-            claims'
-            axioms'
-            graph
-            node
+        verifyClaimStep claim' claims' axioms' graph node
     unifier0
         :: TermLike Variable
         -> TermLike Variable

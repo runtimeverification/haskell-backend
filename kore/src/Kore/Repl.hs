@@ -53,13 +53,7 @@ import           Kore.Repl.Interpreter
 import           Kore.Repl.Parser
 import qualified Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
-                 ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Simplification.Data
                  ( Simplifier )
-import           Kore.Step.Simplification.Data
-                 ( TermLikeSimplifier )
-import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
@@ -82,13 +76,7 @@ runRepl
     :: forall claim
     .  Unparse (Variable)
     => Claim claim
-    => TermLikeSimplifier
-    -- ^ pattern simplifier
-    -> PredicateSimplifier
-    -- ^ predicate simplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ builtin simplifier
-    -> [Axiom]
+    => [Axiom]
     -- ^ list of axioms to used in the proof
     -> [claim]
     -- ^ list of claims to be proven
@@ -98,10 +86,7 @@ runRepl
     -> ReplMode
     -- ^ mode to run in
     -> Simplifier ()
-runRepl
-    simplifier predicateSimplifier axiomToIdSimplifier
-    axioms' claims' logger replScript replMode
-  = do
+runRepl axioms' claims' logger replScript replMode = do
     mNewState <- evaluateScript replScript
     case replMode of
         Interactive -> do
@@ -218,15 +203,7 @@ runRepl
         if Graph.outdeg (Strategy.graph graph) node == 0
             then
                 catchInterruptWithDefault graph
-                $ verifyClaimStep
-                    simplifier
-                    predicateSimplifier
-                    axiomToIdSimplifier
-                    claim
-                    claims
-                    axioms
-                    graph
-                    node
+                $ verifyClaimStep claim claims axioms graph node
             else pure graph
 
     unifier0

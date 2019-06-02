@@ -134,22 +134,11 @@ which is actually, exactly the form we want, since we are working with a
 and n destinations.
  -}
 transitionRule
-    :: PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Prim (Pattern Variable) (RewriteRule Variable)
+    :: Prim (Pattern Variable) (RewriteRule Variable)
     -> CommonStrategyPattern
     -- ^ Configuration being rewritten and its accompanying proof
     -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
-transitionRule
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSimplifier
-    strategy
-    expandedPattern
-  =
+transitionRule strategy expandedPattern =
     traceNonErrorMonad D_OnePath_Step_transitionRule
         [ debugArg "strategy" (debugString strategy)
         , debugArg "expandedPattern" expandedPattern

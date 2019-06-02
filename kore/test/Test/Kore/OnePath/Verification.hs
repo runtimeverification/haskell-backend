@@ -7,17 +7,16 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Control.Monad.Trans.Except
-                 ( runExceptT )
-import           Data.Coerce
-                 ( coerce )
-import           Data.Default
-                 ( def )
-import           Data.Limit
-                 ( Limit (..) )
-import qualified Data.Map as Map
-import           Numeric.Natural
-                 ( Natural )
+import Control.Monad.Trans.Except
+       ( runExceptT )
+import Data.Coerce
+       ( coerce )
+import Data.Default
+       ( def )
+import Data.Limit
+       ( Limit (..) )
+import Numeric.Natural
+       ( Natural )
 
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Internal.Pattern
@@ -38,8 +37,7 @@ import           Kore.Step.Rule
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
+                 ( Env (..), evalSimplifier )
 import qualified SMT
 
 import           Test.Kore
@@ -375,21 +373,14 @@ runVerification
     -> [OnePath.Axiom]
     -> [claim]
     -> IO (Either (Pattern Variable) ())
-runVerification
-    stepLimit
-    axioms
-    claims
-  =
+runVerification stepLimit axioms claims =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
+    $ evalSimplifier mockEnv
     $ runExceptT
     $ OnePath.verify
-        simplifier
-        Mock.substitutionSimplifier
-        Map.empty
         (OnePath.defaultStrategy claims axioms)
-        ( map (\c -> (RewriteRule . coerce $ c, stepLimit))
-        . filter (not . Claim.isTrusted)
-        $ claims)
+        (map applyStepLimit . selectUntrusted $ claims)
   where
-    simplifier = Simplifier.create
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
+    applyStepLimit claim = (RewriteRule $ coerce claim, stepLimit)
+    selectUntrusted = filter (not . Claim.isTrusted)

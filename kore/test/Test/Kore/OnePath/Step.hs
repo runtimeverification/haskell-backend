@@ -7,15 +7,14 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Data.Default
-                 ( def )
-import           Data.List
-                 ( nub, sort )
-import qualified Data.Map as Map
-import           Data.Maybe
-                 ( fromMaybe )
-import           Numeric.Natural
-                 ( Natural )
+import Data.Default
+       ( def )
+import Data.List
+       ( nub, sort )
+import Data.Maybe
+       ( fromMaybe )
+import Numeric.Natural
+       ( Natural )
 
 import           Data.Limit
                  ( Limit (..) )
@@ -37,7 +36,6 @@ import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( Env (..), evalSimplifier )
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.Strategy
                  ( Strategy, pickFinal, runStrategy )
 import qualified Kore.Step.Strategy as Strategy
@@ -397,12 +395,8 @@ runSteps graphFilter picker configuration strategy =
     $ SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier mockEnv
     $ (fromMaybe (error "Unexpected missing tree") . graphFilter)
-    <$> runStrategy
-        (transitionRule Mock.substitutionSimplifier simplifier Map.empty)
-        strategy
-        (RewritePattern configuration)
+    <$> runStrategy transitionRule strategy (RewritePattern configuration)
   where
-    simplifier = Simplifier.create
     mockEnv =
         Mock.env
             { simplifierPredicate = Mock.substitutionSimplifier }

@@ -231,27 +231,16 @@ prove
     -> SMT (Either (TermLike Variable) ())
 prove limit definitionModule specModule =
     evalSimplifier env $ initialize definitionModule $ \initialized -> do
-        let
-            Initialized
-                { rewriteRules
-                , simplifier
-                , substitutionSimplifier
-                , axiomIdToSimplifier
-                }
-              = initialized
+        let Initialized { rewriteRules } = initialized
             specClaims = extractOnePathClaims specModule
         specAxioms <- traverse simplifyRuleOnSecond specClaims
         assertSomeClaims specAxioms
         let
             axioms = fmap Axiom rewriteRules
             claims = fmap makeClaim specAxioms
-
         result <-
             runExceptT
             $ verify
-                simplifier
-                substitutionSimplifier
-                axiomIdToSimplifier
                 (defaultStrategy claims axioms)
                 (map (\x -> (x,limit)) (extractUntrustedClaims claims))
         return $ Bifunctor.first Pattern.toTermLike result
@@ -280,31 +269,14 @@ proveWithRepl
     -> SMT ()
 proveWithRepl definitionModule specModule mvar replScript replMode =
     evalSimplifier env $ initialize definitionModule $ \initialized -> do
-        let
-            Initialized
-                { rewriteRules
-                , simplifier
-                , substitutionSimplifier
-                , axiomIdToSimplifier
-                }
-              = initialized
-
+        let Initialized { rewriteRules } = initialized
             specClaims = extractOnePathClaims specModule
         specAxioms <- traverse simplifyRuleOnSecond specClaims
         assertSomeClaims specAxioms
         let
             axioms = fmap Axiom rewriteRules
             claims = fmap makeClaim specAxioms
-
-        Repl.runRepl
-            simplifier
-            substitutionSimplifier
-            axiomIdToSimplifier
-            axioms
-            claims
-            mvar
-            replScript
-            replMode
+        Repl.runRepl axioms claims mvar replScript replMode
   where
     metadataTools = MetadataTools.build definitionModule
     env =
