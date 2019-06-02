@@ -167,18 +167,13 @@ termEqualsAnd
   =
     MaybeT $ do
         eitherMaybeResult <-
-            Monad.Trans.lift . Monad.Unify.runUnifier
-            . runMaybeT
+            Monad.Trans.lift . Monad.Unify.runUnifier . runMaybeT
             $ maybeTermEquals
                 tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
-                (createPredicatesAndSubstitutionsMergerExcept
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-                )
+                createPredicatesAndSubstitutionsMergerExcept
                 termEqualsAndWorker
                 p1
                 p2
@@ -199,11 +194,7 @@ termEqualsAnd
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
-                (createPredicatesAndSubstitutionsMergerExcept
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-                )
+                createPredicatesAndSubstitutionsMergerExcept
                 termEqualsAndWorker
                 first
                 second
@@ -287,11 +278,7 @@ termUnification substitutionSimplifier simplifier axiomIdToSimplifier =
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplifier
-                    (createPredicatesAndSubstitutionsMergerExcept
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
-                    )
+                    createPredicatesAndSubstitutionsMergerExcept
                     termUnificationWorker
                     pat1
                     pat2
@@ -347,11 +334,7 @@ termAnd substitutionSimplifier simplifier axiomIdToSimplifier p1 p2 = do
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplifier
-                    (createLiftedPredicatesAndSubstitutionsMerger
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
-                    )
+                    createLiftedPredicatesAndSubstitutionsMerger
                     termAndWorker
                     first
                     second

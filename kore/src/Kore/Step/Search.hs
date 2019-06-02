@@ -127,7 +127,7 @@ matchWith
     -> Pattern variable
     -> Pattern variable
     -> MaybeT Simplifier (OrPredicate variable)
-matchWith substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
+matchWith _substitutionSimplifier _simplifier _axiomIdToSimplifier e1 e2 = do
     eitherUnifiers <-
         Monad.Trans.lift $ Monad.Unify.runUnifier
         $ unificationProcedure t1 t2
@@ -146,23 +146,16 @@ matchWith substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
         mergeAndEvaluateBranches predSubst = do
             merged <-
                 mergePredicatesAndSubstitutions
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
                     [ Conditional.predicate predSubst
                     , Conditional.predicate e1
                     , Conditional.predicate e2
                     ]
-                    [ Conditional.substitution predSubst]
+                    [ Conditional.substitution predSubst ]
             evaluated <-
                 Monad.Trans.lift
                 $ Predicate.evaluate $ Conditional.predicate merged
             mergePredicatesAndSubstitutions
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                [ Conditional.predicate evaluated
-                ]
+                [ Conditional.predicate evaluated ]
                 [ Conditional.substitution merged
                 , Conditional.substitution evaluated
                 ]

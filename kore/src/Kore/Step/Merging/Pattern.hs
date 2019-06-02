@@ -59,9 +59,6 @@ mergeWithPredicate
   = do
     merged <-
         mergePredicatesAndSubstitutions
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
             [pattPredicate, conditionToMerge]
             [pattSubstitution, substitutionToMerge]
     let Conditional { predicate = mergedCondition } = merged
@@ -90,9 +87,9 @@ mergeWithEvaluatedCondition
     -> Predicate variable
     -> BranchT Simplifier (Pattern variable)
 mergeWithEvaluatedCondition
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSimplifier
     Conditional
         { term = pattTerm
         , substitution = pattSubstitution
@@ -100,10 +97,8 @@ mergeWithEvaluatedCondition
     Conditional
         { predicate = predPredicate, substitution = predSubstitution }
   = do
-    merged <- mergePredicatesAndSubstitutions
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
+    merged <-
+        mergePredicatesAndSubstitutions
             [predPredicate]
             [pattSubstitution, predSubstitution]
     return $ Pattern.withCondition pattTerm merged

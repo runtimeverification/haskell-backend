@@ -74,17 +74,11 @@ simplifyPredicate
     -- ^ The condition to be evaluated.
     -> BranchT Simplifier (Pattern variable)
 simplifyPredicate Conditional {term, predicate, substitution} = do
-    substitutionSimplifier <- Simplifier.askSimplifierPredicate
-    simplifier <- Simplifier.askSimplifierTermLike
-    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
     evaluated <- Monad.Trans.lift $ Predicate.evaluate predicate
     let Conditional { predicate = evaluatedPredicate } = evaluated
         Conditional { substitution = evaluatedSubstitution } = evaluated
     merged <-
         mergePredicatesAndSubstitutions
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
             [evaluatedPredicate]
             [substitution, evaluatedSubstitution]
     -- TODO(virgil): Do I need to re-evaluate the predicate?

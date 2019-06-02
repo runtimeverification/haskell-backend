@@ -7,9 +7,6 @@ import           Kore.Internal.Pattern
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
-import           Kore.Step.Simplification.Data
-                 ( BuiltinAndAxiomSimplifierMap, PredicateSimplifier,
-                 TermLikeSimplifier )
 import           Kore.Syntax.Variable
                  ( SortedVariable )
 import           Kore.Unification.Substitution
@@ -29,9 +26,6 @@ mergePredicatesAndSubstitutionsExcept
         , HasCallStack
         , MonadUnify unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> [Syntax.Predicate variable]
+    => [Syntax.Predicate variable]
     -> [Substitution variable]
     -> unifier (Predicate variable)

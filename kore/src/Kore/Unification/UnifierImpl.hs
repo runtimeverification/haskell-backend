@@ -88,9 +88,6 @@ simplifyAnds
                         pat
                 predSubst <-
                     mergePredicatesAndSubstitutionsExcept
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
                         [ Pattern.predicate result
                         , Pattern.predicate intermediate
                         ]

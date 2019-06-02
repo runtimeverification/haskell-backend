@@ -222,18 +222,15 @@ makeExpandedApplication
     -> [Pattern variable]
     -> BranchT Simplifier (ExpandedApplication variable)
 makeExpandedApplication
-    substitutionSimplifier
-    simplifier
-    axiomIdToEvaluator
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToEvaluator
     valid
     symbol
     children
   = do
     merged <-
         mergePredicatesAndSubstitutions
-            substitutionSimplifier
-            simplifier
-            axiomIdToEvaluator
             (map Pattern.predicate children)
             (map Pattern.substitution children)
     let term =

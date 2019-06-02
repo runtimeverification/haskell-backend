@@ -7,7 +7,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Foldable as Foldable
-import qualified Data.Map as Map
 
 import           Kore.Internal.MultiOr
                  ( MultiOr )
@@ -18,7 +17,6 @@ import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutionsExcept )
 import qualified Kore.Step.Substitution as Substitution
@@ -338,14 +336,11 @@ merge
     -> IO (Either UnificationOrSubstitutionError [Predicate Variable])
 merge s1 s2 =
     runSMT
-    $ evalSimplifier Mock.env
+    $ evalSimplifier mockEnv
     $ Monad.Unify.runUnifier
-    $ mergePredicatesAndSubstitutionsExcept
-        Mock.substitutionSimplifier
-        Simplifier.create
-        Map.empty
-        []
-        $ Substitution.wrap <$> [s1, s2]
+    $ mergePredicatesAndSubstitutionsExcept [] $ Substitution.wrap <$> [s1, s2]
+  where
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
 
 normalize :: Conditional Variable term -> IO [Conditional Variable term]
 normalize predicated =

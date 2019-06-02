@@ -81,8 +81,6 @@ simplify
             if Substitution.null simplifiedSubstitution
                 then return simplified { substitution }
                 else do
-                    simplifier <- askSimplifierTermLike
-                    axiomIdToSimplifier <- askSimplifierAxioms
                     -- TODO(virgil): Optimize. Since both substitution and
                     -- simplifiedSubstitution have distinct variables, it is
                     -- enough to check that, say, simplifiedSubstitution's
@@ -91,9 +89,6 @@ simplify
                         (substitution <> simplifiedSubstitution)
                     mergedPredicate <-
                         mergePredicatesAndSubstitutions
-                            substitutionSimplifier
-                            simplifier
-                            axiomIdToSimplifier
                             [simplifiedPredicate]
                             [substitution, simplifiedSubstitution]
                     TopBottom.guardAgainstBottom mergedPredicate

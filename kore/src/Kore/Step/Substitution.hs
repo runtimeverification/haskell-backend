@@ -162,24 +162,12 @@ mergePredicatesAndSubstitutions
        , FreshVariable variable
        , HasCallStack
        )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> [Syntax.Predicate variable]
+    => [Syntax.Predicate variable]
     -> [Substitution variable]
     -> BranchT Simplifier (Predicate variable)
-mergePredicatesAndSubstitutions
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    predicates
-    substitutions
-  = do
+mergePredicatesAndSubstitutions predicates substitutions = do
     result <- Monad.Trans.lift $ Monad.Unify.runUnifier $
         mergePredicatesAndSubstitutionsExcept
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
             predicates
             substitutions
     case result of
@@ -203,26 +191,14 @@ mergePredicatesAndSubstitutionsExcept
         , HasCallStack
         , MonadUnify unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> [Syntax.Predicate variable]
+    => [Syntax.Predicate variable]
     -> [Substitution variable]
     -> unifier (Predicate variable)
-mergePredicatesAndSubstitutionsExcept
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    predicates
-    substitutions
-  = do
+mergePredicatesAndSubstitutionsExcept predicates substitutions = do
     let
         mergedSubstitution = Foldable.fold substitutions
         mergedPredicate = Syntax.Predicate.makeMultipleAndPredicate predicates
     normalizeSubstitutionAfterMerge
-        substitutionSimplifier
-        simplifier
-        axiomIdToSimplifier
         Conditional
             { term = ()
             , predicate = mergedPredicate
@@ -241,13 +217,8 @@ createPredicatesAndSubstitutionsMergerExcept
         , FreshVariable variable
         , MonadUnify unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> PredicateMerger variable unifier
-createPredicatesAndSubstitutionsMergerExcept
-    _substitutionSimplifier _simplifier _axiomIdToSimplifier
-  =
+    => PredicateMerger variable unifier
+createPredicatesAndSubstitutionsMergerExcept =
     PredicateMerger worker
   where
     worker
@@ -298,13 +269,8 @@ createLiftedPredicatesAndSubstitutionsMerger
         , FreshVariable variable
         , MonadUnify unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> PredicateMerger variable unifier
-createLiftedPredicatesAndSubstitutionsMerger
-    _substitutionSimplifier _simplifier _axiomIdToSimplifier
-  =
+    => PredicateMerger variable unifier
+createLiftedPredicatesAndSubstitutionsMerger =
     PredicateMerger worker
   where
     worker
@@ -326,17 +292,9 @@ normalizeSubstitutionAfterMerge
         , HasCallStack
         , MonadUnify unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> Predicate variable
+    => Predicate variable
     -> unifier (Predicate variable)
-normalizeSubstitutionAfterMerge
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSimplifier
-    predicate
-  = do
+normalizeSubstitutionAfterMerge predicate = do
     results <- Monad.Unify.gather $ normalizeExcept predicate
     case Foldable.toList results of
         [] -> return Predicate.bottom

@@ -516,9 +516,6 @@ matchJoin
             )
             patterns
     lift $ mergePredicatesAndSubstitutionsExcept
-        substitutionSimplifier
-        simplifier
-        axiomIdToSimplifier
         (map Conditional.predicate matched)
         (map Conditional.substitution matched)
 
@@ -596,11 +593,7 @@ matchVariableFunction
             second
     result <-
         OrPattern.mergeWithPredicateAssumesEvaluated
-            (createPredicatesAndSubstitutionsMergerExcept
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-            )
+            createPredicatesAndSubstitutionsMergerExcept
             Conditional
                 { term = ()
                 , predicate = makeTruePredicate
