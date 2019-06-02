@@ -8,7 +8,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Foldable as Foldable
-import qualified Data.Map as Map
 
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
@@ -32,8 +31,6 @@ import           Kore.Step.Simplification.Data
                  ( Env (..), evalSimplifier )
 import           Kore.Step.Simplification.Equals
                  ( makeEvaluate, makeEvaluateTermsToPredicate, simplify )
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
-                 ( create )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import qualified SMT
@@ -928,11 +925,7 @@ evaluateOr
 evaluateOr equals =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier mockEnv
-    $ simplify
-        Mock.substitutionSimplifier
-        Simplifier.create
-        Map.empty
-        equals
+    $ simplify equals
   where
     mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
 
@@ -943,12 +936,7 @@ evaluate
 evaluate first second =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier mockEnv
-    $ makeEvaluate
-        Mock.substitutionSimplifier
-        Simplifier.create
-        Map.empty
-        first
-        second
+    $ makeEvaluate first second
   where
     mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
 
@@ -959,11 +947,6 @@ evaluateTermsGeneric
 evaluateTermsGeneric first second =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier mockEnv
-    $ makeEvaluateTermsToPredicate
-        Mock.substitutionSimplifier
-        Simplifier.create
-        Map.empty
-        first
-        second
+    $ makeEvaluateTermsToPredicate first second
   where
     mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }

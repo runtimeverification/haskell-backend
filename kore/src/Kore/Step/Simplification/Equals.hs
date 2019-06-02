@@ -140,28 +140,10 @@ simplify
         , Unparse variable
         , FreshVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Equals Sort (OrPattern variable)
+    => Equals Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
-simplify
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplfier
-    Equals
-        { equalsFirst = first
-        , equalsSecond = second
-        }
-  =
-    simplifyEvaluated
-        substitutionSimplifier
-        simplifier
-        axiomIdToSimplfier
-        first
-        second
+simplify Equals { equalsFirst = first, equalsSecond = second } =
+    simplifyEvaluated first second
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -183,18 +165,10 @@ simplifyEvaluated
         , Unparse variable
         , FreshVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> OrPattern variable
+    => OrPattern variable
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
 simplifyEvaluated
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplfier
     first
     second
   | first == second = return OrPattern.top
@@ -202,35 +176,16 @@ simplifyEvaluated
   | otherwise = do
     tools <- Simplifier.askMetadataTools
     let isFunctionConditional Conditional {term} = isFunctionPattern tools term
-    case ( firstPatterns, secondPatterns ) of
-        ([firstP], [secondP]) ->
-            makeEvaluate
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplfier
-                firstP
-                secondP
+    case (firstPatterns, secondPatterns) of
+        ([firstP], [secondP]) -> makeEvaluate firstP secondP
         ([firstP], _)
             | isFunctionConditional firstP ->
-                makeEvaluateFunctionalOr
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplfier
-                    firstP
-                    secondPatterns
+                makeEvaluateFunctionalOr firstP secondPatterns
         (_, [secondP])
             | isFunctionConditional secondP ->
-                makeEvaluateFunctionalOr
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplfier
-                    secondP
-                    firstPatterns
+                makeEvaluateFunctionalOr secondP firstPatterns
         _ ->
             makeEvaluate
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplfier
                 (OrPattern.toPattern first)
                 (OrPattern.toPattern second)
   where
@@ -245,21 +200,13 @@ makeEvaluateFunctionalOr
         , Unparse variable
         , FreshVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Pattern variable
+    => Pattern variable
     -> [Pattern variable]
     -> Simplifier (OrPattern variable)
-makeEvaluateFunctionalOr
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplfier
-    first
-    seconds
-  = do
+makeEvaluateFunctionalOr first seconds = do
+    substitutionSimplifier <- Simplifier.askSimplifierPredicate
+    simplifier <- Simplifier.askSimplifierTermLike
+    axiomIdToSimplfier <- Simplifier.askSimplifierAxioms
     firstCeil <- Ceil.makeEvaluate first
     secondCeilsWithProofs <- mapM Ceil.makeEvaluate seconds
     firstNotCeil <-
@@ -290,22 +237,16 @@ makeEvaluateFunctionalOr
             And.simplifyEvaluated
             firstCeil
             (oneNotBottom : firstEqualsSeconds)
-    return
-        ( MultiOr.merge allAreBottom oneIsNotBottomEquals
-
-        )
+    return (MultiOr.merge allAreBottom oneIsNotBottomEquals)
   where
     makeEvaluateEqualsIfSecondNotBottom
         Conditional {term = firstTerm}
         (Conditional {term = secondTerm}, secondCeil)
       = do
-        equality <-
-            makeEvaluateTermsAssumesNoBottom
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplfier
-                firstTerm
-                secondTerm
+        substitutionSimplifier <- Simplifier.askSimplifierPredicate
+        simplifier <- Simplifier.askSimplifierTermLike
+        axiomIdToSimplfier <- Simplifier.askSimplifierAxioms
+        equality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
         result <-
             Implies.simplifyEvaluated
                 substitutionSimplifier
@@ -326,26 +267,15 @@ makeEvaluate
         , Unparse variable
         , FreshVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Pattern variable
+    => Pattern variable
     -> Pattern variable
     -> Simplifier (OrPattern variable)
 makeEvaluate
-    _
-    _
-    _
     first@Conditional { term = Top_ _ }
     second@Conditional { term = Top_ _ }
   =
     return (Iff.makeEvaluate first second)
 makeEvaluate
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplfier
     Conditional
         { term = firstTerm
         , predicate = PredicateTrue
@@ -357,22 +287,16 @@ makeEvaluate
         , substitution = (Substitution.unwrap -> [])
         }
   = do
-    result <-
-        makeEvaluateTermsToPredicate
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            firstTerm
-            secondTerm
+    result <- makeEvaluateTermsToPredicate firstTerm secondTerm
     return (Pattern.fromPredicate <$> result)
 
 makeEvaluate
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplfier
     first@Conditional { term = firstTerm }
     second@Conditional { term = secondTerm }
   = do
+    substitutionSimplifier <- Simplifier.askSimplifierPredicate
+    simplifier <- Simplifier.askSimplifierTermLike
+    axiomIdToSimplfier <- Simplifier.askSimplifierAxioms
     firstCeil <-
         Ceil.makeEvaluate
             first { term = if termsAreEqual then mkTop_ else firstTerm }
@@ -391,13 +315,7 @@ makeEvaluate
             simplifier
             axiomIdToSimplfier
             secondCeil
-    termEquality <-
-        makeEvaluateTermsAssumesNoBottom
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            firstTerm
-            secondTerm
+    termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
     negationAnd <- And.simplifyEvaluated firstCeilNegation secondCeilNegation
     ceilAnd <- And.simplifyEvaluated firstCeil secondCeil
     equalityAnd <- And.simplifyEvaluated termEquality ceilAnd
@@ -414,29 +332,13 @@ makeEvaluateTermsAssumesNoBottom
         , Unparse variable
         , FreshVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> Simplifier (OrPattern variable)
-makeEvaluateTermsAssumesNoBottom
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplfier
-    firstTerm
-    secondTerm
-  = do
+makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
     result <-
         runMaybeT
-        $ makeEvaluateTermsAssumesNoBottomMaybe
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            firstTerm
-            secondTerm
+        $ makeEvaluateTermsAssumesNoBottomMaybe firstTerm secondTerm
     (return . fromMaybe def) result
   where
     def =
@@ -457,21 +359,10 @@ makeEvaluateTermsAssumesNoBottomMaybe
         , Unparse variable
         , FreshVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> MaybeT Simplifier (OrPattern variable)
-makeEvaluateTermsAssumesNoBottomMaybe
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSimplfier
-    first
-    second
-  = do
+makeEvaluateTermsAssumesNoBottomMaybe first second = do
     result <- AndTerms.termEquals first second
     return (Pattern.fromPredicate <$> result)
 
@@ -492,16 +383,10 @@ makeEvaluateTermsToPredicate
         , Unparse variable
         , FreshVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> Simplifier (OrPredicate variable)
-makeEvaluateTermsToPredicate
-    _substitutionSimplifier _simplifier _axiomIdToSimplfier first second
+makeEvaluateTermsToPredicate first second
   | first == second = return OrPredicate.top
   | otherwise = do
     result <- runMaybeT $ AndTerms.termEquals first second
