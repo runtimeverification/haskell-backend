@@ -378,21 +378,10 @@ finalizeRulesParallel
         , MonadUnify unifier
         , Log.WithLog Log.LogMessage unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-
-    -> Pattern (Target variable)
+    => Pattern (Target variable)
     -> [UnifiedRule (Target variable)]
     -> unifier (Results variable)
-finalizeRulesParallel
-    _predicateSimplifier
-    _termSimplifier
-    _axiomSimplifiers
-
-    initial
-    unifiedRules
-  = do
+finalizeRulesParallel initial unifiedRules = do
     let initialCondition = Conditional.withoutTerm initial
     results <-
         Foldable.fold <$> traverse (finalizeRule initialCondition) unifiedRules
@@ -548,9 +537,9 @@ applyRulesParallel
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
 applyRulesParallel
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
+    _predicateSimplifier
+    _patternSimplifier
+    _axiomSimplifiers
     unificationProcedure
 
     -- Wrap the rule and configuration so that unification prefers to substitute
@@ -559,13 +548,7 @@ applyRulesParallel
     (toConfigurationVariables -> initial)
   =
     unifyRules unificationProcedure initial rules
-    >>= finalizeRulesParallel' initial
-  where
-    finalizeRulesParallel' =
-        finalizeRulesParallel
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
+    >>= finalizeRulesParallel initial
 
 {- | Apply the given rewrite rules to the initial configuration in parallel.
 
