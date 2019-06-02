@@ -155,8 +155,7 @@ simplifyInternal
         MuF p -> return $ Mu.simplify p
         -- TODO(virgil): Move next up through patterns.
         NextF p -> return $ Next.simplify p
-        NotF p ->
-            Not.simplify substitutionSimplifier simplifier axiomIdToEvaluator p
+        NotF p -> Not.simplify p
         NuF p -> return $ Nu.simplify p
         OrF p -> return $ Or.simplify p
         RewritesF p -> return $ Rewrites.simplify p

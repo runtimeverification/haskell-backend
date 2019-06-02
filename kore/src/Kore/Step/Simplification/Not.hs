@@ -52,22 +52,9 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> Not Sort (OrPattern variable)
+    => Not Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
-simplify
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
-    Not { notChild }
-  =
-    simplifyEvaluated
-        predicateSimplifier
-        termSimplifier
-        axiomSimplifiers
-        notChild
+simplify Not { notChild } = simplifyEvaluated notChild
 
 {-|'simplifyEvaluated' simplifies a 'Not' pattern given its
 'OrPattern' child.
@@ -94,26 +81,13 @@ simplifyEvaluated
         , Show variable
         , Unparse variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> OrPattern variable
+    => OrPattern variable
     -> Simplifier (OrPattern variable)
-simplifyEvaluated
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
-    simplified
-  = do
-    let mkMultiAndPattern' =
-            mkMultiAndPattern
-                predicateSimplifier
-                termSimplifier
-                axiomSimplifiers
+simplifyEvaluated simplified =
     fmap OrPattern.fromPatterns $ gather $ do
         let not' = Not { notChild = simplified, notSort = () }
         andPattern <- scatterAnd (makeEvaluateNot <$> distributeNot not')
-        mkMultiAndPattern' andPattern
+        mkMultiAndPattern andPattern
 
 {-|'makeEvaluate' simplifies a 'Not' pattern given its 'Pattern'
 child.
@@ -200,16 +174,7 @@ mkMultiAndPattern
         , Show variable
         , Unparse variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-
-    -> MultiAnd (Pattern variable)
+    => MultiAnd (Pattern variable)
     -> BranchT Simplifier (Pattern variable)
-mkMultiAndPattern
-    _predicateSimplifier
-    _termSimplifier
-    _axiomSimplifiers
-    patterns
-  =
+mkMultiAndPattern patterns =
     Foldable.foldrM And.makeEvaluate Pattern.top patterns

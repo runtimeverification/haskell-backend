@@ -89,25 +89,15 @@ simplifyEvaluated
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
 simplifyEvaluated
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
+    _predicateSimplifier
+    _termSimplifier
+    _axiomSimplifiers
     first
     second
-  | OrPattern.isTrue first = return second
-  | OrPattern.isFalse first =
-    Not.simplifyEvaluated
-        predicateSimplifier
-        termSimplifier
-        axiomSimplifiers
-        second
-  | OrPattern.isTrue second = return first
-  | OrPattern.isFalse second =
-    Not.simplifyEvaluated
-        predicateSimplifier
-        termSimplifier
-        axiomSimplifiers
-        first
+  | OrPattern.isTrue first   = return second
+  | OrPattern.isFalse first  = Not.simplifyEvaluated second
+  | OrPattern.isTrue second  = return first
+  | OrPattern.isFalse second = Not.simplifyEvaluated first
   | otherwise =
     return $ case ( firstPatterns, secondPatterns ) of
         ([firstP], [secondP]) -> makeEvaluate firstP secondP

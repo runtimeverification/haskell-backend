@@ -13,15 +13,14 @@ module Kore.Step.Simplification.Equals
     , simplify
     ) where
 
-import           Control.Error
-                 ( MaybeT (..) )
-import           Control.Monad
-                 ( foldM )
-import           Data.List
-                 ( foldl' )
-import           Data.Maybe
-                 ( fromMaybe )
-import qualified Data.Traversable as Traversable
+import Control.Error
+       ( MaybeT (..) )
+import Control.Monad
+       ( foldM )
+import Data.List
+       ( foldl' )
+import Data.Maybe
+       ( fromMaybe )
 
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
@@ -204,24 +203,11 @@ makeEvaluateFunctionalOr
     -> [Pattern variable]
     -> Simplifier (OrPattern variable)
 makeEvaluateFunctionalOr first seconds = do
-    substitutionSimplifier <- Simplifier.askSimplifierPredicate
-    simplifier <- Simplifier.askSimplifierTermLike
-    axiomIdToSimplfier <- Simplifier.askSimplifierAxioms
     firstCeil <- Ceil.makeEvaluate first
     secondCeilsWithProofs <- mapM Ceil.makeEvaluate seconds
-    firstNotCeil <-
-        Not.simplifyEvaluated
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            firstCeil
+    firstNotCeil <- Not.simplifyEvaluated firstCeil
     let secondCeils = secondCeilsWithProofs
-    secondNotCeils <-
-        Traversable.for secondCeils
-        $ Not.simplifyEvaluated
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
+    secondNotCeils <- traverse Not.simplifyEvaluated secondCeils
     let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
     allAreBottom <-
         foldM
@@ -294,27 +280,12 @@ makeEvaluate
     first@Conditional { term = firstTerm }
     second@Conditional { term = secondTerm }
   = do
-    substitutionSimplifier <- Simplifier.askSimplifierPredicate
-    simplifier <- Simplifier.askSimplifierTermLike
-    axiomIdToSimplfier <- Simplifier.askSimplifierAxioms
-    firstCeil <-
-        Ceil.makeEvaluate
-            first { term = if termsAreEqual then mkTop_ else firstTerm }
-    secondCeil <-
-        Ceil.makeEvaluate
-            second { term = if termsAreEqual then mkTop_ else secondTerm }
-    firstCeilNegation <-
-        Not.simplifyEvaluated
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            firstCeil
-    secondCeilNegation <-
-        Not.simplifyEvaluated
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            secondCeil
+    let first' = first { term = if termsAreEqual then mkTop_ else firstTerm }
+    firstCeil <- Ceil.makeEvaluate first'
+    let second' = second { term = if termsAreEqual then mkTop_ else secondTerm }
+    secondCeil <- Ceil.makeEvaluate second'
+    firstCeilNegation <- Not.simplifyEvaluated firstCeil
+    secondCeilNegation <- Not.simplifyEvaluated secondCeil
     termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
     negationAnd <- And.simplifyEvaluated firstCeilNegation secondCeilNegation
     ceilAnd <- And.simplifyEvaluated firstCeil secondCeil

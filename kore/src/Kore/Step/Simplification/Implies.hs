@@ -105,12 +105,7 @@ simplifyEvaluated
   | OrPattern.isTrue first   = return second
   | OrPattern.isFalse first  = return OrPattern.top
   | OrPattern.isTrue second  = return OrPattern.top
-  | OrPattern.isFalse second =
-    Not.simplifyEvaluated
-        predicateSimplifier
-        termSimplifier
-        axiomSimplifiers
-        first
+  | OrPattern.isFalse second = Not.simplifyEvaluated first
   | otherwise = do
     results <- traverse (simplifyEvaluateHalfImplies' first) second
     return (MultiOr.flatten results)
@@ -134,23 +129,15 @@ simplifyEvaluateHalfImplies
     -> Pattern variable
     -> Simplifier (OrPattern variable)
 simplifyEvaluateHalfImplies
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
+    _predicateSimplifier
+    _termSimplifier
+    _axiomSimplifiers
     first
     second
-  | OrPattern.isTrue first =
-    return (OrPattern.fromPatterns [second])
-  | OrPattern.isFalse first =
-    return (OrPattern.fromPatterns [Pattern.top])
-  | Pattern.isTop second =
-    return (OrPattern.fromPatterns [Pattern.top])
-  | Pattern.isBottom second =
-    Not.simplifyEvaluated
-        predicateSimplifier
-        termSimplifier
-        axiomSimplifiers
-        first
+  | OrPattern.isTrue first  = return (OrPattern.fromPatterns [second])
+  | OrPattern.isFalse first = return (OrPattern.fromPatterns [Pattern.top])
+  | Pattern.isTop second    = return (OrPattern.fromPatterns [Pattern.top])
+  | Pattern.isBottom second = Not.simplifyEvaluated first
   | otherwise =
     -- TODO: Also merge predicate-only patterns for 'Or'
     return $ case MultiOr.extractPatterns first of
