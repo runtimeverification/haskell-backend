@@ -33,9 +33,5 @@ target =
             (mkVar $ Target Mock.z)
         )
 
-quantified :: Predicate Variable
-quantified =
-    Predicate.makeMultipleExists [Mock.y, Mock.z]
-    $ Predicate.makeEqualsPredicate
-        (mkVar Mock.x)
-        (Mock.sigma (mkVar Mock.y) (mkVar Mock.z))
+quantified :: Predicate (Target Variable)
+quantified = Predicate.makeMultipleExists [Target Mock.y, Target Mock.z] target

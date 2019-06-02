@@ -124,7 +124,7 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
         eitherResults <-
             Monad.Trans.lift
             $ Monad.Unify.runUnifier
-            $ Step.applyRewriteRules
+            $ Step.applyRewriteRulesParallel
                 tools
                 substitutionSimplifier
                 simplifier

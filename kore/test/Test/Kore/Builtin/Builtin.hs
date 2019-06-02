@@ -238,7 +238,7 @@ runStepResult configuration axiom = do
     results <-
         evalSimplifier
         $ Monad.Unify.runUnifier
-        $ Step.applyRewriteRules
+        $ Step.applyRewriteRulesParallel
             testMetadataTools
             testSubstitutionSimplifier
             testTermLikeSimplifier

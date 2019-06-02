@@ -209,7 +209,7 @@ transitionRule
         eitherResults <-
             Monad.Trans.lift
             $ Monad.Unify.runUnifier
-            $ Step.sequenceRewriteRules
+            $ Step.applyRewriteRulesSequence
                 tools
                 substitutionSimplifier
                 simplifier
