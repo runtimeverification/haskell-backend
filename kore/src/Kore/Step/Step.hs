@@ -44,6 +44,8 @@ import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
+import           Data.Set
+                 ( Set )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
@@ -129,17 +131,13 @@ type Results variable =
 
 {- | Is the result a symbolic rewrite, i.e. a narrowing result?
 
-The result is narrowing if it contains any variable from the left-hand side of
-the rule.
+The result is narrowing if the unifier's substitution is missing any variable
+from the left-hand side of the rule.
 
  -}
 isNarrowingResult :: Ord variable => Result variable -> Bool
-isNarrowingResult Step.Result { appliedRule, result } =
-    Foldable.any hasLeftVariable result
-  where
-    hasLeftVariable = not . Set.disjoint leftVariables . Pattern.freeVariables
-    left = (Rule.left . unwrapRule) (Conditional.term appliedRule)
-    leftVariables = TermLike.freeVariables left
+isNarrowingResult Step.Result { appliedRule } =
+    (not . Set.null) (wouldNarrowWith appliedRule)
 
 {- | Unwrap the variables in a 'RulePattern'.
  -}
@@ -714,16 +712,26 @@ checkSubstitutionCoverage initial unified
     Conditional { term = axiom } = unified
     unifier :: Pattern (Target variable)
     unifier = mkTop_ <$ Conditional.withoutTerm unified
+    Conditional { substitution } = unified
+    substitutionVariables = Map.keysSet (Substitution.toMap substitution)
+    uncovered = wouldNarrowWith unified
+    isCoveringSubstitution = Set.null uncovered
+    isSymbolic = Foldable.any Target.isNonTarget substitutionVariables
+
+{- | The 'Set' of variables that would be introduced by narrowing.
+ -}
+-- TODO (thomas.tuegel): Unit tests
+wouldNarrowWith :: Ord variable => UnifiedRule variable -> Set variable
+wouldNarrowWith unified =
+    Set.difference leftAxiomVariables substitutionVariables
+  where
     leftAxiomVariables =
         TermLike.freeVariables leftAxiom
       where
+        Conditional { term = axiom } = unified
         RulePattern { left = leftAxiom } = axiom
     Conditional { substitution } = unified
-    subst = Substitution.toMap substitution
-    substitutionVariables = Map.keysSet subst
-    uncovered = Set.difference leftAxiomVariables substitutionVariables
-    isCoveringSubstitution = Set.null uncovered
-    isSymbolic = Foldable.any Target.isNonTarget substitutionVariables
+    substitutionVariables = Map.keysSet (Substitution.toMap substitution)
 
 {- | Apply the given rules to the initial configuration in parallel.
 
