@@ -146,9 +146,7 @@ simplifyInternal
         ForallF p      -> return $ Forall.simplify p
         IffF p ->
             Iff.simplify substitutionSimplifier simplifier axiomIdToEvaluator p
-        ImpliesF p ->
-            Implies.simplify
-                substitutionSimplifier simplifier axiomIdToEvaluator p
+        ImpliesF p -> Implies.simplify p
         InF p ->
             In.simplify substitutionSimplifier simplifier axiomIdToEvaluator p
         InhabitantF s -> return $ Inhabitant.simplify s

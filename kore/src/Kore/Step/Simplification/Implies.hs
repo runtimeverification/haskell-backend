@@ -45,26 +45,10 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> Implies Sort (OrPattern variable)
+    => Implies Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
-simplify
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
-    Implies
-        { impliesFirst = first
-        , impliesSecond = second
-        }
-  =
-    simplifyEvaluated
-        predicateSimplifier
-        termSimplifier
-        axiomSimplifiers
-        first
-        second
+simplify Implies { impliesFirst = first, impliesSecond = second } =
+    simplifyEvaluated first second
 
 {-| simplifies an Implies given its two 'OrPattern' children.
 
@@ -90,31 +74,17 @@ simplifyEvaluated
         , Show variable
         , Unparse variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> OrPattern variable
+    => OrPattern variable
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
-simplifyEvaluated
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
-    first
-    second
+simplifyEvaluated first second
   | OrPattern.isTrue first   = return second
   | OrPattern.isFalse first  = return OrPattern.top
   | OrPattern.isTrue second  = return OrPattern.top
   | OrPattern.isFalse second = Not.simplifyEvaluated first
   | otherwise = do
-    results <- traverse (simplifyEvaluateHalfImplies' first) second
+    results <- traverse (simplifyEvaluateHalfImplies first) second
     return (MultiOr.flatten results)
-  where
-    simplifyEvaluateHalfImplies' =
-        simplifyEvaluateHalfImplies
-            predicateSimplifier
-            termSimplifier
-            axiomSimplifiers
 
 simplifyEvaluateHalfImplies
     ::  ( FreshVariable variable
@@ -122,16 +92,10 @@ simplifyEvaluateHalfImplies
         , Show variable
         , Unparse variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> OrPattern variable
+    => OrPattern variable
     -> Pattern variable
     -> Simplifier (OrPattern variable)
 simplifyEvaluateHalfImplies
-    _predicateSimplifier
-    _termSimplifier
-    _axiomSimplifiers
     first
     second
   | OrPattern.isTrue first  = return (OrPattern.fromPatterns [second])

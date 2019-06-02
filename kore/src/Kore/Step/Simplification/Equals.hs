@@ -167,9 +167,7 @@ simplifyEvaluated
     => OrPattern variable
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
-simplifyEvaluated
-    first
-    second
+simplifyEvaluated first second
   | first == second = return OrPattern.top
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
   | otherwise = do
@@ -229,18 +227,8 @@ makeEvaluateFunctionalOr first seconds = do
         Conditional {term = firstTerm}
         (Conditional {term = secondTerm}, secondCeil)
       = do
-        substitutionSimplifier <- Simplifier.askSimplifierPredicate
-        simplifier <- Simplifier.askSimplifierTermLike
-        axiomIdToSimplfier <- Simplifier.askSimplifierAxioms
         equality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
-        result <-
-            Implies.simplifyEvaluated
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplfier
-                secondCeil
-                equality
-        return result
+        Implies.simplifyEvaluated secondCeil equality
 
 {-| evaluates an 'Equals' given its two 'Pattern' children.
 
