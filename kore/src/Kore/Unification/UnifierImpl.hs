@@ -29,7 +29,6 @@ import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse, makeAndPredicate )
-import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -55,9 +54,6 @@ simplifyAnds
     => NonEmpty (TermLike variable)
     -> unifier (Pattern variable)
 simplifyAnds patterns = do
-    substitutionSimplifier <- Simplifier.askSimplifierPredicate
-    simplifier <- Simplifier.askSimplifierTermLike
-    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
     let
         simplifyAnds'
             :: Pattern variable
@@ -68,13 +64,7 @@ simplifyAnds patterns = do
                 AndF And { andFirst = lhs, andSecond = rhs } ->
                     foldM simplifyAnds' intermediate [lhs, rhs]
                 _ -> do
-                    result <-
-                        termUnification
-                            substitutionSimplifier
-                            simplifier
-                            axiomIdToSimplifier
-                            (Pattern.term intermediate)
-                            pat
+                    result <- termUnification (Pattern.term intermediate) pat
                     predSubst <-
                         mergePredicatesAndSubstitutionsExcept
                             [ Pattern.predicate result

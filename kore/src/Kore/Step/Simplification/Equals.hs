@@ -507,19 +507,13 @@ makeEvaluateTermsAssumesNoBottomMaybe
     -> TermLike variable
     -> MaybeT Simplifier (OrPattern variable)
 makeEvaluateTermsAssumesNoBottomMaybe
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplfier
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSimplfier
     first
     second
   = do
-    result <-
-        AndTerms.termEquals
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            first
-            second
+    result <- AndTerms.termEquals first second
     return (Pattern.fromPredicate <$> result)
 
 {-| Combines two terms with 'Equals' into a predicate-substitution.
@@ -551,14 +545,7 @@ makeEvaluateTermsToPredicate
     substitutionSimplifier simplifier axiomIdToSimplfier first second
   | first == second = return OrPredicate.top
   | otherwise = do
-    result <-
-        runMaybeT
-        $ AndTerms.termEquals
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            first
-            second
+    result <- runMaybeT $ AndTerms.termEquals first second
     case result of
         Nothing ->
             return

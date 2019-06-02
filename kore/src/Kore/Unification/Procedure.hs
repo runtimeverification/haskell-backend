@@ -83,15 +83,7 @@ unificationProcedure  p1 p2
     substitutionSimplifier <- Simplifier.askSimplifierPredicate
     simplifier <- Simplifier.askSimplifierTermLike
     axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
-    let
-        getUnifiedTerm =
-            termUnification
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                p1
-                p2
-    pat@Conditional { term } <- getUnifiedTerm
+    pat@Conditional { term } <- termUnification p1 p2
     if Conditional.isBottom pat
         then empty
         else Monad.Unify.liftBranchedSimplifier $ do

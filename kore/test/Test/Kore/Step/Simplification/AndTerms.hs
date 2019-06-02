@@ -36,11 +36,9 @@ import           Kore.Step.Simplification.AndTerms
 import           Kore.Step.Simplification.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
+                 ( Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
-                 ( create )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
 import qualified SMT
@@ -1180,20 +1178,16 @@ unify
     -> IO (Maybe [Pattern Variable])
 unify first second =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
+    $ evalSimplifier mockEnv
     $ runMaybeT unification
   where
-    substitutionSimplifier = Mock.substitutionSimplifier
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
     unification =
         -- The unification error is discarded because, for testing purposes, we
         -- are not interested in the /reason/ unification failed. For the tests,
         -- the failure is almost always due to unsupported patterns anyway.
-        MaybeT . fmap Error.hush . Monad.Unify.runUnifier $ termUnification
-            substitutionSimplifier
-            Simplifier.create
-            Map.empty
-            first
-            second
+        MaybeT . fmap Error.hush . Monad.Unify.runUnifier
+        $ termUnification first second
 
 simplify
     :: TermLike Variable
@@ -1201,14 +1195,11 @@ simplify
     -> IO [Pattern Variable]
 simplify first second =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
+    $ evalSimplifier mockEnv
     $ BranchT.gather
-    $ termAnd
-        Mock.substitutionSimplifier
-        Simplifier.create
-        Map.empty
-        first
-        second
+    $ termAnd first second
+  where
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
 
 simplifyEquals
     :: BuiltinAndAxiomSimplifierMap
@@ -1216,14 +1207,13 @@ simplifyEquals
     -> TermLike Variable
     -> IO (Maybe [Predicate Variable])
 simplifyEquals axiomIdToSimplifier first second =
-    fmap MultiOr.extractPatterns
-    <$> SMT.runSMT SMT.defaultConfig emptyLogger
-        ( evalSimplifier Mock.env
-        $ runMaybeT
-        $ termEquals
-            Mock.substitutionSimplifier
-            Simplifier.create
-            axiomIdToSimplifier
-            first
-            second
-        )
+    (fmap . fmap) MultiOr.extractPatterns
+    $ SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier mockEnv
+    $ runMaybeT $ termEquals first second
+  where
+    mockEnv =
+        Mock.env
+            { simplifierPredicate = Mock.substitutionSimplifier
+            , simplifierAxioms = axiomIdToSimplifier
+            }

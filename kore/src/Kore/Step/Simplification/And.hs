@@ -208,19 +208,13 @@ makeEvaluateNonBool
     -> Pattern variable
     -> BranchT Simplifier (Pattern variable)
 makeEvaluateNonBool
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSimplifier
     first@Conditional { term = firstTerm }
     second@Conditional { term = secondTerm }
   = do
-    terms <-
-        makeTermAnd
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            firstTerm
-            secondTerm
+    terms <- AndTerms.termAnd firstTerm secondTerm
     let firstCondition = Conditional.withoutTerm first
         secondCondition = Conditional.withoutTerm second
         initialConditions = firstCondition <> secondCondition
@@ -242,20 +236,3 @@ applyAndIdempotence patt =
   where
     children (And_ _ p1 p2) = children p1 ++ children p2
     children p = [p]
-
-makeTermAnd
-    ::  ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> TermLike variable
-    -> TermLike variable
-    -> BranchT Simplifier (Pattern variable)
-makeTermAnd = AndTerms.termAnd

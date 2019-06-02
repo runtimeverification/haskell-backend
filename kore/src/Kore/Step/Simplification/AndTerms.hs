@@ -115,20 +115,14 @@ termEquals
         , Unparse variable
         , SortedVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> MaybeT Simplifier (OrPredicate variable)
-termEquals
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    first
-    second
-  = MaybeT $ do
+termEquals first second = MaybeT $ do
     tools <- Simplifier.askMetadataTools
+    substitutionSimplifier <- Simplifier.askSimplifierPredicate
+    simplifier <- Simplifier.askSimplifierTermLike
+    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
     maybeResults <-
         BranchT.gather $ runMaybeT $ termEqualsAnd
             tools
@@ -255,13 +249,10 @@ termUnification
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> unifier (Pattern variable)
-termUnification substitutionSimplifier simplifier axiomIdToSimplifier =
+termUnification =
     termUnificationWorker
   where
     termUnificationWorker
@@ -270,6 +261,9 @@ termUnification substitutionSimplifier simplifier axiomIdToSimplifier =
         -> unifier (Pattern variable)
     termUnificationWorker pat1 pat2 = do
         tools <- Simplifier.askMetadataTools
+        substitutionSimplifier <- Simplifier.askSimplifierPredicate
+        simplifier <- Simplifier.askSimplifierTermLike
+        axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
         let
             maybeTermUnification :: MaybeT unifier (Pattern variable)
             maybeTermUnification =
@@ -309,15 +303,12 @@ termAnd
         , Unparse variable
         , SortedVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> BranchT Simplifier (Pattern variable)
-termAnd substitutionSimplifier simplifier axiomIdToSimplifier p1 p2 = do
-    eitherResult <- Monad.Trans.lift $ Monad.Unify.runUnifier $
-        termAndWorker p1 p2
+termAnd p1 p2 = do
+    eitherResult <-
+        Monad.Trans.lift . Monad.Unify.runUnifier $ termAndWorker p1 p2
     case eitherResult of
         Left _        -> return $ Pattern.fromTermLike (mkAnd p1 p2)
         Right results -> BranchT.scatter results
@@ -328,6 +319,9 @@ termAnd substitutionSimplifier simplifier axiomIdToSimplifier p1 p2 = do
         -> Unifier (Pattern variable)
     termAndWorker first second = do
         tools <- Simplifier.askMetadataTools
+        substitutionSimplifier <- Simplifier.askSimplifierPredicate
+        simplifier <- Simplifier.askSimplifierTermLike
+        axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
         let maybeTermAnd' =
                 maybeTermAnd
                     tools
