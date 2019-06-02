@@ -405,21 +405,10 @@ finalizeRulesSequence
         , MonadUnify unifier
         , Log.WithLog Log.LogMessage unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-
-    -> Pattern (Target variable)
+    => Pattern (Target variable)
     -> [UnifiedRule (Target variable)]
     -> unifier (Results variable)
-finalizeRulesSequence
-    _predicateSimplifier
-    _termSimplifier
-    _axiomSimplifiers
-
-    initial
-    unifiedRules
-  = do
+finalizeRulesSequence initial unifiedRules = do
     (results, remainder) <-
         State.runStateT
             (traverse finalizeRuleSequence' unifiedRules)
@@ -620,9 +609,9 @@ applyRulesSequence
     -- ^ Rewrite rules
     -> unifier (Results variable)
 applyRulesSequence
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
+    _predicateSimplifier
+    _patternSimplifier
+    _axiomSimplifiers
     unificationProcedure
 
     -- Wrap the rule and configuration so that unification prefers to substitute
@@ -631,13 +620,7 @@ applyRulesSequence
     (map toAxiomVariables -> rules)
   =
     unifyRules unificationProcedure initial rules
-    >>= finalizeRulesSequence' initial
-  where
-    finalizeRulesSequence' =
-        finalizeRulesSequence
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
+    >>= finalizeRulesSequence initial
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
