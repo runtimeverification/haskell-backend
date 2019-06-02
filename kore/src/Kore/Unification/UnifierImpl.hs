@@ -29,9 +29,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse, makeAndPredicate )
-import           Kore.Step.Simplification.Data
-                 ( BuiltinAndAxiomSimplifierMap, PredicateSimplifier (..),
-                 TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -54,52 +52,46 @@ simplifyAnds
         , FreshVariable variable
         , MonadUnify unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> NonEmpty (TermLike variable)
+    => NonEmpty (TermLike variable)
     -> unifier (Pattern variable)
-simplifyAnds
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    patterns
-  = do
+simplifyAnds patterns = do
+    substitutionSimplifier <- Simplifier.askSimplifierPredicate
+    simplifier <- Simplifier.askSimplifierTermLike
+    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
+    let
+        simplifyAnds'
+            :: Pattern variable
+            -> TermLike variable
+            -> unifier (Pattern variable)
+        simplifyAnds' intermediate pat =
+            case Cofree.tailF (Recursive.project pat) of
+                AndF And { andFirst = lhs, andSecond = rhs } ->
+                    foldM simplifyAnds' intermediate [lhs, rhs]
+                _ -> do
+                    result <-
+                        termUnification
+                            substitutionSimplifier
+                            simplifier
+                            axiomIdToSimplifier
+                            (Pattern.term intermediate)
+                            pat
+                    predSubst <-
+                        mergePredicatesAndSubstitutionsExcept
+                            [ Pattern.predicate result
+                            , Pattern.predicate intermediate
+                            ]
+                            [ Pattern.substitution result
+                            , Pattern.substitution intermediate
+                            ]
+                    return Pattern.Conditional
+                        { term = Pattern.term result
+                        , predicate = Conditional.predicate predSubst
+                        , substitution = Conditional.substitution predSubst
+                        }
     result <- foldM simplifyAnds' Pattern.top patterns
     if Predicate.isFalse . Pattern.predicate $ result
         then return Pattern.bottom
         else return result
-  where
-    simplifyAnds'
-        :: Pattern variable
-        -> TermLike variable
-        -> unifier (Pattern variable)
-    simplifyAnds' intermediate pat =
-        case Cofree.tailF (Recursive.project pat) of
-            AndF And { andFirst = lhs, andSecond = rhs } ->
-                foldM simplifyAnds' intermediate [lhs, rhs]
-            _ -> do
-                result <-
-                    termUnification
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
-                        (Pattern.term intermediate)
-                        pat
-                predSubst <-
-                    mergePredicatesAndSubstitutionsExcept
-                        [ Pattern.predicate result
-                        , Pattern.predicate intermediate
-                        ]
-                        [ Pattern.substitution result
-                        , Pattern.substitution intermediate
-                        ]
-                return Pattern.Conditional
-                    { term = Pattern.term result
-                    , predicate = Conditional.predicate predSubst
-                    , substitution = Conditional.substitution predSubst
-                    }
-
 
 groupSubstitutionByVariable
     :: Ord variable
@@ -123,25 +115,11 @@ solveGroupedSubstitution
        , FreshVariable variable
        , MonadUnify unifier
       )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> variable
+    => variable
     -> NonEmpty (TermLike variable)
     -> unifier (Predicate variable)
-solveGroupedSubstitution
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    var
-    patterns
-  = do
-    predSubst <-
-        simplifyAnds
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            patterns
+solveGroupedSubstitution var patterns = do
+    predSubst <- simplifyAnds patterns
     return Conditional
         { term = ()
         , predicate = Pattern.predicate predSubst
@@ -149,8 +127,7 @@ solveGroupedSubstitution
         }
   where
     termAndSubstitution s =
-        (var, Pattern.term s)
-        : Substitution.unwrap (Pattern.substitution s)
+        (var, Pattern.term s) : Substitution.unwrap (Pattern.substitution s)
 
 -- |Takes a potentially non-normalized substitution,
 -- and if it contains multiple assignments to the same variable,
@@ -166,34 +143,17 @@ normalizeSubstitutionDuplication
         , FreshVariable variable
         , MonadUnify unifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> Substitution variable
+    => Substitution variable
     -> unifier (Predicate variable)
-normalizeSubstitutionDuplication
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    subst
+normalizeSubstitutionDuplication subst
   | null nonSingletonSubstitutions || Substitution.isNormalized subst =
     return (Predicate.fromSubstitution subst)
   | otherwise = do
     predSubst <-
         mergePredicateList
-        <$> mapM
-            (uncurry
-                $ solveGroupedSubstitution
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-            )
-            varAndSubstList
+        <$> mapM (uncurry solveGroupedSubstitution) varAndSubstList
     finalSubst <-
         normalizeSubstitutionDuplication
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
             (  Substitution.wrap (concat singletonSubstitutions)
             <> Conditional.substitution predSubst
             )
@@ -221,7 +181,6 @@ normalizeSubstitutionDuplication
         nonSingletonSubstitutions >>= \case
             [] -> []
             ((x, y) : ys) -> [(x, y :| (snd <$> ys))]
-
 
 mergePredicateList
     :: ( Ord variable

@@ -102,16 +102,9 @@ normalizeExcept
     -> unifier (Predicate variable)
 normalizeExcept Conditional { predicate, substitution } = do
     predicateSimplifier <- Simplifier.askSimplifierPredicate
-    simplifier <- Simplifier.askSimplifierTermLike
-    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
-    let normalizeSubstitutionDuplication' =
-            normalizeSubstitutionDuplication
-                predicateSimplifier
-                simplifier
-                axiomIdToSimplifier
     -- The intermediate steps do not need to be checked for \bottom because we
     -- use guardAgainstBottom at the end.
-    deduplicated <- normalizeSubstitutionDuplication' substitution
+    deduplicated <- normalizeSubstitutionDuplication substitution
     let
         PredicateSimplifier simplifySubstitution = predicateSimplifier
         Conditional { substitution = preDeduplicatedSubstitution } =

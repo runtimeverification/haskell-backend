@@ -39,7 +39,6 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Simplification.Data
                  ( Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Unification.Error
 import           Kore.Unification.Procedure
 import qualified Kore.Unification.Substitution as Substitution
@@ -209,7 +208,11 @@ tools = MetadataTools
     }
 
 testEnv :: Env
-testEnv = Mock.env { metadataTools = tools }
+testEnv =
+    Mock.env
+        { metadataTools = tools
+        , simplifierPredicate = Mock.substitutionSimplifier
+        }
 
 unificationProblem
     :: UnificationTerm
@@ -265,11 +268,7 @@ andSimplifySuccess term1 term2 results = do
         runSMT
         $ evalSimplifier testEnv
         $ Monad.Unify.runUnifier
-        $ simplifyAnds
-            Mock.substitutionSimplifier
-            Simplifier.create
-            Map.empty
-            (unificationProblem term1 term2 :| [])
+        $ simplifyAnds (unificationProblem term1 term2 :| [])
     assertEqualWithExplanation "" expect subst'
 
 andSimplifyFailure
@@ -285,11 +284,7 @@ andSimplifyFailure term1 term2 err = do
         runSMT
         $ evalSimplifier testEnv
         $ Monad.Unify.runUnifier
-        $ simplifyAnds
-            Mock.substitutionSimplifier
-            Simplifier.create
-            Map.empty
-            (unificationProblem term1 term2 :| [])
+        $ simplifyAnds (unificationProblem term1 term2 :| [])
     assertEqual "" (show expect) (show actual)
 
 andSimplifyException
@@ -306,11 +301,7 @@ andSimplifyException message term1 term2 exceptionMessage =
             var <-
                 runSMT $ evalSimplifier testEnv
                 $ Monad.Unify.runUnifier
-                $ simplifyAnds
-                    Mock.substitutionSimplifier
-                    Simplifier.create
-                    Map.empty
-                    (unificationProblem term1 term2 :| [])
+                $ simplifyAnds (unificationProblem term1 term2 :| [])
             _ <- evaluate var
             assertFailure "This evaluation should fail"
         handler (ErrorCall s) = assertEqual "" exceptionMessage s
