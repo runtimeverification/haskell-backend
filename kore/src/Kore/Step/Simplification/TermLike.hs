@@ -144,9 +144,8 @@ simplifyInternal
         ExistsF p      -> Exists.simplify p
         FloorF p       -> return $ Floor.simplify p
         ForallF p      -> return $ Forall.simplify p
-        IffF p ->
-            Iff.simplify substitutionSimplifier simplifier axiomIdToEvaluator p
-        ImpliesF p -> Implies.simplify p
+        IffF p         -> Iff.simplify p
+        ImpliesF p     -> Implies.simplify p
         InF p ->
             In.simplify substitutionSimplifier simplifier axiomIdToEvaluator p
         InhabitantF s -> return $ Inhabitant.simplify s

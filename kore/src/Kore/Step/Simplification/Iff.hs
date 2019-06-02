@@ -40,23 +40,10 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> Iff Sort (OrPattern variable)
+    => Iff Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
-simplify
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
-    Iff { iffFirst = first, iffSecond = second }
-  =
-    simplifyEvaluated
-        predicateSimplifier
-        termSimplifier
-        axiomSimplifiers
-        first
-        second
+simplify Iff { iffFirst = first, iffSecond = second } =
+    simplifyEvaluated first second
 
 {-| evaluates an 'Iff' given its two 'OrPattern' children.
 
@@ -82,16 +69,10 @@ simplifyEvaluated
         , Show variable
         , Unparse variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> OrPattern variable
+    => OrPattern variable
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
 simplifyEvaluated
-    _predicateSimplifier
-    _termSimplifier
-    _axiomSimplifiers
     first
     second
   | OrPattern.isTrue first   = return second
