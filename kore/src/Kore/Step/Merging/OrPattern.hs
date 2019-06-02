@@ -39,23 +39,12 @@ mergeWithPredicate
         , FreshVariable variable
         , SortedVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions in a pattern.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate variable
+    => Predicate variable
     -- ^ Predicate to add.
     -> OrPattern variable
     -- ^ Pattern to which the condition should be added.
     -> Simplifier (OrPattern variable)
-mergeWithPredicate
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSimplifier
-    toMerge
-    patt
-  = do
+mergeWithPredicate toMerge patt = do
     patterns <-
         BranchT.gather $ traverse (Pattern.mergeWithPredicate toMerge) patt
     return (MultiOr.mergeAll patterns)

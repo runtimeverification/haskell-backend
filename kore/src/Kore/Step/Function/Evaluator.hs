@@ -321,9 +321,9 @@ reevaluateFunctions
     -- ^ Function evaluation result.
     -> Simplifier (OrPattern variable)
 reevaluateFunctions
-    substitutionSimplifier
-    termSimplifier
-    axiomIdToEvaluator
+    _substitutionSimplifier
+    _termSimplifier
+    _axiomIdToEvaluator
     Conditional
         { term   = rewrittenPattern
         , predicate = rewritingCondition
@@ -333,9 +333,6 @@ reevaluateFunctions
     pattOr <- simplifyTerm rewrittenPattern
     mergedPatt <-
         OrPattern.mergeWithPredicate
-            substitutionSimplifier
-            termSimplifier
-            axiomIdToEvaluator
             Conditional
                 { term = ()
                 , predicate = rewritingCondition
@@ -367,26 +364,14 @@ mergeWithConditionAndSubstitution
 mergeWithConditionAndSubstitution _ _ _ _ AttemptedAxiom.NotApplicable =
     return AttemptedAxiom.NotApplicable
 mergeWithConditionAndSubstitution
-    substitutionSimplifier
-    simplifier
-    axiomIdToEvaluator
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToEvaluator
     toMerge
     (AttemptedAxiom.Applied AttemptedAxiomResults { results, remainders })
   = do
-    evaluatedResults <-
-        OrPattern.mergeWithPredicate
-            substitutionSimplifier
-            simplifier
-            axiomIdToEvaluator
-            toMerge
-            results
-    evaluatedRemainders <-
-        OrPattern.mergeWithPredicate
-            substitutionSimplifier
-            simplifier
-            axiomIdToEvaluator
-            toMerge
-            remainders
+    evaluatedResults <- OrPattern.mergeWithPredicate toMerge results
+    evaluatedRemainders <- OrPattern.mergeWithPredicate toMerge remainders
     return $ AttemptedAxiom.Applied AttemptedAxiomResults
         { results = evaluatedResults
         , remainders = evaluatedRemainders
