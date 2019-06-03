@@ -271,8 +271,8 @@ removeAllMap
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
-removeAllMap map' set' =
-    mkApp mapSort removeAllMapSymbol [map', set']
+removeAllMap map' set =
+    mkApp mapSort removeAllMapSymbol [map', set]
 
 -- ** Pair
 
