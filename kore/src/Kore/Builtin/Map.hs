@@ -95,6 +95,8 @@ import           Kore.Step.Axiom.Data
                  BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Axiom.Data as Axiom.Data.DoNotUse
 import           Kore.Step.Simplification.Data
+                 ( PredicateSimplifier, SimplificationType, Simplifier,
+                 TermLikeSimplifier, simplifyConditionalTerm, simplifyTerm )
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -598,8 +600,8 @@ unifyEquals
 unifyEquals
     simplificationType
     tools
-    _
-    _
+    substitutionSimplifier
+    simplifier
     _
     unifyEqualsChildren
     first
@@ -704,45 +706,19 @@ unifyEquals
                 (concreteKey1, value1) <- Monad.Unify.scatter (Map.toList map1)
                 let remainderMap = Map.delete concreteKey1 map1
                     remainderMapPat = asInternal tools sort1 remainderMap
+                    originalMapPat = asInternal tools sort1 map1
                     key1 = fromConcrete concreteKey1
 
-                keyUnifier <- unifyEqualsChildren key1 key2
-                valueUnifier <- unifyEqualsChildren value1 value2
+                keyUnifier <- do
+                    key <- unifyEqualsChildren key1 key2
+                    simplify key
+                valueUnifier <- do
+                    value <- unifyEqualsChildren value1 value2
+                    simplify value
 
-                mapUnifier <- unifyEqualsChildren remainderMapPat map2
-
-                let
-                    mapUnifierTerm :: TermLike variable
-                    mapUnifierPredicate :: Predicate variable
-                    (mapUnifierTerm, mapUnifierPredicate) =
-                        Pattern.splitTerm mapUnifier
-                    mapUnifierMap :: Map (TermLike Concrete) (TermLike variable)
-                    mapUnifierMap = case mapUnifierTerm of
-                        (Builtin_
-                            (Domain.BuiltinMap
-                                Domain.InternalMap { builtinMapChild }
-                            )
-                         ) -> builtinMapChild
-                        _ -> (error . unlines)
-                            [ "Unexpected map unification term."
-                            , "builtin=" ++ unparseToString builtin1
-                            , "key2=" ++ unparseToString key2
-                            , "unifier=" ++ unparseToString mapUnifier
-                            ]
-
-                    eitherResult =
-                        addKeyValuePatternsToMap
-                            tools sort1 keyUnifier valueUnifier mapUnifierMap
-                case eitherResult of
-                    Left KeyInMap -> do
-                        Monad.Unify.explainBottom
-                            "After unification the key was found in the map."
-                            first
-                            second
-                        empty
-                    Right result ->
-                        return (result `andCondition` mapUnifierPredicate)
-
+                unifyMapSplit sort1 keyUnifier valueUnifier remainderMapPat map2
+                    <|> unifyMapSplit
+                        sort1 keyUnifier valueUnifier originalMapPat map2
           | otherwise =
             Builtin.unifyEqualsUnsolved simplificationType dv1 app2
           where
@@ -750,6 +726,45 @@ unifyEquals
                 { builtinMapChild = map1
                 , builtinMapSort = sort1
                 } = builtin1'
+
+        unifyMapSplit
+            :: Sort
+            -> Pattern variable
+            -> Pattern variable
+            -> TermLike variable
+            -> TermLike variable
+            -> unifier (Pattern variable)
+        unifyMapSplit mapSort keyUnifier valueUnifier mapPat map2 = do
+            mapUnifier <- unifyEqualsChildren mapPat map2
+
+            let
+                mapUnifierTerm :: TermLike variable
+                mapUnifierPredicate :: Predicate variable
+                (mapUnifierTerm, mapUnifierPredicate) =
+                    Pattern.splitTerm mapUnifier
+                mapUnifierMap :: Map (TermLike Concrete) (TermLike variable)
+                mapUnifierMap = case mapUnifierTerm of
+                    (Builtin_
+                        (Domain.BuiltinMap
+                            Domain.InternalMap { builtinMapChild }
+                        )
+                        ) -> builtinMapChild
+                    _ -> (error . unlines)
+                        [ "Unexpected map unification term."
+                        , "mapPat=" ++ unparseToString mapPat
+                        , "map2=" ++ unparseToString map2
+                        , "unifier=" ++ unparseToString mapUnifier
+                        ]
+
+            result <- addKeyValuePatternsToMap
+                tools
+                unifyEqualsChildren
+                mapSort
+                keyUnifier
+                valueUnifier
+                mapUnifierMap
+            return (result `andCondition` mapUnifierPredicate)
+
 
     unifyEquals0 (Builtin_ (Domain.BuiltinMap _)) _ = empty
 
@@ -835,20 +850,20 @@ unifyEquals
     unifyEqualsElement builtin1 key2 value2 =
         case Map.toList map1 of
             [(fromConcrete -> key1, value1)] -> do
-                keyUnifier <- unifyEqualsChildren key1 key2
-                valueUnifier <- unifyEqualsChildren value1 value2
+                keyUnifier <- do
+                    key <- unifyEqualsChildren key1 key2
+                    simplify key
+                valueUnifier <- do
+                    value <- unifyEqualsChildren value1 value2
+                    simplify value
 
-                let
-                    eitherResult =
-                        addKeyValuePatternsToMap
-                            tools sort1 keyUnifier valueUnifier Map.empty
-                case eitherResult of
-                    Left KeyInMap -> (error . unlines)
-                        [ "Unexpected key in empty map."
-                        , "key=" ++ unparseToString keyUnifier
-                        , "value=" ++ unparseToString valueUnifier
-                        ]
-                    Right result -> return result
+                addKeyValuePatternsToMap
+                    tools
+                    unifyEqualsChildren
+                    sort1
+                    keyUnifier
+                    valueUnifier
+                    Map.empty
             _ -> bottomWithExplanation
             -- Cannot unify a non-element Map with an element Map
       where
@@ -870,6 +885,13 @@ unifyEquals
       where
         Domain.InternalMap { builtinMapChild = map1 } = builtin1
 
+    simplify :: Pattern variable -> unifier (Pattern variable)
+    simplify patt =
+        let (term, predicate) = Pattern.splitTerm patt
+        in Monad.Unify.liftBranchedSimplifier
+            $ simplifyConditionalTerm
+                simplifier substitutionSimplifier term predicate
+
     bottomWithExplanation :: unifier (Pattern variable)
     bottomWithExplanation = do
         Monad.Unify.explainBottom
@@ -878,29 +900,46 @@ unifyEquals
             second
         empty
 
-data KeyInMap = KeyInMap
-
 addKeyValuePatternsToMap
-    :: forall variable
-    .   ( Ord variable
+    :: forall variable unifier
+    .   ( MonadUnify unifier
+        , Ord variable
         , Show variable
         , SortedVariable variable
         , Unparse variable
         )
     => SmtMetadataTools StepperAttributes
+    -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     -> Sort
     -> Pattern variable
     -> Pattern variable
     -> Map (TermLike Concrete) (TermLike variable)
-    -> Either KeyInMap (Pattern variable)
-addKeyValuePatternsToMap tools sort1 keyPattern valuePattern existingMap =
-    if Map.member concreteKeyTerm existingMap
-    then Left KeyInMap
-    else Right
-        (pure (asInternal tools sort1 newMap)
-            `andCondition` keyPredicate
-            `andCondition` valuePredicate
-        )
+    -> unifier (Pattern variable)
+addKeyValuePatternsToMap
+    tools
+    unifyEqualsChildren
+    sort1
+    keyPattern
+    valuePattern
+    existingMap
+  = do
+    existingValueUnifier <- case Map.lookup concreteKeyTerm existingMap of
+        Just existingValue -> unifyEqualsChildren valueTerm existingValue
+        Nothing -> return (Pattern.fromTermLike valueTerm)
+    let
+        existingValueUnifierTerm :: TermLike variable
+        existingValueUnifierPredicate :: Predicate variable
+        (existingValueUnifierTerm, existingValueUnifierPredicate) =
+            Pattern.splitTerm existingValueUnifier
+
+        newMap :: Map (TermLike Concrete) (TermLike variable)
+        newMap = Map.insert concreteKeyTerm existingValueUnifierTerm existingMap
+    return
+            (Pattern.fromTermLike (asInternal tools sort1 newMap)
+                `andCondition` keyPredicate
+                `andCondition` valuePredicate
+                `andCondition` existingValueUnifierPredicate
+            )
   where
     keyTerm :: TermLike variable
     keyPredicate :: Predicate variable
@@ -918,6 +957,3 @@ addKeyValuePatternsToMap tools sort1 keyPattern valuePattern existingMap =
     valueTerm :: TermLike variable
     valuePredicate :: Predicate variable
     (valueTerm, valuePredicate) = Pattern.splitTerm valuePattern
-
-    newMap :: Map (TermLike Concrete) (TermLike variable)
-    newMap = Map.insert concreteKeyTerm valueTerm existingMap
