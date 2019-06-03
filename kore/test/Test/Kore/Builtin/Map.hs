@@ -113,12 +113,12 @@ test_removeKeyNotIn =
         "MAP.remove key with key not in map"
         (do
             key <- forAll genIntegerPattern
-            map <- forAll genMapPattern
-            isInMap <- evaluate $ lookupMap map key
+            map' <- forAll genMapPattern
+            isInMap <- evaluate $ lookupMap map' key
             Monad.when (not $ Pattern.bottom == isInMap) discard
-            let patRemove = removeMap map key
-                predicate = mkEquals_ map patRemove
-            expect <- evaluate map
+            let patRemove = removeMap map' key
+                predicate = mkEquals_ map' patRemove
+            expect <- evaluate map'
             (===) expect =<< evaluate patRemove
             (===) Pattern.top =<< evaluate predicate
         )
@@ -130,12 +130,12 @@ test_removeKeyIn =
         (do
             key <- forAll genIntegerPattern
             val <- forAll genIntegerPattern
-            map <- forAll genMapPattern
-            isInMap <- evaluate $ lookupMap map key
+            map' <- forAll genMapPattern
+            isInMap <- evaluate $ lookupMap map' key
             Monad.when (not $ Pattern.bottom == isInMap) discard
-            let patRemove = removeMap (updateMap map key val) key
-                predicate = mkEquals_ patRemove map
-            expect <- evaluate map
+            let patRemove = removeMap (updateMap map' key val) key
+                predicate = mkEquals_ patRemove map'
+            expect <- evaluate map'
             (===) expect =<< evaluate patRemove
             (===) Pattern.top =<< evaluate predicate
         )
@@ -158,10 +158,10 @@ test_removeAllSetUnit =
     testPropertyWithSolver
         "removeAll{}(map, unit{}()) === map"
         (do
-            map <- forAll genMapPattern
-            let patRemoveAll = removeAllMap map unitSet
-                predicate = mkEquals_ map patRemoveAll
-            expect <- evaluate map
+            map' <- forAll genMapPattern
+            let patRemoveAll = removeAllMap map' unitSet
+                predicate = mkEquals_ map' patRemoveAll
+            expect <- evaluate map'
             (===) expect =<< evaluate patRemoveAll
             (===) Pattern.top =<< evaluate predicate
         )

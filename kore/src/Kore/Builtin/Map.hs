@@ -28,9 +28,13 @@ module Kore.Builtin.Map
     , lookupSymbolLookup
     , lookupSymbolInKeys
     , lookupSymbolKeys
+    , lookupSymbolRemove
+    , lookupSymbolRemoveAll
     , isSymbolConcat
     , isSymbolElement
     , isSymbolUnit
+    , isSymbolRemove
+    , isSymbolRemoveAll
       -- * keys
     , concatKey
     , lookupKey
