@@ -299,6 +299,36 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
         assertEqualWithExplanation "" expect actual
+    , testCase "new variable quantification" $ do
+        let
+            expect = OrPattern.fromPatterns
+                [ Conditional
+                    { term = mkExists Mock.x (Mock.f (mkVar Mock.x))
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+                ]
+        actual <-
+            evaluateWithAxioms
+                (axiomPatternsToEvaluators $ Map.fromList
+                    [   ( AxiomIdentifier.Application Mock.cfId
+                        ,   [ EqualityRule RulePattern
+                                { left = Mock.cf
+                                , right = Mock.f (mkVar Mock.x)
+                                , requires = makeTruePredicate
+                                , ensures = makeTruePredicate
+                                , attributes = def
+                                }
+                            ]
+                        )
+                    ]
+                )
+                Conditional
+                    { term = Mock.cf
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+        assertEqualWithExplanation "" expect actual
     ]
 
 test_substitute :: [TestTree]

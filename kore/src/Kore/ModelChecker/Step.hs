@@ -47,7 +47,7 @@ import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplify )
+                 ( simplifyAndRemoveTopExists )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
@@ -149,7 +149,7 @@ transitionRule
         do
             configs <-
                 Monad.Trans.lift . Monad.Trans.lift
-                $ Pattern.simplify config
+                $ Pattern.simplifyAndRemoveTopExists config
             let
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = MultiOr.filterOr configs

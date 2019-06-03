@@ -4,7 +4,8 @@ License     : NCSA
 
 -}
 module Kore.Step.Simplification.Pattern
-    ( simplify
+    ( simplifyAndRemoveTopExists
+    , simplify
     , simplifyPredicate
     ) where
 
@@ -16,6 +17,8 @@ import           Kore.Internal.OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
+                 ( pattern Exists_ )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import qualified Kore.Step.Merging.Pattern as Pattern
@@ -28,6 +31,24 @@ import           Kore.Syntax.Variable
                  ( SortedVariable )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
+
+simplifyAndRemoveTopExists
+    ::  ( Ord variable
+        , Show variable
+        , Unparse variable
+        , FreshVariable variable
+        , SortedVariable variable
+        )
+    => Pattern variable
+    -> Simplifier (OrPattern variable)
+simplifyAndRemoveTopExists patt = do
+    simplified <- simplify patt
+    return (removeTopExists <$> simplified)
+  where
+    removeTopExists :: Pattern variable -> Pattern variable
+    removeTopExists p@Conditional{ term = Exists_ _ _ quantified } =
+        removeTopExists p {term = quantified}
+    removeTopExists p = p
 
 {-| Simplifies an 'Pattern', returning an 'OrPattern'.
 -}

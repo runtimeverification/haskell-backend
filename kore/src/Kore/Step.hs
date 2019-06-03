@@ -42,7 +42,7 @@ import           Kore.Step.Rule
                  isHeatingRule, isNormalRule )
 import           Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplify )
+                 ( simplifyAndRemoveTopExists )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
@@ -93,7 +93,7 @@ transitionRule =
   where
     transitionSimplify config =
         do
-            configs <- Monad.Trans.lift $ Pattern.simplify config
+            configs <- Monad.Trans.lift $ Pattern.simplifyAndRemoveTopExists config
             let
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = MultiOr.filterOr configs

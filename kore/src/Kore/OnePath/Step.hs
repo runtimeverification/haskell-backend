@@ -40,7 +40,7 @@ import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule) )
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplify )
+                 ( simplifyAndRemoveTopExists )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
@@ -154,7 +154,7 @@ transitionRule strategy expandedPattern =
     transitionSimplify c = return c
 
     applySimplify wrapper config = do
-        configs <- Monad.Trans.lift $ Pattern.simplify config
+        configs <- Monad.Trans.lift $ Pattern.simplifyAndRemoveTopExists config
         let
             -- Filter out ⊥ patterns
             nonEmptyConfigs = MultiOr.filterOr configs
@@ -236,7 +236,7 @@ transitionRule strategy expandedPattern =
         let
             removal = removalPredicate destination patt
             result = patt `Conditional.andPredicate` removal
-        orResult <- Monad.Trans.lift $ Pattern.simplify result
+        orResult <- Monad.Trans.lift $ Pattern.simplifyAndRemoveTopExists result
         let nonEmpty = MultiOr.filterOr orResult
         if null nonEmpty
             then return Bottom
