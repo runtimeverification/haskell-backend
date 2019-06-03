@@ -5,7 +5,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 
 import           Data.Sup
@@ -538,46 +537,6 @@ test_functionIntegration =
                 )
                 (Mock.f (mkVar Mock.x))
         assertEqualWithExplanation "" expect actual
-
-    , testCase "Variable expansion." $ do
-        let equalsXA = mkEquals Mock.testSort (mkVar Mock.x) Mock.a
-            equalsXB = mkEquals Mock.testSort (mkVar Mock.x) Mock.b
-            expect =
-                Conditional
-                    { term =
-                        Foldable.foldr1 mkOr
-                            [ mkAnd Mock.a equalsXA
-                            , mkAnd Mock.b equalsXB
-                            , mkAnd
-                                (mkEvaluated $ Mock.f (mkVar Mock.x))
-                                (mkAnd
-                                    (mkNot equalsXA)
-                                    (mkNot equalsXB)
-                                )
-                            ]
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-        actual <-
-            evaluate
-                Mock.metadataTools
-                (Map.fromList
-                    [   ( AxiomIdentifier.Application Mock.fId
-                        , definitionEvaluation
-                            [ axiom
-                                (Mock.f Mock.a)
-                                Mock.a
-                                makeTruePredicate
-                            , axiom
-                                (Mock.f Mock.b)
-                                Mock.b
-                                makeTruePredicate
-                            ]
-                        )
-                    ]
-                )
-                (Mock.f (mkVar Mock.x))
-        assertEqualWithExplanation "" expect actual
     ]
 
 axiomEvaluator
@@ -633,8 +592,8 @@ evaluate
     -> TermLike Variable
     -> IO (Pattern Variable)
 evaluate metadataTools functionIdToEvaluator patt =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ TermLike.simplify
         metadataTools substitutionSimplifier functionIdToEvaluator patt
   where

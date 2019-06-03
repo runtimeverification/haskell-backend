@@ -167,7 +167,9 @@ test_simplificationIntegration =
         let
             expect = OrPattern.fromPatterns
                 [ Conditional
-                    { term = Mock.function20MapTest (Mock.builtinMap []) Mock.a
+                    { term =
+                        mkEvaluated
+                        $ Mock.function20MapTest (Mock.builtinMap []) Mock.a
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
@@ -311,6 +313,40 @@ test_simplificationIntegration =
                         mkExists
                             Mock.x
                             (mkEquals_ (mkVar Mock.y) (mkVar Mock.x))
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+        assertEqualWithExplanation "" expect actual
+    , testCase "new variable quantification" $ do
+        let
+            expect = OrPattern.fromPatterns
+                [ Conditional
+                    { term = mkExists Mock.x (Mock.f (mkVar Mock.x))
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+                ]
+        actual <-
+            evaluateWithAxioms
+                Mock.metadataTools
+                (axiomPatternsToEvaluators
+                    (Map.fromList
+                        [   ( AxiomIdentifier.Application
+                                Mock.cfId
+                            ,   [ EqualityRule RulePattern
+                                    { left = Mock.cf
+                                    , right = Mock.f (mkVar Mock.x)
+                                    , requires = makeTruePredicate
+                                    , ensures = makeTruePredicate
+                                    , attributes = def
+                                    }
+                                ]
+                            )
+                        ]
+                    )
+                )
+                Conditional
+                    { term = Mock.cf
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
@@ -465,8 +501,8 @@ evaluateWithAxioms
     -> Pattern Variable
     -> IO (OrPattern Variable)
 evaluateWithAxioms tools axioms patt =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ Pattern.simplify
         tools
         (Predicate.create tools simplifier axiomIdToSimplifier)

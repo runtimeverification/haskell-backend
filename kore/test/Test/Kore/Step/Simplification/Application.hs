@@ -352,8 +352,8 @@ evaluate
         (OrPattern Variable)
     -> IO (OrPattern Variable)
 evaluate tools simplifier axiomIdToEvaluator application =
-    SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ simplify
         tools
         (Mock.substitutionSimplifier tools)

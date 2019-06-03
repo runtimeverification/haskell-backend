@@ -9,12 +9,23 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 A module for interacting with an external SMT solver, using SMT-LIB 2 format.
 -}
 
-{-# LANGUAGE PatternGuards #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module SMT.SimpleSMT
     (
     -- * Basic Solver Interface
-      Solver(..)
+      Solver (..)
+    , lensLogger
+    , lensHIn
+    , lensHOut
+    , lensHErr
+    , lensHProc
+    , send
+    , recv
+    , info
+    , command
+    , stop
+    , Logger
     , newSolver
     , ackCommand
     , ackCommandIgnoreErr
@@ -26,13 +37,6 @@ module SMT.SimpleSMT
     , SExpr(..)
     , showSExpr, readSExprs
     , nameFromSExpr
-
-    -- ** Logging and Debugging
-    , Logger(..)
-    , newLogger
-    , withLogLevel
-    , logMessageAt
-    , logIndented
 
     -- * Common SMT-LIB 2 Commands
     , Constructor (..)
@@ -153,15 +157,14 @@ module SMT.SimpleSMT
     , forallQ
     ) where
 
+import qualified Colog
 import           Control.Concurrent
                  ( forkIO )
 import qualified Control.Exception as X
 import           Control.Monad
-                 ( forever, when )
+                 ( forever )
 import           Data.Bits
                  ( testBit )
-import           Data.IORef
-                 ( modifyIORef', newIORef, readIORef, writeIORef )
 import           Data.Ratio
                  ( denominator, numerator, (%) )
 import           Data.Text
@@ -169,10 +172,10 @@ import           Data.Text
 import qualified Data.Text as Text
 import qualified Data.Text.Internal.Builder as Text.Builder
 import qualified Data.Text.IO as Text
-import qualified Data.Text.Lazy as Lazy
-                 ( Text )
 import qualified Data.Text.Lazy as Text.Lazy
-import qualified Data.Text.Lazy.IO as Text.Lazy
+import           GHC.Stack
+                 ( callStack )
+import qualified GHC.Stack as GHC
 import           Numeric
                  ( readHex, showFFloat, showHex )
 import           Prelude hiding
@@ -181,15 +184,18 @@ import qualified Prelude
 import           System.Exit
                  ( ExitCode )
 import           System.IO
-                 ( hClose, hFlush, hPutChar, stdout )
+                 ( Handle, hClose, hFlush, hPutChar )
 import           System.Process
-                 ( runInteractiveProcess, waitForProcess )
+                 ( ProcessHandle, runInteractiveProcess, waitForProcess )
 import qualified Text.Megaparsec as Parser
 import           Text.Read
                  ( readMaybe )
 
-import Kore.Debug
-import SMT.AST
+import           Control.Lens.TH.Rules
+                 ( makeLenses )
+import           Kore.Debug
+import qualified Kore.Logger as Logger
+import           SMT.AST
 
 -- | Results of checking for satisfiability.
 data Result = Sat         -- ^ The assertions are satisfiable
@@ -207,70 +213,77 @@ data Value =  Bool  !Bool           -- ^ Boolean value
 
 --------------------------------------------------------------------------------
 
+type Logger = Logger.LogAction IO Logger.LogMessage
+
 -- | An interactive solver process.
 data Solver = Solver
-  { command   :: SExpr -> IO SExpr
-    -- ^ Send a command to the solver.
+    { hIn    :: !Handle
+    , hOut   :: !Handle
+    , hErr   :: !Handle
+    , hProc  :: !ProcessHandle
+    , logger :: !Logger
+    }
 
-  , stop :: IO ExitCode
-    -- ^ Terminate the solver.
-  }
-
+makeLenses ''Solver
 
 -- | Start a new solver process.
 newSolver
-    :: FilePath  -- ^ Executable
-    -> [String]  -- ^ Arguments
-    -> Maybe Logger  -- ^ Optional logger
+    :: FilePath -- ^ Executable
+    -> [String] -- ^ Arguments
+    -> Logger   -- ^ Logger
     -> IO Solver
-newSolver exe opts mbLog = do
-    (hIn, hOut, hErr, h) <- runInteractiveProcess exe opts Nothing Nothing
-
-    let info a =
-            case mbLog of
-                Nothing -> return ()
-                Just l  -> logMessage l a
+newSolver exe opts logger = do
+    (hIn, hOut, hErr, hProc) <- runInteractiveProcess exe opts Nothing Nothing
+    let solver = Solver { hIn, hOut, hErr, hProc, logger }
 
     _ <- forkIO $ do
         let handler X.SomeException {} = return ()
         X.handle handler $ forever $ do
-            errs <- Text.Lazy.hGetLine hErr
-            info ("[stderr] " <> errs)
-
-    let send c = do
-            (info . Text.Builder.toLazyText) ("[send] " <> buildSExpr c)
-            sendSExpr hIn c
-            hPutChar hIn '\n'
-            hFlush hIn
-
-        recv = do
-            resp <- Text.hGetLine hOut
-            info ("[recv] " <> Text.Lazy.fromStrict resp)
-            readSExpr resp
-
-        command c =
-            traceNonErrorMonad D_SMT_command [debugArg "c" (showSExpr c)]
-            $ do
-              send c
-              recv
-
-        stop = do
-            send (List [Atom "exit"])
-            ec <- waitForProcess h
-            let handler :: X.IOException -> IO ()
-                handler ex = (info . Text.Lazy.pack) (show ex)
-            X.handle handler $ do
-                hClose hIn
-                hClose hOut
-                hClose hErr
-            return ec
-
-        solver = Solver { command, stop }
+            errs <- Text.hGetLine hErr
+            info solver ["stderr"] errs
 
     setOption solver ":print-success" "true"
     setOption solver ":produce-models" "true"
 
     return solver
+
+info :: GHC.HasCallStack => Solver -> [Logger.Scope] -> Text -> IO ()
+info Solver { logger } scope a =
+    logger Colog.<& message
+  where
+    message = Logger.LogMessage a Logger.Info ("SimpleSMT" : scope) callStack
+
+send :: Solver -> SExpr -> IO ()
+send solver@Solver { hIn } command' = do
+    (info solver ["send"] . Text.Lazy.toStrict . Text.Builder.toLazyText)
+        (buildSExpr command')
+    sendSExpr hIn command'
+    hPutChar hIn '\n'
+    hFlush hIn
+
+recv :: Solver -> IO SExpr
+recv solver@Solver { hOut } = do
+    resp <- Text.hGetLine hOut
+    info solver ["recv"] resp
+    readSExpr resp
+
+command :: Solver -> SExpr -> IO SExpr
+command solver c =
+    traceNonErrorMonad D_SMT_command [debugArg "c" (showSExpr c)] $ do
+        send solver c
+        recv solver
+
+stop :: Solver -> IO ExitCode
+stop solver@Solver { hIn, hOut, hErr, hProc } = do
+    send solver (List [Atom "exit"])
+    ec <- waitForProcess hProc
+    let handler :: X.IOException -> IO ()
+        handler ex = (info solver ["stop"] . Text.pack) (show ex)
+    X.handle handler $ do
+        hClose hIn
+        hClose hOut
+        hClose hErr
+    return ec
 
 
 -- | Load the contents of a file.
@@ -987,64 +1000,3 @@ named x e = fun "!" [e, Atom ":named", Atom x ]
 
 
 --------------------------------------------------------------------------------
-
--- | Log messages with minimal formatting. Mostly for debugging.
-data Logger = Logger
-  { logMessage :: Lazy.Text -> IO ()
-    -- ^ Log a message.
-
-  , logLevel   :: IO Int
-
-  , logSetLevel:: Int -> IO ()
-
-  , logTab     :: IO ()
-    -- ^ Increase indentation.
-
-  , logUntab   :: IO ()
-    -- ^ Decrease indentation.
-  }
-
--- | Run an IO action with the logger set to a specific level, restoring it when
--- done.
-withLogLevel :: Logger -> Int -> IO a -> IO a
-withLogLevel Logger { logLevel, logSetLevel } l m =
-  do l0 <- logLevel
-     X.bracket_ (logSetLevel l) (logSetLevel l0) m
-
-logIndented :: Logger -> IO a -> IO a
-logIndented Logger { logTab, logUntab } = X.bracket_ logTab logUntab
-
--- | Log a message at a specific log level.
-logMessageAt :: Logger -> Int -> Lazy.Text -> IO ()
-logMessageAt logger l msg = withLogLevel logger l (logMessage logger msg)
-
--- | A simple stdout logger.  Shows only messages logged at a level that is
--- greater than or equal to the passed level.
-newLogger :: Int -> IO Logger
-newLogger l = do
-     tab <- newIORef 0
-     lev <- newIORef 0
-     let logLevel    = readIORef lev
-         logSetLevel = writeIORef lev
-
-         shouldLog m =
-           do cl <- logLevel
-              when (cl >= l) m
-
-         logMessage x = shouldLog $ do
-             t <- readIORef tab
-             Text.Lazy.putStr $ Text.Lazy.unlines
-                [ Text.Lazy.replicate t " " <> line
-                | line <- Text.Lazy.lines x
-                ]
-             hFlush stdout
-
-         logTab   = shouldLog (modifyIORef' tab (+ 2))
-         logUntab = shouldLog (modifyIORef' tab (subtract 2))
-     return Logger
-         { logLevel
-         , logSetLevel
-         , logMessage
-         , logTab
-         , logUntab
-         }

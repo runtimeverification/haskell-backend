@@ -352,8 +352,8 @@ mainWithOptions
         (exitCode, finalPattern) <-
             clockSomethingIO "Executing"
             $ withLogger koreLogOptions (\logger ->
-                SMT.runSMT smtConfig
-                $ evalSimplifier logger
+                SMT.runSMT smtConfig logger
+                $ evalSimplifier
                 $ do
                     give
                         (MetadataTools.build indexedModule)

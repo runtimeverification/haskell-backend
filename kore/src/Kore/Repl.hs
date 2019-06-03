@@ -12,6 +12,7 @@ module Kore.Repl
     , ReplMode (..)
     ) where
 
+import           Control.Concurrent.MVar
 import           Control.Exception
                  ( AsyncException (UserInterrupt) )
 import qualified Control.Lens as Lens hiding
@@ -97,6 +98,7 @@ runRepl
     -- ^ list of axioms to used in the proof
     -> [claim]
     -- ^ list of claims to be proven
+    -> MVar (Logger.LogAction IO Logger.LogMessage)
     -> ReplScript
     -- ^ optional script
     -> ReplMode
@@ -104,7 +106,7 @@ runRepl
     -> Simplifier ()
 runRepl
     tools simplifier predicateSimplifier axiomToIdSimplifier
-    axioms' claims' replScript replMode
+    axioms' claims' logger replScript replMode
   = do
     mNewState <- evaluateScript replScript
     case replMode of
@@ -156,6 +158,7 @@ runRepl
             , labels     = Map.empty
             , aliases    = Map.empty
             , logging    = (Logger.Debug, NoLogging)
+            , logger
             }
 
     firstClaimIndex :: ClaimIndex

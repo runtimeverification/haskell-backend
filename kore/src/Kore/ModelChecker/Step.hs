@@ -53,7 +53,7 @@ import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplify )
+                 ( simplifyAndRemoveTopExists )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
@@ -165,7 +165,7 @@ transitionRule
         do
             configs <-
                 Monad.Trans.lift . Monad.Trans.lift
-                $ Pattern.simplify
+                $ Pattern.simplifyAndRemoveTopExists
                     tools
                     predicateSimplifier
                     patternSimplifier
@@ -241,7 +241,7 @@ transitionRule
         eitherResults <-
             Monad.Trans.lift . Monad.Trans.lift
             $ Monad.Unify.runUnifier
-            $ Step.applyRewriteRules
+            $ Step.applyRewriteRulesParallel
                 tools
                 predicateSimplifier
                 patternSimplifier

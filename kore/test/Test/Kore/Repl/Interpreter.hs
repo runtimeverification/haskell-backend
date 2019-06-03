@@ -7,6 +7,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( Assertion, testCase, (@?=) )
 
+import           Control.Concurrent.MVar
 import           Control.Monad.Trans.State.Strict
                  ( evalStateT, runStateT )
 import           Data.Coerce
@@ -324,7 +325,7 @@ runSimplifier
     :: Simplifier a
     -> IO a
 runSimplifier =
-    SMT.runSMT SMT.defaultConfig . evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger . evalSimplifier
 
 runWithState
     :: ReplCommand
@@ -336,16 +337,18 @@ runWithState
 runWithState command axioms claims claim stateTransformer
   = Logger.withLogger logOptions $ \logger -> do
         output <- newIORef ""
-        (c, s) <- liftSimplifier logger
+        mvar <- newMVar logger
+        let state = stateTransformer $ mkState axioms claims claim mvar
+        (c, s) <-
+            liftSimplifier (Logger.swappableLogger mvar)
+            $ flip runStateT state
             $ replInterpreter (writeIORefIfNotEmpty output) command
-                `runStateT` state
         output' <- readIORef output
         return $ Result output' c s
   where
     logOptions = Logger.KoreLogOptions Logger.LogNone Logger.Debug
     liftSimplifier logger =
-        SMT.runSMT SMT.defaultConfig . evalSimplifier logger
-    state = stateTransformer $ mkState axioms claims claim
+        SMT.runSMT SMT.defaultConfig logger . evalSimplifier
     writeIORefIfNotEmpty out =
         \case
             "" -> pure ()
@@ -390,8 +393,13 @@ hasLogging st expectedLogging =
 tests :: IO () -> String -> TestTree
 tests = flip testCase
 
-mkState :: [Axiom] -> [Claim] -> Claim -> ReplState Claim
-mkState axioms claims claim =
+mkState
+    :: [Axiom]
+    -> [Claim]
+    -> Claim
+    -> MVar (Logger.LogAction IO Logger.LogMessage)
+    -> ReplState Claim
+mkState axioms claims claim logger =
     ReplState
         { axioms      = axioms
         , claims      = claims
@@ -406,6 +414,7 @@ mkState axioms claims claim =
         , labels      = Map.singleton (ClaimIndex 0) Map.empty
         , aliases     = Map.empty
         , logging     = (Logger.Debug, NoLogging)
+        , logger
         }
   where
     graph' = emptyExecutionGraph claim

@@ -180,8 +180,8 @@ execBenchmark root kFile definitionFile mainModuleName test =
             )
         -> IO (TermLike Variable)
     execution (verifiedModule, purePattern) =
-        SMT.runSMT SMT.defaultConfig
-        $ evalSimplifier emptyLogger
+        SMT.runSMT SMT.defaultConfig emptyLogger
+        $ evalSimplifier
         $ exec verifiedModule strategy purePattern
       where
         unlimited :: Limit Natural

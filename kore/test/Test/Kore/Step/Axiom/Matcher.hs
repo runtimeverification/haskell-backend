@@ -892,15 +892,13 @@ test_unificationWithAppMatchOnTop =
             expected = Just $ OrPredicate.fromPredicates
                 [ Conditional
                     { term = ()
-                    , predicate = makeTruePredicate
-                    , substitution = Substitution.unsafeWrap
-                        [(Mock.x, Mock.cf), (Mock.y, Mock.a)]
+                    , predicate = makeEqualsPredicate (Mock.f Mock.a) Mock.a
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.cf)]
                     }
                 , Conditional
                     { term = ()
-                    , predicate = makeTruePredicate
-                    , substitution = Substitution.unsafeWrap
-                        [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                    , predicate = makeEqualsPredicate (Mock.f Mock.b) Mock.b
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.cf)]
                     }
                 ]
             sortVar = SortVariableSort (SortVariable (testId "S"))
@@ -912,8 +910,20 @@ test_unificationWithAppMatchOnTop =
                             { left = mkCeil sortVar Mock.cf
                             , right =
                                 mkOr
-                                    (mkEquals_ (mkVar Mock.y) Mock.a)
-                                    (mkEquals_ (mkVar Mock.y) Mock.b)
+                                    (mkAnd
+                                        (mkEquals_
+                                            (Mock.f (mkVar Mock.y))
+                                            Mock.a
+                                        )
+                                        (mkEquals_ (mkVar Mock.y) Mock.a)
+                                    )
+                                    (mkAnd
+                                        (mkEquals_
+                                            (Mock.f (mkVar Mock.y))
+                                            Mock.b
+                                        )
+                                        (mkEquals_ (mkVar Mock.y) Mock.b)
+                                    )
                             , requires = makeTruePredicate
                             , ensures = makeTruePredicate
                             , attributes = def
@@ -932,35 +942,35 @@ test_unificationWithAppMatchOnTop =
             expected = Just $ OrPredicate.fromPredicates
                 [ Conditional
                     { term = ()
-                    , predicate = makeTruePredicate
+                    , predicate = makeAndPredicate
+                        (makeEqualsPredicate (Mock.f Mock.a) Mock.a)
+                        (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
                     , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg)
-                        , (Mock.y, Mock.a), (Mock.z, Mock.a)
-                        ]
+                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
                     }
                 , Conditional
                     { term = ()
-                    , predicate = makeTruePredicate
+                    , predicate = makeAndPredicate
+                        (makeEqualsPredicate (Mock.f Mock.a) Mock.a)
+                        (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
                     , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg)
-                        , (Mock.y, Mock.a), (Mock.z, Mock.b)
-                        ]
+                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
                     }
                 , Conditional
                     { term = ()
-                    , predicate = makeTruePredicate
+                    , predicate = makeAndPredicate
+                        (makeEqualsPredicate (Mock.f Mock.b) Mock.b)
+                        (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
                     , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg)
-                        , (Mock.y, Mock.b), (Mock.z, Mock.a)
-                        ]
+                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
                     }
                 , Conditional
                     { term = ()
-                    , predicate = makeTruePredicate
+                    , predicate = makeAndPredicate
+                        (makeEqualsPredicate (Mock.f Mock.b) Mock.b)
+                        (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
                     , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg)
-                        , (Mock.y, Mock.b), (Mock.z, Mock.b)
-                        ]
+                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
                     }
                 ]
             sortVar = SortVariableSort (SortVariable (testId "S"))
@@ -972,8 +982,20 @@ test_unificationWithAppMatchOnTop =
                             { left = mkCeil sortVar Mock.cf
                             , right =
                                 mkOr
-                                    (mkEquals_ (mkVar Mock.y) Mock.a)
-                                    (mkEquals_ (mkVar Mock.y) Mock.b)
+                                    (mkAnd
+                                        (mkEquals_
+                                            (Mock.f (mkVar Mock.y))
+                                            Mock.a
+                                        )
+                                        (mkEquals_ (mkVar Mock.y) Mock.a)
+                                    )
+                                    (mkAnd
+                                        (mkEquals_
+                                            (Mock.f (mkVar Mock.y))
+                                            Mock.b
+                                        )
+                                        (mkEquals_ (mkVar Mock.y) Mock.b)
+                                    )
                             , requires = makeTruePredicate
                             , ensures = makeTruePredicate
                             , attributes = def
@@ -987,8 +1009,20 @@ test_unificationWithAppMatchOnTop =
                             { left = mkCeil sortVar Mock.cg
                             , right =
                                 mkOr
-                                    (mkEquals_ (mkVar Mock.z) Mock.a)
-                                    (mkEquals_ (mkVar Mock.z) Mock.b)
+                                    (mkAnd
+                                        (mkEquals_
+                                            (Mock.g (mkVar Mock.z))
+                                            Mock.a
+                                        )
+                                        (mkEquals_ (mkVar Mock.z) Mock.a)
+                                    )
+                                    (mkAnd
+                                        (mkEquals_
+                                            (Mock.g (mkVar Mock.z))
+                                            Mock.b
+                                        )
+                                        (mkEquals_ (mkVar Mock.z) Mock.b)
+                                    )
                             , requires = makeTruePredicate
                             , ensures = makeTruePredicate
                             , attributes = def
@@ -1025,8 +1059,8 @@ unificationWithMatchSimplifiers
     -> TermLike Variable
     -> IO (Maybe (OrPredicate Variable))
 unificationWithMatchSimplifiers tools axiomIdToSimplifier first second = do
-    result <- SMT.runSMT SMT.defaultConfig
-        $ evalSimplifier emptyLogger
+    result <- SMT.runSMT SMT.defaultConfig emptyLogger
+        $ evalSimplifier
         $ Monad.Unify.runUnifier
         $ unificationWithAppMatchOnTop
             tools
@@ -1057,8 +1091,8 @@ match tools first second = do
     matchAsEither
         :: IO (Either UnificationOrSubstitutionError (OrPredicate Variable))
     matchAsEither =
-        SMT.runSMT SMT.defaultConfig
-            $ evalSimplifier emptyLogger matchResult
+        SMT.runSMT SMT.defaultConfig emptyLogger
+            $ evalSimplifier matchResult
     matchResult
         :: Simplifier
             (Either UnificationOrSubstitutionError (OrPredicate Variable))

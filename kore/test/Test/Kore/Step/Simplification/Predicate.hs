@@ -272,8 +272,8 @@ runSimplifier
     -> IO (OrPredicate Variable)
 runSimplifier patternSimplifierMap predicate =
     fmap MultiOr.make
-    $ SMT.runSMT SMT.defaultConfig
-    $ evalSimplifier emptyLogger
+    $ SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier
     $ gather
     $ simplifier predicate
   where

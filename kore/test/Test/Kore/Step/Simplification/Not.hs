@@ -126,8 +126,8 @@ simplifyEvaluated
     :: OrPattern Variable
     -> IO (OrPattern Variable)
 simplifyEvaluated =
-    SMT.runSMT SMT.defaultConfig
-    . evalSimplifier emptyLogger
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    . evalSimplifier
     . Not.simplifyEvaluated
         Mock.metadataTools
         (Mock.substitutionSimplifier Mock.metadataTools)

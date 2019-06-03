@@ -338,7 +338,7 @@ merge
     -> IO (Either UnificationOrSubstitutionError [Predicate Variable])
 merge s1 s2 =
     runSMT
-    $ evalSimplifier emptyLogger
+    $ evalSimplifier
     $ Monad.Unify.runUnifier
     $ mergePredicatesAndSubstitutionsExcept
         Mock.metadataTools
@@ -353,7 +353,7 @@ normalize
     -> IO [Conditional Variable term]
 normalize predicated =
     runSMT
-    $ evalSimplifier emptyLogger
+    $ evalSimplifier
     $ gather
     $ Substitution.normalize
         Mock.metadataTools
@@ -372,7 +372,7 @@ normalizeExcept
 normalizeExcept predicated =
     (fmap . fmap) MultiOr.make
     $ runSMT
-    $ evalSimplifier emptyLogger
+    $ evalSimplifier
     $ Monad.Unify.runUnifier
     $ Substitution.normalizeExcept
         Mock.metadataTools
@@ -383,7 +383,7 @@ normalizeExcept predicated =
 
 -- | Run an 'SMT' computation with the default configuration.
 runSMT :: SMT a -> IO a
-runSMT = SMT.runSMT SMT.defaultConfig
+runSMT = SMT.runSMT SMT.defaultConfig emptyLogger
 
 -- | Check that 'Predicate.substitution' is normalized for all arguments.
 assertNormalizedPredicates :: Foldable f => f [Predicate Variable] -> Assertion

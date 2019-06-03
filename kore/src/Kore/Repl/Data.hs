@@ -43,6 +43,7 @@ module Kore.Repl.Data
 
 import           Control.Applicative
                  ( Alternative )
+import           Control.Concurrent.MVar
 import           Control.Error
                  ( hush )
 import qualified Control.Lens as Lens hiding
@@ -55,7 +56,6 @@ import           Control.Monad.Error.Class
 import qualified Control.Monad.Error.Class as Monad.Error
 import           Control.Monad.IO.Class
                  ( liftIO )
-import qualified Control.Monad.Reader.Class as Reader
 import           Control.Monad.State.Strict
                  ( MonadState, get, modify )
 import           Control.Monad.Trans.Accum
@@ -104,7 +104,6 @@ import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
-import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Variable
                  ( Variable )
@@ -379,6 +378,7 @@ data ReplState claim = ReplState
     , aliases :: Map String AliasDefinition
     -- ^ Map of command aliases
     , logging :: (Logger.Severity, LogType)
+    , logger  :: MVar (Logger.LogAction IO Logger.LogMessage)
     }
 
 -- | Unifier that stores the first 'explainBottom'.
@@ -611,27 +611,21 @@ liftSimplifierWithLogger
     :: forall a t claim
     .  MonadState (ReplState claim) (t Simplifier)
     => Monad.Trans.MonadTrans t
-    => Simplifier a
+    => MVar (Logger.LogAction IO Logger.LogMessage)
+    -> Simplifier a
     -> t Simplifier a
-liftSimplifierWithLogger sa = do
+liftSimplifierWithLogger mLogger simplifier = do
    (severity, logType) <- logging <$> get
    (textLogger, maybeHandle) <- logTypeToLogger logType
    let logger = Logger.makeKoreLogger severity textLogger
-   result <- Monad.Trans.lift
-       . Reader.local (setLogger logger)
-       $ sa
+   _ <- Monad.Trans.lift . liftIO $ swapMVar mLogger logger
+   result <- Monad.Trans.lift simplifier
    maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
    pure result
   where
-    setLogger
-        :: Logger.LogAction Simplifier Logger.LogMessage
-        -> Simplifier.Environment
-        -> Simplifier.Environment
-    setLogger la env = env { Simplifier.logger = la }
-
     logTypeToLogger
         :: LogType
-        -> t Simplifier (Logger.LogAction Simplifier Text, Maybe Handle)
+        -> t Simplifier (Logger.LogAction IO Text, Maybe Handle)
     logTypeToLogger =
         \case
             NoLogging   -> pure (mempty, Nothing)
@@ -679,9 +673,10 @@ runStepper'
     -> m Simplifier (ExecutionGraph, StepResult)
 runStepper' claims axioms node = do
     ReplState { claim, stepper } <- get
+    mvar <- Lens.use lensLogger
     gph <- getExecutionGraph
     gr@Strategy.ExecutionGraph { graph = innerGraph } <-
-        liftSimplifierWithLogger $ stepper claim claims axioms gph node
+        liftSimplifierWithLogger mvar $ stepper claim claims axioms gph node
     pure . (,) gr $ case Graph.suc innerGraph (unReplNode node) of
         []       -> NoResult
         [single] -> case getNodeState innerGraph single of
@@ -698,7 +693,8 @@ runUnifier
     -> m Simplifier (Maybe (Pretty.Doc ()))
 runUnifier first second = do
     unifier <- Lens.use lensUnifier
-    liftSimplifierWithLogger
+    mvar <- Lens.use lensLogger
+    liftSimplifierWithLogger mvar
         . runUnifierWithExplanation
         $ unifier first second
 

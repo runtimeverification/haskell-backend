@@ -7,7 +7,6 @@ import           Hedgehog hiding
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
-import           Test.Tasty.HUnit
 
 import           Data.Bits
                  ( complement, shift, xor, (.&.), (.|.) )
@@ -52,7 +51,7 @@ testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         let expect = asPattern $ impl a
-        actual <- evaluate $ mkApp intSort symb (asInternal <$> [a])
+        actual <- evaluateT $ mkApp intSort symb (asInternal <$> [a])
         (===) expect actual
   where
     Attribute.Symbol
@@ -74,7 +73,7 @@ testBinary symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = asPattern $ impl a b
-        actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, b])
+        actual <- evaluateT $ mkApp intSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
     Attribute.Symbol
@@ -96,7 +95,7 @@ testComparison symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = Test.Bool.asPattern $ impl a b
-        actual <- evaluate $ mkApp boolSort symb (asInternal <$> [a, b])
+        actual <- evaluateT $ mkApp boolSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
     Attribute.Symbol
@@ -117,7 +116,7 @@ testPartialUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         let expect = asPartialPattern $ impl a
-        actual <- evaluate $ mkApp intSort symb (asInternal <$> [a])
+        actual <- evaluateT $ mkApp intSort symb (asInternal <$> [a])
         (===) expect actual
   where
     Attribute.Symbol
@@ -139,7 +138,7 @@ testPartialBinary symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = asPartialPattern $ impl a b
-        actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, b])
+        actual <- evaluateT $ mkApp intSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
     Attribute.Symbol
@@ -161,7 +160,7 @@ testPartialBinaryZero symb impl =
     testPropertyWithSolver (Text.unpack name ++ " zero") $ do
         a <- forAll genInteger
         let expect = asPartialPattern $ impl a 0
-        actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, 0])
+        actual <- evaluateT $ mkApp intSort symb (asInternal <$> [a, 0])
         (===) expect actual
   where
     Attribute.Symbol
@@ -184,7 +183,7 @@ testPartialTernary symb impl =
         b <- forAll genInteger
         c <- forAll genInteger
         let expect = asPartialPattern $ impl a b c
-        actual <- evaluate $ mkApp intSort symb (asInternal <$> [a, b, c])
+        actual <- evaluateT $ mkApp intSort symb (asInternal <$> [a, b, c])
         (===) expect actual
   where
     Attribute.Symbol
@@ -363,44 +362,44 @@ testInt name = testSymbolWithSolver evaluate name intSort
 -- | "\equal"ed internal Integers that are not equal
 test_unifyEqual_NotEqual :: TestTree
 test_unifyEqual_NotEqual =
-    testCaseWithSolver "unifyEqual BuiltinInteger: Not Equal" $ \solver -> do
+    testCaseWithSMT "unifyEqual BuiltinInteger: Not Equal" $ do
         let dv1 = asInternal 1
             dv2 = asInternal 2
-        actual <- evaluateWith solver $ mkEquals_ dv1 dv2
-        assertEqual "" bottom actual
+        actual <- evaluate $ mkEquals_ dv1 dv2
+        assertEqual' "" bottom actual
 
 -- | "\equal"ed internal Integers that are equal
 test_unifyEqual_Equal :: TestTree
 test_unifyEqual_Equal =
-    testCaseWithSolver "unifyEqual BuiltinInteger: Equal" $ \solver -> do
+    testCaseWithSMT "unifyEqual BuiltinInteger: Equal" $ do
         let dv1 = asInternal 2
-        actual <- evaluateWith solver $ mkEquals_ dv1 dv1
-        assertEqual "" top actual
+        actual <- evaluate $ mkEquals_ dv1 dv1
+        assertEqual' "" top actual
 
 -- | "\and"ed internal Integers that are not equal
 test_unifyAnd_NotEqual :: TestTree
 test_unifyAnd_NotEqual =
-    testCaseWithSolver "unifyAnd BuiltinInteger: Not Equal" $ \solver -> do
+    testCaseWithSMT "unifyAnd BuiltinInteger: Not Equal" $ do
         let dv1 = asInternal 1
             dv2 = asInternal 2
-        actual <- evaluateWith solver $ mkAnd dv1 dv2
-        assertEqual "" bottom actual
+        actual <- evaluate $ mkAnd dv1 dv2
+        assertEqual' "" bottom actual
 
 -- | "\and"ed internal Integers that are equal
 test_unifyAnd_Equal :: TestTree
 test_unifyAnd_Equal =
-    testCaseWithSolver "unifyAnd BuiltinInteger: Equal" $ \solver -> do
+    testCaseWithSMT "unifyAnd BuiltinInteger: Equal" $ do
         let dv1 = asInternal 2
-        actual <- evaluateWith solver $ mkAnd dv1 dv1
-        assertEqual "" (pure dv1) actual
+        actual <- evaluate $ mkAnd dv1 dv1
+        assertEqual' "" (pure dv1) actual
 
 -- | "\and"ed then "\equal"ed internal Integers that are equal
 test_unifyAndEqual_Equal :: TestTree
 test_unifyAndEqual_Equal =
-    testCaseWithSolver "unifyAnd BuiltinInteger: Equal" $ \solver -> do
+    testCaseWithSMT "unifyAnd BuiltinInteger: Equal" $ do
         let dv = asInternal 0
-        actual <- evaluateWith solver $ mkEquals_ dv $  mkAnd dv dv
-        assertEqual "" top actual
+        actual <- evaluate $ mkEquals_ dv $  mkAnd dv dv
+        assertEqual' "" top actual
 
 -- | Internal Integer "\and"ed with builtin function applied to variable
 test_unifyAnd_Fn :: TestTree
@@ -415,7 +414,9 @@ test_unifyAnd_Fn =
                     , predicate = makeEqualsPredicate dv fnPat
                     , substitution = mempty
                     }
-        (===) expect =<< evaluate (mkAnd dv fnPat)
+        actual <- evaluateT $ mkAnd dv fnPat
+        (===) expect actual
+
 
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> genInteger)

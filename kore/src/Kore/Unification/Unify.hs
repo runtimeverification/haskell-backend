@@ -3,21 +3,29 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
 
-module Kore.Unification.Unify where
+module Kore.Unification.Unify
+    ( MonadUnify (..)
+    , UnifierTT (..)
+    , fromExceptT
+    , runUnifierT
+    , Unifier
+    , runUnifier
+    , maybeUnifier
+    ) where
 
 import           Control.Applicative
                  ( Alternative )
 import           Control.Monad
                  ( MonadPlus )
 import qualified Control.Monad.Except as Error
-import           Control.Monad.Reader.Class
-                 ( MonadReader (..) )
 import           Control.Monad.Trans.Class
                  ( MonadTrans )
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Identity
                  ( IdentityT, runIdentityT )
+import           Control.Monad.Trans.Maybe
+                 ( MaybeT (MaybeT) )
 import           Data.Text.Prettyprint.Doc
                  ( Doc )
 
@@ -25,19 +33,16 @@ import           Kore.Internal.TermLike
                  ( SortedVariable, TermLike )
 import qualified Kore.Logger as Log
 import           Kore.Step.Simplification.Data
-                 ( BranchT, Environment (..), Simplifier )
+                 ( BranchT, Simplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather, scatter )
 import           Kore.Unification.Error
 import           Kore.Unparser
                  ( Unparse )
 
--- | This monad is used throughout the step and unification modules. Its main
+-- | @MonadUnify@ is used throughout the step and unification modules. Its main
 -- goal is to abstract over an 'ExceptT' over a 'UnificationOrSubstitutionError'
 -- running in a 'Simplifier' monad.
---
--- The variable parameter is required in order to allow mapping the variable
--- type via 'mapVariable'.
 --
 -- 'MonadUnify' chooses its error/left type to 'UnificationOrSubstitutionError'
 -- and provides functions to throw these errors. The point of this is to be able
@@ -110,16 +115,6 @@ instance
     gather = UnifierTT . Monad.Trans.lift . BranchT.gather . getUnifier
     scatter = UnifierTT . BranchT.scatter
 
-instance
-    ( MonadReader
-        Environment
-        (m (ExceptT UnificationOrSubstitutionError Simplifier))
-    , MonadTrans m
-    )
-    => MonadReader Environment (UnifierTT m)
-  where
-    ask = liftSimplifier ask
-    local f (UnifierTT ma) = UnifierTT $ local f ma
 
 instance MonadPlus (UnifierTT m) where
 
@@ -132,10 +127,12 @@ instance
     => Log.WithLog Log.LogMessage (UnifierTT m)
   where
     askLogAction = do
-        Log.LogAction logger <- liftSimplifier $ logger <$> ask
-        return $ Log.LogAction (\msg -> liftSimplifier $ logger msg)
+        Log.LogAction logger <- liftSimplifier $ Log.askLogAction
+        return
+            . Log.hoistLogAction liftSimplifier
+            $ Log.LogAction logger
 
-    withLog f = UnifierTT . Log.withLog f . getUnifier
+    localLogAction f = UnifierTT . Log.localLogAction f . getUnifier
 
 -- | Lift an 'ExceptT' to a 'MonadUnify'.
 fromExceptT
@@ -160,3 +157,9 @@ runUnifierT
     -> UnifierTT m a
     -> Simplifier (Either UnificationOrSubstitutionError b)
 runUnifierT runM = runExceptT . runM . BranchT.gather . getUnifier
+
+{- | Run a 'Unifier', returning 'Nothing' upon error.
+ -}
+maybeUnifier :: Unifier a -> MaybeT Simplifier [a]
+maybeUnifier =
+    MaybeT . fmap (either (const Nothing) Just) . runUnifier
