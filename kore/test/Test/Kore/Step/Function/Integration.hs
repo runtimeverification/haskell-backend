@@ -8,9 +8,6 @@ import Test.Tasty.HUnit
 import qualified Data.Map as Map
 
 import           Data.Sup
-import           Kore.Attribute.Symbol
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
@@ -19,9 +16,6 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
-import           Kore.Step.Axiom.Data
-import           Kore.Step.Axiom.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
 import           Kore.Step.Axiom.EvaluationStrategy
                  ( builtinEvaluation, definitionEvaluation,
                  firstFullEvaluation, simplifierWithFallback )
@@ -34,12 +28,11 @@ import           Kore.Step.Rule
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..), rulePattern )
 import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier (..), Simplifier, TermLikeSimplifier,
                  evalSimplifier )
-import qualified Kore.Step.Simplification.Predicate as Predicate
-                 ( create )
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
-                 ( create )
 import qualified Kore.Step.Simplification.TermLike as TermLike
                  ( simplify )
 import qualified Kore.Unification.Substitution as Substitution
@@ -62,7 +55,6 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                Mock.metadataTools
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (axiomEvaluator
@@ -82,7 +74,6 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                Mock.metadataTools
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (builtinEvaluation $ axiomEvaluator
@@ -103,7 +94,6 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                Mock.metadataTools
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (simplifierWithFallback
@@ -130,12 +120,11 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                Mock.metadataTools
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (simplifierWithFallback
                         (builtinEvaluation $ BuiltinAndAxiomSimplifier
-                            (\_ _ _ _ _ -> notApplicableAxiomEvaluator)
+                            (\_ _ _ _ -> notApplicableAxiomEvaluator)
                         )
                         ( axiomEvaluator
                             (Mock.functionalConstr10 (mkVar Mock.x))
@@ -155,7 +144,6 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                Mock.metadataTools
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     ( axiomEvaluator
@@ -178,7 +166,6 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                Mock.metadataTools
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     ( axiomEvaluator
@@ -208,7 +195,6 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                Mock.metadataTools
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     ( axiomEvaluator
@@ -233,7 +219,6 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                Mock.metadataTools
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.cId)
                     ( appliedMockEvaluator Conditional
@@ -258,7 +243,6 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                Mock.metadataTools
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.cId
                         , appliedMockEvaluator Conditional
@@ -293,7 +277,6 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                Mock.metadataTools
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.cId
                         , axiomEvaluator Mock.c Mock.d
@@ -327,7 +310,6 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                Mock.metadataTools
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.cId
                         , appliedMockEvaluator Conditional
@@ -372,7 +354,6 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                Mock.metadataTools
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.fId
                         , appliedMockEvaluator Conditional
@@ -407,7 +388,6 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                Mock.metadataTools
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.fId
                         , simplifierWithFallback
@@ -439,7 +419,6 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                Mock.metadataTools
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.fId
                         , simplifierWithFallback
@@ -481,7 +460,6 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                Mock.metadataTools
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.fId
                         , simplifierWithFallback
@@ -513,7 +491,6 @@ test_functionIntegration =
                     }
         actual <-
             evaluate
-                Mock.metadataTools
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.fId
                         , simplifierWithFallback
@@ -578,28 +555,18 @@ mapVariables =
 
 mockEvaluator
     :: AttemptedAxiom variable
-    -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> Simplifier (AttemptedAxiom variable)
-mockEvaluator evaluation _ _ _ _ _ = return evaluation
+mockEvaluator evaluation _ _ _ _ = return evaluation
 
 evaluate
-    :: SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifierMap
+    :: BuiltinAndAxiomSimplifierMap
     -> TermLike Variable
     -> IO (Pattern Variable)
-evaluate metadataTools functionIdToEvaluator patt =
+evaluate functionIdToEvaluator patt =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
-    $ TermLike.simplify
-        metadataTools substitutionSimplifier functionIdToEvaluator patt
-  where
-    substitutionSimplifier :: PredicateSimplifier
-    substitutionSimplifier =
-        Predicate.create
-            metadataTools patternSimplifier functionIdToEvaluator
-    patternSimplifier :: TermLikeSimplifier
-    patternSimplifier = Simplifier.create metadataTools functionIdToEvaluator
+    $ evalSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
+    $ TermLike.simplify patt

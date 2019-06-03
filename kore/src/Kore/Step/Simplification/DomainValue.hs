@@ -11,8 +11,6 @@ module Kore.Step.Simplification.DomainValue
     ( simplify
     ) where
 
-import Kore.IndexedModule.MetadataTools
-       ( SmtMetadataTools )
 import Kore.Internal.Conditional
        ( Conditional )
 import Kore.Internal.MultiOr as MultiOr
@@ -30,10 +28,9 @@ simplify
        , Unparse variable
        , SortedVariable variable
        )
-    => SmtMetadataTools attrs
-    -> DomainValue Sort (OrPattern variable)
+    => DomainValue Sort (OrPattern variable)
     -> OrPattern variable
-simplify _ builtin =
+simplify builtin =
     MultiOr.filterOr $ do
         child <- simplifyDomainValue builtin
         return (mkDomainValue <$> child)

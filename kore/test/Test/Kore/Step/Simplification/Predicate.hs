@@ -19,7 +19,6 @@ import qualified Kore.Internal.Predicate as Conditional
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
-import           Kore.Step.Axiom.Data
 import           Kore.Step.Axiom.EvaluationStrategy
                  ( firstFullEvaluation )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -27,8 +26,6 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import           Kore.Step.Simplification.Data hiding
                  ( runSimplifier )
 import qualified Kore.Step.Simplification.Predicate as PSSimplifier
-                 ( create )
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
@@ -273,15 +270,12 @@ runSimplifier
 runSimplifier patternSimplifierMap predicate =
     fmap MultiOr.make
     $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
+    $ evalSimplifier env
     $ gather
     $ simplifier predicate
   where
-    PredicateSimplifier simplifier =
-        PSSimplifier.create
-            Mock.metadataTools
-            (Simplifier.create Mock.metadataTools patternSimplifierMap)
-            patternSimplifierMap
+    env = Mock.env { simplifierAxioms = patternSimplifierMap }
+    PredicateSimplifier simplifier = PSSimplifier.create
 
 simplificationEvaluator
     :: [BuiltinAndAxiomSimplifier]
@@ -298,7 +292,7 @@ makeEvaluator
     -> BuiltinAndAxiomSimplifier
 makeEvaluator mapping =
     BuiltinAndAxiomSimplifier
-        $ const $ const $ const $ const $ simpleEvaluator mapping
+    $ const $ const $ const $ simpleEvaluator mapping
 
 simpleEvaluator
     ::  ( FreshVariable variable

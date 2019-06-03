@@ -13,20 +13,15 @@ module Kore.Step.Simplification.Equals
     , simplify
     ) where
 
-import           Control.Error
-                 ( MaybeT (..) )
-import           Control.Monad
-                 ( foldM )
-import           Data.List
-                 ( foldl' )
-import           Data.Maybe
-                 ( fromMaybe )
-import qualified Data.Traversable as Traversable
+import Control.Error
+       ( MaybeT (..) )
+import Control.Monad
+       ( foldM )
+import Data.List
+       ( foldl' )
+import Data.Maybe
+       ( fromMaybe )
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -40,8 +35,6 @@ import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeAndPredicate,
                  makeEqualsPredicate, makeNotPredicate )
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import qualified Kore.Step.Simplification.And as And
@@ -50,8 +43,8 @@ import qualified Kore.Step.Simplification.AndTerms as AndTerms
                  ( termEquals )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, makeEvaluateTerm )
-import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+import           Kore.Step.Simplification.Data as Simplifier hiding
+                 ( Equals )
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate )
 import qualified Kore.Step.Simplification.Implies as Implies
@@ -146,31 +139,10 @@ simplify
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Equals Sort (OrPattern variable)
+    => Equals Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
-simplify
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplfier
-    Equals
-        { equalsFirst = first
-        , equalsSecond = second
-        }
-  =
-    simplifyEvaluated
-        tools
-        substitutionSimplifier
-        simplifier
-        axiomIdToSimplfier
-        first
-        second
+simplify Equals { equalsFirst = first, equalsSecond = second } =
+    simplifyEvaluated first second
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -192,65 +164,30 @@ simplifyEvaluated
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> OrPattern variable
+    => OrPattern variable
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
-simplifyEvaluated
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplfier
-    first
-    second
+simplifyEvaluated first second
   | first == second = return OrPattern.top
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
-  | otherwise =
-    case ( firstPatterns, secondPatterns )
-      of
-        ([firstP], [secondP]) ->
-            makeEvaluate
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplfier
-                firstP
-                secondP
+  | otherwise = do
+    tools <- Simplifier.askMetadataTools
+    let isFunctionConditional Conditional {term} = isFunctionPattern tools term
+    case (firstPatterns, secondPatterns) of
+        ([firstP], [secondP]) -> makeEvaluate firstP secondP
         ([firstP], _)
             | isFunctionConditional firstP ->
-                makeEvaluateFunctionalOr
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplfier
-                    firstP
-                    secondPatterns
+                makeEvaluateFunctionalOr firstP secondPatterns
         (_, [secondP])
             | isFunctionConditional secondP ->
-                makeEvaluateFunctionalOr
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplfier
-                    secondP
-                    firstPatterns
+                makeEvaluateFunctionalOr secondP firstPatterns
         _ ->
             makeEvaluate
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplfier
                 (OrPattern.toPattern first)
                 (OrPattern.toPattern second)
   where
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second
-    isFunctionConditional Conditional {term} = isFunctionPattern tools term
 
 makeEvaluateFunctionalOr
     :: forall variable .
@@ -260,62 +197,19 @@ makeEvaluateFunctionalOr
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Pattern variable
+    => Pattern variable
     -> [Pattern variable]
     -> Simplifier (OrPattern variable)
-makeEvaluateFunctionalOr
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplfier
-    first
-    seconds
-  = do
-    firstCeil <-
-        Ceil.makeEvaluate
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            first
-    secondCeilsWithProofs <- mapM
-        (Ceil.makeEvaluate
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-        )
-        seconds
-    firstNotCeil <-
-        Not.simplifyEvaluated
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            firstCeil
+makeEvaluateFunctionalOr first seconds = do
+    firstCeil <- Ceil.makeEvaluate first
+    secondCeilsWithProofs <- mapM Ceil.makeEvaluate seconds
+    firstNotCeil <- Not.simplifyEvaluated firstCeil
     let secondCeils = secondCeilsWithProofs
-    secondNotCeils <-
-        Traversable.for secondCeils
-        $ Not.simplifyEvaluated
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
+    secondNotCeils <- traverse Not.simplifyEvaluated secondCeils
     let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
     allAreBottom <-
         foldM
-            (And.simplifyEvaluated
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplfier
-            )
+            And.simplifyEvaluated
             (OrPattern.fromPatterns [Pattern.top])
             (firstNotCeil : secondNotCeils)
     firstEqualsSeconds <-
@@ -324,37 +218,17 @@ makeEvaluateFunctionalOr
             (zip seconds secondCeils)
     oneIsNotBottomEquals <-
         foldM
-            (And.simplifyEvaluated
-                tools substitutionSimplifier simplifier axiomIdToSimplfier
-            )
-        firstCeil
-        (oneNotBottom : firstEqualsSeconds)
-    return
-        ( MultiOr.merge allAreBottom oneIsNotBottomEquals
-
-        )
+            And.simplifyEvaluated
+            firstCeil
+            (oneNotBottom : firstEqualsSeconds)
+    return (MultiOr.merge allAreBottom oneIsNotBottomEquals)
   where
     makeEvaluateEqualsIfSecondNotBottom
         Conditional {term = firstTerm}
         (Conditional {term = secondTerm}, secondCeil)
       = do
-        equality <-
-            makeEvaluateTermsAssumesNoBottom
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplfier
-                firstTerm
-                secondTerm
-        result <-
-            Implies.simplifyEvaluated
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplfier
-                secondCeil
-                equality
-        return result
+        equality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
+        Implies.simplifyEvaluated secondCeil equality
 
 {-| evaluates an 'Equals' given its two 'Pattern' children.
 
@@ -367,31 +241,15 @@ makeEvaluate
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Pattern variable
+    => Pattern variable
     -> Pattern variable
     -> Simplifier (OrPattern variable)
 makeEvaluate
-    _
-    _
-    _
-    _
-    first@Conditional
-        { term = Top_ _ }
-    second@Conditional
-        { term = Top_ _ }
+    first@Conditional { term = Top_ _ }
+    second@Conditional { term = Top_ _ }
   =
     return (Iff.makeEvaluate first second)
 makeEvaluate
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplfier
     Conditional
         { term = firstTerm
         , predicate = PredicateTrue
@@ -403,84 +261,23 @@ makeEvaluate
         , substitution = (Substitution.unwrap -> [])
         }
   = do
-    result <-
-        makeEvaluateTermsToPredicate
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            firstTerm
-            secondTerm
+    result <- makeEvaluateTermsToPredicate firstTerm secondTerm
     return (Pattern.fromPredicate <$> result)
 
 makeEvaluate
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplfier
     first@Conditional { term = firstTerm }
     second@Conditional { term = secondTerm }
   = do
-    firstCeil <-
-        Ceil.makeEvaluate
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            first { term = if termsAreEqual then mkTop_ else firstTerm }
-    secondCeil <-
-        Ceil.makeEvaluate
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            second { term = if termsAreEqual then mkTop_ else secondTerm }
-    firstCeilNegation <-
-        Not.simplifyEvaluated
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            firstCeil
-    secondCeilNegation <-
-        Not.simplifyEvaluated
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            secondCeil
-    termEquality <-
-        makeEvaluateTermsAssumesNoBottom
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            firstTerm
-            secondTerm
-    negationAnd <-
-        And.simplifyEvaluated
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            firstCeilNegation
-            secondCeilNegation
-    ceilAnd <-
-        And.simplifyEvaluated
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            firstCeil
-            secondCeil
-    equalityAnd <-
-        And.simplifyEvaluated
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            termEquality
-            ceilAnd
+    let first' = first { term = if termsAreEqual then mkTop_ else firstTerm }
+    firstCeil <- Ceil.makeEvaluate first'
+    let second' = second { term = if termsAreEqual then mkTop_ else secondTerm }
+    secondCeil <- Ceil.makeEvaluate second'
+    firstCeilNegation <- Not.simplifyEvaluated firstCeil
+    secondCeilNegation <- Not.simplifyEvaluated secondCeil
+    termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
+    negationAnd <- And.simplifyEvaluated firstCeilNegation secondCeilNegation
+    ceilAnd <- And.simplifyEvaluated firstCeil secondCeil
+    equalityAnd <- And.simplifyEvaluated termEquality ceilAnd
     return $ Or.simplifyEvaluated equalityAnd negationAnd
   where
     termsAreEqual = firstTerm == secondTerm
@@ -494,32 +291,13 @@ makeEvaluateTermsAssumesNoBottom
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> Simplifier (OrPattern variable)
-makeEvaluateTermsAssumesNoBottom
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplfier
-    firstTerm
-    secondTerm
-  = do
+makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
     result <-
         runMaybeT
-        $ makeEvaluateTermsAssumesNoBottomMaybe
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            firstTerm
-            secondTerm
+        $ makeEvaluateTermsAssumesNoBottomMaybe firstTerm secondTerm
     (return . fromMaybe def) result
   where
     def =
@@ -540,31 +318,11 @@ makeEvaluateTermsAssumesNoBottomMaybe
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> MaybeT Simplifier (OrPattern variable)
-makeEvaluateTermsAssumesNoBottomMaybe
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplfier
-    first
-    second
-  = do
-    result <-
-        AndTerms.termEquals
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            first
-            second
+makeEvaluateTermsAssumesNoBottomMaybe first second = do
+    result <- AndTerms.termEquals first second
     return (Pattern.fromPredicate <$> result)
 
 {-| Combines two terms with 'Equals' into a predicate-substitution.
@@ -584,28 +342,13 @@ makeEvaluateTermsToPredicate
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> Simplifier (OrPredicate variable)
-makeEvaluateTermsToPredicate
-    tools substitutionSimplifier simplifier axiomIdToSimplfier first second
+makeEvaluateTermsToPredicate first second
   | first == second = return OrPredicate.top
   | otherwise = do
-    result <-
-        runMaybeT
-        $ AndTerms.termEquals
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplfier
-            first
-            second
+    result <- runMaybeT $ AndTerms.termEquals first second
     case result of
         Nothing ->
             return
@@ -613,20 +356,8 @@ makeEvaluateTermsToPredicate
                 $ Predicate.fromPredicate
                 $ makeEqualsPredicate first second
         Just predicatedOr -> do
-            firstCeilOr <-
-                Ceil.makeEvaluateTerm
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplfier
-                    first
-            secondCeilOr <-
-                Ceil.makeEvaluateTerm
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplfier
-                    second
+            firstCeilOr <- Ceil.makeEvaluateTerm first
+            secondCeilOr <- Ceil.makeEvaluateTerm second
             let
                 toPredicateSafe
                     ps@Conditional {term = (), predicate, substitution}

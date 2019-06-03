@@ -48,8 +48,6 @@ import           Kore.Step
 import           Kore.Step.Search
                  ( SearchType (..) )
 import qualified Kore.Step.Search as Search
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
 import           Kore.Step.SMT.Lemma
 import           Kore.Unparser
                  ( unparse )
@@ -352,9 +350,7 @@ mainWithOptions
         (exitCode, finalPattern) <-
             clockSomethingIO "Executing"
             $ withLogger koreLogOptions (\logger ->
-                SMT.runSMT smtConfig logger
-                $ evalSimplifier
-                $ do
+                SMT.runSMT smtConfig logger $ do
                     give
                         (MetadataTools.build indexedModule)
                         (declareSMTLemmas indexedModule)

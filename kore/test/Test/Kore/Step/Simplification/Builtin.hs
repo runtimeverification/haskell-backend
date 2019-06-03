@@ -11,8 +11,6 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -32,7 +30,6 @@ test_simplify =
             "Expected \\bottom to propagate to the top level"
             (OrPattern.fromPatterns [])
             (evaluate
-                Mock.emptyMetadataTools
                 (mkMapDomainValue [(Mock.aConcrete, bottom)])
             )
         )
@@ -41,7 +38,6 @@ test_simplify =
             "Expected \\bottom to propagate to the top level"
             (OrPattern.fromPatterns [])
             (evaluate
-                Mock.emptyMetadataTools
                 (mkListDomainValue [bottom])
             )
         )
@@ -71,8 +67,5 @@ mkListDomainValue children =
         , builtinListChild = Seq.fromList children
         }
 
-evaluate
-    :: SmtMetadataTools attrs
-    -> Builtin (OrPattern Variable)
-    -> OrPattern Variable
+evaluate :: Builtin (OrPattern Variable) -> OrPattern Variable
 evaluate = simplify

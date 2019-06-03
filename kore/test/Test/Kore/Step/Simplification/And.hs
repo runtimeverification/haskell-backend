@@ -5,8 +5,6 @@ module Test.Kore.Step.Simplification.And
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import qualified Data.Map as Map
-
 import           Kore.Internal.MultiOr
                  ( MultiOr (MultiOr) )
 import           Kore.Internal.OrPattern
@@ -19,9 +17,7 @@ import           Kore.Predicate.Predicate
                  makeFalsePredicate, makeTruePredicate )
 import           Kore.Step.Simplification.And
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier, gather )
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
-                 ( create )
+                 ( Env (..), evalSimplifier, gather )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -412,13 +408,8 @@ findSort ( Conditional {term} : _ ) = termLikeSort term
 evaluate :: And Sort (OrPattern Variable) -> IO (OrPattern Variable)
 evaluate patt =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
-    $ simplify
-        Mock.metadataTools
-        (Mock.substitutionSimplifier Mock.metadataTools)
-        (Simplifier.create Mock.metadataTools Map.empty)
-        Map.empty
-        patt
+    $ evalSimplifier mockEnv
+    $ simplify patt
 
 evaluatePatterns
     :: Pattern Variable
@@ -427,12 +418,8 @@ evaluatePatterns
 evaluatePatterns first second =
     fmap OrPattern.fromPatterns
     $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
-    $ gather
-    $ makeEvaluate
-        Mock.metadataTools
-        (Mock.substitutionSimplifier Mock.metadataTools)
-        (Simplifier.create Mock.metadataTools Map.empty)
-        Map.empty
-        first
-        second
+    $ evalSimplifier mockEnv
+    $ gather $ makeEvaluate first second
+
+mockEnv :: Env
+mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }

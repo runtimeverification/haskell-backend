@@ -21,10 +21,6 @@ import Data.List
 import GHC.Stack
        ( HasCallStack )
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
 import qualified Kore.Internal.Conditional as Conditional
@@ -33,13 +29,10 @@ import           Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
                  ( termAnd )
-import           Kore.Step.Simplification.Data
-                 ( BranchT, PredicateSimplifier, Simplifier,
-                 TermLikeSimplifier, gather, scatter )
+import           Kore.Step.Simplification.Data hiding
+                 ( And )
 import qualified Kore.Step.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -87,31 +80,10 @@ simplify
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> And Sort (OrPattern variable)
+    => And Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
-simplify
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    And
-        { andFirst = first
-        , andSecond = second
-        }
-  =
-    simplifyEvaluated
-        tools
-        substitutionSimplifier
-        simplifier
-        axiomIdToSimplifier
-        first
-        second
+simplify And { andFirst = first, andSecond = second } =
+    simplifyEvaluated first second
 
 {-| simplifies an And given its two 'OrPattern' children.
 
@@ -137,22 +109,10 @@ simplifyEvaluated
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> OrPattern variable
+    => OrPattern variable
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
-simplifyEvaluated
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    first
-    second
+simplifyEvaluated first second
   | OrPattern.isFalse first  = return OrPattern.bottom
   | OrPattern.isFalse second = return OrPattern.bottom
   | OrPattern.isTrue first   = return second
@@ -162,13 +122,7 @@ simplifyEvaluated
         gather $ do
             first1 <- scatter first
             second1 <- scatter second
-            makeEvaluate
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                first1
-                second1
+            makeEvaluate first1 second1
     return (OrPattern.fromPatterns result)
 
 {-|'makeEvaluate' simplifies an 'And' of 'Pattern's.
@@ -183,28 +137,14 @@ makeEvaluate
         , FreshVariable variable
         , HasCallStack
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern variable
+    => Pattern variable
     -> Pattern variable
     -> BranchT Simplifier (Pattern variable)
-makeEvaluate
-    tools substitutionSimplifier simplifier axiomIdToSimplifier first second
+makeEvaluate first second
   | Pattern.isBottom first || Pattern.isBottom second = empty
   | Pattern.isTop first = return second
   | Pattern.isTop second = return first
-  | otherwise =
-    makeEvaluateNonBool
-        tools
-        substitutionSimplifier
-        simplifier
-        axiomIdToSimplifier
-        first
-        second
+  | otherwise = makeEvaluateNonBool first second
 
 makeEvaluateNonBool
     ::  ( SortedVariable variable
@@ -214,47 +154,21 @@ makeEvaluateNonBool
         , FreshVariable variable
         , HasCallStack
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern variable
+    => Pattern variable
     -> Pattern variable
     -> BranchT Simplifier (Pattern variable)
 makeEvaluateNonBool
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
     first@Conditional { term = firstTerm }
     second@Conditional { term = secondTerm }
   = do
-    terms <-
-        makeTermAnd
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            firstTerm
-            secondTerm
+    terms <- AndTerms.termAnd firstTerm secondTerm
     let firstCondition = Conditional.withoutTerm first
         secondCondition = Conditional.withoutTerm second
         initialConditions = firstCondition <> secondCondition
         merged = Conditional.andCondition terms initialConditions
-    normalized <-
-        Substitution.normalize
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            merged
-    return
-        (applyAndIdempotence <$> normalized)
-            { predicate =
-                applyAndIdempotence <$> Conditional.predicate normalized
-            }
+    normalized <- Substitution.normalize merged
+    return (applyAndIdempotence <$> normalized)
+        { predicate = applyAndIdempotence <$> Conditional.predicate normalized }
 
 applyAndIdempotence
     ::  ( Ord variable
@@ -269,21 +183,3 @@ applyAndIdempotence patt =
   where
     children (And_ _ p1 p2) = children p1 ++ children p2
     children p = [p]
-
-makeTermAnd
-    ::  ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> TermLike variable
-    -> TermLike variable
-    -> BranchT Simplifier (Pattern variable)
-makeTermAnd = AndTerms.termAnd

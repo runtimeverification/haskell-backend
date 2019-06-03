@@ -10,19 +10,12 @@ module Kore.ModelChecker.Simplification
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike as TermLike
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyAndRemoveTopExists )
 import           Kore.TopBottom
@@ -31,23 +24,11 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 checkImplicationIsTop
-    :: SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Pattern Variable
+    :: Pattern Variable
     -> TermLike Variable
     -> Simplifier Bool
-checkImplicationIsTop
-    tools
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifers
-    lhs
-    rhs
-  = case stripForallQuantifiers rhs of
+checkImplicationIsTop lhs rhs =
+    case stripForallQuantifiers rhs of
         ( forallQuantifiers, Implies_ _ implicationLHS implicationRHS ) -> do
             let rename = refreshVariables lhsFreeVariables forallQuantifiers
                 subst = mkVar <$> rename
@@ -64,13 +45,7 @@ checkImplicationIsTop
                     , predicate = Predicate.makeTruePredicate
                     , substitution = mempty
                     }
-            orResult <-
-                Pattern.simplifyAndRemoveTopExists
-                    tools
-                    predicateSimplifier
-                    patternSimplifier
-                    axiomSimplifers
-                    result
+            orResult <- Pattern.simplifyAndRemoveTopExists result
             return (isBottom orResult)
         _ -> (error . show . Pretty.vsep)
              [ "Not implemented error:"

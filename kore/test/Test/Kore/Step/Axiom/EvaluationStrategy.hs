@@ -9,9 +9,6 @@ import           Data.Default
                  ( def )
 import qualified Data.Map as Map
 
-import           Kore.Attribute.Symbol
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
                  ( Conditional (Conditional) )
@@ -21,13 +18,6 @@ import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, makeEqualsPredicate,
                  makeNotPredicate, makeTruePredicate )
-import           Kore.Step.Axiom.Data
-                 ( AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (..), CommonAttemptedAxiom )
-import           Kore.Step.Axiom.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
 import           Kore.Step.Axiom.EvaluationStrategy
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
@@ -36,8 +26,14 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier (..), TermLikeSimplifier,
-                 evalSimplifier )
+                 ( AttemptedAxiomResults (AttemptedAxiomResults),
+                 BuiltinAndAxiomSimplifier (..), CommonAttemptedAxiom )
+import           Kore.Step.Simplification.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import           Kore.Step.Simplification.Data
+                 ( evalSimplifier )
+import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -66,7 +62,6 @@ test_definitionEvaluation =
                         }
         actual <-
             evaluate
-                Mock.metadataTools
                 (definitionEvaluation
                     [ axiom
                         (Mock.functionalConstr10 (mkVar Mock.x))
@@ -98,7 +93,6 @@ test_definitionEvaluation =
                     }
         actual <-
             evaluate
-                Mock.metadataTools
                 (definitionEvaluation
                     [ axiom
                         (Mock.functionalConstr10 Mock.a)
@@ -119,7 +113,6 @@ test_definitionEvaluation =
                         }
         actual <-
             evaluate
-                Mock.metadataTools
                 (definitionEvaluation
                     [ axiom
                         (Mock.functionalConstr10 Mock.a)
@@ -164,7 +157,7 @@ test_definitionEvaluation =
                                 }
                             ]
                     }
-        actual <- evaluate Mock.metadataTools evaluator initial
+        actual <- evaluate evaluator initial
         assertEqualWithExplanation "" expect actual
     ]
 
@@ -185,7 +178,6 @@ test_firstFullEvaluation =
                         }
         actual <-
             evaluate
-                Mock.metadataTools
                 (firstFullEvaluation
                     [ axiomEvaluator
                         (Mock.functionalConstr10 (mkVar Mock.x))
@@ -209,7 +201,6 @@ test_firstFullEvaluation =
                         }
         actual <-
             evaluate
-                Mock.metadataTools
                 (firstFullEvaluation
                     [ axiomEvaluator
                         (Mock.functionalConstr10 Mock.b)
@@ -239,7 +230,6 @@ test_firstFullEvaluation =
                         }
         actual <-
             evaluate
-                Mock.metadataTools
                 (firstFullEvaluation
                     [ axiomEvaluator
                         (Mock.functionalConstr10 Mock.b)
@@ -259,7 +249,6 @@ test_firstFullEvaluation =
             expect = AttemptedAxiom.NotApplicable
         actual <-
             evaluate
-                Mock.metadataTools
                 (firstFullEvaluation
                     [ axiomEvaluator
                         (Mock.functionalConstr10 Mock.b)
@@ -278,7 +267,6 @@ test_firstFullEvaluation =
                 "Unexpected simplification result with remainder"
             )
             (evaluate
-                Mock.metadataTools
                 (firstFullEvaluation
                     [ definitionEvaluation
                         [ axiom
@@ -299,7 +287,6 @@ test_firstFullEvaluation =
                 )
             )
             (evaluate
-                Mock.metadataTools
                 (firstFullEvaluation
                     [ definitionEvaluation
                         [ axiom
@@ -334,7 +321,6 @@ test_simplifierWithFallback =
                         }
         actual <-
             evaluate
-                Mock.metadataTools
                 (simplifierWithFallback
                     (axiomEvaluator
                         (Mock.functionalConstr10 Mock.a)
@@ -369,7 +355,6 @@ test_simplifierWithFallback =
                     }
         actual <-
             evaluate
-                Mock.metadataTools
                 (simplifierWithFallback
                     (definitionEvaluation
                         [ axiom
@@ -403,7 +388,6 @@ test_simplifierWithFallback =
                         }
         actual <-
             evaluate
-                Mock.metadataTools
                 (simplifierWithFallback
                     (axiomEvaluator
                         (Mock.functionalConstr10 Mock.a)
@@ -421,7 +405,6 @@ test_simplifierWithFallback =
             expect = AttemptedAxiom.NotApplicable
         actual <-
             evaluate
-                Mock.metadataTools
                 (simplifierWithFallback
                     (axiomEvaluator
                         (Mock.functionalConstr10 Mock.a)
@@ -454,7 +437,6 @@ test_builtinEvaluation =
                         }
         actual <-
             evaluate
-                Mock.metadataTools
                 (builtinEvaluation
                     (axiomEvaluator
                         (Mock.functionalConstr10 Mock.a)
@@ -469,7 +451,6 @@ test_builtinEvaluation =
                 "Expecting hook MAP.unit to reduce concrete pattern"
             )
             (evaluate
-                Mock.metadataTools
                 (builtinEvaluation failingEvaluator)
                 Mock.unitMap
             )
@@ -478,7 +459,7 @@ test_builtinEvaluation =
 
 failingEvaluator :: BuiltinAndAxiomSimplifier
 failingEvaluator =
-    BuiltinAndAxiomSimplifier $ \_ _ _ _ _ ->
+    BuiltinAndAxiomSimplifier $ \_ _ _ _ ->
         return AttemptedAxiom.NotApplicable
 
 axiomEvaluator
@@ -511,18 +492,13 @@ axiom left right predicate =
         }
 
 evaluate
-    :: SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifier
+    :: BuiltinAndAxiomSimplifier
     -> TermLike Variable
     -> IO (CommonAttemptedAxiom)
-evaluate metadataTools (BuiltinAndAxiomSimplifier simplifier) patt =
+evaluate (BuiltinAndAxiomSimplifier simplifier) patt =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
-    $ simplifier
-        metadataTools substitutionSimplifier patternSimplifier Map.empty patt
+    $ evalSimplifier Mock.env
+    $ simplifier substitutionSimplifier patternSimplifier Map.empty patt
   where
-    substitutionSimplifier :: PredicateSimplifier
-    substitutionSimplifier =
-        Predicate.create metadataTools patternSimplifier Map.empty
-    patternSimplifier :: TermLikeSimplifier
-    patternSimplifier = Simplifier.create metadataTools Map.empty
+    substitutionSimplifier = Predicate.create
+    patternSimplifier = Simplifier.create

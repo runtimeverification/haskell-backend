@@ -78,6 +78,7 @@ default-extensions:
   - DeriveFunctor
   - DeriveGeneric
   - DeriveTraversable
+  - DerivingVia
   - DuplicateRecordFields
   - EmptyCase
   - ExistentialQuantification

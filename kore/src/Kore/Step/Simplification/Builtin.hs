@@ -8,8 +8,6 @@ module Kore.Step.Simplification.Builtin
     ) where
 
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.Conditional
                  ( Conditional )
 import           Kore.Internal.MultiOr as MultiOr
@@ -27,10 +25,9 @@ simplify
        , Unparse variable
        , SortedVariable variable
        )
-    => SmtMetadataTools attrs
-    -> Builtin (OrPattern variable)
+    => Builtin (OrPattern variable)
     -> OrPattern variable
-simplify _ builtin =
+simplify builtin =
     MultiOr.filterOr $ do
         child <- simplifyBuiltin builtin
         return (mkBuiltin <$> child)

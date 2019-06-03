@@ -13,10 +13,6 @@ module Kore.Step.Simplification.AndPredicates
 
 import qualified Data.Foldable as Foldable
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.MultiAnd
                  ( MultiAnd )
 import qualified Kore.Internal.MultiAnd as MultiAnd
@@ -29,11 +25,8 @@ import           Kore.Internal.OrPredicate
                  ( OrPredicate )
 import           Kore.Internal.Pattern
                  ( Predicate )
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-                 ( BranchT, PredicateSimplifier, Simplifier,
-                 TermLikeSimplifier )
+                 ( BranchT, Simplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Substitution as Substitution
@@ -48,19 +41,9 @@ simplifyEvaluatedMultiPredicate
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> MultiAnd (OrPredicate variable)
+    => MultiAnd (OrPredicate variable)
     -> Simplifier (OrPredicate variable)
-simplifyEvaluatedMultiPredicate
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSubstitution
-    predicates
-  = do
+simplifyEvaluatedMultiPredicate predicates = do
     let
         crossProduct :: MultiOr [Predicate variable]
         crossProduct =
@@ -73,11 +56,4 @@ simplifyEvaluatedMultiPredicate
         :: [Predicate variable]
         -> BranchT Simplifier (Predicate variable)
     andPredicates predicates' =
-        normalize (Foldable.fold predicates')
-
-    normalize =
-        Substitution.normalize
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSubstitution
+        Substitution.normalize (Foldable.fold predicates')

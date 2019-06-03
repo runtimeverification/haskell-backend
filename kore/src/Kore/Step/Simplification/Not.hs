@@ -15,9 +15,6 @@ module Kore.Step.Simplification.Not
 
 import qualified Data.Foldable as Foldable
 
-import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.MultiAnd
                  ( MultiAnd )
@@ -33,12 +30,8 @@ import           Kore.Internal.TermLike hiding
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeNotPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Simplification.And as And
 import           Kore.Step.Simplification.Data
-                 ( BranchT, PredicateSimplifier, Simplifier,
-                 TermLikeSimplifier, gather, scatter )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -59,25 +52,9 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> Not Sort (OrPattern variable)
+    => Not Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
-simplify
-    tools
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
-    Not { notChild }
-  =
-    simplifyEvaluated
-        tools
-        predicateSimplifier
-        termSimplifier
-        axiomSimplifiers
-        notChild
+simplify Not { notChild } = simplifyEvaluated notChild
 
 {-|'simplifyEvaluated' simplifies a 'Not' pattern given its
 'OrPattern' child.
@@ -104,30 +81,13 @@ simplifyEvaluated
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> OrPattern variable
+    => OrPattern variable
     -> Simplifier (OrPattern variable)
-simplifyEvaluated
-    tools
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
-    simplified
-  =
+simplifyEvaluated simplified =
     fmap OrPattern.fromPatterns $ gather $ do
         let not' = Not { notChild = simplified, notSort = () }
         andPattern <- scatterAnd (makeEvaluateNot <$> distributeNot not')
-        mkMultiAndPattern' andPattern
-  where
-    mkMultiAndPattern' =
-        mkMultiAndPattern
-            tools
-            predicateSimplifier
-            termSimplifier
-            axiomSimplifiers
+        mkMultiAndPattern andPattern
 
 {-|'makeEvaluate' simplifies a 'Not' pattern given its 'Pattern'
 child.
@@ -214,24 +174,7 @@ mkMultiAndPattern
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-
-    -> MultiAnd (Pattern variable)
+    => MultiAnd (Pattern variable)
     -> BranchT Simplifier (Pattern variable)
-mkMultiAndPattern
-    tools
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
-  =
-    Foldable.foldrM mkAnd Pattern.top
-  where
-    mkAnd =
-        And.makeEvaluate
-            tools
-            predicateSimplifier
-            termSimplifier
-            axiomSimplifiers
+mkMultiAndPattern patterns =
+    Foldable.foldrM And.makeEvaluate Pattern.top patterns

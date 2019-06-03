@@ -8,15 +8,9 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.In
-    (simplify
+    ( simplify
     ) where
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
-import qualified Kore.Internal.MultiOr as MultiOr
-                 ( crossProductGeneric )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -24,12 +18,9 @@ import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeInPredicate )
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplifyEvaluated )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -52,26 +43,10 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> In Sort (OrPattern variable)
+    => In Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
-simplify
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    In
-        { inContainedChild = first
-        , inContainingChild = second
-        }
-  =
-    simplifyEvaluatedIn
-        tools substitutionSimplifier simplifier axiomIdToSimplifier first second
+simplify In { inContainedChild = first, inContainingChild = second } =
+    simplifyEvaluatedIn first second
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -94,37 +69,18 @@ simplifyEvaluatedIn
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> OrPattern variable
+    => OrPattern variable
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
-simplifyEvaluatedIn
-    tools substitutionSimplifier simplifier axiomIdToSimplifier first second
+simplifyEvaluatedIn first second
   | OrPattern.isFalse first  = return OrPattern.bottom
   | OrPattern.isFalse second = return OrPattern.bottom
 
-  | OrPattern.isTrue first =
-    Ceil.simplifyEvaluated
-        tools substitutionSimplifier simplifier axiomIdToSimplifier second
-  | OrPattern.isTrue second =
-    Ceil.simplifyEvaluated
-        tools substitutionSimplifier simplifier axiomIdToSimplifier first
+  | OrPattern.isTrue first = Ceil.simplifyEvaluated second
+  | OrPattern.isTrue second = Ceil.simplifyEvaluated first
 
-  | otherwise = do
-    let
-        crossProduct =
-            MultiOr.crossProductGeneric
-                (makeEvaluateIn
-                    tools substitutionSimplifier simplifier axiomIdToSimplifier
-                )
-                first
-                second
-    OrPattern.flatten <$> sequence crossProduct
+  | otherwise =
+    OrPattern.flatten <$> sequence (makeEvaluateIn <$> first <*> second)
 
 makeEvaluateIn
     ::  ( FreshVariable variable
@@ -133,25 +89,13 @@ makeEvaluateIn
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Pattern variable
+    => Pattern variable
     -> Pattern variable
     -> Simplifier (OrPattern variable)
-makeEvaluateIn
-    tools substitutionSimplifier simplifier axiomIdToSimplifier first second
-  | Pattern.isTop first =
-    Ceil.makeEvaluate
-        tools substitutionSimplifier simplifier axiomIdToSimplifier second
-  | Pattern.isTop second =
-    Ceil.makeEvaluate
-        tools substitutionSimplifier simplifier axiomIdToSimplifier first
-  | Pattern.isBottom first || Pattern.isBottom second =
-    return OrPattern.bottom
+makeEvaluateIn first second
+  | Pattern.isTop first = Ceil.makeEvaluate second
+  | Pattern.isTop second = Ceil.makeEvaluate first
+  | Pattern.isBottom first || Pattern.isBottom second = return OrPattern.bottom
   | otherwise = return $ makeEvaluateNonBoolIn first second
 
 makeEvaluateNonBoolIn

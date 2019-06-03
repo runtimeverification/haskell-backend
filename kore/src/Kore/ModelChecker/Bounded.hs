@@ -16,10 +16,6 @@ import           Data.Limit
 import qualified Data.Limit as Limit
 import           Debug.Trace
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.Pattern
                  ( Conditional (Conditional) )
 import           Kore.Internal.Pattern as Conditional
@@ -35,13 +31,11 @@ import qualified Kore.ModelChecker.Step as ModelChecker
 import           Kore.OnePath.Verification
                  ( Axiom (Axiom) )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Rule
                  ( ImplicationRule (ImplicationRule), RewriteRule,
                  RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+                 ( Simplifier )
 import           Kore.Step.Strategy
                  ( GraphSearchOrder, Strategy, pickFinal,
                  runStrategyWithSearchOrder )
@@ -64,14 +58,7 @@ data CheckResult
     deriving (Show)
 
 check
-    :: SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier
-    -- ^ Simplifies normal patterns through, e.g., function evaluation
-    -> PredicateSimplifier
-    -- ^ Simplifies predicates
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    ->  (  CommonModalPattern
+    ::  (  CommonModalPattern
         -> [Strategy
             (Prim
                 (CommonModalPattern)
@@ -86,33 +73,13 @@ check
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> Simplifier [CheckResult]
-check
-    metadataTools
-    simplifier
-    substitutionSimplifier
-    axiomIdToSimplifier
-    strategyBuilder
-    searchOrder
-  =
-    mapM
-        (checkClaim
-            metadataTools
-            simplifier
-            substitutionSimplifier
-            axiomIdToSimplifier
-            strategyBuilder
-            searchOrder
-        )
+check strategyBuilder searchOrder =
+    mapM (checkClaim strategyBuilder searchOrder)
 
 bmcStrategy
     :: [Axiom]
     -> CommonModalPattern
-    -> [Strategy
-        (Prim
-            (CommonModalPattern)
-            (RewriteRule Variable)
-        )
-       ]
+    -> [Strategy (Prim (CommonModalPattern) (RewriteRule Variable))]
 bmcStrategy
     axioms
     goal
@@ -124,12 +91,7 @@ bmcStrategy
         unwrap (Axiom a) = a
 
 checkClaim
-    :: SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier
-    -> PredicateSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    ->  (  CommonModalPattern
+    ::  (  CommonModalPattern
         -> [Strategy
             (Prim
                 (CommonModalPattern)
@@ -141,10 +103,6 @@ checkClaim
     -> (ImplicationRule Variable, Limit Natural)
     -> Simplifier CheckResult
 checkClaim
-    metadataTools
-    simplifier
-    substitutionSimplifier
-    axiomIdToSimplifier
     strategyBuilder
     searchOrder
     (ImplicationRule RulePattern { left, right }, stepLimit)
@@ -181,12 +139,7 @@ checkClaim
         :: Prim (CommonModalPattern) (RewriteRule Variable)
         -> (CommonProofState)
         -> ModelChecker.Transition (CommonProofState)
-    transitionRule' =
-        ModelChecker.transitionRule
-            metadataTools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
+    transitionRule' = ModelChecker.transitionRule
 
     checkFinalNodes
         :: [CommonProofState]

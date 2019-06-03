@@ -7,7 +7,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Function as Function
-import qualified Data.Map.Strict as Map
 
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -18,10 +17,9 @@ import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeIffPredicate, makeTruePredicate )
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
+                 ( Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate, simplify )
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -197,13 +195,10 @@ simplify
     -> IO (OrPattern Variable)
 simplify iff0 =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
-    $ Iff.simplify
-        Mock.metadataTools
-        (Mock.substitutionSimplifier Mock.metadataTools)
-        (Simplifier.create Mock.metadataTools Map.empty)
-        Map.empty
-        iff0
+    $ evalSimplifier mockEnv
+    $ Iff.simplify iff0
+  where
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
 
 makeEvaluate
     :: Pattern Variable

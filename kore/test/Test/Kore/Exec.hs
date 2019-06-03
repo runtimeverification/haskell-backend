@@ -46,8 +46,6 @@ import           Kore.Step.Rule
 import           Kore.Step.Search
                  ( SearchType (..) )
 import qualified Kore.Step.Search as Search
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
 import qualified Kore.Verified as Verified
 import qualified SMT
 
@@ -62,11 +60,10 @@ test_exec = testCase "exec" $ actual >>= assertEqualWithExplanation "" expected
     unlimited = Unlimited
     actual =
         SMT.runSMT SMT.defaultConfig emptyLogger
-            $ evalSimplifier
-            $ exec
-                verifiedModule
-                (Limit.replicate unlimited . anyRewrite)
-                inputPattern
+        $ exec
+            verifiedModule
+            (Limit.replicate unlimited . anyRewrite)
+            inputPattern
     verifiedModule = verifiedMyModule Module
         { moduleName = ModuleName "MY-MODULE"
         , moduleSentences =
@@ -101,16 +98,14 @@ test_search =
     assertion searchType = actual searchType
         >>= assertEqualWithExplanation "" (expected searchType)
     actual searchType = do
-        let
-            simplifier = search
+        finalPattern <-
+            SMT.runSMT SMT.defaultConfig emptyLogger
+            $ search
                 verifiedModule
                 (Limit.replicate unlimited . allRewrites)
                 inputPattern
                 searchPattern
                 Search.Config { bound = Unlimited, searchType }
-        finalPattern <-
-            SMT.runSMT SMT.defaultConfig emptyLogger
-                $ evalSimplifier simplifier
         let Just results = extractSearchResults finalPattern
         return results
     verifiedModule = verifiedMyModule Module
@@ -302,11 +297,10 @@ test_execGetExitCode =
 
     actual testModule exitCode =
         SMT.runSMT SMT.defaultConfig emptyLogger
-            $ evalSimplifier
-            $ execGetExitCode
-                (verifiedMyModule testModule)
-                (Limit.replicate unlimited . anyRewrite)
-                $ Int.asInternal myIntSort exitCode
+        $ execGetExitCode
+            (verifiedMyModule testModule)
+            (Limit.replicate unlimited . anyRewrite)
+            $ Int.asInternal myIntSort exitCode
 
     -- Module with no getExitCode symbol
     testModuleNoSymbol = Module

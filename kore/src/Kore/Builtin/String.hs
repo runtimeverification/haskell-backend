@@ -291,7 +291,7 @@ evalSubstr = Builtin.functionEvaluator evalSubstr0
     substr :: Int -> Int -> Text -> Text
     substr startIndex endIndex =
         Text.take (endIndex - startIndex) . Text.drop startIndex
-    evalSubstr0 _ _ resultSort arguments =
+    evalSubstr0 _ resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let (_str, _start, _end) =
                     case arguments of
@@ -307,7 +307,7 @@ evalSubstr = Builtin.functionEvaluator evalSubstr0
 evalLength :: Builtin.Function
 evalLength = Builtin.functionEvaluator evalLength0
   where
-    evalLength0 _ _ resultSort arguments =
+    evalLength0 _ resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let _str =
                     case arguments of
@@ -324,7 +324,7 @@ evalFind = Builtin.functionEvaluator evalFind0
   where
     maybeNotFound :: Maybe Int -> Integer
     maybeNotFound = maybe (-1) toInteger
-    evalFind0 _ _ resultSort arguments =
+    evalFind0 _ resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let (_str, _substr, _idx) =
                     case arguments of
@@ -343,7 +343,7 @@ evalFind = Builtin.functionEvaluator evalFind0
 evalString2Base :: Builtin.Function
 evalString2Base = Builtin.functionEvaluator evalString2Base0
   where
-    evalString2Base0 _ _ resultSort arguments =
+    evalString2Base0 _ resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let (_str, _base) =
                     case arguments of
@@ -372,7 +372,7 @@ evalString2Base = Builtin.functionEvaluator evalString2Base0
 evalString2Int :: Builtin.Function
 evalString2Int = Builtin.functionEvaluator evalString2Int0
   where
-    evalString2Int0 _ _ resultSort arguments =
+    evalString2Int0 _ resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let _str =
                     case arguments of
@@ -390,7 +390,7 @@ evalString2Int = Builtin.functionEvaluator evalString2Int0
 evalChr :: Builtin.Function
 evalChr = Builtin.functionEvaluator evalChr0
   where
-    evalChr0 _ _ resultSort arguments =
+    evalChr0 _ resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let _n =
                     case arguments of
@@ -404,7 +404,7 @@ evalChr = Builtin.functionEvaluator evalChr0
 evalOrd :: Builtin.Function
 evalOrd = Builtin.functionEvaluator evalOrd0
   where
-    evalOrd0 _ _ resultSort arguments =
+    evalOrd0 _ resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let _str =
                     case arguments of

@@ -17,10 +17,6 @@ import qualified Data.Map.Strict as Map
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
@@ -33,13 +29,9 @@ import           Kore.Internal.TermLike as Pattern
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Sort
                  ( predicateSort )
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification )
 import           Kore.Step.Simplification.Data
-                 ( BranchT, PredicateSimplifier, Simplifier,
-                 TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather, scatter )
 import qualified Kore.Step.Simplification.Pattern as Pattern
@@ -94,28 +86,10 @@ simplify
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Simplifies patterns.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Exists Sort variable (OrPattern variable)
+    => Exists Sort variable (OrPattern variable)
     -> Simplifier (OrPattern variable)
-simplify
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    Exists { existsVariable = variable, existsChild = child }
-  =
-    simplifyEvaluated
-        tools
-        substitutionSimplifier
-        simplifier
-        axiomIdToSimplifier
-        variable
-        child
+simplify Exists { existsVariable = variable, existsChild = child } =
+    simplifyEvaluated variable child
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -137,35 +111,14 @@ simplifyEvaluated
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Simplifies patterns.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> variable
+    => variable
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
-simplifyEvaluated
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    variable
-    simplified
+simplifyEvaluated variable simplified
   | OrPattern.isTrue simplified  = return simplified
   | OrPattern.isFalse simplified = return simplified
   | otherwise = do
-    evaluated <-
-        traverse
-            (makeEvaluate
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                variable
-            )
-            simplified
+    evaluated <- traverse (makeEvaluate variable) simplified
     return (OrPattern.flatten evaluated)
 
 {-| evaluates an 'Exists' given its two 'Pattern' children.
@@ -179,37 +132,21 @@ makeEvaluate
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Simplifies patterns.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> variable
+    => variable
     -> Pattern variable
     -> Simplifier (OrPattern variable)
-makeEvaluate
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    variable
-    original
+makeEvaluate variable original
   = fmap OrPattern.fromPatterns $ BranchT.gather $ do
-    normalized <- normalize original
+    normalized <- Substitution.normalize original
     let Conditional { substitution = normalizedSubstitution } = normalized
     case splitSubstitution variable normalizedSubstitution of
         (Left boundTerm, freeSubstitution) ->
             makeEvaluateBoundLeft
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
                 variable
                 boundTerm
                 normalized { substitution = freeSubstitution }
         (Right boundSubstitution, freeSubstitution) -> do
-            matched <- Monad.Trans.lift $ matchesToVariableSubstitution'
+            matched <- Monad.Trans.lift $ matchesToVariableSubstitution
                 variable
                 normalized { substitution = boundSubstitution }
             if matched
@@ -221,19 +158,6 @@ makeEvaluate
                     variable
                     freeSubstitution
                     normalized { substitution = boundSubstitution }
-  where
-    normalize =
-        Substitution.normalize
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-    matchesToVariableSubstitution' =
-        matchesToVariableSubstitution
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
 
 matchesToVariableSubstitution
     ::  ( FreshVariable variable
@@ -241,22 +165,10 @@ matchesToVariableSubstitution
         , Unparse variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-
-    -> variable
+    => variable
     -> Pattern variable
     -> Simplifier Bool
 matchesToVariableSubstitution
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-
     variable
     Conditional {term, predicate, substitution = boundSubstitution}
   | Equals_ _sort1 _sort2 first second <-
@@ -264,17 +176,13 @@ matchesToVariableSubstitution
   , Substitution.null boundSubstitution
     && not (hasFreeVariable variable term)
   = do
-    matchResult <- runUnifier $ matchAsUnification' first second
+    matchResult <- runUnifier $ matchAsUnification first second
     case matchResult of
         Left _ -> return False
         Right results ->
             return (all (singleVariableSubstitution variable) results)
-  where
-    matchAsUnification' =
-        matchAsUnification
-            tools substitutionSimplifier simplifier axiomIdToSimplifier
 
-matchesToVariableSubstitution _ _ _ _ _ _ = return False
+matchesToVariableSubstitution _ _ = return False
 
 singleVariableSubstitution
     ::  ( Ord variable
@@ -321,21 +229,11 @@ makeEvaluateBoundLeft
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Simplifies patterns.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> variable  -- ^ quantified variable
+    => variable  -- ^ quantified variable
     -> TermLike variable  -- ^ substituted term
     -> Pattern variable
     -> BranchT Simplifier (Pattern variable)
 makeEvaluateBoundLeft
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
     variable
     boundTerm
     normalized
@@ -351,15 +249,8 @@ makeEvaluateBoundLeft
                         Syntax.Predicate.substitute boundSubstitution
                         $ Conditional.predicate normalized
                     }
-        orPattern <- Monad.Trans.lift $ simplify' substituted
+        orPattern <- Monad.Trans.lift $ Pattern.simplify substituted
         BranchT.scatter (MultiOr.extractPatterns orPattern)
-  where
-    simplify' =
-        Pattern.simplify
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
 
 {- | Existentially quantify a variable in the given 'Pattern'.
 

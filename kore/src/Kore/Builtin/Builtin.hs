@@ -96,8 +96,6 @@ import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
 import qualified Kore.Attribute.Sort.Element as Attribute.Sort
 import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
 import           Kore.Builtin.Error
 import           Kore.Error
                  ( Error )
@@ -116,18 +114,19 @@ import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate )
 import qualified Kore.Proof.Value as Value
-import           Kore.Step.Axiom.Data
+import           Kore.Step.Simplification.Data
+                 ( MonadSimplify, PredicateSimplifier, SimplificationType,
+                 Simplifier, TermLikeSimplifier )
+import           Kore.Step.Simplification.Data
                  ( AttemptedAxiom (..),
                  AttemptedAxiomResults (AttemptedAxiomResults),
                  BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
                  BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier )
-import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, SimplificationType, Simplifier,
-                 TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
+import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
 import           Kore.Unparser
 import qualified Kore.Verified as Verified
 
@@ -246,7 +245,7 @@ notImplemented :: Function
 notImplemented =
     BuiltinAndAxiomSimplifier notImplemented0
   where
-    notImplemented0 _ _ _ _ _ = pure NotApplicable
+    notImplemented0 _ _ _ _ = pure NotApplicable
 
 {- | Verify a builtin sort declaration.
 
@@ -558,12 +557,11 @@ unaryOperator
     get = extractVal ctx
     unaryOperator0
         :: Ord variable
-        => SmtMetadataTools StepperAttributes
-        -> TermLikeSimplifier
+        => TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom variable)
-    unaryOperator0 _ _ resultSort children =
+    unaryOperator0 _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [BuiltinF a] -> do
                 -- Apply the operator to a domain value
@@ -605,12 +603,11 @@ binaryOperator
     get = extractVal ctx
     binaryOperator0
         :: Ord variable
-        => SmtMetadataTools StepperAttributes
-        -> TermLikeSimplifier
+        => TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom variable)
-    binaryOperator0 _ _ resultSort children =
+    binaryOperator0 _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [BuiltinF a, BuiltinF b] -> do
                 -- Apply the operator to two domain values
@@ -652,12 +649,11 @@ ternaryOperator
     get = extractVal ctx
     ternaryOperator0
         :: Ord variable
-        => SmtMetadataTools StepperAttributes
-        -> TermLikeSimplifier
+        => TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom variable)
-    ternaryOperator0 _ _ resultSort children =
+    ternaryOperator0 _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [ BuiltinF a, BuiltinF b, BuiltinF c ] -> do
                 -- Apply the operator to three domain values
@@ -669,8 +665,7 @@ ternaryOperator
 type FunctionImplementation
     = forall variable
         .  Ord variable
-        => SmtMetadataTools StepperAttributes
-        -> TermLikeSimplifier
+        => TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
         -> Simplifier (AttemptedAxiom variable)
@@ -681,8 +676,7 @@ functionEvaluator impl =
   where
     evaluator
         :: (Ord variable, Show variable)
-        => SmtMetadataTools StepperAttributes
-        -> PredicateSimplifier
+        => PredicateSimplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> CofreeF
@@ -690,8 +684,8 @@ functionEvaluator impl =
             (Attribute.Pattern variable)
             (TermLike variable)
         -> Simplifier (AttemptedAxiom variable)
-    evaluator tools _ simplifier _axiomIdToSimplifier (valid :< app) =
-        impl tools simplifier resultSort applicationChildren
+    evaluator _ simplifier _axiomIdToSimplifier (valid :< app) =
+        impl simplifier resultSort applicationChildren
       where
         Application { applicationChildren } = app
         Attribute.Pattern { Attribute.patternSort = resultSort } = valid
@@ -806,11 +800,11 @@ isSymbol builtinName MetadataTools { symAttributes } sym =
 
  -}
 expectNormalConcreteTerm
-    :: Monad m
-    => SmtMetadataTools StepperAttributes
-    -> TermLike variable
+    :: MonadSimplify m
+    => TermLike variable
     -> MaybeT m (TermLike Concrete)
-expectNormalConcreteTerm tools purePattern =
+expectNormalConcreteTerm purePattern = do
+    tools <- Simplifier.askMetadataTools
     MaybeT $ return $ do
         p <- TermLike.asConcrete purePattern
         -- TODO (thomas.tuegel): Use the return value as the term.

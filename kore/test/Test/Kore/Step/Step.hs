@@ -13,7 +13,6 @@ import Test.Tasty.HUnit
 import           Data.Default as Default
                  ( def )
 import qualified Data.Foldable as Foldable
-import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 import qualified Kore.Internal.Conditional as Conditional
@@ -39,9 +38,6 @@ import           Kore.Step.Rule
                  ( EqualityRule (..), RewriteRule (..), RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Predicate as Predicate
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
-                 ( create )
 import           Kore.Step.Step hiding
                  ( applyInitialConditions, applyRewriteRulesParallel,
                  applyRewriteRulesSequence, unifyRule )
@@ -68,7 +64,7 @@ evalUnifier
     -> IO (Either UnificationOrSubstitutionError [a])
 evalUnifier =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    . evalSimplifier
+    . evalSimplifier Mock.env
     . Monad.Unify.runUnifier
 
 applyInitialConditions
@@ -78,25 +74,7 @@ applyInitialConditions
 applyInitialConditions initial unification =
     (fmap . fmap) Foldable.toList
     $ evalUnifier
-    $ Step.applyInitialConditions
-        metadataTools
-        predicateSimplifier
-        patternSimplifier
-        axiomSimplifiers
-        initial
-        unification
-  where
-    metadataTools = Mock.metadataTools
-    predicateSimplifier =
-        Predicate.create
-            metadataTools
-            patternSimplifier
-            axiomSimplifiers
-    patternSimplifier =
-        Simplifier.create
-            metadataTools
-            axiomSimplifiers
-    axiomSimplifiers = Map.empty
+    $ Step.applyInitialConditions initial unification
 
 test_applyInitialConditions :: [TestTree]
 test_applyInitialConditions =
@@ -157,28 +135,9 @@ unifyRule
             [Conditional Variable (RulePattern Variable)]
         )
 unifyRule initial rule =
-    evalUnifier
-    $ Step.unifyRule
-        metadataTools
-        unificationProcedure
-        predicateSimplifier
-        patternSimplifier
-        axiomSimplifiers
-        initial
-        rule
+    evalUnifier $ Step.unifyRule unificationProcedure initial rule
   where
-    metadataTools = Mock.metadataTools
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
-    predicateSimplifier =
-        Predicate.create
-            metadataTools
-            patternSimplifier
-            axiomSimplifiers
-    patternSimplifier =
-        Simplifier.create
-            metadataTools
-            axiomSimplifiers
-    axiomSimplifiers = Map.empty
 
 test_unifyRule :: [TestTree]
 test_unifyRule =
@@ -683,29 +642,11 @@ applyRewriteRulesParallel
     -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
 applyRewriteRulesParallel initial rules =
     (fmap . fmap) Result.mergeResults
-        $ SMT.runSMT SMT.defaultConfig emptyLogger
-        $ evalSimplifier
-        $ Monad.Unify.runUnifier
-        $ Step.applyRewriteRulesParallel
-            metadataTools
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-            unificationProcedure
-            rules
-            initial
+    $ SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier Mock.env
+    $ Monad.Unify.runUnifier
+    $ Step.applyRewriteRulesParallel unificationProcedure rules initial
   where
-    metadataTools = Mock.metadataTools
-    predicateSimplifier =
-        Predicate.create
-            metadataTools
-            patternSimplifier
-            axiomSimplifiers
-    patternSimplifier =
-        Simplifier.create
-            metadataTools
-            axiomSimplifiers
-    axiomSimplifiers = Map.empty
     unificationProcedure =
         UnificationProcedure Unification.unificationProcedure
 
@@ -1078,30 +1019,11 @@ applyRewriteRulesSequence
 applyRewriteRulesSequence initial rules =
     (fmap . fmap) Result.mergeResults
         $ SMT.runSMT SMT.defaultConfig emptyLogger
-        $ evalSimplifier
+        $ evalSimplifier Mock.env
         $ Monad.Unify.runUnifier
-        $ Step.applyRewriteRulesSequence
-            metadataTools
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-            unificationProcedure
-            initial
-            rules
+        $ Step.applyRewriteRulesSequence unificationProcedure initial rules
   where
-    metadataTools = Mock.metadataTools
-    predicateSimplifier =
-        Predicate.create
-            metadataTools
-            patternSimplifier
-            axiomSimplifiers
-    patternSimplifier =
-        Simplifier.create
-            metadataTools
-            axiomSimplifiers
-    axiomSimplifiers = Map.empty
-    unificationProcedure =
-        UnificationProcedure Unification.unificationProcedure
+    unificationProcedure = UnificationProcedure Unification.unificationProcedure
 
 test_applyRewriteRulesSequence :: [TestTree]
 test_applyRewriteRulesSequence =
@@ -1218,30 +1140,13 @@ sequenceMatchingRules
     -- ^ Rewrite rule
     -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
 sequenceMatchingRules initial rules =
-    fmap (fmap Foldable.fold)
+    (fmap . fmap) Foldable.fold
     $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
+    $ evalSimplifier Mock.env
     $ Monad.Unify.runUnifier
-    $ Step.applyRulesSequence
-        metadataTools
-        predicateSimplifier
-        patternSimplifier
-        axiomSimplifiers
-        unificationProcedure
-        initial
-        (getEqualityRule <$> rules)
+    $ Step.applyRulesSequence unificationProcedure initial equalityRules
   where
-    metadataTools = Mock.metadataTools
-    predicateSimplifier =
-        Predicate.create
-            metadataTools
-            patternSimplifier
-            axiomSimplifiers
-    patternSimplifier =
-        Simplifier.create
-            metadataTools
-            axiomSimplifiers
-    axiomSimplifiers = Map.empty
+    equalityRules = getEqualityRule <$> rules
     unificationProcedure =
         UnificationProcedure Matcher.unificationWithAppMatchOnTop
 

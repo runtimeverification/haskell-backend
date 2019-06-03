@@ -12,9 +12,6 @@ module Kore.Step.Simplification.Implies
     , simplifyEvaluated
     ) where
 
-import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -22,10 +19,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
                  ( makeEvaluate, simplifyEvaluated )
 import           Kore.Unparser
@@ -51,29 +45,10 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> Implies Sort (OrPattern variable)
+    => Implies Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
-simplify
-    tools
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
-    Implies
-        { impliesFirst = first
-        , impliesSecond = second
-        }
-  =
-    simplifyEvaluated
-        tools
-        predicateSimplifier
-        termSimplifier
-        axiomSimplifiers
-        first
-        second
+simplify Implies { impliesFirst = first, impliesSecond = second } =
+    simplifyEvaluated first second
 
 {-| simplifies an Implies given its two 'OrPattern' children.
 
@@ -99,40 +74,17 @@ simplifyEvaluated
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> OrPattern variable
+    => OrPattern variable
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
-simplifyEvaluated
-    tools
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
-    first
-    second
+simplifyEvaluated first second
   | OrPattern.isTrue first   = return second
   | OrPattern.isFalse first  = return OrPattern.top
   | OrPattern.isTrue second  = return OrPattern.top
-  | OrPattern.isFalse second =
-    Not.simplifyEvaluated
-        tools
-        predicateSimplifier
-        termSimplifier
-        axiomSimplifiers
-        first
+  | OrPattern.isFalse second = Not.simplifyEvaluated first
   | otherwise = do
-    results <- traverse (simplifyEvaluateHalfImplies' first) second
+    results <- traverse (simplifyEvaluateHalfImplies first) second
     return (MultiOr.flatten results)
-  where
-    simplifyEvaluateHalfImplies' =
-        simplifyEvaluateHalfImplies
-            tools
-            predicateSimplifier
-            termSimplifier
-            axiomSimplifiers
 
 simplifyEvaluateHalfImplies
     ::  ( FreshVariable variable
@@ -140,33 +92,16 @@ simplifyEvaluateHalfImplies
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> OrPattern variable
+    => OrPattern variable
     -> Pattern variable
     -> Simplifier (OrPattern variable)
 simplifyEvaluateHalfImplies
-    tools
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
     first
     second
-  | OrPattern.isTrue first =
-    return (OrPattern.fromPatterns [second])
-  | OrPattern.isFalse first =
-    return (OrPattern.fromPatterns [Pattern.top])
-  | Pattern.isTop second =
-    return (OrPattern.fromPatterns [Pattern.top])
-  | Pattern.isBottom second =
-    Not.simplifyEvaluated
-        tools
-        predicateSimplifier
-        termSimplifier
-        axiomSimplifiers
-        first
+  | OrPattern.isTrue first  = return (OrPattern.fromPatterns [second])
+  | OrPattern.isFalse first = return (OrPattern.fromPatterns [Pattern.top])
+  | Pattern.isTop second    = return (OrPattern.fromPatterns [Pattern.top])
+  | Pattern.isBottom second = Not.simplifyEvaluated first
   | otherwise =
     -- TODO: Also merge predicate-only patterns for 'Or'
     return $ case MultiOr.extractPatterns first of
