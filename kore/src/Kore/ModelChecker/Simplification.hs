@@ -24,7 +24,7 @@ import           Kore.Step.Axiom.Data
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplify )
+                 ( simplifyAndRemoveTopExists )
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser
@@ -65,7 +65,7 @@ checkImplicationIsTop
                     , substitution = mempty
                     }
             orResult <-
-                Pattern.simplify
+                Pattern.simplifyAndRemoveTopExists
                     tools
                     predicateSimplifier
                     patternSimplifier
@@ -83,7 +83,7 @@ checkImplicationIsTop
 
 stripForallQuantifiers
     :: TermLike Variable
-    -> (Set.Set (Variable), TermLike Variable)
+    -> (Set.Set Variable, TermLike Variable)
 stripForallQuantifiers patt
   = case patt of
         Forall_ _ forallVar child ->

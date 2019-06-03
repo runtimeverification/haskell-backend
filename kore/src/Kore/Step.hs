@@ -50,7 +50,7 @@ import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplify )
+                 ( simplifyAndRemoveTopExists )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
@@ -109,7 +109,7 @@ transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
         do
             configs <-
                 Monad.Trans.lift
-                $ Pattern.simplify
+                $ Pattern.simplifyAndRemoveTopExists
                     tools
                     substitutionSimplifier
                     simplifier

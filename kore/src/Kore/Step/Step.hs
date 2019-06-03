@@ -41,8 +41,11 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
+import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
+import           Data.Set
+                 ( Set )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
@@ -128,17 +131,13 @@ type Results variable =
 
 {- | Is the result a symbolic rewrite, i.e. a narrowing result?
 
-The result is narrowing if it contains any variable from the left-hand side of
-the rule.
+The result is narrowing if the unifier's substitution is missing any variable
+from the left-hand side of the rule.
 
  -}
 isNarrowingResult :: Ord variable => Result variable -> Bool
-isNarrowingResult Step.Result { appliedRule, result } =
-    Foldable.any hasLeftVariable result
-  where
-    hasLeftVariable = not . Set.disjoint leftVariables . Pattern.freeVariables
-    left = (Rule.left . unwrapRule) (Conditional.term appliedRule)
-    leftVariables = TermLike.freeVariables left
+isNarrowingResult Step.Result { appliedRule } =
+    (not . Set.null) (wouldNarrowWith appliedRule)
 
 {- | Unwrap the variables in a 'RulePattern'.
  -}
@@ -149,15 +148,44 @@ unwrapRule = Rule.mapVariables Target.unwrapVariable
 
 {- | Remove axiom variables from the substitution and unwrap all variables.
  -}
-unwrapConfiguration
-    :: Ord variable
+unwrapAndQuantifyConfiguration
+    :: forall variable
+    .   ( Ord variable
+        , Show variable
+        , SortedVariable variable
+        , Unparse variable
+        )
     => Pattern (Target variable)
     -> Pattern variable
-unwrapConfiguration config@Conditional { substitution } =
-    Pattern.mapVariables Target.unwrapVariable
-        config { Pattern.substitution = substitution' }
+unwrapAndQuantifyConfiguration config@Conditional { substitution } =
+    if List.null targetVariables
+    then unwrappedConfig
+    else
+        Pattern.fromTermLike
+            (List.foldl'
+                quantify
+                (Pattern.toTermLike unwrappedConfig)
+                targetVariables
+            )
   where
     substitution' = Substitution.filter Target.isNonTarget substitution
+
+    configWithNewSubst :: Pattern (Target variable)
+    configWithNewSubst = config { Pattern.substitution = substitution' }
+
+    unwrappedConfig :: Pattern variable
+    unwrappedConfig =
+        Pattern.mapVariables Target.unwrapVariable configWithNewSubst
+
+    targetVariables :: [variable]
+    targetVariables =
+        map Target.unwrapVariable
+        $ filter Target.isTarget
+        $ Set.toList
+        $ Pattern.freeVariables configWithNewSubst
+
+    quantify :: TermLike variable -> variable -> TermLike variable
+    quantify = flip mkExists
 
 {- | Attempt to unify a rule with the initial configuration.
 
@@ -497,7 +525,7 @@ finalizeRule
     applied <- applyInitialConditions' initialCondition unificationCondition
     let renamedRule = Conditional.term unifiedRule
     final <- finalizeAppliedRule' renamedRule applied
-    let result = unwrapConfiguration <$> final
+    let result = unwrapAndQuantifyConfiguration <$> final
     return Step.Result { appliedRule = unifiedRule, result }
   where
     applyInitialConditions' =
@@ -633,19 +661,20 @@ finalizeRulesSequence
 
 {- | Check that the final substitution covers the applied rule appropriately.
 
-The final substitution should cover all the free variables on the left-hand side
-of the applied rule; otherwise, we would wrongly introduce
-universally-quantified variables into the final configuration. Failure of the
-coverage check indicates a problem with unification, so in that case
-@checkSubstitutionCoverage@ throws an error message with the axiom and the
-initial and final configurations.
+For normal execution, the final substitution should cover all the free
+variables on the left-hand side of the applied rule; otherwise, we would
+wrongly introduce existentially-quantified variables into the final
+configuration. Failure of the coverage check indicates a problem with
+unification, so in that case @checkSubstitutionCoverage@ throws
+an error message with the axiom and the initial and final configurations.
 
-@checkSubstitutionCoverage@ calls @unwrapVariables@ to remove the axiom
-variables from the substitution and unwrap all the 'Target's; this is
-safe because we have already checked that all the universally-quantified axiom
-variables have been instantiated by the substitution.
+For symbolic execution, we expect to replace symbolic variables with
+more specific patterns (narrowing), so we just quantify the variables
+we added to the result.
 
- -}
+@checkSubstitutionCoverage@ calls @quantifyVariables@ to remove
+the axiom variables from the substitution and unwrap all the 'Target's.
+-}
 checkSubstitutionCoverage
     ::  forall variable unifier
     .   ( SortedVariable variable
@@ -683,16 +712,26 @@ checkSubstitutionCoverage initial unified
     Conditional { term = axiom } = unified
     unifier :: Pattern (Target variable)
     unifier = mkTop_ <$ Conditional.withoutTerm unified
+    Conditional { substitution } = unified
+    substitutionVariables = Map.keysSet (Substitution.toMap substitution)
+    uncovered = wouldNarrowWith unified
+    isCoveringSubstitution = Set.null uncovered
+    isSymbolic = Foldable.any Target.isNonTarget substitutionVariables
+
+{- | The 'Set' of variables that would be introduced by narrowing.
+ -}
+-- TODO (thomas.tuegel): Unit tests
+wouldNarrowWith :: Ord variable => UnifiedRule variable -> Set variable
+wouldNarrowWith unified =
+    Set.difference leftAxiomVariables substitutionVariables
+  where
     leftAxiomVariables =
         TermLike.freeVariables leftAxiom
       where
+        Conditional { term = axiom } = unified
         RulePattern { left = leftAxiom } = axiom
     Conditional { substitution } = unified
-    subst = Substitution.toMap substitution
-    substitutionVariables = Map.keysSet subst
-    uncovered = Set.difference leftAxiomVariables substitutionVariables
-    isCoveringSubstitution = Set.null uncovered
-    isSymbolic = Foldable.any Target.isNonTarget substitutionVariables
+    substitutionVariables = Map.keysSet (Substitution.toMap substitution)
 
 {- | Apply the given rules to the initial configuration in parallel.
 

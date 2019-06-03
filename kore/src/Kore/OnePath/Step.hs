@@ -47,7 +47,7 @@ import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplify )
+                 ( simplifyAndRemoveTopExists )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
@@ -176,7 +176,7 @@ transitionRule
     applySimplify wrapper config = do
         configs <-
             Monad.Trans.lift
-            $ Pattern.simplify
+            $ Pattern.simplifyAndRemoveTopExists
                 tools
                 substitutionSimplifier
                 simplifier
@@ -269,7 +269,7 @@ transitionRule
             result = patt `Conditional.andPredicate` removal
         orResult <-
             Monad.Trans.lift
-            $ Pattern.simplify
+            $ Pattern.simplifyAndRemoveTopExists
                 tools
                 substitutionSimplifier
                 simplifier
