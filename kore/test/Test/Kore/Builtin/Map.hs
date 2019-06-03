@@ -103,9 +103,9 @@ test_removeUnit =
             key <- forAll genIntegerPattern
             let patRemove = removeMap unitMap key
                 predicate = mkEquals_ unitMap patRemove
-            expect <- evaluate unitMap
-            (===) expect =<< evaluate patRemove
-            (===) Pattern.top =<< evaluate predicate
+            expect <- evaluateT unitMap
+            (===) expect =<< evaluateT patRemove
+            (===) Pattern.top =<< evaluateT predicate
         )
 
 test_removeKeyNotIn :: TestTree
@@ -115,13 +115,13 @@ test_removeKeyNotIn =
         (do
             key <- forAll genIntegerPattern
             map' <- forAll genMapPattern
-            isInMap <- evaluate $ lookupMap map' key
+            isInMap <- evaluateT $ lookupMap map' key
             Monad.when (not $ Pattern.bottom == isInMap) discard
             let patRemove = removeMap map' key
                 predicate = mkEquals_ map' patRemove
-            expect <- evaluate map'
-            (===) expect =<< evaluate patRemove
-            (===) Pattern.top =<< evaluate predicate
+            expect <- evaluateT map'
+            (===) expect =<< evaluateT patRemove
+            (===) Pattern.top =<< evaluateT predicate
         )
 
 test_removeKeyIn :: TestTree
@@ -132,13 +132,13 @@ test_removeKeyIn =
             key <- forAll genIntegerPattern
             val <- forAll genIntegerPattern
             map' <- forAll genMapPattern
-            isInMap <- evaluate $ lookupMap map' key
+            isInMap <- evaluateT $ lookupMap map' key
             Monad.when (not $ Pattern.bottom == isInMap) discard
             let patRemove = removeMap (updateMap map' key val) key
                 predicate = mkEquals_ patRemove map'
-            expect <- evaluate map'
-            (===) expect =<< evaluate patRemove
-            (===) Pattern.top =<< evaluate predicate
+            expect <- evaluateT map'
+            (===) expect =<< evaluateT patRemove
+            (===) Pattern.top =<< evaluateT predicate
         )
 
 test_removeAllMapUnit :: TestTree
@@ -149,9 +149,9 @@ test_removeAllMapUnit =
             set <- forAll Test.Set.genSetPattern
             let patRemoveAll = removeAllMap unitMap set
                 predicate = mkEquals_ unitMap patRemoveAll
-            expect <- evaluate unitMap
-            (===) expect =<< evaluate patRemoveAll
-            (===) Pattern.top =<< evaluate predicate
+            expect <- evaluateT unitMap
+            (===) expect =<< evaluateT patRemoveAll
+            (===) Pattern.top =<< evaluateT predicate
         )
 
 test_removeAllSetUnit :: TestTree
@@ -162,9 +162,9 @@ test_removeAllSetUnit =
             map' <- forAll genMapPattern
             let patRemoveAll = removeAllMap map' unitSet
                 predicate = mkEquals_ map' patRemoveAll
-            expect <- evaluate map'
-            (===) expect =<< evaluate patRemoveAll
-            (===) Pattern.top =<< evaluate predicate
+            expect <- evaluateT map'
+            (===) expect =<< evaluateT patRemoveAll
+            (===) Pattern.top =<< evaluateT predicate
         )
 
 test_removeAll :: TestTree
@@ -174,8 +174,9 @@ test_removeAll =
         (do
             map' <- forAll genMapPattern
             set <- forAll Test.Set.genSetConcreteIntegerPattern
-            key <- forAll genConcreteIntegerPattern
-            let diffSet = Set.delete key set
+            Monad.when (set == Set.empty) discard
+            let key = Set.elemAt 0 set
+                diffSet = Set.delete key set
                 patSet = Test.Set.asTermLike set
                 patDiffSet = Test.Set.asTermLike diffSet
                 patKey = fromConcrete key
@@ -184,9 +185,9 @@ test_removeAll =
                                     (removeMap map' patKey)
                                     patDiffSet
                 predicate = mkEquals_ patRemoveAll1 patRemoveAll2
-            expect <- evaluate patRemoveAll2
-            (===) expect =<< evaluate patRemoveAll1
-            (===) Pattern.top =<< evaluate predicate
+            expect <- evaluateT patRemoveAll2
+            (===) expect =<< evaluateT patRemoveAll1
+            (===) Pattern.top =<< evaluateT predicate
         )
 
 test_concatUnit :: TestTree
