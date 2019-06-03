@@ -708,10 +708,7 @@ test_andTermsSimplification =
                 expected = Just
                     [ Conditional
                         { term = Mock.builtinMap
-                            [   ( Mock.sortInjectionSubToTop
-                                    (Mock.sortInjectionSubSubToSub
-                                        Mock.aSubSubsort
-                                    )
+                            [   ( Mock.sortInjectionSubSubToTop Mock.aSubSubsort
                                 , fOfA
                                 )
                             ]
@@ -740,10 +737,7 @@ test_andTermsSimplification =
                     [ Conditional
                         { term = Mock.builtinMap
                             [   ( Mock.a
-                                , Mock.sortInjectionSubToTop
-                                    (Mock.sortInjectionSubSubToSub
-                                        Mock.aSubSubsort
-                                    )
+                                , Mock.sortInjectionSubSubToTop Mock.aSubSubsort
                                 )
                             ]
                         , predicate = makeTruePredicate
@@ -767,13 +761,17 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expected actual
         , testCase "map concat key inj splitting" $ do
             let
-                expected = Just
-                    [ Conditional
+                expected = Just $ do -- list monad
+                    expectedMap <-
+                        [ []
+                        ,   [   ( Mock.sortInjectionSubSubToTop Mock.aSubSubsort
+                                , fOfA
+                                )
+                            ]
+                        ]
+                    return Conditional
                         { term = Mock.builtinMap
-                            [   ( Mock.sortInjectionSubToTop
-                                    (Mock.sortInjectionSubSubToSub
-                                        Mock.aSubSubsort
-                                    )
+                            [   ( Mock.sortInjectionSubSubToTop Mock.aSubSubsort
                                 , fOfA
                                 )
                             ]
@@ -783,10 +781,9 @@ test_andTermsSimplification =
                                 , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
                                 )
                             ,   ( Mock.y, fOfA )
-                            ,   ( Mock.m, Mock.builtinMap [])
+                            ,   ( Mock.m, Mock.builtinMap expectedMap)
                             ]
                         }
-                    ]
             actual <- unify
                 Mock.metadataTools
                 (Mock.builtinMap
@@ -802,14 +799,18 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expected actual
         , testCase "map elem value inj splitting" $ do
             let
-                expected = Just
-                    [ Conditional
+                expected = Just $ do -- list monad
+                    expectedMap <-
+                        [ []
+                        ,   [   ( Mock.a
+                                , Mock.sortInjectionSubSubToTop Mock.aSubSubsort
+                                )
+                            ]
+                        ]
+                    return Conditional
                         { term = Mock.builtinMap
                             [   ( Mock.a
-                                , Mock.sortInjectionSubToTop
-                                    (Mock.sortInjectionSubSubToSub
-                                        Mock.aSubSubsort
-                                    )
+                                , Mock.sortInjectionSubSubToTop Mock.aSubSubsort
                                 )
                             ]
                         , predicate = makeTruePredicate
@@ -818,10 +819,9 @@ test_andTermsSimplification =
                                 , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
                                 )
                             ,   ( Mock.y, Mock.a )
-                            ,   ( Mock.m, Mock.builtinMap [])
+                            ,   ( Mock.m, Mock.builtinMap expectedMap)
                             ]
                         }
-                    ]
             actual <- unify
                 Mock.metadataTools
                 (Mock.builtinMap
