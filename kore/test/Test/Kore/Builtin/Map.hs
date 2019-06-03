@@ -166,22 +166,27 @@ test_removeAllSetUnit =
             (===) Pattern.top =<< evaluate predicate
         )
 
--- TODO:
--- test_removeAll :: TestTree
--- test_removeAll =
---     testPropertyWithSolver
---         "MAP.removeAll and MAP.remove"
---         (do
---             map <- forAll genMapPattern
---             set <- forAll Test.Set.genSetPattern
---             key <- forAll genIntegerPattern
---             let diffSet = Set.delete key set
---                 patRemoveAll1 = removeAllMap map set
---                 patRemoveAll2 = removeAllMap
---                                     (removeMap map key)
---                                     diffSet
---             return ()
---         )
+test_removeAll :: TestTree
+test_removeAll =
+    testPropertyWithSolver
+        "MAP.removeAll and MAP.remove"
+        (do
+            map <- forAll genMapPattern
+            set <- forAll Test.Set.genSetConcreteIntegerPattern
+            key <- forAll genConcreteIntegerPattern
+            let diffSet = Set.delete key set
+                patSet = Test.Set.asTermLike set
+                patDiffSet = Test.Set.asTermLike diffSet
+                patKey = fromConcrete key
+                patRemoveAll1 = removeAllMap map patSet
+                patRemoveAll2 = removeAllMap
+                                    (removeMap map patKey)
+                                    patDiffSet
+                predicate = mkEquals_ patRemoveAll1 patRemoveAll2
+            expect <- evaluate patRemoveAll2
+            (===) expect =<< evaluate patRemoveAll1
+            (===) Pattern.top =<< evaluate predicate
+        )
 
 test_concatUnit :: TestTree
 test_concatUnit =
