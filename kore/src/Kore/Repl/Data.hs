@@ -25,6 +25,7 @@ module Kore.Repl.Data
     , lensLabels, lensOmit, lensUnifier
     , lensCommands, lensAliases, lensClaimIndex
     , lensLogging
+    , lensOutputFile
     , shouldStore
     , UnifierWithExplanation (..)
     , runUnifierWithExplanation
@@ -39,6 +40,9 @@ module Kore.Repl.Data
     , updateInnerGraph, updateExecutionGraph
     , addOrUpdateAlias, findAlias, substituteAlias
     , LogType (..)
+    , ReplScript (..)
+    , ReplMode (..)
+    , OutputFile (..)
     ) where
 
 import           Control.Applicative
@@ -114,6 +118,19 @@ import           Kore.Unparser
                  ( unparse )
 import           SMT
                  ( MonadSMT )
+
+-- | Represents an optional file name which contains a sequence of
+-- repl commands.
+newtype ReplScript = ReplScript
+    { unReplScript :: Maybe FilePath
+    } deriving (Eq, Show)
+
+data ReplMode = Interactive | RunScript
+    deriving (Eq, Show)
+
+newtype OutputFile = OutputFile
+    { unOutputFile :: Maybe FilePath
+    } deriving (Eq, Show)
 
 newtype AxiomIndex = AxiomIndex
     { unAxiomIndex :: Int
@@ -381,6 +398,7 @@ data ReplState claim = ReplState
     -- ^ Map of command aliases
     , logging :: (Logger.Severity, LogType)
     , logger  :: MVar (Logger.LogAction IO Logger.LogMessage)
+    , outputFile :: OutputFile
     }
 
 -- | Unifier that stores the first 'explainBottom'.

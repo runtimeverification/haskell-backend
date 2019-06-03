@@ -55,6 +55,8 @@ import           Data.List.Extra
                  ( groupSort )
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
+                 ( fromJust )
+import           Data.Maybe
                  ( catMaybes, listToMaybe )
 import           Data.Sequence
                  ( Seq )
@@ -86,6 +88,8 @@ import qualified Kore.OnePath.StrategyPattern as StrategyPatternTransformer
                  ( StrategyPatternTransformer (..) )
 import           Kore.OnePath.Verification
                  ( Axiom (..), Claim, isTrusted )
+import           Kore.Predicate.Predicate
+                 ( makeTruePredicate )
 import           Kore.Repl.Data
 import           Kore.Repl.Parser
 import           Kore.Repl.Parser
@@ -206,6 +210,9 @@ exit
     => ReplM claim ReplStatus
 exit = do
     proofs <- allProofs
+    ofile <- Lens.use lensOutputFile
+    let name = fromJust . unOutputFile $ ofile
+    liftIO $ writeFile name (unparseToString (TermLike.mkTop @TermLike.Variable $ TermLike.mkSortVariable "R"))
     if isCompleted (Map.elems proofs)
        then return SuccessStop
        else return FailStop

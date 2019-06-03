@@ -415,6 +415,7 @@ mkState axioms claims claim logger =
         , aliases     = Map.empty
         , logging     = (Logger.Debug, NoLogging)
         , logger
+        , outputFile  = OutputFile Nothing
         }
   where
     graph' = emptyExecutionGraph claim
