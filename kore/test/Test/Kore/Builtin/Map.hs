@@ -171,16 +171,16 @@ test_removeAll =
     testPropertyWithSolver
         "MAP.removeAll and MAP.remove"
         (do
-            map <- forAll genMapPattern
+            map' <- forAll genMapPattern
             set <- forAll Test.Set.genSetConcreteIntegerPattern
             key <- forAll genConcreteIntegerPattern
             let diffSet = Set.delete key set
                 patSet = Test.Set.asTermLike set
                 patDiffSet = Test.Set.asTermLike diffSet
                 patKey = fromConcrete key
-                patRemoveAll1 = removeAllMap map patSet
+                patRemoveAll1 = removeAllMap map' patSet
                 patRemoveAll2 = removeAllMap
-                                    (removeMap map patKey)
+                                    (removeMap map' patKey)
                                     patDiffSet
                 predicate = mkEquals_ patRemoveAll1 patRemoveAll2
             expect <- evaluate patRemoveAll2
