@@ -349,7 +349,7 @@ evalRemove =
     Builtin.functionEvaluator evalRemove0
   where
     evalRemove0 :: Builtin.FunctionImplementation
-    evalRemove0 tools _ resultSort = \arguments ->
+    evalRemove0 _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let (_map, _key) =
                     case arguments of
@@ -358,12 +358,12 @@ evalRemove =
                 emptyMap = do
                     _map <- expectBuiltinMap removeKey _map
                     if Map.null _map
-                        then returnMap tools resultSort Map.empty
+                        then returnMap resultSort Map.empty
                         else empty
                 bothConcrete = do
                     _map <- expectBuiltinMap removeKey _map
-                    _key <- Builtin.expectNormalConcreteTerm tools _key
-                    returnMap tools resultSort $ Map.delete _key _map
+                    _key <- Builtin.expectNormalConcreteTerm _key
+                    returnMap resultSort $ Map.delete _key _map
             emptyMap <|> bothConcrete
 
 evalRemoveAll :: Builtin.Function
@@ -371,7 +371,7 @@ evalRemoveAll =
     Builtin.functionEvaluator evalRemoveAll0
   where
     evalRemoveAll0 :: Builtin.FunctionImplementation
-    evalRemoveAll0 tools _ resultSort = \arguments ->
+    evalRemoveAll0 _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let (_map, _set) =
                     case arguments of
@@ -380,12 +380,12 @@ evalRemoveAll =
                 emptyMap = do
                     _map <- expectBuiltinMap removeAllKey _map
                     if Map.null _map
-                        then returnMap tools resultSort Map.empty
+                        then returnMap resultSort Map.empty
                         else empty
                 bothConcrete = do
                     _map <- expectBuiltinMap removeAllKey _map
-                    _set <- Builtin.Set.expectBuiltinSet removeAllKey tools _set
-                    returnMap tools resultSort $ Map.withoutKeys _map _set
+                    _set <- Builtin.Set.expectBuiltinSet removeAllKey _set
+                    returnMap resultSort $ Map.withoutKeys _map _set
             emptyMap <|> bothConcrete
 
 
