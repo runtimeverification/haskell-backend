@@ -124,6 +124,6 @@ test_Anywhere =
         (Right def)
         (anywhere <$> parse [])
     , testCase "isInjective" $ assertEqual ""
-        (Right True)
+        (Right False)
         (isInjective <$> parse [ anywhereAttribute ])
     ]
