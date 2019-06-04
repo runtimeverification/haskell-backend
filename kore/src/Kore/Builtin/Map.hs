@@ -28,9 +28,13 @@ module Kore.Builtin.Map
     , lookupSymbolLookup
     , lookupSymbolInKeys
     , lookupSymbolKeys
+    , lookupSymbolRemove
+    , lookupSymbolRemoveAll
     , isSymbolConcat
     , isSymbolElement
     , isSymbolUnit
+    , isSymbolRemove
+    , isSymbolRemoveAll
       -- * keys
     , concatKey
     , lookupKey
@@ -164,6 +168,12 @@ symbolVerifiers =
       )
     , ( keysKey
       , Builtin.verifySymbol Builtin.Set.assertSort [assertSort]
+      )
+    , ( removeKey
+      , Builtin.verifySymbol assertSort [assertSort, acceptAnySort]
+      )
+    , ( removeAllKey
+      , Builtin.verifySymbol assertSort [assertSort, Builtin.Set.assertSort]
       )
     ]
 
@@ -334,6 +344,51 @@ evalKeys =
             _map <- expectBuiltinMap lookupKey _map
             Builtin.Set.returnSet resultSort (Map.keysSet _map)
 
+evalRemove :: Builtin.Function
+evalRemove =
+    Builtin.functionEvaluator evalRemove0
+  where
+    evalRemove0 :: Builtin.FunctionImplementation
+    evalRemove0 _ resultSort = \arguments ->
+        Builtin.getAttemptedAxiom $ do
+            let (_map, _key) =
+                    case arguments of
+                        [_map, _key] -> (_map, _key)
+                        _ -> Builtin.wrongArity removeKey
+                emptyMap = do
+                    _map <- expectBuiltinMap removeKey _map
+                    if Map.null _map
+                        then returnMap resultSort Map.empty
+                        else empty
+                bothConcrete = do
+                    _map <- expectBuiltinMap removeKey _map
+                    _key <- Builtin.expectNormalConcreteTerm _key
+                    returnMap resultSort $ Map.delete _key _map
+            emptyMap <|> bothConcrete
+
+evalRemoveAll :: Builtin.Function
+evalRemoveAll =
+    Builtin.functionEvaluator evalRemoveAll0
+  where
+    evalRemoveAll0 :: Builtin.FunctionImplementation
+    evalRemoveAll0 _ resultSort = \arguments ->
+        Builtin.getAttemptedAxiom $ do
+            let (_map, _set) =
+                    case arguments of
+                        [_map, _set] -> (_map, _set)
+                        _ -> Builtin.wrongArity removeAllKey
+                emptyMap = do
+                    _map <- expectBuiltinMap removeAllKey _map
+                    if Map.null _map
+                        then returnMap resultSort Map.empty
+                        else empty
+                bothConcrete = do
+                    _map <- expectBuiltinMap removeAllKey _map
+                    _set <- Builtin.Set.expectBuiltinSet removeAllKey _set
+                    returnMap resultSort $ Map.withoutKeys _map _set
+            emptyMap <|> bothConcrete
+
+
 {- | Implement builtin function evaluation.
  -}
 builtinFunctions :: Map Text Builtin.Function
@@ -346,6 +401,8 @@ builtinFunctions =
         , (updateKey, evalUpdate)
         , (in_keysKey, evalInKeys)
         , (keysKey, evalKeys)
+        , (removeKey, evalRemove)
+        , (removeAllKey, evalRemoveAll)
         ]
 
 {- | Render a 'Map' as an internal pattern of the given sort.
@@ -436,6 +493,12 @@ in_keysKey = "MAP.in_keys"
 keysKey :: IsString s => s
 keysKey = "MAP.keys"
 
+removeKey :: IsString s => s
+removeKey = "MAP.remove"
+
+removeAllKey :: IsString s => s
+removeAllKey = "MAP.removeAll"
+
 {- | Find the symbol hooked to @MAP.update@ in an indexed module.
  -}
 lookupSymbolUpdate
@@ -468,6 +531,22 @@ lookupSymbolKeys
     -> Either (Kore.Error e) SymbolOrAlias
 lookupSymbolKeys = Builtin.lookupSymbol keysKey
 
+{- | Find the symbol hooked to @MAP.remove@ in an indexed module.
+ -}
+lookupSymbolRemove
+    :: Sort
+    -> VerifiedModule declAttrs axiomAttrs
+    -> Either (Kore.Error e) SymbolOrAlias
+lookupSymbolRemove = Builtin.lookupSymbol removeKey
+
+{- | Find the symbol hooked to @MAP.removeAll@ in an indexed module.
+ -}
+lookupSymbolRemoveAll
+    :: Sort
+    -> VerifiedModule declAttrs axiomAttrs
+    -> Either (Kore.Error e) SymbolOrAlias
+lookupSymbolRemoveAll = Builtin.lookupSymbol removeAllKey
+
 {- | Check if the given symbol is hooked to @MAP.concat@.
  -}
 isSymbolConcat
@@ -492,6 +571,21 @@ isSymbolUnit
     -> Bool
 isSymbolUnit = Builtin.isSymbol unitKey
 
+{- | Check if the given symbol is hooked to @MAP.remove@.
+-}
+isSymbolRemove
+    :: SmtMetadataTools Hook
+    -> SymbolOrAlias
+    -> Bool
+isSymbolRemove = Builtin.isSymbol removeKey
+
+{- | Check if the given symbol is hooked to @MAP.removeAll@.
+-}
+isSymbolRemoveAll
+    :: SmtMetadataTools Hook
+    -> SymbolOrAlias
+    -> Bool
+isSymbolRemoveAll = Builtin.isSymbol removeAllKey
 
 {- | Simplify the conjunction or equality of two concrete Map domain values.
 
