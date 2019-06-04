@@ -141,7 +141,7 @@ A symbol is injective if it is given the @injective@ attribute, the
 attribute.
 
 See also: 'isInjective', 'injectiveAttribute', 'constructorAttribute',
-'sortInjectionAttribute', 'anywhereAttribute'
+'sortInjectionAttribute'
 
  -}
 isInjective_
@@ -155,11 +155,9 @@ isInjective_ =
 {- | Is the symbol injective?
 
 A symbol is injective if it is given the @injective@ attribute, the
-@constructor@ attribute, the @anywhere@ attribute, or the @sortInjection@
-attribute.
+@constructor@ attribute, or the @sortInjection@ attribute.
 
-See also: 'injectiveAttribute', 'constructorAttribute',
-'sortInjectionAttribute', 'anywhereAttribute'
+See also: 'injectiveAttribute', 'constructorAttribute', 'sortInjectionAttribute'
 
  -}
 isInjective :: StepperAttributes -> Bool
@@ -167,7 +165,6 @@ isInjective =
     or . sequence
         [ isDeclaredInjective . injective
         , isConstructor       . constructor
-        , isAnywhere          . anywhere
         , isSortInjection     . sortInjection
         ]
 
@@ -177,7 +174,7 @@ See also: 'isSortInjection'
 
  -}
 isSortInjection_
-    :: (Given (SmtMetadataTools StepperAttributes))
+    :: Given (SmtMetadataTools StepperAttributes)
     => SymbolOrAlias
     -> Bool
 isSortInjection_ =
