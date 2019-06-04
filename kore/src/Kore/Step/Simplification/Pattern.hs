@@ -38,9 +38,10 @@ simplifyAndRemoveTopExists
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify m
         )
     => Pattern variable
-    -> Simplifier (OrPattern variable)
+    -> m (OrPattern variable)
 simplifyAndRemoveTopExists patt = do
     simplified <- simplify patt
     return (removeTopExists <$> simplified)
@@ -58,9 +59,10 @@ simplify
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify m
         )
     => Pattern variable
-    -> Simplifier (OrPattern variable)
+    -> m (OrPattern variable)
 simplify pattern'@Conditional { term } = do
     simplifiedTerm <- simplifyTerm term
     orPatterns <-

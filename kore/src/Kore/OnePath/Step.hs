@@ -134,10 +134,11 @@ which is actually, exactly the form we want, since we are working with a
 and n destinations.
  -}
 transitionRule
-    :: Prim (Pattern Variable) (RewriteRule Variable)
+    :: MonadSimplify m
+    => Prim (Pattern Variable) (RewriteRule Variable)
     -> CommonStrategyPattern
     -- ^ Configuration being rewritten and its accompanying proof
-    -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
+    -> TransitionT (RewriteRule Variable) m CommonStrategyPattern
 transitionRule strategy expandedPattern =
     traceNonErrorMonad D_OnePath_Step_transitionRule
         [ debugArg "strategy" (debugString strategy)

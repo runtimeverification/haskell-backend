@@ -13,7 +13,8 @@ import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( wrapPredicate )
 import           Kore.Step.Simplification.Data
-                 ( Simplifier, TermLikeSimplifier, termLikeSimplifier )
+                 ( MonadSimplify, Simplifier, TermLikeSimplifier,
+                 termLikeSimplifier )
 import           Kore.Syntax.Variable
                  ( SortedVariable (..) )
 import           Kore.Variables.Fresh
@@ -52,11 +53,12 @@ mockSimplifierHelper
         , Ord variable
         , SortedVariable variable
         , SortedVariable variable0
+        , MonadSimplify m
         )
     => (TermLike variable -> Pattern variable)
     -> [(TermLike variable, [Pattern variable])]
     -> TermLike variable0
-    -> Simplifier (OrPattern variable0)
+    -> m (OrPattern variable0)
 mockSimplifierHelper unevaluatedConverter [] patt =
     return
         ( OrPattern.fromPatterns

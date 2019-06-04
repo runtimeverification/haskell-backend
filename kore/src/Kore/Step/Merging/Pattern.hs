@@ -33,12 +33,13 @@ mergeWithPredicate
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify m
         )
     => Predicate variable
     -- ^ Condition and substitution to add.
     -> Pattern variable
     -- ^ pattern to which the above should be added.
-    -> BranchT Simplifier (Pattern variable)
+    -> BranchT m (Pattern variable)
 mergeWithPredicate
     Conditional
         { predicate = conditionToMerge

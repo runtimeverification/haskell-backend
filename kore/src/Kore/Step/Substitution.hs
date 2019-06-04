@@ -153,11 +153,12 @@ mergePredicatesAndSubstitutions
        , SortedVariable variable
        , Ord variable
        , FreshVariable variable
+       , MonadSimplify m
        , HasCallStack
        )
     => [Syntax.Predicate variable]
     -> [Substitution variable]
-    -> BranchT Simplifier (Predicate variable)
+    -> BranchT m (Predicate variable)
 mergePredicatesAndSubstitutions predicates substitutions = do
     result <- Monad.Trans.lift $ Monad.Unify.runUnifier $
         mergePredicatesAndSubstitutionsExcept

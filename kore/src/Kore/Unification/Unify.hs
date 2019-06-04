@@ -199,8 +199,9 @@ fromExceptT e = do
         Right a                    -> pure a
 
 runUnifier
-    :: Unifier a
-    -> Simplifier (Either UnificationOrSubstitutionError [a])
+    :: MonadSimplify m
+    => Unifier a
+    -> m (Either UnificationOrSubstitutionError [a])
 runUnifier = runUnifierT runIdentityT
 
 runUnifierT
