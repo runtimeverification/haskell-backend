@@ -34,20 +34,17 @@ import           Data.Text
                  ( Text )
 
 import qualified Kore.Attribute.Pattern as Attribute
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.Builtin.Builtin
                  ( acceptAnySort )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (..) )
 import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Axiom.Data
+import           Kore.Step.Simplification.Data
                  ( AttemptedAxiom (..), AttemptedAxiomResults (..),
                  BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier,
                  notApplicableAxiomEvaluator, purePatternAxiomEvaluator )
@@ -122,7 +119,6 @@ evalKEq
         , Show variable
         )
     => Bool
-    -> MetadataTools.SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
@@ -133,7 +129,7 @@ evalKEq
         (Attribute.Pattern variable)
         (TermLike variable)
     -> Simplifier (AttemptedAxiom variable)
-evalKEq true _ _ _ _ (valid :< app) =
+evalKEq true _ _ _ (valid :< app) =
     case applicationChildren of
         [t1, t2] -> evalEq t1 t2
         _ -> Builtin.wrongArity (if true then eqKey else neqKey)
@@ -169,8 +165,7 @@ evalKIte
     .   ( FreshVariable variable
         , SortedVariable variable
         )
-    => MetadataTools.SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
@@ -179,7 +174,7 @@ evalKIte
         (Attribute.Pattern variable)
         (TermLike variable)
     -> Simplifier (AttemptedAxiom variable)
-evalKIte _ _ _ _ (_ :< app) =
+evalKIte _ _ _ (_ :< app) =
     case app of
         Application { applicationChildren = [expr, t1, t2] } ->
             evalIte expr t1 t2

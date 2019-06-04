@@ -38,16 +38,16 @@ import           Kore.OnePath.StrategyPattern
 import qualified Kore.OnePath.StrategyPattern as StrategyPattern
 import           Kore.Predicate.Predicate
 import           Kore.Proof.Functional
-import           Kore.Step.Axiom.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import           Kore.Step.Axiom.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
 import           Kore.Step.Rule
                  ( RulePattern (..) )
+import           Kore.Step.Simplification.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import           Kore.Step.Simplification.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.SMT.AST as SMT
                  ( Declarations (Declarations), Encodable,
                  IndirectSymbolDeclaration (IndirectSymbolDeclaration),

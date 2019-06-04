@@ -2,6 +2,7 @@ module Test.Kore.Builtin.Builtin
     ( mkPair
     , hpropUnparse
     , testMetadataTools
+    , testEnv
     , testSubstitutionSimplifier
     , testTermLikeSimplifier
     , testEvaluators
@@ -54,7 +55,6 @@ import           Kore.Internal.Pattern
 import           Kore.Internal.TermLike
 import           Kore.Parser
                  ( parseKorePattern )
-import           Kore.Step.Axiom.Data
 import qualified Kore.Step.Result as Result
                  ( mergeResults )
 import           Kore.Step.Rule
@@ -180,40 +180,34 @@ testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build (constructorFunctions verifiedModule)
 
 testSubstitutionSimplifier :: PredicateSimplifier
-testSubstitutionSimplifier = Mock.substitutionSimplifier testMetadataTools
+testSubstitutionSimplifier = Mock.substitutionSimplifier
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators = Builtin.koreEvaluators verifiedModule
 
 testTermLikeSimplifier :: TermLikeSimplifier
-testTermLikeSimplifier = Simplifier.create testMetadataTools testEvaluators
+testTermLikeSimplifier = Simplifier.create
 
-evaluate
-    :: TermLike Variable
-    -> SMT (Pattern Variable)
-evaluate =
-    evalSimplifier
-    . TermLike.simplify
-        testMetadataTools
-        testSubstitutionSimplifier
-        testEvaluators
+testEnv :: Env
+testEnv =
+    Env
+        { metadataTools = testMetadataTools
+        , simplifierTermLike = testTermLikeSimplifier
+        , simplifierPredicate = testSubstitutionSimplifier
+        , simplifierAxioms = testEvaluators
+        }
 
-evaluateT
-    :: Trans.MonadTrans t
-    => TermLike Variable
-    -> t SMT (Pattern Variable)
+evaluate :: TermLike Variable -> SMT (Pattern Variable)
+evaluate = evalSimplifier testEnv . TermLike.simplify
+
+evaluateT :: Trans.MonadTrans t => TermLike Variable -> t SMT (Pattern Variable)
 evaluateT = Trans.lift . evaluate
 
-evaluateToList
-    :: TermLike Variable
-    -> SMT [Pattern Variable]
+evaluateToList :: TermLike Variable -> SMT [Pattern Variable]
 evaluateToList =
     fmap MultiOr.extractPatterns
-    . evalSimplifier
+    . evalSimplifier testEnv
     . TermLike.simplifyToOr
-        testMetadataTools
-        testEvaluators
-        testSubstitutionSimplifier
 
 runSMT :: SMT a -> IO a
 runSMT = SMT.runSMT SMT.defaultConfig emptyLogger
@@ -236,18 +230,13 @@ runStepResult
     -> SMT (Either UnificationOrSubstitutionError (Step.Results Variable))
 runStepResult configuration axiom = do
     results <-
-        evalSimplifier
+        evalSimplifier testEnv
         $ Monad.Unify.runUnifier
         $ Step.applyRewriteRulesParallel
-            testMetadataTools
-            testSubstitutionSimplifier
-            testTermLikeSimplifier
-            testEvaluators
             (Step.UnificationProcedure Unification.unificationProcedure)
             [axiom]
             configuration
     return (Result.mergeResults <$> results)
-
 
 -- | Test unparsing internalized patterns.
 hpropUnparse

@@ -9,22 +9,13 @@ module Kore.Step.Merging.Pattern
     ) where
 
 import qualified Control.Monad.Trans.Class as Monad.Trans
-import           Data.Reflection
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern, Predicate )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
-import           Kore.Step.Simplification.Data
-                 ( BranchT, PredicateSimplifier, Simplifier,
-                 TermLikeSimplifier )
+import           Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Substitution
                  ( PredicateMerger (PredicateMerger),
                  mergePredicatesAndSubstitutions )
@@ -42,26 +33,13 @@ mergeWithPredicate
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
-        , Given (SmtMetadataTools StepperAttributes)
         )
-    => SmtMetadataTools StepperAttributes
-    -- ^ Tools for finding additional information about patterns
-    -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions in a pattern.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate variable
+    => Predicate variable
     -- ^ Condition and substitution to add.
     -> Pattern variable
     -- ^ pattern to which the above should be added.
     -> BranchT Simplifier (Pattern variable)
 mergeWithPredicate
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
     Conditional
         { predicate = conditionToMerge
         , substitution = substitutionToMerge
@@ -73,21 +51,12 @@ mergeWithPredicate
   = do
     merged <-
         mergePredicatesAndSubstitutions
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
             [pattPredicate, conditionToMerge]
             [pattSubstitution, substitutionToMerge]
     let Conditional { predicate = mergedCondition } = merged
-    evaluatedCondition <- Monad.Trans.lift $
-        Predicate.evaluate substitutionSimplifier simplifier mergedCondition
+    evaluatedCondition <- Monad.Trans.lift $ Predicate.evaluate mergedCondition
     let Conditional { substitution = mergedSubstitution } = merged
     mergeWithEvaluatedCondition
-        tools
-        substitutionSimplifier
-        simplifier
-        axiomIdToSimplifier
         patt {substitution = mergedSubstitution}
         evaluatedCondition
 
@@ -98,20 +67,10 @@ mergeWithEvaluatedCondition
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern variable
+    => Pattern variable
     -> Predicate variable
     -> BranchT Simplifier (Pattern variable)
 mergeWithEvaluatedCondition
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
     Conditional
         { term = pattTerm
         , substitution = pattSubstitution
@@ -119,11 +78,8 @@ mergeWithEvaluatedCondition
     Conditional
         { predicate = predPredicate, substitution = predSubstitution }
   = do
-    merged <- mergePredicatesAndSubstitutions
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
+    merged <-
+        mergePredicatesAndSubstitutions
             [predPredicate]
             [pattSubstitution, predSubstitution]
     return $ Pattern.withCondition pattTerm merged

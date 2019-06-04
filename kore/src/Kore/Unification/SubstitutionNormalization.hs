@@ -39,6 +39,9 @@ import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
+import           Kore.Step.Simplification.Data
+                 ( MonadSimplify )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -58,16 +61,40 @@ x = f(x) or something equivalent).
 normalizeSubstitution
     ::  forall m variable
      .  ( Ord variable
-        , Monad m
+        , MonadSimplify m
         , FreshVariable variable
         , SortedVariable variable
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> Map variable (TermLike variable)
+    => Map variable (TermLike variable)
     -> ExceptT SubstitutionError m (Predicate variable)
-normalizeSubstitution tools substitution =
+normalizeSubstitution substitution = do
+    tools <- Simplifier.askMetadataTools
+    let
+        nonSimplifiableDependencies :: Map variable (Set variable)
+        nonSimplifiableDependencies =
+            Map.mapWithKey
+                (getNonSimplifiableDependencies tools interestingVariables)
+                substitution
+
+        -- | Do a `topologicalSort` of variables using the `dependencies` Map.
+        -- Topological cycles with non-ctors are returned as Left errors.
+        -- Non-simplifiable cycles are returned as Right Nothing.
+        topologicalSortConverted :: Either SubstitutionError (Maybe [variable])
+        topologicalSortConverted =
+            case topologicalSort (Set.toList <$> allDependencies) of
+                Left (ToplogicalSortCycles vars) ->
+                    case nonSimplifiableSortResult of
+                        Left (ToplogicalSortCycles _vars) ->
+                            Right Nothing
+                        Right _ ->
+                            Left (NonCtorCircularVariableDependency vars)
+                Right result -> Right $ Just result
+          where
+            nonSimplifiableSortResult =
+                topologicalSort (Set.toList <$> nonSimplifiableDependencies)
+
     ExceptT . sequence . fmap maybeToBottom $ topologicalSortConverted
 
   where
@@ -79,29 +106,6 @@ normalizeSubstitution tools substitution =
         Map.mapWithKey
             (getDependencies interestingVariables)
             substitution
-
-    nonSimplifiableDependencies :: Map variable (Set variable)
-    nonSimplifiableDependencies =
-        Map.mapWithKey
-            (getNonSimplifiableDependencies tools interestingVariables)
-            substitution
-
-    -- | Do a `topologicalSort` of variables using the `dependencies` Map.
-    -- Topological cycles with non-ctors are returned as Left errors.
-    -- Non-simplifiable cycles are returned as Right Nothing.
-    topologicalSortConverted :: Either SubstitutionError (Maybe [variable])
-    topologicalSortConverted =
-        case topologicalSort (Set.toList <$> allDependencies) of
-            Left (ToplogicalSortCycles vars) ->
-                case nonSimplifiableSortResult of
-                    Left (ToplogicalSortCycles _vars) ->
-                        Right Nothing
-                    Right _ ->
-                        Left (NonCtorCircularVariableDependency vars)
-            Right result -> Right $ Just result
-      where
-        nonSimplifiableSortResult =
-            topologicalSort (Set.toList <$> nonSimplifiableDependencies)
 
     sortedSubstitution
         :: [variable]

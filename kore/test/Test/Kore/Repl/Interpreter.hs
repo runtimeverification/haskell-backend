@@ -325,7 +325,7 @@ runSimplifier
     :: Simplifier a
     -> IO a
 runSimplifier =
-    SMT.runSMT SMT.defaultConfig emptyLogger . evalSimplifier
+    SMT.runSMT SMT.defaultConfig emptyLogger . evalSimplifier testEnv
 
 runWithState
     :: ReplCommand
@@ -348,7 +348,7 @@ runWithState command axioms claims claim stateTransformer
   where
     logOptions = Logger.KoreLogOptions Logger.LogNone Logger.Debug
     liftSimplifier logger =
-        SMT.runSMT SMT.defaultConfig logger . evalSimplifier
+        SMT.runSMT SMT.defaultConfig logger . evalSimplifier testEnv
     writeIORefIfNotEmpty out =
         \case
             "" -> pure ()
@@ -419,28 +419,12 @@ mkState axioms claims claim logger =
   where
     graph' = emptyExecutionGraph claim
     stepper0 claim' claims' axioms' graph (ReplNode node) =
-        verifyClaimStep
-            testMetadataTools
-            testTermLikeSimplifier
-            testSubstitutionSimplifier
-            testEvaluators
-            claim'
-            claims'
-            axioms'
-            graph
-            node
+        verifyClaimStep claim' claims' axioms' graph node
     unifier0
         :: TermLike Variable
         -> TermLike Variable
         -> UnifierWithExplanation ()
-    unifier0 first second =
-        () <$ unificationProcedure
-            testMetadataTools
-            testSubstitutionSimplifier
-            testTermLikeSimplifier
-            testEvaluators
-            first
-            second
+    unifier0 first second = () <$ unificationProcedure first second
 
 unificationErrorMessage
     :: Pretty.Doc ()

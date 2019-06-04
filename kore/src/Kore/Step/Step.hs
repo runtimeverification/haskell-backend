@@ -49,10 +49,6 @@ import           Data.Set
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.Conditional
                  ( Conditional (Conditional) )
 import qualified Kore.Internal.Conditional as Conditional
@@ -68,15 +64,12 @@ import           Kore.Internal.Predicate
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Log
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Step
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (RulePattern) )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
-import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Substitution as Substitution
 import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
@@ -103,11 +96,7 @@ newtype UnificationProcedure =
             , FreshVariable variable
             , MonadUnify unifier
             )
-        => SmtMetadataTools StepperAttributes
-        -> PredicateSimplifier
-        -> TermLikeSimplifier
-        -> BuiltinAndAxiomSimplifierMap
-        -> TermLike variable
+        => TermLike variable
         -> TermLike variable
         -> unifier (Predicate variable)
         )
@@ -209,24 +198,14 @@ unifyRule
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> UnificationProcedure
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-
+    => UnificationProcedure
     -> Pattern variable
     -- ^ Initial configuration
     -> RulePattern variable
     -- ^ Rule
     -> unifier (UnifiedRule variable)
 unifyRule
-    metadataTools
-    (UnificationProcedure unificationProcedure)
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
-
+    (UnificationProcedure unifyPatterns)
     initial@Conditional { term = initialTerm }
     rule
   = do
@@ -244,25 +223,8 @@ unifyRule
     let
         RulePattern { requires = ruleRequires } = rule'
         requires' = Predicate.fromPredicate ruleRequires
-    unification' <- normalize (unification <> requires')
+    unification' <- Substitution.normalizeExcept (unification <> requires')
     return (rule' `Conditional.withCondition` unification')
-  where
-    unifyPatterns
-        :: TermLike variable
-        -> TermLike variable
-        -> unifier (Conditional variable ())
-    unifyPatterns =
-        unificationProcedure
-            metadataTools
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-    normalize =
-        Substitution.normalizeExcept
-            metadataTools
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
 
 unifyRules
     ::  forall unifier variable
@@ -273,40 +235,18 @@ unifyRules
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> UnificationProcedure
-
+    => UnificationProcedure
     -> Pattern (Target variable)
     -- ^ Initial configuration
     -> [RulePattern (Target variable)]
     -- ^ Rule
     -> unifier [UnifiedRule (Target variable)]
-unifyRules
-    metadataTools
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
-    unificationProcedure
-
-    initial
-    rules
-  =
+unifyRules unificationProcedure initial rules =
     Monad.Unify.gather $ do
         rule <- Monad.Unify.scatter rules
-        unified <- unifyRule' initial rule
+        unified <- unifyRule unificationProcedure initial rule
         checkSubstitutionCoverage initial unified
         return unified
-  where
-    unifyRule' =
-        unifyRule
-            metadataTools
-            unificationProcedure
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
 
 {- | Apply the initial conditions to the results of rule unification.
 
@@ -322,46 +262,25 @@ applyInitialConditions
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-
-    -> Predicate variable
+    => Predicate variable
     -- ^ Initial conditions
     -> Predicate variable
     -- ^ Unification conditions
     -> unifier (OrPredicate variable)
     -- TODO(virgil): This should take advantage of the unifier's branching and
     -- not return an Or.
-applyInitialConditions
-    metadataTools
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
-
-    initial
-    unification
-  = do
+applyInitialConditions initial unification = do
     -- Combine the initial conditions and the unification conditions.
     -- The axiom requires clause is included in the unification conditions.
     applied <-
         Monad.liftM MultiOr.make
         $ Monad.Unify.gather
-        $ normalize (initial <> unification)
+        $ Substitution.normalizeExcept (initial <> unification)
     -- If 'applied' is \bottom, the rule is considered to not apply and
     -- no result is returned. If the result is \bottom after this check,
     -- then the rule is considered to apply with a \bottom result.
     TopBottom.guardAgainstBottom applied
     return applied
-  where
-    normalize condition =
-        Substitution.normalizeExcept
-            metadataTools
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-            condition
 
 {- | Produce the final configurations of an applied rule.
 
@@ -384,25 +303,12 @@ finalizeAppliedRule
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-
-    -> RulePattern variable
+    => RulePattern variable
     -- ^ Applied rule
     -> OrPredicate variable
     -- ^ Conditions of applied rule
     -> unifier (OrPattern variable)
-finalizeAppliedRule
-    metadataTools
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
-
-    renamedRule
-    appliedConditions
-  =
+finalizeAppliedRule renamedRule appliedConditions =
     Monad.liftM OrPattern.fromPatterns . Monad.Unify.gather
     $ finalizeAppliedRuleWorker =<< Monad.Unify.scatter appliedConditions
   where
@@ -423,13 +329,7 @@ finalizeAppliedRule
             finalTerm' = TermLike.substitute substitution' finalTerm
         return finalCondition { Pattern.term = finalTerm' }
 
-    normalize condition =
-        Substitution.normalizeExcept
-            metadataTools
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-            condition
+    normalize = Substitution.normalizeExcept
 
 {- | Apply the remainder predicate to the given initial configuration.
 
@@ -443,39 +343,17 @@ applyRemainder
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-
-    -> Pattern variable
+    => Pattern variable
     -- ^ Initial configuration
     -> Predicate variable
     -- ^ Remainder
     -> unifier (Pattern variable)
-applyRemainder
-    metadataTools
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
-
-    initial
-    remainder
-  = do
+applyRemainder initial remainder = do
     let final = initial `Conditional.andCondition` remainder
         finalCondition = Conditional.withoutTerm final
         Conditional { Conditional.term = finalTerm } = final
-    normalizedCondition <- normalize finalCondition
-    let normalized = normalizedCondition { Conditional.term = finalTerm }
-    return normalized
-  where
-    normalize condition =
-        Substitution.normalizeExcept
-            metadataTools
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-            condition
+    normalizedCondition <- Substitution.normalizeExcept finalCondition
+    return normalizedCondition { Conditional.term = finalTerm }
 
 toAxiomVariables
     :: Ord variable
@@ -498,48 +376,21 @@ finalizeRule
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-
-    -> Predicate (Target variable)
+    => Predicate (Target variable)
     -- ^ Initial conditions
     -> UnifiedRule (Target variable)
     -- ^ Rewriting axiom
     -> unifier [Result variable]
     -- TODO (virgil): This is broken, it should take advantage of the unifier's
     -- branching and not return a list.
-finalizeRule
-    metadataTools
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
-
-    initialCondition
-    unifiedRule
-  = Log.withLogScope "finalizeRule" $ Monad.Unify.gather $ do
-    let unificationCondition = Conditional.withoutTerm unifiedRule
-    applied <- applyInitialConditions' initialCondition unificationCondition
-    let renamedRule = Conditional.term unifiedRule
-    final <- finalizeAppliedRule' renamedRule applied
-    let result = unwrapAndQuantifyConfiguration <$> final
-    return Step.Result { appliedRule = unifiedRule, result }
-  where
-    applyInitialConditions' =
-        applyInitialConditions
-            metadataTools
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-    finalizeAppliedRule' =
-        finalizeAppliedRule
-            metadataTools
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
+finalizeRule initialCondition unifiedRule =
+    Log.withLogScope "finalizeRule" $ Monad.Unify.gather $ do
+        let unificationCondition = Conditional.withoutTerm unifiedRule
+        applied <- applyInitialConditions initialCondition unificationCondition
+        let renamedRule = Conditional.term unifiedRule
+        final <- finalizeAppliedRule renamedRule applied
+        let result = unwrapAndQuantifyConfiguration <$> final
+        return Step.Result { appliedRule = unifiedRule, result }
 
 finalizeRulesParallel
     ::  forall unifier variable
@@ -551,48 +402,22 @@ finalizeRulesParallel
         , MonadUnify unifier
         , Log.WithLog Log.LogMessage unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-
-    -> Pattern (Target variable)
+    => Pattern (Target variable)
     -> [UnifiedRule (Target variable)]
     -> unifier (Results variable)
-finalizeRulesParallel
-    metadataTools
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
-
-    initial
-    unifiedRules
-  = do
+finalizeRulesParallel initial unifiedRules = do
     let initialCondition = Conditional.withoutTerm initial
     results <-
-        Foldable.fold <$> traverse (finalizeRule' initialCondition) unifiedRules
+        Foldable.fold <$> traverse (finalizeRule initialCondition) unifiedRules
     let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
         remainder = Predicate.fromPredicate (Remainder.remainder' unifications)
-    remainders' <- Monad.Unify.gather $ applyRemainder' initial remainder
+    remainders' <- Monad.Unify.gather $ applyRemainder initial remainder
     return Step.Results
         { results = Seq.fromList results
         , remainders =
             OrPattern.fromPatterns
             $ Pattern.mapVariables Target.unwrapVariable <$> remainders'
         }
-  where
-    finalizeRule' =
-        finalizeRule
-            metadataTools
-            predicateSimplifier
-            termSimplifier
-            axiomSimplifiers
-    applyRemainder' =
-        applyRemainder
-            metadataTools
-            predicateSimplifier
-            termSimplifier
-            axiomSimplifiers
 
 finalizeRulesSequence
     ::  forall unifier variable
@@ -604,28 +429,15 @@ finalizeRulesSequence
         , MonadUnify unifier
         , Log.WithLog Log.LogMessage unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-
-    -> Pattern (Target variable)
+    => Pattern (Target variable)
     -> [UnifiedRule (Target variable)]
     -> unifier (Results variable)
-finalizeRulesSequence
-    metadataTools
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
-
-    initial
-    unifiedRules
-  = do
+finalizeRulesSequence initial unifiedRules = do
     (results, remainder) <-
         State.runStateT
             (traverse finalizeRuleSequence' unifiedRules)
             (Conditional.withoutTerm initial)
-    remainders' <- Monad.Unify.gather $ applyRemainder' initial remainder
+    remainders' <- Monad.Unify.gather $ applyRemainder initial remainder
     return Step.Results
         { results = Seq.fromList $ Foldable.fold results
         , remainders =
@@ -638,7 +450,7 @@ finalizeRulesSequence
         -> State.StateT (Predicate (Target variable)) unifier [Result variable]
     finalizeRuleSequence' unifiedRule = do
         remainder <- State.get
-        results <- Monad.Trans.lift $ finalizeRule' remainder unifiedRule
+        results <- Monad.Trans.lift $ finalizeRule remainder unifiedRule
         let unification = Conditional.withoutTerm unifiedRule
             remainder' =
                 Predicate.fromPredicate
@@ -646,18 +458,6 @@ finalizeRulesSequence
                 $ MultiOr.singleton unification
         State.put (remainder `Conditional.andCondition` remainder')
         return results
-    finalizeRule' =
-        finalizeRule
-            metadataTools
-            predicateSimplifier
-            termSimplifier
-            axiomSimplifiers
-    applyRemainder' =
-        applyRemainder
-            metadataTools
-            predicateSimplifier
-            termSimplifier
-            axiomSimplifiers
 
 {- | Check that the final substitution covers the applied rule appropriately.
 
@@ -748,46 +548,21 @@ applyRulesParallel
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> UnificationProcedure
-
+    => UnificationProcedure
     -> [RulePattern variable]
     -- ^ Rewrite rules
     -> Pattern variable
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
 applyRulesParallel
-    metadataTools
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
     unificationProcedure
-
     -- Wrap the rule and configuration so that unification prefers to substitute
     -- axiom variables.
     (map toAxiomVariables -> rules)
     (toConfigurationVariables -> initial)
   =
-    unifyRules' initial rules >>= finalizeRulesParallel' initial
-  where
-    unifyRules' =
-        unifyRules
-            metadataTools
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-            unificationProcedure
-    finalizeRulesParallel' =
-        finalizeRulesParallel
-            metadataTools
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
+    unifyRules unificationProcedure initial rules
+    >>= finalizeRulesParallel initial
 
 {- | Apply the given rewrite rules to the initial configuration in parallel.
 
@@ -804,35 +579,14 @@ applyRewriteRulesParallel
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> UnificationProcedure
-
+    => UnificationProcedure
     -> [RewriteRule variable]
     -- ^ Rewrite rules
     -> Pattern variable
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
-applyRewriteRulesParallel
-    metadataTools
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
-    unificationProcedure
-
-    rewriteRules
-  =
-    applyRulesParallel
-        metadataTools
-        predicateSimplifier
-        patternSimplifier
-        axiomSimplifiers
-        unificationProcedure
-        (getRewriteRule <$> rewriteRules)
+applyRewriteRulesParallel unificationProcedure rewriteRules =
+    applyRulesParallel unificationProcedure (getRewriteRule <$> rewriteRules)
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
@@ -849,46 +603,21 @@ applyRulesSequence
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> UnificationProcedure
-
+    => UnificationProcedure
     -> Pattern variable
     -- ^ Configuration being rewritten
     -> [RulePattern variable]
     -- ^ Rewrite rules
     -> unifier (Results variable)
 applyRulesSequence
-    metadataTools
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
     unificationProcedure
-
     -- Wrap the rule and configuration so that unification prefers to substitute
     -- axiom variables.
     (toConfigurationVariables -> initial)
     (map toAxiomVariables -> rules)
   =
-    unifyRules' initial rules >>= finalizeRulesSequence' initial
-  where
-    unifyRules' =
-        unifyRules
-            metadataTools
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-            unificationProcedure
-    finalizeRulesSequence' =
-        finalizeRulesSequence
-            metadataTools
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
+    unifyRules unificationProcedure initial rules
+    >>= finalizeRulesSequence initial
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
@@ -905,34 +634,14 @@ applyRewriteRulesSequence
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> UnificationProcedure
-
+    => UnificationProcedure
     -> Pattern variable
     -- ^ Configuration being rewritten
     -> [RewriteRule variable]
     -- ^ Rewrite rules
     -> unifier (Results variable)
-applyRewriteRulesSequence
-    metadataTools
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
-    unificationProcedure
-
-    initialConfig
-    rewriteRules
-  =
+applyRewriteRulesSequence unificationProcedure initialConfig rewriteRules =
     applyRulesSequence
-        metadataTools
-        predicateSimplifier
-        patternSimplifier
-        axiomSimplifiers
         unificationProcedure
         initialConfig
         (getRewriteRule <$> rewriteRules)

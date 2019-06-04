@@ -26,13 +26,15 @@ module Kore.Logger
 import           Colog
                  ( LogAction (..) )
 import qualified Control.Monad.Except as Except
+import           Control.Monad.Morph
+                 ( MFunctor )
 import qualified Control.Monad.Morph as Monad.Morph
 import qualified Control.Monad.State.Strict as Strict
 import           Control.Monad.Trans
                  ( MonadTrans )
 import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Identity
-                 ( IdentityT )
+import           Control.Monad.Trans.Reader
 import           Data.Functor.Contravariant
                  ( contramap )
 import           Data.String
@@ -86,6 +88,7 @@ class Monad m => WithLog msg m where
     default askLogAction
         :: (MonadTrans t, WithLog msg n, m ~ t n) => m (LogAction m msg)
     askLogAction = liftLogAction <$> Monad.Trans.lift askLogAction
+    {-# INLINE askLogAction #-}
 
     -- | Modify the 'LogAction' over the scope of an action.
     localLogAction
@@ -93,12 +96,16 @@ class Monad m => WithLog msg m where
         -> m a
         -> m a
     default localLogAction
-        :: (Monad.Morph.MFunctor t, WithLog msg m', m ~ t m')
+        :: (WithLog msg m', MFunctor t, m ~ t m')
         => (forall n. LogAction n msg -> LogAction n msg)
-        -> m a -> m a
+        -> m a
+        -> m a
     localLogAction mapping = Monad.Morph.hoist (localLogAction mapping)
+    {-# INLINE localLogAction #-}
 
 instance (WithLog msg m, Monad m) => WithLog msg (IdentityT m)
+
+instance (WithLog msg m, Monad m) => WithLog msg (ReaderT r m)
 
 instance (WithLog msg m, Monad m) => WithLog msg (Strict.StateT s m)
 

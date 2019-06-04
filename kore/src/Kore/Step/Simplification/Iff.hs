@@ -13,9 +13,6 @@ module Kore.Step.Simplification.Iff
     , simplifyEvaluated
     ) where
 
-import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -23,10 +20,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
                  ( makeEvaluate, simplifyEvaluated )
 import           Kore.Unparser
@@ -46,26 +40,10 @@ simplify
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> Iff Sort (OrPattern variable)
+    => Iff Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
-simplify
-    tools
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
-    Iff { iffFirst = first, iffSecond = second }
-  =
-    simplifyEvaluated
-        tools
-        predicateSimplifier
-        termSimplifier
-        axiomSimplifiers
-        first
-        second
+simplify Iff { iffFirst = first, iffSecond = second } =
+    simplifyEvaluated first second
 
 {-| evaluates an 'Iff' given its two 'OrPattern' children.
 
@@ -91,36 +69,16 @@ simplifyEvaluated
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> OrPattern variable
+    => OrPattern variable
     -> OrPattern variable
     -> Simplifier (OrPattern variable)
 simplifyEvaluated
-    tools
-    predicateSimplifier
-    termSimplifier
-    axiomSimplifiers
     first
     second
-  | OrPattern.isTrue first = return second
-  | OrPattern.isFalse first =
-    Not.simplifyEvaluated
-        tools
-        predicateSimplifier
-        termSimplifier
-        axiomSimplifiers
-        second
-  | OrPattern.isTrue second = return first
-  | OrPattern.isFalse second =
-    Not.simplifyEvaluated
-        tools
-        predicateSimplifier
-        termSimplifier
-        axiomSimplifiers
-        first
+  | OrPattern.isTrue first   = return second
+  | OrPattern.isFalse first  = Not.simplifyEvaluated second
+  | OrPattern.isTrue second  = return first
+  | OrPattern.isFalse second = Not.simplifyEvaluated first
   | otherwise =
     return $ case ( firstPatterns, secondPatterns ) of
         ([firstP], [secondP]) -> makeEvaluate firstP secondP

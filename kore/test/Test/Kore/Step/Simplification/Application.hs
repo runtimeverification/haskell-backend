@@ -13,10 +13,6 @@ import qualified Data.Set as Set
 
 import           Data.Sup
 import qualified Kore.Attribute.Pattern as Attribute
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -24,16 +20,16 @@ import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
-import           Kore.Step.Axiom.Data
-import qualified Kore.Step.Axiom.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
 import           Kore.Step.Axiom.EvaluationStrategy
                  ( firstFullEvaluation )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Simplification.Application
 import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.Data
                  ( TermLikeSimplifier, evalSimplifier )
+import qualified Kore.Step.Simplification.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
                  ( Unparse )
@@ -80,7 +76,6 @@ test_applicationSimplification =
                     ]
         actual <-
             evaluate
-                Mock.metadataTools
                 (mockSimplifier noSimplification)
                 Map.empty
                 (makeApplication
@@ -97,7 +92,6 @@ test_applicationSimplification =
         let expect = OrPattern.fromPatterns [ Pattern.bottom ]
         actual <-
             evaluate
-                Mock.metadataTools
                 (mockSimplifier noSimplification)
                 Map.empty
                 (makeApplication
@@ -114,12 +108,11 @@ test_applicationSimplification =
         let expect = OrPattern.fromPatterns [ gOfAExpanded ]
         actual <-
             evaluate
-                Mock.metadataTools
                 (mockSimplifier noSimplification)
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.fId)
                     (simplificationEvaluator
-                        [ BuiltinAndAxiomSimplifier $ \_ _ _ _ _ ->
+                        [ BuiltinAndAxiomSimplifier $ \_ _ _ _ ->
                             return $ AttemptedAxiom.Applied
                                 AttemptedAxiomResults
                                     { results =
@@ -154,7 +147,6 @@ test_applicationSimplification =
                         ]
             actual <-
                 evaluate
-                    Mock.metadataTools
                     (mockSimplifier noSimplification)
                     Map.empty
                     (makeApplication
@@ -238,12 +230,11 @@ test_applicationSimplification =
                         }
                 in
                     evaluate
-                        Mock.metadataTools
                         (mockSimplifier noSimplification)
                         (Map.singleton
                             (AxiomIdentifier.Application Mock.sigmaId)
                             (simplificationEvaluator
-                                [ BuiltinAndAxiomSimplifier $ \_ _ _ _ _ ->
+                                [ BuiltinAndAxiomSimplifier $ \_ _ _ _ ->
                                     return result
                                 ]
                             )
@@ -341,8 +332,7 @@ makeApplication patternSort symbol patterns =
             }
 
 evaluate
-    :: SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier
+    :: TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
@@ -351,12 +341,14 @@ evaluate
         (Attribute.Pattern Variable)
         (OrPattern Variable)
     -> IO (OrPattern Variable)
-evaluate tools simplifier axiomIdToEvaluator application =
+evaluate simplifier axiomIdToEvaluator application =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
-    $ simplify
-        tools
-        (Mock.substitutionSimplifier tools)
-        simplifier
-        axiomIdToEvaluator
-        application
+    $ evalSimplifier mockEnv
+    $ simplify application
+  where
+    mockEnv =
+        Mock.env
+            { simplifierPredicate = Mock.substitutionSimplifier
+            , simplifierAxioms = axiomIdToEvaluator
+            , simplifierTermLike = simplifier
+            }

@@ -10,10 +10,6 @@ import Test.Tasty.HUnit
 import qualified Data.Map as Map
 
 import qualified Data.Sup as Sup
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -24,24 +20,22 @@ import           Kore.Logger.Output as Logger
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeTruePredicate )
-import           Kore.Step.Axiom.Data
-                 ( AttemptedAxiom,
-                 AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
-                 BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import qualified Kore.Step.Axiom.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplify )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
-                 evalSimplifier )
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
-                 ( create )
+                 ( AttemptedAxiom,
+                 AttemptedAxiomResults (AttemptedAxiomResults),
+                 BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
+                 BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.Simplification.Data
+                 ( Env (..), PredicateSimplifier, Simplifier,
+                 TermLikeSimplifier, evalSimplifier )
+import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
+import qualified Kore.Step.Simplification.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -71,7 +65,7 @@ test_ceilSimplification =
                     , substitution = mempty
                     }
                 ]
-        actual <- evaluate Mock.metadataTools
+        actual <- evaluate
             (makeCeil
                 [somethingOfAExpanded, somethingOfBExpanded]
             )
@@ -79,7 +73,7 @@ test_ceilSimplification =
     , testCase "Ceil - bool operations"
         (do
             -- ceil(top) = top
-            actual1 <- evaluate Mock.metadataTools
+            actual1 <- evaluate
                 (makeCeil
                     [Pattern.top]
                 )
@@ -89,7 +83,7 @@ test_ceilSimplification =
                 )
                 actual1
             -- ceil(bottom) = bottom
-            actual2 <- evaluate Mock.metadataTools
+            actual2 <- evaluate
                 (makeCeil
                     []
                 )
@@ -102,16 +96,14 @@ test_ceilSimplification =
     , testCase "expanded Ceil - bool operations"
         (do
             -- ceil(top) = top
-            actual1 <- makeEvaluate Mock.metadataTools
-                (Pattern.top :: Pattern Variable)
+            actual1 <- makeEvaluate Pattern.top
             assertEqualWithExplanation "ceil(top)"
                 (OrPattern.fromPatterns
                     [ Pattern.top ]
                 )
                 actual1
             -- ceil(bottom) = bottom
-            actual2 <- makeEvaluate Mock.metadataTools
-                (Pattern.bottom :: Pattern Variable)
+            actual2 <- makeEvaluate Pattern.bottom
             assertEqualWithExplanation "ceil(bottom)"
                 (OrPattern.fromPatterns
                     []
@@ -133,7 +125,7 @@ test_ceilSimplification =
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
-        actual <- makeEvaluate Mock.metadataTools
+        actual <- makeEvaluate
             Conditional
                 { term = somethingOfA
                 , predicate = makeEqualsPredicate fOfA gOfA
@@ -164,7 +156,7 @@ test_ceilSimplification =
                             Substitution.unsafeWrap [(Mock.x, fOfB)]
                         }
                     ]
-            actual <- makeEvaluate Mock.metadataTools
+            actual <- makeEvaluate
                 Conditional
                     { term = constructorTerm
                     , predicate = makeEqualsPredicate fOfA gOfA
@@ -177,7 +169,7 @@ test_ceilSimplification =
     , testCase "ceil of constructors is top" $ do
         let
             expected = OrPattern.fromPatterns [Pattern.top]
-        actual <- makeEvaluate Mock.metadataTools
+        actual <- makeEvaluate
             Conditional
                 { term = Mock.constr10 Mock.a
                 , predicate = makeTruePredicate
@@ -202,7 +194,7 @@ test_ceilSimplification =
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
-        actual <- makeEvaluate Mock.metadataTools
+        actual <- makeEvaluate
             Conditional
                 { term = Mock.functional20 somethingOfA somethingOfB
                 , predicate = makeEqualsPredicate fOfA gOfA
@@ -227,7 +219,7 @@ test_ceilSimplification =
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
-        actual <- makeEvaluate Mock.metadataTools
+        actual <- makeEvaluate
             Conditional
                 { term = fOfA
                 , predicate = makeEqualsPredicate fOfA gOfA
@@ -252,7 +244,7 @@ test_ceilSimplification =
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
-        actual <- makeEvaluate Mock.metadataTools
+        actual <- makeEvaluate
             Conditional
                 { term = fOfA
                 , predicate = makeEqualsPredicate fOfA gOfA
@@ -274,7 +266,7 @@ test_ceilSimplification =
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
-        actual <- makeEvaluate Mock.metadataTools
+        actual <- makeEvaluate
             Conditional
                 { term = Mock.a
                 , predicate = makeEqualsPredicate fOfA gOfA
@@ -304,7 +296,7 @@ test_ceilSimplification =
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
                     }
                 ]
-        actual <- makeEvaluate Mock.metadataTools
+        actual <- makeEvaluate
             Conditional
                 { term = Mock.functional20 fOfA fOfB
                 , predicate = makeEqualsPredicate fOfA gOfA
@@ -332,7 +324,6 @@ test_ceilSimplification =
                     }
                 ]
         actual <- makeEvaluateWithAxioms
-            Mock.metadataTools
             (Map.singleton
                 (AxiomIdentifier.Ceil
                     (AxiomIdentifier.Application Mock.fId)
@@ -364,7 +355,7 @@ test_ceilSimplification =
                     , substitution = mempty
                     }
                 ]
-        actual <- makeEvaluate Mock.metadataTools
+        actual <- makeEvaluate
             $ Pattern.fromTermLike
             $ mkDomainValue DomainValue
                 { domainValueSort = Mock.testSort
@@ -385,7 +376,7 @@ test_ceilSimplification =
                     , substitution = mempty
                     }
                 ]
-        actual <- makeEvaluate Mock.metadataTools
+        actual <- makeEvaluate
             Conditional
                 { term =
                     Mock.builtinMap
@@ -407,7 +398,7 @@ test_ceilSimplification =
                     , substitution = mempty
                     }
                 ]
-        actual <- makeEvaluate Mock.metadataTools
+        actual <- makeEvaluate
             Conditional
                 { term = Mock.builtinList [fOfA, fOfB]
                 , predicate = makeTruePredicate
@@ -419,7 +410,7 @@ test_ceilSimplification =
         -- so ceil({a, b}) = top
         let
             expected = OrPattern.fromPatterns [ Pattern.top ]
-        actual <- makeEvaluate Mock.metadataTools
+        actual <- makeEvaluate
             Conditional
                 { term = Mock.builtinSet [asConcrete' fOfA, asConcrete' fOfB]
                 , predicate = makeTruePredicate
@@ -461,13 +452,12 @@ appliedMockEvaluator result =
 
 mockEvaluator
     :: AttemptedAxiom variable
-    -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> Simplifier (AttemptedAxiom variable)
-mockEvaluator evaluation _ _ _ _ _ =
+mockEvaluator evaluation _ _ _ _ =
     return evaluation
 
 mapVariables
@@ -493,38 +483,32 @@ makeCeil patterns =
         }
 
 evaluate
-    :: SmtMetadataTools StepperAttributes
-    -> Ceil Sort (OrPattern Variable)
+    :: Ceil Sort (OrPattern Variable)
     -> IO (OrPattern Variable)
-evaluate tools ceil =
+evaluate ceil =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
-    $ Ceil.simplify
-        tools
-        (Mock.substitutionSimplifier tools)
-        (Simplifier.create tools Map.empty)
-        Map.empty
-        ceil
+    $ evalSimplifier mockEnv
+    $ Ceil.simplify ceil
+  where
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
 
 makeEvaluate
-    :: SmtMetadataTools StepperAttributes
-    -> Pattern Variable
+    :: Pattern Variable
     -> IO (OrPattern Variable)
-makeEvaluate tools child =
-    makeEvaluateWithAxioms tools Map.empty child
+makeEvaluate = makeEvaluateWithAxioms Map.empty
 
 makeEvaluateWithAxioms
-    :: SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifierMap
+    :: BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> Pattern Variable
     -> IO (OrPattern Variable)
-makeEvaluateWithAxioms tools axiomIdToSimplifier child =
+makeEvaluateWithAxioms axiomIdToSimplifier child =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
-    $ Ceil.makeEvaluate
-        tools
-        (Mock.substitutionSimplifier tools)
-        (Simplifier.create tools axiomIdToSimplifier)
-        axiomIdToSimplifier
-        child
+    $ evalSimplifier mockEnv
+    $ Ceil.makeEvaluate child
+  where
+    mockEnv =
+        Mock.env
+            { simplifierAxioms = axiomIdToSimplifier
+            , simplifierPredicate = Mock.substitutionSimplifier
+            }

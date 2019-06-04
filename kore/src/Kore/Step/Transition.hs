@@ -31,6 +31,8 @@ import qualified Data.Sequence as Seq
 import           Data.Typeable
                  ( Typeable )
 
+import           Kore.Step.Simplification.Data
+                 ( MonadSimplify )
 import           ListT
                  ( ListT )
 import qualified ListT
@@ -90,7 +92,9 @@ instance Monad.Morph.MFunctor (TransitionT rule) where
         . getTransitionT
     {-# INLINE hoist #-}
 
-instance (MonadSMT m, MonadIO m) => MonadSMT (TransitionT rule m)
+instance MonadSMT m => MonadSMT (TransitionT rule m)
+
+instance MonadSimplify m => MonadSimplify (TransitionT rule m)
 
 runTransitionT :: Monad m => TransitionT rule m a -> m [(a, Seq rule)]
 runTransitionT (TransitionT edge) = ListT.gather (runAccumT edge mempty)

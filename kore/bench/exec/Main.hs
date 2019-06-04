@@ -34,8 +34,6 @@ import           Kore.Parser
                  ( parseKoreDefinition, parseKorePattern )
 import           Kore.Step
                  ( anyRewrite )
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
 import           Kore.Syntax.Id
 import           Kore.Syntax.Module
                  ( ModuleName (..) )
@@ -181,7 +179,6 @@ execBenchmark root kFile definitionFile mainModuleName test =
         -> IO (TermLike Variable)
     execution (verifiedModule, purePattern) =
         SMT.runSMT SMT.defaultConfig emptyLogger
-        $ evalSimplifier
         $ exec verifiedModule strategy purePattern
       where
         unlimited :: Limit Natural

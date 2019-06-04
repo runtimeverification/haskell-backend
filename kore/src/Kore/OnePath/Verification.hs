@@ -31,12 +31,8 @@ import qualified Data.Limit as Limit
 import           Data.Maybe
 
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
 import qualified Kore.Attribute.Trusted as Trusted
 import           Kore.Debug
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
                  ( Conditional (Conditional), Pattern )
@@ -50,14 +46,11 @@ import qualified Kore.OnePath.Step as OnePath
 import           Kore.OnePath.StrategyPattern
                  ( CommonStrategyPattern )
 import qualified Kore.OnePath.StrategyPattern as StrategyPattern
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import           Kore.Step.Strategy
                  ( executionHistoryStep )
 import           Kore.Step.Strategy
@@ -145,14 +138,7 @@ didn't manage to verify a claim within the its maximum number of steps.
 If the verification succeeds, it returns ().
 -}
 verify
-    :: SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier
-    -- ^ Simplifies normal patterns through, e.g., function evaluation
-    -> PredicateSimplifier
-    -- ^ Simplifies predicates
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    ->  (  Pattern Variable
+    ::  (  Pattern Variable
         -> [Strategy
             (Prim
                 (Pattern Variable)
@@ -166,21 +152,8 @@ verify
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT (Pattern Variable) Simplifier ()
-verify
-    metadataTools
-    simplifier
-    substitutionSimplifier
-    axiomIdToSimplifier
-    strategyBuilder
-  =
-    mapM_
-        (verifyClaim
-            metadataTools
-            simplifier
-            substitutionSimplifier
-            axiomIdToSimplifier
-            strategyBuilder
-        )
+verify strategyBuilder =
+    mapM_ (verifyClaim strategyBuilder)
 
 {- | Default implementation for a one-path strategy. You can apply it to the
 first two arguments and pass the resulting function to 'verify'.
@@ -225,21 +198,12 @@ defaultStrategy
     coinductiveRewrites = map (RewriteRule . coerce) claims
 
 verifyClaim
-    :: SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier
-    -> PredicateSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    ->  (  Pattern Variable
+    ::  (  Pattern Variable
         -> [Strategy (Prim (Pattern Variable) (RewriteRule Variable))]
         )
     -> (RewriteRule Variable, Limit Natural)
     -> ExceptT (Pattern Variable) Simplifier ()
 verifyClaim
-    metadataTools
-    simplifier
-    substitutionSimplifier
-    axiomIdToSimplifier
     strategyBuilder
     (rule@(RewriteRule RulePattern {left, right, requires, ensures}), stepLimit)
   = traceExceptT D_OnePath_verifyClaim [debugArg "rule" rule] $ do
@@ -273,15 +237,8 @@ verifyClaim
         -> TransitionT (RewriteRule Variable) Verifier CommonStrategyPattern
     transitionRule' prim proofState = do
         transitions <-
-            Monad.Trans.lift . Monad.Trans.lift
-            $ runTransitionT
-            $ OnePath.transitionRule
-                metadataTools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                prim
-                proofState
+            Monad.Trans.lift . Monad.Trans.lift . runTransitionT
+            $ OnePath.transitionRule prim proofState
         let (configs, _) = unzip transitions
             stuck = mapMaybe StrategyPattern.extractStuck configs
         Foldable.traverse_ Monad.Except.throwError stuck
@@ -302,11 +259,7 @@ unprovenNodes executionGraph =
 verifyClaimStep
     :: forall claim
     .  Claim claim
-    => SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier
-    -> PredicateSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> claim
+    => claim
     -- ^ claim that is being proven
     -> [claim]
     -- ^ list of claims in the spec module
@@ -322,10 +275,6 @@ verifyClaimStep
             (RewriteRule Variable)
         )
 verifyClaimStep
-    tools
-    simplifier
-    predicateSimplifier
-    axiomIdToSimplifier
     target
     claims
     axioms
@@ -340,14 +289,8 @@ verifyClaimStep
     transitionRule'
         :: Prim (Pattern Variable) (RewriteRule Variable)
         -> CommonStrategyPattern
-        -> TransitionT (RewriteRule Variable) Simplifier
-            (CommonStrategyPattern)
-    transitionRule' =
-        OnePath.transitionRule
-            tools
-            predicateSimplifier
-            simplifier
-            axiomIdToSimplifier
+        -> TransitionT (RewriteRule Variable) Simplifier (CommonStrategyPattern)
+    transitionRule' = OnePath.transitionRule
 
     strategy'
         :: Strategy

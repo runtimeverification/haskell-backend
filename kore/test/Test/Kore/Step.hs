@@ -6,7 +6,6 @@ import Test.Tasty.HUnit
 import qualified Control.Exception as Exception
 import           Data.Default
                  ( def )
-import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 import           Data.Text
@@ -25,17 +24,12 @@ import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
-import           Kore.Step.Simplification.Data
-                 ( Simplifier )
 import           Kore.Step.Simplification.Data as Simplification
-
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import qualified Kore.Step.Strategy as Strategy
 import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
@@ -52,7 +46,7 @@ import           Test.Tasty.HUnit.Extensions
 -- `mockMetadataTools. `
 test_constructorRewriting :: TestTree
 test_constructorRewriting =
-    applyStrategy                              "a constructor appied to a var"
+    applyStrategy                              "a constructor applied to a var"
         ( Start $ cons "c1" ["var"])
         [ Axiom $ cons "c1" ["x1"] `rewritesTo` cons "c2" ["x1"]
         , Axiom $ cons "c2" ["x2"] `rewritesTo` cons "c3" ["x2"]
@@ -90,12 +84,12 @@ takeSteps :: (Start, [Axiom]) -> IO Actual
 takeSteps (Start start, wrappedAxioms) =
     (<$>) pickLongest
     $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ Simplification.evalSimplifier
+    $ Simplification.evalSimplifier mockEnv
     $ makeExecutionGraph start (unAxiom <$> wrappedAxioms)
   where
     makeExecutionGraph configuration axioms =
         Strategy.runStrategy
-            mockTransitionRule
+            transitionRule
             (repeat $ allRewrites axioms)
             (pure configuration)
 
@@ -123,21 +117,6 @@ type Actual = Pattern Variable
 
 anySort :: Sort
 anySort = sort "irrelevant"
-
-mockTransitionRule
-    :: Prim (RewriteRule Variable)
-    -> CommonPattern
-    -> Strategy.TransitionT (RewriteRule Variable) Simplifier CommonPattern
-mockTransitionRule =
-    transitionRule
-        metadataTools
-        substitutionSimplifier
-        simplifier
-        Map.empty
-  where
-    metadataTools = mockMetadataTools
-    simplifier = Simplifier.create metadataTools Map.empty
-    substitutionSimplifier = Mock.substitutionSimplifier metadataTools
 
 -- Builders -- should these find a better home?
 
@@ -224,7 +203,6 @@ expectTwoAxioms =
 actualTwoAxioms :: IO [Pattern Variable]
 actualTwoAxioms =
     runStep
-        mockMetadataTools
         Conditional
             { term = mkVar (v1 Mock.testSort)
             , predicate = makeTruePredicate
@@ -251,7 +229,6 @@ expectFailSimple = [initialFailSimple]
 actualFailSimple :: IO [Pattern Variable]
 actualFailSimple =
     runStep
-        mockMetadataTools
         initialFailSimple
         [ RewriteRule $ RulePattern
             { left =
@@ -283,7 +260,6 @@ expectFailCycle = [initialFailCycle]
 actualFailCycle :: IO [Pattern Variable]
 actualFailCycle =
     runStep
-        mockMetadataTools
         initialFailCycle
         [ RewriteRule $ RulePattern
             { left =
@@ -312,7 +288,6 @@ expectIdentity = [initialIdentity]
 actualIdentity :: IO [Pattern Variable]
 actualIdentity =
     runStep
-        mockMetadataTools
         initialIdentity
         [ rewriteIdentity ]
 
@@ -354,7 +329,6 @@ test_unificationError =
 actualUnificationError :: IO [Pattern Variable]
 actualUnificationError =
     runStep
-        mockMetadataTools
         Conditional
             { term =
                 metaSigma
@@ -389,6 +363,9 @@ mockMetadataTools = MetadataTools
     , applicationSorts = undefined
     , smtData = undefined
     }
+
+mockEnv :: Env
+mockEnv = Mock.env { metadataTools = mockMetadataTools }
 
 sigmaSymbol :: SymbolOrAlias
 sigmaSymbol = SymbolOrAlias
@@ -464,47 +441,23 @@ metaI
 metaI p = mkApp Mock.testSort iSymbol [p]
 
 runStep
-    :: SmtMetadataTools StepperAttributes
-    -- ^functions yielding metadata for pattern heads
-    -> Pattern Variable
+    :: Pattern Variable
     -- ^left-hand-side of unification
     -> [RewriteRule Variable]
     -> IO [Pattern Variable]
-runStep metadataTools configuration axioms =
+runStep configuration axioms =
     (<$>) pickFinal
     $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ Simplification.evalSimplifier
-    $ runStrategy
-        (transitionRule
-            metadataTools
-            (Mock.substitutionSimplifier metadataTools)
-            simplifier
-            Map.empty
-        )
-        [allRewrites axioms]
-        configuration
-  where
-    simplifier = Simplifier.create metadataTools Map.empty
+    $ Simplification.evalSimplifier mockEnv
+    $ runStrategy transitionRule [allRewrites axioms] configuration
 
 runSteps
-    :: SmtMetadataTools StepperAttributes
-    -- ^functions yielding metadata for pattern heads
-    -> Pattern Variable
+    :: Pattern Variable
     -- ^left-hand-side of unification
     -> [RewriteRule Variable]
     -> IO (Pattern Variable)
-runSteps metadataTools configuration axioms =
+runSteps configuration axioms =
     (<$>) pickLongest
     $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ Simplification.evalSimplifier
-    $ runStrategy
-        (transitionRule
-            metadataTools
-            (Mock.substitutionSimplifier metadataTools)
-            simplifier
-            Map.empty
-        )
-        (repeat $ allRewrites axioms)
-        configuration
-  where
-    simplifier = Simplifier.create metadataTools Map.empty
+    $ Simplification.evalSimplifier mockEnv
+    $ runStrategy transitionRule (repeat $ allRewrites axioms) configuration

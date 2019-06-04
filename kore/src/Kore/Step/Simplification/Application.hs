@@ -13,10 +13,6 @@ module Kore.Step.Simplification.Application
     ) where
 
 import qualified Kore.Attribute.Pattern as Attribute
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -30,13 +26,9 @@ import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Function.Evaluator
                  ( evaluateApplication )
-import           Kore.Step.Simplification.Data
-                 ( BranchT, PredicateSimplifier, Simplifier,
-                 TermLikeSimplifier )
+import           Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import           Kore.Step.Substitution
@@ -70,34 +62,15 @@ simplify
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> CofreeF
+    => CofreeF
         (Application SymbolOrAlias)
         (Attribute.Pattern variable)
         (OrPattern variable)
     -> Simplifier (OrPattern variable)
-simplify
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToEvaluator
-    (valid :< app)
-  = do
+simplify (valid :< app) = do
     evaluated <-
         traverse
-            (makeAndEvaluateApplications
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToEvaluator
-                valid
-                symbol
-            )
+            (makeAndEvaluateApplications valid symbol)
             -- The "Propagation Or" inference rule together with
             -- "Propagation Bottom" for the case when a child or is empty.
             (MultiOr.fullCrossProduct children)
@@ -116,35 +89,15 @@ makeAndEvaluateApplications
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Attribute.Pattern variable
+    => Attribute.Pattern variable
     -> SymbolOrAlias
     -> [Pattern variable]
     -> Simplifier (OrPattern variable)
-makeAndEvaluateApplications
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToEvaluator
-    valid
-    symbol
-    children
-  =
+makeAndEvaluateApplications valid symbol children = do
+    tools <- Simplifier.askMetadataTools
     case MetadataTools.symbolOrAliasType tools symbol of
         HeadType.Symbol ->
-            makeAndEvaluateSymbolApplications
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToEvaluator
-                valid
-                symbol
-                children
+            makeAndEvaluateSymbolApplications valid symbol children
         HeadType.Alias -> error "Alias evaluation not implemented yet."
 
 makeAndEvaluateSymbolApplications
@@ -154,43 +107,18 @@ makeAndEvaluateSymbolApplications
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Attribute.Pattern variable
+    => Attribute.Pattern variable
     -> SymbolOrAlias
     -> [Pattern variable]
     -> Simplifier (OrPattern variable)
 makeAndEvaluateSymbolApplications
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToEvaluator
     valid
     symbol
     children
   = do
-    expandedApplications <- BranchT.gather $
-        makeExpandedApplication
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToEvaluator
-            valid
-            symbol
-            children
-    orResults <-
-        traverse
-            (evaluateApplicationFunction
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToEvaluator
-            )
-            expandedApplications
+    expandedApplications <-
+        BranchT.gather $ makeExpandedApplication valid symbol children
+    orResults <- traverse evaluateApplicationFunction expandedApplications
     return (MultiOr.mergeAll orResults)
 
 evaluateApplicationFunction
@@ -200,28 +128,11 @@ evaluateApplicationFunction
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> ExpandedApplication variable
+    => ExpandedApplication variable
     -- ^ The pattern to be evaluated
     -> Simplifier (OrPattern variable)
-evaluateApplicationFunction
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToEvaluator
-    Conditional
-        { term, predicate, substitution }
-  =
+evaluateApplicationFunction Conditional { term, predicate, substitution } =
     evaluateApplication
-        tools
-        substitutionSimplifier
-        simplifier
-        axiomIdToEvaluator
         Conditional { term = (), predicate, substitution }
         term
 
@@ -232,31 +143,17 @@ makeExpandedApplication
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Attribute.Pattern variable
+    => Attribute.Pattern variable
     -> SymbolOrAlias
     -> [Pattern variable]
     -> BranchT Simplifier (ExpandedApplication variable)
 makeExpandedApplication
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToEvaluator
     valid
     symbol
     children
   = do
     merged <-
         mergePredicatesAndSubstitutions
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToEvaluator
             (map Pattern.predicate children)
             (map Pattern.substitution children)
     let term =

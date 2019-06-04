@@ -6,7 +6,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Foldable as Foldable
-import qualified Data.Map.Strict as Map
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
 
@@ -22,9 +21,8 @@ import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
+                 ( Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -127,9 +125,7 @@ simplifyEvaluated
     -> IO (OrPattern Variable)
 simplifyEvaluated =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    . evalSimplifier
+    . evalSimplifier mockEnv
     . Not.simplifyEvaluated
-        Mock.metadataTools
-        (Mock.substitutionSimplifier Mock.metadataTools)
-        (Simplifier.create Mock.metadataTools Map.empty)
-        Map.empty
+  where
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }

@@ -8,12 +8,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Foldable as Foldable
-import qualified Data.Map as Map
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -33,11 +28,9 @@ import           Kore.Predicate.Predicate
                  makeMultipleAndPredicate, makeNotPredicate, makeOrPredicate,
                  makeTruePredicate )
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
+                 ( Env (..), evalSimplifier )
 import           Kore.Step.Simplification.Equals
                  ( makeEvaluate, makeEvaluateTermsToPredicate, simplify )
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
-                 ( create )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import qualified SMT
@@ -54,7 +47,6 @@ test_equalsSimplification_Or_Pattern =
         let expect = OrPattern.fromPatterns [ Conditional.top ]
         actual <-
             evaluateOr
-                Mock.metadataTools
                 Equals
                     { equalsOperandSort = testSort
                     , equalsResultSort = testSort
@@ -67,7 +59,6 @@ test_equalsSimplification_Or_Pattern =
         let expect = OrPattern.fromPatterns [ Conditional.top ]
         actual <-
             evaluateOr
-                Mock.metadataTools
                 Equals
                     { equalsOperandSort = testSort
                     , equalsResultSort = testSort
@@ -92,7 +83,6 @@ test_equalsSimplification_Or_Pattern =
         let expect = OrPattern.fromPatterns []
         actual <-
             evaluateOr
-                Mock.metadataTools
                 Equals
                     { equalsOperandSort = testSort
                     , equalsResultSort = testSort
@@ -118,7 +108,6 @@ test_equalsSimplification_Or_Pattern =
                     ]
         actual <-
             evaluateOr
-                Mock.metadataTools
                 Equals
                     { equalsOperandSort = testSort
                     , equalsResultSort = testSort
@@ -193,7 +182,6 @@ test_equalsSimplification_Or_Pattern =
                     ]
         actual1 <-
             evaluateOr
-                Mock.metadataTools
                 Equals
                     { equalsOperandSort = testSort
                     , equalsResultSort = testSort
@@ -203,7 +191,6 @@ test_equalsSimplification_Or_Pattern =
         assertEqualWithExplanation "f vs g or h" expect actual1
         actual2 <-
             evaluateOr
-                Mock.metadataTools
                 Equals
                     { equalsOperandSort = testSort
                     , equalsResultSort = testSort
@@ -297,7 +284,7 @@ test_equalsSimplification_Or_Pattern =
                     , equalsFirst = first
                     , equalsSecond = second
                     }
-        actual1 <- evaluateOr Mock.metadataTools test1
+        actual1 <- evaluateOr test1
         let message1 =
                 unlines
                     [ "Expected"
@@ -310,7 +297,6 @@ test_equalsSimplification_Or_Pattern =
         assertEqualWithExplanation message1 expect actual1
         actual2 <-
             evaluateOr
-                Mock.metadataTools
                 Equals
                     { equalsOperandSort = testSort
                     , equalsResultSort = testSort
@@ -336,7 +322,6 @@ test_equalsSimplification_Pattern =
                     ]
         actual <-
             evaluate
-                Mock.metadataTools
                 Conditional
                     { term = mkTop_
                     , predicate = makeEqualsPredicate fOfA fOfB
@@ -388,7 +373,6 @@ test_equalsSimplification_Pattern =
                     ]
         actual <-
             evaluate
-                Mock.metadataTools
                 Conditional
                     { term = Mock.functionalConstr10 hOfA
                     , predicate = makeEqualsPredicate fOfA fOfB
@@ -406,14 +390,12 @@ test_equalsSimplification_TermLike :: [TestTree]
 test_equalsSimplification_TermLike =
     [ testCase "bottom == bottom"
         (assertTermEquals
-            Mock.metadataTools
             Predicate.topPredicate
             mkBottom_
             mkBottom_
         )
     , testCase "domain-value == domain-value"
         (assertTermEquals
-            Mock.metadataTools
             Predicate.topPredicate
             (mkDomainValue DomainValue
                 { domainValueSort = testSort
@@ -428,7 +410,6 @@ test_equalsSimplification_TermLike =
         )
     , testCase "domain-value != domain-value"
         (assertTermEquals
-            Mock.metadataTools
             Predicate.bottomPredicate
             (mkDomainValue DomainValue
                 { domainValueSort = testSort
@@ -443,7 +424,6 @@ test_equalsSimplification_TermLike =
         )
     , testCase "domain-value != domain-value because of sorts"
         (assertTermEquals
-            Mock.metadataTools
             Predicate.bottomPredicate
             (mkDomainValue DomainValue
                 { domainValueSort = testSort
@@ -458,49 +438,42 @@ test_equalsSimplification_TermLike =
         )
     , testCase "\"a\" == \"a\""
         (assertTermEqualsGeneric
-            Mock.metadataTools
             Predicate.topPredicate
             (mkStringLiteral "a")
             (mkStringLiteral "a")
         )
     , testCase "\"a\" != \"b\""
         (assertTermEqualsGeneric
-            Mock.metadataTools
             Predicate.bottomPredicate
             (mkStringLiteral "a")
             (mkStringLiteral "b")
         )
     , testCase "'a' == 'a'"
         (assertTermEqualsGeneric
-            Mock.metadataTools
             Predicate.topPredicate
             (mkCharLiteral 'a')
             (mkCharLiteral 'a')
         )
     , testCase "'a' != 'b'"
         (assertTermEqualsGeneric
-            Mock.metadataTools
             Predicate.bottomPredicate
             (mkCharLiteral 'a')
             (mkCharLiteral 'b')
         )
     , testCase "a != bottom"
         (assertTermEquals
-            Mock.metadataTools
             Predicate.bottomPredicate
             mkBottom_
             Mock.a
         )
     , testCase "a == a"
         (assertTermEquals
-            Mock.metadataTools
             Predicate.topPredicate
             Mock.a
             Mock.a
         )
     , testCase "f(a) vs g(a)"
         (assertTermEquals
-            Mock.metadataTools
             Conditional
                 { term = ()
                 , predicate = makeEqualsPredicate fOfA gOfA
@@ -511,7 +484,6 @@ test_equalsSimplification_TermLike =
         )
     , testCase "constructor1(a) vs constructor1(a)"
         (assertTermEquals
-            Mock.metadataTools
             Predicate.topPredicate
             constructor1OfA
             constructor1OfA
@@ -519,28 +491,24 @@ test_equalsSimplification_TermLike =
     , testCase
         "functionalconstructor1(a) vs functionalconstructor2(a)"
         (assertTermEquals
-            Mock.metadataTools
             Predicate.bottomPredicate
             functionalConstructor1OfA
             functionalConstructor2OfA
         )
     , testCase "constructor1(a) vs constructor2(a)"
         (assertTermEquals
-            Mock.metadataTools
             Predicate.bottomPredicate
             constructor1OfA
             constructor2OfA
         )
     , testCase "constructor1(f(a)) vs constructor1(f(a))"
         (assertTermEquals
-            Mock.metadataTools
             Predicate.topPredicate
             (Mock.constr10 fOfA)
             (Mock.constr10 fOfA)
         )
     , testCase "sigma(f(a), f(b)) vs sigma(g(a), g(b))"
         (assertTermEqualsMulti
-            Mock.metadataTools
             [ Conditional
                 { term = ()
                 , predicate =
@@ -573,7 +541,6 @@ test_equalsSimplification_TermLike =
         )
     , testCase "equals(x, functional) becomes a substitution"
         (assertTermEquals
-            Mock.metadataTools
             Conditional
                 { term = ()
                 , predicate = makeTruePredicate
@@ -585,7 +552,6 @@ test_equalsSimplification_TermLike =
         )
     , testCase "equals(functional, x) becomes a substitution"
         (assertTermEquals
-            Mock.metadataTools
             Conditional
                 { term = ()
                 , predicate = makeTruePredicate
@@ -597,7 +563,6 @@ test_equalsSimplification_TermLike =
         )
     , testCase "equals(x, function) becomes a substitution + ceil"
         (assertTermEquals
-            Mock.metadataTools
             Conditional
                 { term = ()
                 , predicate = makeCeilPredicate fOfA
@@ -608,7 +573,6 @@ test_equalsSimplification_TermLike =
         )
     , testCase "equals(function, x) becomes a substitution + ceil"
         (assertTermEquals
-            Mock.metadataTools
             Conditional
                 { term = ()
                 , predicate = makeCeilPredicate fOfA
@@ -619,7 +583,6 @@ test_equalsSimplification_TermLike =
         )
     , testCase "equals(x, constructor) becomes a predicate"
         (assertTermEquals
-            Mock.metadataTools
             Conditional
                 { term = ()
                 , predicate = makeEqualsPredicate (mkVar Mock.x) constructor1OfA
@@ -630,7 +593,6 @@ test_equalsSimplification_TermLike =
         )
     , testCase "equals(constructor, x) becomes a predicate"
         (assertTermEquals
-            Mock.metadataTools
             Conditional
                 { term = ()
                 , predicate = makeEqualsPredicate constructor1OfA (mkVar Mock.x)
@@ -641,7 +603,6 @@ test_equalsSimplification_TermLike =
         )
     , testCase "equals(x, something) becomes a predicate"
         (assertTermEquals
-            Mock.metadataTools
             Conditional
                 { term = ()
                 , predicate = makeEqualsPredicate (mkVar Mock.x) plain1OfA
@@ -652,7 +613,6 @@ test_equalsSimplification_TermLike =
         )
     , testCase "equals(something, x) becomes a predicate"
         (assertTermEquals
-            Mock.metadataTools
             Conditional
                 { term = ()
                 , predicate = makeEqualsPredicate plain1OfA (mkVar Mock.x)
@@ -663,7 +623,6 @@ test_equalsSimplification_TermLike =
         )
     , testCase "equals(function, constructor) is not simplifiable"
         (assertTermEquals
-            Mock.metadataTools
             Conditional
                 { term = ()
                 , predicate = makeEqualsPredicate (Mock.f Mock.a) Mock.a
@@ -675,7 +634,6 @@ test_equalsSimplification_TermLike =
     , testGroup "builtin Map domain"
         [ testCase "concrete Map, same keys"
             (assertTermEquals
-                Mock.metadataTools
                 Conditional
                     { term = ()
                     , predicate = makeTruePredicate
@@ -686,14 +644,12 @@ test_equalsSimplification_TermLike =
             )
         , testCase "concrete Map, different keys"
             (assertTermEquals
-                Mock.metadataTools
                 Predicate.bottomPredicate
                 (Mock.builtinMap [(Mock.aConcrete, Mock.b)])
                 (Mock.builtinMap [(Mock.bConcrete, mkVar Mock.x)])
             )
         , testCase "concrete Map with framed Map"
             (assertTermEquals
-                Mock.metadataTools
                 Conditional
                     { term = ()
                     , predicate =
@@ -717,7 +673,6 @@ test_equalsSimplification_TermLike =
             )
         , testCase "concrete Map with framed Map"
             (assertTermEquals
-                Mock.metadataTools
                 Conditional
                     { term = ()
                     , predicate =
@@ -741,7 +696,6 @@ test_equalsSimplification_TermLike =
             )
         , testCase "framed Map with concrete Map"
             (assertTermEquals
-                Mock.metadataTools
                 Conditional
                     { term = ()
                     , predicate =
@@ -765,7 +719,6 @@ test_equalsSimplification_TermLike =
             )
         , testCase "framed Map with concrete Map"
             (assertTermEquals
-                Mock.metadataTools
                 Conditional
                     { term = ()
                     , predicate =
@@ -799,7 +752,6 @@ test_equalsSimplification_TermLike =
             in
                 testCase "[same head, same head]"
                     (assertTermEquals
-                        Mock.metadataTools
                         Conditional
                             { term = ()
                             , predicate = makeTruePredicate
@@ -815,7 +767,6 @@ test_equalsSimplification_TermLike =
             in
                 testCase "[same head, different head]"
                     (assertTermEquals
-                        Mock.metadataTools
                         unified34
                         term3
                         term4
@@ -828,7 +779,6 @@ test_equalsSimplification_TermLike =
             in
                 testCase "[a] `concat` x /\\ [a, b] "
                     (assertTermEquals
-                        Mock.metadataTools
                         Conditional
                             { term = ()
                             , predicate = makeTruePredicate
@@ -844,7 +794,6 @@ test_equalsSimplification_TermLike =
             in
                 testCase "different lengths"
                     (assertTermEquals
-                        Mock.metadataTools
                         Predicate.bottomPredicate
                         term7
                         term8
@@ -856,8 +805,7 @@ test_equalsSimplification_TermLike =
 
 assertTermEquals
     :: HasCallStack
-    => SmtMetadataTools StepperAttributes
-    -> Predicate Variable
+    => Predicate Variable
     -> TermLike Variable
     -> TermLike Variable
     -> IO ()
@@ -865,19 +813,17 @@ assertTermEquals = assertTermEqualsGeneric
 
 assertTermEqualsGeneric
     :: HasCallStack
-    => SmtMetadataTools StepperAttributes
-    -> Predicate Variable
+    => Predicate Variable
     -> TermLike Variable
     -> TermLike Variable
     -> Assertion
-assertTermEqualsGeneric tools expectPure =
-    assertTermEqualsMultiGeneric tools [expectPure]
+assertTermEqualsGeneric expectPure =
+    assertTermEqualsMultiGeneric [expectPure]
 
 
 assertTermEqualsMulti
     :: HasCallStack
-    => SmtMetadataTools StepperAttributes
-    -> [Predicate Variable]
+    => [Predicate Variable]
     -> TermLike Variable
     -> TermLike Variable
     -> IO ()
@@ -885,25 +831,20 @@ assertTermEqualsMulti = assertTermEqualsMultiGeneric
 
 assertTermEqualsMultiGeneric
     :: HasCallStack
-    => SmtMetadataTools StepperAttributes
-    -> [Predicate Variable]
+    => [Predicate Variable]
     -> TermLike Variable
     -> TermLike Variable
     -> Assertion
-assertTermEqualsMultiGeneric tools expectPure first second = do
+assertTermEqualsMultiGeneric expectPure first second = do
     let expectExpanded =
             OrPattern.fromPatterns
                 (map predSubstToPattern expectPure)
-    actualExpanded <-
-        evaluateGeneric
-            tools
-            (termToPattern first)
-            (termToPattern second)
+    actualExpanded <- evaluate (termToPattern first) (termToPattern second)
     assertEqualWithExplanation
         "Pattern"
         expectExpanded
         actualExpanded
-    actualPure <- evaluateTermsGeneric tools first second
+    actualPure <- evaluateTermsGeneric first second
     assertEqualWithExplanation
         "PureMLPattern"
         (MultiOr.make expectPure)
@@ -979,54 +920,33 @@ testSort2 =
         }
 
 evaluateOr
-    :: SmtMetadataTools StepperAttributes
-    -> Equals Sort (OrPattern Variable)
+    :: Equals Sort (OrPattern Variable)
     -> IO (OrPattern Variable)
-evaluateOr tools equals =
+evaluateOr equals =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
-    $ simplify
-        tools
-        (Mock.substitutionSimplifier tools)
-        (Simplifier.create tools Map.empty)
-        Map.empty
-        equals
+    $ evalSimplifier mockEnv
+    $ simplify equals
+  where
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
 
 evaluate
-    :: SmtMetadataTools StepperAttributes
-    -> Pattern Variable
-    -> Pattern Variable
-    -> IO (OrPattern Variable)
-evaluate = evaluateGeneric
-
-evaluateGeneric
-    :: SmtMetadataTools StepperAttributes
-    -> Pattern Variable
+    :: Pattern Variable
     -> Pattern Variable
     -> IO (OrPattern Variable)
-evaluateGeneric tools first second =
+evaluate first second =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
-    $ makeEvaluate
-        tools
-        (Mock.substitutionSimplifier tools)
-        (Simplifier.create tools Map.empty)
-        Map.empty
-        first
-        second
+    $ evalSimplifier mockEnv
+    $ makeEvaluate first second
+  where
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
 
 evaluateTermsGeneric
-    :: SmtMetadataTools StepperAttributes
-    -> TermLike Variable
+    :: TermLike Variable
     -> TermLike Variable
     -> IO (OrPredicate Variable)
-evaluateTermsGeneric tools first second =
+evaluateTermsGeneric first second =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
-    $ makeEvaluateTermsToPredicate
-        tools
-        (Mock.substitutionSimplifier tools)
-        (Simplifier.create tools Map.empty)
-        Map.empty
-        first
-        second
+    $ evalSimplifier mockEnv
+    $ makeEvaluateTermsToPredicate first second
+  where
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
