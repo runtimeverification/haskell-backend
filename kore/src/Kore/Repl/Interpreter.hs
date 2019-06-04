@@ -28,7 +28,7 @@ import           Control.Lens
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import           Control.Monad
-                 ( foldM, void )
+                 ( foldM, join, void )
 import           Control.Monad.Extra
                  ( loop, loopM )
 import           Control.Monad.IO.Class
@@ -74,22 +74,28 @@ import           Kore.Attribute.Axiom
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom (..), RuleIndex (..), sourceLocation )
 import           Kore.Attribute.RuleIndex
+import           Kore.Internal.OrPattern
+                 ( fromPatterns )
 import           Kore.Internal.Pattern
                  ( Conditional (..) )
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
                  ( TermLike )
+import           Kore.Internal.TermLike
+                 ( forceSort, termLikeSort )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Logger
 import           Kore.OnePath.StrategyPattern
                  ( CommonStrategyPattern, StrategyPattern (..),
                  StrategyPatternTransformer (StrategyPatternTransformer),
-                 strategyPattern )
+                 extractUnproven, strategyPattern )
 import qualified Kore.OnePath.StrategyPattern as StrategyPatternTransformer
                  ( StrategyPatternTransformer (..) )
 import           Kore.OnePath.Verification
                  ( Axiom (..), Claim, isTrusted )
 import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
+                 ( makeMultipleOrPredicate, makeTruePredicate,
+                 unwrapPredicate )
 import           Kore.Repl.Data
 import           Kore.Repl.Parser
 import           Kore.Repl.Parser
@@ -212,11 +218,28 @@ exit = do
     proofs <- allProofs
     ofile <- Lens.use lensOutputFile
     let name = fromJust . unOutputFile $ ofile
-    liftIO $ writeFile name (unparseToString (TermLike.mkTop @TermLike.Variable $ TermLike.mkSortVariable "R"))
+    -- liftIO $ writeFile name (unparseToString (TermLike.mkTop @TermLike.Variable $ TermLike.mkSortVariable "R"))
+    graphs <- Lens.use lensGraphs
+    let x = fromPatterns (fmap (fromJust . extractUnproven) $ terminalPatterns graphs)
+        y = makeMultipleOrPredicate (Predicate.toPredicate x)
+        z = forceSort patternSort $ unwrapPredicate y
+    putStrLn' . unparseToString $ z
     if isCompleted (Map.elems proofs)
        then return SuccessStop
        else return FailStop
   where
+    patternSort = termLikeSort $ TermLike.mkSortVariable "R"
+    terminalPatterns
+        :: Map.Map ClaimIndex ExecutionGraph
+        -> [CommonStrategyPattern]
+    terminalPatterns gphs =
+        Map.elems gphs >>= f . graphWithLeafs . Strategy.graph
+    graphWithLeafs :: InnerGraph -> (InnerGraph, [Graph.Node])
+    graphWithLeafs gph =
+        (gph, join . Map.elems $ sortLeafsByType gph)
+    f :: (InnerGraph, [Graph.Node]) -> [CommonStrategyPattern]
+    f (g, ns) =
+        fmap (Graph.lab' . Graph.context g) ns
     isCompleted :: [GraphProofStatus] -> Bool
     isCompleted xs =
         foldr
