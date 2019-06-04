@@ -209,6 +209,12 @@ inKeysMapSymbol = builtinSymbol "inKeysMap"
 keysMapSymbol :: SymbolOrAlias
 keysMapSymbol = builtinSymbol "keysMap"
 
+removeMapSymbol :: SymbolOrAlias
+removeMapSymbol = builtinSymbol "removeMap"
+
+removeAllMapSymbol :: SymbolOrAlias
+removeAllMapSymbol = builtinSymbol "removeAllMap"
+
 unitMap :: TermLike Variable
 unitMap = mkApp mapSort unitMapSymbol []
 
@@ -253,6 +259,20 @@ keysMap
     -> TermLike Variable
 keysMap map' =
     mkApp setSort keysMapSymbol [map']
+
+removeMap
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+removeMap map' key =
+    mkApp mapSort removeMapSymbol [map', key]
+
+removeAllMap
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+removeAllMap map' set =
+    mkApp mapSort removeAllMapSymbol [map', set]
 
 -- ** Pair
 
@@ -1019,6 +1039,16 @@ mapModule =
                 setSort
                 [mapSort]
                 [hookAttribute "MAP.keys"]
+            , hookedSymbolDecl
+                removeMapSymbol
+                mapSort
+                [mapSort, intSort]
+                [hookAttribute "MAP.remove"]
+            , hookedSymbolDecl
+                removeAllMapSymbol
+                mapSort
+                [mapSort, setSort]
+                [hookAttribute "MAP.removeAll"]
             ]
         }
 
