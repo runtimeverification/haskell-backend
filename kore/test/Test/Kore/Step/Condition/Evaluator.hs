@@ -6,7 +6,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Control.Monad.Trans as Trans
-import           Data.Reflection
 import           Data.Text
                  ( Text )
 
@@ -22,18 +21,16 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import           SMT
                  ( SMT )
-import qualified SMT
 
 import           Test.Kore
 import qualified Test.Kore.Builtin.Bool as Builtin.Bool
 import           Test.Kore.Builtin.Builtin
-                 ( testMetadataTools, testSubstitutionSimplifier )
+                 ( testEnv )
 import           Test.Kore.Builtin.Definition
                  ( boolSort, intSort )
 import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Builtin.Int
 import           Test.Kore.Predicate.Predicate ()
-import           Test.Kore.Step.Simplifier
 import           Test.SMT
 
 test_andNegation :: TestTree
@@ -64,14 +61,7 @@ test_andNegation =
 evaluate
     :: Syntax.Predicate Variable
     -> PropertyT SMT (Predicate Variable)
-evaluate predicate =
-    give testMetadataTools
-    $ Trans.lift
-    $ evalSimplifier
-    $ Evaluator.evaluate
-        testSubstitutionSimplifier
-        (mockSimplifier noSimplification)
-        predicate
+evaluate = Trans.lift . evalSimplifier testEnv . Evaluator.evaluate
 
 noSimplification :: [(TermLike Variable, [Pattern Variable])]
 noSimplification = []
@@ -104,10 +94,10 @@ mul i j = mkApp intSort Builtin.mulIntSymbol  [i, j]
 div i j = mkApp intSort Builtin.tdivIntSymbol [i, j]
 
 assertRefuted :: Syntax.Predicate Variable -> Assertion
-assertRefuted prop = give testMetadataTools $ do
+assertRefuted prop = do
     let expect = Just False
     actual <-
-        SMT.runSMT SMT.defaultConfig emptyLogger
+        Test.SMT.runSMT $ evalSimplifier testEnv
         $ SMT.Evaluator.decidePredicate prop
     assertEqual "" expect actual
 

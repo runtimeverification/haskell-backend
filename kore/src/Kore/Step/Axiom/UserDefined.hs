@@ -14,28 +14,24 @@ module Kore.Step.Axiom.UserDefined
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Axiom.Concrete as Axiom.Concrete
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike as TermLike
-import           Kore.Step.Axiom.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import           Kore.Step.Axiom.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import           Kore.Step.Axiom.Data
-                 ( AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification )
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
+import           Kore.Step.Simplification.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import           Kore.Step.Simplification.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
+import           Kore.Step.Simplification.Data
+                 ( AttemptedAxiomResults (AttemptedAxiomResults),
+                 BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
@@ -64,9 +60,6 @@ equalityRuleEvaluator
         )
     => EqualityRule Variable
     -- ^ Axiom defining the current function.
-    -> SmtMetadataTools StepperAttributes
-    -- ^ Tools for finding additional information about patterns
-    -- such as their sorts, whether they are constructors or hooked.
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions in patterns
@@ -77,10 +70,9 @@ equalityRuleEvaluator
     -> Simplifier (AttemptedAxiom variable)
 equalityRuleEvaluator
     (EqualityRule rule)
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSimplifier
     patt
   -- TODO(traiansf): never apply smt-lemma axioms,
   -- neither as simplification rules nor as function definition rules
@@ -105,12 +97,8 @@ equalityRuleEvaluator
         -> Simplifier
             (Either UnificationOrSubstitutionError [Step.Results variable])
     applyRule patt' rule' =
-        Monad.Unify.runUnifier $
-        Step.applyRulesInParallel
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
+        Monad.Unify.runUnifier
+        $ Step.applyRulesParallel
             unificationProcedure
             [RulePattern.mapVariables fromVariable rule']
             (Pattern.fromTermLike patt')
@@ -128,13 +116,7 @@ equalityRuleEvaluator
         -- ^ The condition to be evaluated.
         -> Simplifier (OrPattern variable)
     simplifyPattern config = do
-        patterns <- BranchT.gather
-            $ Pattern.simplifyPredicate
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                config
+        patterns <- BranchT.gather $ Pattern.simplifyPredicate config
         return (OrPattern.fromPatterns patterns)
 
     simplifyResults

@@ -18,10 +18,6 @@ import           Data.List
                  ( group )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.Pattern
                  ( Conditional (..), Predicate )
@@ -29,8 +25,6 @@ import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate, unwrapPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
@@ -46,14 +40,8 @@ import           Kore.Variables.Fresh
 
 {- | Create a 'PredicateSimplifier' using 'simplify'.
 -}
-create
-    :: SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> PredicateSimplifier
-create tools simplifier axiomIdToSimplifier =
-    PredicateSimplifier
-        (simplify tools simplifier axiomIdToSimplifier 0)
+create :: PredicateSimplifier
+create = PredicateSimplifier (simplify 0)
 
 {- | Simplify a 'Predicate'.
 
@@ -68,17 +56,10 @@ simplify
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Int
+    => Int
     -> Predicate variable
     -> BranchT Simplifier (Predicate variable)
 simplify
-    tools
-    simplifier
-    axiomIdToSimplifier
     times
     initialValue@Conditional { predicate, substitution }
   = do
@@ -90,12 +71,8 @@ simplify
     -- this needs to run more than once.
     if substitutedPredicate == predicate && times > 1
         then return initialValue
-        else do
-            simplified <-
-                simplifyPartial
-                    substitutionSimplifier
-                    simplifier
-                    substitutedPredicate
+        else localPredicateSimplifier $ do
+            simplified <- simplifyPartial substitutedPredicate
 
             let Conditional { predicate = simplifiedPredicate } = simplified
                 Conditional { substitution = simplifiedSubstitution } =
@@ -112,18 +89,14 @@ simplify
                         (substitution <> simplifiedSubstitution)
                     mergedPredicate <-
                         mergePredicatesAndSubstitutions
-                            tools
-                            substitutionSimplifier
-                            simplifier
-                            axiomIdToSimplifier
                             [simplifiedPredicate]
                             [substitution, simplifiedSubstitution]
                     TopBottom.guardAgainstBottom mergedPredicate
                     return mergedPredicate
   where
-    substitutionSimplifier =
-        PredicateSimplifier
-            (simplify tools simplifier axiomIdToSimplifier (times + 1))
+    substitutionSimplifier = PredicateSimplifier (simplify (times + 1))
+    localPredicateSimplifier =
+        localSimplifierPredicate (const substitutionSimplifier)
 
 assertDistinctVariables
     :: forall variable m
@@ -161,24 +134,17 @@ simplifyPartial
         , Unparse variable
         , SortedVariable variable
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -> Syntax.Predicate variable
+    => Syntax.Predicate variable
     -> BranchT Simplifier (Predicate variable)
 simplifyPartial
-    substitutionSimplifier
-    termSimplifier
     predicate
   = do
     patternOr <-
-        Monad.Trans.lift
-        $ simplifyTerm'
-        $ Syntax.unwrapPredicate predicate
+        Monad.Trans.lift $ simplifyTerm $ Syntax.unwrapPredicate predicate
     -- Despite using Monad.Trans.lift above, we do not need to explicitly check
     -- for \bottom because patternOr is an OrPattern.
     scatter (eraseTerm <$> patternOr)
   where
-    simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
     eraseTerm conditional
       | TopBottom.isTop (Pattern.term conditional)
       = Conditional.withoutTerm conditional

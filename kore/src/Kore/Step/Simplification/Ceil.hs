@@ -19,13 +19,9 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import qualified Kore.Attribute.Symbol as StepperAttributes
+import qualified Kore.Attribute.Symbol as Attribute.Symbol
                  ( isTotal )
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Internal.Conditional
@@ -46,15 +42,12 @@ import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeTruePredicate )
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Function.Evaluator as Axiom
                  ( evaluatePattern )
 import           Kore.Step.RecursiveAttributes
                  ( isTotalPattern )
 import qualified Kore.Step.Simplification.AndPredicates as And
-import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+import           Kore.Step.Simplification.Data as Simplifier
 import           Kore.TopBottom
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -75,23 +68,9 @@ simplify
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Ceil Sort (OrPattern variable)
+    => Ceil Sort (OrPattern variable)
     -> Simplifier (OrPattern variable)
-simplify
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToEvaluator
-    Ceil { ceilChild = child }
-  =
-    simplifyEvaluated
-        tools substitutionSimplifier simplifier axiomIdToEvaluator child
+simplify Ceil { ceilChild = child } = simplifyEvaluated child
 
 {-| 'simplifyEvaluated' evaluates a ceil given its child, see 'simplify'
 for details.
@@ -115,26 +94,10 @@ simplifyEvaluated
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> OrPattern variable
+    => OrPattern variable
     -> Simplifier (OrPattern variable)
-simplifyEvaluated
-    tools substitutionSimplifier simplifier axiomIdToEvaluator child
-  = do
-    evaluated <-
-        traverse
-            (makeEvaluate
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToEvaluator
-            )
-            child
+simplifyEvaluated child = do
+    evaluated <- traverse makeEvaluate child
     return (MultiOr.flatten evaluated)
 
 {-| Evaluates a ceil given its child as an Pattern, see 'simplify'
@@ -148,24 +111,12 @@ makeEvaluate
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Pattern variable
+    => Pattern variable
     -> Simplifier (OrPattern variable)
-makeEvaluate tools substitutionSimplifier simplifier axiomIdToEvaluator child
+makeEvaluate child
   | Pattern.isTop    child = return (OrPattern.top)
   | Pattern.isBottom child = return (OrPattern.bottom)
-  | otherwise =
-        makeEvaluateNonBoolCeil
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToEvaluator
-            child
+  | otherwise              = makeEvaluateNonBoolCeil child
 
 makeEvaluateNonBoolCeil
     ::  ( FreshVariable variable
@@ -174,39 +125,19 @@ makeEvaluateNonBoolCeil
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Pattern variable
+    => Pattern variable
     -> Simplifier (OrPattern variable)
-makeEvaluateNonBoolCeil
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToEvaluator
-    patt@Conditional {term}
-  | isTop term =
-    return $ OrPattern.fromPattern patt
+makeEvaluateNonBoolCeil patt@Conditional {term}
+  | isTop term = return $ OrPattern.fromPattern patt
   | otherwise = do
-    termCeil <- makeEvaluateTerm
-        tools
-        substitutionSimplifier
-        simplifier
-        axiomIdToEvaluator
-        term
-    result <- And.simplifyEvaluatedMultiPredicate
-        tools
-        substitutionSimplifier
-        simplifier
-        axiomIdToEvaluator
-        (MultiAnd.make
-            [ MultiOr.make [Predicate.eraseConditionalTerm patt]
-            , termCeil
-            ]
-        )
+    termCeil <- makeEvaluateTerm term
+    result <-
+        And.simplifyEvaluatedMultiPredicate
+            (MultiAnd.make
+                [ MultiOr.make [Predicate.eraseConditionalTerm patt]
+                , termCeil
+                ]
+            )
     return (fmap Pattern.fromPredicate result)
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
@@ -222,53 +153,33 @@ makeEvaluateTerm
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> TermLike variable
+    => TermLike variable
     -> Simplifier (OrPredicate variable)
-makeEvaluateTerm
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToEvaluator
-    term@(Recursive.project -> _ :< projected)
-  | isTop term                = return OrPredicate.top
-  | isBottom term             = return OrPredicate.bottom
-  | isTotalPattern tools term = return OrPredicate.top
-  | otherwise =
-    case projected of
-        ApplicationF app
-          | StepperAttributes.isTotal headAttributes -> do
-            simplifiedChildren <- mapM
-                (makeEvaluateTerm
-                    tools substitutionSimplifier simplifier axiomIdToEvaluator
-                )
-                children
+makeEvaluateTerm term@(Recursive.project -> _ :< projected) = do
+    tools <- Simplifier.askMetadataTools
+    makeEvaluateTermWorker tools
+  where
+    makeEvaluateTermWorker tools
+      | isTop term                = return OrPredicate.top
+      | isBottom term             = return OrPredicate.bottom
+      | isTotalPattern tools term = return OrPredicate.top
+
+      | ApplicationF app <- projected
+      , let Application { applicationSymbolOrAlias = patternHead } = app
+      , let headAttributes = MetadataTools.symAttributes tools patternHead
+      , Attribute.Symbol.isTotal headAttributes = do
+            let Application { applicationChildren = children } = app
+            simplifiedChildren <- mapM makeEvaluateTerm children
             let ceils = simplifiedChildren
-            And.simplifyEvaluatedMultiPredicate
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToEvaluator
-                (MultiAnd.make ceils)
-          where
-            Application { applicationSymbolOrAlias = patternHead } = app
-            Application { applicationChildren = children } = app
-            headAttributes = MetadataTools.symAttributes tools patternHead
-        BuiltinF child ->
-            makeEvaluateBuiltin
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToEvaluator
-                child
-        _ -> do
+            And.simplifyEvaluatedMultiPredicate (MultiAnd.make ceils)
+
+      | BuiltinF child <- projected = makeEvaluateBuiltin child
+
+      | otherwise = do
+            substitutionSimplifier <- Simplifier.askSimplifierPredicate
+            simplifier <- Simplifier.askSimplifierTermLike
+            axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
             evaluation <- Axiom.evaluatePattern
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToEvaluator
@@ -285,7 +196,7 @@ makeEvaluateTerm
                     }
                 )
             return (fmap toPredicate evaluation)
-  where
+
     toPredicate Conditional {term = Top_ _, predicate, substitution} =
         Conditional {term = (), predicate, substitution}
     toPredicate patt =
@@ -306,90 +217,29 @@ makeEvaluateBuiltin
         , Unparse variable
         , Show variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Builtin (TermLike variable)
+    => Builtin (TermLike variable)
     -> Simplifier (OrPredicate variable)
 makeEvaluateBuiltin
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToEvaluator
     (Domain.BuiltinMap Domain.InternalMap { builtinMapChild = m })
   = do
-    children <- mapM
-        (makeEvaluateTerm
-            tools substitutionSimplifier simplifier axiomIdToEvaluator
-        )
-        values
+    children <- mapM makeEvaluateTerm values
     let
         ceils :: [OrPredicate variable]
         ceils = children
-    And.simplifyEvaluatedMultiPredicate
-        tools
-        substitutionSimplifier
-        simplifier
-        axiomIdToEvaluator
-        (MultiAnd.make ceils)
+    And.simplifyEvaluatedMultiPredicate (MultiAnd.make ceils)
   where
     values :: [TermLike variable]
     -- Maps assume that their keys are relatively functional.
     values = Map.elems m
-makeEvaluateBuiltin
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToEvaluator
-    (Domain.BuiltinList l)
-  = do
-    children <- mapM
-        (makeEvaluateTerm
-            tools substitutionSimplifier simplifier axiomIdToEvaluator
-        )
-        (Foldable.toList l)
+makeEvaluateBuiltin (Domain.BuiltinList l) = do
+    children <- mapM makeEvaluateTerm (Foldable.toList l)
     let
         ceils :: [OrPredicate variable]
         ceils = children
-    And.simplifyEvaluatedMultiPredicate
-        tools
-        substitutionSimplifier
-        simplifier
-        axiomIdToEvaluator
-        (MultiAnd.make ceils)
-makeEvaluateBuiltin
-    _tools
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSimplifier
-    (Domain.BuiltinSet _)
-  =
+    And.simplifyEvaluatedMultiPredicate (MultiAnd.make ceils)
+makeEvaluateBuiltin (Domain.BuiltinSet _) =
     -- Sets assume that their elements are relatively functional.
     return OrPredicate.top
-makeEvaluateBuiltin
-    _tools
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSimplifier
-    (Domain.BuiltinBool _)
-  =
-    return OrPredicate.top
-makeEvaluateBuiltin
-    _tools
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSimplifier
-    (Domain.BuiltinInt _)
-  =
-    return OrPredicate.top
-makeEvaluateBuiltin
-    _tools
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSimplifier
-    (Domain.BuiltinString _)
-  =
-    return OrPredicate.top
+makeEvaluateBuiltin (Domain.BuiltinBool _) = return OrPredicate.top
+makeEvaluateBuiltin (Domain.BuiltinInt _) = return OrPredicate.top
+makeEvaluateBuiltin (Domain.BuiltinString _) = return OrPredicate.top

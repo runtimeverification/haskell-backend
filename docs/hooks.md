@@ -472,6 +472,26 @@ present, replace the associated value with the new value provided.
         [hook{}("MAP.update")]
 ~~~
 
+### MAP.remove
+
+Remove the key and the value associated with it from the map. If the key
+is not present, the resulting map is the original map.
+
+~~~
+    hooked-symbol remove{}(Map{}, Key{}) : Map{}
+        [hook{}("MAP.remove")]
+~~~
+
+### MAP.removeAll
+
+Remove the `key |-> value` associations for which `key` is an element of
+the set operand.
+
+~~~
+    hooked-symbol removeAll{}(Map{}, Set{}) : Map{}
+        [hook{}("MAP.removeAll")]
+~~~
+
 ### MAP.lookup
 
 If the given key is in the map, the result is the associated value; otherwise,

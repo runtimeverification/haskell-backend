@@ -2,8 +2,8 @@ module Test.Kore.Step.Step
     ( test_applyInitialConditions
     , test_unifyRule
     , test_applyRewriteRule_
-    , test_applyRewriteRules
-    , test_sequenceRewriteRules
+    , test_applyRewriteRulesParallel
+    , test_applyRewriteRulesSequence
     , test_sequenceMatchingRules
     ) where
 
@@ -13,7 +13,6 @@ import Test.Tasty.HUnit
 import           Data.Default as Default
                  ( def )
 import qualified Data.Foldable as Foldable
-import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 import qualified Kore.Internal.Conditional as Conditional
@@ -39,12 +38,9 @@ import           Kore.Step.Rule
                  ( EqualityRule (..), RewriteRule (..), RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Predicate as Predicate
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
-                 ( create )
 import           Kore.Step.Step hiding
-                 ( applyInitialConditions, applyRewriteRule, applyRewriteRules,
-                 applyRule, sequenceRewriteRules, unifyRule )
+                 ( applyInitialConditions, applyRewriteRulesParallel,
+                 applyRewriteRulesSequence, unifyRule )
 import qualified Kore.Step.Step as Step
 import           Kore.Unification.Error
                  ( SubstitutionError (..), UnificationOrSubstitutionError (..),
@@ -68,7 +64,7 @@ evalUnifier
     -> IO (Either UnificationOrSubstitutionError [a])
 evalUnifier =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    . evalSimplifier
+    . evalSimplifier Mock.env
     . Monad.Unify.runUnifier
 
 applyInitialConditions
@@ -78,25 +74,7 @@ applyInitialConditions
 applyInitialConditions initial unification =
     (fmap . fmap) Foldable.toList
     $ evalUnifier
-    $ Step.applyInitialConditions
-        metadataTools
-        predicateSimplifier
-        patternSimplifier
-        axiomSimplifiers
-        initial
-        unification
-  where
-    metadataTools = Mock.metadataTools
-    predicateSimplifier =
-        Predicate.create
-            metadataTools
-            patternSimplifier
-            axiomSimplifiers
-    patternSimplifier =
-        Simplifier.create
-            metadataTools
-            axiomSimplifiers
-    axiomSimplifiers = Map.empty
+    $ Step.applyInitialConditions initial unification
 
 test_applyInitialConditions :: [TestTree]
 test_applyInitialConditions =
@@ -157,28 +135,9 @@ unifyRule
             [Conditional Variable (RulePattern Variable)]
         )
 unifyRule initial rule =
-    evalUnifier
-    $ Step.unifyRule
-        metadataTools
-        unificationProcedure
-        predicateSimplifier
-        patternSimplifier
-        axiomSimplifiers
-        initial
-        rule
+    evalUnifier $ Step.unifyRule unificationProcedure initial rule
   where
-    metadataTools = Mock.metadataTools
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
-    predicateSimplifier =
-        Predicate.create
-            metadataTools
-            patternSimplifier
-            axiomSimplifiers
-    patternSimplifier =
-        Simplifier.create
-            metadataTools
-            axiomSimplifiers
-    axiomSimplifiers = Map.empty
 
 test_unifyRule :: [TestTree]
 test_unifyRule =
@@ -238,7 +197,7 @@ applyRewriteRule_
     -- ^ Rewrite rule
     -> IO (Either UnificationOrSubstitutionError [OrPattern Variable])
 applyRewriteRule_ initial rule = do
-    result <- applyRewriteRules initial [rule]
+    result <- applyRewriteRulesParallel initial [rule]
     return (Foldable.toList . discardRemainders <$> result)
   where
     discardRemainders = fmap Step.result . Step.results
@@ -542,8 +501,22 @@ test_applyRewriteRule_ =
                 makeEqualsPredicate
                     (Mock.functional11 (mkVar Mock.x))
                     (Mock.functional10 (mkVar Mock.x))
-            expect = Right [ OrPattern.fromPatterns [initial { predicate = ensures }] ]
-            initial = pure (mkVar Mock.x)
+            expect :: Either
+                UnificationOrSubstitutionError [OrPattern Variable]
+            expect = Right
+                [ OrPattern.fromTermLike
+                    (mkExists
+                        Mock.x
+                        (mkAnd
+                            (mkVar Mock.x)
+                            (mkEquals_
+                                (Mock.functional11 (mkVar Mock.x))
+                                (Mock.functional10 (mkVar Mock.x))
+                            )
+                        )
+                    )
+                ]
+            initial = Pattern.fromTermLike (mkVar Mock.x)
             axiom = RewriteRule ruleId { ensures }
         actual <- applyRewriteRule_ initial axiom
         assertEqualWithExplanation "" expect actual
@@ -558,7 +531,8 @@ test_applyRewriteRule_ =
                 makeEqualsPredicate
                     (Mock.functional11 (mkVar Mock.x))
                     (Mock.functional10 (mkVar Mock.x))
-            expect = Right [ OrPattern.fromPatterns [initial { predicate = requires }] ]
+            expect = Right
+                [ OrPattern.fromPatterns [initial { predicate = requires }] ]
             initial = pure (mkVar Mock.x)
             axiom = RewriteRule ruleId { requires }
         actual <- applyRewriteRule_ initial axiom
@@ -660,37 +634,19 @@ test_applyRewriteRule_ =
             }
 
 -- | Apply the 'RewriteRule's to the configuration.
-applyRewriteRules
+applyRewriteRulesParallel
     :: Pattern Variable
     -- ^ Configuration
     -> [RewriteRule Variable]
     -- ^ Rewrite rule
     -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
-applyRewriteRules initial rules =
+applyRewriteRulesParallel initial rules =
     (fmap . fmap) Result.mergeResults
-        $ SMT.runSMT SMT.defaultConfig emptyLogger
-        $ evalSimplifier
-        $ Monad.Unify.runUnifier
-        $ Step.applyRewriteRules
-            metadataTools
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-            unificationProcedure
-            rules
-            initial
+    $ SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier Mock.env
+    $ Monad.Unify.runUnifier
+    $ Step.applyRewriteRulesParallel unificationProcedure rules initial
   where
-    metadataTools = Mock.metadataTools
-    predicateSimplifier =
-        Predicate.create
-            metadataTools
-            patternSimplifier
-            axiomSimplifiers
-    patternSimplifier =
-        Simplifier.create
-            metadataTools
-            axiomSimplifiers
-    axiomSimplifiers = Map.empty
     unificationProcedure =
         UnificationProcedure Unification.unificationProcedure
 
@@ -714,8 +670,8 @@ checkRemainders expect actual =
         expect
         (Step.remainders actual)
 
-test_applyRewriteRules :: [TestTree]
-test_applyRewriteRules =
+test_applyRewriteRulesParallel :: [TestTree]
+test_applyRewriteRulesParallel =
     [ testCase "if _ then _" $ do
         -- This uses `functionalConstr20(x, y)` instead of `if x then y`
         -- and `a` instead of `true`.
@@ -751,7 +707,7 @@ test_applyRewriteRules =
                     ]
             initialTerm = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
             initial = pure initialTerm
-        Right actual <- applyRewriteRules initial [axiomIfThen]
+        Right actual <- applyRewriteRulesParallel initial [axiomIfThen]
         checkResults results actual
         checkRemainders remainders actual
 
@@ -803,7 +759,7 @@ test_applyRewriteRules =
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution = mempty
                     }
-        Right actual <- applyRewriteRules initial [axiomIfThen]
+        Right actual <- applyRewriteRulesParallel initial [axiomIfThen]
         checkResults results actual
         checkRemainders remainders actual
 
@@ -835,7 +791,7 @@ test_applyRewriteRules =
                     }
             initial = pure (Mock.functionalConstr10 (mkVar Mock.x))
             requirement = makeEqualsPredicate (Mock.f (mkVar Mock.x)) Mock.b
-        Right actual <- applyRewriteRules initial [axiomSignum]
+        Right actual <- applyRewriteRulesParallel initial [axiomSignum]
         checkResults results actual
         checkRemainders remainders actual
 
@@ -872,7 +828,7 @@ test_applyRewriteRules =
                     ]
             initialTerm = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
             initial = pure initialTerm
-        Right actual <- applyRewriteRules initial [axiomIfThen]
+        Right actual <- applyRewriteRulesParallel initial [axiomIfThen]
         checkResults results actual
         checkRemainders remainders actual
 
@@ -938,7 +894,7 @@ test_applyRewriteRules =
                     ]
             initialTerm = Mock.functionalConstr30 (mkVar Mock.x) Mock.cf Mock.cg
             initial = pure initialTerm
-        Right actual <- applyRewriteRules initial axiomsCase
+        Right actual <- applyRewriteRulesParallel initial axiomsCase
         checkResults results actual
         checkRemainders remainders actual
 
@@ -975,7 +931,28 @@ test_applyRewriteRules =
                     ]
             initialTerm = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
             initial = pure initialTerm
-        Right actual <- applyRewriteRules initial [axiomIfThen]
+        Right actual <- applyRewriteRulesParallel initial [axiomIfThen]
+        checkResults results actual
+        checkRemainders remainders actual
+
+    , testCase "adding variables" $ do
+        -- Term: a
+        -- Rule: a => x
+        -- Expected: exists x . x
+        let
+            results = OrPattern.fromTermLike (mkExists Mock.x (mkVar Mock.x))
+            remainders = OrPattern.bottom
+            initialTerm = Mock.a
+            initial = Pattern.fromTermLike initialTerm
+        Right actual <- applyRewriteRulesParallel initial
+            [ RewriteRule RulePattern
+                { left = Mock.a
+                , right = mkVar Mock.x
+                , requires = makeTruePredicate
+                , ensures = makeTruePredicate
+                , attributes = def
+                }
+            ]
         checkResults results actual
         checkRemainders remainders actual
     ]
@@ -1033,42 +1010,23 @@ axiomsCase = [axiomCaseA, axiomCaseB]
 
 
 -- | Apply the 'RewriteRule's to the configuration in sequence.
-sequenceRewriteRules
+applyRewriteRulesSequence
     :: Pattern Variable
     -- ^ Configuration
     -> [RewriteRule Variable]
     -- ^ Rewrite rule
     -> IO (Either UnificationOrSubstitutionError (Results Variable))
-sequenceRewriteRules initial rules =
+applyRewriteRulesSequence initial rules =
     (fmap . fmap) Result.mergeResults
         $ SMT.runSMT SMT.defaultConfig emptyLogger
-        $ evalSimplifier
+        $ evalSimplifier Mock.env
         $ Monad.Unify.runUnifier
-        $ Step.sequenceRewriteRules
-            metadataTools
-            predicateSimplifier
-            patternSimplifier
-            axiomSimplifiers
-            unificationProcedure
-            initial
-            rules
+        $ Step.applyRewriteRulesSequence unificationProcedure initial rules
   where
-    metadataTools = Mock.metadataTools
-    predicateSimplifier =
-        Predicate.create
-            metadataTools
-            patternSimplifier
-            axiomSimplifiers
-    patternSimplifier =
-        Simplifier.create
-            metadataTools
-            axiomSimplifiers
-    axiomSimplifiers = Map.empty
-    unificationProcedure =
-        UnificationProcedure Unification.unificationProcedure
+    unificationProcedure = UnificationProcedure Unification.unificationProcedure
 
-test_sequenceRewriteRules :: [TestTree]
-test_sequenceRewriteRules =
+test_applyRewriteRulesSequence :: [TestTree]
+test_applyRewriteRulesSequence =
     [ testCase "case _ of a -> _; b -> _ -- partial" $ do
         -- This uses `functionalConstr30(x, y, z)` to represent a case
         -- statement,
@@ -1135,7 +1093,28 @@ test_sequenceRewriteRules =
                     ]
             initialTerm = Mock.functionalConstr30 (mkVar Mock.x) Mock.cf Mock.cg
             initial = pure initialTerm
-        Right actual <- sequenceRewriteRules initial axiomsCase
+        Right actual <- applyRewriteRulesSequence initial axiomsCase
+        checkResults results actual
+        checkRemainders remainders actual
+
+    , testCase "adding variables" $ do
+        -- Term: a
+        -- Rule: a => x
+        -- Expected: exists x . x
+        let
+            results = OrPattern.fromTermLike (mkExists Mock.x (mkVar Mock.x))
+            remainders = OrPattern.bottom
+            initialTerm = Mock.a
+            initial = Pattern.fromTermLike initialTerm
+        Right actual <- applyRewriteRulesSequence initial
+            [ RewriteRule RulePattern
+                { left = Mock.a
+                , right = mkVar Mock.x
+                , requires = makeTruePredicate
+                , ensures = makeTruePredicate
+                , attributes = def
+                }
+            ]
         checkResults results actual
         checkRemainders remainders actual
     ]
@@ -1161,30 +1140,13 @@ sequenceMatchingRules
     -- ^ Rewrite rule
     -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
 sequenceMatchingRules initial rules =
-    fmap (fmap Foldable.fold)
+    (fmap . fmap) Foldable.fold
     $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
+    $ evalSimplifier Mock.env
     $ Monad.Unify.runUnifier
-    $ Step.sequenceRules
-        metadataTools
-        predicateSimplifier
-        patternSimplifier
-        axiomSimplifiers
-        unificationProcedure
-        initial
-        (getEqualityRule <$> rules)
+    $ Step.applyRulesSequence unificationProcedure initial equalityRules
   where
-    metadataTools = Mock.metadataTools
-    predicateSimplifier =
-        Predicate.create
-            metadataTools
-            patternSimplifier
-            axiomSimplifiers
-    patternSimplifier =
-        Simplifier.create
-            metadataTools
-            axiomSimplifiers
-    axiomSimplifiers = Map.empty
+    equalityRules = getEqualityRule <$> rules
     unificationProcedure =
         UnificationProcedure Matcher.unificationWithAppMatchOnTop
 
@@ -1199,9 +1161,17 @@ test_sequenceMatchingRules =
             results =
                 OrPattern.fromPatterns
                     [ Conditional
-                        { term = Mock.a
+                        { term =
+                            mkExists
+                                Mock.y
+                                (mkExists
+                                    x'
+                                    (mkAnd
+                                        Mock.a (mkEquals_ (mkVar Mock.x) sigma)
+                                    )
+                                )
                         , predicate = Predicate.makeTruePredicate
-                        , substitution = Substitution.wrap [(Mock.x, sigma)]
+                        , substitution = mempty
                         }
                     ]
             remainders =
@@ -1215,6 +1185,28 @@ test_sequenceMatchingRules =
                         }
                     ]
         Right actual <- sequenceMatchingRules initial [axiomFunctionalSigma]
+        checkResults results actual
+        checkRemainders remainders actual
+
+    , testCase "adding variables" $ do
+        -- Term: a
+        -- Rule: a => f(x)
+        -- Expected: exists x . f(x)
+        let
+            results =
+                OrPattern.fromTermLike (mkExists Mock.x (Mock.f (mkVar Mock.x)))
+            remainders = OrPattern.bottom
+            initialTerm = Mock.a
+            initial = Pattern.fromTermLike initialTerm
+        Right actual <- applyRewriteRulesSequence initial
+            [ RewriteRule RulePattern
+                { left = Mock.a
+                , right = Mock.f (mkVar Mock.x)
+                , requires = makeTruePredicate
+                , ensures = makeTruePredicate
+                , attributes = def
+                }
+            ]
         checkResults results actual
         checkRemainders remainders actual
     ]

@@ -17,10 +17,6 @@ import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
 import           Kore.Internal.Pattern
@@ -30,15 +26,11 @@ import           Kore.Internal.Predicate
                  ( Predicate )
 import           Kore.Internal.TermLike
 import qualified Kore.Logger as Logger
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.OrPattern as OrPattern
 import           Kore.Step.Simplification.AndTerms
                  ( termUnification )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
-import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( scatter )
 import           Kore.Step.Substitution
@@ -64,19 +56,10 @@ unificationProcedure
         , FreshVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -- ^functions yielding metadata for pattern heads
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> TermLike variable
-    -- ^left-hand-side of unification
+    => TermLike variable
     -> TermLike variable
     -> unifier (Predicate variable)
-unificationProcedure
-    tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2
+unificationProcedure  p1 p2
   | p1Sort /= p2Sort = do
     Monad.Unify.explainBottom
         "Cannot unify different sorts."
@@ -95,34 +78,14 @@ unificationProcedure
             , "with"
             , Pretty.indent 4 $ unparse p2
             ]
-    let
-        getUnifiedTerm =
-            termUnification
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                p1
-                p2
-    pat@Conditional { term } <- getUnifiedTerm
+    pat@Conditional { term } <- termUnification p1 p2
     if Conditional.isBottom pat
         then empty
         else Monad.Unify.liftBranchedSimplifier $ do
-            orCeil <-
-                Monad.Trans.lift $ Ceil.makeEvaluateTerm
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-                    term
+            orCeil <- Monad.Trans.lift $ Ceil.makeEvaluateTerm term
             orResult <-
                 OrPattern.mergeWithPredicateAssumesEvaluated
-                    (createPredicatesAndSubstitutionsMerger
-                        tools
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
-                    )
+                    createPredicatesAndSubstitutionsMerger
                     (Conditional.withoutTerm pat)
                     orCeil
             BranchT.scatter (MultiOr.extractPatterns orResult)

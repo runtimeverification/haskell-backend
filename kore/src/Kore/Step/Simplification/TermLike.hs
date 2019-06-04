@@ -11,17 +11,11 @@ module Kore.Step.Simplification.TermLike
 
 import qualified Data.Functor.Foldable as Recursive
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Simplification.And as And
                  ( simplify )
 import qualified Kore.Step.Simplification.Application as Application
@@ -35,8 +29,6 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
 import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
                  ( simplify )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
-                 simplifyTerm, termLikeSimplifier )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
                  ( simplify )
 import qualified Kore.Step.Simplification.Equals as Equals
@@ -90,14 +82,10 @@ simplify
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> TermLike variable
+    => TermLike variable
     -> Simplifier (Pattern variable)
-simplify tools substitutionSimplifier axiomIdToEvaluator patt = do
-    orPatt <- simplifyToOr tools axiomIdToEvaluator substitutionSimplifier patt
+simplify patt = do
+    orPatt <- simplifyToOr patt
     return (OrPattern.toPattern orPatt)
 
 {-|'simplifyToOr' simplifies a TermLike variable, returning an
@@ -110,21 +98,12 @@ simplifyToOr
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> PredicateSimplifier
-    -> TermLike variable
+    => TermLike variable
     -> Simplifier (OrPattern variable)
-simplifyToOr tools axiomIdToEvaluator substitutionSimplifier =
-    simplifyInternal
-        tools
-        substitutionSimplifier
-        simplifier
-        axiomIdToEvaluator
+simplifyToOr =
+    localSimplifierTermLike (const simplifier) . simplifyInternal
   where
-    simplifier = termLikeSimplifier
-        (simplifyToOr tools axiomIdToEvaluator)
+    simplifier = termLikeSimplifier simplifyToOr
 
 simplifyInternal
     ::  ( SortedVariable variable
@@ -133,19 +112,9 @@ simplifyInternal
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> TermLike variable
+    => TermLike variable
     -> Simplifier (OrPattern variable)
-simplifyInternal
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToEvaluator
-    termLike@(Recursive.project -> attrs :< termLikeF)
+simplifyInternal termLike@(Recursive.project -> attrs :< termLikeF)
 
   | EvaluatedF _ <- termLikeF =
     return (OrPattern.fromTermLike termLike)
@@ -157,57 +126,33 @@ simplifyInternal
     return (OrPattern.fromTermLike termLike)
 
   | otherwise =
-    traverse simplifyTerm' termLikeF >>= \case
-        AndF p ->
-            And.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        ApplicationF p ->
-            --  TODO: Re-evaluate outside of the application and stop passing
-            -- the simplifier.
-            Application.simplify
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToEvaluator
-                (attrs :< p)
-        BottomF p -> return $ Bottom.simplify p
-        BuiltinF p -> return $ Builtin.simplify tools p
-        CeilF p ->
-            Ceil.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        DomainValueF p -> return $ DomainValue.simplify tools p
-        EqualsF p ->
-            Equals.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        ExistsF p ->
-            Exists.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        FloorF p -> return $ Floor.simplify p
-        ForallF p -> return $ Forall.simplify p
-        IffF p ->
-            Iff.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        ImpliesF p ->
-            Implies.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        InF p ->
-            In.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        InhabitantF s -> return $ Inhabitant.simplify s
-        MuF p -> return $ Mu.simplify p
+    traverse simplifyTerm termLikeF >>= \case
+        AndF p              -> And.simplify p
+        ApplicationF p      -> Application.simplify (attrs :< p)
+        BottomF p           -> return $ Bottom.simplify p
+        BuiltinF p          -> return $ Builtin.simplify p
+        CeilF p             -> Ceil.simplify p
+        DomainValueF p      -> return $ DomainValue.simplify p
+        EqualsF p           -> Equals.simplify p
+        ExistsF p           -> Exists.simplify p
+        FloorF p            -> return $ Floor.simplify p
+        ForallF p           -> return $ Forall.simplify p
+        IffF p              -> Iff.simplify p
+        ImpliesF p          -> Implies.simplify p
+        InF p               -> In.simplify p
+        InhabitantF s       -> return $ Inhabitant.simplify s
+        MuF p               -> return $ Mu.simplify p
         -- TODO(virgil): Move next up through patterns.
-        NextF p -> return $ Next.simplify p
-        NotF p ->
-            Not.simplify
-                tools substitutionSimplifier simplifier axiomIdToEvaluator p
-        NuF p -> return $ Nu.simplify p
-        OrF p -> return $ Or.simplify p
-        RewritesF p -> return $ Rewrites.simplify p
-        StringLiteralF p -> return $ StringLiteral.simplify p
-        CharLiteralF p -> return $ CharLiteral.simplify p
-        TopF p -> return $ Top.simplify p
-        VariableF p -> return $ Variable.simplify p
-        SetVariableF p -> return $ SetVariable.simplify p
+        NextF p             -> return $ Next.simplify p
+        NotF p              -> Not.simplify p
+        NuF p               -> return $ Nu.simplify p
+        OrF p               -> return $ Or.simplify p
+        RewritesF p         -> return $ Rewrites.simplify p
+        StringLiteralF p    -> return $ StringLiteral.simplify p
+        CharLiteralF p      -> return $ CharLiteral.simplify p
+        TopF p              -> return $ Top.simplify p
+        VariableF p         -> return $ Variable.simplify p
+        SetVariableF p      -> return $ SetVariable.simplify p
         EvaluatedF patterns ->
             -- This is technically impossible because this branch would not be
             -- chosen if termLikeF matched 'EvaluatedF', and 'traverse' (above)
@@ -215,5 +160,3 @@ simplifyInternal
             -- include this case here to convince the compiler that the case
             -- statement is complete.
             return (getEvaluated patterns)
-  where
-    simplifyTerm' = simplifyTerm simplifier substitutionSimplifier

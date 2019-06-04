@@ -12,6 +12,7 @@ module Kore.Logger.Output
     , withLogger
     , parseKoreLogOptions
     , emptyLogger
+    , swappableLogger
     , makeKoreLogger
     , Colog.logTextStdout
     , Colog.logTextHandle
@@ -23,6 +24,9 @@ import           Colog
 import qualified Colog as Colog
 import           Control.Applicative
                  ( Alternative (..) )
+import           Control.Concurrent.MVar
+import           Control.Monad.Catch
+                 ( MonadMask, bracket )
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import qualified Control.Monad.Trans as Trans
@@ -191,3 +195,20 @@ formatLocalTime format = fromString . formatTime defaultTimeLocale format
 
 emptyLogger :: Applicative m => LogAction m msg
 emptyLogger = mempty
+
+{- | @swappableLogger@ delegates to the logger contained in the 'MVar'.
+
+This allows the logger to be "swapped" during execution. (It also automatically
+makes the logger thread-safe.)
+
+ -}
+swappableLogger
+    :: (MonadIO m, MonadMask m)
+    => MVar (LogAction m a)
+    -> LogAction m a
+swappableLogger mvar =
+    Colog.LogAction $ bracket acquire release . worker
+  where
+    acquire = liftIO $ takeMVar mvar
+    release = liftIO . putMVar mvar
+    worker a logAction = Colog.unLogAction logAction a

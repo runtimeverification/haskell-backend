@@ -15,10 +15,7 @@ module Kore.Step.Axiom.EvaluationStrategy
     , simplifierWithFallback
     ) where
 
-import           Control.Monad
-                 ( when )
-import           Control.Monad.Trans.Except
-                 ( ExceptT (ExceptT) )
+import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
 import           Data.Function
 import           Data.Maybe
@@ -27,10 +24,10 @@ import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import           Kore.Attribute.Symbol
-                 ( Hook (..), StepperAttributes )
+                 ( Hook (..) )
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SmtMetadataTools )
+                 ( MetadataTools (..) )
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -38,14 +35,6 @@ import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-import           Kore.Step.Axiom.Data
-                 ( AttemptedAxiom,
-                 AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap )
-import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import qualified Kore.Step.Axiom.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..), exceptNotApplicable, hasRemainders )
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
 import qualified Kore.Step.Result as Result
@@ -53,7 +42,16 @@ import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
+                 ( AttemptedAxiom,
+                 AttemptedAxiomResults (AttemptedAxiomResults),
+                 BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.Simplification.Data
                  ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
+import qualified Kore.Step.Simplification.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..), hasRemainders, maybeNotApplicable )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
@@ -109,14 +107,12 @@ totalDefinitionEvaluation rules =
             , Show variable
             , Unparse variable
             )
-        => SmtMetadataTools StepperAttributes
-        -> PredicateSimplifier
+        => PredicateSimplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
         -> Simplifier (AttemptedAxiom variable)
     totalDefinitionEvaluationWorker
-        tools
         predicateSimplifier
         termSimplifier
         axiomSimplifiers
@@ -130,7 +126,6 @@ totalDefinitionEvaluation rules =
         evaluate =
             evaluateWithDefinitionAxioms
                 rules
-                tools
                 predicateSimplifier
                 termSimplifier
                 axiomSimplifiers
@@ -178,7 +173,6 @@ evaluateBuiltin
         , Unparse variable
         )
     => BuiltinAndAxiomSimplifier
-    -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
@@ -187,15 +181,20 @@ evaluateBuiltin
     -> Simplifier (AttemptedAxiom variable)
 evaluateBuiltin
     (BuiltinAndAxiomSimplifier builtinEvaluator)
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
     patt
   = do
+    tools <- Simplifier.askMetadataTools
+    let
+        isValue pat = isJust $
+            Value.fromConcreteStepPattern tools =<< asConcrete pat
+        -- TODO(virgil): Send this from outside.
+        getSymbolHook = getHook . Attribute.hook . symAttributes tools
+        getAppHookString appHead = Text.unpack <$> getSymbolHook appHead
     result <-
         builtinEvaluator
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToSimplifier
@@ -216,11 +215,6 @@ evaluateBuiltin
         AttemptedAxiom.Applied _ -> return result
   where
     isPattConcrete = isConcrete patt
-    isValue pat = isJust $
-        Value.fromConcreteStepPattern tools =<< asConcrete pat
-    -- TODO(virgil): Send this from outside.
-    getAppHookString appHead =
-        Text.unpack <$> (getHook . Attribute.hook . symAttributes tools) appHead
 
 applyFirstSimplifierThatWorks
     :: forall variable
@@ -232,7 +226,6 @@ applyFirstSimplifierThatWorks
         )
     => [BuiltinAndAxiomSimplifier]
     -> AcceptsMultipleResults
-    -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
@@ -240,27 +233,25 @@ applyFirstSimplifierThatWorks
     -> TermLike variable
     -> Simplifier
         (AttemptedAxiom variable)
-applyFirstSimplifierThatWorks [] _ _ _ _ _ _ =
+applyFirstSimplifierThatWorks [] _ _ _ _ _ =
     return AttemptedAxiom.NotApplicable
 applyFirstSimplifierThatWorks
     (BuiltinAndAxiomSimplifier evaluator : evaluators)
     multipleResults
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToSimplifier
     patt
   = do
     applicationResult <-
-        evaluator
-            tools substitutionSimplifier simplifier axiomIdToSimplifier patt
+        evaluator substitutionSimplifier simplifier axiomIdToSimplifier patt
 
     case applicationResult of
         AttemptedAxiom.Applied AttemptedAxiomResults
             { results = orResults
             , remainders = orRemainders
             } -> do
-                when
+                Monad.when
                     (length (MultiOr.extractPatterns orResults) > 1
                     && not (acceptsMultipleResults multipleResults)
                     )
@@ -275,7 +266,7 @@ applyFirstSimplifierThatWorks
                         ++ show applicationResult
                         )
                     )
-                when
+                Monad.when
                     (not (OrPattern.isFalse orRemainders)
                     && not (acceptsMultipleResults multipleResults)
                     )
@@ -302,7 +293,6 @@ applyFirstSimplifierThatWorks
             applyFirstSimplifierThatWorks
                 evaluators
                 multipleResults
-                tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
@@ -317,7 +307,6 @@ evaluateWithDefinitionAxioms
         , Unparse variable
         )
     => [EqualityRule Variable]
-    -> SmtMetadataTools StepperAttributes
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
@@ -326,31 +315,20 @@ evaluateWithDefinitionAxioms
     -> Simplifier (AttemptedAxiom variable)
 evaluateWithDefinitionAxioms
     definitionRules
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
+    _predicateSimplifier
+    _termSimplifier
+    _axiomSimplifiers
     patt
   =
-    AttemptedAxiom.exceptNotApplicable $ do
+    AttemptedAxiom.maybeNotApplicable $ do
     let
         -- TODO (thomas.tuegel): Figure out how to get the initial conditions
         -- and apply them here, to remove remainder branches sooner.
         expanded :: Pattern variable
         expanded = Pattern.fromTermLike patt
 
-    let unwrapEqualityRule =
-            \(EqualityRule rule) ->
-                RulePattern.mapVariables fromVariable rule
-    results <- ExceptT $ Monad.Unify.runUnifier
-        $ Step.sequenceRules
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            (UnificationProcedure unificationWithAppMatchOnTop)
-            expanded
-            (map unwrapEqualityRule definitionRules)
+    results <- applyRules expanded (map unwrapEqualityRule definitionRules)
+    mapM_ rejectNarrowing results
 
     let
         result =
@@ -365,3 +343,16 @@ evaluateWithDefinitionAxioms
         { results = Step.gatherResults result
         , remainders = Step.remainders result
         }
+
+  where
+    unwrapEqualityRule (EqualityRule rule) =
+        RulePattern.mapVariables fromVariable rule
+
+    rejectNarrowing (Result.results -> results) =
+        (Monad.guard . not) (Foldable.any Step.isNarrowingResult results)
+
+    applyRules initial rules =
+        Monad.Unify.maybeUnifier
+        $ Step.applyRulesSequence unificationProcedure initial rules
+
+    unificationProcedure = UnificationProcedure unificationWithAppMatchOnTop

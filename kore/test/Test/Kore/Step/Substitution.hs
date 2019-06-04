@@ -7,7 +7,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Foldable as Foldable
-import qualified Data.Map as Map
 
 import           Kore.Internal.MultiOr
                  ( MultiOr )
@@ -18,7 +17,6 @@ import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutionsExcept )
 import qualified Kore.Step.Substitution as Substitution
@@ -338,29 +336,20 @@ merge
     -> IO (Either UnificationOrSubstitutionError [Predicate Variable])
 merge s1 s2 =
     runSMT
-    $ evalSimplifier
+    $ evalSimplifier mockEnv
     $ Monad.Unify.runUnifier
-    $ mergePredicatesAndSubstitutionsExcept
-        Mock.metadataTools
-        (Mock.substitutionSimplifier Mock.metadataTools)
-        (Simplifier.create Mock.metadataTools Map.empty)
-        Map.empty
-        []
-        $ Substitution.wrap <$> [s1, s2]
+    $ mergePredicatesAndSubstitutionsExcept [] $ Substitution.wrap <$> [s1, s2]
+  where
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
 
-normalize
-    :: Conditional Variable term
-    -> IO [Conditional Variable term]
+normalize :: Conditional Variable term -> IO [Conditional Variable term]
 normalize predicated =
     runSMT
-    $ evalSimplifier
+    $ evalSimplifier mockEnv
     $ gather
-    $ Substitution.normalize
-        Mock.metadataTools
-        (Mock.substitutionSimplifier Mock.metadataTools)
-        (Simplifier.create Mock.metadataTools Map.empty)
-        Map.empty
-        predicated
+    $ Substitution.normalize predicated
+  where
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
 
 normalizeExcept
     :: Conditional Variable ()
@@ -372,14 +361,11 @@ normalizeExcept
 normalizeExcept predicated =
     (fmap . fmap) MultiOr.make
     $ runSMT
-    $ evalSimplifier
+    $ evalSimplifier mockEnv
     $ Monad.Unify.runUnifier
-    $ Substitution.normalizeExcept
-        Mock.metadataTools
-        (Mock.substitutionSimplifier Mock.metadataTools)
-        (Simplifier.create Mock.metadataTools Map.empty)
-        Map.empty
-        predicated
+    $ Substitution.normalizeExcept predicated
+  where
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
 
 -- | Run an 'SMT' computation with the default configuration.
 runSMT :: SMT a -> IO a

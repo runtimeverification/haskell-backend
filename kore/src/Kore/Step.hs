@@ -28,29 +28,21 @@ module Kore.Step
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Stack
-                 ( HasCallStack )
+import qualified GHC.Stack as GHC
 import           Numeric.Natural
                  ( Natural )
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
                  ( Pattern )
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Result as Result
                  ( mergeResults )
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern, isCoolingRule,
                  isHeatingRule, isNormalRule )
-import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+import           Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplify )
+                 ( simplifyAndRemoveTopExists )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
@@ -89,49 +81,31 @@ rewriteStep a =
 'Strategy.runStrategy'.
  -}
 transitionRule
-    :: HasCallStack
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Prim (RewriteRule Variable)
+    :: GHC.HasCallStack
+    => Prim (RewriteRule Variable)
     -> Pattern Variable
-    -- ^ Configuration being rewritten and its accompanying proof
+    -- ^ Configuration being rewritten
     -> TransitionT (RewriteRule Variable) Simplifier (Pattern Variable)
-transitionRule tools substitutionSimplifier simplifier axiomIdToSimplifier =
+transitionRule =
     \case
         Simplify -> transitionSimplify
         Rewrite a -> transitionRewrite a
   where
     transitionSimplify config =
         do
-            configs <-
-                Monad.Trans.lift
-                $ Pattern.simplify
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-                    config
+            configs <- Monad.Trans.lift $ Pattern.simplifyAndRemoveTopExists config
             let
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = MultiOr.filterOr configs
             Foldable.asum (pure <$> nonEmptyConfigs)
     transitionRewrite rule config = do
         Transition.addRule rule
+        let unificationProcedure =
+                Step.UnificationProcedure Unification.unificationProcedure
         eitherResults <-
             Monad.Trans.lift
             $ Monad.Unify.runUnifier
-            $ Step.applyRewriteRules
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                (Step.UnificationProcedure Unification.unificationProcedure)
-                [rule]
-                config
+            $ Step.applyRewriteRulesParallel unificationProcedure [rule] config
         case eitherResults of
             Left err ->
                 (error . show . Pretty.vsep)

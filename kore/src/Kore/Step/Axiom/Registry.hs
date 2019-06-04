@@ -30,11 +30,9 @@ import           Kore.Attribute.Simplification
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Internal.TermLike
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifier (..) )
 import           Kore.Step.Axiom.EvaluationStrategy
-                 ( firstFullEvaluation, simplifierWithFallback,
-                 totalDefinitionEvaluation )
+                 ( definitionEvaluation, firstFullEvaluation,
+                 simplifierWithFallback )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -46,6 +44,8 @@ import           Kore.Step.Rule
                  QualifiedAxiomPattern (AllPathClaimPattern, FunctionAxiomPattern, ImplicationAxiomPattern, OnePathClaimPattern, RewriteAxiomPattern),
                  RulePattern (RulePattern) )
 import qualified Kore.Step.Rule as Rule
+import           Kore.Step.Simplification.Data
+                 ( BuiltinAndAxiomSimplifier (..) )
 import qualified Kore.Verified as Verified
 
 {- | Create a mapping from symbol identifiers to their defining axioms.
@@ -153,7 +153,7 @@ axiomPatternsToEvaluators =
         definitionEvaluator =
             if null evaluations
                 then Nothing
-                else Just (totalDefinitionEvaluation evaluations)
+                else Just (definitionEvaluation evaluations)
 
 {- | Return the evaluator corresponding to the 'AxiomPattern'.
 

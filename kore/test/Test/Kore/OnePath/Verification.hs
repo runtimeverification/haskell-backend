@@ -7,22 +7,18 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import           Control.Monad.Trans.Except
-                 ( runExceptT )
-import           Data.Coerce
-                 ( coerce )
-import           Data.Default
-                 ( def )
-import           Data.Limit
-                 ( Limit (..) )
-import qualified Data.Map as Map
-import           Numeric.Natural
-                 ( Natural )
+import Control.Monad.Trans.Except
+       ( runExceptT )
+import Data.Coerce
+       ( coerce )
+import Data.Default
+       ( def )
+import Data.Limit
+       ( Limit (..) )
+import Numeric.Natural
+       ( Natural )
 
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Symbol
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.Pattern
                  ( Conditional (Conditional) )
 import           Kore.Internal.Pattern as Conditional
@@ -41,8 +37,7 @@ import           Kore.Step.Rule
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
+                 ( Env (..), evalSimplifier )
 import qualified SMT
 
 import           Test.Kore
@@ -58,7 +53,6 @@ test_onePathVerification =
         -- Claim: a => b
         -- Expected: error a
         actual <- runVerification
-            Mock.metadataTools
             (Limit 0)
             [simpleAxiom Mock.a Mock.b]
             [simpleClaim Mock.a Mock.b]
@@ -75,7 +69,6 @@ test_onePathVerification =
         -- the rewrite transforms 'a' into 'b'. We detect the success at the
         -- beginning of the second step, which does not run here.
         actual <- runVerification
-            Mock.metadataTools
             (Limit 1)
             [simpleAxiom Mock.a Mock.b]
             [simpleClaim Mock.a Mock.b]
@@ -87,7 +80,6 @@ test_onePathVerification =
         -- Claim: a => d
         -- Expected: error [b, c]
         actual <- runVerification
-            Mock.metadataTools
             (Limit 1)
             [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
             [simpleClaim Mock.a Mock.d]
@@ -100,7 +92,6 @@ test_onePathVerification =
         -- Claim: a => b
         -- Expected: success
         actual <- runVerification
-            Mock.metadataTools
             (Limit 2)
             [simpleAxiom Mock.a Mock.b]
             [simpleClaim Mock.a Mock.b]
@@ -111,7 +102,6 @@ test_onePathVerification =
         -- Trusted Claim: a => b
         -- Expected: error a
         actual <- runVerification
-            Mock.metadataTools
             (Limit 4)
             []
             [ simpleTrustedClaim Mock.a Mock.b
@@ -126,7 +116,6 @@ test_onePathVerification =
         -- Claim: a => c
         -- Expected: success
         actual <- runVerification
-            Mock.metadataTools
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
@@ -141,7 +130,6 @@ test_onePathVerification =
         -- Claim: a => b
         -- Expected: success
         actual <- runVerification
-            Mock.metadataTools
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
@@ -157,7 +145,6 @@ test_onePathVerification =
         -- Claim: constr10(x) => b
         -- Expected: success
         actual <- runVerification
-            Mock.metadataTools
             (Limit 4)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
             , simpleAxiom (Mock.functionalConstr11 (mkVar Mock.x)) Mock.b
@@ -173,7 +160,6 @@ test_onePathVerification =
         -- Claim: constr10(x) => b
         -- Expected: error constr11(x) and x != a
         actual <- runVerification
-            Mock.metadataTools
             (Limit 3)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
             , simpleAxiom
@@ -198,7 +184,6 @@ test_onePathVerification =
         -- Claim: d => e
         -- Expected: success
         actual <- runVerification
-            Mock.metadataTools
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
@@ -218,7 +203,6 @@ test_onePathVerification =
         -- Claim: d => e
         -- Expected: error c
         actual <- runVerification
-            Mock.metadataTools
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
@@ -238,7 +222,6 @@ test_onePathVerification =
         -- Claim: d => c
         -- Expected: error e
         actual <- runVerification
-            Mock.metadataTools
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
@@ -257,7 +240,6 @@ test_onePathVerification =
         -- Claim: b => c
         -- Expected: error b
         actual <- runVerification
-            Mock.metadataTools
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.c Mock.d
@@ -275,7 +257,6 @@ test_onePathVerification =
         -- Claim: a => d
         -- Expected: error b
         actual <- runVerification
-            Mock.metadataTools
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.c Mock.d
@@ -293,7 +274,6 @@ test_onePathVerification =
         -- Trusted Claim: b => c
         -- Expected: success
         actual <- runVerification
-            Mock.metadataTools
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.c Mock.d
@@ -311,7 +291,6 @@ test_onePathVerification =
         -- Claim: a => d
         -- Expected: success
         actual <- runVerification
-            Mock.metadataTools
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.c Mock.d
@@ -333,7 +312,6 @@ test_onePathVerification =
         --        without second claim would be: a=>b=>c=>d
         --    second verification: b=>c=>d, not visible here
         actual <- runVerification
-            Mock.metadataTools
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
@@ -391,29 +369,18 @@ simpleRewrite left right =
 
 runVerification
     :: OnePath.Claim claim
-    => SmtMetadataTools StepperAttributes
-    -- ^functions yielding metadata for pattern heads
-    -> Limit Natural
+    => Limit Natural
     -> [OnePath.Axiom]
     -> [claim]
     -> IO (Either (Pattern Variable) ())
-runVerification
-    metadataTools
-    stepLimit
-    axioms
-    claims
-  =
+runVerification stepLimit axioms claims =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier
+    $ evalSimplifier mockEnv
     $ runExceptT
     $ OnePath.verify
-        metadataTools
-        simplifier
-        (Mock.substitutionSimplifier metadataTools)
-        Map.empty
         (OnePath.defaultStrategy claims axioms)
-        ( map (\c -> (RewriteRule . coerce $ c, stepLimit))
-        . filter (not . Claim.isTrusted)
-        $ claims)
+        (map applyStepLimit . selectUntrusted $ claims)
   where
-    simplifier = Simplifier.create metadataTools Map.empty
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
+    applyStepLimit claim = (RewriteRule $ coerce claim, stepLimit)
+    selectUntrusted = filter (not . Claim.isTrusted)

@@ -12,6 +12,7 @@ module Kore.Repl
     , ReplMode (..)
     ) where
 
+import           Control.Concurrent.MVar
 import           Control.Exception
                  ( AsyncException (UserInterrupt) )
 import qualified Control.Lens as Lens hiding
@@ -39,10 +40,6 @@ import           Text.Megaparsec
                  ( parseMaybe )
 
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.TermLike
                  ( TermLike, Variable )
 import qualified Kore.Logger as Logger
@@ -54,15 +51,9 @@ import           Kore.OnePath.Verification
 import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
 import           Kore.Repl.Parser
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
-import           Kore.Step.Simplification.Data
-                 ( TermLikeSimplifier )
-import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
@@ -85,27 +76,17 @@ runRepl
     :: forall claim
     .  Unparse (Variable)
     => Claim claim
-    => SmtMetadataTools StepperAttributes
-    -- ^ tools required for the proof
-    -> TermLikeSimplifier
-    -- ^ pattern simplifier
-    -> PredicateSimplifier
-    -- ^ predicate simplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ builtin simplifier
-    -> [Axiom]
+    => [Axiom]
     -- ^ list of axioms to used in the proof
     -> [claim]
     -- ^ list of claims to be proven
+    -> MVar (Logger.LogAction IO Logger.LogMessage)
     -> ReplScript
     -- ^ optional script
     -> ReplMode
     -- ^ mode to run in
     -> Simplifier ()
-runRepl
-    tools simplifier predicateSimplifier axiomToIdSimplifier
-    axioms' claims' replScript replMode
-  = do
+runRepl axioms' claims' logger replScript replMode = do
     mNewState <- evaluateScript replScript
     case replMode of
         Interactive -> do
@@ -156,6 +137,7 @@ runRepl
             , labels     = Map.empty
             , aliases    = Map.empty
             , logging    = (Logger.Debug, NoLogging)
+            , logger
             }
 
     firstClaimIndex :: ClaimIndex
@@ -221,30 +203,14 @@ runRepl
         if Graph.outdeg (Strategy.graph graph) node == 0
             then
                 catchInterruptWithDefault graph
-                $ verifyClaimStep
-                    tools
-                    simplifier
-                    predicateSimplifier
-                    axiomToIdSimplifier
-                    claim
-                    claims
-                    axioms
-                    graph
-                    node
+                $ verifyClaimStep claim claims axioms graph node
             else pure graph
 
     unifier0
         :: TermLike Variable
         -> TermLike Variable
         -> UnifierWithExplanation ()
-    unifier0 first second =
-        () <$ unificationProcedure
-            tools
-            predicateSimplifier
-            simplifier
-            axiomToIdSimplifier
-            first
-            second
+    unifier0 first second = () <$ unificationProcedure first second
 
     catchInterruptWithDefault :: MonadCatch m => MonadIO m => a -> m a -> m a
     catchInterruptWithDefault def sa =

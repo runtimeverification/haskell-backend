@@ -8,12 +8,6 @@ module Kore.Step.Merging.OrPattern
     , mergeWithPredicateAssumesEvaluated
     ) where
 
-import Data.Reflection
-
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.MultiOr
                  ( MultiOr )
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -22,11 +16,8 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import           Kore.Internal.Pattern
                  ( Conditional, Predicate )
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Merging.Pattern as Pattern
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import           Kore.Step.Substitution
@@ -48,38 +39,14 @@ mergeWithPredicate
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -- ^ Tools for finding additional information about patterns
-    -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions in a pattern.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate variable
+    => Predicate variable
     -- ^ Predicate to add.
     -> OrPattern variable
     -- ^ Pattern to which the condition should be added.
     -> Simplifier (OrPattern variable)
-mergeWithPredicate
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    toMerge
-    patt
-  = do
-    patterns <- BranchT.gather
-        (traverse
-            (give tools $ Pattern.mergeWithPredicate
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                toMerge
-            )
-            patt
-        )
+mergeWithPredicate toMerge patt = do
+    patterns <-
+        BranchT.gather $ traverse (Pattern.mergeWithPredicate toMerge) patt
     return (MultiOr.mergeAll patterns)
 
 {-| Ands the given predicate/substitution with the given 'MultiOr'.

@@ -33,10 +33,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Debug.Trace
 import           GHC.Generics
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
                  ( Pattern )
@@ -45,15 +41,13 @@ import           Kore.Internal.TermLike
                  ( TermLike )
 import           Kore.ModelChecker.Simplification
                  ( checkImplicationIsTop )
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Result as StepResult
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+                 ( Simplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplify )
+                 ( simplifyAndRemoveTopExists )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
@@ -116,20 +110,10 @@ type Transition =
     TransitionT (RewriteRule Variable) (StateT (Maybe ()) Simplifier)
 
 transitionRule
-    :: SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Prim (CommonModalPattern) (RewriteRule Variable)
+    :: Prim (CommonModalPattern) (RewriteRule Variable)
     -> CommonProofState
     -> Transition CommonProofState
 transitionRule
-    tools
-    predicateSimplifier
-    patternSimplifier
-    axiomSimplifiers
     strategyPrim
     proofState
   = case strategyPrim of
@@ -165,12 +149,7 @@ transitionRule
         do
             configs <-
                 Monad.Trans.lift . Monad.Trans.lift
-                $ Pattern.simplify
-                    tools
-                    predicateSimplifier
-                    patternSimplifier
-                    axiomSimplifiers
-                    config
+                $ Pattern.simplifyAndRemoveTopExists config
             let
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = MultiOr.filterOr configs
@@ -196,13 +175,7 @@ transitionRule
             "ag" -> do
                 result <-
                     Monad.Trans.lift . Monad.Trans.lift
-                    $ checkImplicationIsTop
-                        tools
-                        predicateSimplifier
-                        patternSimplifier
-                        axiomSimplifiers
-                        config
-                        term
+                    $ checkImplicationIsTop config term
                 if result
                     then return (wrapper config)
                     else do
@@ -241,11 +214,7 @@ transitionRule
         eitherResults <-
             Monad.Trans.lift . Monad.Trans.lift
             $ Monad.Unify.runUnifier
-            $ Step.applyRewriteRules
-                tools
-                predicateSimplifier
-                patternSimplifier
-                axiomSimplifiers
+            $ Step.applyRewriteRulesParallel
                 (Step.UnificationProcedure Unification.unificationProcedure)
                 rules
                 config

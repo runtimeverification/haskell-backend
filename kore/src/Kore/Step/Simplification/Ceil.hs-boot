@@ -2,18 +2,12 @@ module Kore.Step.Simplification.Ceil
     ( makeEvaluateTerm
     ) where
 
-import Kore.Attribute.Symbol
-       ( StepperAttributes )
-import Kore.IndexedModule.MetadataTools
-       ( SmtMetadataTools )
 import Kore.Internal.OrPredicate
        ( OrPredicate )
 import Kore.Internal.TermLike
        ( TermLike )
-import Kore.Step.Axiom.Data
-       ( BuiltinAndAxiomSimplifierMap )
 import Kore.Step.Simplification.Data
-       ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+       ( Simplifier )
 import Kore.Syntax.Variable
        ( SortedVariable )
 import Kore.Unparser
@@ -28,11 +22,5 @@ makeEvaluateTerm
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> TermLike variable
+    => TermLike variable
     -> Simplifier (OrPredicate variable)

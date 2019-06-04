@@ -5,6 +5,7 @@ module Main (main) where
 
 import           Control.Applicative
                  ( optional )
+import           Control.Concurrent.MVar
 import qualified Data.Bifunctor as Bifunctor
 import           Data.Semigroup
                  ( (<>) )
@@ -22,10 +23,8 @@ import           Kore.Exec
                  ( proveWithRepl )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.Logger.Output
-                 ( emptyLogger )
+                 ( emptyLogger, swappableLogger )
 import           Kore.Repl
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
 import           Kore.Syntax.Module
                  ( ModuleName (..) )
 
@@ -186,15 +185,20 @@ mainWithOptions
                 , SMT.preludeFile = smtPrelude
                 }
     if replMode == RunScript && (unReplScript replScript) == Nothing
-       then do
-           putStrLn "You must supply the path to the repl script\
-                    \ in order to run the repl in run-script mode."
-           exitFailure
-       else do
-           SMT.runSMT smtConfig emptyLogger
-               $ evalSimplifier
+        then do
+            putStrLn
+                "You must supply the path to the repl script\
+                \ in order to run the repl in run-script mode."
+            exitFailure
+        else do
+            mLogger <- newMVar emptyLogger
+            SMT.runSMT smtConfig (swappableLogger mLogger)
                $ proveWithRepl
-                    indexedModule specDefIndexedModule replScript replMode
+                    indexedModule
+                    specDefIndexedModule
+                    mLogger
+                    replScript
+                    replMode
 
   where
     mainModuleName :: ModuleName

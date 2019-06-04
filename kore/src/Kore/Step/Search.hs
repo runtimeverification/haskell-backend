@@ -21,18 +21,12 @@ import           Control.Monad.Trans.Class
                  ( lift )
 import           Data.Maybe
                  ( catMaybes )
-import           Data.Reflection
-                 ( give )
 import           Numeric.Natural
                  ( Natural )
 
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( make, mergeAll )
 import           Kore.Internal.OrPredicate
@@ -40,13 +34,9 @@ import           Kore.Internal.OrPredicate
 import           Kore.Internal.Pattern
                  ( Pattern, Predicate )
 import qualified Kore.Internal.Pattern as Conditional
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.Simplification.Data
-                 ( BranchT, PredicateSimplifier, Simplifier,
-                 TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Strategy as Strategy
@@ -129,25 +119,13 @@ matchWith
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Pattern variable
+    => Pattern variable
     -> Pattern variable
     -> MaybeT Simplifier (OrPredicate variable)
-matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
+matchWith e1 e2 = do
     eitherUnifiers <-
         Monad.Trans.lift $ Monad.Unify.runUnifier
-        $ unificationProcedure
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            t1
-            t2
+        $ unificationProcedure t1 t2
     let
         maybeUnifiers :: Maybe [Predicate variable]
         maybeUnifiers = hush eitherUnifiers
@@ -163,27 +141,16 @@ matchWith tools substitutionSimplifier simplifier axiomIdToSimplifier e1 e2 = do
         mergeAndEvaluateBranches predSubst = do
             merged <-
                 mergePredicatesAndSubstitutions
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
                     [ Conditional.predicate predSubst
                     , Conditional.predicate e1
                     , Conditional.predicate e2
                     ]
-                    [ Conditional.substitution predSubst]
+                    [ Conditional.substitution predSubst ]
             evaluated <-
                 Monad.Trans.lift
-                $ give tools
-                $ Predicate.evaluate substitutionSimplifier simplifier
-                $ Conditional.predicate merged
+                $ Predicate.evaluate $ Conditional.predicate merged
             mergePredicatesAndSubstitutions
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                [ Conditional.predicate evaluated
-                ]
+                [ Conditional.predicate evaluated ]
                 [ Conditional.substitution merged
                 , Conditional.substitution evaluated
                 ]

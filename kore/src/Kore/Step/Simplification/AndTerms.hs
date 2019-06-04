@@ -61,15 +61,16 @@ import qualified Kore.Logger as Logger
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeEqualsPredicate,
                  makeNotPredicate, makeTruePredicate )
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.PatternAttributes
                  ( isConstructorLikeTop )
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
 import           Kore.Step.Simplification.Data
+                 ( BuiltinAndAxiomSimplifierMap )
+import           Kore.Step.Simplification.Data
                  ( BranchT, PredicateSimplifier, SimplificationType,
                  Simplifier, TermLikeSimplifier )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import qualified Kore.Step.Simplification.Data as BranchT
@@ -114,21 +115,14 @@ termEquals
         , Unparse variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> MaybeT Simplifier (OrPredicate variable)
-termEquals
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    first
-    second
-  = MaybeT $ do
+termEquals first second = MaybeT $ do
+    tools <- Simplifier.askMetadataTools
+    substitutionSimplifier <- Simplifier.askSimplifierPredicate
+    simplifier <- Simplifier.askSimplifierTermLike
+    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
     maybeResults <-
         BranchT.gather $ runMaybeT $ termEqualsAnd
             tools
@@ -167,19 +161,13 @@ termEqualsAnd
   =
     MaybeT $ do
         eitherMaybeResult <-
-            Monad.Trans.lift . Monad.Unify.runUnifier
-            . runMaybeT
+            Monad.Trans.lift . Monad.Unify.runUnifier . runMaybeT
             $ maybeTermEquals
                 tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
-                (createPredicatesAndSubstitutionsMergerExcept
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-                )
+                createPredicatesAndSubstitutionsMergerExcept
                 termEqualsAndWorker
                 p1
                 p2
@@ -200,12 +188,7 @@ termEqualsAnd
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
-                (createPredicatesAndSubstitutionsMergerExcept
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-                )
+                createPredicatesAndSubstitutionsMergerExcept
                 termEqualsAndWorker
                 first
                 second
@@ -266,14 +249,10 @@ termUnification
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> unifier (Pattern variable)
-termUnification tools substitutionSimplifier simplifier axiomIdToSimplifier =
+termUnification =
     termUnificationWorker
   where
     termUnificationWorker
@@ -281,6 +260,10 @@ termUnification tools substitutionSimplifier simplifier axiomIdToSimplifier =
         -> TermLike variable
         -> unifier (Pattern variable)
     termUnificationWorker pat1 pat2 = do
+        tools <- Simplifier.askMetadataTools
+        substitutionSimplifier <- Simplifier.askSimplifierPredicate
+        simplifier <- Simplifier.askSimplifierTermLike
+        axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
         let
             maybeTermUnification :: MaybeT unifier (Pattern variable)
             maybeTermUnification =
@@ -289,12 +272,7 @@ termUnification tools substitutionSimplifier simplifier axiomIdToSimplifier =
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplifier
-                    (createPredicatesAndSubstitutionsMergerExcept
-                        tools
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
-                    )
+                    createPredicatesAndSubstitutionsMergerExcept
                     termUnificationWorker
                     pat1
                     pat2
@@ -325,16 +303,12 @@ termAnd
         , Unparse variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> BranchT Simplifier (Pattern variable)
-termAnd tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2 = do
-    eitherResult <- Monad.Trans.lift $ Monad.Unify.runUnifier $
-        termAndWorker p1 p2
+termAnd p1 p2 = do
+    eitherResult <-
+        Monad.Trans.lift . Monad.Unify.runUnifier $ termAndWorker p1 p2
     case eitherResult of
         Left _        -> return $ Pattern.fromTermLike (mkAnd p1 p2)
         Right results -> BranchT.scatter results
@@ -344,18 +318,17 @@ termAnd tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2 = do
         -> TermLike variable
         -> Unifier (Pattern variable)
     termAndWorker first second = do
+        tools <- Simplifier.askMetadataTools
+        substitutionSimplifier <- Simplifier.askSimplifierPredicate
+        simplifier <- Simplifier.askSimplifierTermLike
+        axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
         let maybeTermAnd' =
                 maybeTermAnd
                     tools
                     substitutionSimplifier
                     simplifier
                     axiomIdToSimplifier
-                    (createLiftedPredicatesAndSubstitutionsMerger
-                        tools
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
-                    )
+                    createLiftedPredicatesAndSubstitutionsMerger
                     termAndWorker
                     first
                     second
@@ -821,20 +794,14 @@ bottomTermEquals
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 bottomTermEquals
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
+    _tools
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSimplifier
     first@(Bottom_ _)
     second
   = Monad.Trans.lift $ do -- MonadUnify
-    secondCeil <-
-        Monad.Unify.liftSimplifier $ Ceil.makeEvaluateTerm
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            second
+    secondCeil <- Monad.Unify.liftSimplifier $ Ceil.makeEvaluateTerm second
 
     case MultiOr.extractPatterns secondCeil of
         [] -> return Pattern.top
@@ -926,9 +893,9 @@ variableFunctionAndEquals
 variableFunctionAndEquals
     simplificationType
     tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSimplifier
     _
     first@(Var_ v)
     second
@@ -941,13 +908,8 @@ variableFunctionAndEquals
                 -- be careful to not just drop the term.
                 return Predicate.top
             SimplificationType.Equals -> do
-                resultOr <- Monad.Unify.liftSimplifier
-                    $ Ceil.makeEvaluateTerm
-                        tools
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToSimplifier
-                        second
+                resultOr <-
+                    Monad.Unify.liftSimplifier $ Ceil.makeEvaluateTerm second
                 case MultiOr.extractPatterns resultOr of
                     [] -> do
                         Monad.Unify.explainBottom

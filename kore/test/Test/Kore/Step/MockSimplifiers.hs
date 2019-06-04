@@ -1,36 +1,26 @@
 module Test.Kore.Step.MockSimplifiers where
 
-import qualified Data.Map as Map
-
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern
-                 ( Conditional (Conditional) )
 import qualified Kore.Internal.Pattern as Pattern
-                 ( Conditional (..) )
 import           Kore.Internal.TermLike
-import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Predicate.Predicate
                  ( wrapPredicate )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier (..), termLikeSimplifier )
+                 ( MonadSimplify (..), PredicateSimplifier (..),
+                 termLikeSimplifier )
 import qualified Kore.Step.Simplification.Predicate as Predicate
                  ( create )
 
-substitutionSimplifier
-    :: SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-substitutionSimplifier tools =
-    Predicate.create
-        tools
-        (termLikeSimplifier $ \_ p ->
-            return $ OrPattern.fromPattern
-                Conditional
-                    { term = mkTop_
-                    , predicate = Predicate.wrapPredicate p
-                    , substitution = mempty
-                    }
-        )
-        Map.empty
+substitutionSimplifier :: PredicateSimplifier
+substitutionSimplifier =
+    PredicateSimplifier $ \predicate ->
+        localSimplifierTermLike (const simplifierWrapPredicate)
+        $ predicateSimplifier predicate
+  where
+    -- TODO (thomas.tuegel): Remove simplifierWrapPredicate.
+    simplifierWrapPredicate =
+        termLikeSimplifier $ \patt ->
+            (return . OrPattern.fromPattern)
+                (Pattern.topOf (termLikeSort patt))
+                    { Pattern.predicate = wrapPredicate patt }
+    PredicateSimplifier predicateSimplifier = Predicate.create

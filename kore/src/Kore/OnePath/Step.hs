@@ -24,11 +24,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
 import           Kore.Debug
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
@@ -39,15 +35,12 @@ import           Kore.OnePath.StrategyPattern
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Axiom.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplify )
+                 ( simplifyAndRemoveTopExists )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
@@ -141,24 +134,11 @@ which is actually, exactly the form we want, since we are working with a
 and n destinations.
  -}
 transitionRule
-    :: SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions in patterns
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> Prim (Pattern Variable) (RewriteRule Variable)
+    :: Prim (Pattern Variable) (RewriteRule Variable)
     -> CommonStrategyPattern
     -- ^ Configuration being rewritten and its accompanying proof
     -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
-transitionRule
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    strategy
-    expandedPattern
-  =
+transitionRule strategy expandedPattern =
     traceNonErrorMonad D_OnePath_Step_transitionRule
         [ debugArg "strategy" (debugString strategy)
         , debugArg "expandedPattern" expandedPattern
@@ -174,14 +154,7 @@ transitionRule
     transitionSimplify c = return c
 
     applySimplify wrapper config = do
-        configs <-
-            Monad.Trans.lift
-            $ Pattern.simplify
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                config
+        configs <- Monad.Trans.lift $ Pattern.simplifyAndRemoveTopExists config
         let
             -- Filter out ⊥ patterns
             nonEmptyConfigs = MultiOr.filterOr configs
@@ -209,11 +182,7 @@ transitionRule
         eitherResults <-
             Monad.Trans.lift
             $ Monad.Unify.runUnifier
-            $ Step.sequenceRewriteRules
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
+            $ Step.applyRewriteRulesSequence
                 (Step.UnificationProcedure Unification.unificationProcedure)
                 config
                 rules
@@ -267,14 +236,7 @@ transitionRule
         let
             removal = removalPredicate destination patt
             result = patt `Conditional.andPredicate` removal
-        orResult <-
-            Monad.Trans.lift
-            $ Pattern.simplify
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                result
+        orResult <- Monad.Trans.lift $ Pattern.simplifyAndRemoveTopExists result
         let nonEmpty = MultiOr.filterOr orResult
         if null nonEmpty
             then return Bottom

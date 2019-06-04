@@ -36,22 +36,18 @@ import           Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern, Predicate )
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-import           Kore.Step.Axiom.Data
-                 ( AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Axiom.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import qualified Kore.Step.Axiom.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( extract )
 import qualified Kore.Step.Merging.OrPattern as OrPattern
-import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier,
-                 simplifyTerm )
+import           Kore.Step.Simplification.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import           Kore.Step.Simplification.Data as Simplifier
+import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Simplification.Pattern as Pattern
@@ -67,15 +63,7 @@ evaluateApplication
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -- ^ Tools for finding additional information about patterns
-    -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate variable
+    => Predicate variable
     -- ^ Aggregated children predicate and substitution.
     -> CofreeF
         (Application SymbolOrAlias)
@@ -84,13 +72,42 @@ evaluateApplication
     -- ^ The pattern to be evaluated
     -> Simplifier (OrPattern variable)
 evaluateApplication
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToEvaluator
     childrenPredicate
     (valid :< app)
-  = case maybeEvaluatedPattSimplifier of
+  = do
+    tools <- Simplifier.askMetadataTools
+    substitutionSimplifier <- Simplifier.askSimplifierPredicate
+    simplifier <- Simplifier.askSimplifierTermLike
+    axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
+    let
+        afterInj = evaluateSortInjection tools app
+        Application { applicationSymbolOrAlias = appHead } = afterInj
+        SymbolOrAlias { symbolOrAliasConstructor = symbolId } = appHead
+        appPattern = Recursive.embed (valid :< ApplicationF afterInj)
+
+        maybeEvaluatedPattSimplifier =
+            maybeEvaluatePattern
+                substitutionSimplifier
+                simplifier
+                axiomIdToEvaluator
+                childrenPredicate
+                appPattern
+                unchanged
+        unchangedPatt =
+            Conditional
+                { term         = appPattern
+                , predicate    = predicate
+                , substitution = substitution
+                }
+          where
+            Conditional { term = (), predicate, substitution } =
+                childrenPredicate
+        unchanged = OrPattern.fromPattern unchangedPatt
+
+        getSymbolHook = getHook . Attribute.hook . symAttributes tools
+        getAppHookString = Text.unpack <$> getSymbolHook appHead
+
+    case maybeEvaluatedPattSimplifier of
         Nothing
           | Just hook <- getAppHookString
           , not(null axiomIdToEvaluator) ->
@@ -101,38 +118,6 @@ evaluateApplication
           | otherwise ->
             return unchanged
         Just evaluatedPattSimplifier -> evaluatedPattSimplifier
-  where
-    afterInj = evaluateSortInjection tools app
-
-    maybeEvaluatedPattSimplifier =
-        maybeEvaluatePattern
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToEvaluator
-            childrenPredicate
-            appPattern
-            unchanged
-
-    Application { applicationSymbolOrAlias = appHead } = afterInj
-    SymbolOrAlias { symbolOrAliasConstructor = symbolId } = appHead
-
-    appPattern =
-        Recursive.embed (valid :< ApplicationF afterInj)
-
-    unchangedPatt =
-        Conditional
-            { term         = appPattern
-            , predicate    = predicate
-            , substitution = substitution
-            }
-      where
-        Conditional { term = (), predicate, substitution } =
-            childrenPredicate
-    unchanged = OrPattern.fromPattern unchangedPatt
-
-    getAppHookString =
-        Text.unpack <$> (getHook . Attribute.hook . symAttributes tools) appHead
 
 {-| Evaluates axioms on patterns.
 -}
@@ -144,10 +129,7 @@ evaluatePattern
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -- ^ Tools for finding additional information about patterns
-    -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -158,10 +140,8 @@ evaluatePattern
     -- ^ The pattern to be evaluated
     -> OrPattern variable
     -- ^ The default value
-    -> Simplifier
-        (OrPattern variable)
+    -> Simplifier (OrPattern variable)
 evaluatePattern
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
@@ -172,7 +152,6 @@ evaluatePattern
     fromMaybe
         (return defaultValue)
         (maybeEvaluatePattern
-            tools
             substitutionSimplifier
             simplifier
             axiomIdToEvaluator
@@ -193,10 +172,7 @@ maybeEvaluatePattern
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -- ^ Tools for finding additional information about patterns
-    -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier
+    => PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -209,7 +185,6 @@ maybeEvaluatePattern
     -- ^ The default value
     -> Maybe (Simplifier (OrPattern variable))
 maybeEvaluatePattern
-    tools
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
@@ -227,7 +202,6 @@ maybeEvaluatePattern
             $ do
                 result <-
                     evaluator
-                        tools
                         substitutionSimplifier
                         simplifier
                         axiomIdToEvaluator
@@ -249,10 +223,6 @@ maybeEvaluatePattern
                                 )
                 merged <-
                     mergeWithConditionAndSubstitution
-                        tools
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToEvaluator
                         childrenPredicate
                         flattened
                 case merged of
@@ -285,12 +255,7 @@ maybeEvaluatePattern
       | toSimplify == unchangedPatt =
         return (OrPattern.fromPattern unchangedPatt)
       | otherwise =
-        reevaluateFunctions
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToEvaluator
-            toSimplify
+        reevaluateFunctions toSimplify
 
 evaluateSortInjection
     :: Ord variable
@@ -336,54 +301,15 @@ reevaluateFunctions
         , Unparse variable
         , FreshVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -- ^ Tools for finding additional information about patterns
-    -- such as their sorts, whether they are constructors or hooked.
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions in patterns.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Pattern variable
+    => Pattern variable
     -- ^ Function evaluation result.
     -> Simplifier (OrPattern variable)
-reevaluateFunctions
-    tools
-    substitutionSimplifier
-    termSimplifier
-    axiomIdToEvaluator
-    Conditional
-        { term   = rewrittenPattern
-        , predicate = rewritingCondition
-        , substitution = rewrittenSubstitution
-        }
-  = do
-    pattOr <- simplifyTerm' rewrittenPattern
+reevaluateFunctions rewriting = do
+    pattOr <- simplifyTerm (Pattern.term rewriting)
     mergedPatt <-
-        OrPattern.mergeWithPredicate
-            tools
-            substitutionSimplifier
-            termSimplifier
-            axiomIdToEvaluator
-            Conditional
-                { term = ()
-                , predicate = rewritingCondition
-                , substitution = rewrittenSubstitution
-                }
-            pattOr
-    orResults <- BranchT.gather
-        (traverse
-            (Pattern.simplifyPredicate
-                tools
-                substitutionSimplifier
-                termSimplifier
-                axiomIdToEvaluator
-            )
-            mergedPatt
-        )
+        OrPattern.mergeWithPredicate (Pattern.withoutTerm rewriting) pattOr
+    orResults <- BranchT.gather $ traverse Pattern.simplifyPredicate mergedPatt
     return (MultiOr.mergeAll orResults)
-  where
-    simplifyTerm' = simplifyTerm termSimplifier substitutionSimplifier
 
 {-| Ands the given condition-substitution to the given function evaluation.
 -}
@@ -394,43 +320,19 @@ mergeWithConditionAndSubstitution
         , FreshVariable variable
         , SortedVariable variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions in a pattern.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate variable
+    => Predicate variable
     -- ^ Condition and substitution to add.
-    -> (AttemptedAxiom variable)
+    -> AttemptedAxiom variable
     -- ^ AttemptedAxiom to which the condition should be added.
     -> Simplifier (AttemptedAxiom variable)
-mergeWithConditionAndSubstitution _ _ _ _ _ AttemptedAxiom.NotApplicable =
+mergeWithConditionAndSubstitution _ AttemptedAxiom.NotApplicable =
     return AttemptedAxiom.NotApplicable
 mergeWithConditionAndSubstitution
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToEvaluator
     toMerge
     (AttemptedAxiom.Applied AttemptedAxiomResults { results, remainders })
   = do
-    evaluatedResults <-
-        OrPattern.mergeWithPredicate
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToEvaluator
-            toMerge
-            results
-    evaluatedRemainders <-
-        OrPattern.mergeWithPredicate
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToEvaluator
-            toMerge
-            remainders
+    evaluatedResults <- OrPattern.mergeWithPredicate toMerge results
+    evaluatedRemainders <- OrPattern.mergeWithPredicate toMerge remainders
     return $ AttemptedAxiom.Applied AttemptedAxiomResults
         { results = evaluatedResults
         , remainders = evaluatedRemainders
