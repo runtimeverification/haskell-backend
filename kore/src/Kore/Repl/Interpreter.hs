@@ -985,7 +985,7 @@ parseEvalScript state file = do
         -> [ReplCommand]
         -> Simplifier (Maybe (ReplState claim))
     executeScript st cmds = do
-        newSt <- execStateT (executeCommands) st
+        newSt <- execStateT executeCommands st
         return . return $ newSt
       where
         executeCommands =

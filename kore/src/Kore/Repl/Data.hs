@@ -439,16 +439,6 @@ runUnifierWithExplanation (UnifierWithExplanation unifier) =
         case results of
             [] -> Left $ fromMaybe "No explanation given" (getFirst explanation)
             r : rs -> Right (r :| rs)
-  -- where
-  --   unificationResults :: Simplifier (Either Failure NonEmpty a)
-  --   unificationResults =
-  --       _
-  --       $   Monad.Unify.runUnifierT
-  --               (\accum -> runAccumT accum mempty)
-  --               unifier
-  --   unificationExplanations :: Simplifier (Maybe (First (Doc ())))
-  --   unificationExplanations =
-  --       fmap (fmap snd) unificationResults
 
 Lens.makeLenses ''ReplState
 
