@@ -208,7 +208,7 @@ newtype BranchT m a =
     BranchT (ListT.ListT m a)
     deriving (Functor, Applicative, Monad)
     deriving (Alternative, MonadPlus, Foldable)
-    deriving (MonadTrans, MFunctor, MMonad)
+    deriving (MonadTrans, MFunctor)
     deriving MonadIO
     deriving Typeable
 
@@ -216,7 +216,7 @@ deriving instance MonadReader r m => MonadReader r (BranchT m)
 
 deriving instance MonadState s m => MonadState s (BranchT m)
 
-deriving instance WithLog msg m => WithLog msg (BranchT m)
+instance WithLog msg m => WithLog msg (BranchT m)
 
 instance MonadSMT m => MonadSMT (BranchT m)
 
@@ -269,7 +269,7 @@ scatter [] === empty
 See also: 'gather'
 
  -}
-scatter :: Foldable f => f a -> BranchT m a
+scatter :: (Applicative m, Foldable f) => f a -> BranchT m a
 scatter = BranchT . ListT.scatter . Foldable.toList
 
 {- | Fold down a 'BranchT' into its base 'Monad'.
@@ -277,8 +277,8 @@ scatter = BranchT . ListT.scatter . Foldable.toList
 See also: 'foldListT'
 
  -}
-foldBranchT :: Monad m => (a -> m r -> m r) -> m r -> BranchT m a -> m r
-foldBranchT f mr (BranchT listT) = foldListT listT (>>=) f mr
+foldBranchT :: Monad m => (m a -> m r -> m r) -> m r -> BranchT m a -> m r
+foldBranchT f mr (BranchT listT) = foldListT listT id f mr
 
 {- | Fold down a 'BranchT' using an underlying 'Alternative'.
 
@@ -286,7 +286,7 @@ See also: 'foldBranchT'
 
  -}
 alternate :: (Alternative m, Monad m) => BranchT m a -> m a
-alternate = foldBranchT ((<|>) . pure) empty
+alternate = foldBranchT (<|>) empty
 
 -- * Simplifier
 

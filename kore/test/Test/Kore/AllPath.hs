@@ -278,7 +278,7 @@ removeDestination (src, dst) =
 triviallyValid :: Goal -> Bool
 triviallyValid (src, _) = src == Bot
 
-derivePar :: [Rule] -> Goal -> Strategy.TransitionT Rule m ProofState
+derivePar :: Monad m => [Rule] -> Goal -> Strategy.TransitionT Rule m ProofState
 derivePar rules (src, dst) =
     goals <|> goalRem
   where

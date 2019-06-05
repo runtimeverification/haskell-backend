@@ -69,62 +69,67 @@ newtype ListT m a =
     ListT
         { foldListT
             :: forall n r
-            .  (forall x y. m x -> (x -> n y) -> n y)
-            -> (a -> n r -> n r)
+            .  Monad n
+            => (forall x. m x -> n x)
+            -> (m a -> n r -> n r)
             -> n r
             -> n r
         }
     deriving (Typeable)
 
-instance Functor (ListT m) where
+instance Functor f => Functor (ListT f) where
     fmap f as =
-        ListT $ \nbind yield ->
-            foldListT as nbind (yield . f)
+        ListT $ \nlift yield ->
+            foldListT as nlift (yield . fmap f)
     {-# INLINE fmap #-}
 
-instance Applicative (ListT m) where
-    pure a = ListT $ \_ yield -> yield a
+instance Applicative f => Applicative (ListT f) where
+    pure a = ListT $ \_ yield -> yield (pure a)
     {-# INLINE pure #-}
 
     (<*>) fs as =
-        ListT $ \nbind yield ->
-            foldListT fs nbind $ \f ->
-                foldListT as nbind $ \a ->
-                    yield (f a)
+        ListT $ \nlift yield ->
+            foldListT fs nlift $ \ff ->
+                foldListT as nlift $ \fa ->
+                    yield (ff <*> fa)
     {-# INLINE (<*>) #-}
 
-instance Alternative (ListT f) where
+instance Applicative f => Alternative (ListT f) where
     empty = ListT $ \_ _ next -> next
     {-# INLINE empty #-}
 
     (<|>) as bs =
-        ListT $ \nbind yield ->
-            foldListT as nbind yield . foldListT bs nbind yield
+        ListT $ \nlift yield ->
+            foldListT as nlift yield . foldListT bs nlift yield
     {-# INLINE (<|>) #-}
 
-instance Monad (ListT m) where
+instance Monad m => Monad (ListT m) where
     return = pure
     {-# INLINE return #-}
 
     (>>=) as k =
-        ListT $ \nbind yield ->
-            foldListT as nbind $ \a ->
-                foldListT (k a) nbind yield
+        ListT $ \nlift yield ->
+            foldListT as nlift $ \ma nr ->
+                nlift ma >>= \a -> foldListT (k a) nlift yield nr
     {-# INLINE (>>=) #-}
 
-instance MonadPlus (ListT m)
+instance Monad m => MonadPlus (ListT m)
 
 instance MonadTrans ListT where
-    lift m = ListT $ \nbind yield next -> nbind m (\a -> yield a next)
+    lift ma = ListT $ \_ yield -> yield ma
     {-# INLINE lift #-}
 
 instance MFunctor ListT where
-    hoist morph bs = ListT $ \nbind -> foldListT bs (nbind . morph)
+    hoist morph bs = ListT $ \nlift yield next ->
+        foldListT bs (nlift . morph) (yield . morph) next
     {-# INLINE hoist #-}
 
-instance MMonad ListT where
-    embed mlift bs = foldListT bs ((>>=) . mlift) cons empty
-    {-# INLINE embed #-}
+-- instance MMonad ListT where
+--     embed mlift bs =
+--         -- foldListT bs ((>>=) . mlift) cons empty
+--         ListT $ \nlift yield next ->
+--             foldListT bs (nlift . _) _ _
+--     {-# INLINE embed #-}
 
 instance MonadReader r m => MonadReader r (ListT m) where
     ask = lift ask
@@ -152,17 +157,17 @@ instance MonadIO m => MonadIO (ListT m) where
 
 instance (Monad f, Foldable f) => Foldable (ListT f) where
     foldMap f as =
-        fold $ foldListT as (>>=) (\a r -> mappend (f a) <$> r) (pure mempty)
+        fold $ foldListT as id (\fa fr -> mappend <$> (f <$> fa) <*> fr) (pure mempty)
     {-# INLINE foldMap #-}
 
-cons :: a -> ListT m a -> ListT m a
-cons a as = ListT $ \nbind yield -> yield a . foldListT as nbind yield
+cons :: Applicative m => a -> ListT m a -> ListT m a
+cons a as = ListT $ \nlift yield -> yield (pure a) . foldListT as nlift yield
 {-# INLINE cons #-}
 
 {- | Collect all values produced by a @'ListT' m@ as a list in @m@.
  -}
 gather :: Monad m => ListT m a -> m [a]
-gather as = foldListT as (>>=) (\a mr -> (a :) <$> mr) (pure [])
+gather as = foldListT as id (\ma mr -> (:) <$> ma <*> mr) (pure [])
 {-# INLINE gather #-}
 
 {- | Distribute a 'Foldable' collection of values as a @'ListT' m@ stream.
@@ -170,6 +175,6 @@ gather as = foldListT as (>>=) (\a mr -> (a :) <$> mr) (pure [])
 Usually, @f ~ []@.
 
  -}
-scatter :: Foldable f => f a -> ListT m a
+scatter :: (Applicative m, Foldable f) => f a -> ListT m a
 scatter = foldr cons empty
 {-# INLINE scatter #-}
