@@ -13,39 +13,19 @@ import qualified Kore.Attribute.Symbol as Attribute
  -}
 
 module Kore.Attribute.Symbol
-    ( Symbol (..)
-    , StepperAttributes
-    , defaultSymbolAttributes
+    ( module Kore.Attribute.Symbol.Symbol
     -- * Function symbols
-    , lensFunction, Function (..)
-    , functionAttribute
     , isFunction_, isFunction
     -- * Functional symbols
-    , lensFunctional, Functional (..)
-    , functionalAttribute
     , isFunctional_, isFunctional
     -- * Constructor symbols
-    , lensConstructor, Constructor (..)
-    , constructorAttribute
     , isConstructor_
     -- * Injective symbols
-    , lensInjective, Injective (..)
-    , injectiveAttribute
     , isInjective_, isInjective
     -- * Non-simplifiable symbols
     , isNonSimplifiable_, isNonSimplifiable
     -- * Sort injection symbols
-    , lensSortInjection, SortInjection (..)
-    , sortInjectionAttribute
     , isSortInjection_
-    -- * Hooked symbols
-    , lensHook, Hook (..)
-    , hookAttribute
-    -- * SMT symbols
-    , Smthook (..)
-    , smthookAttribute
-    , Smtlib (..)
-    , smtlibAttribute
     -- * Total symbols
     , isTotal_, isTotal
     ) where
@@ -157,10 +137,12 @@ isConstructor_ =
 {- | Is the symbol injective?
 
 A symbol is injective if it is given the @injective@ attribute, the
-@constructor@ attribute, or the @sortInjection@ attribute.
+@constructor@ attribute, the @anywhere@ attribute, or the @sortInjection@
+attribute.
 
 See also: 'isInjective', 'injectiveAttribute', 'constructorAttribute',
 'sortInjectionAttribute'
+
  -}
 isInjective_
     :: Given (SmtMetadataTools StepperAttributes)
@@ -179,11 +161,12 @@ See also: 'injectiveAttribute', 'constructorAttribute', 'sortInjectionAttribute'
 
  -}
 isInjective :: StepperAttributes -> Bool
-isInjective = do
-    Injective isInjective' <- injective
-    Constructor isConstructor' <- constructor
-    SortInjection isSortInjection' <- sortInjection
-    return (isInjective' || isConstructor' || isSortInjection')
+isInjective =
+    or . sequence
+        [ isDeclaredInjective . injective
+        , isConstructor       . constructor
+        , isSortInjection     . sortInjection
+        ]
 
 {- | Is the symbol a sort injection?
 
@@ -191,7 +174,7 @@ See also: 'isSortInjection'
 
  -}
 isSortInjection_
-    :: (Given (SmtMetadataTools StepperAttributes))
+    :: Given (SmtMetadataTools StepperAttributes)
     => SymbolOrAlias
     -> Bool
 isSortInjection_ =

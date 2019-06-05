@@ -122,11 +122,20 @@ unit{}()
 ```
 
 
-## Stepper Attributes
+## Symbol Attributes
 
-Kore.Step.StepperAttributes
+Kore.Attribute.Symbol.Symbol
 
-Attributes used during Kore execution.
+Attributes assigned to symbols.
+
+### Anywhere
+
+```
+anywhere{}()
+```
+
+A symbol is given the `anywhere` attribute when it has `anywhere` rules
+associated with it.
 
 ### Constructor
 
