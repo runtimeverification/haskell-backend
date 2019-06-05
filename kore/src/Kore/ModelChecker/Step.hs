@@ -213,7 +213,7 @@ transitionRule
     transitionComputeWeakNextHelper rules config = do
         eitherResults <-
             Monad.Trans.lift . Monad.Trans.lift
-            $ Monad.Unify.runUnifier
+            $ Monad.Unify.runUnifierT
             $ Step.applyRewriteRulesParallel
                 (Step.UnificationProcedure Unification.unificationProcedure)
                 rules

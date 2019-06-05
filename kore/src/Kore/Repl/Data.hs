@@ -108,7 +108,7 @@ import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unification.Unify
-                 ( MonadUnify, UnifierTT (UnifierTT) )
+                 ( MonadUnify, UnifierT (..) )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( unparse )
@@ -383,14 +383,20 @@ data ReplState claim = ReplState
     , logger  :: MVar (Logger.LogAction IO Logger.LogMessage)
     }
 
+type Explanation = Doc ()
+
 -- | Unifier that stores the first 'explainBottom'.
 -- See 'runUnifierWithExplanation'.
 newtype UnifierWithExplanation a =
     UnifierWithExplanation
-        { getUnifierWithExplanation :: UnifierTT (AccumT (First (Doc ()))) a }
+        { getUnifierWithExplanation
+            :: UnifierT (AccumT (First Explanation) Simplifier) a
+        }
   deriving (Alternative, Applicative, Functor, Monad)
 
 deriving instance MonadSMT UnifierWithExplanation
+
+deriving instance Logger.WithLog Logger.LogMessage UnifierWithExplanation
 
 deriving instance MonadSimplify UnifierWithExplanation
 
@@ -400,18 +406,12 @@ instance MonadUnify UnifierWithExplanation where
     throwUnificationError =
         UnifierWithExplanation . Monad.Unify.throwUnificationError
 
-    liftSimplifier =
-        UnifierWithExplanation . Monad.Unify.liftSimplifier
-    liftBranchedSimplifier =
-        UnifierWithExplanation . Monad.Unify.liftBranchedSimplifier
-
     gather =
         UnifierWithExplanation . Monad.Unify.gather . getUnifierWithExplanation
     scatter = UnifierWithExplanation . Monad.Unify.scatter
 
     explainBottom info first second =
         UnifierWithExplanation
-        . UnifierTT
         . Monad.Trans.lift
         . Monad.Accum.add
         . First
@@ -433,10 +433,10 @@ runUnifierWithExplanation (UnifierWithExplanation unifier)
   where
     unificationResults :: Simplifier (Maybe ([a], First (Doc ())))
     unificationResults =
-        hush
-        <$> Monad.Unify.runUnifierT
-            (\accum -> runAccumT accum mempty)
-            unifier
+        fmap (\(r, ex) -> fmap (flip (,) ex) (hush r))
+        . flip runAccumT mempty
+        . Monad.Unify.runUnifierT
+        $ unifier
     unificationExplanations :: Simplifier (Maybe (First (Doc ())))
     unificationExplanations =
         fmap (fmap snd) unificationResults

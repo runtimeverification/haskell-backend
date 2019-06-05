@@ -44,9 +44,10 @@ simplify
         , SortedVariable variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
         )
     => Implies Sort (OrPattern variable)
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplify Implies { impliesFirst = first, impliesSecond = second } =
     simplifyEvaluated first second
 
@@ -73,10 +74,11 @@ simplifyEvaluated
         , SortedVariable variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
         )
     => OrPattern variable
     -> OrPattern variable
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplifyEvaluated first second
   | OrPattern.isTrue first   = return second
   | OrPattern.isFalse first  = return OrPattern.top
@@ -91,10 +93,11 @@ simplifyEvaluateHalfImplies
         , SortedVariable variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
         )
     => OrPattern variable
     -> Pattern variable
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplifyEvaluateHalfImplies
     first
     second

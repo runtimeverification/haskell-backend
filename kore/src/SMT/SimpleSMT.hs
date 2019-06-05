@@ -157,6 +157,8 @@ module SMT.SimpleSMT
     , forallQ
     ) where
 
+import qualified Debug.Trace
+
 import qualified Colog
 import           Control.Concurrent
                  ( forkIO )
@@ -374,8 +376,9 @@ popMany proc n = simpleCommand proc [ "pop", Text.pack (show n) ]
 -- | Execute the IO action in a new solver scope (push before, pop after)
 inNewScope :: Solver -> IO a -> IO a
 inNewScope s m =
-  do push s
-     m `X.finally` pop s
+    Debug.Trace.traceStack "inNewScope" $ do
+        push s
+        m `X.finally` pop s
 
 
 -- | Declare a constant.  A common abbreviation for 'declareFun'.

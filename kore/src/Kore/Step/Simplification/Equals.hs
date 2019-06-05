@@ -134,13 +134,13 @@ Equals(a and b, b and a) will not be evaluated to Top.
 -}
 simplify
     ::  ( SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
+        , MonadSimplify simplifier
         )
     => Equals Sort (OrPattern variable)
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplify Equals { equalsFirst = first, equalsSecond = second } =
     simplifyEvaluated first second
 
@@ -159,14 +159,14 @@ carry around.
 -}
 simplifyEvaluated
     ::  ( SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
+        , MonadSimplify simplifier
         )
     => OrPattern variable
     -> OrPattern variable
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplifyEvaluated first second
   | first == second = return OrPattern.top
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
@@ -190,16 +190,16 @@ simplifyEvaluated first second
     secondPatterns = MultiOr.extractPatterns second
 
 makeEvaluateFunctionalOr
-    :: forall variable .
-        ( SortedVariable variable
-        , Ord variable
+    :: forall variable simplifier
+    .   ( SortedVariable variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
+        , MonadSimplify simplifier
         )
     => Pattern variable
     -> [Pattern variable]
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 makeEvaluateFunctionalOr first seconds = do
     firstCeil <- Ceil.makeEvaluate first
     secondCeilsWithProofs <- mapM Ceil.makeEvaluate seconds
@@ -236,14 +236,14 @@ See 'simplify' for detailed documentation.
 -}
 makeEvaluate
     ::  ( SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
+        , MonadSimplify simplifier
         )
     => Pattern variable
     -> Pattern variable
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 makeEvaluate
     first@Conditional { term = Top_ _ }
     second@Conditional { term = Top_ _ }
@@ -286,14 +286,14 @@ makeEvaluate
 -- assumes that some extra conditions will be added on the outside
 makeEvaluateTermsAssumesNoBottom
     ::  ( SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
+        , MonadSimplify simplifier
         )
     => TermLike variable
     -> TermLike variable
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
     result <-
         runMaybeT
@@ -311,16 +311,16 @@ makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
 makeEvaluateTermsAssumesNoBottomMaybe
-    :: forall variable .
-        ( SortedVariable variable
-        , Ord variable
+    :: forall variable simplifier
+    .   ( SortedVariable variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
+        , MonadSimplify simplifier
         )
     => TermLike variable
     -> TermLike variable
-    -> MaybeT Simplifier (OrPattern variable)
+    -> MaybeT simplifier (OrPattern variable)
 makeEvaluateTermsAssumesNoBottomMaybe first second = do
     result <- AndTerms.termEquals first second
     return (Pattern.fromPredicate <$> result)
@@ -337,14 +337,14 @@ See 'simplify' for detailed documentation.
 -}
 makeEvaluateTermsToPredicate
     ::  ( SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
+        , MonadSimplify simplifier
         )
     => TermLike variable
     -> TermLike variable
-    -> Simplifier (OrPredicate variable)
+    -> simplifier (OrPredicate variable)
 makeEvaluateTermsToPredicate first second
   | first == second = return OrPredicate.top
   | otherwise = do

@@ -31,6 +31,8 @@ import qualified Data.Sequence as Seq
 import           Data.Typeable
                  ( Typeable )
 
+import           Kore.Logger
+                 ( WithLog (..) )
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
 import           ListT
@@ -62,6 +64,8 @@ newtype TransitionT rule m a =
         , MonadPlus
         , Typeable
         )
+
+instance WithLog msg m => WithLog msg (TransitionT rule m)
 
 instance MonadTrans (TransitionT rule) where
     lift = TransitionT . Monad.Trans.lift . Monad.Trans.lift

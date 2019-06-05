@@ -5,33 +5,29 @@ License     : NCSA
 
 module Kore.Unification.Unify
     ( MonadUnify (..)
-    , UnifierTT (..)
-    , fromExceptT
+    , UnifierT (..)
+    , lowerExceptT
     , runUnifierT
-    , Unifier
-    , runUnifier
-    , maybeUnifier
+    , maybeUnifierT
     ) where
 
 import           Control.Applicative
                  ( Alternative )
+import           Control.Error
 import           Control.Monad
                  ( MonadPlus )
 import qualified Control.Monad.Except as Error
+import           Control.Monad.Morph
+                 ( MFunctor (..) )
 import           Control.Monad.Trans.Class
-                 ( MonadTrans )
-import qualified Control.Monad.Trans.Class as Monad.Trans
-import           Control.Monad.Trans.Except
-import           Control.Monad.Trans.Identity
-                 ( IdentityT, runIdentityT )
-import           Control.Monad.Trans.Maybe
-                 ( MaybeT (MaybeT) )
+                 ( MonadTrans (..) )
 import           Data.Text.Prettyprint.Doc
                  ( Doc )
 
 import           Kore.Internal.TermLike
                  ( SortedVariable, TermLike )
-import qualified Kore.Logger as Log
+import           Kore.Logger
+                 ( LogMessage, WithLog (..) )
 import           Kore.Step.Simplification.Data
                  ( BranchT, MonadSimplify (..) )
 import qualified Kore.Step.Simplification.Data as BranchT
@@ -53,13 +49,24 @@ class (Alternative unifier, MonadSimplify unifier) => MonadUnify unifier where
     throwSubstitutionError
         :: SubstitutionError
         -> unifier a
+    default throwSubstitutionError
+        :: (MonadTrans t, MonadUnify m, unifier ~ t m)
+        => SubstitutionError -> unifier a
+    throwSubstitutionError = lift . throwSubstitutionError
+    {-# INLINE throwSubstitutionError #-}
 
     throwUnificationError
         :: UnificationError
         -> unifier a
+    default throwUnificationError
+        :: (MonadTrans t, MonadUnify m, unifier ~ t m)
+        => UnificationError -> unifier a
+    throwUnificationError = lift . throwUnificationError
+    {-# INLINE throwUnificationError #-}
 
     -- TODO: This is ugly and not type-safe
     gather :: unifier a -> unifier [a]
+
     scatter :: Traversable t => t a -> unifier a
 
     explainBottom
@@ -70,137 +77,71 @@ class (Alternative unifier, MonadSimplify unifier) => MonadUnify unifier where
         -> unifier ()
     explainBottom _ _ _ = pure ()
 
--- | 'UnifierTT' contains everything that is needed for a MonadUnify,
--- but allows parameterization over a monad transformer.
--- See also: 'Unifier'.
-newtype UnifierTT (t :: (* -> *) -> * -> *) (m :: * -> *) a = UnifierTT
-    { getUnifier
-        :: BranchT (t (ExceptT UnificationOrSubstitutionError m)) a
-    } deriving (Alternative, Applicative, Functor, Monad)
+newtype UnifierT (m :: * -> *) a =
+    UnifierT
+        { getUnifierT :: BranchT (ExceptT UnificationOrSubstitutionError m) a }
+    deriving (Functor, Applicative, Monad)
+    deriving (Alternative, MonadPlus)
 
--- | 'Unifier' is the default concrete implementation of a 'MonadUnify'.
--- See also: 'fromExceptT' and 'runUnifier' for common usages.
-type Unifier m a = UnifierTT IdentityT m a
+instance MonadTrans UnifierT where
+    lift = UnifierT . lift . lift
+    {-# INLINE lift #-}
 
-instance (forall n. MonadSimplify (t n)) => MonadSMT (UnifierTT t m)
-  where
-    withSolver = UnifierTT . withSolver . getUnifier
+instance MFunctor UnifierT where
+    hoist transform = UnifierT . hoist (hoist transform) . getUnifierT
+    {-# INLINE hoist #-}
 
-    declare name typ = UnifierTT $ declare name typ
+instance WithLog LogMessage m => WithLog LogMessage (UnifierT m)
 
-    declareFun decl = UnifierTT $ declareFun decl
+instance MonadSMT m => MonadSMT (UnifierT m)
 
-    declareSort decl = UnifierTT $ declareSort decl
+instance MonadSimplify m => MonadSimplify (UnifierT m)
 
-    declareDatatype decl = UnifierTT $ declareDatatype decl
-
-    declareDatatypes decls = UnifierTT $ declareDatatypes decls
-
-    assert fact = UnifierTT $ assert fact
-
-    check = UnifierTT check
-
-    ackCommand command = UnifierTT $ ackCommand command
-
-    loadFile path = UnifierTT $ loadFile path
-
-instance (forall n. MonadSimplify (t n)) => MonadSimplify (UnifierTT t m)
-  where
-    askMetadataTools = UnifierTT askMetadataTools
-    {-# INLINE askMetadataTools #-}
-
-    askSimplifierTermLike = UnifierTT askSimplifierTermLike
-    {-# INLINE askSimplifierTermLike #-}
-
-    localSimplifierTermLike locally =
-        UnifierTT . localSimplifierTermLike locally . getUnifier
-    {-# INLINE localSimplifierTermLike #-}
-
-    askSimplifierPredicate = UnifierTT askSimplifierPredicate
-    {-# INLINE askSimplifierPredicate #-}
-
-    localSimplifierPredicate locally =
-        UnifierTT . localSimplifierPredicate locally . getUnifier
-    {-# INLINE localSimplifierPredicate #-}
-
-    askSimplifierAxioms = UnifierTT askSimplifierAxioms
-    {-# INLINE askSimplifierAxioms #-}
-
-    localSimplifierAxioms locally =
-        UnifierTT . localSimplifierAxioms locally . getUnifier
-    {-# INLINE localSimplifierAxioms #-}
-
-instance
-    ( forall n. MonadSimplify (t n)
-    , MonadTrans t
-    , Monad m
-    ) =>
-    MonadUnify (UnifierTT t m)
-  where
+instance MonadSimplify m => MonadUnify (UnifierT m) where
     throwSubstitutionError =
-        UnifierTT
-        . Monad.Trans.lift
-        . Monad.Trans.lift
+        UnifierT
+        . lift
         . Error.throwError
         . SubstitutionError
+    {-# INLINE throwSubstitutionError #-}
 
     throwUnificationError =
-        UnifierTT
-        . Monad.Trans.lift
-        . Monad.Trans.lift
+        UnifierT
+        . lift
         . Error.throwError
         . UnificationError
+    {-# INLINE throwUnificationError #-}
 
-    gather = UnifierTT . Monad.Trans.lift . BranchT.gather . getUnifier
-    scatter = UnifierTT . BranchT.scatter
+    gather = UnifierT . lift . BranchT.gather . getUnifierT
+    {-# INLINE gather #-}
 
+    scatter = UnifierT . BranchT.scatter
+    {-# INLINE scatter #-}
 
-instance MonadPlus (UnifierTT t m) where
-
-instance
-    ( Log.WithLog Log.LogMessage (t m)
-    , Log.WithLog Log.LogMessage (t (ExceptT UnificationOrSubstitutionError m))
-    , MonadTrans t
-    )
-    => Log.WithLog Log.LogMessage (UnifierTT t m)
-  where
-    askLogAction = do
-        Log.LogAction logger <- UnifierTT Log.askLogAction
-        return
-            . Log.hoistLogAction UnifierTT
-            $ Log.LogAction logger
-
-    localLogAction f = UnifierTT . Log.localLogAction f . getUnifier
-
--- | Lift an 'ExceptT' to a 'MonadUnify'.
-fromExceptT
+-- | Lower an 'ExceptT UnificationOrSubstitutionError' into a 'MonadUnify'.
+lowerExceptT
     :: MonadUnify unifier
     => ExceptT UnificationOrSubstitutionError unifier a
     -> unifier a
-fromExceptT e = do
-    result <- runExceptT e
-    case result of
-        Left (SubstitutionError s) -> throwSubstitutionError s
-        Left (UnificationError u)  -> throwUnificationError u
-        Right a                    -> pure a
+lowerExceptT e = do
+    runExceptT e >>= either throwUnificationOrSubstitutionError pure
 
-runUnifier
-    :: MonadSimplify m
-    => Unifier m a
-    -> m (Either UnificationOrSubstitutionError [a])
-runUnifier = runUnifierT runIdentityT
+throwUnificationOrSubstitutionError
+    :: MonadUnify unifier
+    => UnificationOrSubstitutionError
+    -> unifier a
+throwUnificationOrSubstitutionError (SubstitutionError s) =
+    throwSubstitutionError s
+throwUnificationOrSubstitutionError (UnificationError u) =
+    throwUnificationError u
 
 runUnifierT
     :: MonadSimplify m
-    => MonadTrans t
-    => Monad (t (ExceptT UnificationOrSubstitutionError m))
-    => (forall n . Monad n => t n [a] -> n b)
-    -> UnifierTT t m a
-    -> m (Either UnificationOrSubstitutionError b)
-runUnifierT runM = runExceptT . runM . BranchT.gather . getUnifier
+    => UnifierT m a
+    -> m (Either UnificationOrSubstitutionError [a])
+runUnifierT = runExceptT . BranchT.gather . getUnifierT
 
 {- | Run a 'Unifier', returning 'Nothing' upon error.
  -}
-maybeUnifier :: MonadSimplify m => Unifier m a -> MaybeT m [a]
-maybeUnifier =
-    MaybeT . fmap (either (const Nothing) Just) . runUnifier
+maybeUnifierT :: MonadSimplify m => UnifierT m a -> MaybeT m [a]
+maybeUnifierT = hushT . BranchT.gather . getUnifierT

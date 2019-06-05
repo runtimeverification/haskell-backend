@@ -13,8 +13,7 @@ import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( wrapPredicate )
 import           Kore.Step.Simplification.Data
-                 ( MonadSimplify, Simplifier, TermLikeSimplifier,
-                 termLikeSimplifier )
+                 ( MonadSimplify, TermLikeSimplifier, termLikeSimplifier )
 import           Kore.Syntax.Variable
                  ( SortedVariable (..) )
 import           Kore.Variables.Fresh

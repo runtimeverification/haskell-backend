@@ -36,12 +36,12 @@ and for children with top terms.
 simplify
     ::  ( FreshVariable variable
         , SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
         )
     => Iff Sort (OrPattern variable)
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplify Iff { iffFirst = first, iffSecond = second } =
     simplifyEvaluated first second
 
@@ -65,13 +65,13 @@ carry around.
 simplifyEvaluated
     ::  ( FreshVariable variable
         , SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
         )
     => OrPattern variable
     -> OrPattern variable
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplifyEvaluated
     first
     second

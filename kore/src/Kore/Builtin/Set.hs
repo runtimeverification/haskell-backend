@@ -746,10 +746,9 @@ unifyEquals
         Domain.InternalSet { builtinSetChild = set1 } = builtin1
 
     simplify :: Pattern variable -> unifier (Pattern variable)
-    simplify patt =
+    simplify patt = do
         let (term, predicate) = Pattern.splitTerm patt
-        in Monad.Unify.liftBranchedSimplifier
-            $ simplifyConditionalTerm term predicate
+        alternate $ simplifyConditionalTerm term predicate
 
     bottomWithExplanation :: unifier (Pattern variable)
     bottomWithExplanation = do

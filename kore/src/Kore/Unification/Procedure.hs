@@ -13,12 +13,9 @@ module Kore.Unification.Procedure
 
 import           Control.Applicative
                  ( empty )
-import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import qualified Kore.Internal.MultiOr as MultiOr
-                 ( extractPatterns )
 import           Kore.Internal.Pattern
                  ( Conditional (..) )
 import qualified Kore.Internal.Pattern as Conditional
@@ -32,7 +29,6 @@ import           Kore.Step.Simplification.AndTerms
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 import qualified Kore.Step.Simplification.Data as BranchT
-                 ( scatter )
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMerger )
 import           Kore.Syntax.Variable
@@ -67,8 +63,7 @@ unificationProcedure  p1 p2
         p2
     empty
   | otherwise = do
-    Monad.Unify.liftSimplifier
-        . Logger.withLogScope (Logger.Scope "UnificationProcedure")
+    Logger.withLogScope (Logger.Scope "UnificationProcedure")
         . Logger.logInfo
         . Text.pack
         . show
@@ -81,14 +76,14 @@ unificationProcedure  p1 p2
     pat@Conditional { term } <- termUnification p1 p2
     if Conditional.isBottom pat
         then empty
-        else Monad.Unify.liftBranchedSimplifier $ do
-            orCeil <- Monad.Trans.lift $ Ceil.makeEvaluateTerm term
+        else do
+            orCeil <- Ceil.makeEvaluateTerm term
             orResult <-
-                OrPattern.mergeWithPredicateAssumesEvaluated
-                    createPredicatesAndSubstitutionsMerger
-                    (Conditional.withoutTerm pat)
-                    orCeil
-            BranchT.scatter (MultiOr.extractPatterns orResult)
+                BranchT.alternate $ OrPattern.mergeWithPredicateAssumesEvaluated
+                createPredicatesAndSubstitutionsMerger
+                (Conditional.withoutTerm pat)
+                orCeil
+            Monad.Unify.scatter orResult
   where
       p1Sort = termLikeSort p1
       p2Sort = termLikeSort p2

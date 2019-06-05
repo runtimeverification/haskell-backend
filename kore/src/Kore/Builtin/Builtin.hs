@@ -116,7 +116,7 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Proof.Value as Value
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify, PredicateSimplifier, SimplificationType,
-                 Simplifier, TermLikeSimplifier )
+                 TermLikeSimplifier )
 import           Kore.Step.Simplification.Data
                  ( AttemptedAxiom (..),
                  AttemptedAxiomResults (AttemptedAxiomResults),
@@ -679,7 +679,7 @@ functionEvaluator impl =
     applicationAxiomSimplifier evaluator
   where
     evaluator
-        :: (Ord variable, Show variable, MonadSimplify m)
+        :: (Ord variable, Show variable, MonadSimplify simplifier)
         => PredicateSimplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
@@ -687,7 +687,7 @@ functionEvaluator impl =
             (Application SymbolOrAlias)
             (Attribute.Pattern variable)
             (TermLike variable)
-        -> m (AttemptedAxiom variable)
+        -> simplifier (AttemptedAxiom variable)
     evaluator _ simplifier _axiomIdToSimplifier (valid :< app) =
         impl simplifier resultSort applicationChildren
       where

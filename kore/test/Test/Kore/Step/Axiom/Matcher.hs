@@ -47,6 +47,8 @@ import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
 import qualified SMT
 
+import Kore.Logger.Output
+
 import           Test.Kore
                  ( emptyLogger, testId )
 import           Test.Kore.Comparators ()
@@ -756,112 +758,112 @@ test_matcherMergeSubresults =
 
 test_unificationWithAppMatchOnTop :: [TestTree]
 test_unificationWithAppMatchOnTop =
-    [ testCase "Simple match same top" $ do
-        let
-            expect = Just (MultiOr.make [Conditional.topPredicate])
-        actual <- unificationWithMatch Mock.cg Mock.cg
-        assertEqualWithExplanation "" expect actual
-    , testCase "variable vs function" $ do
-        let
-            expect = Just
-                (MultiOr.make
-                    [ Conditional
-                        { term = ()
-                        , predicate = makeCeilPredicate Mock.cf
-                        , substitution = Substitution.unsafeWrap
-                            [(Mock.x, Mock.cf)]
-                        }
-                    ]
-                )
-        actual <-
-            unificationWithMatch
-            (Mock.f (mkVar Mock.x))
-            (Mock.f Mock.cf)
-        assertEqualWithExplanation "" expect actual
-    , testCase "function vs variable" $ do
-        let
-            expect = Just
-                (MultiOr.make
-                    [ Conditional
-                        { term = ()
-                        , predicate = makeCeilPredicate Mock.cf
-                        , substitution = Substitution.unsafeWrap
-                            [(Mock.x, Mock.cf)]
-                        }
-                    ]
-                )
-        actual <-
-            unificationWithMatch
-            (Mock.f Mock.cf)
-            (Mock.f (mkVar Mock.x))
-        assertEqualWithExplanation "" expect actual
-    , testCase "removes constructor" $ do
-        let
-            expect = Just
-                (MultiOr.make
-                    [ Conditional
-                        { term = ()
-                        , predicate = makeCeilPredicate Mock.cf
-                        , substitution = Substitution.unsafeWrap
-                            [(Mock.x, Mock.cf)]
-                        }
-                    ]
-                )
-        actual <-
-            unificationWithMatch
-            (Mock.f (Mock.functionalConstr10 (mkVar Mock.x)))
-            (Mock.f (Mock.functionalConstr10 Mock.cf))
-        assertEqualWithExplanation "" expect actual
-    , testCase "produces predicate" $ do
-        let
-            expect = Just
-                (MultiOr.make
-                    [ Conditional
-                        { term = ()
-                        , predicate = makeEqualsPredicate
-                            Mock.a
-                            (Mock.g (mkVar Mock.x))
-                        , substitution = mempty
-                        }
-                    ]
-                )
-        actual <-
-            unificationWithMatch
-            (Mock.f Mock.a)
-            (Mock.f (Mock.g (mkVar Mock.x)))
-        assertEqualWithExplanation "" expect actual
-    , testCase "merges results" $ do
-        let
-            expect = Just
-                (MultiOr.make
-                    [ Conditional
-                        { term = ()
-                        , predicate = makeAndPredicate
-                            (makeEqualsPredicate
-                                Mock.a
-                                (Mock.g (mkVar Mock.x))
-                            )
-                            (makeCeilPredicate Mock.cf)
-                        , substitution = Substitution.unsafeWrap
-                            [(Mock.y, Mock.cf)]
-                        }
-                    ]
-                )
-        actual <-
-            unificationWithMatch
-            (Mock.functional20 Mock.a Mock.cf)
-            (Mock.functional20 (Mock.g (mkVar Mock.x)) (mkVar Mock.y))
-        assertEqualWithExplanation "" expect actual
-    , testCase "not matching" $ do
-        let
-            expect = Just
-                (MultiOr.make [])
-        actual <-
-            unificationWithMatch
-            (Mock.f Mock.a)
-            (Mock.f Mock.b)
-        assertEqualWithExplanation "" expect actual
-    , testCase "handles ambiguity" $ do
+    -- [ testCase "Simple match same top" $ do
+    --     let
+    --         expect = Just (MultiOr.make [Conditional.topPredicate])
+    --     actual <- unificationWithMatch Mock.cg Mock.cg
+    --     assertEqualWithExplanation "" expect actual
+    -- , testCase "variable vs function" $ do
+    --     let
+    --         expect = Just
+    --             (MultiOr.make
+    --                 [ Conditional
+    --                     { term = ()
+    --                     , predicate = makeCeilPredicate Mock.cf
+    --                     , substitution = Substitution.unsafeWrap
+    --                         [(Mock.x, Mock.cf)]
+    --                     }
+    --                 ]
+    --             )
+    --     actual <-
+    --         unificationWithMatch
+    --         (Mock.f (mkVar Mock.x))
+    --         (Mock.f Mock.cf)
+    --     assertEqualWithExplanation "" expect actual
+    -- , testCase "function vs variable" $ do
+    --     let
+    --         expect = Just
+    --             (MultiOr.make
+    --                 [ Conditional
+    --                     { term = ()
+    --                     , predicate = makeCeilPredicate Mock.cf
+    --                     , substitution = Substitution.unsafeWrap
+    --                         [(Mock.x, Mock.cf)]
+    --                     }
+    --                 ]
+    --             )
+    --     actual <-
+    --         unificationWithMatch
+    --         (Mock.f Mock.cf)
+    --         (Mock.f (mkVar Mock.x))
+    --     assertEqualWithExplanation "" expect actual
+    -- , testCase "removes constructor" $ do
+    --     let
+    --         expect = Just
+    --             (MultiOr.make
+    --                 [ Conditional
+    --                     { term = ()
+    --                     , predicate = makeCeilPredicate Mock.cf
+    --                     , substitution = Substitution.unsafeWrap
+    --                         [(Mock.x, Mock.cf)]
+    --                     }
+    --                 ]
+    --             )
+    --     actual <-
+    --         unificationWithMatch
+    --         (Mock.f (Mock.functionalConstr10 (mkVar Mock.x)))
+    --         (Mock.f (Mock.functionalConstr10 Mock.cf))
+    --     assertEqualWithExplanation "" expect actual
+    -- , testCase "produces predicate" $ do
+    --     let
+    --         expect = Just
+    --             (MultiOr.make
+    --                 [ Conditional
+    --                     { term = ()
+    --                     , predicate = makeEqualsPredicate
+    --                         Mock.a
+    --                         (Mock.g (mkVar Mock.x))
+    --                     , substitution = mempty
+    --                     }
+    --                 ]
+    --             )
+    --     actual <-
+    --         unificationWithMatch
+    --         (Mock.f Mock.a)
+    --         (Mock.f (Mock.g (mkVar Mock.x)))
+    --     assertEqualWithExplanation "" expect actual
+    -- , testCase "merges results" $ do
+    --     let
+    --         expect = Just
+    --             (MultiOr.make
+    --                 [ Conditional
+    --                     { term = ()
+    --                     , predicate = makeAndPredicate
+    --                         (makeEqualsPredicate
+    --                             Mock.a
+    --                             (Mock.g (mkVar Mock.x))
+    --                         )
+    --                         (makeCeilPredicate Mock.cf)
+    --                     , substitution = Substitution.unsafeWrap
+    --                         [(Mock.y, Mock.cf)]
+    --                     }
+    --                 ]
+    --             )
+    --     actual <-
+    --         unificationWithMatch
+    --         (Mock.functional20 Mock.a Mock.cf)
+    --         (Mock.functional20 (Mock.g (mkVar Mock.x)) (mkVar Mock.y))
+    --     assertEqualWithExplanation "" expect actual
+    -- , testCase "not matching" $ do
+    --     let
+    --         expect = Just
+    --             (MultiOr.make [])
+    --     actual <-
+    --         unificationWithMatch
+    --         (Mock.f Mock.a)
+    --         (Mock.f Mock.b)
+    --     assertEqualWithExplanation "" expect actual
+    [ testCase "handles ambiguity" $ do
         let
             expected = Just $ OrPredicate.fromPredicates
                 [ Conditional
@@ -911,105 +913,105 @@ test_unificationWithAppMatchOnTop =
             (Mock.f (mkVar Mock.x))
             (Mock.f Mock.cf)
         assertEqualWithExplanation "" expected actual
-    , testCase "handles multiple ambiguity" $ do
-        let
-            expected = Just $ OrPredicate.fromPredicates
-                [ Conditional
-                    { term = ()
-                    , predicate = makeAndPredicate
-                        (makeEqualsPredicate (Mock.f Mock.a) Mock.a)
-                        (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
-                    , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
-                    }
-                , Conditional
-                    { term = ()
-                    , predicate = makeAndPredicate
-                        (makeEqualsPredicate (Mock.f Mock.a) Mock.a)
-                        (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
-                    , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
-                    }
-                , Conditional
-                    { term = ()
-                    , predicate = makeAndPredicate
-                        (makeEqualsPredicate (Mock.f Mock.b) Mock.b)
-                        (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
-                    , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
-                    }
-                , Conditional
-                    { term = ()
-                    , predicate = makeAndPredicate
-                        (makeEqualsPredicate (Mock.f Mock.b) Mock.b)
-                        (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
-                    , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
-                    }
-                ]
-            sortVar = SortVariableSort (SortVariable (testId "S"))
-            -- Ceil branches, which makes matching ambiguous.
-            simplifiers = axiomPatternsToEvaluators $ Map.fromList
-                [   (   AxiomIdentifier.Ceil
-                            (AxiomIdentifier.Application Mock.cfId)
-                    ,   [ EqualityRule RulePattern
-                            { left = mkCeil sortVar Mock.cf
-                            , right =
-                                mkOr
-                                    (mkAnd
-                                        (mkEquals_
-                                            (Mock.f (mkVar Mock.y))
-                                            Mock.a
-                                        )
-                                        (mkEquals_ (mkVar Mock.y) Mock.a)
-                                    )
-                                    (mkAnd
-                                        (mkEquals_
-                                            (Mock.f (mkVar Mock.y))
-                                            Mock.b
-                                        )
-                                        (mkEquals_ (mkVar Mock.y) Mock.b)
-                                    )
-                            , requires = makeTruePredicate
-                            , ensures = makeTruePredicate
-                            , attributes = def
-                                {Attribute.simplification = Simplification True}
-                            }
-                        ]
-                    )
-                ,   (   AxiomIdentifier.Ceil
-                            (AxiomIdentifier.Application Mock.cgId)
-                    ,   [ EqualityRule RulePattern
-                            { left = mkCeil sortVar Mock.cg
-                            , right =
-                                mkOr
-                                    (mkAnd
-                                        (mkEquals_
-                                            (Mock.g (mkVar Mock.z))
-                                            Mock.a
-                                        )
-                                        (mkEquals_ (mkVar Mock.z) Mock.a)
-                                    )
-                                    (mkAnd
-                                        (mkEquals_
-                                            (Mock.g (mkVar Mock.z))
-                                            Mock.b
-                                        )
-                                        (mkEquals_ (mkVar Mock.z) Mock.b)
-                                    )
-                            , requires = makeTruePredicate
-                            , ensures = makeTruePredicate
-                            , attributes = def
-                                {Attribute.simplification = Simplification True}
-                            }
-                        ]
-                    )
-                ]
-        actual <- unificationWithMatchSimplifiers
-            simplifiers
-            (Mock.functionalConstr20 (mkVar Mock.x) (mkVar Mock.var_x_1))
-            (Mock.functionalConstr20 Mock.cf Mock.cg)
-        assertEqualWithExplanation "" expected actual
+    -- , testCase "handles multiple ambiguity" $ do
+    --     let
+    --         expected = Just $ OrPredicate.fromPredicates
+    --             [ Conditional
+    --                 { term = ()
+    --                 , predicate = makeAndPredicate
+    --                     (makeEqualsPredicate (Mock.f Mock.a) Mock.a)
+    --                     (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
+    --                 , substitution = Substitution.unsafeWrap
+    --                     [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
+    --                 }
+    --             , Conditional
+    --                 { term = ()
+    --                 , predicate = makeAndPredicate
+    --                     (makeEqualsPredicate (Mock.f Mock.a) Mock.a)
+    --                     (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
+    --                 , substitution = Substitution.unsafeWrap
+    --                     [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
+    --                 }
+    --             , Conditional
+    --                 { term = ()
+    --                 , predicate = makeAndPredicate
+    --                     (makeEqualsPredicate (Mock.f Mock.b) Mock.b)
+    --                     (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
+    --                 , substitution = Substitution.unsafeWrap
+    --                     [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
+    --                 }
+    --             , Conditional
+    --                 { term = ()
+    --                 , predicate = makeAndPredicate
+    --                     (makeEqualsPredicate (Mock.f Mock.b) Mock.b)
+    --                     (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
+    --                 , substitution = Substitution.unsafeWrap
+    --                     [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
+    --                 }
+    --             ]
+    --         sortVar = SortVariableSort (SortVariable (testId "S"))
+    --         -- Ceil branches, which makes matching ambiguous.
+    --         simplifiers = axiomPatternsToEvaluators $ Map.fromList
+    --             [   (   AxiomIdentifier.Ceil
+    --                         (AxiomIdentifier.Application Mock.cfId)
+    --                 ,   [ EqualityRule RulePattern
+    --                         { left = mkCeil sortVar Mock.cf
+    --                         , right =
+    --                             mkOr
+    --                                 (mkAnd
+    --                                     (mkEquals_
+    --                                         (Mock.f (mkVar Mock.y))
+    --                                         Mock.a
+    --                                     )
+    --                                     (mkEquals_ (mkVar Mock.y) Mock.a)
+    --                                 )
+    --                                 (mkAnd
+    --                                     (mkEquals_
+    --                                         (Mock.f (mkVar Mock.y))
+    --                                         Mock.b
+    --                                     )
+    --                                     (mkEquals_ (mkVar Mock.y) Mock.b)
+    --                                 )
+    --                         , requires = makeTruePredicate
+    --                         , ensures = makeTruePredicate
+    --                         , attributes = def
+    --                             {Attribute.simplification = Simplification True}
+    --                         }
+    --                     ]
+    --                 )
+    --             ,   (   AxiomIdentifier.Ceil
+    --                         (AxiomIdentifier.Application Mock.cgId)
+    --                 ,   [ EqualityRule RulePattern
+    --                         { left = mkCeil sortVar Mock.cg
+    --                         , right =
+    --                             mkOr
+    --                                 (mkAnd
+    --                                     (mkEquals_
+    --                                         (Mock.g (mkVar Mock.z))
+    --                                         Mock.a
+    --                                     )
+    --                                     (mkEquals_ (mkVar Mock.z) Mock.a)
+    --                                 )
+    --                                 (mkAnd
+    --                                     (mkEquals_
+    --                                         (Mock.g (mkVar Mock.z))
+    --                                         Mock.b
+    --                                     )
+    --                                     (mkEquals_ (mkVar Mock.z) Mock.b)
+    --                                 )
+    --                         , requires = makeTruePredicate
+    --                         , ensures = makeTruePredicate
+    --                         , attributes = def
+    --                             {Attribute.simplification = Simplification True}
+    --                         }
+    --                     ]
+    --                 )
+    --             ]
+    --     actual <- unificationWithMatchSimplifiers
+    --         simplifiers
+    --         (Mock.functionalConstr20 (mkVar Mock.x) (mkVar Mock.var_x_1))
+    --         (Mock.functionalConstr20 Mock.cf Mock.cg)
+    --     assertEqualWithExplanation "" expected actual
     ]
 
 matchDefinition
@@ -1031,9 +1033,9 @@ unificationWithMatchSimplifiers
     -> IO (Maybe (OrPredicate Variable))
 unificationWithMatchSimplifiers axiomIdToSimplifier first second = do
     result <-
-        SMT.runSMT SMT.defaultConfig emptyLogger
+        SMT.runSMT SMT.defaultConfig (stdoutLogger Info)
         $ evalSimplifier Mock.env { simplifierAxioms = axiomIdToSimplifier }
-        $ Monad.Unify.runUnifier
+        $ Monad.Unify.runUnifierT
         $ unificationWithAppMatchOnTop first second
     return $ either (const Nothing) Just (MultiOr.make <$> result)
 
@@ -1060,5 +1062,6 @@ match first second = do
         :: Simplifier
             (Either UnificationOrSubstitutionError (OrPredicate Variable))
     matchResult =
-        fmap MultiOr.make <$> Monad.Unify.runUnifier
-            (matchAsUnification first second)
+        (fmap . fmap) MultiOr.make
+        $ Monad.Unify.runUnifierT
+        $ matchAsUnification first second

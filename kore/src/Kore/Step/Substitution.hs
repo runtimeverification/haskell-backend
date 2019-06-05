@@ -29,12 +29,13 @@ import           GHC.Stack
 import           Kore.Internal.Predicate
                  ( Conditional (..), Predicate )
 import qualified Kore.Internal.Predicate as Predicate
+import           Kore.Logger
+                 ( LogMessage, WithLog )
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Simplification.Data as Simplifier
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( scatter )
+import qualified Kore.Step.Simplification.Data as Branch
 import           Kore.Syntax.Variable
                  ( SortedVariable )
 import qualified Kore.TopBottom as TopBottom
@@ -48,7 +49,7 @@ import           Kore.Unification.SubstitutionNormalization
 import           Kore.Unification.UnifierImpl
                  ( normalizeSubstitutionDuplication )
 import           Kore.Unification.Unify
-                 ( MonadUnify, Unifier )
+                 ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -76,8 +77,8 @@ normalize Conditional { term, predicate, substitution } = do
     -- substitution to the predicate when there is an error on *any* branch.
     results <-
         Monad.Trans.lift
-        $ Monad.Unify.runUnifier
-        $ undefined --normalizeExcept Conditional { term = (), predicate, substitution }
+        $ Monad.Unify.runUnifierT
+        $ normalizeExcept Conditional { term = (), predicate, substitution }
     case results of
         Right normal -> scatter (applyTerm <$> normal)
         Left _ ->
@@ -99,6 +100,7 @@ normalizeExcept
         , SortedVariable variable
         , FreshVariable variable
         , MonadUnify unifier
+        , WithLog LogMessage unifier
         )
     => Predicate variable
     -> unifier (Predicate variable)
@@ -127,7 +129,7 @@ normalizeExcept Conditional { predicate, substitution } = do
                 [predicate, deduplicatedPredicate, normalizedPredicate]
 
     TopBottom.guardAgainstBottom mergedPredicate
-    Foldable.asum @(BranchT unifier) @unifier $ simplifySubstitution @variable @unifier Conditional
+    Branch.alternate $ simplifySubstitution Conditional
             { term = ()
             , predicate = mergedPredicate
             , substitution = normalizedSubstitution
@@ -135,7 +137,7 @@ normalizeExcept Conditional { predicate, substitution } = do
   where
 
     normalizeSubstitution' =
-        Monad.Unify.fromExceptT
+        Monad.Unify.lowerExceptT
         . withExceptT substitutionToUnifyOrSubError
         . normalizeSubstitution
 
@@ -149,22 +151,23 @@ predicates and redo the merge.
 hs-boot: Please remember to update the hs-boot file when changing the signature.
 -}
 mergePredicatesAndSubstitutions
-    :: ( Show variable
-       , Unparse variable
-       , SortedVariable variable
-       , Ord variable
-       , FreshVariable variable
-       , MonadSimplify m
-       , HasCallStack
-       )
+    ::  forall variable simplifier
+    .   ( Show variable
+        , Unparse variable
+        , SortedVariable variable
+        , Ord variable
+        , FreshVariable variable
+        , MonadSimplify simplifier
+        , HasCallStack
+        , WithLog LogMessage simplifier
+        )
     => [Syntax.Predicate variable]
     -> [Substitution variable]
-    -> BranchT m (Predicate variable)
+    -> BranchT simplifier (Predicate variable)
 mergePredicatesAndSubstitutions predicates substitutions = do
-    result <- Monad.Trans.lift $ Monad.Unify.runUnifier $
-        mergePredicatesAndSubstitutionsExcept
-            predicates
-            substitutions
+    result <-
+        (Monad.Trans.lift . Monad.Unify.runUnifierT)
+        (mergePredicatesAndSubstitutionsExcept predicates substitutions)
     case result of
         Left _ ->
             let
@@ -175,16 +178,18 @@ mergePredicatesAndSubstitutions predicates substitutions = do
                         )
             in
                 return $ Predicate.fromPredicate mergedPredicate
-        Right r -> BranchT.scatter r
+        Right r -> Branch.scatter r
 
 mergePredicatesAndSubstitutionsExcept
-    ::  ( Show variable
+    ::  forall variable unifier
+    .   ( Show variable
         , SortedVariable variable
         , Ord variable
         , Unparse variable
         , FreshVariable variable
         , HasCallStack
         , MonadUnify unifier
+        , WithLog LogMessage unifier
         )
     => [Syntax.Predicate variable]
     -> [Substitution variable]
@@ -208,9 +213,9 @@ createPredicatesAndSubstitutionsMergerExcept
     .   ( Show variable
         , Unparse variable
         , SortedVariable variable
-        , Ord variable
         , FreshVariable variable
         , MonadUnify unifier
+        , WithLog LogMessage unifier
         )
     => PredicateMerger variable unifier
 createPredicatesAndSubstitutionsMergerExcept =
@@ -230,21 +235,21 @@ createPredicatesAndSubstitutionsMergerExcept =
 unifications it can't handle.
 -}
 createPredicatesAndSubstitutionsMerger
-    :: forall variable .
-        ( Show variable
+    :: forall variable simplifier
+    .   ( Show variable
         , Unparse variable
         , SortedVariable variable
-        , Ord variable
         , FreshVariable variable
+        , MonadSimplify simplifier
         )
-    => PredicateMerger variable (BranchT Simplifier)
+    => PredicateMerger variable (BranchT simplifier)
 createPredicatesAndSubstitutionsMerger =
     PredicateMerger worker
   where
     worker
         :: [Syntax.Predicate variable]
         -> [Substitution variable]
-        -> BranchT Simplifier (Predicate variable)
+        -> BranchT simplifier (Predicate variable)
     worker predicates substitutions = do
         let merged =
                 (Predicate.fromPredicate <$> predicates)
@@ -263,6 +268,7 @@ createLiftedPredicatesAndSubstitutionsMerger
         , Ord variable
         , FreshVariable variable
         , MonadUnify unifier
+        , WithLog LogMessage unifier
         )
     => PredicateMerger variable unifier
 createLiftedPredicatesAndSubstitutionsMerger =
@@ -286,6 +292,7 @@ normalizeSubstitutionAfterMerge
         , FreshVariable variable
         , HasCallStack
         , MonadUnify unifier
+        , WithLog LogMessage unifier
         )
     => Predicate variable
     -> unifier (Predicate variable)

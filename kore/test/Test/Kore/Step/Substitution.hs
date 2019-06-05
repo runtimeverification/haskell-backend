@@ -337,7 +337,7 @@ merge
 merge s1 s2 =
     runSMT
     $ evalSimplifier mockEnv
-    $ Monad.Unify.runUnifier
+    $ Monad.Unify.runUnifierT
     $ mergePredicatesAndSubstitutionsExcept [] $ Substitution.wrap <$> [s1, s2]
   where
     mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
@@ -362,7 +362,7 @@ normalizeExcept predicated =
     (fmap . fmap) MultiOr.make
     $ runSMT
     $ evalSimplifier mockEnv
-    $ Monad.Unify.runUnifier
+    $ Monad.Unify.runUnifierT
     $ Substitution.normalizeExcept predicated
   where
     mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }

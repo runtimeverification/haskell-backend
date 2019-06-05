@@ -18,6 +18,8 @@ module Kore.Step.Simplification.Data
     , gather
     , gatherAll
     , scatter
+    , foldBranchT
+    , alternate
     , PredicateSimplifier (..)
     , emptyPredicateSimplifier
     , TermLikeSimplifier
@@ -89,7 +91,7 @@ import           Kore.Syntax.Variable
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 import           ListT
-                 ( ListT )
+                 ( ListT (..) )
 import qualified ListT
 import           SMT
                  ( MonadSMT (..), SMT (..) )
@@ -99,7 +101,7 @@ This type is used to distinguish between the two in the common code.
 -}
 data SimplificationType = And | Equals
 
-class MonadSMT m => MonadSimplify m where
+class (WithLog LogMessage m, MonadSMT m) => MonadSimplify m where
     -- | Retrieve the 'MetadataTools' for the Kore context.
     askMetadataTools :: m (SmtMetadataTools Attribute.Symbol)
     default askMetadataTools
@@ -151,7 +153,7 @@ class MonadSMT m => MonadSimplify m where
     localSimplifierAxioms locally =
         Monad.Morph.hoist (localSimplifierAxioms locally)
 
-instance (MonadSimplify m, Monoid w) => MonadSimplify (AccumT w m) where
+instance (WithLog LogMessage m, MonadSimplify m, Monoid w) => MonadSimplify (AccumT w m) where
     localSimplifierTermLike locally =
         mapAccumT (localSimplifierTermLike locally)
     {-# INLINE localSimplifierTermLike #-}
@@ -270,6 +272,22 @@ See also: 'gather'
 scatter :: Foldable f => f a -> BranchT m a
 scatter = BranchT . ListT.scatter . Foldable.toList
 
+{- | Fold down a 'BranchT' into its base 'Monad'.
+
+See also: 'foldListT'
+
+ -}
+foldBranchT :: Monad m => (a -> m r -> m r) -> m r -> BranchT m a -> m r
+foldBranchT f mr (BranchT listT) = foldListT listT (>>=) f mr
+
+{- | Fold down a 'BranchT' using an underlying 'Alternative'.
+
+See also: 'foldBranchT'
+
+ -}
+alternate :: (Alternative m, Monad m) => BranchT m a -> m a
+alternate = foldBranchT ((<|>) . pure) empty
+
 -- * Simplifier
 
 data Env =
@@ -366,7 +384,7 @@ evalSimplifier
     => Env
     -> Simplifier a
     -> SMT a
-evalSimplifier env = withSolver . flip runReaderT env . getSimplifier
+evalSimplifier env = flip runReaderT env . getSimplifier
 
 -- * Implementation
 
@@ -398,16 +416,16 @@ The pattern is considered as an isolated term without extra initial conditions.
 
  -}
 simplifyTerm
-    :: forall variable m
+    :: forall variable simplifier
     .   ( FreshVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
         , SortedVariable variable
-        , MonadSimplify m
+        , MonadSimplify simplifier
         )
     => TermLike variable
-    -> m (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplifyTerm termLike = do
     TermLikeSimplifier simplify <- askSimplifierTermLike
     results <- gather $ simplify termLike Predicate.top
@@ -417,16 +435,17 @@ simplifyTerm termLike = do
 {- | Use a 'TermLikeSimplifier' to simplify a pattern subject to conditions.
  -}
 simplifyConditionalTerm
-    :: forall variable
+    :: forall variable simplifier
     .   ( FreshVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => TermLike variable
     -> Predicate variable
-    -> BranchT Simplifier (Pattern variable)
+    -> BranchT simplifier (Pattern variable)
 simplifyConditionalTerm termLike predicate = do
     TermLikeSimplifier simplify <- askSimplifierTermLike
     simplify termLike predicate
@@ -518,19 +537,21 @@ axioms, together with a proof certifying that it was simplified correctly
 (which is only a placeholder right now).
 -}
 newtype BuiltinAndAxiomSimplifier =
+    -- TODO (thomas.tuegel): Rename me!
+    -- TODO (thomas.tuegel): Remove extra arguments.
     BuiltinAndAxiomSimplifier
-        (forall variable m
+        (forall variable simplifier
         .   ( FreshVariable variable
             , SortedVariable variable
             , Show variable
             , Unparse variable
-            , MonadSimplify m
+            , MonadSimplify simplifier
             )
         => PredicateSimplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
-        -> m (AttemptedAxiom variable)
+        -> simplifier (AttemptedAxiom variable)
         )
 
 {-|A type to abstract away the mapping from symbol identifiers to
@@ -626,14 +647,14 @@ exceptNotApplicable =
     notApplicable = NotApplicable
 
 -- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
-notApplicableAxiomEvaluator :: Simplifier (AttemptedAxiom variable)
+notApplicableAxiomEvaluator :: Applicative m => m (AttemptedAxiom variable)
 notApplicableAxiomEvaluator = pure NotApplicable
 
 -- |Yields a pure 'Simplifier' which produces a given 'TermLike'
 purePatternAxiomEvaluator
-    :: Ord variable
+    :: (Applicative m, Ord variable)
     => TermLike variable
-    -> Simplifier (AttemptedAxiom variable)
+    -> m (AttemptedAxiom variable)
 purePatternAxiomEvaluator p =
     pure
         ( Applied AttemptedAxiomResults
