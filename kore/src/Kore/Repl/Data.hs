@@ -44,8 +44,6 @@ module Kore.Repl.Data
 import           Control.Applicative
                  ( Alternative )
 import           Control.Concurrent.MVar
-import           Control.Error
-                 ( hush )
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import qualified Control.Lens.TH.Rules as Lens
@@ -69,11 +67,13 @@ import           Data.Coerce
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Graph.Inductive.PatriciaTree
                  ( Gr )
+import           Data.List.NonEmpty
+                 ( NonEmpty (..) )
 import qualified Data.Map as Map
 import           Data.Map.Strict
                  ( Map )
 import           Data.Maybe
-                 ( listToMaybe )
+                 ( fromMaybe, listToMaybe )
 import           Data.Monoid
                  ( First (..) )
 import           Data.Sequence
@@ -92,8 +92,10 @@ import           Numeric.Natural
 import           System.IO
                  ( Handle, IOMode (AppendMode), hClose, openFile )
 
-import           Kore.Internal.Pattern
+import           Kore.Internal.Conditional
                  ( Conditional (..) )
+import           Kore.Internal.Predicate
+                 ( Predicate )
 import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Logger.Output as Logger
@@ -371,7 +373,7 @@ data ReplState claim = ReplState
     , unifier
         :: TermLike Variable
         -> TermLike Variable
-        -> UnifierWithExplanation ()
+        -> UnifierWithExplanation (Predicate Variable)
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
     --   failures
@@ -426,20 +428,17 @@ instance MonadUnify UnifierWithExplanation where
 runUnifierWithExplanation
     :: forall a
     .  UnifierWithExplanation a
-    -> Simplifier (Maybe (Doc ()))
-runUnifierWithExplanation (UnifierWithExplanation unifier)
-  =
-    join <$> fmap (fmap getFirst) unificationExplanations
-  where
-    unificationResults :: Simplifier (Maybe ([a], First (Doc ())))
-    unificationResults =
-        hush
-        <$> Monad.Unify.runUnifierT
+    -> Simplifier (Either (Doc ()) (NonEmpty a))
+runUnifierWithExplanation (UnifierWithExplanation unifier) =
+    either (Left . Pretty.pretty) failWithExplanation
+    <$> Monad.Unify.runUnifierT
             (\accum -> runAccumT accum mempty)
             unifier
-    unificationExplanations :: Simplifier (Maybe (First (Doc ())))
-    unificationExplanations =
-        fmap (fmap snd) unificationResults
+  where
+    failWithExplanation (results, explanation) =
+        case results of
+            [] -> Left $ fromMaybe "No explanation given" (getFirst explanation)
+            r : rs -> Right (r :| rs)
 
 Lens.makeLenses ''ReplState
 
@@ -696,7 +695,7 @@ runUnifier
     => Monad.Trans.MonadTrans m
     => TermLike Variable
     -> TermLike Variable
-    -> m Simplifier (Maybe (Pretty.Doc ()))
+    -> m Simplifier (Either (Doc ()) (NonEmpty (Predicate Variable)))
 runUnifier first second = do
     unifier <- Lens.use lensUnifier
     mvar <- Lens.use lensLogger
