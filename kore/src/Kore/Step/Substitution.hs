@@ -48,7 +48,7 @@ import           Kore.Unification.SubstitutionNormalization
 import           Kore.Unification.UnifierImpl
                  ( normalizeSubstitutionDuplication )
 import           Kore.Unification.Unify
-                 ( MonadUnify )
+                 ( MonadUnify, Unifier )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -62,21 +62,22 @@ newtype PredicateMerger variable m =
 
 -- | Normalize the substitution and predicate of 'expanded'.
 normalize
-    :: forall variable term
+    :: forall variable term simplifier
     .   ( FreshVariable variable
         , SortedVariable variable
         , Unparse variable
         , Show variable
+        , MonadSimplify simplifier
         )
     => Conditional variable term
-    -> BranchT Simplifier (Conditional variable term)
+    -> BranchT simplifier (Conditional variable term)
 normalize Conditional { term, predicate, substitution } = do
     -- We collect all the results here because we should promote the
     -- substitution to the predicate when there is an error on *any* branch.
     results <-
         Monad.Trans.lift
         $ Monad.Unify.runUnifier
-        $ normalizeExcept Conditional { term = (), predicate, substitution }
+        $ undefined --normalizeExcept Conditional { term = (), predicate, substitution }
     case results of
         Right normal -> scatter (applyTerm <$> normal)
         Left _ ->
@@ -91,7 +92,8 @@ normalize Conditional { term, predicate, substitution } = do
     applyTerm predicated = predicated { term }
 
 normalizeExcept
-    ::  ( Ord variable
+    ::  forall unifier variable
+    .   ( Ord variable
         , Show variable
         , Unparse variable
         , SortedVariable variable
@@ -125,8 +127,7 @@ normalizeExcept Conditional { predicate, substitution } = do
                 [predicate, deduplicatedPredicate, normalizedPredicate]
 
     TopBottom.guardAgainstBottom mergedPredicate
-    Monad.Unify.liftBranchedSimplifier
-        $ simplifySubstitution Conditional
+    Foldable.asum @(BranchT unifier) @unifier $ simplifySubstitution @variable @unifier Conditional
             { term = ()
             , predicate = mergedPredicate
             , substitution = normalizedSubstitution

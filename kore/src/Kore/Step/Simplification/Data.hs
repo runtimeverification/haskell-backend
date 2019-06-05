@@ -205,7 +205,7 @@ newtype BranchT m a =
     -- Pay no attention to the ListT behind the curtain!
     BranchT (ListT.ListT m a)
     deriving (Functor, Applicative, Monad)
-    deriving (Alternative, MonadPlus)
+    deriving (Alternative, MonadPlus, Foldable)
     deriving (MonadTrans, MFunctor, MMonad)
     deriving MonadIO
     deriving Typeable
@@ -480,15 +480,16 @@ that it applies the substitution on the predicate.
 newtype PredicateSimplifier =
     PredicateSimplifier
         { getPredicateSimplifier
-            ::  forall variable
+            ::  forall variable m
             .   ( FreshVariable variable
                 , Ord variable
                 , Show variable
                 , Unparse variable
                 , SortedVariable variable
+                , MonadSimplify m
                 )
             => Predicate variable
-            -> BranchT Simplifier (Predicate variable)
+            -> BranchT m (Predicate variable)
         }
 
 emptyPredicateSimplifier :: PredicateSimplifier
