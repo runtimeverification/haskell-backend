@@ -218,22 +218,22 @@ exit = do
     proofs <- allProofs
     ofile <- Lens.use lensOutputFile
     let name = fromJust . unOutputFile $ ofile
-    -- liftIO $ writeFile name (unparseToString (TermLike.mkTop @TermLike.Variable $ TermLike.mkSortVariable "R"))
-    graphs <- Lens.use lensGraphs
-    let x = fromPatterns (fmap (fromJust . extractUnproven) $ terminalPatterns graphs)
-        y = makeMultipleOrPredicate (Predicate.toPredicate x)
-        z = forceSort patternSort $ unwrapPredicate y
-    putStrLn' . unparseToString $ z
+    liftIO $ writeFile name (unparseToString (TermLike.mkTop @TermLike.Variable $ TermLike.mkSortVariable "R"))
+    -- graphs <- Lens.use lensGraphs
+    -- let x = fromPatterns (fmap (fromJust . extractUnproven) $ terminalPatterns graphs)
+    --    y = makeMultipleOrPredicate (Predicate.toPredicate x)
+    --    z = forceSort patternSort $ unwrapPredicate y
+    -- putStrLn' . unparseToString $ z
     if isCompleted (Map.elems proofs)
        then return SuccessStop
        else return FailStop
   where
-    patternSort = termLikeSort $ TermLike.mkSortVariable "R"
+    -- patternSort = termLikeSort $ TermLike.mkSortVariable "R"
     terminalPatterns
         :: Map.Map ClaimIndex ExecutionGraph
-        -> [CommonStrategyPattern]
+        -> Map.Map ClaimIndex [CommonStrategyPattern]
     terminalPatterns gphs =
-        Map.elems gphs >>= f . graphWithLeafs . Strategy.graph
+        f . graphWithLeafs . Strategy.graph <$> gphs
     graphWithLeafs :: InnerGraph -> (InnerGraph, [Graph.Node])
     graphWithLeafs gph =
         (gph, join . Map.elems $ sortLeafsByType gph)

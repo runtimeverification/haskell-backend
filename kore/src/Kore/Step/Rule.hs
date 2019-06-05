@@ -165,6 +165,13 @@ deriving instance Eq variable => Eq (OnePathRule variable)
 deriving instance Ord variable => Ord (OnePathRule variable)
 deriving instance Show variable => Show (OnePathRule variable)
 
+instance
+    (Ord variable, SortedVariable variable, Unparse variable)
+    => Unparse (OnePathRule variable)
+  where
+    unparse = undefined
+    unparse2 = undefined
+
 {-  | All-Path-Claim rule pattern.
 -}
 newtype AllPathRule variable =
@@ -314,6 +321,24 @@ fromSentenceAxiom sentenceAxiom = do
         (Attribute.Parser.liftParser . Attribute.Parser.parseAttributes)
             (sentenceAxiomAttributes sentenceAxiom)
     patternToAxiomPattern attributes (sentenceAxiomPattern sentenceAxiom)
+
+
+-- TODO:
+--      op should be more general
+--      what sort should sort be?
+f :: QualifiedAxiomPattern Variable -> TermLike Variable
+f =
+    \case
+        OnePathClaimPattern (OnePathRule rulePatt) ->
+            mkImplies
+                (mkAnd (Predicate.unwrapPredicate . requires $ rulePatt) (left rulePatt))
+                (mkApp sort op [mkAnd (Predicate.unwrapPredicate . ensures $ rulePatt) (right rulePatt)])
+  where
+    op = SymbolOrAlias
+            (Id "weakExistsFinally" AstLocationUnknown)
+            []
+    sort :: Sort
+    sort = undefined
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 
