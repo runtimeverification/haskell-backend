@@ -32,8 +32,6 @@ module Kore.Builtin.Int
     , asPartialPattern
     , parse
       -- * keys
-    , bitRangeKey
-    , signExtendBitRangeKey
     , randKey
     , srandKey
     , gtKey
@@ -123,14 +121,7 @@ symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
     [
-      ( bitRangeKey
-      , Builtin.verifySymbol assertSort [assertSort, assertSort, assertSort]
-      )
-    , ( signExtendBitRangeKey
-      , Builtin.verifySymbol assertSort [assertSort, assertSort, assertSort]
-      )
-
-    , (randKey, Builtin.verifySymbol assertSort [assertSort])
+      (randKey, Builtin.verifySymbol assertSort [assertSort])
     , (srandKey, Builtin.verifySymbolArguments [assertSort])
 
     , (gtKey, Builtin.verifySymbol Bool.assertSort [assertSort, assertSort])
@@ -296,13 +287,9 @@ builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
     [
-      -- TODO (thomas.tuegel): Implement bit ranges.
-      --(bitRangeKey, Builtin.notImplemented)
-      (signExtendBitRangeKey, Builtin.notImplemented)
-
       -- TODO (thomas.tuegel): Add MonadRandom to evaluation context to
       -- implement rand and srand.
-    , (randKey, Builtin.notImplemented)
+      (randKey, Builtin.notImplemented)
     , (srandKey, Builtin.notImplemented)
 
     , comparator gtKey (>)
@@ -380,12 +367,6 @@ builtinFunctions =
     log2 n
         | n > 0 = Just (smallInteger (integerLog2# n))
         | otherwise = Nothing
-
-bitRangeKey :: IsString s => s
-bitRangeKey = "INT.bitRange"
-
-signExtendBitRangeKey :: IsString s => s
-signExtendBitRangeKey = "INT.signExtendBitRange"
 
 randKey :: IsString s => s
 randKey = "INT.rand"
