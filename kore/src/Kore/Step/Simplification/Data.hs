@@ -49,7 +49,7 @@ import qualified Control.Monad as Monad
 import           Control.Monad.Catch
                  ( MonadCatch, MonadThrow )
 import           Control.Monad.Morph
-                 ( MFunctor, MMonad )
+                 ( MFunctor )
 import qualified Control.Monad.Morph as Monad.Morph
 import           Control.Monad.Reader
 import           Control.Monad.State.Class
@@ -91,7 +91,7 @@ import           Kore.Syntax.Variable
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 import           ListT
-                 ( ListT (..) )
+                 ( ListT (..), mapListT )
 import qualified ListT
 import           SMT
                  ( MonadSMT (..), SMT (..) )
@@ -170,7 +170,18 @@ instance MonadSimplify m => MonadSimplify (IdentityT m)
 
 instance MonadSimplify m => MonadSimplify (ExceptT e m)
 
-instance MonadSimplify m => MonadSimplify (ListT m)
+instance MonadSimplify m => MonadSimplify (ListT m) where
+    localSimplifierTermLike locally =
+        mapListT (localSimplifierTermLike locally)
+    {-# INLINE localSimplifierTermLike #-}
+
+    localSimplifierPredicate locally =
+        mapListT (localSimplifierPredicate locally)
+    {-# INLINE localSimplifierPredicate #-}
+
+    localSimplifierAxioms locally =
+        mapListT (localSimplifierAxioms locally)
+    {-# INLINE localSimplifierAxioms #-}
 
 instance MonadSimplify m => MonadSimplify (MaybeT m)
 
@@ -208,7 +219,7 @@ newtype BranchT m a =
     BranchT (ListT.ListT m a)
     deriving (Functor, Applicative, Monad)
     deriving (Alternative, MonadPlus, Foldable)
-    deriving (MonadTrans, MFunctor, MMonad)
+    deriving MonadTrans
     deriving MonadIO
     deriving Typeable
 
@@ -218,9 +229,9 @@ deriving instance MonadState s m => MonadState s (BranchT m)
 
 deriving instance WithLog msg m => WithLog msg (BranchT m)
 
-instance MonadSMT m => MonadSMT (BranchT m)
+deriving instance MonadSMT m => MonadSMT (BranchT m)
 
-instance MonadSimplify m => MonadSimplify (BranchT m)
+deriving instance MonadSimplify m => MonadSimplify (BranchT m)
 
 {- | Collect results from many simplification branches into one result.
 
@@ -278,7 +289,7 @@ See also: 'foldListT'
 
  -}
 foldBranchT :: Monad m => (a -> m r -> m r) -> m r -> BranchT m a -> m r
-foldBranchT f mr (BranchT listT) = foldListT listT (>>=) f mr
+foldBranchT f mr (BranchT listT) = foldListT listT f mr
 
 {- | Fold down a 'BranchT' using an underlying 'Alternative'.
 

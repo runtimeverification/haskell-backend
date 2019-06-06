@@ -14,7 +14,8 @@ import qualified Data.Foldable as Foldable
 import           Data.Limit
                  ( Limit )
 import qualified Data.Limit as Limit
-import           Debug.Trace
+-- TODO (thomas.tuegel): Remove Debug.Trace
+import Debug.Trace
 
 import           Kore.Internal.Pattern
                  ( Conditional (Conditional) )

@@ -22,7 +22,6 @@ import qualified Control.Monad.Morph as Monad.Morph
 import           Control.Monad.Reader
 import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Accum
-                 ( AccumT, runAccumT )
 import qualified Control.Monad.Trans.Accum as Accum
 import qualified Data.Foldable as Foldable
 import           Data.Sequence
@@ -34,12 +33,12 @@ import           Data.Typeable
 import           Kore.Logger
                  ( WithLog (..) )
 import           Kore.Step.Simplification.Data
-                 ( MonadSimplify )
+                 ( MonadSimplify (..) )
 import           ListT
-                 ( ListT )
+                 ( ListT, mapListT )
 import qualified ListT
 import           SMT
-                 ( MonadSMT )
+                 ( MonadSMT (..) )
 
 {- | @TransitionT@ represents a transition between program states.
 
@@ -65,7 +64,10 @@ newtype TransitionT rule m a =
         , Typeable
         )
 
-instance WithLog msg m => WithLog msg (TransitionT rule m)
+instance WithLog msg m => WithLog msg (TransitionT rule m) where
+    localLogAction locally =
+        mapTransitionT (localLogAction locally)
+    {-# INLINE localLogAction #-}
 
 instance MonadTrans (TransitionT rule) where
     lift = TransitionT . Monad.Trans.lift . Monad.Trans.lift
@@ -89,16 +91,9 @@ instance MonadReader e m => MonadReader e (TransitionT rule m) where
     local f = TransitionT . Accum.mapAccumT (local f) . getTransitionT
     {-# INLINE local #-}
 
-instance Monad.Morph.MFunctor (TransitionT rule) where
-    hoist morph =
-        TransitionT
-        . Accum.mapAccumT (Monad.Morph.hoist morph)
-        . getTransitionT
-    {-# INLINE hoist #-}
+deriving instance MonadSMT m => MonadSMT (TransitionT rule m)
 
-instance MonadSMT m => MonadSMT (TransitionT rule m)
-
-instance MonadSimplify m => MonadSimplify (TransitionT rule m)
+deriving instance MonadSimplify m => MonadSimplify (TransitionT rule m)
 
 runTransitionT :: Monad m => TransitionT rule m a -> m [(a, Seq rule)]
 runTransitionT (TransitionT edge) = ListT.gather (runAccumT edge mempty)
@@ -108,6 +103,10 @@ tryTransitionT
     => TransitionT rule m a
     -> TransitionT rule m [(a, Seq rule)]
 tryTransitionT = Monad.Trans.lift . runTransitionT
+
+mapTransitionT :: (forall x. m x -> m x) -> TransitionT rule m a -> TransitionT rule m a
+mapTransitionT mapping =
+    TransitionT . mapAccumT (mapListT mapping) . getTransitionT
 
 scatter :: [(a, Seq rule)] -> TransitionT rule m a
 scatter edges = do

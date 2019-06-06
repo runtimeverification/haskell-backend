@@ -17,8 +17,6 @@ import           Control.Error
 import           Control.Monad
                  ( MonadPlus )
 import qualified Control.Monad.Except as Error
-import           Control.Monad.Morph
-                 ( MFunctor (..) )
 import           Control.Monad.Trans.Class
                  ( MonadTrans (..) )
 import           Data.Text.Prettyprint.Doc
@@ -87,15 +85,11 @@ instance MonadTrans UnifierT where
     lift = UnifierT . lift . lift
     {-# INLINE lift #-}
 
-instance MFunctor UnifierT where
-    hoist transform = UnifierT . hoist (hoist transform) . getUnifierT
-    {-# INLINE hoist #-}
+deriving instance WithLog LogMessage m => WithLog LogMessage (UnifierT m)
 
-instance WithLog LogMessage m => WithLog LogMessage (UnifierT m)
+deriving instance MonadSMT m => MonadSMT (UnifierT m)
 
-instance MonadSMT m => MonadSMT (UnifierT m)
-
-instance MonadSimplify m => MonadSimplify (UnifierT m)
+deriving instance MonadSimplify m => MonadSimplify (UnifierT m)
 
 instance MonadSimplify m => MonadUnify (UnifierT m) where
     throwSubstitutionError =

@@ -49,7 +49,7 @@ import           Prelude hiding
                  ( log )
 
 import ListT
-       ( ListT )
+       ( ListT, mapListT )
 
 -- | Log level used to describe each log message. It is also used to set the
 -- minimum level to be outputted.
@@ -144,7 +144,7 @@ instance WithLog msg m => WithLog msg (ListT m) where
     askLogAction = Monad.Trans.lift (liftLogAction <$> askLogAction)
     {-# INLINE askLogAction #-}
 
-    localLogAction f = Monad.Morph.hoist (localLogAction f)
+    localLogAction f = mapListT (localLogAction f)
     {-# INLINE localLogAction #-}
 
 -- | Log any message.
