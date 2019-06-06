@@ -37,7 +37,7 @@ import           Data.Reflection
 import           Kore.Attribute.Hook
 import           Kore.Attribute.Smtlib
 import qualified Kore.Attribute.Sort as Attribute
-import           Kore.Attribute.Symbol
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import           Kore.IndexedModule.MetadataTools
@@ -66,7 +66,7 @@ translatePredicate
     :: forall p variable m .
         ( Ord variable
         , Unparse variable
-        , Given (SmtMetadataTools StepperAttributes)
+        , Given (SmtMetadataTools Attribute.Symbol)
         , p ~ TermLike variable
         , Monad m
         )
@@ -107,7 +107,8 @@ translatePredicate translateUninterpreted predicate =
             -- Invalid: no translation, should not occur in predicates
             MuF _ -> empty
             NuF _ -> empty
-            ApplicationF _ -> empty
+            ApplySymbolF _ -> empty
+            ApplyAliasF _ -> empty
             BuiltinF _ -> empty
             DomainValueF _ -> empty
             NextF _ -> empty
@@ -163,7 +164,7 @@ translatePredicate translateUninterpreted predicate =
 
     -- | Translate a functional pattern in the builtin Int sort for SMT.
     translateInt
-        ::  ( Given (SmtMetadataTools StepperAttributes)
+        ::  ( Given (SmtMetadataTools Attribute.Symbol)
             , Ord variable
             , p ~ TermLike variable
             )
@@ -175,7 +176,7 @@ translatePredicate translateUninterpreted predicate =
             BuiltinF dv ->
                 return $ SMT.int $ Builtin.Int.extractIntDomainValue
                     "while translating dv to SMT.int" dv
-            ApplicationF app ->
+            ApplySymbolF app ->
                 (<|>)
                     (translateApplication app)
                     (translateUninterpreted SMT.tInt pat)
@@ -183,7 +184,7 @@ translatePredicate translateUninterpreted predicate =
 
     -- | Translate a functional pattern in the builtin Bool sort for SMT.
     translateBool
-        ::  ( Given (SmtMetadataTools StepperAttributes)
+        ::  ( Given (SmtMetadataTools Attribute.Symbol)
             , Ord variable
             , p ~ TermLike variable
             )
@@ -200,18 +201,18 @@ translatePredicate translateUninterpreted predicate =
                 -- The following is safe because non-functional patterns
                 -- will fail to translate.
                 SMT.not <$> translateBool notChild
-            ApplicationF app ->
+            ApplySymbolF app ->
                 (<|>)
                     (translateApplication app)
                     (translateUninterpreted SMT.tBool pat)
             _ -> empty
 
     translateApplication
-        ::  ( Given (SmtMetadataTools StepperAttributes)
+        ::  ( Given (SmtMetadataTools Attribute.Symbol)
             , Ord variable
             , p ~ TermLike variable
             )
-        => Application SymbolOrAlias p
+        => Application Symbol p
         -> Translator m p SExpr
     translateApplication
         Application
@@ -230,7 +231,7 @@ translatePredicate translateUninterpreted predicate =
         applicationChildrenSorts = termLikeSort <$> applicationChildren
 
     translatePattern
-        ::  ( Given (SmtMetadataTools StepperAttributes)
+        ::  ( Given (SmtMetadataTools Attribute.Symbol)
             , p ~ TermLike variable
             )
         => Sort
@@ -242,11 +243,10 @@ translatePredicate translateUninterpreted predicate =
               | builtinSort == Builtin.Bool.sort -> translateBool pat
               | builtinSort == Builtin.Int.sort -> translateInt pat
             _ -> case Cofree.tailF $ Recursive.project pat of
-                    ApplicationF app ->
-                        translateApplication app
+                    ApplySymbolF app -> translateApplication app
                     _ -> empty
       where
-        tools :: SmtMetadataTools StepperAttributes
+        tools :: SmtMetadataTools Attribute.Symbol
         tools = given
         Attribute.Sort { hook = Hook { getHook } } =
             sortAttributes tools sort

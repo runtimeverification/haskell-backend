@@ -27,7 +27,8 @@ module Kore.Internal.TermLike
     , forceSort
     -- * Pure Kore pattern constructors
     , mkAnd
-    , mkApp
+    , mkApplyAlias
+    , mkApplySymbol
     , mkBottom
     , mkBuiltin
     , mkCeil
@@ -77,6 +78,7 @@ module Kore.Internal.TermLike
     , applySymbol_
     -- * Pattern synonyms
     , pattern And_
+    , pattern ApplyAlias_
     , pattern App_
     , pattern Bottom_
     , pattern Builtin_
@@ -100,7 +102,8 @@ module Kore.Internal.TermLike
     , pattern CharLiteral_
     , pattern Evaluated_
     -- * Re-exports
-    , SymbolOrAlias (..)
+    , Symbol (..)
+    , Alias (..)
     , SortedVariable (..)
     , Id (..)
     , CofreeF (..), Comonad (..)
@@ -110,7 +113,6 @@ module Kore.Internal.TermLike
     , module Kore.Syntax.Bottom
     , module Kore.Syntax.Ceil
     , module Kore.Syntax.CharLiteral
-    , module Kore.Syntax.Definition
     , module Kore.Syntax.DomainValue
     , module Kore.Syntax.Equals
     , module Kore.Syntax.Exists
@@ -144,6 +146,7 @@ import           Control.Monad.Reader
 import qualified Control.Monad.Reader as Reader
 import           Data.Align
 import qualified Data.Bifunctor as Bifunctor
+import qualified Data.Default as Default
 import qualified Data.Deriving as Deriving
 import qualified Data.Foldable as Foldable
 import           Data.Functor.Classes
@@ -174,6 +177,8 @@ import           GHC.Stack
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Domain.Class
+import           Kore.Internal.Alias
+import           Kore.Internal.Symbol
 import           Kore.Sort
 import qualified Kore.Substitute as Substitute
 import           Kore.Syntax.And
@@ -181,7 +186,9 @@ import           Kore.Syntax.Application
 import           Kore.Syntax.Bottom
 import           Kore.Syntax.Ceil
 import           Kore.Syntax.CharLiteral
-import           Kore.Syntax.Definition
+import           Kore.Syntax.Definition hiding
+                 ( Alias, Symbol )
+import qualified Kore.Syntax.Definition as Syntax
 import           Kore.Syntax.DomainValue
 import           Kore.Syntax.Equals
 import           Kore.Syntax.Exists
@@ -242,7 +249,8 @@ type Builtin = Domain.Builtin (TermLike Concrete)
 -}
 data TermLikeF variable child
     = AndF           !(And Sort child)
-    | ApplicationF   !(Application SymbolOrAlias child)
+    | ApplySymbolF   !(Application Symbol child)
+    | ApplyAliasF    !(Application Alias child)
     | BottomF        !(Bottom Sort child)
     | CeilF          !(Ceil Sort child)
     | DomainValueF   !(DomainValue Sort child)
@@ -335,7 +343,8 @@ traverseVariablesF traversing =
             SetVariableF . SetVariable <$> traversing variable
         -- Trivial cases
         AndF andP -> pure (AndF andP)
-        ApplicationF appP -> pure (ApplicationF appP)
+        ApplySymbolF applySymbolF -> pure (ApplySymbolF applySymbolF)
+        ApplyAliasF applyAliasF -> pure (ApplyAliasF applyAliasF)
         BottomF botP -> pure (BottomF botP)
         BuiltinF builtinP -> pure (BuiltinF builtinP)
         CeilF ceilP -> pure (CeilF ceilP)
@@ -892,7 +901,8 @@ forceSort forcedSort = Recursive.apo forceSortWorker
                 -- Rigid: These patterns should never have sort _PREDICATE{}.
                 MuF _ -> illSorted
                 NuF _ -> illSorted
-                ApplicationF _ -> illSorted
+                ApplySymbolF _ -> illSorted
+                ApplyAliasF _ -> illSorted
                 BuiltinF _ -> illSorted
                 DomainValueF _ -> illSorted
                 CharLiteralF _ -> illSorted
@@ -961,6 +971,35 @@ mkAnd = makeSortsAgree mkAndWorker
 
 {- | Construct an 'Application' pattern.
 
+The result sort of the 'Alias' must be provided. The sorts of arguments
+are not checked. Use 'applySymbol' or 'applyAlias' whenever possible to avoid
+these shortcomings.
+
+See also: 'applyAlias', 'applySymbol'
+
+ -}
+-- TODO: Should this check for sort agreement?
+mkApplyAlias
+    :: Ord variable
+    => Sort
+    -- ^ Result sort
+    -> Alias
+    -- ^ Application symbol or alias
+    -> [TermLike variable]
+    -- ^ Application arguments
+    -> TermLike variable
+mkApplyAlias resultSort applicationSymbolOrAlias applicationChildren =
+    Recursive.embed (attrs :< ApplyAliasF application)
+  where
+    attrs =
+        Attribute.Pattern
+            { patternSort = resultSort
+            , freeVariables = Set.unions (freeVariables <$> applicationChildren)
+            }
+    application = Application { applicationSymbolOrAlias, applicationChildren }
+
+{- | Construct an 'Application' pattern.
+
 The result sort of the 'SymbolOrAlias' must be provided. The sorts of arguments
 are not checked. Use 'applySymbol' or 'applyAlias' whenever possible to avoid
 these shortcomings.
@@ -969,17 +1008,17 @@ See also: 'applyAlias', 'applySymbol'
 
  -}
 -- TODO: Should this check for sort agreement?
-mkApp
+mkApplySymbol
     :: Ord variable
     => Sort
     -- ^ Result sort
-    -> SymbolOrAlias
+    -> Symbol
     -- ^ Application symbol or alias
     -> [TermLike variable]
     -- ^ Application arguments
     -> TermLike variable
-mkApp resultSort applicationSymbolOrAlias applicationChildren =
-    Recursive.embed (attrs :< ApplicationF application)
+mkApplySymbol resultSort applicationSymbolOrAlias applicationChildren =
+    Recursive.embed (attrs :< ApplySymbolF application)
   where
     attrs =
         Attribute.Pattern
@@ -1015,7 +1054,7 @@ sortSubstitution variables sorts =
 
 The provided sort parameters must match the declaration.
 
-See also: 'mkApp', 'applyAlias_', 'applySymbol', 'mkAlias'
+See also: 'mkApplyAlias', 'applyAlias_', 'applySymbol', 'mkAlias'
 
  -}
 applyAlias
@@ -1028,19 +1067,19 @@ applyAlias
     -- ^ 'Application' arguments
     -> TermLike variable
 applyAlias sentence params children =
-    mkApp
+    mkApplyAlias
         resultSort'
-        symbolOrAlias
+        internal
         children'
   where
-    SentenceAlias { sentenceAliasAlias = alias } = sentence
+    SentenceAlias { sentenceAliasAlias = external } = sentence
     SentenceAlias { sentenceAliasResultSort } = sentence
-    Alias { aliasConstructor } = alias
-    Alias { aliasParams } = alias
-    symbolOrAlias =
-        SymbolOrAlias
-            { symbolOrAliasConstructor = aliasConstructor
-            , symbolOrAliasParams = params
+    Syntax.Alias { aliasConstructor } = external
+    Syntax.Alias { aliasParams } = external
+    internal =
+        Alias
+            { aliasConstructor
+            , aliasParams = params
             }
     substitution = sortSubstitution aliasParams params
     childSorts = substituteSortVariables substitution <$> sentenceAliasSorts
@@ -1100,16 +1139,17 @@ applySymbol
     -- ^ 'Application' arguments
     -> TermLike variable
 applySymbol sentence params children =
-    mkApp resultSort' symbolOrAlias children'
+    mkApplySymbol resultSort' internal children'
   where
-    SentenceSymbol { sentenceSymbolSymbol = symbol } = sentence
+    SentenceSymbol { sentenceSymbolSymbol = external } = sentence
     SentenceSymbol { sentenceSymbolResultSort } = sentence
-    Symbol { symbolConstructor } = symbol
-    Symbol { symbolParams } = symbol
-    symbolOrAlias =
-        SymbolOrAlias
-            { symbolOrAliasConstructor = symbolConstructor
-            , symbolOrAliasParams = params
+    Syntax.Symbol { symbolConstructor } = external
+    Syntax.Symbol { symbolParams } = external
+    internal =
+        Symbol
+            { symbolConstructor
+            , symbolParams = params
+            , symbolAttributes = Default.def
             }
     substitution = sortSubstitution symbolParams params
     resultSort' = substituteSortVariables substitution sentenceSymbolResultSort
@@ -1707,7 +1747,7 @@ mkSymbol
 mkSymbol symbolConstructor symbolParams argumentSorts resultSort' =
     SentenceSymbol
         { sentenceSymbolSymbol =
-            Symbol
+            Syntax.Symbol
                 { symbolConstructor
                 , symbolParams
                 }
@@ -1740,7 +1780,7 @@ mkAlias
 mkAlias aliasConstructor aliasParams resultSort' arguments right =
     SentenceAlias
         { sentenceAliasAlias =
-            Alias
+            Syntax.Alias
                 { aliasConstructor
                 , aliasParams
                 }
@@ -1782,7 +1822,12 @@ pattern And_
     -> TermLike variable
 
 pattern App_
-    :: SymbolOrAlias
+    :: Symbol
+    -> [TermLike variable]
+    -> TermLike variable
+
+pattern ApplyAlias_
+    :: Alias
     -> [TermLike variable]
     -> TermLike variable
 
@@ -1886,9 +1931,17 @@ pattern Evaluated_ :: TermLike variable -> TermLike variable
 pattern And_ andSort andFirst andSecond <-
     (Recursive.project -> _ :< AndF And { andSort, andFirst, andSecond })
 
+pattern ApplyAlias_ applicationSymbolOrAlias applicationChildren <-
+    (Recursive.project ->
+        _ :< ApplyAliasF Application
+            { applicationSymbolOrAlias
+            , applicationChildren
+            }
+    )
+
 pattern App_ applicationSymbolOrAlias applicationChildren <-
     (Recursive.project ->
-        _ :< ApplicationF Application
+        _ :< ApplySymbolF Application
             { applicationSymbolOrAlias
             , applicationChildren
             }

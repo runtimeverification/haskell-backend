@@ -61,9 +61,7 @@ import qualified Data.Text as Text
 
 import           Kore.Attribute.Hook
                  ( Hook )
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import qualified Kore.Attribute.Symbol as StepperAttributes
+import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Builtin.Builtin
                  ( acceptAnySort )
 import qualified Kore.Builtin.Builtin as Builtin
@@ -79,6 +77,8 @@ import           Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Step.Simplification.Data as Simplifier
+import           Kore.Syntax.Sentence
+                 ( SentenceSort (..) )
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -302,7 +302,7 @@ asTermLike builtin
     Domain.InternalList { builtinListElement = elementSymbol } = builtin
     Domain.InternalList { builtinListConcat = concatSymbol } = builtin
 
-    apply = mkApp builtinSort
+    apply = mkApplySymbol builtinSort
     unit = apply unitSymbol []
     element elem' = apply elementSymbol [elem']
     concat' list1 list2 = apply concatSymbol [list1, list2]
@@ -311,7 +311,7 @@ asTermLike builtin
  -}
 asInternal
     :: Ord variable
-    => SmtMetadataTools attrs
+    => SmtMetadataTools Attribute.Symbol
     -> Sort
     -> Seq (TermLike variable)
     -> TermLike variable
@@ -320,11 +320,11 @@ asInternal tools builtinListSort builtinListChild =
         Domain.InternalList
             { builtinListSort
             , builtinListUnit =
-                Builtin.lookupSymbolUnit builtinListSort attrs
+                Builtin.lookupSymbolUnit tools builtinListSort attrs
             , builtinListElement =
-                Builtin.lookupSymbolElement builtinListSort attrs
+                Builtin.lookupSymbolElement tools builtinListSort attrs
             , builtinListConcat =
-                Builtin.lookupSymbolConcat builtinListSort attrs
+                Builtin.lookupSymbolConcat tools builtinListSort attrs
             , builtinListChild
             }
   where
@@ -337,7 +337,7 @@ See also: 'asPattern'
  -}
 asPattern
     ::  ( Ord variable
-        , Given (SmtMetadataTools StepperAttributes)
+        , Given (SmtMetadataTools Attribute.Symbol)
         )
     => Sort
     -> Seq (TermLike variable)
@@ -345,22 +345,22 @@ asPattern
 asPattern resultSort =
     Pattern.fromTermLike . asInternal tools resultSort
   where
-    tools :: SmtMetadataTools StepperAttributes
+    tools :: SmtMetadataTools Attribute.Symbol
     tools = Reflection.given
 
 {- | Find the symbol hooked to @LIST.get@ in an indexed module.
  -}
 lookupSymbolGet
     :: Sort
-    -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) SymbolOrAlias
+    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> Either (Kore.Error e) Symbol
 lookupSymbolGet = Builtin.lookupSymbol getKey
 
 {- | Check if the given symbol is hooked to @LIST.concat@.
 -}
 isSymbolConcat
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias
+    -> Symbol
     -> Bool
 isSymbolConcat = Builtin.isSymbol concatKey
 
@@ -368,7 +368,7 @@ isSymbolConcat = Builtin.isSymbol concatKey
 -}
 isSymbolElement
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias
+    -> Symbol
     -> Bool
 isSymbolElement = Builtin.isSymbol elementKey
 
@@ -376,7 +376,7 @@ isSymbolElement = Builtin.isSymbol elementKey
 -}
 isSymbolUnit
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias
+    -> Symbol
     -> Bool
 isSymbolUnit = Builtin.isSymbol unitKey
 
@@ -398,7 +398,7 @@ unifyEquals
         , MonadUnify unifier
         )
     => SimplificationType
-    -> SmtMetadataTools StepperAttributes
+    -> SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
     -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     -> TermLike variable
@@ -414,7 +414,7 @@ unifyEquals
   =
     unifyEquals0 first second
   where
-    hookTools = StepperAttributes.hook <$> tools
+    hookTools = Attribute.hook <$> tools
 
     propagatePredicates
         :: Traversable t

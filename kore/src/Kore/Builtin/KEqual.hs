@@ -125,7 +125,7 @@ evalKEq
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
-        (Application SymbolOrAlias)
+        (Application Symbol)
         (Attribute.Pattern variable)
         (TermLike variable)
     -> Simplifier (AttemptedAxiom variable)
@@ -170,7 +170,7 @@ evalKIte
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
-        (Application SymbolOrAlias)
+        (Application Symbol)
         (Attribute.Pattern variable)
         (TermLike variable)
     -> Simplifier (AttemptedAxiom variable)

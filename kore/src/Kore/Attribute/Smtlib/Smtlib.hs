@@ -11,13 +11,14 @@ module Kore.Attribute.Smtlib.Smtlib
     , smtlibId
     ) where
 
-import Control.DeepSeq
-       ( NFData )
-import Data.Default
-       ( Default (..) )
-import GHC.Generics
-       ( Generic )
+import           Control.DeepSeq
+                 ( NFData )
+import           Data.Default
+                 ( Default (..) )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Kore.Debug
 import Kore.Syntax.Id
        ( Id )
 import SMT.SimpleSMT
@@ -40,12 +41,18 @@ valid SMT-LIB S-expressions.
 
  -}
 newtype Smtlib = Smtlib { getSmtlib :: Maybe SExpr }
-    deriving (Generic, Eq, Ord, Show)
+    deriving (GHC.Generic, Eq, Ord, Show)
 
 instance Default Smtlib where
     def = Smtlib Nothing
 
 instance NFData Smtlib
+
+instance SOP.Generic Smtlib
+
+instance SOP.HasDatatypeInfo Smtlib
+
+instance Debug Smtlib
 
 -- | Kore identifier representing the @smtlib@ attribute symbol.
 smtlibId :: Id

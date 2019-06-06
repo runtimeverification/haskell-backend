@@ -128,7 +128,8 @@ simplifyInternal termLike@(Recursive.project -> attrs :< termLikeF)
   | otherwise =
     traverse simplifyTerm termLikeF >>= \case
         AndF p              -> And.simplify p
-        ApplicationF p      -> Application.simplify (attrs :< p)
+        ApplyAliasF _       -> undefined
+        ApplySymbolF p      -> Application.simplify (attrs :< p)
         BottomF p           -> return $ Bottom.simplify p
         BuiltinF p          -> return $ Builtin.simplify p
         CeilF p             -> Ceil.simplify p

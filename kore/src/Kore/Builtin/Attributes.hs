@@ -20,37 +20,34 @@ module Kore.Builtin.Attributes
 import Data.Reflection
        ( Given, given )
 
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes, isConstructor_, isSortInjection_ )
-import qualified Kore.Attribute.Symbol as StepperAttributes
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
-import           Kore.Syntax.Application
-                 ( SymbolOrAlias )
+import           Kore.Internal.Symbol
 
 -- | Is the symbol a constructor modulo associativity, commutativity and
 -- neutral element?
 isConstructorModulo_
-    :: Given (SmtMetadataTools StepperAttributes)
-    => SymbolOrAlias
+    :: Given (SmtMetadataTools Attribute.Symbol)
+    => Symbol
     -> Bool
-isConstructorModulo_ symbolOrAlias =
-    any (apply given symbolOrAlias)
+isConstructorModulo_ symbol =
+    any (apply given symbol)
         [ List.isSymbolConcat, List.isSymbolElement, List.isSymbolUnit
         ,  Map.isSymbolConcat,  Map.isSymbolElement,  Map.isSymbolUnit
         ,  Set.isSymbolConcat,  Set.isSymbolElement,  Set.isSymbolUnit
         ]
   where
-    apply tools pattHead f = f (StepperAttributes.hook <$> tools) pattHead
+    apply tools pattHead f = f (Attribute.hook <$> tools) pattHead
 
 isConstructorModuloLike_
-    :: Given (SmtMetadataTools StepperAttributes)
-    => SymbolOrAlias
+    :: Given (SmtMetadataTools Attribute.Symbol)
+    => Symbol
     -> Bool
 isConstructorModuloLike_ appHead =
     isConstructorModulo_ appHead
-        || isConstructor_ appHead
-        || isSortInjection_ appHead
+        || isConstructor appHead
+        || isSortInjection appHead

@@ -10,12 +10,15 @@ module Kore.Attribute.Symbol.Anywhere
     ) where
 
 import qualified Control.Monad as Monad
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
+import Kore.Debug
 
 -- | @Anywhere@ represents the @anywhere@ attribute for symbols.
 newtype Anywhere = Anywhere { isAnywhere :: Bool }
-    deriving (Generic, Eq, Ord, Show)
+    deriving (GHC.Generic, Eq, Ord, Show)
 
 instance Semigroup Anywhere where
     (<>) (Anywhere a) (Anywhere b) = Anywhere (a || b)
@@ -27,6 +30,12 @@ instance Default Anywhere where
     def = mempty
 
 instance NFData Anywhere
+
+instance SOP.Generic Anywhere
+
+instance SOP.HasDatatypeInfo Anywhere
+
+instance Debug Anywhere
 
 -- | Kore identifier representing the @anywhere@ attribute symbol.
 anywhereId :: Id

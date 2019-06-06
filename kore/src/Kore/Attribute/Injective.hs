@@ -12,13 +12,16 @@ module Kore.Attribute.Injective
     ) where
 
 import qualified Control.Monad as Monad
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
+import Kore.Debug
 
 {- | @Injective@ represents the @injective@ attribute for symbols.
  -}
 newtype Injective = Injective { isDeclaredInjective :: Bool }
-    deriving (Generic, Eq, Ord, Show)
+    deriving (GHC.Generic, Eq, Ord, Show)
 
 instance Semigroup Injective where
     (<>) (Injective a) (Injective b) = Injective (a || b)
@@ -30,6 +33,12 @@ instance Default Injective where
     def = mempty
 
 instance NFData Injective
+
+instance SOP.Generic Injective
+
+instance SOP.HasDatatypeInfo Injective
+
+instance Debug Injective
 
 -- | Kore identifier representing the @injective@ attribute symbol.
 injectiveId :: Id

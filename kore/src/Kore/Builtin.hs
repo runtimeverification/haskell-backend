@@ -61,6 +61,8 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import qualified Kore.Internal.Alias as Alias
+import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
@@ -228,7 +230,12 @@ externalizePattern =
         (Attribute.Null :<)
         $ case termLikeF of
             AndF andF -> Syntax.AndF andF
-            ApplicationF applicationF -> Syntax.ApplicationF applicationF
+            ApplyAliasF applyAliasF ->
+                Syntax.ApplicationF
+                $ mapHead Alias.toSymbolOrAlias applyAliasF
+            ApplySymbolF applySymbolF ->
+                Syntax.ApplicationF
+                $ mapHead Symbol.toSymbolOrAlias applySymbolF
             BottomF bottomF -> Syntax.BottomF bottomF
             CeilF ceilF -> Syntax.CeilF ceilF
             DomainValueF domainValueF -> Syntax.DomainValueF domainValueF

@@ -12,13 +12,16 @@ module Kore.Attribute.Functional
     ) where
 
 import qualified Control.Monad as Monad
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
+import Kore.Debug
 
 {- | @Functional@ represents the @functional@ attribute for symbols.
  -}
 newtype Functional = Functional { isDeclaredFunctional :: Bool }
-    deriving (Generic, Eq, Ord, Show)
+    deriving (GHC.Generic, Eq, Ord, Show)
 
 instance Semigroup Functional where
     (<>) (Functional a) (Functional b) = Functional (a || b)
@@ -30,6 +33,12 @@ instance Default Functional where
     def = mempty
 
 instance NFData Functional
+
+instance SOP.Generic Functional
+
+instance SOP.HasDatatypeInfo Functional
+
+instance Debug Functional
 
 -- | Kore identifier representing the @functional@ attribute symbol.
 functionalId :: Id

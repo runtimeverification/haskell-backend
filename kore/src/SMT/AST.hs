@@ -46,8 +46,8 @@ import qualified Data.Text.IO as Text
 import qualified Data.Text.Lazy as Text.Lazy
 import           Data.Void
                  ( Void )
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import           System.IO
                  ( Handle, hPutChar )
 import           Text.Megaparsec
@@ -60,7 +60,13 @@ import qualified Text.Megaparsec.Char.Lexer as Lexer
 data SExpr
     = Atom !Text
     | List ![SExpr]
-    deriving (Generic, Eq, Ord, Show)
+    deriving (GHC.Generic, Eq, Ord, Show)
+
+instance NFData SExpr
+
+instance SOP.Generic SExpr
+
+instance SOP.HasDatatypeInfo SExpr
 
 {-| An argument to a data type constructor.
 
@@ -134,8 +140,6 @@ type SmtDataTypeDeclaration = DataTypeDeclaration SExpr Text Text
 type SmtSortDeclaration = SortDeclaration Text
 -- | Instantiate FunctionDeclaration with the types needed by SimpleSMT.
 type SmtFunctionDeclaration = FunctionDeclaration SExpr Text
-
-instance NFData SExpr
 
 -- | Stream an S-expression into 'Builder'.
 buildSExpr :: SExpr -> Builder

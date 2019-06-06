@@ -96,6 +96,7 @@ import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
 import qualified Kore.Attribute.Sort.Element as Attribute.Sort
 import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
+import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Builtin.Error
 import           Kore.Error
                  ( Error )
@@ -103,7 +104,7 @@ import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule, VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SmtMetadataTools )
+                 ( MetadataTools (..), SmtMetadataTools, extractMetadataTools )
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
@@ -127,6 +128,9 @@ import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
+import           Kore.Syntax.Definition
+                 ( ParsedSentenceSort, ParsedSentenceSymbol, SentenceSort (..),
+                 SentenceSymbol (..) )
 import           Kore.Unparser
 import qualified Kore.Verified as Verified
 
@@ -680,7 +684,7 @@ functionEvaluator impl =
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> CofreeF
-            (Application SymbolOrAlias)
+            (Application Symbol)
             (Attribute.Pattern variable)
             (TermLike variable)
         -> Simplifier (AttemptedAxiom variable)
@@ -710,13 +714,13 @@ lookupSymbol
     -- ^ builtin name
     -> Sort
     -- ^ the hooked sort
-    -> VerifiedModule declAtts axiomAtts
-    -> Either (Error e) SymbolOrAlias
-lookupSymbol builtinName builtinSort indexedModule
-  = do
+    -> VerifiedModule Attribute.Symbol axiomAtts
+    -> Either (Error e) Symbol
+lookupSymbol builtinName builtinSort indexedModule = do
     symbolOrAliasConstructor <-
         IndexedModule.resolveHook indexedModule builtinName builtinSort
-    return SymbolOrAlias
+    let tools = extractMetadataTools indexedModule (const ())
+    (return . getSymbol tools) SymbolOrAlias
         { symbolOrAliasConstructor
         , symbolOrAliasParams = []
         }
@@ -728,12 +732,13 @@ during verification.
 
  -}
 lookupSymbolUnit
-    :: Sort
+    :: MetadataTools attr Attribute.Symbol
+    -> Sort
     -> Attribute.Sort
-    -> SymbolOrAlias
-lookupSymbolUnit theSort attrs =
+    -> Symbol
+lookupSymbolUnit tools theSort attrs =
     case getUnit of
-        Just symbol -> symbol
+        Just symbol -> getSymbol tools symbol
         Nothing ->
             verifierBug
             $ "missing 'unit' attribute of sort '"
@@ -748,12 +753,13 @@ checked during verification.
 
  -}
 lookupSymbolElement
-    :: Sort
+    :: MetadataTools attr Attribute.Symbol
+    -> Sort
     -> Attribute.Sort
-    -> SymbolOrAlias
-lookupSymbolElement theSort attrs =
+    -> Symbol
+lookupSymbolElement tools theSort attrs =
     case getElement of
-        Just symbol -> symbol
+        Just symbol -> getSymbol tools symbol
         Nothing ->
             verifierBug
             $ "missing 'element' attribute of sort '"
@@ -768,12 +774,13 @@ checked during verification.
 
  -}
 lookupSymbolConcat
-    :: Sort
+    :: MetadataTools attr Attribute.Symbol
+    -> Sort
     -> Attribute.Sort
-    -> SymbolOrAlias
-lookupSymbolConcat theSort attrs =
+    -> Symbol
+lookupSymbolConcat tools theSort attrs =
     case getConcat of
-        Just symbol -> symbol
+        Just symbol -> getSymbol tools symbol
         Nothing ->
             verifierBug
             $ "missing 'concat' attribute of sort '"
@@ -781,17 +788,27 @@ lookupSymbolConcat theSort attrs =
   where
     Attribute.Sort { concat = Attribute.Sort.Concat { getConcat } } = attrs
 
+getSymbol :: MetadataTools attr Attribute.Symbol -> SymbolOrAlias -> Symbol
+getSymbol tools symbol =
+    Symbol
+        { symbolConstructor
+        , symbolParams
+        , symbolAttributes
+        }
+  where
+    symbolConstructor = symbolOrAliasConstructor symbol
+    symbolParams = symbolOrAliasParams symbol
+    symbolAttributes = symAttributes tools symbol
+
 {- | Is the given symbol hooked to the named builtin?
  -}
 isSymbol
     :: Text  -- ^ Builtin symbol
     -> SmtMetadataTools Hook
-    -> SymbolOrAlias  -- ^ Kore symbol
+    -> Symbol  -- ^ Kore symbol
     -> Bool
-isSymbol builtinName MetadataTools { symAttributes } sym =
-    case getHook (symAttributes sym) of
-        Just hook -> hook == builtinName
-        Nothing -> False
+isSymbol builtinName _ Symbol { symbolAttributes = Attribute.Symbol { hook } } =
+  maybe False (== builtinName) (getHook hook)
 
 {- | Ensure that a 'StepPattern' is a concrete, normalized term.
 

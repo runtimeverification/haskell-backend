@@ -19,6 +19,7 @@ Please refer to Section 9 (The Kore Language) of the
 module Kore.Syntax.Application
     ( SymbolOrAlias (..)
     , Application (..)
+    , mapHead
     ) where
 
 import           Control.DeepSeq
@@ -62,21 +63,8 @@ instance Unparse SymbolOrAlias where
             }
       =
         unparse symbolOrAliasConstructor <> parameters symbolOrAliasParams
-    --- 'unparse2' prints alias with all parameter sorts.
-    unparse2
-        SymbolOrAlias
-            { symbolOrAliasConstructor
-            , symbolOrAliasParams
-            }
-      =
-        Pretty.parens $ Pretty.fillSep
-            [ unparse2 symbolOrAliasConstructor
-            , parameters2 symbolOrAliasParams
-            ]
-
-unparseSymbolOrAliasNoSortParams :: SymbolOrAlias -> Pretty.Doc ann
-unparseSymbolOrAliasNoSortParams SymbolOrAlias { symbolOrAliasConstructor } =
-    unparse2 symbolOrAliasConstructor
+    unparse2 SymbolOrAlias { symbolOrAliasConstructor } =
+        Pretty.parens $ Pretty.fillSep [ unparse2 symbolOrAliasConstructor ]
 
 {-|'Application' corresponds to the @head(pattern-list)@ branches of the
 @pattern@ syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
@@ -112,7 +100,7 @@ instance SOP.HasDatatypeInfo (Application head child)
 
 instance (Debug head, Debug child) => Debug (Application head child)
 
-instance Unparse child => Unparse (Application SymbolOrAlias child) where
+instance (Unparse head, Unparse child) => Unparse (Application head child) where
     unparse Application { applicationSymbolOrAlias, applicationChildren } =
         unparse applicationSymbolOrAlias <> arguments applicationChildren
 
@@ -122,6 +110,13 @@ instance Unparse child => Unparse (Application SymbolOrAlias child) where
                 Pretty.parens (unparse2 applicationSymbolOrAlias)
             children ->
                 Pretty.parens (Pretty.fillSep
-                    [ unparseSymbolOrAliasNoSortParams applicationSymbolOrAlias
+                    [ unparse2 applicationSymbolOrAlias
                     , arguments2 children
                     ])
+
+mapHead
+    :: (head1 -> head2)
+    -> Application head1 child
+    -> Application head2 child
+mapHead mapping app =
+    app { applicationSymbolOrAlias = mapping (applicationSymbolOrAlias app) }

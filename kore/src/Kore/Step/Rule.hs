@@ -52,6 +52,7 @@ import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Syntax.Definition as Syntax
 import           Kore.Unparser
                  ( Unparse, unparse, unparse2 )
 import           Kore.Variables.Fresh
@@ -146,15 +147,14 @@ deriving instance Ord variable => Ord (ImplicationRule variable)
 deriving instance Show variable => Show (ImplicationRule variable)
 
 qualifiedAxiomOpToConstructor
-    :: SymbolOrAlias
-    -> Maybe
-        (RulePattern variable -> QualifiedAxiomPattern variable)
+    :: Alias
+    -> Maybe (RulePattern variable -> QualifiedAxiomPattern variable)
 qualifiedAxiomOpToConstructor patternHead = case headName of
     "weakExistsFinally" -> Just $ OnePathClaimPattern . OnePathRule
     "weakAlwaysFinally" -> Just $ AllPathClaimPattern . AllPathRule
     _ -> Nothing
   where
-    headName = getId (symbolOrAliasConstructor patternHead)
+    headName = getId (aliasConstructor patternHead)
 
 {-  | One-Path-Claim rule pattern.
 -}
@@ -249,7 +249,7 @@ extractOnePathClaimFrom
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (OnePathRule Variable)
 extractOnePathClaimFrom sentence =
-    case fromSentenceAxiom (getSentenceClaim sentence) of
+    case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
         Right (OnePathClaimPattern claim) -> Just claim
         _ -> Nothing
 
@@ -270,7 +270,7 @@ extractAllPathClaimFrom
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (AllPathRule Variable)
 extractAllPathClaimFrom sentence =
-    case fromSentenceAxiom (getSentenceClaim sentence) of
+    case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
         Right (AllPathClaimPattern claim) -> Just claim
         _ -> Nothing
 
@@ -292,7 +292,7 @@ extractImplicationClaimFrom
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (ImplicationRule Variable)
 extractImplicationClaimFrom sentence =
-    case fromSentenceAxiom (getSentenceClaim sentence) of
+    case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
         Right (ImplicationAxiomPattern axiomPat) -> Just axiomPat
         _ -> Nothing
 
@@ -300,7 +300,7 @@ extractImplicationClaimFrom sentence =
 fromSentence
     :: Verified.Sentence
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Variable)
-fromSentence (SentenceAxiomSentence sentenceAxiom) =
+fromSentence (Syntax.SentenceAxiomSentence sentenceAxiom) =
     fromSentenceAxiom sentenceAxiom
 fromSentence _ =
     koreFail "Only axiom sentences can be translated to rules"
@@ -312,8 +312,8 @@ fromSentenceAxiom
 fromSentenceAxiom sentenceAxiom = do
     attributes <-
         (Attribute.Parser.liftParser . Attribute.Parser.parseAttributes)
-            (sentenceAxiomAttributes sentenceAxiom)
-    patternToAxiomPattern attributes (sentenceAxiomPattern sentenceAxiom)
+            (Syntax.sentenceAxiomAttributes sentenceAxiom)
+    patternToAxiomPattern attributes (Syntax.sentenceAxiomPattern sentenceAxiom)
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 
@@ -338,7 +338,7 @@ patternToAxiomPattern attributes pat =
                 , attributes
                 }
         -- Reachability claims
-        Implies_ _ (And_ _ requires lhs) (App_ op [And_ _ ensures rhs])
+        Implies_ _ (And_ _ requires lhs) (ApplyAlias_ op [And_ _ ensures rhs])
           | Just constructor <- qualifiedAxiomOpToConstructor op ->
             pure $ constructor RulePattern
                 { left = lhs
@@ -378,8 +378,8 @@ patternToAxiomPattern attributes pat =
         Forall_ _ _ child -> patternToAxiomPattern attributes child
         -- implication axioms:
         -- init -> modal_op ( prop )
-        Implies_ _ lhs rhs@(App_ SymbolOrAlias { symbolOrAliasConstructor } _)
-            | isModalSymbol symbolOrAliasConstructor ->
+        Implies_ _ lhs rhs@(ApplyAlias_ Alias { aliasConstructor } _)
+            | isModalSymbol aliasConstructor ->
                 pure $ ImplicationAxiomPattern $ ImplicationRule RulePattern
                     { left = lhs
                     , right = rhs
@@ -406,7 +406,7 @@ mkRewriteAxiom
     -> Maybe (Sort -> TermLike Variable)  -- ^ requires clause
     -> Verified.Sentence
 mkRewriteAxiom lhs rhs requires =
-    (SentenceAxiomSentence . mkAxiom_)
+    (Syntax.SentenceAxiomSentence . mkAxiom_)
         (mkRewrites
             (mkAnd (fromMaybe mkTop requires $ patternSort) lhs)
             (mkAnd (mkTop patternSort) rhs)
@@ -425,7 +425,7 @@ mkEqualityAxiom
     -> Maybe (Sort -> TermLike Variable)  -- ^ requires clause
     -> Verified.Sentence
 mkEqualityAxiom lhs rhs requires =
-    SentenceAxiomSentence
+    Syntax.SentenceAxiomSentence
     $ mkAxiom [sortVariableR]
     $ case requires of
         Just requires' ->
@@ -443,7 +443,7 @@ mkCeilAxiom
     :: TermLike Variable  -- ^ the child of 'Ceil'
     -> Verified.Sentence
 mkCeilAxiom child =
-    SentenceAxiomSentence
+    Syntax.SentenceAxiomSentence
     $ mkAxiom [sortVariableR]
     $ mkCeil sortR child
   where

@@ -42,17 +42,24 @@ module Kore.Attribute.Symbol.Symbol
     , smthookAttribute
     , Smtlib (..)
     , smtlibAttribute
-    -- * Total symbols
+    -- * Derived attributes
+    , isNonSimplifiable
+    , isFunctional
+    , isFunction
+    , isTotal
+    , isInjective
     ) where
 
 import           Control.DeepSeq
                  ( NFData )
+import qualified Control.Lens as Lens
+                 ( view )
 import qualified Control.Lens.TH.Rules as Lens
 import           Control.Monad
                  ( (>=>) )
 import           Data.Default
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Constructor
 import Kore.Attribute.Function
@@ -65,6 +72,7 @@ import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib
 import Kore.Attribute.SortInjection
 import Kore.Attribute.Symbol.Anywhere
+import Kore.Debug
 
 {- | Symbol attributes used during Kore execution.
 
@@ -92,13 +100,17 @@ data Symbol =
     , smtlib        :: !Smtlib
     , smthook       :: !Smthook
     }
-    deriving (Eq, Ord, Generic, Show)
-
-type StepperAttributes = Symbol
+    deriving (Eq, Ord, GHC.Generic, Show)
 
 Lens.makeLenses ''Symbol
 
 instance NFData Symbol
+
+instance SOP.Generic Symbol
+
+instance SOP.HasDatatypeInfo Symbol
+
+instance Debug Symbol
 
 instance ParseAttributes Symbol where
     parseAttribute attr =
@@ -111,6 +123,8 @@ instance ParseAttributes Symbol where
         >=> lensHook (parseAttribute attr)
         >=> lensSmtlib (parseAttribute attr)
         >=> lensSmthook (parseAttribute attr)
+
+type StepperAttributes = Symbol
 
 defaultSymbolAttributes :: Symbol
 defaultSymbolAttributes =
@@ -129,3 +143,64 @@ defaultSymbolAttributes =
 -- | See also: 'defaultSymbolAttributes'
 instance Default Symbol where
     def = defaultSymbolAttributes
+
+-- | Is a symbol non-simplifiable?
+isNonSimplifiable :: StepperAttributes -> Bool
+isNonSimplifiable = do
+    -- TODO(virgil): Add a 'non-simplifiable' attribute so that we can include
+    -- more symbols here (e.g. Map.concat)
+    Constructor isConstructor' <- constructor
+    SortInjection isSortInjection' <- sortInjection
+    return (isSortInjection' || isConstructor')
+
+{- | Is the symbol a function?
+
+A symbol is a function if it is given the @function@ attribute or if it is
+functional.
+
+See also: 'functionAttribute', 'isFunctional'
+
+ -}
+isFunction :: StepperAttributes -> Bool
+isFunction = do
+    Function isFunction' <- Lens.view lensFunction
+    isFunctional' <- isFunctional
+    return (isFunction' || isFunctional')
+
+{- | Is the symbol functional?
+
+A symbol is functional if it is given the @functional@ attribute or the
+@sortInjection@ attribute.
+
+See also: 'functionalAttribute', 'sortInjectionAttribute'
+
+ -}
+isFunctional :: StepperAttributes -> Bool
+isFunctional = do
+    Functional isFunctional' <- functional
+    SortInjection isSortInjection' <- sortInjection
+    return (isFunctional' || isSortInjection')
+
+-- | Is a symbol total (non-@\\bottom@)?
+isTotal :: StepperAttributes -> Bool
+isTotal = do
+    isFunctional' <- isFunctional
+    -- TODO (thomas.tuegel): Constructors are not total.
+    Constructor isConstructor' <- Lens.view lensConstructor
+    return (isFunctional' || isConstructor')
+
+{- | Is the symbol injective?
+
+A symbol is injective if it is given the @injective@ attribute, the
+@constructor@ attribute, or the @sortInjection@ attribute.
+
+See also: 'injectiveAttribute', 'constructorAttribute', 'sortInjectionAttribute'
+
+ -}
+isInjective :: StepperAttributes -> Bool
+isInjective =
+    or . sequence
+        [ isDeclaredInjective . injective
+        , isConstructor       . constructor
+        , isSortInjection     . sortInjection
+        ]

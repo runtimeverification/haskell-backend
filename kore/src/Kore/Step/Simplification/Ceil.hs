@@ -22,8 +22,6 @@ import qualified Data.Map as Map
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
                  ( isTotal )
 import qualified Kore.Domain.Builtin as Domain
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
 import qualified Kore.Internal.MultiAnd as MultiAnd
@@ -164,9 +162,9 @@ makeEvaluateTerm term@(Recursive.project -> _ :< projected) = do
       | isBottom term             = return OrPredicate.bottom
       | isTotalPattern tools term = return OrPredicate.top
 
-      | ApplicationF app <- projected
+      | ApplySymbolF app <- projected
       , let Application { applicationSymbolOrAlias = patternHead } = app
-      , let headAttributes = MetadataTools.symAttributes tools patternHead
+      , let headAttributes = symbolAttributes patternHead
       , Attribute.Symbol.isTotal headAttributes = do
             let Application { applicationChildren = children } = app
             simplifiedChildren <- mapM makeEvaluateTerm children

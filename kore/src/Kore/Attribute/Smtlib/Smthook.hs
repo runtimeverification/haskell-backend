@@ -11,13 +11,14 @@ module Kore.Attribute.Smtlib.Smthook
     , smthookId
     ) where
 
-import Control.DeepSeq
-       ( NFData )
-import Data.Default
-       ( Default (..) )
-import GHC.Generics
-       ( Generic )
+import           Control.DeepSeq
+                 ( NFData )
+import           Data.Default
+                 ( Default (..) )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Kore.Debug
 import Kore.Syntax.Id
        ( Id )
 import SMT.SimpleSMT
@@ -35,12 +36,18 @@ See 'Kore.Attribute.Smtlib.Smtlib'
 
  -}
 newtype Smthook = Smthook { getSmthook :: Maybe SExpr }
-    deriving (Generic, Eq, Ord, Show)
+    deriving (GHC.Generic, Eq, Ord, Show)
 
 instance Default Smthook where
     def = Smthook Nothing
 
 instance NFData Smthook
+
+instance SOP.Generic Smthook
+
+instance SOP.HasDatatypeInfo Smthook
+
+instance Debug Smthook
 
 -- | Kore identifier representing the @smthook@ attribute symbol.
 smthookId :: Id

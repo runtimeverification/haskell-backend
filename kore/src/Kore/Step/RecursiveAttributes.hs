@@ -16,19 +16,20 @@ module Kore.Step.RecursiveAttributes
 
 import qualified Data.Functor.Foldable as Recursive
 
-import Kore.Attribute.Symbol
-       ( StepperAttributes, isFunction, isFunctional, isTotal )
-import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..), SmtMetadataTools )
-import Kore.Internal.TermLike
+import           Kore.Attribute.Symbol
+                 ( StepperAttributes )
+import           Kore.IndexedModule.MetadataTools
+                 ( SmtMetadataTools )
+import qualified Kore.Internal.Symbol as Symbol
+import           Kore.Internal.TermLike
 
 recursivelyCheckHeadProperty
     :: forall variable
-    .  (StepperAttributes -> Bool)
+    .  (Symbol -> Bool)
     -> SmtMetadataTools StepperAttributes
     -> TermLike variable
     -> Bool
-recursivelyCheckHeadProperty prop MetadataTools { symAttributes } =
+recursivelyCheckHeadProperty prop _ =
     Recursive.fold checkProperty
   where
     checkProperty (_ :< pat) =
@@ -38,12 +39,11 @@ recursivelyCheckHeadProperty prop MetadataTools { symAttributes } =
             StringLiteralF _ -> True
             CharLiteralF _ -> True
             -- Recursive cases
-            ApplicationF app
-              | prop attrs -> and app
+            ApplySymbolF app
+              | prop symbol -> and app
               | otherwise -> False
               where
-                Application { applicationSymbolOrAlias } = app
-                attrs = symAttributes applicationSymbolOrAlias
+                Application { applicationSymbolOrAlias = symbol } = app
             DomainValueF dv -> and dv
             BuiltinF builtin -> and builtin
             _ -> False
@@ -55,6 +55,6 @@ isFunctionalPattern, isFunctionPattern, isTotalPattern
     -> Bool
 --TODO(traiansf): we assume below that the pattern does not contain
 --sort injection symbols where the parameter sorts are not in subsort relation.
-isFunctionalPattern = recursivelyCheckHeadProperty isFunctional
-isFunctionPattern = recursivelyCheckHeadProperty isFunction
-isTotalPattern = recursivelyCheckHeadProperty isTotal
+isFunctionalPattern = recursivelyCheckHeadProperty Symbol.isFunctional
+isFunctionPattern = recursivelyCheckHeadProperty Symbol.isFunction
+isTotalPattern = recursivelyCheckHeadProperty Symbol.isTotal

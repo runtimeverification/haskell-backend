@@ -23,11 +23,7 @@ import           Data.Maybe
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.Attribute.Symbol
-                 ( Hook (..) )
 import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -190,9 +186,6 @@ evaluateBuiltin
     let
         isValue pat = isJust $
             Value.fromConcreteStepPattern tools =<< asConcrete pat
-        -- TODO(virgil): Send this from outside.
-        getSymbolHook = getHook . Attribute.hook . symAttributes tools
-        getAppHookString appHead = Text.unpack <$> getSymbolHook appHead
     result <-
         builtinEvaluator
             substitutionSimplifier
@@ -203,7 +196,7 @@ evaluateBuiltin
         AttemptedAxiom.NotApplicable
           | isPattConcrete
           , App_ appHead children <- patt
-          , Just hook <- getAppHookString appHead
+          , Just hook <- Text.unpack <$> Attribute.getHook (symbolHook appHead)
           , all isValue children ->
             error
                 (   "Expecting hook " ++ hook

@@ -21,8 +21,6 @@ import qualified Data.Functor.Foldable as Recursive
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
-import           Data.Reflection
-                 ( give )
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
@@ -30,12 +28,13 @@ import qualified Data.Set as Set
 import           Data.Graph.TopologicalSort
 import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Attribute.Symbol
-                 ( StepperAttributes, isNonSimplifiable_ )
+                 ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Internal.Predicate
                  ( Conditional (..), Predicate )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
@@ -217,14 +216,14 @@ nonSimplifiableAbove
     -> Set variable
     -> Base (TermLike variable) (Set variable)
     -> Set variable
-nonSimplifiableAbove tools interesting p =
+nonSimplifiableAbove _tools interesting p =
     case Cofree.tailF p of
         VariableF v ->
             if v `Set.member` interesting then Set.singleton v else Set.empty
         ExistsF Exists {existsVariable = v} -> Set.delete v dependencies
         ForallF Forall {forallVariable = v} -> Set.delete v dependencies
-        ApplicationF Application { applicationSymbolOrAlias } ->
-            if give tools $ isNonSimplifiable_ applicationSymbolOrAlias
+        ApplySymbolF Application { applicationSymbolOrAlias } ->
+            if Symbol.isNonSimplifiable applicationSymbolOrAlias
                 then dependencies
                 else Set.empty
         _ -> dependencies
