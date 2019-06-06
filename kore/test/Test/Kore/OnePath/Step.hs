@@ -35,7 +35,7 @@ import           Kore.Step.Rule
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( Env (..), evalSimplifier )
+                 ( evalSimplifier )
 import           Kore.Step.Strategy
                  ( Strategy, pickFinal, runStrategy )
 import qualified Kore.Step.Strategy as Strategy
@@ -46,7 +46,6 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
@@ -175,11 +174,10 @@ test_onePathStrategy =
         -- Normal axiom: constr10(x) => constr11(x)
         -- Start pattern: constr10(x)
         -- Expected:
-        --   Bottom
-        --   or (f(b) and x=b)
+        --   (f(b) and x=b)
         --   or (f(c) and x=c)
         --   or (h(x) and x!=a and x!=b and x!=c )
-        [ _actual1, _actual2, _actual3, _actual4 ] <-
+        actual <-
             runOnePathSteps
                 (Limit 2)
                 (Pattern.fromTermLike
@@ -231,13 +229,8 @@ test_onePathStrategy =
                         )
                 , substitution = mempty
                 }
-            , Bottom
             ]
-            [ _actual1
-            , _actual2
-            , _actual3
-            , _actual4
-            ]
+            actual
     , testCase "Stuck pattern" $ do
         -- Target: constr11(a)
         -- Coinductive axiom: constr11(b) => f(b)
@@ -397,9 +390,7 @@ runSteps graphFilter picker configuration strategy =
     $ (fromMaybe (error "Unexpected missing tree") . graphFilter)
     <$> runStrategy transitionRule strategy (RewritePattern configuration)
   where
-    mockEnv =
-        Mock.env
-            { simplifierPredicate = Mock.substitutionSimplifier }
+    mockEnv = Mock.env
 
 runOnePathSteps
     :: Limit Natural

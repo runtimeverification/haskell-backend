@@ -37,12 +37,11 @@ import           Kore.Step.Rule
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( Env (..), evalSimplifier )
+                 ( evalSimplifier )
 import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
@@ -381,6 +380,6 @@ runVerification stepLimit axioms claims =
         (OnePath.defaultStrategy claims axioms)
         (map applyStepLimit . selectUntrusted $ claims)
   where
-    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
+    mockEnv = Mock.env
     applyStepLimit claim = (RewriteRule $ coerce claim, stepLimit)
     selectUntrusted = filter (not . Claim.isTrusted)

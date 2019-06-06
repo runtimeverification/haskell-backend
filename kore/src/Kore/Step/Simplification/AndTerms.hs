@@ -152,9 +152,11 @@ termEqualsAnd
     p1
     p2
   = MaybeT
-    $   either (const $ return Nothing) BranchT.scatter
+    $   either missingCase BranchT.scatter
         =<< (runUnifierT . runMaybeT) (maybeTermEqualsWorker p1 p2)
   where
+    missingCase = const (return Nothing)
+
     maybeTermEqualsWorker
         :: forall unifier
         .   ( MonadUnify unifier
