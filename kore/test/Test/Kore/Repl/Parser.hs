@@ -198,12 +198,14 @@ tryTests =
     [ "try a5" `parsesTo_` tryAxiom 5
     , "try c5" `parsesTo_` tryClaim 5
     , "try 5"  `fails`     ()
+    , "try"    `fails`     ()
     ]
 
 tryFTests :: [ParserTest ReplCommand]
 tryFTests =
     [ "tryf a5" `parsesTo_` tryFAxiom 5
     , "tryf c5" `parsesTo_` tryFClaim 5
+    , "tryf 5"  `fails`     ()
     , "tryf"    `fails`     ()
     ]
 
