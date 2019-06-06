@@ -47,8 +47,6 @@ import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
 import qualified SMT
 
-import Kore.Logger.Output
-
 import           Test.Kore
                  ( emptyLogger, testId )
 import           Test.Kore.Comparators ()
@@ -1033,7 +1031,7 @@ unificationWithMatchSimplifiers
     -> IO (Maybe (OrPredicate Variable))
 unificationWithMatchSimplifiers axiomIdToSimplifier first second = do
     result <-
-        SMT.runSMT SMT.defaultConfig (stdoutLogger Info)
+        SMT.runSMT SMT.defaultConfig emptyLogger
         $ evalSimplifier Mock.env { simplifierAxioms = axiomIdToSimplifier }
         $ Monad.Unify.runUnifierT
         $ unificationWithAppMatchOnTop first second
