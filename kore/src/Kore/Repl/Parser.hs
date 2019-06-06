@@ -86,6 +86,7 @@ nonRecursiveCommand =
         , try labelAdd
         , try labelDel
         , label
+        , tryForceAxiomClaim
         , tryAxiomClaim
         , clear
         , saveSession
@@ -182,6 +183,14 @@ tryAxiomClaim :: Parser ReplCommand
 tryAxiomClaim =
     Try
     <$$> literal "try"
+    *> ( Left <$> axiomIndexParser
+        <|> Right <$> claimIndexParser
+       )
+
+tryForceAxiomClaim :: Parser ReplCommand
+tryForceAxiomClaim =
+    TryF
+    <$$> literal "tryf"
     *> ( Left <$> axiomIndexParser
         <|> Right <$> claimIndexParser
        )
