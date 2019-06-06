@@ -157,6 +157,7 @@ replInterpreter printFn replCmd = do
                 LabelDel l         -> labelDel l         $> Continue
                 Redirect inn file  -> redirect inn file  $> Continue
                 Try ac             -> tryAxiomClaim ac   $> Continue
+                TryF ac            -> tryFAxiomClaim ac  $> Continue
                 Clear n            -> clear n            $> Continue
                 SaveSession file   -> saveSession file   $> Continue
                 Pipe inn file args -> pipe inn file args $> Continue
@@ -608,23 +609,47 @@ redirect cmd path = do
         -> ReplM claim (ReplState claim)
     runInterpreter = lift . execStateT (replInterpreter redirectToFile cmd)
 
--- | Attempt to use a specific axiom or claim to progress the current proof.
+data AlsoApplyRule = Never | IfPossible
+
+-- | Attempt to use a specific axiom or claim to see if it unifies with the
+-- current node.
 tryAxiomClaim
     :: forall claim
     .  Claim claim
     => Either AxiomIndex ClaimIndex
     -- ^ tagged index in the axioms or claims list
     -> ReplM claim ()
-tryAxiomClaim eac = do
+tryAxiomClaim = tryAxiomClaimWorker Never
+
+-- | Attempt to use a specific axiom or claim to progress the current proof.
+tryFAxiomClaim
+    :: forall claim
+    .  Claim claim
+    => Either AxiomIndex ClaimIndex
+    -- ^ tagged index in the axioms or claims list
+    -> ReplM claim ()
+tryFAxiomClaim = tryAxiomClaimWorker IfPossible
+
+tryAxiomClaimWorker
+    :: forall claim
+    .  Claim claim
+    => AlsoApplyRule
+    -> Either AxiomIndex ClaimIndex
+    -- ^ tagged index in the axioms or claims list
+    -> ReplM claim ()
+tryAxiomClaimWorker mode eac = do
     maybeAxiomOrClaim <- getAxiomOrClaimByIndex eac
     case maybeAxiomOrClaim of
-        Nothing -> putStrLn' "Could not find axiom or claim."
+        Nothing ->
+            putStrLn' "Could not find axiom or claim."
         Just axiomOrClaim -> do
             node <- Lens.use lensNode
-            showUnificationFailure axiomOrClaim node
+            case mode of
+                Never      -> showUnificationFailure axiomOrClaim node
+                IfPossible -> tryForceAxiomOrClaim axiomOrClaim node
   where
     showUnificationFailure
-        :: Either (Axiom) claim
+        :: Either Axiom claim
         -> ReplNode
         -> ReplM claim ()
     showUnificationFailure axiomOrClaim' node = do
@@ -640,6 +665,25 @@ tryAxiomClaim eac = do
                         , stuckTransformer   = runUnifier' first . term
                         }
                     second
+
+    tryForceAxiomOrClaim
+        :: Either Axiom claim
+        -> ReplNode
+        -> ReplM claim ()
+    tryForceAxiomOrClaim axiomOrClaim node = do
+        (graph, result) <-
+            runStepper'
+                (either mempty pure   axiomOrClaim)
+                (either pure   mempty axiomOrClaim)
+                node
+        case result of
+            NoResult ->
+                showUnificationFailure axiomOrClaim node
+            SingleResult nextNode -> do
+                updateExecutionGraph graph
+                lensNode .= nextNode
+            BranchResult _ ->
+                updateExecutionGraph graph
 
     runUnifier' first second =
         runUnifier first second >>= putStrLn' . formatUnificationMessage

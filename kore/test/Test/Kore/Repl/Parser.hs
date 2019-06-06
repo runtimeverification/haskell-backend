@@ -29,6 +29,7 @@ test_replParser =
     , omitTests         `tests`       "omit"
     , labelTests        `tests`       "label"
     , tryTests          `tests`       "try"
+    , tryFTests         `tests`       "tryF"
     , redirectTests     `tests`       "redirect"
     , ruleTests         `tests`       "rule"
     , stepfTests        `tests`       "stepf"
@@ -194,8 +195,16 @@ labelTests =
 
 tryTests :: [ParserTest ReplCommand]
 tryTests =
-    [ "try a5"  `parsesTo_` tryAxiom 5
-    , "try c5"  `parsesTo_` tryClaim 5
+    [ "try a5" `parsesTo_` tryAxiom 5
+    , "try c5" `parsesTo_` tryClaim 5
+    , "try 5"  `fails`     ()
+    ]
+
+tryFTests :: [ParserTest ReplCommand]
+tryFTests =
+    [ "tryf a5" `parsesTo_` tryFAxiom 5
+    , "tryf c5" `parsesTo_` tryFClaim 5
+    , "tryf"    `fails`     ()
     ]
 
 tryAxiom :: Int -> ReplCommand
@@ -203,6 +212,12 @@ tryAxiom = Try . Left . AxiomIndex
 
 tryClaim :: Int -> ReplCommand
 tryClaim = Try . Right . ClaimIndex
+
+tryFAxiom :: Int -> ReplCommand
+tryFAxiom = TryF . Left . AxiomIndex
+
+tryFClaim :: Int -> ReplCommand
+tryFClaim = TryF . Right . ClaimIndex
 
 exitTests :: [ParserTest ReplCommand]
 exitTests =

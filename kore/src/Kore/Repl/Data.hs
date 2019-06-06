@@ -194,6 +194,8 @@ data ReplCommand
     -- ^ Prints the output of the inner command to the file.
     | Try !(Either AxiomIndex ClaimIndex)
     -- ^ Attempt to apply axiom or claim to current node.
+    | TryF !(Either AxiomIndex ClaimIndex)
+    -- ^ Force application of an axiom or claim to current node.
     | Clear !(Maybe ReplNode)
     -- ^ Remove child nodes from graph.
     | Pipe ReplCommand !String ![String]
@@ -233,6 +235,7 @@ commandSet = Set.fromList
     , "children"
     , "label"
     , "try"
+    , "tryf"
     , "clear"
     , "save-session"
     , "alias"
@@ -280,7 +283,10 @@ helpText =
                                            \ (defaults to current node)\n\
     \label <-l>                            remove a label\n\
     \try <a|c><num>                        attempts <a>xiom or <c>laim at\
-                                           \ index <num>.\n\
+                                           \ index <num>\n\
+    \tryf <a|c><num>                       attempts <a>xiom or <c>laim at\
+                                           \ index <num> and if successful, it\
+                                           \ will apply it.\n\
     \clear [n]                             removes all node children from the\
                                            \ proof graph\n\
     \                                      (defaults to current node)\n\
@@ -330,6 +336,7 @@ shouldStore =
         ShowChildren _   -> False
         SaveSession _    -> False
         ProofStatus      -> False
+        Try _            -> False
         Exit             -> False
         _                -> True
 
