@@ -396,7 +396,17 @@ newtype UnifierWithExplanation a =
 
 deriving instance MonadSMT UnifierWithExplanation
 
-deriving instance Logger.WithLog Logger.LogMessage UnifierWithExplanation
+instance Logger.WithLog Logger.LogMessage UnifierWithExplanation where
+    askLogAction =
+        Logger.hoistLogAction UnifierWithExplanation
+        <$> UnifierWithExplanation Logger.askLogAction
+    {-# INLINE askLogAction #-}
+
+    localLogAction locally =
+        UnifierWithExplanation
+        . Logger.localLogAction locally
+        . getUnifierWithExplanation
+    {-# INLINE localLogAction #-}
 
 deriving instance MonadSimplify UnifierWithExplanation
 

@@ -280,7 +280,7 @@ scatter [] === empty
 See also: 'gather'
 
  -}
-scatter :: Foldable f => f a -> BranchT m a
+scatter :: (Applicative m, Foldable f) => f a -> BranchT m a
 scatter = BranchT . ListT.scatter . Foldable.toList
 
 {- | Fold down a 'BranchT' into its base 'Monad'.
