@@ -264,12 +264,20 @@ send solver@Solver { hIn } command' = do
 recv :: Solver -> IO SExpr
 recv solver@Solver { hOut } = do
     responseLines <- readResponse 0 []
-    let resp = Text.intercalate "\n" (reverse responseLines)
+    let resp = Text.unlines (reverse responseLines)
     info solver ["recv"] resp
     readSExpr resp
   where
+    {-| Reads an SMT response.
+
+    An SMT response is either an one line atom like "sat", or an s-expression
+    that may span multiple lines. To find the end of the s-expression we check
+    that all parentheses are closed.
+    -}
     readResponse :: Int -> [Text] -> IO [Text]
     readResponse 0 lines'
+      -- If we closed all parentheses ("0" above) and we have read at least
+      -- one line, then we finished reading the entire z3 response so we return.
       | Prelude.not (Prelude.null lines') = return lines'
     readResponse open lines' = do
         line <- Text.hGetLine hOut
