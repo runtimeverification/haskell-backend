@@ -95,6 +95,101 @@ test_lookupUpdate =
             (===) Pattern.top =<< evaluateT predicate
         )
 
+test_removeUnit :: TestTree
+test_removeUnit =
+    testPropertyWithSolver
+        "remove{}(unit{}(), key) === unit{}()"
+        (do
+            key <- forAll genIntegerPattern
+            let patRemove = removeMap unitMap key
+                predicate = mkEquals_ unitMap patRemove
+            expect <- evaluateT unitMap
+            (===) expect =<< evaluateT patRemove
+            (===) Pattern.top =<< evaluateT predicate
+        )
+
+test_removeKeyNotIn :: TestTree
+test_removeKeyNotIn =
+    testPropertyWithSolver
+        "MAP.remove key with key not in map"
+        (do
+            key <- forAll genIntegerPattern
+            map' <- forAll genMapPattern
+            isInMap <- evaluateT $ lookupMap map' key
+            Monad.when (not $ Pattern.bottom == isInMap) discard
+            let patRemove = removeMap map' key
+                predicate = mkEquals_ map' patRemove
+            expect <- evaluateT map'
+            (===) expect =<< evaluateT patRemove
+            (===) Pattern.top =<< evaluateT predicate
+        )
+
+test_removeKeyIn :: TestTree
+test_removeKeyIn =
+    testPropertyWithSolver
+        "MAP.remove key with key in map"
+        (do
+            key <- forAll genIntegerPattern
+            val <- forAll genIntegerPattern
+            map' <- forAll genMapPattern
+            isInMap <- evaluateT $ lookupMap map' key
+            Monad.when (not $ Pattern.bottom == isInMap) discard
+            let patRemove = removeMap (updateMap map' key val) key
+                predicate = mkEquals_ patRemove map'
+            expect <- evaluateT map'
+            (===) expect =<< evaluateT patRemove
+            (===) Pattern.top =<< evaluateT predicate
+        )
+
+test_removeAllMapUnit :: TestTree
+test_removeAllMapUnit =
+    testPropertyWithSolver
+        "removeAll{}(unit{}(), set) === unit{}()"
+        (do
+            set <- forAll Test.Set.genSetPattern
+            let patRemoveAll = removeAllMap unitMap set
+                predicate = mkEquals_ unitMap patRemoveAll
+            expect <- evaluateT unitMap
+            (===) expect =<< evaluateT patRemoveAll
+            (===) Pattern.top =<< evaluateT predicate
+        )
+
+test_removeAllSetUnit :: TestTree
+test_removeAllSetUnit =
+    testPropertyWithSolver
+        "removeAll{}(map, unit{}()) === map"
+        (do
+            map' <- forAll genMapPattern
+            let patRemoveAll = removeAllMap map' unitSet
+                predicate = mkEquals_ map' patRemoveAll
+            expect <- evaluateT map'
+            (===) expect =<< evaluateT patRemoveAll
+            (===) Pattern.top =<< evaluateT predicate
+        )
+
+test_removeAll :: TestTree
+test_removeAll =
+    testPropertyWithSolver
+        "MAP.removeAll and MAP.remove"
+        (do
+            map' <- forAll genMapPattern
+            set <- forAll Test.Set.genSetConcreteIntegerPattern
+            Monad.when (set == Set.empty) discard
+            let key = Set.elemAt 0 set
+                diffSet = Set.delete key set
+                patSet = Test.Set.asTermLike set
+                patDiffSet = Test.Set.asTermLike diffSet
+                patKey = fromConcrete key
+                patRemoveAll1 = removeAllMap map' patSet
+                patRemoveAll2 = removeAllMap
+                                    (removeMap map' patKey)
+                                    patDiffSet
+                predicate = mkEquals_ patRemoveAll1 patRemoveAll2
+            expect <- evaluateT patRemoveAll2
+            (===) expect =<< evaluateT patRemoveAll1
+            (===) Pattern.top =<< evaluateT predicate
+        )
+
 test_concatUnit :: TestTree
 test_concatUnit =
     testPropertyWithSolver

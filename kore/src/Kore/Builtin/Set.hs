@@ -25,6 +25,7 @@ module Kore.Builtin.Set
     , asInternal
     , asPattern
     , asTermLike
+    , expectBuiltinSet
       -- * Symbols
     , lookupSymbolIn
     , lookupSymbolDifference

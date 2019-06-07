@@ -28,6 +28,9 @@ module Kore.Attribute.Symbol.Symbol
     -- * Injective symbols
     , lensInjective, Injective (..)
     , injectiveAttribute
+    -- * Anywhere symbols
+    , lensAnywhere, Anywhere (..)
+    , anywhereAttribute
     -- * Sort injection symbols
     , lensSortInjection, SortInjection (..)
     , sortInjectionAttribute
@@ -61,6 +64,7 @@ import Kore.Attribute.Parser
 import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib
 import Kore.Attribute.SortInjection
+import Kore.Attribute.Symbol.Anywhere
 
 {- | Symbol attributes used during Kore execution.
 
@@ -82,6 +86,7 @@ data Symbol =
       -- ^ Whether a symbol represents an injective function
     , sortInjection :: !SortInjection
       -- ^ Whether a symbol is a sort injection
+    , anywhere      :: !Anywhere
     , hook          :: !Hook
       -- ^ The builtin sort or symbol hooked to a sort or symbol
     , smtlib        :: !Smtlib
@@ -102,6 +107,7 @@ instance ParseAttributes Symbol where
         >=> lensConstructor (parseAttribute attr)
         >=> lensSortInjection (parseAttribute attr)
         >=> lensInjective (parseAttribute attr)
+        >=> lensAnywhere (parseAttribute attr)
         >=> lensHook (parseAttribute attr)
         >=> lensSmtlib (parseAttribute attr)
         >=> lensSmthook (parseAttribute attr)
@@ -114,6 +120,7 @@ defaultSymbolAttributes =
         , constructor    = def
         , injective      = def
         , sortInjection  = def
+        , anywhere       = def
         , hook           = def
         , smtlib         = def
         , smthook        = def
