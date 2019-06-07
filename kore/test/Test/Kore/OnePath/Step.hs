@@ -26,7 +26,8 @@ import qualified Kore.Internal.TermLike as TermLike
 import           Kore.OnePath.Step
 import           Kore.OnePath.StrategyPattern
 import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeEqualsPredicate, makeNotPredicate,
+                 ( makeAndPredicate, makeEqualsPredicate,
+                 makeMultipleAndPredicate, makeNotPredicate,
                  makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
@@ -273,12 +274,9 @@ test_onePathStrategy =
             , Stuck Conditional
                 { term = Mock.functionalConstr11 (TermLike.mkVar Mock.x)
                 , predicate =
-                    foldr1 makeAndPredicate
+                    makeMultipleAndPredicate
                         [ makeNotPredicate equalsXA
-                        -- TODO (thomas.tuegel): Remove this redundancy.
-                        , makeAndPredicate
-                            (makeNotPredicate equalsXA)
-                            (makeNotPredicate equalsXB)
+                        , makeNotPredicate equalsXB
                         , makeNotPredicate equalsXC
                         ]
                 , substitution = mempty
