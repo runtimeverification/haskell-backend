@@ -263,9 +263,20 @@ send solver@Solver { hIn } command' = do
 
 recv :: Solver -> IO SExpr
 recv solver@Solver { hOut } = do
-    resp <- Text.hGetLine hOut
+    responseLines <- readResponse 0 []
+    let resp = Text.intercalate "\n" (reverse responseLines)
     info solver ["recv"] resp
     readSExpr resp
+  where
+    readResponse :: Int -> [Text] -> IO [Text]
+    readResponse 0 lines'
+      | Prelude.not (Prelude.null lines') = return lines'
+    readResponse open lines' = do
+        line <- Text.hGetLine hOut
+        readResponse (open + deltaOpen line) (line : lines')
+
+    deltaOpen :: Text -> Int
+    deltaOpen line = Text.count "(" line - Text.count ")" line
 
 command :: Solver -> SExpr -> IO SExpr
 command solver c =
@@ -559,17 +570,25 @@ assert proc e = ackCommand proc $ fun "assert" [e]
 
 -- | Check if the current set of assertion is consistent.
 check :: Solver -> IO Result
-check proc =
-  do res <- command proc (List [ Atom "check-sat" ])
-     case res of
-       Atom "unsat"   -> return Unsat
-       Atom "unknown" -> return Unknown
-       Atom "sat"     -> return Sat
-       _ -> fail $ unlines
-              [ "Unexpected result from the SMT solver:"
-              , "  Expected: unsat, unknown, or sat"
-              , "  Result: " ++ showSExpr res
-              ]
+check proc = do
+    res <- command proc (List [ Atom "check-sat" ])
+    case res of
+        Atom "unsat"   -> return Unsat
+        Atom "unknown" -> return Unknown
+        Atom "sat"     -> do
+            model <- command proc (List [ Atom "get-model" ])
+            info
+                proc
+                ["check"]
+                (Text.Lazy.toStrict
+                    (Text.Builder.toLazyText (buildSExpr model))
+                )
+            return Sat
+        _ -> fail $ unlines
+            [ "Unexpected result from the SMT solver:"
+            , "  Expected: unsat, unknown, or sat"
+            , "  Result: " ++ showSExpr res
+            ]
 
 -- | Convert an s-expression to a value.
 sexprToVal :: SExpr -> Value
