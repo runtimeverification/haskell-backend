@@ -96,7 +96,7 @@ instance Alternative (ListT f) where
         ListT $ \yield -> foldListT as yield . foldListT bs yield
     {-# INLINE (<|>) #-}
 
-instance Monad m => Monad (ListT m) where
+instance Monad (ListT m) where
     return = pure
     {-# INLINE return #-}
 
@@ -154,7 +154,7 @@ gather as = foldListT as (\a mr -> (a :) <$> mr) (pure [])
 Usually, @f ~ []@.
 
  -}
-scatter :: (Applicative m, Foldable f) => f a -> ListT m a
+scatter :: Foldable f => f a -> ListT m a
 scatter = foldr cons empty
 {-# INLINE scatter #-}
 
