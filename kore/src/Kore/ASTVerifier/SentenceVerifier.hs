@@ -36,7 +36,6 @@ import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.IndexedModule.Resolvers
-import qualified Kore.Sort as Sort
 import           Kore.Syntax
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
