@@ -13,7 +13,7 @@ module Kore.ASTVerifier.SentenceVerifier
     ) where
 
 import           Control.Monad
-                 ( foldM, join )
+                 ( foldM )
 import           Data.Function
 import qualified Data.Map as Map
 import           Data.Maybe
@@ -274,16 +274,18 @@ verifySymbolSentence indexedModule sentence =
             resultSort = sentenceSymbolResultSort sentence
             resultSortId = getSortId resultSort
 
-            ctor =
+            -- TODO(vladimir.ciobanu): Lookup this attribute in the symbol
+            -- attribute record when it becomes available.
+            isCtor =
                 Attribute.constructorAttribute  `elem` getAttributes attributes
-            sort =
-                join
-                . fmap (Attribute.getHook . Attribute.hook . fst)
-                . Map.lookup resultSortId
-                $ indexedModuleSortDescriptions indexedModule
+            resultSortHook = do
+                (sortDescription, _) <-
+                    Map.lookup resultSortId
+                        $ indexedModuleSortDescriptions indexedModule
+                Attribute.getHook . Attribute.hook $ sortDescription
         in
             koreFailWhen
-                (ctor && isJust sort)
+                (isCtor && isJust resultSortHook)
                 ( "Cannot define constructor '"
                 ++ getIdForError symbol
                 ++ "' for hooked sort '"
