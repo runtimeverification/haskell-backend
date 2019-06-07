@@ -13,9 +13,11 @@ module Kore.ASTVerifier.SentenceVerifier
     ) where
 
 import           Control.Monad
-                 ( foldM )
+                 ( foldM, join )
 import           Data.Function
 import qualified Data.Map as Map
+import           Data.Maybe
+                 ( isJust )
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
@@ -26,11 +28,15 @@ import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import           Kore.ASTVerifier.SortVerifier
+import qualified Kore.Attribute.Constructor as Attribute
+import qualified Kore.Attribute.Hook as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
+import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.IndexedModule.Resolvers
+import qualified Kore.Sort as Sort
 import           Kore.Syntax
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
@@ -251,6 +257,7 @@ verifySymbolSentence indexedModule sentence =
         mapM_
             (verifySort findSort variables)
             (sentenceSymbolSorts sentence)
+        verifyConstructorNotInHookedSort
         verifySort
             findSort
             variables
@@ -259,6 +266,31 @@ verifySymbolSentence indexedModule sentence =
   where
     findSort = findIndexedSort indexedModule
     sortParams = (symbolParams . sentenceSymbolSymbol) sentence
+
+    verifyConstructorNotInHookedSort :: Either (Error VerifyError) ()
+    verifyConstructorNotInHookedSort =
+        let
+            symbol = symbolConstructor $ sentenceSymbolSymbol sentence
+            attributes = sentenceSymbolAttributes sentence
+            resultSort = sentenceSymbolResultSort sentence
+            resultSortId = getSortId resultSort
+
+            ctor =
+                Attribute.constructorAttribute  `elem` getAttributes attributes
+            sort =
+                join
+                . fmap (Attribute.getHook . Attribute.hook . fst)
+                . Map.lookup resultSortId
+                $ indexedModuleSortDescriptions indexedModule
+        in
+            koreFailWhen
+                (ctor && isJust sort)
+                ( "Cannot define constructor '"
+                ++ getIdForError symbol
+                ++ "' for hooked sort '"
+                ++ getIdForError resultSortId
+                ++ "'."
+                )
 
 verifyAliasSentence
     :: Builtin.Verifiers
