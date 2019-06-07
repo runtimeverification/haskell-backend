@@ -30,6 +30,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )

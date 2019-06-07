@@ -108,10 +108,8 @@ checkClaim
     (ImplicationRule RulePattern { left, right }, stepLimit)
   = do
         let
-            App_ SymbolOrAlias
-                { symbolOrAliasConstructor = symbol } [prop]
-              = right
-            goalPattern = ModalPattern { modalOp = getId symbol, term = prop }
+            ApplyAlias_ Alias { aliasConstructor = alias } [prop] = right
+            goalPattern = ModalPattern { modalOp = getId alias, term = prop }
             strategy =
                 Limit.takeWithin
                     stepLimit

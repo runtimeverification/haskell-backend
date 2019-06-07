@@ -2,13 +2,19 @@ module Test.Kore.Internal.Pattern
     ( test_expandedPattern
     ) where
 
-import Test.Tasty
-import Test.Tasty.HUnit
+import           Hedgehog hiding
+                 ( Gen )
+import qualified Hedgehog
+import           Test.Tasty
+import           Test.Tasty.HUnit
 
 import Data.Text.Prettyprint.Doc
 
 import           Kore.Internal.Pattern as Pattern
                  ( Conditional (..), mapVariables, toTermLike )
+import qualified Kore.Internal.Pattern as Internal
+                 ( Pattern )
+import qualified Kore.Internal.Pattern as Internal.Pattern
 import           Kore.Internal.TermLike hiding
                  ( V )
 import           Kore.Predicate.Predicate
@@ -17,8 +23,16 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 
+import Test.Kore
+       ( Gen, sortGen )
 import Test.Kore.Comparators ()
+import Test.Kore.Internal.TermLike
+       ( termLikeChildGen )
 import Test.Tasty.HUnit.Extensions
+
+internalPatternGen :: Gen (Internal.Pattern Variable)
+internalPatternGen =
+    Internal.Pattern.fromTermLike <$> (termLikeChildGen =<< sortGen)
 
 test_expandedPattern :: [TestTree]
 test_expandedPattern =

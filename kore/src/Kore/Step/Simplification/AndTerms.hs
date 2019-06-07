@@ -53,6 +53,7 @@ import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
 import qualified Kore.Logger as Logger
 import           Kore.Predicate.Predicate
@@ -1005,8 +1006,8 @@ equalInjectiveHeadsAndEquals
                     (Pattern.term <$> children)
         return (Pattern.withCondition term merged)
   where
-    isFirstInjective = isInjective firstHead
-    isSecondInjective = isInjective secondHead
+    isFirstInjective = Symbol.isInjective firstHead
+    isSecondInjective = Symbol.isInjective secondHead
 
 equalInjectiveHeadsAndEquals _ _ _ _ _ = Error.nothing
 
@@ -1142,8 +1143,8 @@ simplifySortInjections
   where
     subsorts = MetadataTools.subsorts tools
 
-    isFirstSortInjection = isSortInjection firstHead
-    isSecondSortInjection = isSortInjection firstHead
+    isFirstSortInjection = Symbol.isSortInjection firstHead
+    isSecondSortInjection = Symbol.isSortInjection firstHead
 
     isSubsortOf = MetadataTools.isSubsortOf tools
 
@@ -1237,8 +1238,8 @@ constructorSortInjectionAndEquals
     -- Are we asked to unify a constructor with a sort injection?
     isConstructorSortInjection =
         (||)
-            (isConstructor   firstHead && isSortInjection secondHead)
-            (isSortInjection firstHead && isConstructor   secondHead)
+            (Symbol.isConstructor   firstHead && Symbol.isSortInjection secondHead)
+            (Symbol.isSortInjection firstHead && Symbol.isConstructor   secondHead)
 constructorSortInjectionAndEquals _ _ _ = empty
 
 {-| Unify two constructor application patterns.
@@ -1261,7 +1262,8 @@ constructorAndEqualsAssumesDifferentHeads
     _tools
     first@(App_ firstHead _)
     second@(App_ secondHead _)
-  | isConstructor firstHead && isConstructor secondHead =
+  | Symbol.isConstructor firstHead
+  , Symbol.isConstructor secondHead =
     assert (firstHead /= secondHead) $ Monad.Trans.lift $ do
         Monad.Unify.explainBottom
             (Pretty.hsep
@@ -1293,7 +1295,7 @@ domainValueAndConstructorErrors
     _tools
     term1@(DV_ _ _)
     term2@(App_ secondHead _)
-    | isConstructor secondHead =
+    | Symbol.isConstructor secondHead =
       error (unlines [ "Cannot handle DomainValue and Constructor:"
                      , unparseToString term1
                      , unparseToString term2
@@ -1303,7 +1305,7 @@ domainValueAndConstructorErrors
     _tools
     term1@(Builtin_ _)
     term2@(App_ secondHead _)
-    | isConstructor secondHead =
+    | Symbol.isConstructor secondHead =
       error (unlines [ "Cannot handle builtin and Constructor:"
                      , unparseToString term1
                      , unparseToString term2
@@ -1313,7 +1315,7 @@ domainValueAndConstructorErrors
     _tools
     term1@(App_ firstHead _)
     term2@(DV_ _ _)
-    | isConstructor firstHead =
+    | Symbol.isConstructor firstHead =
       error (unlines [ "Cannot handle Constructor and DomainValue:"
                      , unparseToString term1
                      , unparseToString term2
@@ -1323,7 +1325,7 @@ domainValueAndConstructorErrors
     _tools
     term1@(App_ firstHead _)
     term2@(Builtin_ _)
-    | isConstructor firstHead =
+    | Symbol.isConstructor firstHead =
       error (unlines [ "Cannot handle Constructor and builtin:"
                      , unparseToString term1
                      , unparseToString term2
