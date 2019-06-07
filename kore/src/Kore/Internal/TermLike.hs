@@ -850,6 +850,8 @@ forceSort forcedSort = Recursive.apo forceSortWorker
             [ Pretty.cat
                 [ "Could not force pattern to sort "
                 , Pretty.squotes (unparse forcedSort)
+                , ", instead it has sort "
+                , Pretty.squotes (unparse (termLikeSort original))
                 , ":"
                 ]
             , Pretty.indent 4 (unparse original)
