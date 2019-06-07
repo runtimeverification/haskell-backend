@@ -37,8 +37,11 @@ import           Data.Char
                  ( isSpace )
 import           Data.Maybe
                  ( fromMaybe )
+import           Data.String
+                 ( IsString (..) )
 import           Data.Text
                  ( Text )
+import qualified Data.Text as Text
 import           Data.Text.Internal.Builder
                  ( Builder )
 import qualified Data.Text.Internal.Builder as Text.Builder
@@ -67,6 +70,9 @@ instance NFData SExpr
 instance SOP.Generic SExpr
 
 instance SOP.HasDatatypeInfo SExpr
+
+instance IsString SExpr where
+    fromString = Atom . Text.pack
 
 {-| An argument to a data type constructor.
 

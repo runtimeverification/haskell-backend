@@ -1178,7 +1178,7 @@ applySymbol sentence params children =
 
 The 'Symbol' must not be declared with sort parameters.
 
-See also: 'mkApp', 'applySymbol'
+See also: 'mkApplySymbol', 'applySymbol'
 
  -}
 applySymbol_

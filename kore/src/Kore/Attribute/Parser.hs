@@ -81,7 +81,6 @@ import qualified Kore.AST.Error as Kore.Error
 import           Kore.Attribute.Attributes
 import qualified Kore.Attribute.Null as Attribute
                  ( Null )
-import qualified Kore.Attribute.Smtlib.Smthook as Attribute
 import qualified Kore.Attribute.Smtlib.Smtlib as Attribute
 import           Kore.Error
                  ( Error, castError )
@@ -92,7 +91,7 @@ import           Kore.Syntax.Pattern
 import           Kore.Syntax.StringLiteral
                  ( StringLiteral (StringLiteral) )
 import           SMT.SimpleSMT
-                 ( SExpr, readSExprs )
+                 ( SExpr, readSExprs, showSExpr )
 
 data ParseError
 
@@ -117,12 +116,16 @@ class Default attrs => ParseAttributes attrs where
         -> attrs  -- ^ partial parsing result
         -> Parser attrs
 
+    toAttributes :: attrs -> Attributes
+
 instance ParseAttributes Attributes where
     parseAttribute attr (Attributes attrs) =
         return (Attributes $ attr : attrs)
+    toAttributes = id
 
 instance ParseAttributes Attribute.Null where
     parseAttribute _ _ = return mempty
+    toAttributes _ = Attributes []
 
 parseAttributesWith
     :: ParseAttributes attrs
@@ -325,15 +328,7 @@ instance ParseAttributes Attribute.Smtlib where
         withApplication' = withApplication Attribute.smtlibId
         failDuplicate' = failDuplicate Attribute.smtlibId
 
-instance ParseAttributes Attribute.Smthook where
-    parseAttribute =
-        withApplication' $ \params args Attribute.Smthook { getSmthook } -> do
-            getZeroParams params
-            arg <- getOneArgument args
-            StringLiteral syntax <- getStringLiteral arg
-            sExpr <- parseSExpr syntax
-            Monad.unless (Maybe.isNothing getSmthook) failDuplicate'
-            return Attribute.Smthook { getSmthook = Just sExpr }
-      where
-        withApplication' = withApplication Attribute.smthookId
-        failDuplicate' = failDuplicate Attribute.smthookId
+    toAttributes =
+        Attributes
+        . maybe [] ((: []) . Attribute.smtlibAttribute . Text.pack . showSExpr)
+        . Attribute.getSmtlib

@@ -16,6 +16,7 @@ import Kore.Variables.Fresh
 import           Test.Kore hiding
                  ( symbolGen )
 import           Test.Kore.Comparators ()
+import           Test.Kore.Internal.Symbol
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 import           Test.Terse
@@ -64,7 +65,7 @@ termLikeChildGen patternSort =
             <*> termLikeChildGen patternSort
     termLikeAppGen =
         mkApplySymbol patternSort
-            <$> _
+            <$> symbolGen
             <*> couple (termLikeChildGen =<< sortGen)
     termLikeBottomGen = pure (mkBottom patternSort)
     termLikeCeilGen = do

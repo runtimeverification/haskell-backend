@@ -20,6 +20,7 @@ import qualified Data.Text as Text
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
@@ -30,6 +31,7 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Rule hiding
                  ( freeVariables )
 import qualified Kore.Step.Rule as Rule
+import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 import           Test.Kore
@@ -325,8 +327,8 @@ extractIndexedModule
     :: Text
     -> Either
         (Error a)
-        (Map.Map ModuleName (VerifiedModule Attribute.Null Attribute.Null))
-    -> VerifiedModule Attribute.Null Attribute.Null
+        (Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Null))
+    -> VerifiedModule Attribute.Symbol Attribute.Null
 extractIndexedModule name eModules =
     case eModules of
         Left err -> error (printError err)

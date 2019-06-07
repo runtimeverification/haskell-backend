@@ -65,3 +65,6 @@ instance ParseAttributes SortInjection where
       where
         withApplication' = Parser.withApplication sortInjectionId
         failDuplicate' = Parser.failDuplicate sortInjectionId
+
+    toAttributes SortInjection { isSortInjection } =
+        Attributes $ if isSortInjection then [sortInjectionAttribute] else []

@@ -18,7 +18,7 @@ import           Kore.Attribute.Functional
 import qualified Kore.Attribute.Null as Attribute
 import           Kore.Attribute.Subsort
                  ( subsortAttribute )
-import           Kore.Attribute.Symbol
+import           Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
@@ -27,6 +27,7 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
 import           Kore.Internal.TermLike
+import           Kore.Syntax.Definition
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -186,13 +187,13 @@ testSubsorts =
     test name cond = testCase name (assertBool "" cond)
     testSubsort name list = testCase name . assertEqual "" (Set.fromList list)
     moduleIndex ::
-        Map.Map ModuleName (VerifiedModule Attribute.Null Attribute.Null)
+        Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Null)
     Right moduleIndex =
         verifyAndIndexDefinition
             DoNotVerifyAttributes
             Builtin.koreVerifiers
             testSubsortDefinition
-    meta :: MetadataTools () Attribute.Null
+    meta :: MetadataTools () Attribute.Symbol
     meta =
         extractMetadataTools
             (moduleIndex Map.! testObjectModuleName)

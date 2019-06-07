@@ -65,3 +65,6 @@ instance ParseAttributes Function where
             return Function { isDeclaredFunction = True }
         withApplication' = Parser.withApplication functionId
         failDuplicate' = Parser.failDuplicate functionId
+
+    toAttributes Function { isDeclaredFunction } =
+        Attributes $ if isDeclaredFunction then [functionAttribute] else []

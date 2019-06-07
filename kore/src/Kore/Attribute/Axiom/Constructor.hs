@@ -51,3 +51,6 @@ instance ParseAttributes Constructor where
       where
         withApplication' = Parser.withApplication constructorId
         failDuplicate' = Parser.failDuplicate constructorId
+
+    toAttributes Constructor { isConstructor } =
+        Attributes $ if isConstructor then [constructorAttribute] else []

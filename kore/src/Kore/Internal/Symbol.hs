@@ -4,8 +4,13 @@ License     : NCSA
 
 -}
 
+{-# LANGUAGE TemplateHaskell #-}
+
 module Kore.Internal.Symbol
     ( Symbol (..)
+    , lensSymbolConstructor
+    , lensSymbolParams
+    , lensSymbolAttributes
     , toSymbolOrAlias
     , isNonSimplifiable
     , isConstructor
@@ -23,6 +28,7 @@ import           Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import qualified Control.Lens.TH.Rules as Lens
 import qualified Kore.Attribute.Symbol.Symbol as Attribute
 import           Kore.Debug
 import           Kore.Sort
@@ -37,6 +43,8 @@ data Symbol =
         , symbolAttributes  :: !Attribute.Symbol
         }
     deriving (GHC.Generic, Show)
+
+Lens.makeLenses ''Symbol
 
 instance Eq Symbol where
     (==) a b =

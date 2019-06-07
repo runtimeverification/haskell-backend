@@ -10,7 +10,7 @@ import qualified Data.Set as Set
 
 import           Data.Text
                  ( Text )
-import           Kore.Attribute.Symbol
+import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
@@ -47,23 +47,36 @@ import           Test.Tasty.HUnit.Extensions
 test_constructorRewriting :: TestTree
 test_constructorRewriting =
     applyStrategy                              "a constructor applied to a var"
-        ( Start $ cons "c1" ["var"])
-        [ Axiom $ cons "c1" ["x1"] `rewritesTo` cons "c2" ["x1"]
-        , Axiom $ cons "c2" ["x2"] `rewritesTo` cons "c3" ["x2"]
+        ( Start $ cons c1 ["var"])
+        [ Axiom $ cons c1 ["x1"] `rewritesTo` cons c2 ["x1"]
+        , Axiom $ cons c2 ["x2"] `rewritesTo` cons c3 ["x2"]
         ]
-        ( Expect $                              cons "c3" ["var"])
+        ( Expect $                            cons c3 ["var"])
       where
         cons = applyConstructorToVariables
 
+constructorSymbol :: Text -> Symbol
+constructorSymbol name =
+    Symbol
+        { symbolConstructor = testId name
+        , symbolParams = []
+        , symbolAttributes = functionalConstructorAttributes
+        }
+
+c1, c2, c3, unused :: Symbol
+c1 = constructorSymbol "c1"
+c2 = constructorSymbol "c2"
+c3 = constructorSymbol "c3"
+unused = constructorSymbol "unused"
 
 test_ruleThatDoesn'tApply :: TestTree
 test_ruleThatDoesn'tApply =
     applyStrategy                              "unused rewrite rule"
-        ( Start $ cons "c1"     ["var"])
-        [ Axiom $ cons "c1"     ["x1"] `rewritesTo`  cons "c2" ["x1"]
-        , Axiom $ cons "unused" ["x2"] `rewritesTo`  var "x2"
+        ( Start $ cons c1     ["var"])
+        [ Axiom $ cons c2     ["x1"] `rewritesTo`  cons c2 ["x1"]
+        , Axiom $ cons unused ["x2"] `rewritesTo`  var "x2"
         ]
-        ( Expect $                              cons "c2" ["var"])
+        ( Expect $                              cons c2 ["var"])
       where
         cons = applyConstructorToVariables
 
@@ -121,14 +134,9 @@ anySort = sort "irrelevant"
 -- Builders -- should these find a better home?
 
 -- | Create a function pattern from a function name and list of argnames.
-applyConstructorToVariables :: Text -> [Text] -> TestPattern
-applyConstructorToVariables name arguments =
-    mkApp anySort symbol $ fmap var arguments
-  where
-      symbol = SymbolOrAlias -- can this be more abstact?
-        { symbolOrAliasConstructor = testId name
-        , symbolOrAliasParams = []
-        }
+applyConstructorToVariables :: Symbol -> [Text] -> TestPattern
+applyConstructorToVariables symbol arguments =
+    mkApplySymbol anySort symbol $ fmap var arguments
 
 -- | Do the busywork of converting a name into a variable pattern.
 var :: Text -> TestPattern
@@ -339,21 +347,25 @@ actualUnificationError =
             }
         [axiomMetaSigmaId]
 
-mockSymbolAttributes :: SymbolOrAlias -> StepperAttributes
-mockSymbolAttributes patternHead =
-    defaultSymbolAttributes
-        { constructor = Constructor { isConstructor }
-        , functional = Functional { isDeclaredFunctional }
-        , function = Function { isDeclaredFunction }
-        , injective = Injective { isDeclaredInjective }
+functionalConstructorAttributes :: Attribute.Symbol
+functionalConstructorAttributes =
+    Attribute.defaultSymbolAttributes
+        { Attribute.constructor = Attribute.Constructor True
+        , Attribute.functional = Attribute.Functional True
+        , Attribute.function = Attribute.Function True
+        , Attribute.injective = Attribute.Injective True
         }
-  where
-    isConstructor = patternHead /= iSymbol
-    isDeclaredFunctional = patternHead /= iSymbol
-    isDeclaredFunction = patternHead /= iSymbol
-    isDeclaredInjective = patternHead /= iSymbol
 
-mockMetadataTools :: SmtMetadataTools StepperAttributes
+mockSymbolAttributes :: SymbolOrAlias -> Attribute.Symbol
+mockSymbolAttributes patternHead
+  | symbolOrAliasConstructor patternHead == iId =
+    Attribute.defaultSymbolAttributes
+  | otherwise =
+    functionalConstructorAttributes
+  where
+    iId = symbolConstructor iSymbol
+
+mockMetadataTools :: SmtMetadataTools Attribute.Symbol
 mockMetadataTools = MetadataTools
     { symAttributes = mockSymbolAttributes
     , symbolOrAliasType = const HeadType.Symbol
@@ -367,17 +379,18 @@ mockMetadataTools = MetadataTools
 mockEnv :: Env
 mockEnv = Mock.env { metadataTools = mockMetadataTools }
 
-sigmaSymbol :: SymbolOrAlias
-sigmaSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = testId "#sigma"
-    , symbolOrAliasParams = []
+sigmaSymbol :: Symbol
+sigmaSymbol = Symbol
+    { symbolConstructor = testId "#sigma"
+    , symbolParams = []
+    , symbolAttributes = functionalConstructorAttributes
     }
 
 metaSigma
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
-metaSigma p1 p2 = mkApp Mock.testSort sigmaSymbol [p1, p2]
+metaSigma p1 p2 = mkApplySymbol Mock.testSort sigmaSymbol [p1, p2]
 
 axiomMetaSigmaId :: RewriteRule Variable
 axiomMetaSigmaId =
@@ -394,51 +407,55 @@ axiomMetaSigmaId =
         }
 
 
-fSymbol :: SymbolOrAlias
-fSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#f" AstLocationTest
-    , symbolOrAliasParams = []
+fSymbol :: Symbol
+fSymbol = Symbol
+    { symbolConstructor = Id "#f" AstLocationTest
+    , symbolParams = []
+    , symbolAttributes = functionalConstructorAttributes
     }
 
 metaF
     :: TermLike Variable
     -> TermLike Variable
-metaF p = mkApp Mock.testSort fSymbol [p]
+metaF p = mkApplySymbol Mock.testSort fSymbol [p]
 
 
-gSymbol :: SymbolOrAlias
-gSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#g" AstLocationTest
-    , symbolOrAliasParams = []
+gSymbol :: Symbol
+gSymbol = Symbol
+    { symbolConstructor = Id "#g" AstLocationTest
+    , symbolParams = []
+    , symbolAttributes = functionalConstructorAttributes
     }
 
 metaG
     :: TermLike Variable
     -> TermLike Variable
-metaG p = mkApp Mock.testSort gSymbol [p]
+metaG p = mkApplySymbol Mock.testSort gSymbol [p]
 
 
-hSymbol :: SymbolOrAlias
-hSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#h" AstLocationTest
-    , symbolOrAliasParams = []
+hSymbol :: Symbol
+hSymbol = Symbol
+    { symbolConstructor = Id "#h" AstLocationTest
+    , symbolParams = []
+    , symbolAttributes = functionalConstructorAttributes
     }
 
 metaH
     :: TermLike Variable
     -> TermLike Variable
-metaH p = mkApp Mock.testSort hSymbol [p]
+metaH p = mkApplySymbol Mock.testSort hSymbol [p]
 
-iSymbol :: SymbolOrAlias
-iSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#i" AstLocationTest
-    , symbolOrAliasParams = []
+iSymbol :: Symbol
+iSymbol = Symbol
+    { symbolConstructor = Id "#i" AstLocationTest
+    , symbolParams = []
+    , symbolAttributes = Attribute.defaultSymbolAttributes
     }
 
 metaI
     :: TermLike Variable
     -> TermLike Variable
-metaI p = mkApp Mock.testSort iSymbol [p]
+metaI p = mkApplySymbol Mock.testSort iSymbol [p]
 
 runStep
     :: Pattern Variable

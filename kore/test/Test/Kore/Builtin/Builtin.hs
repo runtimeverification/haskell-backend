@@ -38,7 +38,7 @@ import           Kore.ASTVerifier.Error
                  ( VerifyError )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Null as Attribute
-import           Kore.Attribute.Symbol
+import           Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule as IndexedModule
@@ -52,6 +52,7 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import           Kore.Internal.Pattern
                  ( Pattern )
+import qualified Kore.Internal.Symbol as Internal
 import           Kore.Internal.TermLike
 import           Kore.Parser
                  ( parseKorePattern )
@@ -63,6 +64,8 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Step.Step as Step
+import           Kore.Syntax.Definition
+                 ( ModuleName, ParsedDefinition )
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Procedure as Unification
@@ -84,7 +87,7 @@ mkPair
     -> TermLike Variable
     -> TermLike Variable
 mkPair lSort rSort l r =
-    mkApp (pairSort lSort rSort) (pairSymbol lSort rSort) [l, r]
+    mkApplySymbol (pairSort lSort rSort) (pairSymbol lSort rSort) [l, r]
 
 -- | 'testSymbol' is useful for writing unit tests for symbols.
 testSymbolWithSolver
@@ -98,7 +101,7 @@ testSymbolWithSolver
     -- ^ test name
     -> Sort
     -- ^ symbol result sort
-    -> SymbolOrAlias
+    -> Internal.Symbol
     -- ^ symbol being tested
     -> [p]
     -- ^ arguments for symbol
@@ -110,7 +113,7 @@ testSymbolWithSolver eval title resultSort symbol args expected =
         actual <- runSMT eval'
         assertEqual "" expected actual
   where
-    eval' = eval $ mkApp resultSort symbol args
+    eval' = eval $ mkApplySymbol resultSort symbol args
 
 -- -------------------------------------------------------------
 -- * Evaluation
@@ -170,10 +173,10 @@ verifiedModules =
 verifiedModule :: VerifiedModule StepperAttributes Attribute.Axiom
 Just verifiedModule = Map.lookup testModuleName verifiedModules
 
-indexedModule :: KoreIndexedModule Attribute.Null Attribute.Null
+indexedModule :: KoreIndexedModule Attribute.Symbol Attribute.Null
 indexedModule =
     verifiedModule
-    & IndexedModule.eraseAttributes
+    & IndexedModule.eraseAxiomAttributes
     & IndexedModule.mapPatterns Builtin.externalizePattern
 
 testMetadataTools :: SmtMetadataTools StepperAttributes

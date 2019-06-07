@@ -65,3 +65,6 @@ instance ParseAttributes Constructor where
             return Constructor { isConstructor = True }
         withApplication' = Parser.withApplication constructorId
         failDuplicate' = Parser.failDuplicate constructorId
+
+    toAttributes Constructor { isConstructor } =
+        Attributes $ if isConstructor then [constructorAttribute] else []

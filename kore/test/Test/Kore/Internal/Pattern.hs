@@ -1,12 +1,10 @@
 module Test.Kore.Internal.Pattern
     ( test_expandedPattern
+    , internalPatternGen
     ) where
 
-import           Hedgehog hiding
-                 ( Gen )
-import qualified Hedgehog
-import           Test.Tasty
-import           Test.Tasty.HUnit
+import Test.Tasty
+import Test.Tasty.HUnit
 
 import Data.Text.Prettyprint.Doc
 

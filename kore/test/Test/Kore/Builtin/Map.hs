@@ -39,6 +39,7 @@ import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
 import           Test.Kore
+                 ( standaloneGen, testId, variableGen )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
 import           Test.Kore.Builtin.Definition
@@ -432,7 +433,7 @@ asSymbolicPattern result
     | otherwise =
         foldr1 applyConcat (applyElement <$> Map.toAscList result)
   where
-    applyUnit = mkApp mapSort unitMapSymbol []
+    applyUnit = mkApplySymbol mapSort unitMapSymbol []
     applyElement (key, value) = elementMap key value
     applyConcat map1 map2 = concatMap map1 map2
 
@@ -472,15 +473,15 @@ selectFunctionPattern
     -> (forall a . [a] -> [a])  -- ^scrambling function
     -> TermLike Variable
 selectFunctionPattern keyVar valueVar mapVar permutation  =
-    mkApp mapSort concatMapSymbol $ permutation [singleton, mkVar mapVar]
+    mkApplySymbol mapSort concatMapSymbol $ permutation [singleton, mkVar mapVar]
   where
-    key = mkApp intSort absIntSymbol  [mkVar keyVar]
-    value = mkApp intSort absIntSymbol  [mkVar valueVar]
-    singleton = mkApp mapSort elementMapSymbol [ key, value ]
+    key = mkApplySymbol intSort absIntSymbol  [mkVar keyVar]
+    value = mkApplySymbol intSort absIntSymbol  [mkVar valueVar]
+    singleton = mkApplySymbol mapSort elementMapSymbol [ key, value ]
 
 makeElementSelect :: Variable -> Variable -> TermLike Variable
 makeElementSelect keyVar valueVar =
-    mkApp mapSort elementMapSymbol [mkVar keyVar, mkVar valueVar]
+    mkApplySymbol mapSort elementMapSymbol [mkVar keyVar, mkVar valueVar]
 
 -- Given a function to scramble the arguments to concat, i.e.,
 -- @id@ or @reverse@, produces a pattern of the form
@@ -493,7 +494,7 @@ selectPattern
     -> (forall a . [a] -> [a])  -- ^scrambling function
     -> TermLike Variable
 selectPattern keyVar valueVar mapVar permutation  =
-    mkApp mapSort concatMapSymbol $ permutation [element, mkVar mapVar]
+    mkApplySymbol mapSort concatMapSymbol $ permutation [element, mkVar mapVar]
   where
     element = makeElementSelect keyVar valueVar
 
@@ -503,7 +504,7 @@ addSelectElement
     -> TermLike Variable
     -> TermLike Variable
 addSelectElement keyVar valueVar mapPattern  =
-    mkApp mapSort concatMapSymbol [element, mapPattern]
+    mkApplySymbol mapSort concatMapSymbol [element, mapPattern]
   where
     element = makeElementSelect keyVar valueVar
 

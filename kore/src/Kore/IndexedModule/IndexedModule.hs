@@ -24,6 +24,7 @@ module Kore.IndexedModule.IndexedModule
     , KoreIndexedModule
     , VerifiedModule
     , eraseAttributes
+    , eraseAxiomAttributes
     , erasePatterns
     , mapPatterns
     , indexedModuleRawSentences
@@ -180,6 +181,29 @@ recursiveIndexedModuleStuff stuffExtractor m =
         -> stuff
     subModuleStuff (_, _, subMod) =
         recursiveIndexedModuleStuff stuffExtractor subMod
+
+-- | Strip module of its parsed attributes, replacing them with 'Attribute.Null'
+eraseAxiomAttributes
+    :: IndexedModule patternType1 declAttributes axiomAttributes
+    -> IndexedModule patternType1 declAttributes Attribute.Null
+eraseAxiomAttributes
+    indexedModule@IndexedModule
+        { indexedModuleAxioms
+        , indexedModuleClaims
+        , indexedModuleImports
+        }
+  =
+    indexedModule
+        { indexedModuleAxioms =
+            indexedModuleAxioms
+            & Lens.set (Lens.mapped . Lens._1) Attribute.Null
+        , indexedModuleClaims =
+            indexedModuleClaims
+            & Lens.set (Lens.mapped . Lens._1) Attribute.Null
+        , indexedModuleImports =
+            indexedModuleImports
+            & Lens.over (Lens.mapped . Lens._3) eraseAxiomAttributes
+        }
 
 -- | Strip module of its parsed attributes, replacing them with 'Attribute.Null'
 eraseAttributes

@@ -20,7 +20,8 @@ module GlobalMain
 
 import           Control.Exception
                  ( evaluate )
-import qualified Control.Lens as Lens
+import           Control.Lens
+                 ( (<>~) )
 import           Control.Monad
                  ( when )
 import           Data.Function
@@ -59,7 +60,9 @@ import           Kore.ASTVerifier.DefinitionVerifier
                  verifyAndIndexDefinitionWithBase )
 import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Symbol
+import qualified Kore.Attribute.Symbol as Attribute
+                 ( Symbol )
+import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
@@ -266,7 +269,7 @@ clockSomethingIO description something = do
 
 -- | Verify that a Kore pattern is well-formed and print timing information.
 mainPatternVerify
-    :: VerifiedModule declAttrs axiomAttrs
+    :: VerifiedModule Attribute.Symbol axiomAttrs
     -- ^ Module containing definitions visible in the pattern
     -> ParsedPattern -- ^ Parsed pattern to check well-formedness
     -> IO Verified.Pattern
@@ -281,7 +284,7 @@ mainPatternVerify verifiedModule patt = do
         PatternVerifier.Context
             { indexedModule =
                 verifiedModule
-                & IndexedModule.eraseAttributes
+                & IndexedModule.eraseAxiomAttributes
                 & IndexedModule.erasePatterns
             , declaredSortVariables = Set.empty
             , declaredVariables = emptyDeclaredVariables
@@ -294,8 +297,8 @@ mainPatternVerify verifiedModule patt = do
 -- functions are constructors (so that function patterns can match)
 -- and that @kseq@ and @dotk@ are both functional and constructor.
 constructorFunctions
-    :: VerifiedModule StepperAttributes Attribute.Axiom
-    -> VerifiedModule StepperAttributes Attribute.Axiom
+    :: VerifiedModule Attribute.Symbol Attribute.Axiom
+    -> VerifiedModule Attribute.Symbol Attribute.Axiom
 constructorFunctions ixm =
     ixm
         { indexedModuleSymbolSentences =
@@ -311,10 +314,14 @@ constructorFunctions ixm =
   where
     constructorFunctions1 ident (atts, defn) =
         ( atts
-            & lensConstructor Lens.<>~ Constructor isCons
-            & lensFunctional Lens.<>~ Functional (isCons || isInj)
-            & lensInjective Lens.<>~ Injective (isCons || isInj)
-            & lensSortInjection Lens.<>~ SortInjection isInj
+            & Attribute.Symbol.lensConstructor
+                <>~ Attribute.Symbol.Constructor isCons
+            & Attribute.Symbol.lensFunctional
+                <>~ Attribute.Symbol.Functional (isCons || isInj)
+            & Attribute.Symbol.lensInjective
+                <>~ Attribute.Symbol.Injective (isCons || isInj)
+            & Attribute.Symbol.lensSortInjection
+                <>~ Attribute.Symbol.SortInjection isInj
         , defn
         )
       where
@@ -328,8 +335,8 @@ mainModule
     :: ModuleName
     -> Map.Map
         ModuleName
-        (VerifiedModule StepperAttributes Attribute.Axiom)
-    -> IO (VerifiedModule StepperAttributes Attribute.Axiom)
+        (VerifiedModule Attribute.Symbol Attribute.Axiom)
+    -> IO (VerifiedModule Attribute.Symbol Attribute.Axiom)
 mainModule name modules =
     case Map.lookup name modules of
         Nothing ->
@@ -348,7 +355,7 @@ Also prints timing information; see 'mainParse'.
 verifyDefinitionWithBase
     :: Maybe
         ( Map.Map ModuleName
-            (KoreIndexedModule StepperAttributes Attribute.Axiom)
+            (KoreIndexedModule Attribute.Symbol Attribute.Axiom)
         , Map.Map Text AstLocation
         )
     -- ^ base definition to use for verification
@@ -358,7 +365,7 @@ verifyDefinitionWithBase
     -- ^ Parsed definition to check well-formedness
     -> IO
         ( Map.Map ModuleName
-            (VerifiedModule StepperAttributes Attribute.Axiom)
+            (VerifiedModule Attribute.Symbol Attribute.Axiom)
         , Map.Map Text AstLocation
         )
 verifyDefinitionWithBase maybeBaseModule willChkAttr definition =

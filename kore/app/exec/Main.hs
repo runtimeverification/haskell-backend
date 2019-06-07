@@ -49,6 +49,8 @@ import           Kore.Step.Search
                  ( SearchType (..) )
 import qualified Kore.Step.Search as Search
 import           Kore.Step.SMT.Lemma
+import           Kore.Syntax.Definition
+                 ( ModuleName (..) )
 import           Kore.Unparser
                  ( unparse )
 import qualified SMT

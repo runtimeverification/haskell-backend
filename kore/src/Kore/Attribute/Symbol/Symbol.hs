@@ -38,9 +38,9 @@ module Kore.Attribute.Symbol.Symbol
     , lensHook, Hook (..)
     , hookAttribute
     -- * SMT symbols
-    , Smthook (..)
+    , lensSmthook, Smthook (..)
     , smthookAttribute
-    , Smtlib (..)
+    , lensSmtlib, Smtlib (..)
     , smtlibAttribute
     -- * Derived attributes
     , isNonSimplifiable
@@ -123,6 +123,19 @@ instance ParseAttributes Symbol where
         >=> lensHook (parseAttribute attr)
         >=> lensSmtlib (parseAttribute attr)
         >=> lensSmthook (parseAttribute attr)
+
+    toAttributes =
+        mconcat . sequence
+            [ toAttributes . function
+            , toAttributes . functional
+            , toAttributes . constructor
+            , toAttributes . injective
+            , toAttributes . sortInjection
+            , toAttributes . anywhere
+            , toAttributes . hook
+            , toAttributes . smtlib
+            , toAttributes . smthook
+            ]
 
 type StepperAttributes = Symbol
 

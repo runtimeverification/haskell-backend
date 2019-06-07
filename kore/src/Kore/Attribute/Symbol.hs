@@ -15,23 +15,21 @@ import qualified Kore.Attribute.Symbol as Attribute
 module Kore.Attribute.Symbol
     ( module Kore.Attribute.Symbol.Symbol
     -- * Function symbols
-    , isFunction_, isFunction
+    , isFunction_
     -- * Functional symbols
-    , isFunctional_, isFunctional
+    , isFunctional_
     -- * Constructor symbols
     , isConstructor_
     -- * Injective symbols
-    , isInjective_, isInjective
+    , isInjective_
     -- * Sort injection symbols
     , isSortInjection_
     -- * Total symbols
-    , isTotal_, isTotal
+    , isTotal_
     ) where
 
-import qualified Control.Lens as Lens hiding
-                 ( makeLenses )
-import           Data.Reflection
-                 ( Given, given )
+import Data.Reflection
+       ( Given, given )
 
 import Kore.Attribute.Constructor
 import Kore.Attribute.Function

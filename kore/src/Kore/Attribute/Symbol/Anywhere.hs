@@ -63,3 +63,6 @@ instance ParseAttributes Anywhere where
             return Anywhere { isAnywhere = True }
         withApplication' = Parser.withApplication anywhereId
         failDuplicate' = Parser.failDuplicate anywhereId
+
+    toAttributes Anywhere { isAnywhere } =
+        Attributes $ if isAnywhere then [anywhereAttribute] else []

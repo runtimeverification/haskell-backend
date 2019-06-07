@@ -39,8 +39,6 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Strategy
                  ( GraphSearchOrder, Strategy, pickFinal,
                  runStrategyWithSearchOrder )
-import           Kore.Syntax.Application
-                 ( SymbolOrAlias (..) )
 import           Kore.Syntax.Id
                  ( Id (..) )
 import           Kore.Syntax.Variable

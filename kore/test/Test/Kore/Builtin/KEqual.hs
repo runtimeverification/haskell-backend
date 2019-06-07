@@ -11,7 +11,6 @@ import qualified Hedgehog.Gen as Gen
 import           Test.Tasty
 
 import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.IndexedModule.MetadataTools
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 
@@ -29,7 +28,7 @@ test_keq = testBinary keqBoolSymbol (==)
 
 -- | Test a binary operator hooked to the given symbol.
 testBinary
-    :: SymbolOrAlias
+    :: Symbol
     -- ^ hooked symbol
     -> (Bool -> Bool -> Bool)
     -- ^ operator
@@ -41,17 +40,11 @@ testBinary symb impl =
         let expect = Test.Bool.asPattern (impl a b)
         actual <-
             evaluateT
-            . mkApp boolSort symb
+            . mkApplySymbol boolSort symb
             $ Test.Bool.asInternal <$> [a, b]
         (===) expect actual
   where
-    Attribute.Symbol
-        { Attribute.hook =
-            Attribute.Hook
-                { Attribute.getHook = Just name }
-        }
-      =
-        symAttributes testMetadataTools symb
+    Just name = Attribute.getHook $ Attribute.hook $ symbolAttributes symb
 
 test_KEqual :: [TestTree]
 test_KEqual =
@@ -60,11 +53,11 @@ test_KEqual =
                 Pattern.fromTermLike
                 $ Test.Bool.asInternal True
             original =
-                mkApp
+                mkApplySymbol
                     boolSort
                     keqBoolSymbol
-                    [ mkApp kSort dotkSymbol []
-                    , mkApp kSort dotkSymbol []
+                    [ mkApplySymbol kSort dotkSymbol []
+                    , mkApplySymbol kSort dotkSymbol []
                     ]
         actual <- evaluate original
         assertEqual' "" expect actual
@@ -74,7 +67,7 @@ test_KEqual =
                 Pattern.fromTermLike
                 $ Test.Bool.asInternal False
             original =
-                mkApp
+                mkApplySymbol
                     boolSort
                     keqBoolSymbol
                     [ mkDomainValue DomainValue
@@ -94,10 +87,10 @@ test_KEqual =
                 Pattern.fromTermLike
                 $ Test.Bool.asInternal False
             original =
-                mkApp
+                mkApplySymbol
                     boolSort
                     keqBoolSymbol
-                    [ mkApp
+                    [ mkApplySymbol
                         kItemSort
                         (injSymbol idSort kItemSort)
                         [ mkDomainValue DomainValue
@@ -105,7 +98,7 @@ test_KEqual =
                             , domainValueChild = mkStringLiteral "t"
                             }
                         ]
-                    , mkApp
+                    , mkApplySymbol
                         kItemSort
                         (injSymbol idSort kItemSort)
                         [ mkDomainValue DomainValue
@@ -122,13 +115,13 @@ test_KEqual =
                 Pattern.fromTermLike
                 $ Test.Bool.asInternal False
             original =
-                mkApp
+                mkApplySymbol
                     boolSort
                     keqBoolSymbol
-                    [ mkApp
+                    [ mkApplySymbol
                         kSort
                         kseqSymbol
-                        [ mkApp
+                        [ mkApplySymbol
                             kItemSort
                             (injSymbol idSort kItemSort)
                             [ mkDomainValue DomainValue
@@ -136,12 +129,12 @@ test_KEqual =
                                 , domainValueChild = mkStringLiteral "t"
                                 }
                             ]
-                        , mkApp kSort dotkSymbol []
+                        , mkApplySymbol kSort dotkSymbol []
                         ]
-                    , mkApp
+                    , mkApplySymbol
                         kSort
                         kseqSymbol
-                        [ mkApp
+                        [ mkApplySymbol
                             kItemSort
                             (injSymbol idSort kItemSort)
                             [ mkDomainValue DomainValue
@@ -149,7 +142,7 @@ test_KEqual =
                                 , domainValueChild = mkStringLiteral "x"
                                 }
                             ]
-                        , mkApp kSort dotkSymbol []
+                        , mkApplySymbol kSort dotkSymbol []
                         ]
                     ]
         actual <- evaluate original
@@ -163,7 +156,7 @@ test_KIte =
                 Pattern.fromTermLike
                 $ Test.Bool.asInternal False
             original =
-                mkApp
+                mkApplySymbol
                     kSort
                     kiteKSymbol
                     [ Test.Bool.asInternal True
@@ -178,7 +171,7 @@ test_KIte =
                 Pattern.fromTermLike
                 $ Test.Bool.asInternal True
             original =
-                mkApp
+                mkApplySymbol
                     kSort
                     kiteKSymbol
                     [ Test.Bool.asInternal False

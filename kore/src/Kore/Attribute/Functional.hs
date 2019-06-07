@@ -66,3 +66,6 @@ instance ParseAttributes Functional where
             return Functional { isDeclaredFunctional = True }
         withApplication' = Parser.withApplication functionalId
         failDuplicate' = Parser.failDuplicate functionalId
+
+    toAttributes Functional { isDeclaredFunctional } =
+        Attributes $ if isDeclaredFunctional then [functionalAttribute] else []

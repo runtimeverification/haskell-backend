@@ -5,14 +5,13 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Control.Monad.Except as Except
+import qualified Data.Default as Default
 import qualified Data.Map.Strict as Map
 
 import qualified Kore.Internal.Pattern as Conditional
 import           Kore.Internal.TermLike
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
-import           Kore.Syntax.PatternF
-                 ( groundHead )
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -76,7 +75,7 @@ test_substitutionNormalization =
         assertEqualWithExplanation ""
             (Left (NonCtorCircularVariableDependency [var1]))
             =<< runNormalizeSubstitution
-                [ ( var1 , mkApp Mock.testSort f [mkVar var1] ) ]
+                [ ( var1 , mkApplySymbol Mock.testSort f [mkVar var1] ) ]
     , testCase "Length 2 cycle" $ do
         let
             var1 =  (v1 Mock.testSort)
@@ -102,7 +101,7 @@ test_substitutionNormalization =
         assertEqualWithExplanation ""
             (Left (NonCtorCircularVariableDependency [var1, varx1]))
             =<< runNormalizeSubstitution
-                [ (var1, mkApp Mock.testSort f [mkVar varx1])
+                [ (var1, mkApplySymbol Mock.testSort f [mkVar varx1])
                 , (varx1, mkVar var1)
                 ]
     , testCase "Constructor cycle" $ do
@@ -124,7 +123,11 @@ test_substitutionNormalization =
     v1 = Variable (testId "v1") mempty
     x1 :: Sort -> Variable
     x1 = Variable (testId "x1") mempty
-    f = groundHead "f" AstLocationTest
+    f = Symbol
+        { symbolConstructor = testId "f"
+        , symbolParams = []
+        , symbolAttributes = Default.def
+        }
 
 runNormalizeSubstitution
     :: [(Variable, TermLike Variable)]

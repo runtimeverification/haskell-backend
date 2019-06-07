@@ -9,16 +9,23 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 module Kore.Attribute.Smtlib.Smtlib
     ( Smtlib (..)
     , smtlibId
+    , smtlibSymbol
+    , smtlibAttribute
     ) where
 
 import           Control.DeepSeq
                  ( NFData )
 import           Data.Default
                  ( Default (..) )
+import           Data.Text
+                 ( Text )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Attributes
 import Kore.Debug
+import Kore.Syntax.Application
+       ( SymbolOrAlias (..) )
 import Kore.Syntax.Id
        ( Id )
 import SMT.SimpleSMT
@@ -57,3 +64,16 @@ instance Debug Smtlib
 -- | Kore identifier representing the @smtlib@ attribute symbol.
 smtlibId :: Id
 smtlibId = "smtlib"
+
+-- | Kore symbol representing the @smtlib@ attribute.
+smtlibSymbol :: SymbolOrAlias
+smtlibSymbol =
+    SymbolOrAlias
+        { symbolOrAliasConstructor = smtlibId
+        , symbolOrAliasParams = []
+        }
+
+-- | Kore pattern representing the @smtlib@ attribute.
+smtlibAttribute :: Text -> AttributePattern
+smtlibAttribute syntax =
+    attributePattern smtlibSymbol [attributeString syntax]

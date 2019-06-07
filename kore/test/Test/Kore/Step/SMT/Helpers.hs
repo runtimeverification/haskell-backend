@@ -28,6 +28,7 @@ import GHC.Stack
 import Numeric.Natural
        ( Natural )
 
+import           Kore.Attribute.Attributes
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom )
 import qualified Kore.Attribute.Symbol as Attribute
@@ -40,10 +41,9 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
 import           Kore.Internal.TermLike
-import           Kore.Syntax.Application
-                 ( SymbolOrAlias (SymbolOrAlias) )
-import           Kore.Syntax.Application as SymbolOrAlias
-                 ( SymbolOrAlias (..) )
+import           Kore.Syntax.Sentence
+                 ( ParsedSentence, Sentence (..),
+                 SentenceAxiom (SentenceAxiom) )
 import qualified Kore.Syntax.Sentence as SentenceAxiom
                  ( SentenceAxiom (..) )
 import           Kore.Syntax.Variable
@@ -52,14 +52,15 @@ import           SMT
                  ( SMT )
 import qualified SMT
 
-import Test.Kore
-       ( testId )
-import Test.Kore.Builtin.Builtin
-       ( runSMT )
-import Test.Kore.Step.SMT.Builders
-       ( noJunk )
-import Test.Kore.With
-       ( with )
+import           Test.Kore
+                 ( testId )
+import           Test.Kore.Builtin.Builtin
+                 ( runSMT )
+import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+import           Test.Kore.Step.SMT.Builders
+                 ( noJunk )
+import           Test.Kore.With
+                 ( with )
 
 newtype SmtPrelude = SmtPrelude { getSmtPrelude :: SMT () }
 
@@ -190,7 +191,7 @@ constructorAxiom sortName constructors =
     constructorAssertion (constructorName, argumentSorts) =
         foldr
             mkExists
-            (mkApp
+            (mkApplySymbol
                 sort
                 (makeHead constructorName)
                 (map mkVar argumentVariables)
@@ -215,9 +216,10 @@ makeSort name =
         , sortActualSorts = []
         }
 
-makeHead :: Text -> SymbolOrAlias
+makeHead :: Text -> Symbol
 makeHead name =
-    SymbolOrAlias
-        { symbolOrAliasConstructor = testId name
-        , symbolOrAliasParams      = []
+    Symbol
+        { symbolConstructor = testId name
+        , symbolParams      = []
+        , symbolAttributes  = Mock.constructorFunctionalAttributes
         }

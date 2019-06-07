@@ -61,6 +61,9 @@ instance ParseAttributes Hook where
         withApplication' = withApplication hookId
         failDuplicate' = failDuplicate hookId
 
+    toAttributes Hook { getHook } =
+        Attributes $ maybe [] ((: []) . hookAttribute) getHook
+
 {- | The missing @hook@ attribute.
 
  -}

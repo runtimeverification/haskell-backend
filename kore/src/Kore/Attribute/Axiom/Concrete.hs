@@ -51,3 +51,6 @@ instance ParseAttributes Concrete where
       where
         withApplication' = Parser.withApplication concreteId
         failDuplicate' = Parser.failDuplicate concreteId
+
+    toAttributes Concrete { isConcrete } =
+        Attributes $ if isConcrete then [concreteAttribute] else []

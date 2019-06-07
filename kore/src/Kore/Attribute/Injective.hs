@@ -66,3 +66,6 @@ instance ParseAttributes Injective where
             return Injective { isDeclaredInjective = True }
         withApplication' = Parser.withApplication injectiveId
         failDuplicate' = Parser.failDuplicate injectiveId
+
+    toAttributes Injective { isDeclaredInjective } =
+        Attributes $ if isDeclaredInjective then [injectiveAttribute] else []

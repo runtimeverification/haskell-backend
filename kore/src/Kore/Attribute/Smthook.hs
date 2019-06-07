@@ -7,25 +7,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 
 -}
 module Kore.Attribute.Smthook
-    ( Smthook (..)
-    , smthookId, smthookSymbol, smthookAttribute
+    ( module Kore.Attribute.Smtlib.Smthook
     ) where
 
-import Data.Text
-       ( Text )
-
-import Kore.Attribute.Parser
 import Kore.Attribute.Smtlib.Smthook
-
--- | Kore symbol representing the @smthook@ attribute.
-smthookSymbol :: SymbolOrAlias
-smthookSymbol =
-    SymbolOrAlias
-        { symbolOrAliasConstructor = smthookId
-        , symbolOrAliasParams = []
-        }
-
--- | Kore pattern representing the @smthook@ attribute.
-smthookAttribute :: Text -> AttributePattern
-smthookAttribute syntax =
-    attributePattern smthookSymbol [attributeString syntax]
