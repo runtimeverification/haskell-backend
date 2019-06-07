@@ -263,9 +263,28 @@ send solver@Solver { hIn } command' = do
 
 recv :: Solver -> IO SExpr
 recv solver@Solver { hOut } = do
-    resp <- Text.hGetLine hOut
+    responseLines <- readResponse 0 []
+    let resp = Text.unlines (reverse responseLines)
     info solver ["recv"] resp
     readSExpr resp
+  where
+    {-| Reads an SMT response.
+
+    An SMT response is either an one line atom like "sat", or an s-expression
+    that may span multiple lines. To find the end of the s-expression we check
+    that all parentheses are closed.
+    -}
+    readResponse :: Int -> [Text] -> IO [Text]
+    readResponse 0 lines'
+      -- If we closed all parentheses ("0" above) and we have read at least
+      -- one line, then we finished reading the entire z3 response so we return.
+      | Prelude.not (Prelude.null lines') = return lines'
+    readResponse open lines' = do
+        line <- Text.hGetLine hOut
+        readResponse (open + deltaOpen line) (line : lines')
+
+    deltaOpen :: Text -> Int
+    deltaOpen line = Text.count "(" line - Text.count ")" line
 
 command :: Solver -> SExpr -> IO SExpr
 command solver c =
@@ -559,17 +578,25 @@ assert proc e = ackCommand proc $ fun "assert" [e]
 
 -- | Check if the current set of assertion is consistent.
 check :: Solver -> IO Result
-check proc =
-  do res <- command proc (List [ Atom "check-sat" ])
-     case res of
-       Atom "unsat"   -> return Unsat
-       Atom "unknown" -> return Unknown
-       Atom "sat"     -> return Sat
-       _ -> fail $ unlines
-              [ "Unexpected result from the SMT solver:"
-              , "  Expected: unsat, unknown, or sat"
-              , "  Result: " ++ showSExpr res
-              ]
+check proc = do
+    res <- command proc (List [ Atom "check-sat" ])
+    case res of
+        Atom "unsat"   -> return Unsat
+        Atom "unknown" -> return Unknown
+        Atom "sat"     -> do
+            model <- command proc (List [ Atom "get-model" ])
+            info
+                proc
+                ["check"]
+                (Text.Lazy.toStrict
+                    (Text.Builder.toLazyText (buildSExpr model))
+                )
+            return Sat
+        _ -> fail $ unlines
+            [ "Unexpected result from the SMT solver:"
+            , "  Expected: unsat, unknown, or sat"
+            , "  Result: " ++ showSExpr res
+            ]
 
 -- | Convert an s-expression to a value.
 sexprToVal :: SExpr -> Value
