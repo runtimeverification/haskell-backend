@@ -170,7 +170,5 @@ the actions @before@ and @after@ are sequenced before and after evaluating the
 contents of the list, respectively.
 
  -}
-mapListT :: (forall x. m x -> m x) -> ListT m a -> ListT m a
-mapListT mapping as =
-    ListT $ \yield next ->
-        mapping $ foldListT as yield next
+mapListT :: Monad m => (forall x. m x -> m x) -> ListT m a -> ListT m a
+mapListT mapping as = (lift . mapping) (gather as) >>= scatter

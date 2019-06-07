@@ -104,7 +104,11 @@ tryTransitionT
     -> TransitionT rule m [(a, Seq rule)]
 tryTransitionT = Monad.Trans.lift . runTransitionT
 
-mapTransitionT :: (forall x. m x -> m x) -> TransitionT rule m a -> TransitionT rule m a
+mapTransitionT
+    :: Monad m
+    => (forall x. m x -> m x)
+    -> TransitionT rule m a
+    -> TransitionT rule m a
 mapTransitionT mapping =
     TransitionT . mapAccumT (mapListT mapping) . getTransitionT
 
