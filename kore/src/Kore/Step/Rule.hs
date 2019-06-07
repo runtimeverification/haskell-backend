@@ -391,7 +391,7 @@ patternToAxiomPattern attributes pat =
       where
         isModalSymbol symbol =
             case getId symbol of
-                "ag" -> True
+                "allPathGlobally" -> True
                 "ef" -> True
                 _  -> False
 

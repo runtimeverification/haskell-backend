@@ -174,7 +174,8 @@ transitionRule
 
     applyUnroll ModalPattern { modalOp, term } wrapper config
       = case modalOp of
-            "ag" -> do
+            "allPathGlobally" -> do
+                {-traceM ("Current Config:\n" ++ (show . unparse $ config) ++ "\n")-}
                 result <-
                     Monad.Trans.lift . Monad.Trans.lift
                     $ checkImplicationIsTop config term

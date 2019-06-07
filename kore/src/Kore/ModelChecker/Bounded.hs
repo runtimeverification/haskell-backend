@@ -11,6 +11,7 @@ module Kore.ModelChecker.Bounded
 
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
+import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Limit
                  ( Limit )
 import qualified Data.Limit as Limit
@@ -38,7 +39,7 @@ import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import           Kore.Step.Strategy
-                 ( GraphSearchOrder, Strategy, pickFinal,
+                 ( ExecutionGraph (..), GraphSearchOrder, Strategy, pickFinal,
                  runStrategyWithSearchOrder )
 import           Kore.Syntax.Id
                  ( Id (..) )
@@ -128,6 +129,7 @@ checkClaim
                                 searchOrder
                                 startState)
                             Nothing
+        traceM ("searched states: " ++ (show . Graph.order . graph $ executionGraph))
         let
             finalResult = (checkFinalNodes . pickFinal) executionGraph
         trace (show finalResult) (return finalResult)
