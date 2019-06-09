@@ -59,6 +59,7 @@ import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( RewriteRule )
 import           Kore.Step.Simplification.Data
+import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Step.Step as Step
@@ -74,9 +75,8 @@ import           SMT
                  ( SMT )
 import qualified SMT
 
-import           Test.Kore
-import           Test.Kore.Builtin.Definition
-import qualified Test.Kore.Step.MockSimplifiers as Mock
+import Test.Kore
+import Test.Kore.Builtin.Definition
 
 mkPair
     :: Sort
@@ -145,7 +145,7 @@ testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build verifiedModule
 
 testSubstitutionSimplifier :: PredicateSimplifier
-testSubstitutionSimplifier = Mock.substitutionSimplifier
+testSubstitutionSimplifier = Simplifier.Predicate.create
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators = Builtin.koreEvaluators verifiedModule
@@ -196,7 +196,7 @@ runStepResult
 runStepResult configuration axiom = do
     results <-
         evalSimplifier testEnv
-        $ Monad.Unify.runUnifier
+        $ Monad.Unify.runUnifierT
         $ Step.applyRewriteRulesParallel
             (Step.UnificationProcedure Unification.unificationProcedure)
             [axiom]

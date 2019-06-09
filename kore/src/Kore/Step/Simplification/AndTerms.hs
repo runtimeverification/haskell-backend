@@ -63,12 +63,7 @@ import           Kore.Step.PatternAttributes
                  ( isConstructorLikeTop )
 import           Kore.Step.RecursiveAttributes
                  ( isFunctionPattern )
-import           Kore.Step.Simplification.Data
-                 ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Simplification.Data
-                 ( BranchT, PredicateSimplifier, SimplificationType,
-                 Simplifier, TermLikeSimplifier )
-import qualified Kore.Step.Simplification.Data as Simplifier
+import           Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import qualified Kore.Step.Simplification.Data as BranchT
@@ -81,9 +76,7 @@ import           Kore.TopBottom
 import           Kore.Unification.Error
                  ( unsupportedPatterns )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.Unify
-                 ( MonadUnify, Unifier )
-import qualified Kore.Unification.Unify as Monad.Unify
+import           Kore.Unification.Unify as Unify
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -108,14 +101,14 @@ See also: 'termAnd'
  -}
 termEquals
     ::  ( FreshVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => TermLike variable
     -> TermLike variable
-    -> MaybeT Simplifier (OrPredicate variable)
+    -> MaybeT simplifier (OrPredicate variable)
 termEquals first second = MaybeT $ do
     tools <- Simplifier.askMetadataTools
     substitutionSimplifier <- Simplifier.askSimplifierPredicate
@@ -135,12 +128,12 @@ termEquals first second = MaybeT $ do
             MultiOr.make (map Predicate.eraseConditionalTerm results)
 
 termEqualsAnd
-    :: forall variable .
-        ( FreshVariable variable
-        , Ord variable
+    ::  forall variable simplifier
+    .   ( FreshVariable variable
         , Show variable
         , Unparse variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
@@ -148,7 +141,7 @@ termEqualsAnd
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> TermLike variable
-    -> MaybeT (BranchT Simplifier) (Pattern variable)
+    -> MaybeT (BranchT simplifier) (Pattern variable)
 termEqualsAnd
     tools
     substitutionSimplifier
@@ -156,47 +149,47 @@ termEqualsAnd
     axiomIdToSimplifier
     p1
     p2
-  =
-    MaybeT $ do
-        eitherMaybeResult <-
-            Monad.Trans.lift . Monad.Unify.runUnifier . runMaybeT
-            $ maybeTermEquals
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                createPredicatesAndSubstitutionsMergerExcept
-                termEqualsAndWorker
-                p1
-                p2
-        case eitherMaybeResult of
-            Left _ -> return Nothing
-            Right results -> BranchT.scatter results
+  = MaybeT
+    $   either missingCase BranchT.scatter
+        =<< (runUnifierT . runMaybeT) (maybeTermEqualsWorker p1 p2)
   where
+    missingCase = const (return Nothing)
+
+    maybeTermEqualsWorker
+        :: forall unifier
+        .   ( MonadUnify unifier
+            , Logger.WithLog Logger.LogMessage unifier
+            )
+        => TermLike variable
+        -> TermLike variable
+        -> MaybeT unifier (Pattern variable)
+    maybeTermEqualsWorker =
+        maybeTermEquals
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            createPredicatesAndSubstitutionsMergerExcept
+            termEqualsAndWorker
+
     termEqualsAndWorker
-        :: MonadUnify unifier
+        :: forall unifier
+        .   ( MonadUnify unifier
+            , Logger.WithLog Logger.LogMessage unifier
+            )
         => TermLike variable
         -> TermLike variable
         -> unifier (Pattern variable)
-    termEqualsAndWorker first second = Monad.Unify.liftBranchedSimplifier $ do
-        eitherMaybeTermEqualsAndChild <-
-            Monad.Trans.lift $ Monad.Unify.runUnifier $ runMaybeT
-            $ maybeTermEquals
-                tools
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                createPredicatesAndSubstitutionsMergerExcept
-                termEqualsAndWorker
-                first
-                second
-        case eitherMaybeTermEqualsAndChild of
-            Left _ -> return equalsPredicate
-            Right maybeResults ->
-                case sequence maybeResults of
-                    Nothing -> return equalsPredicate
-                    Just results -> BranchT.scatter results
+    termEqualsAndWorker first second =
+        either ignoreErrors scatterResults
+        =<< (runUnifierT . runMaybeT) (maybeTermEqualsWorker first second)
       where
+        ignoreErrors _ = return equalsPredicate
+        scatterResults =
+            maybe
+                (return equalsPredicate) -- default if no results
+                (alternate . BranchT.scatter)
+            . sequence
         equalsPredicate =
             Conditional
                 { term = mkTop_
@@ -211,6 +204,7 @@ maybeTermEquals
         , Unparse variable
         , SortedVariable variable
         , MonadUnify unifier
+        , Logger.WithLog Logger.LogMessage unifier
         )
     => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
@@ -246,6 +240,7 @@ termUnification
         , Unparse variable
         , SortedVariable variable
         , MonadUnify unifier
+        , Logger.WithLog Logger.LogMessage unifier
         )
     => TermLike variable
     -> TermLike variable
@@ -275,7 +270,7 @@ termUnification =
                     pat1
                     pat2
             unsupportedPatternsError =
-                Monad.Unify.throwUnificationError
+                throwUnificationError
                     (unsupportedPatterns
                         "Unknown unification case."
                         pat1
@@ -295,26 +290,28 @@ See also: 'termUnification'
 -- NOTE (hs-boot): Please update AndTerms.hs-boot file when changing the
 -- signature.
 termAnd
-    :: forall variable .
-        ( FreshVariable variable
+    :: forall variable simplifier
+    .   ( FreshVariable variable
         , Show variable
         , Unparse variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => TermLike variable
     -> TermLike variable
-    -> BranchT Simplifier (Pattern variable)
-termAnd p1 p2 = do
-    eitherResult <-
-        Monad.Trans.lift . Monad.Unify.runUnifier $ termAndWorker p1 p2
-    case eitherResult of
-        Left _        -> return $ Pattern.fromTermLike (mkAnd p1 p2)
-        Right results -> BranchT.scatter results
+    -> BranchT simplifier (Pattern variable)
+termAnd p1 p2 =
+    either (const andTerm) BranchT.scatter
+    =<< (Monad.Trans.lift . runUnifierT) (termAndWorker p1 p2)
   where
+    andTerm = return $ Pattern.fromTermLike (mkAnd p1 p2)
     termAndWorker
-        :: TermLike variable
+        ::  ( MonadUnify unifier
+            , Logger.WithLog Logger.LogMessage unifier
+            )
+        => TermLike variable
         -> TermLike variable
-        -> Unifier (Pattern variable)
+        -> unifier (Pattern variable)
     termAndWorker first second = do
         tools <- Simplifier.askMetadataTools
         substitutionSimplifier <- Simplifier.askSimplifierPredicate
@@ -342,6 +339,7 @@ maybeTermAnd
         , Unparse variable
         , SortedVariable variable
         , MonadUnify unifier
+        , Logger.WithLog Logger.LogMessage unifier
         )
     => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
@@ -363,6 +361,7 @@ andFunctions
         , Unparse variable
         , SortedVariable variable
         , MonadUnify unifier
+        , Logger.WithLog Logger.LogMessage unifier
         )
     => [TermTransformationOld variable unifier]
 andFunctions =
@@ -386,6 +385,7 @@ equalsFunctions
         , Unparse variable
         , SortedVariable variable
         , MonadUnify unifier
+        , Logger.WithLog Logger.LogMessage unifier
         )
     => [TermTransformationOld variable unifier]
 equalsFunctions =
@@ -410,6 +410,7 @@ andEqualsFunctions
         , Unparse variable
         , SortedVariable variable
         , MonadUnify unifier
+        , Logger.WithLog Logger.LogMessage unifier
         )
     => [(SimplificationTarget, TermTransformation variable unifier)]
 andEqualsFunctions = fmap mapEqualsFunctions
@@ -445,23 +446,17 @@ andEqualsFunctions = fmap mapEqualsFunctions
             mresult <- getResult
             case mresult of
                 Nothing -> do
-                    Monad.Unify.liftSimplifier
-                        . Logger.withLogScope (Logger.Scope "AndTerms")
-                        . Logger.logDebug
-                        . Text.pack
-                        . show
+                    Logger.withLogScope (Logger.Scope "AndTerms")
+                        . Logger.logDebug . Text.pack . show
                         $ Pretty.hsep
-                                [ "Evaluator"
-                                , Pretty.pretty fnName
-                                , "does not apply."
-                                ]
+                            [ "Evaluator"
+                            , Pretty.pretty fnName
+                            , "does not apply."
+                            ]
                     return mresult
                 Just result -> do
-                    Monad.Unify.liftSimplifier
-                        . Logger.withLogScope (Logger.Scope "AndTerms")
-                        . Logger.logInfo
-                        . Text.pack
-                        . show
+                    Logger.withLogScope (Logger.Scope "AndTerms")
+                        . Logger.logInfo . Text.pack . show
                         $ Pretty.vsep
                             [ Pretty.hsep
                                 [ "Evaluator"
@@ -748,20 +743,24 @@ boolAnd
     -> MaybeT unifier (TermLike variable)
 boolAnd first second
   | isBottom first  = do
-      Monad.Trans.lift $ Monad.Unify.explainBottom
-          "Cannot unify bottom."
-          first
-          second
+      explainBoolAndBottom first second
       return first
   | isTop first     = return second
   | isBottom second = do
-      Monad.Trans.lift $ Monad.Unify.explainBottom
-          "Cannot unify bottom."
-          first
-          second
+      explainBoolAndBottom first second
       return second
   | isTop second    = return first
   | otherwise       = empty
+
+explainBoolAndBottom
+    :: MonadUnify unifier
+    => SortedVariable variable
+    => Unparse variable
+    => TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier ()
+explainBoolAndBottom term1 term2 =
+    Monad.Trans.lift $ explainBottom "Cannot unify bottom." term1 term2
 
 -- | Unify two identical ('==') patterns.
 equalAndEquals
@@ -781,6 +780,7 @@ bottomTermEquals
         , Show variable
         , Unparse variable
         , MonadUnify unifier
+        , Logger.WithLog Logger.LogMessage unifier
         )
     => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
@@ -799,17 +799,17 @@ bottomTermEquals
     first@(Bottom_ _)
     second
   = Monad.Trans.lift $ do -- MonadUnify
-    secondCeil <- Monad.Unify.liftSimplifier $ Ceil.makeEvaluateTerm second
+    secondCeil <- Ceil.makeEvaluateTerm second
 
     case MultiOr.extractPatterns secondCeil of
         [] -> return Pattern.top
         [ Conditional { predicate = PredicateTrue, substitution } ]
           | substitution == mempty -> do
-            Monad.Unify.explainBottom
+            explainBottom
                 "Cannot unify bottom with non-bottom pattern."
                 first
                 second
-            Monad.Unify.scatter []
+            empty
         _ ->
             return  Conditional
                 { term = mkTop_
@@ -832,6 +832,7 @@ termBottomEquals
         , Show variable
         , Unparse variable
         , MonadUnify unifier
+        , Logger.WithLog Logger.LogMessage unifier
         )
     => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
@@ -859,6 +860,7 @@ variableFunctionAndEquals
         , Show variable
         , Unparse variable
         , MonadUnify unifier
+        , Logger.WithLog Logger.LogMessage unifier
         )
     => SimplificationType
     -> SmtMetadataTools Attribute.Symbol
@@ -906,20 +908,16 @@ variableFunctionAndEquals
                 -- be careful to not just drop the term.
                 return Predicate.top
             SimplificationType.Equals -> do
-                resultOr <-
-                    Monad.Unify.liftSimplifier $ Ceil.makeEvaluateTerm second
+                resultOr <- Ceil.makeEvaluateTerm second
                 case MultiOr.extractPatterns resultOr of
                     [] -> do
-                        Monad.Unify.explainBottom
-                           (Pretty.hsep
-                               [ "Unification of variable and bottom"
-                               , "when attempting to simplify equals."
-                               ]
-                           )
+                        explainBottom
+                           "Unification of variable and bottom \
+                           \when attempting to simplify equals."
                            first
                            second
-                        Monad.Unify.scatter []
-                    resultPredicates -> Monad.Unify.scatter resultPredicates
+                        empty
+                    resultPredicates -> Unify.scatter resultPredicates
     let result = predicate <> Predicate.fromSingleSubstitution (v, second)
     return (Pattern.withCondition second result)
 variableFunctionAndEquals _ _ _ _ _ _ _ _ = empty
@@ -1047,25 +1045,20 @@ sortInjectionAndEqualsAssumesDifferentHeads
   = case simplifySortInjections tools first second of
     Nothing ->
         Monad.Trans.lift
-            (Monad.Unify.throwUnificationError
-                (unsupportedPatterns
-                    "Unimplemented sort injection unification"
-                    first
-                    second
-                )
-            )
+            $ throwUnificationError
+            $ unsupportedPatterns
+                "Unimplemented sort injection unification"
+                first
+                second
     Just NotInjection -> empty
     Just NotMatching -> Monad.Trans.lift $ do
-        Monad.Unify.explainBottom
-           (Pretty.hsep
-               [ "Unification of sort injections failed due to mismatch."
-               , "This can happen either because one of them is a constructor"
-               , "or because their sort intersection is empty."
-               ]
-           )
+        explainBottom
+           "Unification of sort injections failed due to mismatch. \
+            \This can happen either because one of them is a constructor \
+            \or because their sort intersection is empty."
            first
            second
-        Monad.Unify.scatter []
+        empty
     Just
         (Matching SortInjectionMatch
             { injectionHead, sort, firstChild, secondChild }
@@ -1073,16 +1066,12 @@ sortInjectionAndEqualsAssumesDifferentHeads
             merged <- termMerger firstChild secondChild
             if Pattern.isBottom merged
                 then do
-                    Monad.Unify.explainBottom
-                        (Pretty.hsep
-                            [ "Unification of sort injections failed when"
-                            , "merging application children:"
-                            , "the result is bottom."
-                            ]
-                        )
+                    explainBottom
+                        "Unification of sort injections failed when \
+                        \merging application children: the result is bottom."
                         first
                         second
-                    Monad.Unify.scatter []
+                    empty
                 else
                     return $ applyInjection sort injectionHead <$> merged
   where
@@ -1229,11 +1218,11 @@ constructorSortInjectionAndEquals
     second@(App_ secondHead _)
   | isConstructorSortInjection =
     assert (firstHead /= secondHead) $ Monad.Trans.lift $ do
-        Monad.Unify.explainBottom
+        explainBottom
             "Cannot unify constructors with sort injections."
             first
             second
-        Monad.Unify.scatter []
+        empty
   where
     -- Are we asked to unify a constructor with a sort injection?
     isConstructorSortInjection =
@@ -1265,15 +1254,12 @@ constructorAndEqualsAssumesDifferentHeads
   | Symbol.isConstructor firstHead
   , Symbol.isConstructor secondHead =
     assert (firstHead /= secondHead) $ Monad.Trans.lift $ do
-        Monad.Unify.explainBottom
-            (Pretty.hsep
-                [ "Cannot unify different constructors or"
-                , "incompatible sort injections."
-                ]
-            )
+        explainBottom
+            "Cannot unify different constructors or incompatible \
+            \sort injections."
             first
             second
-        Monad.Unify.scatter []
+        empty
 constructorAndEqualsAssumesDifferentHeads _ _ _ = empty
 
 {- | Unifcation or equality for a domain value pattern vs a constructor
@@ -1382,11 +1368,11 @@ cannotUnifyDomainValues
     -> unifier (TermLike variable)
 cannotUnifyDomainValues first second =
     assert (first /= second) $ do
-        Monad.Unify.explainBottom
+        explainBottom
             cannotUnifyDistinctDomainValues
             first
             second
-        Monad.Unify.scatter []
+        empty
 
 {-| Unify two literal strings.
 

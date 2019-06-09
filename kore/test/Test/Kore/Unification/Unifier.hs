@@ -323,7 +323,7 @@ andSimplifySuccess term1 term2 results = do
     Right subst' <-
         runSMT
         $ evalSimplifier testEnv
-        $ Monad.Unify.runUnifier
+        $ Monad.Unify.runUnifierT
         $ simplifyAnds (unificationProblem term1 term2 :| [])
     assertEqualWithExplanation "" expect subst'
 
@@ -339,7 +339,7 @@ andSimplifyFailure term1 term2 err = do
     actual <-
         runSMT
         $ evalSimplifier testEnv
-        $ Monad.Unify.runUnifier
+        $ Monad.Unify.runUnifierT
         $ simplifyAnds (unificationProblem term1 term2 :| [])
     assertEqual "" (show expect) (show actual)
 
@@ -356,7 +356,7 @@ andSimplifyException message term1 term2 exceptionMessage =
         test = do
             assignment <-
                 runSMT $ evalSimplifier testEnv
-                $ Monad.Unify.runUnifier
+                $ Monad.Unify.runUnifierT
                 $ simplifyAnds (unificationProblem term1 term2 :| [])
             _ <- evaluate assignment
             assertFailure "This evaluation should fail"
@@ -382,7 +382,7 @@ unificationProcedureSuccessWithSimplifiers
         Right results <-
             runSMT
             $ evalSimplifier mockEnv
-            $ Monad.Unify.runUnifier
+            $ Monad.Unify.runUnifierT
             $ unificationProcedure term1 term2
         let
             normalize

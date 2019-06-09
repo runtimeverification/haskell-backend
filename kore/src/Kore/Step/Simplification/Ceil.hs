@@ -38,6 +38,8 @@ import           Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
+import           Kore.Logger
+                 ( LogMessage, WithLog )
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeTruePredicate )
 import qualified Kore.Step.Function.Evaluator as Axiom
@@ -64,10 +66,10 @@ simplify
         , SortedVariable variable
         , Show variable
         , Unparse variable
-        , FreshVariable variable
+        , MonadSimplify simplifier
         )
     => Ceil Sort (OrPattern variable)
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplify Ceil { ceilChild = child } = simplifyEvaluated child
 
 {-| 'simplifyEvaluated' evaluates a ceil given its child, see 'simplify'
@@ -91,12 +93,13 @@ simplifyEvaluated
         , SortedVariable variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
+        , WithLog LogMessage simplifier
         )
     => OrPattern variable
-    -> Simplifier (OrPattern variable)
-simplifyEvaluated child = do
-    evaluated <- traverse makeEvaluate child
-    return (MultiOr.flatten evaluated)
+    -> simplifier (OrPattern variable)
+simplifyEvaluated child =
+    MultiOr.flatten <$> traverse makeEvaluate child
 
 {-| Evaluates a ceil given its child as an Pattern, see 'simplify'
 for details.
@@ -108,9 +111,11 @@ makeEvaluate
         , Show variable
         , Unparse variable
         , FreshVariable variable
+        , MonadSimplify simplifier
+        , WithLog LogMessage simplifier
         )
     => Pattern variable
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 makeEvaluate child
   | Pattern.isTop    child = return (OrPattern.top)
   | Pattern.isBottom child = return (OrPattern.bottom)
@@ -122,9 +127,11 @@ makeEvaluateNonBoolCeil
         , Show variable
         , Unparse variable
         , FreshVariable variable
+        , MonadSimplify simplifier
+        , WithLog LogMessage simplifier
         )
     => Pattern variable
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 makeEvaluateNonBoolCeil patt@Conditional {term}
   | isTop term = return $ OrPattern.fromPattern patt
   | otherwise = do
@@ -145,14 +152,16 @@ makeEvaluateNonBoolCeil patt@Conditional {term}
 -- NOTE (hs-boot): Please update Ceil.hs-boot file when changing the
 -- signature.
 makeEvaluateTerm
-    ::  forall variable .
-        ( FreshVariable variable
+    ::  forall variable simplifier
+    .   ( FreshVariable variable
         , SortedVariable variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
+        , WithLog LogMessage simplifier
         )
     => TermLike variable
-    -> Simplifier (OrPredicate variable)
+    -> simplifier (OrPredicate variable)
 makeEvaluateTerm term@(Recursive.project -> _ :< projected) = do
     tools <- Simplifier.askMetadataTools
     makeEvaluateTermWorker tools
@@ -209,14 +218,16 @@ makeEvaluateTerm term@(Recursive.project -> _ :< projected) = do
 {-| Evaluates the ceil of a domain value.
 -}
 makeEvaluateBuiltin
-    :: forall variable .
-        ( FreshVariable variable
+    :: forall variable simplifier
+    .   ( FreshVariable variable
         , SortedVariable variable
         , Unparse variable
         , Show variable
+        , MonadSimplify simplifier
+        , WithLog LogMessage simplifier
         )
     => Builtin (TermLike variable)
-    -> Simplifier (OrPredicate variable)
+    -> simplifier (OrPredicate variable)
 makeEvaluateBuiltin
     (Domain.BuiltinMap Domain.InternalMap { builtinMapChild = m })
   = do

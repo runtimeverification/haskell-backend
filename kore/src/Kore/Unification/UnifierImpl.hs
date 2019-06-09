@@ -27,6 +27,8 @@ import           Kore.Internal.Predicate
                  ( Conditional (..), Predicate )
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
+import           Kore.Logger
+                 ( LogMessage, WithLog )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse, makeAndPredicate )
 import           Kore.Unification.Substitution
@@ -50,6 +52,7 @@ simplifyAnds
         , SortedVariable variable
         , FreshVariable variable
         , MonadUnify unifier
+        , WithLog LogMessage unifier
         )
     => NonEmpty (TermLike variable)
     -> unifier (Pattern variable)
@@ -104,7 +107,8 @@ solveGroupedSubstitution
        , SortedVariable variable
        , FreshVariable variable
        , MonadUnify unifier
-      )
+       , WithLog LogMessage unifier
+       )
     => variable
     -> NonEmpty (TermLike variable)
     -> unifier (Predicate variable)
@@ -132,6 +136,7 @@ normalizeSubstitutionDuplication
         , SortedVariable variable
         , FreshVariable variable
         , MonadUnify unifier
+        , WithLog LogMessage unifier
         )
     => Substitution variable
     -> unifier (Predicate variable)

@@ -46,7 +46,6 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
@@ -1216,12 +1215,12 @@ unify first second =
     $ evalSimplifier mockEnv
     $ runMaybeT unification
   where
-    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
+    mockEnv = Mock.env
     unification =
         -- The unification error is discarded because, for testing purposes, we
         -- are not interested in the /reason/ unification failed. For the tests,
         -- the failure is almost always due to unsupported patterns anyway.
-        MaybeT . fmap Error.hush . Monad.Unify.runUnifier
+        MaybeT . fmap Error.hush . Monad.Unify.runUnifierT
         $ termUnification first second
 
 simplify
@@ -1234,7 +1233,7 @@ simplify first second =
     $ BranchT.gather
     $ termAnd first second
   where
-    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
+    mockEnv = Mock.env
 
 simplifyEquals
     :: BuiltinAndAxiomSimplifierMap
@@ -1247,8 +1246,4 @@ simplifyEquals axiomIdToSimplifier first second =
     $ evalSimplifier mockEnv
     $ runMaybeT $ termEquals first second
   where
-    mockEnv =
-        Mock.env
-            { simplifierPredicate = Mock.substitutionSimplifier
-            , simplifierAxioms = axiomIdToSimplifier
-            }
+    mockEnv = Mock.env { simplifierAxioms = axiomIdToSimplifier }

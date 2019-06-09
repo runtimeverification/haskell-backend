@@ -194,11 +194,11 @@ evalGet =
     Builtin.functionEvaluator evalGet0
   where
     evalGet0
-        :: Ord variable
+        :: (Ord variable, MonadSimplify simplifier)
         => TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom variable)
+        -> simplifier (AttemptedAxiom variable)
     evalGet0 _ _ = \arguments ->
         Builtin.getAttemptedAxiom
         (do
@@ -241,11 +241,11 @@ evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
     evalConcat0
-        :: Ord variable
+        :: (Ord variable, MonadSimplify simplifier)
         => TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom variable)
+        -> simplifier (AttemptedAxiom variable)
     evalConcat0 _ resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let (_list1, _list2) =

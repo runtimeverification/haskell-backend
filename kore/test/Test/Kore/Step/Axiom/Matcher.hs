@@ -1033,7 +1033,7 @@ unificationWithMatchSimplifiers axiomIdToSimplifier first second = do
     result <-
         SMT.runSMT SMT.defaultConfig emptyLogger
         $ evalSimplifier Mock.env { simplifierAxioms = axiomIdToSimplifier }
-        $ Monad.Unify.runUnifier
+        $ Monad.Unify.runUnifierT
         $ unificationWithAppMatchOnTop first second
     return $ either (const Nothing) Just (MultiOr.make <$> result)
 
@@ -1060,5 +1060,6 @@ match first second = do
         :: Simplifier
             (Either UnificationOrSubstitutionError (OrPredicate Variable))
     matchResult =
-        fmap MultiOr.make <$> Monad.Unify.runUnifier
-            (matchAsUnification first second)
+        (fmap . fmap) MultiOr.make
+        $ Monad.Unify.runUnifierT
+        $ matchAsUnification first second

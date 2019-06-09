@@ -117,7 +117,7 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Proof.Value as Value
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify, PredicateSimplifier, SimplificationType,
-                 Simplifier, TermLikeSimplifier )
+                 TermLikeSimplifier )
 import           Kore.Step.Simplification.Data
                  ( AttemptedAxiom (..),
                  AttemptedAxiomResults (AttemptedAxiomResults),
@@ -561,10 +561,11 @@ unaryOperator
     get = extractVal ctx
     unaryOperator0
         :: Ord variable
+        => MonadSimplify m
         => TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom variable)
+        -> m (AttemptedAxiom variable)
     unaryOperator0 _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [BuiltinF a] -> do
@@ -607,10 +608,11 @@ binaryOperator
     get = extractVal ctx
     binaryOperator0
         :: Ord variable
+        => MonadSimplify m
         => TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom variable)
+        -> m (AttemptedAxiom variable)
     binaryOperator0 _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [BuiltinF a, BuiltinF b] -> do
@@ -653,10 +655,11 @@ ternaryOperator
     get = extractVal ctx
     ternaryOperator0
         :: Ord variable
+        => MonadSimplify m
         => TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom variable)
+        -> m (AttemptedAxiom variable)
     ternaryOperator0 _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [ BuiltinF a, BuiltinF b, BuiltinF c ] -> do
@@ -667,19 +670,20 @@ ternaryOperator
             _ -> wrongArity (Text.unpack ctx)
 
 type FunctionImplementation
-    = forall variable
+    = forall variable m
         .  Ord variable
+        => MonadSimplify m
         => TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom variable)
+        -> m (AttemptedAxiom variable)
 
 functionEvaluator :: FunctionImplementation -> Function
 functionEvaluator impl =
     applicationAxiomSimplifier evaluator
   where
     evaluator
-        :: (Ord variable, Show variable)
+        :: (Ord variable, Show variable, MonadSimplify simplifier)
         => PredicateSimplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
@@ -687,7 +691,7 @@ functionEvaluator impl =
             (Application Symbol)
             (Attribute.Pattern variable)
             (TermLike variable)
-        -> Simplifier (AttemptedAxiom variable)
+        -> simplifier (AttemptedAxiom variable)
     evaluator _ simplifier _axiomIdToSimplifier (valid :< app) =
         impl simplifier resultSort applicationChildren
       where

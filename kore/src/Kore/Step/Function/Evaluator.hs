@@ -37,6 +37,8 @@ import           Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
+import           Kore.Logger
+                 ( LogMessage, WithLog )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -56,11 +58,12 @@ import           Kore.Variables.Fresh
 {-| Evaluates functions on an application pattern.
 -}
 evaluateApplication
-    ::  forall variable.
-        ( Show variable
+    ::  forall variable simplifier
+    .   ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => Predicate variable
     -- ^ Aggregated children predicate and substitution.
@@ -69,7 +72,7 @@ evaluateApplication
         (Attribute.Pattern variable)
         (TermLike variable)
     -- ^ The pattern to be evaluated
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 evaluateApplication childrenPredicate (valid :< app) = do
     tools <- Simplifier.askMetadataTools
     substitutionSimplifier <- Simplifier.askSimplifierPredicate
@@ -118,12 +121,13 @@ evaluateApplication childrenPredicate (valid :< app) = do
 {-| Evaluates axioms on patterns.
 -}
 evaluatePattern
-    ::  forall variable .
-        ( Ord variable
-        , Show variable
+    ::  forall variable simplifier
+    .   ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
+        , WithLog LogMessage simplifier
         )
     => PredicateSimplifier
     -> TermLikeSimplifier
@@ -136,7 +140,7 @@ evaluatePattern
     -- ^ The pattern to be evaluated
     -> OrPattern variable
     -- ^ The default value
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 evaluatePattern
     substitutionSimplifier
     simplifier
@@ -161,12 +165,13 @@ evaluatePattern
 Returns Nothing if there is no axiom for the pattern's identifier.
 -}
 maybeEvaluatePattern
-    ::  forall variable .
-        ( Ord variable
-        , Show variable
+    ::  forall variable simplifier
+    .   ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
+        , WithLog LogMessage simplifier
         )
     => PredicateSimplifier
     -> TermLikeSimplifier
@@ -179,7 +184,7 @@ maybeEvaluatePattern
     -- ^ The pattern to be evaluated
     -> OrPattern variable
     -- ^ The default value
-    -> Maybe (Simplifier (OrPattern variable))
+    -> Maybe (simplifier (OrPattern variable))
 maybeEvaluatePattern
     substitutionSimplifier
     simplifier
@@ -246,7 +251,7 @@ maybeEvaluatePattern
       where
         Conditional { term = (), predicate, substitution } = childrenPredicate
 
-    simplifyIfNeeded :: Pattern variable -> Simplifier (OrPattern variable)
+    simplifyIfNeeded :: Pattern variable -> simplifier (OrPattern variable)
     simplifyIfNeeded toSimplify
       | toSimplify == unchangedPatt =
         return (OrPattern.fromPattern unchangedPatt)
@@ -289,14 +294,15 @@ was evaluated.
 -}
 reevaluateFunctions
     ::  ( SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
+        , MonadSimplify simplifier
+        , WithLog LogMessage simplifier
         )
     => Pattern variable
     -- ^ Function evaluation result.
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 reevaluateFunctions rewriting = do
     pattOr <- simplifyTerm (Pattern.term rewriting)
     mergedPatt <-
@@ -307,17 +313,18 @@ reevaluateFunctions rewriting = do
 {-| Ands the given condition-substitution to the given function evaluation.
 -}
 mergeWithConditionAndSubstitution
-    ::  ( Ord variable
-        , Show variable
+    ::  ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
+        , WithLog LogMessage simplifier
         )
     => Predicate variable
     -- ^ Condition and substitution to add.
     -> AttemptedAxiom variable
     -- ^ AttemptedAxiom to which the condition should be added.
-    -> Simplifier (AttemptedAxiom variable)
+    -> simplifier (AttemptedAxiom variable)
 mergeWithConditionAndSubstitution _ AttemptedAxiom.NotApplicable =
     return AttemptedAxiom.NotApplicable
 mergeWithConditionAndSubstitution

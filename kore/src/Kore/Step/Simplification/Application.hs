@@ -52,17 +52,17 @@ predicates ans substitutions, applying functions on the Application(terms),
 then merging everything into an Pattern.
 -}
 simplify
-    ::  ( Ord variable
-        , Show variable
+    ::  ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => CofreeF
         (Application Symbol)
         (Attribute.Pattern variable)
         (OrPattern variable)
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplify (valid :< app) = do
     evaluated <-
         traverse
@@ -79,30 +79,30 @@ simplify (valid :< app) = do
       = app
 
 makeAndEvaluateApplications
-    ::  ( Ord variable
-        , Show variable
+    ::  ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => Attribute.Pattern variable
     -> Symbol
     -> [Pattern variable]
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 makeAndEvaluateApplications valid symbol children = do
     makeAndEvaluateSymbolApplications valid symbol children
 
 makeAndEvaluateSymbolApplications
-    ::  ( Ord variable
-        , Show variable
+    ::  ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => Attribute.Pattern variable
     -> Symbol
     -> [Pattern variable]
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 makeAndEvaluateSymbolApplications valid symbol children = do
     expandedApplications <-
         BranchT.gather $ makeExpandedApplication valid symbol children
@@ -110,31 +110,31 @@ makeAndEvaluateSymbolApplications valid symbol children = do
     return (MultiOr.mergeAll orResults)
 
 evaluateApplicationFunction
-    ::  ( Ord variable
-        , Show variable
+    ::  ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => ExpandedApplication variable
     -- ^ The pattern to be evaluated
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 evaluateApplicationFunction Conditional { term, predicate, substitution } =
     evaluateApplication
         Conditional { term = (), predicate, substitution }
         term
 
 makeExpandedApplication
-    ::  ( Ord variable
-        , Show variable
+    ::  ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => Attribute.Pattern variable
     -> Symbol
     -> [Pattern variable]
-    -> BranchT Simplifier (ExpandedApplication variable)
+    -> BranchT simplifier (ExpandedApplication variable)
 makeExpandedApplication valid symbol children = do
     merged <-
         mergePredicatesAndSubstitutions

@@ -96,7 +96,7 @@ simplify = Simplify
 removeDestination :: patt -> Prim patt rewrite
 removeDestination = RemoveDestination
 
-type Transition = TransitionT (RewriteRule Variable) Simplifier
+type Transition simplifier = TransitionT (RewriteRule Variable) simplifier
 
 {- | Transition rule for primitive strategies in 'Prim'.
 
@@ -134,10 +134,12 @@ which is actually, exactly the form we want, since we are working with a
 and n destinations.
  -}
 transitionRule
-    :: Prim (Pattern Variable) (RewriteRule Variable)
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => Prim (Pattern Variable) (RewriteRule Variable)
     -> CommonStrategyPattern
     -- ^ Configuration being rewritten and its accompanying proof
-    -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
+    -> TransitionT (RewriteRule Variable) simplifier CommonStrategyPattern
 transitionRule strategy expandedPattern =
     traceNonErrorMonad D_OnePath_Step_transitionRule
         [ debugArg "strategy" (debugString strategy)
@@ -166,7 +168,7 @@ transitionRule strategy expandedPattern =
         :: [RewriteRule Variable]
         -> Pattern Variable -- ^ destination
         -> CommonStrategyPattern
-        -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
+        -> TransitionT (RewriteRule Variable) simplifier CommonStrategyPattern
     transitionApplyWithRemainders rules destination (RewritePattern config) =
         transitionMultiApplyWithRemainders rules destination config
     transitionApplyWithRemainders _ _ c = return c
@@ -175,13 +177,12 @@ transitionRule strategy expandedPattern =
         :: [RewriteRule Variable]
         -> Pattern Variable  -- ^ destination
         -> Pattern Variable  -- ^ configuration
-        -> Transition CommonStrategyPattern
+        -> Transition simplifier CommonStrategyPattern
     transitionMultiApplyWithRemainders rules destination config
       | Pattern.isBottom config = empty
       | otherwise = do
         eitherResults <-
-            Monad.Trans.lift
-            $ Monad.Unify.runUnifier
+            Monad.Unify.runUnifierT
             $ Step.applyRewriteRulesSequence
                 (Step.UnificationProcedure Unification.unificationProcedure)
                 config
@@ -221,7 +222,7 @@ transitionRule strategy expandedPattern =
     transitionRemoveDestination
         :: Pattern Variable
         -> CommonStrategyPattern
-        -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
+        -> TransitionT (RewriteRule Variable) simplifier CommonStrategyPattern
     transitionRemoveDestination destination (RewritePattern patt) =
         applyRemoveDestination RewritePattern destination patt
     transitionRemoveDestination _ _ = empty
@@ -231,7 +232,7 @@ transitionRule strategy expandedPattern =
         -- ^ proof state constructor
         -> Pattern Variable  -- ^ destination
         -> Pattern Variable  -- ^ configuration
-        -> TransitionT (RewriteRule Variable) Simplifier CommonStrategyPattern
+        -> TransitionT (RewriteRule Variable) simplifier CommonStrategyPattern
     applyRemoveDestination proofState destination patt = do
         let
             removal = removalPredicate destination patt

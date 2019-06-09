@@ -94,12 +94,12 @@ simplify patt = do
 simplifyToOr
     ::  ( SortedVariable variable
         , Show variable
-        , Ord variable
         , Unparse variable
         , FreshVariable variable
+        , MonadSimplify simplifier
         )
     => TermLike variable
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplifyToOr =
     localSimplifierTermLike (const simplifier) . simplifyInternal
   where
@@ -108,12 +108,12 @@ simplifyToOr =
 simplifyInternal
     ::  ( SortedVariable variable
         , Show variable
-        , Ord variable
         , Unparse variable
         , FreshVariable variable
+        , MonadSimplify simplifier
         )
     => TermLike variable
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplifyInternal termLike@(Recursive.project -> attrs :< termLikeF)
 
   | EvaluatedF _ <- termLikeF =

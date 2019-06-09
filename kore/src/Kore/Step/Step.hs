@@ -63,6 +63,8 @@ import           Kore.Internal.Predicate
                  ( Predicate )
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike as TermLike
+import           Kore.Logger
+                 ( LogMessage, WithLog )
 import qualified Kore.Logger as Log
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Step
@@ -197,6 +199,7 @@ unifyRule
         , FreshVariable  variable
         , SortedVariable variable
         , MonadUnify unifier
+        , WithLog LogMessage unifier
         )
     => UnificationProcedure
     -> Pattern variable
@@ -234,6 +237,7 @@ unifyRules
         , FreshVariable  variable
         , SortedVariable variable
         , MonadUnify unifier
+        , WithLog LogMessage unifier
         )
     => UnificationProcedure
     -> Pattern (Target variable)
@@ -261,6 +265,7 @@ applyInitialConditions
         , FreshVariable  variable
         , SortedVariable variable
         , MonadUnify unifier
+        , WithLog LogMessage unifier
         )
     => Predicate variable
     -- ^ Initial conditions
@@ -302,6 +307,7 @@ finalizeAppliedRule
         , FreshVariable  variable
         , SortedVariable variable
         , MonadUnify unifier
+        , WithLog LogMessage unifier
         )
     => RulePattern variable
     -- ^ Applied rule
@@ -342,6 +348,7 @@ applyRemainder
         , FreshVariable  variable
         , SortedVariable variable
         , MonadUnify unifier
+        , WithLog LogMessage unifier
         )
     => Pattern variable
     -- ^ Initial configuration

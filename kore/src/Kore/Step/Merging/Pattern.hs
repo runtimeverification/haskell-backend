@@ -13,6 +13,8 @@ import qualified Control.Monad.Trans.Class as Monad.Trans
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern, Predicate )
 import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Logger
+                 ( LogMessage, WithLog )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import           Kore.Step.Simplification.Data as Simplifier
@@ -33,12 +35,14 @@ mergeWithPredicate
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
+        , WithLog LogMessage simplifier
         )
     => Predicate variable
     -- ^ Condition and substitution to add.
     -> Pattern variable
     -- ^ pattern to which the above should be added.
-    -> BranchT Simplifier (Pattern variable)
+    -> BranchT simplifier (Pattern variable)
 mergeWithPredicate
     Conditional
         { predicate = conditionToMerge
@@ -66,10 +70,12 @@ mergeWithEvaluatedCondition
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
+        , WithLog LogMessage simplifier
         )
     => Pattern variable
     -> Predicate variable
-    -> BranchT Simplifier (Pattern variable)
+    -> BranchT simplifier (Pattern variable)
 mergeWithEvaluatedCondition
     Conditional
         { term = pattTerm

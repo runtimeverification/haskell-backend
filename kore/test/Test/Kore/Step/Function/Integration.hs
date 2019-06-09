@@ -31,7 +31,7 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier (..), Simplifier, TermLikeSimplifier,
+                 ( PredicateSimplifier (..), TermLikeSimplifier,
                  evalSimplifier )
 import qualified Kore.Step.Simplification.TermLike as TermLike
                  ( simplify )
@@ -554,12 +554,13 @@ mapVariables =
         fromVariable v { variableCounter = Just (Element 1) }
 
 mockEvaluator
-    :: AttemptedAxiom variable
+    :: Monad simplifier
+    => AttemptedAxiom variable
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
-    -> Simplifier (AttemptedAxiom variable)
+    -> simplifier (AttemptedAxiom variable)
 mockEvaluator evaluation _ _ _ _ = return evaluation
 
 evaluate

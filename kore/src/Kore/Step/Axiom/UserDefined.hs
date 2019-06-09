@@ -33,7 +33,7 @@ import           Kore.Step.Simplification.Data
                  ( AttemptedAxiomResults (AttemptedAxiomResults),
                  BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+                 ( MonadSimplify, PredicateSimplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Simplification.Pattern as Pattern
@@ -51,12 +51,12 @@ import           Kore.Variables.Fresh
 evaluating the pattern, it tries to re-apply all axioms on the result.
 -}
 equalityRuleEvaluator
-    ::  forall variable.
-        ( FreshVariable variable
+    ::  forall variable simplifier
+    .   ( FreshVariable variable
         , SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
         )
     => EqualityRule Variable
     -- ^ Axiom defining the current function.
@@ -67,7 +67,7 @@ equalityRuleEvaluator
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -- ^ The function on which to evaluate the current function.
-    -> Simplifier (AttemptedAxiom variable)
+    -> simplifier (AttemptedAxiom variable)
 equalityRuleEvaluator
     (EqualityRule rule)
     _substitutionSimplifier
@@ -85,7 +85,7 @@ equalityRuleEvaluator
         Left _        -> notApplicable
         Right results -> AttemptedAxiom.Applied <$> simplifyResults results
   where
-    notApplicable :: Simplifier (AttemptedAxiom variable)
+    notApplicable :: simplifier (AttemptedAxiom variable)
     notApplicable = return AttemptedAxiom.NotApplicable
 
     unificationProcedure :: UnificationProcedure
@@ -94,17 +94,17 @@ equalityRuleEvaluator
     applyRule
         :: TermLike variable
         -> RulePattern Variable
-        -> Simplifier
+        -> simplifier
             (Either UnificationOrSubstitutionError [Step.Results variable])
     applyRule patt' rule' =
-        Monad.Unify.runUnifier
+        Monad.Unify.runUnifierT
         $ Step.applyRulesParallel
             unificationProcedure
             [RulePattern.mapVariables fromVariable rule']
             (Pattern.fromTermLike patt')
 
     simplifyOrPatterns
-        :: [OrPattern variable] -> Simplifier (OrPattern variable)
+        :: [OrPattern variable] -> simplifier (OrPattern variable)
     simplifyOrPatterns unsimplified =
         MultiOr.mergeAll
         <$> traverse
@@ -114,14 +114,14 @@ equalityRuleEvaluator
     simplifyPattern
         :: Pattern.Pattern variable
         -- ^ The condition to be evaluated.
-        -> Simplifier (OrPattern variable)
+        -> simplifier (OrPattern variable)
     simplifyPattern config = do
         patterns <- BranchT.gather $ Pattern.simplifyPredicate config
         return (OrPattern.fromPatterns patterns)
 
     simplifyResults
         :: [Step.Results variable]
-        -> Simplifier (AttemptedAxiomResults variable)
+        -> simplifier (AttemptedAxiomResults variable)
     simplifyResults stepResults = do
         results <- simplifyOrPatterns $ map Step.gatherResults stepResults
         remainders <- simplifyOrPatterns $ map Step.remainders stepResults

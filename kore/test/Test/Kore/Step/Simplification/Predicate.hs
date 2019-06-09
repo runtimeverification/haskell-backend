@@ -297,10 +297,11 @@ makeEvaluator mapping =
 simpleEvaluator
     ::  ( FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => [(TermLike variable, TermLike variable)]
     -> TermLike variable
-    -> Simplifier (AttemptedAxiom variable)
+    -> simplifier (AttemptedAxiom variable)
 simpleEvaluator [] _ = return NotApplicable
 simpleEvaluator ((from, to) : ps) patt
   | from == patt =

@@ -75,13 +75,13 @@ Also, we have
 -}
 simplify
     ::  ( SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
+        , MonadSimplify simplifier
         )
     => And Sort (OrPattern variable)
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplify And { andFirst = first, andSecond = second } =
     simplifyEvaluated first second
 
@@ -104,14 +104,14 @@ to carry around.
 -}
 simplifyEvaluated
     ::  ( SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
+        , MonadSimplify simplifier
         )
     => OrPattern variable
     -> OrPattern variable
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplifyEvaluated first second
   | OrPattern.isFalse first  = return OrPattern.bottom
   | OrPattern.isFalse second = return OrPattern.bottom
@@ -131,15 +131,15 @@ See the comment for 'simplify' to find more details.
 -}
 makeEvaluate
     ::  ( SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
         , HasCallStack
+        , MonadSimplify simplifier
         )
     => Pattern variable
     -> Pattern variable
-    -> BranchT Simplifier (Pattern variable)
+    -> BranchT simplifier (Pattern variable)
 makeEvaluate first second
   | Pattern.isBottom first || Pattern.isBottom second = empty
   | Pattern.isTop first = return second
@@ -148,15 +148,15 @@ makeEvaluate first second
 
 makeEvaluateNonBool
     ::  ( SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
         , HasCallStack
+        , MonadSimplify simplifier
         )
     => Pattern variable
     -> Pattern variable
-    -> BranchT Simplifier (Pattern variable)
+    -> BranchT simplifier (Pattern variable)
 makeEvaluateNonBool
     first@Conditional { term = firstTerm }
     second@Conditional { term = secondTerm }
