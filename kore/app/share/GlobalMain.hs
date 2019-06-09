@@ -13,15 +13,12 @@ module GlobalMain
     , mainPatternVerify
     , parseDefinition
     , verifyDefinitionWithBase
-    , constructorFunctions
     , mainModule
     , mainParse
     ) where
 
 import           Control.Exception
                  ( evaluate )
-import           Control.Lens
-                 ( (<>~) )
 import           Control.Monad
                  ( when )
 import           Data.Function
@@ -62,11 +59,10 @@ import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
                  ( Symbol )
-import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
-                 ( IndexedModule (..), KoreIndexedModule, VerifiedModule )
+                 ( KoreIndexedModule, VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.Parser
                  ( ParsedPattern, parseKoreDefinition )
@@ -290,46 +286,6 @@ mainPatternVerify verifiedModule patt = do
             , declaredVariables = emptyDeclaredVariables
             , builtinDomainValueVerifiers = domainValueVerifiers
             }
-
--- TODO (traiansf): Get rid of this.
--- The function below works around several limitations of
--- the current tool by tricking the tool into believing that
--- functions are constructors (so that function patterns can match)
--- and that @kseq@ and @dotk@ are both functional and constructor.
-constructorFunctions
-    :: VerifiedModule Attribute.Symbol Attribute.Axiom
-    -> VerifiedModule Attribute.Symbol Attribute.Axiom
-constructorFunctions ixm =
-    ixm
-        { indexedModuleSymbolSentences =
-            Map.mapWithKey
-                constructorFunctions1
-                (indexedModuleSymbolSentences ixm)
-        , indexedModuleAliasSentences =
-            Map.mapWithKey
-                constructorFunctions1
-                (indexedModuleAliasSentences ixm)
-        , indexedModuleImports = recurseIntoImports <$> indexedModuleImports ixm
-        }
-  where
-    constructorFunctions1 ident (atts, defn) =
-        ( atts
-            & Attribute.Symbol.lensConstructor
-                <>~ Attribute.Symbol.Constructor isCons
-            & Attribute.Symbol.lensFunctional
-                <>~ Attribute.Symbol.Functional (isCons || isInj)
-            & Attribute.Symbol.lensInjective
-                <>~ Attribute.Symbol.Injective (isCons || isInj)
-            & Attribute.Symbol.lensSortInjection
-                <>~ Attribute.Symbol.SortInjection isInj
-        , defn
-        )
-      where
-        isInj = getId ident == "inj"
-        isCons = elem (getId ident) ["kseq", "dotk"]
-
-    recurseIntoImports (attrs, attributes, importedModule) =
-        (attrs, attributes, constructorFunctions importedModule)
 
 mainModule
     :: ModuleName

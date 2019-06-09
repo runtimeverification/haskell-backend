@@ -1,12 +1,10 @@
 {-|
-Module      : Kore.ASTVerifier.PatternVerifier
-Description : Tools for verifying the wellformedness of a Kore 'Pattern'.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : POSIX
 -}
+
+{-# LANGUAGE TemplateHaskell #-}
+
 module Kore.ASTVerifier.PatternVerifier
     ( verifyPattern
     , verifyStandalonePattern
@@ -17,12 +15,20 @@ module Kore.ASTVerifier.PatternVerifier
     , PatternVerifier (..)
     , runPatternVerifier
     , Context (..)
+    , lensDeclaredVariables
+    , lensDeclaredSortVariables
+    , lensIndexedModule
+    , lensBuiltinDomainValueVerifiers
     , DeclaredVariables (..), emptyDeclaredVariables
     , assertExpectedSort
     , assertSameSort
     ) where
 
 import           Control.Applicative
+import           Control.Lens
+                 ( (%~), (<>~), _1 )
+import qualified Control.Lens as Lens hiding
+                 ( makeLenses )
 import qualified Control.Monad as Monad
 import           Control.Monad.Reader
                  ( MonadReader, ReaderT, runReaderT )
@@ -43,6 +49,7 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Data.Text.Prettyprint.Doc.Render.String
                  ( renderString )
 
+import qualified Control.Lens.TH.Rules as Lens
 import           Kore.AST.Error
 import           Kore.ASTHelpers
 import           Kore.ASTVerifier.Error
@@ -87,6 +94,8 @@ data Context =
             :: !(Builtin.DomainValueVerifiers Verified.Pattern)
         }
 
+Lens.makeLenses ''Context
+
 newtype PatternVerifier a =
     PatternVerifier
         { getPatternVerifier :: ReaderT Context (Either (Error VerifyError)) a }
@@ -101,7 +110,37 @@ runPatternVerifier
     -> PatternVerifier a
     -> Either (Error VerifyError) a
 runPatternVerifier ctx PatternVerifier { getPatternVerifier } =
-    runReaderT getPatternVerifier ctx
+    ctx
+    & Lens.over lensIndexedModule specialK
+    & runReaderT getPatternVerifier
+
+{- | Apply attributes to special K symbols.
+ -}
+-- TODO (thomas.tuegel): Remove this after changing prelude.kore.
+specialK
+    :: IndexedModule patternType Attribute.Symbol attrAxiom
+    -> IndexedModule patternType Attribute.Symbol attrAxiom
+specialK indexedModule =
+    indexedModule
+    & lensIndexedModuleImports         %~ fmap recurseIntoImports
+    & lensIndexedModuleSymbolSentences %~ Map.mapWithKey worker
+    & lensIndexedModuleAliasSentences  %~ Map.mapWithKey worker
+  where
+    worker ident decl =
+        decl
+        & _1 . Attribute.lensConstructor   <>~ constructor
+        & _1 . Attribute.lensFunctional    <>~ functional
+        & _1 . Attribute.lensInjective     <>~ injective
+        & _1 . Attribute.lensSortInjection <>~ sortInjection
+      where
+        isInj = getId ident == "inj"
+        isCons = elem (getId ident) ["kseq", "dotk"]
+        constructor = Attribute.Constructor isCons
+        functional = Attribute.Functional (isCons || isInj)
+        injective = Attribute.Injective (isCons || isInj)
+        sortInjection = Attribute.SortInjection isInj
+
+    recurseIntoImports = Lens.over Lens._3 specialK
 
 lookupSortDeclaration
     :: Id

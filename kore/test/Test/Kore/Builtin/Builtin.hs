@@ -21,7 +21,6 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
                  ( assertEqual, testCase )
 
-import qualified Control.Lens as Lens
 import qualified Control.Monad.Trans as Trans
 import           Data.Function
                  ( (&) )
@@ -29,7 +28,6 @@ import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
 import           Data.Proxy
-import qualified Data.Set as Set
 import           GHC.Stack
                  ( HasCallStack )
 
@@ -129,42 +127,6 @@ verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
   where
     attrVerify = defaultAttributesVerification Proxy Proxy
 
--- TODO (traiansf): Get rid of this.
--- The function below works around several limitations of
--- the current tool by tricking the tool into believing that
--- functions are constructors (so that function patterns can match)
--- and that @kseq@ and @dotk@ are both functional and constructor.
-constructorFunctions
-    :: VerifiedModule StepperAttributes Attribute.Axiom
-    -> VerifiedModule StepperAttributes Attribute.Axiom
-constructorFunctions ixm =
-    ixm
-        { indexedModuleSymbolSentences =
-            Map.mapWithKey
-                constructorFunctions1
-                (indexedModuleSymbolSentences ixm)
-        , indexedModuleAliasSentences =
-            Map.mapWithKey
-                constructorFunctions1
-                (indexedModuleAliasSentences ixm)
-        , indexedModuleImports = recurseIntoImports <$> indexedModuleImports ixm
-        }
-  where
-    constructorFunctions1 ident (atts, defn) =
-        ( atts
-            & lensConstructor Lens.<>~ Constructor isCons
-            & lensFunctional Lens.<>~ Functional (isCons || isInj)
-            & lensInjective Lens.<>~ Injective (isCons || isInj)
-            & lensSortInjection Lens.<>~ SortInjection isInj
-        , defn
-        )
-      where
-        isInj = getId ident == "inj"
-        isCons = Set.member (getId ident) (Set.fromList ["kseq", "dotk"])
-
-    recurseIntoImports (attrs, attributes, importedModule) =
-        (attrs, attributes, constructorFunctions importedModule)
-
 verifiedModules
     :: Map ModuleName (VerifiedModule StepperAttributes Attribute.Axiom)
 verifiedModules =
@@ -180,7 +142,7 @@ indexedModule =
     & IndexedModule.mapPatterns Builtin.externalizePattern
 
 testMetadataTools :: SmtMetadataTools StepperAttributes
-testMetadataTools = MetadataTools.build (constructorFunctions verifiedModule)
+testMetadataTools = MetadataTools.build verifiedModule
 
 testSubstitutionSimplifier :: PredicateSimplifier
 testSubstitutionSimplifier = Mock.substitutionSimplifier

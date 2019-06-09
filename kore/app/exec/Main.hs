@@ -310,8 +310,7 @@ mainWithOptions
                 Nothing
                 True
                 parsedDefinition
-        indexedModule <-
-            constructorFunctions <$> mainModule mainModuleName indexedModules
+        indexedModule <- mainModule mainModuleName indexedModules
         searchParameters <-
             case koreSearchOptions of
                 Nothing -> return Nothing
