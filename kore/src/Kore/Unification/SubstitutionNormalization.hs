@@ -27,10 +27,6 @@ import qualified Data.Set as Set
 
 import           Data.Graph.TopologicalSort
 import qualified Kore.Attribute.Pattern as Attribute
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.Predicate
                  ( Conditional (..), Predicate )
 import qualified Kore.Internal.Predicate as Predicate
@@ -40,7 +36,6 @@ import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
-import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -69,12 +64,11 @@ normalizeSubstitution
     => Map variable (TermLike variable)
     -> ExceptT SubstitutionError m (Predicate variable)
 normalizeSubstitution substitution = do
-    tools <- Simplifier.askMetadataTools
     let
         nonSimplifiableDependencies :: Map variable (Set variable)
         nonSimplifiableDependencies =
             Map.mapWithKey
-                (getNonSimplifiableDependencies tools interestingVariables)
+                (getNonSimplifiableDependencies interestingVariables)
                 substitution
 
         -- | Do a `topologicalSort` of variables using the `dependencies` Map.
@@ -198,25 +192,21 @@ getNonSimplifiableDependencies
     ::  ( Ord variable
         , Show variable
         )
-    => SmtMetadataTools StepperAttributes
-    -> Set variable  -- ^ interesting variables
+    => Set variable  -- ^ interesting variables
     -> variable  -- ^ substitution variable
     -> TermLike variable  -- ^ substitution pattern
     -> Set variable
-getNonSimplifiableDependencies
-    tools interesting var p@(Recursive.project -> _ :< h)
-  =
+getNonSimplifiableDependencies interesting var p@(Recursive.project -> _ :< h) =
     case h of
         VariableF v | v == var -> Set.empty
-        _ -> Recursive.fold (nonSimplifiableAbove tools interesting) p
+        _ -> Recursive.fold (nonSimplifiableAbove interesting) p
 
 nonSimplifiableAbove
     :: forall variable. (Ord variable, Show variable)
-    => SmtMetadataTools StepperAttributes
-    -> Set variable
+    => Set variable
     -> Base (TermLike variable) (Set variable)
     -> Set variable
-nonSimplifiableAbove _tools interesting p =
+nonSimplifiableAbove interesting p =
     case Cofree.tailF p of
         VariableF v ->
             if v `Set.member` interesting then Set.singleton v else Set.empty
