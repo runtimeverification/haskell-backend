@@ -161,10 +161,10 @@ kiteKSymbol :: Internal.Symbol
 kiteKSymbol = builtinSymbol "kiteK" & hook "KEQUAL.ite"
 
 kseqSymbol :: Internal.Symbol
-kseqSymbol = builtinSymbol "kseq"
+kseqSymbol = builtinSymbol "kseq" & constructor
 
 dotkSymbol :: Internal.Symbol
-dotkSymbol = builtinSymbol "dotk"
+dotkSymbol = builtinSymbol "dotk" & constructor
 
 injSymbol :: Sort -> Sort -> Internal.Symbol
 injSymbol lSort rSort =
@@ -307,6 +307,12 @@ functional =
     Lens.set
         (Internal.lensSymbolAttributes . Attribute.lensFunctional)
         Attribute.Functional { isDeclaredFunctional = True }
+
+constructor :: Internal.Symbol -> Internal.Symbol
+constructor =
+    Lens.set
+        (Internal.lensSymbolAttributes . Attribute.lensConstructor)
+        Attribute.Constructor { isConstructor = True }
 
 -- ** Pair
 

@@ -27,7 +27,11 @@ import qualified Control.Monad as Monad
 import           Control.Monad.Reader
                  ( MonadReader, ReaderT, runReaderT )
 import qualified Control.Monad.Reader as Reader
+import qualified Control.Monad.Trans.Class as Trans
+import           Control.Monad.Trans.Maybe
 import qualified Data.Foldable as Foldable
+import           Data.Function
+                 ( (&) )
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
 import           Data.Set
@@ -48,6 +52,7 @@ import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
+import           Kore.IndexedModule.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
 import qualified Kore.Internal.Alias as Internal
@@ -206,13 +211,17 @@ verifyAliasLeftPattern
     :: Application SymbolOrAlias Variable
     -> PatternVerifier (DeclaredVariables, Application SymbolOrAlias Variable)
 verifyAliasLeftPattern leftPattern = do
-    _ :< verified <- verifyApplyAlias snd (expectVariable <$> leftPattern)
+    _ :< verified <-
+        verifyApplyAlias snd (expectVariable <$> leftPattern)
+        & runMaybeT
+        & (>>= maybe (error . noHead $ symbolOrAlias) return)
     declaredVariables <- uniqueDeclaredVariables (fst <$> verified)
     let verifiedLeftPattern =
             leftPattern
                 { applicationChildren = fst <$> applicationChildren verified }
     return (declaredVariables, verifiedLeftPattern)
   where
+    symbolOrAlias = applicationSymbolOrAlias leftPattern
     expectVariable
         :: Variable
         -> PatternVerifier (Variable, Attribute.Pattern Variable)
@@ -515,14 +524,14 @@ verifyPatternsWithSorts getChildAttributes sorts operands = do
 verifyApplyAlias
     ::  (child -> Attribute.Pattern Variable)
     ->  Application SymbolOrAlias (PatternVerifier child)
-    ->  PatternVerifier
+    ->  MaybeT PatternVerifier
             (CofreeF
                 (Application Internal.Alias)
                 (Attribute.Pattern Variable)
                 child
             )
-verifyApplyAlias getChildAttributes application = do
-    decl <- lookupAliasDeclaration aliasId
+verifyApplyAlias getChildAttributes application =
+    lookupDeclaration >>= \decl -> Trans.lift $ do
     let alias =
             Internal.Alias
                 { aliasConstructor = aliasId
@@ -541,6 +550,9 @@ verifyApplyAlias getChildAttributes application = do
         patternAttrs = Attribute.Pattern { patternSort, freeVariables }
     return (patternAttrs :< verified)
   where
+    lookupDeclaration =
+        Trans.lift (lookupAliasDeclaration aliasId)
+        `catchError` (const empty)
     verifyChildren = verifyPatternsWithSorts getChildAttributes
     getChildFreeVariables = Attribute.freeVariables . getChildAttributes
     Application { applicationSymbolOrAlias = symbolOrAlias } = application
@@ -550,14 +562,14 @@ verifyApplyAlias getChildAttributes application = do
 verifyApplySymbol
     ::  (child -> Attribute.Pattern Variable)
     ->  Application SymbolOrAlias (PatternVerifier child)
-    ->  PatternVerifier
+    ->  MaybeT PatternVerifier
             (CofreeF
                 (Application Internal.Symbol)
                 (Attribute.Pattern Variable)
                 child
             )
-verifyApplySymbol getChildAttributes application = do
-    decl <- lookupSymbolDeclaration symbolId
+verifyApplySymbol getChildAttributes application =
+    lookupDeclaration >>= \decl -> Trans.lift $ do
     attrs <- lookupSymbolAttributes symbolId
     let symbol =
             Internal.Symbol
@@ -578,6 +590,9 @@ verifyApplySymbol getChildAttributes application = do
         patternAttrs = Attribute.Pattern { patternSort, freeVariables }
     return (patternAttrs :< verified)
   where
+    lookupDeclaration =
+        Trans.lift (lookupSymbolDeclaration symbolId)
+        `catchError` (const empty)
     verifyChildren = verifyPatternsWithSorts getChildAttributes
     getChildFreeVariables = Attribute.freeVariables . getChildAttributes
     Application { applicationSymbolOrAlias = symbolOrAlias } = application
@@ -588,11 +603,11 @@ verifyApplication
     ::  (Verified.Pattern -> Attribute.Pattern Variable)
     ->  Application SymbolOrAlias (PatternVerifier Verified.Pattern)
     ->  PatternVerifier (Base (TermLike Variable) Verified.Pattern)
-verifyApplication getChildAttributes application =
-    verifyApplyAlias' `orElse` verifyApplySymbol'
+verifyApplication getChildAttributes application = do
+    result <- verifyApplyAlias' <|> verifyApplySymbol' & runMaybeT
+    maybe (koreFail . noHead $ symbolOrAlias) return result
   where
-    orElse :: PatternVerifier a -> PatternVerifier a -> PatternVerifier a
-    orElse a b = catchError a (\_ -> b)
+    symbolOrAlias = applicationSymbolOrAlias application
     transCofreeF fg (a :< fb) = a :< fg fb
     verifyApplyAlias' =
         transCofreeF Internal.ApplyAliasF

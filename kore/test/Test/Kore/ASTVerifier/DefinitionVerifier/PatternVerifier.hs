@@ -299,12 +299,8 @@ test_patternVerifier =
         NeedsInternalDefinitions
     , failureTestsForObjectPattern
         "Application pattern - symbol not declared"
-        (ExpectedErrorMessage "Symbol 'ObjectSymbol' not defined.")
-        (ErrorStack
-            [ "symbol or alias 'ObjectSymbol' (<test data>)"
-            , "(<test data>)"
-            ]
-        )
+        (ExpectedErrorMessage "Head 'ObjectSymbol' not defined.")
+        (ErrorStack [ "symbol or alias 'ObjectSymbol' (<test data>)" ])
         (applicationPatternWithChildren
             objectSymbolName
             [ simpleExistsParsedPattern

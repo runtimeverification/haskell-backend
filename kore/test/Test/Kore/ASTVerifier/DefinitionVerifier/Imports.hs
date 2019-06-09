@@ -517,11 +517,10 @@ symbolVisibilityTests :: [TestTree]
 symbolVisibilityTests =
     [ nameReferenceTests
         "Symbol visibility in axioms"
-        (ExpectedErrorMessage "Symbol 'symbol1' not defined.")
+        (ExpectedErrorMessage "Head 'symbol1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "symbol or alias 'symbol1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence symbolDeclaration)
@@ -529,12 +528,11 @@ symbolVisibilityTests =
         (SupportingSentences defaultSymbolSupportSentences)
     , nameReferenceTests
         "Symbol visibility in and pattern"
-        (ExpectedErrorMessage "Symbol 'symbol1' not defined.")
+        (ExpectedErrorMessage "Head 'symbol1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "\\and (<test data>)"
             , "symbol or alias 'symbol1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence symbolDeclaration)
@@ -542,12 +540,11 @@ symbolVisibilityTests =
         (SupportingSentences defaultSymbolSupportSentences)
     , nameReferenceTests
         "Symbol visibility in exists pattern"
-        (ExpectedErrorMessage "Symbol 'symbol1' not defined.")
+        (ExpectedErrorMessage "Head 'symbol1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "\\exists 'var' (<test data>)"
             , "symbol or alias 'symbol1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence symbolDeclaration)
@@ -555,12 +552,11 @@ symbolVisibilityTests =
         (SupportingSentences defaultSymbolSupportSentences)
     , nameReferenceTests
         "Symbol visibility in next pattern"
-        (ExpectedErrorMessage "Symbol 'symbol1' not defined.")
+        (ExpectedErrorMessage "Head 'symbol1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "\\next (<test data>)"
             , "symbol or alias 'symbol1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence symbolDeclaration)
@@ -568,12 +564,11 @@ symbolVisibilityTests =
         (SupportingSentences defaultSymbolSupportSentences)
     , nameReferenceTests
         "Symbol visibility in application pattern"
-        (ExpectedErrorMessage "Symbol 'symbol1' not defined.")
+        (ExpectedErrorMessage "Head 'symbol1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "symbol or alias 'symbol2' (<test data>)"
             , "symbol or alias 'symbol1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence symbolDeclaration)
@@ -581,11 +576,10 @@ symbolVisibilityTests =
         (SupportingSentences symbolReferenceInSymbolOrAliasSupportSentences)
     , nameReferenceTests
         "Meta symbol visibility in axioms"
-        (ExpectedErrorMessage "Symbol '#symbol1' not defined.")
+        (ExpectedErrorMessage "Head '#symbol1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "symbol or alias '#symbol1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence metaSymbolDeclaration)
@@ -708,11 +702,10 @@ aliasVisibilityTests :: [TestTree]
 aliasVisibilityTests =
     [ nameReferenceTests
         "Alias visibility in axioms"
-        (ExpectedErrorMessage "Symbol 'alias1' not defined.")
+        (ExpectedErrorMessage "Head 'alias1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "symbol or alias 'alias1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence aliasDeclaration)
@@ -720,12 +713,11 @@ aliasVisibilityTests =
         (SupportingSentences defaultAliasSupportSentences)
     , nameReferenceTests
         "Alias visibility in and pattern"
-        (ExpectedErrorMessage "Symbol 'alias1' not defined.")
+        (ExpectedErrorMessage "Head 'alias1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "\\and (<test data>)"
             , "symbol or alias 'alias1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence aliasDeclaration)
@@ -733,12 +725,11 @@ aliasVisibilityTests =
         (SupportingSentences defaultAliasSupportSentences)
     , nameReferenceTests
         "Alias visibility in exists pattern"
-        (ExpectedErrorMessage "Symbol 'alias1' not defined.")
+        (ExpectedErrorMessage "Head 'alias1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "\\exists 'var' (<test data>)"
             , "symbol or alias 'alias1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence aliasDeclaration)
@@ -746,12 +737,11 @@ aliasVisibilityTests =
         (SupportingSentences defaultAliasSupportSentences)
     , nameReferenceTests
         "Alias visibility in next pattern"
-        (ExpectedErrorMessage "Symbol 'alias1' not defined.")
+        (ExpectedErrorMessage "Head 'alias1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "\\next (<test data>)"
             , "symbol or alias 'alias1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence aliasDeclaration)
@@ -759,12 +749,11 @@ aliasVisibilityTests =
         (SupportingSentences defaultAliasSupportSentences)
     , nameReferenceTests
         "Alias visibility in application pattern"
-        (ExpectedErrorMessage "Symbol 'alias1' not defined.")
+        (ExpectedErrorMessage "Head 'alias1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "symbol or alias 'alias2' (<test data>)"
             , "symbol or alias 'alias1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence aliasDeclaration)
@@ -772,11 +761,10 @@ aliasVisibilityTests =
         (SupportingSentences aliasReferenceInAliasOrAliasSupportSentences)
     , nameReferenceTests
         "Meta alias visibility in axioms"
-        (ExpectedErrorMessage "Symbol '#alias1' not defined.")
+        (ExpectedErrorMessage "Head '#alias1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "symbol or alias '#alias1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence metaAliasDeclaration)
