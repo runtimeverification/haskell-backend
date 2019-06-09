@@ -10,8 +10,6 @@ import Test.Tasty.HUnit.Extensions
 
 import           Control.Exception
                  ( ErrorCall (ErrorCall), catch, evaluate )
-import           Control.Lens
-                 ( Lens', (.~) )
 import qualified Control.Lens as Lens
 import qualified Data.Bifunctor as Bifunctor
 import           Data.Function
@@ -65,9 +63,10 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 
 inj :: Sort -> TermLike Variable -> TermLike Variable
 inj sortTo pat =
-    mkApplySymbol sortTo (injSymbol & parameters .~ [sortFrom, sortTo]) [pat]
+    mkApplySymbol sortTo symbol' [pat]
   where
     sortFrom = termLikeSort pat
+    symbol' = injSymbol & Lens.set lensSymbolParams [sortFrom, sortTo]
 
 s1, s2, s3, s4 :: Sort
 s1 = simpleSort (SortName "s1")
@@ -112,11 +111,6 @@ symbol name =
         , symbolParams = []
         , symbolAttributes = Attribute.defaultSymbolAttributes
         }
-
-parameters :: Lens' Symbol [Sort]
-parameters lens symb@Symbol { symbolParams } =
-    (\symbolParams' -> symb { symbolParams = symbolParams' })
-    <$> lens symbolParams
 
 var :: Text -> Sort -> Variable
 var name variableSort =
@@ -230,7 +224,7 @@ sortParamSort = SortVariableSort . sortParam
 injSymbol :: Symbol
 injSymbol =
     symbol "inj"
-    & parameters .~ [sortParamSort "From", sortParamSort "To"]
+    & Lens.set lensSymbolParams [sortParamSort "From", sortParamSort "To"]
     & functional & injective & sortInjection
 
 symbols :: [Symbol]
