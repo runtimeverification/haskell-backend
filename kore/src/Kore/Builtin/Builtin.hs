@@ -104,7 +104,7 @@ import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule, VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SmtMetadataTools, extractMetadataTools )
+                 ( SmtMetadataTools )
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
@@ -712,6 +712,10 @@ runParser ctx result =
         Right a -> a
 
 {- | Look up the symbol hooked to the named builtin in the provided module.
+
+**WARNING**: The returned 'Symbol' will have the default attributes, not its
+declared attributes, because it is intended only for unparsing.
+
  -}
 lookupSymbol
     :: Text
@@ -723,8 +727,7 @@ lookupSymbol
 lookupSymbol builtinName builtinSort indexedModule = do
     symbolOrAliasConstructor <-
         IndexedModule.resolveHook indexedModule builtinName builtinSort
-    let tools = extractMetadataTools indexedModule (const ())
-    (return . getSymbol tools) SymbolOrAlias
+    (return . getSymbol) SymbolOrAlias
         { symbolOrAliasConstructor
         , symbolOrAliasParams = []
         }
@@ -734,15 +737,14 @@ lookupSymbol builtinName builtinSort indexedModule = do
 It is an error if the sort does not provide a @unit@ attribute; this is checked
 during verification.
 
+**WARNING**: The returned 'Symbol' will have the default attributes, not its
+declared attributes, because it is intended only for unparsing.
+
  -}
-lookupSymbolUnit
-    :: MetadataTools attr Attribute.Symbol
-    -> Sort
-    -> Attribute.Sort
-    -> Symbol
-lookupSymbolUnit tools theSort attrs =
+lookupSymbolUnit :: Sort -> Attribute.Sort -> Symbol
+lookupSymbolUnit theSort attrs =
     case getUnit of
-        Just symbol -> getSymbol tools symbol
+        Just symbol -> getSymbol symbol
         Nothing ->
             verifierBug
             $ "missing 'unit' attribute of sort '"
@@ -755,15 +757,14 @@ lookupSymbolUnit tools theSort attrs =
 It is an error if the sort does not provide a @element@ attribute; this is
 checked during verification.
 
+**WARNING**: The returned 'Symbol' will have the default attributes, not its
+declared attributes, because it is intended only for unparsing.
+
  -}
-lookupSymbolElement
-    :: MetadataTools attr Attribute.Symbol
-    -> Sort
-    -> Attribute.Sort
-    -> Symbol
-lookupSymbolElement tools theSort attrs =
+lookupSymbolElement :: Sort -> Attribute.Sort -> Symbol
+lookupSymbolElement theSort attrs =
     case getElement of
-        Just symbol -> getSymbol tools symbol
+        Just symbol -> getSymbol symbol
         Nothing ->
             verifierBug
             $ "missing 'element' attribute of sort '"
@@ -776,15 +777,14 @@ lookupSymbolElement tools theSort attrs =
 It is an error if the sort does not provide a @concat@ attribute; this is
 checked during verification.
 
+**WARNING**: The returned 'Symbol' will have the default attributes, not its
+declared attributes, because it is intended only for unparsing.
+
  -}
-lookupSymbolConcat
-    :: MetadataTools attr Attribute.Symbol
-    -> Sort
-    -> Attribute.Sort
-    -> Symbol
-lookupSymbolConcat tools theSort attrs =
+lookupSymbolConcat :: Sort -> Attribute.Sort -> Symbol
+lookupSymbolConcat theSort attrs =
     case getConcat of
-        Just symbol -> getSymbol tools symbol
+        Just symbol -> getSymbol symbol
         Nothing ->
             verifierBug
             $ "missing 'concat' attribute of sort '"
@@ -792,17 +792,22 @@ lookupSymbolConcat tools theSort attrs =
   where
     Attribute.Sort { concat = Attribute.Sort.Concat { getConcat } } = attrs
 
-getSymbol :: MetadataTools attr Attribute.Symbol -> SymbolOrAlias -> Symbol
-getSymbol tools symbol =
+{- | Get the internal 'Symbol' for a builtin symbol.
+
+**WARNING**: The returned 'Symbol' will have the default attributes, not its
+declared attributes, because it is intended only for unparsing.
+
+ -}
+getSymbol :: SymbolOrAlias -> Symbol
+getSymbol symbol =
     Symbol
         { symbolConstructor
         , symbolParams
-        , symbolAttributes
+        , symbolAttributes = Attribute.defaultSymbolAttributes
         }
   where
     symbolConstructor = symbolOrAliasConstructor symbol
     symbolParams = symbolOrAliasParams symbol
-    symbolAttributes = symAttributes tools symbol
 
 {- | Is the given symbol hooked to the named builtin?
  -}

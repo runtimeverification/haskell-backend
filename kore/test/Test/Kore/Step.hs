@@ -365,8 +365,7 @@ mockSymbolAttributes patternHead
 
 mockMetadataTools :: SmtMetadataTools Attribute.Symbol
 mockMetadataTools = MetadataTools
-    { symAttributes = mockSymbolAttributes
-    , sortAttributes = const def
+    { sortAttributes = const def
     , isSubsortOf = const $ const False
     , subsorts = Set.singleton
     , applicationSorts = undefined

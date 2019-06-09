@@ -15,10 +15,7 @@ import qualified Data.Bifunctor as Bifunctor
 import           Data.Function
 import           Data.List.NonEmpty
                  ( NonEmpty ((:|)) )
-import           Data.Map
-                 ( Map )
 import qualified Data.Map as Map
-import           Data.Maybe
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
@@ -160,11 +157,10 @@ eg, eh :: TermLike Variable -> TermLike Variable
 eg x' = mkApplySymbol s1 egSymbol [x']
 eh x' = mkApplySymbol s1 ehSymbol [x']
 
-nonLinFSymbol, nonLinGSymbol, nonLinASymbol, nonLinASSymbol :: Symbol
+nonLinFSymbol, nonLinGSymbol, nonLinASymbol :: Symbol
 nonLinFSymbol = symbol "nonLinF" & constructor & functional & injective
 nonLinGSymbol = symbol "nonLinG" & constructor & functional & injective
 nonLinASymbol = symbol "nonLinA" & constructor & functional & injective
-nonLinASSymbol = symbol "nonLinA" & constructor & functional & injective
 
 nonLinF :: TermLike Variable -> TermLike Variable -> TermLike Variable
 nonLinF x' y' = mkApplySymbol s1 nonLinFSymbol [x', y']
@@ -173,7 +169,7 @@ nonLinG :: TermLike Variable -> TermLike Variable
 nonLinG x' = mkApplySymbol s1 nonLinGSymbol [x']
 
 nonLinA, nonLinX, nonLinY :: TermLike Variable
-nonLinA = mkApplySymbol s1 nonLinASSymbol []
+nonLinA = mkApplySymbol s1 nonLinASymbol []
 nonLinX = mkVar $ var "x" s1
 nonLinY = mkVar $ var "y" s1
 
@@ -225,29 +221,9 @@ injSymbol =
     & Lens.set lensSymbolParams [sortParamSort "From", sortParamSort "To"]
     & functional & injective & sortInjection
 
-symbols :: [Symbol]
-symbols =
-    [ a1Symbol, a2Symbol, a3Symbol, a4Symbol, a5Symbol
-    , aSymbol, bSymbol, fSymbol
-    , efSymbol, egSymbol, ehSymbol
-    , nonLinFSymbol, nonLinGSymbol, nonLinASymbol, nonLinASSymbol
-    , expBinSymbol
-    , injSymbol
-    ]
-
-symbolAttributesMap :: Map SymbolOrAlias Attribute.Symbol
-symbolAttributesMap =
-    Map.fromList $ map ((,) <$> toSymbolOrAlias <*> symbolAttributes) symbols
-
-mockStepperAttributes :: SymbolOrAlias -> Attribute.Symbol
-mockStepperAttributes patternHead =
-    Map.lookup patternHead symbolAttributesMap
-    & fromMaybe Attribute.defaultSymbolAttributes
-
 tools :: SmtMetadataTools Attribute.Symbol
 tools = MetadataTools
-    { symAttributes = mockStepperAttributes
-    , sortAttributes = undefined
+    { sortAttributes = undefined
     , isSubsortOf = const $ const False
     , subsorts = Set.singleton
     , applicationSorts = undefined

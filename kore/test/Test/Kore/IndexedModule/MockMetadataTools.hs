@@ -43,10 +43,9 @@ makeMetadataTools
     -> [(SymbolOrAlias, ApplicationSorts)]
     -> SMT.AST.SmtDeclarations
     -> SmtMetadataTools StepperAttributes
-makeMetadataTools attr _headTypes sortTypes isSubsortOf sorts declarations =
+makeMetadataTools _attr _headTypes sortTypes isSubsortOf sorts declarations =
     MetadataTools
-        { symAttributes = attributesFunction attr
-        , sortAttributes = caseBasedFunction sortTypes
+        { sortAttributes = caseBasedFunction sortTypes
         -- TODO(Vladimir): fix the inconsistency that both 'subsorts' and
         -- 'isSubsortOf' only work with direct (non-transitive) relationships.
         -- For now, we can manually add the relationships for tests.
@@ -56,12 +55,6 @@ makeMetadataTools attr _headTypes sortTypes isSubsortOf sorts declarations =
         , applicationSorts = caseBasedFunction sorts
         , smtData = declarations
         }
-
-attributesFunction
-    :: [(SymbolOrAlias, StepperAttributes)]
-    -> SymbolOrAlias
-    -> StepperAttributes
-attributesFunction = caseBasedFunction
 
 caseBasedFunction
     :: (Eq a, Show a, HasCallStack)

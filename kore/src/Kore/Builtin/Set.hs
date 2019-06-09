@@ -390,11 +390,11 @@ asInternal tools builtinSetSort builtinSetChild =
         Domain.InternalSet
             { builtinSetSort
             , builtinSetUnit =
-                Builtin.lookupSymbolUnit tools builtinSetSort attrs
+                Builtin.lookupSymbolUnit builtinSetSort attrs
             , builtinSetElement =
-                Builtin.lookupSymbolElement tools builtinSetSort attrs
+                Builtin.lookupSymbolElement builtinSetSort attrs
             , builtinSetConcat =
-                Builtin.lookupSymbolConcat tools builtinSetSort attrs
+                Builtin.lookupSymbolConcat builtinSetSort attrs
             , builtinSetChild
             }
   where

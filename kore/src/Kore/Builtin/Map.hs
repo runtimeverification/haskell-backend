@@ -423,11 +423,11 @@ asInternal tools builtinMapSort builtinMapChild =
         Domain.InternalMap
             { builtinMapSort
             , builtinMapUnit =
-                Builtin.lookupSymbolUnit tools builtinMapSort attrs
+                Builtin.lookupSymbolUnit builtinMapSort attrs
             , builtinMapElement =
-                Builtin.lookupSymbolElement tools builtinMapSort attrs
+                Builtin.lookupSymbolElement builtinMapSort attrs
             , builtinMapConcat =
-                Builtin.lookupSymbolConcat tools builtinMapSort attrs
+                Builtin.lookupSymbolConcat builtinMapSort attrs
             , builtinMapChild
             }
   where

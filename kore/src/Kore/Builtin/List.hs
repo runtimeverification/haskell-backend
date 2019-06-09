@@ -320,11 +320,11 @@ asInternal tools builtinListSort builtinListChild =
         Domain.InternalList
             { builtinListSort
             , builtinListUnit =
-                Builtin.lookupSymbolUnit tools builtinListSort attrs
+                Builtin.lookupSymbolUnit builtinListSort attrs
             , builtinListElement =
-                Builtin.lookupSymbolElement tools builtinListSort attrs
+                Builtin.lookupSymbolElement builtinListSort attrs
             , builtinListConcat =
-                Builtin.lookupSymbolConcat tools builtinListSort attrs
+                Builtin.lookupSymbolConcat builtinListSort attrs
             , builtinListChild
             }
   where
