@@ -150,23 +150,42 @@ lookupSortDeclaration sortId = do
     (_, sortDecl) <- resolveSort indexedModule sortId
     return sortDecl
 
-lookupAliasDeclaration :: Id -> PatternVerifier (SentenceAlias ())
-lookupAliasDeclaration aliasId = do
+lookupAlias
+    ::  SymbolOrAlias
+    ->  MaybeT PatternVerifier (Internal.Alias, ApplicationSorts)
+lookupAlias symbolOrAlias = do
     Context { indexedModule } <- Reader.ask
-    (_, aliasDecl) <- resolveAlias indexedModule aliasId
-    return aliasDecl
+    let resolveAlias' = resolveAlias indexedModule aliasConstructor
+    (_, decl) <- resolveAlias' `catchError` const empty
+    let alias =
+            Internal.Alias
+                { aliasConstructor
+                , aliasParams
+                }
+    sorts <- Trans.lift $ applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
+    return (alias, sorts)
+  where
+    aliasConstructor = symbolOrAliasConstructor symbolOrAlias
+    aliasParams = symbolOrAliasParams symbolOrAlias
 
-lookupSymbolDeclaration :: Id -> PatternVerifier (SentenceSymbol ())
-lookupSymbolDeclaration symbolId = do
+lookupSymbol
+    ::  SymbolOrAlias
+    ->  MaybeT PatternVerifier (Internal.Symbol, ApplicationSorts)
+lookupSymbol symbolOrAlias = do
     Context { indexedModule } <- Reader.ask
-    (_, symbolDecl) <- resolveSymbol indexedModule symbolId
-    return symbolDecl
-
-lookupSymbolAttributes :: Id -> PatternVerifier Attribute.Symbol
-lookupSymbolAttributes symbolId = do
-    Context { indexedModule } <- Reader.ask
-    (attrs, _) <- resolveSymbol indexedModule symbolId
-    return attrs
+    let resolveSymbol' = resolveSymbol indexedModule symbolConstructor
+    (attrs, decl) <- resolveSymbol' `catchError` const empty
+    let symbol =
+            Internal.Symbol
+                { symbolConstructor
+                , symbolParams
+                , symbolAttributes = attrs
+                }
+    sorts <- Trans.lift $ applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
+    return (symbol, sorts)
+  where
+    symbolConstructor = symbolOrAliasConstructor symbolOrAlias
+    symbolParams = symbolOrAliasParams symbolOrAlias
 
 lookupDeclaredVariable :: Id -> PatternVerifier Variable
 lookupDeclaredVariable varId = do
@@ -570,33 +589,11 @@ verifyApplyAlias
                 child
             )
 verifyApplyAlias getChildAttributes application =
-    lookupDeclaration >>= \decl -> Trans.lift $ do
-    let alias =
-            Internal.Alias
-                { aliasConstructor = aliasId
-                , aliasParams = symbolOrAliasParams symbolOrAlias
-                }
-    sorts <- applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
-    let operandSorts = applicationSortsOperands sorts
-    verifiedChildren <- verifyChildren operandSorts children
-    let patternSort = applicationSortsResult sorts
-        verified =
-            application
-                { applicationSymbolOrAlias = alias
-                , applicationChildren = verifiedChildren
-                }
-        freeVariables = Set.unions (getChildFreeVariables <$> verifiedChildren)
-        patternAttrs = Attribute.Pattern { patternSort, freeVariables }
-    return (patternAttrs :< verified)
+    lookupAlias symbolOrAlias >>= \(alias, sorts) -> Trans.lift $ do
+    let verified = application { applicationSymbolOrAlias = alias }
+    verifyApplicationChildren getChildAttributes verified sorts
   where
-    lookupDeclaration =
-        Trans.lift (lookupAliasDeclaration aliasId)
-        `catchError` (const empty)
-    verifyChildren = verifyPatternsWithSorts getChildAttributes
-    getChildFreeVariables = Attribute.freeVariables . getChildAttributes
     Application { applicationSymbolOrAlias = symbolOrAlias } = application
-    Application { applicationChildren = children } = application
-    SymbolOrAlias { symbolOrAliasConstructor = aliasId } = symbolOrAlias
 
 verifyApplySymbol
     ::  (child -> Attribute.Pattern Variable)
@@ -608,35 +605,34 @@ verifyApplySymbol
                 child
             )
 verifyApplySymbol getChildAttributes application =
-    lookupDeclaration >>= \decl -> Trans.lift $ do
-    attrs <- lookupSymbolAttributes symbolId
-    let symbol =
-            Internal.Symbol
-                { symbolConstructor = symbolId
-                , symbolParams = symbolOrAliasParams symbolOrAlias
-                , symbolAttributes = attrs
-                }
-    sorts <- applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
+    lookupSymbol symbolOrAlias >>= \(symbol, sorts) -> Trans.lift $ do
+    let verified = application { applicationSymbolOrAlias = symbol }
+    verifyApplicationChildren getChildAttributes verified sorts
+  where
+    Application { applicationSymbolOrAlias = symbolOrAlias } = application
+
+verifyApplicationChildren
+    ::  (child -> Attribute.Pattern Variable)
+    ->  Application head (PatternVerifier child)
+    ->  ApplicationSorts
+    ->  PatternVerifier
+            (CofreeF
+                (Application head)
+                (Attribute.Pattern Variable)
+                child
+            )
+verifyApplicationChildren getChildAttributes application sorts = do
     let operandSorts = applicationSortsOperands sorts
     verifiedChildren <- verifyChildren operandSorts children
     let patternSort = applicationSortsResult sorts
-        verified =
-            application
-                { applicationSymbolOrAlias = symbol
-                , applicationChildren = verifiedChildren
-                }
+        verified = application { applicationChildren = verifiedChildren }
         freeVariables = Set.unions (getChildFreeVariables <$> verifiedChildren)
         patternAttrs = Attribute.Pattern { patternSort, freeVariables }
     return (patternAttrs :< verified)
   where
-    lookupDeclaration =
-        Trans.lift (lookupSymbolDeclaration symbolId)
-        `catchError` (const empty)
     verifyChildren = verifyPatternsWithSorts getChildAttributes
     getChildFreeVariables = Attribute.freeVariables . getChildAttributes
-    Application { applicationSymbolOrAlias = symbolOrAlias } = application
     Application { applicationChildren = children } = application
-    SymbolOrAlias { symbolOrAliasConstructor = symbolId } = symbolOrAlias
 
 verifyApplication
     ::  (Verified.Pattern -> Attribute.Pattern Variable)
