@@ -109,8 +109,9 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Variable
                  ( Variable )
+import           Kore.Unification.Error
 import           Kore.Unification.Unify
-                 ( MonadUnify, UnifierTT (UnifierTT) )
+                 ( MonadUnify, UnifierT (..) )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( unparse )
@@ -392,14 +393,30 @@ data ReplState claim = ReplState
     , logger  :: MVar (Logger.LogAction IO Logger.LogMessage)
     }
 
+type Explanation = Doc ()
+
 -- | Unifier that stores the first 'explainBottom'.
 -- See 'runUnifierWithExplanation'.
 newtype UnifierWithExplanation a =
     UnifierWithExplanation
-        { getUnifierWithExplanation :: UnifierTT (AccumT (First (Doc ()))) a }
+        { getUnifierWithExplanation
+            :: UnifierT (AccumT (First Explanation) Simplifier) a
+        }
   deriving (Alternative, Applicative, Functor, Monad)
 
 deriving instance MonadSMT UnifierWithExplanation
+
+instance Logger.WithLog Logger.LogMessage UnifierWithExplanation where
+    askLogAction =
+        Logger.hoistLogAction UnifierWithExplanation
+        <$> UnifierWithExplanation Logger.askLogAction
+    {-# INLINE askLogAction #-}
+
+    localLogAction locally =
+        UnifierWithExplanation
+        . Logger.localLogAction locally
+        . getUnifierWithExplanation
+    {-# INLINE localLogAction #-}
 
 deriving instance MonadSimplify UnifierWithExplanation
 
@@ -409,18 +426,12 @@ instance MonadUnify UnifierWithExplanation where
     throwUnificationError =
         UnifierWithExplanation . Monad.Unify.throwUnificationError
 
-    liftSimplifier =
-        UnifierWithExplanation . Monad.Unify.liftSimplifier
-    liftBranchedSimplifier =
-        UnifierWithExplanation . Monad.Unify.liftBranchedSimplifier
-
     gather =
         UnifierWithExplanation . Monad.Unify.gather . getUnifierWithExplanation
     scatter = UnifierWithExplanation . Monad.Unify.scatter
 
     explainBottom info first second =
         UnifierWithExplanation
-        . UnifierTT
         . Monad.Trans.lift
         . Monad.Accum.add
         . First
@@ -435,13 +446,19 @@ instance MonadUnify UnifierWithExplanation where
 runUnifierWithExplanation
     :: forall a
     .  UnifierWithExplanation a
-    -> Simplifier (Either (Doc ()) (NonEmpty a))
+    -> Simplifier (Either Explanation (NonEmpty a))
 runUnifierWithExplanation (UnifierWithExplanation unifier) =
-    either (Left . Pretty.pretty) failWithExplanation
-    <$> Monad.Unify.runUnifierT
-            (\accum -> runAccumT accum mempty)
-            unifier
+    either explainError failWithExplanation <$> unificationResults
   where
+    unificationResults
+        ::  Simplifier
+                (Either UnificationOrSubstitutionError ([a], First Explanation))
+    unificationResults =
+        fmap (\(r, ex) -> flip (,) ex <$> r)
+        . flip runAccumT mempty
+        . Monad.Unify.runUnifierT
+        $ unifier
+    explainError = Left . Pretty.pretty
     failWithExplanation (results, explanation) =
         case results of
             [] -> Left $ fromMaybe "No explanation given" (getFirst explanation)

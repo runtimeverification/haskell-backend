@@ -30,8 +30,10 @@ import           Data.Maybe
 import           Data.Text
                  ( Text )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           Debug.Trace
-import           GHC.Generics
+-- TODO (thomas.tuegel): Remove Debug.Trace
+import Debug.Trace
+       ( trace )
+import GHC.Generics
 
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
@@ -213,7 +215,7 @@ transitionRule
     transitionComputeWeakNextHelper rules config = do
         eitherResults <-
             Monad.Trans.lift . Monad.Trans.lift
-            $ Monad.Unify.runUnifier
+            $ Monad.Unify.runUnifierT
             $ Step.applyRewriteRulesParallel
                 (Step.UnificationProcedure Unification.unificationProcedure)
                 rules

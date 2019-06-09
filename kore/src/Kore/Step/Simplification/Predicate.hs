@@ -55,10 +55,11 @@ simplify
         , Show variable
         , Unparse variable
         , FreshVariable variable
+        , MonadSimplify simplifier
         )
     => Int
     -> Predicate variable
-    -> BranchT Simplifier (Predicate variable)
+    -> BranchT simplifier (Predicate variable)
 simplify
     times
     initialValue@Conditional { predicate, substitution }
@@ -133,9 +134,10 @@ simplifyPartial
         , Show variable
         , Unparse variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => Syntax.Predicate variable
-    -> BranchT Simplifier (Predicate variable)
+    -> BranchT simplifier (Predicate variable)
 simplifyPartial
     predicate
   = do

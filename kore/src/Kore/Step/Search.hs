@@ -124,7 +124,7 @@ matchWith
     -> MaybeT Simplifier (OrPredicate variable)
 matchWith e1 e2 = do
     eitherUnifiers <-
-        Monad.Trans.lift $ Monad.Unify.runUnifier
+        Monad.Trans.lift $ Monad.Unify.runUnifierT
         $ unificationProcedure t1 t2
     let
         maybeUnifiers :: Maybe [Predicate variable]

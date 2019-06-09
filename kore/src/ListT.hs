@@ -14,6 +14,7 @@ module ListT
     , cons
     , gather
     , scatter
+    , mapListT
     -- * Re-exports
     , Alternative (..), MonadPlus (..)
     ) where
@@ -68,38 +69,31 @@ return [f a, f b, g a, g b]
 newtype ListT m a =
     ListT
         { foldListT
-            :: forall n r
-            .  (forall x y. m x -> (x -> n y) -> n y)
-            -> (a -> n r -> n r)
-            -> n r
-            -> n r
+            :: forall r
+            .  (a -> m r -> m r)
+            -> m r
+            -> m r
         }
     deriving (Typeable)
 
 instance Functor (ListT m) where
-    fmap f as =
-        ListT $ \nbind yield ->
-            foldListT as nbind (yield . f)
+    fmap f as = ListT $ \yield -> foldListT as (yield . f)
     {-# INLINE fmap #-}
 
 instance Applicative (ListT m) where
-    pure a = ListT $ \_ yield -> yield a
+    pure a = ListT $ \yield -> yield a
     {-# INLINE pure #-}
 
     (<*>) fs as =
-        ListT $ \nbind yield ->
-            foldListT fs nbind $ \f ->
-                foldListT as nbind $ \a ->
-                    yield (f a)
+        ListT $ \yield -> foldListT fs $ \f -> foldListT as $ \a -> yield (f a)
     {-# INLINE (<*>) #-}
 
 instance Alternative (ListT f) where
-    empty = ListT $ \_ _ next -> next
+    empty = ListT $ \_ next -> next
     {-# INLINE empty #-}
 
     (<|>) as bs =
-        ListT $ \nbind yield ->
-            foldListT as nbind yield . foldListT bs nbind yield
+        ListT $ \yield -> foldListT as yield . foldListT bs yield
     {-# INLINE (<|>) #-}
 
 instance Monad (ListT m) where
@@ -107,24 +101,14 @@ instance Monad (ListT m) where
     {-# INLINE return #-}
 
     (>>=) as k =
-        ListT $ \nbind yield ->
-            foldListT as nbind $ \a ->
-                foldListT (k a) nbind yield
+        ListT $ \yield -> foldListT as $ \a -> foldListT (k a) yield
     {-# INLINE (>>=) #-}
 
-instance MonadPlus (ListT m)
+instance Monad m => MonadPlus (ListT m)
 
 instance MonadTrans ListT where
-    lift m = ListT $ \nbind yield next -> nbind m (\a -> yield a next)
+    lift m = ListT $ \yield next -> m >>= \a -> yield a next
     {-# INLINE lift #-}
-
-instance MFunctor ListT where
-    hoist morph bs = ListT $ \nbind -> foldListT bs (nbind . morph)
-    {-# INLINE hoist #-}
-
-instance MMonad ListT where
-    embed mlift bs = foldListT bs ((>>=) . mlift) cons empty
-    {-# INLINE embed #-}
 
 instance MonadReader r m => MonadReader r (ListT m) where
     ask = lift ask
@@ -133,7 +117,7 @@ instance MonadReader r m => MonadReader r (ListT m) where
     reader f = lift (reader f)
     {-# INLINE reader #-}
 
-    local f = hoist (local f)
+    local f = mapListT (local f)
     {-# INLINE local #-}
 
 instance MonadState s m => MonadState s (ListT m) where
@@ -152,17 +136,17 @@ instance MonadIO m => MonadIO (ListT m) where
 
 instance (Monad f, Foldable f) => Foldable (ListT f) where
     foldMap f as =
-        fold $ foldListT as (>>=) (\a r -> mappend (f a) <$> r) (pure mempty)
+        fold $ foldListT as (\a r -> mappend (f a) <$> r) (pure mempty)
     {-# INLINE foldMap #-}
 
 cons :: a -> ListT m a -> ListT m a
-cons a as = ListT $ \nbind yield -> yield a . foldListT as nbind yield
+cons a as = ListT $ \yield -> yield a . foldListT as yield
 {-# INLINE cons #-}
 
 {- | Collect all values produced by a @'ListT' m@ as a list in @m@.
  -}
 gather :: Monad m => ListT m a -> m [a]
-gather as = foldListT as (>>=) (\a mr -> (a :) <$> mr) (pure [])
+gather as = foldListT as (\a mr -> (a :) <$> mr) (pure [])
 {-# INLINE gather #-}
 
 {- | Distribute a 'Foldable' collection of values as a @'ListT' m@ stream.
@@ -173,3 +157,18 @@ Usually, @f ~ []@.
 scatter :: Foldable f => f a -> ListT m a
 scatter = foldr cons empty
 {-# INLINE scatter #-}
+
+{- | Apply a transformation of the 'Monad' @m@ underlying @'ListT' m@.
+
+The transformation is applied to the entire list, i.e. given
+
+@
+mapListT (\during -> before >> during >> after)
+@
+
+the actions @before@ and @after@ are sequenced before and after evaluating the
+contents of the list, respectively.
+
+ -}
+mapListT :: Monad m => (forall x. m x -> m x) -> ListT m a -> ListT m a
+mapListT mapping as = (lift . mapping) (gather as) >>= scatter

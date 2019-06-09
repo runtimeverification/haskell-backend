@@ -26,7 +26,7 @@ import           Kore.Internal.OrPredicate
 import           Kore.Internal.Pattern
                  ( Predicate )
 import           Kore.Step.Simplification.Data
-                 ( BranchT, Simplifier )
+                 ( BranchT, MonadSimplify )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Substitution as Substitution
@@ -34,15 +34,15 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 simplifyEvaluatedMultiPredicate
-    :: forall variable .
-        ( SortedVariable variable
-        , Ord variable
+    :: forall variable simplifier
+    .   ( SortedVariable variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
+        , MonadSimplify simplifier
         )
     => MultiAnd (OrPredicate variable)
-    -> Simplifier (OrPredicate variable)
+    -> simplifier (OrPredicate variable)
 simplifyEvaluatedMultiPredicate predicates = do
     let
         crossProduct :: MultiOr [Predicate variable]
@@ -54,6 +54,6 @@ simplifyEvaluatedMultiPredicate predicates = do
   where
     andPredicates
         :: [Predicate variable]
-        -> BranchT Simplifier (Predicate variable)
+        -> BranchT simplifier (Predicate variable)
     andPredicates predicates' =
         Substitution.normalize (Foldable.fold predicates')

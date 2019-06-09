@@ -56,17 +56,17 @@ predicates ans substitutions, applying functions on the Application(terms),
 then merging everything into an Pattern.
 -}
 simplify
-    ::  ( Ord variable
-        , Show variable
+    ::  ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => CofreeF
         (Application SymbolOrAlias)
         (Attribute.Pattern variable)
         (OrPattern variable)
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplify (valid :< app) = do
     evaluated <-
         traverse
@@ -83,16 +83,16 @@ simplify (valid :< app) = do
       = app
 
 makeAndEvaluateApplications
-    ::  ( Ord variable
-        , Show variable
+    ::  ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => Attribute.Pattern variable
     -> SymbolOrAlias
     -> [Pattern variable]
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 makeAndEvaluateApplications valid symbol children = do
     tools <- Simplifier.askMetadataTools
     case MetadataTools.symbolOrAliasType tools symbol of
@@ -101,52 +101,48 @@ makeAndEvaluateApplications valid symbol children = do
         HeadType.Alias -> error "Alias evaluation not implemented yet."
 
 makeAndEvaluateSymbolApplications
-    ::  ( Ord variable
-        , Show variable
+    ::  ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => Attribute.Pattern variable
     -> SymbolOrAlias
     -> [Pattern variable]
-    -> Simplifier (OrPattern variable)
-makeAndEvaluateSymbolApplications
-    valid
-    symbol
-    children
-  = do
+    -> simplifier (OrPattern variable)
+makeAndEvaluateSymbolApplications valid symbol children = do
     expandedApplications <-
         BranchT.gather $ makeExpandedApplication valid symbol children
     orResults <- traverse evaluateApplicationFunction expandedApplications
     return (MultiOr.mergeAll orResults)
 
 evaluateApplicationFunction
-    ::  ( Ord variable
-        , Show variable
+    ::  ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => ExpandedApplication variable
     -- ^ The pattern to be evaluated
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 evaluateApplicationFunction Conditional { term, predicate, substitution } =
     evaluateApplication
         Conditional { term = (), predicate, substitution }
         term
 
 makeExpandedApplication
-    ::  ( Ord variable
-        , Show variable
+    ::  ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => Attribute.Pattern variable
     -> SymbolOrAlias
     -> [Pattern variable]
-    -> BranchT Simplifier (ExpandedApplication variable)
+    -> BranchT simplifier (ExpandedApplication variable)
 makeExpandedApplication
     valid
     symbol

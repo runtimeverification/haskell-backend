@@ -30,7 +30,7 @@ import           Kore.Step.Simplification.Data
                  BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
                  BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-                 ( Env (..), PredicateSimplifier, Simplifier,
+                 ( Env (..), MonadSimplify, PredicateSimplifier,
                  TermLikeSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
@@ -451,12 +451,13 @@ appliedMockEvaluator result =
         }
 
 mockEvaluator
-    :: AttemptedAxiom variable
+    :: MonadSimplify simplifier
+    => AttemptedAxiom variable
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
-    -> Simplifier (AttemptedAxiom variable)
+    -> simplifier (AttemptedAxiom variable)
 mockEvaluator evaluation _ _ _ _ =
     return evaluation
 

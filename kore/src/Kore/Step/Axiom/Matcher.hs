@@ -414,7 +414,7 @@ matchVariableFunction quantifiedVariables (Var_ var) second
     tools <- Simplifier.askMetadataTools
     Monad.guard (isFunctionPattern tools second)
     Monad.Trans.lift $ do
-        ceilOr <- Monad.Unify.liftSimplifier $ Ceil.makeEvaluateTerm second
+        ceilOr <- Ceil.makeEvaluateTerm second
         result <-
             OrPattern.mergeWithPredicateAssumesEvaluated
                 createPredicatesAndSubstitutionsMergerExcept

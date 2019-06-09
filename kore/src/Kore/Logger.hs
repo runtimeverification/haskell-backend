@@ -33,7 +33,9 @@ import qualified Control.Monad.State.Strict as Strict
 import           Control.Monad.Trans
                  ( MonadTrans )
 import qualified Control.Monad.Trans as Monad.Trans
+import           Control.Monad.Trans.Accum
 import           Control.Monad.Trans.Identity
+import           Control.Monad.Trans.Maybe
 import           Control.Monad.Trans.Reader
 import           Data.Functor.Contravariant
                  ( contramap )
@@ -47,7 +49,7 @@ import           Prelude hiding
                  ( log )
 
 import ListT
-       ( ListT )
+       ( ListT, mapListT )
 
 -- | Log level used to describe each log message. It is also used to set the
 -- minimum level to be outputted.
@@ -82,6 +84,7 @@ data LogMessage = LogMessage
     -- ^ call stack of the message, when available
     }
 
+-- TODO (thomas.tuegel): Use TypeFamilies instead of MultiParamTypeClasses here.
 class Monad m => WithLog msg m where
     -- | Retrieve the 'LogAction' in scope.
     askLogAction :: m (LogAction m msg)
@@ -103,7 +106,13 @@ class Monad m => WithLog msg m where
     localLogAction mapping = Monad.Morph.hoist (localLogAction mapping)
     {-# INLINE localLogAction #-}
 
+instance (WithLog msg m, Monad m, Monoid w) => WithLog msg (AccumT w m) where
+    localLogAction mapping = mapAccumT (localLogAction mapping)
+    {-# INLINE localLogAction #-}
+
 instance (WithLog msg m, Monad m) => WithLog msg (IdentityT m)
+
+instance (WithLog msg m, Monad m) => WithLog msg (MaybeT m)
 
 instance (WithLog msg m, Monad m) => WithLog msg (ReaderT r m)
 
@@ -135,7 +144,7 @@ instance WithLog msg m => WithLog msg (ListT m) where
     askLogAction = Monad.Trans.lift (liftLogAction <$> askLogAction)
     {-# INLINE askLogAction #-}
 
-    localLogAction f = Monad.Morph.hoist (localLogAction f)
+    localLogAction f = mapListT (localLogAction f)
     {-# INLINE localLogAction #-}
 
 -- | Log any message.

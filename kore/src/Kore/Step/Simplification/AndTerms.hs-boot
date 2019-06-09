@@ -4,8 +4,10 @@ import Kore.Internal.Pattern
        ( Pattern )
 import Kore.Internal.TermLike
        ( TermLike )
+import Kore.Logger
+       ( LogMessage, WithLog )
 import Kore.Step.Simplification.Data
-       ( BranchT, Simplifier )
+       ( BranchT, MonadSimplify )
 import Kore.Syntax.Variable
        ( SortedVariable )
 import Kore.Unification.Unify
@@ -15,15 +17,16 @@ import Kore.Variables.Fresh
        ( FreshVariable )
 
 termAnd
-    :: forall variable .
-        ( FreshVariable variable
+    :: forall variable simplifier
+    .   ( FreshVariable variable
         , Show variable
         , Unparse variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => TermLike variable
     -> TermLike variable
-    -> BranchT Simplifier (Pattern variable)
+    -> BranchT simplifier (Pattern variable)
 
 termUnification
     ::  forall variable unifier
@@ -33,6 +36,7 @@ termUnification
         , Unparse variable
         , SortedVariable variable
         , MonadUnify unifier
+        , WithLog LogMessage unifier
         )
     => TermLike variable
     -> TermLike variable

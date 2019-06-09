@@ -72,7 +72,7 @@ import           Data.Text
 
 import qualified Kore.Logger as Logger
 import           ListT
-                 ( ListT )
+                 ( ListT, mapListT )
 import           SMT.SimpleSMT
                  ( Constructor (..), ConstructorArgument (..),
                  DataTypeDeclaration (..), FunctionDeclaration (..),
@@ -242,18 +242,22 @@ instance Logger.WithLog Logger.LogMessage SMT where
             runReaderT action =<< newMVar solver'
 
 instance MonadSMT SMT where
-    withSolver (SMT action) = withSolver' $ \solver -> do
-        -- Create an unshared "dummy" mutex for the solver.
-        mvar <- newMVar solver
-        -- Run the inner action with the unshared mutex.
-        -- The action will never block waiting to acquire the solver.
-        SimpleSMT.inNewScope solver (runReaderT action mvar)
+    withSolver (SMT action) =
+        Logger.withLogScope "SMT.withSolver"
+        $ withSolver' $ \solver -> do
+            -- Create an unshared "dummy" mutex for the solver.
+            mvar <- newMVar solver
+            -- Run the inner action with the unshared mutex.
+            -- The action will never block waiting to acquire the solver.
+            SimpleSMT.inNewScope solver (runReaderT action mvar)
 
     declare name typ =
-        withSolver' $ \solver -> SimpleSMT.declare solver name typ
+        Logger.withLogScope "SMT.declare"
+        $ withSolver' $ \solver -> SimpleSMT.declare solver name typ
 
-    declareFun declaration = do
-        withSolver' $ \solver -> SimpleSMT.declareFun solver declaration
+    declareFun declaration =
+        Logger.withLogScope "SMT.declareFun"
+        $ withSolver' $ \solver -> SimpleSMT.declareFun solver declaration
 
     declareSort declaration =
         withSolver' $ \solver -> SimpleSMT.declareSort solver declaration
@@ -281,7 +285,9 @@ instance (MonadSMT m, Monoid w) => MonadSMT (AccumT w m) where
 
 instance MonadSMT m => MonadSMT (IdentityT m)
 
-instance MonadSMT m => MonadSMT (ListT m)
+instance MonadSMT m => MonadSMT (ListT m) where
+    withSolver = mapListT withSolver
+    {-# INLINE withSolver #-}
 
 instance MonadSMT m => MonadSMT (ReaderT r m)
 
@@ -334,12 +340,6 @@ runSMT config logger SMT { getSMT } = do
     a <- runReaderT getSMT solver
     stopSolver solver
     return a
-
-{- | Declare a constant.
-
-The declared name is returned as an expression for convenience.
-
- -}
 
 -- Need to quote every identifier in SMT between pipes
 -- to escape special chars

@@ -19,6 +19,8 @@ import           Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
                  ( pattern Exists_ )
+import           Kore.Logger
+                 ( LogMessage, WithLog )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( evaluate )
 import qualified Kore.Step.Merging.Pattern as Pattern
@@ -33,14 +35,15 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 simplifyAndRemoveTopExists
-    ::  ( Ord variable
-        , Show variable
+    ::  ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
+        , WithLog LogMessage simplifier
         )
     => Pattern variable
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplifyAndRemoveTopExists patt = do
     simplified <- simplify patt
     return (removeTopExists <$> simplified)
@@ -53,14 +56,15 @@ simplifyAndRemoveTopExists patt = do
 {-| Simplifies an 'Pattern', returning an 'OrPattern'.
 -}
 simplify
-    ::  ( Ord variable
-        , Show variable
+    ::  ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
+        , WithLog LogMessage simplifier
         )
     => Pattern variable
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplify pattern'@Conditional { term } = do
     simplifiedTerm <- simplifyTerm term
     orPatterns <-
@@ -73,15 +77,16 @@ simplify pattern'@Conditional { term } = do
 {-| Simplifies the predicate inside an 'Pattern'.
 -}
 simplifyPredicate
-    ::  ( Ord variable
-        , Show variable
+    ::  ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
+        , WithLog LogMessage simplifier
         )
     => Pattern variable
     -- ^ The condition to be evaluated.
-    -> BranchT Simplifier (Pattern variable)
+    -> BranchT simplifier (Pattern variable)
 simplifyPredicate Conditional {term, predicate, substitution} = do
     evaluated <- Monad.Trans.lift $ Predicate.evaluate predicate
     let Conditional { predicate = evaluatedPredicate } = evaluated

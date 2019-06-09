@@ -49,7 +49,7 @@ import           Kore.Step.Simplification.Data
                  BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier,
                  notApplicableAxiomEvaluator, purePatternAxiomEvaluator )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+                 ( MonadSimplify, PredicateSimplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Or as Or
 import           Kore.Syntax.Definition
                  ( SentenceSymbol (..) )
@@ -117,6 +117,7 @@ evalKEq
         , SortedVariable variable
         , Unparse variable
         , Show variable
+        , MonadSimplify simplifier
         )
     => Bool
     -> PredicateSimplifier
@@ -128,7 +129,7 @@ evalKEq
         (Application SymbolOrAlias)
         (Attribute.Pattern variable)
         (TermLike variable)
-    -> Simplifier (AttemptedAxiom variable)
+    -> simplifier (AttemptedAxiom variable)
 evalKEq true _ _ _ (valid :< app) =
     case applicationChildren of
         [t1, t2] -> evalEq t1 t2
@@ -161,9 +162,10 @@ evalKEq true _ _ _ (valid :< app) =
             }
 
 evalKIte
-    ::  forall variable
+    ::  forall variable simplifier
     .   ( FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => PredicateSimplifier
     -> TermLikeSimplifier
@@ -173,7 +175,7 @@ evalKIte
         (Application SymbolOrAlias)
         (Attribute.Pattern variable)
         (TermLike variable)
-    -> Simplifier (AttemptedAxiom variable)
+    -> simplifier (AttemptedAxiom variable)
 evalKIte _ _ _ (_ :< app) =
     case app of
         Application { applicationChildren = [expr, t1, t2] } ->

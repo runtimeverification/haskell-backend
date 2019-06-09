@@ -104,7 +104,7 @@ transitionRule =
                 Step.UnificationProcedure Unification.unificationProcedure
         eitherResults <-
             Monad.Trans.lift
-            $ Monad.Unify.runUnifier
+            $ Monad.Unify.runUnifierT
             $ Step.applyRewriteRulesParallel unificationProcedure [rule] config
         case eitherResults of
             Left err ->
