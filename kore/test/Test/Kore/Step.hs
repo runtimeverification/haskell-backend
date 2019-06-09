@@ -73,10 +73,10 @@ test_ruleThatDoesn'tApply :: TestTree
 test_ruleThatDoesn'tApply =
     applyStrategy                              "unused rewrite rule"
         ( Start $ cons c1     ["var"])
-        [ Axiom $ cons c2     ["x1"] `rewritesTo`  cons c2 ["x1"]
+        [ Axiom $ cons c1     ["x1"] `rewritesTo`  cons c2 ["x1"]
         , Axiom $ cons unused ["x2"] `rewritesTo`  var "x2"
         ]
-        ( Expect $                              cons c2 ["var"])
+        ( Expect $                                 cons c2 ["var"])
       where
         cons = applyConstructorToVariables
 
