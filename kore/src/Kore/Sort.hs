@@ -9,6 +9,7 @@ module Kore.Sort
     ( SortVariable (..)
     , SortActual (..)
     , Sort (..)
+    , getSortId
     , substituteSortVariables
     -- * Meta-sorts
     , MetaSortType (..)
@@ -127,6 +128,15 @@ instance Unparse Sort where
         \case
             SortVariableSort sortVariable -> unparse2 sortVariable
             SortActualSort sortActual -> unparse2 sortActual
+
+getSortId :: Sort -> Id
+getSortId =
+    \case
+        SortVariableSort SortVariable { getSortVariable } ->
+            getSortVariable
+        SortActualSort SortActual { sortActualName } ->
+            sortActualName
+
 {- | Substitute sort variables in a 'Sort'.
 
 Sort variables that are not in the substitution are not changed.
