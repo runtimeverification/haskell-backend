@@ -20,13 +20,10 @@ import           Data.Maybe
                  ( fromMaybe )
 import qualified Data.Text as Text
 
+import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Pattern as Attribute
-import           Kore.Attribute.Symbol
-                 ( Hook (..), StepperAttributes )
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Debug
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( flatten, merge, mergeAll )
 import           Kore.Internal.OrPattern
@@ -74,12 +71,11 @@ evaluateApplication
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
 evaluateApplication childrenPredicate (valid :< app) = do
-    tools <- Simplifier.askMetadataTools
     substitutionSimplifier <- Simplifier.askSimplifierPredicate
     simplifier <- Simplifier.askSimplifierTermLike
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
     let
-        afterInj = evaluateSortInjection tools app
+        afterInj = evaluateSortInjection app
         Application { applicationSymbolOrAlias = appHead } = afterInj
         Symbol { symbolConstructor = symbolId } = appHead
         appPattern = Recursive.embed (valid :< ApplySymbolF afterInj)
@@ -260,10 +256,9 @@ maybeEvaluatePattern
 
 evaluateSortInjection
     :: Ord variable
-    => SmtMetadataTools StepperAttributes
+    => Application Symbol (TermLike variable)
     -> Application Symbol (TermLike variable)
-    -> Application Symbol (TermLike variable)
-evaluateSortInjection _tools ap
+evaluateSortInjection ap
   | Symbol.isSortInjection apHead
   = case apChild of
     App_ apHeadChild grandChildren
