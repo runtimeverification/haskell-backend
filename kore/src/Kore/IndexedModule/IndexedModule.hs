@@ -94,7 +94,7 @@ import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Sort as Attribute
                  ( Sort )
 import           Kore.Attribute.Subsort
-import qualified Kore.Attribute.Symbol.Symbol as Attribute
+import qualified Kore.Attribute.Symbol as Attribute
                  ( Symbol )
 import           Kore.Error
 import           Kore.Parser

@@ -29,7 +29,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import qualified Control.Lens.TH.Rules as Lens
-import qualified Kore.Attribute.Symbol.Symbol as Attribute
+import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Debug
 import           Kore.Sort
 import           Kore.Syntax.Application
