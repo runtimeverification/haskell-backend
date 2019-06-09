@@ -49,9 +49,7 @@ testBinary symb impl =
 test_KEqual :: [TestTree]
 test_KEqual =
     [ testCaseWithSMT "dotk equals dotk" $ do
-        let expect =
-                Pattern.fromTermLike
-                $ Test.Bool.asInternal True
+        let expect = Pattern.fromTermLike $ Test.Bool.asInternal True
             original =
                 mkApplySymbol
                     boolSort
@@ -62,23 +60,51 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
 
-    , testCaseWithSMT "distinct domain values" $ do
-        let expect =
-                Pattern.fromTermLike
-                $ Test.Bool.asInternal False
+    , testCaseWithSMT "kseq(x, dotk) equals kseq(x, dotk)" $ do
+        let expect = Pattern.fromTermLike $ Test.Bool.asInternal True
             original =
                 mkApplySymbol
                     boolSort
                     keqBoolSymbol
-                    [ mkDomainValue DomainValue
-                        { domainValueSort = idSort
-                        , domainValueChild = mkStringLiteral "t"
-                        }
-                    , mkDomainValue DomainValue
-                        { domainValueSort = idSort
-                        , domainValueChild = mkStringLiteral "x"
-                        }
+                    [ mkApplySymbol kSort kseqSymbol
+                        [ mkVar (varS "x" kSort)
+                        , mkApplySymbol kSort dotkSymbol []
+                        ]
+                    , mkApplySymbol kSort kseqSymbol
+                        [ mkVar (varS "x" kSort)
+                        , mkApplySymbol kSort dotkSymbol []
+                        ]
                     ]
+        actual <- evaluate original
+        assertEqual' "" expect actual
+
+    , testCaseWithSMT "kseq(inj(x), dotk) equals kseq(inj(x), dotk)" $ do
+        let expect = Pattern.fromTermLike $ Test.Bool.asInternal True
+            original =
+                mkApplySymbol
+                    boolSort
+                    keqBoolSymbol
+                    [ mkApplySymbol kSort kseqSymbol
+                        [ mkApplySymbol kSort (injSymbol idSort kSort)
+                            [mkVar (varS "x" idSort)]
+                        , mkApplySymbol kSort dotkSymbol []
+                        ]
+                    , mkApplySymbol kSort kseqSymbol
+                        [ mkApplySymbol kSort (injSymbol idSort kSort)
+                            [mkVar (varS "x" idSort)]
+                        , mkApplySymbol kSort dotkSymbol []
+                        ]
+                    ]
+        actual <- evaluate original
+        assertEqual' "" expect actual
+
+    , testCaseWithSMT "distinct domain values" $ do
+        let expect = Pattern.fromTermLike $ Test.Bool.asInternal False
+            original =
+                mkApplySymbol
+                    boolSort
+                    keqBoolSymbol
+                    [ dvT, dvX ]
         actual <- evaluate original
         assertEqual' "" expect actual
 
@@ -93,27 +119,17 @@ test_KEqual =
                     [ mkApplySymbol
                         kItemSort
                         (injSymbol idSort kItemSort)
-                        [ mkDomainValue DomainValue
-                            { domainValueSort = idSort
-                            , domainValueChild = mkStringLiteral "t"
-                            }
-                        ]
+                        [ dvT ]
                     , mkApplySymbol
                         kItemSort
                         (injSymbol idSort kItemSort)
-                        [ mkDomainValue DomainValue
-                            { domainValueSort = idSort
-                            , domainValueChild = mkStringLiteral "x"
-                            }
-                        ]
+                        [ dvX ]
                     ]
         actual <- evaluate original
         assertEqual' "" expect actual
 
     , testCaseWithSMT "distinct Id domain values casted to K" $ do
-        let expect =
-                Pattern.fromTermLike
-                $ Test.Bool.asInternal False
+        let expect = Pattern.fromTermLike $ Test.Bool.asInternal False
             original =
                 mkApplySymbol
                     boolSort
@@ -124,11 +140,7 @@ test_KEqual =
                         [ mkApplySymbol
                             kItemSort
                             (injSymbol idSort kItemSort)
-                            [ mkDomainValue DomainValue
-                                { domainValueSort = idSort
-                                , domainValueChild = mkStringLiteral "t"
-                                }
-                            ]
+                            [ dvT ]
                         , mkApplySymbol kSort dotkSymbol []
                         ]
                     , mkApplySymbol
@@ -137,17 +149,24 @@ test_KEqual =
                         [ mkApplySymbol
                             kItemSort
                             (injSymbol idSort kItemSort)
-                            [ mkDomainValue DomainValue
-                                { domainValueSort = idSort
-                                , domainValueChild = mkStringLiteral "x"
-                                }
-                            ]
+                            [ dvX ]
                         , mkApplySymbol kSort dotkSymbol []
                         ]
                     ]
         actual <- evaluate original
         assertEqual' "" expect actual
     ]
+  where
+    dvT =
+        mkDomainValue DomainValue
+            { domainValueSort = idSort
+            , domainValueChild = mkStringLiteral "t"
+            }
+    dvX =
+        mkDomainValue DomainValue
+            { domainValueSort = idSort
+            , domainValueChild = mkStringLiteral "x"
+            }
 
 test_KIte :: [TestTree]
 test_KIte =

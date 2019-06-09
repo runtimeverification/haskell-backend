@@ -18,6 +18,7 @@ import           Kore.Attribute.Smthook
 import qualified Kore.Attribute.Sort.Concat as Sort
 import qualified Kore.Attribute.Sort.Element as Sort
 import qualified Kore.Attribute.Sort.Unit as Sort
+import           Kore.Attribute.SortInjection
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Domain.Builtin
 import qualified Kore.Internal.Symbol as Internal
@@ -680,14 +681,11 @@ symbolDecl
     -- ^ result sort
     -> [Sort]
     -- ^ argument sorts
-    -> [ParsedPattern]
-    -- ^ declaration attributes
     -> ParsedSentence
 symbolDecl
-    Internal.Symbol { symbolConstructor }
+    Internal.Symbol { symbolConstructor, symbolAttributes }
     sentenceSymbolResultSort
     sentenceSymbolSorts
-    (Attributes -> sentenceSymbolAttributes)
   =
     asSentence sentence
   where
@@ -697,7 +695,7 @@ symbolDecl
             { sentenceSymbolSymbol
             , sentenceSymbolSorts
             , sentenceSymbolResultSort
-            , sentenceSymbolAttributes
+            , sentenceSymbolAttributes = toAttributes symbolAttributes
             }
     sentenceSymbolSymbol =
         Symbol
@@ -879,11 +877,11 @@ kEqualModule =
             , hookedSymbolDecl
                 keqBoolSymbol
                 boolSort
-                [boolSort, boolSort]
+                [kSort, kSort]
             , hookedSymbolDecl
                 kneqBoolSymbol
                 boolSort
-                [boolSort, boolSort]
+                [kSort, kSort]
             , hookedSymbolDecl
                 kiteKSymbol
                 kSort
@@ -891,8 +889,8 @@ kEqualModule =
             , sortDecl kSort
             , sortDecl kItemSort
             , sortDecl idSort
-            , symbolDecl kseqSymbol kSort [kSort, kSort] []
-            , symbolDecl dotkSymbol kSort [] []
+            , symbolDecl kseqSymbol kSort [kSort, kSort]
+            , symbolDecl dotkSymbol kSort []
             , injSymbolDecl
             ]
         }
@@ -916,7 +914,7 @@ injSymbolDecl =
             , sentenceSymbolResultSort = toSort
             , sentenceSymbolAttributes =
                 Attributes
-                    [ constructorAttribute
+                    [ sortInjectionAttribute
                     , injectiveAttribute
                     ]
             }

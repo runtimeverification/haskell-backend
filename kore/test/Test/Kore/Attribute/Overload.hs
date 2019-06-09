@@ -135,8 +135,8 @@ test_ignore =
             , moduleAttributes = Attributes []
             , moduleSentences =
                 [ sortDecl   Mock.testSort
-                , symbolDecl superSymbol Mock.testSort [] []
-                , symbolDecl subSymbol   Mock.testSort [] []
+                , symbolDecl superSymbol Mock.testSort []
+                , symbolDecl subSymbol   Mock.testSort []
                 , overloadAxiom
                 ]
             }
