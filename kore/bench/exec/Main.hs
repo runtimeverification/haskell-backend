@@ -2,7 +2,6 @@ module Main where
 
 import Criterion.Main
 
-import qualified Control.Lens as Lens
 import           Data.Function
                  ( (&) )
 import           Data.Limit
@@ -24,7 +23,7 @@ import           Kore.Error
                  ( printError )
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
-                 ( IndexedModule (..), VerifiedModule )
+                 ( VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.Internal.TermLike
                  ( TermLike, Variable )
@@ -34,7 +33,6 @@ import           Kore.Parser
                  ( parseKoreDefinition, parseKorePattern )
 import           Kore.Step
                  ( anyRewrite )
-import           Kore.Syntax.Id
 import           Kore.Syntax.Module
                  ( ModuleName (..) )
 import qualified SMT
@@ -166,7 +164,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
                         , indexedModule =
                             verifiedModule
                             & IndexedModule.erasePatterns
-                            & IndexedModule.eraseAttributes
+                            & IndexedModule.eraseAxiomAttributes
                         , declaredSortVariables = Set.empty
                         , declaredVariables =
                             PatternVerifier.emptyDeclaredVariables
