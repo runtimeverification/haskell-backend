@@ -40,8 +40,6 @@ import           Kore.Syntax.Application
 data MetadataTools smt attributes = MetadataTools
     { symAttributes :: SymbolOrAlias -> attributes
     -- ^ get the attributes of a symbol or alias
-    , symbolOrAliasType :: SymbolOrAlias -> HeadType
-    -- ^ whether a symbol or alias is a symbol
     , sortAttributes :: Sort -> Attribute.Sort
     -- ^ get the attributes of a sort
     , isSubsortOf :: Sort -> Sort -> Bool
@@ -74,7 +72,6 @@ extractMetadataTools
 extractMetadataTools m smtExtractor =
     MetadataTools
         { symAttributes = getHeadAttributes m
-        , symbolOrAliasType = getHeadType m
         , sortAttributes = getSortAttributes m
         , isSubsortOf = checkSubsort
         , subsorts = Set.fromList . fmap getSortFromId . getSubsorts

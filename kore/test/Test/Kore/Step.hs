@@ -13,8 +13,6 @@ import           Data.Text
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
-import qualified Kore.IndexedModule.MetadataTools as HeadType
-                 ( HeadType (..) )
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
@@ -368,7 +366,6 @@ mockSymbolAttributes patternHead
 mockMetadataTools :: SmtMetadataTools Attribute.Symbol
 mockMetadataTools = MetadataTools
     { symAttributes = mockSymbolAttributes
-    , symbolOrAliasType = const HeadType.Symbol
     , sortAttributes = const def
     , isSubsortOf = const $ const False
     , subsorts = Set.singleton

@@ -31,8 +31,6 @@ import           Kore.Attribute.SortInjection
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools hiding
                  ( HeadType (..) )
-import qualified Kore.IndexedModule.MetadataTools as HeadType
-                 ( HeadType (..) )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Symbol
@@ -249,7 +247,6 @@ mockStepperAttributes patternHead =
 tools :: SmtMetadataTools Attribute.Symbol
 tools = MetadataTools
     { symAttributes = mockStepperAttributes
-    , symbolOrAliasType = const HeadType.Symbol
     , sortAttributes = undefined
     , isSubsortOf = const $ const False
     , subsorts = Set.singleton

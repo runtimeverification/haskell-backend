@@ -10,9 +10,7 @@ import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( HeadType, SmtMetadataTools )
-import qualified Kore.IndexedModule.MetadataTools as HeadType
-                 ( HeadType (..) )
+                 ( SmtMetadataTools )
 import           Kore.Internal.Symbol
                  ( toSymbolOrAlias )
 import           Kore.Internal.TermLike
@@ -211,15 +209,11 @@ symbols =
     , funSymbol
     ]
 
-symbolOrAliasType :: [(SymbolOrAlias, HeadType)]
-symbolOrAliasType =
-    map (\symbol -> (toSymbolOrAlias symbol, HeadType.Symbol)) symbols
-
 tools :: SmtMetadataTools Attribute.Symbol
 tools =
     Mock.makeMetadataTools
         symbolOrAliasAttrs
-        symbolOrAliasType
+        []
         []
         []
         []
