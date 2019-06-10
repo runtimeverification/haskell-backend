@@ -88,10 +88,10 @@ add, sub, mul, div
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
-add i j = mkApp intSort Builtin.addIntSymbol  [i, j]
-sub i j = mkApp intSort Builtin.subIntSymbol  [i, j]
-mul i j = mkApp intSort Builtin.mulIntSymbol  [i, j]
-div i j = mkApp intSort Builtin.tdivIntSymbol [i, j]
+add i j = mkApplySymbol intSort Builtin.addIntSymbol  [i, j]
+sub i j = mkApplySymbol intSort Builtin.subIntSymbol  [i, j]
+mul i j = mkApplySymbol intSort Builtin.mulIntSymbol  [i, j]
+div i j = mkApplySymbol intSort Builtin.tdivIntSymbol [i, j]
 
 assertRefuted :: Syntax.Predicate Variable -> Assertion
 assertRefuted prop = do
@@ -106,9 +106,9 @@ unit_1 =
     assertRefuted
     $ makeEqualsPredicate
         (Builtin.Bool.asInternal True)
-        (mkApp boolSort Builtin.andBoolSymbol
-            [ mkApp boolSort Builtin.ltIntSymbol [a, Builtin.Int.intLiteral 0]
-            , mkApp boolSort Builtin.ltIntSymbol [Builtin.Int.intLiteral 0, a]
+        (mkApplySymbol boolSort Builtin.andBoolSymbol
+            [ mkApplySymbol boolSort Builtin.ltIntSymbol [a, Builtin.Int.intLiteral 0]
+            , mkApplySymbol boolSort Builtin.ltIntSymbol [Builtin.Int.intLiteral 0, a]
             ]
         )
 
@@ -117,9 +117,9 @@ unit_2 =
     assertRefuted
     $ makeEqualsPredicate
         (Builtin.Bool.asInternal True)
-        (mkApp boolSort Builtin.andBoolSymbol
-            [ mkApp boolSort Builtin.ltIntSymbol [a `add` a, a `add` b]
-            , mkApp boolSort Builtin.ltIntSymbol [b `add` b, a `add` b]
+        (mkApplySymbol boolSort Builtin.andBoolSymbol
+            [ mkApplySymbol boolSort Builtin.ltIntSymbol [a `add` a, a `add` b]
+            , mkApplySymbol boolSort Builtin.ltIntSymbol [b `add` b, a `add` b]
             ]
         )
 
@@ -128,11 +128,11 @@ unit_3 =
     assertRefuted
     $ makeEqualsPredicate
         (Builtin.Bool.asInternal False)
-        (mkApp boolSort Builtin.impliesBoolSymbol
-            [ mkApp boolSort Builtin.ltIntSymbol [a, b]
-            , mkApp boolSort Builtin.impliesBoolSymbol
-                [ mkApp boolSort Builtin.ltIntSymbol [b, c]
-                , mkApp boolSort Builtin.ltIntSymbol [a, c]
+        (mkApplySymbol boolSort Builtin.impliesBoolSymbol
+            [ mkApplySymbol boolSort Builtin.ltIntSymbol [a, b]
+            , mkApplySymbol boolSort Builtin.impliesBoolSymbol
+                [ mkApplySymbol boolSort Builtin.ltIntSymbol [b, c]
+                , mkApplySymbol boolSort Builtin.ltIntSymbol [a, c]
                 ]
             ]
         )
@@ -142,7 +142,7 @@ unit_4 =
     assertRefuted
     $ makeEqualsPredicate
         (Builtin.Bool.asInternal True)
-        (mkApp boolSort Builtin.eqIntSymbol
+        (mkApplySymbol boolSort Builtin.eqIntSymbol
             [ add
                 (Builtin.Int.intLiteral 1)
                 (Builtin.Int.intLiteral 2 `mul` a)
@@ -155,12 +155,12 @@ unit_5 =
     assertRefuted
     $ makeEqualsPredicate
         (Builtin.Bool.asInternal False)
-        (mkApp boolSort Builtin.impliesBoolSymbol
-            [ mkApp boolSort Builtin.eqIntSymbol
+        (mkApplySymbol boolSort Builtin.impliesBoolSymbol
+            [ mkApplySymbol boolSort Builtin.eqIntSymbol
                 [ Builtin.Int.intLiteral 0 `sub` (a `mul` a)
                 , b `mul` b
                 ]
-            , mkApp boolSort Builtin.eqIntSymbol [a, Builtin.Int.intLiteral 0]
+            , mkApplySymbol boolSort Builtin.eqIntSymbol [a, Builtin.Int.intLiteral 0]
             ]
         )
 
@@ -171,13 +171,13 @@ unit_6 =
     assertRefuted
     $ makeEqualsPredicate
         (Builtin.Bool.asInternal True)
-        (mkApp boolSort Builtin.andBoolSymbol
-            [ mkApp boolSort Builtin.eqIntSymbol
-                [ mkApp intSort Builtin.dummyIntSymbol [Builtin.Int.intLiteral 0]
+        (mkApplySymbol boolSort Builtin.andBoolSymbol
+            [ mkApplySymbol boolSort Builtin.eqIntSymbol
+                [ mkApplySymbol intSort Builtin.dummyIntSymbol [Builtin.Int.intLiteral 0]
                 , Builtin.Int.intLiteral 123
                 ]
-            , mkApp boolSort Builtin.eqIntSymbol
-                [ mkApp intSort Builtin.dummyIntSymbol [Builtin.Int.intLiteral 0]
+            , mkApplySymbol boolSort Builtin.eqIntSymbol
+                [ mkApplySymbol intSort Builtin.dummyIntSymbol [Builtin.Int.intLiteral 0]
                 , Builtin.Int.intLiteral 456
                 ]
             ]
@@ -188,10 +188,10 @@ unit_div =
     assertRefuted
     $ makeEqualsPredicate
         (Builtin.Bool.asInternal False)
-        (mkApp boolSort Builtin.impliesBoolSymbol
-            [ mkApp boolSort Builtin.ltIntSymbol [Builtin.Int.intLiteral 0, a]
-            , mkApp boolSort Builtin.ltIntSymbol
-                [ mkApp boolSort Builtin.tdivIntSymbol [a, Builtin.Int.intLiteral 2]
+        (mkApplySymbol boolSort Builtin.impliesBoolSymbol
+            [ mkApplySymbol boolSort Builtin.ltIntSymbol [Builtin.Int.intLiteral 0, a]
+            , mkApplySymbol boolSort Builtin.ltIntSymbol
+                [ mkApplySymbol boolSort Builtin.tdivIntSymbol [a, Builtin.Int.intLiteral 2]
                 , a
                 ]
             ]
@@ -202,8 +202,8 @@ unit_mod =
     assertRefuted
     $ makeEqualsPredicate
         (Builtin.Bool.asInternal False)
-        (mkApp boolSort Builtin.eqIntSymbol
-            [ mkApp boolSort Builtin.tmodIntSymbol
+        (mkApplySymbol boolSort Builtin.eqIntSymbol
+            [ mkApplySymbol boolSort Builtin.tmodIntSymbol
                 [ a `mul` Builtin.Int.intLiteral 2
                 , Builtin.Int.intLiteral 2
                 ]
@@ -216,9 +216,9 @@ unit_pierce =
     assertRefuted
     $ makeEqualsPredicate
         (Builtin.Bool.asInternal False)
-        (mkApp boolSort Builtin.impliesBoolSymbol
-            [ mkApp boolSort Builtin.impliesBoolSymbol
-                [ mkApp boolSort Builtin.impliesBoolSymbol [ p, q ]
+        (mkApplySymbol boolSort Builtin.impliesBoolSymbol
+            [ mkApplySymbol boolSort Builtin.impliesBoolSymbol
+                [ mkApplySymbol boolSort Builtin.impliesBoolSymbol [ p, q ]
                 , p
                 ]
             , p
@@ -230,12 +230,12 @@ unit_demorgan =
     assertRefuted
     $ makeEqualsPredicate
         (Builtin.Bool.asInternal False)
-        (mkApp boolSort Builtin.eqBoolSymbol
-            [ mkApp boolSort Builtin.notBoolSymbol
-                [ mkApp boolSort Builtin.orBoolSymbol [p, q] ]
-            , mkApp boolSort Builtin.andBoolSymbol
-                [ mkApp boolSort Builtin.notBoolSymbol [p]
-                , mkApp boolSort Builtin.notBoolSymbol [q]
+        (mkApplySymbol boolSort Builtin.eqBoolSymbol
+            [ mkApplySymbol boolSort Builtin.notBoolSymbol
+                [ mkApplySymbol boolSort Builtin.orBoolSymbol [p, q] ]
+            , mkApplySymbol boolSort Builtin.andBoolSymbol
+                [ mkApplySymbol boolSort Builtin.notBoolSymbol [p]
+                , mkApplySymbol boolSort Builtin.notBoolSymbol [q]
                 ]
             ]
         )
@@ -251,9 +251,9 @@ unit_false =
     $ makeNotPredicate
     $ makeEqualsPredicate
         (Builtin.Bool.asInternal True)
-        (mkApp boolSort Builtin.eqBoolSymbol
-            [ mkApp boolSort Builtin.notBoolSymbol [p]
-            , mkApp boolSort Builtin.impliesBoolSymbol
+        (mkApplySymbol boolSort Builtin.eqBoolSymbol
+            [ mkApplySymbol boolSort Builtin.notBoolSymbol [p]
+            , mkApplySymbol boolSort Builtin.impliesBoolSymbol
                 [ p
                 , Builtin.Bool.asInternal False
                 ]

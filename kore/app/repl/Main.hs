@@ -160,8 +160,7 @@ mainWithOptions
             Nothing
             True
             parsedDefinition
-    indexedModule <-
-        constructorFunctions <$> mainModule mainModuleName indexedModules
+    indexedModule <- mainModule mainModuleName indexedModules
 
     specDef <- parseDefinition specFile
     let unverifiedDefinition =

@@ -81,7 +81,7 @@ import           Kore.Internal.Pattern
                  ( Pattern, Predicate )
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
-                 ( TermLike, TermLikeF (..) )
+                 ( Symbol, TermLike, TermLikeF (..) )
 import           Kore.Logger
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
@@ -692,7 +692,7 @@ applicationAxiomSimplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> CofreeF
-            (Application SymbolOrAlias)
+            (Application Symbol)
             (Attribute.Pattern variable)
             (TermLike variable)
         -> m (AttemptedAxiom variable)
@@ -718,7 +718,7 @@ applicationAxiomSimplifier applicationSimplifier =
         -> m (AttemptedAxiom variable)
     helper substitutionSimplifier simplifier axiomIdToSimplifier termLike =
         case Recursive.project termLike of
-            (valid :< ApplicationF p) ->
+            (valid :< ApplySymbolF p) ->
                 applicationSimplifier
                     substitutionSimplifier
                     simplifier

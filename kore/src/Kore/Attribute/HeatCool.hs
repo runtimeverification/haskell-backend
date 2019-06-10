@@ -93,3 +93,7 @@ instance ParseAttributes HeatCool where
             withApplication' = Parser.withApplication coolId
             failDuplicate' = Parser.failDuplicate coolId
             failConflicting' = Parser.failConflicting [heatId, coolId]
+
+    toAttributes Heat = Attributes [heatAttribute]
+    toAttributes Cool = Attributes [coolAttribute]
+    toAttributes Normal = def

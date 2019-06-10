@@ -12,12 +12,15 @@ module Kore.Attribute.SortInjection
     ) where
 
 import qualified Control.Monad as Monad
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
+import Kore.Debug
 
 -- | @SortInjection@ represents the @sortInjection@ attribute for symbols.
 newtype SortInjection = SortInjection { isSortInjection :: Bool }
-    deriving (Generic, Eq, Ord, Show)
+    deriving (GHC.Generic, Eq, Ord, Show)
 
 instance Semigroup SortInjection where
     (<>) (SortInjection a) (SortInjection b) = SortInjection (a || b)
@@ -29,6 +32,12 @@ instance Default SortInjection where
     def = mempty
 
 instance NFData SortInjection
+
+instance SOP.Generic SortInjection
+
+instance SOP.HasDatatypeInfo SortInjection
+
+instance Debug SortInjection
 
 -- | Kore identifier representing the @sortInjection@ attribute symbol.
 sortInjectionId :: Id
@@ -56,3 +65,6 @@ instance ParseAttributes SortInjection where
       where
         withApplication' = Parser.withApplication sortInjectionId
         failDuplicate' = Parser.failDuplicate sortInjectionId
+
+    toAttributes SortInjection { isSortInjection } =
+        Attributes $ if isSortInjection then [sortInjectionAttribute] else []

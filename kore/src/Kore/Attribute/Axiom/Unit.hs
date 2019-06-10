@@ -51,3 +51,6 @@ instance ParseAttributes Unit where
       where
         withApplication' = Parser.withApplication unitId
         failDuplicate' = Parser.failDuplicate unitId
+
+    toAttributes Unit { isUnit } =
+        Attributes $ if isUnit then [unitAttribute] else []

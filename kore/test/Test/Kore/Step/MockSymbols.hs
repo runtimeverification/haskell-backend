@@ -20,7 +20,9 @@ module Test.Kore.Step.MockSymbols where
    * variables are called x, y, z...
 -}
 
+import           Data.Bifunctor
 import qualified Data.Default as Default
+import           Data.Function
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
@@ -38,7 +40,6 @@ import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute
 import qualified Kore.Attribute.Sort.Element as Attribute
 import qualified Kore.Attribute.Sort.Unit as Attribute
-import           Kore.Attribute.Symbol
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
@@ -47,6 +48,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( HeadType, SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
+import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Internal.TermLike as Internal
@@ -190,348 +192,443 @@ sigmaId = testId "sigma"
 anywhereId :: Id
 anywhereId = testId "anywhere"
 
-aSymbol :: SymbolOrAlias
-aSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = aId
-    , symbolOrAliasParams      = []
+aSymbol :: Symbol
+aSymbol = Symbol
+    { symbolConstructor = aId
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorFunctionalAttributes
     }
-aSort0Symbol :: SymbolOrAlias
-aSort0Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = aSort0Id
-    , symbolOrAliasParams      = []
+aSort0Symbol :: Symbol
+aSort0Symbol = Symbol
+    { symbolConstructor = aSort0Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorFunctionalAttributes
     }
-aSort1Symbol :: SymbolOrAlias
-aSort1Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = aSort1Id
-    , symbolOrAliasParams      = []
+aSort1Symbol :: Symbol
+aSort1Symbol = Symbol
+    { symbolConstructor = aSort1Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorFunctionalAttributes
     }
-aSubsortSymbol :: SymbolOrAlias
-aSubsortSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = aSubsortId
-    , symbolOrAliasParams      = []
+aSubsortSymbol :: Symbol
+aSubsortSymbol = Symbol
+    { symbolConstructor = aSubsortId
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorFunctionalAttributes
     }
-aSubSubsortSymbol :: SymbolOrAlias
-aSubSubsortSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = aSubSubsortId
-    , symbolOrAliasParams      = []
+aSubSubsortSymbol :: Symbol
+aSubSubsortSymbol = Symbol
+    { symbolConstructor = aSubSubsortId
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorFunctionalAttributes
     }
-aTopSortSymbol :: SymbolOrAlias
-aTopSortSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = aTopSortId
-    , symbolOrAliasParams      = []
+aTopSortSymbol :: Symbol
+aTopSortSymbol = Symbol
+    { symbolConstructor = aTopSortId
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorFunctionalAttributes
     }
-aOtherSortSymbol :: SymbolOrAlias
-aOtherSortSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = aOtherSortId
-    , symbolOrAliasParams      = []
+aOtherSortSymbol :: Symbol
+aOtherSortSymbol = Symbol
+    { symbolConstructor = aOtherSortId
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorFunctionalAttributes
     }
-bSymbol :: SymbolOrAlias
-bSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = bId
-    , symbolOrAliasParams      = []
+bSymbol :: Symbol
+bSymbol = Symbol
+    { symbolConstructor = bId
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorFunctionalAttributes
     }
-bSort0Symbol :: SymbolOrAlias
-bSort0Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = bSort0Id
-    , symbolOrAliasParams      = []
+bSort0Symbol :: Symbol
+bSort0Symbol = Symbol
+    { symbolConstructor = bSort0Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorFunctionalAttributes
     }
-cSymbol :: SymbolOrAlias
-cSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = cId
-    , symbolOrAliasParams      = []
+cSymbol :: Symbol
+cSymbol = Symbol
+    { symbolConstructor = cId
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorFunctionalAttributes
     }
-dSymbol :: SymbolOrAlias
-dSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = dId
-    , symbolOrAliasParams      = []
+dSymbol :: Symbol
+dSymbol = Symbol
+    { symbolConstructor = dId
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorFunctionalAttributes
     }
-eSymbol :: SymbolOrAlias
-eSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = eId
-    , symbolOrAliasParams      = []
+eSymbol :: Symbol
+eSymbol = Symbol
+    { symbolConstructor = eId
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorFunctionalAttributes
     }
-fSymbol :: SymbolOrAlias
-fSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = fId
-    , symbolOrAliasParams      = []
+fSymbol :: Symbol
+fSymbol = Symbol
+    { symbolConstructor = fId
+    , symbolParams      = []
+    , symbolAttributes  = Mock.functionAttributes
     }
-gSymbol :: SymbolOrAlias
-gSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = gId
-    , symbolOrAliasParams      = []
+gSymbol :: Symbol
+gSymbol = Symbol
+    { symbolConstructor = gId
+    , symbolParams      = []
+    , symbolAttributes  = Mock.functionAttributes
     }
-hSymbol :: SymbolOrAlias
-hSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = hId
-    , symbolOrAliasParams      = []
+hSymbol :: Symbol
+hSymbol = Symbol
+    { symbolConstructor = hId
+    , symbolParams      = []
+    , symbolAttributes  = Mock.functionAttributes
     }
-cfSymbol :: SymbolOrAlias
-cfSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = cfId
-    , symbolOrAliasParams      = []
+cfSymbol :: Symbol
+cfSymbol = Symbol
+    { symbolConstructor = cfId
+    , symbolParams      = []
+    , symbolAttributes  = Mock.functionAttributes
     }
-cfSort0Symbol :: SymbolOrAlias
-cfSort0Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = cfSort0Id
-    , symbolOrAliasParams      = []
+cfSort0Symbol :: Symbol
+cfSort0Symbol = Symbol
+    { symbolConstructor = cfSort0Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.functionAttributes
     }
-cfSort1Symbol :: SymbolOrAlias
-cfSort1Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = cfSort1Id
-    , symbolOrAliasParams      = []
+cfSort1Symbol :: Symbol
+cfSort1Symbol = Symbol
+    { symbolConstructor = cfSort1Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.functionAttributes
     }
-cgSymbol :: SymbolOrAlias
-cgSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = cgId
-    , symbolOrAliasParams      = []
+cgSymbol :: Symbol
+cgSymbol = Symbol
+    { symbolConstructor = cgId
+    , symbolParams      = []
+    , symbolAttributes  = Mock.functionAttributes
     }
-cgSort0Symbol :: SymbolOrAlias
-cgSort0Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = cgSort0Id
-    , symbolOrAliasParams      = []
+cgSort0Symbol :: Symbol
+cgSort0Symbol = Symbol
+    { symbolConstructor = cgSort0Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.functionAttributes
     }
-chSymbol :: SymbolOrAlias
-chSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = chId
-    , symbolOrAliasParams      = []
+chSymbol :: Symbol
+chSymbol = Symbol
+    { symbolConstructor = chId
+    , symbolParams      = []
+    , symbolAttributes  = Mock.functionAttributes
     }
-plain00Symbol :: SymbolOrAlias
-plain00Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = plain00Id
-    , symbolOrAliasParams      = []
+plain00Symbol :: Symbol
+plain00Symbol = Symbol
+    { symbolConstructor = plain00Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.defaultAttributes
     }
-plain00Sort0Symbol :: SymbolOrAlias
-plain00Sort0Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = plain00Sort0Id
-    , symbolOrAliasParams      = []
+plain00Sort0Symbol :: Symbol
+plain00Sort0Symbol = Symbol
+    { symbolConstructor = plain00Sort0Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.defaultAttributes
     }
-plain00SubsortSymbol :: SymbolOrAlias
-plain00SubsortSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = plain00SubsortId
-    , symbolOrAliasParams      = []
+plain00SubsortSymbol :: Symbol
+plain00SubsortSymbol = Symbol
+    { symbolConstructor = plain00SubsortId
+    , symbolParams      = []
+    , symbolAttributes  = Mock.defaultAttributes
     }
-plain00SubSubsortSymbol :: SymbolOrAlias
-plain00SubSubsortSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = plain00SubSubsortId
-    , symbolOrAliasParams      = []
+plain00SubSubsortSymbol :: Symbol
+plain00SubSubsortSymbol = Symbol
+    { symbolConstructor = plain00SubSubsortId
+    , symbolParams      = []
+    , symbolAttributes  = Mock.defaultAttributes
     }
-plain10Symbol :: SymbolOrAlias
-plain10Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = plain10Id
-    , symbolOrAliasParams      = []
+plain10Symbol :: Symbol
+plain10Symbol = Symbol
+    { symbolConstructor = plain10Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.defaultAttributes
     }
-plain11Symbol :: SymbolOrAlias
-plain11Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = plain11Id
-    , symbolOrAliasParams      = []
+plain11Symbol :: Symbol
+plain11Symbol = Symbol
+    { symbolConstructor = plain11Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.defaultAttributes
     }
-plain20Symbol :: SymbolOrAlias
-plain20Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = plain20Id
-    , symbolOrAliasParams      = []
+plain20Symbol :: Symbol
+plain20Symbol = Symbol
+    { symbolConstructor = plain20Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.defaultAttributes
     }
-constr10Symbol :: SymbolOrAlias
-constr10Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = constr10Id
-    , symbolOrAliasParams      = []
+constr10Symbol :: Symbol
+constr10Symbol = Symbol
+    { symbolConstructor = constr10Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorAttributes
     }
-constr11Symbol :: SymbolOrAlias
-constr11Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = constr11Id
-    , symbolOrAliasParams      = []
+constr11Symbol :: Symbol
+constr11Symbol = Symbol
+    { symbolConstructor = constr11Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorAttributes
     }
-constr20Symbol :: SymbolOrAlias
-constr20Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = constr20Id
-    , symbolOrAliasParams      = []
+constr20Symbol :: Symbol
+constr20Symbol = Symbol
+    { symbolConstructor = constr20Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorAttributes
     }
-function20MapTestSymbol :: SymbolOrAlias
-function20MapTestSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = function20MapTestId
-    , symbolOrAliasParams      = []
+function20MapTestSymbol :: Symbol
+function20MapTestSymbol = Symbol
+    { symbolConstructor = function20MapTestId
+    , symbolParams      = []
+    , symbolAttributes  = Mock.functionAttributes
     }
-functional00Symbol :: SymbolOrAlias
-functional00Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = functional00Id
-    , symbolOrAliasParams      = []
+functional00Symbol :: Symbol
+functional00Symbol = Symbol
+    { symbolConstructor = functional00Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.functionalAttributes
     }
-functional01Symbol :: SymbolOrAlias
-functional01Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = functional01Id
-    , symbolOrAliasParams      = []
+functional01Symbol :: Symbol
+functional01Symbol = Symbol
+    { symbolConstructor = functional01Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.functionalAttributes
     }
-functional10Symbol :: SymbolOrAlias
-functional10Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = functional10Id
-    , symbolOrAliasParams      = []
+functional10Symbol :: Symbol
+functional10Symbol = Symbol
+    { symbolConstructor = functional10Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.functionalAttributes
     }
-functional11Symbol :: SymbolOrAlias
-functional11Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = functional11Id
-    , symbolOrAliasParams      = []
+functional11Symbol :: Symbol
+functional11Symbol = Symbol
+    { symbolConstructor = functional11Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.functionalAttributes
     }
-functional20Symbol :: SymbolOrAlias
-functional20Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = functional20Id
-    , symbolOrAliasParams      = []
+functional20Symbol :: Symbol
+functional20Symbol = Symbol
+    { symbolConstructor = functional20Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.functionalAttributes
     }
-functional00SubSubSortSymbol :: SymbolOrAlias
-functional00SubSubSortSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = functional00SubSubSortId
-    , symbolOrAliasParams      = []
+functional00SubSubSortSymbol :: Symbol
+functional00SubSubSortSymbol = Symbol
+    { symbolConstructor = functional00SubSubSortId
+    , symbolParams      = []
+    , symbolAttributes  = Mock.functionalAttributes
     }
-functionalConstr10Symbol :: SymbolOrAlias
-functionalConstr10Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = functionalConstr10Id
-    , symbolOrAliasParams      = []
+functionalConstr10Symbol :: Symbol
+functionalConstr10Symbol = Symbol
+    { symbolConstructor = functionalConstr10Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorFunctionalAttributes
     }
-functionalConstr11Symbol :: SymbolOrAlias
-functionalConstr11Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = functionalConstr11Id
-    , symbolOrAliasParams      = []
+functionalConstr11Symbol :: Symbol
+functionalConstr11Symbol = Symbol
+    { symbolConstructor = functionalConstr11Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorFunctionalAttributes
     }
-functionalConstr12Symbol :: SymbolOrAlias
-functionalConstr12Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = functionalConstr12Id
-    , symbolOrAliasParams      = []
+functionalConstr12Symbol :: Symbol
+functionalConstr12Symbol = Symbol
+    { symbolConstructor = functionalConstr12Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorFunctionalAttributes
     }
-functionalConstr20Symbol :: SymbolOrAlias
-functionalConstr20Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = functionalConstr20Id
-    , symbolOrAliasParams      = []
+functionalConstr20Symbol :: Symbol
+functionalConstr20Symbol = Symbol
+    { symbolConstructor = functionalConstr20Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorFunctionalAttributes
     }
-functionalConstr30Symbol :: SymbolOrAlias
-functionalConstr30Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = functionalConstr30Id
-    , symbolOrAliasParams      = []
+functionalConstr30Symbol :: Symbol
+functionalConstr30Symbol = Symbol
+    { symbolConstructor = functionalConstr30Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorFunctionalAttributes
     }
-functionalTopConstr20Symbol :: SymbolOrAlias
-functionalTopConstr20Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = functionalTopConstr20Id
-    , symbolOrAliasParams      = []
+functionalTopConstr20Symbol :: Symbol
+functionalTopConstr20Symbol = Symbol
+    { symbolConstructor = functionalTopConstr20Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorFunctionalAttributes
     }
-functionalTopConstr21Symbol :: SymbolOrAlias
-functionalTopConstr21Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = functionalTopConstr21Id
-    , symbolOrAliasParams      = []
+functionalTopConstr21Symbol :: Symbol
+functionalTopConstr21Symbol = Symbol
+    { symbolConstructor = functionalTopConstr21Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorFunctionalAttributes
     }
-injective10Symbol :: SymbolOrAlias
-injective10Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = injective10Id
-    , symbolOrAliasParams      = []
+injective10Symbol :: Symbol
+injective10Symbol = Symbol
+    { symbolConstructor = injective10Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.injectiveAttributes
     }
-injective11Symbol :: SymbolOrAlias
-injective11Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = injective11Id
-    , symbolOrAliasParams      = []
+injective11Symbol :: Symbol
+injective11Symbol = Symbol
+    { symbolConstructor = injective11Id
+    , symbolParams      = []
+    , symbolAttributes  = Mock.injectiveAttributes
     }
-sortInjection10Symbol :: SymbolOrAlias
-sortInjection10Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = sortInjectionId
-    , symbolOrAliasParams      = [testSort0, testSort]
+sortInjection10Symbol :: Symbol
+sortInjection10Symbol = Symbol
+    { symbolConstructor = sortInjectionId
+    , symbolParams      = [testSort0, testSort]
+    , symbolAttributes  = Mock.sortInjectionAttributes
     }
-sortInjection11Symbol :: SymbolOrAlias
-sortInjection11Symbol = SymbolOrAlias
-    { symbolOrAliasConstructor = sortInjectionId
-    , symbolOrAliasParams      = [testSort1, testSort]
+sortInjection11Symbol :: Symbol
+sortInjection11Symbol = Symbol
+    { symbolConstructor = sortInjectionId
+    , symbolParams      = [testSort1, testSort]
+    , symbolAttributes  = Mock.sortInjectionAttributes
     }
-sortInjection0ToTopSymbol :: SymbolOrAlias
-sortInjection0ToTopSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = sortInjectionId
-    , symbolOrAliasParams      = [testSort0, topSort]
+sortInjection0ToTopSymbol :: Symbol
+sortInjection0ToTopSymbol = Symbol
+    { symbolConstructor = sortInjectionId
+    , symbolParams      = [testSort0, topSort]
+    , symbolAttributes  = Mock.sortInjectionAttributes
     }
-sortInjectionSubToTopSymbol :: SymbolOrAlias
-sortInjectionSubToTopSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = sortInjectionId
-    , symbolOrAliasParams      = [subSort, topSort]
+sortInjectionSubToTopSymbol :: Symbol
+sortInjectionSubToTopSymbol = Symbol
+    { symbolConstructor = sortInjectionId
+    , symbolParams      = [subSort, topSort]
+    , symbolAttributes  = Mock.sortInjectionAttributes
     }
-sortInjectionSubSubToTopSymbol :: SymbolOrAlias
-sortInjectionSubSubToTopSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = sortInjectionId
-    , symbolOrAliasParams      = [subSubsort, topSort]
+sortInjectionSubSubToTopSymbol :: Symbol
+sortInjectionSubSubToTopSymbol = Symbol
+    { symbolConstructor = sortInjectionId
+    , symbolParams      = [subSubsort, topSort]
+    , symbolAttributes  = Mock.sortInjectionAttributes
     }
-sortInjectionSubSubToSubSymbol :: SymbolOrAlias
-sortInjectionSubSubToSubSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = sortInjectionId
-    , symbolOrAliasParams      = [subSubsort, subSort]
+sortInjectionSubSubToSubSymbol :: Symbol
+sortInjectionSubSubToSubSymbol = Symbol
+    { symbolConstructor = sortInjectionId
+    , symbolParams      = [subSubsort, subSort]
+    , symbolAttributes  = Mock.sortInjectionAttributes
     }
-sortInjectionOtherToTopSymbol :: SymbolOrAlias
-sortInjectionOtherToTopSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = sortInjectionId
-    , symbolOrAliasParams      = [otherSort, topSort]
+sortInjectionOtherToTopSymbol :: Symbol
+sortInjectionOtherToTopSymbol = Symbol
+    { symbolConstructor = sortInjectionId
+    , symbolParams      = [otherSort, topSort]
+    , symbolAttributes  = Mock.sortInjectionAttributes
     }
-unitMapSymbol :: SymbolOrAlias
-unitMapSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = unitMapId
-    , symbolOrAliasParams      = []
+unitMapSymbol :: Symbol
+unitMapSymbol = Symbol
+    { symbolConstructor = unitMapId
+    , symbolParams      = []
+    , symbolAttributes  =
+        Mock.functionalAttributes
+            { Attribute.hook = Attribute.Hook (Just "MAP.unit") }
     }
-elementMapSymbol :: SymbolOrAlias
-elementMapSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = elementMapId
-    , symbolOrAliasParams      = []
+elementMapSymbol :: Symbol
+elementMapSymbol = Symbol
+    { symbolConstructor = elementMapId
+    , symbolParams      = []
+    , symbolAttributes  =
+        Mock.functionalAttributes
+            { Attribute.hook = Attribute.Hook (Just "MAP.element") }
     }
-concatMapSymbol :: SymbolOrAlias
-concatMapSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = concatMapId
-    , symbolOrAliasParams      = []
+concatMapSymbol :: Symbol
+concatMapSymbol = Symbol
+    { symbolConstructor = concatMapId
+    , symbolParams      = []
+    , symbolAttributes  =
+        Mock.functionalAttributes
+            { Attribute.hook = Attribute.Hook (Just "MAP.concat") }
     }
-lessIntSymbol :: SymbolOrAlias
-lessIntSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = lessIntId
-    , symbolOrAliasParams      = []
+lessIntSymbol :: Symbol
+lessIntSymbol = Symbol
+    { symbolConstructor = lessIntId
+    , symbolParams      = []
+    , symbolAttributes  =
+        Mock.functionalAttributes
+            { Attribute.hook = Attribute.Hook (Just "INT.lt")
+            , Attribute.smthook = Attribute.Smthook (Just (SMT.Atom "<"))
+            }
     }
-greaterEqIntSymbol :: SymbolOrAlias
-greaterEqIntSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = greaterEqIntId
-    , symbolOrAliasParams      = []
+greaterEqIntSymbol :: Symbol
+greaterEqIntSymbol = Symbol
+    { symbolConstructor = greaterEqIntId
+    , symbolParams      = []
+    , symbolAttributes  =
+        Mock.functionalAttributes
+            { Attribute.hook = Attribute.Hook (Just "INT.ge")
+            , Attribute.smthook = Attribute.Smthook (Just (SMT.Atom ">="))
+            }
     }
 
-concatListSymbol :: SymbolOrAlias
-concatListSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = concatListId
-    , symbolOrAliasParams = []
+concatListSymbol :: Symbol
+concatListSymbol = Symbol
+    { symbolConstructor = concatListId
+    , symbolParams = []
+    , symbolAttributes  =
+        Mock.functionalAttributes
+            { Attribute.hook = Attribute.Hook (Just "LIST.concat") }
     }
 
-elementListSymbol :: SymbolOrAlias
-elementListSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = elementListId
-    , symbolOrAliasParams = []
+elementListSymbol :: Symbol
+elementListSymbol = Symbol
+    { symbolConstructor = elementListId
+    , symbolParams = []
+    , symbolAttributes  =
+        Mock.functionalAttributes
+            { Attribute.hook = Attribute.Hook (Just "LIST.element") }
     }
 
-unitListSymbol :: SymbolOrAlias
-unitListSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = unitListId
-    , symbolOrAliasParams = []
+unitListSymbol :: Symbol
+unitListSymbol = Symbol
+    { symbolConstructor = unitListId
+    , symbolParams = []
+    , symbolAttributes  =
+        Mock.functionalAttributes
+            { Attribute.hook = Attribute.Hook (Just "LIST.unit") }
     }
 
-concatSetSymbol :: SymbolOrAlias
-concatSetSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = concatSetId
-    , symbolOrAliasParams = []
+concatSetSymbol :: Symbol
+concatSetSymbol = Symbol
+    { symbolConstructor = concatSetId
+    , symbolParams = []
+    , symbolAttributes  =
+        Mock.functionalAttributes
+            { Attribute.hook = Attribute.Hook (Just "SET.concat") }
     }
 
-elementSetSymbol :: SymbolOrAlias
-elementSetSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = elementSetId
-    , symbolOrAliasParams = []
+elementSetSymbol :: Symbol
+elementSetSymbol = Symbol
+    { symbolConstructor = elementSetId
+    , symbolParams = []
+    , symbolAttributes  =
+        Mock.functionalAttributes
+            { Attribute.hook = Attribute.Hook (Just "SET.element") }
     }
 
-unitSetSymbol :: SymbolOrAlias
-unitSetSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = unitSetId
-    , symbolOrAliasParams = []
+unitSetSymbol :: Symbol
+unitSetSymbol = Symbol
+    { symbolConstructor = unitSetId
+    , symbolParams = []
+    , symbolAttributes  =
+        Mock.functionalAttributes
+            { Attribute.hook = Attribute.Hook (Just "SET.unit") }
     }
 
-sigmaSymbol :: SymbolOrAlias
-sigmaSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = sigmaId
-    , symbolOrAliasParams      = []
+sigmaSymbol :: Symbol
+sigmaSymbol = Symbol
+    { symbolConstructor = sigmaId
+    , symbolParams      = []
+    , symbolAttributes  = Mock.constructorFunctionalAttributes
     }
 
-anywhereSymbol :: SymbolOrAlias
-anywhereSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = anywhereId
-    , symbolOrAliasParams      = []
+anywhereSymbol :: Symbol
+anywhereSymbol = Symbol
+    { symbolConstructor = anywhereId
+    , symbolParams      = []
+    , symbolAttributes  =
+        Mock.functionalAttributes
+            { Attribute.anywhere = Attribute.Anywhere True }
     }
 
 var_x_1 :: Variable
@@ -558,112 +655,112 @@ xTopSort :: Variable
 xTopSort = Variable (testId "xTopSort") mempty topSort
 
 a :: Ord variable => TermLike variable
-a = Internal.mkApp testSort aSymbol []
+a = Internal.mkApplySymbol testSort aSymbol []
 
 aConcrete :: TermLike Concrete
 Just aConcrete = Internal.asConcrete (a :: TermLike Variable)
 
 aSort0 :: Ord variable => TermLike variable
-aSort0 = Internal.mkApp testSort0 aSort0Symbol []
+aSort0 = Internal.mkApplySymbol testSort0 aSort0Symbol []
 
 aSort1 :: Ord variable => TermLike variable
-aSort1 = Internal.mkApp testSort1 aSort1Symbol []
+aSort1 = Internal.mkApplySymbol testSort1 aSort1Symbol []
 
 aSubsort :: Ord variable => TermLike variable
-aSubsort = Internal.mkApp subSort aSubsortSymbol []
+aSubsort = Internal.mkApplySymbol subSort aSubsortSymbol []
 
 aSubSubsort :: Ord variable => TermLike variable
-aSubSubsort = Internal.mkApp subSubsort aSubSubsortSymbol []
+aSubSubsort = Internal.mkApplySymbol subSubsort aSubSubsortSymbol []
 
 aTopSort :: Ord variable => TermLike variable
-aTopSort = Internal.mkApp topSort aTopSortSymbol []
+aTopSort = Internal.mkApplySymbol topSort aTopSortSymbol []
 
 aOtherSort :: Ord variable => TermLike variable
-aOtherSort = Internal.mkApp otherSort aOtherSortSymbol []
+aOtherSort = Internal.mkApplySymbol otherSort aOtherSortSymbol []
 
 b :: Ord variable => TermLike variable
-b = Internal.mkApp testSort bSymbol []
+b = Internal.mkApplySymbol testSort bSymbol []
 
 bConcrete :: TermLike Concrete
 Just bConcrete = Internal.asConcrete (b :: TermLike Variable)
 
 bSort0 :: Ord variable => TermLike variable
-bSort0 = Internal.mkApp testSort0 bSort0Symbol []
+bSort0 = Internal.mkApplySymbol testSort0 bSort0Symbol []
 
 c :: Ord variable => TermLike variable
-c = Internal.mkApp testSort cSymbol []
+c = Internal.mkApplySymbol testSort cSymbol []
 
 d :: Ord variable => TermLike variable
-d = Internal.mkApp testSort dSymbol []
+d = Internal.mkApplySymbol testSort dSymbol []
 
 e :: Ord variable => TermLike variable
-e = Internal.mkApp testSort eSymbol []
+e = Internal.mkApplySymbol testSort eSymbol []
 
 f, g, h
     :: Ord variable
     => TermLike variable
     -> TermLike variable
-f arg = Internal.mkApp testSort fSymbol [arg]
-g arg = Internal.mkApp testSort gSymbol [arg]
-h arg = Internal.mkApp testSort hSymbol [arg]
+f arg = Internal.mkApplySymbol testSort fSymbol [arg]
+g arg = Internal.mkApplySymbol testSort gSymbol [arg]
+h arg = Internal.mkApplySymbol testSort hSymbol [arg]
 
 cf :: Ord variable => TermLike variable
-cf = Internal.mkApp testSort cfSymbol []
+cf = Internal.mkApplySymbol testSort cfSymbol []
 
 cfSort0 :: Ord variable => TermLike variable
-cfSort0 = Internal.mkApp testSort0 cfSort0Symbol []
+cfSort0 = Internal.mkApplySymbol testSort0 cfSort0Symbol []
 
 cfSort1 :: Ord variable => TermLike variable
-cfSort1 = Internal.mkApp testSort1 cfSort1Symbol []
+cfSort1 = Internal.mkApplySymbol testSort1 cfSort1Symbol []
 
 cg :: Ord variable => TermLike variable
-cg = Internal.mkApp testSort cgSymbol []
+cg = Internal.mkApplySymbol testSort cgSymbol []
 
 cgSort0 :: Ord variable => TermLike variable
-cgSort0 = Internal.mkApp testSort0 cgSort0Symbol []
+cgSort0 = Internal.mkApplySymbol testSort0 cgSort0Symbol []
 
 ch :: Ord variable => TermLike variable
-ch = Internal.mkApp testSort chSymbol []
+ch = Internal.mkApplySymbol testSort chSymbol []
 
 plain00 :: Ord variable => TermLike variable
-plain00 = Internal.mkApp testSort plain00Symbol []
+plain00 = Internal.mkApplySymbol testSort plain00Symbol []
 
 plain00Sort0 :: Ord variable => TermLike variable
-plain00Sort0 = Internal.mkApp testSort0 plain00Sort0Symbol []
+plain00Sort0 = Internal.mkApplySymbol testSort0 plain00Sort0Symbol []
 
 plain00Subsort :: Ord variable => TermLike variable
-plain00Subsort = Internal.mkApp subSort plain00SubsortSymbol []
+plain00Subsort = Internal.mkApplySymbol subSort plain00SubsortSymbol []
 
 plain00SubSubsort :: Ord variable => TermLike variable
-plain00SubSubsort = Internal.mkApp subSubsort plain00SubSubsortSymbol []
+plain00SubSubsort = Internal.mkApplySymbol subSubsort plain00SubSubsortSymbol []
 
 plain10, plain11
     :: Ord variable
     => TermLike variable
     -> TermLike variable
-plain10 arg = Internal.mkApp testSort plain10Symbol [arg]
-plain11 arg = Internal.mkApp testSort plain11Symbol [arg]
+plain10 arg = Internal.mkApplySymbol testSort plain10Symbol [arg]
+plain11 arg = Internal.mkApplySymbol testSort plain11Symbol [arg]
 
 plain20
     :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-plain20 arg1 arg2 = Internal.mkApp testSort plain20Symbol [arg1, arg2]
+plain20 arg1 arg2 = Internal.mkApplySymbol testSort plain20Symbol [arg1, arg2]
 
 constr10, constr11
     :: Ord variable
     => TermLike variable
     -> TermLike variable
-constr10 arg = Internal.mkApp testSort constr10Symbol [arg]
-constr11 arg = Internal.mkApp testSort constr11Symbol [arg]
+constr10 arg = Internal.mkApplySymbol testSort constr10Symbol [arg]
+constr11 arg = Internal.mkApplySymbol testSort constr11Symbol [arg]
 
 constr20
     :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-constr20 arg1 arg2 = Internal.mkApp testSort constr20Symbol [arg1, arg2]
+constr20 arg1 arg2 = Internal.mkApplySymbol testSort constr20Symbol [arg1, arg2]
 
 function20MapTest
     :: Ord variable
@@ -671,55 +768,55 @@ function20MapTest
     -> TermLike variable
     -> TermLike variable
 function20MapTest arg1 arg2 =
-    Internal.mkApp testSort function20MapTestSymbol [arg1, arg2]
+    Internal.mkApplySymbol testSort function20MapTestSymbol [arg1, arg2]
 
 functional00 :: Ord variable => TermLike variable
-functional00 = Internal.mkApp testSort functional00Symbol []
+functional00 = Internal.mkApplySymbol testSort functional00Symbol []
 
 functional01 :: Ord variable => TermLike variable
-functional01 = Internal.mkApp testSort functional01Symbol []
+functional01 = Internal.mkApplySymbol testSort functional01Symbol []
 
 functional10
     :: Ord variable
     => TermLike variable
     -> TermLike variable
-functional10 arg = Internal.mkApp testSort functional10Symbol [arg]
+functional10 arg = Internal.mkApplySymbol testSort functional10Symbol [arg]
 
 functional11
     :: Ord variable
     => TermLike variable
     -> TermLike variable
-functional11 arg = Internal.mkApp testSort functional11Symbol [arg]
+functional11 arg = Internal.mkApplySymbol testSort functional11Symbol [arg]
 
 functional20
     :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-functional20 arg1 arg2 = Internal.mkApp testSort functional20Symbol [arg1, arg2]
+functional20 arg1 arg2 = Internal.mkApplySymbol testSort functional20Symbol [arg1, arg2]
 
 functional00SubSubSort :: Ord variable => TermLike variable
 functional00SubSubSort =
-    Internal.mkApp subSubsort functional00SubSubSortSymbol []
+    Internal.mkApplySymbol subSubsort functional00SubSubSortSymbol []
 
 functionalConstr10
     :: Ord variable
     => TermLike variable
     -> TermLike variable
 functionalConstr10 arg =
-    Internal.mkApp testSort functionalConstr10Symbol [arg]
+    Internal.mkApplySymbol testSort functionalConstr10Symbol [arg]
 
 functionalConstr11
     :: Ord variable
     => TermLike variable
     -> TermLike variable
-functionalConstr11 arg = Internal.mkApp testSort functionalConstr11Symbol [arg]
+functionalConstr11 arg = Internal.mkApplySymbol testSort functionalConstr11Symbol [arg]
 
 functionalConstr12
     :: Ord variable
     => TermLike variable
     -> TermLike variable
-functionalConstr12 arg = Internal.mkApp testSort functionalConstr12Symbol [arg]
+functionalConstr12 arg = Internal.mkApplySymbol testSort functionalConstr12Symbol [arg]
 
 functionalConstr20
     :: Ord variable
@@ -727,7 +824,7 @@ functionalConstr20
     -> TermLike variable
     -> TermLike variable
 functionalConstr20 arg1 arg2 =
-    Internal.mkApp testSort functionalConstr20Symbol [arg1, arg2]
+    Internal.mkApplySymbol testSort functionalConstr20Symbol [arg1, arg2]
 
 functionalConstr30
     :: Ord variable
@@ -736,7 +833,7 @@ functionalConstr30
     -> TermLike variable
     -> TermLike variable
 functionalConstr30 arg1 arg2 arg3 =
-    Internal.mkApp testSort functionalConstr30Symbol [arg1, arg2, arg3]
+    Internal.mkApplySymbol testSort functionalConstr30Symbol [arg1, arg2, arg3]
 
 functionalTopConstr20
     :: Ord variable
@@ -744,7 +841,7 @@ functionalTopConstr20
     -> TermLike variable
     -> TermLike variable
 functionalTopConstr20 arg1 arg2 =
-    Internal.mkApp testSort functionalTopConstr20Symbol [arg1, arg2]
+    Internal.mkApplySymbol testSort functionalTopConstr20Symbol [arg1, arg2]
 
 functionalTopConstr21
     :: Ord variable
@@ -752,552 +849,215 @@ functionalTopConstr21
     -> TermLike variable
     -> TermLike variable
 functionalTopConstr21 arg1 arg2 =
-    Internal.mkApp testSort functionalTopConstr21Symbol [arg1, arg2]
+    Internal.mkApplySymbol testSort functionalTopConstr21Symbol [arg1, arg2]
 
 injective10
     :: Ord variable
     => TermLike variable
     -> TermLike variable
-injective10 arg = Internal.mkApp testSort injective10Symbol [arg]
+injective10 arg = Internal.mkApplySymbol testSort injective10Symbol [arg]
 
 injective11
     :: Ord variable
     => TermLike variable
     -> TermLike variable
-injective11 arg = Internal.mkApp testSort injective11Symbol [arg]
+injective11 arg = Internal.mkApplySymbol testSort injective11Symbol [arg]
 
 sortInjection10
     :: Ord variable
     => TermLike variable
     -> TermLike variable
 sortInjection10 arg =
-    Internal.mkApp testSort sortInjection10Symbol [arg]
+    Internal.mkApplySymbol testSort sortInjection10Symbol [arg]
 
 sortInjection11
     :: Ord variable
     => TermLike variable
     -> TermLike variable
 sortInjection11 arg =
-    Internal.mkApp testSort sortInjection11Symbol [arg]
+    Internal.mkApplySymbol testSort sortInjection11Symbol [arg]
 
 sortInjection0ToTop
     :: Ord variable
     => TermLike variable
     -> TermLike variable
 sortInjection0ToTop arg =
-    Internal.mkApp topSort sortInjection0ToTopSymbol [arg]
+    Internal.mkApplySymbol topSort sortInjection0ToTopSymbol [arg]
 
 sortInjectionSubToTop
     :: Ord variable
     => TermLike variable
     -> TermLike variable
 sortInjectionSubToTop arg =
-    Internal.mkApp topSort sortInjectionSubToTopSymbol [arg]
+    Internal.mkApplySymbol topSort sortInjectionSubToTopSymbol [arg]
 
 sortInjectionSubSubToTop
     :: Ord variable
     => TermLike variable
     -> TermLike variable
 sortInjectionSubSubToTop arg =
-    Internal.mkApp topSort sortInjectionSubSubToTopSymbol [arg]
+    Internal.mkApplySymbol topSort sortInjectionSubSubToTopSymbol [arg]
 
 sortInjectionSubSubToSub
     :: Ord variable
     => TermLike variable
     -> TermLike variable
 sortInjectionSubSubToSub arg =
-    Internal.mkApp subSort sortInjectionSubSubToSubSymbol [arg]
+    Internal.mkApplySymbol subSort sortInjectionSubSubToSubSymbol [arg]
 
 sortInjectionOtherToTop
     :: Ord variable
     => TermLike variable
     -> TermLike variable
 sortInjectionOtherToTop arg =
-    Internal.mkApp topSort sortInjectionOtherToTopSymbol [arg]
+    Internal.mkApplySymbol topSort sortInjectionOtherToTopSymbol [arg]
 
 unitMap
     :: Ord variable
     => TermLike variable
-unitMap = Internal.mkApp mapSort unitMapSymbol []
+unitMap = Internal.mkApplySymbol mapSort unitMapSymbol []
 
 elementMap
     :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-elementMap m1 m2 = Internal.mkApp mapSort elementMapSymbol [m1, m2]
+elementMap m1 m2 = Internal.mkApplySymbol mapSort elementMapSymbol [m1, m2]
 
 concatMap
     :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-concatMap m1 m2 = Internal.mkApp mapSort concatMapSymbol [m1, m2]
+concatMap m1 m2 = Internal.mkApplySymbol mapSort concatMapSymbol [m1, m2]
 
 unitSet
     :: Ord variable
     => TermLike variable
-unitSet = Internal.mkApp setSort unitSetSymbol []
+unitSet = Internal.mkApplySymbol setSort unitSetSymbol []
 
 elementSet
     :: Ord variable
     => TermLike variable
     -> TermLike variable
-elementSet s1 = Internal.mkApp setSort elementSetSymbol [s1]
+elementSet s1 = Internal.mkApplySymbol setSort elementSetSymbol [s1]
 
 concatSet
     :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-concatSet s1 s2 = Internal.mkApp setSort concatSetSymbol [s1, s2]
+concatSet s1 s2 = Internal.mkApplySymbol setSort concatSetSymbol [s1, s2]
 
 lessInt
     :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-lessInt i1 i2 = Internal.mkApp boolSort lessIntSymbol [i1, i2]
+lessInt i1 i2 = Internal.mkApplySymbol boolSort lessIntSymbol [i1, i2]
 
 greaterEqInt
     :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-greaterEqInt i1 i2 = Internal.mkApp boolSort greaterEqIntSymbol [i1, i2]
+greaterEqInt i1 i2 = Internal.mkApplySymbol boolSort greaterEqIntSymbol [i1, i2]
 
 concatList
     :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-concatList l1 l2 = Internal.mkApp listSort concatListSymbol [l1, l2]
+concatList l1 l2 = Internal.mkApplySymbol listSort concatListSymbol [l1, l2]
 
 sigma
     :: Ord variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-sigma child1 child2 = Internal.mkApp testSort sigmaSymbol [child1, child2]
+sigma child1 child2 = Internal.mkApplySymbol testSort sigmaSymbol [child1, child2]
 
 anywhere :: Ord variable => TermLike variable
-anywhere = Internal.mkApp testSort anywhereSymbol []
+anywhere = Internal.mkApplySymbol testSort anywhereSymbol []
 
-attributesMapping :: [(SymbolOrAlias, StepperAttributes)]
+attributesMapping :: [(SymbolOrAlias, Attribute.Symbol)]
 attributesMapping =
-    [   ( aSymbol
-        , Mock.constructorFunctionalAttributes
-        )
-    ,   ( aSort0Symbol
-        , Mock.constructorFunctionalAttributes
-        )
-    ,   ( aSort1Symbol
-        , Mock.constructorFunctionalAttributes
-        )
-    ,   ( aSubsortSymbol
-        , Mock.constructorFunctionalAttributes
-        )
-    ,   ( aSubSubsortSymbol
-        , Mock.constructorFunctionalAttributes
-        )
-    ,   ( aTopSortSymbol
-        , Mock.constructorFunctionalAttributes
-        )
-    ,   ( aOtherSortSymbol
-        , Mock.constructorFunctionalAttributes
-        )
-    ,   ( bSymbol
-        , Mock.constructorFunctionalAttributes
-        )
-    ,   ( bSort0Symbol
-        , Mock.constructorFunctionalAttributes
-        )
-    ,   ( cSymbol
-        , Mock.constructorFunctionalAttributes
-        )
-    ,   ( dSymbol
-        , Mock.constructorFunctionalAttributes
-        )
-    ,   ( eSymbol
-        , Mock.constructorFunctionalAttributes
-        )
-    ,   ( fSymbol
-        , Mock.functionAttributes
-        )
-    ,   ( gSymbol
-        , Mock.functionAttributes
-        )
-    ,   ( hSymbol
-        , Mock.functionAttributes
-        )
-    ,   ( cfSymbol
-        , Mock.functionAttributes
-        )
-    ,   ( cfSort0Symbol
-        , Mock.functionAttributes
-        )
-    ,   ( cfSort1Symbol
-        , Mock.functionAttributes
-        )
-    ,   ( cgSymbol
-        , Mock.functionAttributes
-        )
-    ,   ( cgSort0Symbol
-        , Mock.functionAttributes
-        )
-    ,   ( chSymbol
-        , Mock.functionAttributes
-        )
-    ,   ( plain00Symbol
-        , Mock.defaultAttributes
-        )
-    ,   ( plain00Sort0Symbol
-        , Mock.defaultAttributes
-        )
-    ,   ( plain00SubsortSymbol
-        , Mock.defaultAttributes
-        )
-    ,   ( plain00SubSubsortSymbol
-        , Mock.defaultAttributes
-        )
-    ,   ( plain10Symbol
-        , Mock.defaultAttributes
-        )
-    ,   ( plain11Symbol
-        , Mock.defaultAttributes
-        )
-    ,   ( plain20Symbol
-        , Mock.defaultAttributes
-        )
-    ,   ( constr10Symbol
-        , Mock.constructorAttributes
-        )
-    ,   ( constr11Symbol
-        , Mock.constructorAttributes
-        )
-    ,   ( constr20Symbol
-        , Mock.constructorAttributes
-        )
-    ,   ( function20MapTestSymbol
-        , Mock.functionAttributes
-        )
-    ,   ( functional00Symbol
-        , Mock.functionalAttributes
-        )
-    ,   ( functional01Symbol
-        , Mock.functionalAttributes
-        )
-    ,   ( functional10Symbol
-        , Mock.functionalAttributes
-        )
-    ,   ( functional11Symbol
-        , Mock.functionalAttributes
-        )
-    ,   ( functional20Symbol
-        , Mock.functionalAttributes
-        )
-    ,   ( functional00SubSubSortSymbol
-        , Mock.functionalAttributes
-        )
-    ,   ( functionalConstr10Symbol
-        , Mock.constructorFunctionalAttributes
-        )
-    ,   ( functionalConstr11Symbol
-        , Mock.constructorFunctionalAttributes
-        )
-    ,   ( functionalConstr12Symbol
-        , Mock.constructorFunctionalAttributes
-        )
-    ,   ( functionalConstr20Symbol
-        , Mock.constructorFunctionalAttributes
-        )
-    ,   ( functionalConstr30Symbol
-        , Mock.constructorFunctionalAttributes
-        )
-    ,   ( functionalTopConstr20Symbol
-        , Mock.constructorFunctionalAttributes
-        )
-    ,   ( functionalTopConstr21Symbol
-        , Mock.constructorFunctionalAttributes
-        )
-    ,   ( injective10Symbol
-        , Mock.injectiveAttributes
-        )
-    ,   ( injective11Symbol
-        , Mock.injectiveAttributes
-        )
-    ,   ( sortInjection10Symbol
-        , Mock.sortInjectionAttributes
-        )
-    ,   ( sortInjection11Symbol
-        , Mock.sortInjectionAttributes
-        )
-    ,   ( sortInjection0ToTopSymbol
-        , Mock.sortInjectionAttributes
-        )
-    ,   ( sortInjectionSubToTopSymbol
-        , Mock.sortInjectionAttributes
-        )
-    ,   ( sortInjectionSubSubToTopSymbol
-        , Mock.sortInjectionAttributes
-        )
-    ,   ( sortInjectionSubSubToSubSymbol
-        , Mock.sortInjectionAttributes
-        )
-    ,   ( sortInjectionOtherToTopSymbol
-        , Mock.sortInjectionAttributes
-        )
-    ,   ( unitMapSymbol
-        , Mock.functionalAttributes { hook = Hook (Just "MAP.unit") }
-        )
-    ,   ( elementMapSymbol
-        , Mock.functionalAttributes { hook = Hook (Just "MAP.element") }
-        )
-    ,   ( concatMapSymbol
-        , Mock.functionalAttributes { hook = Hook (Just "MAP.concat") }
-        )
-    ,   ( concatListSymbol
-        , Mock.functionalAttributes { hook = Hook (Just "LIST.concat") }
-        )
-    ,   ( elementListSymbol
-        , Mock.functionalAttributes { hook = Hook (Just "LIST.element") }
-        )
-    ,   ( unitListSymbol
-        , Mock.functionalAttributes { hook = Hook (Just "LIST.unit") }
-        )
-    ,   ( concatSetSymbol
-        , Mock.functionalAttributes { hook = Hook (Just "SET.concat") }
-        )
-    ,   ( elementSetSymbol
-        , Mock.functionalAttributes { hook = Hook (Just "SET.element") }
-        )
-    ,   ( unitSetSymbol
-        , Mock.functionalAttributes { hook = Hook (Just "SET.unit") }
-        )
-    ,   ( lessIntSymbol
-        , Mock.functionalAttributes
-            { hook = Hook (Just "INT.lt")
-            , smthook = Smthook (Just (SMT.Atom "<"))
-            }
-        )
-    ,   ( greaterEqIntSymbol
-        , Mock.functionalAttributes
-            { hook = Hook (Just "INT.ge")
-            , smthook = Smthook (Just (SMT.Atom ">="))
-            }
-        )
-    ,   ( sigmaSymbol
-        , Mock.constructorFunctionalAttributes
-        )
-    ,   ( anywhereSymbol
-        , Mock.functionalAttributes { Attribute.anywhere = Anywhere True }
-        )
+    map (\symbol -> symbol & (,) <$> toSymbolOrAlias <*> symbolAttributes) symbols
+
+symbols :: [Symbol]
+symbols =
+    [ aSymbol
+    , aSort0Symbol
+    , aSort1Symbol
+    , aSubsortSymbol
+    , aSubSubsortSymbol
+    , aTopSortSymbol
+    , aOtherSortSymbol
+    , bSymbol
+    , bSort0Symbol
+    , cSymbol
+    , dSymbol
+    , eSymbol
+    , fSymbol
+    , gSymbol
+    , hSymbol
+    , cfSymbol
+    , cfSort0Symbol
+    , cfSort1Symbol
+    , cgSymbol
+    , cgSort0Symbol
+    , chSymbol
+    , plain00Symbol
+    , plain00Sort0Symbol
+    , plain00SubsortSymbol
+    , plain00SubSubsortSymbol
+    , plain10Symbol
+    , plain11Symbol
+    , plain20Symbol
+    , constr10Symbol
+    , constr11Symbol
+    , constr20Symbol
+    , function20MapTestSymbol
+    , functional00Symbol
+    , functional01Symbol
+    , functional10Symbol
+    , functional11Symbol
+    , functional20Symbol
+    , functional00SubSubSortSymbol
+    , functionalConstr10Symbol
+    , functionalConstr11Symbol
+    , functionalConstr12Symbol
+    , functionalConstr20Symbol
+    , functionalConstr30Symbol
+    , functionalTopConstr20Symbol
+    , functionalTopConstr21Symbol
+    , injective10Symbol
+    , injective11Symbol
+    , sortInjection10Symbol
+    , sortInjection11Symbol
+    , sortInjection0ToTopSymbol
+    , sortInjectionSubToTopSymbol
+    , sortInjectionSubSubToTopSymbol
+    , sortInjectionSubSubToSubSymbol
+    , sortInjectionOtherToTopSymbol
+    , unitMapSymbol
+    , elementMapSymbol
+    , concatMapSymbol
+    , concatListSymbol
+    , elementListSymbol
+    , unitListSymbol
+    , concatSetSymbol
+    , elementSetSymbol
+    , unitSetSymbol
+    , lessIntSymbol
+    , greaterEqIntSymbol
+    , sigmaSymbol
+    , anywhereSymbol
     ]
 
 headTypeMapping :: [(SymbolOrAlias, HeadType)]
 headTypeMapping =
-    [   ( aSymbol
-        , HeadType.Symbol
-        )
-    ,   ( aSort0Symbol
-        , HeadType.Symbol
-        )
-    ,   ( aSort1Symbol
-        , HeadType.Symbol
-        )
-    ,   ( aSubsortSymbol
-        , HeadType.Symbol
-        )
-    ,   ( aSubSubsortSymbol
-        , HeadType.Symbol
-        )
-    ,   ( aTopSortSymbol
-        , HeadType.Symbol
-        )
-    ,   ( aOtherSortSymbol
-        , HeadType.Symbol
-        )
-    ,   ( bSymbol
-        , HeadType.Symbol
-        )
-    ,   ( bSort0Symbol
-        , HeadType.Symbol
-        )
-    ,   ( cSymbol
-        , HeadType.Symbol
-        )
-    ,   ( dSymbol
-        , HeadType.Symbol
-        )
-    ,   ( eSymbol
-        , HeadType.Symbol
-        )
-    ,   ( fSymbol
-        , HeadType.Symbol
-        )
-    ,   ( gSymbol
-        , HeadType.Symbol
-        )
-    ,   ( hSymbol
-        , HeadType.Symbol
-        )
-    ,   ( cfSymbol
-        , HeadType.Symbol
-        )
-    ,   ( cfSort0Symbol
-        , HeadType.Symbol
-        )
-    ,   ( cfSort1Symbol
-        , HeadType.Symbol
-        )
-    ,   ( cgSymbol
-        , HeadType.Symbol
-        )
-    ,   ( cgSort0Symbol
-        , HeadType.Symbol
-        )
-    ,   ( chSymbol
-        , HeadType.Symbol
-        )
-    ,   ( plain00Symbol
-        , HeadType.Symbol
-        )
-    ,   ( plain00Sort0Symbol
-        , HeadType.Symbol
-        )
-    ,   ( plain00SubsortSymbol
-        , HeadType.Symbol
-        )
-    ,   ( plain00SubSubsortSymbol
-        , HeadType.Symbol
-        )
-    ,   ( plain10Symbol
-        , HeadType.Symbol
-        )
-    ,   ( plain11Symbol
-        , HeadType.Symbol
-        )
-    ,   ( plain20Symbol
-        , HeadType.Symbol
-        )
-    ,   ( constr10Symbol
-        , HeadType.Symbol
-        )
-    ,   ( constr11Symbol
-        , HeadType.Symbol
-        )
-    ,   ( constr20Symbol
-        , HeadType.Symbol
-        )
-    ,   ( function20MapTestSymbol
-        , HeadType.Symbol
-        )
-    ,   ( functional00Symbol
-        , HeadType.Symbol
-        )
-    ,   ( functional01Symbol
-        , HeadType.Symbol
-        )
-    ,   ( functional10Symbol
-        , HeadType.Symbol
-        )
-    ,   ( functional11Symbol
-        , HeadType.Symbol
-        )
-    ,   ( functional20Symbol
-        , HeadType.Symbol
-        )
-    ,   ( functional00SubSubSortSymbol
-        , HeadType.Symbol
-        )
-    ,   ( functionalConstr10Symbol
-        , HeadType.Symbol
-        )
-    ,   ( functionalConstr11Symbol
-        , HeadType.Symbol
-        )
-    ,   ( functionalConstr12Symbol
-        , HeadType.Symbol
-        )
-    ,   ( functionalConstr20Symbol
-        , HeadType.Symbol
-        )
-    ,   ( functionalConstr30Symbol
-        , HeadType.Symbol
-        )
-    ,   ( functionalTopConstr20Symbol
-        , HeadType.Symbol
-        )
-    ,   ( functionalTopConstr21Symbol
-        , HeadType.Symbol
-        )
-    ,   ( injective10Symbol
-        , HeadType.Symbol
-        )
-    ,   ( injective11Symbol
-        , HeadType.Symbol
-        )
-    ,   ( sortInjection10Symbol
-        , HeadType.Symbol
-        )
-    ,   ( sortInjection11Symbol
-        , HeadType.Symbol
-        )
-    ,   ( sortInjection0ToTopSymbol
-        , HeadType.Symbol
-        )
-    ,   ( sortInjectionSubToTopSymbol
-        , HeadType.Symbol
-        )
-    ,   ( sortInjectionSubSubToTopSymbol
-        , HeadType.Symbol
-        )
-    ,   ( sortInjectionSubSubToSubSymbol
-        , HeadType.Symbol
-        )
-    ,   ( sortInjectionOtherToTopSymbol
-        , HeadType.Symbol
-        )
-    ,   ( unitMapSymbol
-        , HeadType.Symbol
-        )
-    ,   ( elementMapSymbol
-        , HeadType.Symbol
-        )
-    ,   ( concatMapSymbol
-        , HeadType.Symbol
-        )
-    ,   ( elementListSymbol
-        , HeadType.Symbol
-        )
-    ,   ( unitListSymbol
-        , HeadType.Symbol
-        )
-    ,   ( concatListSymbol
-        , HeadType.Symbol
-        )
-    ,   ( elementSetSymbol
-        , HeadType.Symbol
-        )
-    ,   ( unitSetSymbol
-        , HeadType.Symbol
-        )
-    ,   ( concatSetSymbol
-        , HeadType.Symbol
-        )
-    ,   ( lessIntSymbol
-        , HeadType.Symbol
-        )
-    ,   ( greaterEqIntSymbol
-        , HeadType.Symbol
-        )
-    ,   ( sigmaSymbol
-        , HeadType.Symbol
-        )
-    ,   ( anywhereSymbol
-        , HeadType.Symbol
-        )
-    ]
+    map (\symbol -> symbol & (,) <$> toSymbolOrAlias <*> pure HeadType.Symbol) symbols
 
 sortAttributesMapping :: [(Sort, Attribute.Sort)]
 sortAttributesMapping =
@@ -1325,25 +1085,34 @@ sortAttributesMapping =
     ,   ( mapSort
         , Default.def
             { Attribute.hook = Hook (Just "MAP.Map")
-            , Attribute.unit = Attribute.Unit (Just unitMapSymbol)
-            , Attribute.element = Attribute.Element (Just elementMapSymbol)
-            , Attribute.concat = Attribute.Concat (Just concatMapSymbol)
+            , Attribute.unit =
+                Attribute.Unit (Just $ toSymbolOrAlias unitMapSymbol)
+            , Attribute.element =
+                Attribute.Element (Just $ toSymbolOrAlias elementMapSymbol)
+            , Attribute.concat =
+                Attribute.Concat (Just $ toSymbolOrAlias concatMapSymbol)
             }
         )
     ,   ( listSort
         , Default.def
             { Attribute.hook = Hook (Just "LIST.List")
-            , Attribute.unit = Attribute.Unit (Just unitListSymbol)
-            , Attribute.element = Attribute.Element (Just elementListSymbol)
-            , Attribute.concat = Attribute.Concat (Just concatListSymbol)
+            , Attribute.unit =
+                Attribute.Unit (Just $ toSymbolOrAlias unitListSymbol)
+            , Attribute.element =
+                Attribute.Element (Just $ toSymbolOrAlias elementListSymbol)
+            , Attribute.concat =
+                Attribute.Concat (Just $ toSymbolOrAlias concatListSymbol)
             }
         )
     ,   ( setSort
         , Default.def
             { Attribute.hook = Hook (Just "SET.Set")
-            , Attribute.unit = Attribute.Unit (Just unitSetSymbol)
-            , Attribute.element = Attribute.Element (Just elementSetSymbol)
-            , Attribute.concat = Attribute.Concat (Just concatSetSymbol)
+            , Attribute.unit =
+                Attribute.Unit (Just $ toSymbolOrAlias unitSetSymbol)
+            , Attribute.element =
+                Attribute.Element (Just $ toSymbolOrAlias elementSetSymbol)
+            , Attribute.concat =
+                Attribute.Concat (Just $ toSymbolOrAlias concatSetSymbol)
             }
         )
     ,   ( intSort
@@ -1356,6 +1125,7 @@ sortAttributesMapping =
 
 headSortsMapping :: [(SymbolOrAlias, ApplicationSorts)]
 headSortsMapping =
+    map (first toSymbolOrAlias)
     [   ( aSymbol
         , ApplicationSorts
             { applicationSortsOperands = []

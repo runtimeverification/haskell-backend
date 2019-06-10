@@ -81,6 +81,10 @@ instance SOP.HasDatatypeInfo Attributes
 
 instance Debug Attributes
 
+deriving instance Semigroup Attributes
+
+deriving instance Monoid Attributes
+
 instance Unparse Attributes where
     unparse = attributes . getAttributes
     unparse2 = attributes . getAttributes

@@ -36,6 +36,8 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Step.SMT.Declaration.All as SMT.All
                  ( declare )
 import           Kore.Step.SMT.Translate
+import           Kore.Syntax.Sentence
+                 ( SentenceAxiom (..) )
 import           Kore.Unparser
 import           SMT
                  ( MonadSMT (..), SExpr (..) )

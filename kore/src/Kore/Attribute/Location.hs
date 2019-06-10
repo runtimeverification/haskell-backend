@@ -67,6 +67,9 @@ instance ParseAttributes Location where
         parseApplication _ _ _ =
             AttributeParser.failDuplicate locationId
 
+    -- TODO (thomas.tuegel): Implement
+    toAttributes = def
+
 -- | This parser is used to parse the inner representation of the attribute.
 -- The expected format is "Location(sl,sc,el,ec)" where sc, sc, el, and ec are
 -- all numbers.

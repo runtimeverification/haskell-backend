@@ -40,8 +40,6 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Strategy
                  ( GraphSearchOrder, Strategy, pickFinal,
                  runStrategyWithSearchOrder )
-import           Kore.Syntax.Application
-                 ( SymbolOrAlias (..) )
 import           Kore.Syntax.Id
                  ( Id (..) )
 import           Kore.Syntax.Variable
@@ -109,10 +107,8 @@ checkClaim
     (ImplicationRule RulePattern { left, right }, stepLimit)
   = do
         let
-            App_ SymbolOrAlias
-                { symbolOrAliasConstructor = symbol } [prop]
-              = right
-            goalPattern = ModalPattern { modalOp = getId symbol, term = prop }
+            ApplyAlias_ Alias { aliasConstructor = alias } [prop] = right
+            goalPattern = ModalPattern { modalOp = getId alias, term = prop }
             strategy =
                 Limit.takeWithin
                     stepLimit

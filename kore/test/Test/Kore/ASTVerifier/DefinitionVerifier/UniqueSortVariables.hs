@@ -8,6 +8,8 @@ import Test.Tasty
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.Internal.TermLike
+import           Kore.Syntax.Definition
+                 ( ModuleName (..), asSentence )
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier

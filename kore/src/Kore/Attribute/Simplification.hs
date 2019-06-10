@@ -61,3 +61,6 @@ instance ParseAttributes Simplification where
             return Simplification { isSimplification = True }
         withApplication' = Parser.withApplication simplificationId
         failDuplicate' = Parser.failDuplicate simplificationId
+
+    toAttributes Simplification { isSimplification } =
+        Attributes $ if isSimplification then [simplificationAttribute] else []

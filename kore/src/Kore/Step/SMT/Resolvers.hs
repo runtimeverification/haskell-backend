@@ -16,36 +16,28 @@ import           Data.Reflection
                  ( Given, given )
 
 import qualified Kore.Attribute.Symbol as Attribute
-                 ( StepperAttributes )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (MetadataTools), SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (smtData) )
+import           Kore.Internal.Symbol
 import qualified Kore.Step.SMT.AST as AST
                  ( Declarations (Declarations), Symbol (Symbol) )
 import qualified Kore.Step.SMT.AST as AST.DoNotUse
-import           Kore.Syntax.Application
-                 ( SymbolOrAlias (SymbolOrAlias) )
-import           Kore.Syntax.Application as SymbolOrAlias
-                 ( SymbolOrAlias (..) )
 import qualified SMT
 
 {-| Creates the SMT representation of a symbol assuming the smt declarations in
 the given SmtMetadataTools.
 -}
 translateSymbol
-    :: Given (SmtMetadataTools Attribute.StepperAttributes)
-    => SymbolOrAlias
+    :: Given (SmtMetadataTools Attribute.Symbol)
+    => Symbol
     -> Maybe SMT.SExpr
-translateSymbol
-    SymbolOrAlias { symbolOrAliasConstructor, symbolOrAliasParams }
-  = do
-    AST.Symbol { smtFromSortArgs } <-
-        Map.lookup symbolOrAliasConstructor symbols
-    smtFromSortArgs sorts symbolOrAliasParams
+translateSymbol Symbol { symbolConstructor, symbolParams } = do
+    AST.Symbol { smtFromSortArgs } <- Map.lookup symbolConstructor symbols
+    smtFromSortArgs sorts symbolParams
   where
-    MetadataTools {smtData = AST.Declarations {sorts, symbols}} =
-        tools
+    MetadataTools {smtData = AST.Declarations {sorts, symbols}} = tools
 
-    tools :: SmtMetadataTools Attribute.StepperAttributes
+    tools :: SmtMetadataTools Attribute.Symbol
     tools = given

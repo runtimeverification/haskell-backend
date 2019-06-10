@@ -7,6 +7,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import qualified Data.Default as Default
+
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -118,30 +120,34 @@ test_floorSimplification =
   where
     fId = testId "f"
     gId = testId "g"
-    aSymbol = SymbolOrAlias
-        { symbolOrAliasConstructor = testId "a"
-        , symbolOrAliasParams      = []
+    aSymbol = Symbol
+        { symbolConstructor = testId "a"
+        , symbolParams      = []
+        , symbolAttributes  = Default.def
         }
-    bSymbol = SymbolOrAlias
-        { symbolOrAliasConstructor = testId "b"
-        , symbolOrAliasParams      = []
+    bSymbol = Symbol
+        { symbolConstructor = testId "b"
+        , symbolParams      = []
+        , symbolAttributes  = Default.def
         }
-    fSymbol = SymbolOrAlias
-        { symbolOrAliasConstructor = fId
-        , symbolOrAliasParams      = []
+    fSymbol = Symbol
+        { symbolConstructor = fId
+        , symbolParams      = []
+        , symbolAttributes  = Default.def
         }
-    gSymbol = SymbolOrAlias
-        { symbolOrAliasConstructor = gId
-        , symbolOrAliasParams      = []
+    gSymbol = Symbol
+        { symbolConstructor = gId
+        , symbolParams      = []
+        , symbolAttributes  = Default.def
         }
     x = Variable (testId "x") mempty testSort
     a :: TermLike Variable
-    a = mkApp testSort aSymbol []
+    a = mkApplySymbol testSort aSymbol []
     b :: TermLike Variable
-    b = mkApp testSort bSymbol []
-    fOfA = mkApp testSort fSymbol [a]
-    fOfB = mkApp testSort fSymbol [b]
-    gOfA = mkApp testSort gSymbol [a]
+    b = mkApplySymbol testSort bSymbol []
+    fOfA = mkApplySymbol testSort fSymbol [a]
+    fOfB = mkApplySymbol testSort fSymbol [b]
+    gOfA = mkApplySymbol testSort gSymbol [a]
     aExpanded = Conditional
         { term = a
         , predicate = makeTruePredicate

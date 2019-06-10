@@ -18,17 +18,12 @@ import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
-import           Data.Reflection
-                 ( give )
 import qualified Data.Text as Text
 
+import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Pattern as Attribute
-import           Kore.Attribute.Symbol
-                 ( Hook (..), StepperAttributes, isSortInjection_ )
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Debug
-import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SmtMetadataTools )
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( flatten, merge, mergeAll )
 import           Kore.Internal.OrPattern
@@ -37,6 +32,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern, Predicate )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
 import           Kore.Logger
                  ( LogMessage, WithLog )
@@ -69,21 +65,20 @@ evaluateApplication
     => Predicate variable
     -- ^ Aggregated children predicate and substitution.
     -> CofreeF
-        (Application SymbolOrAlias)
+        (Application Symbol)
         (Attribute.Pattern variable)
         (TermLike variable)
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
 evaluateApplication childrenPredicate (valid :< app) = do
-    tools <- Simplifier.askMetadataTools
     substitutionSimplifier <- Simplifier.askSimplifierPredicate
     simplifier <- Simplifier.askSimplifierTermLike
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
     let
-        afterInj = evaluateSortInjection tools app
+        afterInj = evaluateSortInjection app
         Application { applicationSymbolOrAlias = appHead } = afterInj
-        SymbolOrAlias { symbolOrAliasConstructor = symbolId } = appHead
-        appPattern = Recursive.embed (valid :< ApplicationF afterInj)
+        Symbol { symbolConstructor = symbolId } = appHead
+        appPattern = Recursive.embed (valid :< ApplySymbolF afterInj)
 
         maybeEvaluatedPattSimplifier =
             maybeEvaluatePattern
@@ -104,7 +99,7 @@ evaluateApplication childrenPredicate (valid :< app) = do
                 childrenPredicate
         unchanged = OrPattern.fromPattern unchangedPatt
 
-        getSymbolHook = getHook . Attribute.hook . symAttributes tools
+        getSymbolHook = getHook . Attribute.hook . symbolAttributes
         getAppHookString = Text.unpack <$> getSymbolHook appHead
 
     case maybeEvaluatedPattSimplifier of
@@ -261,37 +256,33 @@ maybeEvaluatePattern
 
 evaluateSortInjection
     :: Ord variable
-    => SmtMetadataTools StepperAttributes
-    -> Application SymbolOrAlias (TermLike variable)
-    -> Application SymbolOrAlias (TermLike variable)
-evaluateSortInjection tools ap
-  | give tools isSortInjection_ apHead
+    => Application Symbol (TermLike variable)
+    -> Application Symbol (TermLike variable)
+evaluateSortInjection ap
+  | Symbol.isSortInjection apHead
   = case apChild of
     App_ apHeadChild grandChildren
-      | give tools isSortInjection_ apHeadChild ->
+      | Symbol.isSortInjection apHeadChild ->
         let
-            [fromSort', toSort'] = symbolOrAliasParams apHeadChild
+            [fromSort', toSort'] = symbolParams apHeadChild
             apHeadNew = updateSortInjectionSource apHead fromSort'
             resultApp = apHeadNew grandChildren
         in
-            assert (toSort' == fromSort) $
-                ( resultApp
-
-                )
+            assert (toSort' == fromSort) resultApp
     _ -> ap
   | otherwise = ap
   where
     apHead = applicationSymbolOrAlias ap
-    [fromSort, _] = symbolOrAliasParams apHead
+    [fromSort, _] = symbolParams apHead
     [apChild] = applicationChildren ap
     updateSortInjectionSource head1 fromSort1 children =
         Application
             { applicationSymbolOrAlias =
-                head1 { symbolOrAliasParams = [fromSort1, toSort1] }
+                head1 { symbolParams = [fromSort1, toSort1] }
             , applicationChildren = children
             }
       where
-        [_, toSort1] = symbolOrAliasParams head1
+        [_, toSort1] = symbolParams head1
 
 {-| 'reevaluateFunctions' re-evaluates functions after a user-defined function
 was evaluated.

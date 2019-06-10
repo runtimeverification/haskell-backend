@@ -917,10 +917,10 @@ unparseStrategy omitList =
     hide =
         Recursive.unfold $ \termLike ->
             case Recursive.project termLike of
-                ann :< TermLike.ApplicationF app
+                ann :< TermLike.ApplySymbolF app
                   | shouldBeExcluded (applicationSymbolOrAlias app) ->
                     -- Do not display children
-                    ann :< TermLike.ApplicationF (withoutChildren app)
+                    ann :< TermLike.ApplySymbolF (withoutChildren app)
                 projected -> projected
 
     withoutChildren app = app { applicationChildren = [] }
@@ -929,7 +929,7 @@ unparseStrategy omitList =
        (`elem` omitList)
            . Text.unpack
            . Id.getId
-           . symbolOrAliasConstructor
+           . TermLike.symbolConstructor
 
 putStrLn' :: MonadWriter String m => String -> m ()
 putStrLn' str = tell $ str <> "\n"

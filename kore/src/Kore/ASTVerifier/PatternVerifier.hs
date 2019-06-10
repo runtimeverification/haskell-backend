@@ -1,12 +1,10 @@
 {-|
-Module      : Kore.ASTVerifier.PatternVerifier
-Description : Tools for verifying the wellformedness of a Kore 'Pattern'.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : POSIX
 -}
+
+{-# LANGUAGE TemplateHaskell #-}
+
 module Kore.ASTVerifier.PatternVerifier
     ( verifyPattern
     , verifyStandalonePattern
@@ -17,17 +15,29 @@ module Kore.ASTVerifier.PatternVerifier
     , PatternVerifier (..)
     , runPatternVerifier
     , Context (..)
+    , lensDeclaredVariables
+    , lensDeclaredSortVariables
+    , lensIndexedModule
+    , lensBuiltinDomainValueVerifiers
     , DeclaredVariables (..), emptyDeclaredVariables
     , assertExpectedSort
     , assertSameSort
     ) where
 
+import           Control.Applicative
+import           Control.Lens
+                 ( (%~), (<>~), _1 )
+import qualified Control.Lens as Lens hiding
+                 ( makeLenses )
 import qualified Control.Monad as Monad
 import           Control.Monad.Reader
                  ( MonadReader, ReaderT, runReaderT )
 import qualified Control.Monad.Reader as Reader
+import qualified Control.Monad.Trans.Class as Trans
+import           Control.Monad.Trans.Maybe
 import qualified Data.Foldable as Foldable
-import           Data.Functor.Const
+import           Data.Function
+                 ( (&) )
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
 import           Data.Set
@@ -39,16 +49,21 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Data.Text.Prettyprint.Doc.Render.String
                  ( renderString )
 
+import qualified Control.Lens.TH.Rules as Lens
 import           Kore.AST.Error
 import           Kore.ASTHelpers
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.SortVerifier
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
+import           Kore.IndexedModule.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
+import qualified Kore.Internal.Alias as Internal
+import qualified Kore.Internal.Symbol as Internal
 import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Internal.TermLike as Internal
@@ -73,11 +88,13 @@ data Context =
         { declaredVariables :: !DeclaredVariables
         , declaredSortVariables :: !(Set SortVariable)
         -- ^ The sort variables in scope.
-        , indexedModule :: !(IndexedModule () Attribute.Null Attribute.Null)
+        , indexedModule :: !(IndexedModule () Attribute.Symbol Attribute.Null)
         -- ^ The indexed Kore module containing all definitions in scope.
         , builtinDomainValueVerifiers
             :: !(Builtin.DomainValueVerifiers Verified.Pattern)
         }
+
+Lens.makeLenses ''Context
 
 newtype PatternVerifier a =
     PatternVerifier
@@ -93,7 +110,37 @@ runPatternVerifier
     -> PatternVerifier a
     -> Either (Error VerifyError) a
 runPatternVerifier ctx PatternVerifier { getPatternVerifier } =
-    runReaderT getPatternVerifier ctx
+    ctx
+    & Lens.over lensIndexedModule specialK
+    & runReaderT getPatternVerifier
+
+{- | Apply attributes to special K symbols.
+ -}
+-- TODO (thomas.tuegel): Remove this after changing prelude.kore.
+specialK
+    :: IndexedModule patternType Attribute.Symbol attrAxiom
+    -> IndexedModule patternType Attribute.Symbol attrAxiom
+specialK indexedModule =
+    indexedModule
+    & lensIndexedModuleImports         %~ fmap recurseIntoImports
+    & lensIndexedModuleSymbolSentences %~ Map.mapWithKey worker
+    & lensIndexedModuleAliasSentences  %~ Map.mapWithKey worker
+  where
+    worker ident decl =
+        decl
+        & _1 . Attribute.lensConstructor   <>~ constructor
+        & _1 . Attribute.lensFunctional    <>~ functional
+        & _1 . Attribute.lensInjective     <>~ injective
+        & _1 . Attribute.lensSortInjection <>~ sortInjection
+      where
+        isInj = getId ident == "inj"
+        isCons = elem (getId ident) ["kseq", "dotk"]
+        constructor = Attribute.Constructor isCons
+        functional = Attribute.Functional (isCons || isInj)
+        injective = Attribute.Injective (isCons || isInj)
+        sortInjection = Attribute.SortInjection isInj
+
+    recurseIntoImports = Lens.over Lens._3 specialK
 
 lookupSortDeclaration
     :: Id
@@ -103,17 +150,42 @@ lookupSortDeclaration sortId = do
     (_, sortDecl) <- resolveSort indexedModule sortId
     return sortDecl
 
-lookupAliasDeclaration :: Id -> PatternVerifier (SentenceAlias ())
-lookupAliasDeclaration aliasId = do
+lookupAlias
+    ::  SymbolOrAlias
+    ->  MaybeT PatternVerifier (Internal.Alias, ApplicationSorts)
+lookupAlias symbolOrAlias = do
     Context { indexedModule } <- Reader.ask
-    (_, aliasDecl) <- resolveAlias indexedModule aliasId
-    return aliasDecl
+    let resolveAlias' = resolveAlias indexedModule aliasConstructor
+    (_, decl) <- resolveAlias' `catchError` const empty
+    let alias =
+            Internal.Alias
+                { aliasConstructor
+                , aliasParams
+                }
+    sorts <- Trans.lift $ applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
+    return (alias, sorts)
+  where
+    aliasConstructor = symbolOrAliasConstructor symbolOrAlias
+    aliasParams = symbolOrAliasParams symbolOrAlias
 
-lookupSymbolDeclaration :: Id -> PatternVerifier (SentenceSymbol ())
-lookupSymbolDeclaration symbolId = do
+lookupSymbol
+    ::  SymbolOrAlias
+    ->  MaybeT PatternVerifier (Internal.Symbol, ApplicationSorts)
+lookupSymbol symbolOrAlias = do
     Context { indexedModule } <- Reader.ask
-    (_, symbolDecl) <- resolveSymbol indexedModule symbolId
-    return symbolDecl
+    let resolveSymbol' = resolveSymbol indexedModule symbolConstructor
+    (attrs, decl) <- resolveSymbol' `catchError` const empty
+    let symbol =
+            Internal.Symbol
+                { symbolConstructor
+                , symbolParams
+                , symbolAttributes = attrs
+                }
+    sorts <- Trans.lift $ applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
+    return (symbol, sorts)
+  where
+    symbolConstructor = symbolOrAliasConstructor symbolOrAlias
+    symbolParams = symbolOrAliasParams symbolOrAlias
 
 lookupDeclaredVariable :: Id -> PatternVerifier Variable
 lookupDeclaredVariable varId = do
@@ -194,15 +266,20 @@ See also: 'uniqueDeclaredVariables', 'withDeclaredVariables'
 
  -}
 verifyAliasLeftPattern
-    :: Application SymbolOrAlias (Variable)
-    -> PatternVerifier
-        (DeclaredVariables, Application SymbolOrAlias (Variable))
+    :: Application SymbolOrAlias Variable
+    -> PatternVerifier (DeclaredVariables, Application SymbolOrAlias Variable)
 verifyAliasLeftPattern leftPattern = do
-    _ :< verified <- verifyApplication snd (expectVariable <$> leftPattern)
+    _ :< verified <-
+        verifyApplyAlias snd (expectVariable <$> leftPattern)
+        & runMaybeT
+        & (>>= maybe (error . noHead $ symbolOrAlias) return)
     declaredVariables <- uniqueDeclaredVariables (fst <$> verified)
-    let verifiedLeftPattern = fst <$> verified
+    let verifiedLeftPattern =
+            leftPattern
+                { applicationChildren = fst <$> applicationChildren verified }
     return (declaredVariables, verifiedLeftPattern)
   where
+    symbolOrAlias = applicationSymbolOrAlias leftPattern
     expectVariable
         :: Variable
         -> PatternVerifier (Variable, Attribute.Pattern Variable)
@@ -279,8 +356,7 @@ verifyPatternHead (_ :< patternF) =
         Syntax.AndF and' ->
             transCofreeF Internal.AndF <$> verifyAnd and'
         Syntax.ApplicationF app ->
-            transCofreeF Internal.ApplicationF
-            <$> verifyApplication Internal.extractAttributes app
+            verifyApplication Internal.extractAttributes app
         Syntax.BottomF bottom ->
             transCofreeF Internal.BottomF <$> verifyBottom bottom
         Syntax.CeilF ceil' ->
@@ -503,30 +579,77 @@ verifyPatternsWithSorts getChildAttributes sorts operands = do
     declaredOperandCount = length sorts
     actualOperandCount = length operands
 
-verifyApplication
+verifyApplyAlias
     ::  (child -> Attribute.Pattern Variable)
     ->  Application SymbolOrAlias (PatternVerifier child)
-    ->  PatternVerifier
+    ->  MaybeT PatternVerifier
             (CofreeF
-                (Application SymbolOrAlias)
+                (Application Internal.Alias)
                 (Attribute.Pattern Variable)
                 child
             )
-verifyApplication getChildAttributes application = do
-    applicationSorts <- verifySymbolOrAlias applicationSymbolOrAlias
-    let ApplicationSorts { applicationSortsOperands } = applicationSorts
-        operandSorts = applicationSortsOperands
-    verifiedChildren <- verifyChildren operandSorts applicationChildren
-    let patternSort = applicationSortsResult applicationSorts
+verifyApplyAlias getChildAttributes application =
+    lookupAlias symbolOrAlias >>= \(alias, sorts) -> Trans.lift $ do
+    let verified = application { applicationSymbolOrAlias = alias }
+    verifyApplicationChildren getChildAttributes verified sorts
+  where
+    Application { applicationSymbolOrAlias = symbolOrAlias } = application
+
+verifyApplySymbol
+    ::  (child -> Attribute.Pattern Variable)
+    ->  Application SymbolOrAlias (PatternVerifier child)
+    ->  MaybeT PatternVerifier
+            (CofreeF
+                (Application Internal.Symbol)
+                (Attribute.Pattern Variable)
+                child
+            )
+verifyApplySymbol getChildAttributes application =
+    lookupSymbol symbolOrAlias >>= \(symbol, sorts) -> Trans.lift $ do
+    let verified = application { applicationSymbolOrAlias = symbol }
+    verifyApplicationChildren getChildAttributes verified sorts
+  where
+    Application { applicationSymbolOrAlias = symbolOrAlias } = application
+
+verifyApplicationChildren
+    ::  (child -> Attribute.Pattern Variable)
+    ->  Application head (PatternVerifier child)
+    ->  ApplicationSorts
+    ->  PatternVerifier
+            (CofreeF
+                (Application head)
+                (Attribute.Pattern Variable)
+                child
+            )
+verifyApplicationChildren getChildAttributes application sorts = do
+    let operandSorts = applicationSortsOperands sorts
+    verifiedChildren <- verifyChildren operandSorts children
+    let patternSort = applicationSortsResult sorts
         verified = application { applicationChildren = verifiedChildren }
-        freeVariables =
-            Set.unions (getChildFreeVariables <$> verifiedChildren)
-    return (Attribute.Pattern { patternSort, freeVariables } :< verified)
+        freeVariables = Set.unions (getChildFreeVariables <$> verifiedChildren)
+        patternAttrs = Attribute.Pattern { patternSort, freeVariables }
+    return (patternAttrs :< verified)
   where
     verifyChildren = verifyPatternsWithSorts getChildAttributes
     getChildFreeVariables = Attribute.freeVariables . getChildAttributes
-    Application { applicationSymbolOrAlias } = application
-    Application { applicationChildren } = application
+    Application { applicationChildren = children } = application
+
+verifyApplication
+    ::  (Verified.Pattern -> Attribute.Pattern Variable)
+    ->  Application SymbolOrAlias (PatternVerifier Verified.Pattern)
+    ->  PatternVerifier (Base (TermLike Variable) Verified.Pattern)
+verifyApplication getChildAttributes application = do
+    result <- verifyApplyAlias' <|> verifyApplySymbol' & runMaybeT
+    maybe (koreFail . noHead $ symbolOrAlias) return result
+  where
+    symbolOrAlias = applicationSymbolOrAlias application
+    transCofreeF fg (a :< fb) = a :< fg fb
+    verifyApplyAlias' =
+        transCofreeF Internal.ApplyAliasF
+        <$> verifyApplyAlias getChildAttributes application
+    verifyApplySymbol' =
+        transCofreeF Internal.ApplySymbolF
+        <$> verifyApplySymbol getChildAttributes application
 
 verifyBinder
     ::  ( Traversable binder
@@ -664,31 +787,6 @@ verifyVariableDeclaration Variable { variableSort } = do
         lookupSortDeclaration
         declaredSortVariables
         variableSort
-
-verifySymbolOrAlias
-    :: SymbolOrAlias
-    -> PatternVerifier ApplicationSorts
-verifySymbolOrAlias symbolOrAlias = do
-    trySymbol <- catchError (Right <$> lookupSymbol) (return . Left)
-    tryAlias <- catchError (Right <$> lookupAlias) (return . Left)
-    case (trySymbol, tryAlias) of
-        (Right sentenceSymbol, Left _) ->
-            applicationSortsFromSymbolOrAliasSentence
-                symbolOrAlias
-                sentenceSymbol
-        (Left _, Right sentenceAlias) ->
-            applicationSortsFromSymbolOrAliasSentence
-                symbolOrAlias
-                sentenceAlias
-        (Left err, Left _) -> throwError err
-        (Right _, Right _) -> error
-            (  "The (Right, Right) match should be caught "
-            ++ "by the unique names check."
-            )
-  where
-    lookupSymbol = lookupSymbolDeclaration applicationId
-    lookupAlias = lookupAliasDeclaration applicationId
-    applicationId = symbolOrAliasConstructor symbolOrAlias
 
 applicationSortsFromSymbolOrAliasSentence
     :: SentenceSymbolOrAlias sentence

@@ -71,9 +71,7 @@ import qualified Data.Text as Text
 
 import           Kore.Attribute.Hook
                  ( Hook )
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import qualified Kore.Attribute.Symbol as StepperAttributes
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.Builtin.Builtin
                  ( acceptAnySort )
@@ -94,6 +92,8 @@ import           Kore.Internal.Predicate
                  ( Predicate )
 import           Kore.Internal.TermLike
 import           Kore.Step.Simplification.Data as Simplifier
+import           Kore.Syntax.Sentence
+                 ( SentenceSort (..) )
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -414,7 +414,7 @@ See also: 'sort'
  -}
 asInternal
     :: Ord variable
-    => SmtMetadataTools attrs
+    => SmtMetadataTools Attribute.Symbol
     -> Sort
     -> Map (TermLike Concrete) (TermLike variable)
     -> TermLike variable
@@ -449,7 +449,7 @@ asTermLike builtin
     Domain.InternalMap { builtinMapElement = elementSymbol } = builtin
     Domain.InternalMap { builtinMapConcat = concatSymbol } = builtin
 
-    apply = mkApp builtinSort
+    apply = mkApplySymbol builtinSort
     unit = apply unitSymbol []
     element (key, value) = apply elementSymbol [fromConcrete key, value]
     concat' map1 map2 = apply concatSymbol [map1, map2]
@@ -461,7 +461,7 @@ See also: 'asPattern'
  -}
 asPattern
     ::  ( Ord variable
-        , Given (SmtMetadataTools StepperAttributes)
+        , Given (SmtMetadataTools Attribute.Symbol)
         )
     => Sort
     -> Map (TermLike Concrete) (TermLike variable)
@@ -469,7 +469,7 @@ asPattern
 asPattern resultSort =
     Pattern.fromTermLike . asInternal tools resultSort
   where
-    tools :: SmtMetadataTools StepperAttributes
+    tools :: SmtMetadataTools Attribute.Symbol
     tools = Reflection.given
 
 concatKey :: IsString s => s
@@ -503,55 +503,55 @@ removeAllKey = "MAP.removeAll"
  -}
 lookupSymbolUpdate
     :: Sort
-    -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) SymbolOrAlias
+    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> Either (Kore.Error e) Symbol
 lookupSymbolUpdate = Builtin.lookupSymbol updateKey
 
 {- | Find the symbol hooked to @MAP.lookup@ in an indexed module.
  -}
 lookupSymbolLookup
     :: Sort
-    -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) SymbolOrAlias
+    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> Either (Kore.Error e) Symbol
 lookupSymbolLookup = Builtin.lookupSymbol lookupKey
 
 {- | Find the symbol hooked to @MAP.in_keys@ in an indexed module.
  -}
 lookupSymbolInKeys
     :: Sort
-    -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) SymbolOrAlias
+    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> Either (Kore.Error e) Symbol
 lookupSymbolInKeys = Builtin.lookupSymbol in_keysKey
 
 {- | Find the symbol hooked to @MAP.keys@ in an indexed module.
  -}
 lookupSymbolKeys
     :: Sort
-    -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) SymbolOrAlias
+    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> Either (Kore.Error e) Symbol
 lookupSymbolKeys = Builtin.lookupSymbol keysKey
 
 {- | Find the symbol hooked to @MAP.remove@ in an indexed module.
  -}
 lookupSymbolRemove
     :: Sort
-    -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) SymbolOrAlias
+    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> Either (Kore.Error e) Symbol
 lookupSymbolRemove = Builtin.lookupSymbol removeKey
 
 {- | Find the symbol hooked to @MAP.removeAll@ in an indexed module.
  -}
 lookupSymbolRemoveAll
     :: Sort
-    -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) SymbolOrAlias
+    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> Either (Kore.Error e) Symbol
 lookupSymbolRemoveAll = Builtin.lookupSymbol removeAllKey
 
 {- | Check if the given symbol is hooked to @MAP.concat@.
  -}
 isSymbolConcat
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias
+    -> Symbol
     -> Bool
 isSymbolConcat = Builtin.isSymbol concatKey
 
@@ -559,7 +559,7 @@ isSymbolConcat = Builtin.isSymbol concatKey
  -}
 isSymbolElement
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias
+    -> Symbol
     -> Bool
 isSymbolElement = Builtin.isSymbol elementKey
 
@@ -567,7 +567,7 @@ isSymbolElement = Builtin.isSymbol elementKey
 -}
 isSymbolUnit
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias
+    -> Symbol
     -> Bool
 isSymbolUnit = Builtin.isSymbol unitKey
 
@@ -575,7 +575,7 @@ isSymbolUnit = Builtin.isSymbol unitKey
 -}
 isSymbolRemove
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias
+    -> Symbol
     -> Bool
 isSymbolRemove = Builtin.isSymbol removeKey
 
@@ -583,7 +583,7 @@ isSymbolRemove = Builtin.isSymbol removeKey
 -}
 isSymbolRemoveAll
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias
+    -> Symbol
     -> Bool
 isSymbolRemoveAll = Builtin.isSymbol removeAllKey
 
@@ -627,7 +627,7 @@ unifyEquals
         , MonadUnify unifier
         )
     => SimplificationType
-    -> SmtMetadataTools StepperAttributes
+    -> SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
@@ -649,7 +649,7 @@ unifyEquals
   =
     unifyEquals0 first second
   where
-    hookTools = StepperAttributes.hook <$> tools
+    hookTools = Attribute.hook <$> tools
 
     -- | Given a collection 't' of 'Conditional' values, propagate all the
     -- predicates to the top, returning a 'Conditional' collection.
@@ -734,7 +734,7 @@ unifyEquals
             ::  Domain.InternalMap
                     (TermLike Concrete)
                     (TermLike variable)  -- ^ concrete map
-            -> SymbolOrAlias             -- ^ 'element' symbol
+            -> Symbol                    -- ^ 'element' symbol
             -> TermLike variable         -- ^ key
             -> TermLike variable         -- ^ value
             -> TermLike variable         -- ^ remainder for unification
@@ -929,7 +929,7 @@ addKeyValuePatternsToMap
         , SortedVariable variable
         , Unparse variable
         )
-    => SmtMetadataTools StepperAttributes
+    => SmtMetadataTools Attribute.Symbol
     -> Sort
     -> Pattern variable
     -> Pattern variable

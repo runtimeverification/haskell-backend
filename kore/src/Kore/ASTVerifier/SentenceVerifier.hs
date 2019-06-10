@@ -31,12 +31,13 @@ import           Kore.ASTVerifier.SortVerifier
 import qualified Kore.Attribute.Constructor as Attribute
 import qualified Kore.Attribute.Hook as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
-import qualified Kore.Attribute.Sort as Attribute
+import qualified Kore.Attribute.Sort as Attribute.Sort
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.IndexedModule.Resolvers
-import           Kore.Syntax
+import           Kore.Sort
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
@@ -101,10 +102,10 @@ definedNamesForSentence (SentenceHookSentence (SentenceHookedSymbol sentence)) =
 {-|'verifySentences' verifies the welformedness of a list of Kore 'Sentence's.
 -}
 verifySentences
-    :: KoreIndexedModule declAtts axiomAtts
+    :: KoreIndexedModule Attribute.Symbol axiomAtts
     -- ^ The module containing all definitions which are visible in this
     -- pattern.
-    -> AttributesVerification declAtts axiomAtts
+    -> AttributesVerification Attribute.Symbol axiomAtts
     -> Builtin.Verifiers
     -> [ParsedSentence]
     -> Either (Error VerifyError) [Verified.Sentence]
@@ -118,8 +119,8 @@ verifySentences indexedModule attributesVerification builtinVerifiers =
 
 verifySentence
     :: Builtin.Verifiers
-    -> KoreIndexedModule declAtts axiomAtts
-    -> AttributesVerification declAtts axiomAtts
+    -> KoreIndexedModule Attribute.Symbol axiomAtts
+    -> AttributesVerification Attribute.Symbol axiomAtts
     -> ParsedSentence
     -> Either (Error VerifyError) Verified.Sentence
 verifySentence builtinVerifiers indexedModule attributesVerification sentence =
@@ -282,7 +283,7 @@ verifySymbolSentence indexedModule sentence =
                 (sortDescription, _) <-
                     Map.lookup resultSortId
                         $ indexedModuleSortDescriptions indexedModule
-                Attribute.getHook . Attribute.hook $ sortDescription
+                Attribute.getHook . Attribute.Sort.hook $ sortDescription
         in
             koreFailWhen
                 (isCtor && isJust resultSortHook)
@@ -295,7 +296,7 @@ verifySymbolSentence indexedModule sentence =
 
 verifyAliasSentence
     :: Builtin.Verifiers
-    -> KoreIndexedModule declAtts axiomAtts
+    -> KoreIndexedModule Attribute.Symbol axiomAtts
     -> ParsedSentenceAlias
     -> Either (Error VerifyError) Verified.SentenceAlias
 verifyAliasSentence builtinVerifiers indexedModule sentence =
@@ -308,7 +309,7 @@ verifyAliasSentence builtinVerifiers indexedModule sentence =
                     { builtinDomainValueVerifiers =
                         Builtin.domainValueVerifiers builtinVerifiers
                     , indexedModule =
-                        IndexedModule.eraseAttributes
+                        IndexedModule.eraseAxiomAttributes
                         $ IndexedModule.erasePatterns indexedModule
                     , declaredSortVariables = variables
                     , declaredVariables = emptyDeclaredVariables
@@ -335,7 +336,7 @@ verifyAliasSentence builtinVerifiers indexedModule sentence =
 verifyAxiomSentence
     :: ParsedSentenceAxiom
     -> Builtin.Verifiers
-    -> KoreIndexedModule declAtts axiomAtts
+    -> KoreIndexedModule Attribute.Symbol axiomAtts
     -> Either (Error VerifyError) Verified.SentenceAxiom
 verifyAxiomSentence axiom builtinVerifiers indexedModule =
     do
@@ -347,7 +348,7 @@ verifyAxiomSentence axiom builtinVerifiers indexedModule =
                     , indexedModule =
                         indexedModule
                         & IndexedModule.erasePatterns
-                        & IndexedModule.eraseAttributes
+                        & IndexedModule.eraseAxiomAttributes
                     , declaredSortVariables = variables
                     , declaredVariables = emptyDeclaredVariables
                     }

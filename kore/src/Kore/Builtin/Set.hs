@@ -70,9 +70,7 @@ import qualified Data.Text as Text
 
 import           Kore.Attribute.Hook
                  ( Hook )
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import qualified Kore.Attribute.Symbol as StepperAttributes
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.Builtin.Builtin
                  ( acceptAnySort )
@@ -94,6 +92,8 @@ import           Kore.Internal.Predicate
                  ( Predicate )
 import           Kore.Internal.TermLike
 import           Kore.Step.Simplification.Data as Simplifier
+import           Kore.Syntax.Sentence
+                 ( SentenceSort (..) )
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -381,7 +381,7 @@ pattern.
  -}
 asInternal
     :: Ord variable
-    => SmtMetadataTools attrs
+    => SmtMetadataTools Attribute.Symbol
     -> Sort
     -> Set (TermLike Concrete)
     -> TermLike variable
@@ -416,7 +416,7 @@ asTermLike builtin
     Domain.InternalSet { builtinSetElement = elementSymbol } = builtin
     Domain.InternalSet { builtinSetConcat = concatSymbol } = builtin
 
-    apply = mkApp builtinSort
+    apply = mkApplySymbol builtinSort
     unit = apply unitSymbol []
     element elem' = apply elementSymbol [fromConcrete elem']
     concat' set1 set2 = apply concatSymbol [set1, set2]
@@ -428,7 +428,7 @@ asTermLike builtin
  -}
 asPattern
     ::  ( Ord variable
-        , Given (SmtMetadataTools StepperAttributes)
+        , Given (SmtMetadataTools Attribute.Symbol)
         )
     => Sort
     -> Set (TermLike Concrete)
@@ -436,7 +436,7 @@ asPattern
 asPattern resultSort =
     Pattern.fromTermLike . asInternal tools resultSort
   where
-    tools :: SmtMetadataTools StepperAttributes
+    tools :: SmtMetadataTools Attribute.Symbol
     tools = Reflection.given
 
 concatKey :: IsString s => s
@@ -467,23 +467,23 @@ intersectionKey = "SET.intersection"
  -}
 lookupSymbolIn
     :: Sort
-    -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) SymbolOrAlias
+    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> Either (Kore.Error e) Symbol
 lookupSymbolIn = Builtin.lookupSymbol inKey
 
 {- | Find the symbol hooked to @SET.difference@ in an indexed module.
  -}
 lookupSymbolDifference
     :: Sort
-    -> VerifiedModule declAttrs axiomAttrs
-    -> Either (Kore.Error e) SymbolOrAlias
+    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> Either (Kore.Error e) Symbol
 lookupSymbolDifference = Builtin.lookupSymbol differenceKey
 
 {- | Check if the given symbol is hooked to @SET.concat@.
  -}
 isSymbolConcat
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias
+    -> Symbol
     -> Bool
 isSymbolConcat = Builtin.isSymbol concatKey
 
@@ -491,7 +491,7 @@ isSymbolConcat = Builtin.isSymbol concatKey
  -}
 isSymbolElement
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias
+    -> Symbol
     -> Bool
 isSymbolElement = Builtin.isSymbol elementKey
 
@@ -499,7 +499,7 @@ isSymbolElement = Builtin.isSymbol elementKey
 -}
 isSymbolUnit
     :: SmtMetadataTools Hook
-    -> SymbolOrAlias
+    -> Symbol
     -> Bool
 isSymbolUnit = Builtin.isSymbol "SET.unit"
 
@@ -521,7 +521,7 @@ unifyEquals
         , MonadUnify unifier
         )
     => SimplificationType
-    -> SmtMetadataTools StepperAttributes
+    -> SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
@@ -543,7 +543,7 @@ unifyEquals
   =
     unifyEquals0 first second
   where
-    hookTools = StepperAttributes.hook <$> tools
+    hookTools = Attribute.hook <$> tools
 
     -- | Unify the two argument patterns.
     unifyEquals0
@@ -604,7 +604,7 @@ unifyEquals
         -- TODO(traiansf): move it from here once the otherwise is not needed
         unifyEqualsSelect
             :: Domain.InternalSet (TermLike Concrete) -- ^ concrete set
-            -> SymbolOrAlias                          -- ^ 'element' symbol
+            -> Symbol                                 -- ^ 'element' symbol
             -> TermLike variable                      -- ^ key
             -> TermLike variable                      -- ^ framing variable
             -> unifier (Pattern variable)
@@ -766,7 +766,7 @@ addElemPatternToSet
         , SortedVariable variable
         , Unparse variable
         )
-    => SmtMetadataTools StepperAttributes
+    => SmtMetadataTools Attribute.Symbol
     -> Sort
     -> Pattern variable
     -> Set (TermLike Concrete)

@@ -67,3 +67,9 @@ instance ParseAttributes Overload where
             return Overload { getOverload = Just (symbol1, symbol2) }
         withApplication' = Parser.withApplication overloadId
         failDuplicate' = Parser.failDuplicate overloadId
+
+    toAttributes =
+        maybe def toAttribute . getOverload
+      where
+        toAttribute (symbol1, symbol2) =
+            Attributes [overloadAttribute symbol1 symbol2]

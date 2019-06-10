@@ -46,6 +46,8 @@ import           Kore.Step.Rule
 import qualified Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
                  ( BuiltinAndAxiomSimplifier (..) )
+import           Kore.Syntax.Sentence
+                 ( SentenceAxiom (..) )
 import qualified Kore.Verified as Verified
 
 {- | Create a mapping from symbol identifiers to their defining axioms.

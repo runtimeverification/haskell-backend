@@ -132,3 +132,21 @@ instance ParseAttributes Axiom where
         Monad.>=> lensLabel (parseAttribute attr)
         Monad.>=> lensSourceLocation (parseAttribute attr)
         Monad.>=> lensConstructor (parseAttribute attr)
+
+    toAttributes =
+        mconcat . sequence
+            [ toAttributes . heatCool
+            , toAttributes . productionID
+            , toAttributes . assoc
+            , toAttributes . comm
+            , toAttributes . unit
+            , toAttributes . idem
+            , toAttributes . trusted
+            , toAttributes . concrete
+            , toAttributes . simplification
+            , toAttributes . overload
+            , toAttributes . smtLemma
+            , toAttributes . label
+            , toAttributes . sourceLocation
+            , toAttributes . constructor
+            ]

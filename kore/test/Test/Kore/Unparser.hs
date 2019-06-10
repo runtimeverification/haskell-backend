@@ -23,7 +23,8 @@ import Kore.Syntax
 import Kore.Syntax.Definition
 import Kore.Unparser
 
-import           Test.Kore
+import           Test.Kore hiding
+                 ( Gen )
 import qualified Test.Terse as Terse
 
 test_unparse :: TestTree

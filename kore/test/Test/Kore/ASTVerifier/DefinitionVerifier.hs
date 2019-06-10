@@ -5,12 +5,14 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( HasCallStack, assertEqual, assertFailure, testCase )
 
+import Data.Proxy
 import Data.Text
        ( Text )
 
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Debug
 import           Kore.Error
@@ -125,8 +127,8 @@ expectFailureWithError description expectedError unverifiedDefinition =
         )
 
 attributesVerificationForTests
-    :: AttributesVerification Attribute.Null Attribute.Null
-attributesVerificationForTests = defaultNullAttributesVerification
+    :: AttributesVerification Attribute.Symbol Attribute.Null
+attributesVerificationForTests = defaultAttributesVerification Proxy Proxy
 
 printDefinition :: ParsedDefinition -> String
 printDefinition definition =
@@ -742,10 +744,11 @@ applicationUnifiedPatternWithParams
     -> [Sort]
     -> TermLike Variable
 applicationUnifiedPatternWithParams resultSort (SymbolName name) params =
-    Internal.mkApp
+    Internal.mkApplySymbol
         resultSort
-        SymbolOrAlias
-            { symbolOrAliasConstructor = testId name
-            , symbolOrAliasParams = params
+        Internal.Symbol
+            { symbolConstructor = testId name
+            , symbolParams = params
+            , symbolAttributes = Attribute.defaultSymbolAttributes
             }
         []

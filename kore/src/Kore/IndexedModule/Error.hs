@@ -20,7 +20,7 @@ noSort sortId =
 -- | A message declaring that a Head is undefined
 noHead :: SymbolOrAlias -> String
 noHead patternHead =
-    notDefined "Head" $ show patternHead
+    notDefined "Head" . getIdForError . symbolOrAliasConstructor $ patternHead
 
 -- | A message declaring that a Alias is undefined
 noAlias :: Id -> String

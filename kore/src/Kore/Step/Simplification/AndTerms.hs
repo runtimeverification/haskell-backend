@@ -30,22 +30,19 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Reflection
-                 ( give )
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Prelude hiding
                  ( concat )
 
-import           Kore.Attribute.Symbol
-                 ( SortInjection (..), StepperAttributes )
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Builtin.Map
 import qualified Kore.Builtin.Set as Builtin.Set
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
+                 ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -56,6 +53,7 @@ import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
 import qualified Kore.Logger as Logger
 import           Kore.Predicate.Predicate
@@ -137,7 +135,7 @@ termEqualsAnd
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => SmtMetadataTools StepperAttributes
+    => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
@@ -208,7 +206,7 @@ maybeTermEquals
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
-    => SmtMetadataTools StepperAttributes
+    => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
@@ -343,7 +341,7 @@ maybeTermAnd
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
-    => SmtMetadataTools StepperAttributes
+    => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
@@ -543,7 +541,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
         _substitutionMerger
       = f tools
     addT
-        ::  (  SmtMetadataTools StepperAttributes
+        ::  (  SmtMetadataTools Attribute.Symbol
             -> PredicateMerger variable unifier
             -> TermSimplifier variable unifier
             -> TermLike variable
@@ -606,7 +604,7 @@ call 'empty' unless given patterns matching their unification case.
  -}
 type TermTransformation variable unifier =
        SimplificationType
-    -> SmtMetadataTools StepperAttributes
+    -> SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
@@ -617,7 +615,7 @@ type TermTransformation variable unifier =
     -> MaybeT unifier (Pattern variable)
 
 type TermTransformationOld variable unifier =
-       SmtMetadataTools StepperAttributes
+       SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
@@ -637,7 +635,7 @@ maybeTransformTerm
         , MonadUnify unifier
         )
     => [TermTransformationOld variable unifier]
-    -> SmtMetadataTools StepperAttributes
+    -> SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
@@ -680,7 +678,7 @@ addToolsArg
         -> TermLike variable
         -> Maybe (TermLike variable)
         )
-    ->  (  SmtMetadataTools StepperAttributes
+    ->  (  SmtMetadataTools Attribute.Symbol
         -> TermLike variable
         -> TermLike variable
         -> Maybe (TermLike variable)
@@ -692,12 +690,12 @@ toExpanded
         , Show variable
         , Ord variable
         )
-    =>  (  SmtMetadataTools StepperAttributes
+    =>  (  SmtMetadataTools Attribute.Symbol
         -> TermLike variable
         -> TermLike variable
         -> Maybe (TermLike variable)
         )
-    ->  (  SmtMetadataTools StepperAttributes
+    ->  (  SmtMetadataTools Attribute.Symbol
         -> TermLike variable
         -> TermLike variable
         -> Maybe (Pattern variable)
@@ -711,7 +709,7 @@ toExpanded transformer tools first second =
 
 transformerLiftOld
     :: Monad unifier
-    =>  (  SmtMetadataTools StepperAttributes
+    =>  (  SmtMetadataTools Attribute.Symbol
         -> TermLike variable
         -> TermLike variable
         -> Maybe (Pattern variable)
@@ -784,7 +782,7 @@ bottomTermEquals
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
-    => SmtMetadataTools StepperAttributes
+    => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
@@ -836,7 +834,7 @@ termBottomEquals
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
-    => SmtMetadataTools StepperAttributes
+    => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
@@ -865,7 +863,7 @@ variableFunctionAndEquals
         , Logger.WithLog Logger.LogMessage unifier
         )
     => SimplificationType
-    -> SmtMetadataTools StepperAttributes
+    -> SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
@@ -937,7 +935,7 @@ functionVariableAndEquals
         , MonadUnify unifier
         )
     => SimplificationType
-    -> SmtMetadataTools StepperAttributes
+    -> SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
@@ -982,7 +980,7 @@ equalInjectiveHeadsAndEquals
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
+    => SmtMetadataTools Attribute.Symbol
     -> PredicateMerger variable unifier
     -> TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
@@ -990,7 +988,7 @@ equalInjectiveHeadsAndEquals
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 equalInjectiveHeadsAndEquals
-    tools
+    _tools
     _
     termMerger
     firstPattern@(App_ firstHead firstChildren)
@@ -1000,14 +998,14 @@ equalInjectiveHeadsAndEquals
         children <- Monad.zipWithM termMerger firstChildren secondChildren
         let merged = Foldable.foldMap Pattern.withoutTerm children
             term =
-                mkApp
+                mkApplySymbol
                     (termLikeSort firstPattern)
                     firstHead
                     (Pattern.term <$> children)
         return (Pattern.withCondition term merged)
   where
-    isFirstInjective = give tools Attribute.isInjective_ firstHead
-    isSecondInjective = give tools Attribute.isInjective_ secondHead
+    isFirstInjective = Symbol.isInjective firstHead
+    isSecondInjective = Symbol.isInjective secondHead
 
 equalInjectiveHeadsAndEquals _ _ _ _ _ = Error.nothing
 
@@ -1034,7 +1032,7 @@ sortInjectionAndEqualsAssumesDifferentHeads
         , SortedVariable variable
         , Unparse variable
         , MonadUnify unifier )
-    => SmtMetadataTools StepperAttributes
+    => SmtMetadataTools Attribute.Symbol
     -> TermSimplifier variable unifier
     -> TermLike variable
     -> TermLike variable
@@ -1077,11 +1075,12 @@ sortInjectionAndEqualsAssumesDifferentHeads
                 else
                     return $ applyInjection sort injectionHead <$> merged
   where
-    applyInjection sort injectionHead term = mkApp sort injectionHead [term]
+    applyInjection sort injectionHead term =
+        mkApplySymbol sort injectionHead [term]
 
 data SortInjectionMatch variable =
     SortInjectionMatch
-        { injectionHead :: !SymbolOrAlias
+        { injectionHead :: !Symbol
         , sort :: !Sort
         , firstChild :: !(TermLike variable)
         , secondChild :: !(TermLike variable)
@@ -1095,22 +1094,22 @@ data SortInjectionSimplification variable
 simplifySortInjections
     :: forall variable
     .  Ord variable
-    => SmtMetadataTools StepperAttributes
+    => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> TermLike variable
     -> Maybe (SortInjectionSimplification variable)
 simplifySortInjections
     tools
     (App_
-        firstHead@SymbolOrAlias
-            { symbolOrAliasConstructor = firstConstructor
-            , symbolOrAliasParams = [firstOrigin, firstDestination]
+        firstHead@Symbol
+            { symbolConstructor = firstConstructor
+            , symbolParams = [firstOrigin, firstDestination]
             }
         [firstChild])
     (App_
-        secondHead@SymbolOrAlias
-            { symbolOrAliasConstructor = secondConstructor
-            , symbolOrAliasParams = [secondOrigin, secondDestination]
+        secondHead@Symbol
+            { symbolConstructor = secondConstructor
+            , symbolParams = [secondOrigin, secondDestination]
             }
         [secondChild]
     )
@@ -1133,13 +1132,8 @@ simplifySortInjections
   where
     subsorts = MetadataTools.subsorts tools
 
-    firstHeadAttributes = MetadataTools.symAttributes tools firstHead
-    secondHeadAttributes = MetadataTools.symAttributes tools secondHead
-
-    Attribute.Symbol { sortInjection = SortInjection isFirstSortInjection } =
-        firstHeadAttributes
-    Attribute.Symbol { sortInjection = SortInjection isSecondSortInjection } =
-        secondHeadAttributes
+    isFirstSortInjection = Symbol.isSortInjection firstHead
+    isSecondSortInjection = Symbol.isSortInjection firstHead
 
     isSubsortOf = MetadataTools.isSubsortOf tools
 
@@ -1159,10 +1153,9 @@ simplifySortInjections
     mergeFirstIntoSecond ::  SortInjectionSimplification variable
     mergeFirstIntoSecond =
         Matching SortInjectionMatch
-            { injectionHead = SymbolOrAlias
-                { symbolOrAliasConstructor = firstConstructor
-                , symbolOrAliasParams = [secondOrigin, firstDestination]
-                }
+            { injectionHead =
+                firstHead
+                    { symbolParams = [secondOrigin, firstDestination] }
             , sort = firstDestination
             , firstChild = sortInjection firstOrigin secondOrigin firstChild
             , secondChild = secondChild
@@ -1180,10 +1173,7 @@ simplifySortInjections
     mergeSecondIntoFirst :: SortInjectionSimplification variable
     mergeSecondIntoFirst =
         Matching SortInjectionMatch
-            { injectionHead = SymbolOrAlias
-                { symbolOrAliasConstructor = firstConstructor
-                , symbolOrAliasParams = [firstOrigin, firstDestination]
-                }
+            { injectionHead = firstHead
             , sort = firstDestination
             , firstChild = firstChild
             , secondChild = sortInjection secondOrigin firstOrigin secondChild
@@ -1195,12 +1185,9 @@ simplifySortInjections
         -> TermLike variable
         -> TermLike variable
     sortInjection originSort destinationSort term =
-        mkApp
+        mkApplySymbol
             destinationSort
-            SymbolOrAlias
-                { symbolOrAliasConstructor = firstConstructor
-                , symbolOrAliasParams = [originSort, destinationSort]
-                }
+            firstHead { symbolParams = [originSort, destinationSort] }
             [term]
     firstSubsorts = subsorts firstOrigin
     secondSubsorts = subsorts secondOrigin
@@ -1221,12 +1208,12 @@ constructorSortInjectionAndEquals
         , Unparse variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
+    => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (TermLike variable)
 constructorSortInjectionAndEquals
-    tools
+    _tools
     first@(App_ firstHead _)
     second@(App_ secondHead _)
   | isConstructorSortInjection =
@@ -1240,10 +1227,8 @@ constructorSortInjectionAndEquals
     -- Are we asked to unify a constructor with a sort injection?
     isConstructorSortInjection =
         (||)
-            (isConstructor   firstHead && isSortInjection secondHead)
-            (isSortInjection firstHead && isConstructor   secondHead)
-    isConstructor = give tools Attribute.isConstructor_
-    isSortInjection = give tools Attribute.isSortInjection_
+            (Symbol.isConstructor   firstHead && Symbol.isSortInjection secondHead)
+            (Symbol.isSortInjection firstHead && Symbol.isConstructor   secondHead)
 constructorSortInjectionAndEquals _ _ _ = empty
 
 {-| Unify two constructor application patterns.
@@ -1258,15 +1243,16 @@ constructorAndEqualsAssumesDifferentHeads
         , Unparse variable
         , MonadUnify unifier
         )
-    => SmtMetadataTools StepperAttributes
+    => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (TermLike variable)
 constructorAndEqualsAssumesDifferentHeads
-    tools
+    _tools
     first@(App_ firstHead _)
     second@(App_ secondHead _)
-  | isConstructor firstHead && isConstructor secondHead =
+  | Symbol.isConstructor firstHead
+  , Symbol.isConstructor secondHead =
     assert (firstHead /= secondHead) $ Monad.Trans.lift $ do
         explainBottom
             "Cannot unify different constructors or incompatible \
@@ -1274,8 +1260,6 @@ constructorAndEqualsAssumesDifferentHeads
             first
             second
         empty
-  where
-    isConstructor = give tools Attribute.isConstructor_
 constructorAndEqualsAssumesDifferentHeads _ _ _ = empty
 
 {- | Unifcation or equality for a domain value pattern vs a constructor
@@ -1289,45 +1273,45 @@ domainValueAndConstructorErrors
     :: Eq variable
     => Unparse variable
     => SortedVariable variable
-    => SmtMetadataTools StepperAttributes
+    => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> TermLike variable
     -> Maybe (TermLike variable)
 domainValueAndConstructorErrors
-    tools
+    _tools
     term1@(DV_ _ _)
     term2@(App_ secondHead _)
-    | give tools Attribute.isConstructor_ secondHead =
+    | Symbol.isConstructor secondHead =
       error (unlines [ "Cannot handle DomainValue and Constructor:"
                      , unparseToString term1
                      , unparseToString term2
                      ]
             )
 domainValueAndConstructorErrors
-    tools
+    _tools
     term1@(Builtin_ _)
     term2@(App_ secondHead _)
-    | give tools Attribute.isConstructor_ secondHead =
+    | Symbol.isConstructor secondHead =
       error (unlines [ "Cannot handle builtin and Constructor:"
                      , unparseToString term1
                      , unparseToString term2
                      ]
             )
 domainValueAndConstructorErrors
-    tools
+    _tools
     term1@(App_ firstHead _)
     term2@(DV_ _ _)
-    | give tools Attribute.isConstructor_ firstHead =
+    | Symbol.isConstructor firstHead =
       error (unlines [ "Cannot handle Constructor and DomainValue:"
                      , unparseToString term1
                      , unparseToString term2
                      ]
             )
 domainValueAndConstructorErrors
-    tools
+    _tools
     term1@(App_ firstHead _)
     term2@(Builtin_ _)
-    | give tools Attribute.isConstructor_ firstHead =
+    | Symbol.isConstructor firstHead =
       error (unlines [ "Cannot handle Constructor and builtin:"
                      , unparseToString term1
                      , unparseToString term2
@@ -1445,7 +1429,7 @@ functionAnd
         , Show variable
         , Unparse variable
         )
-    => SmtMetadataTools StepperAttributes
+    => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> TermLike variable
     -> Maybe (Pattern variable)

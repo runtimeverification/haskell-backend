@@ -21,7 +21,6 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
                  ( assertEqual, testCase )
 
-import qualified Control.Lens as Lens
 import qualified Control.Monad.Trans as Trans
 import           Data.Function
                  ( (&) )
@@ -29,7 +28,6 @@ import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
 import           Data.Proxy
-import qualified Data.Set as Set
 import           GHC.Stack
                  ( HasCallStack )
 
@@ -38,7 +36,7 @@ import           Kore.ASTVerifier.Error
                  ( VerifyError )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Null as Attribute
-import           Kore.Attribute.Symbol
+import           Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule as IndexedModule
@@ -52,6 +50,7 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import           Kore.Internal.Pattern
                  ( Pattern )
+import qualified Kore.Internal.Symbol as Internal
 import           Kore.Internal.TermLike
 import           Kore.Parser
                  ( parseKorePattern )
@@ -64,6 +63,8 @@ import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Step.Step as Step
+import           Kore.Syntax.Definition
+                 ( ModuleName, ParsedDefinition )
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Procedure as Unification
@@ -84,7 +85,7 @@ mkPair
     -> TermLike Variable
     -> TermLike Variable
 mkPair lSort rSort l r =
-    mkApp (pairSort lSort rSort) (pairSymbol lSort rSort) [l, r]
+    mkApplySymbol (pairSort lSort rSort) (pairSymbol lSort rSort) [l, r]
 
 -- | 'testSymbol' is useful for writing unit tests for symbols.
 testSymbolWithSolver
@@ -98,7 +99,7 @@ testSymbolWithSolver
     -- ^ test name
     -> Sort
     -- ^ symbol result sort
-    -> SymbolOrAlias
+    -> Internal.Symbol
     -- ^ symbol being tested
     -> [p]
     -- ^ arguments for symbol
@@ -110,7 +111,7 @@ testSymbolWithSolver eval title resultSort symbol args expected =
         actual <- runSMT eval'
         assertEqual "" expected actual
   where
-    eval' = eval $ mkApp resultSort symbol args
+    eval' = eval $ mkApplySymbol resultSort symbol args
 
 -- -------------------------------------------------------------
 -- * Evaluation
@@ -126,42 +127,6 @@ verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
   where
     attrVerify = defaultAttributesVerification Proxy Proxy
 
--- TODO (traiansf): Get rid of this.
--- The function below works around several limitations of
--- the current tool by tricking the tool into believing that
--- functions are constructors (so that function patterns can match)
--- and that @kseq@ and @dotk@ are both functional and constructor.
-constructorFunctions
-    :: VerifiedModule StepperAttributes Attribute.Axiom
-    -> VerifiedModule StepperAttributes Attribute.Axiom
-constructorFunctions ixm =
-    ixm
-        { indexedModuleSymbolSentences =
-            Map.mapWithKey
-                constructorFunctions1
-                (indexedModuleSymbolSentences ixm)
-        , indexedModuleAliasSentences =
-            Map.mapWithKey
-                constructorFunctions1
-                (indexedModuleAliasSentences ixm)
-        , indexedModuleImports = recurseIntoImports <$> indexedModuleImports ixm
-        }
-  where
-    constructorFunctions1 ident (atts, defn) =
-        ( atts
-            & lensConstructor Lens.<>~ Constructor isCons
-            & lensFunctional Lens.<>~ Functional (isCons || isInj)
-            & lensInjective Lens.<>~ Injective (isCons || isInj)
-            & lensSortInjection Lens.<>~ SortInjection isInj
-        , defn
-        )
-      where
-        isInj = getId ident == "inj"
-        isCons = Set.member (getId ident) (Set.fromList ["kseq", "dotk"])
-
-    recurseIntoImports (attrs, attributes, importedModule) =
-        (attrs, attributes, constructorFunctions importedModule)
-
 verifiedModules
     :: Map ModuleName (VerifiedModule StepperAttributes Attribute.Axiom)
 verifiedModules =
@@ -170,14 +135,14 @@ verifiedModules =
 verifiedModule :: VerifiedModule StepperAttributes Attribute.Axiom
 Just verifiedModule = Map.lookup testModuleName verifiedModules
 
-indexedModule :: KoreIndexedModule Attribute.Null Attribute.Null
+indexedModule :: KoreIndexedModule Attribute.Symbol Attribute.Null
 indexedModule =
     verifiedModule
-    & IndexedModule.eraseAttributes
+    & IndexedModule.eraseAxiomAttributes
     & IndexedModule.mapPatterns Builtin.externalizePattern
 
 testMetadataTools :: SmtMetadataTools StepperAttributes
-testMetadataTools = MetadataTools.build (constructorFunctions verifiedModule)
+testMetadataTools = MetadataTools.build verifiedModule
 
 testSubstitutionSimplifier :: PredicateSimplifier
 testSubstitutionSimplifier = Simplifier.Predicate.create

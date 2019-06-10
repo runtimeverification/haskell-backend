@@ -63,6 +63,7 @@ import Control.Lens.TH.Rules
        ( makeLenses )
 import Kore.Debug
 import Kore.Domain.Class
+import Kore.Internal.Symbol
 import Kore.Syntax
 import Kore.Unparser
 
@@ -74,9 +75,9 @@ The children are already unparsed.
 
  -}
 unparseCollection
-    :: SymbolOrAlias  -- ^ unit symbol
-    -> SymbolOrAlias  -- ^ element symbol
-    -> SymbolOrAlias  -- ^ concat symbol
+    :: Symbol  -- ^ unit symbol
+    -> Symbol  -- ^ element symbol
+    -> Symbol  -- ^ concat symbol
     -> [Pretty.Doc ann]      -- ^ children
     -> Pretty.Doc ann
 unparseCollection unitSymbol elementSymbol concatSymbol =
@@ -95,9 +96,9 @@ unparseCollection unitSymbol elementSymbol concatSymbol =
 data InternalMap key child =
     InternalMap
         { builtinMapSort :: !Sort
-        , builtinMapUnit :: !SymbolOrAlias
-        , builtinMapElement :: !SymbolOrAlias
-        , builtinMapConcat :: !SymbolOrAlias
+        , builtinMapUnit :: !Symbol
+        , builtinMapElement :: !Symbol
+        , builtinMapConcat :: !Symbol
         , builtinMapChild :: !(Map key child)
         }
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
@@ -159,9 +160,9 @@ instance (Unparse key, Unparse child) => Unparse (InternalMap key child) where
 data InternalList child =
     InternalList
         { builtinListSort :: !Sort
-        , builtinListUnit :: !SymbolOrAlias
-        , builtinListElement :: !SymbolOrAlias
-        , builtinListConcat :: !SymbolOrAlias
+        , builtinListUnit :: !Symbol
+        , builtinListElement :: !Symbol
+        , builtinListConcat :: !Symbol
         , builtinListChild :: !(Seq child)
         }
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
@@ -216,9 +217,9 @@ instance Unparse child => Unparse (InternalList child) where
 data InternalSet key =
     InternalSet
         { builtinSetSort :: !Sort
-        , builtinSetUnit :: !SymbolOrAlias
-        , builtinSetElement :: !SymbolOrAlias
-        , builtinSetConcat :: !SymbolOrAlias
+        , builtinSetUnit :: !Symbol
+        , builtinSetElement :: !Symbol
+        , builtinSetConcat :: !Symbol
         , builtinSetChild :: !(Set key)
         }
     deriving (Eq, Ord, GHC.Generic, Show)

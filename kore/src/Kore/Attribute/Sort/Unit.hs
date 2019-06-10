@@ -48,6 +48,11 @@ instance ParseAttributes Unit where
         withApplication' = withApplication unitId
         failDuplicate' = failDuplicate unitId
 
+    toAttributes =
+        maybe def toAttribute . getUnit
+      where
+        toAttribute = Attributes . (: []) . unitAttribute
+
 -- | Kore identifier representing the @unit@ attribute symbol.
 unitId :: Id
 unitId = "unit"
