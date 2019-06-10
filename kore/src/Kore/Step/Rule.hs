@@ -48,6 +48,7 @@ import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
+import qualified Kore.Internal.Pattern as Internal.Pattern
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate )
@@ -169,8 +170,8 @@ instance
     (Ord variable, SortedVariable variable, Unparse variable)
     => Unparse (OnePathRule variable)
   where
-    unparse = undefined
-    unparse2 = undefined
+    unparse = unparse . axiomPatternToPattern . OnePathClaimPattern
+    unparse2 = unparse2 . axiomPatternToPattern . OnePathClaimPattern
 
 {-  | All-Path-Claim rule pattern.
 -}
@@ -326,19 +327,40 @@ fromSentenceAxiom sentenceAxiom = do
 -- TODO:
 --      op should be more general
 --      what sort should sort be?
-f :: QualifiedAxiomPattern Variable -> TermLike Variable
-f =
+axiomPatternToPattern
+    :: Ord variable
+    => SortedVariable variable
+    => Unparse variable
+    => QualifiedAxiomPattern variable
+    -> TermLike variable
+axiomPatternToPattern =
     \case
+        -- Reachability claims
         OnePathClaimPattern (OnePathRule rulePatt) ->
             mkImplies
                 (mkAnd (Predicate.unwrapPredicate . requires $ rulePatt) (left rulePatt))
-                (mkApp sort op [mkAnd (Predicate.unwrapPredicate . ensures $ rulePatt) (right rulePatt)])
+                (mkApp
+                    (termLikeSort . left $ rulePatt) op [mkAnd (Predicate.unwrapPredicate . ensures $ rulePatt)
+                    (right rulePatt)])
+        -- normal rewrite axioms
+        RewriteAxiomPattern (RewriteRule rulePatt) ->
+            mkRewrites
+                (mkAnd (Predicate.unwrapPredicate . requires $ rulePatt) (left rulePatt))
+                (mkAnd (Predicate.unwrapPredicate . requires $ rulePatt) (right rulePatt))
+        -- function axioms: general
+        FunctionAxiomPattern (EqualityRule rulePatt) ->
+            mkImplies
+                (Predicate.unwrapPredicate . requires $ rulePatt)
+                (mkAnd
+                    (mkEquals (termLikeSort . left $ rulePatt) (left rulePatt) (right rulePatt))
+                    (Predicate.unwrapPredicate . ensures $ rulePatt))
+        -- TODO: finish all cases
   where
     op = SymbolOrAlias
             (Id "weakExistsFinally" AstLocationUnknown)
             []
-    sort :: Sort
-    sort = undefined
+    -- sort :: Internal.Pattern.Pattern variable -> Sort
+    -- sort = termLikeSort . Internal.Pattern.toTermLike
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 

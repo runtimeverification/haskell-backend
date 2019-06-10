@@ -218,7 +218,13 @@ exit = do
     proofs <- allProofs
     ofile <- Lens.use lensOutputFile
     let name = fromJust . unOutputFile $ ofile
-    liftIO $ writeFile name (unparseToString (TermLike.mkTop @TermLike.Variable $ TermLike.mkSortVariable "R"))
+    graphs <- Lens.use lensGraphs
+    let pairs =
+            fmap
+                ( \(x, y) -> ([x], y) )
+                (Map.toList . terminalPatterns $ graphs)
+    let x = pairs >>= uncurry zip
+    -- liftIO $ writeFile name (unparseToString (TermLike.mkTop @TermLike.Variable $ TermLike.mkSortVariable "R"))
     -- graphs <- Lens.use lensGraphs
     -- let x = fromPatterns (fmap (fromJust . extractUnproven) $ terminalPatterns graphs)
     --    y = makeMultipleOrPredicate (Predicate.toPredicate x)
@@ -229,6 +235,11 @@ exit = do
        else return FailStop
   where
     -- patternSort = termLikeSort $ TermLike.mkSortVariable "R"
+    createReachabilityClaim
+        :: (claim, CommonStrategyPattern)
+        -> Rule.OnePathRule Variable
+    createReachabilityClaim (ci, cpatt) =
+        undefined
     terminalPatterns
         :: Map.Map ClaimIndex ExecutionGraph
         -> Map.Map ClaimIndex [CommonStrategyPattern]
