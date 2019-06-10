@@ -13,9 +13,18 @@ module Kore.Attribute.Synthetic
 import           Control.Comonad.Trans.Cofree
                  ( CofreeF (..) )
 import qualified Control.Comonad.Trans.Cofree as Cofree
+import qualified Data.Foldable as Foldable
 import           Data.Functor.Foldable
                  ( Base, Corecursive, Recursive )
 import qualified Data.Functor.Foldable as Recursive
+
+import           Kore.Attribute.Pattern.FreeVariables
+                 ( FreeVariables (..) )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import           Kore.Internal.TermLike
+                 ( TermLikeF (..) )
+import           Kore.Syntax.Exists
+import           Kore.Syntax.Forall
 
 {- | @Synthetic@ is the class of synthetic attribute types @syn@.
 
@@ -32,6 +41,26 @@ class Functor base => Synthetic base inh syn where
 
      -}
     synthetic :: CofreeF base inh syn -> syn
+
+instance
+    Ord variable =>
+    Synthetic (TermLikeF variable) inh (FreeVariables variable)
+  where
+    synthetic (_ :< termLikeF) =
+        case termLikeF of
+            -- Not implemented
+            ApplyAliasF _ -> undefined
+            -- Binders
+            ExistsF existsF -> FreeVariables.delete existsVariable existsChild
+              where
+                Exists { existsVariable, existsChild } = existsF
+            ForallF forallF -> FreeVariables.delete forallVariable forallChild
+              where
+                Forall { forallVariable, forallChild } = forallF
+            VariableF variableF -> FreeVariables.singleton variableF
+            --
+            _ -> Foldable.fold termLikeF
+    {-# INLINE synthetic #-}
 
 {- | @/synthesize/@ attribute @b@ bottom-up along a tree @s@.
 

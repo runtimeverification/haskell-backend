@@ -6,20 +6,23 @@ License     : NCSA
 
 module Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables (..)
-    , insert, delete, member
+    , insert, delete, member, singleton
     ) where
 
-import Control.DeepSeq
-import Data.Set (Set)
+import           Control.DeepSeq
+import           Data.Set
+                 ( Set )
 import qualified Data.Set as Set
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Kore.Debug
 
 newtype FreeVariables variable =
     FreeVariables { getFreeVariables :: Set variable }
     deriving GHC.Generic
+    deriving (Eq, Show)
+    deriving Foldable
     deriving (Semigroup, Monoid)
 
 instance SOP.Generic (FreeVariables variable)
@@ -52,3 +55,7 @@ member :: Ord variable => variable -> FreeVariables variable -> Bool
 member variable (FreeVariables freeVariables) =
     Set.member variable freeVariables
 {-# INLINE member #-}
+
+singleton :: Ord variable => variable -> FreeVariables variable
+singleton variable = FreeVariables (Set.singleton variable)
+{-# INLINE singleton #-}
