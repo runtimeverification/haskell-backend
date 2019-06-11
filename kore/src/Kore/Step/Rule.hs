@@ -28,6 +28,7 @@ module Kore.Step.Rule
     , mkEqualityAxiom
     , mkCeilAxiom
     , refreshRulePattern
+    , axiomPatternToPattern
     , Kore.Step.Rule.freeVariables
     , Kore.Step.Rule.mapVariables
     , Kore.Step.Rule.substitute
