@@ -326,8 +326,7 @@ fromSentenceAxiom sentenceAxiom = do
 
 
 -- TODO:
---      op should be more general
---      what sort should sort be?
+--      what sort?
 axiomPatternToPattern
     :: Ord variable
     => SortedVariable variable
@@ -337,31 +336,61 @@ axiomPatternToPattern
 axiomPatternToPattern =
     \case
         -- Reachability claims
-        OnePathClaimPattern (OnePathRule rulePatt) ->
+        onePathPatt@(OnePathClaimPattern (OnePathRule rulePatt)) ->
             mkImplies
-                (mkAnd (Predicate.unwrapPredicate . requires $ rulePatt) (left rulePatt))
-                (mkApp
-                    (termLikeSort . left $ rulePatt) op [mkAnd (Predicate.unwrapPredicate . ensures $ rulePatt)
-                    (right rulePatt)])
+                ( mkAnd
+                    ( Predicate.unwrapPredicate . requires $ rulePatt )
+                    ( left rulePatt )
+                )
+                ( mkApp
+                    ( termLikeSort . left $ rulePatt)
+                    ( fromJust . op $ onePathPatt )
+                    [ mkAnd
+                        (Predicate.unwrapPredicate . ensures $ rulePatt)
+                        (right rulePatt)
+                    ]
+                )
         -- normal rewrite axioms
         RewriteAxiomPattern (RewriteRule rulePatt) ->
             mkRewrites
-                (mkAnd (Predicate.unwrapPredicate . requires $ rulePatt) (left rulePatt))
-                (mkAnd (Predicate.unwrapPredicate . requires $ rulePatt) (right rulePatt))
+                ( mkAnd
+                    ( Predicate.unwrapPredicate . requires $ rulePatt )
+                    ( left rulePatt )
+                )
+                ( mkAnd
+                    ( Predicate.unwrapPredicate . requires $ rulePatt )
+                    ( right rulePatt )
+                )
         -- function axioms: general
         FunctionAxiomPattern (EqualityRule rulePatt) ->
             mkImplies
-                (Predicate.unwrapPredicate . requires $ rulePatt)
-                (mkAnd
-                    (mkEquals (termLikeSort . left $ rulePatt) (left rulePatt) (right rulePatt))
-                    (Predicate.unwrapPredicate . ensures $ rulePatt))
+                ( Predicate.unwrapPredicate . requires $ rulePatt)
+                ( mkAnd
+                    ( mkEquals
+                        ( termLikeSort . left $ rulePatt )
+                        ( left rulePatt )
+                        ( right rulePatt )
+                    )
+                    ( Predicate.unwrapPredicate . ensures $ rulePatt )
+                )
+        -- function axioms: trivial pre- and post-conditions
+        -- ^ and ^^; should do case on the requires part
         -- TODO: finish all cases
   where
-    op = SymbolOrAlias
-            (Id "weakExistsFinally" AstLocationUnknown)
-            []
-    -- sort :: Internal.Pattern.Pattern variable -> Sort
-    -- sort = termLikeSort . Internal.Pattern.toTermLike
+    op :: QualifiedAxiomPattern variable -> Maybe SymbolOrAlias
+    op =
+        \case
+            OnePathClaimPattern _ ->
+                Just
+                $ SymbolOrAlias
+                    (Id "weakExistsFinally" AstLocationUnknown)
+                    []
+            AllPathClaimPattern _ ->
+                Just
+                $ SymbolOrAlias
+                    (Id "weakAlwaysFinally" AstLocationUnknown)
+                    []
+            _ -> Nothing
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 

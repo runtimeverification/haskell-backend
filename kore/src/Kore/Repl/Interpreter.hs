@@ -219,6 +219,7 @@ exit
 exit = do
     proofs <- allProofs
     ofile <- Lens.use lensOutputFile
+    -- TODO: check file
     let name = fromJust . unOutputFile $ ofile
     graphs <- Lens.use lensGraphs
     claims <- Lens.use lensClaims
@@ -278,12 +279,17 @@ exit = do
         :: Map.Map ClaimIndex ExecutionGraph
         -> Map.Map ClaimIndex [CommonStrategyPattern]
     terminalPatterns gphs =
-        f . graphWithLeafs . Strategy.graph <$> gphs
+        terminalPattern
+        . graphWithLeafs
+        . Strategy.graph
+        <$> gphs
     graphWithLeafs :: InnerGraph -> (InnerGraph, [Graph.Node])
     graphWithLeafs gph =
         (gph, join . Map.elems $ sortLeafsByType gph)
-    f :: (InnerGraph, [Graph.Node]) -> [CommonStrategyPattern]
-    f (g, ns) =
+    terminalPattern
+        :: (InnerGraph, [Graph.Node])
+        -> [CommonStrategyPattern]
+    terminalPattern (g, ns) =
         fmap (Graph.lab' . Graph.context g) ns
     isCompleted :: [GraphProofStatus] -> Bool
     isCompleted xs =
