@@ -21,10 +21,20 @@ import qualified Data.Functor.Foldable as Recursive
 import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables (..) )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import           Kore.Domain.Builtin
+                 ( builtinSort )
 import           Kore.Internal.TermLike
-                 ( TermLikeF (..) )
+                 ( Evaluated (..), TermLikeF (..) )
+import           Kore.Sort
+import           Kore.Syntax.DomainValue
 import           Kore.Syntax.Exists
 import           Kore.Syntax.Forall
+import           Kore.Syntax.Mu
+import           Kore.Syntax.Next
+import           Kore.Syntax.Not
+import           Kore.Syntax.Nu
+import           Kore.Syntax.SetVariable
+import           Kore.Syntax.Variable
 
 {- | @Synthetic@ is the class of synthetic attribute types @syn@.
 
@@ -61,6 +71,46 @@ instance
             --
             _ -> Foldable.fold termLikeF
     {-# INLINE synthetic #-}
+
+-- TODO (thomas.tuegel): Do not take an input sort here.
+instance
+    SortedVariable variable =>
+    Synthetic (TermLikeF variable) Sort Sort
+  where
+    synthetic (inputSort :< termLikeF) =
+        case termLikeF of
+            -- Not checked
+            ApplyAliasF _ -> inputSort
+            ApplySymbolF _ -> inputSort
+            -- Predicates
+            BottomF _ -> inputSort
+            CeilF _ -> inputSort
+            FloorF _ -> inputSort
+            TopF _ -> inputSort
+            EqualsF equalsF -> seq (alignSorts equalsF) inputSort
+            InF inF -> seq (alignSorts inF) inputSort
+            -- Connectives
+            AndF andF -> alignSorts andF
+            IffF iffF -> alignSorts iffF
+            ImpliesF impliesF -> alignSorts impliesF
+            OrF orF -> alignSorts orF
+            RewritesF rewritesF -> alignSorts rewritesF
+            -- Nothing to check
+            DomainValueF domainValueF -> domainValueSort domainValueF
+            ExistsF existsF -> existsChild existsF
+            ForallF forallF -> forallChild forallF
+            MuF muF -> muChild muF
+            NextF nextF -> nextChild nextF
+            NotF notF -> notChild notF
+            NuF nuF -> nuChild nuF
+            StringLiteralF _ -> stringMetaSort
+            CharLiteralF _ -> charMetaSort
+            VariableF variableF -> sortedVariableSort variableF
+            InhabitantF inhF -> inhF
+            SetVariableF setVariableF ->
+                sortedVariableSort (getVariable setVariableF)
+            BuiltinF builtinF -> builtinSort builtinF
+            EvaluatedF evaluatedF -> getEvaluated evaluatedF
 
 {- | @/synthesize/@ attribute @b@ bottom-up along a tree @s@.
 

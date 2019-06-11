@@ -10,6 +10,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 
 module Kore.Domain.Builtin
     ( Builtin (..)
+    , builtinSort
     , InternalMap (..)
     , lensBuiltinMapSort
     , lensBuiltinMapUnit
@@ -403,6 +404,16 @@ makeLenses ''InternalInt
 makeLenses ''InternalBool
 makeLenses ''InternalString
 
+builtinSort :: Builtin key child -> Sort
+builtinSort builtin =
+    case builtin of
+        BuiltinInt InternalInt { builtinIntSort } -> builtinIntSort
+        BuiltinBool InternalBool { builtinBoolSort } -> builtinBoolSort
+        BuiltinString InternalString { internalStringSort } -> internalStringSort
+        BuiltinMap InternalMap { builtinMapSort } -> builtinMapSort
+        BuiltinList InternalList { builtinListSort } -> builtinListSort
+        BuiltinSet InternalSet { builtinSetSort } -> builtinSetSort
+
 instance Domain (Builtin key) where
     lensDomainValue mapDomainValue builtin =
         getBuiltin <$> mapDomainValue original
@@ -410,16 +421,8 @@ instance Domain (Builtin key) where
         original =
             DomainValue
                 { domainValueChild = builtin
-                , domainValueSort = originalSort
+                , domainValueSort = builtinSort builtin
                 }
-        originalSort =
-            case builtin of
-                BuiltinInt InternalInt { builtinIntSort } -> builtinIntSort
-                BuiltinBool InternalBool { builtinBoolSort } -> builtinBoolSort
-                BuiltinString InternalString { internalStringSort } -> internalStringSort
-                BuiltinMap InternalMap { builtinMapSort } -> builtinMapSort
-                BuiltinList InternalList { builtinListSort } -> builtinListSort
-                BuiltinSet InternalSet { builtinSetSort } -> builtinSetSort
         getBuiltin
             :: forall child
             .  DomainValue Sort (Builtin key child)

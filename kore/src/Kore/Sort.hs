@@ -12,6 +12,8 @@ module Kore.Sort
     , getSortId
     , sortSubstitution
     , substituteSortVariables
+    , rigidSort
+    , alignSorts
     -- * Meta-sorts
     , MetaSortType (..)
     , MetaBasicSortType (..)
@@ -42,6 +44,7 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Data.These
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified GHC.Stack as GHC
 
 import Kore.Debug
 import Kore.Syntax.Id
@@ -271,3 +274,24 @@ Kore.ASTVerifier.DefinitionVerifier.indexImplicitModule.
 
 -}
 predicateSort = SortActualSort predicateSortActual
+
+rigidSort :: Sort -> Maybe Sort
+rigidSort sort
+  | sort == predicateSort = Nothing
+  | otherwise             = Just sort
+
+alignSorts :: (GHC.HasCallStack, Foldable f) => f Sort -> Sort
+alignSorts = Foldable.foldl' worker predicateSort
+  where
+    worker sort1 sort2 =
+        maybe sort1 (align sort1) (rigidSort sort2)
+    align sort1 sort2
+      | sort1 == sort2 = sort1
+      | otherwise =
+        (error . show . Pretty.vsep)
+            [ "Could not align sort"
+            , Pretty.indent 4 (unparse sort2)
+            , "with sort"
+            , Pretty.indent 4 (unparse sort1)
+            , "This is a program bug!"
+            ]
