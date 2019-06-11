@@ -12,6 +12,7 @@ module Kore.Step.Rule
     , AllPathRule (..)
     , ImplicationRule (..)
     , RulePattern (..)
+    , allPathGlobally
     , rulePattern
     , isHeatingRule
     , isCoolingRule
@@ -40,6 +41,8 @@ import           Data.Maybe
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
 import           Data.Text.Prettyprint.Doc
                  ( Pretty )
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -146,13 +149,23 @@ deriving instance Eq variable => Eq (ImplicationRule variable)
 deriving instance Ord variable => Ord (ImplicationRule variable)
 deriving instance Show variable => Show (ImplicationRule variable)
 
+-- | modalities
+weakExistsFinally :: Text
+weakExistsFinally = "weakExistsFinally"
+
+weakAlwaysFinally :: Text
+weakAlwaysFinally = "weakAlwaysFinally"
+
+allPathGlobally :: Text
+allPathGlobally = "allPathGlobally"
+
 qualifiedAxiomOpToConstructor
     :: Alias
     -> Maybe (RulePattern variable -> QualifiedAxiomPattern variable)
-qualifiedAxiomOpToConstructor patternHead = case headName of
-    "weakExistsFinally" -> Just $ OnePathClaimPattern . OnePathRule
-    "weakAlwaysFinally" -> Just $ AllPathClaimPattern . AllPathRule
-    _ -> Nothing
+qualifiedAxiomOpToConstructor patternHead
+    | headName == weakExistsFinally = Just $ OnePathClaimPattern . OnePathRule
+    | headName == weakAlwaysFinally = Just $ AllPathClaimPattern . AllPathRule
+    | otherwise = Nothing
   where
     headName = getId (aliasConstructor patternHead)
 
@@ -378,8 +391,8 @@ patternToAxiomPattern attributes pat =
         Forall_ _ _ child -> patternToAxiomPattern attributes child
         -- implication axioms:
         -- init -> modal_op ( prop )
-        Implies_ _ lhs rhs@(ApplyAlias_ Alias { aliasConstructor } _)
-            | isModalSymbol aliasConstructor ->
+        Implies_ _ lhs rhs@(ApplyAlias_ op _)
+            | isModalSymbol op ->
                 pure $ ImplicationAxiomPattern $ ImplicationRule RulePattern
                     { left = lhs
                     , right = rhs
@@ -389,11 +402,11 @@ patternToAxiomPattern attributes pat =
                     }
         _ -> koreFail "Unsupported pattern type in axiom"
       where
-        isModalSymbol symbol =
-            case getId symbol of
-                "ag" -> True
-                "ef" -> True
-                _  -> False
+        isModalSymbol symbol
+            | headName == allPathGlobally = True
+            | otherwise = False
+          where
+            headName = getId (aliasConstructor symbol)
 
 {- | Construct a 'VerifiedKoreSentence' corresponding to 'RewriteRule'.
 
