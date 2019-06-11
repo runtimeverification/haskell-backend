@@ -44,6 +44,7 @@ import           Control.Monad.Trans.Except
                  ( runExceptT )
 import           Data.Coerce
                  ( Coercible, coerce )
+import qualified Data.Default as Default
 import           Data.Foldable
                  ( traverse_ )
 import           Data.Functor
@@ -77,7 +78,7 @@ import           Kore.Attribute.RuleIndex
 import           Kore.Internal.OrPattern
                  ( fromPatterns )
 import           Kore.Internal.Pattern
-                 ( Conditional (..) )
+                 ( Conditional (..), toTermLike )
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
                  ( TermLike )
@@ -96,6 +97,7 @@ import           Kore.OnePath.Verification
 import           Kore.Predicate.Predicate
                  ( makeMultipleOrPredicate, makeTruePredicate,
                  unwrapPredicate )
+import qualified Kore.Predicate.Predicate as Predicate.Predicate
 import           Kore.Repl.Data
 import           Kore.Repl.Parser
 import           Kore.Repl.Parser
@@ -219,27 +221,52 @@ exit = do
     ofile <- Lens.use lensOutputFile
     let name = fromJust . unOutputFile $ ofile
     graphs <- Lens.use lensGraphs
+    claims <- Lens.use lensClaims
     let pairs =
             fmap
                 ( \(x, y) -> ([x], y) )
                 (Map.toList . terminalPatterns $ graphs)
     let x = pairs >>= uncurry zip
+    let y = fmap (\(x,y) -> (claims !! (unClaimIndex x), y )) x
+    -- debugging:
+    let todoconj = fmap (unparseToString . createReachabilityClaim) y
+    traverse putStrLn' todoconj
     -- liftIO $ writeFile name (unparseToString (TermLike.mkTop @TermLike.Variable $ TermLike.mkSortVariable "R"))
-    -- graphs <- Lens.use lensGraphs
-    -- let x = fromPatterns (fmap (fromJust . extractUnproven) $ terminalPatterns graphs)
-    --    y = makeMultipleOrPredicate (Predicate.toPredicate x)
-    --    z = forceSort patternSort $ unwrapPredicate y
-    -- putStrLn' . unparseToString $ z
     if isCompleted (Map.elems proofs)
        then return SuccessStop
        else return FailStop
   where
     -- patternSort = termLikeSort $ TermLike.mkSortVariable "R"
     createReachabilityClaim
-        :: (claim, CommonStrategyPattern)
+        :: Claim claim
+        => (claim, CommonStrategyPattern)
         -> Rule.OnePathRule Variable
-    createReachabilityClaim (ci, cpatt) =
-        undefined
+    createReachabilityClaim (cl, cpatt) =
+        Rule.OnePathRule
+        $ Rule.RulePattern
+            { left = pattToLeftPatt cpatt
+            , right = claimToRightPatt cl
+            , requires = Predicate.Predicate.makeTruePredicate
+            , ensures = claimToEnsures cl
+            , attributes = Default.def
+            }
+    pattToLeftPatt
+        :: CommonStrategyPattern
+        -> TermLike Variable
+    pattToLeftPatt =
+        toTermLike . fromJust . extractUnproven
+    claimToRightPatt
+        :: Claim claim
+        => claim
+        -> TermLike Variable
+    claimToRightPatt =
+        Rule.right . coerce
+    claimToEnsures
+        :: Claim claim
+        => claim
+        -> Predicate.Predicate.Predicate Variable
+    claimToEnsures =
+        Rule.ensures . coerce
     terminalPatterns
         :: Map.Map ClaimIndex ExecutionGraph
         -> Map.Map ClaimIndex [CommonStrategyPattern]
