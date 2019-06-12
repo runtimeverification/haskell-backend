@@ -198,7 +198,7 @@ mergePredicatesAndSubstitutionsExcept predicates substitutions = do
     let
         mergedSubstitution = Foldable.fold substitutions
         mergedPredicate = Syntax.Predicate.makeMultipleAndPredicate predicates
-    normalizeSubstitutionAfterMerge
+    normalizeExcept
         Conditional
             { term = ()
             , predicate = mergedPredicate
@@ -283,24 +283,3 @@ createLiftedPredicatesAndSubstitutionsMerger =
                 (Predicate.fromPredicate <$> predicates)
                 <> (Predicate.fromSubstitution <$> substitutions)
         normalizeExcept (Foldable.fold merged)
-
-normalizeSubstitutionAfterMerge
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , FreshVariable variable
-        , HasCallStack
-        , MonadUnify unifier
-        , WithLog LogMessage unifier
-        )
-    => Predicate variable
-    -> unifier (Predicate variable)
-normalizeSubstitutionAfterMerge predicate = do
-    results <- Monad.Unify.gather $ normalizeExcept predicate
-    case Foldable.toList results of
-        [] -> return Predicate.bottom
-        [normal] -> return normal
-        -- TODO(virgil): Allow multiple results and consider dropping this
-        -- function.
-        _ -> error "Not implemented: branching during normalization"
