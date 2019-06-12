@@ -33,7 +33,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Matcher
-                 ( unificationWithAppMatchOnTop )
+                 ( matchAsUnification )
 import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
@@ -348,4 +348,4 @@ evaluateWithDefinitionAxioms
         Monad.Unify.maybeUnifierT
         $ Step.applyRulesSequence unificationProcedure initial rules
 
-    unificationProcedure = UnificationProcedure unificationWithAppMatchOnTop
+    unificationProcedure = UnificationProcedure matchAsUnification
