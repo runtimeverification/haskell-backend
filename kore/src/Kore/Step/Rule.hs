@@ -28,7 +28,7 @@ module Kore.Step.Rule
     , mkEqualityAxiom
     , mkCeilAxiom
     , refreshRulePattern
-    , axiomPatternToPattern
+    , onePathRuleToPattern
     , Kore.Step.Rule.freeVariables
     , Kore.Step.Rule.mapVariables
     , Kore.Step.Rule.substitute
@@ -171,8 +171,8 @@ instance
     (Ord variable, SortedVariable variable, Unparse variable)
     => Unparse (OnePathRule variable)
   where
-    unparse = unparse . axiomPatternToPattern . OnePathClaimPattern
-    unparse2 = unparse2 . axiomPatternToPattern . OnePathClaimPattern
+    unparse = unparse . onePathRuleToPattern
+    unparse2 = unparse2 . onePathRuleToPattern
 
 {-  | All-Path-Claim rule pattern.
 -}
@@ -324,85 +324,46 @@ fromSentenceAxiom sentenceAxiom = do
             (sentenceAxiomAttributes sentenceAxiom)
     patternToAxiomPattern attributes (sentenceAxiomPattern sentenceAxiom)
 
-
--- TODO:
---      what sort?
-axiomPatternToPattern
+onePathRuleToPattern
     :: Ord variable
     => SortedVariable variable
     => Unparse variable
-    => QualifiedAxiomPattern variable
+    => OnePathRule variable
     -> TermLike variable
-axiomPatternToPattern =
+onePathRuleToPattern (OnePathRule rulePatt) =
+    mkImplies
+        ( mkAnd
+            (Predicate.unwrapPredicate . requires $ rulePatt)
+            (left rulePatt)
+        )
+        ( mkAnd
+            (Predicate.unwrapPredicate . ensures $ rulePatt)
+            (right rulePatt)
+        )
+-- TODO(ana.pantilie): second mkAnd should be this instead
+-- ( mkApp
+--     (termLikeSort . left $ rulePatt)
+--     (fromJust . op $ onePathPatt)
+--     [ mkAnd
+--         (Predicate.unwrapPredicate . ensures $ rulePatt)
+--         (right rulePatt)
+--     ]
+-- )
+
+reachabilityClaimOp :: QualifiedAxiomPattern variable -> Maybe SymbolOrAlias
+reachabilityClaimOp =
     \case
-        -- Reachability claims
-        onePathPatt@(OnePathClaimPattern (OnePathRule rulePatt)) ->
-            mkImplies
-                ( mkAnd
-                    (Predicate.unwrapPredicate . requires $ rulePatt)
-                    (left rulePatt)
-                )
-                -- ( mkApp
-                --     (termLikeSort . left $ rulePatt)
-                --     (fromJust . op $ onePathPatt)
-                --     [ mkAnd
-                --         (Predicate.unwrapPredicate . ensures $ rulePatt)
-                --         (right rulePatt)
-                --     ]
-                -- )
-                ( mkAnd
-                    (Predicate.unwrapPredicate . ensures $ rulePatt)
-                    (right rulePatt)
-                )
-        -- normal rewrite axioms
-        RewriteAxiomPattern (RewriteRule rulePatt) ->
-            mkRewrites
-                ( mkAnd
-                    (Predicate.unwrapPredicate . requires $ rulePatt)
-                    (left rulePatt)
-                )
-                ( mkAnd
-                    (Predicate.unwrapPredicate . requires $ rulePatt)
-                    (right rulePatt)
-                )
-        -- function axioms: general
-        FunctionAxiomPattern (EqualityRule rulePatt) ->
-            if (requires rulePatt) == Predicate.makeTruePredicate
-               then
-                ( mkEquals
-                    (termLikeSort . left $ rulePatt)
-                    (left rulePatt)
-                    (right rulePatt)
-                )
-               else
-                mkImplies
-                    (Predicate.unwrapPredicate . requires $ rulePatt)
-                    ( mkAnd
-                        ( mkEquals
-                            (termLikeSort . left $ rulePatt)
-                            (left rulePatt)
-                            (right rulePatt)
-                        )
-                        (Predicate.unwrapPredicate . ensures $ rulePatt)
-                    )
-        -- function axioms: trivial pre- and post-conditions
-        -- ^ and ^^; should do case on the requires part
-        -- TODO: finish all cases
-  where
-    op :: QualifiedAxiomPattern variable -> Maybe SymbolOrAlias
-    op =
-        \case
-            OnePathClaimPattern _ ->
-                Just
-                $ SymbolOrAlias
-                    (Id "weakExistsFinally" AstLocationNone)
-                    []
-            AllPathClaimPattern _ ->
-                Just
-                $ SymbolOrAlias
-                    (Id "weakAlwaysFinally" AstLocationNone)
-                    []
-            _ -> Nothing
+        OnePathClaimPattern _ ->
+            Just
+            $ SymbolOrAlias
+                (Id "weakExistsFinally" AstLocationNone)
+                []
+        AllPathClaimPattern _ ->
+            Just
+            $ SymbolOrAlias
+                (Id "weakAlwaysFinally" AstLocationNone)
+                []
+        _ -> Nothing
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 

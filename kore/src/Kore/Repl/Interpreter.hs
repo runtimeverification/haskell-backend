@@ -229,18 +229,12 @@ exit = do
                 (Map.toList . terminalPatterns $ graphs)
     let x = pairs >>= uncurry zip
     let y = fmap (\(x,y) -> (claims !! (unClaimIndex x), y )) x
-    -- debugging:
-    -- let todoconj = fmap (unparseToString . createReachabilityClaim) y
-    -- traverse putStrLn' todoconj
-    let patts = fmap (Rule.axiomPatternToPattern . Rule.OnePathClaimPattern . createReachabilityClaim) y
-    -- TODO: sort!
-    let pattSort = termLikeSort . Rule.axiomPatternToPattern . Rule.OnePathClaimPattern . createReachabilityClaim $ (y !! 0)
+    -- TODO: what if the proof wasn't started for a claim? (its execution graph won't be initialized)
+    let patts = fmap (Rule.onePathRuleToPattern . createReachabilityClaim) y
+    -- TODO: get this from claim
+    let pattSort = termLikeSort . Rule.onePathRuleToPattern . createReachabilityClaim $ (y !! 0)
     let bigConj = foldr TermLike.mkAnd (TermLike.mkTop pattSort) patts
-    -- putStrLn' . unparseToString $ bigConj
-    -- liftIO $ writeFile name (unparseToString (TermLike.mkTop @TermLike.Variable $ TermLike.mkSortVariable "R"))
     liftIO $ writeFile name (unparseToString bigConj)
-    -- putStrLn' (unparseToString (patts !! 0))
-    -- liftIO $ writeFile name (unparseToString (patts !! 0))
     if isCompleted (Map.elems proofs)
        then return SuccessStop
        else return FailStop
