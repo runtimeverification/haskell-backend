@@ -339,40 +339,52 @@ axiomPatternToPattern =
         onePathPatt@(OnePathClaimPattern (OnePathRule rulePatt)) ->
             mkImplies
                 ( mkAnd
-                    ( Predicate.unwrapPredicate . requires $ rulePatt )
-                    ( left rulePatt )
+                    (Predicate.unwrapPredicate . requires $ rulePatt)
+                    (left rulePatt)
                 )
-                ( mkApp
-                    ( termLikeSort . left $ rulePatt)
-                    ( fromJust . op $ onePathPatt )
-                    [ mkAnd
-                        (Predicate.unwrapPredicate . ensures $ rulePatt)
-                        (right rulePatt)
-                    ]
+                -- ( mkApp
+                --     (termLikeSort . left $ rulePatt)
+                --     (fromJust . op $ onePathPatt)
+                --     [ mkAnd
+                --         (Predicate.unwrapPredicate . ensures $ rulePatt)
+                --         (right rulePatt)
+                --     ]
+                -- )
+                ( mkAnd
+                    (Predicate.unwrapPredicate . ensures $ rulePatt)
+                    (right rulePatt)
                 )
         -- normal rewrite axioms
         RewriteAxiomPattern (RewriteRule rulePatt) ->
             mkRewrites
                 ( mkAnd
-                    ( Predicate.unwrapPredicate . requires $ rulePatt )
-                    ( left rulePatt )
+                    (Predicate.unwrapPredicate . requires $ rulePatt)
+                    (left rulePatt)
                 )
                 ( mkAnd
-                    ( Predicate.unwrapPredicate . requires $ rulePatt )
-                    ( right rulePatt )
+                    (Predicate.unwrapPredicate . requires $ rulePatt)
+                    (right rulePatt)
                 )
         -- function axioms: general
         FunctionAxiomPattern (EqualityRule rulePatt) ->
-            mkImplies
-                ( Predicate.unwrapPredicate . requires $ rulePatt)
-                ( mkAnd
-                    ( mkEquals
-                        ( termLikeSort . left $ rulePatt )
-                        ( left rulePatt )
-                        ( right rulePatt )
-                    )
-                    ( Predicate.unwrapPredicate . ensures $ rulePatt )
+            if (requires rulePatt) == Predicate.makeTruePredicate
+               then
+                ( mkEquals
+                    (termLikeSort . left $ rulePatt)
+                    (left rulePatt)
+                    (right rulePatt)
                 )
+               else
+                mkImplies
+                    (Predicate.unwrapPredicate . requires $ rulePatt)
+                    ( mkAnd
+                        ( mkEquals
+                            (termLikeSort . left $ rulePatt)
+                            (left rulePatt)
+                            (right rulePatt)
+                        )
+                        (Predicate.unwrapPredicate . ensures $ rulePatt)
+                    )
         -- function axioms: trivial pre- and post-conditions
         -- ^ and ^^; should do case on the requires part
         -- TODO: finish all cases
@@ -383,12 +395,12 @@ axiomPatternToPattern =
             OnePathClaimPattern _ ->
                 Just
                 $ SymbolOrAlias
-                    (Id "weakExistsFinally" AstLocationUnknown)
+                    (Id "weakExistsFinally" AstLocationNone)
                     []
             AllPathClaimPattern _ ->
                 Just
                 $ SymbolOrAlias
-                    (Id "weakAlwaysFinally" AstLocationUnknown)
+                    (Id "weakAlwaysFinally" AstLocationNone)
                     []
             _ -> Nothing
 
