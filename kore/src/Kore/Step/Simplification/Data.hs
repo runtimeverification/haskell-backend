@@ -48,6 +48,8 @@ import           Control.DeepSeq
 import qualified Control.Monad as Monad
 import           Control.Monad.Catch
                  ( MonadCatch, MonadThrow )
+import           Control.Monad.IO.Unlift
+                 ( MonadUnliftIO, withRunInIO )
 import           Control.Monad.Morph
                  ( MFunctor )
 import qualified Control.Monad.Morph as Monad.Morph
@@ -94,7 +96,7 @@ import           ListT
                  ( ListT (..), mapListT )
 import qualified ListT
 import           SMT
-                 ( MonadSMT (..), SMT (..) )
+                 ( MonadSMT (..), SMT (..), SmtT (..) )
 
 {-| 'And' simplification is very similar to 'Equals' simplification.
 This type is used to distinguish between the two in the common code.
@@ -316,22 +318,24 @@ A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.
 A @Simplifier@ can write to the log through 'HasLog'.
 
  -}
-newtype Simplifier a = Simplifier
-    { getSimplifier :: ReaderT Env SMT a
+newtype SimplifierT m a = SimplifierT
+    { runSimplifierT :: ReaderT Env (SmtT m) a
     }
     deriving (Functor, Applicative, Monad, MonadSMT)
     deriving (MonadIO, MonadCatch, MonadThrow)
     deriving (MonadReader Env)
 
-instance WithLog LogMessage Simplifier where
-    askLogAction = Simplifier (hoistLogAction Simplifier <$> askLogAction)
+type Simplifier a = SimplifierT IO a
+
+instance MonadUnliftIO m => WithLog LogMessage (SimplifierT m) where
+    askLogAction = SimplifierT (hoistLogAction SimplifierT <$> askLogAction)
     {-# INLINE askLogAction #-}
 
     localLogAction mapping =
-        Simplifier . localLogAction mapping . getSimplifier
+        SimplifierT . localLogAction mapping . runSimplifierT
     {-# INLINE localLogAction #-}
 
-instance MonadSimplify Simplifier where
+instance MonadUnliftIO m => MonadSimplify (SimplifierT m) where
     askMetadataTools = asks metadataTools
     {-# INLINE askMetadataTools #-}
 
@@ -363,7 +367,7 @@ instance MonadSimplify Simplifier where
  -}
 evalSimplifierBranch
     :: Env
-    -> BranchT Simplifier a
+    -> BranchT (SimplifierT IO) a
     -- ^ simplifier computation
     -> SMT [a]
 evalSimplifierBranch env = evalSimplifier env . gather
@@ -395,7 +399,7 @@ evalSimplifier
     => Env
     -> Simplifier a
     -> SMT a
-evalSimplifier env = flip runReaderT env . getSimplifier
+evalSimplifier env = flip runReaderT env . runSimplifierT
 
 -- * Implementation
 
