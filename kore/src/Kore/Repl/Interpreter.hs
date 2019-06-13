@@ -219,18 +219,23 @@ exit = do
     let patts =
             inProgressClaims graphs claims
             <> notStartedClaims graphs claims
-        pattSort =
-            termLikeSort
-            . Rule.onePathRuleToPattern
-            . Rule.OnePathRule
-            . coerce
-            $ claims !! 0
+        pattSort = patternSort claims
         conj = foldr TermLike.mkAnd (TermLike.mkTop pattSort) patts
     liftIO $ writeFile fileName (unparseToString conj)
     if isCompleted (Map.elems proofs)
        then return SuccessStop
        else return FailStop
   where
+    patternSort
+        :: Claim claim
+        => [claim]
+        -> TermLike.Sort
+    patternSort cls =
+        termLikeSort
+        . Rule.onePathRuleToPattern
+        . Rule.OnePathRule
+        . coerce
+        $ cls !! 0
     inProgressClaims
         :: Claim claim
         => Map.Map ClaimIndex ExecutionGraph
