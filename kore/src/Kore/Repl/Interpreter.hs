@@ -76,15 +76,10 @@ import           Kore.Attribute.Axiom
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom (..), RuleIndex (..), sourceLocation )
 import           Kore.Attribute.RuleIndex
-import           Kore.Internal.OrPattern
-                 ( fromPatterns )
 import           Kore.Internal.Pattern
                  ( Conditional (..), toTermLike )
-import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
-                 ( TermLike )
-import           Kore.Internal.TermLike
-                 ( forceSort, termLikeSort )
+                 ( TermLike, termLikeSort )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Logger
 import           Kore.OnePath.StrategyPattern
@@ -95,10 +90,7 @@ import qualified Kore.OnePath.StrategyPattern as StrategyPatternTransformer
                  ( StrategyPatternTransformer (..) )
 import           Kore.OnePath.Verification
                  ( Axiom (..), Claim, isTrusted )
-import           Kore.Predicate.Predicate
-                 ( makeMultipleOrPredicate, makeTruePredicate,
-                 unwrapPredicate )
-import qualified Kore.Predicate.Predicate as Predicate.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Repl.Data
 import           Kore.Repl.Parser
 import           Kore.Repl.Parser
@@ -224,33 +216,48 @@ exit = do
             maybe (error "Output file not specified") id (unOutputFile ofile)
     graphs <- Lens.use lensGraphs
     claims <- Lens.use lensClaims
-    let pairs =
-            fmap
-            ( \(x, y) -> ([x], y) )
-            (Map.toList . terminalPatterns $ graphs)
-        x = pairs >>= uncurry zip
-        y = fmap (\(x,y) -> (claims !! (unClaimIndex x), y )) x
-        patts =
-            fmap (Rule.onePathRuleToPattern . createReachabilityClaim) y
-            <> notStartedClaims claims graphs
+    let patts =
+            inProgressClaims graphs claims
+            <> notStartedClaims graphs claims
         pattSort =
             termLikeSort
             . Rule.onePathRuleToPattern
             . Rule.OnePathRule
             . coerce
             $ claims !! 0
-        bigConj = foldr TermLike.mkAnd (TermLike.mkTop pattSort) patts
-    liftIO $ writeFile fileName (unparseToString bigConj)
+        conj = foldr TermLike.mkAnd (TermLike.mkTop pattSort) patts
+    liftIO $ writeFile fileName (unparseToString conj)
     if isCompleted (Map.elems proofs)
        then return SuccessStop
        else return FailStop
   where
+    inProgressClaims
+        :: Claim claim
+        => Map.Map ClaimIndex ExecutionGraph
+        -> [claim]
+        -> [TermLike.TermLike Variable]
+    inProgressClaims gphs cls =
+        Rule.onePathRuleToPattern
+        . createReachabilityClaim
+        <$> terminalAndParentClaims gphs cls
+    terminalAndParentClaims
+        :: Claim claim
+        => Map.Map ClaimIndex ExecutionGraph
+        -> [claim]
+        -> [(claim, CommonStrategyPattern)]
+    terminalAndParentClaims gphs cls =
+        let pairs =
+                ( \(x, y) -> ([x], y) )
+                <$> (Map.toList . terminalPatterns) gphs
+        in fmap
+            ( \(x, y) -> (cls !! (unClaimIndex x), y) )
+            (pairs >>= uncurry zip)
     notStartedClaims
         :: Claim claim
-        => [claim]
-        -> Map.Map ClaimIndex ExecutionGraph
+        => Map.Map ClaimIndex ExecutionGraph
+        -> [claim]
         -> [TermLike.TermLike Variable]
-    notStartedClaims cls m =
+    notStartedClaims gphs cls =
         Rule.onePathRuleToPattern
         . Rule.OnePathRule
         . coerce
@@ -258,7 +265,7 @@ exit = do
         . unClaimIndex
         <$> (Set.toList $ Set.difference
                 (Set.fromList $ fmap ClaimIndex [0..length cls - 1])
-                (Set.fromList $ Map.keys m))
+                (Set.fromList $ Map.keys gphs))
     createReachabilityClaim
         :: Claim claim
         => (claim, CommonStrategyPattern)
@@ -268,7 +275,7 @@ exit = do
         $ Rule.RulePattern
             { left = pattToLeftPatt cpatt
             , right = claimToRightPatt cl
-            , requires = Predicate.Predicate.makeTruePredicate
+            , requires = Predicate.makeTruePredicate
             , ensures = claimToEnsures cl
             , attributes = Default.def
             }
@@ -286,7 +293,7 @@ exit = do
     claimToEnsures
         :: Claim claim
         => claim
-        -> Predicate.Predicate.Predicate Variable
+        -> Predicate.Predicate Variable
     claimToEnsures =
         Rule.ensures . coerce
     terminalPatterns

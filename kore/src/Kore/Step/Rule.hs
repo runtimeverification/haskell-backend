@@ -49,7 +49,6 @@ import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
-import qualified Kore.Internal.Pattern as Internal.Pattern
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate )
@@ -324,6 +323,8 @@ fromSentenceAxiom sentenceAxiom = do
             (sentenceAxiomAttributes sentenceAxiom)
     patternToAxiomPattern attributes (sentenceAxiomPattern sentenceAxiom)
 
+-- TODO(ana.pantilie): second mkAnd should be changed when
+-- the frontend will be able to unparse one path claims
 onePathRuleToPattern
     :: Ord variable
     => SortedVariable variable
@@ -340,31 +341,6 @@ onePathRuleToPattern (OnePathRule rulePatt) =
             (Predicate.unwrapPredicate . ensures $ rulePatt)
             (right rulePatt)
         )
--- TODO(ana.pantilie): second mkAnd should be changed to this
---     when the frontend will be able to unparse one path claims
--- ( mkApp
---     (termLikeSort . left $ rulePatt)
---     (fromJust . op $ onePathPatt)
---     [ mkAnd
---         (Predicate.unwrapPredicate . ensures $ rulePatt)
---         (right rulePatt)
---     ]
--- )
-
-reachabilityClaimOp :: QualifiedAxiomPattern variable -> Maybe SymbolOrAlias
-reachabilityClaimOp =
-    \case
-        OnePathClaimPattern _ ->
-            Just
-            $ SymbolOrAlias
-                (Id "weakExistsFinally" AstLocationNone)
-                []
-        AllPathClaimPattern _ ->
-            Just
-            $ SymbolOrAlias
-                (Id "weakAlwaysFinally" AstLocationNone)
-                []
-        _ -> Nothing
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 
