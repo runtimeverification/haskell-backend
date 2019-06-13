@@ -61,6 +61,7 @@ import           Data.Maybe
                  ( catMaybes, listToMaybe )
 import           Data.Sequence
                  ( Seq )
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as Text.Lazy
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -219,26 +220,45 @@ exit
 exit = do
     proofs <- allProofs
     ofile <- Lens.use lensOutputFile
-    -- TODO: check file
-    let name = fromJust . unOutputFile $ ofile
+    let fileName =
+            maybe (error "Output file not specified") id (unOutputFile ofile)
     graphs <- Lens.use lensGraphs
     claims <- Lens.use lensClaims
     let pairs =
             fmap
-                ( \(x, y) -> ([x], y) )
-                (Map.toList . terminalPatterns $ graphs)
-    let x = pairs >>= uncurry zip
-    let y = fmap (\(x,y) -> (claims !! (unClaimIndex x), y )) x
-    -- TODO: what if the proof wasn't started for a claim? (its execution graph won't be initialized)
-    let patts = fmap (Rule.onePathRuleToPattern . createReachabilityClaim) y
-    -- TODO: get this from claim
-    let pattSort = termLikeSort . Rule.onePathRuleToPattern . createReachabilityClaim $ (y !! 0)
-    let bigConj = foldr TermLike.mkAnd (TermLike.mkTop pattSort) patts
-    liftIO $ writeFile name (unparseToString bigConj)
+            ( \(x, y) -> ([x], y) )
+            (Map.toList . terminalPatterns $ graphs)
+        x = pairs >>= uncurry zip
+        y = fmap (\(x,y) -> (claims !! (unClaimIndex x), y )) x
+        patts =
+            fmap (Rule.onePathRuleToPattern . createReachabilityClaim) y
+            <> notStartedClaims claims graphs
+        pattSort =
+            termLikeSort
+            . Rule.onePathRuleToPattern
+            . Rule.OnePathRule
+            . coerce
+            $ claims !! 0
+        bigConj = foldr TermLike.mkAnd (TermLike.mkTop pattSort) patts
+    liftIO $ writeFile fileName (unparseToString bigConj)
     if isCompleted (Map.elems proofs)
        then return SuccessStop
        else return FailStop
   where
+    notStartedClaims
+        :: Claim claim
+        => [claim]
+        -> Map.Map ClaimIndex ExecutionGraph
+        -> [TermLike.TermLike Variable]
+    notStartedClaims cls m =
+        Rule.onePathRuleToPattern
+        . Rule.OnePathRule
+        . coerce
+        . (cls !!)
+        . unClaimIndex
+        <$> (Set.toList $ Set.difference
+                (Set.fromList $ fmap ClaimIndex [0..length cls - 1])
+                (Set.fromList $ Map.keys m))
     createReachabilityClaim
         :: Claim claim
         => (claim, CommonStrategyPattern)

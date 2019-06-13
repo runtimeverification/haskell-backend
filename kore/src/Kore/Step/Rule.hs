@@ -340,7 +340,8 @@ onePathRuleToPattern (OnePathRule rulePatt) =
             (Predicate.unwrapPredicate . ensures $ rulePatt)
             (right rulePatt)
         )
--- TODO(ana.pantilie): second mkAnd should be this instead
+-- TODO(ana.pantilie): second mkAnd should be changed to this
+--     when the frontend will be able to unparse one path claims
 -- ( mkApp
 --     (termLikeSort . left $ rulePatt)
 --     (fromJust . op $ onePathPatt)
