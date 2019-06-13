@@ -114,7 +114,7 @@ test_mergeAndNormalizeSubstitutions =
     , testCase "Double constructor is bottom"
         -- [x=constructor(a)] + [x=constructor(constructor(a))]  === bottom?
         $ do
-            let expect = Right [Predicate.bottomPredicate]
+            let expect = Right []
             actual <-
                 merge
                     [   ( Mock.x
