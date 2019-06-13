@@ -81,7 +81,7 @@ import           Kore.Attribute.RuleIndex
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
 import           Kore.Internal.Pattern
-                 ( Conditional (..), toTermLike )
+                 ( toTermLike )
 import           Kore.Internal.Predicate
                  ( Predicate )
 import           Kore.Internal.TermLike
