@@ -23,17 +23,14 @@ import           Data.Maybe
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.Attribute.Symbol
-                 ( Hook (..) )
 import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..) )
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
@@ -46,7 +43,7 @@ import           Kore.Step.Simplification.Data
                  AttemptedAxiomResults (AttemptedAxiomResults),
                  BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier, Simplifier, TermLikeSimplifier )
+                 ( MonadSimplify, PredicateSimplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiom
@@ -100,18 +97,18 @@ totalDefinitionEvaluation rules =
     BuiltinAndAxiomSimplifier totalDefinitionEvaluationWorker
   where
     totalDefinitionEvaluationWorker
-        ::  forall variable
+        ::  forall variable simplifier
         .   ( FreshVariable variable
-            , Ord variable
             , SortedVariable variable
             , Show variable
             , Unparse variable
+            , MonadSimplify simplifier
             )
         => PredicateSimplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
-        -> Simplifier (AttemptedAxiom variable)
+        -> simplifier (AttemptedAxiom variable)
     totalDefinitionEvaluationWorker
         predicateSimplifier
         termSimplifier
@@ -165,12 +162,12 @@ builtinEvaluation evaluator =
 
 
 evaluateBuiltin
-    :: forall variable
+    :: forall variable simplifier
     .   ( FreshVariable variable
-        , Ord variable
         , SortedVariable variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
         )
     => BuiltinAndAxiomSimplifier
     -> PredicateSimplifier
@@ -178,7 +175,7 @@ evaluateBuiltin
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
-    -> Simplifier (AttemptedAxiom variable)
+    -> simplifier (AttemptedAxiom variable)
 evaluateBuiltin
     (BuiltinAndAxiomSimplifier builtinEvaluator)
     substitutionSimplifier
@@ -190,9 +187,6 @@ evaluateBuiltin
     let
         isValue pat = isJust $
             Value.fromConcreteStepPattern tools =<< asConcrete pat
-        -- TODO(virgil): Send this from outside.
-        getSymbolHook = getHook . Attribute.hook . symAttributes tools
-        getAppHookString appHead = Text.unpack <$> getSymbolHook appHead
     result <-
         builtinEvaluator
             substitutionSimplifier
@@ -203,7 +197,7 @@ evaluateBuiltin
         AttemptedAxiom.NotApplicable
           | isPattConcrete
           , App_ appHead children <- patt
-          , Just hook <- getAppHookString appHead
+          , Just hook <- Text.unpack <$> Attribute.getHook (symbolHook appHead)
           , all isValue children ->
             error
                 (   "Expecting hook " ++ hook
@@ -217,12 +211,12 @@ evaluateBuiltin
     isPattConcrete = isConcrete patt
 
 applyFirstSimplifierThatWorks
-    :: forall variable
+    :: forall variable simplifier
     .   ( FreshVariable variable
-        , Ord variable
         , SortedVariable variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
         )
     => [BuiltinAndAxiomSimplifier]
     -> AcceptsMultipleResults
@@ -231,8 +225,7 @@ applyFirstSimplifierThatWorks
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
-    -> Simplifier
-        (AttemptedAxiom variable)
+    -> simplifier (AttemptedAxiom variable)
 applyFirstSimplifierThatWorks [] _ _ _ _ _ =
     return AttemptedAxiom.NotApplicable
 applyFirstSimplifierThatWorks
@@ -299,12 +292,12 @@ applyFirstSimplifierThatWorks
                 patt
 
 evaluateWithDefinitionAxioms
-    :: forall variable
+    :: forall variable simplifier
     .   ( FreshVariable variable
-        , Ord variable
         , SortedVariable variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
         )
     => [EqualityRule Variable]
     -> PredicateSimplifier
@@ -312,7 +305,7 @@ evaluateWithDefinitionAxioms
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
-    -> Simplifier (AttemptedAxiom variable)
+    -> simplifier (AttemptedAxiom variable)
 evaluateWithDefinitionAxioms
     definitionRules
     _predicateSimplifier
@@ -352,7 +345,7 @@ evaluateWithDefinitionAxioms
         (Monad.guard . not) (Foldable.any Step.isNarrowingResult results)
 
     applyRules initial rules =
-        Monad.Unify.maybeUnifier
+        Monad.Unify.maybeUnifierT
         $ Step.applyRulesSequence unificationProcedure initial rules
 
     unificationProcedure = UnificationProcedure unificationWithAppMatchOnTop

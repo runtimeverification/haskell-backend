@@ -8,11 +8,16 @@ import Test.Tasty
 import GHC.Stack
        ( HasCallStack )
 
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.Error
                  ( noSort )
-import           Kore.Internal.TermLike
+import qualified Kore.Internal.Alias as Internal
+import qualified Kore.Internal.Symbol as Internal
+import           Kore.Internal.TermLike hiding
+                 ( Alias, Symbol )
+import           Kore.Syntax.Definition
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -486,11 +491,11 @@ sortVisibilityTests =
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
                 Builtin.externalizePattern
-                $ mkApp
-                    sort
-                    SymbolOrAlias
-                        { symbolOrAliasConstructor = testId "symbol2"
-                        , symbolOrAliasParams = [ sort ]
+                $ mkApplySymbol sort
+                    Internal.Symbol
+                        { symbolConstructor = testId "symbol2"
+                        , symbolParams = [ sort ]
+                        , symbolAttributes = Attribute.defaultSymbolAttributes
                         }
                     []
             , sentenceAxiomAttributes = Attributes []
@@ -512,11 +517,10 @@ symbolVisibilityTests :: [TestTree]
 symbolVisibilityTests =
     [ nameReferenceTests
         "Symbol visibility in axioms"
-        (ExpectedErrorMessage "Symbol 'symbol1' not defined.")
+        (ExpectedErrorMessage "Head 'symbol1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "symbol or alias 'symbol1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence symbolDeclaration)
@@ -524,12 +528,11 @@ symbolVisibilityTests =
         (SupportingSentences defaultSymbolSupportSentences)
     , nameReferenceTests
         "Symbol visibility in and pattern"
-        (ExpectedErrorMessage "Symbol 'symbol1' not defined.")
+        (ExpectedErrorMessage "Head 'symbol1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "\\and (<test data>)"
             , "symbol or alias 'symbol1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence symbolDeclaration)
@@ -537,12 +540,11 @@ symbolVisibilityTests =
         (SupportingSentences defaultSymbolSupportSentences)
     , nameReferenceTests
         "Symbol visibility in exists pattern"
-        (ExpectedErrorMessage "Symbol 'symbol1' not defined.")
+        (ExpectedErrorMessage "Head 'symbol1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "\\exists 'var' (<test data>)"
             , "symbol or alias 'symbol1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence symbolDeclaration)
@@ -550,12 +552,11 @@ symbolVisibilityTests =
         (SupportingSentences defaultSymbolSupportSentences)
     , nameReferenceTests
         "Symbol visibility in next pattern"
-        (ExpectedErrorMessage "Symbol 'symbol1' not defined.")
+        (ExpectedErrorMessage "Head 'symbol1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "\\next (<test data>)"
             , "symbol or alias 'symbol1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence symbolDeclaration)
@@ -563,12 +564,11 @@ symbolVisibilityTests =
         (SupportingSentences defaultSymbolSupportSentences)
     , nameReferenceTests
         "Symbol visibility in application pattern"
-        (ExpectedErrorMessage "Symbol 'symbol1' not defined.")
+        (ExpectedErrorMessage "Head 'symbol1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "symbol or alias 'symbol2' (<test data>)"
             , "symbol or alias 'symbol1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence symbolDeclaration)
@@ -576,11 +576,10 @@ symbolVisibilityTests =
         (SupportingSentences symbolReferenceInSymbolOrAliasSupportSentences)
     , nameReferenceTests
         "Meta symbol visibility in axioms"
-        (ExpectedErrorMessage "Symbol '#symbol1' not defined.")
+        (ExpectedErrorMessage "Head '#symbol1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "symbol or alias '#symbol1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence metaSymbolDeclaration)
@@ -589,11 +588,12 @@ symbolVisibilityTests =
     ]
   where
     symbolPattern =
-        mkApp
+        mkApplySymbol
             defaultSort
-            SymbolOrAlias
-                { symbolOrAliasConstructor = testId "symbol1"
-                , symbolOrAliasParams = [ defaultSort ]
+            Internal.Symbol
+                { symbolConstructor = testId "symbol1"
+                , symbolParams = [ defaultSort ]
+                , symbolAttributes = Attribute.defaultSymbolAttributes
                 }
             []
     symbolDeclaration =
@@ -609,11 +609,12 @@ symbolVisibilityTests =
             }
     defaultSymbolSupportSentences = [ defaultSortDeclaration ]
     metaSymbolPattern =
-        mkApp
+        mkApplySymbol
             charMetaSort
-            SymbolOrAlias
-                { symbolOrAliasConstructor = testId "#symbol1"
-                , symbolOrAliasParams = [ charMetaSort ]
+            Internal.Symbol
+                { symbolConstructor = testId "#symbol1"
+                , symbolParams = [ charMetaSort ]
+                , symbolAttributes = Attribute.defaultSymbolAttributes
                 }
             []
     metaSymbolDeclaration =
@@ -673,11 +674,12 @@ symbolVisibilityTests =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
-                Builtin.externalizePattern $ mkApp
+                Builtin.externalizePattern $ mkApplySymbol
                     defaultSort
-                    SymbolOrAlias
-                        { symbolOrAliasConstructor = testId "symbol2"
-                        , symbolOrAliasParams = [ defaultSort ]
+                    Internal.Symbol
+                        { symbolConstructor = testId "symbol2"
+                        , symbolParams = [ defaultSort ]
+                        , symbolAttributes = Attribute.defaultSymbolAttributes
                         }
                     [symbolPattern]
             , sentenceAxiomAttributes = Attributes []
@@ -700,11 +702,10 @@ aliasVisibilityTests :: [TestTree]
 aliasVisibilityTests =
     [ nameReferenceTests
         "Alias visibility in axioms"
-        (ExpectedErrorMessage "Symbol 'alias1' not defined.")
+        (ExpectedErrorMessage "Head 'alias1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "symbol or alias 'alias1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence aliasDeclaration)
@@ -712,12 +713,11 @@ aliasVisibilityTests =
         (SupportingSentences defaultAliasSupportSentences)
     , nameReferenceTests
         "Alias visibility in and pattern"
-        (ExpectedErrorMessage "Symbol 'alias1' not defined.")
+        (ExpectedErrorMessage "Head 'alias1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "\\and (<test data>)"
             , "symbol or alias 'alias1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence aliasDeclaration)
@@ -725,12 +725,11 @@ aliasVisibilityTests =
         (SupportingSentences defaultAliasSupportSentences)
     , nameReferenceTests
         "Alias visibility in exists pattern"
-        (ExpectedErrorMessage "Symbol 'alias1' not defined.")
+        (ExpectedErrorMessage "Head 'alias1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "\\exists 'var' (<test data>)"
             , "symbol or alias 'alias1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence aliasDeclaration)
@@ -738,12 +737,11 @@ aliasVisibilityTests =
         (SupportingSentences defaultAliasSupportSentences)
     , nameReferenceTests
         "Alias visibility in next pattern"
-        (ExpectedErrorMessage "Symbol 'alias1' not defined.")
+        (ExpectedErrorMessage "Head 'alias1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "\\next (<test data>)"
             , "symbol or alias 'alias1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence aliasDeclaration)
@@ -751,12 +749,11 @@ aliasVisibilityTests =
         (SupportingSentences defaultAliasSupportSentences)
     , nameReferenceTests
         "Alias visibility in application pattern"
-        (ExpectedErrorMessage "Symbol 'alias1' not defined.")
+        (ExpectedErrorMessage "Head 'alias1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "symbol or alias 'alias2' (<test data>)"
             , "symbol or alias 'alias1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence aliasDeclaration)
@@ -764,11 +761,10 @@ aliasVisibilityTests =
         (SupportingSentences aliasReferenceInAliasOrAliasSupportSentences)
     , nameReferenceTests
         "Meta alias visibility in axioms"
-        (ExpectedErrorMessage "Symbol '#alias1' not defined.")
+        (ExpectedErrorMessage "Head '#alias1' not defined.")
         (ErrorStack
             [ "axiom declaration"
             , "symbol or alias '#alias1' (<test data>)"
-            , "(<test data>)"
             ]
         )
         (DeclaringSentence metaAliasDeclaration)
@@ -777,11 +773,11 @@ aliasVisibilityTests =
     ]
   where
     aliasPattern =
-        mkApp
+        mkApplyAlias
             defaultSort
-            SymbolOrAlias
-                { symbolOrAliasConstructor = testId "alias1"
-                , symbolOrAliasParams = [ defaultSort ]
+            Internal.Alias
+                { aliasConstructor = testId "alias1"
+                , aliasParams = [ defaultSort ]
                 }
             []
     aliasDeclaration =
@@ -810,11 +806,11 @@ aliasVisibilityTests =
             }
     defaultAliasSupportSentences = [ defaultSortDeclaration ]
     metaAliasPattern =
-        mkApp
+        mkApplyAlias
             charMetaSort
-            SymbolOrAlias
-                { symbolOrAliasConstructor = testId "#alias1"
-                , symbolOrAliasParams = [ charMetaSort ]
+            Internal.Alias
+                { aliasConstructor = testId "#alias1"
+                , aliasParams = [ charMetaSort ]
                 }
             []
     metaAliasDeclaration =
@@ -886,11 +882,11 @@ aliasVisibilityTests =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
-                Builtin.externalizePattern $ mkApp
+                Builtin.externalizePattern $ mkApplyAlias
                     defaultSort
-                    SymbolOrAlias
-                        { symbolOrAliasConstructor = testId "alias2"
-                        , symbolOrAliasParams = [ defaultSort ]
+                    Internal.Alias
+                        { aliasConstructor = testId "alias2"
+                        , aliasParams = [ defaultSort ]
                         }
                     [aliasPattern]
             , sentenceAxiomAttributes = Attributes []

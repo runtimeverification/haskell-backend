@@ -50,3 +50,6 @@ instance ParseAttributes SmtLemma where
             return SmtLemma { isSmtLemma = True }
         withApplication' = Parser.withApplication smtLemmaId
         failDuplicate' = Parser.failDuplicate smtLemmaId
+
+    toAttributes SmtLemma { isSmtLemma } =
+        Attributes $ if isSmtLemma then [smtLemmaAttribute] else []

@@ -19,6 +19,8 @@ module Kore.Attribute.Sort
     ) where
 
 import qualified Control.Monad as Monad
+import           Prelude hiding
+                 ( concat )
 
 import qualified Control.Lens.TH.Rules as Lens
 import           Kore.Attribute.Hook
@@ -69,3 +71,12 @@ instance ParseAttributes Sort where
         Monad.>=> lensUnit (parseAttribute attr)
         Monad.>=> lensElement (parseAttribute attr)
         Monad.>=> lensConcat (parseAttribute attr)
+
+    toAttributes =
+        mconcat . sequence
+            [ toAttributes . hook
+            , toAttributes . smtlib
+            , toAttributes . unit
+            , toAttributes . element
+            , toAttributes . concat
+            ]

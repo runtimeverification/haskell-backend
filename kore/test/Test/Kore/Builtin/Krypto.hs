@@ -9,7 +9,6 @@ import qualified Data.Text as Text
 
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.String as String
-import           Kore.IndexedModule.MetadataTools
 import           Kore.Internal.TermLike
 
 import           Test.Kore.Builtin.Builtin
@@ -21,7 +20,7 @@ testKeyRecover :: Text -> Integer -> Text -> Text -> Text -> TestTree
 testKeyRecover messageHash v r s result =
     testPropertyWithSolver (Text.unpack name) $ do
         let expect = String.asPattern stringSort result
-        actual <- evaluateT $ mkApp stringSort ecdsaRecoverSymbol
+        actual <- evaluateT $ mkApplySymbol stringSort ecdsaRecoverSymbol
                     [ String.asInternal stringSort messageHash
                     , Test.Int.asInternal v
                     , String.asInternal stringSort r
@@ -29,28 +28,20 @@ testKeyRecover messageHash v r s result =
                     ]
         (===) expect actual
   where
-    Attribute.Symbol
-        { Attribute.hook =
-            Attribute.Hook { Attribute.getHook = Just name }
-        }
-      =
-        symAttributes testMetadataTools ecdsaRecoverSymbol
+    Just name =
+        Attribute.getHook . Attribute.hook $ symbolAttributes ecdsaRecoverSymbol
 
 testKeccak :: Text -> Text -> TestTree
 testKeccak input result =
     testPropertyWithSolver (Text.unpack name) $ do
         let expect = String.asPattern stringSort result
-        actual <- evaluateT $ mkApp stringSort keccakSymbol
+        actual <- evaluateT $ mkApplySymbol stringSort keccakSymbol
                     [ String.asInternal stringSort input
                     ]
         (===) expect actual
   where
-    Attribute.Symbol
-        { Attribute.hook =
-            Attribute.Hook { Attribute.getHook = Just name }
-        }
-      =
-        symAttributes testMetadataTools ecdsaRecoverSymbol
+    Just name =
+        Attribute.getHook . Attribute.hook $ symbolAttributes ecdsaRecoverSymbol
 
 test_ecdsaRecover :: [TestTree]
 test_ecdsaRecover =

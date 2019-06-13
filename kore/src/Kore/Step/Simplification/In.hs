@@ -39,12 +39,12 @@ TODO(virgil): It does not have yet a special case for children with top terms.
 simplify
     ::  ( FreshVariable variable
         , SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
         )
     => In Sort (OrPattern variable)
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplify In { inContainedChild = first, inContainingChild = second } =
     simplifyEvaluatedIn first second
 
@@ -62,16 +62,16 @@ carry around.
 
 -}
 simplifyEvaluatedIn
-    :: forall variable .
-        ( FreshVariable variable
+    :: forall variable simplifier
+    .   ( FreshVariable variable
         , SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
         )
     => OrPattern variable
     -> OrPattern variable
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplifyEvaluatedIn first second
   | OrPattern.isFalse first  = return OrPattern.bottom
   | OrPattern.isFalse second = return OrPattern.bottom
@@ -85,13 +85,13 @@ simplifyEvaluatedIn first second
 makeEvaluateIn
     ::  ( FreshVariable variable
         , SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
         )
     => Pattern variable
     -> Pattern variable
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 makeEvaluateIn first second
   | Pattern.isTop first = Ceil.makeEvaluate second
   | Pattern.isTop second = Ceil.makeEvaluate first

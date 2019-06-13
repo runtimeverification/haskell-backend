@@ -55,3 +55,6 @@ instance ParseAttributes Trusted where
       where
         withApplication' = Parser.withApplication trustedId
         failDuplicate' = Parser.failDuplicate trustedId
+
+    toAttributes Trusted { isTrusted } =
+        Attributes $ if isTrusted then [trustedAttribute] else []

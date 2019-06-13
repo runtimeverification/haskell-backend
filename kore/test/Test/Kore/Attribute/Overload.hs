@@ -3,15 +3,20 @@ module Test.Kore.Attribute.Overload where
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import qualified Data.Default as Default
 import qualified Data.Map.Strict as Map
 import           Data.Proxy
 
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.Attribute.Overload
 import qualified Kore.Builtin as Builtin
+import           Kore.Internal.Symbol
+                 ( toSymbolOrAlias )
 import           Kore.Internal.TermLike
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import           Kore.Step.Axiom.Registry
+import           Kore.Syntax.Definition hiding
+                 ( Alias, Symbol )
 
 import           Test.Kore
 import           Test.Kore.Attribute.Parser
@@ -25,45 +30,56 @@ parseOverload = parseAttributes
 superId :: Id
 superId = testId "super"
 
-superSymbol :: SymbolOrAlias
+superSymbol :: Symbol
 superSymbol =
-    SymbolOrAlias
-        { symbolOrAliasConstructor = superId
-        , symbolOrAliasParams = []
+    Symbol
+        { symbolConstructor = superId
+        , symbolParams = []
+        , symbolAttributes = Default.def
         }
+
+superSymbolOrAlias :: SymbolOrAlias
+superSymbolOrAlias = toSymbolOrAlias superSymbol
 
 subId :: Id
 subId = testId "sub"
 
-subSymbol :: SymbolOrAlias
+subSymbol :: Symbol
 subSymbol =
-    SymbolOrAlias
-        { symbolOrAliasConstructor = subId
-        , symbolOrAliasParams = []
+    Symbol
+        { symbolConstructor = subId
+        , symbolParams = []
+        , symbolAttributes = Default.def
         }
+
+subSymbolOrAlias :: SymbolOrAlias
+subSymbolOrAlias = toSymbolOrAlias subSymbol
 
 test_Overload :: TestTree
 test_Overload =
     testCase "[overload{}(super{}(), sub{}())] :: Overload"
-    $ expectSuccess Overload { getOverload = Just (superSymbol, subSymbol) }
-    $ parseOverload $ Attributes [ overloadAttribute superSymbol subSymbol ]
+    $ expectSuccess expected $ parseOverload attributes
+  where
+    expected =
+        Overload { getOverload = Just (superSymbolOrAlias, subSymbolOrAlias) }
+
+attribute :: AttributePattern
+attribute = overloadAttribute superSymbolOrAlias subSymbolOrAlias
+
+attributes :: Attributes
+attributes = Attributes [ attribute ]
 
 test_Attributes :: TestTree
 test_Attributes =
     testCase "[overload{}(super{}(), sub{}())] :: Attributes"
-    $ expectSuccess attrs $ parseAttributes attrs
-  where
-    attrs = Attributes [ overloadAttribute superSymbol subSymbol ]
+    $ expectSuccess attributes $ parseAttributes attributes
 
 test_duplicate :: TestTree
 test_duplicate =
     testCase "[overload{}(_, _), overload{}(_, _)]"
     $ expectFailure
     $ parseOverload
-    $ Attributes
-        [ overloadAttribute superSymbol subSymbol
-        , overloadAttribute superSymbol subSymbol
-        ]
+    $ Attributes [ attribute, attribute ]
 
 test_arguments :: TestTree
 test_arguments =
@@ -119,8 +135,8 @@ test_ignore =
             , moduleAttributes = Attributes []
             , moduleSentences =
                 [ sortDecl   Mock.testSort
-                , symbolDecl superSymbol Mock.testSort [] []
-                , symbolDecl subSymbol   Mock.testSort [] []
+                , symbolDecl superSymbol Mock.testSort []
+                , symbolDecl subSymbol   Mock.testSort []
                 , overloadAxiom
                 ]
             }
@@ -129,13 +145,12 @@ test_ignore =
     overloadAxiom =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = [ sortVarS ]
-            , sentenceAxiomAttributes =
-                Attributes [ overloadAttribute superSymbol subSymbol ]
+            , sentenceAxiomAttributes = attributes
             , sentenceAxiomPattern =
                 Builtin.externalizePattern
                 $ mkEquals sortS
-                    (mkApp Mock.testSort superSymbol [])
-                    (mkApp Mock.testSort subSymbol   [])
+                    (mkApplySymbol Mock.testSort superSymbol [])
+                    (mkApplySymbol Mock.testSort subSymbol   [])
             }
       where
         sortVarS = SortVariable "S"

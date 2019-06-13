@@ -38,8 +38,6 @@ import           Text.Megaparsec
                  ( parseMaybe )
 
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Internal.TermLike
-                 ( TermLike, Variable )
 import qualified Kore.Logger as Logger
 import           Kore.OnePath.Verification
                  ( verifyClaimStep )
@@ -53,6 +51,7 @@ import qualified Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Syntax.Variable
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import           Kore.Unparser
@@ -124,7 +123,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
             -- the frontend via '--omit-labels'.
             , omit       = []
             , stepper    = stepper0
-            , unifier    = unifier0
+            , unifier    = unificationProcedure
             , labels     = Map.empty
             , aliases    = Map.empty
             , logging    = (Logger.Debug, NoLogging)
@@ -197,12 +196,6 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
                 catchInterruptWithDefault graph
                 $ verifyClaimStep claim claims axioms graph node
             else pure graph
-
-    unifier0
-        :: TermLike Variable
-        -> TermLike Variable
-        -> UnifierWithExplanation ()
-    unifier0 first second = () <$ unificationProcedure first second
 
     catchInterruptWithDefault :: MonadCatch m => MonadIO m => a -> m a -> m a
     catchInterruptWithDefault def sa =

@@ -6,8 +6,10 @@ import Kore.Internal.OrPredicate
        ( OrPredicate )
 import Kore.Internal.TermLike
        ( TermLike )
+import Kore.Logger
+       ( LogMessage, WithLog )
 import Kore.Step.Simplification.Data
-       ( Simplifier )
+       ( MonadSimplify )
 import Kore.Syntax.Variable
        ( SortedVariable )
 import Kore.Unparser
@@ -16,11 +18,13 @@ import Kore.Variables.Fresh
        ( FreshVariable )
 
 makeEvaluateTerm
-    ::  forall variable .
-        ( FreshVariable variable
+    ::  forall variable simplifier
+    .   ( FreshVariable variable
         , SortedVariable variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
+        , WithLog LogMessage simplifier
         )
     => TermLike variable
-    -> Simplifier (OrPredicate variable)
+    -> simplifier (OrPredicate variable)

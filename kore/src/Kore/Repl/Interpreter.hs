@@ -45,15 +45,17 @@ import           Control.Monad.Trans.Except
 import           Data.Coerce
                  ( Coercible, coerce )
 import qualified Data.Default as Default
-import           Data.Foldable
-                 ( traverse_ )
+import qualified Data.Foldable as Foldable
 import           Data.Functor
                  ( ($>) )
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
+import qualified Data.List as List
 import           Data.List.Extra
                  ( groupSort )
+import           Data.List.NonEmpty
+                 ( NonEmpty )
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
                  ( fromJust )
@@ -76,14 +78,18 @@ import           Kore.Attribute.Axiom
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom (..), RuleIndex (..), sourceLocation )
 import           Kore.Attribute.RuleIndex
+import           Kore.Internal.Conditional
+                 ( Conditional (..) )
 import           Kore.Internal.Pattern
                  ( Conditional (..), toTermLike )
+import           Kore.Internal.Predicate
+                 ( Predicate )
 import           Kore.Internal.TermLike
                  ( TermLike, termLikeSort )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Logger
 import           Kore.OnePath.StrategyPattern
-                 ( CommonStrategyPattern, StrategyPattern (..),
+                 ( CommonStrategyPattern,
                  StrategyPatternTransformer (StrategyPatternTransformer),
                  extractUnproven, strategyPattern )
 import qualified Kore.OnePath.StrategyPattern as StrategyPatternTransformer
@@ -109,7 +115,7 @@ import qualified Kore.Syntax.Id as Id
 import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unparser
-                 ( unparseToString )
+                 ( unparse, unparseToString )
 import           Numeric.Natural
 import           System.Directory
                  ( doesFileExist, findExecutable )
@@ -158,6 +164,7 @@ replInterpreter printFn replCmd = do
                 LabelDel l         -> labelDel l         $> Continue
                 Redirect inn file  -> redirect inn file  $> Continue
                 Try ac             -> tryAxiomClaim ac   $> Continue
+                TryF ac            -> tryFAxiomClaim ac  $> Continue
                 Clear n            -> clear n            $> Continue
                 SaveSession file   -> saveSession file   $> Continue
                 Pipe inn file args -> pipe inn file args $> Continue
@@ -490,7 +497,7 @@ omitCell =
         omitList <- Lens.use lensOmit
         case omitList of
             [] -> putStrLn' "Omit list is currently empty."
-            _  -> traverse_ putStrLn' omitList
+            _  -> Foldable.traverse_ putStrLn' omitList
 
     addOrRemove :: String -> ReplM claim ()
     addOrRemove str = lensOmit %= toggle str
@@ -711,57 +718,47 @@ redirect cmd path = do
         -> ReplM claim (ReplState claim)
     runInterpreter = lift . execStateT (replInterpreter redirectToFile cmd)
 
--- | Attempt to use a specific axiom or claim to progress the current proof.
+data AlsoApplyRule = Never | IfPossible
+
+-- | Attempt to use a specific axiom or claim to see if it unifies with the
+-- current node.
 tryAxiomClaim
     :: forall claim
     .  Claim claim
     => Either AxiomIndex ClaimIndex
     -- ^ tagged index in the axioms or claims list
     -> ReplM claim ()
-tryAxiomClaim eac = do
+tryAxiomClaim = tryAxiomClaimWorker Never
+
+-- | Attempt to use a specific axiom or claim to progress the current proof.
+tryFAxiomClaim
+    :: forall claim
+    .  Claim claim
+    => Either AxiomIndex ClaimIndex
+    -- ^ tagged index in the axioms or claims list
+    -> ReplM claim ()
+tryFAxiomClaim = tryAxiomClaimWorker IfPossible
+
+tryAxiomClaimWorker
+    :: forall claim
+    .  Claim claim
+    => AlsoApplyRule
+    -> Either AxiomIndex ClaimIndex
+    -- ^ tagged index in the axioms or claims list
+    -> ReplM claim ()
+tryAxiomClaimWorker mode eac = do
     maybeAxiomOrClaim <- getAxiomOrClaimByIndex eac
     case maybeAxiomOrClaim of
-        Nothing -> putStrLn' "Could not find axiom or claim."
+        Nothing ->
+            putStrLn' "Could not find axiom or claim."
         Just axiomOrClaim -> do
             node <- Lens.use lensNode
-            (graph, stepResult) <- runStepper'
-                (rightToList axiomOrClaim)
-                (leftToList  axiomOrClaim)
-                node
-            case stepResult of
-                NoResult ->
-                    showUnificationFailure axiomOrClaim node
-                SingleResult node' -> do
-                    lensNode .= node'
-                    updateExecutionGraph graph
-                    putStrLn' "Unification successful."
-                BranchResult nodes -> do
-                    stuckToUnstuck nodes graph
-                    putStrLn'
-                        $ "Unification successful with branching: "
-                            <> show nodes
+            case mode of
+                Never      -> showUnificationFailure axiomOrClaim node
+                IfPossible -> tryForceAxiomOrClaim axiomOrClaim node
   where
-    leftToList :: Either a b -> [a]
-    leftToList = either pure (const [])
-
-    rightToList :: Either a b -> [b]
-    rightToList = either (const []) pure
-
-    stuckToUnstuck :: [ReplNode] -> ExecutionGraph -> ReplM claim ()
-    stuckToUnstuck nodes Strategy.ExecutionGraph{ graph } =
-        updateInnerGraph
-        $ Graph.gmap (stuckToRewrite
-        $ fmap unReplNode nodes) graph
-
-    stuckToRewrite xs ct@(to, n, lab, from)
-        | n `elem` xs =
-            case lab of
-                Stuck patt -> (to, n, RewritePattern patt, from)
-                _ -> ct
-        | otherwise = ct
-
     showUnificationFailure
-        :: Either (Axiom) claim
+        :: Either Axiom claim
         -> ReplNode
         -> ReplM claim ()
     showUnificationFailure axiomOrClaim' node = do
@@ -777,6 +774,26 @@ tryAxiomClaim eac = do
                         , stuckTransformer   = runUnifier' first . term
                         }
                     second
+
+    tryForceAxiomOrClaim
+        :: Either Axiom claim
+        -> ReplNode
+        -> ReplM claim ()
+    tryForceAxiomOrClaim axiomOrClaim node = do
+        (graph, result) <-
+            runStepper'
+                (either mempty pure   axiomOrClaim)
+                (either pure   mempty axiomOrClaim)
+                node
+        case result of
+            NoResult ->
+                showUnificationFailure axiomOrClaim node
+            SingleResult nextNode -> do
+                updateExecutionGraph graph
+                lensNode .= nextNode
+            BranchResult _ ->
+                updateExecutionGraph graph
+
     runUnifier' first second =
         runUnifier first second >>= putStrLn' . formatUnificationMessage
 
@@ -1009,10 +1026,10 @@ unparseStrategy omitList =
     hide =
         Recursive.unfold $ \termLike ->
             case Recursive.project termLike of
-                ann :< TermLike.ApplicationF app
+                ann :< TermLike.ApplySymbolF app
                   | shouldBeExcluded (applicationSymbolOrAlias app) ->
                     -- Do not display children
-                    ann :< TermLike.ApplicationF (withoutChildren app)
+                    ann :< TermLike.ApplySymbolF (withoutChildren app)
                 projected -> projected
 
     withoutChildren app = app { applicationChildren = [] }
@@ -1021,7 +1038,7 @@ unparseStrategy omitList =
        (`elem` omitList)
            . Text.unpack
            . Id.getId
-           . symbolOrAliasConstructor
+           . TermLike.symbolConstructor
 
 putStrLn' :: MonadWriter String m => String -> m ()
 putStrLn' str = tell $ str <> "\n"
@@ -1121,12 +1138,27 @@ parseEvalScript state file = do
         -> [ReplCommand]
         -> Simplifier (Maybe (ReplState claim))
     executeScript st cmds = do
-        newSt <- execStateT (traverse_ (replInterpreter $ \_ -> return () ) cmds) st
+        newSt <- execStateT executeCommands st
         return . return $ newSt
+      where
+        executeCommands =
+            Foldable.for_ cmds $ replInterpreter $ \_ -> return ()
 
-formatUnificationMessage :: Maybe (Pretty.Doc ()) -> String
+formatUnificationMessage
+    :: Either (Pretty.Doc ()) (NonEmpty (Predicate Variable))
+    -> String
 formatUnificationMessage =
-    maybe "No unification error found." show
+    show . either prettyFailure prettyUnifiers
+  where
+    prettyFailure =
+        (<>) "Failed: "
+    prettyUnifiers =
+        Pretty.vsep
+        . (:) "Succeeded with unifiers:"
+        . List.intersperse (Pretty.indent 2 "and")
+        . map (Pretty.indent 4 . unparseUnifier)
+        . Foldable.toList
+    unparseUnifier = unparse . (<$) (TermLike.mkTop_ :: TermLike Variable)
 
 findLeafNodes :: InnerGraph -> [Graph.Node]
 findLeafNodes graph =

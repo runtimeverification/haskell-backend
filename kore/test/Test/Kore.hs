@@ -1,5 +1,6 @@
 module Test.Kore
     ( testId
+    , Gen
     , standaloneGen
     , idGen
     , stringLiteralGen
@@ -16,12 +17,13 @@ module Test.Kore
     , sortActual
     , sortVariable
     , sortVariableSort
-    , termLikeGen
-    , internalPatternGen
-    , orPatternGen
     , predicateGen
     , predicateChildGen
     , variableGen
+    , genBuiltin
+    , couple
+    , symbolOrAliasGen
+    , addVariable
       -- * Re-exports
     , ParsedPattern
     , asParsedPattern
@@ -42,13 +44,8 @@ import           Data.Text
 import qualified Data.Text as Text
 
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
-import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Internal.Pattern as Internal
-                 ( Pattern )
-import qualified Kore.Internal.Pattern as Internal.Pattern
-import           Kore.Internal.TermLike as TermLike
+import           Kore.Internal.TermLike as TermLike hiding
+                 ( Alias, Symbol )
 import qualified Kore.Logger.Output as Logger
                  ( emptyLogger )
 import           Kore.Parser
@@ -57,6 +54,7 @@ import           Kore.Parser.Lexeme
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import           Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
                  ( PatternF (..) )
 
@@ -360,101 +358,6 @@ patternGen childGen patternSort =
         , (5, Syntax.VariableF <$> variableGen patternSort)
         ]
 
-termLikeGen :: Hedgehog.Gen (TermLike Variable)
-termLikeGen = standaloneGen (termLikeChildGen =<< sortGen)
-
-termLikeChildGen :: Sort -> Gen (TermLike Variable)
-termLikeChildGen patternSort =
-    Gen.sized termLikeChildGenWorker
-  where
-    termLikeChildGenWorker n
-      | n <= 1 =
-        case () of
-            ()
-              | patternSort == stringMetaSort ->
-                mkStringLiteral . getStringLiteral <$> stringLiteralGen
-              | patternSort == charMetaSort ->
-                mkCharLiteral . getCharLiteral <$> charLiteralGen
-              | otherwise ->
-                Gen.choice
-                    [ mkVar <$> variableGen patternSort
-                    , mkBuiltin <$> genBuiltin patternSort
-                    ]
-      | otherwise =
-        (Gen.small . Gen.frequency)
-            [ (1, termLikeAndGen)
-            , (1, termLikeAppGen)
-            , (1, termLikeBottomGen)
-            , (1, termLikeCeilGen)
-            , (1, termLikeEqualsGen)
-            , (1, termLikeExistsGen)
-            , (1, termLikeFloorGen)
-            , (1, termLikeForallGen)
-            , (1, termLikeIffGen)
-            , (1, termLikeImpliesGen)
-            , (1, termLikeInGen)
-            , (1, termLikeNotGen)
-            , (1, termLikeOrGen)
-            , (1, termLikeTopGen)
-            , (5, termLikeVariableGen)
-            ]
-    termLikeAndGen =
-        mkAnd
-            <$> termLikeChildGen patternSort
-            <*> termLikeChildGen patternSort
-    termLikeAppGen =
-        mkApp patternSort
-            <$> symbolOrAliasGen
-            <*> couple (termLikeChildGen =<< sortGen)
-    termLikeBottomGen = pure (mkBottom patternSort)
-    termLikeCeilGen = do
-        child <- termLikeChildGen =<< sortGen
-        pure (mkCeil patternSort child)
-    termLikeEqualsGen = do
-        operandSort <- sortGen
-        mkEquals patternSort
-            <$> termLikeChildGen operandSort
-            <*> termLikeChildGen operandSort
-    termLikeExistsGen = do
-        varSort <- sortGen
-        var <- variableGen varSort
-        child <-
-            Reader.local
-                (addVariable var)
-                (termLikeChildGen patternSort)
-        pure (mkExists var child)
-    termLikeForallGen = do
-        varSort <- sortGen
-        var <- variableGen varSort
-        child <-
-            Reader.local
-                (addVariable var)
-                (termLikeChildGen patternSort)
-        pure (mkForall var child)
-    termLikeFloorGen = do
-        child <- termLikeChildGen =<< sortGen
-        pure (mkFloor patternSort child)
-    termLikeIffGen =
-        mkIff
-            <$> termLikeChildGen patternSort
-            <*> termLikeChildGen patternSort
-    termLikeImpliesGen =
-        mkImplies
-            <$> termLikeChildGen patternSort
-            <*> termLikeChildGen patternSort
-    termLikeInGen =
-        mkIn patternSort
-            <$> termLikeChildGen patternSort
-            <*> termLikeChildGen patternSort
-    termLikeNotGen =
-        mkNot <$> termLikeChildGen patternSort
-    termLikeOrGen =
-        mkOr
-            <$> termLikeChildGen patternSort
-            <*> termLikeChildGen patternSort
-    termLikeTopGen = pure (mkTop patternSort)
-    termLikeVariableGen = mkVar <$> variableGen patternSort
-
 korePatternGen :: Hedgehog.Gen ParsedPattern
 korePatternGen =
     standaloneGen (korePatternChildGen =<< sortGen)
@@ -729,11 +632,3 @@ sortActual name sorts =
         { sortActualName = testId name
         , sortActualSorts = sorts
         }
-
-internalPatternGen :: Gen (Internal.Pattern Variable)
-internalPatternGen =
-    Internal.Pattern.fromTermLike <$> (termLikeChildGen =<< sortGen)
-
-orPatternGen :: Gen (OrPattern Variable)
-orPatternGen =
-    OrPattern.fromPatterns <$> Gen.list (Range.linear 0 64) internalPatternGen

@@ -20,10 +20,8 @@ import GHC.Generics
        ( Generic )
 
 import Kore.Internal.TermLike
-       ( Builtin )
+       ( Builtin, Symbol )
 import Kore.Sort
-import Kore.Syntax.Application
-       ( SymbolOrAlias )
 import Kore.Syntax.CharLiteral
 import Kore.Syntax.DomainValue
 import Kore.Syntax.StringLiteral
@@ -45,7 +43,7 @@ data FunctionalProof variable
     | FunctionalDomainValue (DomainValue Sort ())
     -- ^ Domain value pattern without children are functional: they represent
     -- one value in the model.
-    | FunctionalHead SymbolOrAlias
+    | FunctionalHead Symbol
     -- ^Head of a total function, conforming to Definition 5.21
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     | FunctionalStringLiteral StringLiteral
@@ -70,7 +68,7 @@ instance Hashable variable => Hashable (FunctionalProof variable)
 data FunctionProof variable
     = FunctionProofFunctional (FunctionalProof variable)
     -- ^ A functional component is also function-like.
-    | FunctionHead SymbolOrAlias
+    | FunctionHead Symbol
     -- ^Head of a partial function.
 
 deriving instance Eq variable => Eq (FunctionProof variable)
@@ -86,7 +84,7 @@ deriving instance Show variable => Show (FunctionProof variable)
 data TotalProof variable
     = TotalProofFunctional (FunctionalProof variable)
     -- ^A functional component is also total.
-    | TotalHead SymbolOrAlias
+    | TotalHead Symbol
     -- ^Head of a total symbol.
 
 deriving instance Eq variable => Eq (TotalProof variable)

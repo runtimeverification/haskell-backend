@@ -38,11 +38,7 @@ import           Kore.Syntax.Application
 -- |'MetadataTools' defines a dictionary of functions which can be used to
 -- access the metadata needed during the unification process.
 data MetadataTools smt attributes = MetadataTools
-    { symAttributes :: SymbolOrAlias -> attributes
-    -- ^ get the attributes of a symbol or alias
-    , symbolOrAliasType :: SymbolOrAlias -> HeadType
-    -- ^ whether a symbol or alias is a symbol
-    , sortAttributes :: Sort -> Attribute.Sort
+    { sortAttributes :: Sort -> Attribute.Sort
     -- ^ get the attributes of a sort
     , isSubsortOf :: Sort -> Sort -> Bool
     {- ^ @isSubsortOf a b@ is true if sort @a@ is a subsort of sort @b@,
@@ -73,9 +69,7 @@ extractMetadataTools
     -> MetadataTools smt declAtts
 extractMetadataTools m smtExtractor =
     MetadataTools
-        { symAttributes = getHeadAttributes m
-        , symbolOrAliasType = getHeadType m
-        , sortAttributes = getSortAttributes m
+        { sortAttributes = getSortAttributes m
         , isSubsortOf = checkSubsort
         , subsorts = Set.fromList . fmap getSortFromId . getSubsorts
         , applicationSorts = getHeadApplicationSorts m

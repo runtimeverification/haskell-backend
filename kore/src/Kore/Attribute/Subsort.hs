@@ -70,3 +70,8 @@ instance ParseAttributes Subsorts where
             return (Subsorts $ relation : subsorts)
       where
         withApplication' = Parser.withApplication subsortId
+
+    toAttributes =
+        Attributes . map toAttribute . getSubsorts
+      where
+        toAttribute = subsortAttribute <$> subsort <*> supersort

@@ -12,7 +12,7 @@ import           Kore.Internal.TermLike
 import qualified Kore.Syntax.Pattern as Syntax
 import qualified Kore.Variables.Free as Variables.Free
 
-import Test.Kore
+import Test.Kore.Internal.TermLike
 
 -- | Check that 'Variables.Free.synthetic' produces the same free variable
 -- annotations as the smart constructors in "Kore.Internal.TermLike".

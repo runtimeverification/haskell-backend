@@ -20,12 +20,12 @@ import           GHC.Integer.Logarithms
 
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Int as Int
-import           Kore.IndexedModule.MetadataTools
 import           Kore.Internal.Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
 
 import           Test.Kore
+                 ( standaloneGen, variableGen )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
 import           Test.Kore.Builtin.Definition
@@ -42,7 +42,7 @@ genConcreteIntegerPattern = asInternal <$> genInteger
 
 -- | Test a unary operator hooked to the given symbol
 testUnary
-    :: SymbolOrAlias
+    :: Symbol
     -- ^ hooked symbol
     -> (Integer -> Integer)
     -- ^ operator
@@ -51,19 +51,14 @@ testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         let expect = asPattern $ impl a
-        actual <- evaluateT $ mkApp intSort symb (asInternal <$> [a])
+        actual <- evaluateT $ mkApplySymbol intSort symb (asInternal <$> [a])
         (===) expect actual
   where
-    Attribute.Symbol
-        { Attribute.hook =
-            Attribute.Hook { Attribute.getHook = Just name }
-        }
-      =
-        symAttributes testMetadataTools symb
+    Just name = Attribute.getHook . Attribute.hook $ symbolAttributes symb
 
 -- | Test a binary operator hooked to the given symbol.
 testBinary
-    :: SymbolOrAlias
+    :: Symbol
     -- ^ hooked symbol
     -> (Integer -> Integer -> Integer)
     -- ^ operator
@@ -73,19 +68,14 @@ testBinary symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = asPattern $ impl a b
-        actual <- evaluateT $ mkApp intSort symb (asInternal <$> [a, b])
+        actual <- evaluateT $ mkApplySymbol intSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
-    Attribute.Symbol
-        { Attribute.hook =
-            Attribute.Hook { Attribute.getHook = Just name }
-        }
-      =
-        symAttributes testMetadataTools symb
+    Just name = Attribute.getHook . Attribute.hook $ symbolAttributes symb
 
 -- | Test a comparison operator hooked to the given symbol
 testComparison
-    :: SymbolOrAlias
+    :: Symbol
     -- ^ symbol
     -> (Integer -> Integer -> Bool)
     -- ^ implementation
@@ -95,19 +85,14 @@ testComparison symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = Test.Bool.asPattern $ impl a b
-        actual <- evaluateT $ mkApp boolSort symb (asInternal <$> [a, b])
+        actual <- evaluateT $ mkApplySymbol boolSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
-    Attribute.Symbol
-        { Attribute.hook =
-            Attribute.Hook { Attribute.getHook = Just name }
-        }
-      =
-        symAttributes testMetadataTools symb
+    Just name = Attribute.getHook . Attribute.hook $ symbolAttributes symb
 
 -- | Test a partial unary operator hooked to the given symbol.
 testPartialUnary
-    :: SymbolOrAlias
+    :: Symbol
     -- ^ hooked symbol
     -> (Integer -> Maybe Integer)
     -- ^ operator
@@ -116,19 +101,14 @@ testPartialUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         let expect = asPartialPattern $ impl a
-        actual <- evaluateT $ mkApp intSort symb (asInternal <$> [a])
+        actual <- evaluateT $ mkApplySymbol intSort symb (asInternal <$> [a])
         (===) expect actual
   where
-    Attribute.Symbol
-        { Attribute.hook =
-            Attribute.Hook { Attribute.getHook = Just name }
-        }
-      =
-        symAttributes testMetadataTools symb
+    Just name = Attribute.getHook . Attribute.hook $ symbolAttributes symb
 
 -- | Test a partial binary operator hooked to the given symbol.
 testPartialBinary
-    :: SymbolOrAlias
+    :: Symbol
     -- ^ hooked symbol
     -> (Integer -> Integer -> Maybe Integer)
     -- ^ operator
@@ -138,20 +118,15 @@ testPartialBinary symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = asPartialPattern $ impl a b
-        actual <- evaluateT $ mkApp intSort symb (asInternal <$> [a, b])
+        actual <- evaluateT $ mkApplySymbol intSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
-    Attribute.Symbol
-        { Attribute.hook =
-            Attribute.Hook { Attribute.getHook = Just name }
-        }
-      =
-        symAttributes testMetadataTools symb
+    Just name = Attribute.getHook . Attribute.hook $ symbolAttributes symb
 
 -- | Test a partial binary operator hooked to the given symbol, passing zero as
 -- the second argument.
 testPartialBinaryZero
-    :: SymbolOrAlias
+    :: Symbol
     -- ^ hooked symbol
     -> (Integer -> Integer -> Maybe Integer)
     -- ^ operator
@@ -160,19 +135,14 @@ testPartialBinaryZero symb impl =
     testPropertyWithSolver (Text.unpack name ++ " zero") $ do
         a <- forAll genInteger
         let expect = asPartialPattern $ impl a 0
-        actual <- evaluateT $ mkApp intSort symb (asInternal <$> [a, 0])
+        actual <- evaluateT $ mkApplySymbol intSort symb (asInternal <$> [a, 0])
         (===) expect actual
   where
-    Attribute.Symbol
-        { Attribute.hook =
-            Attribute.Hook { Attribute.getHook = Just name }
-        }
-      =
-        symAttributes testMetadataTools symb
+    Just name = Attribute.getHook . Attribute.hook $ symbolAttributes symb
 
 -- | Test a partial ternary operator hooked to the given symbol.
 testPartialTernary
-    :: SymbolOrAlias
+    :: Symbol
     -- ^ hooked symbol
     -> (Integer -> Integer -> Integer -> Maybe Integer)
     -- ^ operator
@@ -183,15 +153,10 @@ testPartialTernary symb impl =
         b <- forAll genInteger
         c <- forAll genInteger
         let expect = asPartialPattern $ impl a b c
-        actual <- evaluateT $ mkApp intSort symb (asInternal <$> [a, b, c])
+        actual <- evaluateT $ mkApplySymbol intSort symb (asInternal <$> [a, b, c])
         (===) expect actual
   where
-    Attribute.Symbol
-        { Attribute.hook =
-            Attribute.Hook { Attribute.getHook = Just name }
-        }
-      =
-        symAttributes testMetadataTools symb
+    Just name = Attribute.getHook . Attribute.hook $ symbolAttributes symb
 
 -- Comparison operators
 test_gt :: TestTree
@@ -353,7 +318,7 @@ asPartialPattern = Int.asPartialPattern intSort
 
 testInt
     :: String
-    -> SymbolOrAlias
+    -> Symbol
     -> [TermLike Variable]
     -> Pattern Variable
     -> TestTree
@@ -407,7 +372,7 @@ test_unifyAnd_Fn =
     testPropertyWithSolver "unifyAnd BuiltinInteger: Equal" $ do
         var <- forAll (standaloneGen $ variableGen intSort)
         let dv = asInternal 2
-            fnPat = mkApp intSort absIntSymbol  [mkVar var]
+            fnPat = mkApplySymbol intSort absIntSymbol  [mkVar var]
             expect =
                 Conditional
                     { term = dv

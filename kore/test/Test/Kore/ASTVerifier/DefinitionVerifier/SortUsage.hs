@@ -17,6 +17,10 @@ import           Kore.Error
 import           Kore.IndexedModule.Error
                  ( noSort )
 import           Kore.Internal.TermLike
+import           Kore.Syntax.Definition
+                 ( AsSentence (..), Attributes (..), ModuleName (..),
+                 ParsedSentence, ParsedSentenceAlias, ParsedSentenceSymbol,
+                 SentenceSort (..) )
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier

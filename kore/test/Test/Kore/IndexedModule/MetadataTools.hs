@@ -6,155 +6,29 @@ import Test.Tasty.HUnit
        ( assertBool, assertEqual, testCase )
 
 import qualified Data.Map as Map
-import           Data.Maybe
-                 ( fromMaybe )
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
 import           Kore.ASTVerifier.DefinitionVerifier
-import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Constructor
-import           Kore.Attribute.Functional
 import qualified Kore.Attribute.Null as Attribute
 import           Kore.Attribute.Subsort
                  ( subsortAttribute )
-import           Kore.Attribute.Symbol
+import           Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
-import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SmtMetadataTools, extractMetadataTools )
-import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
-                 ( build )
+                 ( MetadataTools (..), extractMetadataTools )
 import           Kore.Internal.TermLike
+import           Kore.Syntax.Definition
 
 import Test.Kore
-import Test.Kore.ASTVerifier.DefinitionVerifier
-
-objectS1 :: Sort
-objectS1 = simpleSort (SortName "s1")
-
-objectA :: SentenceSymbol ParsedPattern
-objectA =
-    fmap Builtin.externalizePattern
-    $ (mkSymbol_ (testId "b") [] objectS1)
-        { sentenceSymbolAttributes = Attributes [ constructorAttribute ] }
-
-metaA :: SentenceSymbol ParsedPattern
-metaA =
-    fmap Builtin.externalizePattern
-    $ mkSymbol_ (testId "#a") [] stringMetaSort
 
 testObjectModuleName :: ModuleName
 testObjectModuleName = ModuleName "TEST-OBJECT-MODULE"
 
-testMetaModuleName :: ModuleName
-testMetaModuleName = ModuleName "TEST-META-MODULE"
-
-testMainModuleName :: ModuleName
-testMainModuleName = ModuleName "TEST-MAIN-MODULE"
-
-testObjectModule :: Module ParsedSentence
-testObjectModule =
-    Module
-        { moduleName = testObjectModuleName
-        , moduleSentences =
-            [ SentenceSortSentence SentenceSort
-                { sentenceSortName = testId "s1"
-                , sentenceSortParameters = []
-                , sentenceSortAttributes = Attributes []
-                }
-            , asSentence objectA
-            ]
-        , moduleAttributes = Attributes []
-        }
-
-testMetaModule :: Module ParsedSentence
-testMetaModule =
-    Module
-        { moduleName = testMetaModuleName
-        , moduleSentences = [ asSentence metaA ]
-        , moduleAttributes = Attributes []
-        }
-
-mainModule :: Module ParsedSentence
-mainModule =
-    Module
-        { moduleName = testMainModuleName
-        , moduleSentences =
-            [ importSentence testObjectModuleName
-            , importSentence testMetaModuleName
-            ]
-        , moduleAttributes = Attributes []
-        }
-
-
-testDefinition :: ParsedDefinition
-testDefinition =
-    Definition
-        { definitionAttributes = Attributes []
-        , definitionModules =
-            [ testObjectModule
-            , testMetaModule
-            , mainModule
-            ]
-        }
-
-testVerifiedModule :: VerifiedModule StepperAttributes Attribute.Axiom
-testVerifiedModule =
-    case
-        verifyAndIndexDefinition
-            DoNotVerifyAttributes
-            Builtin.koreVerifiers
-            testDefinition
-      of
-        Right modulesMap ->
-            fromMaybe
-                (error "This should not have happened")
-                (Map.lookup testMainModuleName modulesMap)
-        Left err -> error (printError err)
-
-metadataTools :: SmtMetadataTools StepperAttributes
-metadataTools = MetadataTools.build testVerifiedModule
-
 test_metadataTools :: [TestTree]
 test_metadataTools =
-    [ testCase "constructor object"
-        (assertEqual ""
-            (Constructor True)
-            (constructor
-                $ symAttributes metadataTools
-                $ symbolHead objectA
-            )
-        )
-    , testCase "constructor meta"
-        (assertEqual ""
-            (Constructor False)
-            (constructor
-                $ symAttributes metadataTools
-                $ symbolHead metaA
-            )
-        )
-    , testCase "functional object"
-        (assertEqual ""
-            (Functional False)
-            (functional
-                $ symAttributes metadataTools
-                $ symbolHead objectA
-            )
-        )
-    , testCase "functional meta"
-        (assertEqual ""
-            (Functional False)
-            (functional
-                $ symAttributes metadataTools
-                $ symbolHead metaA
-            )
-        )
-    , testGroup "subsort" testSubsorts
-    ]
-  where
-    symbolHead symbol = getSentenceSymbolOrAliasHead symbol []
+    [ testGroup "subsort" testSubsorts ]
 
 sortA, sortB, sortC, sortD,sortE, sortF, sortG :: Sort
 [sortA, sortB, sortC, sortD, sortE, sortF, sortG] =
@@ -186,13 +60,13 @@ testSubsorts =
     test name cond = testCase name (assertBool "" cond)
     testSubsort name list = testCase name . assertEqual "" (Set.fromList list)
     moduleIndex ::
-        Map.Map ModuleName (VerifiedModule Attribute.Null Attribute.Null)
+        Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Null)
     Right moduleIndex =
         verifyAndIndexDefinition
             DoNotVerifyAttributes
             Builtin.koreVerifiers
             testSubsortDefinition
-    meta :: MetadataTools () Attribute.Null
+    meta :: MetadataTools () Attribute.Symbol
     meta =
         extractMetadataTools
             (moduleIndex Map.! testObjectModuleName)

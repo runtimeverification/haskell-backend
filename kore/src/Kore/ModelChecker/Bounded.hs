@@ -11,10 +11,12 @@ module Kore.ModelChecker.Bounded
 
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
+import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Limit
                  ( Limit )
 import qualified Data.Limit as Limit
-import           Debug.Trace
+-- TODO (thomas.tuegel): Remove Debug.Trace
+import Debug.Trace
 
 import           Kore.Internal.Pattern
                  ( Conditional (Conditional) )
@@ -37,10 +39,8 @@ import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import           Kore.Step.Strategy
-                 ( GraphSearchOrder, Strategy, pickFinal,
+                 ( ExecutionGraph (..), GraphSearchOrder, Strategy, pickFinal,
                  runStrategyWithSearchOrder )
-import           Kore.Syntax.Application
-                 ( SymbolOrAlias (..) )
 import           Kore.Syntax.Id
                  ( Id (..) )
 import           Kore.Syntax.Variable
@@ -108,10 +108,8 @@ checkClaim
     (ImplicationRule RulePattern { left, right }, stepLimit)
   = do
         let
-            App_ SymbolOrAlias
-                { symbolOrAliasConstructor = symbol } [prop]
-              = right
-            goalPattern = ModalPattern { modalOp = getId symbol, term = prop }
+            ApplyAlias_ Alias { aliasConstructor = alias } [prop] = right
+            goalPattern = ModalPattern { modalOp = getId alias, term = prop }
             strategy =
                 Limit.takeWithin
                     stepLimit
@@ -131,6 +129,7 @@ checkClaim
                                 searchOrder
                                 startState)
                             Nothing
+        traceM ("searched states: " ++ (show . Graph.order . graph $ executionGraph))
         let
             finalResult = (checkFinalNodes . pickFinal) executionGraph
         trace (show finalResult) (return finalResult)

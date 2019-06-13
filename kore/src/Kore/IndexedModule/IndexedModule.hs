@@ -7,6 +7,9 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
+
+{-# LANGUAGE TemplateHaskell #-}
+
 module Kore.IndexedModule.IndexedModule
     ( ImplicitIndexedModule (ImplicitIndexedModule)
     , IndexedModule
@@ -19,11 +22,22 @@ module Kore.IndexedModule.IndexedModule
         , indexedModuleAttributes, indexedModuleImports
         , indexedModuleHooks
         )
+    , lensIndexedModuleName
+    , lensIndexedModuleAliasSentences
+    , lensIndexedModuleSymbolSentences
+    , lensIndexedModuleSortDescriptions
+    , lensIndexedModuleAxioms
+    , lensIndexedModuleClaims
+    , lensIndexedModuleAttributes
+    , lensIndexedModuleImports
+    , lensIndexedModuleHooks
+    , lensIndexedModuleHookedIdentifiers
     , IndexModuleError
     , KoreImplicitIndexedModule
     , KoreIndexedModule
     , VerifiedModule
     , eraseAttributes
+    , eraseAxiomAttributes
     , erasePatterns
     , mapPatterns
     , indexedModuleRawSentences
@@ -48,7 +62,8 @@ module Kore.IndexedModule.IndexedModule
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import qualified Control.Lens as Lens
+import qualified Control.Lens as Lens hiding
+                 ( makeLenses )
 import           Control.Monad
                  ( foldM )
 import           Control.Monad.State.Strict
@@ -69,6 +84,7 @@ import           Data.Text
 import           GHC.Generics
                  ( Generic )
 
+import qualified Control.Lens.TH.Rules as Lens
 import           Kore.AST.Error
 import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Null as Attribute
@@ -78,7 +94,7 @@ import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Sort as Attribute
                  ( Sort )
 import           Kore.Attribute.Subsort
-import qualified Kore.Attribute.Symbol.Symbol as Attribute
+import qualified Kore.Attribute.Symbol as Attribute
                  ( Symbol )
 import           Kore.Error
 import           Kore.Parser
@@ -139,6 +155,8 @@ data IndexedModule pat declAtts axiomAtts =
     }
     deriving (Generic, Show)
 
+Lens.makeLenses ''IndexedModule
+
 recursiveIndexedModuleSortDescriptions
     :: forall pat declAtts axiomAtts
     .  IndexedModule pat declAtts axiomAtts
@@ -180,6 +198,29 @@ recursiveIndexedModuleStuff stuffExtractor m =
         -> stuff
     subModuleStuff (_, _, subMod) =
         recursiveIndexedModuleStuff stuffExtractor subMod
+
+-- | Strip module of its parsed attributes, replacing them with 'Attribute.Null'
+eraseAxiomAttributes
+    :: IndexedModule patternType1 declAttributes axiomAttributes
+    -> IndexedModule patternType1 declAttributes Attribute.Null
+eraseAxiomAttributes
+    indexedModule@IndexedModule
+        { indexedModuleAxioms
+        , indexedModuleClaims
+        , indexedModuleImports
+        }
+  =
+    indexedModule
+        { indexedModuleAxioms =
+            indexedModuleAxioms
+            & Lens.set (Lens.mapped . Lens._1) Attribute.Null
+        , indexedModuleClaims =
+            indexedModuleClaims
+            & Lens.set (Lens.mapped . Lens._1) Attribute.Null
+        , indexedModuleImports =
+            indexedModuleImports
+            & Lens.over (Lens.mapped . Lens._3) eraseAxiomAttributes
+        }
 
 -- | Strip module of its parsed attributes, replacing them with 'Attribute.Null'
 eraseAttributes

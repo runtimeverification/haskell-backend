@@ -15,15 +15,20 @@ import Test.Tasty.Golden
 
 import           Control.Exception
                  ( bracket )
+import           Data.Bifunctor
 import           Data.ByteString.Lazy
                  ( ByteString )
 import qualified Data.ByteString.Lazy.Char8 as ByteString.Lazy.Char8
+import           Data.Function
+import           Data.Proxy
 import           System.Directory
                  ( getCurrentDirectory, setCurrentDirectory )
 import           System.FilePath
                  ( addExtension, splitFileName, (</>) )
 
 import           Kore.ASTVerifier.DefinitionVerifier
+import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.Parser
@@ -75,14 +80,11 @@ toByteString (Right _) = ByteString.Lazy.Char8.empty
 
 verify :: ParsedDefinition -> Either String ParsedDefinition
 verify definition =
-    case
-        verifyDefinition
-            defaultNullAttributesVerification
-            Builtin.koreVerifiers
-            definition
-      of
-        Left e  -> Left (printError e)
-        Right _ -> Right definition
+    verifyDefinition attrVerify Builtin.koreVerifiers definition
+    & bimap printError (const definition)
+  where
+    attrVerify :: AttributesVerification Attribute.Symbol Attribute.Null
+    attrVerify = defaultAttributesVerification Proxy Proxy
 
 runParser :: String -> VerifyRequest -> IO ByteString
 runParser inputFileName verifyRequest = do

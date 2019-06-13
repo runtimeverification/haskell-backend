@@ -48,8 +48,6 @@ module Kore.Repl.Data
 import           Control.Applicative
                  ( Alternative )
 import           Control.Concurrent.MVar
-import           Control.Error
-                 ( hush )
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import qualified Control.Lens.TH.Rules as Lens
@@ -73,11 +71,13 @@ import           Data.Coerce
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Graph.Inductive.PatriciaTree
                  ( Gr )
+import           Data.List.NonEmpty
+                 ( NonEmpty (..) )
 import qualified Data.Map as Map
 import           Data.Map.Strict
                  ( Map )
 import           Data.Maybe
-                 ( listToMaybe )
+                 ( fromMaybe, listToMaybe )
 import           Data.Monoid
                  ( First (..) )
 import           Data.Sequence
@@ -96,8 +96,10 @@ import           Numeric.Natural
 import           System.IO
                  ( Handle, IOMode (AppendMode), hClose, openFile )
 
-import           Kore.Internal.Pattern
+import           Kore.Internal.Conditional
                  ( Conditional (..) )
+import           Kore.Internal.Predicate
+                 ( Predicate )
 import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Logger.Output as Logger
@@ -111,8 +113,9 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Variable
                  ( Variable )
+import           Kore.Unification.Error
 import           Kore.Unification.Unify
-                 ( MonadUnify, UnifierTT (UnifierTT) )
+                 ( MonadUnify, UnifierT (..) )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( unparse )
@@ -209,6 +212,8 @@ data ReplCommand
     -- ^ Prints the output of the inner command to the file.
     | Try !(Either AxiomIndex ClaimIndex)
     -- ^ Attempt to apply axiom or claim to current node.
+    | TryF !(Either AxiomIndex ClaimIndex)
+    -- ^ Force application of an axiom or claim to current node.
     | Clear !(Maybe ReplNode)
     -- ^ Remove child nodes from graph.
     | Pipe ReplCommand !String ![String]
@@ -248,6 +253,7 @@ commandSet = Set.fromList
     , "children"
     , "label"
     , "try"
+    , "tryf"
     , "clear"
     , "save-session"
     , "alias"
@@ -295,7 +301,10 @@ helpText =
                                            \ (defaults to current node)\n\
     \label <-l>                            remove a label\n\
     \try <a|c><num>                        attempts <a>xiom or <c>laim at\
-                                           \ index <num>.\n\
+                                           \ index <num>\n\
+    \tryf <a|c><num>                       attempts <a>xiom or <c>laim at\
+                                           \ index <num> and if successful, it\
+                                           \ will apply it.\n\
     \clear [n]                             removes all node children from the\
                                            \ proof graph\n\
     \                                      (defaults to current node)\n\
@@ -345,6 +354,7 @@ shouldStore =
         ShowChildren _   -> False
         SaveSession _    -> False
         ProofStatus      -> False
+        Try _            -> False
         Exit             -> False
         _                -> True
 
@@ -388,7 +398,7 @@ data ReplState claim = ReplState
     , unifier
         :: TermLike Variable
         -> TermLike Variable
-        -> UnifierWithExplanation ()
+        -> UnifierWithExplanation (Predicate Variable)
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
     --   failures
@@ -401,14 +411,30 @@ data ReplState claim = ReplState
     , outputFile :: OutputFile
     }
 
+type Explanation = Doc ()
+
 -- | Unifier that stores the first 'explainBottom'.
 -- See 'runUnifierWithExplanation'.
 newtype UnifierWithExplanation a =
     UnifierWithExplanation
-        { getUnifierWithExplanation :: UnifierTT (AccumT (First (Doc ()))) a }
+        { getUnifierWithExplanation
+            :: UnifierT (AccumT (First Explanation) Simplifier) a
+        }
   deriving (Alternative, Applicative, Functor, Monad)
 
 deriving instance MonadSMT UnifierWithExplanation
+
+instance Logger.WithLog Logger.LogMessage UnifierWithExplanation where
+    askLogAction =
+        Logger.hoistLogAction UnifierWithExplanation
+        <$> UnifierWithExplanation Logger.askLogAction
+    {-# INLINE askLogAction #-}
+
+    localLogAction locally =
+        UnifierWithExplanation
+        . Logger.localLogAction locally
+        . getUnifierWithExplanation
+    {-# INLINE localLogAction #-}
 
 deriving instance MonadSimplify UnifierWithExplanation
 
@@ -418,18 +444,12 @@ instance MonadUnify UnifierWithExplanation where
     throwUnificationError =
         UnifierWithExplanation . Monad.Unify.throwUnificationError
 
-    liftSimplifier =
-        UnifierWithExplanation . Monad.Unify.liftSimplifier
-    liftBranchedSimplifier =
-        UnifierWithExplanation . Monad.Unify.liftBranchedSimplifier
-
     gather =
         UnifierWithExplanation . Monad.Unify.gather . getUnifierWithExplanation
     scatter = UnifierWithExplanation . Monad.Unify.scatter
 
     explainBottom info first second =
         UnifierWithExplanation
-        . UnifierTT
         . Monad.Trans.lift
         . Monad.Accum.add
         . First
@@ -444,20 +464,23 @@ instance MonadUnify UnifierWithExplanation where
 runUnifierWithExplanation
     :: forall a
     .  UnifierWithExplanation a
-    -> Simplifier (Maybe (Doc ()))
-runUnifierWithExplanation (UnifierWithExplanation unifier)
-  =
-    join <$> fmap (fmap getFirst) unificationExplanations
+    -> Simplifier (Either Explanation (NonEmpty a))
+runUnifierWithExplanation (UnifierWithExplanation unifier) =
+    either explainError failWithExplanation <$> unificationResults
   where
-    unificationResults :: Simplifier (Maybe ([a], First (Doc ())))
+    unificationResults
+        ::  Simplifier
+                (Either UnificationOrSubstitutionError ([a], First Explanation))
     unificationResults =
-        hush
-        <$> Monad.Unify.runUnifierT
-            (\accum -> runAccumT accum mempty)
-            unifier
-    unificationExplanations :: Simplifier (Maybe (First (Doc ())))
-    unificationExplanations =
-        fmap (fmap snd) unificationResults
+        fmap (\(r, ex) -> flip (,) ex <$> r)
+        . flip runAccumT mempty
+        . Monad.Unify.runUnifierT
+        $ unifier
+    explainError = Left . Pretty.pretty
+    failWithExplanation (results, explanation) =
+        case results of
+            [] -> Left $ fromMaybe "No explanation given" (getFirst explanation)
+            r : rs -> Right (r :| rs)
 
 Lens.makeLenses ''ReplState
 
@@ -714,7 +737,7 @@ runUnifier
     => Monad.Trans.MonadTrans m
     => TermLike Variable
     -> TermLike Variable
-    -> m Simplifier (Maybe (Pretty.Doc ()))
+    -> m Simplifier (Either (Doc ()) (NonEmpty (Predicate Variable)))
 runUnifier first second = do
     unifier <- Lens.use lensUnifier
     mvar <- Lens.use lensLogger

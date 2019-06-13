@@ -1,8 +1,11 @@
 module Test.Kore.Internal.TermLike where
 
-import Test.Tasty
-import Test.Tasty.HUnit
+import qualified Hedgehog
+import qualified Hedgehog.Gen as Gen
+import           Test.Tasty
+import           Test.Tasty.HUnit
 
+import           Control.Monad.Reader as Reader
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
@@ -10,10 +13,108 @@ import Data.Sup
 import Kore.Internal.TermLike
 import Kore.Variables.Fresh
 
+import           Test.Kore hiding
+                 ( symbolGen )
 import           Test.Kore.Comparators ()
+import           Test.Kore.Internal.Symbol
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 import           Test.Terse
+
+termLikeGen :: Hedgehog.Gen (TermLike Variable)
+termLikeGen = standaloneGen (termLikeChildGen =<< sortGen)
+
+termLikeChildGen :: Sort -> Gen (TermLike Variable)
+termLikeChildGen patternSort =
+    Gen.sized termLikeChildGenWorker
+  where
+    termLikeChildGenWorker n
+      | n <= 1 =
+        case () of
+            ()
+              | patternSort == stringMetaSort ->
+                mkStringLiteral . getStringLiteral <$> stringLiteralGen
+              | patternSort == charMetaSort ->
+                mkCharLiteral . getCharLiteral <$> charLiteralGen
+              | otherwise ->
+                Gen.choice
+                    [ mkVar <$> variableGen patternSort
+                    , mkBuiltin <$> genBuiltin patternSort
+                    ]
+      | otherwise =
+        (Gen.small . Gen.frequency)
+            [ (1, termLikeAndGen)
+            , (1, termLikeAppGen)
+            , (1, termLikeBottomGen)
+            , (1, termLikeCeilGen)
+            , (1, termLikeEqualsGen)
+            , (1, termLikeExistsGen)
+            , (1, termLikeFloorGen)
+            , (1, termLikeForallGen)
+            , (1, termLikeIffGen)
+            , (1, termLikeImpliesGen)
+            , (1, termLikeInGen)
+            , (1, termLikeNotGen)
+            , (1, termLikeOrGen)
+            , (1, termLikeTopGen)
+            , (5, termLikeVariableGen)
+            ]
+    termLikeAndGen =
+        mkAnd
+            <$> termLikeChildGen patternSort
+            <*> termLikeChildGen patternSort
+    termLikeAppGen =
+        mkApplySymbol patternSort
+            <$> symbolGen
+            <*> couple (termLikeChildGen =<< sortGen)
+    termLikeBottomGen = pure (mkBottom patternSort)
+    termLikeCeilGen = do
+        child <- termLikeChildGen =<< sortGen
+        pure (mkCeil patternSort child)
+    termLikeEqualsGen = do
+        operandSort <- sortGen
+        mkEquals patternSort
+            <$> termLikeChildGen operandSort
+            <*> termLikeChildGen operandSort
+    termLikeExistsGen = do
+        varSort <- sortGen
+        var <- variableGen varSort
+        child <-
+            Reader.local
+                (addVariable var)
+                (termLikeChildGen patternSort)
+        pure (mkExists var child)
+    termLikeForallGen = do
+        varSort <- sortGen
+        var <- variableGen varSort
+        child <-
+            Reader.local
+                (addVariable var)
+                (termLikeChildGen patternSort)
+        pure (mkForall var child)
+    termLikeFloorGen = do
+        child <- termLikeChildGen =<< sortGen
+        pure (mkFloor patternSort child)
+    termLikeIffGen =
+        mkIff
+            <$> termLikeChildGen patternSort
+            <*> termLikeChildGen patternSort
+    termLikeImpliesGen =
+        mkImplies
+            <$> termLikeChildGen patternSort
+            <*> termLikeChildGen patternSort
+    termLikeInGen =
+        mkIn patternSort
+            <$> termLikeChildGen patternSort
+            <*> termLikeChildGen patternSort
+    termLikeNotGen =
+        mkNot <$> termLikeChildGen patternSort
+    termLikeOrGen =
+        mkOr
+            <$> termLikeChildGen patternSort
+            <*> termLikeChildGen patternSort
+    termLikeTopGen = pure (mkTop patternSort)
+    termLikeVariableGen = mkVar <$> variableGen patternSort
 
 test_substitute :: [TestTree]
 test_substitute =

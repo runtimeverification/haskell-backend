@@ -309,10 +309,10 @@ simplificationEvaluator = firstFullEvaluation
 makeApplication
     :: (Ord variable, Show variable, HasCallStack)
     => Sort
-    -> SymbolOrAlias
+    -> Symbol
     -> [[Pattern variable]]
     -> CofreeF
-        (Application SymbolOrAlias)
+        (Application Symbol)
         (Attribute.Pattern variable)
         (OrPattern variable)
 makeApplication patternSort symbol patterns =
@@ -337,7 +337,7 @@ evaluate
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> CofreeF
-        (Application SymbolOrAlias)
+        (Application Symbol)
         (Attribute.Pattern Variable)
         (OrPattern Variable)
     -> IO (OrPattern Variable)

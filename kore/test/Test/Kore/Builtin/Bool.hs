@@ -10,7 +10,6 @@ import qualified Data.Text as Text
 import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Bool
-import           Kore.IndexedModule.MetadataTools
 import           Kore.Internal.Pattern
 import           Kore.Internal.TermLike
 import qualified SMT as SMT
@@ -62,7 +61,7 @@ asPattern = Bool.asPattern boolSort
 
 -- | Test a binary operator hooked to the given symbol.
 testBinary
-    :: SymbolOrAlias
+    :: Symbol
     -- ^ hooked symbol
     -> (Bool -> Bool -> Bool)
     -- ^ operator
@@ -72,15 +71,15 @@ testBinary symb impl =
         a <- forAll Gen.bool
         b <- forAll Gen.bool
         let expect = asPattern $ impl a b
-        actual <- evaluateT $ mkApp boolSort symb (asInternal <$> [a, b])
+        actual <- evaluateT $ mkApplySymbol boolSort symb (asInternal <$> [a, b])
         (===) expect actual
   where
     Attribute.Symbol { Attribute.hook = Hook { getHook = Just name } } =
-        symAttributes testMetadataTools symb
+        symbolAttributes symb
 
 -- | Test a unary operator hooked to the given symbol
 testUnary
-    :: SymbolOrAlias
+    :: Symbol
     -- ^ hooked symbol
     -> (Bool -> Bool)
     -- ^ operator
@@ -89,11 +88,11 @@ testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
         let expect = asPattern $ impl a
-        actual <- evaluateT $ mkApp boolSort symb (asInternal <$> [a])
+        actual <- evaluateT $ mkApplySymbol boolSort symb (asInternal <$> [a])
         (===) expect actual
   where
     Attribute.Symbol { Attribute.hook = Hook { getHook = Just name } } =
-        symAttributes testMetadataTools symb
+        symbolAttributes symb
 
 test_simplification :: TestTree
 test_simplification =

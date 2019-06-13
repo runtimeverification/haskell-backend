@@ -16,27 +16,11 @@ module Kore.Attribute.Smtlib
 import qualified Control.Error as Error
 import           Data.Maybe
                  ( fromMaybe )
-import           Data.Text
-                 ( Text )
 import qualified Data.Text as Text
 import           SMT.SimpleSMT
 
-import           Kore.Attribute.Parser
 import           Kore.Attribute.Smtlib.Smtlib
 import qualified Kore.Builtin.Error as Builtin.Error
-
--- | Kore symbol representing the @smtlib@ attribute.
-smtlibSymbol :: SymbolOrAlias
-smtlibSymbol =
-    SymbolOrAlias
-        { symbolOrAliasConstructor = smtlibId
-        , symbolOrAliasParams = []
-        }
-
--- | Kore pattern representing the @smtlib@ attribute.
-smtlibAttribute :: Text -> AttributePattern
-smtlibAttribute syntax =
-    attributePattern smtlibSymbol [attributeString syntax]
 
 shortenSExpr :: SExpr -> SExpr
 shortenSExpr (List [e]) = e

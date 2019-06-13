@@ -109,8 +109,7 @@ unificationWithAppMatchOnTop first second =
                 (App_ secondHead secondChildren)
                   | firstHead == secondHead
                     -> unifyJoin (zip firstChildren secondChildren)
-                  | symbolOrAliasConstructor firstHead
-                        == symbolOrAliasConstructor secondHead
+                  | symbolConstructor firstHead == symbolConstructor secondHead
                     -- The application heads have the same symbol or alias
                     -- constructor with different parameters,
                     -- but we do not handle unification of symbol parameters.
@@ -414,7 +413,7 @@ matchVariableFunction quantifiedVariables (Var_ var) second
     tools <- Simplifier.askMetadataTools
     Monad.guard (isFunctionPattern tools second)
     Monad.Trans.lift $ do
-        ceilOr <- Monad.Unify.liftSimplifier $ Ceil.makeEvaluateTerm second
+        ceilOr <- Ceil.makeEvaluateTerm second
         result <-
             OrPattern.mergeWithPredicateAssumesEvaluated
                 createPredicatesAndSubstitutionsMergerExcept

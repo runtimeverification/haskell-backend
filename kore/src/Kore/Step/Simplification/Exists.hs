@@ -42,7 +42,7 @@ import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
-                 ( runUnifier )
+                 ( runUnifierT )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -80,14 +80,14 @@ The simplification of exists x . (pat and pred and subst) is equivalent to:
     (pat' and (pred' and (exists x . predX and substX)) and subst')
 -}
 simplify
-    ::  ( Ord variable
-        , Show variable
+    ::  ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => Exists Sort variable (OrPattern variable)
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplify Exists { existsVariable = variable, existsChild = child } =
     simplifyEvaluated variable child
 
@@ -105,15 +105,15 @@ even more useful to carry around.
 
 -}
 simplifyEvaluated
-    ::  ( Ord variable
-        , Show variable
+    ::  ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => variable
     -> OrPattern variable
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplifyEvaluated variable simplified
   | OrPattern.isTrue simplified  = return simplified
   | OrPattern.isFalse simplified = return simplified
@@ -126,15 +126,15 @@ simplifyEvaluated variable simplified
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    ::  ( Ord variable
-        , Show variable
+    ::  ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => variable
     -> Pattern variable
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 makeEvaluate variable original
   = fmap OrPattern.fromPatterns $ BranchT.gather $ do
     normalized <- Substitution.normalize original
@@ -164,10 +164,11 @@ matchesToVariableSubstitution
         , Show variable
         , Unparse variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => variable
     -> Pattern variable
-    -> Simplifier Bool
+    -> simplifier Bool
 matchesToVariableSubstitution
     variable
     Conditional {term, predicate, substitution = boundSubstitution}
@@ -176,7 +177,7 @@ matchesToVariableSubstitution
   , Substitution.null boundSubstitution
     && not (hasFreeVariable variable term)
   = do
-    matchResult <- runUnifier $ matchAsUnification first second
+    matchResult <- runUnifierT $ matchAsUnification first second
     case matchResult of
         Left _ -> return False
         Right results ->
@@ -223,16 +224,16 @@ See also: 'quantifyPattern'
 
  -}
 makeEvaluateBoundLeft
-    ::  ( Ord variable
-        , Show variable
+    ::  ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => variable  -- ^ quantified variable
     -> TermLike variable  -- ^ substituted term
     -> Pattern variable
-    -> BranchT Simplifier (Pattern variable)
+    -> BranchT simplifier (Pattern variable)
 makeEvaluateBoundLeft
     variable
     boundTerm
@@ -267,11 +268,12 @@ makeEvaluateBoundRight
         , Show variable
         , Unparse variable
         , SortedVariable variable
+        , MonadSimplify simplifier
         )
     => variable  -- ^ variable to be quantified
     -> Substitution variable  -- ^ free substitution
     -> Pattern variable  -- ^ pattern to quantify
-    -> BranchT Simplifier (Pattern variable)
+    -> BranchT simplifier (Pattern variable)
 makeEvaluateBoundRight
     variable
     freeSubstitution
@@ -343,6 +345,7 @@ quantifyPattern variable original@Conditional { term, predicate, substitution }
   = (error . unlines)
     [ "Quantifying both the term and the predicate probably means that there's"
     , "an error somewhere else."
+    , "variable=" ++ unparseToString variable
     , "patt=" ++ unparseToString original
     ]
   | quantifyTerm = mkExists variable <$> original

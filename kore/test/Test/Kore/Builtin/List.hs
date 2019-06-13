@@ -40,8 +40,8 @@ test_getUnit =
     testPropertyWithSolver "get{}(unit{}(), _) === \\bottom{}()" $ do
         k <- forAll genInteger
         let patGet =
-                mkApp intSort getListSymbol
-                    [ mkApp listSort unitListSymbol []
+                mkApplySymbol intSort getListSymbol
+                    [ mkApplySymbol listSort unitListSymbol []
                     , Test.Int.asInternal k
                     ]
             predicate = mkEquals_ mkBottom_ patGet
@@ -57,7 +57,7 @@ test_getFirstElement =
     prop = do
         values <- forAll genSeqInteger
         let patGet =
-                mkApp intSort getListSymbol [ patList , Test.Int.asInternal 0 ]
+                mkApplySymbol intSort getListSymbol [ patList , Test.Int.asInternal 0 ]
             patList = asTermLike (Test.Int.asInternal <$> values)
             value =
                 case values of
@@ -78,7 +78,7 @@ test_getLastElement =
     prop = do
         values <- forAll genSeqInteger
         let patGet =
-                mkApp
+                mkApplySymbol
                     intSort
                     getListSymbol
                     [ patList , Test.Int.asInternal (-1) ]
@@ -101,10 +101,10 @@ test_concatUnit =
   where
     prop = do
         values <- forAll genSeqInteger
-        let patUnit = mkApp listSort unitListSymbol []
+        let patUnit = mkApplySymbol listSort unitListSymbol []
             patValues = asTermLike (Test.Int.asInternal <$> values)
-            patConcat1 = mkApp listSort concatListSymbol [ patUnit, patValues ]
-            patConcat2 = mkApp listSort concatListSymbol [ patValues, patUnit ]
+            patConcat1 = mkApplySymbol listSort concatListSymbol [ patUnit, patValues ]
+            patConcat2 = mkApplySymbol listSort concatListSymbol [ patValues, patUnit ]
             predicate1 = mkEquals_ patValues patConcat1
             predicate2 = mkEquals_ patValues patConcat2
         expectValues <- evaluateT patValues
@@ -126,12 +126,12 @@ test_concatAssociates =
         let patList1 = asTermLike $ Test.Int.asInternal <$> values1
             patList2 = asTermLike $ Test.Int.asInternal <$> values2
             patList3 = asTermLike $ Test.Int.asInternal <$> values3
-            patConcat12 = mkApp listSort concatListSymbol [ patList1, patList2 ]
-            patConcat23 = mkApp listSort concatListSymbol [ patList2, patList3 ]
+            patConcat12 = mkApplySymbol listSort concatListSymbol [ patList1, patList2 ]
+            patConcat23 = mkApplySymbol listSort concatListSymbol [ patList2, patList3 ]
             patConcat12_3 =
-                mkApp listSort concatListSymbol [ patConcat12, patList3 ]
+                mkApplySymbol listSort concatListSymbol [ patConcat12, patList3 ]
             patConcat1_23 =
-                mkApp listSort concatListSymbol [ patList1, patConcat23 ]
+                mkApplySymbol listSort concatListSymbol [ patList1, patConcat23 ]
             predicate = mkEquals_ patConcat12_3 patConcat1_23
         evalConcat12_3 <- evaluateT patConcat12_3
         evalConcat1_23 <- evaluateT patConcat1_23

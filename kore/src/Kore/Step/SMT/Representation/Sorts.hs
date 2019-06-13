@@ -356,20 +356,20 @@ parseSMTConstructor patt =
         _ -> Nothing
 
     buildConstructor
-        :: SymbolOrAlias
+        :: Symbol
         -> [Variable]
         -> Maybe AST.UnresolvedConstructor
     buildConstructor
-        SymbolOrAlias { symbolOrAliasConstructor, symbolOrAliasParams = [] }
+        Symbol { symbolConstructor, symbolParams = [] }
         childVariables
       = do -- Maybe monad
         args <- zipWithM (parseVariableSort encodedName) [1..] childVariables
         return SMT.Constructor
-            { name = AST.SymbolReference symbolOrAliasConstructor
+            { name = AST.SymbolReference symbolConstructor
             , arguments = args
             }
       where
-        encodedName = AST.encodable symbolOrAliasConstructor
+        encodedName = AST.encodable symbolConstructor
 
     -- TODO(virgil): Also handle parameterized sorts.
     buildConstructor _ _ = Nothing

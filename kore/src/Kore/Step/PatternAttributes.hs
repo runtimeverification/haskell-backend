@@ -25,13 +25,14 @@ import qualified Data.Functor.Foldable as Recursive
 import           Data.Reflection
                  ( give )
 
-import           Kore.Attribute.Symbol
+import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Builtin.Attributes
                  ( isConstructorModulo_ )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
+import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
 import           Kore.Proof.Functional
 import           Kore.Step.PatternAttributesError
@@ -42,7 +43,7 @@ import           Kore.Step.PatternAttributesError
     certifying that.
 -}
 isFunctionalPattern
-    :: SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> Either (FunctionalError) [FunctionalProof variable]
 isFunctionalPattern tools =
@@ -52,7 +53,7 @@ isFunctionalPattern tools =
     certifying that.
 -}
 isTotalPattern
-    :: SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> Either (TotalError) [TotalProof variable]
 isTotalPattern tools =
@@ -62,7 +63,7 @@ isTotalPattern tools =
     returns a proof certifying that.
 -}
 isConstructorLikePattern
-    :: SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> Either ConstructorLikeError [ConstructorLikeProof]
 isConstructorLikePattern tools =
@@ -74,7 +75,7 @@ isConstructorLikePattern tools =
 -}
 isConstructorModuloLikePattern
     :: Show variable
-    => SmtMetadataTools StepperAttributes
+    => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> Either ConstructorLikeError [ConstructorLikeProof]
 isConstructorModuloLikePattern tools =
@@ -120,7 +121,7 @@ isPreconstructedPattern err (_ :< pattern') =
         _ -> Left err
 
 checkFunctionalHead
-    :: SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools Attribute.Symbol
     -> Recursive.Base (TermLike variable) a
     -> Either
         (FunctionalError)
@@ -129,17 +130,17 @@ checkFunctionalHead tools base@(_ :< pattern') =
     case pattern' of
         VariableF v ->
             Right (DoNotDescend (FunctionalVariable v))
-        ApplicationF ap
-          | give tools isFunctional_ patternHead ->
+        ApplySymbolF ap
+          | Symbol.isFunctional patternHead ->
             return (Descend (FunctionalHead patternHead))
-          | give tools isSortInjection_ patternHead ->
+          | Symbol.isSortInjection patternHead ->
             assert (MetadataTools.isSubsortOf tools sortFrom sortTo)
             $ return (Descend (FunctionalHead patternHead))
           | otherwise ->
             Left (NonFunctionalHead patternHead)
           where
             patternHead = applicationSymbolOrAlias ap
-            [sortFrom, sortTo] = symbolOrAliasParams patternHead
+            [sortFrom, sortTo] = symbolParams patternHead
         _ -> isPreconstructedPattern NonFunctionalPattern base
 
 {-|@isConstructorLikeTop@ checks whether the given 'Pattern' is topped in a
@@ -147,32 +148,31 @@ constructor / syntactic sugar for a constructor (literal / domain value)
 construct.
 -}
 isConstructorLikeTop
-    :: SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools Attribute.Symbol
     -> Recursive.Base (TermLike variable) pat
     -> Bool
-isConstructorLikeTop tools base@(_ :< pattern') =
+isConstructorLikeTop _tools base@(_ :< pattern') =
     case pattern' of
-        ApplicationF ap ->
-            give tools isConstructor_ patternHead
+        ApplySymbolF ap ->
+            Symbol.isConstructor patternHead
           where
             patternHead = applicationSymbolOrAlias ap
         _ -> isRight (isPreconstructedPattern undefined base)
 
 checkConstructorLikeHead
-    :: SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools Attribute.Symbol
     -> Recursive.Base (TermLike variable) a
     -> Either
         ConstructorLikeError
         (PartialPatternProof ConstructorLikeProof)
-checkConstructorLikeHead tools base@(_ :< pattern') =
+checkConstructorLikeHead _tools base@(_ :< pattern') =
     case pattern' of
-        ApplicationF Application {applicationSymbolOrAlias}
+        ApplySymbolF Application { applicationSymbolOrAlias }
           | isConstructor || isSortInjection ->
             return (Descend ConstructorLikeProof)
           where
             (isConstructor, isSortInjection) =
-                give tools
-                    ((,) <$> isConstructor_ <*> isSortInjection_)
+                ((,) <$> Symbol.isConstructor <*> Symbol.isSortInjection)
                     applicationSymbolOrAlias
         VariableF _ ->
             return (Descend ConstructorLikeProof)
@@ -182,7 +182,7 @@ checkConstructorLikeHead tools base@(_ :< pattern') =
 
 checkConstructorModuloLikeHead
     :: (Show a, Show variable)
-    => SmtMetadataTools StepperAttributes
+    => SmtMetadataTools Attribute.Symbol
     -> Recursive.Base (TermLike variable) a
     -> Either
         ConstructorLikeError
@@ -192,7 +192,7 @@ checkConstructorModuloLikeHead tools base@(_ :< pattern') =
         r@(Right _) -> r
         Left _ ->
             case pattern' of
-                ApplicationF Application {applicationSymbolOrAlias}
+                ApplySymbolF Application { applicationSymbolOrAlias }
                   | isConstructorModulo -> return (Descend ConstructorLikeProof)
                   where
                     isConstructorModulo =
@@ -203,22 +203,22 @@ checkConstructorModuloLikeHead tools base@(_ :< pattern') =
     a proof certifying that.
 -}
 isFunctionPattern
-    :: SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> Either (FunctionError) [FunctionProof variable]
 isFunctionPattern tools =
     provePattern (checkFunctionHead tools)
 
 checkFunctionHead
-    :: SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools Attribute.Symbol
     -> Recursive.Base (TermLike variable) a
     -> Either
         (FunctionError)
         (PartialPatternProof (FunctionProof variable))
 checkFunctionHead tools base@(_ :< pattern') =
     case pattern' of
-        ApplicationF ap
-          | give tools isFunction_ patternHead ->
+        ApplySymbolF ap
+          | Symbol.isFunction patternHead ->
             Right (Descend (FunctionHead patternHead))
           where
             patternHead = applicationSymbolOrAlias ap
@@ -230,15 +230,15 @@ checkFunctionHead tools base@(_ :< pattern') =
                 Left NonFunctionalPattern -> Left NonFunctionPattern
 
 checkTotalHead
-    :: SmtMetadataTools StepperAttributes
+    :: SmtMetadataTools Attribute.Symbol
     -> Recursive.Base (TermLike variable) a
     -> Either
         (TotalError)
         (PartialPatternProof (TotalProof variable))
 checkTotalHead tools base@(_ :< pattern') =
     case pattern' of
-        ApplicationF ap
-          | isTotal (MetadataTools.symAttributes tools patternHead) ->
+        ApplySymbolF ap
+          | Symbol.isTotal patternHead ->
             Right (Descend (TotalHead patternHead))
           where
             patternHead = applicationSymbolOrAlias ap

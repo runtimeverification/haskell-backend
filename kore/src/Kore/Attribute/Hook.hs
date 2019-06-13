@@ -18,12 +18,15 @@ import           Data.Hashable
 import qualified Data.Maybe as Maybe
 import           Data.Text
                  ( Text )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
+import Kore.Debug
 import Kore.Error
 
 newtype Hook = Hook { getHook :: Maybe Text }
-  deriving (Eq, Generic, Ord, Read, Show)
+  deriving (Eq, GHC.Generic, Ord, Read, Show)
 
 instance Default Hook where
     def = emptyHook
@@ -31,6 +34,12 @@ instance Default Hook where
 instance Hashable Hook
 
 instance NFData Hook
+
+instance SOP.Generic Hook
+
+instance SOP.HasDatatypeInfo Hook
+
+instance Debug Hook
 
 {- | Parse the @hook@ Kore attribute, if present.
 
@@ -51,6 +60,9 @@ instance ParseAttributes Hook where
       where
         withApplication' = withApplication hookId
         failDuplicate' = failDuplicate hookId
+
+    toAttributes Hook { getHook } =
+        Attributes $ maybe [] ((: []) . hookAttribute) getHook
 
 {- | The missing @hook@ attribute.
 

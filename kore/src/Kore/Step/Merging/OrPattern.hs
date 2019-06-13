@@ -16,6 +16,8 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import           Kore.Internal.Pattern
                  ( Conditional, Predicate )
+import           Kore.Logger
+                 ( LogMessage, WithLog )
 import qualified Kore.Step.Merging.Pattern as Pattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Data as BranchT
@@ -33,17 +35,18 @@ import           Kore.Variables.Fresh
 to the given OrPattern.
 -}
 mergeWithPredicate
-    ::  ( Ord variable
-        , Show variable
+    ::  ( Show variable
         , Unparse variable
         , FreshVariable variable
         , SortedVariable variable
+        , MonadSimplify simplifier
+        , WithLog LogMessage simplifier
         )
     => Predicate variable
     -- ^ Predicate to add.
     -> OrPattern variable
     -- ^ Pattern to which the condition should be added.
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 mergeWithPredicate toMerge patt = do
     patterns <-
         BranchT.gather $ traverse (Pattern.mergeWithPredicate toMerge) patt

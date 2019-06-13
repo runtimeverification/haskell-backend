@@ -5,17 +5,20 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, assertFailure, testCase )
 
+import qualified Data.Default as Default
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
 import           Data.Proxy
                  ( Proxy (..) )
+import           Data.Text
+                 ( Text )
 
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Simplification
                  ( simplificationSymbol )
-import           Kore.Attribute.Symbol
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
@@ -37,8 +40,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Simplification.Data
                  ( Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import           Kore.Syntax.PatternF
-                 ( groundHead )
+import           Kore.Syntax.Definition hiding
+                 ( Symbol )
 import qualified SMT
 
 import           Test.Kore
@@ -70,16 +73,22 @@ sortVar1S = SortVariableSort sortVar1
 sortS :: Sort
 sortS = SortActualSort (SortActual (testId "S") [])
 
-fHead, gHead, sHead, tHead :: SymbolOrAlias
-fHead = groundHead "f" AstLocationTest
-gHead = groundHead "g" AstLocationTest
-sHead = groundHead "s" AstLocationTest
-tHead = groundHead "t" AstLocationTest
-injHead :: Sort -> Sort -> SymbolOrAlias
-injHead s1 s2 = SymbolOrAlias
-    { symbolOrAliasConstructor = testId "inj"
-    , symbolOrAliasParams = [s1, s2]
-    }
+testSymbol :: Text -> Symbol
+testSymbol name =
+    Symbol
+        { symbolConstructor = testId name
+        , symbolParams = []
+        , symbolAttributes = Default.def
+        }
+
+fHead, gHead, sHead, tHead :: Symbol
+fHead = testSymbol "f"
+gHead = testSymbol "g"
+sHead = testSymbol "s"
+tHead = testSymbol "t"
+
+injHead :: Sort -> Sort -> Symbol
+injHead s1 s2 = (testSymbol "inj") { symbolParams = [s1, s2] }
 
 
 testDef :: Definition ParsedSentence
@@ -95,10 +104,17 @@ testDef =
             sortVar1S
             [sortVarS]
         , updateAttributes
-            (Attributes [functionAttribute, constructorAttribute])
+            (Attributes
+                [ Attribute.functionAttribute
+                , Attribute.constructorAttribute
+                ]
+            )
             (simpleSymbolSentence (SymbolName "f") (SortName "S"))
         , updateAttributes
-            (Attributes [functionAttribute, constructorAttribute])
+            (Attributes
+                [ Attribute.functionAttribute
+                , Attribute.constructorAttribute]
+            )
             (simpleSymbolSentence (SymbolName "g") (SortName "S"))
         , SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = [sortVar]
@@ -109,10 +125,10 @@ testDef =
                     (mkAnd
                         (mkEquals
                             sortVarS
-                            (mkApp sortS (injHead sortS sortS)
-                                [mkApp sortS tHead []]
+                            (mkApplySymbol sortS (injHead sortS sortS)
+                                [mkApplySymbol sortS tHead []]
                             )
-                            (mkApp sortS sHead [])
+                            (mkApplySymbol sortS sHead [])
                         )
                         (mkTop sortVarS)
                     )
@@ -126,8 +142,8 @@ testDef =
                     (mkAnd
                         (mkEquals
                             sortVarS
-                            (mkApp sortS gHead [])
-                            (mkApp sortS sHead [])
+                            (mkApplySymbol sortS gHead [])
+                            (mkApplySymbol sortS sHead [])
                         )
                         (mkTop sortVarS)
                     )
@@ -141,7 +157,7 @@ testDef =
                     (mkAnd
                         (mkEquals sortVarS
                             (mkTop sortS)
-                            (mkApp sortS fHead [])
+                            (mkApplySymbol sortS fHead [])
                         )
                         (mkTop sortVarS)
                     )
@@ -154,8 +170,8 @@ testDef =
                     (mkTop sortVarS)
                     (mkAnd
                         (mkEquals sortVarS
-                            (mkApp sortS fHead [])
-                            (mkApp sortS sHead [])
+                            (mkApplySymbol sortS fHead [])
+                            (mkApplySymbol sortS sHead [])
                         )
                         (mkTop sortVarS)
                     )
@@ -168,8 +184,8 @@ testDef =
                     (mkTop sortVarS)
                     (mkAnd
                         (mkEquals sortVarS
-                            (mkApp sortS fHead [])
-                            (mkApp sortS tHead [])
+                            (mkApplySymbol sortS fHead [])
+                            (mkApplySymbol sortS tHead [])
                         )
                         (mkTop sortVarS)
                     )
@@ -183,8 +199,8 @@ testDef =
                     (mkTop sortVarS)
                     (mkAnd
                         (mkEquals sortVarS
-                            (mkApp sortS fHead [])
-                            (mkApp sortS gHead [])
+                            (mkApplySymbol sortS fHead [])
+                            (mkApplySymbol sortS gHead [])
                         )
                         (mkTop sortVarS)
                     )
@@ -200,8 +216,8 @@ testDef =
             , sentenceAxiomAttributes = Attributes []
             , sentenceAxiomPattern =
                 Builtin.externalizePattern $ mkRewrites
-                    (mkAnd mkTop_ (mkApp sortS fHead []))
-                    (mkAnd mkTop_ (mkApp sortS tHead []))
+                    (mkAnd mkTop_ (mkApplySymbol sortS fHead []))
+                    (mkAnd mkTop_ (mkApplySymbol sortS tHead []))
             }
         , SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = [sortVar, sortVar1]
@@ -211,7 +227,7 @@ testDef =
                     (mkTop sortVarS)
                     (mkAnd
                         (mkEquals sortVarS
-                            (mkCeil sortVar1S (mkApp sortS fHead []))
+                            (mkCeil sortVar1S (mkApplySymbol sortS fHead []))
                             mkTop_
                         )
                         (mkTop sortVarS)
@@ -219,7 +235,7 @@ testDef =
             }
         ]
 
-testIndexedModule :: VerifiedModule StepperAttributes Attribute.Axiom
+testIndexedModule :: VerifiedModule Attribute.Symbol Attribute.Axiom
 testIndexedModule =
     let
         attributesVerification = defaultAttributesVerification Proxy Proxy
@@ -239,7 +255,7 @@ testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators =
     axiomPatternsToEvaluators $ extractEqualityAxioms testIndexedModule
 
-testMetadataTools :: SmtMetadataTools StepperAttributes
+testMetadataTools :: SmtMetadataTools Attribute.Symbol
 testMetadataTools = MetadataTools.build testIndexedModule
 
 testEnv :: Env
@@ -288,11 +304,11 @@ test_functionRegistry =
             (length (extractRewriteAxioms testIndexedModule))
         )
     , testCase "Checking that evaluator simplifies correctly" $ do
-        let expect = mkApp sortS sHead []
+        let expect = mkApplySymbol sortS sHead []
         simplified <-
             SMT.runSMT SMT.defaultConfig emptyLogger
             $ evalSimplifier testEnv
-            $ Pattern.simplify $ makePattern $ mkApp sortS gHead []
+            $ Pattern.simplify $ makePattern $ mkApplySymbol sortS gHead []
         let actual =
                 Pattern.term $ head
                 $ MultiOr.extractPatterns simplified

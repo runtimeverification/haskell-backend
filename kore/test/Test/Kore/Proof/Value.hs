@@ -5,14 +5,14 @@ import Test.Tasty.HUnit
 
 import qualified GHC.Stack as GHC
 
-import           Kore.Attribute.Symbol
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( HeadType, SmtMetadataTools )
-import qualified Kore.IndexedModule.MetadataTools as HeadType
-                 ( HeadType (..) )
+                 ( SmtMetadataTools )
+import           Kore.Internal.Symbol
+                 ( toSymbolOrAlias )
 import           Kore.Internal.TermLike
 import qualified Kore.Proof.Value as Value
 
@@ -87,20 +87,20 @@ varX = varS "X" intSort
 
 test_fun :: [TestTree]
 test_fun =
-    [ testNotValue "fun(1)" (mkApp intSort funSymbol [oneTermLike])
-    , testNotValue "fun(1)" (mkApp intSort funSymbol [oneInternal])
+    [ testNotValue "fun(1)" (mkApplySymbol intSort funSymbol [oneTermLike])
+    , testNotValue "fun(1)" (mkApplySymbol intSort funSymbol [oneInternal])
     ]
 
 mkInj :: TermLike Variable -> TermLike Variable
 mkInj input =
-    mkApp supSort (injSymbol (termLikeSort input) supSort) [input]
+    mkApplySymbol supSort (injSymbol (termLikeSort input) supSort) [input]
 
 mkPair
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
 mkPair a b =
-    mkApp (pairSort inputSort') (pairSymbol inputSort') [a, b]
+    mkApplySymbol (pairSort inputSort') (pairSymbol inputSort') [a, b]
   where
     inputSort' = termLikeSort a
 
@@ -114,7 +114,7 @@ mkSet :: [TermLike Concrete] -> TermLike Variable
 mkSet = mkBuiltin . Domain.BuiltinSet . builtinSet
 
 unitPattern :: TermLike Variable
-unitPattern = mkApp unitSort unitSymbol []
+unitPattern = mkApplySymbol unitSort unitSymbol []
 
 oneInternal :: Ord variable => TermLike variable
 oneInternal = Builtin.Int.asInternal intSort 1
@@ -149,11 +149,12 @@ unitSort =
         , sortActualSorts = []
         }
 
-unitSymbol :: SymbolOrAlias
+unitSymbol :: Symbol
 unitSymbol =
-    SymbolOrAlias
-        { symbolOrAliasConstructor = testId "unit"
-        , symbolOrAliasParams = []
+    Symbol
+        { symbolConstructor = testId "unit"
+        , symbolParams = []
+        , symbolAttributes = Mock.constructorAttributes
         }
 
 pairSort :: Sort -> Sort
@@ -163,25 +164,28 @@ pairSort sort =
         , sortActualSorts = [sort]
         }
 
-pairSymbol :: Sort -> SymbolOrAlias
+pairSymbol :: Sort -> Symbol
 pairSymbol sort =
-    SymbolOrAlias
-        { symbolOrAliasConstructor = testId "pair"
-        , symbolOrAliasParams = [sort]
+    Symbol
+        { symbolConstructor = testId "pair"
+        , symbolParams = [sort]
+        , symbolAttributes = Mock.constructorAttributes
         }
 
-injSymbol :: Sort -> Sort -> SymbolOrAlias
+injSymbol :: Sort -> Sort -> Symbol
 injSymbol sub sup =
-    SymbolOrAlias
-        { symbolOrAliasConstructor = testId "inj"
-        , symbolOrAliasParams = [sub, sup]
+    Symbol
+        { symbolConstructor = testId "inj"
+        , symbolParams = [sub, sup]
+        , symbolAttributes = Mock.sortInjectionAttributes
         }
 
-funSymbol :: SymbolOrAlias
+funSymbol :: Symbol
 funSymbol =
-    SymbolOrAlias
-        { symbolOrAliasConstructor = testId "fun"
-        , symbolOrAliasParams = []
+    Symbol
+        { symbolConstructor = testId "fun"
+        , symbolParams = []
+        , symbolAttributes = Mock.functionAttributes
         }
 
 subSort :: Sort
@@ -190,33 +194,26 @@ subSort = (SortVariableSort . SortVariable) (testId "sub")
 supSort :: Sort
 supSort = (SortVariableSort . SortVariable) (testId "sup")
 
-symbolOrAliasAttrs :: [(SymbolOrAlias, StepperAttributes)]
+symbolOrAliasAttrs :: [(SymbolOrAlias, Attribute.Symbol)]
 symbolOrAliasAttrs =
-    [ (unitSymbol, Mock.constructorAttributes)
-    , (injSymbol subSort supSort, Mock.sortInjectionAttributes)
-    , (injSymbol unitSort supSort, Mock.sortInjectionAttributes)
-    , (injSymbol supSort supSort, Mock.sortInjectionAttributes)
-    , (pairSymbol unitSort, Mock.constructorAttributes)
-    , (pairSymbol intSort, Mock.constructorAttributes)
-    , (funSymbol, Mock.functionAttributes)
+    map ((,) <$> toSymbolOrAlias <*> symbolAttributes) symbols
+
+symbols :: [Symbol]
+symbols =
+    [ unitSymbol
+    , injSymbol subSort supSort
+    , injSymbol unitSort supSort
+    , injSymbol supSort supSort
+    , pairSymbol unitSort
+    , pairSymbol intSort
+    , funSymbol
     ]
 
-symbolOrAliasType :: [(SymbolOrAlias, HeadType)]
-symbolOrAliasType =
-    [ (unitSymbol, HeadType.Symbol)
-    , (injSymbol subSort supSort, HeadType.Symbol)
-    , (injSymbol unitSort supSort, HeadType.Symbol)
-    , (injSymbol supSort supSort, HeadType.Symbol)
-    , (pairSymbol unitSort, HeadType.Symbol)
-    , (pairSymbol intSort, HeadType.Symbol)
-    , (funSymbol, HeadType.Symbol)
-    ]
-
-tools :: SmtMetadataTools StepperAttributes
+tools :: SmtMetadataTools Attribute.Symbol
 tools =
     Mock.makeMetadataTools
         symbolOrAliasAttrs
-        symbolOrAliasType
+        []
         []
         []
         []

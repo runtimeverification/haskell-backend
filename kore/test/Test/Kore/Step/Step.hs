@@ -48,8 +48,7 @@ import           Kore.Unification.Error
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
-                 ( Unifier )
-import qualified Kore.Unification.Unify as Monad.Unify
+                 ( UnifierT, runUnifierT )
 import           Kore.Variables.Fresh
                  ( nextVariable )
 import qualified SMT
@@ -60,12 +59,12 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 evalUnifier
-    :: Unifier a
+    :: UnifierT Simplifier a
     -> IO (Either UnificationOrSubstitutionError [a])
 evalUnifier =
     SMT.runSMT SMT.defaultConfig emptyLogger
     . evalSimplifier Mock.env
-    . Monad.Unify.runUnifier
+    . runUnifierT
 
 applyInitialConditions
     :: Predicate Variable
@@ -644,7 +643,7 @@ applyRewriteRulesParallel initial rules =
     (fmap . fmap) Result.mergeResults
     $ SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
-    $ Monad.Unify.runUnifier
+    $ runUnifierT
     $ Step.applyRewriteRulesParallel unificationProcedure rules initial
   where
     unificationProcedure =
@@ -1018,10 +1017,10 @@ applyRewriteRulesSequence
     -> IO (Either UnificationOrSubstitutionError (Results Variable))
 applyRewriteRulesSequence initial rules =
     (fmap . fmap) Result.mergeResults
-        $ SMT.runSMT SMT.defaultConfig emptyLogger
-        $ evalSimplifier Mock.env
-        $ Monad.Unify.runUnifier
-        $ Step.applyRewriteRulesSequence unificationProcedure initial rules
+    $ SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier Mock.env
+    $ runUnifierT
+    $ Step.applyRewriteRulesSequence unificationProcedure initial rules
   where
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
 
@@ -1143,7 +1142,7 @@ sequenceMatchingRules initial rules =
     (fmap . fmap) Foldable.fold
     $ SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
-    $ Monad.Unify.runUnifier
+    $ runUnifierT
     $ Step.applyRulesSequence unificationProcedure initial equalityRules
   where
     equalityRules = getEqualityRule <$> rules

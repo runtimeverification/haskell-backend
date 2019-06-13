@@ -7,6 +7,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( Assertion, testCase, (@?=) )
 
+import           Control.Applicative
 import           Control.Concurrent.MVar
 import           Control.Monad.Trans.State.Strict
                  ( evalStateT, runStateT )
@@ -14,14 +15,19 @@ import           Data.Coerce
                  ( coerce )
 import           Data.IORef
                  ( newIORef, readIORef, writeIORef )
+import           Data.List.NonEmpty
+                 ( NonEmpty (..) )
 import qualified Data.Map as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Data.Map.Strict as StrictMap
 import qualified Kore.Builtin.Int as Int
+import           Kore.Internal.Predicate
+                 ( Predicate )
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
-                 ( TermLike, mkApp, mkBottom_, mkVar, varS )
+                 ( TermLike, mkApplySymbol, mkBottom_, mkVar, varS )
 import qualified Kore.Logger.Output as Logger
 import           Kore.OnePath.Verification
                  ( Axiom (..), verifyClaimStep )
@@ -61,7 +67,10 @@ test_replInterpreter =
     , aliasOfUnknownCommand  `tests` "Create alias of unknown command"
     , recursiveAlias         `tests` "Create alias of unknown command"
     , tryAlias               `tests` "Executing an existing alias with arguments"
-    , unificationFailure     `tests` "Force axiom that doesn't unify"
+    , unificationFailure     `tests` "Try axiom that doesn't unify"
+    , unificationSuccess     `tests` "Try axiom that does unify"
+    , forceFailure           `tests` "TryF axiom that doesn't unify"
+    , forceSuccess           `tests` "TryF axiom that does unify"
     , proofStatus            `tests` "Multi claim proof status"
     , logUpdatesState        `tests` "Log command updates the state"
     , showCurrentClaim       `tests` "Showing current claim"
@@ -238,10 +247,59 @@ unificationFailure =
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
         expectedOutput <-
-            unificationErrorMessage cannotUnifyDistinctDomainValues one zero
+            formatUnificationError cannotUnifyDistinctDomainValues one zero
         output `equalsOutput` expectedOutput
         continue `equals` Continue
         state `hasCurrentNode` ReplNode 0
+
+unificationSuccess :: IO ()
+unificationSuccess = do
+    let
+        zero = Int.asInternal intSort 0
+        one = Int.asInternal intSort 1
+        impossibleAxiom = coerce $ rulePattern zero one
+        axioms = [ impossibleAxiom ]
+        claim = zeroToTen
+        command = Try . Left $ AxiomIndex 0
+        expectedOutput = formatUnifiers (Predicate.top :| [])
+
+    Result { output, continue, state } <- run command axioms [claim] claim
+    output `equalsOutput` expectedOutput
+    continue `equals` Continue
+    state `hasCurrentNode` ReplNode 0
+
+forceFailure :: IO ()
+forceFailure =
+    let
+        zero = Int.asInternal intSort 0
+        one = Int.asInternal intSort 1
+        impossibleAxiom = coerce $ rulePattern one one
+        axioms = [ impossibleAxiom ]
+        claim = zeroToTen
+        command = TryF . Left $ AxiomIndex 0
+    in do
+        Result { output, continue, state } <- run command axioms [claim] claim
+        expectedOutput <-
+            formatUnificationError cannotUnifyDistinctDomainValues one zero
+        output `equalsOutput` expectedOutput
+        continue `equals` Continue
+        state `hasCurrentNode` ReplNode 0
+
+forceSuccess :: IO ()
+forceSuccess = do
+    let
+        zero = Int.asInternal intSort 0
+        one = Int.asInternal intSort 1
+        impossibleAxiom = coerce $ rulePattern zero one
+        axioms = [ impossibleAxiom ]
+        claim = zeroToTen
+        command = TryF . Left $ AxiomIndex 0
+        expectedOutput = ""
+
+    Result { output, continue, state } <- run command axioms [claim] claim
+    output `equalsOutput` expectedOutput
+    continue `equals` Continue
+    state `hasCurrentNode` ReplNode 1
 
 proofStatus :: IO ()
 proofStatus =
@@ -306,7 +364,7 @@ add1 = coerce $ rulePattern n plusOne
   where
     one     = Int.asInternal intSort 1
     n       = mkVar $ varS "x" intSort
-    plusOne = mkApp intSort addIntSymbol [n, one]
+    plusOne = mkApplySymbol intSort addIntSymbol [n, one]
 
 zeroToTen :: Claim
 zeroToTen = coerce $ rulePattern zero ten
@@ -410,7 +468,7 @@ mkState axioms claims claim logger =
         , commands    = Seq.empty
         , omit        = []
         , stepper     = stepper0
-        , unifier     = unifier0
+        , unifier     = unificationProcedure
         , labels      = Map.singleton (ClaimIndex 0) Map.empty
         , aliases     = Map.empty
         , logging     = (Logger.Debug, NoLogging)
@@ -421,18 +479,17 @@ mkState axioms claims claim logger =
     graph' = emptyExecutionGraph claim
     stepper0 claim' claims' axioms' graph (ReplNode node) =
         verifyClaimStep claim' claims' axioms' graph node
-    unifier0
-        :: TermLike Variable
-        -> TermLike Variable
-        -> UnifierWithExplanation ()
-    unifier0 first second = () <$ unificationProcedure first second
 
-unificationErrorMessage
+formatUnificationError
     :: Pretty.Doc ()
     -> TermLike Variable
     -> TermLike Variable
     -> IO String
-unificationErrorMessage info first second = do
-    res <- runSimplifier . runUnifierWithExplanation
-        $ explainBottom info first second
+formatUnificationError info first second = do
+    res <- runSimplifier . runUnifierWithExplanation $ do
+        explainBottom info first second
+        empty
     return $ formatUnificationMessage res
+
+formatUnifiers :: NonEmpty (Predicate Variable) -> String
+formatUnifiers = formatUnificationMessage . Right

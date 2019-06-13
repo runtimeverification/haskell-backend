@@ -30,8 +30,10 @@ import           Data.Maybe
 import           Data.Text
                  ( Text )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           Debug.Trace
-import           GHC.Generics
+-- TODO (thomas.tuegel): Remove Debug.Trace
+import Debug.Trace
+       ( trace )
+import GHC.Generics
 
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
@@ -43,7 +45,7 @@ import           Kore.ModelChecker.Simplification
                  ( checkImplicationIsTop )
 import qualified Kore.Step.Result as StepResult
 import           Kore.Step.Rule
-                 ( RewriteRule (RewriteRule) )
+                 ( RewriteRule (RewriteRule), allPathGlobally )
 import           Kore.Step.Simplification.Data
                  ( Simplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
@@ -171,27 +173,26 @@ transitionRule
         | otherwise = applyUnroll goalrhs GoalRemLHS config
 
     applyUnroll ModalPattern { modalOp, term } wrapper config
-      = case modalOp of
-            "ag" -> do
-                result <-
-                    Monad.Trans.lift . Monad.Trans.lift
-                    $ checkImplicationIsTop config term
-                if result
-                    then return (wrapper config)
-                    else do
-                        (Monad.Trans.lift . State.put) (Just ())
-                        trace
-                            (show . Pretty.vsep
-                                $ [ "config failed to prove the invariant:"
-                                  , Pretty.indent 4 (unparse config)
-                                  ]
-                            )
-                            return Unprovable
-            _ -> (error . show . Pretty.vsep)
-                 [ "Not implemented error:"
-                 , "We don't know how to unroll the modalOp:"
-                 , Pretty.pretty modalOp
-                 ]
+        | modalOp == allPathGlobally = do
+            result <-
+                Monad.Trans.lift . Monad.Trans.lift
+                $ checkImplicationIsTop config term
+            if result
+                then return (wrapper config)
+                else do
+                    (Monad.Trans.lift . State.put) (Just ())
+                    trace
+                        (show . Pretty.vsep
+                            $ [ "config failed to prove the invariant:"
+                              , Pretty.indent 4 (unparse config)
+                              ]
+                        )
+                        return Unprovable
+        | otherwise = (error . show . Pretty.vsep)
+                      [ "Not implemented error:"
+                      , "We don't know how to unroll the modalOp:"
+                      , Pretty.pretty modalOp
+                      ]
 
     transitionComputeWeakNext
         :: [RewriteRule Variable]
@@ -213,7 +214,7 @@ transitionRule
     transitionComputeWeakNextHelper rules config = do
         eitherResults <-
             Monad.Trans.lift . Monad.Trans.lift
-            $ Monad.Unify.runUnifier
+            $ Monad.Unify.runUnifierT
             $ Step.applyRewriteRulesParallel
                 (Step.UnificationProcedure Unification.unificationProcedure)
                 rules

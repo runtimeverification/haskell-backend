@@ -12,6 +12,7 @@ module Kore.Step.Rule
     , AllPathRule (..)
     , ImplicationRule (..)
     , RulePattern (..)
+    , allPathGlobally
     , rulePattern
     , isHeatingRule
     , isCoolingRule
@@ -41,6 +42,8 @@ import           Data.Maybe
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
 import           Data.Text.Prettyprint.Doc
                  ( Pretty )
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -53,6 +56,7 @@ import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Syntax.Definition as Syntax
 import           Kore.Unparser
                  ( Unparse, unparse, unparse2 )
 import           Kore.Variables.Fresh
@@ -146,16 +150,25 @@ deriving instance Eq variable => Eq (ImplicationRule variable)
 deriving instance Ord variable => Ord (ImplicationRule variable)
 deriving instance Show variable => Show (ImplicationRule variable)
 
+-- | modalities
+weakExistsFinally :: Text
+weakExistsFinally = "weakExistsFinally"
+
+weakAlwaysFinally :: Text
+weakAlwaysFinally = "weakAlwaysFinally"
+
+allPathGlobally :: Text
+allPathGlobally = "allPathGlobally"
+
 qualifiedAxiomOpToConstructor
-    :: SymbolOrAlias
-    -> Maybe
-        (RulePattern variable -> QualifiedAxiomPattern variable)
-qualifiedAxiomOpToConstructor patternHead = case headName of
-    "weakExistsFinally" -> Just $ OnePathClaimPattern . OnePathRule
-    "weakAlwaysFinally" -> Just $ AllPathClaimPattern . AllPathRule
-    _ -> Nothing
+    :: Alias
+    -> Maybe (RulePattern variable -> QualifiedAxiomPattern variable)
+qualifiedAxiomOpToConstructor patternHead
+    | headName == weakExistsFinally = Just $ OnePathClaimPattern . OnePathRule
+    | headName == weakAlwaysFinally = Just $ AllPathClaimPattern . AllPathRule
+    | otherwise = Nothing
   where
-    headName = getId (symbolOrAliasConstructor patternHead)
+    headName = getId (aliasConstructor patternHead)
 
 {-  | One-Path-Claim rule pattern.
 -}
@@ -257,7 +270,7 @@ extractOnePathClaimFrom
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (OnePathRule Variable)
 extractOnePathClaimFrom sentence =
-    case fromSentenceAxiom (getSentenceClaim sentence) of
+    case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
         Right (OnePathClaimPattern claim) -> Just claim
         _ -> Nothing
 
@@ -278,7 +291,7 @@ extractAllPathClaimFrom
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (AllPathRule Variable)
 extractAllPathClaimFrom sentence =
-    case fromSentenceAxiom (getSentenceClaim sentence) of
+    case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
         Right (AllPathClaimPattern claim) -> Just claim
         _ -> Nothing
 
@@ -300,7 +313,7 @@ extractImplicationClaimFrom
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (ImplicationRule Variable)
 extractImplicationClaimFrom sentence =
-    case fromSentenceAxiom (getSentenceClaim sentence) of
+    case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
         Right (ImplicationAxiomPattern axiomPat) -> Just axiomPat
         _ -> Nothing
 
@@ -308,7 +321,7 @@ extractImplicationClaimFrom sentence =
 fromSentence
     :: Verified.Sentence
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Variable)
-fromSentence (SentenceAxiomSentence sentenceAxiom) =
+fromSentence (Syntax.SentenceAxiomSentence sentenceAxiom) =
     fromSentenceAxiom sentenceAxiom
 fromSentence _ =
     koreFail "Only axiom sentences can be translated to rules"
@@ -320,8 +333,8 @@ fromSentenceAxiom
 fromSentenceAxiom sentenceAxiom = do
     attributes <-
         (Attribute.Parser.liftParser . Attribute.Parser.parseAttributes)
-            (sentenceAxiomAttributes sentenceAxiom)
-    patternToAxiomPattern attributes (sentenceAxiomPattern sentenceAxiom)
+            (Syntax.sentenceAxiomAttributes sentenceAxiom)
+    patternToAxiomPattern attributes (Syntax.sentenceAxiomPattern sentenceAxiom)
 
 -- TODO(ana.pantilie): second mkAnd should be changed when
 -- the frontend will be able to unparse one path claims
@@ -365,7 +378,7 @@ patternToAxiomPattern attributes pat =
                 , attributes
                 }
         -- Reachability claims
-        Implies_ _ (And_ _ requires lhs) (App_ op [And_ _ ensures rhs])
+        Implies_ _ (And_ _ requires lhs) (ApplyAlias_ op [And_ _ ensures rhs])
           | Just constructor <- qualifiedAxiomOpToConstructor op ->
             pure $ constructor RulePattern
                 { left = lhs
@@ -405,8 +418,8 @@ patternToAxiomPattern attributes pat =
         Forall_ _ _ child -> patternToAxiomPattern attributes child
         -- implication axioms:
         -- init -> modal_op ( prop )
-        Implies_ _ lhs rhs@(App_ SymbolOrAlias { symbolOrAliasConstructor } _)
-            | isModalSymbol symbolOrAliasConstructor ->
+        Implies_ _ lhs rhs@(ApplyAlias_ op _)
+            | isModalSymbol op ->
                 pure $ ImplicationAxiomPattern $ ImplicationRule RulePattern
                     { left = lhs
                     , right = rhs
@@ -416,11 +429,11 @@ patternToAxiomPattern attributes pat =
                     }
         _ -> koreFail "Unsupported pattern type in axiom"
       where
-        isModalSymbol symbol =
-            case getId symbol of
-                "ag" -> True
-                "ef" -> True
-                _  -> False
+        isModalSymbol symbol
+            | headName == allPathGlobally = True
+            | otherwise = False
+          where
+            headName = getId (aliasConstructor symbol)
 
 {- | Construct a 'VerifiedKoreSentence' corresponding to 'RewriteRule'.
 
@@ -433,7 +446,7 @@ mkRewriteAxiom
     -> Maybe (Sort -> TermLike Variable)  -- ^ requires clause
     -> Verified.Sentence
 mkRewriteAxiom lhs rhs requires =
-    (SentenceAxiomSentence . mkAxiom_)
+    (Syntax.SentenceAxiomSentence . mkAxiom_)
         (mkRewrites
             (mkAnd (fromMaybe mkTop requires $ patternSort) lhs)
             (mkAnd (mkTop patternSort) rhs)
@@ -452,7 +465,7 @@ mkEqualityAxiom
     -> Maybe (Sort -> TermLike Variable)  -- ^ requires clause
     -> Verified.Sentence
 mkEqualityAxiom lhs rhs requires =
-    SentenceAxiomSentence
+    Syntax.SentenceAxiomSentence
     $ mkAxiom [sortVariableR]
     $ case requires of
         Just requires' ->
@@ -470,7 +483,7 @@ mkCeilAxiom
     :: TermLike Variable  -- ^ the child of 'Ceil'
     -> Verified.Sentence
 mkCeilAxiom child =
-    SentenceAxiomSentence
+    Syntax.SentenceAxiomSentence
     $ mkAxiom [sortVariableR]
     $ mkCeil sortR child
   where

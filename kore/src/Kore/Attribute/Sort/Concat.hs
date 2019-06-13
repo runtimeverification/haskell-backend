@@ -48,6 +48,11 @@ instance ParseAttributes Concat where
         withApplication' = withApplication concatId
         failDuplicate' = failDuplicate concatId
 
+    toAttributes =
+        maybe def toAttribute . getConcat
+      where
+        toAttribute = Attributes . (: []) . concatAttribute
+
 -- | Kore identifier representing the @concat@ attribute symbol.
 concatId :: Id
 concatId = "concat"

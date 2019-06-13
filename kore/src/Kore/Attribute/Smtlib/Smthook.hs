@@ -7,21 +7,28 @@ Maintainer  : traian.serbanuta@runtimeverification.com
 
 -}
 module Kore.Attribute.Smtlib.Smthook
-    ( Smthook (..)
-    , smthookId
+    ( Smthook (..), SExpr (..)
+    , smthookId, smthookSymbol, smthookAttribute
     ) where
 
-import Control.DeepSeq
-       ( NFData )
-import Data.Default
-       ( Default (..) )
-import GHC.Generics
-       ( Generic )
+import           Control.DeepSeq
+                 ( NFData )
+import qualified Control.Monad as Monad
+import           Data.Default
+                 ( Default (..) )
+import qualified Data.Maybe as Maybe
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Parser
+import Kore.Debug
 import Kore.Syntax.Id
        ( Id )
 import SMT.SimpleSMT
-       ( SExpr )
+       ( SExpr (..), showSExpr )
 
 {- | The @smthook@ attribute for symbols.
 
@@ -35,13 +42,50 @@ See 'Kore.Attribute.Smtlib.Smtlib'
 
  -}
 newtype Smthook = Smthook { getSmthook :: Maybe SExpr }
-    deriving (Generic, Eq, Ord, Show)
+    deriving (GHC.Generic, Eq, Ord, Show)
 
 instance Default Smthook where
     def = Smthook Nothing
 
 instance NFData Smthook
 
+instance SOP.Generic Smthook
+
+instance SOP.HasDatatypeInfo Smthook
+
+instance Debug Smthook
+
 -- | Kore identifier representing the @smthook@ attribute symbol.
 smthookId :: Id
 smthookId = "smt-hook"
+
+-- | Kore symbol representing the @smthook@ attribute.
+smthookSymbol :: SymbolOrAlias
+smthookSymbol =
+    SymbolOrAlias
+        { symbolOrAliasConstructor = smthookId
+        , symbolOrAliasParams = []
+        }
+
+-- | Kore pattern representing the @smthook@ attribute.
+smthookAttribute :: Text -> AttributePattern
+smthookAttribute syntax =
+    attributePattern smthookSymbol [attributeString syntax]
+
+instance ParseAttributes Smthook where
+    parseAttribute =
+        withApplication' $ \params args Smthook { getSmthook } -> do
+            getZeroParams params
+            arg <- getOneArgument args
+            StringLiteral syntax <- getStringLiteral arg
+            sExpr <- parseSExpr syntax
+            Monad.unless (Maybe.isNothing getSmthook) failDuplicate'
+            return Smthook { getSmthook = Just sExpr }
+      where
+        withApplication' = withApplication smthookId
+        failDuplicate' = failDuplicate smthookId
+
+    toAttributes =
+        Attributes
+        . maybe [] ((: []) . smthookAttribute . Text.pack . showSExpr)
+        . getSmthook

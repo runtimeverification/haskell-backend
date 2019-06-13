@@ -259,8 +259,9 @@ unprovenNodes executionGraph =
 -- in the execution graph designated by the provided node. Re-constructs the
 -- execution graph by inserting this step.
 verifyClaimStep
-    :: forall claim
+    :: forall claim m
     .  Claim claim
+    => MonadSimplify m
     => claim
     -- ^ claim that is being proven
     -> [claim]
@@ -271,7 +272,7 @@ verifyClaimStep
     -- ^ current execution graph
     -> Graph.Node
     -- ^ selected node in the graph
-    -> Simplifier
+    -> m
         (ExecutionGraph
             (CommonStrategyPattern)
             (RewriteRule Variable)
@@ -291,7 +292,7 @@ verifyClaimStep
     transitionRule'
         :: Prim (Pattern Variable) (RewriteRule Variable)
         -> CommonStrategyPattern
-        -> TransitionT (RewriteRule Variable) Simplifier (CommonStrategyPattern)
+        -> TransitionT (RewriteRule Variable) m (CommonStrategyPattern)
     transitionRule' = OnePath.transitionRule
 
     strategy'

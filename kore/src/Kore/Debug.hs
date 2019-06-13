@@ -110,6 +110,8 @@ import           Numeric.Natural
                  ( Natural )
 
 import Data.Sup
+import SMT.AST
+       ( SExpr )
 
 {-| Identifiers for places where we're doing debug.
 
@@ -675,3 +677,5 @@ instance Debug a => Debug (Seq a) where
 instance Debug Bool
 
 instance Debug a => Debug (Const a b)
+
+instance Debug SExpr

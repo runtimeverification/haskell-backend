@@ -29,18 +29,16 @@ testComparison
     :: TestName
     -> (Text -> Text -> Bool)
     -- ^ implementation
-    -> SymbolOrAlias
+    -> Symbol
     -- ^ symbol
     -> TestTree
 testComparison name impl symb =
-    testPropertyWithSolver name
-        (do
-            a <- forAll genString
-            b <- forAll genString
-            let expect = Test.Bool.asPattern (impl a b)
-            actual <- evaluateT $ mkApp boolSort symb (asInternal <$> [a, b])
-            (===) expect actual
-        )
+    testPropertyWithSolver name $ do
+        a <- forAll genString
+        b <- forAll genString
+        let expect = Test.Bool.asPattern (impl a b)
+        actual <- evaluateT $ mkApplySymbol boolSort symb (asInternal <$> [a, b])
+        (===) expect actual
 
 test_lt :: TestTree
 test_lt = testComparison "STRING.lt" (<) ltStringSymbol
@@ -331,7 +329,7 @@ asPartialPattern = String.asPartialPattern stringSort
 testString
     :: HasCallStack
     => String
-    -> SymbolOrAlias
+    -> Symbol
     -> [TermLike Variable]
     -> Pattern Variable
     -> TestTree

@@ -61,3 +61,6 @@ instance ParseAttributes Label where
             return Label { unLabel = Just str }
         withApplication' = Parser.withApplication labelId
         failDuplicate' = Parser.failDuplicate labelId
+
+    toAttributes =
+        maybe def (Attributes . (: []) . labelAttribute) . unLabel

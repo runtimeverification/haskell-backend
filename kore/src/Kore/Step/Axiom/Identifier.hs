@@ -24,12 +24,14 @@ module Kore.Step.Axiom.Identifier
     , extract
     ) where
 
-import Kore.Internal.TermLike
-       ( pattern App_, pattern Ceil_, TermLike )
-import Kore.Syntax.Application
-       ( SymbolOrAlias (..) )
-import Kore.Syntax.Id
-       ( Id (..) )
+import qualified Data.Functor.Foldable as Recursive
+
+import           Kore.Internal.TermLike hiding
+                 ( Application, Ceil, extract )
+import qualified Kore.Syntax.Application as Syntax
+import qualified Kore.Syntax.Ceil as Syntax
+import           Kore.Syntax.Id
+                 ( Id (..) )
 
 {-| Identifer for the left-hand-side of axioms and for the terms with which
 these can be identified.
@@ -52,8 +54,13 @@ Currently parameters of parameterized symbols are ignored.
 -}
 -- TODO (thomas.tuegel): Rename this to avoid conflicting with Comonad.
 extract :: TermLike variable -> Maybe AxiomIdentifier
-extract (App_ symbolOrAlias _children) =
-    Just (Application (symbolOrAliasConstructor symbolOrAlias))
-extract (Ceil_ _sort1 _sort2 (App_ symbolOrAlias _children)) =
-    Just (Ceil (Application (symbolOrAliasConstructor symbolOrAlias)))
-extract _ = Nothing
+extract (Recursive.project -> _ :< termLikeF)
+  | ApplySymbolF applySymbolF <- termLikeF = extractApplication applySymbolF
+  | CeilF Syntax.Ceil { ceilChild } <- termLikeF
+  , _ :< ApplySymbolF applySymbolF <- Recursive.project ceilChild
+  =
+    Ceil <$> extractApplication applySymbolF
+  | otherwise = Nothing
+  where
+    extractApplication Syntax.Application { applicationSymbolOrAlias } =
+      Just $ Application $ symbolConstructor applicationSymbolOrAlias

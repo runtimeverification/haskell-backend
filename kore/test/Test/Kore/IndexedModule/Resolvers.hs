@@ -13,13 +13,16 @@ import           Kore.ASTHelpers
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Sort as Attribute
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.Error as Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
-import           Kore.Internal.TermLike hiding
-                 ( freeVariables )
+import qualified Kore.Internal.TermLike as TermLike
+import           Kore.Sort
+import           Kore.Syntax
+import           Kore.Syntax.Definition
 import           Kore.Syntax.PatternF
                  ( groundHead )
 
@@ -32,38 +35,39 @@ objectS1 = simpleSort (SortName "s1")
 objectA :: SentenceSymbol ParsedPattern
 objectA =
     fmap Builtin.externalizePattern
-    $ mkSymbol_ (testId "a") [] objectS1
+    $ TermLike.mkSymbol_ (testId "a") [] objectS1
 
 -- Two variations on a constructor axiom for 'objectA'.
 axiomA, axiomA' :: SentenceAxiom ParsedPattern
 axiomA =
     fmap Builtin.externalizePattern
-    $ mkAxiom_ $ applySymbol_ objectA []
+    $ TermLike.mkAxiom_ $ TermLike.applySymbol_ objectA []
 axiomA' =
     fmap Builtin.externalizePattern
-    $ mkAxiom [sortVariableR]
-    $ mkForall x
-    $ mkEquals sortR (mkVar x) (applySymbol_ objectA [])
+    $ TermLike.mkAxiom [sortVariableR]
+    $ TermLike.mkForall x
+    $ TermLike.mkEquals sortR (TermLike.mkVar x)
+    $ TermLike.applySymbol_ objectA []
   where
-    x = varS "x" objectS1
+    x = TermLike.varS "x" objectS1
     sortVariableR = SortVariable (testId "R")
     sortR = SortVariableSort sortVariableR
 
 objectB :: SentenceAlias ParsedPattern
 objectB =
     fmap Builtin.externalizePattern
-    $ mkAlias_ (testId "b") objectS1 [] $ mkTop objectS1
+    $ TermLike.mkAlias_ (testId "b") objectS1 [] $ TermLike.mkTop objectS1
 
 metaA :: SentenceSymbol ParsedPattern
 metaA =
     fmap Builtin.externalizePattern
-    $ mkSymbol_ (testId "#a") [] stringMetaSort
+    $ TermLike.mkSymbol_ (testId "#a") [] stringMetaSort
 
 metaB :: SentenceAlias ParsedPattern
 metaB =
     fmap Builtin.externalizePattern
-    $ mkAlias_ (testId "#b") stringMetaSort []
-    $ mkTop stringMetaSort
+    $ TermLike.mkAlias_ (testId "#b") stringMetaSort []
+    $ TermLike.mkTop stringMetaSort
 
 testObjectModuleName :: ModuleName
 testObjectModuleName = ModuleName "TEST-OBJECT-MODULE"
@@ -145,7 +149,7 @@ testDefinition =
             ]
         }
 
-indexedModules :: Map ModuleName (VerifiedModule Attribute.Null Attribute.Null)
+indexedModules :: Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Null)
 Right indexedModules =
     verifyAndIndexDefinition
         DoNotVerifyAttributes
@@ -153,7 +157,7 @@ Right indexedModules =
         testDefinition
 
 testIndexedModule, testIndexedObjectModule
-    :: VerifiedModule Attribute.Null Attribute.Null
+    :: VerifiedModule Attribute.Symbol Attribute.Null
 Just testIndexedModule = Map.lookup testMainModuleName indexedModules
 Just testIndexedObjectModule = Map.lookup testObjectModuleName indexedModules
 
@@ -181,7 +185,7 @@ test_resolvers =
         )
     , testCase "object symbol"
         (assertEqual ""
-            (Right (def :: Attribute.Null, SentenceSymbol
+            (Right (def :: Attribute.Symbol, SentenceSymbol
                 { sentenceSymbolAttributes = Attributes []
                 , sentenceSymbolSymbol = sentenceSymbolSymbol objectA
                 , sentenceSymbolSorts = []
@@ -192,7 +196,7 @@ test_resolvers =
         )
     , testCase "meta symbol"
         (assertEqual ""
-            (Right (def :: Attribute.Null, SentenceSymbol
+            (Right (def :: Attribute.Symbol, SentenceSymbol
                 { sentenceSymbolAttributes = Attributes []
                 , sentenceSymbolSymbol = sentenceSymbolSymbol metaA
                 , sentenceSymbolSorts = []
@@ -204,7 +208,7 @@ test_resolvers =
     , testCase "object alias"
         (assertEqual ""
             (Right
-                ( def :: Attribute.Null
+                ( def :: Attribute.Symbol
                 , SentenceAlias
                     { sentenceAliasAttributes = Attributes []
                     , sentenceAliasAlias = sentenceAliasAlias objectB
@@ -225,7 +229,7 @@ test_resolvers =
                                     }
                             , applicationChildren = []
                             }
-                    , sentenceAliasRightPattern = mkTop objectS1
+                    , sentenceAliasRightPattern = TermLike.mkTop objectS1
                     , sentenceAliasResultSort = objectS1
                     }
                 )
@@ -234,7 +238,7 @@ test_resolvers =
         )
     , testCase "meta alias"
         (assertEqual ""
-            (Right (def :: Attribute.Null, SentenceAlias
+            (Right (def :: Attribute.Symbol, SentenceAlias
                 { sentenceAliasAttributes = Attributes []
                 , sentenceAliasAlias = sentenceAliasAlias metaB
                 , sentenceAliasSorts = []
@@ -254,7 +258,7 @@ test_resolvers =
                                 }
                         , applicationChildren = []
                         }
-                , sentenceAliasRightPattern = mkTop stringMetaSort
+                , sentenceAliasRightPattern = TermLike.mkTop stringMetaSort
                 , sentenceAliasResultSort = stringMetaSort
                 }
             ))

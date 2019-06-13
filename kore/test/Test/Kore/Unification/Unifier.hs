@@ -10,7 +10,9 @@ import Test.Tasty.HUnit.Extensions
 
 import           Control.Exception
                  ( ErrorCall (ErrorCall), catch, evaluate )
+import qualified Control.Lens as Lens
 import qualified Data.Bifunctor as Bifunctor
+import           Data.Function
 import           Data.List.NonEmpty
                  ( NonEmpty ((:|)) )
 import qualified Data.Map as Map
@@ -23,12 +25,12 @@ import           Kore.Attribute.Function
 import           Kore.Attribute.Functional
 import           Kore.Attribute.Injective
 import           Kore.Attribute.SortInjection
-import           Kore.Attribute.Symbol
-import           Kore.IndexedModule.MetadataTools
-import qualified Kore.IndexedModule.MetadataTools as HeadType
+import qualified Kore.Attribute.Symbol as Attribute
+import           Kore.IndexedModule.MetadataTools hiding
                  ( HeadType (..) )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike hiding
                  ( V )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
@@ -54,14 +56,12 @@ import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 
-applyInj
-    :: Sort
-    -> TermLike Variable
-    -> TermLike Variable
-applyInj sortTo pat =
-    applySymbol symbolInj [sortFrom, sortTo] [pat]
+inj :: Sort -> TermLike Variable -> TermLike Variable
+inj sortTo pat =
+    mkApplySymbol sortTo symbol' [pat]
   where
     sortFrom = termLikeSort pat
+    symbol' = injSymbol & Lens.set lensSymbolParams [sortFrom, sortTo]
 
 s1, s2, s3, s4 :: Sort
 s1 = simpleSort (SortName "s1")
@@ -69,46 +69,126 @@ s2 = simpleSort (SortName "s2")
 s3 = simpleSort (SortName "s3")
 s4 = simpleSort (SortName "s4")
 
-a1, a2, a3, a4, a5 :: SentenceSymbol (TermLike Variable)
-a1 = mkSymbol_ (testId "a1") [] s1
-a2 = mkSymbol_ (testId "a2") [] s1
-a3 = mkSymbol_ (testId "a3") [] s1
-a4 = mkSymbol_ (testId "a4") [] s1
-a5 = mkSymbol_ (testId "a5") [] s1
+constructor :: Symbol -> Symbol
+constructor =
+    Lens.set
+        (lensSymbolAttributes . Attribute.lensConstructor)
+        Attribute.Constructor { isConstructor = True }
 
-a, b, f :: SentenceSymbol (TermLike Variable)
-a = mkSymbol_ (testId "a") [] s1
-b = mkSymbol_ (testId "b") [] s2
-f = mkSymbol_ (testId "f") [s1] s2
+functional :: Symbol -> Symbol
+functional =
+    Lens.set
+        (lensSymbolAttributes . Attribute.lensFunctional)
+        Attribute.Functional { isDeclaredFunctional = True }
 
-ef, eg, eh :: SentenceSymbol (TermLike Variable)
-ef = mkSymbol_ (testId "ef") [s1, s1, s1] s1
-eg = mkSymbol_ (testId "eg") [s1] s1
-eh = mkSymbol_ (testId "eh") [s1] s1
+function :: Symbol -> Symbol
+function =
+    Lens.set
+        (lensSymbolAttributes . Attribute.lensFunction)
+        Attribute.Function { isDeclaredFunction = True }
 
-nonLinF, nonLinG, nonLinAS :: SentenceSymbol (TermLike Variable)
-nonLinF  = mkSymbol_ (testId "nonLinF") [s1, s1] s1
-nonLinG  = mkSymbol_ (testId "nonLinG") [s1] s1
-nonLinAS = mkSymbol_ (testId "nonLinA") [] s1
+injective :: Symbol -> Symbol
+injective =
+    Lens.set
+        (lensSymbolAttributes . Attribute.lensInjective)
+        Attribute.Injective { isDeclaredInjective = True }
+
+sortInjection :: Symbol -> Symbol
+sortInjection =
+    Lens.set
+        (lensSymbolAttributes . Attribute.lensSortInjection)
+        Attribute.SortInjection { isSortInjection = True }
+
+symbol :: Text -> Symbol
+symbol name =
+    Symbol
+        { symbolConstructor = testId name
+        , symbolParams = []
+        , symbolAttributes = Attribute.defaultSymbolAttributes
+        }
+
+var :: Text -> Sort -> Variable
+var name variableSort =
+    Variable
+        { variableName = testId name
+        , variableSort
+        , variableCounter = mempty
+        }
+
+a1Symbol, a2Symbol, a3Symbol, a4Symbol, a5Symbol :: Symbol
+a1Symbol = symbol "a1" & constructor & functional & injective
+a2Symbol = symbol "a2" & functional
+a3Symbol = symbol "a3" & constructor & injective
+a4Symbol = symbol "a4" & functional & injective
+a5Symbol = symbol "a5" & function
+
+a1, a2, a3, a4, a5 :: TermLike Variable
+a1 = mkApplySymbol s1 a1Symbol []
+a2 = mkApplySymbol s1 a2Symbol []
+a3 = mkApplySymbol s1 a3Symbol []
+a4 = mkApplySymbol s1 a4Symbol []
+a5 = mkApplySymbol s1 a5Symbol []
+
+aSymbol, bSymbol, fSymbol :: Symbol
+aSymbol = symbol "a" & constructor & functional & injective
+bSymbol = symbol "b" & constructor & functional & injective
+fSymbol = symbol "f" & constructor & functional & injective
+
+a, b :: TermLike Variable
+a = mkApplySymbol s1 aSymbol []
+b = mkApplySymbol s2 bSymbol []
+
+f :: TermLike Variable -> TermLike Variable
+f x' = mkApplySymbol s2 fSymbol [x']
+
+efSymbol, egSymbol, ehSymbol :: Symbol
+efSymbol = symbol "ef" & constructor & functional & injective
+egSymbol = symbol "eg" & constructor & functional & injective
+ehSymbol = symbol "eh" & constructor & functional & injective
+
+ef
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+ef x' y' z' = mkApplySymbol s1 efSymbol [x', y', z']
+
+eg, eh :: TermLike Variable -> TermLike Variable
+eg x' = mkApplySymbol s1 egSymbol [x']
+eh x' = mkApplySymbol s1 ehSymbol [x']
+
+nonLinFSymbol, nonLinGSymbol, nonLinASymbol :: Symbol
+nonLinFSymbol = symbol "nonLinF" & constructor & functional & injective
+nonLinGSymbol = symbol "nonLinG" & constructor & functional & injective
+nonLinASymbol = symbol "nonLinA" & constructor & functional & injective
+
+nonLinF :: TermLike Variable -> TermLike Variable -> TermLike Variable
+nonLinF x' y' = mkApplySymbol s1 nonLinFSymbol [x', y']
+
+nonLinG :: TermLike Variable -> TermLike Variable
+nonLinG x' = mkApplySymbol s1 nonLinGSymbol [x']
 
 nonLinA, nonLinX, nonLinY :: TermLike Variable
-nonLinA = applySymbol_ nonLinAS []
-nonLinX = mkVar Variable { variableName = testId "x", variableCounter = mempty, variableSort = s1 }
-nonLinY = mkVar Variable { variableName = testId "y", variableCounter = mempty, variableSort = s1 }
+nonLinA = mkApplySymbol s1 nonLinASymbol []
+nonLinX = mkVar $ var "x" s1
+nonLinY = mkVar $ var "y" s1
 
-expBin :: SentenceSymbol (TermLike Variable)
-expBin = mkSymbol_ (testId "times") [s1, s1] s1
+expBinSymbol :: Symbol
+expBinSymbol = symbol "times" & constructor & functional & injective
+
+expBin :: TermLike Variable -> TermLike Variable -> TermLike Variable
+expBin x' y' = mkApplySymbol s1 expBinSymbol [x', y']
 
 expA, expX, expY :: TermLike Variable
-expA = mkVar Variable { variableName = testId "a", variableCounter = mempty, variableSort = s1 }
-expX = mkVar Variable { variableName = testId "x", variableCounter = mempty, variableSort = s1 }
-expY = mkVar Variable { variableName = testId "y", variableCounter = mempty, variableSort = s1 }
+expA = mkVar $ var "a" s1
+expX = mkVar $ var "x" s1
+expY = mkVar $ var "y" s1
 
 ex1, ex2, ex3, ex4 :: TermLike Variable
-ex1 = mkVar Variable { variableName = testId "ex1", variableCounter = mempty, variableSort = s1 }
-ex2 = mkVar Variable { variableName = testId "ex2", variableCounter = mempty, variableSort = s1 }
-ex3 = mkVar Variable { variableName = testId "ex3", variableCounter = mempty, variableSort = s1 }
-ex4 = mkVar Variable { variableName = testId "ex4", variableCounter = mempty, variableSort = s1 }
+ex1 = mkVar $ var "ex1" s1
+ex2 = mkVar $ var "ex2" s1
+ex3 = mkVar $ var "ex3" s1
+ex4 = mkVar $ var "ex4" s1
 
 
 dv1, dv2 :: TermLike Variable
@@ -123,32 +203,11 @@ dv2 =
         , domainValueChild = mkStringLiteral "dv2"
         }
 
-aA :: TermLike Variable
-aA = applySymbol_ a []
-
-a1A :: TermLike Variable
-a1A = applySymbol_ a1 []
-
-a2A :: TermLike Variable
-a2A = applySymbol_ a2 []
-
-a3A :: TermLike Variable
-a3A = applySymbol_ a3 []
-
-a4A :: TermLike Variable
-a4A = applySymbol_ a4 []
-
-a5A :: TermLike Variable
-a5A = applySymbol_ a5 []
-
-bA :: TermLike Variable
-bA = applySymbol_ b []
-
 x :: TermLike Variable
-x = mkVar Variable { variableName = testId "x", variableCounter = mempty, variableSort = s1 }
+x = mkVar $ var "x" s1
 
 xs2 :: TermLike Variable
-xs2 = mkVar Variable { variableName = testId "xs2", variableCounter = mempty, variableSort = s2 }
+xs2 = mkVar $ var "xs2" s2
 
 sortParam :: Text -> SortVariable
 sortParam name = SortVariable (testId name)
@@ -156,51 +215,15 @@ sortParam name = SortVariable (testId name)
 sortParamSort :: Text -> Sort
 sortParamSort = SortVariableSort . sortParam
 
-injName :: Text
-injName = "inj"
+injSymbol :: Symbol
+injSymbol =
+    symbol "inj"
+    & Lens.set lensSymbolParams [sortParamSort "From", sortParamSort "To"]
+    & functional & injective & sortInjection
 
-symbolInj :: SentenceSymbol (TermLike Variable)
-symbolInj =
-    mkSymbol
-        (testId injName)
-        [sortParam "From", sortParam "To"]
-        [sortParamSort "From"]
-        (sortParamSort "To")
-
-isInjHead :: SymbolOrAlias -> Bool
-isInjHead pHead = getId (symbolOrAliasConstructor pHead) == injName
-
-mockStepperAttributes :: SymbolOrAlias -> StepperAttributes
-mockStepperAttributes patternHead =
-    defaultSymbolAttributes
-        { constructor = Constructor { isConstructor }
-        , functional = Functional { isDeclaredFunctional }
-        , function = Function { isDeclaredFunction }
-        , injective = Injective { isDeclaredInjective }
-        , sortInjection = SortInjection { isSortInjection }
-        }
-  where
-    isConstructor =
-            patternHead /= getSentenceSymbolOrAliasHead a2 []
-        &&  patternHead /= getSentenceSymbolOrAliasHead a4 []
-        &&  patternHead /= getSentenceSymbolOrAliasHead a5 []
-        &&  not (isInjHead patternHead)
-    isDeclaredFunctional =
-            patternHead /= getSentenceSymbolOrAliasHead a3 []
-        &&  patternHead /= getSentenceSymbolOrAliasHead a5 []
-    isDeclaredFunction = patternHead == getSentenceSymbolOrAliasHead a5 []
-    isDeclaredInjective =
-        (  patternHead /= getSentenceSymbolOrAliasHead a2 []
-        && patternHead /= getSentenceSymbolOrAliasHead a5 []
-        )
-        || isInjHead patternHead
-    isSortInjection = isInjHead patternHead
-
-tools :: SmtMetadataTools StepperAttributes
+tools :: SmtMetadataTools Attribute.Symbol
 tools = MetadataTools
-    { symAttributes = mockStepperAttributes
-    , symbolOrAliasType = const HeadType.Symbol
-    , sortAttributes = undefined
+    { sortAttributes = undefined
     , isSubsortOf = const $ const False
     , subsorts = Set.singleton
     , applicationSorts = undefined
@@ -267,7 +290,7 @@ andSimplifySuccess term1 term2 results = do
     Right subst' <-
         runSMT
         $ evalSimplifier testEnv
-        $ Monad.Unify.runUnifier
+        $ Monad.Unify.runUnifierT
         $ simplifyAnds (unificationProblem term1 term2 :| [])
     assertEqualWithExplanation "" expect subst'
 
@@ -283,7 +306,7 @@ andSimplifyFailure term1 term2 err = do
     actual <-
         runSMT
         $ evalSimplifier testEnv
-        $ Monad.Unify.runUnifier
+        $ Monad.Unify.runUnifierT
         $ simplifyAnds (unificationProblem term1 term2 :| [])
     assertEqual "" (show expect) (show actual)
 
@@ -298,11 +321,11 @@ andSimplifyException message term1 term2 exceptionMessage =
     testCase message (catch test handler)
     where
         test = do
-            var <-
+            assignment <-
                 runSMT $ evalSimplifier testEnv
-                $ Monad.Unify.runUnifier
+                $ Monad.Unify.runUnifierT
                 $ simplifyAnds (unificationProblem term1 term2 :| [])
-            _ <- evaluate var
+            _ <- evaluate assignment
             assertFailure "This evaluation should fail"
         handler (ErrorCall s) = assertEqual "" exceptionMessage s
 
@@ -326,7 +349,7 @@ unificationProcedureSuccessWithSimplifiers
         Right results <-
             runSMT
             $ evalSimplifier mockEnv
-            $ Monad.Unify.runUnifier
+            $ Monad.Unify.runUnifierT
             $ unificationProcedure term1 term2
         let
             normalize
@@ -360,10 +383,10 @@ test_unification :: [TestTree]
 test_unification =
     [ testCase "Constant" $
         andSimplifySuccess
-            (UnificationTerm aA)
-            (UnificationTerm aA)
+            (UnificationTerm a)
+            (UnificationTerm a)
             [ UnificationResult
-                { term = aA
+                { term = a
                 , substitution = []
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
@@ -371,62 +394,53 @@ test_unification =
     , testCase "Variable" $
         andSimplifySuccess
             (UnificationTerm x)
-            (UnificationTerm aA)
+            (UnificationTerm a)
             [ UnificationResult
-                { term = aA
-                , substitution = [("x", aA)]
+                { term = a
+                , substitution = [("x", a)]
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]
     , testCase "one level" $
         andSimplifySuccess
-            (UnificationTerm (applySymbol_ f [x]))
-            (UnificationTerm (applySymbol_ f [aA]))
+            (UnificationTerm (f x))
+            (UnificationTerm (f a))
             [ UnificationResult
-                { term = applySymbol_ f [aA]
-                , substitution = [("x", aA)]
+                { term = f a
+                , substitution = [("x", a)]
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]
     , testCase "equal non-constructor patterns" $
         andSimplifySuccess
-            (UnificationTerm a2A)
-            (UnificationTerm a2A)
+            (UnificationTerm a2)
+            (UnificationTerm a2)
             [ UnificationResult
-                { term = a2A
+                { term = a2
                 , substitution = []
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]
     , testCase "variable + non-constructor pattern" $
         andSimplifySuccess
-            (UnificationTerm a2A)
+            (UnificationTerm a2)
             (UnificationTerm x)
             [ UnificationResult
-                { term = a2A
-                , substitution = [("x", a2A)]
+                { term = a2
+                , substitution = [("x", a2)]
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]
     , testCase "https://basics.sjtu.edu.cn/seminars/c_chu/Algorithm.pdf slide 3" $
         andSimplifySuccess
-            (UnificationTerm
-                (applySymbol_ ef [ex1, applySymbol_ eh [ex1], ex2])
-            )
-            (UnificationTerm
-                (applySymbol_ ef [applySymbol_ eg [ex3], ex4, ex3])
-            )
+            (UnificationTerm (ef ex1 (eh ex1) ex2))
+            (UnificationTerm (ef (eg ex3) ex4 ex3))
             [ UnificationResult
-                { term = applySymbol_
-                    ef
-                    [ applySymbol_ eg [ex3]
-                    , applySymbol_ eh [ex1]
-                    , ex3
-                    ]
+                { term = ef (eg ex3) (eh ex1) ex3
                 , substitution =
-                    [ ("ex1", applySymbol_ eg [ex3])
+                    [ ("ex1", eg ex3)
                     , ("ex2", ex3)
-                    , ("ex4", applySymbol_ eh [applySymbol_ eg [ex3]])
+                    , ("ex4", eh (eg ex3))
                     ]
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
@@ -434,79 +448,63 @@ test_unification =
     , testCase "f(g(X),X) = f(Y,a) https://en.wikipedia.org/wiki/Unification_(computer_science)#Examples_of_syntactic_unification_of_first-order_terms" $
         andSimplifySuccess
 
-            (UnificationTerm
-                (applySymbol_ nonLinF [applySymbol_ nonLinG [nonLinX], nonLinX])
-            )
-            (UnificationTerm (applySymbol_ nonLinF [nonLinY, nonLinA]))
+            (UnificationTerm (nonLinF (nonLinG nonLinX) nonLinX))
+            (UnificationTerm (nonLinF nonLinY nonLinA))
             [ UnificationResult
-                { term = applySymbol_
-                    nonLinF
-                    [applySymbol_ nonLinG [nonLinX], nonLinA]
+                { term = nonLinF (nonLinG nonLinX) nonLinA
                 , substitution =
                     [ ("x", nonLinA)
-                    , ("y", applySymbol_ nonLinG [nonLinA])
+                    , ("y", nonLinG nonLinA)
                     ]
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]
     , testCase "times(times(a, y), x) = times(x, times(y, a))" $
         andSimplifySuccess
-            (UnificationTerm
-                (applySymbol_ expBin [applySymbol_ expBin [expA, expY], expX])
-            )
-            (UnificationTerm
-                (applySymbol_ expBin [expX, applySymbol_ expBin [expY, expA]])
-            )
+            (UnificationTerm (expBin (expBin expA expY) expX))
+            (UnificationTerm (expBin expX (expBin expY expA)))
             [ UnificationResult
-                { term = applySymbol_
-                    expBin
-                    [ applySymbol_ expBin [expA, expY]
-                    , applySymbol_ expBin [expY, expA]
-                    ]
+                { term = expBin (expBin expA expY) (expBin expY expA)
                 , substitution =
                     [ ("a", expY)
-                    , ("x", applySymbol_ expBin [expY, expY])
+                    , ("x", expBin expY expY)
                     ]
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]
     , unificationProcedureSuccess
         "times(x, g(x)) = times(a, a) -- cycle bottom"
-        (UnificationTerm (applySymbol_ expBin [expX, applySymbol_ eg [expX]]))
-        (UnificationTerm (applySymbol_ expBin [expA, expA]))
+        (UnificationTerm (expBin expX (eg expX)))
+        (UnificationTerm (expBin expA expA))
         []
     , unificationProcedureSuccess
         "times(times(a, y), x) = times(x, times(y, a))"
-        (UnificationTerm
-            (applySymbol_ expBin [applySymbol_ expBin [expA, expY], expX])
-        )
-        (UnificationTerm
-            (applySymbol_ expBin [expX, applySymbol_ expBin [expY, expA]])
-        )
+        (UnificationTerm (expBin (expBin expA expY) expX))
+        (UnificationTerm (expBin expX (expBin expY expA)))
         [   (   [ ("a", expY)
-                , ("x", applySymbol_ expBin [expY, expY])
+                , ("x", expBin expY expY)
                 ]
             , Syntax.Predicate.makeTruePredicate
             )
         ]
     , unificationProcedureSuccess
         "Unifying two non-ctors results in equals predicate"
-        (UnificationTerm a2A)
-        (UnificationTerm a4A)
-        [ ([], makeEqualsPredicate a2A a4A) ]
+        (UnificationTerm a2)
+        (UnificationTerm a4)
+        [ ([], makeEqualsPredicate a2 a4) ]
     , unificationProcedureSuccess
         "Unifying function and variable results in ceil predicate"
         (UnificationTerm x)
-        (UnificationTerm a5A)
-        [   ( [("x", a5A)]
-            , Syntax.Predicate.makeCeilPredicate a5A
+        (UnificationTerm a5)
+        [   ( [("x", a5)]
+            , Syntax.Predicate.makeCeilPredicate a5
             )
         ]
     , testGroup "inj unification tests" injUnificationTests
     , testCase "Unmatching constants is bottom" $
         andSimplifySuccess
-            (UnificationTerm aA)
-            (UnificationTerm a1A)
+            (UnificationTerm a)
+            (UnificationTerm a1)
             []
     , testCase "Unmatching domain values is bottom" $
         andSimplifySuccess
@@ -514,68 +512,64 @@ test_unification =
             (UnificationTerm dv2)
             []
     , andSimplifyException "Unmatching constructor constant + domain value"
-        (UnificationTerm aA)
+        (UnificationTerm a)
         (UnificationTerm dv2)
         "Cannot handle Constructor and DomainValue:\n\
         \a{}()\n\\dv{s1{}}(\"dv2\")\n"
     , andSimplifyException "Unmatching domain value + constructor constant"
         (UnificationTerm dv1)
-        (UnificationTerm aA)
+        (UnificationTerm a)
         "Cannot handle DomainValue and Constructor:\n\
         \\\dv{s1{}}(\"dv1\")\na{}()\n"
     , testCase "Unmatching domain value + nonconstructor constant" $
         andSimplifySuccess
             (UnificationTerm dv1)
-            (UnificationTerm a2A)
+            (UnificationTerm a2)
             [ UnificationResult
                 { term = dv1
                 , substitution = []
-                , predicate = makeEqualsPredicate dv1 a2A
+                , predicate = makeEqualsPredicate dv1 a2
                 }
             ]
     , testCase "Unmatching nonconstructor constant + domain value" $
         andSimplifySuccess
-            (UnificationTerm a2A)
+            (UnificationTerm a2)
             (UnificationTerm dv1)
             [ UnificationResult
-                { term = a2A
+                { term = a2
                 , substitution = []
-                , predicate = makeEqualsPredicate a2A dv1
+                , predicate = makeEqualsPredicate a2 dv1
                 }
             ]
     , testCase "non-functional pattern" $
         andSimplifyFailure
             (UnificationTerm x)
-            (UnificationTerm a3A)
-            (unsupportedPatterns
-                "Unknown unification case."
-                x
-                a3A
-            )
+            (UnificationTerm a3)
+            (unsupportedPatterns "Unknown unification case."  x a3)
     , testCase "non-constructor symbolHead right" $
         andSimplifySuccess
-            (UnificationTerm aA)
-            (UnificationTerm a2A)
+            (UnificationTerm a)
+            (UnificationTerm a2)
             [ UnificationResult
-                { term = aA
+                { term = a
                 , substitution = []
-                , predicate = makeEqualsPredicate aA a2A
+                , predicate = makeEqualsPredicate a a2
                 }
             ]
     , testCase "non-constructor symbolHead left" $
         andSimplifySuccess
-            (UnificationTerm a2A)
-            (UnificationTerm aA)
+            (UnificationTerm a2)
+            (UnificationTerm a)
             [ UnificationResult
-                { term = a2A
+                { term = a2
                 , substitution = []
-                , predicate = makeEqualsPredicate a2A aA
+                , predicate = makeEqualsPredicate a2 a
                 }
             ]
     , testCase "nested a=a1 is bottom" $
         andSimplifySuccess
-            (UnificationTerm (applySymbol_ f [aA]))
-            (UnificationTerm (applySymbol_ f [a1A]))
+            (UnificationTerm (f a))
+            (UnificationTerm (f a1))
             []
           {- currently this cannot even be built because of builder checks
     , andSimplifyFailure "Unmatching sorts"
@@ -599,12 +593,12 @@ test_unsupportedConstructs :: TestTree
 test_unsupportedConstructs =
     testCase "Unsupported constructs" $
         andSimplifyFailure
-            (UnificationTerm (applySymbol_ f [aA]))
-            (UnificationTerm (applySymbol_ f [mkImplies aA (mkNext a1A)]))
+            (UnificationTerm (f a))
+            (UnificationTerm (f (mkImplies a (mkNext a1))))
             (unsupportedPatterns
                 "Unknown unification case."
-                aA
-                (mkImplies aA (mkNext a1A))
+                a
+                (mkImplies a (mkNext a1))
             )
 
 newtype V = V Integer
@@ -647,78 +641,78 @@ injUnificationTests :: [TestTree]
 injUnificationTests =
     [ testCase "Injected Variable" $
         andSimplifySuccess
-            (UnificationTerm (applyInj s2 x))
-            (UnificationTerm (applyInj s2 aA))
+            (UnificationTerm (inj s2 x))
+            (UnificationTerm (inj s2 a))
             [ UnificationResult
-                { term = applyInj s2 aA
-                , substitution = [("x", aA)]
+                { term = inj s2 a
+                , substitution = [("x", a)]
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]
     , testCase "Variable" $
         andSimplifySuccess
             (UnificationTerm xs2)
-            (UnificationTerm (applyInj s2 aA))
+            (UnificationTerm (inj s2 a))
             [ UnificationResult
-                { term = applyInj s2 aA
-                , substitution = [("xs2", applyInj s2 aA)]
+                { term = inj s2 a
+                , substitution = [("xs2", inj s2 a)]
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]
     , testCase "Injected Variable vs doubly injected term" $ do
         term2 <-
             simplifyPattern
-            $ UnificationTerm (applyInj s2 (applyInj s3 aA))
+            $ UnificationTerm (inj s2 (inj s3 a))
         andSimplifySuccess
-            (UnificationTerm (applyInj s2 x))
+            (UnificationTerm (inj s2 x))
             term2
             [ UnificationResult
-                { term = applyInj s2 aA
-                , substitution = [("x", aA)]
+                { term = inj s2 a
+                , substitution = [("x", a)]
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]
     , testCase "doubly injected variable vs injected term" $ do
         term1 <-
             simplifyPattern
-            $ UnificationTerm (applyInj s2 (applyInj s3 x))
+            $ UnificationTerm (inj s2 (inj s3 x))
         andSimplifySuccess
             term1
-            (UnificationTerm (applyInj s2 aA))
+            (UnificationTerm (inj s2 a))
             [ UnificationResult
-                { term = applyInj s2 aA
-                , substitution = [("x", aA)]
+                { term = inj s2 a
+                , substitution = [("x", a)]
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]
     , testCase "doubly injected variable vs doubly injected term" $ do
         term1 <-
             simplifyPattern
-            $ UnificationTerm (applyInj s2 (applyInj s4 x))
+            $ UnificationTerm (inj s2 (inj s4 x))
         term2 <-
             simplifyPattern
-            $ UnificationTerm (applyInj s2 (applyInj s3 aA))
+            $ UnificationTerm (inj s2 (inj s3 a))
         andSimplifySuccess
             term1
             term2
             [ UnificationResult
-                { term = applyInj s2 aA
-                , substitution = [("x", aA)]
+                { term = inj s2 a
+                , substitution = [("x", a)]
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]
     , testCase "constant vs injection is bottom" $
         andSimplifySuccess
-            (UnificationTerm aA)
-            (UnificationTerm (applyInj s1 xs2))
+            (UnificationTerm a)
+            (UnificationTerm (inj s1 xs2))
             []
     , testCase "unmatching nested injections" $ do
         term1 <-
             simplifyPattern
-            $ UnificationTerm (applyInj s4 (applyInj s2 aA))
+            $ UnificationTerm (inj s4 (inj s2 a))
         term2 <-
             simplifyPattern
-            $ UnificationTerm (applyInj s4 (applyInj s3 bA))
+            $ UnificationTerm (inj s4 (inj s3 b))
         andSimplifySuccess
             term1
             term2
@@ -726,8 +720,8 @@ injUnificationTests =
     , testCase "unmatching injections" $
         andSimplifySuccess
             -- TODO(traiansf): this should succeed if s1 < s2 < s3
-            (UnificationTerm (applyInj s3 aA))
-            (UnificationTerm (applyInj s3 xs2))
+            (UnificationTerm (inj s3 a))
+            (UnificationTerm (inj s3 xs2))
             []
     ]
 

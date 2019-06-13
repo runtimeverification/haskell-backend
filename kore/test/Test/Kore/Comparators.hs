@@ -67,6 +67,7 @@ import qualified Kore.Step.SMT.AST as SMT.SymbolReference
 import qualified Kore.Step.SMT.AST as SMT.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
 import           Kore.Syntax as Syntax
+import           Kore.Syntax.Sentence as Syntax
 import qualified Kore.Syntax.SetVariable as SetVariable
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution
@@ -395,8 +396,11 @@ instance (Show child, EqualWithExplanation child)
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance (Show child, EqualWithExplanation child)
-    => StructEqualWithExplanation (Application SymbolOrAlias child)
+instance
+    ( Show head, EqualWithExplanation head
+    , Show child, EqualWithExplanation child
+    ) =>
+    StructEqualWithExplanation (Application head child)
   where
     structFieldsWithNames
         expected@(Application _ _)
@@ -412,8 +416,11 @@ instance (Show child, EqualWithExplanation child)
         ]
     structConstructorName _ = "Application"
 
-instance (Show child, EqualWithExplanation child)
-    => EqualWithExplanation (Application SymbolOrAlias child)
+instance
+    ( Show head, EqualWithExplanation head
+    , Show child, EqualWithExplanation child
+    ) =>
+    EqualWithExplanation (Application head child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
@@ -846,6 +853,38 @@ instance EqualWithExplanation Id where
 
 instance EqualWithExplanation Sort where
     compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+instance StructEqualWithExplanation TermLike.Alias where
+    structFieldsWithNames
+        expected@(TermLike.Alias _ _)
+        actual@(TermLike.Alias _ _)
+      =
+        [ Function.on (EqWrap "aliasConstructor = ")
+            TermLike.aliasConstructor expected actual
+        , Function.on (EqWrap "aliasParams = ")
+            TermLike.aliasParams expected actual
+        ]
+    structConstructorName _ = "Alias"
+
+instance EqualWithExplanation TermLike.Alias where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance StructEqualWithExplanation TermLike.Symbol where
+    structFieldsWithNames
+        expected@(TermLike.Symbol _ _ _)
+        actual@(TermLike.Symbol _ _ _)
+      =
+        [ Function.on (EqWrap "symbolConstructor = ")
+            TermLike.symbolConstructor expected actual
+        , Function.on (EqWrap "symbolParams = ")
+            TermLike.symbolParams expected actual
+        ]
+    structConstructorName _ = "Symbol"
+
+instance EqualWithExplanation TermLike.Symbol where
+    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance StructEqualWithExplanation SymbolOrAlias where
@@ -1594,16 +1633,16 @@ instance
 
 -- For: Alias
 
-instance EqualWithExplanation Alias where
+instance EqualWithExplanation Syntax.Alias where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance StructEqualWithExplanation Alias where
+instance StructEqualWithExplanation Syntax.Alias where
     structConstructorName _ = "Alias"
-    structFieldsWithNames expect@(Alias _ _) actual@(Alias _ _) =
+    structFieldsWithNames expect@(Syntax.Alias _ _) actual@(Syntax.Alias _ _) =
         map (\f -> f expect actual)
-            [ Function.on (EqWrap "aliasConstructor = ") aliasConstructor
-            , Function.on (EqWrap "aliasParams = ") aliasParams
+            [ Function.on (EqWrap "aliasConstructor = ") Syntax.aliasConstructor
+            , Function.on (EqWrap "aliasParams = ") Syntax.aliasParams
             ]
 
 -- For: SortVariable
@@ -2035,9 +2074,15 @@ instance
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 
-    sumConstructorPair (TermLike.ApplicationF a1) (TermLike.ApplicationF a2) =
-        SumConstructorSameWithArguments (EqWrap "ApplicationF" a1 a2)
-    sumConstructorPair pattern1@(TermLike.ApplicationF _) pattern2 =
+    sumConstructorPair (TermLike.ApplyAliasF a1) (TermLike.ApplyAliasF a2) =
+        SumConstructorSameWithArguments (EqWrap "ApplyAliasF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.ApplyAliasF _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+    sumConstructorPair (TermLike.ApplySymbolF a1) (TermLike.ApplySymbolF a2) =
+        SumConstructorSameWithArguments (EqWrap "ApplySymbolF" a1 a2)
+    sumConstructorPair pattern1@(TermLike.ApplySymbolF _) pattern2 =
         SumConstructorDifferent
             (printWithExplanation pattern1) (printWithExplanation pattern2)
 

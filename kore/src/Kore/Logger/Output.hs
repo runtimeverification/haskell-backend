@@ -12,6 +12,7 @@ module Kore.Logger.Output
     , withLogger
     , parseKoreLogOptions
     , emptyLogger
+    , stdoutLogger
     , swappableLogger
     , makeKoreLogger
     , Colog.logTextStdout
@@ -94,7 +95,7 @@ withLogger KoreLogOptions { logType, logLevel } cont =
         LogNone     ->
             cont mempty
         LogStdOut   ->
-            cont $ makeKoreLogger logLevel Colog.logTextStdout
+            cont (stdoutLogger logLevel)
         LogFileText -> do
             fileName <- getKoreLogFileName
             Colog.withLogTextFile fileName
@@ -195,6 +196,9 @@ formatLocalTime format = fromString . formatTime defaultTimeLocale format
 
 emptyLogger :: Applicative m => LogAction m msg
 emptyLogger = mempty
+
+stdoutLogger :: MonadIO m => Severity -> LogAction m LogMessage
+stdoutLogger logLevel = makeKoreLogger logLevel Colog.logTextStdout
 
 {- | @swappableLogger@ delegates to the logger contained in the 'MVar'.
 

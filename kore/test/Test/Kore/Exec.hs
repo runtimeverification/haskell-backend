@@ -30,8 +30,7 @@ import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Constructor
 import           Kore.Attribute.Functional
 import           Kore.Attribute.Hook
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import           Kore.Exec
@@ -46,12 +45,15 @@ import           Kore.Step.Rule
 import           Kore.Step.Search
                  ( SearchType (..) )
 import qualified Kore.Step.Search as Search
+import           Kore.Syntax.Definition hiding
+                 ( Symbol )
 import qualified Kore.Verified as Verified
 import qualified SMT
 
-import Test.Kore
-import Test.Kore.Comparators ()
-import Test.Tasty.HUnit.Extensions
+import           Test.Kore
+import           Test.Kore.Comparators ()
+import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+import           Test.Tasty.HUnit.Extensions
 
 test_exec :: TestTree
 test_exec = testCase "exec" $ actual >>= assertEqualWithExplanation "" expected
@@ -185,7 +187,7 @@ extractSearchResults =
 
 verifiedMyModule
     :: Module Verified.Sentence
-    -> VerifiedModule StepperAttributes Attribute.Axiom
+    -> VerifiedModule Attribute.Symbol Attribute.Axiom
 verifiedMyModule module_ = indexedModule
   where
     Just indexedModule = Map.lookup (ModuleName "MY-MODULE") indexedModules
@@ -267,11 +269,12 @@ rewriteAxiom lhsName rhsName =
 
 applyToNoArgs :: Sort -> Text -> TermLike Variable
 applyToNoArgs sort name =
-    mkApp
+    mkApplySymbol
         sort
-        SymbolOrAlias
-            { symbolOrAliasConstructor = testId name
-            , symbolOrAliasParams = []
+        Symbol
+            { symbolConstructor = testId name
+            , symbolParams = []
+            , symbolAttributes = Mock.constructorFunctionalAttributes
             }
         []
 
@@ -349,11 +352,12 @@ test_execGetExitCode =
 
     mockGetExitCodeAxiom =
         mkEqualityAxiom
-            (mkApp myIntSort getExitCodeSym [mkVar v]) (mkVar v) Nothing
+            (mkApplySymbol myIntSort getExitCodeSym [mkVar v]) (mkVar v) Nothing
       where
         v = Variable
             { variableName = testId "V"
             , variableCounter = mempty
             , variableSort = myIntSort
             }
-        getExitCodeSym = SymbolOrAlias getExitCodeId []
+        getExitCodeSym =
+            Symbol getExitCodeId [] Attribute.defaultSymbolAttributes

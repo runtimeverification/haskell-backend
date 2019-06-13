@@ -12,12 +12,15 @@ module Kore.Attribute.Constructor
     ) where
 
 import qualified Control.Monad as Monad
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
+import Kore.Debug
 
 -- | @Constructor@ represents the @constructor@ attribute for symbols.
 newtype Constructor = Constructor { isConstructor :: Bool }
-    deriving (Generic, Eq, Ord, Show)
+    deriving (GHC.Generic, Eq, Ord, Show)
 
 instance Semigroup Constructor where
     (<>) (Constructor a) (Constructor b) = Constructor (a || b)
@@ -29,6 +32,12 @@ instance Default Constructor where
     def = mempty
 
 instance NFData Constructor
+
+instance SOP.Generic Constructor
+
+instance SOP.HasDatatypeInfo Constructor
+
+instance Debug Constructor
 
 -- | Kore identifier representing the @constructor@ attribute symbol.
 constructorId :: Id
@@ -56,3 +65,6 @@ instance ParseAttributes Constructor where
             return Constructor { isConstructor = True }
         withApplication' = Parser.withApplication constructorId
         failDuplicate' = Parser.failDuplicate constructorId
+
+    toAttributes Constructor { isConstructor } =
+        Attributes $ if isConstructor then [constructorAttribute] else []

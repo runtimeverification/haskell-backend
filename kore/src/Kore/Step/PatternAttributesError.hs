@@ -15,14 +15,14 @@ module Kore.Step.PatternAttributesError
     , TotalError (..)
     ) where
 
-import Kore.Syntax.Application
-       ( SymbolOrAlias )
+import Kore.Internal.Symbol
+       ( Symbol )
 
 {-| An error explaining why a pattern is not composed of function heads and
 things like StringLiteral, DomainValue and variables.
 -}
 data FunctionError
-    = NonFunctionHead SymbolOrAlias
+    = NonFunctionHead Symbol
     -- ^ The pattern was the application of a non-function head to something
     | NonFunctionPattern
     -- ^ The pattern is neither an application pattern nor one of the basic
@@ -33,7 +33,7 @@ data FunctionError
 things like StringLiteral, DomainValue and variables.
 -}
 data FunctionalError
-    = NonFunctionalHead SymbolOrAlias
+    = NonFunctionalHead Symbol
     -- ^ The pattern was the application of a non-functional head to something
     | NonFunctionalPattern
     -- ^ The pattern is neither an application pattern nor one of the basic
@@ -52,7 +52,7 @@ data ConstructorLikeError
 things like StringLiteral, DomainValue and variables.
 -}
 data TotalError
-    = NonTotalHead SymbolOrAlias
+    = NonTotalHead Symbol
     -- ^ The pattern was the application of a non-total head to something
     | NonTotalPattern
     -- ^ The pattern is neither an application pattern nor one of the basic

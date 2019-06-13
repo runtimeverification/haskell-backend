@@ -96,6 +96,7 @@ import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
 import qualified Kore.Attribute.Sort.Element as Attribute.Sort
 import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
+import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Builtin.Error
 import           Kore.Error
                  ( Error )
@@ -103,7 +104,7 @@ import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule, VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SmtMetadataTools )
+                 ( SmtMetadataTools )
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
@@ -116,7 +117,7 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Proof.Value as Value
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify, PredicateSimplifier, SimplificationType,
-                 Simplifier, TermLikeSimplifier )
+                 TermLikeSimplifier )
 import           Kore.Step.Simplification.Data
                  ( AttemptedAxiom (..),
                  AttemptedAxiomResults (AttemptedAxiomResults),
@@ -127,6 +128,9 @@ import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
+import           Kore.Syntax.Definition
+                 ( ParsedSentenceSort, ParsedSentenceSymbol, SentenceSort (..),
+                 SentenceSymbol (..) )
 import           Kore.Unparser
 import qualified Kore.Verified as Verified
 
@@ -557,10 +561,11 @@ unaryOperator
     get = extractVal ctx
     unaryOperator0
         :: Ord variable
+        => MonadSimplify m
         => TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom variable)
+        -> m (AttemptedAxiom variable)
     unaryOperator0 _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [BuiltinF a] -> do
@@ -603,10 +608,11 @@ binaryOperator
     get = extractVal ctx
     binaryOperator0
         :: Ord variable
+        => MonadSimplify m
         => TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom variable)
+        -> m (AttemptedAxiom variable)
     binaryOperator0 _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [BuiltinF a, BuiltinF b] -> do
@@ -649,10 +655,11 @@ ternaryOperator
     get = extractVal ctx
     ternaryOperator0
         :: Ord variable
+        => MonadSimplify m
         => TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom variable)
+        -> m (AttemptedAxiom variable)
     ternaryOperator0 _ resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [ BuiltinF a, BuiltinF b, BuiltinF c ] -> do
@@ -663,27 +670,28 @@ ternaryOperator
             _ -> wrongArity (Text.unpack ctx)
 
 type FunctionImplementation
-    = forall variable
+    = forall variable m
         .  Ord variable
+        => MonadSimplify m
         => TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
-        -> Simplifier (AttemptedAxiom variable)
+        -> m (AttemptedAxiom variable)
 
 functionEvaluator :: FunctionImplementation -> Function
 functionEvaluator impl =
     applicationAxiomSimplifier evaluator
   where
     evaluator
-        :: (Ord variable, Show variable)
+        :: (Ord variable, Show variable, MonadSimplify simplifier)
         => PredicateSimplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> CofreeF
-            (Application SymbolOrAlias)
+            (Application Symbol)
             (Attribute.Pattern variable)
             (TermLike variable)
-        -> Simplifier (AttemptedAxiom variable)
+        -> simplifier (AttemptedAxiom variable)
     evaluator _ simplifier _axiomIdToSimplifier (valid :< app) =
         impl simplifier resultSort applicationChildren
       where
@@ -704,19 +712,22 @@ runParser ctx result =
         Right a -> a
 
 {- | Look up the symbol hooked to the named builtin in the provided module.
+
+**WARNING**: The returned 'Symbol' will have the default attributes, not its
+declared attributes, because it is intended only for unparsing.
+
  -}
 lookupSymbol
     :: Text
     -- ^ builtin name
     -> Sort
     -- ^ the hooked sort
-    -> VerifiedModule declAtts axiomAtts
-    -> Either (Error e) SymbolOrAlias
-lookupSymbol builtinName builtinSort indexedModule
-  = do
+    -> VerifiedModule Attribute.Symbol axiomAtts
+    -> Either (Error e) Symbol
+lookupSymbol builtinName builtinSort indexedModule = do
     symbolOrAliasConstructor <-
         IndexedModule.resolveHook indexedModule builtinName builtinSort
-    return SymbolOrAlias
+    (return . getSymbol) SymbolOrAlias
         { symbolOrAliasConstructor
         , symbolOrAliasParams = []
         }
@@ -726,14 +737,14 @@ lookupSymbol builtinName builtinSort indexedModule
 It is an error if the sort does not provide a @unit@ attribute; this is checked
 during verification.
 
+**WARNING**: The returned 'Symbol' will have the default attributes, not its
+declared attributes, because it is intended only for unparsing.
+
  -}
-lookupSymbolUnit
-    :: Sort
-    -> Attribute.Sort
-    -> SymbolOrAlias
+lookupSymbolUnit :: Sort -> Attribute.Sort -> Symbol
 lookupSymbolUnit theSort attrs =
     case getUnit of
-        Just symbol -> symbol
+        Just symbol -> getSymbol symbol
         Nothing ->
             verifierBug
             $ "missing 'unit' attribute of sort '"
@@ -746,14 +757,14 @@ lookupSymbolUnit theSort attrs =
 It is an error if the sort does not provide a @element@ attribute; this is
 checked during verification.
 
+**WARNING**: The returned 'Symbol' will have the default attributes, not its
+declared attributes, because it is intended only for unparsing.
+
  -}
-lookupSymbolElement
-    :: Sort
-    -> Attribute.Sort
-    -> SymbolOrAlias
+lookupSymbolElement :: Sort -> Attribute.Sort -> Symbol
 lookupSymbolElement theSort attrs =
     case getElement of
-        Just symbol -> symbol
+        Just symbol -> getSymbol symbol
         Nothing ->
             verifierBug
             $ "missing 'element' attribute of sort '"
@@ -766,14 +777,14 @@ lookupSymbolElement theSort attrs =
 It is an error if the sort does not provide a @concat@ attribute; this is
 checked during verification.
 
+**WARNING**: The returned 'Symbol' will have the default attributes, not its
+declared attributes, because it is intended only for unparsing.
+
  -}
-lookupSymbolConcat
-    :: Sort
-    -> Attribute.Sort
-    -> SymbolOrAlias
+lookupSymbolConcat :: Sort -> Attribute.Sort -> Symbol
 lookupSymbolConcat theSort attrs =
     case getConcat of
-        Just symbol -> symbol
+        Just symbol -> getSymbol symbol
         Nothing ->
             verifierBug
             $ "missing 'concat' attribute of sort '"
@@ -781,17 +792,32 @@ lookupSymbolConcat theSort attrs =
   where
     Attribute.Sort { concat = Attribute.Sort.Concat { getConcat } } = attrs
 
+{- | Get the internal 'Symbol' for a builtin symbol.
+
+**WARNING**: The returned 'Symbol' will have the default attributes, not its
+declared attributes, because it is intended only for unparsing.
+
+ -}
+getSymbol :: SymbolOrAlias -> Symbol
+getSymbol symbol =
+    Symbol
+        { symbolConstructor
+        , symbolParams
+        , symbolAttributes = Attribute.defaultSymbolAttributes
+        }
+  where
+    symbolConstructor = symbolOrAliasConstructor symbol
+    symbolParams = symbolOrAliasParams symbol
+
 {- | Is the given symbol hooked to the named builtin?
  -}
 isSymbol
     :: Text  -- ^ Builtin symbol
     -> SmtMetadataTools Hook
-    -> SymbolOrAlias  -- ^ Kore symbol
+    -> Symbol  -- ^ Kore symbol
     -> Bool
-isSymbol builtinName MetadataTools { symAttributes } sym =
-    case getHook (symAttributes sym) of
-        Just hook -> hook == builtinName
-        Nothing -> False
+isSymbol builtinName _ Symbol { symbolAttributes = Attribute.Symbol { hook } } =
+  maybe False (== builtinName) (getHook hook)
 
 {- | Ensure that a 'StepPattern' is a concrete, normalized term.
 

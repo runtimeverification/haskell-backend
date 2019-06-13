@@ -48,12 +48,12 @@ Right now this uses the following:
 simplify
     ::  ( FreshVariable variable
         , SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
         )
     => Not Sort (OrPattern variable)
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplify Not { notChild } = simplifyEvaluated notChild
 
 {-|'simplifyEvaluated' simplifies a 'Not' pattern given its
@@ -77,12 +77,12 @@ to carry around.
 simplifyEvaluated
     ::  ( FreshVariable variable
         , SortedVariable variable
-        , Ord variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
         )
     => OrPattern variable
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplifyEvaluated simplified =
     fmap OrPattern.fromPatterns $ gather $ do
         let not' = Not { notChild = simplified, notSort = () }
@@ -169,12 +169,12 @@ scatterAnd = scatter . distributeAnd
  -}
 mkMultiAndPattern
     ::  ( FreshVariable variable
-        , Ord variable
         , SortedVariable variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
         )
     => MultiAnd (Pattern variable)
-    -> BranchT Simplifier (Pattern variable)
+    -> BranchT simplifier (Pattern variable)
 mkMultiAndPattern patterns =
     Foldable.foldrM And.makeEvaluate Pattern.top patterns

@@ -48,8 +48,11 @@ instance Default SourceLocation where
 
 instance ParseAttributes SourceLocation where
     parseAttribute attr =
-            lensLocation (parseAttribute attr)
-            >=> lensSource (parseAttribute attr)
+        lensLocation (parseAttribute attr)
+        >=> lensSource (parseAttribute attr)
+
+    -- TODO (thomas.tuegel): Implement
+    toAttributes _ = def
 
 instance Pretty SourceLocation where
     pretty SourceLocation

@@ -94,69 +94,84 @@ simplify patt = do
 simplifyToOr
     ::  ( SortedVariable variable
         , Show variable
-        , Ord variable
         , Unparse variable
         , FreshVariable variable
+        , MonadSimplify simplifier
         )
     => TermLike variable
-    -> Simplifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 simplifyToOr =
     localSimplifierTermLike (const simplifier) . simplifyInternal
   where
     simplifier = termLikeSimplifier simplifyToOr
 
 simplifyInternal
-    ::  ( SortedVariable variable
+    ::  forall variable simplifier
+    .   ( SortedVariable variable
         , Show variable
-        , Ord variable
         , Unparse variable
         , FreshVariable variable
+        , MonadSimplify simplifier
         )
     => TermLike variable
-    -> Simplifier (OrPattern variable)
-simplifyInternal termLike@(Recursive.project -> attrs :< termLikeF)
+    -> simplifier (OrPattern variable)
+simplifyInternal = simplifyInternalWorker
+  where
+    simplifyChildren
+        :: Traversable t
+        => t (TermLike variable)
+        -> simplifier (t (OrPattern variable))
+    simplifyChildren = traverse simplifyInternalWorker
 
-  | EvaluatedF _ <- termLikeF =
-    return (OrPattern.fromTermLike termLike)
-
-  | MuF _ <- termLikeF =
-    return (OrPattern.fromTermLike termLike)
-
-  | NuF _ <- termLikeF =
-    return (OrPattern.fromTermLike termLike)
-
-  | otherwise =
-    traverse simplifyTerm termLikeF >>= \case
-        AndF p              -> And.simplify p
-        ApplicationF p      -> Application.simplify (attrs :< p)
-        BottomF p           -> return $ Bottom.simplify p
-        BuiltinF p          -> return $ Builtin.simplify p
-        CeilF p             -> Ceil.simplify p
-        DomainValueF p      -> return $ DomainValue.simplify p
-        EqualsF p           -> Equals.simplify p
-        ExistsF p           -> Exists.simplify p
-        FloorF p            -> return $ Floor.simplify p
-        ForallF p           -> return $ Forall.simplify p
-        IffF p              -> Iff.simplify p
-        ImpliesF p          -> Implies.simplify p
-        InF p               -> In.simplify p
-        InhabitantF s       -> return $ Inhabitant.simplify s
-        MuF p               -> return $ Mu.simplify p
-        -- TODO(virgil): Move next up through patterns.
-        NextF p             -> return $ Next.simplify p
-        NotF p              -> Not.simplify p
-        NuF p               -> return $ Nu.simplify p
-        OrF p               -> return $ Or.simplify p
-        RewritesF p         -> return $ Rewrites.simplify p
-        StringLiteralF p    -> return $ StringLiteral.simplify p
-        CharLiteralF p      -> return $ CharLiteral.simplify p
-        TopF p              -> return $ Top.simplify p
-        VariableF p         -> return $ Variable.simplify p
-        SetVariableF p      -> return $ SetVariable.simplify p
-        EvaluatedF patterns ->
-            -- This is technically impossible because this branch would not be
-            -- chosen if termLikeF matched 'EvaluatedF', and 'traverse' (above)
-            -- does not change the head of termLikeF. However, it is harmless to
-            -- include this case here to convince the compiler that the case
-            -- statement is complete.
-            return (getEvaluated patterns)
+    simplifyInternalWorker termLike =
+        let doNotSimplify = return (OrPattern.fromTermLike termLike)
+            (attrs :< termLikeF) = Recursive.project termLike
+        in case termLikeF of
+            -- Unimplemented cases
+            ApplyAliasF _ -> doNotSimplify
+            -- Do not simplify evaluated patterns.
+            EvaluatedF  _ -> doNotSimplify
+            --
+            AndF andF ->
+                And.simplify =<< simplifyChildren andF
+            ApplySymbolF applySymbolF ->
+                Application.simplify . (attrs :<)
+                =<< simplifyChildren applySymbolF
+            CeilF ceilF ->
+                Ceil.simplify =<< simplifyChildren ceilF
+            EqualsF equalsF ->
+                Equals.simplify =<< simplifyChildren equalsF
+            ExistsF existsF ->
+                Exists.simplify =<< simplifyChildren existsF
+            IffF iffF ->
+                Iff.simplify =<< simplifyChildren iffF
+            ImpliesF impliesF ->
+                Implies.simplify =<< simplifyChildren impliesF
+            InF inF ->
+                In.simplify =<< simplifyChildren inF
+            NotF notF ->
+                Not.simplify =<< simplifyChildren notF
+            --
+            BottomF bottomF -> Bottom.simplify <$> simplifyChildren bottomF
+            BuiltinF builtinF -> Builtin.simplify <$> simplifyChildren builtinF
+            DomainValueF domainValueF ->
+                DomainValue.simplify <$> simplifyChildren domainValueF
+            FloorF floorF -> Floor.simplify <$> simplifyChildren floorF
+            ForallF forallF -> Forall.simplify <$> simplifyChildren forallF
+            MuF muF -> Mu.simplify <$> simplifyChildren muF
+            NuF nuF -> Nu.simplify <$> simplifyChildren nuF
+            -- TODO(virgil): Move next up through patterns.
+            NextF nextF -> Next.simplify <$> simplifyChildren nextF
+            OrF orF -> Or.simplify <$> simplifyChildren orF
+            RewritesF rewritesF ->
+                Rewrites.simplify <$> simplifyChildren rewritesF
+            TopF topF -> Top.simplify <$> simplifyChildren topF
+            --
+            InhabitantF inhF -> return $ Inhabitant.simplify inhF
+            StringLiteralF stringLiteralF ->
+                return $ StringLiteral.simplify stringLiteralF
+            CharLiteralF charLiteralF ->
+                return $ CharLiteral.simplify charLiteralF
+            VariableF variableF -> return $ Variable.simplify variableF
+            SetVariableF setVariableF ->
+                return $ SetVariable.simplify setVariableF

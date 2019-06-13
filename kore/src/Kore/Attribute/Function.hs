@@ -12,12 +12,15 @@ module Kore.Attribute.Function
     ) where
 
 import qualified Control.Monad as Monad
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
+import Kore.Debug
 
 -- | @Function@ represents the @function@ attribute for symbols.
 newtype Function = Function { isDeclaredFunction :: Bool }
-    deriving (Generic, Eq, Ord, Show)
+    deriving (GHC.Generic, Eq, Ord, Show)
 
 instance Semigroup Function where
     (<>) (Function a) (Function b) = Function (a || b)
@@ -29,6 +32,12 @@ instance Default Function where
     def = mempty
 
 instance NFData Function
+
+instance SOP.Generic Function
+
+instance SOP.HasDatatypeInfo Function
+
+instance Debug Function
 
 -- | Kore identifier representing the @function@ attribute symbol.
 functionId :: Id
@@ -56,3 +65,6 @@ instance ParseAttributes Function where
             return Function { isDeclaredFunction = True }
         withApplication' = Parser.withApplication functionId
         failDuplicate' = Parser.failDuplicate functionId
+
+    toAttributes Function { isDeclaredFunction } =
+        Attributes $ if isDeclaredFunction then [functionAttribute] else []

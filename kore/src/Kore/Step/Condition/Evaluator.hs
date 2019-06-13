@@ -18,7 +18,7 @@ import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Simplification.Data
-                 ( Simplifier, simplifyTerm )
+                 ( MonadSimplify, simplifyTerm )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -31,18 +31,19 @@ If the predicate is non-trivial (not @\\top{_}()@ or @\\bottom{_}()@),
 
  -}
 evaluate
-    ::  forall variable .
+    ::  forall variable m .
         ( FreshVariable variable
         , SortedVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
+        , MonadSimplify m
         )
     => Syntax.Predicate variable
     -- ^ The condition to be evaluated.
     -- TODO: Can't it happen that I also get a substitution when evaluating
     -- functions? See the Equals case.
-    -> Simplifier (Predicate variable)
+    -> m (Predicate variable)
 evaluate
     predicate
   = do

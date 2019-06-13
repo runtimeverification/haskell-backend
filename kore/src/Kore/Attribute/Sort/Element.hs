@@ -60,3 +60,8 @@ instance ParseAttributes Element where
             return Element { getElement = Just symbol }
         withApplication' = withApplication elementId
         failDuplicate' = failDuplicate elementId
+
+    toAttributes =
+        maybe def toAttribute . getElement
+      where
+        toAttribute = Attributes . (: []) . elementAttribute

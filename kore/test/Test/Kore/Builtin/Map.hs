@@ -39,6 +39,7 @@ import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
 import           Test.Kore
+                 ( standaloneGen, testId, variableGen )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
 import           Test.Kore.Builtin.Definition
@@ -92,6 +93,101 @@ test_lookupUpdate =
                 predicate = mkEquals_ patLookup patVal
                 expect = Pattern.fromTermLike patVal
             (===) expect      =<< evaluateT patLookup
+            (===) Pattern.top =<< evaluateT predicate
+        )
+
+test_removeUnit :: TestTree
+test_removeUnit =
+    testPropertyWithSolver
+        "remove{}(unit{}(), key) === unit{}()"
+        (do
+            key <- forAll genIntegerPattern
+            let patRemove = removeMap unitMap key
+                predicate = mkEquals_ unitMap patRemove
+            expect <- evaluateT unitMap
+            (===) expect =<< evaluateT patRemove
+            (===) Pattern.top =<< evaluateT predicate
+        )
+
+test_removeKeyNotIn :: TestTree
+test_removeKeyNotIn =
+    testPropertyWithSolver
+        "MAP.remove key with key not in map"
+        (do
+            key <- forAll genIntegerPattern
+            map' <- forAll genMapPattern
+            isInMap <- evaluateT $ lookupMap map' key
+            Monad.when (not $ Pattern.bottom == isInMap) discard
+            let patRemove = removeMap map' key
+                predicate = mkEquals_ map' patRemove
+            expect <- evaluateT map'
+            (===) expect =<< evaluateT patRemove
+            (===) Pattern.top =<< evaluateT predicate
+        )
+
+test_removeKeyIn :: TestTree
+test_removeKeyIn =
+    testPropertyWithSolver
+        "MAP.remove key with key in map"
+        (do
+            key <- forAll genIntegerPattern
+            val <- forAll genIntegerPattern
+            map' <- forAll genMapPattern
+            isInMap <- evaluateT $ lookupMap map' key
+            Monad.when (not $ Pattern.bottom == isInMap) discard
+            let patRemove = removeMap (updateMap map' key val) key
+                predicate = mkEquals_ patRemove map'
+            expect <- evaluateT map'
+            (===) expect =<< evaluateT patRemove
+            (===) Pattern.top =<< evaluateT predicate
+        )
+
+test_removeAllMapUnit :: TestTree
+test_removeAllMapUnit =
+    testPropertyWithSolver
+        "removeAll{}(unit{}(), set) === unit{}()"
+        (do
+            set <- forAll Test.Set.genSetPattern
+            let patRemoveAll = removeAllMap unitMap set
+                predicate = mkEquals_ unitMap patRemoveAll
+            expect <- evaluateT unitMap
+            (===) expect =<< evaluateT patRemoveAll
+            (===) Pattern.top =<< evaluateT predicate
+        )
+
+test_removeAllSetUnit :: TestTree
+test_removeAllSetUnit =
+    testPropertyWithSolver
+        "removeAll{}(map, unit{}()) === map"
+        (do
+            map' <- forAll genMapPattern
+            let patRemoveAll = removeAllMap map' unitSet
+                predicate = mkEquals_ map' patRemoveAll
+            expect <- evaluateT map'
+            (===) expect =<< evaluateT patRemoveAll
+            (===) Pattern.top =<< evaluateT predicate
+        )
+
+test_removeAll :: TestTree
+test_removeAll =
+    testPropertyWithSolver
+        "MAP.removeAll and MAP.remove"
+        (do
+            map' <- forAll genMapPattern
+            set <- forAll Test.Set.genSetConcreteIntegerPattern
+            Monad.when (set == Set.empty) discard
+            let key = Set.elemAt 0 set
+                diffSet = Set.delete key set
+                patSet = Test.Set.asTermLike set
+                patDiffSet = Test.Set.asTermLike diffSet
+                patKey = fromConcrete key
+                patRemoveAll1 = removeAllMap map' patSet
+                patRemoveAll2 = removeAllMap
+                                    (removeMap map' patKey)
+                                    patDiffSet
+                predicate = mkEquals_ patRemoveAll1 patRemoveAll2
+            expect <- evaluateT patRemoveAll2
+            (===) expect =<< evaluateT patRemoveAll1
             (===) Pattern.top =<< evaluateT predicate
         )
 
@@ -337,7 +433,7 @@ asSymbolicPattern result
     | otherwise =
         foldr1 applyConcat (applyElement <$> Map.toAscList result)
   where
-    applyUnit = mkApp mapSort unitMapSymbol []
+    applyUnit = mkApplySymbol mapSort unitMapSymbol []
     applyElement (key, value) = elementMap key value
     applyConcat map1 map2 = concatMap map1 map2
 
@@ -377,15 +473,15 @@ selectFunctionPattern
     -> (forall a . [a] -> [a])  -- ^scrambling function
     -> TermLike Variable
 selectFunctionPattern keyVar valueVar mapVar permutation  =
-    mkApp mapSort concatMapSymbol $ permutation [singleton, mkVar mapVar]
+    mkApplySymbol mapSort concatMapSymbol $ permutation [singleton, mkVar mapVar]
   where
-    key = mkApp intSort absIntSymbol  [mkVar keyVar]
-    value = mkApp intSort absIntSymbol  [mkVar valueVar]
-    singleton = mkApp mapSort elementMapSymbol [ key, value ]
+    key = mkApplySymbol intSort absIntSymbol  [mkVar keyVar]
+    value = mkApplySymbol intSort absIntSymbol  [mkVar valueVar]
+    singleton = mkApplySymbol mapSort elementMapSymbol [ key, value ]
 
 makeElementSelect :: Variable -> Variable -> TermLike Variable
 makeElementSelect keyVar valueVar =
-    mkApp mapSort elementMapSymbol [mkVar keyVar, mkVar valueVar]
+    mkApplySymbol mapSort elementMapSymbol [mkVar keyVar, mkVar valueVar]
 
 -- Given a function to scramble the arguments to concat, i.e.,
 -- @id@ or @reverse@, produces a pattern of the form
@@ -398,7 +494,7 @@ selectPattern
     -> (forall a . [a] -> [a])  -- ^scrambling function
     -> TermLike Variable
 selectPattern keyVar valueVar mapVar permutation  =
-    mkApp mapSort concatMapSymbol $ permutation [element, mkVar mapVar]
+    mkApplySymbol mapSort concatMapSymbol $ permutation [element, mkVar mapVar]
   where
     element = makeElementSelect keyVar valueVar
 
@@ -408,7 +504,7 @@ addSelectElement
     -> TermLike Variable
     -> TermLike Variable
 addSelectElement keyVar valueVar mapPattern  =
-    mkApp mapSort concatMapSymbol [element, mapPattern]
+    mkApplySymbol mapSort concatMapSymbol [element, mapPattern]
   where
     element = makeElementSelect keyVar valueVar
 

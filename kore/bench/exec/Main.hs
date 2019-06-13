@@ -2,7 +2,6 @@ module Main where
 
 import Criterion.Main
 
-import qualified Control.Lens as Lens
 import           Data.Function
                  ( (&) )
 import           Data.Limit
@@ -24,7 +23,7 @@ import           Kore.Error
                  ( printError )
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
-                 ( IndexedModule (..), VerifiedModule )
+                 ( VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.Internal.TermLike
                  ( TermLike, Variable )
@@ -34,7 +33,6 @@ import           Kore.Parser
                  ( parseKoreDefinition, parseKorePattern )
 import           Kore.Step
                  ( anyRewrite )
-import           Kore.Syntax.Id
 import           Kore.Syntax.Module
                  ( ModuleName (..) )
 import qualified SMT
@@ -148,9 +146,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
                         DoNotVerifyAttributes
                         Builtin.koreVerifiers
                         parsedDefinition
-            Just verifiedModule =
-                fmap constructorFunctions
-                    $ Map.lookup mainModuleName verifiedModules
+            Just verifiedModule = Map.lookup mainModuleName verifiedModules
         pat <- parseProgram
         let
             parsedPattern = either error id $ parseKorePattern "" pat
@@ -166,7 +162,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
                         , indexedModule =
                             verifiedModule
                             & IndexedModule.erasePatterns
-                            & IndexedModule.eraseAttributes
+                            & IndexedModule.eraseAxiomAttributes
                         , declaredSortVariables = Set.empty
                         , declaredVariables =
                             PatternVerifier.emptyDeclaredVariables
@@ -198,39 +194,3 @@ execBenchmark root kFile definitionFile mainModuleName test =
         (_, _, _, ph) <- Proc.createProcess $ quiet $ Proc.shell command
         _ <- Proc.waitForProcess ph
         return ()
-
--- TODO (traiansf): Get rid of this.
--- The function below works around several limitations of
--- the current tool by tricking the tool into believing that
--- functions are constructors (so that function patterns can match)
--- and that @kseq@ and @dotk@ are both functional and constructor.
-constructorFunctions
-    :: IndexedModule patternType StepperAttributes Attribute.Axiom
-    -> IndexedModule patternType StepperAttributes Attribute.Axiom
-constructorFunctions ixm =
-    ixm
-        { indexedModuleSymbolSentences =
-            Map.mapWithKey
-                constructorFunctions1
-                (indexedModuleSymbolSentences ixm)
-        , indexedModuleAliasSentences =
-            Map.mapWithKey
-                constructorFunctions1
-                (indexedModuleAliasSentences ixm)
-        , indexedModuleImports = recurseIntoImports <$> indexedModuleImports ixm
-        }
-  where
-    constructorFunctions1 ident (atts, defn) =
-        ( atts
-            & lensConstructor Lens.<>~ Constructor isCons
-            & lensFunctional Lens.<>~ Functional (isCons || isInj)
-            & lensInjective Lens.<>~ Injective (isCons || isInj)
-            & lensSortInjection Lens.<>~ SortInjection isInj
-        , defn
-        )
-      where
-        isInj = getId ident == "inj"
-        isCons = elem (getId ident) ["kseq", "dotk"]
-
-    recurseIntoImports (attrs, attributes, importedModule) =
-        (attrs, attributes, constructorFunctions importedModule)

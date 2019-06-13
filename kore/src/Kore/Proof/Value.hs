@@ -26,19 +26,18 @@ import           Data.Functor.Foldable
                  ( Base, Corecursive, Recursive )
 import qualified Data.Functor.Foldable as Recursive
 import           Data.Functor.Identity
-import           Data.Reflection
-                 ( give )
 import           GHC.Generics
                  ( Generic )
 
 import qualified Kore.Attribute.Pattern as Attribute
                  ( Pattern (..) )
 import           Kore.Attribute.Symbol
-                 ( StepperAttributes, isConstructor_, isSortInjection_ )
+                 ( StepperAttributes )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
+import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
-                 ( SymbolOrAlias, TermLike, TermLikeF (..) )
+                 ( TermLike, TermLikeF (..) )
 import           Kore.Sort
 import qualified Kore.Syntax.Application as Syntax
 import           Kore.Syntax.CharLiteral
@@ -54,8 +53,8 @@ import           Kore.Syntax.Variable
     value), a sort injection, or a domain value.
  -}
 data ValueF child
-    = Constructor !(Syntax.Application SymbolOrAlias child)
-    | SortInjection !(Syntax.Application SymbolOrAlias child)
+    = Constructor !(Syntax.Application Symbol child)
+    | SortInjection !(Syntax.Application Symbol child)
     | DomainValue !(Syntax.DomainValue Sort child)
     | Builtin !(Domain.Builtin (TermLike Concrete) child)
     | StringLiteral !StringLiteral
@@ -104,20 +103,20 @@ fromPattern
     :: SmtMetadataTools StepperAttributes
     -> Base (TermLike Concrete) (Maybe Value)
     -> Maybe Value
-fromPattern tools (attrs :< termLikeF) =
+fromPattern _ (attrs :< termLikeF) =
     fmap (Recursive.embed . (attrs :<))
     $ case termLikeF of
-        ApplicationF
-            appP@Syntax.Application
-                { applicationSymbolOrAlias = symbolOrAlias }
-          | isConstructor symbolOrAlias ->
+        ApplySymbolF applySymbolF
+          | isConstructor symbol ->
             -- The constructor application is normal if all its children are
             -- normal.
-            Constructor <$> sequence appP
-          | isSortInjection symbolOrAlias ->
+            Constructor <$> sequence applySymbolF
+          | isSortInjection symbol ->
             -- The sort injection application is normal if all its children are
             -- normal and none are sort injections.
-            SortInjection <$> traverse (>>= eraseSortInjection) appP
+            SortInjection <$> traverse (>>= eraseSortInjection) applySymbolF
+          where
+            symbol = Syntax.applicationSymbolOrAlias applySymbolF
         DomainValueF dvP ->
             -- A domain value is not technically a constructor, but it is
             -- constructor-like for builtin domains, at least from the
@@ -139,9 +138,6 @@ fromPattern tools (attrs :< termLikeF) =
         StringLiteralF stringL -> Just (StringLiteral stringL)
         CharLiteralF charL -> Just (CharLiteral charL)
         _ -> Nothing
-  where
-    isConstructor = give tools isConstructor_
-    isSortInjection = give tools isSortInjection_
 
 {- | View a 'ConcreteStepPattern' as a normalized value.
 
@@ -163,8 +159,8 @@ fromConcreteStepPattern tools =
 asPattern :: Value -> Base (TermLike Concrete) Value
 asPattern (Recursive.project -> attrs :< value) =
     case value of
-        Constructor appP      -> attrs :< ApplicationF   appP
-        SortInjection appP    -> attrs :< ApplicationF   appP
+        Constructor appP      -> attrs :< ApplySymbolF   appP
+        SortInjection appP    -> attrs :< ApplySymbolF   appP
         DomainValue dvP       -> attrs :< DomainValueF   dvP
         Builtin builtinP      -> attrs :< BuiltinF       builtinP
         StringLiteral stringP -> attrs :< StringLiteralF stringP

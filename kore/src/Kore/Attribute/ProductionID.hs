@@ -56,3 +56,8 @@ instance ParseAttributes ProductionID where
       where
         withApplication' = Parser.withApplication productionIDId
         failDuplicate' = Parser.failDuplicate productionIDId
+
+    toAttributes =
+        maybe def toAttribute . getProductionID
+      where
+        toAttribute = Attributes . (: []) . productionIDAttribute
