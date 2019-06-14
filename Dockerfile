@@ -20,8 +20,8 @@ ARG GROUP_ID=1000
 RUN    groupadd --gid $GROUP_ID user                                        \
     && useradd --create-home --uid $USER_ID --shell /bin/sh --gid user user
 
-ADD scripts/install-stack.sh /home/user/.tmp-haskell/
-RUN /home/user/.tmp-haskell/install-stack.sh
+ADD scripts/install-stack.sh /home/user/.install-stack/
+RUN /home/user/.install-stack/install-stack.sh
 
 USER $USER_ID:$GROUP_ID
 
