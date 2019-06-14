@@ -39,41 +39,20 @@ module Kore.Repl.Data
 import           Control.Applicative
                  ( Alternative )
 import           Control.Concurrent.MVar
-import qualified Control.Lens as Lens hiding
-                 ( makeLenses )
 import qualified Control.Lens.TH.Rules as Lens
-import           Control.Monad
-                 ( join )
-import           Control.Monad.Error.Class
-                 ( MonadError )
-import qualified Control.Monad.Error.Class as Monad.Error
-import           Control.Monad.IO.Class
-                 ( liftIO )
-import           Control.Monad.State.Strict
-                 ( MonadState, get, modify )
 import           Control.Monad.Trans.Accum
                  ( AccumT, runAccumT )
 import qualified Control.Monad.Trans.Accum as Monad.Accum
 import qualified Control.Monad.Trans.Class as Monad.Trans
-import           Data.Bitraversable
-                 ( bisequence, bitraverse )
-import           Data.Coerce
-                 ( coerce )
-import qualified Data.Default as Default
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Graph.Inductive.PatriciaTree
                  ( Gr )
-import           Data.List.Extra
-                 ( groupSort )
 import           Data.List.NonEmpty
                  ( NonEmpty (..) )
-import qualified Data.Map as Map
 import           Data.Map.Strict
                  ( Map )
 import           Data.Maybe
-                 ( fromJust )
-import           Data.Maybe
-                 ( catMaybes, fromMaybe, listToMaybe )
+                 ( fromMaybe )
 import           Data.Monoid
                  ( First (..) )
 import           Data.Sequence
@@ -81,33 +60,20 @@ import           Data.Sequence
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
-import           Data.Text
-                 ( Text )
 import           Data.Text.Prettyprint.Doc
                  ( Doc )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Exts
-                 ( toList )
 import           Numeric.Natural
-import           System.IO
-                 ( Handle, IOMode (AppendMode), hClose, openFile )
 
-import           Kore.Internal.Conditional
-                 ( Conditional (..) )
-import           Kore.Internal.Pattern
-                 ( toTermLike )
 import qualified Kore.Internal.Predicate as IPredicate
 import           Kore.Internal.TermLike
-                 ( Sort, TermLike )
-import qualified Kore.Internal.TermLike as TermLike
+                 ( TermLike )
 import qualified Kore.Logger.Output as Logger
 import           Kore.OnePath.StrategyPattern
 import           Kore.OnePath.Verification
                  ( Axiom (..), Claim )
-import           Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Rule
-                 ( RewriteRule (..), RulePattern (..) )
-import           Kore.Step.Rule as Rule
+                 ( RewriteRule (..) )
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify, Simplifier )
 import qualified Kore.Step.Strategy as Strategy
