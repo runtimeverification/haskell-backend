@@ -39,9 +39,6 @@ import qualified Data.Default as Default
 import           Data.Map.Strict
                  ( Map )
 import           Data.Maybe
-import           Data.Set
-                 ( Set )
-import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 import           Data.Text.Prettyprint.Doc
@@ -50,6 +47,9 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
+import           Kore.Attribute.Pattern.FreeVariables
+                 ( FreeVariables )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Internal.TermLike as TermLike
@@ -98,7 +98,8 @@ instance
         RulePattern { left, right, requires, ensures } = rulePattern'
 
 rulePattern
-    :: TermLike variable
+    :: Ord variable
+    => TermLike variable
     -> TermLike variable
     -> RulePattern variable
 rulePattern left right =
@@ -501,10 +502,10 @@ refreshRulePattern
     .   ( FreshVariable variable
         , SortedVariable variable
         )
-    => Set variable  -- ^ Variables to avoid
+    => FreeVariables variable  -- ^ Variables to avoid
     -> RulePattern variable
     -> (Map variable variable, RulePattern variable)
-refreshRulePattern avoid rule1 =
+refreshRulePattern (FreeVariables.getFreeVariables -> avoid) rule1 =
     let rename = refreshVariables avoid originalFreeVariables
         subst = mkVar <$> rename
         left' = TermLike.substitute subst left
@@ -519,20 +520,20 @@ refreshRulePattern avoid rule1 =
     in (rename, rule2)
   where
     RulePattern { left, right, requires } = rule1
-    originalFreeVariables = Kore.Step.Rule.freeVariables rule1
+    originalFreeVariables =
+        FreeVariables.getFreeVariables
+        $ Kore.Step.Rule.freeVariables rule1
 
 {- | Extract the free variables of a 'RulePattern'.
  -}
 freeVariables
     :: Ord variable
     => RulePattern variable
-    -> Set variable
+    -> FreeVariables variable
 freeVariables RulePattern { left, right, requires } =
-    Set.unions
-        [ TermLike.freeVariables left
-        , TermLike.freeVariables right
-        , Predicate.freeVariables requires
-        ]
+    TermLike.freeVariables left
+    <> TermLike.freeVariables right
+    <> Predicate.freeVariables requires
 
 {- | Apply the given function to all variables in a 'RulePattern'.
  -}

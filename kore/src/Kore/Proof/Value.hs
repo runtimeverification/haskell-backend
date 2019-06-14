@@ -67,7 +67,7 @@ Deriving.deriveShow1 ''ValueF
 
 newtype Value =
     Value { getValue :: Cofree ValueF (Attribute.Pattern Concrete) }
-    deriving (Eq, Generic, Ord, Show)
+    deriving (Eq, Generic, Show)
 
 type instance Base Value = CofreeF ValueF (Attribute.Pattern Concrete)
 

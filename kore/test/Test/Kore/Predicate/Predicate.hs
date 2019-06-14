@@ -1,14 +1,13 @@
 module Test.Kore.Predicate.Predicate (test_predicate) where
 
 import Test.Tasty
-       ( TestTree, testGroup )
 import Test.Tasty.HUnit
-       ( assertEqual, testCase )
 
 import           Data.Foldable
                  ( traverse_ )
 import qualified Data.Set as Set
 
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate as Predicate
 import qualified Kore.Unification.Substitution as Substitution
@@ -269,26 +268,24 @@ test_predicate =
         )
     , testCase "freeVariables"
         ( do
-            assertEqual "top has no free variables"
-                Set.empty
-                (Predicate.freeVariables
+            assertBool "top has no free variables"
+                $ null
+                $ Predicate.freeVariables
                     (makeTruePredicate :: Predicate Variable)
-                )
             assertEqual "equals predicate has two variables"
                 (Set.fromList
                     [ a Mock.testSort
                     , b Mock.testSort
                     ]
                 )
-                (Predicate.freeVariables pr1)
-            assertEqual "quantified variables are not included"
-                Set.empty
-                (Predicate.freeVariables
-                    (makeExistsPredicate
-                        (a Mock.testSort)
-                        makeTruePredicate
-                    )
-                )
+                (FreeVariables.getFreeVariables $ Predicate.freeVariables pr1)
+            assertBool "quantified variables are not included"
+                $ not . FreeVariables.member (a Mock.testSort)
+                $ Predicate.freeVariables
+                $ makeExistsPredicate (a Mock.testSort)
+                $ makeEqualsPredicate
+                    (mkVar $ a Mock.testSort)
+                    (mkVar $ b Mock.testSort)
         )
     , testCase "substitutionToPredicate"
         ( do

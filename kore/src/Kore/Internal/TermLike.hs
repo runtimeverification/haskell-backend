@@ -163,8 +163,6 @@ import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
-import           Data.Set
-                 ( Set )
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
@@ -175,6 +173,9 @@ import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Pattern as Attribute
+import           Kore.Attribute.Pattern.FreeVariables
+                 ( FreeVariables )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Domain.Class
 import           Kore.Error
@@ -535,7 +536,7 @@ instance Ord variable => Binding (TermLike variable) where
                     attrs' =
                         attrs
                             { Attribute.freeVariables =
-                                Set.singleton variable'
+                                FreeVariables.singleton variable'
                             }
             _ -> pure termLike
       where
@@ -552,7 +553,7 @@ instance Ord variable => Binding (TermLike variable) where
                     attrs' =
                         attrs
                             { Attribute.freeVariables =
-                                Set.delete existsVariable
+                                FreeVariables.delete existsVariable
                                 $ freeVariables existsChild
                             }
 
@@ -565,13 +566,13 @@ instance Ord variable => Binding (TermLike variable) where
                     attrs' =
                         attrs
                             { Attribute.freeVariables =
-                                Set.delete forallVariable
+                                FreeVariables.delete forallVariable
                                 $ freeVariables forallChild
                             }
 
             _ -> pure termLike
 
-freeVariables :: TermLike variable -> Set variable
+freeVariables :: TermLike variable -> FreeVariables variable
 freeVariables = Attribute.freeVariables . extractAttributes
 
 hasFreeVariable
@@ -579,7 +580,7 @@ hasFreeVariable
     => variable
     -> TermLike variable
     -> Bool
-hasFreeVariable variable = Set.member variable . freeVariables
+hasFreeVariable variable = FreeVariables.member variable . freeVariables
 
 {- | Throw an error if the variable occurs free in the pattern.
 
@@ -710,7 +711,7 @@ substitute
     ->  TermLike variable
 substitute = Substitute.substitute lensFreeVariables
 
-lensFreeVariables :: Lens.Lens' (TermLike variable) (Set variable)
+lensFreeVariables :: Lens.Lens' (TermLike variable) (FreeVariables variable)
 lensFreeVariables mapping (Recursive.project -> attrs :< termLikeHead) =
     embed <$> Attribute.lensFreeVariables mapping attrs
   where
@@ -732,19 +733,20 @@ externalizeFreshVariables termLike =
     -- not have a generated counter. 'generatedFreeVariables' have a generated
     -- counter, usually because they were introduced by applying some axiom.
     (originalFreeVariables, generatedFreeVariables) =
-        Set.partition Variable.isOriginalVariable (freeVariables termLike)
+        Set.partition Variable.isOriginalVariable
+        $ FreeVariables.getFreeVariables $ freeVariables termLike
 
     -- | The map of generated free variables, renamed to be unique from the
     -- original free variables.
     (renamedFreeVariables, _) =
         Foldable.foldl' rename initial generatedFreeVariables
       where
-        initial = (Map.empty, originalFreeVariables)
+        initial = (Map.empty, FreeVariables.FreeVariables originalFreeVariables)
         rename (renaming, avoiding) variable =
             let
                 variable' = safeVariable avoiding variable
                 renaming' = Map.insert variable variable' renaming
-                avoiding' = Set.insert variable' avoiding
+                avoiding' = FreeVariables.insert variable' avoiding
             in
                 (renaming', avoiding')
 
@@ -771,7 +773,7 @@ externalizeFreshVariables termLike =
         $ Variable.externalizeFreshVariable
         <$> iterate nextVariable variable
       where
-        wouldCapture var = Set.member var avoiding
+        wouldCapture var = FreeVariables.member var avoiding
 
     underBinder freeVariables' variable child = do
         let variable' = safeVariable freeVariables' variable
@@ -966,7 +968,7 @@ mkAnd = makeSortsAgree mkAndWorker
         attrs =
             Attribute.Pattern
                 { patternSort = andSort
-                , freeVariables = Set.union freeVariables1 freeVariables2
+                , freeVariables = freeVariables1 <> freeVariables2
                 }
         and' = And { andSort, andFirst, andSecond }
         freeVariables1 = freeVariables andFirst
@@ -1024,7 +1026,7 @@ mkApplyAlias alias children =
     attrs =
         Attribute.Pattern
             { patternSort = resultSort
-            , freeVariables = Set.unions (freeVariables <$> children)
+            , freeVariables = mconcat (freeVariables <$> children)
             }
     application =
         Application
@@ -1058,7 +1060,7 @@ mkApplySymbol symbol children =
     attrs =
         Attribute.Pattern
             { patternSort = resultSort
-            , freeVariables = Set.unions (freeVariables <$> children)
+            , freeVariables = mconcat (freeVariables <$> children)
             }
     application =
         Application
@@ -1192,14 +1194,14 @@ applySymbol_ sentence = applySymbol sentence []
 See also: 'mkBottom_'
 
  -}
-mkBottom :: Sort -> TermLike variable
+mkBottom :: Ord variable => Sort -> TermLike variable
 mkBottom bottomSort =
     Recursive.embed (attrs :< BottomF bottom)
   where
     attrs =
         Attribute.Pattern
             { patternSort = bottomSort
-            , freeVariables = Set.empty
+            , freeVariables = mempty
             }
     bottom = Bottom { bottomSort }
 
@@ -1211,7 +1213,7 @@ This should not be used outside "Kore.Predicate.Predicate"; please use
 See also: 'mkBottom'
 
  -}
-mkBottom_ :: TermLike variable
+mkBottom_ :: Ord variable => TermLike variable
 mkBottom_ = mkBottom predicateSort
 
 {- | Construct a 'Ceil' pattern in the given sort.
@@ -1255,7 +1257,7 @@ mkBuiltin domain =
         Attribute.Pattern
             { patternSort = domainValueSort
             , freeVariables =
-                (Set.unions . Foldable.toList) (freeVariables <$> domain)
+                (mconcat . Foldable.toList) (freeVariables <$> domain)
             }
     DomainValue { domainValueSort } = Lens.view lensDomainValue domain
 
@@ -1272,7 +1274,7 @@ mkDomainValue domain =
         Attribute.Pattern
             { patternSort = domainValueSort domain
             , freeVariables =
-                (Set.unions . Foldable.toList) (freeVariables <$> domain)
+                (mconcat . Foldable.toList) (freeVariables <$> domain)
             }
 
 {- | Construct an 'Equals' pattern in the given sort.
@@ -1296,7 +1298,7 @@ mkEquals equalsResultSort =
         attrs =
             Attribute.Pattern
                 { patternSort = equalsResultSort
-                , freeVariables = Set.union freeVariables1 freeVariables2
+                , freeVariables = freeVariables1 <> freeVariables2
                 }
         freeVariables1 = freeVariables equalsFirst
         freeVariables2 = freeVariables equalsSecond
@@ -1340,7 +1342,8 @@ mkExists existsVariable existsChild =
     attrs =
         Attribute.Pattern
             { patternSort = existsSort
-            , freeVariables  = Set.delete existsVariable freeVariablesChild
+            , freeVariables =
+                FreeVariables.delete existsVariable freeVariablesChild
             }
     existsSort = termLikeSort existsChild
     freeVariablesChild = freeVariables existsChild
@@ -1391,7 +1394,7 @@ mkForall forallVariable forallChild =
         Attribute.Pattern
             { patternSort = forallSort
             , freeVariables =
-                Set.delete forallVariable freeVariablesChild
+                FreeVariables.delete forallVariable freeVariablesChild
             }
     forallSort = termLikeSort forallChild
     freeVariablesChild = freeVariables forallChild
@@ -1413,7 +1416,7 @@ mkIff = makeSortsAgree mkIffWorker
         attrs =
             Attribute.Pattern
                 { patternSort = iffSort
-                , freeVariables =  Set.union freeVariables1 freeVariables2
+                , freeVariables = freeVariables1 <> freeVariables2
                 }
         freeVariables1 = freeVariables iffFirst
         freeVariables2 = freeVariables iffSecond
@@ -1435,7 +1438,7 @@ mkImplies = makeSortsAgree mkImpliesWorker
         attrs =
             Attribute.Pattern
                 { patternSort = impliesSort
-                , freeVariables = Set.union freeVariables1 freeVariables2
+                , freeVariables = freeVariables1 <> freeVariables2
                 }
         freeVariables1 = freeVariables impliesFirst
         freeVariables2 = freeVariables impliesSecond
@@ -1461,7 +1464,7 @@ mkIn inResultSort = makeSortsAgree mkInWorker
         attrs =
             Attribute.Pattern
                 { patternSort = inResultSort
-                , freeVariables = Set.union freeVariables1 freeVariables2
+                , freeVariables = freeVariables1 <> freeVariables2
                 }
         freeVariables1 = freeVariables inContainedChild
         freeVariables2 = freeVariables inContainingChild
@@ -1506,7 +1509,7 @@ mkMu muVar = makeSortsAgree mkMuWorker (mkSetVar muVar)
         attrs =
             Attribute.Pattern
                 { patternSort = sortedVariableSort v
-                , freeVariables  = Set.delete v freeVariablesChild
+                , freeVariables = FreeVariables.delete v freeVariablesChild
                 }
         v = getVariable muVariable
         freeVariablesChild = freeVariables muChild
@@ -1558,7 +1561,7 @@ mkNu nuVar = makeSortsAgree mkNuWorker (mkSetVar nuVar)
         attrs =
             Attribute.Pattern
                 { patternSort = sortedVariableSort v
-                , freeVariables  = Set.delete v freeVariablesChild
+                , freeVariables = FreeVariables.delete v freeVariablesChild
                 }
         v = getVariable nuVariable
         freeVariablesChild = freeVariables nuChild
@@ -1581,7 +1584,7 @@ mkOr = makeSortsAgree mkOrWorker
         attrs =
             Attribute.Pattern
                 { patternSort = orSort
-                , freeVariables = Set.union freeVariables1 freeVariables2
+                , freeVariables = freeVariables1 <> freeVariables2
                 }
         freeVariables1 = freeVariables orFirst
         freeVariables2 = freeVariables orSecond
@@ -1603,7 +1606,7 @@ mkRewrites = makeSortsAgree mkRewritesWorker
         attrs =
             Attribute.Pattern
                 { patternSort = rewritesSort
-                , freeVariables = Set.union freeVariables1 freeVariables2
+                , freeVariables = freeVariables1 <> freeVariables2
                 }
         freeVariables1 = freeVariables rewritesFirst
         freeVariables2 = freeVariables rewritesSecond
@@ -1614,14 +1617,14 @@ mkRewrites = makeSortsAgree mkRewritesWorker
 See also: 'mkTop_'
 
  -}
-mkTop :: Sort -> TermLike variable
+mkTop :: Ord variable => Sort -> TermLike variable
 mkTop topSort =
     Recursive.embed (attrs :< TopF top)
   where
     attrs =
         Attribute.Pattern
             { patternSort = topSort
-            , freeVariables = Set.empty
+            , freeVariables = mempty
             }
     top = Top { topSort }
 
@@ -1633,63 +1636,69 @@ This should not be used outside "Kore.Predicate.Predicate"; please use
 See also: 'mkTop'
 
  -}
-mkTop_ :: TermLike variable
+mkTop_ :: Ord variable => TermLike variable
 mkTop_ = mkTop predicateSort
 
 {- | Construct a variable pattern.
  -}
-mkVar :: SortedVariable variable => variable -> TermLike variable
+mkVar
+    :: (Ord variable, SortedVariable variable)
+    => variable
+    -> TermLike variable
 mkVar var = Recursive.embed (validVar var :< VariableF var)
 
 validVar
-    :: SortedVariable variable
+    :: (Ord variable, SortedVariable variable)
     => variable
     -> Attribute.Pattern variable
 validVar var =
     Attribute.Pattern
         { patternSort = sortedVariableSort var
-        , freeVariables = Set.singleton var
+        , freeVariables = FreeVariables.singleton var
         }
 
 {- | Construct a set variable pattern.
  -}
-mkSetVar :: SortedVariable variable => SetVariable variable -> TermLike variable
+mkSetVar
+    :: (Ord variable, SortedVariable variable)
+    => SetVariable variable
+    -> TermLike variable
 mkSetVar setVar@(SetVariable var) =
     Recursive.embed (validVar var :< SetVariableF setVar)
 
 {- | Construct a 'StringLiteral' pattern.
  -}
-mkStringLiteral :: Text -> TermLike variable
+mkStringLiteral :: Ord variable => Text -> TermLike variable
 mkStringLiteral string =
     Recursive.embed (attrs :< StringLiteralF stringLiteral)
   where
     attrs =
         Attribute.Pattern
             { patternSort = stringMetaSort
-            , freeVariables = Set.empty
+            , freeVariables = mempty
             }
     stringLiteral = StringLiteral string
 
 {- | Construct a 'CharLiteral' pattern.
  -}
-mkCharLiteral :: Char -> TermLike variable
+mkCharLiteral :: Ord variable => Char -> TermLike variable
 mkCharLiteral char =
     Recursive.embed (attrs :< CharLiteralF charLiteral)
   where
     attrs = Attribute.Pattern
         { patternSort = charMetaSort
-        , freeVariables = Set.empty
+        , freeVariables = mempty
         }
     charLiteral = CharLiteral char
 
-mkInhabitant :: Sort -> TermLike variable
+mkInhabitant :: Ord variable => Sort -> TermLike variable
 mkInhabitant sort =
     Recursive.embed (attrs :< InhabitantF sort)
   where
     attrs =
         Attribute.Pattern
             { patternSort = sort
-            , freeVariables = Set.empty
+            , freeVariables = mempty
             }
 
 mkEvaluated :: TermLike variable -> TermLike variable

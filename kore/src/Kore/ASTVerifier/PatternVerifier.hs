@@ -51,6 +51,7 @@ import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.SortVerifier
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
@@ -257,9 +258,9 @@ verifyAliasLeftPattern leftPattern = do
         verifyVariableDeclaration var
         let
             patternSort = variableSort var
-            freeVariables = Set.singleton var
-            valid = Attribute.Pattern { patternSort, freeVariables }
-        return (var, valid)
+            freeVariables = FreeVariables.singleton var
+            attrs = Attribute.Pattern { patternSort, freeVariables }
+        return (var, attrs)
 
 {- | Verify that a Kore pattern is well-formed.
 
@@ -398,9 +399,7 @@ verifyOperands operandSort = \operator -> do
             assertExpectedSort expectedSort (Internal.extractAttributes child)
             return child
     verified <- traverse verifyChildWithSort operator
-    let freeVariables =
-            Foldable.foldl' Set.union Set.empty
-                (Internal.freeVariables <$> verified)
+    let freeVariables = Foldable.fold (Internal.freeVariables <$> verified)
     return (Attribute.Pattern { patternSort, freeVariables } :< verified)
 {-# INLINE verifyOperands #-}
 
@@ -598,9 +597,9 @@ verifyApplicationChildren getChildAttributes application sorts = do
     verifiedChildren <- verifyChildren operandSorts children
     let patternSort = applicationSortsResult sorts
         verified = application { applicationChildren = verifiedChildren }
-        freeVariables = Set.unions (getChildFreeVariables <$> verifiedChildren)
-        patternAttrs = Attribute.Pattern { patternSort, freeVariables }
-    return (patternAttrs :< verified)
+        freeVariables = mconcat (getChildFreeVariables <$> verifiedChildren)
+        attrs = Attribute.Pattern { patternSort, freeVariables }
+    return (attrs :< verified)
   where
     verifyChildren = verifyPatternsWithSorts getChildAttributes
     getChildFreeVariables = Attribute.freeVariables . getChildAttributes
@@ -704,7 +703,7 @@ verifyVariable variable@Variable { variableName, variableSort } = do
         "The declared sort is different."
     let patternSort = variableSort
         verified = Const variable
-        freeVariables = Set.singleton variable
+        freeVariables = FreeVariables.singleton variable
     return (Attribute.Pattern { patternSort, freeVariables } :< verified)
 
 verifyDomainValue
@@ -726,29 +725,32 @@ verifyDomainValue domain = do
             lookupSortDeclaration'
             domain'
     let freeVariables =
-            Foldable.foldl' Set.union Set.empty
-                (Attribute.freeVariables . Internal.extractAttributes <$> verified)
-    Monad.unless (Set.null freeVariables)
+            Foldable.foldMap
+                (Attribute.freeVariables . Internal.extractAttributes)
+                verified
+    Monad.unless (FreeVariables.null freeVariables)
         (koreFail "Domain value must not contain free variables.")
     return (Attribute.Pattern { patternSort, freeVariables } :< verified)
 
 verifyStringLiteral
     :: (base ~ Const StringLiteral, valid ~ Attribute.Pattern variable)
+    => Ord variable
     => StringLiteral
     -> PatternVerifier (CofreeF base valid Verified.Pattern)
 verifyStringLiteral str = do
     let patternSort = stringMetaSort
-        freeVariables = Set.empty
+        freeVariables = mempty
         verified = Const str
     return (Attribute.Pattern { patternSort, freeVariables } :< verified)
 
 verifyCharLiteral
     :: (base ~ Const CharLiteral, valid ~ Attribute.Pattern variable)
+    => Ord variable
     => CharLiteral
     -> PatternVerifier (CofreeF base valid Verified.Pattern)
 verifyCharLiteral char = do
     let patternSort = charMetaSort
-        freeVariables = Set.empty
+        freeVariables = mempty
         verified = Const char
     return (Attribute.Pattern { patternSort, freeVariables } :< verified)
 

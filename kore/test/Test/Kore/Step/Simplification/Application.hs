@@ -9,7 +9,6 @@ import qualified Data.List as List
 import qualified Data.Map as Map
 import           Data.Ord
                  ( comparing )
-import qualified Data.Set as Set
 
 import           Data.Sup
 import qualified Kore.Attribute.Pattern as Attribute
@@ -330,7 +329,7 @@ makeApplication patternSort symbol patterns =
         Attribute.Pattern
             { patternSort
             , freeVariables =
-                Set.unions (Set.unions . map termFreeVariables <$> patterns)
+                mconcat (mconcat . map termFreeVariables <$> patterns)
             }
 
 evaluate

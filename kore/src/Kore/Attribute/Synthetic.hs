@@ -18,6 +18,7 @@ import           Data.Functor.Foldable
                  ( Base, Corecursive, Recursive )
 import qualified Data.Functor.Foldable as Recursive
 
+import           Kore.Attribute.Pattern
 import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables (..) )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
@@ -111,6 +112,27 @@ instance
                 sortedVariableSort (getVariable setVariableF)
             BuiltinF builtinF -> builtinSort builtinF
             EvaluatedF evaluatedF -> getEvaluated evaluatedF
+
+instance
+    (Ord variable, SortedVariable variable) =>
+    Synthetic (TermLikeF variable) Sort (Pattern variable)
+  where
+    synthetic baseF =
+        Pattern
+            { patternSort = synthetic (patternSort <$> baseF)
+            , freeVariables = synthetic (freeVariables <$> baseF)
+            }
+
+instance
+    (Ord variable, SortedVariable variable) =>
+    Synthetic (TermLikeF variable) (Pattern variable) (Pattern variable)
+  where
+    synthetic baseF@(attrs :< termLikeF) =
+        Pattern
+            { patternSort =
+                synthetic (patternSort attrs :< (patternSort <$> termLikeF))
+            , freeVariables = synthetic (freeVariables <$> baseF)
+            }
 
 {- | @/synthesize/@ attribute @b@ bottom-up along a tree @s@.
 

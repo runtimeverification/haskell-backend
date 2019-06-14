@@ -21,10 +21,9 @@ module Kore.Internal.Predicate
     , Conditional (..)
     ) where
 
-import           Data.Set
-                 ( Set )
-import qualified Data.Set as Set
 
+import           Kore.Attribute.Pattern.FreeVariables
+                 ( FreeVariables )
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
 import qualified Kore.Internal.Conditional as Conditional
@@ -79,8 +78,8 @@ freeVariables
        , SortedVariable variable
        )
     => Predicate variable
-    -> Set variable
-freeVariables = Conditional.freeVariables (const Set.empty)
+    -> FreeVariables variable
+freeVariables = Conditional.freeVariables (const mempty)
 
 {- | Transform a predicate and substitution into a predicate only.
 

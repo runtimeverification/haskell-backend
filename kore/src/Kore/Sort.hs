@@ -311,7 +311,7 @@ alignSorts = fromMaybe predicateSort . Foldable.foldl' worker Nothing
   where
     worker Nothing      sort2 = rigidSort sort2
     worker (Just sort1) sort2 =
-        Just $ maybe sort1 (align sort1) (rigidSort sort2)
-    align sort1 sort2
+        Just $ maybe sort1 (alignSort sort1) (rigidSort sort2)
+    alignSort sort1 sort2
       | sort1 == sort2 = sort1
       | otherwise = sortsDisagree sort1 sort2

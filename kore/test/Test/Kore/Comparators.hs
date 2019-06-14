@@ -26,6 +26,7 @@ import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Location as Attribute
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
+import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import qualified Kore.Attribute.Source as Attribute
 import           Kore.Domain.Builtin as Domain
 import           Kore.Error
@@ -1328,6 +1329,21 @@ instance
             (Attribute.freeVariables actual)
         ]
     structConstructorName _ = "Pattern"
+
+instance
+    (EqualWithExplanation variable, Show variable) =>
+    EqualWithExplanation (Attribute.FreeVariables variable)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    (EqualWithExplanation variable, Show variable) =>
+    WrapperEqualWithExplanation (Attribute.FreeVariables variable)
+  where
+    wrapperConstructorName _ = "FreeVariables"
+    wrapperField =
+        Function.on (EqWrap "getFreeVariables = ") Attribute.getFreeVariables
 
 instance
     ( EqualWithExplanation variable, Show variable

@@ -25,9 +25,12 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
-import Kore.Syntax
-import Kore.Variables.Binding
-import Kore.Variables.Fresh
+import           Kore.Attribute.Pattern.FreeVariables
+                 ( FreeVariables )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import           Kore.Syntax
+import           Kore.Variables.Binding
+import           Kore.Variables.Fresh
 
 {- | Traverse the pattern from the top down and apply substitutions.
 
@@ -51,7 +54,7 @@ substitute
         , Binding patternType
         , VariableType patternType ~ variable
         )
-    => Lens.Lens' patternType (Set variable)
+    => Lens.Lens' patternType (FreeVariables variable)
     -- ^ Lens into free variables of the pattern
     -> Map variable patternType
     -- ^ Substitution
@@ -62,7 +65,8 @@ substitute lensFreeVariables =
     \subst -> substituteWorker (Map.map Left subst)
   where
     extractFreeVariables :: patternType -> Set variable
-    extractFreeVariables = Lens.view lensFreeVariables
+    extractFreeVariables =
+        FreeVariables.getFreeVariables . Lens.view lensFreeVariables
 
     -- | Insert an optional variable renaming into the substitution.
     renaming
@@ -134,7 +138,9 @@ substitute lensFreeVariables =
             attrib :< termLikeHead = Recursive.project termLike
             termLikeHead' = substituteWorker subst' <$> termLikeHead
             embed =
-                Lens.set lensFreeVariables freeVariables'
+                Lens.set
+                    lensFreeVariables
+                    (FreeVariables.FreeVariables freeVariables')
                 . Recursive.embed
                 . (attrib :<)
 

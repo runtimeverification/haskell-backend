@@ -27,6 +27,7 @@ import qualified Data.Set as Set
 
 import           Data.Graph.TopologicalSort
 import qualified Kore.Attribute.Pattern as Attribute
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Internal.Predicate
                  ( Conditional (..), Predicate )
 import qualified Kore.Internal.Predicate as Predicate
@@ -179,7 +180,7 @@ getDependencies interesting var (Recursive.project -> valid :< patternHead) =
         VariableF v | v == var -> Set.empty
         _ -> Set.intersection interesting freeVars
   where
-    Attribute.Pattern { Attribute.freeVariables = freeVars } = valid
+    freeVars = FreeVariables.getFreeVariables $ Attribute.freeVariables valid
 
 {- | Calculate the dependencies of a substitution that have only
      non-simplifiable symbols above.

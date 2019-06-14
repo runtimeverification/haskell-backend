@@ -24,12 +24,12 @@ import           Control.DeepSeq
 import           Data.Hashable
 import           Data.Monoid
                  ( (<>) )
-import           Data.Set
-                 ( Set )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
                  ( Generic )
 
+import           Kore.Attribute.Pattern.FreeVariables
+                 ( FreeVariables )
 import           Kore.Internal.TermLike
                  ( TermLike )
 import           Kore.Predicate.Predicate
@@ -284,10 +284,10 @@ See also: 'Predicate.freeVariables'.
 -}
 freeVariables
     :: Ord variable
-    => (term -> Set variable)
+    => (term -> FreeVariables variable)
     -- ^ Extract the free variables of @term@.
     -> Conditional variable term
-    -> Set variable
+    -> FreeVariables variable
 freeVariables getFreeVariables Conditional { term, predicate, substitution } =
     getFreeVariables term
     <> Predicate.freeVariables predicate

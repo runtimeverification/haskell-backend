@@ -26,11 +26,11 @@ module Kore.Internal.Pattern
     , Predicate
     ) where
 
-import Data.Set
-       ( Set )
 import GHC.Stack
        ( HasCallStack )
 
+import           Kore.Attribute.Pattern.FreeVariables
+                 ( FreeVariables )
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
 import qualified Kore.Internal.Conditional as Conditional
@@ -53,13 +53,13 @@ program configuration for Kore execution.
  -}
 type Pattern variable = Conditional variable (TermLike variable)
 
-fromPredicate :: Predicate variable -> Pattern variable
+fromPredicate :: Ord variable => Predicate variable -> Pattern variable
 fromPredicate = (<$) mkTop_
 
 freeVariables
     :: Ord variable
     => Pattern variable
-    -> Set variable
+    -> FreeVariables variable
 freeVariables = Conditional.freeVariables TermLike.freeVariables
 
 {-|'mapVariables' transforms all variables, including the quantified ones,

@@ -20,6 +20,7 @@ import qualified Data.Text as Text
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
+import           Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
@@ -339,7 +340,7 @@ extractIndexedModule name eModules =
 test_freeVariables :: TestTree
 test_freeVariables =
     testCase "Extract free variables" $ do
-        let expect = Set.fromList [Mock.x, Mock.z]
+        let expect = FreeVariables $ Set.fromList [Mock.x, Mock.z]
             actual = Rule.freeVariables testRulePattern
         assertEqual "Expected free variables" expect actual
 
@@ -351,16 +352,17 @@ test_refreshRulePattern =
                 refreshRulePattern avoiding testRulePattern
             renamed = Set.fromList (Foldable.toList renaming)
             free' = Rule.freeVariables rulePattern'
+            notAvoided x = not (FreeVariables.member x avoiding)
         assertEqual
             "Expected to rename all free variables of original RulePattern"
-            avoiding
+            (getFreeVariables avoiding)
             (Map.keysSet renaming)
         assertBool
             "Expected to renamed variables distinct from original variables"
-            (Set.null $ Set.intersection avoiding renamed)
+            (all notAvoided renamed)
         assertBool
             "Expected no free variables in common with original RulePattern"
-            (Set.null $ Set.intersection avoiding free')
+            (all notAvoided free')
 
 testRulePattern :: RulePattern Variable
 testRulePattern =
