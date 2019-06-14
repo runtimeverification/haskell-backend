@@ -39,6 +39,10 @@ module Kore.Repl.Data
     , runUnifier
     , updateInnerGraph, updateExecutionGraph
     , addOrUpdateAlias, findAlias, substituteAlias
+    , sortLeafsByType
+    , generateInProgressOPClaims
+    , currentClaimSort
+    , conjOfOnePathClaims
     , LogType (..)
     , ReplScript (..)
     , ReplMode (..)
@@ -68,16 +72,21 @@ import           Data.Bitraversable
                  ( bisequence, bitraverse )
 import           Data.Coerce
                  ( coerce )
+import qualified Data.Default as Default
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Graph.Inductive.PatriciaTree
                  ( Gr )
+import           Data.List.Extra
+                 ( groupSort )
 import           Data.List.NonEmpty
                  ( NonEmpty (..) )
 import qualified Data.Map as Map
 import           Data.Map.Strict
                  ( Map )
 import           Data.Maybe
-                 ( fromMaybe, listToMaybe )
+                 ( fromJust )
+import           Data.Maybe
+                 ( catMaybes, fromMaybe, listToMaybe )
 import           Data.Monoid
                  ( First (..) )
 import           Data.Sequence
@@ -98,16 +107,20 @@ import           System.IO
 
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
-import           Kore.Internal.Predicate
-                 ( Predicate )
+import           Kore.Internal.Pattern
+                 ( toTermLike )
+import qualified Kore.Internal.Predicate as IPredicate
 import           Kore.Internal.TermLike
-                 ( TermLike )
+                 ( Sort, TermLike )
+import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger.Output as Logger
 import           Kore.OnePath.StrategyPattern
 import           Kore.OnePath.Verification
                  ( Axiom (..), Claim )
+import           Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
+import           Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify, Simplifier )
 import qualified Kore.Step.Strategy as Strategy
@@ -398,7 +411,7 @@ data ReplState claim = ReplState
     , unifier
         :: TermLike Variable
         -> TermLike Variable
-        -> UnifierWithExplanation (Predicate Variable)
+        -> UnifierWithExplanation (IPredicate.Predicate Variable)
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
     --   failures
@@ -737,7 +750,7 @@ runUnifier
     => Monad.Trans.MonadTrans m
     => TermLike Variable
     -> TermLike Variable
-    -> m Simplifier (Either (Doc ()) (NonEmpty (Predicate Variable)))
+    -> m Simplifier (Either (Doc ()) (NonEmpty (IPredicate.Predicate Variable)))
 runUnifier first second = do
     unifier <- Lens.use lensUnifier
     mvar <- Lens.use lensLogger
@@ -843,3 +856,118 @@ substituteAlias
     toString = \case
         SimpleArgument str -> str
         QuotedArgument str -> "\"" <> str <> "\""
+
+createOnePathClaim
+    :: Claim claim
+    => (claim, CommonStrategyPattern)
+    -> Rule.OnePathRule Variable
+createOnePathClaim (cl, cpatt) =
+    Rule.OnePathRule
+    $ Rule.RulePattern
+        { left = pattToLeftPatt cpatt
+        , right = claimToRightPatt cl
+        , requires = Predicate.makeTruePredicate
+        , ensures = claimToEnsures cl
+        , attributes = Default.def
+        }
+  where
+    pattToLeftPatt
+        :: CommonStrategyPattern
+        -> TermLike Variable
+    pattToLeftPatt =
+        toTermLike . fromJust . extractUnproven
+    claimToRightPatt
+        :: Claim claim
+        => claim
+        -> TermLike Variable
+    claimToRightPatt =
+        Rule.right . coerce
+    claimToEnsures
+        :: Claim claim
+        => claim
+        -> Predicate.Predicate Variable
+    claimToEnsures =
+        Rule.ensures . coerce
+
+conjOfOnePathClaims
+    :: [Rule.OnePathRule Variable]
+    -> Sort
+    -> TermLike Variable
+conjOfOnePathClaims opCls sort =
+    foldr
+        TermLike.mkAnd
+        (TermLike.mkTop sort)
+        $ fmap Rule.onePathRuleToPattern opCls
+
+generateInProgressOPClaims
+    :: Claim claim
+    => MonadState (ReplState claim) m
+    => m [Rule.OnePathRule Variable]
+generateInProgressOPClaims = do
+    gphs <- Lens.use lensGraphs
+    cls <- Lens.use lensClaims
+    let pairs =
+            ( \(x, y) -> ([x], y) )
+            <$> (Map.toList . terminalPatterns) gphs
+        started =
+            createOnePathClaim
+            . ( \(x, y) -> (cls !! (unClaimIndex x), y) )
+            <$> (pairs >>= uncurry zip)
+        notStarted = notStartedOPClaims gphs cls
+    return $ started <> notStarted
+  where
+    terminalPatterns
+        :: Map.Map ClaimIndex ExecutionGraph
+        -> Map.Map ClaimIndex [CommonStrategyPattern]
+    terminalPatterns gphs =
+        terminalPattern
+        . graphWithLeafs
+        . Strategy.graph
+        <$> gphs
+    graphWithLeafs :: InnerGraph -> (InnerGraph, [Graph.Node])
+    graphWithLeafs gph =
+        (gph, join . Map.elems $ sortLeafsByType gph)
+    terminalPattern
+        :: (InnerGraph, [Graph.Node])
+        -> [CommonStrategyPattern]
+    terminalPattern (g, ns) =
+        fmap (Graph.lab' . Graph.context g) ns
+    notStartedOPClaims
+        :: Claim claim
+        => Map.Map ClaimIndex ExecutionGraph
+        -> [claim]
+        -> [Rule.OnePathRule Variable]
+    notStartedOPClaims gphs cls =
+        Rule.OnePathRule
+        . coerce
+        . (cls !!)
+        . unClaimIndex
+        <$> (Set.toList $ Set.difference
+                (Set.fromList $ fmap ClaimIndex [0..length cls - 1])
+                (Set.fromList $ Map.keys gphs)
+            )
+
+currentClaimSort
+    :: Claim claim
+    => MonadState (ReplState claim) m
+    => m Sort
+currentClaimSort = do
+    cls <- Lens.use lensClaim
+    return . TermLike.termLikeSort
+        . Rule.onePathRuleToPattern
+        . Rule.OnePathRule
+        . coerce
+        $ cls
+
+sortLeafsByType :: InnerGraph -> Map.Map NodeState [Graph.Node]
+sortLeafsByType graph =
+    Map.fromList
+        . groupSort
+        . catMaybes
+        . fmap (getNodeState graph)
+        . findLeafNodes
+        $ graph
+
+findLeafNodes :: InnerGraph -> [Graph.Node]
+findLeafNodes graph =
+    filter ((==) 0 . Graph.outdeg graph) $ Graph.nodes graph

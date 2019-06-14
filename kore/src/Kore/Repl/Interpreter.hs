@@ -28,7 +28,7 @@ import           Control.Lens
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import           Control.Monad
-                 ( foldM, join, void )
+                 ( foldM, void )
 import           Control.Monad.Extra
                  ( loop, loopM )
 import           Control.Monad.IO.Class
@@ -44,7 +44,6 @@ import           Control.Monad.Trans.Except
                  ( runExceptT )
 import           Data.Coerce
                  ( Coercible, coerce )
-import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import           Data.Functor
                  ( ($>) )
@@ -52,18 +51,13 @@ import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
 import qualified Data.List as List
-import           Data.List.Extra
-                 ( groupSort )
 import           Data.List.NonEmpty
                  ( NonEmpty )
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
-                 ( fromJust )
-import           Data.Maybe
-                 ( catMaybes, listToMaybe )
+                 ( listToMaybe )
 import           Data.Sequence
                  ( Seq )
-import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as Text.Lazy
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -80,23 +74,20 @@ import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.RuleIndex
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
-import           Kore.Internal.Pattern
-                 ( toTermLike )
 import           Kore.Internal.Predicate
                  ( Predicate )
 import           Kore.Internal.TermLike
-                 ( TermLike, termLikeSort )
+                 ( TermLike )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Logger
 import           Kore.OnePath.StrategyPattern
                  ( CommonStrategyPattern,
                  StrategyPatternTransformer (StrategyPatternTransformer),
-                 extractUnproven, strategyPattern )
+                 strategyPattern )
 import qualified Kore.OnePath.StrategyPattern as StrategyPatternTransformer
                  ( StrategyPatternTransformer (..) )
 import           Kore.OnePath.Verification
                  ( Axiom (..), Claim, isTrusted )
-import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Repl.Data
 import           Kore.Repl.Parser
 import           Kore.Repl.Parser
@@ -221,109 +212,14 @@ exit = do
     ofile <- Lens.use lensOutputFile
     let fileName =
             maybe (error "Output file not specified") id (unOutputFile ofile)
-    graphs <- Lens.use lensGraphs
-    claims <- Lens.use lensClaims
-    let patts =
-            inProgressClaims graphs claims
-            <> notStartedClaims graphs claims
-        pattSort = patternSort claims
-        conj = foldr TermLike.mkAnd (TermLike.mkTop pattSort) patts
+    onePathClaims <- generateInProgressOPClaims
+    sort <- currentClaimSort
+    let conj = conjOfOnePathClaims onePathClaims sort
     liftIO $ writeFile fileName (unparseToString conj)
     if isCompleted (Map.elems proofs)
        then return SuccessStop
        else return FailStop
   where
-    patternSort
-        :: Claim claim
-        => [claim]
-        -> TermLike.Sort
-    patternSort cls =
-        termLikeSort
-        . Rule.onePathRuleToPattern
-        . Rule.OnePathRule
-        . coerce
-        $ cls !! 0
-    inProgressClaims
-        :: Claim claim
-        => Map.Map ClaimIndex ExecutionGraph
-        -> [claim]
-        -> [TermLike.TermLike Variable]
-    inProgressClaims gphs cls =
-        Rule.onePathRuleToPattern
-        . createReachabilityClaim
-        <$> terminalAndParentClaims gphs cls
-    terminalAndParentClaims
-        :: Claim claim
-        => Map.Map ClaimIndex ExecutionGraph
-        -> [claim]
-        -> [(claim, CommonStrategyPattern)]
-    terminalAndParentClaims gphs cls =
-        let pairs =
-                ( \(x, y) -> ([x], y) )
-                <$> (Map.toList . terminalPatterns) gphs
-        in fmap
-            ( \(x, y) -> (cls !! (unClaimIndex x), y) )
-            (pairs >>= uncurry zip)
-    notStartedClaims
-        :: Claim claim
-        => Map.Map ClaimIndex ExecutionGraph
-        -> [claim]
-        -> [TermLike.TermLike Variable]
-    notStartedClaims gphs cls =
-        Rule.onePathRuleToPattern
-        . Rule.OnePathRule
-        . coerce
-        . (cls !!)
-        . unClaimIndex
-        <$> (Set.toList $ Set.difference
-                (Set.fromList $ fmap ClaimIndex [0..length cls - 1])
-                (Set.fromList $ Map.keys gphs))
-    createReachabilityClaim
-        :: Claim claim
-        => (claim, CommonStrategyPattern)
-        -> Rule.OnePathRule Variable
-    createReachabilityClaim (cl, cpatt) =
-        Rule.OnePathRule
-        $ Rule.RulePattern
-            { left = pattToLeftPatt cpatt
-            , right = claimToRightPatt cl
-            , requires = Predicate.makeTruePredicate
-            , ensures = claimToEnsures cl
-            , attributes = Default.def
-            }
-    pattToLeftPatt
-        :: CommonStrategyPattern
-        -> TermLike Variable
-    pattToLeftPatt =
-        toTermLike . fromJust . extractUnproven
-    claimToRightPatt
-        :: Claim claim
-        => claim
-        -> TermLike Variable
-    claimToRightPatt =
-        Rule.right . coerce
-    claimToEnsures
-        :: Claim claim
-        => claim
-        -> Predicate.Predicate Variable
-    claimToEnsures =
-        Rule.ensures . coerce
-    terminalPatterns
-        :: Map.Map ClaimIndex ExecutionGraph
-        -> Map.Map ClaimIndex [CommonStrategyPattern]
-    terminalPatterns gphs =
-        terminalPattern
-        . graphWithLeafs
-        . Strategy.graph
-        <$> gphs
-    graphWithLeafs :: InnerGraph -> (InnerGraph, [Graph.Node])
-    graphWithLeafs gph =
-        (gph, join . Map.elems $ sortLeafsByType gph)
-    terminalPattern
-        :: (InnerGraph, [Graph.Node])
-        -> [CommonStrategyPattern]
-    terminalPattern (g, ns) =
-        fmap (Graph.lab' . Graph.context g) ns
     isCompleted :: [GraphProofStatus] -> Bool
     isCompleted xs =
         foldr
@@ -1159,19 +1055,6 @@ formatUnificationMessage =
         . map (Pretty.indent 4 . unparseUnifier)
         . Foldable.toList
     unparseUnifier = unparse . (<$) (TermLike.mkTop_ :: TermLike Variable)
-
-findLeafNodes :: InnerGraph -> [Graph.Node]
-findLeafNodes graph =
-    filter ((==) 0 . Graph.outdeg graph) $ Graph.nodes graph
-
-sortLeafsByType :: InnerGraph -> Map.Map NodeState [Graph.Node]
-sortLeafsByType graph =
-    Map.fromList
-        . groupSort
-        . catMaybes
-        . fmap (getNodeState graph)
-        . findLeafNodes
-        $ graph
 
 showProofStatus :: Map.Map ClaimIndex GraphProofStatus -> String
 showProofStatus m =

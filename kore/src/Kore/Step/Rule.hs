@@ -336,8 +336,8 @@ fromSentenceAxiom sentenceAxiom = do
             (Syntax.sentenceAxiomAttributes sentenceAxiom)
     patternToAxiomPattern attributes (Syntax.sentenceAxiomPattern sentenceAxiom)
 
--- TODO(ana.pantilie): second mkAnd should be changed when
--- the frontend will be able to unparse one path claims
+-- TODO(ana.pantilie): should apply `weakExistsFinally` to the
+-- second mkAnd when the frontend will be able to unparse one path claims
 onePathRuleToPattern
     :: Ord variable
     => SortedVariable variable
