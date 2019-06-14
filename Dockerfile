@@ -15,7 +15,7 @@ RUN    apt update                                                               
 
 RUN update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
 
-RUN curl -sSL https://get.haskellstack.org/ | sh
+RUN curl -sSL https://raw.githubusercontent.com/commercialhaskell/stack/v2.1.1/etc/scripts/get-stack.sh | sh
 
 ARG USER_ID=1000
 ARG GROUP_ID=1000
