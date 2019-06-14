@@ -30,4 +30,4 @@ ENV LC_ALL=C.UTF-8
 ADD --chown=user:user stack.yaml /home/user/.tmp-haskell/
 ADD --chown=user:user kore/package.yaml /home/user/.tmp-haskell/kore/
 RUN    cd /home/user/.tmp-haskell \
-    && stack build --only-snapshot --no-haddock-deps --test --bench --haddock --library-profiling
+    && stack build --only-snapshot --test --bench --haddock --library-profiling
