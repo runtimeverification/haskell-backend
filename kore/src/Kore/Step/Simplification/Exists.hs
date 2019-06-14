@@ -345,6 +345,7 @@ quantifyPattern variable original@Conditional { term, predicate, substitution }
   = (error . unlines)
     [ "Quantifying both the term and the predicate probably means that there's"
     , "an error somewhere else."
+    , "variable=" ++ unparseToString variable
     , "patt=" ++ unparseToString original
     ]
   | quantifyTerm = mkExists variable <$> original
