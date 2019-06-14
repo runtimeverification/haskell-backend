@@ -15,12 +15,13 @@ RUN    apt update                                                               
 
 RUN update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
 
-RUN curl -sSL https://get.haskellstack.org/ | sh
-
 ARG USER_ID=1000
 ARG GROUP_ID=1000
 RUN    groupadd --gid $GROUP_ID user                                        \
     && useradd --create-home --uid $USER_ID --shell /bin/sh --gid user user
+
+ADD scripts/install-stack.sh /home/user/.install-stack/
+RUN /home/user/.install-stack/install-stack.sh
 
 USER $USER_ID:$GROUP_ID
 
@@ -30,4 +31,5 @@ ENV LC_ALL=C.UTF-8
 ADD --chown=user:user stack.yaml /home/user/.tmp-haskell/
 ADD --chown=user:user kore/package.yaml /home/user/.tmp-haskell/kore/
 RUN    cd /home/user/.tmp-haskell \
-    && stack build --only-snapshot --no-haddock-deps --test --bench --haddock --library-profiling
+    && stack build --only-snapshot --test --bench --haddock \
+    && stack build --only-snapshot stylish-haskell
