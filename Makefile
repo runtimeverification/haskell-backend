@@ -20,7 +20,7 @@ docs: haddock
 
 $(STACK_LOCAL_DOC_ROOT)/index.html:
 	$(STACK_HADDOCK) haddock \
-		$(STACK_NO_PROFILE) $(STACK_FAST) --no-haddock-deps \
+		--fast \
 		>haddock.log 2>&1 \
 		|| ( cat haddock.log; exit 1; )
 	cat haddock.log
@@ -44,7 +44,7 @@ test-kore: $(STACK_LOCAL_HPC_ROOT)
 
 $(STACK_LOCAL_HPC_ROOT):
 	$(STACK_TEST) $(STACK_BUILD) \
-		$(STACK_NO_PROFILE) $(STACK_FAST) $(STACK_COVERAGE) \
+		--coverage \
 		--test --bench --no-run-benchmarks \
 		--ta --xml=test-results.xml
 
