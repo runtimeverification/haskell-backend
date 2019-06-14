@@ -29,22 +29,30 @@ module Kore.Sort
     , predicateSortId
     , predicateSortActual
     , predicateSort
+    -- * Exceptions
+    , SortsDisagree (..)
+    , sortsDisagree
     -- * Re-exports
     , module Kore.Syntax.Id
     ) where
 
 import           Control.DeepSeq
                  ( NFData )
+import           Control.Exception
+                 ( Exception (..), throw )
 import           Data.Align
 import qualified Data.Foldable as Foldable
 import           Data.Hashable
                  ( Hashable )
 import qualified Data.Map.Strict as Map
+import           Data.Maybe
+                 ( fromMaybe )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Data.These
+import           Data.Typeable
+                 ( Typeable )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import qualified GHC.Stack as GHC
 
 import Kore.Debug
 import Kore.Syntax.Id
@@ -280,18 +288,30 @@ rigidSort sort
   | sort == predicateSort = Nothing
   | otherwise             = Just sort
 
-alignSorts :: (GHC.HasCallStack, Foldable f) => f Sort -> Sort
-alignSorts = Foldable.foldl' worker predicateSort
-  where
-    worker sort1 sort2 =
-        maybe sort1 (align sort1) (rigidSort sort2)
-    align sort1 sort2
-      | sort1 == sort2 = sort1
-      | otherwise =
-        (error . show . Pretty.vsep)
-            [ "Could not align sort"
+data SortsDisagree = SortsDisagree !Sort !Sort
+    deriving (Eq, Show, Typeable)
+
+instance Exception SortsDisagree where
+    displayException (SortsDisagree sort1 sort2) =
+        (show . Pretty.vsep)
+            [ "Could not make sort"
             , Pretty.indent 4 (unparse sort2)
-            , "with sort"
+            , "agree with sort"
             , Pretty.indent 4 (unparse sort1)
             , "This is a program bug!"
             ]
+
+{- | Throw a 'SortsDisagree' exception.
+ -}
+sortsDisagree :: Sort -> Sort -> a
+sortsDisagree sort1 sort2 = throw (SortsDisagree sort1 sort2)
+
+alignSorts :: Foldable f => f Sort -> Sort
+alignSorts = fromMaybe predicateSort . Foldable.foldl' worker Nothing
+  where
+    worker Nothing      sort2 = rigidSort sort2
+    worker (Just sort1) sort2 =
+        Just $ maybe sort1 (align sort1) (rigidSort sort2)
+    align sort1 sort2
+      | sort1 == sort2 = sort1
+      | otherwise = sortsDisagree sort1 sort2
