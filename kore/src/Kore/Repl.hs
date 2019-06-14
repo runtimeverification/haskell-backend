@@ -47,6 +47,7 @@ import           Kore.OnePath.Verification
 import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
 import           Kore.Repl.Parser
+import           Kore.Repl.State
 import qualified Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
                  ( Simplifier )

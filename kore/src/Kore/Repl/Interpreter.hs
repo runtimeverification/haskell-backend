@@ -92,6 +92,7 @@ import           Kore.Repl.Data
 import           Kore.Repl.Parser
 import           Kore.Repl.Parser
                  ( commandParser )
+import           Kore.Repl.State
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
 import qualified Kore.Step.Rule as Rule

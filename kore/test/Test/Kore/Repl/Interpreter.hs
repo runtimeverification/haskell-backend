@@ -33,6 +33,7 @@ import           Kore.OnePath.Verification
                  ( Axiom (..), verifyClaimStep )
 import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
+import           Kore.Repl.State
 import           Kore.Step.Rule
                  ( OnePathRule (..), RewriteRule (..), rulePattern )
 
