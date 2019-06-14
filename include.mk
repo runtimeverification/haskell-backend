@@ -26,9 +26,6 @@ KPROVE_REPL_OPTS = --haskell-backend-command "$(KORE_REPL) $(KORE_EXEC_OPTS)"
 
 HS_TOP = $(TOP)/kore
 HS_SOURCE_DIRS = $(HS_TOP)/src $(HS_TOP)/app $(HS_TOP)/test $(HS_TOP)/bench
-STACK_NO_PROFILE = --no-library-profiling --no-executable-profiling
-STACK_FAST = --fast
-STACK_COVERAGE = --coverage
 STACK_BUILD = build --pedantic
 
 STACK = stack
