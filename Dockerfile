@@ -15,12 +15,13 @@ RUN    apt update                                                               
 
 RUN update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
 
-RUN curl -sSL https://raw.githubusercontent.com/commercialhaskell/stack/v2.1.1/etc/scripts/get-stack.sh | sh
-
 ARG USER_ID=1000
 ARG GROUP_ID=1000
 RUN    groupadd --gid $GROUP_ID user                                        \
     && useradd --create-home --uid $USER_ID --shell /bin/sh --gid user user
+
+ADD scripts/install-stack.sh /home/user/.tmp-haskell/
+RUN /home/user/.tmp-haskell/install-stack.sh
 
 USER $USER_ID:$GROUP_ID
 
