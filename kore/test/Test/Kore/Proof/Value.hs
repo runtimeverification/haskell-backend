@@ -12,7 +12,7 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Internal.Symbol
-                 ( toSymbolOrAlias )
+                 ( applicationSorts, toSymbolOrAlias )
 import           Kore.Internal.TermLike
 import qualified Kore.Proof.Value as Value
 
@@ -155,6 +155,7 @@ unitSymbol =
         { symbolConstructor = testId "unit"
         , symbolParams = []
         , symbolAttributes = Mock.constructorAttributes
+        , symbolSorts = applicationSorts [] unitSort
         }
 
 pairSort :: Sort -> Sort
@@ -170,6 +171,7 @@ pairSymbol sort =
         { symbolConstructor = testId "pair"
         , symbolParams = [sort]
         , symbolAttributes = Mock.constructorAttributes
+        , symbolSorts = applicationSorts [sort, sort] (pairSort sort)
         }
 
 injSymbol :: Sort -> Sort -> Symbol
@@ -178,6 +180,7 @@ injSymbol sub sup =
         { symbolConstructor = testId "inj"
         , symbolParams = [sub, sup]
         , symbolAttributes = Mock.sortInjectionAttributes
+        , symbolSorts = applicationSorts [sub] sup
         }
 
 funSymbol :: Symbol
@@ -186,6 +189,7 @@ funSymbol =
         { symbolConstructor = testId "fun"
         , symbolParams = []
         , symbolAttributes = Mock.functionAttributes
+        , symbolSorts = applicationSorts [intSort] intSort
         }
 
 subSort :: Sort

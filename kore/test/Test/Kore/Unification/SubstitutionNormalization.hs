@@ -9,6 +9,7 @@ import qualified Data.Default as Default
 import qualified Data.Map.Strict as Map
 
 import qualified Kore.Internal.Pattern as Conditional
+import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
@@ -127,6 +128,7 @@ test_substitutionNormalization =
         { symbolConstructor = testId "f"
         , symbolParams = []
         , symbolAttributes = Default.def
+        , symbolSorts = applicationSorts [Mock.testSort] Mock.testSort
         }
 
 runNormalizeSubstitution

@@ -82,7 +82,7 @@ import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SmtMetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Internal.Conditional
                  ( Conditional, andCondition )
 import           Kore.Internal.Pattern
@@ -423,15 +423,13 @@ asInternal tools builtinMapSort builtinMapChild =
         Domain.InternalMap
             { builtinMapSort
             , builtinMapUnit =
-                Builtin.lookupSymbolUnit builtinMapSort attrs
+                Builtin.lookupSymbolUnit tools builtinMapSort
             , builtinMapElement =
-                Builtin.lookupSymbolElement builtinMapSort attrs
+                Builtin.lookupSymbolElement tools builtinMapSort
             , builtinMapConcat =
-                Builtin.lookupSymbolConcat builtinMapSort attrs
+                Builtin.lookupSymbolConcat tools builtinMapSort
             , builtinMapChild
             }
-  where
-    attrs = sortAttributes tools builtinMapSort
 
 {- | Render an 'Domain.InternalMap' as a 'TermLike' domain value pattern.
  -}

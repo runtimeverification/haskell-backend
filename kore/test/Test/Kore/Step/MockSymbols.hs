@@ -20,7 +20,6 @@ module Test.Kore.Step.MockSymbols where
    * variables are called x, y, z...
 -}
 
-import           Data.Bifunctor
 import qualified Data.Default as Default
 import           Data.Function
 import qualified Data.Map.Strict as Map
@@ -197,324 +196,594 @@ aSymbol = Symbol
     { symbolConstructor = aId
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorFunctionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort
+            }
     }
 aSort0Symbol :: Symbol
 aSort0Symbol = Symbol
     { symbolConstructor = aSort0Id
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorFunctionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort0
+            }
     }
 aSort1Symbol :: Symbol
 aSort1Symbol = Symbol
     { symbolConstructor = aSort1Id
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorFunctionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort1
+            }
     }
 aSubsortSymbol :: Symbol
 aSubsortSymbol = Symbol
     { symbolConstructor = aSubsortId
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorFunctionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = subSort
+            }
     }
 aSubSubsortSymbol :: Symbol
 aSubSubsortSymbol = Symbol
     { symbolConstructor = aSubSubsortId
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorFunctionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = subSubsort
+            }
     }
 aTopSortSymbol :: Symbol
 aTopSortSymbol = Symbol
     { symbolConstructor = aTopSortId
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorFunctionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = topSort
+            }
     }
 aOtherSortSymbol :: Symbol
 aOtherSortSymbol = Symbol
     { symbolConstructor = aOtherSortId
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorFunctionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = otherSort
+            }
     }
 bSymbol :: Symbol
 bSymbol = Symbol
     { symbolConstructor = bId
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorFunctionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort
+            }
     }
 bSort0Symbol :: Symbol
 bSort0Symbol = Symbol
     { symbolConstructor = bSort0Id
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorFunctionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort0
+            }
     }
 cSymbol :: Symbol
 cSymbol = Symbol
     { symbolConstructor = cId
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorFunctionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort
+            }
     }
 dSymbol :: Symbol
 dSymbol = Symbol
     { symbolConstructor = dId
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorFunctionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort
+            }
     }
 eSymbol :: Symbol
 eSymbol = Symbol
     { symbolConstructor = eId
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorFunctionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort
+            }
     }
 fSymbol :: Symbol
 fSymbol = Symbol
     { symbolConstructor = fId
     , symbolParams      = []
     , symbolAttributes  = Mock.functionAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 gSymbol :: Symbol
 gSymbol = Symbol
     { symbolConstructor = gId
     , symbolParams      = []
     , symbolAttributes  = Mock.functionAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 hSymbol :: Symbol
 hSymbol = Symbol
     { symbolConstructor = hId
     , symbolParams      = []
     , symbolAttributes  = Mock.functionAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 cfSymbol :: Symbol
 cfSymbol = Symbol
     { symbolConstructor = cfId
     , symbolParams      = []
     , symbolAttributes  = Mock.functionAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort
+            }
     }
 cfSort0Symbol :: Symbol
 cfSort0Symbol = Symbol
     { symbolConstructor = cfSort0Id
     , symbolParams      = []
     , symbolAttributes  = Mock.functionAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort0
+            }
     }
 cfSort1Symbol :: Symbol
 cfSort1Symbol = Symbol
     { symbolConstructor = cfSort1Id
     , symbolParams      = []
     , symbolAttributes  = Mock.functionAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort1
+            }
     }
 cgSymbol :: Symbol
 cgSymbol = Symbol
     { symbolConstructor = cgId
     , symbolParams      = []
     , symbolAttributes  = Mock.functionAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort
+            }
     }
 cgSort0Symbol :: Symbol
 cgSort0Symbol = Symbol
     { symbolConstructor = cgSort0Id
     , symbolParams      = []
     , symbolAttributes  = Mock.functionAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort0
+            }
     }
 chSymbol :: Symbol
 chSymbol = Symbol
     { symbolConstructor = chId
     , symbolParams      = []
     , symbolAttributes  = Mock.functionAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort
+            }
     }
 plain00Symbol :: Symbol
 plain00Symbol = Symbol
     { symbolConstructor = plain00Id
     , symbolParams      = []
     , symbolAttributes  = Mock.defaultAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort
+            }
     }
 plain00Sort0Symbol :: Symbol
 plain00Sort0Symbol = Symbol
     { symbolConstructor = plain00Sort0Id
     , symbolParams      = []
     , symbolAttributes  = Mock.defaultAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort0
+            }
     }
 plain00SubsortSymbol :: Symbol
 plain00SubsortSymbol = Symbol
     { symbolConstructor = plain00SubsortId
     , symbolParams      = []
     , symbolAttributes  = Mock.defaultAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = subSort
+            }
     }
 plain00SubSubsortSymbol :: Symbol
 plain00SubSubsortSymbol = Symbol
     { symbolConstructor = plain00SubSubsortId
     , symbolParams      = []
     , symbolAttributes  = Mock.defaultAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = subSubsort
+            }
     }
 plain10Symbol :: Symbol
 plain10Symbol = Symbol
     { symbolConstructor = plain10Id
     , symbolParams      = []
     , symbolAttributes  = Mock.defaultAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 plain11Symbol :: Symbol
 plain11Symbol = Symbol
     { symbolConstructor = plain11Id
     , symbolParams      = []
     , symbolAttributes  = Mock.defaultAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 plain20Symbol :: Symbol
 plain20Symbol = Symbol
     { symbolConstructor = plain20Id
     , symbolParams      = []
     , symbolAttributes  = Mock.defaultAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort, testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 constr10Symbol :: Symbol
 constr10Symbol = Symbol
     { symbolConstructor = constr10Id
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 constr11Symbol :: Symbol
 constr11Symbol = Symbol
     { symbolConstructor = constr11Id
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 constr20Symbol :: Symbol
 constr20Symbol = Symbol
     { symbolConstructor = constr20Id
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort, testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 function20MapTestSymbol :: Symbol
 function20MapTestSymbol = Symbol
     { symbolConstructor = function20MapTestId
     , symbolParams      = []
     , symbolAttributes  = Mock.functionAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [mapSort, testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 functional00Symbol :: Symbol
 functional00Symbol = Symbol
     { symbolConstructor = functional00Id
     , symbolParams      = []
     , symbolAttributes  = Mock.functionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort
+            }
     }
 functional01Symbol :: Symbol
 functional01Symbol = Symbol
     { symbolConstructor = functional01Id
     , symbolParams      = []
     , symbolAttributes  = Mock.functionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort
+            }
     }
 functional10Symbol :: Symbol
 functional10Symbol = Symbol
     { symbolConstructor = functional10Id
     , symbolParams      = []
     , symbolAttributes  = Mock.functionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 functional11Symbol :: Symbol
 functional11Symbol = Symbol
     { symbolConstructor = functional11Id
     , symbolParams      = []
     , symbolAttributes  = Mock.functionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 functional20Symbol :: Symbol
 functional20Symbol = Symbol
     { symbolConstructor = functional20Id
     , symbolParams      = []
     , symbolAttributes  = Mock.functionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort, testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 functional00SubSubSortSymbol :: Symbol
 functional00SubSubSortSymbol = Symbol
     { symbolConstructor = functional00SubSubSortId
     , symbolParams      = []
     , symbolAttributes  = Mock.functionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = subSubsort
+            }
     }
 functionalConstr10Symbol :: Symbol
 functionalConstr10Symbol = Symbol
     { symbolConstructor = functionalConstr10Id
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorFunctionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 functionalConstr11Symbol :: Symbol
 functionalConstr11Symbol = Symbol
     { symbolConstructor = functionalConstr11Id
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorFunctionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 functionalConstr12Symbol :: Symbol
 functionalConstr12Symbol = Symbol
     { symbolConstructor = functionalConstr12Id
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorFunctionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 functionalConstr20Symbol :: Symbol
 functionalConstr20Symbol = Symbol
     { symbolConstructor = functionalConstr20Id
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorFunctionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort, testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 functionalConstr30Symbol :: Symbol
 functionalConstr30Symbol = Symbol
     { symbolConstructor = functionalConstr30Id
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorFunctionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort, testSort, testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 functionalTopConstr20Symbol :: Symbol
 functionalTopConstr20Symbol = Symbol
     { symbolConstructor = functionalTopConstr20Id
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorFunctionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort, testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 functionalTopConstr21Symbol :: Symbol
 functionalTopConstr21Symbol = Symbol
     { symbolConstructor = functionalTopConstr21Id
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorFunctionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort, testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 injective10Symbol :: Symbol
 injective10Symbol = Symbol
     { symbolConstructor = injective10Id
     , symbolParams      = []
     , symbolAttributes  = Mock.injectiveAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 injective11Symbol :: Symbol
 injective11Symbol = Symbol
     { symbolConstructor = injective11Id
     , symbolParams      = []
     , symbolAttributes  = Mock.injectiveAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 sortInjection10Symbol :: Symbol
 sortInjection10Symbol = Symbol
     { symbolConstructor = sortInjectionId
     , symbolParams      = [testSort0, testSort]
     , symbolAttributes  = Mock.sortInjectionAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort0]
+            , applicationSortsResult   = testSort
+            }
     }
 sortInjection11Symbol :: Symbol
 sortInjection11Symbol = Symbol
     { symbolConstructor = sortInjectionId
     , symbolParams      = [testSort1, testSort]
     , symbolAttributes  = Mock.sortInjectionAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort1]
+            , applicationSortsResult   = testSort
+            }
     }
 sortInjection0ToTopSymbol :: Symbol
 sortInjection0ToTopSymbol = Symbol
     { symbolConstructor = sortInjectionId
     , symbolParams      = [testSort0, topSort]
     , symbolAttributes  = Mock.sortInjectionAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort0]
+            , applicationSortsResult   = testSort
+            }
     }
 sortInjectionSubToTopSymbol :: Symbol
 sortInjectionSubToTopSymbol = Symbol
     { symbolConstructor = sortInjectionId
     , symbolParams      = [subSort, topSort]
     , symbolAttributes  = Mock.sortInjectionAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [subSort]
+            , applicationSortsResult   = testSort
+            }
     }
 sortInjectionSubSubToTopSymbol :: Symbol
 sortInjectionSubSubToTopSymbol = Symbol
     { symbolConstructor = sortInjectionId
     , symbolParams      = [subSubsort, topSort]
     , symbolAttributes  = Mock.sortInjectionAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [subSubsort]
+            , applicationSortsResult   = testSort
+            }
     }
 sortInjectionSubSubToSubSymbol :: Symbol
 sortInjectionSubSubToSubSymbol = Symbol
     { symbolConstructor = sortInjectionId
     , symbolParams      = [subSubsort, subSort]
     , symbolAttributes  = Mock.sortInjectionAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [subSubsort]
+            , applicationSortsResult   = subSort
+            }
     }
 sortInjectionOtherToTopSymbol :: Symbol
 sortInjectionOtherToTopSymbol = Symbol
     { symbolConstructor = sortInjectionId
     , symbolParams      = [otherSort, topSort]
     , symbolAttributes  = Mock.sortInjectionAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [otherSort]
+            , applicationSortsResult   = testSort
+            }
     }
 unitMapSymbol :: Symbol
 unitMapSymbol = Symbol
@@ -523,6 +792,11 @@ unitMapSymbol = Symbol
     , symbolAttributes  =
         Mock.functionalAttributes
             { Attribute.hook = Attribute.Hook (Just "MAP.unit") }
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = mapSort
+            }
     }
 elementMapSymbol :: Symbol
 elementMapSymbol = Symbol
@@ -531,6 +805,11 @@ elementMapSymbol = Symbol
     , symbolAttributes  =
         Mock.functionalAttributes
             { Attribute.hook = Attribute.Hook (Just "MAP.element") }
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult   = mapSort
+            }
     }
 concatMapSymbol :: Symbol
 concatMapSymbol = Symbol
@@ -539,6 +818,11 @@ concatMapSymbol = Symbol
     , symbolAttributes  =
         Mock.functionalAttributes
             { Attribute.hook = Attribute.Hook (Just "MAP.concat") }
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [mapSort, mapSort]
+            , applicationSortsResult   = mapSort
+            }
     }
 lessIntSymbol :: Symbol
 lessIntSymbol = Symbol
@@ -548,6 +832,11 @@ lessIntSymbol = Symbol
         Mock.functionalAttributes
             { Attribute.hook = Attribute.Hook (Just "INT.lt")
             , Attribute.smthook = Attribute.Smthook (Just (SMT.Atom "<"))
+            }
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [intSort, intSort]
+            , applicationSortsResult   = boolSort
             }
     }
 greaterEqIntSymbol :: Symbol
@@ -559,6 +848,11 @@ greaterEqIntSymbol = Symbol
             { Attribute.hook = Attribute.Hook (Just "INT.ge")
             , Attribute.smthook = Attribute.Smthook (Just (SMT.Atom ">="))
             }
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [intSort, intSort]
+            , applicationSortsResult   = boolSort
+            }
     }
 
 concatListSymbol :: Symbol
@@ -568,6 +862,11 @@ concatListSymbol = Symbol
     , symbolAttributes  =
         Mock.functionalAttributes
             { Attribute.hook = Attribute.Hook (Just "LIST.concat") }
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [listSort, listSort]
+            , applicationSortsResult   = listSort
+            }
     }
 
 elementListSymbol :: Symbol
@@ -577,6 +876,11 @@ elementListSymbol = Symbol
     , symbolAttributes  =
         Mock.functionalAttributes
             { Attribute.hook = Attribute.Hook (Just "LIST.element") }
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort]
+            , applicationSortsResult   = listSort
+            }
     }
 
 unitListSymbol :: Symbol
@@ -586,6 +890,11 @@ unitListSymbol = Symbol
     , symbolAttributes  =
         Mock.functionalAttributes
             { Attribute.hook = Attribute.Hook (Just "LIST.unit") }
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = listSort
+            }
     }
 
 concatSetSymbol :: Symbol
@@ -595,6 +904,11 @@ concatSetSymbol = Symbol
     , symbolAttributes  =
         Mock.functionalAttributes
             { Attribute.hook = Attribute.Hook (Just "SET.concat") }
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [setSort, setSort]
+            , applicationSortsResult   = setSort
+            }
     }
 
 elementSetSymbol :: Symbol
@@ -604,6 +918,11 @@ elementSetSymbol = Symbol
     , symbolAttributes  =
         Mock.functionalAttributes
             { Attribute.hook = Attribute.Hook (Just "SET.element") }
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [setSort]
+            , applicationSortsResult   = setSort
+            }
     }
 
 unitSetSymbol :: Symbol
@@ -613,6 +932,11 @@ unitSetSymbol = Symbol
     , symbolAttributes  =
         Mock.functionalAttributes
             { Attribute.hook = Attribute.Hook (Just "SET.unit") }
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = setSort
+            }
     }
 
 sigmaSymbol :: Symbol
@@ -620,6 +944,11 @@ sigmaSymbol = Symbol
     { symbolConstructor = sigmaId
     , symbolParams      = []
     , symbolAttributes  = Mock.constructorFunctionalAttributes
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = [testSort, testSort]
+            , applicationSortsResult   = testSort
+            }
     }
 
 anywhereSymbol :: Symbol
@@ -629,6 +958,11 @@ anywhereSymbol = Symbol
     , symbolAttributes  =
         Mock.functionalAttributes
             { Attribute.anywhere = Attribute.Anywhere True }
+    , symbolSorts =
+        ApplicationSorts
+            { applicationSortsOperands = []
+            , applicationSortsResult   = testSort
+            }
     }
 
 var_x_1 :: Variable
@@ -1125,410 +1459,7 @@ sortAttributesMapping =
 
 headSortsMapping :: [(SymbolOrAlias, ApplicationSorts)]
 headSortsMapping =
-    map (first toSymbolOrAlias)
-    [   ( aSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort
-            }
-        )
-    ,   ( aSort0Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort0
-            }
-        )
-    ,   ( aSort1Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort1
-            }
-        )
-    ,   ( aSubsortSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = subSort
-            }
-        )
-    ,   ( aSubSubsortSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = subSubsort
-            }
-        )
-    ,   ( aTopSortSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = topSort
-            }
-        )
-    ,   ( aOtherSortSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = otherSort
-            }
-        )
-    ,   ( bSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort
-            }
-        )
-    ,   ( bSort0Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort0
-            }
-        )
-    ,   ( cSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort
-            }
-        )
-    ,   ( dSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort
-            }
-        )
-    ,   ( eSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort
-            }
-        )
-    ,   ( fSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult   = testSort
-            }
-        )
-    ,   ( gSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult   = testSort
-            }
-        )
-    ,   ( hSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult   = testSort
-            }
-        )
-    ,   ( cfSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort
-            }
-        )
-    ,   ( cfSort0Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort0
-            }
-        )
-    ,   ( cfSort1Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort1
-            }
-        )
-    ,   ( cgSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort
-            }
-        )
-    ,   ( cgSort0Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort0
-            }
-        )
-    ,   ( chSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort
-            }
-        )
-    ,   ( plain00Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort
-            }
-        )
-    ,   ( plain00Sort0Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort0
-            }
-        )
-    ,   ( plain00SubsortSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = subSort
-            }
-        )
-    ,   ( plain00SubSubsortSymbol
-        , ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = subSubsort
-            }
-        )
-    ,   ( plain10Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult   = testSort
-            }
-        )
-    ,   ( plain11Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult   = testSort
-            }
-        )
-    ,   ( plain20Symbol
-        , ApplicationSorts
-            { applicationSortsOperands = [testSort, testSort]
-            , applicationSortsResult   = testSort
-            }
-        )
-    ,   ( constr10Symbol
-        , ApplicationSorts
-             { applicationSortsOperands = [testSort]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( constr11Symbol
-        , ApplicationSorts
-             { applicationSortsOperands = [testSort]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( constr20Symbol
-        , ApplicationSorts
-             { applicationSortsOperands = [testSort, testSort]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( function20MapTestSymbol
-        , ApplicationSorts
-             { applicationSortsOperands = [mapSort, testSort]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( functional00Symbol
-        , ApplicationSorts
-             { applicationSortsOperands = []
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( functional01Symbol
-        , ApplicationSorts
-             { applicationSortsOperands = []
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( functional10Symbol
-        , ApplicationSorts
-             { applicationSortsOperands = [testSort]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( functional11Symbol
-        , ApplicationSorts
-             { applicationSortsOperands = [testSort]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( functional20Symbol
-        , ApplicationSorts
-             { applicationSortsOperands = [testSort, testSort]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( functional00SubSubSortSymbol
-        , ApplicationSorts
-             { applicationSortsOperands = []
-             , applicationSortsResult   = subSubsort
-             }
-        )
-    ,   ( functionalConstr10Symbol
-        , ApplicationSorts
-             { applicationSortsOperands = [testSort]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( functionalConstr11Symbol
-        , ApplicationSorts
-             { applicationSortsOperands = [testSort]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( functionalConstr12Symbol
-        , ApplicationSorts
-             { applicationSortsOperands = [testSort]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( functionalConstr20Symbol
-        , ApplicationSorts
-             { applicationSortsOperands = [testSort, testSort]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( functionalConstr30Symbol
-        , ApplicationSorts
-             { applicationSortsOperands = [testSort, testSort, testSort]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( functionalTopConstr20Symbol
-        , ApplicationSorts
-             { applicationSortsOperands = [testSort, testSort]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( functionalTopConstr21Symbol
-        , ApplicationSorts
-             { applicationSortsOperands = [testSort, testSort]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( injective10Symbol
-        , ApplicationSorts
-             { applicationSortsOperands = [testSort]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( injective11Symbol
-        , ApplicationSorts
-             { applicationSortsOperands = [testSort]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( sortInjection10Symbol
-        , ApplicationSorts
-             { applicationSortsOperands = [testSort0]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( sortInjection11Symbol
-        , ApplicationSorts
-             { applicationSortsOperands = [testSort1]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( sortInjection0ToTopSymbol
-        , ApplicationSorts
-             { applicationSortsOperands = [testSort0]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( sortInjectionSubToTopSymbol
-        , ApplicationSorts
-             { applicationSortsOperands = [subSort]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( sortInjectionSubSubToTopSymbol
-        , ApplicationSorts
-             { applicationSortsOperands = [subSubsort]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( sortInjectionSubSubToSubSymbol
-        , ApplicationSorts
-             { applicationSortsOperands = [subSubsort]
-             , applicationSortsResult   = subSort
-             }
-        )
-    ,   ( sortInjectionOtherToTopSymbol
-        , ApplicationSorts
-             { applicationSortsOperands = [otherSort]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( unitMapSymbol
-        , ApplicationSorts
-             { applicationSortsOperands = []
-             , applicationSortsResult   = mapSort
-             }
-        )
-    ,   ( elementMapSymbol
-        , ApplicationSorts
-             { applicationSortsOperands = [testSort]
-             , applicationSortsResult   = mapSort
-             }
-        )
-    ,   ( concatMapSymbol
-        , ApplicationSorts
-             { applicationSortsOperands = [mapSort, mapSort]
-             , applicationSortsResult   = mapSort
-             }
-        )
-    ,   ( elementListSymbol
-        , ApplicationSorts
-             { applicationSortsOperands = [testSort]
-             , applicationSortsResult   = listSort
-             }
-        )
-    ,   ( unitListSymbol
-        , ApplicationSorts
-             { applicationSortsOperands = []
-             , applicationSortsResult   = listSort
-             }
-        )
-    ,   ( concatListSymbol
-        , ApplicationSorts
-             { applicationSortsOperands = [listSort, listSort]
-             , applicationSortsResult   = listSort
-             }
-        )
-    ,   ( elementSetSymbol
-        , ApplicationSorts
-             { applicationSortsOperands = [setSort]
-             , applicationSortsResult   = setSort
-             }
-        )
-    ,   ( unitSetSymbol
-        , ApplicationSorts
-             { applicationSortsOperands = []
-             , applicationSortsResult   = setSort
-             }
-        )
-    ,   ( concatSetSymbol
-        , ApplicationSorts
-             { applicationSortsOperands = [setSort, setSort]
-             , applicationSortsResult   = setSort
-             }
-        )
-    ,   ( lessIntSymbol
-        , ApplicationSorts
-             { applicationSortsOperands = [intSort, intSort]
-             , applicationSortsResult   = boolSort
-             }
-        )
-    ,   ( greaterEqIntSymbol
-        , ApplicationSorts
-             { applicationSortsOperands = [intSort, intSort]
-             , applicationSortsResult   = boolSort
-             }
-        )
-    ,   ( sigmaSymbol
-        , ApplicationSorts
-             { applicationSortsOperands = [testSort, testSort]
-             , applicationSortsResult   = testSort
-             }
-        )
-    ,   ( anywhereSymbol
-        , ApplicationSorts
-             { applicationSortsOperands = []
-             , applicationSortsResult   = testSort
-             }
-        )
-    ]
+    map ((,) <$> toSymbolOrAlias <*> symbolSorts) symbols
 
 zeroarySmtSort :: Id -> SMT.UnresolvedSort
 zeroarySmtSort sortId =

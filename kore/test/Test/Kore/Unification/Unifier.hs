@@ -20,14 +20,10 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
-import           Kore.Attribute.Constructor
-import           Kore.Attribute.Function
-import           Kore.Attribute.Functional
-import           Kore.Attribute.Injective
-import           Kore.Attribute.SortInjection
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools hiding
                  ( HeadType (..) )
+import           Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Symbol
@@ -69,42 +65,16 @@ s2 = simpleSort (SortName "s2")
 s3 = simpleSort (SortName "s3")
 s4 = simpleSort (SortName "s4")
 
-constructor :: Symbol -> Symbol
-constructor =
-    Lens.set
-        (lensSymbolAttributes . Attribute.lensConstructor)
-        Attribute.Constructor { isConstructor = True }
-
-functional :: Symbol -> Symbol
-functional =
-    Lens.set
-        (lensSymbolAttributes . Attribute.lensFunctional)
-        Attribute.Functional { isDeclaredFunctional = True }
-
-function :: Symbol -> Symbol
-function =
-    Lens.set
-        (lensSymbolAttributes . Attribute.lensFunction)
-        Attribute.Function { isDeclaredFunction = True }
-
-injective :: Symbol -> Symbol
-injective =
-    Lens.set
-        (lensSymbolAttributes . Attribute.lensInjective)
-        Attribute.Injective { isDeclaredInjective = True }
-
-sortInjection :: Symbol -> Symbol
-sortInjection =
-    Lens.set
-        (lensSymbolAttributes . Attribute.lensSortInjection)
-        Attribute.SortInjection { isSortInjection = True }
-
-symbol :: Text -> Symbol
-symbol name =
+symbol :: Text -> Sort -> [Sort] -> Symbol
+symbol name resultSort operandSorts =
     Symbol
         { symbolConstructor = testId name
         , symbolParams = []
         , symbolAttributes = Attribute.defaultSymbolAttributes
+        , symbolSorts =
+            Kore.Internal.ApplicationSorts.applicationSorts
+                operandSorts
+                resultSort
         }
 
 var :: Text -> Sort -> Variable
@@ -116,11 +86,11 @@ var name variableSort =
         }
 
 a1Symbol, a2Symbol, a3Symbol, a4Symbol, a5Symbol :: Symbol
-a1Symbol = symbol "a1" & constructor & functional & injective
-a2Symbol = symbol "a2" & functional
-a3Symbol = symbol "a3" & constructor & injective
-a4Symbol = symbol "a4" & functional & injective
-a5Symbol = symbol "a5" & function
+a1Symbol = symbol "a1" s1 [] & constructor & functional & injective
+a2Symbol = symbol "a2" s1 [] & functional
+a3Symbol = symbol "a3" s1 [] & constructor & injective
+a4Symbol = symbol "a4" s1 [] & functional & injective
+a5Symbol = symbol "a5" s1 [] & function
 
 a1, a2, a3, a4, a5 :: TermLike Variable
 a1 = mkApplySymbol s1 a1Symbol []
@@ -130,9 +100,9 @@ a4 = mkApplySymbol s1 a4Symbol []
 a5 = mkApplySymbol s1 a5Symbol []
 
 aSymbol, bSymbol, fSymbol :: Symbol
-aSymbol = symbol "a" & constructor & functional & injective
-bSymbol = symbol "b" & constructor & functional & injective
-fSymbol = symbol "f" & constructor & functional & injective
+aSymbol = symbol "a" s1 []   & constructor & functional & injective
+bSymbol = symbol "b" s2 []   & constructor & functional & injective
+fSymbol = symbol "f" s2 [s1] & constructor & functional & injective
 
 a, b :: TermLike Variable
 a = mkApplySymbol s1 aSymbol []
@@ -142,9 +112,9 @@ f :: TermLike Variable -> TermLike Variable
 f x' = mkApplySymbol s2 fSymbol [x']
 
 efSymbol, egSymbol, ehSymbol :: Symbol
-efSymbol = symbol "ef" & constructor & functional & injective
-egSymbol = symbol "eg" & constructor & functional & injective
-ehSymbol = symbol "eh" & constructor & functional & injective
+efSymbol = symbol "ef" s1 [s1, s1, s1] & constructor & functional & injective
+egSymbol = symbol "eg" s1 [s1]         & constructor & functional & injective
+ehSymbol = symbol "eh" s1 [s1]         & constructor & functional & injective
 
 ef
     :: TermLike Variable
@@ -158,9 +128,12 @@ eg x' = mkApplySymbol s1 egSymbol [x']
 eh x' = mkApplySymbol s1 ehSymbol [x']
 
 nonLinFSymbol, nonLinGSymbol, nonLinASymbol :: Symbol
-nonLinFSymbol = symbol "nonLinF" & constructor & functional & injective
-nonLinGSymbol = symbol "nonLinG" & constructor & functional & injective
-nonLinASymbol = symbol "nonLinA" & constructor & functional & injective
+nonLinFSymbol =
+    symbol "nonLinF" s1 [s1, s1] & constructor & functional & injective
+nonLinGSymbol =
+    symbol "nonLinG" s1 [s1] & constructor & functional & injective
+nonLinASymbol =
+    symbol "nonLinA" s1 [] & constructor & functional & injective
 
 nonLinF :: TermLike Variable -> TermLike Variable -> TermLike Variable
 nonLinF x' y' = mkApplySymbol s1 nonLinFSymbol [x', y']
@@ -174,7 +147,7 @@ nonLinX = mkVar $ var "x" s1
 nonLinY = mkVar $ var "y" s1
 
 expBinSymbol :: Symbol
-expBinSymbol = symbol "times" & constructor & functional & injective
+expBinSymbol = symbol "times" s1 [s1, s1] & constructor & functional & injective
 
 expBin :: TermLike Variable -> TermLike Variable -> TermLike Variable
 expBin x' y' = mkApplySymbol s1 expBinSymbol [x', y']
@@ -217,9 +190,12 @@ sortParamSort = SortVariableSort . sortParam
 
 injSymbol :: Symbol
 injSymbol =
-    symbol "inj"
-    & Lens.set lensSymbolParams [sortParamSort "From", sortParamSort "To"]
+    symbol "inj" toSort [fromSort]
+    & Lens.set lensSymbolParams [fromSort, toSort]
     & functional & injective & sortInjection
+  where
+    fromSort = sortParamSort "From"
+    toSort = sortParamSort "To"
 
 tools :: SmtMetadataTools Attribute.Symbol
 tools = MetadataTools

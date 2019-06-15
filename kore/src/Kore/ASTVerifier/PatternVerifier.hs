@@ -170,19 +170,22 @@ lookupAlias symbolOrAlias = do
 
 lookupSymbol
     ::  SymbolOrAlias
-    ->  MaybeT PatternVerifier (Internal.Symbol, ApplicationSorts)
+    ->  MaybeT PatternVerifier Internal.Symbol
 lookupSymbol symbolOrAlias = do
     Context { indexedModule } <- Reader.ask
     let resolveSymbol' = resolveSymbol indexedModule symbolConstructor
-    (attrs, decl) <- resolveSymbol' `catchError` const empty
+    (symbolAttributes, decl) <- resolveSymbol' `catchError` const empty
+    symbolSorts <-
+        Trans.lift
+        $ applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
     let symbol =
             Internal.Symbol
                 { symbolConstructor
                 , symbolParams
-                , symbolAttributes = attrs
+                , symbolAttributes
+                , symbolSorts
                 }
-    sorts <- Trans.lift $ applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
-    return (symbol, sorts)
+    return symbol
   where
     symbolConstructor = symbolOrAliasConstructor symbolOrAlias
     symbolParams = symbolOrAliasParams symbolOrAlias
@@ -605,8 +608,9 @@ verifyApplySymbol
                 child
             )
 verifyApplySymbol getChildAttributes application =
-    lookupSymbol symbolOrAlias >>= \(symbol, sorts) -> Trans.lift $ do
+    lookupSymbol symbolOrAlias >>= \symbol -> Trans.lift $ do
     let verified = application { applicationSymbolOrAlias = symbol }
+        sorts = Internal.symbolSorts symbol
     verifyApplicationChildren getChildAttributes verified sorts
   where
     Application { applicationSymbolOrAlias = symbolOrAlias } = application

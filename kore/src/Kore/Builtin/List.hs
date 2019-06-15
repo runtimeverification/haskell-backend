@@ -71,7 +71,7 @@ import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SmtMetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Internal.Pattern as Pattern
@@ -320,15 +320,13 @@ asInternal tools builtinListSort builtinListChild =
         Domain.InternalList
             { builtinListSort
             , builtinListUnit =
-                Builtin.lookupSymbolUnit builtinListSort attrs
+                Builtin.lookupSymbolUnit tools builtinListSort
             , builtinListElement =
-                Builtin.lookupSymbolElement builtinListSort attrs
+                Builtin.lookupSymbolElement tools builtinListSort
             , builtinListConcat =
-                Builtin.lookupSymbolConcat builtinListSort attrs
+                Builtin.lookupSymbolConcat tools builtinListSort
             , builtinListChild
             }
-  where
-    attrs = sortAttributes tools builtinListSort
 
 {- | Render a 'Seq' as an extended domain value pattern.
 

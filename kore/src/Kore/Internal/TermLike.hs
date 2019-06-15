@@ -149,6 +149,7 @@ import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import qualified Data.Deriving as Deriving
 import qualified Data.Foldable as Foldable
+import           Data.Function
 import           Data.Functor.Classes
 import           Data.Functor.Compose
                  ( Compose (..) )
@@ -177,7 +178,9 @@ import           GHC.Stack
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Domain.Class
+import           Kore.Error
 import           Kore.Internal.Alias
+import           Kore.Internal.ApplicationSorts
 import           Kore.Internal.Symbol
 import           Kore.Sort
 import qualified Kore.Substitute as Substitute
@@ -1150,6 +1153,9 @@ applySymbol sentence params children =
             { symbolConstructor
             , symbolParams = params
             , symbolAttributes = Default.def
+            , symbolSorts =
+                symbolOrAliasSorts params sentence
+                & assertRight
             }
     substitution = sortSubstitution symbolParams params
     resultSort' = substituteSortVariables substitution sentenceSymbolResultSort

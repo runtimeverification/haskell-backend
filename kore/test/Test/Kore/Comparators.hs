@@ -873,8 +873,8 @@ instance EqualWithExplanation TermLike.Alias where
 
 instance StructEqualWithExplanation TermLike.Symbol where
     structFieldsWithNames
-        expected@(TermLike.Symbol _ _ _)
-        actual@(TermLike.Symbol _ _ _)
+        expected@(TermLike.Symbol _ _ _ _)
+        actual@(TermLike.Symbol _ _ _ _)
       =
         [ Function.on (EqWrap "symbolConstructor = ")
             TermLike.symbolConstructor expected actual

@@ -69,6 +69,7 @@ import           Control.Error
 import           Control.Monad
                  ( zipWithM_ )
 import qualified Control.Monad as Monad
+import           Data.Function
 import qualified Data.Functor.Foldable as Recursive
 import           Data.HashMap.Strict
                  ( HashMap )
@@ -105,7 +106,9 @@ import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule, VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
+import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
+import           Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
@@ -725,11 +728,16 @@ lookupSymbol
     -> VerifiedModule Attribute.Symbol axiomAtts
     -> Either (Error e) Symbol
 lookupSymbol builtinName builtinSort indexedModule = do
-    symbolOrAliasConstructor <-
+    symbolConstructor <-
         IndexedModule.resolveHook indexedModule builtinName builtinSort
-    (return . getSymbol) SymbolOrAlias
-        { symbolOrAliasConstructor
-        , symbolOrAliasParams = []
+    (symbolAttributes, sentenceSymbol) <-
+        IndexedModule.resolveSymbol indexedModule symbolConstructor
+    symbolSorts <- symbolOrAliasSorts [] sentenceSymbol
+    return Symbol
+        { symbolConstructor
+        , symbolParams = []
+        , symbolAttributes
+        , symbolSorts
         }
 
 {- | Find the symbol hooked to @unit@.
@@ -741,16 +749,30 @@ during verification.
 declared attributes, because it is intended only for unparsing.
 
  -}
-lookupSymbolUnit :: Sort -> Attribute.Sort -> Symbol
-lookupSymbolUnit theSort attrs =
-    case getUnit of
-        Just symbol -> getSymbol symbol
-        Nothing ->
-            verifierBug
-            $ "missing 'unit' attribute of sort '"
-            ++ unparseToString theSort ++ "'"
+-- TODO (thomas.tuegel): Resolve this symbol during syntax verification.
+lookupSymbolUnit
+    :: SmtMetadataTools Attribute.Symbol
+    -> Sort
+    -> Symbol
+lookupSymbolUnit tools builtinSort =
+    Symbol
+        { symbolConstructor
+        , symbolParams
+        , symbolAttributes = Attribute.defaultSymbolAttributes
+        , symbolSorts
+        }
   where
-    Attribute.Sort { unit = Attribute.Sort.Unit { getUnit } } = attrs
+    unit = Attribute.unit (MetadataTools.sortAttributes tools builtinSort)
+    symbolOrAlias =
+        Attribute.Sort.getUnit unit
+        & fromMaybe missingUnitAttribute
+    symbolConstructor = symbolOrAliasConstructor symbolOrAlias
+    symbolParams = symbolOrAliasParams symbolOrAlias
+    symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
+    missingUnitAttribute =
+        verifierBug
+        $ "missing 'unit' attribute of sort '"
+        ++ unparseToString builtinSort ++ "'"
 
 {- | Find the symbol hooked to @element@.
 
@@ -761,16 +783,30 @@ checked during verification.
 declared attributes, because it is intended only for unparsing.
 
  -}
-lookupSymbolElement :: Sort -> Attribute.Sort -> Symbol
-lookupSymbolElement theSort attrs =
-    case getElement of
-        Just symbol -> getSymbol symbol
-        Nothing ->
-            verifierBug
-            $ "missing 'element' attribute of sort '"
-            ++ unparseToString theSort ++ "'"
+-- TODO (thomas.tuegel): Resolve this symbol during syntax verification.
+lookupSymbolElement
+    :: SmtMetadataTools Attribute.Symbol
+    -> Sort
+    -> Symbol
+lookupSymbolElement tools builtinSort =
+    Symbol
+        { symbolConstructor
+        , symbolParams
+        , symbolAttributes = Attribute.defaultSymbolAttributes
+        , symbolSorts
+        }
   where
-    Attribute.Sort { element = Attribute.Sort.Element { getElement } } = attrs
+    element = Attribute.element (MetadataTools.sortAttributes tools builtinSort)
+    symbolOrAlias =
+        Attribute.Sort.getElement element
+        & fromMaybe missingElementAttribute
+    symbolConstructor = symbolOrAliasConstructor symbolOrAlias
+    symbolParams = symbolOrAliasParams symbolOrAlias
+    symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
+    missingElementAttribute =
+        verifierBug
+        $ "missing 'element' attribute of sort '"
+        ++ unparseToString builtinSort ++ "'"
 
 {- | Find the symbol hooked to @concat@.
 
@@ -781,33 +817,30 @@ checked during verification.
 declared attributes, because it is intended only for unparsing.
 
  -}
-lookupSymbolConcat :: Sort -> Attribute.Sort -> Symbol
-lookupSymbolConcat theSort attrs =
-    case getConcat of
-        Just symbol -> getSymbol symbol
-        Nothing ->
-            verifierBug
-            $ "missing 'concat' attribute of sort '"
-            ++ unparseToString theSort ++ "'"
-  where
-    Attribute.Sort { concat = Attribute.Sort.Concat { getConcat } } = attrs
-
-{- | Get the internal 'Symbol' for a builtin symbol.
-
-**WARNING**: The returned 'Symbol' will have the default attributes, not its
-declared attributes, because it is intended only for unparsing.
-
- -}
-getSymbol :: SymbolOrAlias -> Symbol
-getSymbol symbol =
+-- TODO (thomas.tuegel): Resolve this symbol during syntax verification.
+lookupSymbolConcat
+    :: SmtMetadataTools Attribute.Symbol
+    -> Sort
+    -> Symbol
+lookupSymbolConcat tools builtinSort =
     Symbol
         { symbolConstructor
         , symbolParams
         , symbolAttributes = Attribute.defaultSymbolAttributes
+        , symbolSorts
         }
   where
-    symbolConstructor = symbolOrAliasConstructor symbol
-    symbolParams = symbolOrAliasParams symbol
+    concat' = Attribute.concat (MetadataTools.sortAttributes tools builtinSort)
+    symbolOrAlias =
+        Attribute.Sort.getConcat concat'
+        & fromMaybe missingConcatAttribute
+    symbolConstructor = symbolOrAliasConstructor symbolOrAlias
+    symbolParams = symbolOrAliasParams symbolOrAlias
+    symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
+    missingConcatAttribute =
+        verifierBug
+        $ "missing 'concat' attribute of sort '"
+        ++ unparseToString builtinSort ++ "'"
 
 {- | Is the given symbol hooked to the named builtin?
  -}

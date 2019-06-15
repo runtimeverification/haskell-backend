@@ -11,6 +11,7 @@ module Kore.Internal.Symbol
     , lensSymbolConstructor
     , lensSymbolParams
     , lensSymbolAttributes
+    , lensSymbolSorts
     , toSymbolOrAlias
     , isNonSimplifiable
     , isConstructor
@@ -20,9 +21,18 @@ module Kore.Internal.Symbol
     , isTotal
     , isInjective
     , symbolHook
+    , constructor
+    , functional
+    , function
+    , injective
+    , sortInjection
+    -- * Re-exports
+    , module Kore.Internal.ApplicationSorts
     ) where
 
 import           Control.DeepSeq
+import qualified Control.Lens as Lens hiding
+                 ( makeLenses )
 import qualified Data.Function as Function
 import           Data.Hashable
 import qualified Generics.SOP as SOP
@@ -31,6 +41,7 @@ import qualified GHC.Generics as GHC
 import qualified Control.Lens.TH.Rules as Lens
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Debug
+import           Kore.Internal.ApplicationSorts
 import           Kore.Sort
 import           Kore.Syntax.Application
                  ( SymbolOrAlias (..) )
@@ -41,6 +52,7 @@ data Symbol =
         { symbolConstructor :: !Id
         , symbolParams      :: ![Sort]
         , symbolAttributes  :: !Attribute.Symbol
+        , symbolSorts       :: !ApplicationSorts
         }
     deriving (GHC.Generic, Show)
 
@@ -123,3 +135,33 @@ isTotal = Attribute.isTotal . symbolAttributes
 
 symbolHook :: Symbol -> Attribute.Hook
 symbolHook = Attribute.hook . symbolAttributes
+
+constructor :: Symbol -> Symbol
+constructor =
+    Lens.set
+        (lensSymbolAttributes . Attribute.lensConstructor)
+        Attribute.Constructor { isConstructor = True }
+
+functional :: Symbol -> Symbol
+functional =
+    Lens.set
+        (lensSymbolAttributes . Attribute.lensFunctional)
+        Attribute.Functional { isDeclaredFunctional = True }
+
+function :: Symbol -> Symbol
+function =
+    Lens.set
+        (lensSymbolAttributes . Attribute.lensFunction)
+        Attribute.Function { isDeclaredFunction = True }
+
+injective :: Symbol -> Symbol
+injective =
+    Lens.set
+        (lensSymbolAttributes . Attribute.lensInjective)
+        Attribute.Injective { isDeclaredInjective = True }
+
+sortInjection :: Symbol -> Symbol
+sortInjection =
+    Lens.set
+        (lensSymbolAttributes . Attribute.lensSortInjection)
+        Attribute.SortInjection { isSortInjection = True }

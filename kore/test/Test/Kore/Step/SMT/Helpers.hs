@@ -40,6 +40,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
+import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import           Kore.Syntax.Sentence
                  ( ParsedSentence, Sentence (..),
@@ -191,15 +192,20 @@ constructorAxiom sortName constructors =
     constructorAssertion (constructorName, argumentSorts) =
         foldr
             mkExists
-            (mkApplySymbol
-                sort
-                (makeHead constructorName)
-                (map mkVar argumentVariables)
-            )
+            (mkApplySymbol sort symbol (map mkVar argumentVariables))
             argumentVariables
-        where
+      where
         argumentVariables :: [Variable]
         argumentVariables = zipWith makeVariable [1..] argumentSorts
+
+        symbol =
+            Symbol
+                { symbolConstructor = testId constructorName
+                , symbolParams      = []
+                , symbolAttributes  = Mock.constructorFunctionalAttributes
+                , symbolSorts       =
+                    applicationSorts (map makeSort argumentSorts) sort
+                }
 
 makeVariable :: Natural -> Text -> Variable
 makeVariable varIndex sortName =
@@ -214,12 +220,4 @@ makeSort name =
     SortActualSort SortActual
         { sortActualName  = testId name
         , sortActualSorts = []
-        }
-
-makeHead :: Text -> Symbol
-makeHead name =
-    Symbol
-        { symbolConstructor = testId name
-        , symbolParams      = []
-        , symbolAttributes  = Mock.constructorFunctionalAttributes
         }

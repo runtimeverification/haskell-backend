@@ -35,6 +35,7 @@ import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
+import           Kore.Internal.ApplicationSorts
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
@@ -275,6 +276,11 @@ applyToNoArgs sort name =
             { symbolConstructor = testId name
             , symbolParams = []
             , symbolAttributes = Mock.constructorFunctionalAttributes
+            , symbolSorts =
+                ApplicationSorts
+                    { applicationSortsResult = sort
+                    , applicationSortsOperands = []
+                    }
             }
         []
 
@@ -360,4 +366,13 @@ test_execGetExitCode =
             , variableSort = myIntSort
             }
         getExitCodeSym =
-            Symbol getExitCodeId [] Attribute.defaultSymbolAttributes
+            Symbol
+                { symbolConstructor = getExitCodeId
+                , symbolParams = []
+                , symbolAttributes = Attribute.defaultSymbolAttributes
+                , symbolSorts =
+                    ApplicationSorts
+                        { applicationSortsResult = myIntSort
+                        , applicationSortsOperands = [myIntSort]
+                        }
+                }

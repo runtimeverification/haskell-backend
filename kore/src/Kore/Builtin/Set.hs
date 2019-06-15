@@ -82,7 +82,7 @@ import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools, sortAttributes )
+                 ( SmtMetadataTools )
 import           Kore.Internal.Conditional
                  ( andCondition )
 import           Kore.Internal.Pattern
@@ -390,15 +390,13 @@ asInternal tools builtinSetSort builtinSetChild =
         Domain.InternalSet
             { builtinSetSort
             , builtinSetUnit =
-                Builtin.lookupSymbolUnit builtinSetSort attrs
+                Builtin.lookupSymbolUnit tools builtinSetSort
             , builtinSetElement =
-                Builtin.lookupSymbolElement builtinSetSort attrs
+                Builtin.lookupSymbolElement tools builtinSetSort
             , builtinSetConcat =
-                Builtin.lookupSymbolConcat builtinSetSort attrs
+                Builtin.lookupSymbolConcat tools builtinSetSort
             , builtinSetChild
             }
-  where
-    attrs = sortAttributes tools builtinSetSort
 
 {- | Render an 'Domain.InternalSet' as a 'TermLike' domain value.
  -}

@@ -30,6 +30,7 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
@@ -79,6 +80,7 @@ testSymbol name =
         { symbolConstructor = testId name
         , symbolParams = []
         , symbolAttributes = Default.def
+        , symbolSorts = applicationSorts [] sortS
         }
 
 fHead, gHead, sHead, tHead :: Symbol

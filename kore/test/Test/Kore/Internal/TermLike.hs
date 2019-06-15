@@ -13,6 +13,7 @@ import Data.Sup
 import Kore.Internal.TermLike
 import Kore.Variables.Fresh
 
+import           Kore.Internal.ApplicationSorts
 import           Test.Kore hiding
                  ( symbolGen )
 import           Test.Kore.Comparators ()
@@ -63,10 +64,11 @@ termLikeChildGen patternSort =
         mkAnd
             <$> termLikeChildGen patternSort
             <*> termLikeChildGen patternSort
-    termLikeAppGen =
-        mkApplySymbol patternSort
-            <$> symbolGen
-            <*> couple (termLikeChildGen =<< sortGen)
+    termLikeAppGen = do
+        symbol <- symbolGen patternSort
+        let childSorts = applicationSortsOperands . symbolSorts $ symbol
+        children <- traverse termLikeChildGen childSorts
+        pure $ mkApplySymbol patternSort symbol children
     termLikeBottomGen = pure (mkBottom patternSort)
     termLikeCeilGen = do
         child <- termLikeChildGen =<< sortGen

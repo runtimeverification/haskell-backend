@@ -6,6 +6,7 @@ import Test.Tasty.HUnit
 import qualified Control.Exception as Exception
 import           Data.Default
                  ( def )
+import           Data.Function
 import qualified Data.Set as Set
 
 import           Data.Text
@@ -14,6 +15,7 @@ import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
 import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
@@ -54,12 +56,7 @@ test_constructorRewriting =
         cons = applyConstructorToVariables
 
 constructorSymbol :: Text -> Symbol
-constructorSymbol name =
-    Symbol
-        { symbolConstructor = testId name
-        , symbolParams = []
-        , symbolAttributes = functionalConstructorAttributes
-        }
+constructorSymbol name = symbol name & functional & constructor
 
 c1, c2, c3, unused :: Symbol
 c1 = constructorSymbol "c1"
@@ -133,8 +130,8 @@ anySort = sort "irrelevant"
 
 -- | Create a function pattern from a function name and list of argnames.
 applyConstructorToVariables :: Symbol -> [Text] -> TestPattern
-applyConstructorToVariables symbol arguments =
-    mkApplySymbol anySort symbol $ fmap var arguments
+applyConstructorToVariables constr arguments =
+    mkApplySymbol anySort constr (var <$> arguments)
 
 -- | Do the busywork of converting a name into a variable pattern.
 var :: Text -> TestPattern
@@ -376,11 +373,7 @@ mockEnv :: Env
 mockEnv = Mock.env { metadataTools = mockMetadataTools }
 
 sigmaSymbol :: Symbol
-sigmaSymbol = Symbol
-    { symbolConstructor = testId "#sigma"
-    , symbolParams = []
-    , symbolAttributes = functionalConstructorAttributes
-    }
+sigmaSymbol = symbol "#sigma" & functional & constructor
 
 metaSigma
     :: TermLike Variable
@@ -402,13 +395,18 @@ axiomMetaSigmaId =
         , attributes = def
         }
 
+symbol :: Text -> Symbol
+symbol name =
+    Symbol
+        { symbolConstructor = testId name
+        , symbolParams = []
+        , symbolAttributes = Attribute.defaultSymbolAttributes
+        , symbolSorts =
+            Kore.Internal.Symbol.applicationSorts [Mock.testSort] Mock.testSort
+        }
 
 fSymbol :: Symbol
-fSymbol = Symbol
-    { symbolConstructor = Id "#f" AstLocationTest
-    , symbolParams = []
-    , symbolAttributes = functionalConstructorAttributes
-    }
+fSymbol = symbol "#f" & functional & constructor
 
 metaF
     :: TermLike Variable
@@ -417,11 +415,7 @@ metaF p = mkApplySymbol Mock.testSort fSymbol [p]
 
 
 gSymbol :: Symbol
-gSymbol = Symbol
-    { symbolConstructor = Id "#g" AstLocationTest
-    , symbolParams = []
-    , symbolAttributes = functionalConstructorAttributes
-    }
+gSymbol = symbol "#g" & functional & constructor
 
 metaG
     :: TermLike Variable
@@ -430,11 +424,7 @@ metaG p = mkApplySymbol Mock.testSort gSymbol [p]
 
 
 hSymbol :: Symbol
-hSymbol = Symbol
-    { symbolConstructor = Id "#h" AstLocationTest
-    , symbolParams = []
-    , symbolAttributes = functionalConstructorAttributes
-    }
+hSymbol = symbol "#h" & functional & constructor
 
 metaH
     :: TermLike Variable
@@ -442,11 +432,7 @@ metaH
 metaH p = mkApplySymbol Mock.testSort hSymbol [p]
 
 iSymbol :: Symbol
-iSymbol = Symbol
-    { symbolConstructor = Id "#i" AstLocationTest
-    , symbolParams = []
-    , symbolAttributes = Attribute.defaultSymbolAttributes
-    }
+iSymbol = symbol "#i"
 
 metaI
     :: TermLike Variable

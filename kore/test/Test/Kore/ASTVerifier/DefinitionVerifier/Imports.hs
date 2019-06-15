@@ -14,6 +14,7 @@ import           Kore.Error
 import           Kore.IndexedModule.Error
                  ( noSort )
 import qualified Kore.Internal.Alias as Internal
+import           Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.Symbol as Internal
 import           Kore.Internal.TermLike hiding
                  ( Alias, Symbol )
@@ -496,6 +497,11 @@ sortVisibilityTests =
                         { symbolConstructor = testId "symbol2"
                         , symbolParams = [ sort ]
                         , symbolAttributes = Attribute.defaultSymbolAttributes
+                        , symbolSorts =
+                            ApplicationSorts
+                                { applicationSortsResult = sort
+                                , applicationSortsOperands = []
+                                }
                         }
                     []
             , sentenceAxiomAttributes = Attributes []
@@ -594,6 +600,11 @@ symbolVisibilityTests =
                 { symbolConstructor = testId "symbol1"
                 , symbolParams = [ defaultSort ]
                 , symbolAttributes = Attribute.defaultSymbolAttributes
+                , symbolSorts =
+                    ApplicationSorts
+                        { applicationSortsResult = defaultSort
+                        , applicationSortsOperands = []
+                        }
                 }
             []
     symbolDeclaration =
@@ -615,6 +626,11 @@ symbolVisibilityTests =
                 { symbolConstructor = testId "#symbol1"
                 , symbolParams = [ charMetaSort ]
                 , symbolAttributes = Attribute.defaultSymbolAttributes
+                , symbolSorts =
+                    ApplicationSorts
+                        { applicationSortsResult = charMetaSort
+                        , applicationSortsOperands = []
+                        }
                 }
             []
     metaSymbolDeclaration =
@@ -680,6 +696,12 @@ symbolVisibilityTests =
                         { symbolConstructor = testId "symbol2"
                         , symbolParams = [ defaultSort ]
                         , symbolAttributes = Attribute.defaultSymbolAttributes
+                        , symbolSorts =
+                            ApplicationSorts
+                                { applicationSortsResult = defaultSort
+                                , applicationSortsOperands =
+                                    [termLikeSort symbolPattern]
+                                }
                         }
                     [symbolPattern]
             , sentenceAxiomAttributes = Attributes []
