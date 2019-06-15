@@ -751,10 +751,6 @@ applicationUnifiedPatternWithParams resultSort (SymbolName name) params =
             { symbolConstructor = testId name
             , symbolParams = params
             , symbolAttributes = Attribute.defaultSymbolAttributes
-            , symbolSorts =
-                ApplicationSorts
-                    { applicationSortsResult = resultSort
-                    , applicationSortsOperands = []
-                    }
+            , symbolSorts = applicationSorts [] resultSort
             }
         []

@@ -20,6 +20,8 @@ module Test.Kore.Step.MockSymbols where
    * variables are called x, y, z...
 -}
 
+import           Control.Applicative
+import qualified Control.Lens as Lens
 import qualified Data.Default as Default
 import           Data.Function
 import qualified Data.Map.Strict as Map
@@ -44,9 +46,7 @@ import           Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
 import           Kore.Internal.ApplicationSorts
-                 ( ApplicationSorts (ApplicationSorts) )
-import qualified Kore.Internal.ApplicationSorts as ApplicationSorts
-                 ( ApplicationSorts (..) )
+                 ( ApplicationSorts )
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
                  ( TermLike )
@@ -191,779 +191,283 @@ sigmaId = testId "sigma"
 anywhereId :: Id
 anywhereId = testId "anywhere"
 
+symbol :: Id -> [Sort] -> Sort -> Symbol
+symbol name operands result =
+    Symbol
+        { symbolConstructor = name
+        , symbolParams = []
+        , symbolAttributes = Default.def
+        , symbolSorts = applicationSorts operands result
+        }
+
 aSymbol :: Symbol
-aSymbol = Symbol
-    { symbolConstructor = aId
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorFunctionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort
-            }
-    }
+aSymbol = symbol aId [] testSort & functional & constructor
+
 aSort0Symbol :: Symbol
-aSort0Symbol = Symbol
-    { symbolConstructor = aSort0Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorFunctionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort0
-            }
-    }
+aSort0Symbol = symbol aSort0Id [] testSort0 & functional & constructor
+
 aSort1Symbol :: Symbol
-aSort1Symbol = Symbol
-    { symbolConstructor = aSort1Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorFunctionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort1
-            }
-    }
+aSort1Symbol = symbol aSort1Id [] testSort1 & functional & constructor
+
 aSubsortSymbol :: Symbol
-aSubsortSymbol = Symbol
-    { symbolConstructor = aSubsortId
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorFunctionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = subSort
-            }
-    }
+aSubsortSymbol = symbol aSubsortId [] subSort & functional & constructor
+
 aSubSubsortSymbol :: Symbol
-aSubSubsortSymbol = Symbol
-    { symbolConstructor = aSubSubsortId
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorFunctionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = subSubsort
-            }
-    }
+aSubSubsortSymbol =
+    symbol aSubSubsortId [] subSubsort & functional & constructor
+
 aTopSortSymbol :: Symbol
-aTopSortSymbol = Symbol
-    { symbolConstructor = aTopSortId
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorFunctionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = topSort
-            }
-    }
+aTopSortSymbol = symbol aTopSortId [] topSort & functional & constructor
+
 aOtherSortSymbol :: Symbol
-aOtherSortSymbol = Symbol
-    { symbolConstructor = aOtherSortId
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorFunctionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = otherSort
-            }
-    }
+aOtherSortSymbol = symbol aOtherSortId [] otherSort & functional & constructor
+
 bSymbol :: Symbol
-bSymbol = Symbol
-    { symbolConstructor = bId
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorFunctionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort
-            }
-    }
+bSymbol = symbol bId [] testSort & functional & constructor
+
 bSort0Symbol :: Symbol
-bSort0Symbol = Symbol
-    { symbolConstructor = bSort0Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorFunctionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort0
-            }
-    }
+bSort0Symbol = symbol bSort0Id [] testSort0 & functional & constructor
+
 cSymbol :: Symbol
-cSymbol = Symbol
-    { symbolConstructor = cId
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorFunctionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort
-            }
-    }
+cSymbol = symbol cId [] testSort & functional & constructor
+
 dSymbol :: Symbol
-dSymbol = Symbol
-    { symbolConstructor = dId
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorFunctionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort
-            }
-    }
+dSymbol = symbol dId [] testSort & functional & constructor
+
 eSymbol :: Symbol
-eSymbol = Symbol
-    { symbolConstructor = eId
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorFunctionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort
-            }
-    }
+eSymbol = symbol eId [] testSort & functional & constructor
+
 fSymbol :: Symbol
-fSymbol = Symbol
-    { symbolConstructor = fId
-    , symbolParams      = []
-    , symbolAttributes  = Mock.functionAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+fSymbol = symbol fId [testSort] testSort & function
+
 gSymbol :: Symbol
-gSymbol = Symbol
-    { symbolConstructor = gId
-    , symbolParams      = []
-    , symbolAttributes  = Mock.functionAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+gSymbol = symbol gId [testSort] testSort & function
+
 hSymbol :: Symbol
-hSymbol = Symbol
-    { symbolConstructor = hId
-    , symbolParams      = []
-    , symbolAttributes  = Mock.functionAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+hSymbol = symbol hId [testSort] testSort & function
+
 cfSymbol :: Symbol
-cfSymbol = Symbol
-    { symbolConstructor = cfId
-    , symbolParams      = []
-    , symbolAttributes  = Mock.functionAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort
-            }
-    }
+cfSymbol = symbol cfId [] testSort & function
+
 cfSort0Symbol :: Symbol
-cfSort0Symbol = Symbol
-    { symbolConstructor = cfSort0Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.functionAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort0
-            }
-    }
+cfSort0Symbol = symbol cfSort0Id [] testSort0 & function
+
 cfSort1Symbol :: Symbol
-cfSort1Symbol = Symbol
-    { symbolConstructor = cfSort1Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.functionAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort1
-            }
-    }
+cfSort1Symbol = symbol cfSort1Id [] testSort1 & function
+
 cgSymbol :: Symbol
-cgSymbol = Symbol
-    { symbolConstructor = cgId
-    , symbolParams      = []
-    , symbolAttributes  = Mock.functionAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort
-            }
-    }
+cgSymbol = symbol cgId [] testSort & function
+
 cgSort0Symbol :: Symbol
-cgSort0Symbol = Symbol
-    { symbolConstructor = cgSort0Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.functionAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort0
-            }
-    }
+cgSort0Symbol = symbol cgSort0Id [] testSort0 & function
+
 chSymbol :: Symbol
-chSymbol = Symbol
-    { symbolConstructor = chId
-    , symbolParams      = []
-    , symbolAttributes  = Mock.functionAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort
-            }
-    }
+chSymbol = symbol chId [] testSort & function
+
 plain00Symbol :: Symbol
-plain00Symbol = Symbol
-    { symbolConstructor = plain00Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.defaultAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort
-            }
-    }
+plain00Symbol = symbol plain00Id [] testSort
+
 plain00Sort0Symbol :: Symbol
-plain00Sort0Symbol = Symbol
-    { symbolConstructor = plain00Sort0Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.defaultAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort0
-            }
-    }
+plain00Sort0Symbol = symbol plain00Sort0Id [] testSort0
+
 plain00SubsortSymbol :: Symbol
-plain00SubsortSymbol = Symbol
-    { symbolConstructor = plain00SubsortId
-    , symbolParams      = []
-    , symbolAttributes  = Mock.defaultAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = subSort
-            }
-    }
+plain00SubsortSymbol = symbol plain00SubsortId [] subSort
+
 plain00SubSubsortSymbol :: Symbol
-plain00SubSubsortSymbol = Symbol
-    { symbolConstructor = plain00SubSubsortId
-    , symbolParams      = []
-    , symbolAttributes  = Mock.defaultAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = subSubsort
-            }
-    }
+plain00SubSubsortSymbol = symbol plain00SubSubsortId [] subSubsort
+
 plain10Symbol :: Symbol
-plain10Symbol = Symbol
-    { symbolConstructor = plain10Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.defaultAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+plain10Symbol = symbol plain10Id [testSort] testSort
+
 plain11Symbol :: Symbol
-plain11Symbol = Symbol
-    { symbolConstructor = plain11Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.defaultAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+plain11Symbol = symbol plain11Id [testSort] testSort
+
 plain20Symbol :: Symbol
-plain20Symbol = Symbol
-    { symbolConstructor = plain20Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.defaultAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort, testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+plain20Symbol = symbol plain20Id [testSort, testSort] testSort
+
 constr10Symbol :: Symbol
-constr10Symbol = Symbol
-    { symbolConstructor = constr10Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+constr10Symbol = symbol constr10Id [testSort] testSort & constructor
+
 constr11Symbol :: Symbol
-constr11Symbol = Symbol
-    { symbolConstructor = constr11Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+constr11Symbol = symbol constr11Id [testSort] testSort & constructor
+
 constr20Symbol :: Symbol
-constr20Symbol = Symbol
-    { symbolConstructor = constr20Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort, testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+constr20Symbol = symbol constr20Id [testSort, testSort] testSort & constructor
+
 function20MapTestSymbol :: Symbol
-function20MapTestSymbol = Symbol
-    { symbolConstructor = function20MapTestId
-    , symbolParams      = []
-    , symbolAttributes  = Mock.functionAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [mapSort, testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+function20MapTestSymbol =
+    symbol function20MapTestId [mapSort, testSort] testSort & function
+
 functional00Symbol :: Symbol
-functional00Symbol = Symbol
-    { symbolConstructor = functional00Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.functionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort
-            }
-    }
+functional00Symbol = symbol functional00Id [] testSort & functional
+
 functional01Symbol :: Symbol
-functional01Symbol = Symbol
-    { symbolConstructor = functional01Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.functionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort
-            }
-    }
+functional01Symbol = symbol functional01Id [] testSort & functional
+
 functional10Symbol :: Symbol
-functional10Symbol = Symbol
-    { symbolConstructor = functional10Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.functionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+functional10Symbol = symbol functional10Id [testSort] testSort & functional
+
 functional11Symbol :: Symbol
-functional11Symbol = Symbol
-    { symbolConstructor = functional11Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.functionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+functional11Symbol = symbol functional11Id [testSort] testSort & functional
+
 functional20Symbol :: Symbol
-functional20Symbol = Symbol
-    { symbolConstructor = functional20Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.functionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort, testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+functional20Symbol =
+    symbol functional20Id [testSort, testSort] testSort & functional
+
 functional00SubSubSortSymbol :: Symbol
-functional00SubSubSortSymbol = Symbol
-    { symbolConstructor = functional00SubSubSortId
-    , symbolParams      = []
-    , symbolAttributes  = Mock.functionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = subSubsort
-            }
-    }
+functional00SubSubSortSymbol =
+    symbol functional00SubSubSortId [] subSubsort & functional
+
 functionalConstr10Symbol :: Symbol
-functionalConstr10Symbol = Symbol
-    { symbolConstructor = functionalConstr10Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorFunctionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+functionalConstr10Symbol =
+    symbol functionalConstr10Id [testSort] testSort & functional & constructor
+
 functionalConstr11Symbol :: Symbol
-functionalConstr11Symbol = Symbol
-    { symbolConstructor = functionalConstr11Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorFunctionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+functionalConstr11Symbol =
+    symbol functionalConstr11Id [testSort] testSort & functional & constructor
+
 functionalConstr12Symbol :: Symbol
-functionalConstr12Symbol = Symbol
-    { symbolConstructor = functionalConstr12Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorFunctionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+functionalConstr12Symbol =
+    symbol functionalConstr12Id [testSort] testSort & functional & constructor
+
 functionalConstr20Symbol :: Symbol
-functionalConstr20Symbol = Symbol
-    { symbolConstructor = functionalConstr20Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorFunctionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort, testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+functionalConstr20Symbol =
+    symbol functionalConstr20Id [testSort, testSort] testSort
+    & functional & constructor
+
 functionalConstr30Symbol :: Symbol
-functionalConstr30Symbol = Symbol
-    { symbolConstructor = functionalConstr30Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorFunctionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort, testSort, testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+functionalConstr30Symbol =
+    symbol functionalConstr30Id [testSort, testSort, testSort] testSort
+    & functional & constructor
+
 functionalTopConstr20Symbol :: Symbol
-functionalTopConstr20Symbol = Symbol
-    { symbolConstructor = functionalTopConstr20Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorFunctionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort, testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+functionalTopConstr20Symbol =
+    symbol functionalTopConstr20Id [testSort, testSort] testSort
+    & functional & constructor
+
 functionalTopConstr21Symbol :: Symbol
-functionalTopConstr21Symbol = Symbol
-    { symbolConstructor = functionalTopConstr21Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorFunctionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort, testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+functionalTopConstr21Symbol =
+    symbol functionalTopConstr21Id [testSort, testSort] testSort
+    & functional & constructor
+
 injective10Symbol :: Symbol
-injective10Symbol = Symbol
-    { symbolConstructor = injective10Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.injectiveAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+injective10Symbol = symbol injective10Id [testSort] testSort & injective
+
 injective11Symbol :: Symbol
-injective11Symbol = Symbol
-    { symbolConstructor = injective11Id
-    , symbolParams      = []
-    , symbolAttributes  = Mock.injectiveAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+injective11Symbol = symbol injective11Id [testSort] testSort & injective
+
 sortInjection10Symbol :: Symbol
 sortInjection10Symbol = Symbol
     { symbolConstructor = sortInjectionId
     , symbolParams      = [testSort0, testSort]
     , symbolAttributes  = Mock.sortInjectionAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort0]
-            , applicationSortsResult   = testSort
-            }
+    , symbolSorts = applicationSorts [testSort0] testSort
     }
 sortInjection11Symbol :: Symbol
 sortInjection11Symbol = Symbol
     { symbolConstructor = sortInjectionId
     , symbolParams      = [testSort1, testSort]
     , symbolAttributes  = Mock.sortInjectionAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort1]
-            , applicationSortsResult   = testSort
-            }
+    , symbolSorts = applicationSorts [testSort1] testSort
     }
 sortInjection0ToTopSymbol :: Symbol
 sortInjection0ToTopSymbol = Symbol
     { symbolConstructor = sortInjectionId
     , symbolParams      = [testSort0, topSort]
     , symbolAttributes  = Mock.sortInjectionAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort0]
-            , applicationSortsResult   = testSort
-            }
+    , symbolSorts = applicationSorts [testSort0] testSort
     }
 sortInjectionSubToTopSymbol :: Symbol
 sortInjectionSubToTopSymbol = Symbol
     { symbolConstructor = sortInjectionId
     , symbolParams      = [subSort, topSort]
     , symbolAttributes  = Mock.sortInjectionAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [subSort]
-            , applicationSortsResult   = testSort
-            }
+    , symbolSorts = applicationSorts [subSort] testSort
     }
 sortInjectionSubSubToTopSymbol :: Symbol
 sortInjectionSubSubToTopSymbol = Symbol
     { symbolConstructor = sortInjectionId
     , symbolParams      = [subSubsort, topSort]
     , symbolAttributes  = Mock.sortInjectionAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [subSubsort]
-            , applicationSortsResult   = testSort
-            }
+    , symbolSorts = applicationSorts [subSubsort] testSort
     }
 sortInjectionSubSubToSubSymbol :: Symbol
 sortInjectionSubSubToSubSymbol = Symbol
     { symbolConstructor = sortInjectionId
     , symbolParams      = [subSubsort, subSort]
     , symbolAttributes  = Mock.sortInjectionAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [subSubsort]
-            , applicationSortsResult   = subSort
-            }
+    , symbolSorts = applicationSorts [subSubsort] subSort
     }
 sortInjectionOtherToTopSymbol :: Symbol
 sortInjectionOtherToTopSymbol = Symbol
     { symbolConstructor = sortInjectionId
     , symbolParams      = [otherSort, topSort]
     , symbolAttributes  = Mock.sortInjectionAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [otherSort]
-            , applicationSortsResult   = testSort
-            }
+    , symbolSorts = applicationSorts [otherSort] testSort
     }
 unitMapSymbol :: Symbol
-unitMapSymbol = Symbol
-    { symbolConstructor = unitMapId
-    , symbolParams      = []
-    , symbolAttributes  =
-        Mock.functionalAttributes
-            { Attribute.hook = Attribute.Hook (Just "MAP.unit") }
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = mapSort
-            }
-    }
+unitMapSymbol =
+    symbol unitMapId [] mapSort
+    & functional & hook "MAP.unit"
+
 elementMapSymbol :: Symbol
-elementMapSymbol = Symbol
-    { symbolConstructor = elementMapId
-    , symbolParams      = []
-    , symbolAttributes  =
-        Mock.functionalAttributes
-            { Attribute.hook = Attribute.Hook (Just "MAP.element") }
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult   = mapSort
-            }
-    }
+elementMapSymbol =
+    symbol elementMapId [testSort] mapSort
+    & functional & hook "MAP.element"
+
 concatMapSymbol :: Symbol
-concatMapSymbol = Symbol
-    { symbolConstructor = concatMapId
-    , symbolParams      = []
-    , symbolAttributes  =
-        Mock.functionalAttributes
-            { Attribute.hook = Attribute.Hook (Just "MAP.concat") }
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [mapSort, mapSort]
-            , applicationSortsResult   = mapSort
-            }
-    }
+concatMapSymbol =
+    symbol concatMapId [mapSort, mapSort] mapSort
+    & functional & hook "MAP.concat"
+
 lessIntSymbol :: Symbol
-lessIntSymbol = Symbol
-    { symbolConstructor = lessIntId
-    , symbolParams      = []
-    , symbolAttributes  =
-        Mock.functionalAttributes
-            { Attribute.hook = Attribute.Hook (Just "INT.lt")
-            , Attribute.smthook = Attribute.Smthook (Just (SMT.Atom "<"))
-            }
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [intSort, intSort]
-            , applicationSortsResult   = boolSort
-            }
-    }
+lessIntSymbol =
+    symbol lessIntId [intSort, intSort] boolSort
+    & functional & hook "INT.lt" & smthook "<"
+
 greaterEqIntSymbol :: Symbol
-greaterEqIntSymbol = Symbol
-    { symbolConstructor = greaterEqIntId
-    , symbolParams      = []
-    , symbolAttributes  =
-        Mock.functionalAttributes
-            { Attribute.hook = Attribute.Hook (Just "INT.ge")
-            , Attribute.smthook = Attribute.Smthook (Just (SMT.Atom ">="))
-            }
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [intSort, intSort]
-            , applicationSortsResult   = boolSort
-            }
-    }
+greaterEqIntSymbol =
+    symbol greaterEqIntId [intSort, intSort] boolSort
+    & functional & hook "INT.ge" & smthook ">="
 
 concatListSymbol :: Symbol
-concatListSymbol = Symbol
-    { symbolConstructor = concatListId
-    , symbolParams = []
-    , symbolAttributes  =
-        Mock.functionalAttributes
-            { Attribute.hook = Attribute.Hook (Just "LIST.concat") }
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [listSort, listSort]
-            , applicationSortsResult   = listSort
-            }
-    }
+concatListSymbol =
+    symbol concatListId [listSort, listSort] listSort
+    & functional & hook "LIST.concat"
 
 elementListSymbol :: Symbol
-elementListSymbol = Symbol
-    { symbolConstructor = elementListId
-    , symbolParams = []
-    , symbolAttributes  =
-        Mock.functionalAttributes
-            { Attribute.hook = Attribute.Hook (Just "LIST.element") }
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort]
-            , applicationSortsResult   = listSort
-            }
-    }
+elementListSymbol =
+    symbol elementListId [testSort] listSort
+    & functional & hook "LIST.element"
 
 unitListSymbol :: Symbol
-unitListSymbol = Symbol
-    { symbolConstructor = unitListId
-    , symbolParams = []
-    , symbolAttributes  =
-        Mock.functionalAttributes
-            { Attribute.hook = Attribute.Hook (Just "LIST.unit") }
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = listSort
-            }
-    }
+unitListSymbol = symbol unitListId [] listSort & functional & hook "LIST.unit"
 
 concatSetSymbol :: Symbol
-concatSetSymbol = Symbol
-    { symbolConstructor = concatSetId
-    , symbolParams = []
-    , symbolAttributes  =
-        Mock.functionalAttributes
-            { Attribute.hook = Attribute.Hook (Just "SET.concat") }
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [setSort, setSort]
-            , applicationSortsResult   = setSort
-            }
-    }
+concatSetSymbol =
+    symbol concatSetId [setSort, setSort] setSort
+    & functional & hook "SET.concat"
 
 elementSetSymbol :: Symbol
-elementSetSymbol = Symbol
-    { symbolConstructor = elementSetId
-    , symbolParams = []
-    , symbolAttributes  =
-        Mock.functionalAttributes
-            { Attribute.hook = Attribute.Hook (Just "SET.element") }
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [setSort]
-            , applicationSortsResult   = setSort
-            }
-    }
+elementSetSymbol =
+    symbol elementSetId [setSort] setSort & functional & hook "SET.element"
 
 unitSetSymbol :: Symbol
-unitSetSymbol = Symbol
-    { symbolConstructor = unitSetId
-    , symbolParams = []
-    , symbolAttributes  =
-        Mock.functionalAttributes
-            { Attribute.hook = Attribute.Hook (Just "SET.unit") }
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = setSort
-            }
-    }
+unitSetSymbol =
+    symbol unitSetId [] setSort & functional & hook "SET.unit"
 
 sigmaSymbol :: Symbol
-sigmaSymbol = Symbol
-    { symbolConstructor = sigmaId
-    , symbolParams      = []
-    , symbolAttributes  = Mock.constructorFunctionalAttributes
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = [testSort, testSort]
-            , applicationSortsResult   = testSort
-            }
-    }
+sigmaSymbol =
+    symbol sigmaId [testSort, testSort] testSort
+    & functional & constructor
 
 anywhereSymbol :: Symbol
-anywhereSymbol = Symbol
-    { symbolConstructor = anywhereId
-    , symbolParams      = []
-    , symbolAttributes  =
-        Mock.functionalAttributes
-            { Attribute.anywhere = Attribute.Anywhere True }
-    , symbolSorts =
-        ApplicationSorts
-            { applicationSortsOperands = []
-            , applicationSortsResult   = testSort
-            }
-    }
+anywhereSymbol =
+    symbol anywhereId [] testSort
+    & functional
+    & Lens.set
+        (lensSymbolAttributes . Attribute.lensAnywhere)
+        (Attribute.Anywhere True)
 
 var_x_1 :: Variable
 var_x_1 = Variable (testId "x") (Just (Element 1)) testSort
@@ -1316,7 +820,7 @@ anywhere = Internal.mkApplySymbol testSort anywhereSymbol []
 
 attributesMapping :: [(SymbolOrAlias, Attribute.Symbol)]
 attributesMapping =
-    map (\symbol -> symbol & (,) <$> toSymbolOrAlias <*> symbolAttributes) symbols
+    map (liftA2 (,) toSymbolOrAlias symbolAttributes) symbols
 
 symbols :: [Symbol]
 symbols =
@@ -1391,7 +895,7 @@ symbols =
 
 headTypeMapping :: [(SymbolOrAlias, HeadType)]
 headTypeMapping =
-    map (\symbol -> symbol & (,) <$> toSymbolOrAlias <*> pure HeadType.Symbol) symbols
+    map (liftA2 (,) toSymbolOrAlias $ pure HeadType.Symbol) symbols
 
 sortAttributesMapping :: [(Sort, Attribute.Sort)]
 sortAttributesMapping =

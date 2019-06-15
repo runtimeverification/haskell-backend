@@ -276,11 +276,7 @@ applyToNoArgs sort name =
             { symbolConstructor = testId name
             , symbolParams = []
             , symbolAttributes = Mock.constructorFunctionalAttributes
-            , symbolSorts =
-                ApplicationSorts
-                    { applicationSortsResult = sort
-                    , applicationSortsOperands = []
-                    }
+            , symbolSorts = applicationSorts [] sort
             }
         []
 
@@ -370,9 +366,5 @@ test_execGetExitCode =
                 { symbolConstructor = getExitCodeId
                 , symbolParams = []
                 , symbolAttributes = Attribute.defaultSymbolAttributes
-                , symbolSorts =
-                    ApplicationSorts
-                        { applicationSortsResult = myIntSort
-                        , applicationSortsOperands = [myIntSort]
-                        }
+                , symbolSorts = applicationSorts [myIntSort] myIntSort
                 }

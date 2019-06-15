@@ -26,6 +26,8 @@ module Kore.Internal.Symbol
     , function
     , injective
     , sortInjection
+    , smthook
+    , hook
     -- * Re-exports
     , module Kore.Internal.ApplicationSorts
     ) where
@@ -35,6 +37,8 @@ import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import qualified Data.Function as Function
 import           Data.Hashable
+import           Data.Text
+                 ( Text )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -46,6 +50,8 @@ import           Kore.Sort
 import           Kore.Syntax.Application
                  ( SymbolOrAlias (..) )
 import           Kore.Unparser
+import           SMT.AST
+                 ( SExpr )
 
 data Symbol =
     Symbol
@@ -165,3 +171,15 @@ sortInjection =
     Lens.set
         (lensSymbolAttributes . Attribute.lensSortInjection)
         Attribute.SortInjection { isSortInjection = True }
+
+smthook :: SExpr -> Symbol -> Symbol
+smthook sExpr =
+    Lens.set
+        (lensSymbolAttributes . Attribute.lensSmthook)
+        Attribute.Smthook { getSmthook = Just sExpr }
+
+hook :: Text -> Symbol -> Symbol
+hook name =
+    Lens.set
+        (lensSymbolAttributes . Attribute.lensHook)
+        Attribute.Hook { getHook = Just name }

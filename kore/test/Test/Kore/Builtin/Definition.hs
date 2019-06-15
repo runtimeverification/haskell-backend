@@ -1,6 +1,5 @@
 module Test.Kore.Builtin.Definition where
 
-import qualified Control.Lens as Lens
 import qualified Data.Default as Default
 import           Data.Function
 import qualified Data.Map.Strict as Map
@@ -14,14 +13,14 @@ import           Kore.Attribute.Functional
 import           Kore.Attribute.Hook
 import           Kore.Attribute.Injective
 import           Kore.Attribute.Parser
-import           Kore.Attribute.Smthook
 import qualified Kore.Attribute.Sort.Concat as Sort
 import qualified Kore.Attribute.Sort.Element as Sort
 import qualified Kore.Attribute.Sort.Unit as Sort
 import           Kore.Attribute.SortInjection
-import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Domain.Builtin
 import           Kore.Internal.ApplicationSorts
+import           Kore.Internal.Symbol
+                 ( constructor, functional, hook, smthook, sortInjection )
 import qualified Kore.Internal.Symbol as Internal
 import           Kore.Internal.TermLike hiding
                  ( Symbol )
@@ -39,11 +38,7 @@ builtinSymbol name resultSort operandSorts =
         { symbolConstructor = testId name
         , symbolParams = []
         , symbolAttributes = Default.def
-        , symbolSorts =
-            ApplicationSorts
-                { applicationSortsResult = resultSort
-                , applicationSortsOperands = operandSorts
-                }
+        , symbolSorts = applicationSorts operandSorts resultSort
         }
 
 unarySymbol :: Text -> Sort -> Internal.Symbol
@@ -212,15 +207,10 @@ injSymbol lSort rSort =
     Internal.Symbol
         { symbolConstructor = testId "inj"
         , symbolParams = [lSort, rSort]
-        , symbolAttributes =
-            Default.def
-                { Attribute.sortInjection = Attribute.SortInjection True }
-        , symbolSorts =
-            ApplicationSorts
-                { applicationSortsResult = rSort
-                , applicationSortsOperands = [lSort]
-                }
+        , symbolAttributes = Default.def
+        , symbolSorts = applicationSorts [lSort] rSort
         }
+    & sortInjection
 
 -- ** List
 
@@ -353,30 +343,6 @@ removeAllMap
 removeAllMap map' set =
     mkApplySymbol mapSort removeAllMapSymbol [map', set]
 
-smthook :: SExpr -> Internal.Symbol -> Internal.Symbol
-smthook sExpr =
-    Lens.set
-        (Internal.lensSymbolAttributes . Attribute.lensSmthook)
-        Attribute.Smthook { getSmthook = Just sExpr }
-
-hook :: Text -> Internal.Symbol -> Internal.Symbol
-hook name =
-    Lens.set
-        (Internal.lensSymbolAttributes . Attribute.lensHook)
-        Attribute.Hook { getHook = Just name }
-
-functional :: Internal.Symbol -> Internal.Symbol
-functional =
-    Lens.set
-        (Internal.lensSymbolAttributes . Attribute.lensFunctional)
-        Attribute.Functional { isDeclaredFunctional = True }
-
-constructor :: Internal.Symbol -> Internal.Symbol
-constructor =
-    Lens.set
-        (Internal.lensSymbolAttributes . Attribute.lensConstructor)
-        Attribute.Constructor { isConstructor = True }
-
 -- ** Pair
 
 pairSymbol :: Sort -> Sort -> Internal.Symbol
@@ -385,11 +351,7 @@ pairSymbol lSort rSort =
         { symbolConstructor = testId "pair"
         , symbolParams = [lSort, rSort]
         , symbolAttributes = Default.def
-        , symbolSorts =
-            ApplicationSorts
-                { applicationSortsResult = pairSort lSort rSort
-                , applicationSortsOperands = [lSort, rSort]
-                }
+        , symbolSorts = applicationSorts [lSort, rSort] (pairSort lSort rSort)
         }
     & constructor
 
