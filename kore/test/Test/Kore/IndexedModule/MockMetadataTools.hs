@@ -15,8 +15,6 @@ import qualified Data.Set as Set
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.ASTHelpers
-                 ( ApplicationSorts )
 import           Kore.Attribute.Constructor
 import           Kore.Attribute.Function
 import           Kore.Attribute.Functional
@@ -28,6 +26,8 @@ import           Kore.IndexedModule.MetadataTools
                  ( HeadType, MetadataTools (MetadataTools), SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
+import           Kore.Internal.ApplicationSorts
+                 ( ApplicationSorts )
 import           Kore.Sort
                  ( Sort )
 import qualified Kore.Step.SMT.AST as SMT.AST

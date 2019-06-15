@@ -30,10 +30,6 @@ import           Data.Text
                  ( Text )
 
 import           Data.Sup
-import           Kore.ASTHelpers
-                 ( ApplicationSorts (ApplicationSorts) )
-import qualified Kore.ASTHelpers as ApplicationSorts
-                 ( ApplicationSorts (..) )
 import           Kore.Attribute.Hook
                  ( Hook (..) )
 import qualified Kore.Attribute.Sort as Attribute
@@ -48,6 +44,10 @@ import           Kore.IndexedModule.MetadataTools
                  ( HeadType, SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as HeadType
                  ( HeadType (..) )
+import           Kore.Internal.ApplicationSorts
+                 ( ApplicationSorts (ApplicationSorts) )
+import qualified Kore.Internal.ApplicationSorts as ApplicationSorts
+                 ( ApplicationSorts (..) )
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
                  ( TermLike )

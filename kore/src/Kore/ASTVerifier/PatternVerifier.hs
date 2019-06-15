@@ -51,7 +51,6 @@ import           Data.Text.Prettyprint.Doc.Render.String
 
 import qualified Control.Lens.TH.Rules as Lens
 import           Kore.AST.Error
-import           Kore.ASTHelpers
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.SortVerifier
 import qualified Kore.Attribute.Null as Attribute
@@ -63,6 +62,7 @@ import           Kore.IndexedModule.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
 import qualified Kore.Internal.Alias as Internal
+import           Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.Symbol as Internal
 import           Kore.Internal.TermLike
                  ( TermLike )

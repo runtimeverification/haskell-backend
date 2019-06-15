@@ -1,12 +1,14 @@
-module Test.Kore.ASTHelpers (test_symbolOrAliasSorts) where
+module Test.Kore.Internal.ApplicationSorts
+    ( test_symbolOrAliasSorts
+    ) where
 
 import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import Kore.ASTHelpers
 import Kore.Error
+import Kore.Internal.ApplicationSorts
 import Kore.Syntax
 import Kore.Syntax.Definition
 
