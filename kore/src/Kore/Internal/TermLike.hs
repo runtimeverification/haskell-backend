@@ -105,9 +105,10 @@ module Kore.Internal.TermLike
     , Symbol (..)
     , Alias (..)
     , SortedVariable (..)
-    , Id (..)
+    , module Kore.Syntax.Id
     , CofreeF (..), Comonad (..)
-    , module Kore.Sort
+    , Sort (..), SortActual (..), SortVariable (..)
+    , charMetaSort, stringMetaSort
     , module Kore.Syntax.And
     , module Kore.Syntax.Application
     , module Kore.Syntax.Bottom
@@ -195,6 +196,7 @@ import           Kore.Syntax.Equals
 import           Kore.Syntax.Exists
 import           Kore.Syntax.Floor
 import           Kore.Syntax.Forall
+import           Kore.Syntax.Id
 import           Kore.Syntax.Iff
 import           Kore.Syntax.Implies
 import           Kore.Syntax.In
@@ -1067,29 +1069,6 @@ mkApplySymbol symbol children =
     Symbol { symbolSorts } = symbol
     operandSorts = applicationSortsOperands symbolSorts
     resultSort = applicationSortsResult symbolSorts
-
-{- | The 'Sort' substitution from applying the given sort parameters.
- -}
-sortSubstitution
-    :: [SortVariable]
-    -> [Sort]
-    -> Map.Map SortVariable Sort
-sortSubstitution variables sorts =
-    Foldable.foldl' insertSortVariable Map.empty (align variables sorts)
-  where
-    insertSortVariable map' =
-        \case
-            These var sort -> Map.insert var sort map'
-            This _ ->
-                (error . show . Pretty.vsep) ("Too few parameters:" : expected)
-            That _ ->
-                (error . show . Pretty.vsep) ("Too many parameters:" : expected)
-    expected =
-        [ "Expected:"
-        , Pretty.indent 4 (Unparser.parameters variables)
-        , "but found:"
-        , Pretty.indent 4 (Unparser.parameters sorts)
-        ]
 
 {- | Construct an 'Application' pattern from a 'Alias' declaration.
 
