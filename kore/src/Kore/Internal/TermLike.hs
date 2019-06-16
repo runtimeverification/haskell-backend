@@ -971,6 +971,35 @@ mkAnd = makeSortsAgree mkAndWorker
         freeVariables1 = freeVariables andFirst
         freeVariables2 = freeVariables andSecond
 
+{- | Force the 'TermLike's to conform to their 'Sort's.
+
+It is an error if the lists are not the same length, or if any 'TermLike' cannot
+be coerced to its corresponding 'Sort'.
+
+See also: 'forceSort'
+
+ -}
+forceSorts
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
+    => [Sort]
+    -> [TermLike variable]
+    -> [TermLike variable]
+forceSorts operandSorts children =
+    alignWith forceTheseSorts operandSorts children
+  where
+    forceTheseSorts (This _) =
+        (error . show . Pretty.vsep) ("Too few arguments:" : expected)
+    forceTheseSorts (That _) =
+        (error . show . Pretty.vsep) ("Too many arguments:" : expected)
+    forceTheseSorts (These sort termLike) = forceSort sort termLike
+    expected =
+        [ "Expected:"
+        , Pretty.indent 4 (Unparser.arguments operandSorts)
+        , "but found:"
+        , Pretty.indent 4 (Unparser.arguments children)
+        ]
+
 {- | Construct an 'Application' pattern.
 
 The result sort of the 'Alias' must be provided. The sorts of arguments
@@ -999,24 +1028,11 @@ mkApplyAlias alias children =
     application =
         Application
             { applicationSymbolOrAlias = alias
-            , applicationChildren =
-                alignWith forceTheseSorts operandSorts children
+            , applicationChildren = forceSorts operandSorts children
             }
     Alias { aliasSorts } = alias
     operandSorts = applicationSortsOperands aliasSorts
     resultSort = applicationSortsResult aliasSorts
-    forceTheseSorts (This _) =
-        (error . show . Pretty.vsep) ("Too few arguments:" : expected)
-    forceTheseSorts (That _) =
-        (error . show . Pretty.vsep) ("Too many arguments:" : expected)
-    forceTheseSorts (These sort termLike) = forceSort sort termLike
-    expected =
-        -- TODO (thomas.tuegel): Show alias head here.
-        [ "Expected:"
-        , Pretty.indent 4 (Unparser.arguments operandSorts)
-        , "but found:"
-        , Pretty.indent 4 (Unparser.arguments children)
-        ]
 
 {- | Construct an 'Application' pattern.
 
@@ -1046,24 +1062,11 @@ mkApplySymbol symbol children =
     application =
         Application
             { applicationSymbolOrAlias = symbol
-            , applicationChildren =
-                alignWith forceTheseSorts operandSorts children
+            , applicationChildren = forceSorts operandSorts children
             }
     Symbol { symbolSorts } = symbol
     operandSorts = applicationSortsOperands symbolSorts
     resultSort = applicationSortsResult symbolSorts
-    forceTheseSorts (This _) =
-        (error . show . Pretty.vsep) ("Too few arguments:" : expected)
-    forceTheseSorts (That _) =
-        (error . show . Pretty.vsep) ("Too many arguments:" : expected)
-    forceTheseSorts (These sort termLike) = forceSort sort termLike
-    expected =
-        -- TODO (thomas.tuegel): Show symbol head here.
-        [ "Expected:"
-        , Pretty.indent 4 (Unparser.arguments operandSorts)
-        , "but found:"
-        , Pretty.indent 4 (Unparser.arguments children)
-        ]
 
 {- | The 'Sort' substitution from applying the given sort parameters.
  -}
