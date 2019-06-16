@@ -179,7 +179,6 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Domain.Class
 import           Kore.Error
 import           Kore.Internal.Alias
-import           Kore.Internal.ApplicationSorts
 import           Kore.Internal.Symbol
 import           Kore.Sort
 import qualified Kore.Substitute as Substitute
@@ -981,25 +980,43 @@ these shortcomings.
 See also: 'applyAlias', 'applySymbol'
 
  -}
--- TODO: Should this check for sort agreement?
 mkApplyAlias
-    :: Ord variable
-    => Sort
-    -- ^ Result sort
-    -> Alias
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
+    => Alias
     -- ^ Application symbol or alias
     -> [TermLike variable]
     -- ^ Application arguments
     -> TermLike variable
-mkApplyAlias resultSort applicationSymbolOrAlias applicationChildren =
+mkApplyAlias alias children =
     Recursive.embed (attrs :< ApplyAliasF application)
   where
     attrs =
         Attribute.Pattern
             { patternSort = resultSort
-            , freeVariables = Set.unions (freeVariables <$> applicationChildren)
+            , freeVariables = Set.unions (freeVariables <$> children)
             }
-    application = Application { applicationSymbolOrAlias, applicationChildren }
+    application =
+        Application
+            { applicationSymbolOrAlias = alias
+            , applicationChildren =
+                alignWith forceTheseSorts operandSorts children
+            }
+    Alias { aliasSorts } = alias
+    operandSorts = applicationSortsOperands aliasSorts
+    resultSort = applicationSortsResult aliasSorts
+    forceTheseSorts (This _) =
+        (error . show . Pretty.vsep) ("Too few arguments:" : expected)
+    forceTheseSorts (That _) =
+        (error . show . Pretty.vsep) ("Too many arguments:" : expected)
+    forceTheseSorts (These sort termLike) = forceSort sort termLike
+    expected =
+        -- TODO (thomas.tuegel): Show alias head here.
+        [ "Expected:"
+        , Pretty.indent 4 (Unparser.arguments operandSorts)
+        , "but found:"
+        , Pretty.indent 4 (Unparser.arguments children)
+        ]
 
 {- | Construct an 'Application' pattern.
 
@@ -1089,25 +1106,23 @@ applyAlias
     -- ^ 'Application' arguments
     -> TermLike variable
 applyAlias sentence params children =
-    mkApplyAlias
-        resultSort'
-        internal
-        children'
+    mkApplyAlias internal children'
   where
     SentenceAlias { sentenceAliasAlias = external } = sentence
-    SentenceAlias { sentenceAliasResultSort } = sentence
     Syntax.Alias { aliasConstructor } = external
     Syntax.Alias { aliasParams } = external
     internal =
         Alias
             { aliasConstructor
             , aliasParams = params
+            , aliasSorts =
+                symbolOrAliasSorts params sentence
+                & assertRight
             }
     substitution = sortSubstitution aliasParams params
     childSorts = substituteSortVariables substitution <$> sentenceAliasSorts
       where
         SentenceAlias { sentenceAliasSorts } = sentence
-    resultSort' = substituteSortVariables substitution sentenceAliasResultSort
     children' = alignWith forceChildSort childSorts children
       where
         forceChildSort =

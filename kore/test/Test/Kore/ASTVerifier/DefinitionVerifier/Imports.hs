@@ -778,10 +778,10 @@ aliasVisibilityTests =
   where
     aliasPattern =
         mkApplyAlias
-            defaultSort
             Internal.Alias
                 { aliasConstructor = testId "alias1"
                 , aliasParams = [ defaultSort ]
+                , aliasSorts = applicationSorts [] defaultSort
                 }
             []
     aliasDeclaration =
@@ -811,10 +811,10 @@ aliasVisibilityTests =
     defaultAliasSupportSentences = [ defaultSortDeclaration ]
     metaAliasPattern =
         mkApplyAlias
-            charMetaSort
             Internal.Alias
                 { aliasConstructor = testId "#alias1"
                 , aliasParams = [ charMetaSort ]
+                , aliasSorts = applicationSorts [] charMetaSort
                 }
             []
     metaAliasDeclaration =
@@ -887,10 +887,13 @@ aliasVisibilityTests =
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
                 Builtin.externalizePattern $ mkApplyAlias
-                    defaultSort
                     Internal.Alias
                         { aliasConstructor = testId "alias2"
                         , aliasParams = [ defaultSort ]
+                        , aliasSorts =
+                            applicationSorts
+                                [termLikeSort aliasPattern]
+                                defaultSort
                         }
                     [aliasPattern]
             , sentenceAxiomAttributes = Attributes []

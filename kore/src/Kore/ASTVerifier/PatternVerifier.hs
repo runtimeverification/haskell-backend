@@ -152,18 +152,19 @@ lookupSortDeclaration sortId = do
 
 lookupAlias
     ::  SymbolOrAlias
-    ->  MaybeT PatternVerifier (Internal.Alias, ApplicationSorts)
+    ->  MaybeT PatternVerifier Internal.Alias
 lookupAlias symbolOrAlias = do
     Context { indexedModule } <- Reader.ask
     let resolveAlias' = resolveAlias indexedModule aliasConstructor
     (_, decl) <- resolveAlias' `catchError` const empty
-    let alias =
-            Internal.Alias
-                { aliasConstructor
-                , aliasParams
-                }
-    sorts <- Trans.lift $ applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
-    return (alias, sorts)
+    aliasSorts <-
+        Trans.lift
+        $ applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
+    return Internal.Alias
+        { aliasConstructor
+        , aliasParams
+        , aliasSorts
+        }
   where
     aliasConstructor = symbolOrAliasConstructor symbolOrAlias
     aliasParams = symbolOrAliasParams symbolOrAlias
@@ -592,8 +593,9 @@ verifyApplyAlias
                 child
             )
 verifyApplyAlias getChildAttributes application =
-    lookupAlias symbolOrAlias >>= \(alias, sorts) -> Trans.lift $ do
+    lookupAlias symbolOrAlias >>= \alias -> Trans.lift $ do
     let verified = application { applicationSymbolOrAlias = alias }
+        sorts = Internal.aliasSorts alias
     verifyApplicationChildren getChildAttributes verified sorts
   where
     Application { applicationSymbolOrAlias = symbolOrAlias } = application
