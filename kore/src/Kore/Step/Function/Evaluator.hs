@@ -276,13 +276,9 @@ evaluateSortInjection ap
     [fromSort, _] = symbolParams apHead
     [apChild] = applicationChildren ap
     updateSortInjectionSource head1 fromSort1 children =
-        -- TODO (thomas.tuegel): Extract from here and AndTerms
         Application
             { applicationSymbolOrAlias =
-                head1
-                    { symbolParams = [fromSort1, toSort1]
-                    , symbolSorts = Symbol.applicationSorts [fromSort1] toSort1
-                    }
+                Symbol.coerceSortInjection head1 fromSort1 toSort1
             , applicationChildren = children
             }
       where

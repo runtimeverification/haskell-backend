@@ -1196,11 +1196,7 @@ simplifySortInjections
         -> TermLike variable
     sortInjection originSort destinationSort term =
         mkApplySymbol
-            firstHead
-                { symbolParams = [originSort, destinationSort]
-                , symbolSorts =
-                    Symbol.applicationSorts [originSort] destinationSort
-                }
+            (Symbol.coerceSortInjection firstHead originSort destinationSort)
             [term]
     firstSubsorts = subsorts firstOrigin
     secondSubsorts = subsorts secondOrigin

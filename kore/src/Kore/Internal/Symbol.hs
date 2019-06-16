@@ -28,6 +28,7 @@ module Kore.Internal.Symbol
     , sortInjection
     , smthook
     , hook
+    , coerceSortInjection
     -- * Re-exports
     , module Kore.Internal.ApplicationSorts
     ) where
@@ -182,3 +183,23 @@ hook name =
     Lens.set
         (lensSymbolAttributes . Attribute.lensHook)
         Attribute.Hook { getHook = Just name }
+
+{- | Coerce a sort injection symbol's source and target sorts.
+
+Use @coerceSortInjection@ to update the internal representation of a sort
+injection 'Symbol' when evaluating or simplifying sort injections.
+
+ -}
+coerceSortInjection
+    :: Symbol
+    -- ^ Original sort injection symbol
+    -> Sort
+    -- ^ New source sort
+    -> Sort
+    -- ^ New target sort
+    -> Symbol
+coerceSortInjection injectionSymbol sourceSort targetSort =
+    injectionSymbol
+        { symbolParams = [sourceSort, targetSort]
+        , symbolSorts = applicationSorts [sourceSort] targetSort
+        }
