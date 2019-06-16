@@ -33,6 +33,7 @@ import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified GHC.Stack as GHC
 import           Prelude hiding
                  ( concat )
 
@@ -106,6 +107,7 @@ termEquals
         , SortedVariable variable
         , MonadSimplify simplifier
         )
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> MaybeT simplifier (OrPredicate variable)
@@ -135,6 +137,7 @@ termEqualsAnd
         , SortedVariable variable
         , MonadSimplify simplifier
         )
+    => GHC.HasCallStack
     => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
     -> TermLikeSimplifier
@@ -206,6 +209,7 @@ maybeTermEquals
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
+    => GHC.HasCallStack
     => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
     -> TermLikeSimplifier
@@ -242,6 +246,7 @@ termUnification
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> unifier (Pattern variable)
@@ -297,6 +302,7 @@ termAnd
         , SortedVariable variable
         , MonadSimplify simplifier
         )
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> BranchT simplifier (Pattern variable)
@@ -341,6 +347,7 @@ maybeTermAnd
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
+    => GHC.HasCallStack
     => SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
     -> TermLikeSimplifier
@@ -362,6 +369,7 @@ andFunctions
         , SortedVariable variable
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
+        , GHC.HasCallStack
         )
     => [TermTransformationOld variable unifier]
 andFunctions =
@@ -386,6 +394,7 @@ equalsFunctions
         , SortedVariable variable
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
+        , GHC.HasCallStack
         )
     => [TermTransformationOld variable unifier]
 equalsFunctions =
@@ -411,6 +420,7 @@ andEqualsFunctions
         , SortedVariable variable
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
+        , GHC.HasCallStack
         )
     => [(SimplificationTarget, TermTransformation variable unifier)]
 andEqualsFunctions = fmap mapEqualsFunctions
@@ -634,6 +644,7 @@ maybeTransformTerm
         , SortedVariable variable
         , MonadUnify unifier
         )
+    => GHC.HasCallStack
     => [TermTransformationOld variable unifier]
     -> SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
@@ -862,6 +873,7 @@ variableFunctionAndEquals
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
+    => GHC.HasCallStack
     => SimplificationType
     -> SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
@@ -934,6 +946,7 @@ functionVariableAndEquals
         , Unparse variable
         , MonadUnify unifier
         )
+    => GHC.HasCallStack
     => SimplificationType
     -> SmtMetadataTools Attribute.Symbol
     -> PredicateSimplifier
@@ -980,6 +993,7 @@ equalInjectiveHeadsAndEquals
         , SortedVariable variable
         , MonadUnify unifier
         )
+    => GHC.HasCallStack
     => SmtMetadataTools Attribute.Symbol
     -> PredicateMerger variable unifier
     -> TermSimplifier variable unifier
@@ -991,17 +1005,13 @@ equalInjectiveHeadsAndEquals
     _tools
     _
     termMerger
-    firstPattern@(App_ firstHead firstChildren)
+    (App_ firstHead firstChildren)
     (App_ secondHead secondChildren)
   | isFirstInjective && isSecondInjective && firstHead == secondHead =
     Monad.Trans.lift $ do
         children <- Monad.zipWithM termMerger firstChildren secondChildren
         let merged = Foldable.foldMap Pattern.withoutTerm children
-            term =
-                mkApplySymbol
-                    (termLikeSort firstPattern)
-                    firstHead
-                    (Pattern.term <$> children)
+            term = mkApplySymbol firstHead (Pattern.term <$> children)
         return (Pattern.withCondition term merged)
   where
     isFirstInjective = Symbol.isInjective firstHead
@@ -1031,7 +1041,9 @@ sortInjectionAndEqualsAssumesDifferentHeads
     .   ( Ord variable
         , SortedVariable variable
         , Unparse variable
-        , MonadUnify unifier )
+        , MonadUnify unifier
+        )
+    => GHC.HasCallStack
     => SmtMetadataTools Attribute.Symbol
     -> TermSimplifier variable unifier
     -> TermLike variable
@@ -1061,7 +1073,7 @@ sortInjectionAndEqualsAssumesDifferentHeads
         empty
     Just
         (Matching SortInjectionMatch
-            { injectionHead, sort, firstChild, secondChild }
+            { injectionHead, firstChild, secondChild }
         ) -> Monad.Trans.lift $ do
             merged <- termMerger firstChild secondChild
             if Pattern.isBottom merged
@@ -1073,10 +1085,9 @@ sortInjectionAndEqualsAssumesDifferentHeads
                         second
                     empty
                 else
-                    return $ applyInjection sort injectionHead <$> merged
+                    return $ applyInjection injectionHead <$> merged
   where
-    applyInjection sort injectionHead term =
-        mkApplySymbol sort injectionHead [term]
+    applyInjection injectionHead term = mkApplySymbol injectionHead [term]
 
 data SortInjectionMatch variable =
     SortInjectionMatch
@@ -1093,7 +1104,8 @@ data SortInjectionSimplification variable
 
 simplifySortInjections
     :: forall variable
-    .  Ord variable
+    .  (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> TermLike variable
@@ -1153,9 +1165,7 @@ simplifySortInjections
     mergeFirstIntoSecond ::  SortInjectionSimplification variable
     mergeFirstIntoSecond =
         Matching SortInjectionMatch
-            { injectionHead =
-                firstHead
-                    { symbolParams = [secondOrigin, firstDestination] }
+            { injectionHead = secondHead
             , sort = firstDestination
             , firstChild = sortInjection firstOrigin secondOrigin firstChild
             , secondChild = secondChild
@@ -1186,8 +1196,11 @@ simplifySortInjections
         -> TermLike variable
     sortInjection originSort destinationSort term =
         mkApplySymbol
-            destinationSort
-            firstHead { symbolParams = [originSort, destinationSort] }
+            firstHead
+                { symbolParams = [originSort, destinationSort]
+                , symbolSorts =
+                    Symbol.applicationSorts [originSort] destinationSort
+                }
             [term]
     firstSubsorts = subsorts firstOrigin
     secondSubsorts = subsorts secondOrigin
@@ -1208,6 +1221,7 @@ constructorSortInjectionAndEquals
         , Unparse variable
         , MonadUnify unifier
         )
+    => GHC.HasCallStack
     => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> TermLike variable
@@ -1243,6 +1257,7 @@ constructorAndEqualsAssumesDifferentHeads
         , Unparse variable
         , MonadUnify unifier
         )
+    => GHC.HasCallStack
     => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> TermLike variable
@@ -1273,6 +1288,7 @@ domainValueAndConstructorErrors
     :: Eq variable
     => Unparse variable
     => SortedVariable variable
+    => GHC.HasCallStack
     => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> TermLike variable
@@ -1334,6 +1350,7 @@ domainValueAndEqualsAssumesDifferent
     => SortedVariable variable
     => Unparse variable
     => MonadUnify unifier
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier (TermLike variable)
@@ -1363,6 +1380,7 @@ cannotUnifyDomainValues
     => SortedVariable variable
     => Unparse variable
     => MonadUnify unifier
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> unifier (TermLike variable)
@@ -1387,6 +1405,7 @@ stringLiteralAndEqualsAssumesDifferent
     => SortedVariable variable
     => Unparse variable
     => MonadUnify unifier
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier (TermLike variable)
@@ -1409,6 +1428,7 @@ charLiteralAndEqualsAssumesDifferent
     => SortedVariable variable
     => Unparse variable
     => MonadUnify unifier
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier (TermLike variable)
@@ -1429,6 +1449,7 @@ functionAnd
         , Show variable
         , Unparse variable
         )
+    => GHC.HasCallStack
     => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> TermLike variable

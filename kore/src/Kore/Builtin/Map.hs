@@ -434,23 +434,21 @@ asInternal tools builtinMapSort builtinMapChild =
 {- | Render an 'Domain.InternalMap' as a 'TermLike' domain value pattern.
  -}
 asTermLike
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
     => Domain.InternalMap (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 asTermLike builtin
   | Map.null map' = unit
   | otherwise = foldr1 concat' (element <$> Map.toAscList map')
   where
-    Domain.InternalMap { builtinMapSort = builtinSort } = builtin
     Domain.InternalMap { builtinMapChild = map' } = builtin
     Domain.InternalMap { builtinMapUnit = unitSymbol } = builtin
     Domain.InternalMap { builtinMapElement = elementSymbol } = builtin
     Domain.InternalMap { builtinMapConcat = concatSymbol } = builtin
 
-    apply = mkApplySymbol builtinSort
-    unit = apply unitSymbol []
-    element (key, value) = apply elementSymbol [fromConcrete key, value]
-    concat' map1 map2 = apply concatSymbol [map1, map2]
+    unit = mkApplySymbol unitSymbol []
+    element (key, value) = mkApplySymbol elementSymbol [fromConcrete key, value]
+    concat' map1 map2 = mkApplySymbol concatSymbol [map1, map2]
 
 {- | Render a 'Map' a domain value 'Pattern'.
 

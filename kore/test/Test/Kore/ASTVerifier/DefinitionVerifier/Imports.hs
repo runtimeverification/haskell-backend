@@ -491,17 +491,12 @@ sortVisibilityTests =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
-                Builtin.externalizePattern
-                $ mkApplySymbol sort
+                Builtin.externalizePattern $ mkApplySymbol
                     Internal.Symbol
                         { symbolConstructor = testId "symbol2"
                         , symbolParams = [ sort ]
                         , symbolAttributes = Attribute.defaultSymbolAttributes
-                        , symbolSorts =
-                            ApplicationSorts
-                                { applicationSortsResult = sort
-                                , applicationSortsOperands = []
-                                }
+                        , symbolSorts = applicationSorts [] sort
                         }
                     []
             , sentenceAxiomAttributes = Attributes []
@@ -595,16 +590,11 @@ symbolVisibilityTests =
   where
     symbolPattern =
         mkApplySymbol
-            defaultSort
             Internal.Symbol
                 { symbolConstructor = testId "symbol1"
                 , symbolParams = [ defaultSort ]
                 , symbolAttributes = Attribute.defaultSymbolAttributes
-                , symbolSorts =
-                    ApplicationSorts
-                        { applicationSortsResult = defaultSort
-                        , applicationSortsOperands = []
-                        }
+                , symbolSorts = applicationSorts [] defaultSort
                 }
             []
     symbolDeclaration =
@@ -621,16 +611,11 @@ symbolVisibilityTests =
     defaultSymbolSupportSentences = [ defaultSortDeclaration ]
     metaSymbolPattern =
         mkApplySymbol
-            charMetaSort
             Internal.Symbol
                 { symbolConstructor = testId "#symbol1"
                 , symbolParams = [ charMetaSort ]
                 , symbolAttributes = Attribute.defaultSymbolAttributes
-                , symbolSorts =
-                    ApplicationSorts
-                        { applicationSortsResult = charMetaSort
-                        , applicationSortsOperands = []
-                        }
+                , symbolSorts = applicationSorts [] charMetaSort
                 }
             []
     metaSymbolDeclaration =
@@ -691,17 +676,14 @@ symbolVisibilityTests =
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
                 Builtin.externalizePattern $ mkApplySymbol
-                    defaultSort
                     Internal.Symbol
                         { symbolConstructor = testId "symbol2"
                         , symbolParams = [ defaultSort ]
                         , symbolAttributes = Attribute.defaultSymbolAttributes
                         , symbolSorts =
-                            ApplicationSorts
-                                { applicationSortsResult = defaultSort
-                                , applicationSortsOperands =
-                                    [termLikeSort symbolPattern]
-                                }
+                            applicationSorts
+                                [termLikeSort symbolPattern]
+                                defaultSort
                         }
                     [symbolPattern]
             , sentenceAxiomAttributes = Attributes []

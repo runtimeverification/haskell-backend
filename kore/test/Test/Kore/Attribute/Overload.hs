@@ -151,8 +151,8 @@ test_ignore =
             , sentenceAxiomPattern =
                 Builtin.externalizePattern
                 $ mkEquals sortS
-                    (mkApplySymbol Mock.testSort superSymbol [])
-                    (mkApplySymbol Mock.testSort subSymbol   [])
+                    (mkApplySymbol superSymbol [])
+                    (mkApplySymbol subSymbol   [])
             }
       where
         sortVarS = SortVariable "S"

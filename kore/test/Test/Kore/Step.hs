@@ -4,6 +4,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Control.Exception as Exception
+import qualified Control.Lens as Lens
 import           Data.Default
                  ( def )
 import           Data.Function
@@ -15,7 +16,7 @@ import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
 import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Symbol
+import           Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
@@ -121,22 +122,17 @@ newtype Expect = Expect TestPattern
 
 type Actual = Pattern Variable
 
--- Useful constant values
-
-anySort :: Sort
-anySort = sort "irrelevant"
-
 -- Builders -- should these find a better home?
 
 -- | Create a function pattern from a function name and list of argnames.
 applyConstructorToVariables :: Symbol -> [Text] -> TestPattern
 applyConstructorToVariables constr arguments =
-    mkApplySymbol anySort constr (var <$> arguments)
+    mkApplySymbol constr (var <$> arguments)
 
 -- | Do the busywork of converting a name into a variable pattern.
 var :: Text -> TestPattern
 var name =
-    mkVar $ (Variable (testId name) mempty) anySort
+    mkVar $ (Variable (testId name) mempty) Mock.testSort
 -- can the above be more abstract?
 
 sort :: Text -> Sort
@@ -373,13 +369,18 @@ mockEnv :: Env
 mockEnv = Mock.env { metadataTools = mockMetadataTools }
 
 sigmaSymbol :: Symbol
-sigmaSymbol = symbol "#sigma" & functional & constructor
+sigmaSymbol =
+    symbol "#sigma"
+    & functional & constructor
+    & Lens.set lensSymbolSorts sorts
+  where
+    sorts = Symbol.applicationSorts [Mock.testSort, Mock.testSort] Mock.testSort
 
 metaSigma
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
-metaSigma p1 p2 = mkApplySymbol Mock.testSort sigmaSymbol [p1, p2]
+metaSigma p1 p2 = mkApplySymbol sigmaSymbol [p1, p2]
 
 axiomMetaSigmaId :: RewriteRule Variable
 axiomMetaSigmaId =
@@ -388,8 +389,7 @@ axiomMetaSigmaId =
             metaSigma
                 (mkVar $ x1 Mock.testSort)
                 (mkVar $ x1 Mock.testSort)
-        , right =
-            mkVar $ x1 Mock.testSort
+        , right = mkVar $ x1 Mock.testSort
         , requires = makeTruePredicate
         , ensures = makeTruePredicate
         , attributes = def
@@ -401,43 +401,34 @@ symbol name =
         { symbolConstructor = testId name
         , symbolParams = []
         , symbolAttributes = Attribute.defaultSymbolAttributes
-        , symbolSorts =
-            Kore.Internal.Symbol.applicationSorts [Mock.testSort] Mock.testSort
+        , symbolSorts = Symbol.applicationSorts [Mock.testSort] Mock.testSort
         }
 
 fSymbol :: Symbol
 fSymbol = symbol "#f" & functional & constructor
 
-metaF
-    :: TermLike Variable
-    -> TermLike Variable
-metaF p = mkApplySymbol Mock.testSort fSymbol [p]
+metaF :: TermLike Variable -> TermLike Variable
+metaF p = mkApplySymbol fSymbol [p]
 
 
 gSymbol :: Symbol
 gSymbol = symbol "#g" & functional & constructor
 
-metaG
-    :: TermLike Variable
-    -> TermLike Variable
-metaG p = mkApplySymbol Mock.testSort gSymbol [p]
+metaG :: TermLike Variable -> TermLike Variable
+metaG p = mkApplySymbol gSymbol [p]
 
 
 hSymbol :: Symbol
 hSymbol = symbol "#h" & functional & constructor
 
-metaH
-    :: TermLike Variable
-    -> TermLike Variable
-metaH p = mkApplySymbol Mock.testSort hSymbol [p]
+metaH :: TermLike Variable -> TermLike Variable
+metaH p = mkApplySymbol hSymbol [p]
 
 iSymbol :: Symbol
 iSymbol = symbol "#i"
 
-metaI
-    :: TermLike Variable
-    -> TermLike Variable
-metaI p = mkApplySymbol Mock.testSort iSymbol [p]
+metaI :: TermLike Variable -> TermLike Variable
+metaI p = mkApplySymbol iSymbol [p]
 
 runStep
     :: Pattern Variable

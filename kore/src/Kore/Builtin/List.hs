@@ -289,23 +289,21 @@ builtinFunctions =
 
  -}
 asTermLike
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
     => Domain.InternalList (TermLike variable)
     -> TermLike variable
 asTermLike builtin
   | Seq.null list = unit
   | otherwise = foldr1 concat' (element <$> list)
   where
-    Domain.InternalList { builtinListSort = builtinSort } = builtin
     Domain.InternalList { builtinListChild = list } = builtin
     Domain.InternalList { builtinListUnit = unitSymbol } = builtin
     Domain.InternalList { builtinListElement = elementSymbol } = builtin
     Domain.InternalList { builtinListConcat = concatSymbol } = builtin
 
-    apply = mkApplySymbol builtinSort
-    unit = apply unitSymbol []
-    element elem' = apply elementSymbol [elem']
-    concat' list1 list2 = apply concatSymbol [list1, list2]
+    unit = mkApplySymbol unitSymbol []
+    element elem' = mkApplySymbol elementSymbol [elem']
+    concat' list1 list2 = mkApplySymbol concatSymbol [list1, list2]
 
 {- | Render a 'Seq' as an expanded internal list pattern.
  -}

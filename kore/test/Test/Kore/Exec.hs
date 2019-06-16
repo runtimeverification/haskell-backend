@@ -271,7 +271,6 @@ rewriteAxiom lhsName rhsName =
 applyToNoArgs :: Sort -> Text -> TermLike Variable
 applyToNoArgs sort name =
     mkApplySymbol
-        sort
         Symbol
             { symbolConstructor = testId name
             , symbolParams = []
@@ -354,7 +353,7 @@ test_execGetExitCode =
 
     mockGetExitCodeAxiom =
         mkEqualityAxiom
-            (mkApplySymbol myIntSort getExitCodeSym [mkVar v]) (mkVar v) Nothing
+            (mkApplySymbol getExitCodeSym [mkVar v]) (mkVar v) Nothing
       where
         v = Variable
             { variableName = testId "V"

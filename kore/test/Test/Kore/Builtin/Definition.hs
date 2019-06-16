@@ -84,6 +84,18 @@ impliesBoolSymbol =
     binaryBoolSymbol "impliesBool"
     & hook "BOOL.implies" & smthook "=>"
 
+notBool :: TermLike Variable -> TermLike Variable
+notBool x = mkApplySymbol notBoolSymbol [x]
+
+andBool, impliesBool, eqBool, orBool
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+andBool x y = mkApplySymbol andBoolSymbol [x, y]
+impliesBool x y = mkApplySymbol impliesBoolSymbol [x, y]
+eqBool x y = mkApplySymbol eqBoolSymbol [x, y]
+orBool x y = mkApplySymbol orBoolSymbol [x, y]
+
 -- ** Int
 
 comparisonSymbol :: Text -> Sort -> Internal.Symbol
@@ -178,6 +190,27 @@ emodIntSymbol = binaryIntSymbol "emodInt" & hook "INT.emod" & smthook "mod"
 dummyIntSymbol :: Internal.Symbol
 dummyIntSymbol = unaryIntSymbol "f"
 
+dummyInt :: TermLike Variable -> TermLike Variable
+dummyInt x = mkApplySymbol dummyIntSymbol [x]
+
+addInt, subInt, mulInt, divInt, tdivInt, tmodInt
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+addInt i j = mkApplySymbol addIntSymbol  [i, j]
+subInt i j = mkApplySymbol subIntSymbol  [i, j]
+mulInt i j = mkApplySymbol mulIntSymbol  [i, j]
+divInt i j = mkApplySymbol tdivIntSymbol [i, j]
+tdivInt i j = mkApplySymbol tdivIntSymbol [i, j]
+tmodInt i j = mkApplySymbol tmodIntSymbol [i, j]
+
+eqInt, ltInt
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+eqInt i j = mkApplySymbol eqIntSymbol [i, j]
+ltInt i j = mkApplySymbol ltIntSymbol [i, j]
+
 -- ** KEQUAL
 
 comparisonKSymbol :: Text -> Internal.Symbol
@@ -211,6 +244,32 @@ injSymbol lSort rSort =
         , symbolSorts = applicationSorts [lSort] rSort
         }
     & sortInjection
+
+inj :: Sort -> TermLike Variable -> TermLike Variable
+inj toSort termLike =
+    mkApplySymbol (injSymbol fromSort toSort) [termLike]
+  where
+    fromSort = termLikeSort termLike
+
+keqBool, kneqBool
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+keqBool x y = mkApplySymbol keqBoolSymbol [x, y]
+kneqBool x y = mkApplySymbol kneqBoolSymbol [x, y]
+
+kseq :: TermLike Variable -> TermLike Variable -> TermLike Variable
+kseq x y = mkApplySymbol kseqSymbol [x, y]
+
+dotk :: TermLike Variable
+dotk = mkApplySymbol dotkSymbol []
+
+kiteK
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+kiteK i t e = mkApplySymbol kiteKSymbol [i, t, e]
 
 -- ** List
 
@@ -285,63 +344,55 @@ removeAllMapSymbol =
     & hook "MAP.removeAll"
 
 unitMap :: TermLike Variable
-unitMap = mkApplySymbol mapSort unitMapSymbol []
+unitMap = mkApplySymbol unitMapSymbol []
 
 updateMap
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
-updateMap map' key value =
-    mkApplySymbol mapSort updateMapSymbol [map', key, value]
+updateMap map' key value = mkApplySymbol updateMapSymbol [map', key, value]
 
 lookupMap
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
-lookupMap map' key =
-    mkApplySymbol intSort lookupMapSymbol [map', key]
+lookupMap map' key = mkApplySymbol lookupMapSymbol [map', key]
 
 elementMap
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
-elementMap key value =
-    mkApplySymbol mapSort elementMapSymbol [key, value]
+elementMap key value = mkApplySymbol elementMapSymbol [key, value]
 
 concatMap
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
-concatMap map1 map2 =
-    mkApplySymbol mapSort concatMapSymbol [map1, map2]
+concatMap map1 map2 = mkApplySymbol concatMapSymbol [map1, map2]
 
 inKeysMap
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
-inKeysMap key map' =
-    mkApplySymbol boolSort inKeysMapSymbol [key, map']
+inKeysMap key map' = mkApplySymbol inKeysMapSymbol [key, map']
 
 keysMap
     :: TermLike Variable
     -> TermLike Variable
-keysMap map' =
-    mkApplySymbol setSort keysMapSymbol [map']
+keysMap map' = mkApplySymbol keysMapSymbol [map']
 
 removeMap
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
-removeMap map' key =
-    mkApplySymbol mapSort removeMapSymbol [map', key]
+removeMap map' key = mkApplySymbol removeMapSymbol [map', key]
 
 removeAllMap
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
-removeAllMap map' set =
-    mkApplySymbol mapSort removeAllMapSymbol [map', set]
+removeAllMap map' set = mkApplySymbol removeAllMapSymbol [map', set]
 
 -- ** Pair
 
@@ -361,7 +412,7 @@ unitSetSymbol :: Internal.Symbol
 unitSetSymbol = builtinSymbol "unitSet" setSort [] & hook "SET.unit"
 
 unitSet :: TermLike Variable
-unitSet = mkApplySymbol setSort unitSetSymbol []
+unitSet = mkApplySymbol unitSetSymbol []
 
 elementSetSymbol :: Internal.Symbol
 elementSetSymbol =
@@ -396,7 +447,7 @@ intersectionSet
     -> TermLike Variable
     -> TermLike Variable
 intersectionSet set1 set2 =
-    mkApplySymbol setSort intersectionSetSymbol [set1, set2]
+    mkApplySymbol intersectionSetSymbol [set1, set2]
 
 -- ** String
 

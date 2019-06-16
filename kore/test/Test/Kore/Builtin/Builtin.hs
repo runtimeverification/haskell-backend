@@ -84,8 +84,7 @@ mkPair
     -> TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
-mkPair lSort rSort l r =
-    mkApplySymbol (pairSort lSort rSort) (pairSymbol lSort rSort) [l, r]
+mkPair lSort rSort l r = mkApplySymbol (pairSymbol lSort rSort) [l, r]
 
 -- | 'testSymbol' is useful for writing unit tests for symbols.
 testSymbolWithSolver
@@ -97,8 +96,6 @@ testSymbolWithSolver
     -- ^ evaluator function for the builtin
     -> String
     -- ^ test name
-    -> Sort
-    -- ^ symbol result sort
     -> Internal.Symbol
     -- ^ symbol being tested
     -> [p]
@@ -106,12 +103,12 @@ testSymbolWithSolver
     -> expanded
     -- ^ expected result
     -> TestTree
-testSymbolWithSolver eval title resultSort symbol args expected =
+testSymbolWithSolver eval title symbol args expected =
     testCase title $ do
         actual <- runSMT eval'
         assertEqual "" expected actual
   where
-    eval' = eval $ mkApplySymbol resultSort symbol args
+    eval' = eval $ mkApplySymbol symbol args
 
 -- -------------------------------------------------------------
 -- * Evaluation

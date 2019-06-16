@@ -746,7 +746,6 @@ applicationUnifiedPatternWithParams
     -> TermLike Variable
 applicationUnifiedPatternWithParams resultSort (SymbolName name) params =
     Internal.mkApplySymbol
-        resultSort
         Internal.Symbol
             { symbolConstructor = testId name
             , symbolParams = params

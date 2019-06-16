@@ -19,8 +19,8 @@ symbolGen resultSort =
     Symbol
         <$> Gen.small idGen
         <*> couple (Gen.small sortGen)
-        <*> symbolAttributeGen
         <*> applicationSortsGen resultSort
+        <*> symbolAttributeGen
 
 applicationSortsGen :: Sort -> Gen ApplicationSorts
 applicationSortsGen resultSort =

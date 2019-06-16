@@ -132,12 +132,12 @@ test_floorSimplification =
     gSymbol = symbol "g" [testSort] testSort
     x = Variable (testId "x") mempty testSort
     a :: TermLike Variable
-    a = mkApplySymbol testSort aSymbol []
+    a = mkApplySymbol aSymbol []
     b :: TermLike Variable
-    b = mkApplySymbol testSort bSymbol []
-    fOfA = mkApplySymbol testSort fSymbol [a]
-    fOfB = mkApplySymbol testSort fSymbol [b]
-    gOfA = mkApplySymbol testSort gSymbol [a]
+    b = mkApplySymbol bSymbol []
+    fOfA = mkApplySymbol fSymbol [a]
+    fOfB = mkApplySymbol fSymbol [b]
+    gOfA = mkApplySymbol gSymbol [a]
     aExpanded = Conditional
         { term = a
         , predicate = makeTruePredicate

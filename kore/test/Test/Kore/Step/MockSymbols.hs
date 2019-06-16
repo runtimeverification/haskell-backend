@@ -29,6 +29,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
+import qualified GHC.Stack as GHC
 
 import           Data.Sup
 import           Kore.Attribute.Hook
@@ -61,6 +62,7 @@ import qualified Kore.Step.SMT.Representation.Resolve as SMT
                  ( resolve )
 import           Kore.Syntax.Application
 import           Kore.Syntax.Variable
+import           Kore.Unparser
 import qualified SMT.AST as SMT
 import qualified SMT.SimpleSMT as SMT
 
@@ -342,12 +344,12 @@ functionalConstr30Symbol =
 
 functionalTopConstr20Symbol :: Symbol
 functionalTopConstr20Symbol =
-    symbol functionalTopConstr20Id [testSort, testSort] testSort
+    symbol functionalTopConstr20Id [topSort, testSort] testSort
     & functional & constructor
 
 functionalTopConstr21Symbol :: Symbol
 functionalTopConstr21Symbol =
-    symbol functionalTopConstr21Id [testSort, testSort] testSort
+    symbol functionalTopConstr21Id [testSort, topSort] testSort
     & functional & constructor
 
 injective10Symbol :: Symbol
@@ -356,55 +358,35 @@ injective10Symbol = symbol injective10Id [testSort] testSort & injective
 injective11Symbol :: Symbol
 injective11Symbol = symbol injective11Id [testSort] testSort & injective
 
+sortInjectionSymbol :: Sort -> Sort -> Symbol
+sortInjectionSymbol fromSort toSort = Symbol
+    { symbolConstructor = sortInjectionId
+    , symbolParams      = [fromSort, toSort]
+    , symbolAttributes  = Mock.sortInjectionAttributes
+    , symbolSorts = applicationSorts [fromSort] toSort
+    }
+
 sortInjection10Symbol :: Symbol
-sortInjection10Symbol = Symbol
-    { symbolConstructor = sortInjectionId
-    , symbolParams      = [testSort0, testSort]
-    , symbolAttributes  = Mock.sortInjectionAttributes
-    , symbolSorts = applicationSorts [testSort0] testSort
-    }
+sortInjection10Symbol = sortInjectionSymbol testSort0 testSort
+
 sortInjection11Symbol :: Symbol
-sortInjection11Symbol = Symbol
-    { symbolConstructor = sortInjectionId
-    , symbolParams      = [testSort1, testSort]
-    , symbolAttributes  = Mock.sortInjectionAttributes
-    , symbolSorts = applicationSorts [testSort1] testSort
-    }
+sortInjection11Symbol = sortInjectionSymbol testSort1 testSort
+
 sortInjection0ToTopSymbol :: Symbol
-sortInjection0ToTopSymbol = Symbol
-    { symbolConstructor = sortInjectionId
-    , symbolParams      = [testSort0, topSort]
-    , symbolAttributes  = Mock.sortInjectionAttributes
-    , symbolSorts = applicationSorts [testSort0] testSort
-    }
+sortInjection0ToTopSymbol = sortInjectionSymbol testSort0 topSort
+
 sortInjectionSubToTopSymbol :: Symbol
-sortInjectionSubToTopSymbol = Symbol
-    { symbolConstructor = sortInjectionId
-    , symbolParams      = [subSort, topSort]
-    , symbolAttributes  = Mock.sortInjectionAttributes
-    , symbolSorts = applicationSorts [subSort] testSort
-    }
+sortInjectionSubToTopSymbol = sortInjectionSymbol subSort topSort
+
 sortInjectionSubSubToTopSymbol :: Symbol
-sortInjectionSubSubToTopSymbol = Symbol
-    { symbolConstructor = sortInjectionId
-    , symbolParams      = [subSubsort, topSort]
-    , symbolAttributes  = Mock.sortInjectionAttributes
-    , symbolSorts = applicationSorts [subSubsort] testSort
-    }
+sortInjectionSubSubToTopSymbol = sortInjectionSymbol subSubsort topSort
+
 sortInjectionSubSubToSubSymbol :: Symbol
-sortInjectionSubSubToSubSymbol = Symbol
-    { symbolConstructor = sortInjectionId
-    , symbolParams      = [subSubsort, subSort]
-    , symbolAttributes  = Mock.sortInjectionAttributes
-    , symbolSorts = applicationSorts [subSubsort] subSort
-    }
+sortInjectionSubSubToSubSymbol = sortInjectionSymbol subSubsort subSort
+
 sortInjectionOtherToTopSymbol :: Symbol
-sortInjectionOtherToTopSymbol = Symbol
-    { symbolConstructor = sortInjectionId
-    , symbolParams      = [otherSort, topSort]
-    , symbolAttributes  = Mock.sortInjectionAttributes
-    , symbolSorts = applicationSorts [otherSort] testSort
-    }
+sortInjectionOtherToTopSymbol = sortInjectionSymbol otherSort topSort
+
 unitMapSymbol :: Symbol
 unitMapSymbol =
     symbol unitMapId [] mapSort
@@ -412,7 +394,7 @@ unitMapSymbol =
 
 elementMapSymbol :: Symbol
 elementMapSymbol =
-    symbol elementMapId [testSort] mapSort
+    symbol elementMapId [testSort, testSort] mapSort
     & functional & hook "MAP.element"
 
 concatMapSymbol :: Symbol
@@ -450,7 +432,7 @@ concatSetSymbol =
 
 elementSetSymbol :: Symbol
 elementSetSymbol =
-    symbol elementSetId [setSort] setSort & functional & hook "SET.element"
+    symbol elementSetId [testSort] setSort & functional & hook "SET.element"
 
 unitSetSymbol :: Symbol
 unitSetSymbol =
@@ -492,331 +474,366 @@ xSubSort = Variable (testId "xSubSort") mempty subSort
 xTopSort :: Variable
 xTopSort = Variable (testId "xTopSort") mempty topSort
 
-a :: Ord variable => TermLike variable
-a = Internal.mkApplySymbol testSort aSymbol []
+a :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+a = Internal.mkApplySymbol aSymbol []
 
 aConcrete :: TermLike Concrete
 Just aConcrete = Internal.asConcrete (a :: TermLike Variable)
 
-aSort0 :: Ord variable => TermLike variable
-aSort0 = Internal.mkApplySymbol testSort0 aSort0Symbol []
+aSort0 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+aSort0 = Internal.mkApplySymbol aSort0Symbol []
 
-aSort1 :: Ord variable => TermLike variable
-aSort1 = Internal.mkApplySymbol testSort1 aSort1Symbol []
+aSort1 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+aSort1 = Internal.mkApplySymbol aSort1Symbol []
 
-aSubsort :: Ord variable => TermLike variable
-aSubsort = Internal.mkApplySymbol subSort aSubsortSymbol []
+aSubsort :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+aSubsort = Internal.mkApplySymbol aSubsortSymbol []
 
-aSubSubsort :: Ord variable => TermLike variable
-aSubSubsort = Internal.mkApplySymbol subSubsort aSubSubsortSymbol []
+aSubSubsort :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+aSubSubsort = Internal.mkApplySymbol aSubSubsortSymbol []
 
-aTopSort :: Ord variable => TermLike variable
-aTopSort = Internal.mkApplySymbol topSort aTopSortSymbol []
+aTopSort :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+aTopSort = Internal.mkApplySymbol aTopSortSymbol []
 
-aOtherSort :: Ord variable => TermLike variable
-aOtherSort = Internal.mkApplySymbol otherSort aOtherSortSymbol []
+aOtherSort :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+aOtherSort = Internal.mkApplySymbol aOtherSortSymbol []
 
-b :: Ord variable => TermLike variable
-b = Internal.mkApplySymbol testSort bSymbol []
+b :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+b = Internal.mkApplySymbol bSymbol []
 
 bConcrete :: TermLike Concrete
 Just bConcrete = Internal.asConcrete (b :: TermLike Variable)
 
-bSort0 :: Ord variable => TermLike variable
-bSort0 = Internal.mkApplySymbol testSort0 bSort0Symbol []
+bSort0 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+bSort0 = Internal.mkApplySymbol bSort0Symbol []
 
-c :: Ord variable => TermLike variable
-c = Internal.mkApplySymbol testSort cSymbol []
+c :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+c = Internal.mkApplySymbol cSymbol []
 
-d :: Ord variable => TermLike variable
-d = Internal.mkApplySymbol testSort dSymbol []
+d :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+d = Internal.mkApplySymbol dSymbol []
 
-e :: Ord variable => TermLike variable
-e = Internal.mkApplySymbol testSort eSymbol []
+e :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+e = Internal.mkApplySymbol eSymbol []
 
 f, g, h
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-f arg = Internal.mkApplySymbol testSort fSymbol [arg]
-g arg = Internal.mkApplySymbol testSort gSymbol [arg]
-h arg = Internal.mkApplySymbol testSort hSymbol [arg]
+f arg = Internal.mkApplySymbol fSymbol [arg]
+g arg = Internal.mkApplySymbol gSymbol [arg]
+h arg = Internal.mkApplySymbol hSymbol [arg]
 
-cf :: Ord variable => TermLike variable
-cf = Internal.mkApplySymbol testSort cfSymbol []
+cf :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+cf = Internal.mkApplySymbol cfSymbol []
 
-cfSort0 :: Ord variable => TermLike variable
-cfSort0 = Internal.mkApplySymbol testSort0 cfSort0Symbol []
+cfSort0 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+cfSort0 = Internal.mkApplySymbol cfSort0Symbol []
 
-cfSort1 :: Ord variable => TermLike variable
-cfSort1 = Internal.mkApplySymbol testSort1 cfSort1Symbol []
+cfSort1 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+cfSort1 = Internal.mkApplySymbol cfSort1Symbol []
 
-cg :: Ord variable => TermLike variable
-cg = Internal.mkApplySymbol testSort cgSymbol []
+cg :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+cg = Internal.mkApplySymbol cgSymbol []
 
-cgSort0 :: Ord variable => TermLike variable
-cgSort0 = Internal.mkApplySymbol testSort0 cgSort0Symbol []
+cgSort0 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+cgSort0 = Internal.mkApplySymbol cgSort0Symbol []
 
-ch :: Ord variable => TermLike variable
-ch = Internal.mkApplySymbol testSort chSymbol []
+ch :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+ch = Internal.mkApplySymbol chSymbol []
 
-plain00 :: Ord variable => TermLike variable
-plain00 = Internal.mkApplySymbol testSort plain00Symbol []
+plain00 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+plain00 = Internal.mkApplySymbol plain00Symbol []
 
-plain00Sort0 :: Ord variable => TermLike variable
-plain00Sort0 = Internal.mkApplySymbol testSort0 plain00Sort0Symbol []
+plain00Sort0 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+plain00Sort0 = Internal.mkApplySymbol plain00Sort0Symbol []
 
-plain00Subsort :: Ord variable => TermLike variable
-plain00Subsort = Internal.mkApplySymbol subSort plain00SubsortSymbol []
+plain00Subsort :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+plain00Subsort = Internal.mkApplySymbol plain00SubsortSymbol []
 
-plain00SubSubsort :: Ord variable => TermLike variable
-plain00SubSubsort = Internal.mkApplySymbol subSubsort plain00SubSubsortSymbol []
+plain00SubSubsort :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+plain00SubSubsort = Internal.mkApplySymbol plain00SubSubsortSymbol []
 
 plain10, plain11
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-plain10 arg = Internal.mkApplySymbol testSort plain10Symbol [arg]
-plain11 arg = Internal.mkApplySymbol testSort plain11Symbol [arg]
+plain10 arg = Internal.mkApplySymbol plain10Symbol [arg]
+plain11 arg = Internal.mkApplySymbol plain11Symbol [arg]
 
 plain20
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-plain20 arg1 arg2 = Internal.mkApplySymbol testSort plain20Symbol [arg1, arg2]
+plain20 arg1 arg2 = Internal.mkApplySymbol plain20Symbol [arg1, arg2]
 
 constr10, constr11
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-constr10 arg = Internal.mkApplySymbol testSort constr10Symbol [arg]
-constr11 arg = Internal.mkApplySymbol testSort constr11Symbol [arg]
+constr10 arg = Internal.mkApplySymbol constr10Symbol [arg]
+constr11 arg = Internal.mkApplySymbol constr11Symbol [arg]
 
 constr20
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-constr20 arg1 arg2 = Internal.mkApplySymbol testSort constr20Symbol [arg1, arg2]
+constr20 arg1 arg2 = Internal.mkApplySymbol constr20Symbol [arg1, arg2]
 
 function20MapTest
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
 function20MapTest arg1 arg2 =
-    Internal.mkApplySymbol testSort function20MapTestSymbol [arg1, arg2]
+    Internal.mkApplySymbol function20MapTestSymbol [arg1, arg2]
 
-functional00 :: Ord variable => TermLike variable
-functional00 = Internal.mkApplySymbol testSort functional00Symbol []
+functional00 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+functional00 = Internal.mkApplySymbol functional00Symbol []
 
-functional01 :: Ord variable => TermLike variable
-functional01 = Internal.mkApplySymbol testSort functional01Symbol []
+functional01 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+functional01 = Internal.mkApplySymbol functional01Symbol []
 
 functional10
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-functional10 arg = Internal.mkApplySymbol testSort functional10Symbol [arg]
+functional10 arg = Internal.mkApplySymbol functional10Symbol [arg]
 
 functional11
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
     => TermLike variable
     -> TermLike variable
-functional11 arg = Internal.mkApplySymbol testSort functional11Symbol [arg]
+functional11 arg = Internal.mkApplySymbol functional11Symbol [arg]
 
 functional20
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-functional20 arg1 arg2 = Internal.mkApplySymbol testSort functional20Symbol [arg1, arg2]
+functional20 arg1 arg2 = Internal.mkApplySymbol functional20Symbol [arg1, arg2]
 
-functional00SubSubSort :: Ord variable => TermLike variable
+functional00SubSubSort :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
 functional00SubSubSort =
-    Internal.mkApplySymbol subSubsort functional00SubSubSortSymbol []
+    Internal.mkApplySymbol functional00SubSubSortSymbol []
 
 functionalConstr10
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
 functionalConstr10 arg =
-    Internal.mkApplySymbol testSort functionalConstr10Symbol [arg]
+    Internal.mkApplySymbol functionalConstr10Symbol [arg]
 
 functionalConstr11
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-functionalConstr11 arg = Internal.mkApplySymbol testSort functionalConstr11Symbol [arg]
+functionalConstr11 arg = Internal.mkApplySymbol functionalConstr11Symbol [arg]
 
 functionalConstr12
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
     => TermLike variable
     -> TermLike variable
-functionalConstr12 arg = Internal.mkApplySymbol testSort functionalConstr12Symbol [arg]
+functionalConstr12 arg = Internal.mkApplySymbol functionalConstr12Symbol [arg]
 
 functionalConstr20
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
 functionalConstr20 arg1 arg2 =
-    Internal.mkApplySymbol testSort functionalConstr20Symbol [arg1, arg2]
+    Internal.mkApplySymbol functionalConstr20Symbol [arg1, arg2]
 
 functionalConstr30
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
     -> TermLike variable
 functionalConstr30 arg1 arg2 arg3 =
-    Internal.mkApplySymbol testSort functionalConstr30Symbol [arg1, arg2, arg3]
+    Internal.mkApplySymbol functionalConstr30Symbol [arg1, arg2, arg3]
 
 functionalTopConstr20
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
 functionalTopConstr20 arg1 arg2 =
-    Internal.mkApplySymbol testSort functionalTopConstr20Symbol [arg1, arg2]
+    Internal.mkApplySymbol functionalTopConstr20Symbol [arg1, arg2]
 
 functionalTopConstr21
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
 functionalTopConstr21 arg1 arg2 =
-    Internal.mkApplySymbol testSort functionalTopConstr21Symbol [arg1, arg2]
+    Internal.mkApplySymbol functionalTopConstr21Symbol [arg1, arg2]
 
 injective10
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-injective10 arg = Internal.mkApplySymbol testSort injective10Symbol [arg]
+injective10 arg = Internal.mkApplySymbol injective10Symbol [arg]
 
 injective11
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-injective11 arg = Internal.mkApplySymbol testSort injective11Symbol [arg]
+injective11 arg = Internal.mkApplySymbol injective11Symbol [arg]
+
+sortInjection
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
+    => Sort
+    -> TermLike variable
+    -> TermLike variable
+sortInjection toSort termLike =
+    Internal.mkApplySymbol (sortInjectionSymbol fromSort toSort) [termLike]
+  where
+    fromSort = Internal.termLikeSort termLike
 
 sortInjection10
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-sortInjection10 arg =
-    Internal.mkApplySymbol testSort sortInjection10Symbol [arg]
+sortInjection10 arg = Internal.mkApplySymbol sortInjection10Symbol [arg]
 
 sortInjection11
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-sortInjection11 arg =
-    Internal.mkApplySymbol testSort sortInjection11Symbol [arg]
+sortInjection11 arg = Internal.mkApplySymbol sortInjection11Symbol [arg]
 
 sortInjection0ToTop
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
 sortInjection0ToTop arg =
-    Internal.mkApplySymbol topSort sortInjection0ToTopSymbol [arg]
+    Internal.mkApplySymbol sortInjection0ToTopSymbol [arg]
 
 sortInjectionSubToTop
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
 sortInjectionSubToTop arg =
-    Internal.mkApplySymbol topSort sortInjectionSubToTopSymbol [arg]
+    Internal.mkApplySymbol sortInjectionSubToTopSymbol [arg]
 
 sortInjectionSubSubToTop
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
 sortInjectionSubSubToTop arg =
-    Internal.mkApplySymbol topSort sortInjectionSubSubToTopSymbol [arg]
+    Internal.mkApplySymbol sortInjectionSubSubToTopSymbol [arg]
 
 sortInjectionSubSubToSub
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
 sortInjectionSubSubToSub arg =
-    Internal.mkApplySymbol subSort sortInjectionSubSubToSubSymbol [arg]
+    Internal.mkApplySymbol sortInjectionSubSubToSubSymbol [arg]
 
 sortInjectionOtherToTop
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
 sortInjectionOtherToTop arg =
-    Internal.mkApplySymbol topSort sortInjectionOtherToTopSymbol [arg]
+    Internal.mkApplySymbol sortInjectionOtherToTopSymbol [arg]
 
-unitMap
-    :: Ord variable
-    => TermLike variable
-unitMap = Internal.mkApplySymbol mapSort unitMapSymbol []
+unitMap :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+unitMap = Internal.mkApplySymbol unitMapSymbol []
 
 elementMap
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-elementMap m1 m2 = Internal.mkApplySymbol mapSort elementMapSymbol [m1, m2]
+elementMap m1 m2 = Internal.mkApplySymbol elementMapSymbol [m1, m2]
 
 concatMap
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-concatMap m1 m2 = Internal.mkApplySymbol mapSort concatMapSymbol [m1, m2]
+concatMap m1 m2 = Internal.mkApplySymbol concatMapSymbol [m1, m2]
 
 unitSet
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
     => TermLike variable
-unitSet = Internal.mkApplySymbol setSort unitSetSymbol []
+unitSet = Internal.mkApplySymbol unitSetSymbol []
 
 elementSet
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-elementSet s1 = Internal.mkApplySymbol setSort elementSetSymbol [s1]
+elementSet s1 = Internal.mkApplySymbol elementSetSymbol [s1]
 
 concatSet
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-concatSet s1 s2 = Internal.mkApplySymbol setSort concatSetSymbol [s1, s2]
+concatSet s1 s2 = Internal.mkApplySymbol concatSetSymbol [s1, s2]
 
 lessInt
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-lessInt i1 i2 = Internal.mkApplySymbol boolSort lessIntSymbol [i1, i2]
+lessInt i1 i2 = Internal.mkApplySymbol lessIntSymbol [i1, i2]
 
 greaterEqInt
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-greaterEqInt i1 i2 = Internal.mkApplySymbol boolSort greaterEqIntSymbol [i1, i2]
+greaterEqInt i1 i2 = Internal.mkApplySymbol greaterEqIntSymbol [i1, i2]
 
 concatList
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-concatList l1 l2 = Internal.mkApplySymbol listSort concatListSymbol [l1, l2]
+concatList l1 l2 = Internal.mkApplySymbol concatListSymbol [l1, l2]
 
 sigma
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-sigma child1 child2 = Internal.mkApplySymbol testSort sigmaSymbol [child1, child2]
+sigma child1 child2 = Internal.mkApplySymbol sigmaSymbol [child1, child2]
 
-anywhere :: Ord variable => TermLike variable
-anywhere = Internal.mkApplySymbol testSort anywhereSymbol []
+anywhere :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+anywhere = Internal.mkApplySymbol anywhereSymbol []
 
 attributesMapping :: [(SymbolOrAlias, Attribute.Symbol)]
 attributesMapping =
@@ -1198,7 +1215,7 @@ subsorts =
     ]
 
 builtinMap
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
     => [(TermLike Concrete, TermLike variable)]
     -> TermLike variable
 builtinMap child =
@@ -1211,7 +1228,7 @@ builtinMap child =
         }
 
 builtinList
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
     => [TermLike variable]
     -> TermLike variable
 builtinList child =
@@ -1224,7 +1241,7 @@ builtinList child =
         }
 
 builtinSet
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
     => [TermLike Concrete]
     -> TermLike variable
 builtinSet child =
@@ -1237,13 +1254,13 @@ builtinSet child =
         }
 
 builtinInt
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
     => Integer
     -> TermLike variable
 builtinInt = Builtin.Int.asInternal intSort
 
 builtinBool
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
     => Bool
     -> TermLike variable
 builtinBool = Builtin.Bool.asInternal boolSort

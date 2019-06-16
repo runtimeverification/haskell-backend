@@ -57,8 +57,8 @@ data Symbol =
     Symbol
         { symbolConstructor :: !Id
         , symbolParams      :: ![Sort]
-        , symbolAttributes  :: !Attribute.Symbol
         , symbolSorts       :: !ApplicationSorts
+        , symbolAttributes  :: !Attribute.Symbol
         }
     deriving (GHC.Generic, Show)
 
@@ -89,8 +89,7 @@ instance Debug Symbol
 
 instance Unparse Symbol where
     unparse Symbol { symbolConstructor, symbolParams } =
-        unparse symbolConstructor
-        <> parameters symbolParams
+        unparse symbolConstructor <> parameters symbolParams
 
     unparse2 Symbol { symbolConstructor } =
         unparse2 symbolConstructor

@@ -192,7 +192,7 @@ constructorAxiom sortName constructors =
     constructorAssertion (constructorName, argumentSorts) =
         foldr
             mkExists
-            (mkApplySymbol sort symbol (map mkVar argumentVariables))
+            (mkApplySymbol symbol (map mkVar argumentVariables))
             argumentVariables
       where
         argumentVariables :: [Variable]

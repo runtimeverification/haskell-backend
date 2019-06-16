@@ -76,7 +76,7 @@ test_substitutionNormalization =
         assertEqualWithExplanation ""
             (Left (NonCtorCircularVariableDependency [var1]))
             =<< runNormalizeSubstitution
-                [ ( var1 , mkApplySymbol Mock.testSort f [mkVar var1] ) ]
+                [ ( var1 , mkApplySymbol f [mkVar var1] ) ]
     , testCase "Length 2 cycle" $ do
         let
             var1 =  (v1 Mock.testSort)
@@ -102,7 +102,7 @@ test_substitutionNormalization =
         assertEqualWithExplanation ""
             (Left (NonCtorCircularVariableDependency [var1, varx1]))
             =<< runNormalizeSubstitution
-                [ (var1, mkApplySymbol Mock.testSort f [mkVar varx1])
+                [ (var1, mkApplySymbol f [mkVar varx1])
                 , (varx1, mkVar var1)
                 ]
     , testCase "Constructor cycle" $ do
