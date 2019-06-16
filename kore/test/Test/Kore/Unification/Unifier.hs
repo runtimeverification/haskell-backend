@@ -22,8 +22,7 @@ import           Data.Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.IndexedModule.MetadataTools hiding
-                 ( HeadType (..) )
+import           Kore.IndexedModule.MetadataTools
 import           Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern as Pattern

@@ -43,9 +43,7 @@ import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( HeadType, SmtMetadataTools )
-import qualified Kore.IndexedModule.MetadataTools as HeadType
-                 ( HeadType (..) )
+                 ( SmtMetadataTools )
 import           Kore.Internal.ApplicationSorts
                  ( ApplicationSorts )
 import           Kore.Internal.Symbol
@@ -910,10 +908,6 @@ symbols =
     , anywhereSymbol
     ]
 
-headTypeMapping :: [(SymbolOrAlias, HeadType)]
-headTypeMapping =
-    map (liftA2 (,) toSymbolOrAlias $ pure HeadType.Symbol) symbols
-
 sortAttributesMapping :: [(Sort, Attribute.Sort)]
 sortAttributesMapping =
     [   ( testSort
@@ -1272,14 +1266,12 @@ emptyMetadataTools =
         [] -- headTypeMapping
         [] -- sortAttributesMapping
         [] -- subsorts
-        [] -- headSortsMapping
         emptySmtDeclarations
 
 metadataTools :: SmtMetadataTools Attribute.Symbol
 metadataTools =
     Mock.makeMetadataTools
         attributesMapping
-        headTypeMapping
         sortAttributesMapping
         subsorts
         headSortsMapping

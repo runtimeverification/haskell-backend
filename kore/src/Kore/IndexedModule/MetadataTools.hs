@@ -9,8 +9,7 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.IndexedModule.MetadataTools
-    ( HeadType (..)
-    , MetadataTools (..)
+    ( MetadataTools (..)
     , SmtMetadataTools
     , extractMetadataTools
     ) where
