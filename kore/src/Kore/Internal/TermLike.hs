@@ -56,7 +56,6 @@ module Kore.Internal.TermLike
     , mkInhabitant
     , mkEvaluated
     , varS
-    , symS
     -- * Predicate constructors
     , mkBottom_
     , mkCeil_
@@ -1713,14 +1712,6 @@ varS x variableSort =
         , variableSort
         , variableCounter = mempty
         }
-
--- | Construct a symbol with a given name and input sorts
--- "mult" `symS` [s, s]
--- Since the return sort is only found in MetadataTools, this is
--- mostly useful for testing.
-symS :: Text -> [Sort] -> SymbolOrAlias
-symS x s =
-    SymbolOrAlias (noLocationId x) s
 
 {- | Construct an axiom declaration with the given parameters and pattern.
  -}
