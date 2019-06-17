@@ -18,25 +18,6 @@ import           Data.Functor.Foldable
                  ( Base, Corecursive, Recursive )
 import qualified Data.Functor.Foldable as Recursive
 
-import           Kore.Attribute.Pattern
-import           Kore.Attribute.Pattern.FreeVariables
-                 ( FreeVariables (..) )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import           Kore.Domain.Builtin
-                 ( builtinSort )
-import           Kore.Internal.TermLike
-                 ( Evaluated (..), TermLikeF (..) )
-import           Kore.Sort
-import           Kore.Syntax.DomainValue
-import           Kore.Syntax.Exists
-import           Kore.Syntax.Forall
-import           Kore.Syntax.Mu
-import           Kore.Syntax.Next
-import           Kore.Syntax.Not
-import           Kore.Syntax.Nu
-import           Kore.Syntax.SetVariable
-import           Kore.Syntax.Variable
-
 {- | @Synthetic@ is the class of synthetic attribute types @syn@.
 
 @Synthetic base syn@ allows synthesizing @syn@ given a @'Cofree' base@ tree;
@@ -46,27 +27,6 @@ that is, a 'Cofree' tree with branching described by a @'Functor' base@.
 class Functor base => Synthetic base syn where
     -- | @synthetic@ is the @base@-algebra for synthesizing the attribute @syn@.
     synthetic :: base syn -> syn
-
-instance
-    Ord variable =>
-    Synthetic (TermLikeF variable) (FreeVariables variable)
-  where
-    -- Not implemented
-    synthetic (ApplyAliasF _) = undefined
-    -- Binders
-    synthetic (ExistsF existsF) =
-        FreeVariables.delete existsVariable existsChild
-      where
-        Exists { existsVariable, existsChild } = existsF
-    synthetic (ForallF forallF) =
-        FreeVariables.delete forallVariable forallChild
-      where
-        Forall { forallVariable, forallChild } = forallF
-    synthetic (VariableF variableF) =
-        FreeVariables.singleton variableF
-    --
-    synthetic termLikeF = Foldable.fold termLikeF
-    {-# INLINE synthetic #-}
 
 {- | @/synthesize/@ attribute @b@ bottom-up along a tree @s@.
 

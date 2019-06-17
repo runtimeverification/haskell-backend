@@ -13,12 +13,15 @@ module Kore.Syntax.And
 import           Control.DeepSeq
                  ( NFData (..) )
 import qualified Data.Deriving as Deriving
+import qualified Data.Foldable as Foldable
 import           Data.Functor.Classes
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
@@ -73,3 +76,7 @@ instance Unparse child => Unparse (And Sort child) where
             , unparse2 andFirst
             , unparse2 andSecond
             ])
+
+instance Ord variable => Synthetic (And sort) (FreeVariables variable) where
+    synthetic = Foldable.fold
+    {-# INLINE synthetic #-}

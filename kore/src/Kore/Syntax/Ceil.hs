@@ -18,6 +18,8 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
@@ -61,3 +63,7 @@ instance Unparse child => Unparse (Ceil Sort child) where
 
     unparse2 Ceil { ceilChild } =
         Pretty.parens (Pretty.fillSep ["\\ceil", unparse2 ceilChild])
+
+instance Ord variable => Synthetic (Ceil sort) (FreeVariables variable) where
+    synthetic = ceilChild
+    {-# INLINE synthetic #-}

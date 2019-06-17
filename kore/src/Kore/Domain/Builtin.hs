@@ -62,6 +62,8 @@ import qualified GHC.Generics as GHC
 
 import Control.Lens.TH.Rules
        ( makeLenses )
+import Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Domain.Class
 import Kore.Internal.Symbol

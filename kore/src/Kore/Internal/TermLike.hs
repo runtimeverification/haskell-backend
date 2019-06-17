@@ -176,6 +176,7 @@ import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import           Kore.Attribute.Synthetic
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Domain.Class
 import           Kore.Error
@@ -244,6 +245,10 @@ instance Unparse child => Unparse (Evaluated child) where
     unparse2 evaluated =
         Pretty.vsep ["/* evaluated: */", Unparser.unparse2Generic evaluated]
 
+instance Synthetic Evaluated syn where
+    synthetic = getEvaluated
+    {-# INLINE synthetic #-}
+
 -- | The type of internal domain values.
 type Builtin = Domain.Builtin (TermLike Concrete)
 
@@ -310,6 +315,45 @@ instance
   where
     unparse = Unparser.unparseGeneric
     unparse2 = Unparser.unparse2Generic
+
+instance
+    Ord variable =>
+    Synthetic (TermLikeF variable) (FreeVariables variable)
+  where
+    -- TODO (thomas.tuegel): Use SOP.Generic here, after making the children
+    -- Functors.
+    synthetic (ForallF forallF) = synthetic forallF
+    synthetic (ExistsF existsF) = synthetic existsF
+    synthetic (VariableF variable) = FreeVariables.singleton variable
+
+    synthetic (AndF andF) = synthetic andF
+    synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
+    synthetic (ApplyAliasF _) = undefined
+    synthetic (BottomF bottomF) = synthetic bottomF
+    synthetic (CeilF ceilF) = synthetic ceilF
+    synthetic (DomainValueF domainValueF) = synthetic domainValueF
+    synthetic (EqualsF equalsF) = synthetic equalsF
+    synthetic (FloorF floorF) = synthetic floorF
+    synthetic (IffF iffF) = synthetic iffF
+    synthetic (ImpliesF impliesF) = synthetic impliesF
+    synthetic (InF inF) = synthetic inF
+    synthetic (NextF nextF) = synthetic nextF
+    synthetic (NotF notF) = synthetic notF
+    synthetic (OrF orF) = synthetic orF
+    synthetic (RewritesF rewritesF) = synthetic rewritesF
+    synthetic (TopF topF) = synthetic topF
+    synthetic (BuiltinF builtinF) = Foldable.fold builtinF
+    synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
+
+    synthetic (StringLiteralF _) = mempty
+    synthetic (CharLiteralF _) = mempty
+    synthetic (InhabitantF _) = mempty
+
+    -- TODO (thomas.tuegel): Track free set variables.
+    synthetic (MuF muF) = synthetic muF
+    synthetic (NuF nuF) = synthetic nuF
+    synthetic (SetVariableF _) = mempty
+    {-# INLINE synthetic #-}
 
 {- | Use the provided mapping to replace all variables in a 'TermLikeF' head.
 
