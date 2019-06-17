@@ -42,9 +42,6 @@ import           GHC.Stack
 
 import           Kore.AST.Error
                  ( koreFailWithLocations )
-import           Kore.ASTHelpers as AST
-import           Kore.ASTHelpers
-                 ( ApplicationSorts (..) )
 import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Error
 import           Kore.IndexedModule.Error
@@ -52,6 +49,7 @@ import           Kore.IndexedModule.Error
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), getIndexedSentence,
                  indexedModulesInScope )
+import           Kore.Internal.ApplicationSorts
 import           Kore.Syntax
 import           Kore.Syntax.Definition hiding
                  ( Alias (..), Symbol (..) )

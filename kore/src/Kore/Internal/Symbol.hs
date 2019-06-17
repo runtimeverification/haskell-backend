@@ -11,6 +11,7 @@ module Kore.Internal.Symbol
     , lensSymbolConstructor
     , lensSymbolParams
     , lensSymbolAttributes
+    , lensSymbolSorts
     , toSymbolOrAlias
     , isNonSimplifiable
     , isConstructor
@@ -20,26 +21,44 @@ module Kore.Internal.Symbol
     , isTotal
     , isInjective
     , symbolHook
+    , constructor
+    , functional
+    , function
+    , injective
+    , sortInjection
+    , smthook
+    , hook
+    , coerceSortInjection
+    -- * Re-exports
+    , module Kore.Internal.ApplicationSorts
     ) where
 
 import           Control.DeepSeq
+import qualified Control.Lens as Lens hiding
+                 ( makeLenses )
 import qualified Data.Function as Function
 import           Data.Hashable
+import           Data.Text
+                 ( Text )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import qualified Control.Lens.TH.Rules as Lens
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Debug
+import           Kore.Internal.ApplicationSorts
 import           Kore.Sort
 import           Kore.Syntax.Application
                  ( SymbolOrAlias (..) )
 import           Kore.Unparser
+import           SMT.AST
+                 ( SExpr )
 
 data Symbol =
     Symbol
         { symbolConstructor :: !Id
         , symbolParams      :: ![Sort]
+        , symbolSorts       :: !ApplicationSorts
         , symbolAttributes  :: !Attribute.Symbol
         }
     deriving (GHC.Generic, Show)
@@ -71,8 +90,7 @@ instance Debug Symbol
 
 instance Unparse Symbol where
     unparse Symbol { symbolConstructor, symbolParams } =
-        unparse symbolConstructor
-        <> parameters symbolParams
+        unparse symbolConstructor <> parameters symbolParams
 
     unparse2 Symbol { symbolConstructor } =
         unparse2 symbolConstructor
@@ -123,3 +141,65 @@ isTotal = Attribute.isTotal . symbolAttributes
 
 symbolHook :: Symbol -> Attribute.Hook
 symbolHook = Attribute.hook . symbolAttributes
+
+constructor :: Symbol -> Symbol
+constructor =
+    Lens.set
+        (lensSymbolAttributes . Attribute.lensConstructor)
+        Attribute.Constructor { isConstructor = True }
+
+functional :: Symbol -> Symbol
+functional =
+    Lens.set
+        (lensSymbolAttributes . Attribute.lensFunctional)
+        Attribute.Functional { isDeclaredFunctional = True }
+
+function :: Symbol -> Symbol
+function =
+    Lens.set
+        (lensSymbolAttributes . Attribute.lensFunction)
+        Attribute.Function { isDeclaredFunction = True }
+
+injective :: Symbol -> Symbol
+injective =
+    Lens.set
+        (lensSymbolAttributes . Attribute.lensInjective)
+        Attribute.Injective { isDeclaredInjective = True }
+
+sortInjection :: Symbol -> Symbol
+sortInjection =
+    Lens.set
+        (lensSymbolAttributes . Attribute.lensSortInjection)
+        Attribute.SortInjection { isSortInjection = True }
+
+smthook :: SExpr -> Symbol -> Symbol
+smthook sExpr =
+    Lens.set
+        (lensSymbolAttributes . Attribute.lensSmthook)
+        Attribute.Smthook { getSmthook = Just sExpr }
+
+hook :: Text -> Symbol -> Symbol
+hook name =
+    Lens.set
+        (lensSymbolAttributes . Attribute.lensHook)
+        Attribute.Hook { getHook = Just name }
+
+{- | Coerce a sort injection symbol's source and target sorts.
+
+Use @coerceSortInjection@ to update the internal representation of a sort
+injection 'Symbol' when evaluating or simplifying sort injections.
+
+ -}
+coerceSortInjection
+    :: Symbol
+    -- ^ Original sort injection symbol
+    -> Sort
+    -- ^ New source sort
+    -> Sort
+    -- ^ New target sort
+    -> Symbol
+coerceSortInjection injectionSymbol sourceSort targetSort =
+    injectionSymbol
+        { symbolParams = [sourceSort, targetSort]
+        , symbolSorts = applicationSorts [sourceSort] targetSort
+        }

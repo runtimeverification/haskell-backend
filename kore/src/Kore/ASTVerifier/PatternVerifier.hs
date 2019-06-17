@@ -51,7 +51,6 @@ import           Data.Text.Prettyprint.Doc.Render.String
 
 import qualified Control.Lens.TH.Rules as Lens
 import           Kore.AST.Error
-import           Kore.ASTHelpers
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.SortVerifier
 import qualified Kore.Attribute.Null as Attribute
@@ -63,6 +62,7 @@ import           Kore.IndexedModule.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
 import qualified Kore.Internal.Alias as Internal
+import           Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.Symbol as Internal
 import           Kore.Internal.TermLike
                  ( TermLike )
@@ -152,37 +152,41 @@ lookupSortDeclaration sortId = do
 
 lookupAlias
     ::  SymbolOrAlias
-    ->  MaybeT PatternVerifier (Internal.Alias, ApplicationSorts)
+    ->  MaybeT PatternVerifier Internal.Alias
 lookupAlias symbolOrAlias = do
     Context { indexedModule } <- Reader.ask
     let resolveAlias' = resolveAlias indexedModule aliasConstructor
     (_, decl) <- resolveAlias' `catchError` const empty
-    let alias =
-            Internal.Alias
-                { aliasConstructor
-                , aliasParams
-                }
-    sorts <- Trans.lift $ applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
-    return (alias, sorts)
+    aliasSorts <-
+        Trans.lift
+        $ applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
+    return Internal.Alias
+        { aliasConstructor
+        , aliasParams
+        , aliasSorts
+        }
   where
     aliasConstructor = symbolOrAliasConstructor symbolOrAlias
     aliasParams = symbolOrAliasParams symbolOrAlias
 
 lookupSymbol
     ::  SymbolOrAlias
-    ->  MaybeT PatternVerifier (Internal.Symbol, ApplicationSorts)
+    ->  MaybeT PatternVerifier Internal.Symbol
 lookupSymbol symbolOrAlias = do
     Context { indexedModule } <- Reader.ask
     let resolveSymbol' = resolveSymbol indexedModule symbolConstructor
-    (attrs, decl) <- resolveSymbol' `catchError` const empty
+    (symbolAttributes, decl) <- resolveSymbol' `catchError` const empty
+    symbolSorts <-
+        Trans.lift
+        $ applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
     let symbol =
             Internal.Symbol
                 { symbolConstructor
                 , symbolParams
-                , symbolAttributes = attrs
+                , symbolAttributes
+                , symbolSorts
                 }
-    sorts <- Trans.lift $ applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
-    return (symbol, sorts)
+    return symbol
   where
     symbolConstructor = symbolOrAliasConstructor symbolOrAlias
     symbolParams = symbolOrAliasParams symbolOrAlias
@@ -589,8 +593,9 @@ verifyApplyAlias
                 child
             )
 verifyApplyAlias getChildAttributes application =
-    lookupAlias symbolOrAlias >>= \(alias, sorts) -> Trans.lift $ do
+    lookupAlias symbolOrAlias >>= \alias -> Trans.lift $ do
     let verified = application { applicationSymbolOrAlias = alias }
+        sorts = Internal.aliasSorts alias
     verifyApplicationChildren getChildAttributes verified sorts
   where
     Application { applicationSymbolOrAlias = symbolOrAlias } = application
@@ -605,8 +610,9 @@ verifyApplySymbol
                 child
             )
 verifyApplySymbol getChildAttributes application =
-    lookupSymbol symbolOrAlias >>= \(symbol, sorts) -> Trans.lift $ do
+    lookupSymbol symbolOrAlias >>= \symbol -> Trans.lift $ do
     let verified = application { applicationSymbolOrAlias = symbol }
+        sorts = Internal.symbolSorts symbol
     verifyApplicationChildren getChildAttributes verified sorts
   where
     Application { applicationSymbolOrAlias = symbolOrAlias } = application

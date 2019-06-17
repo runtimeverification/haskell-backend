@@ -149,6 +149,7 @@ import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import qualified Data.Deriving as Deriving
 import qualified Data.Foldable as Foldable
+import           Data.Function
 import           Data.Functor.Classes
 import           Data.Functor.Compose
                  ( Compose (..) )
@@ -171,12 +172,12 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Data.These
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import           GHC.Stack
-                 ( HasCallStack )
+import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Domain.Class
+import           Kore.Error
 import           Kore.Internal.Alias
 import           Kore.Internal.Symbol
 import           Kore.Sort
@@ -827,14 +828,15 @@ termLikeSort = Attribute.patternSort . extractAttributes
 
 -- | Attempts to modify p to have sort s.
 forceSort
-    :: (SortedVariable variable, Unparse variable, HasCallStack)
+    :: (SortedVariable variable, Unparse variable, GHC.HasCallStack)
     => Sort
     -> TermLike variable
     -> TermLike variable
 forceSort forcedSort = Recursive.apo forceSortWorker
   where
     forceSortWorker original@(Recursive.project -> attrs :< pattern') =
-        (attrs { Attribute.patternSort = forcedSort } :<)
+        (:<)
+            (attrs { Attribute.patternSort = forcedSort })
             (case attrs of
                 Attribute.Pattern { patternSort = sort }
                   | sort == forcedSort    -> Left <$> pattern'
@@ -921,7 +923,7 @@ same sort.
 
  -}
 makeSortsAgree
-    :: (SortedVariable variable, Unparse variable, HasCallStack)
+    :: (SortedVariable variable, Unparse variable, GHC.HasCallStack)
     => (TermLike variable -> TermLike variable -> Sort -> a)
     -> TermLike variable
     -> TermLike variable
@@ -950,7 +952,7 @@ mkAnd
     ::  ( Ord variable
         , SortedVariable variable
         , Unparse variable
-        , HasCallStack
+        , GHC.HasCallStack
         )
     => TermLike variable
     -> TermLike variable
@@ -969,6 +971,35 @@ mkAnd = makeSortsAgree mkAndWorker
         freeVariables1 = freeVariables andFirst
         freeVariables2 = freeVariables andSecond
 
+{- | Force the 'TermLike's to conform to their 'Sort's.
+
+It is an error if the lists are not the same length, or if any 'TermLike' cannot
+be coerced to its corresponding 'Sort'.
+
+See also: 'forceSort'
+
+ -}
+forceSorts
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
+    => [Sort]
+    -> [TermLike variable]
+    -> [TermLike variable]
+forceSorts operandSorts children =
+    alignWith forceTheseSorts operandSorts children
+  where
+    forceTheseSorts (This _) =
+        (error . show . Pretty.vsep) ("Too few arguments:" : expected)
+    forceTheseSorts (That _) =
+        (error . show . Pretty.vsep) ("Too many arguments:" : expected)
+    forceTheseSorts (These sort termLike) = forceSort sort termLike
+    expected =
+        [ "Expected:"
+        , Pretty.indent 4 (Unparser.arguments operandSorts)
+        , "but found:"
+        , Pretty.indent 4 (Unparser.arguments children)
+        ]
+
 {- | Construct an 'Application' pattern.
 
 The result sort of the 'Alias' must be provided. The sorts of arguments
@@ -978,25 +1009,30 @@ these shortcomings.
 See also: 'applyAlias', 'applySymbol'
 
  -}
--- TODO: Should this check for sort agreement?
 mkApplyAlias
-    :: Ord variable
-    => Sort
-    -- ^ Result sort
-    -> Alias
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
+    => Alias
     -- ^ Application symbol or alias
     -> [TermLike variable]
     -- ^ Application arguments
     -> TermLike variable
-mkApplyAlias resultSort applicationSymbolOrAlias applicationChildren =
+mkApplyAlias alias children =
     Recursive.embed (attrs :< ApplyAliasF application)
   where
     attrs =
         Attribute.Pattern
             { patternSort = resultSort
-            , freeVariables = Set.unions (freeVariables <$> applicationChildren)
+            , freeVariables = Set.unions (freeVariables <$> children)
             }
-    application = Application { applicationSymbolOrAlias, applicationChildren }
+    application =
+        Application
+            { applicationSymbolOrAlias = alias
+            , applicationChildren = forceSorts operandSorts children
+            }
+    Alias { aliasSorts } = alias
+    operandSorts = applicationSortsOperands aliasSorts
+    resultSort = applicationSortsResult aliasSorts
 
 {- | Construct an 'Application' pattern.
 
@@ -1007,25 +1043,30 @@ these shortcomings.
 See also: 'applyAlias', 'applySymbol'
 
  -}
--- TODO: Should this check for sort agreement?
 mkApplySymbol
-    :: Ord variable
-    => Sort
-    -- ^ Result sort
-    -> Symbol
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
+    => Symbol
     -- ^ Application symbol or alias
     -> [TermLike variable]
     -- ^ Application arguments
     -> TermLike variable
-mkApplySymbol resultSort applicationSymbolOrAlias applicationChildren =
+mkApplySymbol symbol children =
     Recursive.embed (attrs :< ApplySymbolF application)
   where
     attrs =
         Attribute.Pattern
             { patternSort = resultSort
-            , freeVariables = Set.unions (freeVariables <$> applicationChildren)
+            , freeVariables = Set.unions (freeVariables <$> children)
             }
-    application = Application { applicationSymbolOrAlias, applicationChildren }
+    application =
+        Application
+            { applicationSymbolOrAlias = symbol
+            , applicationChildren = forceSorts operandSorts children
+            }
+    Symbol { symbolSorts } = symbol
+    operandSorts = applicationSortsOperands symbolSorts
+    resultSort = applicationSortsResult symbolSorts
 
 {- | The 'Sort' substitution from applying the given sort parameters.
  -}
@@ -1058,7 +1099,8 @@ See also: 'mkApplyAlias', 'applyAlias_', 'applySymbol', 'mkAlias'
 
  -}
 applyAlias
-    :: (Ord variable, SortedVariable variable, Unparse variable, HasCallStack)
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => SentenceAlias (TermLike variable)
     -- ^ 'Alias' declaration
     -> [Sort]
@@ -1067,25 +1109,23 @@ applyAlias
     -- ^ 'Application' arguments
     -> TermLike variable
 applyAlias sentence params children =
-    mkApplyAlias
-        resultSort'
-        internal
-        children'
+    mkApplyAlias internal children'
   where
     SentenceAlias { sentenceAliasAlias = external } = sentence
-    SentenceAlias { sentenceAliasResultSort } = sentence
     Syntax.Alias { aliasConstructor } = external
     Syntax.Alias { aliasParams } = external
     internal =
         Alias
             { aliasConstructor
             , aliasParams = params
+            , aliasSorts =
+                symbolOrAliasSorts params sentence
+                & assertRight
             }
     substitution = sortSubstitution aliasParams params
     childSorts = substituteSortVariables substitution <$> sentenceAliasSorts
       where
         SentenceAlias { sentenceAliasSorts } = sentence
-    resultSort' = substituteSortVariables substitution sentenceAliasResultSort
     children' = alignWith forceChildSort childSorts children
       where
         forceChildSort =
@@ -1115,7 +1155,7 @@ applyAlias_
     ::  ( Ord variable
         , SortedVariable variable
         , Unparse variable
-        , HasCallStack
+        , GHC.HasCallStack
         )
     => SentenceAlias (TermLike variable)
     -> [TermLike variable]
@@ -1130,7 +1170,8 @@ See also: 'mkApp', 'applySymbol_', 'mkSymbol'
 
  -}
 applySymbol
-    :: (Ord variable, SortedVariable variable, Unparse variable, HasCallStack)
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => SentenceSymbol pattern''
     -- ^ 'Symbol' declaration
     -> [Sort]
@@ -1139,40 +1180,19 @@ applySymbol
     -- ^ 'Application' arguments
     -> TermLike variable
 applySymbol sentence params children =
-    mkApplySymbol resultSort' internal children'
+    mkApplySymbol internal children
   where
     SentenceSymbol { sentenceSymbolSymbol = external } = sentence
-    SentenceSymbol { sentenceSymbolResultSort } = sentence
     Syntax.Symbol { symbolConstructor } = external
-    Syntax.Symbol { symbolParams } = external
     internal =
         Symbol
             { symbolConstructor
             , symbolParams = params
             , symbolAttributes = Default.def
+            , symbolSorts =
+                symbolOrAliasSorts params sentence
+                & assertRight
             }
-    substitution = sortSubstitution symbolParams params
-    resultSort' = substituteSortVariables substitution sentenceSymbolResultSort
-    childSorts = substituteSortVariables substitution <$> sentenceSymbolSorts
-      where
-        SentenceSymbol { sentenceSymbolSorts } = sentence
-    children' = alignWith forceChildSort childSorts children
-      where
-        forceChildSort =
-            \case
-                These sort pattern' -> forceSort sort pattern'
-                This _ ->
-                    (error . show . Pretty.vsep)
-                        ("Too few parameters:" : expected)
-                That _ ->
-                    (error . show . Pretty.vsep)
-                        ("Too many parameters:" : expected)
-        expected =
-            [ "Expected:"
-            , Pretty.indent 4 (Unparser.arguments childSorts)
-            , "but found:"
-            , Pretty.indent 4 (Unparser.arguments children)
-            ]
 
 {- | Construct an 'Application' pattern from a 'Symbol' declaration.
 
@@ -1182,7 +1202,8 @@ See also: 'mkApplySymbol', 'applySymbol'
 
  -}
 applySymbol_
-    :: (Ord variable, SortedVariable variable, Unparse variable, HasCallStack)
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => SentenceSymbol pattern''
     -> [TermLike variable]
     -> TermLike variable
@@ -1282,7 +1303,8 @@ See also: 'mkEquals_'
 
  -}
 mkEquals
-    :: (Ord variable, SortedVariable variable, Unparse variable, HasCallStack)
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => Sort
     -> TermLike variable
     -> TermLike variable
@@ -1320,7 +1342,7 @@ mkEquals_
     ::  ( Ord variable
         , SortedVariable variable
         , Unparse variable
-        , HasCallStack
+        , GHC.HasCallStack
         )
     => TermLike variable
     -> TermLike variable
@@ -1400,7 +1422,8 @@ mkForall forallVariable forallChild =
 {- | Construct an 'Iff' pattern.
  -}
 mkIff
-    :: (Ord variable, SortedVariable variable, Unparse variable, HasCallStack)
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -1421,7 +1444,8 @@ mkIff = makeSortsAgree mkIffWorker
 {- | Construct an 'Implies' pattern.
  -}
 mkImplies
-    :: (Ord variable, SortedVariable variable, Unparse variable, HasCallStack)
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -1445,7 +1469,8 @@ See also: 'mkIn_'
 
  -}
 mkIn
-    :: (Ord variable, SortedVariable variable, Unparse variable, HasCallStack)
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => Sort
     -> TermLike variable
     -> TermLike variable
@@ -1479,7 +1504,8 @@ See also: 'mkIn'
 
  -}
 mkIn_
-    :: (Ord variable, SortedVariable variable, Unparse variable, HasCallStack)
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -1564,7 +1590,8 @@ mkNu nuVar = makeSortsAgree mkNuWorker (mkSetVar nuVar)
 {- | Construct an 'Or' pattern.
  -}
 mkOr
-    :: (Ord variable, SortedVariable variable, Unparse variable, HasCallStack)
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -1585,7 +1612,8 @@ mkOr = makeSortsAgree mkOrWorker
 {- | Construct a 'Rewrites' pattern.
  -}
 mkRewrites
-    :: (Ord variable, SortedVariable variable, Unparse variable, HasCallStack)
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable

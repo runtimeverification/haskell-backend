@@ -1,12 +1,14 @@
-module Test.Kore.ASTHelpers (test_symbolOrAliasSorts) where
+module Test.Kore.Internal.ApplicationSorts
+    ( test_symbolOrAliasSorts
+    ) where
 
 import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import Kore.ASTHelpers
 import Kore.Error
+import Kore.Internal.ApplicationSorts
 import Kore.Syntax
 import Kore.Syntax.Definition
 
@@ -14,55 +16,40 @@ import Test.Kore
 
 test_symbolOrAliasSorts :: [TestTree]
 test_symbolOrAliasSorts =
-    [ testCase "simple result sort"
-        (assertEqual "Expecting success"
-            (applicationSorts [] simpleSortActual)
-            (symbolOrAliasSorts
-                []
-                (symbolSentence [] [] simpleSortActual)
-            )
+    [ success "simple result sort"
+        (applicationSorts [] simpleSortActual)
+        (symbolOrAliasSorts [] (symbolSentence [] [] simpleSortActual))
+    , success "parameterized result sort"
+        (applicationSorts [] simpleSortActual)
+        (symbolOrAliasSorts
+            [simpleSortActual]
+            (symbolSentence [sortVariable'] [] sortVariableSort')
         )
-    , testCase "parameterized result sort"
-        (assertEqual "Expecting success"
-            (applicationSorts [] simpleSortActual)
-            (symbolOrAliasSorts
-                [simpleSortActual]
-                (symbolSentence [sortVariable'] [] sortVariableSort')
-            )
+    , success "complex parameterized result sort"
+        (applicationSorts [] complexSortActualSort)
+        (symbolOrAliasSorts
+            [simpleSortActual]
+            (symbolSentence [sortVariable'] [] complexSortActualParam)
         )
-    , testCase "complex parameterized result sort"
-        (assertEqual "Expecting success"
-            (applicationSorts [] complexSortActualSort)
-            (symbolOrAliasSorts
-                [simpleSortActual]
-                (symbolSentence [sortVariable'] [] complexSortActualParam)
-            )
+    , success "simple argument sort"
+        (applicationSorts [simpleSortActual] simpleSortActual)
+        (symbolOrAliasSorts
+            []
+            (symbolSentence [] [simpleSortActual] simpleSortActual)
         )
-    , testCase "simple argument sort"
-        (assertEqual "Expecting success"
-            (applicationSorts [simpleSortActual] simpleSortActual)
-            (symbolOrAliasSorts
-                []
-                (symbolSentence [] [simpleSortActual] simpleSortActual)
-            )
+    , success "parameterized argument sort"
+        (applicationSorts [simpleSortActual] simpleSortActual)
+        (symbolOrAliasSorts
+            [simpleSortActual]
+            (symbolSentence
+                [sortVariable'] [sortVariableSort'] simpleSortActual)
         )
-    , testCase "parameterized argument sort"
-        (assertEqual "Expecting success"
-            (applicationSorts [simpleSortActual] simpleSortActual)
-            (symbolOrAliasSorts
-                [simpleSortActual]
-                (symbolSentence
-                    [sortVariable'] [sortVariableSort'] simpleSortActual)
-            )
-        )
-    , testCase "complex argument sort"
-        (assertEqual "Expecting success"
-            (applicationSorts [complexSortActualSort] simpleSortActual)
-            (symbolOrAliasSorts
-                [simpleSortActual]
-                (symbolSentence
-                    [sortVariable'] [complexSortActualParam] simpleSortActual)
-            )
+    , success "complex argument sort"
+        (applicationSorts [complexSortActualSort] simpleSortActual)
+        (symbolOrAliasSorts
+            [simpleSortActual]
+            (symbolSentence
+                [sortVariable'] [complexSortActualParam] simpleSortActual)
         )
     , testCase "sort variable not found"
         (assertEqual "Expecting error"
@@ -102,13 +89,8 @@ test_symbolOrAliasSorts =
     sortVariableSort' = sortVariableSort "sv"
     complexSortActualParam = sortActual "sa" [sortVariableSort']
     complexSortActualSort = sortActual "sa" [simpleSortActual]
-
-applicationSorts :: [Sort] -> Sort -> Either b ApplicationSorts
-applicationSorts operandSorts resultSort =
-    Right ApplicationSorts
-        { applicationSortsOperands = operandSorts
-        , applicationSortsResult = resultSort
-        }
+    success name expect actual =
+        testCase name $ assertEqual "Expecting success" (Right expect) actual
 
 symbolSentence
     :: [SortVariable]

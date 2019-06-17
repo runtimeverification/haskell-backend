@@ -262,11 +262,11 @@ test_applicationSimplification =
         ]
     ]
   where
-    fOfA, fOfB :: Ord variable => TermLike variable
+    fOfA, fOfB, gOfA, gOfB
+        :: (Ord variable, SortedVariable variable, Unparse variable)
+        => TermLike variable
     fOfA = Mock.f Mock.a
     fOfB = Mock.f Mock.b
-
-    gOfA, gOfB :: Ord variable => TermLike variable
     gOfA = Mock.g Mock.a
     gOfB = Mock.g Mock.b
 
@@ -291,7 +291,9 @@ test_applicationSimplification =
         , substitution = mempty
         }
 
-    gOfAExpanded :: Ord variable => Pattern variable
+    gOfAExpanded
+        :: (Ord variable, SortedVariable variable, Unparse variable)
+        => Pattern variable
     gOfAExpanded = Conditional
         { term = gOfA
         , predicate = makeTruePredicate

@@ -51,7 +51,7 @@ testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         let expect = asPattern $ impl a
-        actual <- evaluateT $ mkApplySymbol intSort symb (asInternal <$> [a])
+        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a])
         (===) expect actual
   where
     Just name = Attribute.getHook . Attribute.hook $ symbolAttributes symb
@@ -68,7 +68,7 @@ testBinary symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = asPattern $ impl a b
-        actual <- evaluateT $ mkApplySymbol intSort symb (asInternal <$> [a, b])
+        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
   where
     Just name = Attribute.getHook . Attribute.hook $ symbolAttributes symb
@@ -85,7 +85,7 @@ testComparison symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = Test.Bool.asPattern $ impl a b
-        actual <- evaluateT $ mkApplySymbol boolSort symb (asInternal <$> [a, b])
+        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
   where
     Just name = Attribute.getHook . Attribute.hook $ symbolAttributes symb
@@ -101,7 +101,7 @@ testPartialUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         let expect = asPartialPattern $ impl a
-        actual <- evaluateT $ mkApplySymbol intSort symb (asInternal <$> [a])
+        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a])
         (===) expect actual
   where
     Just name = Attribute.getHook . Attribute.hook $ symbolAttributes symb
@@ -118,7 +118,7 @@ testPartialBinary symb impl =
         a <- forAll genInteger
         b <- forAll genInteger
         let expect = asPartialPattern $ impl a b
-        actual <- evaluateT $ mkApplySymbol intSort symb (asInternal <$> [a, b])
+        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
   where
     Just name = Attribute.getHook . Attribute.hook $ symbolAttributes symb
@@ -135,7 +135,7 @@ testPartialBinaryZero symb impl =
     testPropertyWithSolver (Text.unpack name ++ " zero") $ do
         a <- forAll genInteger
         let expect = asPartialPattern $ impl a 0
-        actual <- evaluateT $ mkApplySymbol intSort symb (asInternal <$> [a, 0])
+        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, 0])
         (===) expect actual
   where
     Just name = Attribute.getHook . Attribute.hook $ symbolAttributes symb
@@ -153,7 +153,7 @@ testPartialTernary symb impl =
         b <- forAll genInteger
         c <- forAll genInteger
         let expect = asPartialPattern $ impl a b c
-        actual <- evaluateT $ mkApplySymbol intSort symb (asInternal <$> [a, b, c])
+        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b, c])
         (===) expect actual
   where
     Just name = Attribute.getHook . Attribute.hook $ symbolAttributes symb
@@ -322,7 +322,7 @@ testInt
     -> [TermLike Variable]
     -> Pattern Variable
     -> TestTree
-testInt name = testSymbolWithSolver evaluate name intSort
+testInt name = testSymbolWithSolver evaluate name
 
 -- | "\equal"ed internal Integers that are not equal
 test_unifyEqual_NotEqual :: TestTree
@@ -372,7 +372,7 @@ test_unifyAnd_Fn =
     testPropertyWithSolver "unifyAnd BuiltinInteger: Equal" $ do
         var <- forAll (standaloneGen $ variableGen intSort)
         let dv = asInternal 2
-            fnPat = mkApplySymbol intSort absIntSymbol  [mkVar var]
+            fnPat = mkApplySymbol absIntSymbol  [mkVar var]
             expect =
                 Conditional
                     { term = dv

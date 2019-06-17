@@ -37,7 +37,7 @@ testComparison name impl symb =
         a <- forAll genString
         b <- forAll genString
         let expect = Test.Bool.asPattern (impl a b)
-        actual <- evaluateT $ mkApplySymbol boolSort symb (asInternal <$> [a, b])
+        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
 
 test_lt :: TestTree
@@ -333,4 +333,4 @@ testString
     -> [TermLike Variable]
     -> Pattern Variable
     -> TestTree
-testString name = testSymbolWithSolver evaluate name stringSort
+testString name = testSymbolWithSolver evaluate name

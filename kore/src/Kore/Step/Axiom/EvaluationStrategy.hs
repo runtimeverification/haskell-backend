@@ -197,10 +197,10 @@ evaluateBuiltin
         AttemptedAxiom.NotApplicable
           | isPattConcrete
           , App_ appHead children <- patt
-          , Just hook <- Text.unpack <$> Attribute.getHook (symbolHook appHead)
+          , Just hook_ <- Text.unpack <$> Attribute.getHook (symbolHook appHead)
           , all isValue children ->
             error
-                (   "Expecting hook " ++ hook
+                (   "Expecting hook " ++ hook_
                ++  " to reduce concrete pattern\n\t"
                 ++ show patt
                 )

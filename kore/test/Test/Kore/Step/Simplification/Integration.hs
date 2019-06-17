@@ -393,30 +393,28 @@ test_substitute =
 test_substituteMap :: [TestTree]
 test_substituteMap =
     [ testCase "Substitution applied to Map elements" $ do
-        let expect =
+        let testMapX =
+                Mock.sortInjection Mock.testSort
+                $ mkDomainBuiltinMap [(Mock.a, mkVar Mock.x)]
+            testMapA =
+                Mock.sortInjection Mock.testSort
+                $ mkDomainBuiltinMap [(Mock.a, Mock.a)]
+            expect =
                 OrPattern.fromPatterns
                     [ Pattern.Conditional
-                        { term =
-                            Mock.functionalConstr20
-                                Mock.a
-                                (mkDomainBuiltinMap [(Mock.a, mkVar Mock.x)])
+                        { term = Mock.functionalConstr20 Mock.a testMapX
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [ (Mock.x, Mock.a)
-                            , (Mock.y, mkDomainBuiltinMap [(Mock.a, Mock.a)])
+                            , (Mock.y, testMapA)
                             ]
                         }
                     ]
         actual <-
-            evaluate
-                (Pattern.fromTermLike
-                    (mkAnd
-                        (Mock.functionalConstr20
-                            (mkVar Mock.x)
-                            (mkDomainBuiltinMap [(Mock.a, mkVar Mock.x)])
-                        )
-                        (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
-                    )
+            (evaluate . Pattern.fromTermLike)
+                (mkAnd
+                    (Mock.functionalConstr20 (mkVar Mock.x) testMapX)
+                    (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
                 )
         assertEqualWithExplanation
             "Expected substitution applied to Map elements"
@@ -429,30 +427,28 @@ test_substituteMap =
 test_substituteList :: [TestTree]
 test_substituteList =
     [ testCase "Substitution applied to List elements" $ do
-        let expect =
+        let testListX =
+                Mock.sortInjection Mock.testSort
+                $ mkDomainBuiltinList [Mock.a, mkVar Mock.x]
+            testListA =
+                Mock.sortInjection Mock.testSort
+                $ mkDomainBuiltinList [Mock.a, Mock.a]
+            expect =
                 OrPattern.fromPatterns
                     [ Pattern.Conditional
-                        { term =
-                            Mock.functionalConstr20
-                                Mock.a
-                                (mkDomainBuiltinList [Mock.a, mkVar Mock.x])
+                        { term = Mock.functionalConstr20 Mock.a testListX
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [ (Mock.x, Mock.a)
-                            , (Mock.y, mkDomainBuiltinList [Mock.a, Mock.a])
+                            , (Mock.y, testListA)
                             ]
                         }
                     ]
         actual <-
-            evaluate
-                ( Pattern.fromTermLike
-                    (mkAnd
-                        (Mock.functionalConstr20
-                            (mkVar Mock.x)
-                            (mkDomainBuiltinList [Mock.a, mkVar Mock.x])
-                        )
-                        (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
-                    )
+            (evaluate . Pattern.fromTermLike)
+                (mkAnd
+                    (Mock.functionalConstr20 (mkVar Mock.x) testListX)
+                    (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
                 )
         assertEqualWithExplanation
             "Expected substitution applied to List elements"
