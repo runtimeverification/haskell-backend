@@ -39,100 +39,34 @@ import           Kore.Syntax.Variable
 
 {- | @Synthetic@ is the class of synthetic attribute types @syn@.
 
-@Synthetic base inh syn@ allows synthesizing @syn@ given a @'Cofree' base inh@
-tree; that is, a 'Cofree' tree with branching described by a @'Functor' base@
-with attributes @inh@ at its nodes.
+@Synthetic base syn@ allows synthesizing @syn@ given a @'Cofree' base@ tree;
+that is, a 'Cofree' tree with branching described by a @'Functor' base@.
 
  -}
-class Functor base => Synthetic base inh syn where
-    {- | @synthetic@ is the @base@-algebra for synthesizing the attribute @syn@.
-
-    The algebra may inherit an attribute of type @inh@, but that may change in
-    the future.
-
-     -}
-    synthetic :: CofreeF base inh syn -> syn
+class Functor base => Synthetic base syn where
+    -- | @synthetic@ is the @base@-algebra for synthesizing the attribute @syn@.
+    synthetic :: base syn -> syn
 
 instance
     Ord variable =>
-    Synthetic (TermLikeF variable) inh (FreeVariables variable)
+    Synthetic (TermLikeF variable) (FreeVariables variable)
   where
-    synthetic (_ :< termLikeF) =
-        case termLikeF of
-            -- Not implemented
-            ApplyAliasF _ -> undefined
-            -- Binders
-            ExistsF existsF -> FreeVariables.delete existsVariable existsChild
-              where
-                Exists { existsVariable, existsChild } = existsF
-            ForallF forallF -> FreeVariables.delete forallVariable forallChild
-              where
-                Forall { forallVariable, forallChild } = forallF
-            VariableF variableF -> FreeVariables.singleton variableF
-            --
-            _ -> Foldable.fold termLikeF
+    -- Not implemented
+    synthetic (ApplyAliasF _) = undefined
+    -- Binders
+    synthetic (ExistsF existsF) =
+        FreeVariables.delete existsVariable existsChild
+      where
+        Exists { existsVariable, existsChild } = existsF
+    synthetic (ForallF forallF) =
+        FreeVariables.delete forallVariable forallChild
+      where
+        Forall { forallVariable, forallChild } = forallF
+    synthetic (VariableF variableF) =
+        FreeVariables.singleton variableF
+    --
+    synthetic termLikeF = Foldable.fold termLikeF
     {-# INLINE synthetic #-}
-
--- TODO (thomas.tuegel): Do not take an input sort here.
-instance
-    SortedVariable variable =>
-    Synthetic (TermLikeF variable) Sort Sort
-  where
-    synthetic (inputSort :< termLikeF) =
-        case termLikeF of
-            -- Not checked
-            ApplyAliasF _ -> inputSort
-            ApplySymbolF _ -> inputSort
-            -- Predicates
-            BottomF _ -> inputSort
-            CeilF _ -> inputSort
-            FloorF _ -> inputSort
-            TopF _ -> inputSort
-            EqualsF equalsF -> seq (alignSorts equalsF) inputSort
-            InF inF -> seq (alignSorts inF) inputSort
-            -- Connectives
-            AndF andF -> alignSorts andF
-            IffF iffF -> alignSorts iffF
-            ImpliesF impliesF -> alignSorts impliesF
-            OrF orF -> alignSorts orF
-            RewritesF rewritesF -> alignSorts rewritesF
-            -- Nothing to check
-            DomainValueF domainValueF -> domainValueSort domainValueF
-            ExistsF existsF -> existsChild existsF
-            ForallF forallF -> forallChild forallF
-            MuF muF -> muChild muF
-            NextF nextF -> nextChild nextF
-            NotF notF -> notChild notF
-            NuF nuF -> nuChild nuF
-            StringLiteralF _ -> stringMetaSort
-            CharLiteralF _ -> charMetaSort
-            VariableF variableF -> sortedVariableSort variableF
-            InhabitantF inhF -> inhF
-            SetVariableF setVariableF ->
-                sortedVariableSort (getVariable setVariableF)
-            BuiltinF builtinF -> builtinSort builtinF
-            EvaluatedF evaluatedF -> getEvaluated evaluatedF
-
-instance
-    (Ord variable, SortedVariable variable) =>
-    Synthetic (TermLikeF variable) Sort (Pattern variable)
-  where
-    synthetic baseF =
-        Pattern
-            { patternSort = synthetic (patternSort <$> baseF)
-            , freeVariables = synthetic (freeVariables <$> baseF)
-            }
-
-instance
-    (Ord variable, SortedVariable variable) =>
-    Synthetic (TermLikeF variable) (Pattern variable) (Pattern variable)
-  where
-    synthetic baseF@(attrs :< termLikeF) =
-        Pattern
-            { patternSort =
-                synthetic (patternSort attrs :< (patternSort <$> termLikeF))
-            , freeVariables = synthetic (freeVariables <$> baseF)
-            }
 
 {- | @/synthesize/@ attribute @b@ bottom-up along a tree @s@.
 
@@ -151,7 +85,7 @@ synthesize
         , Recursive t
         , Base s ~ CofreeF base inh
         , Base t ~ CofreeF base syn
-        , Synthetic base inh syn
+        , Synthetic base syn
         )
     => s  -- ^ Original tree with attributes @a@
     -> t
@@ -179,14 +113,14 @@ synthesizeAux
         , Base s ~ CofreeF f a
         , Base t ~ CofreeF f b
         )
-    => (CofreeF f a b -> b)  -- ^ @(Base s)@-algebra synthesizing @b@
+    => (f b -> b)  -- ^ @(Base s)@-algebra synthesizing @b@
     -> s  -- ^ Original tree with attributes @a@
     -> t
 synthesizeAux synth =
     Recursive.fold worker
   where
-    worker (a :< ft) =
-        Recursive.embed (synth (a :< fb) :< ft)
+    worker (_ :< ft) =
+        Recursive.embed (synth fb :< ft)
       where
         fb = Cofree.headF . Recursive.project <$> ft
 
