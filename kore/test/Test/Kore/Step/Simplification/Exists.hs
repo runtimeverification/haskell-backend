@@ -318,4 +318,4 @@ makeEvaluate variable child =
     $ Exists.makeEvaluate variable child
 
 mockEnv :: Env
-mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
+mockEnv = Mock.env
