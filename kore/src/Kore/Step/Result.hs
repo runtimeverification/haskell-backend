@@ -8,6 +8,7 @@ module Kore.Step.Result
     , mapRule
     , Results (..)
     , remainder
+    , hasResults
     , withoutRemainders
     , gatherResults
     , mergeResults
@@ -74,6 +75,11 @@ instance (Ord config, TopBottom config) => Semigroup (Results rule config) where
 instance (Ord config, TopBottom config) => Monoid (Results rule config) where
     mempty = Results { results = mempty, remainders = mempty }
     mappend = (<>)
+
+{- | 'True' if any rule applied.
+ -}
+hasResults :: Results rule config -> Bool
+hasResults = not . Foldable.null . results
 
 mergeResults
     :: (Ord config, TopBottom config)

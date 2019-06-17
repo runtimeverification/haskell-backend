@@ -22,6 +22,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification )
+import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
@@ -82,8 +83,10 @@ equalityRuleEvaluator
   | otherwise = do
     result <- applyRule patt rule
     case result of
-        Left _        -> notApplicable
-        Right results -> AttemptedAxiom.Applied <$> simplifyResults results
+        Right results
+          | any Result.hasResults results ->
+            AttemptedAxiom.Applied <$> simplifyResults results
+        _ -> notApplicable
   where
     notApplicable :: simplifier (AttemptedAxiom variable)
     notApplicable = return AttemptedAxiom.NotApplicable

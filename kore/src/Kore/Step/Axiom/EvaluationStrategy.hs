@@ -25,7 +25,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( extractPatterns )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Pattern )
@@ -320,15 +319,15 @@ evaluateWithDefinitionAxioms
         expanded :: Pattern variable
         expanded = Pattern.fromTermLike patt
 
-    results <- applyRules expanded (map unwrapEqualityRule definitionRules)
+    results <- applyRules (map unwrapEqualityRule definitionRules) expanded
+
+    Monad.guard (any Result.hasResults results)
     mapM_ rejectNarrowing results
 
     let
         result =
             Result.mergeResults results
-            & Result.mapConfigs
-                keepResultUnchanged
-                markRemainderEvaluated
+            & Result.mapConfigs keepResultUnchanged markRemainderEvaluated
         keepResultUnchanged = id
         markRemainderEvaluated = fmap mkEvaluated
 
@@ -344,7 +343,7 @@ evaluateWithDefinitionAxioms
     rejectNarrowing (Result.results -> results) =
         (Monad.guard . not) (Foldable.any Step.isNarrowingResult results)
 
-    applyRules initial rules =
+    applyRules rules initial =
         Monad.Unify.maybeUnifierT
         $ Step.applyRulesSequence unificationProcedure initial rules
 

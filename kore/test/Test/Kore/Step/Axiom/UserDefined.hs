@@ -106,17 +106,7 @@ test_userDefinedFunction =
                 (Mock.functionalConstr10 (mkVar Mock.x))
         assertEqualWithExplanation "f(x) => g(x)" expect actual
     , testCase "Cannot apply step with unsat axiom pre-condition" $ do
-        let expect =
-                AttemptedAxiom.Applied AttemptedAxiomResults
-                    { results = OrPattern.fromPatterns []
-                    , remainders = OrPattern.fromPatterns
-                        [ Conditional
-                            { term = Mock.functionalConstr10 (mkVar Mock.x)
-                            , predicate = makeTruePredicate
-                            , substitution = mempty
-                             }
-                        ]
-                    }
+        let expect = AttemptedAxiom.NotApplicable
         actual <-
             evaluateWithAxiom
                 (EqualityRule RulePattern

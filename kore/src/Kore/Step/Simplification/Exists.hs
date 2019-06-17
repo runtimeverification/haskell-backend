@@ -175,13 +175,14 @@ matchesToVariableSubstitution
   | Equals_ _sort1 _sort2 first second <-
         Syntax.Predicate.fromPredicate predicateSort predicate
   , Substitution.null boundSubstitution
-    && not (hasFreeVariable variable term)
+  , not (hasFreeVariable variable term)
   = do
     matchResult <- runUnifierT $ matchAsUnification first second
     case matchResult of
-        Left _ -> return False
-        Right results ->
+        Right results
+          | any (not . isBottom) results ->
             return (all (singleVariableSubstitution variable) results)
+        _ -> return False
 
 matchesToVariableSubstitution _ _ = return False
 

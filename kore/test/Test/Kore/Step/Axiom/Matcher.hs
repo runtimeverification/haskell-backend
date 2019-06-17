@@ -4,6 +4,8 @@ module Test.Kore.Step.Axiom.Matcher
     , test_matcherNonVarToPattern
     , test_matcherMergeSubresults
     , test_unificationWithAppMatchOnTop
+
+    , match
     ) where
 
 import Test.Tasty
@@ -41,6 +43,7 @@ import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
+import           Kore.TopBottom
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Substitution as Substitution
@@ -85,46 +88,12 @@ test_matcherEqualHeads =
                     (Mock.plain10 Mock.a)
             assertEqualWithExplanation "" expect actual
 
-        , testCase "different constructors" $ do
-            let expect = Nothing
-            actual <-
-                matchDefinition
-                    (Mock.constr10 (mkVar Mock.x))
-                    (Mock.constr11 Mock.a)
-            assertEqualWithExplanation "" expect actual
-
-        , testCase "different functions" $ do
-            let expect = Nothing
-            actual <-
-                matchDefinition
-                    (Mock.f Mock.b)
-                    (Mock.g Mock.a)
-            assertEqualWithExplanation "" expect actual
-
-        , testCase "different functions with variable" $ do
-            let expect = Nothing
-            actual <-
-                matchDefinition
-                    (Mock.f (mkVar Mock.x))
-                    (Mock.g Mock.a)
-            assertEqualWithExplanation "" expect actual
-
-        , testCase "different symbols" $ do
-            let expect = Nothing
-            actual <-
-                matchDefinition
-                    (Mock.plain10 Mock.b)
-                    (Mock.plain11 Mock.a)
-            assertEqualWithExplanation "" expect actual
+        , Mock.constr10 (mkVar Mock.x) `notMatches` Mock.constr11 Mock.a $ "different constructors"
+        , Mock.f Mock.b `notMatches` Mock.g Mock.a                       $ "different functions"
+        , Mock.f (mkVar Mock.x) `notMatches` Mock.g Mock.a               $ "different functions with variable"
+        , Mock.plain10 Mock.b `notMatches` Mock.plain11 Mock.a           $ "different symbols"
+        , Mock.plain10 (mkVar Mock.x) `notMatches` Mock.plain11 Mock.a   $ "different symbols with variable"
         ]
-
-        , testCase "different symbols with variable" $ do
-            let expect = Nothing
-            actual <-
-                matchDefinition
-                    (Mock.plain10 (mkVar Mock.x))
-                    (Mock.plain11 Mock.a)
-            assertEqualWithExplanation "" expect actual
 
     , testCase "Bottom" $ do
         let expect = Just $ MultiOr.make [Conditional.topPredicate]
@@ -386,14 +355,6 @@ test_matcherEqualHeads =
                     (Mock.plain10 (mkVar Mock.x))
                     (Mock.plain10 Mock.a)
             assertEqualWithExplanation "" expect actual
-
-        , testCase "different constructors" $ do
-            let expect = Nothing
-            actual <-
-                matchSimplification
-                    (Mock.constr10 (mkVar Mock.x))
-                    (Mock.constr11 Mock.a)
-            assertEqualWithExplanation "" expect actual
         ]
     ]
 
@@ -561,38 +522,13 @@ test_matcherVariableFunction =
 
 test_matcherNonVarToPattern :: [TestTree]
 test_matcherNonVarToPattern =
-    [ testCase "no-var - no-var" $ do
-        let expect = Nothing
-        actual <-
-            matchSimplification
-            (Mock.plain10 Mock.a)
-            (Mock.plain11 Mock.b)
-        assertEqualWithExplanation "" expect actual
-
-    , testCase "var - no-var" $ do
-        let expect = Nothing
-        actual <-
-            matchSimplification
-            (Mock.plain10 (mkVar Mock.x))
-            (Mock.plain11 Mock.b)
-        assertEqualWithExplanation "" expect actual
-
-    , testCase "no-var - var" $ do
-        let expect = Nothing
-        actual <-
-            matchSimplification
-            (Mock.plain10 Mock.a)
-            (Mock.plain11 (mkVar Mock.x))
-        assertEqualWithExplanation "" expect actual
-
-    , testCase "var - var" $ do
-        let expect = Nothing
-        actual <-
-            matchSimplification
-            (Mock.plain10 (mkVar Mock.x))
-            (Mock.plain11 (mkVar Mock.y))
-        assertEqualWithExplanation "" expect actual
+    [ failure Mock.a Mock.b                 "no-var - no-var"
+    , failure (mkVar Mock.x) Mock.a         "var - no-var"
+    , failure Mock.a (mkVar Mock.x)         "no-var - var"
+    , failure (mkVar Mock.x) (mkVar Mock.y) "no-var - var"
     ]
+  where
+    failure term1 term2 = notMatches (Mock.plain10 term1) (Mock.plain11 term2)
 
 test_matcherMergeSubresults :: [TestTree]
 test_matcherMergeSubresults =
@@ -1063,3 +999,21 @@ match first second = do
         (fmap . fmap) MultiOr.make
         $ Monad.Unify.runUnifierT
         $ matchAsUnification first second
+
+withMatch
+    :: (Maybe (OrPredicate Variable) -> Bool)
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TestName
+    -> TestTree
+withMatch check term1 term2 comment =
+    testCase comment $ do
+        actual <- match term1 term2
+        assertBool "" (check actual)
+
+notMatches
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TestName
+    -> TestTree
+notMatches = withMatch (maybe False isBottom)

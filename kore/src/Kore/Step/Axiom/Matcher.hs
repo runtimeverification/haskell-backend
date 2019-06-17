@@ -14,7 +14,7 @@ module Kore.Step.Axiom.Matcher
     ) where
 
 import           Control.Applicative
-                 ( (<|>) )
+                 ( Alternative (..) )
 import           Control.Error.Util
                  ( just, nothing )
 import qualified Control.Monad as Monad
@@ -58,9 +58,11 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
-{- Matches two patterns based on their form.
+{- | Matches two patterns based on their form.
 
 Assumes that the two patterns have no common variables (quantified or not).
+
+TODO (thomas.tuegel): The following is no longer accurate:
 
 Returns Right bottom or Left when it can't handle the patterns. The
 returned substitution substitutes only variables from the first pattern.
@@ -203,9 +205,9 @@ matchEqualHeadPatterns quantifiedVariables first second = do
                     else case simplifySortInjections tools first second of
                         Nothing -> nothing
                         Just SortInjectionSimplification.NotInjection ->
-                            nothing
+                            Monad.Trans.lift empty
                         Just SortInjectionSimplification.NotMatching ->
-                            nothing
+                            Monad.Trans.lift empty
                         Just
                             (SortInjectionSimplification.Matching
                                 SortInjectionMatch
