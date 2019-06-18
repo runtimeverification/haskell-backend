@@ -40,7 +40,7 @@ import           Kore.Step.Rule
 import           Kore.Step.Simplification.AndTerms
                  ( cannotUnifyDistinctDomainValues )
 import           Kore.Step.Simplification.Data
-                 ( Simplifier, SimplifierT, evalSimplifier )
+                 ( Simplifier, evalSimplifier )
 import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unification.Procedure
