@@ -48,12 +48,11 @@ recursivelyCheckHeadProperty prop _ =
             BuiltinF builtin -> and builtin
             _ -> False
 
-isFunctionPattern, isTotalPattern
+isTotalPattern
     :: forall variable
     .  SmtMetadataTools StepperAttributes
     -> TermLike variable
     -> Bool
 --TODO(traiansf): we assume below that the pattern does not contain
 --sort injection symbols where the parameter sorts are not in subsort relation.
-isFunctionPattern = recursivelyCheckHeadProperty Symbol.isFunction
 isTotalPattern = recursivelyCheckHeadProperty Symbol.isTotal

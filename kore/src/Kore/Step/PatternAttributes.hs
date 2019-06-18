@@ -36,8 +36,8 @@ import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
 import           Kore.Proof.Functional
 import           Kore.Step.PatternAttributesError
-                 ( ConstructorLikeError (..), FunctionError (..),
-                 FunctionalError (..), TotalError (..) )
+                 ( ConstructorLikeError (..), FunctionalError (..),
+                 TotalError (..) )
 
 {-| Checks whether a pattern is non-bottom or not and, if it is, returns a proof
     certifying that.
@@ -188,36 +188,6 @@ checkConstructorModuloLikeHead tools base@(_ :< pattern') =
                     isConstructorModulo =
                         give tools isConstructorModulo_ applicationSymbolOrAlias
                 _ -> Left NonConstructorLikeHead
-
-{-| checks whether a pattern is function-like or not and, if it is, returns
-    a proof certifying that.
--}
-isFunctionPattern
-    :: SmtMetadataTools Attribute.Symbol
-    -> TermLike variable
-    -> Either (FunctionError) [FunctionProof variable]
-isFunctionPattern tools =
-    provePattern (checkFunctionHead tools)
-
-checkFunctionHead
-    :: SmtMetadataTools Attribute.Symbol
-    -> Recursive.Base (TermLike variable) a
-    -> Either
-        (FunctionError)
-        (PartialPatternProof (FunctionProof variable))
-checkFunctionHead tools base@(_ :< pattern') =
-    case pattern' of
-        ApplySymbolF ap
-          | Symbol.isFunction patternHead ->
-            Right (Descend (FunctionHead patternHead))
-          where
-            patternHead = applicationSymbolOrAlias ap
-        _ ->
-            case checkFunctionalHead tools base of
-                Right proof -> Right (FunctionProofFunctional <$> proof)
-                Left (NonFunctionalHead patternHead) ->
-                    Left (NonFunctionHead patternHead)
-                Left NonFunctionalPattern -> Left NonFunctionPattern
 
 checkTotalHead
     :: SmtMetadataTools Attribute.Symbol

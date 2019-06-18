@@ -904,14 +904,14 @@ variableFunctionAndEquals
         }
 variableFunctionAndEquals
     simplificationType
-    tools
+    _tools
     _substitutionSimplifier
     _simplifier
     _axiomIdToSimplifier
     _
     first@(Var_ v)
     second
-  | isFunctionPattern tools second = Monad.Trans.lift $ do -- MonadUnify
+  | isFunctionPattern second = Monad.Trans.lift $ do -- MonadUnify
     predicate <-
         case simplificationType of -- Simplifier
             SimplificationType.And ->
@@ -1451,11 +1451,10 @@ functionAnd
     -> TermLike variable
     -> Maybe (Pattern variable)
 functionAnd
-    tools
+    _tools
     first
     second
-  | isFunctionPattern tools first
-  , isFunctionPattern tools second =
+  | isFunctionPattern first, isFunctionPattern second =
     return Conditional
         { term = first  -- different for Equals
         -- Ceil predicate not needed since first being

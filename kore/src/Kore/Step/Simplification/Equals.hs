@@ -171,8 +171,7 @@ simplifyEvaluated first second
   | first == second = return OrPattern.top
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
   | otherwise = do
-    tools <- Simplifier.askMetadataTools
-    let isFunctionConditional Conditional {term} = isFunctionPattern tools term
+    let isFunctionConditional Conditional {term} = isFunctionPattern term
     case (firstPatterns, secondPatterns) of
         ([firstP], [secondP]) -> makeEvaluate firstP secondP
         ([firstP], _)

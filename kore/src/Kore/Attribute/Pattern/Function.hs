@@ -38,7 +38,9 @@ instance NFData Function
 instance Hashable Function
 
 instance Synthetic (And sort) Function where
-    synthetic = Foldable.fold
+    -- TODO (thomas.tuegel):
+    -- synthetic = Foldable.fold
+    synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Bottom sort) Function where

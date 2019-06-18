@@ -16,10 +16,7 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 
 test_instance_Synthetic :: [TestTree]
 test_instance_Synthetic =
-    [ testGroup "AndF" $ do
-        x <- range
-        y <- range
-        [ expect (x <> y) $ AndF $ And sort x y ]
+    [ testGroup "AndF" $ map (isn't . AndF) (And sort <$> range <*> range)
     , testGroup "ApplySymbolF" $ do
         x <- range
         y <- range

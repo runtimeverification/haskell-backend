@@ -410,8 +410,7 @@ matchVariableFunction
     -> MaybeT unifier (Predicate variable)
 matchVariableFunction quantifiedVariables (Var_ var) second
   | not (var `Map.member` quantifiedVariables) = do
-    tools <- Simplifier.askMetadataTools
-    Monad.guard (isFunctionPattern tools second)
+    Monad.guard (isFunctionPattern second)
     Monad.Trans.lift $ do
         ceilOr <- Ceil.makeEvaluateTerm second
         result <-
