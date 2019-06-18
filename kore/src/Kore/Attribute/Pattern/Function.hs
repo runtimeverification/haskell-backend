@@ -1,0 +1,124 @@
+{- |
+Copyright   : (c) Runtime Verification, 2019
+License     : NCSA
+
+ -}
+
+module Kore.Attribute.Pattern.Function
+    ( Function (..)
+    ) where
+
+import           Control.DeepSeq
+import qualified Data.Foldable as Foldable
+import           Data.Hashable
+import           Data.Monoid
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
+
+import           Kore.Attribute.Synthetic
+import           Kore.Debug
+import           Kore.Domain.Builtin
+import qualified Kore.Internal.Alias as Internal
+import qualified Kore.Internal.Symbol as Internal
+import           Kore.Syntax
+
+newtype Function = Function { isFunction :: Bool }
+    deriving (Eq, GHC.Generic, Show)
+    deriving (Semigroup, Monoid) via All
+
+instance SOP.Generic Function
+
+instance SOP.HasDatatypeInfo Function
+
+instance Debug Function
+
+instance NFData Function
+
+instance Hashable Function
+
+instance Synthetic (And sort) Function where
+    synthetic = Foldable.fold
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Bottom sort) Function where
+    synthetic _ = Function True
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Application Internal.Symbol) Function where
+    synthetic application =
+        functionSymbol <> Foldable.fold children
+      where
+        functionSymbol = Function (Internal.isFunction symbol)
+        children = applicationChildren application
+        symbol = applicationSymbolOrAlias application
+
+instance Synthetic (Application Internal.Alias) Function where
+    synthetic _ = Function False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Ceil sort) Function where
+    synthetic _ = Function False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (DomainValue sort) Function where
+    synthetic = domainValueChild
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Equals sort) Function where
+    synthetic _ = Function False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Exists sort variable) Function where
+    synthetic _ = Function False
+
+instance Synthetic (Floor sort) Function where
+    synthetic _ = Function False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Forall sort variable) Function where
+    synthetic _ = Function False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Iff sort) Function where
+    synthetic _ = Function False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Implies sort) Function where
+    synthetic _ = Function False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (In sort) Function where
+    synthetic _ = Function False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Mu sort) Function where
+    synthetic _ = Function False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Next sort) Function where
+    synthetic = nextChild
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Not sort) Function where
+    synthetic _ = Function False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Nu sort) Function where
+    synthetic _ = Function False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Or sort) Function where
+    synthetic _ = Function False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Rewrites sort) Function where
+    synthetic _ = Function False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Builtin key) Function where
+    synthetic = Foldable.fold
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Top sort) Function where
+    synthetic _ = Function False
+    {-# INLINE synthetic #-}
