@@ -9,7 +9,6 @@ import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
 
-import           Kore.ASTHelpers
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Sort as Attribute
@@ -19,6 +18,7 @@ import           Kore.Error
 import           Kore.IndexedModule.Error as Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
+import           Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Sort
 import           Kore.Syntax

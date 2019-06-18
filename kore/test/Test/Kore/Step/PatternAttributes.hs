@@ -238,7 +238,7 @@ test_patternAttributes =
                 )
             let
                 sortInjection :: TermLike Variable
-                sortInjection = Mock.sortInjection10 Mock.a
+                sortInjection = Mock.sortInjection10 Mock.aSort0
             assertEqualWithExplanation "sort injections are constructor-like"
                 (Right [ConstructorLikeProof, ConstructorLikeProof])
                 (isConstructorLikePattern
@@ -327,7 +327,7 @@ test_patternAttributes =
                 )
             let
                 sortInjection :: TermLike Variable
-                sortInjection = Mock.sortInjection10 Mock.a
+                sortInjection = Mock.sortInjection10 Mock.aSort0
             assertEqualWithExplanation
                 "sort injections are constructor-modulo-like"
                 (Right [ConstructorLikeProof, ConstructorLikeProof])

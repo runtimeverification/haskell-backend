@@ -71,7 +71,7 @@ testBinary symb impl =
         a <- forAll Gen.bool
         b <- forAll Gen.bool
         let expect = asPattern $ impl a b
-        actual <- evaluateT $ mkApplySymbol boolSort symb (asInternal <$> [a, b])
+        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
   where
     Attribute.Symbol { Attribute.hook = Hook { getHook = Just name } } =
@@ -88,7 +88,7 @@ testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll Gen.bool
         let expect = asPattern $ impl a
-        actual <- evaluateT $ mkApplySymbol boolSort symb (asInternal <$> [a])
+        actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a])
         (===) expect actual
   where
     Attribute.Symbol { Attribute.hook = Hook { getHook = Just name } } =

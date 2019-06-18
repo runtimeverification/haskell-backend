@@ -24,9 +24,10 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 checkImplicationIsTop
-    :: Pattern Variable
+    :: MonadSimplify m
+    => Pattern Variable
     -> TermLike Variable
-    -> Simplifier Bool
+    -> m Bool
 checkImplicationIsTop lhs rhs =
     case stripForallQuantifiers rhs of
         ( forallQuantifiers, Implies_ _ implicationLHS implicationRHS ) -> do

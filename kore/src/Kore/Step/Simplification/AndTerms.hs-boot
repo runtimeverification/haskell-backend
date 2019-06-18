@@ -1,5 +1,7 @@
 module Kore.Step.Simplification.AndTerms where
 
+import qualified GHC.Stack as GHC
+
 import Kore.Internal.Pattern
        ( Pattern )
 import Kore.Internal.TermLike
@@ -24,6 +26,7 @@ termAnd
         , SortedVariable variable
         , MonadSimplify simplifier
         )
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> BranchT simplifier (Pattern variable)
@@ -38,6 +41,7 @@ termUnification
         , MonadUnify unifier
         , WithLog LogMessage unifier
         )
+    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
     -> unifier (Pattern variable)

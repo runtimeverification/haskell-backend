@@ -15,8 +15,6 @@ import qualified Data.Set as Set
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.ASTHelpers
-                 ( ApplicationSorts )
 import           Kore.Attribute.Constructor
 import           Kore.Attribute.Function
 import           Kore.Attribute.Functional
@@ -25,9 +23,11 @@ import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Attribute.SortInjection
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
-                 ( HeadType, MetadataTools (MetadataTools), SmtMetadataTools )
+                 ( MetadataTools (MetadataTools), SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
+import           Kore.Internal.ApplicationSorts
+                 ( ApplicationSorts )
 import           Kore.Sort
                  ( Sort )
 import qualified Kore.Step.SMT.AST as SMT.AST
@@ -37,13 +37,12 @@ import           Kore.Syntax.Application
 
 makeMetadataTools
     :: [(SymbolOrAlias, StepperAttributes)]
-    -> [(SymbolOrAlias, HeadType)]
     -> [(Sort, Attribute.Sort)]
     -> [(Sort, Sort)]
     -> [(SymbolOrAlias, ApplicationSorts)]
     -> SMT.AST.SmtDeclarations
     -> SmtMetadataTools StepperAttributes
-makeMetadataTools _attr _headTypes sortTypes isSubsortOf sorts declarations =
+makeMetadataTools _attr sortTypes isSubsortOf sorts declarations =
     MetadataTools
         { sortAttributes = caseBasedFunction sortTypes
         -- TODO(Vladimir): fix the inconsistency that both 'subsorts' and
