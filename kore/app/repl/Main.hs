@@ -24,7 +24,7 @@ import           Kore.Exec
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.Logger.Output
                  ( emptyLogger, swappableLogger )
-import           Kore.Repl
+import           Kore.Repl.Data
 import           Kore.Syntax.Module
                  ( ModuleName (..) )
 
@@ -50,6 +50,7 @@ data KoreReplOptions = KoreReplOptions
     , smtOptions       :: !SmtOptions
     , replMode         :: !ReplMode
     , replScript       :: !ReplScript
+    , outputFile       :: !OutputFile
     }
 
 parseKoreReplOptions :: Parser KoreReplOptions
@@ -60,7 +61,7 @@ parseKoreReplOptions =
     <*> parseSmtOptions
     <*> parseReplMode
     <*> parseReplScript
-    <* parseIgnoredOutput
+    <*> parseOutputFile
   where
     parseMainModule :: Parser KoreModule
     parseMainModule  =
@@ -126,13 +127,14 @@ parseKoreReplOptions =
             then readerError "smt-timeout must be a positive integer."
             else return $ SMT.TimeOut $ Limit i
 
-    parseIgnoredOutput :: Parser (Maybe String)
-    parseIgnoredOutput =
-        optional
+    parseOutputFile :: Parser OutputFile
+    parseOutputFile =
+        OutputFile
+        <$> optional
             (strOption
                 (  metavar "PATTERN_OUTPUT_FILE"
                 <> long "output"
-                <> help "This parameter is ignored"
+                <> help "Output file to contain final Kore pattern."
                 )
             )
 
@@ -152,7 +154,13 @@ main = do
 mainWithOptions :: KoreReplOptions -> IO ()
 mainWithOptions
     KoreReplOptions
-        { definitionModule, proveOptions, smtOptions, replScript, replMode }
+        { definitionModule
+        , proveOptions
+        , smtOptions
+        , replScript
+        , replMode
+        , outputFile
+        }
   = do
     parsedDefinition <- parseDefinition definitionFileName
     indexedDefinition@(indexedModules, _) <-
@@ -198,6 +206,7 @@ mainWithOptions
                     mLogger
                     replScript
                     replMode
+                    outputFile
 
   where
     mainModuleName :: ModuleName

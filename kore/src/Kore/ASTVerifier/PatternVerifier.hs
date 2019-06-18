@@ -25,10 +25,6 @@ module Kore.ASTVerifier.PatternVerifier
     ) where
 
 import           Control.Applicative
-import           Control.Lens
-                 ( (%~), (<>~), _1 )
-import qualified Control.Lens as Lens hiding
-                 ( makeLenses )
 import qualified Control.Monad as Monad
 import           Control.Monad.Reader
                  ( MonadReader, ReaderT, runReaderT )
@@ -109,38 +105,8 @@ runPatternVerifier
     :: Context
     -> PatternVerifier a
     -> Either (Error VerifyError) a
-runPatternVerifier ctx PatternVerifier { getPatternVerifier } =
-    ctx
-    & Lens.over lensIndexedModule specialK
-    & runReaderT getPatternVerifier
-
-{- | Apply attributes to special K symbols.
- -}
--- TODO (thomas.tuegel): Remove this after changing prelude.kore.
-specialK
-    :: IndexedModule patternType Attribute.Symbol attrAxiom
-    -> IndexedModule patternType Attribute.Symbol attrAxiom
-specialK indexedModule =
-    indexedModule
-    & lensIndexedModuleImports         %~ fmap recurseIntoImports
-    & lensIndexedModuleSymbolSentences %~ Map.mapWithKey worker
-    & lensIndexedModuleAliasSentences  %~ Map.mapWithKey worker
-  where
-    worker ident decl =
-        decl
-        & _1 . Attribute.lensConstructor   <>~ constructor
-        & _1 . Attribute.lensFunctional    <>~ functional
-        & _1 . Attribute.lensInjective     <>~ injective
-        & _1 . Attribute.lensSortInjection <>~ sortInjection
-      where
-        isInj = getId ident == "inj"
-        isCons = elem (getId ident) ["kseq", "dotk"]
-        constructor = Attribute.Constructor isCons
-        functional = Attribute.Functional (isCons || isInj)
-        injective = Attribute.Injective (isCons || isInj)
-        sortInjection = Attribute.SortInjection isInj
-
-    recurseIntoImports = Lens.over Lens._3 specialK
+runPatternVerifier context PatternVerifier { getPatternVerifier } =
+    runReaderT getPatternVerifier context
 
 lookupSortDeclaration
     :: Id
