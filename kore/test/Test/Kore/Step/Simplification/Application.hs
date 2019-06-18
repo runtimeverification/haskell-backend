@@ -12,6 +12,7 @@ import           Data.Ord
 
 import           Data.Sup
 import qualified Kore.Attribute.Pattern as Attribute
+import qualified Kore.Attribute.Pattern.Functional as Attribute.Pattern
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -318,18 +319,19 @@ makeApplication
         (OrPattern variable)
 makeApplication patternSort symbol patterns =
     (:<)
-        valid
+        attrs
         Application
             { applicationSymbolOrAlias = symbol
             , applicationChildren = map OrPattern.fromPatterns patterns
             }
   where
     termFreeVariables = TermLike.freeVariables . Pattern.term
-    valid =
+    attrs =
         Attribute.Pattern
             { patternSort
             , freeVariables =
                 mconcat (mconcat . map termFreeVariables <$> patterns)
+            , functional = Attribute.Pattern.Functional False
             }
 
 evaluate

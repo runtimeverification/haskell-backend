@@ -346,8 +346,8 @@ instance
     synthetic (BuiltinF builtinF) = Foldable.fold builtinF
     synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
 
-    synthetic (StringLiteralF _) = mempty
-    synthetic (CharLiteralF _) = mempty
+    synthetic (StringLiteralF stringLiteral) = synthetic (Const stringLiteral)
+    synthetic (CharLiteralF charLiteral) = synthetic (Const charLiteral)
     synthetic (InhabitantF _) = mempty
 
     -- TODO (thomas.tuegel): Track free set variables.
@@ -382,9 +382,9 @@ instance SortedVariable variable => Synthetic (TermLikeF variable) Sort where
     synthetic (BuiltinF builtinF) = synthetic builtinF
     synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
 
-    synthetic (StringLiteralF _) = stringMetaSort
-    synthetic (CharLiteralF _) = charMetaSort
-    synthetic (InhabitantF inhSort) = inhSort
+    synthetic (StringLiteralF stringLiteral) = synthetic (Const stringLiteral)
+    synthetic (CharLiteralF charLiteral) = synthetic (Const charLiteral)
+    synthetic (InhabitantF inhSort) = synthetic (Const inhSort)
 
     synthetic (MuF muF) = synthetic muF
     synthetic (NuF nuF) = synthetic nuF
@@ -418,9 +418,9 @@ instance Synthetic (TermLikeF variable) Pattern.Functional where
     synthetic (BuiltinF builtinF) = synthetic builtinF
     synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
 
-    synthetic (StringLiteralF _) = Pattern.Functional True
-    synthetic (CharLiteralF _) = Pattern.Functional True
-    synthetic (InhabitantF _) = Pattern.Functional False
+    synthetic (StringLiteralF stringLiteral) = synthetic (Const stringLiteral)
+    synthetic (CharLiteralF charLiteral) = synthetic (Const charLiteral)
+    synthetic (InhabitantF inhSort) = synthetic (Const inhSort)
 
     synthetic (MuF muF) = synthetic muF
     synthetic (NuF nuF) = synthetic nuF
@@ -1376,18 +1376,10 @@ mkBuiltin = synthesize . BuiltinF
 {- | Construct a 'DomainValue' pattern.
  -}
 mkDomainValue
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => DomainValue Sort (TermLike variable)
     -> TermLike variable
-mkDomainValue domain =
-    Recursive.embed (attrs :< DomainValueF domain)
-  where
-    attrs =
-        Attribute.Pattern
-            { patternSort = domainValueSort domain
-            , freeVariables =
-                (mconcat . Foldable.toList) (freeVariables <$> domain)
-            }
+mkDomainValue = synthesize . DomainValueF
 
 {- | Construct an 'Equals' pattern in the given sort.
 
@@ -1477,22 +1469,14 @@ mkFloor_ = mkFloor predicateSort
 {- | Construct a 'Forall' pattern.
  -}
 mkForall
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => variable
     -> TermLike variable
     -> TermLike variable
 mkForall forallVariable forallChild =
-    Recursive.embed (attrs :< ForallF forall)
+    synthesize (ForallF Forall { forallSort, forallVariable, forallChild })
   where
-    attrs =
-        Attribute.Pattern
-            { patternSort = forallSort
-            , freeVariables =
-                FreeVariables.delete forallVariable freeVariablesChild
-            }
     forallSort = termLikeSort forallChild
-    freeVariablesChild = freeVariables forallChild
-    forall = Forall { forallSort, forallVariable, forallChild }
 
 {- | Construct an 'Iff' pattern.
  -}
@@ -1668,17 +1652,7 @@ mkVar
     :: (Ord variable, SortedVariable variable)
     => variable
     -> TermLike variable
-mkVar var = Recursive.embed (validVar var :< VariableF var)
-
-validVar
-    :: (Ord variable, SortedVariable variable)
-    => variable
-    -> Attribute.Pattern variable
-validVar var =
-    Attribute.Pattern
-        { patternSort = sortedVariableSort var
-        , freeVariables = FreeVariables.singleton var
-        }
+mkVar = synthesize . VariableF
 
 {- | Construct a set variable pattern.
  -}
@@ -1686,48 +1660,35 @@ mkSetVar
     :: (Ord variable, SortedVariable variable)
     => SetVariable variable
     -> TermLike variable
-mkSetVar setVar@(SetVariable var) =
-    Recursive.embed (validVar var :< SetVariableF setVar)
+mkSetVar = synthesize . SetVariableF
 
 {- | Construct a 'StringLiteral' pattern.
  -}
-mkStringLiteral :: Ord variable => Text -> TermLike variable
-mkStringLiteral string =
-    Recursive.embed (attrs :< StringLiteralF stringLiteral)
-  where
-    attrs =
-        Attribute.Pattern
-            { patternSort = stringMetaSort
-            , freeVariables = mempty
-            }
-    stringLiteral = StringLiteral string
+mkStringLiteral
+    :: (Ord variable, SortedVariable variable)
+    => Text
+    -> TermLike variable
+mkStringLiteral = synthesize . StringLiteralF . StringLiteral
 
 {- | Construct a 'CharLiteral' pattern.
  -}
-mkCharLiteral :: Ord variable => Char -> TermLike variable
-mkCharLiteral char =
-    Recursive.embed (attrs :< CharLiteralF charLiteral)
-  where
-    attrs = Attribute.Pattern
-        { patternSort = charMetaSort
-        , freeVariables = mempty
-        }
-    charLiteral = CharLiteral char
+mkCharLiteral
+    :: (Ord variable, SortedVariable variable)
+    => Char
+    -> TermLike variable
+mkCharLiteral = synthesize . CharLiteralF . CharLiteral
 
-mkInhabitant :: Ord variable => Sort -> TermLike variable
-mkInhabitant sort =
-    Recursive.embed (attrs :< InhabitantF sort)
-  where
-    attrs =
-        Attribute.Pattern
-            { patternSort = sort
-            , freeVariables = mempty
-            }
+mkInhabitant
+    :: (Ord variable, SortedVariable variable)
+    => Sort
+    -> TermLike variable
+mkInhabitant = synthesize . InhabitantF
 
-mkEvaluated :: TermLike variable -> TermLike variable
-mkEvaluated termLike =
-    Recursive.embed
-        (extractAttributes termLike :< EvaluatedF (Evaluated termLike))
+mkEvaluated
+    :: (Ord variable, SortedVariable variable)
+    => TermLike variable
+    -> TermLike variable
+mkEvaluated = synthesize . EvaluatedF . Evaluated
 
 mkSort :: Id -> Sort
 mkSort name = SortActualSort $ SortActual name []

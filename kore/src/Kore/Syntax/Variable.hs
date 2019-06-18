@@ -20,6 +20,7 @@ module Kore.Syntax.Variable
 
 import           Control.DeepSeq
                  ( NFData (..) )
+import           Data.Functor.Const
 import           Data.Hashable
 import           Data.Maybe
                  ( isNothing )
@@ -30,6 +31,8 @@ import qualified GHC.Generics as GHC
 import           Numeric.Natural
 
 import Data.Sup
+import Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
@@ -184,3 +187,11 @@ instance SortedVariable Concrete where
     sortedVariableSort = \case {}
     toVariable = \case {}
     fromVariable = error "Cannot construct a variable in a concrete term!"
+
+instance Synthetic (Const Variable) (FreeVariables Variable) where
+    synthetic (Const variable) = FreeVariables.singleton variable
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Const Variable) Sort where
+    synthetic (Const variable) = sortedVariableSort variable
+    {-# INLINE synthetic #-}

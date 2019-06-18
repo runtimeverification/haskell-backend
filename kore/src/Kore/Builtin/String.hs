@@ -230,7 +230,7 @@ asInternal internalStringSort internalStringValue =
 
  -}
 asTermLike
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => Domain.InternalString  -- ^ builtin value to render
     -> TermLike variable
 asTermLike internal =

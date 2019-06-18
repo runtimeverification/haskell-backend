@@ -10,6 +10,7 @@ module Kore.Attribute.Pattern.Functional
 
 import           Control.DeepSeq
 import qualified Data.Foldable as Foldable
+import Data.Functor.Const
 import           Data.Hashable
 import           Data.Monoid
 import qualified Generics.SOP as SOP
@@ -37,11 +38,11 @@ instance NFData Functional
 instance Hashable Functional
 
 instance Synthetic (And sort) Functional where
-    synthetic _ = Functional False
+    synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Bottom sort) Functional where
-    synthetic _ = Functional False
+    synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Application Internal.Symbol) Functional where
@@ -53,11 +54,11 @@ instance Synthetic (Application Internal.Symbol) Functional where
         symbol = applicationSymbolOrAlias application
 
 instance Synthetic (Application Internal.Alias) Functional where
-    synthetic _ = Functional False
+    synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Ceil sort) Functional where
-    synthetic _ = Functional False
+    synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (DomainValue sort) Functional where
@@ -65,34 +66,34 @@ instance Synthetic (DomainValue sort) Functional where
     {-# INLINE synthetic #-}
 
 instance Synthetic (Equals sort) Functional where
-    synthetic _ = Functional False
+    synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Exists sort variable) Functional where
-    synthetic _ = Functional False
+    synthetic = const (Functional False)
 
 instance Synthetic (Floor sort) Functional where
-    synthetic _ = Functional False
+    synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Forall sort variable) Functional where
-    synthetic _ = Functional False
+    synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Iff sort) Functional where
-    synthetic _ = Functional False
+    synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Implies sort) Functional where
-    synthetic _ = Functional False
+    synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (In sort) Functional where
-    synthetic _ = Functional False
+    synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Mu sort) Functional where
-    synthetic _ = Functional False
+    synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Next sort) Functional where
@@ -100,19 +101,19 @@ instance Synthetic (Next sort) Functional where
     {-# INLINE synthetic #-}
 
 instance Synthetic (Not sort) Functional where
-    synthetic _ = Functional False
+    synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Nu sort) Functional where
-    synthetic _ = Functional False
+    synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Or sort) Functional where
-    synthetic _ = Functional False
+    synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Rewrites sort) Functional where
-    synthetic _ = Functional False
+    synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Builtin key) Functional where
@@ -120,5 +121,25 @@ instance Synthetic (Builtin key) Functional where
     {-# INLINE synthetic #-}
 
 instance Synthetic (Top sort) Functional where
-    synthetic _ = Functional False
+    synthetic = const (Functional False)
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Const Variable) Functional where
+    synthetic = const (Functional True)
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Const StringLiteral) Functional where
+    synthetic = const (Functional True)
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Const CharLiteral) Functional where
+    synthetic = const (Functional True)
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Const (SetVariable variable)) Functional where
+    synthetic = const (Functional False)
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Const Sort) Functional where
+    synthetic = const (Functional False)
     {-# INLINE synthetic #-}

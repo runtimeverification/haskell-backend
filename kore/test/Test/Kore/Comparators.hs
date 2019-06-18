@@ -27,6 +27,7 @@ import qualified Kore.Attribute.Location as Attribute
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
+import qualified Kore.Attribute.Pattern.Functional as Attribute.Pattern
 import qualified Kore.Attribute.Source as Attribute
 import           Kore.Domain.Builtin as Domain
 import           Kore.Error
@@ -1318,7 +1319,10 @@ instance
     ( EqualWithExplanation variable, Show variable
     ) => StructEqualWithExplanation (Attribute.Pattern variable)
   where
-    structFieldsWithNames expected@(Attribute.Pattern _ _) actual@(Attribute.Pattern _ _) =
+    structFieldsWithNames
+        expected@(Attribute.Pattern _ _ _)
+        actual@(Attribute.Pattern _ _ _)
+      =
         [ EqWrap
             "patternSort = "
             (Attribute.patternSort expected)
@@ -1327,6 +1331,10 @@ instance
             "freeVariables = "
             (Attribute.freeVariables expected)
             (Attribute.freeVariables actual)
+        , EqWrap
+            "functional = "
+            (Attribute.functional expected)
+            (Attribute.functional actual)
         ]
     structConstructorName _ = "Pattern"
 
@@ -1344,6 +1352,15 @@ instance
     wrapperConstructorName _ = "FreeVariables"
     wrapperField =
         Function.on (EqWrap "getFreeVariables = ") Attribute.getFreeVariables
+
+instance EqualWithExplanation Attribute.Pattern.Functional where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation Attribute.Pattern.Functional where
+    wrapperConstructorName _ = "Functional"
+    wrapperField =
+        Function.on (EqWrap "isFunctional = ") Attribute.Pattern.isFunctional
 
 instance
     ( EqualWithExplanation variable, Show variable

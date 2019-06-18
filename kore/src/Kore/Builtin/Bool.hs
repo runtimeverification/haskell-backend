@@ -168,7 +168,7 @@ asInternal builtinBoolSort builtinBoolValue =
 
  -}
 asTermLike
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => Domain.InternalBool  -- ^ builtin value to render
     -> TermLike variable
 asTermLike builtin =
