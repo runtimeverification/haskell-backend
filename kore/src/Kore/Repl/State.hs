@@ -481,29 +481,29 @@ generateInProgressOPClaims = do
     startedOPClaims graphs claims =
         fmap createOnePathClaim
         $ claimsWithPatterns graphs claims
-        >>= uncurry zip
+        >>= sequence
     notStartedOPClaims
         :: Claim claim
         => Map.Map ClaimIndex ExecutionGraph
         -> [claim]
         -> [Rule.OnePathRule Variable]
-    notStartedOPClaims gphs cls =
+    notStartedOPClaims graphs claims =
         Rule.OnePathRule
         . coerce
-        . (cls !!)
+        . (claims !!)
         . unClaimIndex
         <$> (Set.toList $ Set.difference
-                (Set.fromList $ fmap ClaimIndex [0..length cls - 1])
-                (Set.fromList $ Map.keys gphs)
+                (Set.fromList $ fmap ClaimIndex [0..length claims - 1])
+                (Set.fromList $ Map.keys graphs)
             )
 
 claimsWithPatterns
     :: Map ClaimIndex ExecutionGraph
     -> [claim]
-    -> [([claim], [TermLike Variable])]
+    -> [(claim, [TermLike Variable])]
 claimsWithPatterns graphs claims =
     Bifunctor.bimap
-        (return . (claims !!) . unClaimIndex)
+        ((claims !!) . unClaimIndex)
         (findTerminalPatterns . Strategy.graph)
     <$> (Map.toList graphs)
 
