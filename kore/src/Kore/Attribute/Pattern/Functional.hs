@@ -1,0 +1,124 @@
+{- |
+Copyright   : (c) Runtime Verification, 2019
+License     : NCSA
+
+ -}
+
+module Kore.Attribute.Pattern.Functional
+    ( Functional (..)
+    ) where
+
+import           Control.DeepSeq
+import qualified Data.Foldable as Foldable
+import           Data.Hashable
+import           Data.Monoid
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
+
+import           Kore.Attribute.Synthetic
+import           Kore.Debug
+import           Kore.Domain.Builtin
+import qualified Kore.Internal.Alias as Internal
+import qualified Kore.Internal.Symbol as Internal
+import           Kore.Syntax
+
+newtype Functional = Functional { isFunctional :: Bool }
+    deriving (Eq, GHC.Generic, Show)
+    deriving (Semigroup, Monoid) via All
+
+instance SOP.Generic Functional
+
+instance SOP.HasDatatypeInfo Functional
+
+instance Debug Functional
+
+instance NFData Functional
+
+instance Hashable Functional
+
+instance Synthetic (And sort) Functional where
+    synthetic _ = Functional False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Bottom sort) Functional where
+    synthetic _ = Functional False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Application Internal.Symbol) Functional where
+    synthetic application =
+        functionalSymbol <> Foldable.fold children
+      where
+        functionalSymbol = Functional (Internal.isFunctional symbol)
+        children = applicationChildren application
+        symbol = applicationSymbolOrAlias application
+
+instance Synthetic (Application Internal.Alias) Functional where
+    synthetic _ = Functional False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Ceil sort) Functional where
+    synthetic _ = Functional False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (DomainValue sort) Functional where
+    synthetic = domainValueChild
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Equals sort) Functional where
+    synthetic _ = Functional False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Exists sort variable) Functional where
+    synthetic _ = Functional False
+
+instance Synthetic (Floor sort) Functional where
+    synthetic _ = Functional False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Forall sort variable) Functional where
+    synthetic _ = Functional False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Iff sort) Functional where
+    synthetic _ = Functional False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Implies sort) Functional where
+    synthetic _ = Functional False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (In sort) Functional where
+    synthetic _ = Functional False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Mu sort) Functional where
+    synthetic _ = Functional False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Next sort) Functional where
+    synthetic = nextChild
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Not sort) Functional where
+    synthetic _ = Functional False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Nu sort) Functional where
+    synthetic _ = Functional False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Or sort) Functional where
+    synthetic _ = Functional False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Rewrites sort) Functional where
+    synthetic _ = Functional False
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Builtin key) Functional where
+    synthetic = Foldable.fold
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Top sort) Functional where
+    synthetic _ = Functional False
+    {-# INLINE synthetic #-}
