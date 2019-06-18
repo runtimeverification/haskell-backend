@@ -243,7 +243,7 @@ asTermLike internal =
     Domain.InternalString { internalStringValue } = internal
 
 asPattern
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => Sort  -- ^ resulting sort
     -> Text  -- ^ builtin value to render
     -> Pattern variable
@@ -251,7 +251,7 @@ asPattern resultSort =
     Pattern.fromTermLike . asInternal resultSort
 
 asPartialPattern
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => Sort  -- ^ resulting sort
     -> Maybe Text  -- ^ builtin value to render
     -> Pattern variable

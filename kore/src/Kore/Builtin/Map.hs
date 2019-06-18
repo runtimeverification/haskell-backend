@@ -199,7 +199,7 @@ expectBuiltinMap ctx (Builtin_ builtin) =
 expectBuiltinMap _ _ = empty
 
 returnMap
-    :: (MonadSimplify m, Ord variable)
+    :: (MonadSimplify m, Ord variable, SortedVariable variable)
     => Sort
     -> Map (TermLike Concrete) (TermLike variable)
     -> m (AttemptedAxiom variable)
@@ -413,7 +413,7 @@ See also: 'sort'
 
  -}
 asInternal
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => SmtMetadataTools Attribute.Symbol
     -> Sort
     -> Map (TermLike Concrete) (TermLike variable)
@@ -456,7 +456,7 @@ See also: 'asPattern'
 
  -}
 asPattern
-    ::  ( Ord variable
+    ::  ( Ord variable, SortedVariable variable
         , Given (SmtMetadataTools Attribute.Symbol)
         )
     => Sort

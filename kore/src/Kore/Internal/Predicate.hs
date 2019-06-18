@@ -42,7 +42,7 @@ eraseConditionalTerm
     -> Predicate variable
 eraseConditionalTerm = Conditional.withoutTerm
 
-top :: Ord variable => Predicate variable
+top :: (Ord variable, SortedVariable variable) => Predicate variable
 top =
     Conditional
         { term = ()
@@ -50,7 +50,7 @@ top =
         , substitution = mempty
         }
 
-bottom :: Ord variable => Predicate variable
+bottom :: (Ord variable, SortedVariable variable) => Predicate variable
 bottom =
     Conditional
         { term = ()
@@ -58,11 +58,11 @@ bottom =
         , substitution = mempty
         }
 
-topPredicate :: Ord variable => Predicate variable
+topPredicate :: (Ord variable, SortedVariable variable) => Predicate variable
 topPredicate = top
 
 bottomPredicate
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => Predicate variable
 bottomPredicate = bottom
 

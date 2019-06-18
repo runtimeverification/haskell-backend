@@ -7,6 +7,7 @@ License     : NCSA
 
 module Kore.Attribute.Synthetic
     ( Synthetic (..)
+    , resynthesize, resynthesizeAux
     , synthesize, synthesizeAux
     ) where
 
@@ -38,7 +39,7 @@ See also:
 <https://en.wikipedia.org/wiki/Attribute_grammar#Synthesized_attributes>
 
  -}
-synthesize
+resynthesize
     ::  ( Recursive s
         , Corecursive t
         , Recursive t
@@ -48,23 +49,20 @@ synthesize
         )
     => s  -- ^ Original tree with attributes @a@
     -> t
-synthesize = synthesizeAux synthetic
+resynthesize = resynthesizeAux synthetic
+{-# INLINE resynthesize #-}
 
-{-# INLINE synthesize #-}
+{- | @/resynthesize/@ attribute @b@ bottom-up along a tree @s@.
 
-{- | @/synthesize/@ attribute @b@ bottom-up along a tree @s@.
-
-@synthesize@ is a generalization of 'Data.List.scanr' to trees: Given a tree @s@
-with attributes @a@ along the nodes, @synthesize@ produces a tree @t@ with
-attributes @b@ along the nodes using the given @(Base s)@-algebra from the
-bottom up. The algebra's argument is the original @a@-attribute of a node and
-the @b@-attributes of all children.
+@resynthesize@ is a generalization of 'Data.List.scanr' to trees: Given a tree
+@s@, @resynthesize@ produces a tree @t@ with attributes @b@ along the nodes
+using the given @(Base s)@-algebra from the bottom up.
 
 See also:
 <https://en.wikipedia.org/wiki/Attribute_grammar#Synthesized_attributes>
 
  -}
-synthesizeAux
+resynthesizeAux
     ::  ( Functor f
         , Recursive s
         , Corecursive t
@@ -75,12 +73,32 @@ synthesizeAux
     => (f b -> b)  -- ^ @(Base s)@-algebra synthesizing @b@
     -> s  -- ^ Original tree with attributes @a@
     -> t
-synthesizeAux synth =
+resynthesizeAux synth =
     Recursive.fold worker
   where
-    worker (_ :< ft) =
-        Recursive.embed (synth fb :< ft)
-      where
-        fb = Cofree.headF . Recursive.project <$> ft
+    worker (_ :< ft) = synthesizeAux synth ft
+{-# INLINE resynthesizeAux #-}
 
+{- | @/synthesize/@ an attribute @a@ bottom-up along a tree @s@.
+ -}
+synthesize
+    ::  ( Functor f, Synthetic f a
+        , Corecursive s, Recursive s, Base s ~ CofreeF f a
+        )
+    => f s
+    -> s
+synthesize = synthesizeAux synthetic
+{-# INLINE synthesize #-}
+
+{- | @/synthesize/@ an attribute @a@ using the provided algebra.
+ -}
+synthesizeAux
+    :: (Functor f, Corecursive s, Recursive s, Base s ~ CofreeF f a)
+    => (f a -> a)  -- ^ Algebra
+    -> f s
+    -> s
+synthesizeAux synth fs =
+    Recursive.embed (synth fa :< fs)
+  where
+    fa = Cofree.headF . Recursive.project <$> fs
 {-# INLINE synthesizeAux #-}

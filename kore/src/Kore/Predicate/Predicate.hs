@@ -317,7 +317,8 @@ makeInPredicate first second =
 predicate.
 -}
 makeCeilPredicate
-    ::  ( SortedVariable variable
+    ::  ( Ord variable
+        , SortedVariable variable
         , Show variable
         , Unparse variable
         )
@@ -330,8 +331,9 @@ makeCeilPredicate patt =
 predicate.
 -}
 makeFloorPredicate
-    ::  ( SortedVariable variable
+    ::  ( Ord variable
         , Show variable
+        , SortedVariable variable
         , Unparse variable
         )
     => TermLike variable
@@ -388,12 +390,14 @@ makeForallPredicate v (GenericPredicate p) =
 
 {-| 'makeTruePredicate' produces a predicate wrapping a 'top'.
 -}
-makeTruePredicate :: Ord variable => Predicate variable
+makeTruePredicate
+    :: (Ord variable, SortedVariable variable) => Predicate variable
 makeTruePredicate = GenericPredicate TermLike.mkTop_
 
 {-| 'makeFalsePredicate' produces a predicate wrapping a 'bottom'.
 -}
-makeFalsePredicate :: Ord variable => Predicate variable
+makeFalsePredicate
+    :: (Ord variable, SortedVariable variable) => Predicate variable
 makeFalsePredicate = GenericPredicate TermLike.mkBottom_
 
 makePredicate

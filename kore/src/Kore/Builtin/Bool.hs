@@ -148,7 +148,7 @@ parse = (Parsec.<|>) true false
 
  -}
 asInternal
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => Sort  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
     -> TermLike variable
@@ -184,7 +184,7 @@ asTermLike builtin =
       | otherwise = "false"
 
 asPattern
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => Sort  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
     -> Pattern variable

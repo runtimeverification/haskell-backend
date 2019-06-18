@@ -24,7 +24,8 @@ hprop_synthetic = property $ do
         external :: Syntax.Pattern Variable Attribute.Null
         external = Builtin.externalizePattern termLike
         synthesized :: Syntax.Pattern Variable (Set Variable)
-        synthesized = Attribute.synthesizeAux Variables.Free.synthetic external
+        synthesized =
+            Attribute.resynthesizeAux Variables.Free.synthetic external
         expect = getFreeVariables (freeVariables termLike)
         actual = extract synthesized
     expect === actual

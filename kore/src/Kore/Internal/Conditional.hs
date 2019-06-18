@@ -239,7 +239,7 @@ The result has a true 'Predicate'.
 
  -}
 fromSubstitution
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => Substitution variable
     -> Conditional variable ()
 fromSubstitution substitution =
@@ -255,7 +255,7 @@ The result has a true 'Predicate'.
 
  -}
 fromSingleSubstitution
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => (variable, TermLike variable)
     -> Conditional variable ()
 fromSingleSubstitution pair =

@@ -267,14 +267,14 @@ asTermLike builtin =
     Domain.InternalInt { builtinIntValue = int } = builtin
 
 asPattern
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => Sort  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
     -> Pattern variable
 asPattern resultSort = Pattern.fromTermLike . asInternal resultSort
 
 asPartialPattern
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => Sort  -- ^ resulting sort
     -> Maybe Integer  -- ^ builtin value to render
     -> Pattern variable

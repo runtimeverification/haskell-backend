@@ -180,7 +180,6 @@ import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
 import           Kore.Attribute.Synthetic
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Domain.Class
 import           Kore.Error
 import           Kore.Internal.Alias
 import           Kore.Internal.Symbol
@@ -330,7 +329,7 @@ instance
 
     synthetic (AndF andF) = synthetic andF
     synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
-    synthetic (ApplyAliasF _) = undefined
+    synthetic (ApplyAliasF applyAliasF) = synthetic applyAliasF
     synthetic (BottomF bottomF) = synthetic bottomF
     synthetic (CeilF ceilF) = synthetic ceilF
     synthetic (DomainValueF domainValueF) = synthetic domainValueF
@@ -1115,16 +1114,7 @@ mkAnd
 mkAnd = makeSortsAgree mkAndWorker
   where
     mkAndWorker andFirst andSecond andSort =
-        Recursive.embed (attrs :< AndF and')
-      where
-        attrs =
-            Attribute.Pattern
-                { patternSort = andSort
-                , freeVariables = freeVariables1 <> freeVariables2
-                }
-        and' = And { andSort, andFirst, andSecond }
-        freeVariables1 = freeVariables andFirst
-        freeVariables2 = freeVariables andSecond
+        synthesize (AndF And { andSort, andFirst, andSecond })
 
 {- | Force the 'TermLike's to conform to their 'Sort's.
 
@@ -1173,21 +1163,14 @@ mkApplyAlias
     -- ^ Application arguments
     -> TermLike variable
 mkApplyAlias alias children =
-    Recursive.embed (attrs :< ApplyAliasF application)
+    synthesize (ApplyAliasF application)
   where
-    attrs =
-        Attribute.Pattern
-            { patternSort = resultSort
-            , freeVariables = mconcat (freeVariables <$> children)
-            }
     application =
         Application
             { applicationSymbolOrAlias = alias
             , applicationChildren = forceSorts operandSorts children
             }
-    Alias { aliasSorts } = alias
-    operandSorts = applicationSortsOperands aliasSorts
-    resultSort = applicationSortsResult aliasSorts
+    operandSorts = applicationSortsOperands (aliasSorts alias)
 
 {- | Construct an 'Application' pattern.
 
@@ -1207,21 +1190,14 @@ mkApplySymbol
     -- ^ Application arguments
     -> TermLike variable
 mkApplySymbol symbol children =
-    Recursive.embed (attrs :< ApplySymbolF application)
+    synthesize (ApplySymbolF application)
   where
-    attrs =
-        Attribute.Pattern
-            { patternSort = resultSort
-            , freeVariables = mconcat (freeVariables <$> children)
-            }
     application =
         Application
             { applicationSymbolOrAlias = symbol
             , applicationChildren = forceSorts operandSorts children
             }
-    Symbol { symbolSorts } = symbol
-    operandSorts = applicationSortsOperands symbolSorts
-    resultSort = applicationSortsResult symbolSorts
+    operandSorts = applicationSortsOperands (symbolSorts symbol)
 
 {- | Construct an 'Application' pattern from a 'Alias' declaration.
 
@@ -1346,16 +1322,8 @@ applySymbol_ sentence = applySymbol sentence []
 See also: 'mkBottom_'
 
  -}
-mkBottom :: Ord variable => Sort -> TermLike variable
-mkBottom bottomSort =
-    Recursive.embed (attrs :< BottomF bottom)
-  where
-    attrs =
-        Attribute.Pattern
-            { patternSort = bottomSort
-            , freeVariables = mempty
-            }
-    bottom = Bottom { bottomSort }
+mkBottom :: (Ord variable, SortedVariable variable) => Sort -> TermLike variable
+mkBottom bottomSort = synthesize (BottomF Bottom { bottomSort })
 
 {- | Construct a 'Bottom' pattern in 'predicateSort'.
 
@@ -1365,7 +1333,7 @@ This should not be used outside "Kore.Predicate.Predicate"; please use
 See also: 'mkBottom'
 
  -}
-mkBottom_ :: Ord variable => TermLike variable
+mkBottom_ :: (Ord variable, SortedVariable variable) => TermLike variable
 mkBottom_ = mkBottom predicateSort
 
 {- | Construct a 'Ceil' pattern in the given sort.
@@ -1373,17 +1341,15 @@ mkBottom_ = mkBottom predicateSort
 See also: 'mkCeil_'
 
  -}
-mkCeil :: Sort -> TermLike variable -> TermLike variable
+mkCeil
+    :: (Ord variable, SortedVariable variable)
+    => Sort
+    -> TermLike variable
+    -> TermLike variable
 mkCeil ceilResultSort ceilChild =
-    Recursive.embed (attrs :< CeilF ceil)
+    synthesize (CeilF Ceil { ceilOperandSort, ceilResultSort, ceilChild })
   where
     ceilOperandSort = termLikeSort ceilChild
-    attrs =
-        Attribute.Pattern
-            { patternSort = ceilResultSort
-            , freeVariables = freeVariables ceilChild
-            }
-    ceil = Ceil { ceilOperandSort, ceilResultSort, ceilChild }
 
 {- | Construct a 'Ceil' pattern in 'predicateSort'.
 
@@ -1393,25 +1359,19 @@ instead.
 See also: 'mkCeil'
 
  -}
-mkCeil_ :: TermLike variable -> TermLike variable
+mkCeil_
+    :: (Ord variable, SortedVariable variable)
+    => TermLike variable
+    -> TermLike variable
 mkCeil_ = mkCeil predicateSort
 
 {- | Construct a builtin pattern.
  -}
 mkBuiltin
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => Domain.Builtin (TermLike Concrete) (TermLike variable)
     -> TermLike variable
-mkBuiltin domain =
-    Recursive.embed (attrs :< BuiltinF domain)
-  where
-    attrs =
-        Attribute.Pattern
-            { patternSort = domainValueSort
-            , freeVariables =
-                (mconcat . Foldable.toList) (freeVariables <$> domain)
-            }
-    DomainValue { domainValueSort } = Lens.view lensDomainValue domain
+mkBuiltin = synthesize . BuiltinF
 
 {- | Construct a 'DomainValue' pattern.
  -}
@@ -1442,18 +1402,11 @@ mkEquals
     -> TermLike variable
     -> TermLike variable
 mkEquals equalsResultSort =
-    makeSortsAgree mkEquals'Worker
+    makeSortsAgree mkEqualsWorker
   where
-    mkEquals'Worker equalsFirst equalsSecond equalsOperandSort =
-        Recursive.embed (attrs :< EqualsF equals)
+    mkEqualsWorker equalsFirst equalsSecond equalsOperandSort =
+        synthesize (EqualsF equals)
       where
-        attrs =
-            Attribute.Pattern
-                { patternSort = equalsResultSort
-                , freeVariables = freeVariables1 <> freeVariables2
-                }
-        freeVariables1 = freeVariables equalsFirst
-        freeVariables2 = freeVariables equalsSecond
         equals =
             Equals
                 { equalsOperandSort
@@ -1484,22 +1437,14 @@ mkEquals_ = mkEquals predicateSort
 {- | Construct an 'Exists' pattern.
  -}
 mkExists
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => variable
     -> TermLike variable
     -> TermLike variable
 mkExists existsVariable existsChild =
-    Recursive.embed (attrs :< ExistsF exists)
+    synthesize (ExistsF Exists { existsSort, existsVariable, existsChild })
   where
-    attrs =
-        Attribute.Pattern
-            { patternSort = existsSort
-            , freeVariables =
-                FreeVariables.delete existsVariable freeVariablesChild
-            }
     existsSort = termLikeSort existsChild
-    freeVariablesChild = freeVariables existsChild
-    exists = Exists { existsSort, existsVariable, existsChild }
 
 {- | Construct a 'Floor' pattern in the given sort.
 
@@ -1507,19 +1452,14 @@ See also: 'mkFloor_'
 
  -}
 mkFloor
-    :: Sort
+    :: (Ord variable, SortedVariable variable)
+    => Sort
     -> TermLike variable
     -> TermLike variable
 mkFloor floorResultSort floorChild =
-    Recursive.embed (attrs :< FloorF floor')
+    synthesize (FloorF Floor { floorOperandSort, floorResultSort, floorChild })
   where
-    attrs =
-        Attribute.Pattern
-            { patternSort = floorResultSort
-            , freeVariables = freeVariables floorChild
-            }
     floorOperandSort = termLikeSort floorChild
-    floor' = Floor { floorOperandSort, floorResultSort, floorChild }
 
 {- | Construct a 'Floor' pattern in 'predicateSort'.
 
@@ -1529,7 +1469,9 @@ instead.
 See also: 'mkFloor'
 
  -}
-mkFloor_ :: TermLike variable -> TermLike variable
+mkFloor_
+    :: (Ord variable, SortedVariable variable)
+    => TermLike variable -> TermLike variable
 mkFloor_ = mkFloor predicateSort
 
 {- | Construct a 'Forall' pattern.
@@ -1563,16 +1505,7 @@ mkIff
 mkIff = makeSortsAgree mkIffWorker
   where
     mkIffWorker iffFirst iffSecond iffSort =
-        Recursive.embed (attrs :< IffF iff')
-      where
-        attrs =
-            Attribute.Pattern
-                { patternSort = iffSort
-                , freeVariables = freeVariables1 <> freeVariables2
-                }
-        freeVariables1 = freeVariables iffFirst
-        freeVariables2 = freeVariables iffSecond
-        iff' = Iff { iffSort, iffFirst, iffSecond }
+        synthesize (IffF Iff { iffSort, iffFirst, iffSecond })
 
 {- | Construct an 'Implies' pattern.
  -}
@@ -1585,15 +1518,8 @@ mkImplies
 mkImplies = makeSortsAgree mkImpliesWorker
   where
     mkImpliesWorker impliesFirst impliesSecond impliesSort =
-        Recursive.embed (attrs :< ImpliesF implies')
+        synthesize (ImpliesF implies')
       where
-        attrs =
-            Attribute.Pattern
-                { patternSort = impliesSort
-                , freeVariables = freeVariables1 <> freeVariables2
-                }
-        freeVariables1 = freeVariables impliesFirst
-        freeVariables2 = freeVariables impliesSecond
         implies' = Implies { impliesSort, impliesFirst, impliesSecond }
 
 {- | Construct a 'In' pattern in the given sort.
@@ -1611,15 +1537,8 @@ mkIn
 mkIn inResultSort = makeSortsAgree mkInWorker
   where
     mkInWorker inContainedChild inContainingChild inOperandSort =
-        Recursive.embed (attrs :< InF in')
+        synthesize (InF in')
       where
-        attrs =
-            Attribute.Pattern
-                { patternSort = inResultSort
-                , freeVariables = freeVariables1 <> freeVariables2
-                }
-        freeVariables1 = freeVariables inContainedChild
-        freeVariables2 = freeVariables inContainingChild
         in' =
             In
                 { inOperandSort
@@ -1656,45 +1575,30 @@ mkMu
 mkMu muVar = makeSortsAgree mkMuWorker (mkSetVar muVar)
   where
     mkMuWorker (SetVar_ muVariable) muChild _ =
-           Recursive.embed (attrs :< MuF mu)
-      where
-        attrs =
-            Attribute.Pattern
-                { patternSort = sortedVariableSort v
-                , freeVariables = FreeVariables.delete v freeVariablesChild
-                }
-        v = getVariable muVariable
-        freeVariablesChild = freeVariables muChild
-        mu = Mu { muVariable, muChild }
+        synthesize (MuF Mu { muVariable, muChild })
     mkMuWorker _ _ _ = error "Unreachable code"
 
 {- | Construct a 'Next' pattern.
  -}
-mkNext :: TermLike variable -> TermLike variable
+mkNext
+    :: (Ord variable, SortedVariable variable)
+    => TermLike variable
+    -> TermLike variable
 mkNext nextChild =
-    Recursive.embed (attrs :< NextF next)
+    synthesize (NextF Next { nextSort, nextChild })
   where
-    attrs =
-        Attribute.Pattern
-            { patternSort = nextSort
-            , freeVariables = freeVariables nextChild
-            }
     nextSort = termLikeSort nextChild
-    next = Next { nextSort, nextChild }
 
 {- | Construct a 'Not' pattern.
  -}
-mkNot :: TermLike variable -> TermLike variable
+mkNot
+    :: (Ord variable, SortedVariable variable)
+    => TermLike variable
+    -> TermLike variable
 mkNot notChild =
-    Recursive.embed (attrs :< NotF not')
+    synthesize (NotF Not { notSort, notChild })
   where
-    attrs =
-        Attribute.Pattern
-            { patternSort = notSort
-            , freeVariables = freeVariables notChild
-            }
     notSort = termLikeSort notChild
-    not' = Not { notSort, notChild }
 
 {- | Construct a 'Nu' pattern.
  -}
@@ -1708,16 +1612,7 @@ mkNu
 mkNu nuVar = makeSortsAgree mkNuWorker (mkSetVar nuVar)
   where
     mkNuWorker (SetVar_ nuVariable) nuChild _ =
-           Recursive.embed (attrs :< NuF nu)
-      where
-        attrs =
-            Attribute.Pattern
-                { patternSort = sortedVariableSort v
-                , freeVariables = FreeVariables.delete v freeVariablesChild
-                }
-        v = getVariable nuVariable
-        freeVariablesChild = freeVariables nuChild
-        nu = Nu { nuVariable, nuChild }
+        synthesize (NuF Nu { nuVariable, nuChild })
     mkNuWorker _ _ _ = error "Unreachable code"
 
 {- | Construct an 'Or' pattern.
@@ -1731,16 +1626,7 @@ mkOr
 mkOr = makeSortsAgree mkOrWorker
   where
     mkOrWorker orFirst orSecond orSort =
-        Recursive.embed (attrs :< OrF or')
-      where
-        attrs =
-            Attribute.Pattern
-                { patternSort = orSort
-                , freeVariables = freeVariables1 <> freeVariables2
-                }
-        freeVariables1 = freeVariables orFirst
-        freeVariables2 = freeVariables orSecond
-        or' = Or { orSort, orFirst, orSecond }
+        synthesize (OrF Or { orSort, orFirst, orSecond })
 
 {- | Construct a 'Rewrites' pattern.
  -}
@@ -1753,15 +1639,8 @@ mkRewrites
 mkRewrites = makeSortsAgree mkRewritesWorker
   where
     mkRewritesWorker rewritesFirst rewritesSecond rewritesSort =
-        Recursive.embed (attrs :< RewritesF rewrites')
+        synthesize (RewritesF rewrites')
       where
-        attrs =
-            Attribute.Pattern
-                { patternSort = rewritesSort
-                , freeVariables = freeVariables1 <> freeVariables2
-                }
-        freeVariables1 = freeVariables rewritesFirst
-        freeVariables2 = freeVariables rewritesSecond
         rewrites' = Rewrites { rewritesSort, rewritesFirst, rewritesSecond }
 
 {- | Construct a 'Top' pattern in the given sort.
@@ -1769,16 +1648,8 @@ mkRewrites = makeSortsAgree mkRewritesWorker
 See also: 'mkTop_'
 
  -}
-mkTop :: Ord variable => Sort -> TermLike variable
-mkTop topSort =
-    Recursive.embed (attrs :< TopF top)
-  where
-    attrs =
-        Attribute.Pattern
-            { patternSort = topSort
-            , freeVariables = mempty
-            }
-    top = Top { topSort }
+mkTop :: (Ord variable, SortedVariable variable) => Sort -> TermLike variable
+mkTop topSort = synthesize (TopF Top { topSort })
 
 {- | Construct a 'Top' pattern in 'predicateSort'.
 
@@ -1788,7 +1659,7 @@ This should not be used outside "Kore.Predicate.Predicate"; please use
 See also: 'mkTop'
 
  -}
-mkTop_ :: Ord variable => TermLike variable
+mkTop_ :: (Ord variable, SortedVariable variable) => TermLike variable
 mkTop_ = mkTop predicateSort
 
 {- | Construct a variable pattern.

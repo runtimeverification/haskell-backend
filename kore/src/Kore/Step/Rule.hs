@@ -98,7 +98,7 @@ instance
         RulePattern { left, right, requires, ensures } = rulePattern'
 
 rulePattern
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => TermLike variable
     -> TermLike variable
     -> RulePattern variable

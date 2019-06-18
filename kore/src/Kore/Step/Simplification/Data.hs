@@ -668,7 +668,7 @@ notApplicableAxiomEvaluator = pure NotApplicable
 
 -- |Yields a pure 'Simplifier' which produces a given 'TermLike'
 purePatternAxiomEvaluator
-    :: (Applicative m, Ord variable)
+    :: (Applicative m, Ord variable, SortedVariable variable)
     => TermLike variable
     -> m (AttemptedAxiom variable)
 purePatternAxiomEvaluator p =
