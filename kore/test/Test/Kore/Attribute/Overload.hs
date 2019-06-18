@@ -11,7 +11,7 @@ import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.Attribute.Overload
 import qualified Kore.Builtin as Builtin
 import           Kore.Internal.Symbol
-                 ( toSymbolOrAlias )
+                 ( applicationSorts, toSymbolOrAlias )
 import           Kore.Internal.TermLike
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import           Kore.Step.Axiom.Registry
@@ -36,6 +36,7 @@ superSymbol =
         { symbolConstructor = superId
         , symbolParams = []
         , symbolAttributes = Default.def
+        , symbolSorts = applicationSorts [] Mock.testSort
         }
 
 superSymbolOrAlias :: SymbolOrAlias
@@ -50,6 +51,7 @@ subSymbol =
         { symbolConstructor = subId
         , symbolParams = []
         , symbolAttributes = Default.def
+        , symbolSorts = applicationSorts [] Mock.testSort
         }
 
 subSymbolOrAlias :: SymbolOrAlias
@@ -135,8 +137,8 @@ test_ignore =
             , moduleAttributes = Attributes []
             , moduleSentences =
                 [ sortDecl   Mock.testSort
-                , symbolDecl superSymbol Mock.testSort []
-                , symbolDecl subSymbol   Mock.testSort []
+                , symbolDecl superSymbol
+                , symbolDecl subSymbol
                 , overloadAxiom
                 ]
             }
@@ -149,8 +151,8 @@ test_ignore =
             , sentenceAxiomPattern =
                 Builtin.externalizePattern
                 $ mkEquals sortS
-                    (mkApplySymbol Mock.testSort superSymbol [])
-                    (mkApplySymbol Mock.testSort subSymbol   [])
+                    (mkApplySymbol superSymbol [])
+                    (mkApplySymbol subSymbol   [])
             }
       where
         sortVarS = SortVariable "S"

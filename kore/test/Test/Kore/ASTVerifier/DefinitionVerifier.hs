@@ -16,6 +16,7 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Debug
 import           Kore.Error
+import           Kore.Internal.ApplicationSorts
 import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Internal.TermLike as Internal
@@ -745,10 +746,10 @@ applicationUnifiedPatternWithParams
     -> TermLike Variable
 applicationUnifiedPatternWithParams resultSort (SymbolName name) params =
     Internal.mkApplySymbol
-        resultSort
         Internal.Symbol
             { symbolConstructor = testId name
             , symbolParams = params
             , symbolAttributes = Attribute.defaultSymbolAttributes
+            , symbolSorts = applicationSorts [] resultSort
             }
         []

@@ -8,10 +8,7 @@ Stability   : experimental
 Portability : POSIX
 -}
 module Kore.IndexedModule.Resolvers
-    ( HeadType(..)
-    , getHeadAttributes
-    , getHeadType
-    , getSortAttributes
+    ( getSortAttributes
     , resolveSort
     , resolveAlias
     , resolveSymbol
@@ -27,8 +24,6 @@ module Kore.IndexedModule.Resolvers
 
     ) where
 
-import           Data.Functor
-                 ( ($>) )
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import           Data.Set
@@ -42,9 +37,6 @@ import           GHC.Stack
 
 import           Kore.AST.Error
                  ( koreFailWithLocations )
-import           Kore.ASTHelpers as AST
-import           Kore.ASTHelpers
-                 ( ApplicationSorts (..) )
 import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Error
 import           Kore.IndexedModule.Error
@@ -52,6 +44,7 @@ import           Kore.IndexedModule.Error
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), getIndexedSentence,
                  indexedModulesInScope )
+import           Kore.Internal.ApplicationSorts
 import           Kore.Syntax
 import           Kore.Syntax.Definition hiding
                  ( Alias (..), Symbol (..) )
@@ -87,39 +80,6 @@ getHeadApplicationSorts m patternHead =
         => [Sort] -> sentence pat -> ApplicationSorts
     sentenceSorts sortParameters sentence =
         assertRight $ symbolOrAliasSorts sortParameters sentence
-
-
--- |Given a KoreIndexedModule and a head, it looks up the 'SentenceSymbol' or
--- 'SentenceAlias', and returns its attributes.
-getHeadAttributes
-    :: IndexedModule patternType declAtts axiomAtts
-    -- ^ module representing an indexed definition
-    -> SymbolOrAlias     -- ^the head we want to find sorts for
-    -> declAtts
-getHeadAttributes m patternHead =
-    applyToAttributes id m patternHead
-
--- |The type of a 'SymbolOrAlias'.
-data HeadType
-    = Alias
-    | Symbol
-
--- |Given a KoreIndexedModule and a head, retrieves the head type.
-getHeadType
-    :: HasCallStack
-    => IndexedModule patternType declAtts axiomAtts
-    -- ^ Module representing an indexed definition
-    -> SymbolOrAlias     -- ^the head we want to find sorts for
-    -> HeadType
-getHeadType m patternHead =
-    case symbol <> alias of
-        Right result -> result
-        Left _ -> error $ noHead patternHead
-  where
-    headName = symbolOrAliasConstructor patternHead
-    symbol = resolveSymbol m headName $> Symbol
-    alias = resolveAlias m headName $> Alias
-
 
 getSortAttributes
     :: HasCallStack
@@ -319,19 +279,6 @@ applyToHeadSentence
     -> result
 applyToHeadSentence f =
      applyToResolution (\ params (_, sentence) -> f params sentence)
-
--- It would make sense to put this in a `where` clause; however,
--- the fully type annotation is required even there, and that makes
--- for too much clutter.
-applyToAttributes
-    :: (declAtts -> result)
-    -> IndexedModule patternType declAtts axiomAtts
-    -- ^ module representing an indexed definition
-    -> SymbolOrAlias     -- ^the head we want to find sorts for
-    -> result
-applyToAttributes f =
-    applyToResolution (\ _ (attrs, _) -> f attrs)
-
 
 applyToResolution
     :: HasCallStack

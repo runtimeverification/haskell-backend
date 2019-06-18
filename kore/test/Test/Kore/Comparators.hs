@@ -857,8 +857,8 @@ instance EqualWithExplanation Sort where
 
 instance StructEqualWithExplanation TermLike.Alias where
     structFieldsWithNames
-        expected@(TermLike.Alias _ _)
-        actual@(TermLike.Alias _ _)
+        expected@(TermLike.Alias _ _ _)
+        actual@(TermLike.Alias _ _ _)
       =
         [ Function.on (EqWrap "aliasConstructor = ")
             TermLike.aliasConstructor expected actual
@@ -873,8 +873,8 @@ instance EqualWithExplanation TermLike.Alias where
 
 instance StructEqualWithExplanation TermLike.Symbol where
     structFieldsWithNames
-        expected@(TermLike.Symbol _ _ _)
-        actual@(TermLike.Symbol _ _ _)
+        expected@(TermLike.Symbol _ _ _ _)
+        actual@(TermLike.Symbol _ _ _ _)
       =
         [ Function.on (EqWrap "symbolConstructor = ")
             TermLike.symbolConstructor expected actual

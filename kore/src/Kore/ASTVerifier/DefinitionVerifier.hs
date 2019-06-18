@@ -13,8 +13,6 @@ module Kore.ASTVerifier.DefinitionVerifier
     , verifyDefinition
     , verifyAndIndexDefinition
     , verifyAndIndexDefinitionWithBase
-    , verifyImplicitParsedDefinition
-    , verifyNormalParsedDefinition
     , AttributesVerification (..)
     ) where
 
@@ -195,83 +193,3 @@ defaultNullAttributesVerification =
   where
     proxy :: Proxy Attribute.Null
     proxy = Proxy
-
-{-|'verifyNormalParsedDefinition' is meant to be used only in the
-"Kore.Implicit" package. It verifies the correctness of a definition
-containing only the 'kore' default module.
--}
-verifyNormalParsedDefinition
-    :: (ParseAttributes axiomAtts, Show axiomAtts)
-    => AttributesVerification Attribute.Symbol axiomAtts
-    -> Builtin.Verifiers
-    -> ParsedDefinition
-    -> Either (Error VerifyError) (VerifiedModule Attribute.Symbol axiomAtts)
-verifyNormalParsedDefinition
-    attributesVerification
-    builtinVerifiers
-    definition
-  = do
-    -- VerifyDefinition already checks the Kore module, so we skip it.
-    modules <-
-        verifyAndIndexDefinition
-            attributesVerification
-            builtinVerifiers
-            definition
-    name <- extractSingleModuleNameFromDefinition definition
-    findModule name modules
-
-{-|'verifyImplicitParsedDefinition' is meant to be used only in the
-"Kore.Implicit" package. It verifies the correctness of a definition
-containing only the 'kore' default module.
--}
-verifyImplicitParsedDefinition
-    :: ParseAttributes axiomAtts
-    => AttributesVerification Attribute.Symbol axiomAtts
-    -> Builtin.Verifiers
-    -> ParsedDefinition
-    -> Either (Error VerifyError) (VerifiedModule Attribute.Symbol axiomAtts)
-verifyImplicitParsedDefinition
-    attributesVerification
-    builtinVerifiers
-    definition
-  = do
-    modules <-
-        verifyAndIndexDefinition
-            attributesVerification
-            builtinVerifiers
-            definition { definitionModules = [] }
-    name <- extractSingleModuleNameFromDefinition definition
-    findModule name modules
-
-extractSingleModuleNameFromDefinition
-    :: ParsedDefinition
-    -> Either (Error VerifyError) ModuleName
-extractSingleModuleNameFromDefinition definition =
-    case definitionModules definition of
-        [] ->
-            koreFail
-                (  "The kore implicit definition should have exactly"
-                ++ " one module, but found none."
-                )
-        [a] -> return (moduleName a)
-        _ ->
-            koreFail
-                (  "The kore implicit definition should have exactly"
-                ++ " one module, but found multiple ones."
-                )
-
-findModule
-    :: ModuleName
-    -> Map.Map ModuleName (IndexedModule pat declAtts axiomAtts)
-    -> Either (Error VerifyError) (IndexedModule pat declAtts axiomAtts)
-findModule name modules =
-    case Map.lookup name modules of
-        Just a -> return a
-        Nothing ->
-            koreFail
-                (  "Internal error: the kore module ("
-                ++ getModuleNameForError name
-                ++ ") was not indexed ("
-                ++ show (Map.keys modules)
-                ++ ")."
-                )
