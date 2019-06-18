@@ -11,7 +11,7 @@ import Kore.Internal.TermLike
 import Kore.Proof.Functional as Proof.Functional
 import Kore.Step.PatternAttributes
 import Kore.Step.PatternAttributesError
-       ( ConstructorLikeError (..), FunctionError (..), FunctionalError (..) )
+       ( ConstructorLikeError (..), FunctionError (..) )
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as MockSymbols
@@ -52,83 +52,6 @@ test_patternAttributes =
                 (Proof.Functional.mapVariables
                     levelShow
                     (FunctionalCharLiteral (CharLiteral 'a'))
-                )
-        )
-    , testCase "isFunctionalPattern"
-        (do
-            assertEqualWithExplanation "variables are functional"
-                (Right [FunctionalVariable Mock.x])
-                (isFunctionalPattern
-                    Mock.metadataTools
-                    (mkVar Mock.x)
-                )
-            let
-                functionalConstant :: TermLike Variable
-                functionalConstant = Mock.functional00
-            assertEqualWithExplanation "functional symbols are functional"
-                (Right [FunctionalHead Mock.functional00Symbol])
-                (isFunctionalPattern
-                    Mock.metadataTools
-                    functionalConstant
-                )
-            let
-                str :: TermLike Variable
-                str = mkStringLiteral "10"
-            assertEqualWithExplanation "string literals are functional"
-                (Right [FunctionalStringLiteral (StringLiteral "10")])
-                (isFunctionalPattern
-                    Mock.metadataTools
-                    str
-                )
-            let
-                chr :: TermLike Variable
-                chr = mkCharLiteral 'a'
-            assertEqualWithExplanation "char literals are functional"
-                (Right [FunctionalCharLiteral (CharLiteral 'a')])
-                (isFunctionalPattern
-                    Mock.metadataTools
-                    chr
-                )
-            let
-                functionConstant :: TermLike Variable
-                functionConstant = Mock.cf
-            assertEqualWithExplanation "function symbols are not functional"
-                (Left (NonFunctionalHead Mock.cfSymbol))
-                (isFunctionalPattern
-                    Mock.metadataTools
-                    functionConstant
-                )
-            let
-                plainConstant :: TermLike Variable
-                plainConstant = Mock.plain00
-            assertEqualWithExplanation "plain symbols are not functional"
-                (Left (NonFunctionalHead Mock.plain00Symbol))
-                (isFunctionalPattern
-                    Mock.metadataTools
-                    plainConstant
-                )
-            let
-                functionalPatt :: TermLike Variable
-                functionalPatt = Mock.functional10 Mock.a
-            assertEqualWithExplanation "functional composition is functional"
-                (Right
-                    [ FunctionalHead Mock.functional10Symbol
-                    , FunctionalHead Mock.aSymbol
-                    ]
-                )
-                (isFunctionalPattern
-                    Mock.metadataTools
-                    functionalPatt
-                )
-            let
-                nonFunctionalPatt :: TermLike Variable
-                nonFunctionalPatt =
-                    mkOr Mock.a Mock.b
-            assertEqualWithExplanation "or is not functional"
-                (Left NonFunctionalPattern)
-                (isFunctionalPattern
-                    Mock.metadataTools
-                    nonFunctionalPatt
                 )
         )
     , testCase "isFunctionPattern"

@@ -39,16 +39,6 @@ import           Kore.Step.PatternAttributesError
                  ( ConstructorLikeError (..), FunctionError (..),
                  FunctionalError (..), TotalError (..) )
 
-{-| Checks whether a pattern is functional or not and, if it is, returns a proof
-    certifying that.
--}
-isFunctionalPattern
-    :: SmtMetadataTools Attribute.Symbol
-    -> TermLike variable
-    -> Either (FunctionalError) [FunctionalProof variable]
-isFunctionalPattern tools =
-    provePattern (checkFunctionalHead tools)
-
 {-| Checks whether a pattern is non-bottom or not and, if it is, returns a proof
     certifying that.
 -}

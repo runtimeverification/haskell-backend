@@ -12,6 +12,7 @@ module Kore.Internal.TermLike
     , Evaluated (..)
     , Builtin
     , extractAttributes
+    , isFunctionalPattern
     , freeVariables
     , termLikeSort
     , hasFreeVariable
@@ -732,6 +733,12 @@ hasFreeVariable
     -> TermLike variable
     -> Bool
 hasFreeVariable variable = FreeVariables.member variable . freeVariables
+
+{- | Is the 'TermLike' functional?
+ -}
+isFunctionalPattern :: TermLike variable -> Bool
+isFunctionalPattern =
+    Pattern.isFunctional . Attribute.functional . extractAttributes
 
 {- | Throw an error if the variable occurs free in the pattern.
 

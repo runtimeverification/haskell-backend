@@ -14,15 +14,14 @@ module Kore.Step.Function.Evaluator
 
 import           Control.Exception
                  ( assert )
-import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
 import qualified Data.Text as Text
 
 import           Kore.Attribute.Hook
-import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
+import           Kore.Attribute.Synthetic
 import           Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( flatten, merge, mergeAll )
@@ -64,21 +63,18 @@ evaluateApplication
         )
     => Predicate variable
     -- ^ Aggregated children predicate and substitution.
-    -> CofreeF
-        (Application Symbol)
-        (Attribute.Pattern variable)
-        (TermLike variable)
+    -> Application Symbol (TermLike variable)
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
-evaluateApplication childrenPredicate (valid :< app) = do
+evaluateApplication childrenPredicate application = do
     substitutionSimplifier <- Simplifier.askSimplifierPredicate
     simplifier <- Simplifier.askSimplifierTermLike
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
     let
-        afterInj = evaluateSortInjection app
+        afterInj = evaluateSortInjection application
         Application { applicationSymbolOrAlias = appHead } = afterInj
         Symbol { symbolConstructor = symbolId } = appHead
-        appPattern = Recursive.embed (valid :< ApplySymbolF afterInj)
+        termLike = synthesize (ApplySymbolF afterInj)
 
         maybeEvaluatedPattSimplifier =
             maybeEvaluatePattern
@@ -86,11 +82,11 @@ evaluateApplication childrenPredicate (valid :< app) = do
                 simplifier
                 axiomIdToEvaluator
                 childrenPredicate
-                appPattern
+                termLike
                 unchanged
         unchangedPatt =
             Conditional
-                { term         = appPattern
+                { term         = termLike
                 , predicate    = predicate
                 , substitution = substitution
                 }
