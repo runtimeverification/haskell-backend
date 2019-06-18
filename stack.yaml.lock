@@ -31,7 +31,9 @@ packages:
       size: 96118
       sha256: 50c1163d5416f5052c1d5c03b4b68f906151ae3d1b23d0587e0d7cb4881c7392
   original:
+    size: 1248687
     url: https://github.com/ttuegel/haskell-src-exts/archive/363dbd17d91ba58ac877d205c5e82c1672367008.tar.gz
+    sha256: e02e7317509cb1c766b7f591bb7304fb436928ce6d99565a214f70467781aabe
 snapshots:
 - completed:
     size: 498186
