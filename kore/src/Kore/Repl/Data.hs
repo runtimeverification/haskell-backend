@@ -75,7 +75,7 @@ import           Kore.OnePath.Verification
 import           Kore.Step.Rule
                  ( RewriteRule (..) )
 import           Kore.Step.Simplification.Data
-                 ( MonadSimplify, Simplifier )
+                 ( MonadSimplify )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Variable
                  ( Variable )
@@ -334,7 +334,7 @@ type InnerGraph =
     Gr CommonStrategyPattern (Seq (RewriteRule Variable))
 
 -- | State for the rep.
-data ReplState claim = ReplState
+data ReplState claim m = ReplState
     { axioms     :: [Axiom]
     -- ^ List of available axioms
     , claims     :: [claim]
@@ -359,12 +359,12 @@ data ReplState claim = ReplState
         -> [Axiom]
         -> ExecutionGraph
         -> ReplNode
-        -> Simplifier ExecutionGraph
+        -> m ExecutionGraph
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , unifier
         :: TermLike Variable
         -> TermLike Variable
-        -> UnifierWithExplanation (IPredicate.Predicate Variable)
+        -> UnifierWithExplanation m (IPredicate.Predicate Variable)
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
     --   failures
@@ -381,16 +381,16 @@ type Explanation = Doc ()
 
 -- | Unifier that stores the first 'explainBottom'.
 -- See 'runUnifierWithExplanation'.
-newtype UnifierWithExplanation a =
+newtype UnifierWithExplanation m a =
     UnifierWithExplanation
         { getUnifierWithExplanation
-            :: UnifierT (AccumT (First Explanation) Simplifier) a
+            :: UnifierT (AccumT (First Explanation) m) a
         }
   deriving (Alternative, Applicative, Functor, Monad)
 
-deriving instance MonadSMT UnifierWithExplanation
+deriving instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
 
-instance Logger.WithLog Logger.LogMessage UnifierWithExplanation where
+instance Logger.WithLog Logger.LogMessage m => Logger.WithLog Logger.LogMessage (UnifierWithExplanation m) where
     askLogAction =
         Logger.hoistLogAction UnifierWithExplanation
         <$> UnifierWithExplanation Logger.askLogAction
@@ -402,9 +402,9 @@ instance Logger.WithLog Logger.LogMessage UnifierWithExplanation where
         . getUnifierWithExplanation
     {-# INLINE localLogAction #-}
 
-deriving instance MonadSimplify UnifierWithExplanation
+deriving instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m)
 
-instance MonadUnify UnifierWithExplanation where
+instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
     throwSubstitutionError =
         UnifierWithExplanation . Monad.Unify.throwSubstitutionError
     throwUnificationError =
@@ -428,14 +428,15 @@ instance MonadUnify UnifierWithExplanation where
             ]
 
 runUnifierWithExplanation
-    :: forall a
-    .  UnifierWithExplanation a
-    -> Simplifier (Either Explanation (NonEmpty a))
+    :: forall m a
+    .  MonadSimplify m
+    => UnifierWithExplanation m a
+    -> m (Either Explanation (NonEmpty a))
 runUnifierWithExplanation (UnifierWithExplanation unifier) =
     either explainError failWithExplanation <$> unificationResults
   where
     unificationResults
-        ::  Simplifier
+        ::  m
                 (Either UnificationOrSubstitutionError ([a], First Explanation))
     unificationResults =
         fmap (\(r, ex) -> flip (,) ex <$> r)
@@ -474,4 +475,3 @@ data GraphProofStatus
     | StuckProof [Graph.Node]
     | TrustedClaim
     deriving (Eq, Show)
-
