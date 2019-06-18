@@ -10,6 +10,7 @@ module Kore.Attribute.Pattern.Function
 
 import           Control.DeepSeq
 import qualified Data.Foldable as Foldable
+import Data.Functor.Const
 import           Data.Hashable
 import           Data.Monoid
 import qualified Generics.SOP as SOP
@@ -41,7 +42,7 @@ instance Synthetic (And sort) Function where
     {-# INLINE synthetic #-}
 
 instance Synthetic (Bottom sort) Function where
-    synthetic _ = Function True
+    synthetic = const (Function True)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Application Internal.Symbol) Function where
@@ -53,11 +54,11 @@ instance Synthetic (Application Internal.Symbol) Function where
         symbol = applicationSymbolOrAlias application
 
 instance Synthetic (Application Internal.Alias) Function where
-    synthetic _ = Function False
+    synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Ceil sort) Function where
-    synthetic _ = Function False
+    synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (DomainValue sort) Function where
@@ -65,34 +66,34 @@ instance Synthetic (DomainValue sort) Function where
     {-# INLINE synthetic #-}
 
 instance Synthetic (Equals sort) Function where
-    synthetic _ = Function False
+    synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Exists sort variable) Function where
-    synthetic _ = Function False
+    synthetic = const (Function False)
 
 instance Synthetic (Floor sort) Function where
-    synthetic _ = Function False
+    synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Forall sort variable) Function where
-    synthetic _ = Function False
+    synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Iff sort) Function where
-    synthetic _ = Function False
+    synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Implies sort) Function where
-    synthetic _ = Function False
+    synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (In sort) Function where
-    synthetic _ = Function False
+    synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Mu sort) Function where
-    synthetic _ = Function False
+    synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Next sort) Function where
@@ -100,19 +101,19 @@ instance Synthetic (Next sort) Function where
     {-# INLINE synthetic #-}
 
 instance Synthetic (Not sort) Function where
-    synthetic _ = Function False
+    synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Nu sort) Function where
-    synthetic _ = Function False
+    synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Or sort) Function where
-    synthetic _ = Function False
+    synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Rewrites sort) Function where
-    synthetic _ = Function False
+    synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Builtin key) Function where
@@ -120,5 +121,17 @@ instance Synthetic (Builtin key) Function where
     {-# INLINE synthetic #-}
 
 instance Synthetic (Top sort) Function where
-    synthetic _ = Function False
+    synthetic = const (Function False)
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Const StringLiteral) Function where
+    synthetic = const (Function True)
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Const CharLiteral) Function where
+    synthetic = const (Function True)
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Const Variable) Function where
+    synthetic = const (Function True)
     {-# INLINE synthetic #-}
