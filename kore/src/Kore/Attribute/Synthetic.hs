@@ -13,7 +13,6 @@ module Kore.Attribute.Synthetic
 import           Control.Comonad.Trans.Cofree
                  ( CofreeF (..) )
 import qualified Control.Comonad.Trans.Cofree as Cofree
-import qualified Data.Foldable as Foldable
 import           Data.Functor.Foldable
                  ( Base, Corecursive, Recursive )
 import qualified Data.Functor.Foldable as Recursive

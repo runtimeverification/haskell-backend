@@ -355,6 +355,42 @@ instance
     synthetic (SetVariableF _) = mempty
     {-# INLINE synthetic #-}
 
+instance SortedVariable variable => Synthetic (TermLikeF variable) Sort where
+    -- TODO (thomas.tuegel): Use SOP.Generic here, after making the children
+    -- Functors.
+    synthetic (ForallF forallF) = synthetic forallF
+    synthetic (ExistsF existsF) = synthetic existsF
+    synthetic (VariableF variable) = sortedVariableSort variable
+
+    synthetic (AndF andF) = synthetic andF
+    synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
+    synthetic (ApplyAliasF _) = undefined
+    synthetic (BottomF bottomF) = synthetic bottomF
+    synthetic (CeilF ceilF) = synthetic ceilF
+    synthetic (DomainValueF domainValueF) = synthetic domainValueF
+    synthetic (EqualsF equalsF) = synthetic equalsF
+    synthetic (FloorF floorF) = synthetic floorF
+    synthetic (IffF iffF) = synthetic iffF
+    synthetic (ImpliesF impliesF) = synthetic impliesF
+    synthetic (InF inF) = synthetic inF
+    synthetic (NextF nextF) = synthetic nextF
+    synthetic (NotF notF) = synthetic notF
+    synthetic (OrF orF) = synthetic orF
+    synthetic (RewritesF rewritesF) = synthetic rewritesF
+    synthetic (TopF topF) = synthetic topF
+    synthetic (BuiltinF builtinF) = synthetic builtinF
+    synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
+
+    synthetic (StringLiteralF _) = stringMetaSort
+    synthetic (CharLiteralF _) = charMetaSort
+    synthetic (InhabitantF inhSort) = inhSort
+
+    synthetic (MuF muF) = synthetic muF
+    synthetic (NuF nuF) = synthetic nuF
+    synthetic (SetVariableF setVariable) =
+        sortedVariableSort (getVariable setVariable)
+    {-# INLINE synthetic #-}
+
 {- | Use the provided mapping to replace all variables in a 'TermLikeF' head.
 
 __Warning__: @mapVariablesF@ will capture variables if the provided mapping is

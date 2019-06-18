@@ -14,6 +14,7 @@ import           Control.DeepSeq
                  ( NFData (..) )
 import qualified Data.Deriving as Deriving
 import qualified Data.Foldable as Foldable
+import           Data.Function
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
@@ -82,4 +83,14 @@ instance Unparse child => Unparse (In Sort child) where
 
 instance Ord variable => Synthetic (In sort) (FreeVariables variable) where
     synthetic = Foldable.fold
+    {-# INLINE synthetic #-}
+
+instance Synthetic (In Sort) Sort where
+    synthetic in' =
+        inResultSort
+        & seq (matchSort inOperandSort inContainedChild)
+        . seq (matchSort inOperandSort inContainingChild)
+      where
+        In { inResultSort, inOperandSort } = in'
+        In { inContainedChild, inContainingChild } = in'
     {-# INLINE synthetic #-}

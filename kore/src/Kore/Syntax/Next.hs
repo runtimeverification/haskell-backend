@@ -62,3 +62,8 @@ instance Unparse child => Unparse (Next Sort child) where
 instance Ord variable => Synthetic (Next sort) (FreeVariables variable) where
     synthetic = nextChild
     {-# INLINE synthetic #-}
+
+instance Synthetic (Next Sort) Sort where
+    synthetic Next { nextSort, nextChild } =
+        nextSort `matchSort` nextChild
+    {-# INLINE synthetic #-}

@@ -52,7 +52,6 @@ import           Kore.Debug
 import           Kore.Internal.ApplicationSorts
 import           Kore.Sort
 import           Kore.Syntax.Application
-                 ( Application, SymbolOrAlias (..) )
 import           Kore.Unparser
 import           SMT.AST
                  ( SExpr )
@@ -104,6 +103,16 @@ instance
   where
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}
+
+instance Synthetic (Application Symbol) Sort where
+    synthetic application =
+        resultSort Function.& deepseq (matchSorts operandSorts children)
+      where
+        Application { applicationSymbolOrAlias = symbol } = application
+        Application { applicationChildren = children } = application
+        Symbol { symbolSorts } = symbol
+        resultSort = applicationSortsResult symbolSorts
+        operandSorts = applicationSortsOperands symbolSorts
 
 toSymbolOrAlias :: Symbol -> SymbolOrAlias
 toSymbolOrAlias symbol =

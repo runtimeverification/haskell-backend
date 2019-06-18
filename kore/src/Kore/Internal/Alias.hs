@@ -21,11 +21,11 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import qualified Control.Lens.TH.Rules as Lens
+import           Kore.Attribute.Synthetic
 import           Kore.Debug
 import           Kore.Internal.ApplicationSorts
 import           Kore.Sort
 import           Kore.Syntax.Application
-                 ( SymbolOrAlias (..) )
 import           Kore.Unparser
 
 data Alias =
@@ -68,6 +68,16 @@ instance Unparse Alias where
 
     unparse2 Alias { aliasConstructor } =
         unparse2 aliasConstructor
+
+instance Synthetic (Application Alias) Sort where
+    synthetic application =
+        resultSort Function.& deepseq (matchSorts operandSorts children)
+      where
+        Application { applicationSymbolOrAlias = alias } = application
+        Application { applicationChildren = children } = application
+        Alias { aliasSorts } = alias
+        resultSort = applicationSortsResult aliasSorts
+        operandSorts = applicationSortsOperands aliasSorts
 
 toSymbolOrAlias :: Alias -> SymbolOrAlias
 toSymbolOrAlias alias =

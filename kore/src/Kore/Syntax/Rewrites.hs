@@ -14,6 +14,7 @@ import           Control.DeepSeq
                  ( NFData (..) )
 import qualified Data.Deriving as Deriving
 import qualified Data.Foldable as Foldable
+import           Data.Function
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
@@ -72,3 +73,9 @@ instance
   where
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}
+
+instance Synthetic (Rewrites Sort) Sort where
+    synthetic Rewrites { rewritesSort, rewritesFirst, rewritesSecond } =
+        rewritesSort
+        & seq (matchSort rewritesSort rewritesFirst)
+        . seq (matchSort rewritesSort rewritesSecond)

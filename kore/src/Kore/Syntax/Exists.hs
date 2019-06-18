@@ -82,3 +82,8 @@ instance
     synthetic Exists { existsVariable, existsChild } =
         FreeVariables.delete existsVariable existsChild
     {-# INLINE synthetic #-}
+
+instance Synthetic (Exists Sort variable) Sort where
+    synthetic Exists { existsSort, existsChild } =
+        existsSort `matchSort` existsChild
+    {-# INLINE synthetic #-}

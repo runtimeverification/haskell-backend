@@ -13,6 +13,7 @@ module Kore.Syntax.DomainValue
 import           Control.DeepSeq
                  ( NFData (..) )
 import qualified Data.Deriving as Deriving
+import           Data.Function
 import           Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -68,4 +69,10 @@ instance
     Synthetic (DomainValue sort) (FreeVariables variable)
   where
     synthetic = domainValueChild
+    {-# INLINE synthetic #-}
+
+instance Synthetic (DomainValue Sort) Sort where
+    synthetic DomainValue { domainValueSort, domainValueChild } =
+        domainValueSort
+        & seq (matchSort stringMetaSort domainValueChild)
     {-# INLINE synthetic #-}

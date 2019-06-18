@@ -82,3 +82,8 @@ instance
     synthetic Forall { forallVariable, forallChild } =
         FreeVariables.delete forallVariable forallChild
     {-# INLINE synthetic #-}
+
+instance Synthetic (Forall Sort variable) Sort where
+    synthetic Forall { forallSort, forallChild } =
+        forallSort `matchSort` forallChild
+    {-# INLINE synthetic #-}

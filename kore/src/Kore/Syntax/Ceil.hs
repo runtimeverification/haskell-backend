@@ -13,6 +13,7 @@ module Kore.Syntax.Ceil
 import           Control.DeepSeq
                  ( NFData (..) )
 import qualified Data.Deriving as Deriving
+import           Data.Function
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
@@ -66,4 +67,10 @@ instance Unparse child => Unparse (Ceil Sort child) where
 
 instance Ord variable => Synthetic (Ceil sort) (FreeVariables variable) where
     synthetic = ceilChild
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Ceil Sort) Sort where
+    synthetic Ceil { ceilOperandSort, ceilResultSort, ceilChild } =
+        ceilResultSort
+        & seq (matchSort ceilOperandSort ceilChild)
     {-# INLINE synthetic #-}

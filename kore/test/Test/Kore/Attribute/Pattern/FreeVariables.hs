@@ -3,7 +3,6 @@ module Test.Kore.Attribute.Pattern.FreeVariables where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Control.Comonad.Trans.Cofree
 import qualified GHC.Stack as GHC
 
 import           Kore.Attribute.Pattern.FreeVariables

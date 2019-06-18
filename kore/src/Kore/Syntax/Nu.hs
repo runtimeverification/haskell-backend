@@ -13,6 +13,7 @@ module Kore.Syntax.Nu
 import           Control.DeepSeq
                  ( NFData (..) )
 import qualified Data.Deriving as Deriving
+import           Data.Function
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
@@ -24,7 +25,6 @@ import Kore.Debug
 import Kore.Sort
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
-       ( SortedVariable, unparse2SortedVariable )
 import Kore.Unparser
 
 {-|'Nu' corresponds to the @ν@ syntactic category from the
@@ -43,21 +43,15 @@ Deriving.deriveEq1 ''Nu
 Deriving.deriveOrd1 ''Nu
 Deriving.deriveShow1 ''Nu
 
-instance
-    (Hashable variable, Hashable child) =>
-    Hashable (Nu variable child)
+instance (Hashable variable, Hashable child) => Hashable (Nu variable child)
 
-instance
-    (NFData variable, NFData child) =>
-    NFData (Nu variable child)
+instance (NFData variable, NFData child) => NFData (Nu variable child)
 
 instance SOP.Generic (Nu variable child)
 
 instance SOP.HasDatatypeInfo (Nu variable child)
 
-instance
-    (Debug variable, Debug child) =>
-    Debug (Nu variable child)
+instance (Debug variable, Debug child) => Debug (Nu variable child)
 
 instance
     (SortedVariable variable, Unparse variable, Unparse child) =>
@@ -77,4 +71,12 @@ instance
 
 instance Ord variable => Synthetic (Nu variable) (FreeVariables variable) where
     synthetic = nuChild
+    {-# INLINE synthetic #-}
+
+instance SortedVariable variable => Synthetic (Nu variable) Sort where
+    synthetic Nu { nuVariable, nuChild } =
+        nuSort
+        & seq (matchSort nuSort nuChild)
+      where
+        nuSort = sortedVariableSort (getVariable nuVariable)
     {-# INLINE synthetic #-}

@@ -62,7 +62,6 @@ import qualified GHC.Generics as GHC
 
 import Control.Lens.TH.Rules
        ( makeLenses )
-import Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Domain.Class
@@ -399,13 +398,6 @@ instance (Unparse key, Unparse child) => Unparse (Builtin key child) where
     unparse = unparseGeneric
     unparse2 = unparse2Generic
 
-makeLenses ''InternalMap
-makeLenses ''InternalList
-makeLenses ''InternalSet
-makeLenses ''InternalInt
-makeLenses ''InternalBool
-makeLenses ''InternalString
-
 builtinSort :: Builtin key child -> Sort
 builtinSort builtin =
     case builtin of
@@ -415,6 +407,17 @@ builtinSort builtin =
         BuiltinMap InternalMap { builtinMapSort } -> builtinMapSort
         BuiltinList InternalList { builtinListSort } -> builtinListSort
         BuiltinSet InternalSet { builtinSetSort } -> builtinSetSort
+
+instance Synthetic (Builtin key) Sort where
+    synthetic = builtinSort
+    {-# INLINE synthetic #-}
+
+makeLenses ''InternalMap
+makeLenses ''InternalList
+makeLenses ''InternalSet
+makeLenses ''InternalInt
+makeLenses ''InternalBool
+makeLenses ''InternalString
 
 instance Domain (Builtin key) where
     lensDomainValue mapDomainValue builtin =

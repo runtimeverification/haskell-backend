@@ -54,3 +54,7 @@ instance Unparse (Bottom Sort child) where
 instance Ord variable => Synthetic (Bottom sort) (FreeVariables variable) where
     synthetic = const mempty
     {-# INLINE synthetic #-}
+
+instance Synthetic (Bottom Sort) Sort where
+    synthetic = bottomSort
+    {-# INLINE synthetic #-}
