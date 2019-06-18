@@ -50,7 +50,7 @@ import qualified Control.Monad as Monad
 import           Control.Monad.Catch
                  ( MonadCatch, MonadThrow )
 import           Control.Monad.IO.Unlift
-                 ( MonadUnliftIO, withRunInIO )
+                 ( MonadUnliftIO )
 import           Control.Monad.Morph
                  ( MFunctor )
 import qualified Control.Monad.Morph as Monad.Morph
@@ -97,7 +97,7 @@ import           ListT
                  ( ListT (..), mapListT )
 import qualified ListT
 import           SMT
-                 ( MonadSMT (..), SMT (..), SmtT (..) )
+                 ( MonadSMT (..), SMT, SmtT (..) )
 
 {-| 'And' simplification is very similar to 'Equals' simplification.
 This type is used to distinguish between the two in the common code.

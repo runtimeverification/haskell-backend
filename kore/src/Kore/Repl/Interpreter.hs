@@ -51,13 +51,11 @@ import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
 import qualified Data.List as List
-import           Data.List.Extra
-                 ( groupSort )
 import           Data.List.NonEmpty
                  ( NonEmpty )
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
-                 ( catMaybes, listToMaybe )
+                 ( listToMaybe )
 import           Data.Sequence
                  ( Seq )
 import qualified Data.Text as Text
@@ -94,13 +92,14 @@ import           Kore.Repl.Data
 import           Kore.Repl.Parser
 import           Kore.Repl.Parser
                  ( commandParser )
+import           Kore.Repl.State
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as Axiom
                  ( attributes )
 import           Kore.Step.Simplification.Data
-                 ( MonadSimplify, Simplifier )
+                 ( MonadSimplify )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
@@ -210,10 +209,17 @@ showUsage = putStrLn' showUsageMessage
 
 exit
     :: Claim claim
-    => Monad m
+    => MonadIO m
     => ReplM claim m ReplStatus
 exit = do
     proofs <- allProofs
+    ofile <- Lens.use lensOutputFile
+    let fileName =
+            maybe (error "Output file not specified") id (unOutputFile ofile)
+    onePathClaims <- generateInProgressOPClaims
+    sort <- currentClaimSort
+    let conj = conjOfOnePathClaims onePathClaims sort
+    liftIO $ writeFile fileName (unparseToString conj)
     if isCompleted (Map.elems proofs)
        then return SuccessStop
        else return FailStop
@@ -1095,19 +1101,6 @@ formatUnificationMessage =
         . map (Pretty.indent 4 . unparseUnifier)
         . Foldable.toList
     unparseUnifier = unparse . (<$) (TermLike.mkTop_ :: TermLike Variable)
-
-findLeafNodes :: InnerGraph -> [Graph.Node]
-findLeafNodes graph =
-    filter ((==) 0 . Graph.outdeg graph) $ Graph.nodes graph
-
-sortLeafsByType :: InnerGraph -> Map.Map NodeState [Graph.Node]
-sortLeafsByType graph =
-    Map.fromList
-        . groupSort
-        . catMaybes
-        . fmap (getNodeState graph)
-        . findLeafNodes
-        $ graph
 
 showProofStatus :: Map.Map ClaimIndex GraphProofStatus -> String
 showProofStatus m =

@@ -62,6 +62,7 @@ import           Kore.Step.Transition
 import qualified Kore.Step.Transition as Transition
 import           Kore.Syntax.Variable
                  ( Variable )
+import           Kore.Unparser
 import           Numeric.Natural
                  ( Natural )
 
@@ -104,6 +105,7 @@ decision is subject to change without notice.
 type Claim claim =
     ( Coercible (RulePattern Variable) claim
     , Coercible claim (RulePattern Variable)
+    , Unparse claim
     )
 
 -- | Is the 'Claim' trusted?

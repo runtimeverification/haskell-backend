@@ -29,6 +29,7 @@ module Kore.Step.Rule
     , mkEqualityAxiom
     , mkCeilAxiom
     , refreshRulePattern
+    , onePathRuleToPattern
     , Kore.Step.Rule.freeVariables
     , Kore.Step.Rule.mapVariables
     , Kore.Step.Rule.substitute
@@ -177,6 +178,13 @@ newtype OnePathRule variable =
 deriving instance Eq variable => Eq (OnePathRule variable)
 deriving instance Ord variable => Ord (OnePathRule variable)
 deriving instance Show variable => Show (OnePathRule variable)
+
+instance
+    (Ord variable, SortedVariable variable, Unparse variable)
+    => Unparse (OnePathRule variable)
+  where
+    unparse = unparse . onePathRuleToPattern
+    unparse2 = unparse2 . onePathRuleToPattern
 
 {-  | All-Path-Claim rule pattern.
 -}
@@ -327,6 +335,25 @@ fromSentenceAxiom sentenceAxiom = do
         (Attribute.Parser.liftParser . Attribute.Parser.parseAttributes)
             (Syntax.sentenceAxiomAttributes sentenceAxiom)
     patternToAxiomPattern attributes (Syntax.sentenceAxiomPattern sentenceAxiom)
+
+-- TODO(ana.pantilie): should apply `weakExistsFinally` to the
+-- second mkAnd when the frontend will be able to unparse one path claims
+onePathRuleToPattern
+    :: Ord variable
+    => SortedVariable variable
+    => Unparse variable
+    => OnePathRule variable
+    -> TermLike variable
+onePathRuleToPattern (OnePathRule rulePatt) =
+    mkImplies
+        ( mkAnd
+            (Predicate.unwrapPredicate . requires $ rulePatt)
+            (left rulePatt)
+        )
+        ( mkAnd
+            (Predicate.unwrapPredicate . ensures $ rulePatt)
+            (right rulePatt)
+        )
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 

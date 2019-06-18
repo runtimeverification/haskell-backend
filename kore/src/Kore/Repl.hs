@@ -8,8 +8,6 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 
 module Kore.Repl
     ( runRepl
-    , ReplScript (..)
-    , ReplMode (..)
     ) where
 
 import           Control.Concurrent.MVar
@@ -49,6 +47,7 @@ import           Kore.OnePath.Verification
 import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
 import           Kore.Repl.Parser
+import           Kore.Repl.State
 import qualified Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
@@ -58,15 +57,6 @@ import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import           Kore.Unparser
                  ( Unparse )
-
--- | Represents an optional file name which contains a sequence of
--- repl commands.
-newtype ReplScript = ReplScript
-    { unReplScript :: Maybe FilePath
-    } deriving (Eq, Show)
-
-data ReplMode = Interactive | RunScript
-    deriving (Eq, Show)
 
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
 -- that would otherwise be required in the proof and allows for step-by-step
@@ -87,8 +77,10 @@ runRepl
     -- ^ optional script
     -> ReplMode
     -- ^ mode to run in
+    -> OutputFile
+    -- ^ optional output file
     -> m ()
-runRepl axioms' claims' logger replScript replMode = do
+runRepl axioms' claims' logger replScript replMode outputFile = do
     mNewState <- evaluateScript replScript
     case replMode of
         Interactive -> do
@@ -140,6 +132,7 @@ runRepl axioms' claims' logger replScript replMode = do
             , aliases    = Map.empty
             , logging    = (Logger.Debug, NoLogging)
             , logger
+            , outputFile = outputFile
             }
 
     firstClaimIndex :: ClaimIndex

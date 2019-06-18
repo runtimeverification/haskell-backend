@@ -20,7 +20,7 @@ import qualified Kore.Step.Condition.Evaluator as Evaluator
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import           SMT
-                 ( SMT, SmtT )
+                 ( SmtT )
 
 import           Test.Kore
 import qualified Test.Kore.Builtin.Bool as Builtin.Bool
