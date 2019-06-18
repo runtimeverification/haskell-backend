@@ -9,8 +9,7 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.IndexedModule.MetadataTools
-    ( HeadType (..)
-    , MetadataTools (..)
+    ( MetadataTools (..)
     , SmtMetadataTools
     , extractMetadataTools
     ) where
@@ -23,12 +22,11 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
-import           Kore.ASTHelpers
-                 ( ApplicationSorts )
 import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Attribute.Subsort
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
+import           Kore.Internal.ApplicationSorts
 import           Kore.Sort
 import qualified Kore.Step.SMT.AST as SMT.AST
                  ( SmtDeclarations )
