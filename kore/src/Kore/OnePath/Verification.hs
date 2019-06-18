@@ -126,7 +126,7 @@ The action may throw an exception if the proof fails; the exception is a single
 @'Pattern' 'Variable'@, the first unprovable configuration.
 
  -}
-type Verifier = ExceptT (Pattern Variable) Simplifier
+type Verifier m = ExceptT (Pattern Variable) m
 
 {- | Verifies a set of claims. When it verifies a certain claim, after the
 first step, it also uses the claims as axioms (i.e. it does coinductive proofs).
@@ -138,7 +138,8 @@ didn't manage to verify a claim within the its maximum number of steps.
 If the verification succeeds, it returns ().
 -}
 verify
-    ::  (  Pattern Variable
+    :: MonadSimplify m
+    =>  (  Pattern Variable
         -> [Strategy
             (Prim
                 (Pattern Variable)
@@ -151,7 +152,7 @@ verify
     -> [(RewriteRule Variable, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
-    -> ExceptT (Pattern Variable) Simplifier ()
+    -> ExceptT (Pattern Variable) m ()
 verify strategyBuilder =
     mapM_ (verifyClaim strategyBuilder)
 
@@ -198,11 +199,13 @@ defaultStrategy
     coinductiveRewrites = map (RewriteRule . coerce) claims
 
 verifyClaim
-    ::  (  Pattern Variable
+    :: forall m
+    .  MonadSimplify m
+    =>  (  Pattern Variable
         -> [Strategy (Prim (Pattern Variable) (RewriteRule Variable))]
         )
     -> (RewriteRule Variable, Limit Natural)
-    -> ExceptT (Pattern Variable) Simplifier ()
+    -> ExceptT (Pattern Variable) m ()
 verifyClaim
     strategyBuilder
     (rule@(RewriteRule RulePattern {left, right, requires, ensures}), stepLimit)
@@ -234,7 +237,7 @@ verifyClaim
     transitionRule'
         :: Prim (Pattern Variable) (RewriteRule Variable)
         -> CommonStrategyPattern
-        -> TransitionT (RewriteRule Variable) Verifier CommonStrategyPattern
+        -> TransitionT (RewriteRule Variable) (Verifier m) CommonStrategyPattern
     transitionRule' prim proofState = do
         transitions <-
             Monad.Trans.lift . Monad.Trans.lift . runTransitionT

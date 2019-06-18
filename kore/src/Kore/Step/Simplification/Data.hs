@@ -10,6 +10,7 @@ Portability : portable
 module Kore.Step.Simplification.Data
     ( MonadSimplify (..)
     , Simplifier
+    , SimplifierT, runSimplifierT
     , Env (..)
     , runSimplifier
     , evalSimplifier

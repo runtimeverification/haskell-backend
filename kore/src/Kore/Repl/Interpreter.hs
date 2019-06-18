@@ -100,7 +100,7 @@ import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as Axiom
                  ( attributes )
 import           Kore.Step.Simplification.Data
-                 ( Simplifier )
+                 ( MonadSimplify, Simplifier )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
@@ -123,18 +123,20 @@ import           Text.Megaparsec
 -- _great care_ of evaluating the RWST to a StateT immediatly, and thus getting
 -- rid of the WriterT part of the stack. This happens in the implementation of
 -- 'replInterpreter'.
-type ReplM claim a = RWST () String (ReplState claim) Simplifier a
+type ReplM claim m a = RWST () String (ReplState claim m) m a
 
 data ReplStatus = Continue | SuccessStop | FailStop
     deriving (Eq, Show)
 
 -- | Interprets a REPL command in a stateful Simplifier context.
 replInterpreter
-    :: forall claim
+    :: forall claim m
     .  Claim claim
+    => MonadSimplify m
+    => MonadIO m
     => (String -> IO ())
     -> ReplCommand
-    -> StateT (ReplState claim) Simplifier ReplStatus
+    -> StateT (ReplState claim m) m ReplStatus
 replInterpreter printFn replCmd = do
     let command = case replCmd of
                 ShowUsage          -> showUsage          $> Continue
@@ -179,8 +181,8 @@ replInterpreter printFn replCmd = do
     -- and updates the state, returning the writer output along with the
     -- monadic result.
     evaluateCommand
-        :: ReplM claim ReplStatus
-        -> StateT (ReplState claim) Simplifier (String, ReplStatus)
+        :: ReplM claim m ReplStatus
+        -> StateT (ReplState claim m) m (String, ReplStatus)
     evaluateCommand c = do
         st <- get
         (ext, st', w) <- Monad.Trans.lift $ runRWST c () st
@@ -208,7 +210,8 @@ showUsage = putStrLn' showUsageMessage
 
 exit
     :: Claim claim
-    => ReplM claim ReplStatus
+    => Monad m
+    => ReplM claim m ReplStatus
 exit = do
     proofs <- allProofs
     if isCompleted (Map.elems proofs)
@@ -228,7 +231,8 @@ help = putStrLn' helpText
 -- | Prints a claim using an index in the claims list.
 showClaim
     :: Claim claim
-    => MonadState (ReplState claim) m
+    => Monad n
+    => MonadState (ReplState claim n) m
     => MonadWriter String m
     => Maybe ClaimIndex
     -> m ()
@@ -243,7 +247,8 @@ showClaim =
 
 -- | Prints an axiom using an index in the axioms list.
 showAxiom
-    :: MonadState (ReplState claim) m
+    :: MonadState (ReplState claim n) m
+    => Monad n
     => MonadWriter String m
     => AxiomIndex
     -- ^ index in the axioms list
@@ -254,9 +259,10 @@ showAxiom aindex = do
 
 -- | Changes the currently focused proof, using an index in the claims list.
 prove
-    :: forall claim m
+    :: forall claim m n
     .  Claim claim
-    => MonadState (ReplState claim) m
+    => Monad n
+    => MonadState (ReplState claim n) m
     => MonadWriter String m
     => ClaimIndex
     -- ^ index in the claims list
@@ -280,10 +286,11 @@ prove cindex = do
 
 showGraph
     :: MonadIO m
+    => Monad n
     => MonadWriter String m
     => Claim claim
     => Maybe FilePath
-    -> MonadState (ReplState claim) m
+    -> MonadState (ReplState claim n) m
     => m ()
 showGraph mfile = do
     graph <- getInnerGraph
@@ -299,9 +306,11 @@ showGraph mfile = do
 -- | Executes 'n' prove steps, or until branching occurs.
 proveSteps
     :: Claim claim
+    => MonadSimplify m
+    => MonadIO m
     => Natural
     -- ^ maximum number of steps to perform
-    -> ReplM claim ()
+    -> ReplM claim m ()
 proveSteps n = do
     let node = ReplNode . fromEnum $ n
     result <- loopM performStepNoBranching (n, SingleResult node)
@@ -314,9 +323,10 @@ proveSteps n = do
 -- than 'n' steps if the proof is stuck or completed in less than 'n' steps.
 proveStepsF
     :: Claim claim
+    => Monad m
     => Natural
     -- ^ maximum number of steps to perform
-    -> ReplM claim ()
+    -> ReplM claim m ()
 proveStepsF n = do
     graph  <- getExecutionGraph
     node   <- Lens.use lensNode
@@ -325,25 +335,28 @@ proveStepsF n = do
 
 -- | Loads a script from a file.
 loadScript
-    :: forall claim
+    :: forall claim m
     .  Claim claim
+    => MonadSimplify m
+    => MonadIO m
     => FilePath
     -- ^ path to file
-    -> ReplM claim ()
+    -> ReplM claim m ()
 loadScript file = do
     state <- get
     mstate <- lift $ parseEvalScript state file
     put $ maybe state id mstate
 
 handleLog
-    :: MonadState (ReplState claim) m
+    :: MonadState (ReplState claim n) m
     => (Logger.Severity, LogType)
     -> m ()
 handleLog t = lensLogging .= t
 
 -- | Focuses the node with id equals to 'n'.
 selectNode
-    :: MonadState (ReplState claim) m
+    :: MonadState (ReplState claim n) m
+    => Monad n
     => Claim claim
     => MonadWriter String m
     => ReplNode
@@ -359,9 +372,10 @@ selectNode rnode = do
 -- | Shows configuration at node 'n', or current node if 'Nothing' is passed.
 showConfig
     :: Claim claim
+    => Monad m
     => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
-    -> ReplM claim ()
+    -> ReplM claim m ()
 showConfig configNode = do
     maybeConfig <- getConfigAt configNode
     case maybeConfig of
@@ -374,23 +388,24 @@ showConfig configNode = do
 -- | Shows current omit list if passed 'Nothing'. Adds/removes from the list
 -- depending on whether the string already exists in the list or not.
 omitCell
-    :: forall claim
-    .  Maybe String
+    :: forall claim m
+    .  Monad m
+    => Maybe String
     -- ^ Nothing to show current list, @Just str@ to add/remove to list
-    -> ReplM claim ()
+    -> ReplM claim m ()
 omitCell =
     \case
         Nothing  -> showCells
         Just str -> addOrRemove str
   where
-    showCells :: ReplM claim ()
+    showCells :: ReplM claim m ()
     showCells = do
         omitList <- Lens.use lensOmit
         case omitList of
             [] -> putStrLn' "Omit list is currently empty."
             _  -> Foldable.traverse_ putStrLn' omitList
 
-    addOrRemove :: String -> ReplM claim ()
+    addOrRemove :: String -> ReplM claim m ()
     addOrRemove str = lensOmit %= toggle str
 
     toggle :: String -> [String] -> [String]
@@ -401,9 +416,10 @@ omitCell =
 -- | Shows all leaf nodes identifiers which are either stuck or can be
 -- evaluated further.
 showLeafs
-    :: forall claim
-    . Claim claim
-    => ReplM claim ()
+    :: forall claim m
+    .  Claim claim
+    => Monad m
+    => ReplM claim m ()
 showLeafs = do
     leafsByType <- sortLeafsByType <$> getInnerGraph
     case Map.foldMapWithKey showPair leafsByType of
@@ -414,17 +430,19 @@ showLeafs = do
     showPair ns xs = show ns <> ": " <> show xs
 
 proofStatus
-    :: forall claim
+    :: forall claim m
     .  Claim claim
-    => ReplM claim ()
+    => Monad m
+    => ReplM claim m ()
 proofStatus = do
     proofs <- allProofs
     putStrLn' . showProofStatus $ proofs
 
 allProofs
-    :: forall claim
+    :: forall claim m
     .  Claim claim
-    => ReplM claim (Map.Map ClaimIndex GraphProofStatus)
+    => Monad m
+    => ReplM claim m (Map.Map ClaimIndex GraphProofStatus)
 allProofs = do
     graphs <- Lens.use lensGraphs
     claims <- Lens.use lensClaims
@@ -465,8 +483,9 @@ allProofs = do
             Just ns -> StuckProof ns
 
 showRule
-    :: MonadState (ReplState claim) m
+    :: MonadState (ReplState claim n) m
     => MonadWriter String m
+    => Monad n
     => Claim claim
     => Maybe ReplNode
     -> m ()
@@ -489,9 +508,10 @@ showRule configNode = do
 -- | Shows the previous branching point.
 showPrecBranch
     :: Claim claim
+    => Monad m
     => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
-    -> ReplM claim ()
+    -> ReplM claim m ()
 showPrecBranch maybeNode = do
     graph <- getInnerGraph
     node' <- getTargetNode maybeNode
@@ -511,9 +531,10 @@ showPrecBranch maybeNode = do
 -- | Shows the next node(s) for the selected node.
 showChildren
     :: Claim claim
+    => Monad m
     => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
-    -> ReplM claim ()
+    -> ReplM claim m ()
 showChildren maybeNode = do
     graph <- getInnerGraph
     node' <- getTargetNode maybeNode
@@ -523,9 +544,10 @@ showChildren maybeNode = do
 
 -- | Shows existing labels or go to an existing label.
 label
-    :: forall m claim
-    .  MonadState (ReplState claim) m
+    :: forall m n claim
+    .  MonadState (ReplState claim n) m
     => MonadWriter String m
+    => Monad n
     => Claim claim
     => Maybe String
     -- ^ 'Nothing' for show labels, @Just str@ for jumping to the string label.
@@ -551,8 +573,9 @@ label =
 
 -- | Adds label for selected node.
 labelAdd
-    :: MonadState (ReplState claim) m
+    :: MonadState (ReplState claim n) m
     => MonadWriter String m
+    => Monad n
     => Claim claim
     => String
     -- ^ label
@@ -574,8 +597,9 @@ labelAdd lbl maybeNode = do
 
 -- | Removes a label.
 labelDel
-    :: MonadState (ReplState claim) m
+    :: MonadState (ReplState claim n) m
     => MonadWriter String m
+    => Monad n
     => String
     -- ^ label
     -> m ()
@@ -590,13 +614,15 @@ labelDel lbl = do
 
 -- | Redirect command to specified file.
 redirect
-    :: forall claim
+    :: forall claim m
     .  Claim claim
+    => MonadSimplify m
+    => MonadIO m
     => ReplCommand
     -- ^ command to redirect
     -> FilePath
     -- ^ file path
-    -> ReplM claim ()
+    -> ReplM claim m ()
 redirect cmd path = do
     get >>= runInterpreter >>= put
     putStrLn' "File created."
@@ -605,8 +631,8 @@ redirect cmd path = do
     redirectToFile = writeFile path
 
     runInterpreter
-        :: ReplState claim
-        -> ReplM claim (ReplState claim)
+        :: ReplState claim m
+        -> ReplM claim m (ReplState claim m)
     runInterpreter = lift . execStateT (replInterpreter redirectToFile cmd)
 
 data AlsoApplyRule = Never | IfPossible
@@ -614,29 +640,35 @@ data AlsoApplyRule = Never | IfPossible
 -- | Attempt to use a specific axiom or claim to see if it unifies with the
 -- current node.
 tryAxiomClaim
-    :: forall claim
+    :: forall claim m
     .  Claim claim
+    => MonadSimplify m
+    => MonadIO m
     => Either AxiomIndex ClaimIndex
     -- ^ tagged index in the axioms or claims list
-    -> ReplM claim ()
+    -> ReplM claim m ()
 tryAxiomClaim = tryAxiomClaimWorker Never
 
 -- | Attempt to use a specific axiom or claim to progress the current proof.
 tryFAxiomClaim
-    :: forall claim
+    :: forall claim m
     .  Claim claim
+    => MonadSimplify m
+    => MonadIO m
     => Either AxiomIndex ClaimIndex
     -- ^ tagged index in the axioms or claims list
-    -> ReplM claim ()
+    -> ReplM claim m ()
 tryFAxiomClaim = tryAxiomClaimWorker IfPossible
 
 tryAxiomClaimWorker
-    :: forall claim
+    :: forall claim m
     .  Claim claim
+    => MonadSimplify m
+    => MonadIO m
     => AlsoApplyRule
     -> Either AxiomIndex ClaimIndex
     -- ^ tagged index in the axioms or claims list
-    -> ReplM claim ()
+    -> ReplM claim m ()
 tryAxiomClaimWorker mode eac = do
     maybeAxiomOrClaim <- getAxiomOrClaimByIndex eac
     case maybeAxiomOrClaim of
@@ -651,7 +683,7 @@ tryAxiomClaimWorker mode eac = do
     showUnificationFailure
         :: Either Axiom claim
         -> ReplNode
-        -> ReplM claim ()
+        -> ReplM claim m ()
     showUnificationFailure axiomOrClaim' node = do
         let first = extractLeftPattern axiomOrClaim'
         maybeSecond <- getConfigAt (Just node)
@@ -669,7 +701,7 @@ tryAxiomClaimWorker mode eac = do
     tryForceAxiomOrClaim
         :: Either Axiom claim
         -> ReplNode
-        -> ReplM claim ()
+        -> ReplM claim m ()
     tryForceAxiomOrClaim axiomOrClaim node = do
         (graph, result) <-
             runStepper'
@@ -696,8 +728,9 @@ tryAxiomClaimWorker mode eac = do
 
 -- | Removes specified node and all its child nodes.
 clear
-    :: forall m claim
-    .  MonadState (ReplState claim) m
+    :: forall m n claim
+    .  MonadState (ReplState claim n) m
+    => Monad n
     => Claim claim
     => MonadWriter String m
     => Maybe ReplNode
@@ -732,7 +765,7 @@ clear =
 
 -- | Save this sessions' commands to the specified file.
 saveSession
-    :: MonadState (ReplState claim) m
+    :: MonadState (ReplState claim n) m
     => MonadWriter String m
     => MonadIO m
     => FilePath
@@ -748,15 +781,17 @@ saveSession path = do
 
 -- | Pipe result of command to specified program.
 pipe
-    :: forall claim
+    :: forall claim m
     .  Claim claim
+    => MonadIO m
+    => MonadSimplify m
     => ReplCommand
     -- ^ command to pipe
     -> String
     -- ^ path to the program that will receive the command's output
     -> [String]
     -- ^ additional arguments to be passed to the program
-    -> ReplM claim ()
+    -> ReplM claim m ()
 pipe cmd file args = do
     exists <- liftIO $ findExecutable file
     case exists of
@@ -775,8 +810,8 @@ pipe cmd file args = do
   where
     runInterpreter
         :: (String -> IO ())
-        -> ReplState claim
-        -> ReplM claim (ReplState claim)
+        -> ReplState claim m
+        -> ReplM claim m (ReplState claim m)
     runInterpreter io = lift . execStateT (replInterpreter io cmd)
 
     createProcess' exec =
@@ -785,26 +820,29 @@ pipe cmd file args = do
 
 -- | Appends output of a command to a file.
 appendTo
-    :: forall claim
+    :: forall claim m
     .  Claim claim
+    => MonadSimplify m
+    => MonadIO m
     => ReplCommand
     -- ^ command
     -> FilePath
     -- ^ file to append to
-    -> ReplM claim ()
+    -> ReplM claim m ()
 appendTo cmd file = do
     get >>= runInterpreter >>= put
     putStrLn' $ "Appended output to \"" <> file <> "\"."
   where
     runInterpreter
-        :: ReplState claim
-        -> ReplM claim (ReplState claim)
+        :: ReplState claim m
+        -> ReplM claim m (ReplState claim m)
     runInterpreter = lift . execStateT (replInterpreter (appendFile file) cmd)
 
 alias
-    :: forall m claim
-    .  MonadState (ReplState claim) m
+    :: forall m n claim
+    .  MonadState (ReplState claim n) m
     => MonadWriter String m
+    => Monad n
     => AliasDefinition
     -> m ()
 alias a = do
@@ -814,11 +852,13 @@ alias a = do
         Right _  -> pure ()
 
 tryAlias
-    :: forall claim
+    :: forall claim m
     .  Claim claim
+    => MonadSimplify m
+    => MonadIO m
     => ReplAlias
     -> (String -> IO ())
-    -> ReplM claim ReplStatus
+    -> ReplM claim m ReplStatus
 tryAlias replAlias@ReplAlias { name } printFn = do
     res <- findAlias name
     case res of
@@ -834,8 +874,8 @@ tryAlias replAlias@ReplAlias { name } printFn = do
   where
     runInterpreter
         :: ReplCommand
-        -> ReplState claim
-        -> ReplM claim (ReplStatus, ReplState claim)
+        -> ReplState claim m
+        -> ReplM claim m (ReplStatus, ReplState claim m)
     runInterpreter cmd =
         lift . runStateT (replInterpreter printFn cmd)
 
@@ -845,11 +885,13 @@ tryAlias replAlias@ReplAlias { name } printFn = do
 --
 -- See 'loopM' for details.
 performStepNoBranching
-    :: forall claim
+    :: forall claim m
     .  Claim claim
+    => MonadSimplify m
+    => MonadIO m
     => (Natural, StepResult)
     -- ^ (current step, last result)
-    -> ReplM claim (Either (Natural, StepResult) (Natural, StepResult))
+    -> ReplM claim m (Either (Natural, StepResult) (Natural, StepResult))
 performStepNoBranching =
     \case
         -- Termination branch
@@ -865,10 +907,11 @@ performStepNoBranching =
 -- 'performStepNoBranching'.
 recursiveForcedStep
     :: Claim claim
+    => Monad m
     => Natural
     -> ExecutionGraph
     -> ReplNode
-    -> ReplM claim ExecutionGraph
+    -> ReplM claim m ExecutionGraph
 recursiveForcedStep n graph node
   | n == 0    = return graph
   | otherwise = do
@@ -995,11 +1038,13 @@ showAxiomOrClaim len (RuleIndex (Just rid))
   | otherwise = Just $ "Claim " <> show (rid - len)
 
 parseEvalScript
-    :: forall claim
+    :: forall claim m
     .  Claim claim
-    => ReplState claim
+    => MonadSimplify m
+    => MonadIO m
+    => ReplState claim m
     -> FilePath
-    -> Simplifier (Maybe (ReplState claim))
+    -> m (Maybe (ReplState claim m))
 parseEvalScript state file = do
     exists <- liftIO . doesFileExist $ file
     if exists == True
@@ -1016,7 +1061,7 @@ parseEvalScript state file = do
 
     parseFailed
         :: ParseErrorBundle String String
-        -> Simplifier (Maybe (ReplState claim))
+        -> m (Maybe (ReplState claim m))
     parseFailed err = do
         liftIO . putStrLn
             $ "\nCouldn't parse initial script file."
@@ -1025,9 +1070,9 @@ parseEvalScript state file = do
         return Nothing
 
     executeScript
-        :: ReplState claim
+        :: ReplState claim m
         -> [ReplCommand]
-        -> Simplifier (Maybe (ReplState claim))
+        -> m (Maybe (ReplState claim m))
     executeScript st cmds = do
         newSt <- execStateT executeCommands st
         return . return $ newSt

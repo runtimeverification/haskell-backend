@@ -53,7 +53,7 @@ import           Control.Monad.Error.Class
                  ( MonadError )
 import qualified Control.Monad.Error.Class as Monad.Error
 import           Control.Monad.IO.Class
-                 ( liftIO )
+                 ( MonadIO, liftIO )
 import           Control.Monad.State.Strict
                  ( MonadState, get, modify )
 import           Control.Monad.Trans.Accum
@@ -105,7 +105,7 @@ import           Kore.OnePath.Verification
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( MonadSimplify, Simplifier )
+                 ( MonadSimplify )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Variable
                  ( Variable )
@@ -351,7 +351,7 @@ type InnerGraph =
     Gr CommonStrategyPattern (Seq (RewriteRule Variable))
 
 -- | State for the rep.
-data ReplState claim = ReplState
+data ReplState claim m = ReplState
     { axioms     :: [Axiom]
     -- ^ List of available axioms
     , claims     :: [claim]
@@ -376,12 +376,12 @@ data ReplState claim = ReplState
         -> [Axiom]
         -> ExecutionGraph
         -> ReplNode
-        -> Simplifier ExecutionGraph
+        -> m ExecutionGraph
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , unifier
         :: TermLike Variable
         -> TermLike Variable
-        -> UnifierWithExplanation (Predicate Variable)
+        -> UnifierWithExplanation m (Predicate Variable)
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
     --   failures
@@ -397,16 +397,16 @@ type Explanation = Doc ()
 
 -- | Unifier that stores the first 'explainBottom'.
 -- See 'runUnifierWithExplanation'.
-newtype UnifierWithExplanation a =
+newtype UnifierWithExplanation m a =
     UnifierWithExplanation
         { getUnifierWithExplanation
-            :: UnifierT (AccumT (First Explanation) Simplifier) a
+            :: UnifierT (AccumT (First Explanation) m) a
         }
   deriving (Alternative, Applicative, Functor, Monad)
 
-deriving instance MonadSMT UnifierWithExplanation
+deriving instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
 
-instance Logger.WithLog Logger.LogMessage UnifierWithExplanation where
+instance Logger.WithLog Logger.LogMessage m => Logger.WithLog Logger.LogMessage (UnifierWithExplanation m) where
     askLogAction =
         Logger.hoistLogAction UnifierWithExplanation
         <$> UnifierWithExplanation Logger.askLogAction
@@ -418,9 +418,9 @@ instance Logger.WithLog Logger.LogMessage UnifierWithExplanation where
         . getUnifierWithExplanation
     {-# INLINE localLogAction #-}
 
-deriving instance MonadSimplify UnifierWithExplanation
+deriving instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m)
 
-instance MonadUnify UnifierWithExplanation where
+instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
     throwSubstitutionError =
         UnifierWithExplanation . Monad.Unify.throwSubstitutionError
     throwUnificationError =
@@ -444,14 +444,15 @@ instance MonadUnify UnifierWithExplanation where
             ]
 
 runUnifierWithExplanation
-    :: forall a
-    .  UnifierWithExplanation a
-    -> Simplifier (Either Explanation (NonEmpty a))
+    :: forall m a
+    .  MonadSimplify m
+    => UnifierWithExplanation m a
+    -> m (Either Explanation (NonEmpty a))
 runUnifierWithExplanation (UnifierWithExplanation unifier) =
     either explainError failWithExplanation <$> unificationResults
   where
     unificationResults
-        ::  Simplifier
+        ::  m
                 (Either UnificationOrSubstitutionError ([a], First Explanation))
     unificationResults =
         fmap (\(r, ex) -> flip (,) ex <$> r)
@@ -479,7 +480,8 @@ emptyExecutionGraph =
 
 -- | Get nth claim from the claims list.
 getClaimByIndex
-    :: MonadState (ReplState claim) m
+    :: Monad n
+    => MonadState (ReplState claim n) m
     => Int
     -- ^ index in the claims list
     -> m (Maybe claim)
@@ -487,7 +489,8 @@ getClaimByIndex index = Lens.preuse $ lensClaims . Lens.element index
 
 -- | Get nth axiom from the axioms list.
 getAxiomByIndex
-    :: MonadState (ReplState claim) m
+    :: Monad n
+    => MonadState (ReplState claim n) m
     => Int
     -- ^ index in the axioms list
     -> m (Maybe Axiom)
@@ -496,7 +499,8 @@ getAxiomByIndex index = Lens.preuse $ lensAxioms . Lens.element index
 -- | Transforms an axiom or claim index into an axiom or claim if they could be
 -- found.
 getAxiomOrClaimByIndex
-    :: MonadState (ReplState claim) m
+    :: Monad n
+    => MonadState (ReplState claim n) m
     => Either AxiomIndex ClaimIndex
     -> m (Maybe (Either Axiom claim))
 getAxiomOrClaimByIndex =
@@ -507,7 +511,8 @@ getAxiomOrClaimByIndex =
 
 -- | Update the currently selected claim to prove.
 switchToProof
-    :: MonadState (ReplState claim) m
+    :: Monad n
+    => MonadState (ReplState claim n) m
     => Claim claim
     => claim
     -> ClaimIndex
@@ -521,7 +526,8 @@ switchToProof claim cindex =
 
 -- | Get the internal representation of the execution graph.
 getInnerGraph
-    :: MonadState (ReplState claim) m
+    :: Monad n
+    => MonadState (ReplState claim n) m
     => Claim claim
     => m InnerGraph
 getInnerGraph =
@@ -529,7 +535,8 @@ getInnerGraph =
 
 -- | Get the current execution graph
 getExecutionGraph
-    :: MonadState (ReplState claim) m
+    :: Monad n
+    => MonadState (ReplState claim n) m
     => Claim claim
     => m ExecutionGraph
 getExecutionGraph = do
@@ -539,7 +546,8 @@ getExecutionGraph = do
 
 -- | Update the internal representation of the current execution graph.
 updateInnerGraph
-    :: MonadState (ReplState claim) m
+    :: Monad n
+    => MonadState (ReplState claim n) m
     => InnerGraph
     -> m ()
 updateInnerGraph ig = do
@@ -553,7 +561,8 @@ updateInnerGraph ig = do
 
 -- | Update the current execution graph.
 updateExecutionGraph
-    :: MonadState (ReplState claim) m
+    :: Monad n
+    => MonadState (ReplState claim n) m
     => ExecutionGraph
     -> m ()
 updateExecutionGraph gph = do
@@ -562,7 +571,8 @@ updateExecutionGraph gph = do
 
 -- | Get the node labels for the current claim.
 getLabels
-    :: MonadState (ReplState claim) m
+    :: Monad n
+    => MonadState (ReplState claim n) m
     => m (Map String ReplNode)
 getLabels = do
     ReplState { claimIndex, labels } <- get
@@ -571,7 +581,8 @@ getLabels = do
 
 -- | Update the node labels for the current claim.
 setLabels
-    :: MonadState (ReplState claim) m
+    :: Monad n
+    => MonadState (ReplState claim n) m
     => Map String ReplNode
     -> m ()
 setLabels lbls = do
@@ -582,7 +593,8 @@ setLabels lbls = do
 -- | Get selected node (or current node for 'Nothing') and validate that it's
 -- part of the execution graph.
 getTargetNode
-    :: MonadState (ReplState claim) m
+    :: Monad n
+    => MonadState (ReplState claim n) m
     => Claim claim
     => Maybe ReplNode
     -- ^ node index
@@ -597,7 +609,8 @@ getTargetNode maybeNode = do
 
 -- | Get the configuration at selected node (or current node for 'Nothing').
 getConfigAt
-    :: MonadState (ReplState claim) m
+    :: Monad n
+    => MonadState (ReplState claim n) m
     => Claim claim
     => Maybe ReplNode
     -> m (Maybe (ReplNode, CommonStrategyPattern))
@@ -613,7 +626,8 @@ getConfigAt maybeNode = do
 
 -- | Get the rule used to reach selected node.
 getRuleFor
-    :: MonadState (ReplState claim) m
+    :: Monad n
+    => MonadState (ReplState claim n) m
     => Claim claim
     => Maybe ReplNode
     -- ^ node index
@@ -637,12 +651,14 @@ getRuleFor maybeNode = do
 
 -- | Lifting function that takes logging into account.
 liftSimplifierWithLogger
-    :: forall a t claim
-    .  MonadState (ReplState claim) (t Simplifier)
+    :: forall a t claim m
+    .  MonadSimplify m
+    => MonadIO m
+    => MonadState (ReplState claim m) (t m)
     => Monad.Trans.MonadTrans t
     => MVar (Logger.LogAction IO Logger.LogMessage)
-    -> Simplifier a
-    -> t Simplifier a
+    -> m a
+    -> t m a
 liftSimplifierWithLogger mLogger simplifier = do
    (severity, logType) <- logging <$> get
    (textLogger, maybeHandle) <- logTypeToLogger logType
@@ -654,7 +670,7 @@ liftSimplifierWithLogger mLogger simplifier = do
   where
     logTypeToLogger
         :: LogType
-        -> t Simplifier (Logger.LogAction IO Text, Maybe Handle)
+        -> t m (Logger.LogAction IO Text, Maybe Handle)
     logTypeToLogger =
         \case
             NoLogging   -> pure (mempty, Nothing)
@@ -676,10 +692,12 @@ data StepResult
 -- | Run a single step for the data in state
 -- (claim, axioms, claims, current node and execution graph).
 runStepper
-    :: MonadState (ReplState claim) (m Simplifier)
-    => Monad.Trans.MonadTrans m
+    :: MonadSimplify m
+    => MonadIO m
+    => MonadState (ReplState claim m) (t m)
+    => Monad.Trans.MonadTrans t
     => Claim claim
-    => m Simplifier StepResult
+    => t m StepResult
 runStepper = do
     ReplState { claims, axioms, node } <- get
     (graph', res) <- runStepper' claims axioms node
@@ -693,13 +711,15 @@ runStepper = do
 -- | Run a single step for the current claim with the selected claims, axioms
 -- starting at the selected node.
 runStepper'
-    :: MonadState (ReplState claim) (m Simplifier)
-    => Monad.Trans.MonadTrans m
+    :: MonadSimplify m
+    => MonadIO m
+    => MonadState (ReplState claim m) (t m)
+    => Monad.Trans.MonadTrans t
     => Claim claim
     => [claim]
     -> [Axiom]
     -> ReplNode
-    -> m Simplifier (ExecutionGraph, StepResult)
+    -> t m (ExecutionGraph, StepResult)
 runStepper' claims axioms node = do
     ReplState { claim, stepper } <- get
     mvar <- Lens.use lensLogger
@@ -715,11 +735,13 @@ runStepper' claims axioms node = do
         nodes    -> BranchResult $ fmap ReplNode nodes
 
 runUnifier
-    :: MonadState (ReplState claim) (m Simplifier)
-    => Monad.Trans.MonadTrans m
+    :: MonadSimplify m
+    => MonadIO m
+    => MonadState (ReplState claim m) (t m)
+    => Monad.Trans.MonadTrans t
     => TermLike Variable
     -> TermLike Variable
-    -> m Simplifier (Either (Doc ()) (NonEmpty (Predicate Variable)))
+    -> t m (Either (Doc ()) (NonEmpty (Predicate Variable)))
 runUnifier first second = do
     unifier <- Lens.use lensUnifier
     mvar <- Lens.use lensLogger
@@ -756,8 +778,9 @@ data GraphProofStatus
 
 -- | Adds or updates the provided alias.
 addOrUpdateAlias
-    :: forall m claim
-    .  MonadState (ReplState claim) m
+    :: forall m n claim
+    .  MonadState (ReplState claim n) m
+    => Monad n
     => MonadError AliasError m
     => AliasDefinition
     -> m ()
@@ -795,7 +818,8 @@ addOrUpdateAlias alias@AliasDefinition { name, command } = do
 
 
 findAlias
-    :: MonadState (ReplState claim) m
+    :: Monad n
+    => MonadState (ReplState claim n) m
     => String
     -> m (Maybe AliasDefinition)
 findAlias name = Map.lookup name <$> Lens.use lensAliases

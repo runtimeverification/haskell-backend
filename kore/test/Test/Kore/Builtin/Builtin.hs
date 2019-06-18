@@ -72,7 +72,7 @@ import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( unparseToString )
 import           SMT
-                 ( SMT )
+                 ( SMT, SmtT )
 import qualified SMT
 
 import Test.Kore
@@ -165,7 +165,7 @@ testEnv =
 evaluate :: TermLike Variable -> SMT (Pattern Variable)
 evaluate = evalSimplifier testEnv . TermLike.simplify
 
-evaluateT :: Trans.MonadTrans t => TermLike Variable -> t SMT (Pattern Variable)
+evaluateT :: Trans.MonadTrans t => TermLike Variable -> t (SmtT IO) (Pattern Variable)
 evaluateT = Trans.lift . evaluate
 
 evaluateToList :: TermLike Variable -> SMT [Pattern Variable]

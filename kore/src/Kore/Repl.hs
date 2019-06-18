@@ -51,7 +51,7 @@ import           Kore.Repl.Interpreter
 import           Kore.Repl.Parser
 import qualified Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
-                 ( Simplifier )
+                 ( MonadSimplify )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Variable
 import           Kore.Unification.Procedure
@@ -72,8 +72,11 @@ data ReplMode = Interactive | RunScript
 -- that would otherwise be required in the proof and allows for step-by-step
 -- execution of proofs. Currently works via stdin/stdout interaction.
 runRepl
-    :: forall claim
+    :: forall claim m
     .  Unparse (Variable)
+    => MonadSimplify m
+    => MonadIO m
+    => MonadCatch m
     => Claim claim
     => [Axiom]
     -- ^ list of axioms to used in the proof
@@ -84,7 +87,7 @@ runRepl
     -- ^ optional script
     -> ReplMode
     -- ^ mode to run in
-    -> Simplifier ()
+    -> m ()
 runRepl axioms' claims' logger replScript replMode = do
     mNewState <- evaluateScript replScript
     case replMode of
@@ -100,25 +103,25 @@ runRepl axioms' claims' logger replScript replMode = do
 
   where
 
-    runReplCommand :: ReplCommand -> ReplState claim -> Simplifier ()
+    runReplCommand :: ReplCommand -> ReplState claim m -> m ()
     runReplCommand cmd st =
         void $ evalStateT (replInterpreter printIfNotEmpty cmd) st
 
-    evaluateScript :: ReplScript -> Simplifier (Maybe (ReplState claim))
+    evaluateScript :: ReplScript -> m (Maybe (ReplState claim m))
     evaluateScript rs =
         maybe
             (pure . pure $ state)
             (parseEvalScript state)
             (unReplScript rs)
 
-    repl0 :: StateT (ReplState claim) Simplifier ()
+    repl0 :: StateT (ReplState claim m) m ()
     repl0 = do
         str <- prompt
         let command = maybe ShowUsage id $ parseMaybe commandParser str
         when (shouldStore command) $ lensCommands Lens.%= (Seq.|> str)
         void $ replInterpreter printIfNotEmpty command
 
-    state :: ReplState claim
+    state :: ReplState claim m
     state =
         ReplState
             { axioms     = addIndexesToAxioms axioms'
@@ -196,7 +199,7 @@ runRepl axioms' claims' logger replScript replMode = do
         -> [Axiom]
         -> ExecutionGraph
         -> ReplNode
-        -> Simplifier ExecutionGraph
+        -> m ExecutionGraph
     stepper0 claim claims axioms graph rnode = do
         let node = unReplNode rnode
         if Graph.outdeg (Strategy.graph graph) node == 0
@@ -216,7 +219,7 @@ runRepl axioms' claims' logger replScript replMode = do
         liftIO $
             putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
-    prompt :: MonadIO m => MonadState (ReplState claim) m => m String
+    prompt :: MonadIO n => MonadState (ReplState claim m) n => n String
     prompt = do
         node <- Lens.use lensNode
         liftIO $ do

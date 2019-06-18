@@ -39,7 +39,7 @@ import           Kore.Step.Rule
 import           Kore.Step.Simplification.AndTerms
                  ( cannotUnifyDistinctDomainValues )
 import           Kore.Step.Simplification.Data
-                 ( Simplifier, evalSimplifier )
+                 ( Simplifier, SimplifierT, evalSimplifier )
 import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unification.Procedure
@@ -390,7 +390,7 @@ runWithState
     -> [Axiom]
     -> [Claim]
     -> Claim
-    -> (ReplState Claim -> ReplState Claim)
+    -> (ReplState Claim (SimplifierT IO) -> ReplState Claim (SimplifierT IO))
     -> IO Result
 runWithState command axioms claims claim stateTransformer
   = Logger.withLogger logOptions $ \logger -> do
@@ -415,7 +415,7 @@ runWithState command axioms claims claim stateTransformer
 data Result = Result
     { output   :: String
     , continue :: ReplStatus
-    , state    :: ReplState Claim
+    , state    :: ReplState Claim (SimplifierT IO)
     }
 
 equals :: (Eq a, Show a) => a -> a -> Assertion
@@ -425,7 +425,7 @@ equalsOutput :: String -> String -> Assertion
 equalsOutput "" expected     = "" @?= expected
 equalsOutput actual expected = actual @?= expected <> "\n"
 
-hasCurrentNode :: ReplState Claim -> ReplNode -> IO ()
+hasCurrentNode :: ReplState Claim (SimplifierT IO) -> ReplNode -> IO ()
 hasCurrentNode st n = do
     node st `equals` n
     graphNode <- evalStateT (getTargetNode justNode) st
@@ -433,7 +433,7 @@ hasCurrentNode st n = do
   where
     justNode = Just n
 
-hasAlias :: ReplState Claim -> AliasDefinition -> IO ()
+hasAlias :: ReplState Claim (SimplifierT IO) -> AliasDefinition -> IO ()
 hasAlias st alias@AliasDefinition { name } =
     let
         aliasMap = aliases st
@@ -441,7 +441,7 @@ hasAlias st alias@AliasDefinition { name } =
     in
         actual `equals` Just alias
 
-hasLogging :: ReplState Claim -> (Logger.Severity, LogType) -> IO ()
+hasLogging :: ReplState Claim (SimplifierT IO) -> (Logger.Severity, LogType) -> IO ()
 hasLogging st expectedLogging =
     let
         actualLogging = logging st
@@ -456,7 +456,7 @@ mkState
     -> [Claim]
     -> Claim
     -> MVar (Logger.LogAction IO Logger.LogMessage)
-    -> ReplState Claim
+    -> ReplState Claim (SimplifierT IO)
 mkState axioms claims claim logger =
     ReplState
         { axioms      = axioms
