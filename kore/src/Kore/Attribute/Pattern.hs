@@ -28,6 +28,7 @@ import           Control.Lens.TH.Rules
 import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import           Kore.Attribute.Synthetic
 import           Kore.Debug
 import           Kore.Sort
                  ( Sort )
@@ -54,6 +55,18 @@ instance SOP.Generic (Pattern variable)
 instance SOP.HasDatatypeInfo (Pattern variable)
 
 instance Debug variable => Debug (Pattern variable)
+
+instance
+    ( Synthetic base Sort
+    , Synthetic base (FreeVariables variable)
+    ) =>
+    Synthetic base (Pattern variable)
+  where
+    synthetic base =
+        Pattern
+            { patternSort = synthetic (patternSort <$> base)
+            , freeVariables = synthetic (freeVariables <$> base)
+            }
 
 {- | Use the provided mapping to replace all variables in a 'Pattern'.
 
