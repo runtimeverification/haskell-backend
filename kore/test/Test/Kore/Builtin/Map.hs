@@ -789,7 +789,7 @@ unifiesWith
     => TermLike Variable
     -> TermLike Variable
     -> Pattern Variable
-    -> PropertyT (SMT.SmtT IO) ()
+    -> PropertyT SMT.SMT ()
 unifiesWith pat1 pat2 expected =
     unifiesWithMulti pat1 pat2 [expected]
 
@@ -799,7 +799,7 @@ unifiesWithMulti
     => TermLike Variable
     -> TermLike Variable
     -> [Pattern Variable]
-    -> PropertyT (SMT.SmtT IO) ()
+    -> PropertyT SMT.SMT ()
 unifiesWithMulti pat1 pat2 expectedResults = do
     actualResults <- Trans.lift $ evaluateToList (mkAnd pat1 pat2)
     compareElements (List.sort expectedResults) actualResults

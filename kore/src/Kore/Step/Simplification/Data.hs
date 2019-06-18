@@ -320,15 +320,15 @@ A @Simplifier@ can write to the log through 'HasLog'.
 
  -}
 newtype SimplifierT m a = SimplifierT
-    { runSimplifierT :: ReaderT Env (SmtT m) a
+    { runSimplifierT :: ReaderT Env m a
     }
     deriving (Functor, Applicative, Monad, MonadSMT)
     deriving (MonadIO, MonadCatch, MonadThrow)
     deriving (MonadReader Env)
 
-type Simplifier a = SimplifierT IO a
+type Simplifier = SimplifierT (SmtT IO)
 
-instance MonadUnliftIO m => WithLog LogMessage (SimplifierT m) where
+instance (MonadUnliftIO m, WithLog LogMessage m) => WithLog LogMessage (SimplifierT m) where
     askLogAction = SimplifierT (hoistLogAction SimplifierT <$> askLogAction)
     {-# INLINE askLogAction #-}
 
@@ -336,7 +336,7 @@ instance MonadUnliftIO m => WithLog LogMessage (SimplifierT m) where
         SimplifierT . localLogAction mapping . runSimplifierT
     {-# INLINE localLogAction #-}
 
-instance MonadUnliftIO m => MonadSimplify (SimplifierT m) where
+instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m) => MonadSimplify (SimplifierT m) where
     askMetadataTools = asks metadataTools
     {-# INLINE askMetadataTools #-}
 
@@ -368,7 +368,7 @@ instance MonadUnliftIO m => MonadSimplify (SimplifierT m) where
  -}
 evalSimplifierBranch
     :: Env
-    -> BranchT (SimplifierT IO) a
+    -> BranchT Simplifier a
     -- ^ simplifier computation
     -> SMT [a]
 evalSimplifierBranch env = evalSimplifier env . gather

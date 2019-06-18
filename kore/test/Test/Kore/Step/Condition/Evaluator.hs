@@ -20,7 +20,7 @@ import qualified Kore.Step.Condition.Evaluator as Evaluator
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import           SMT
-                 ( SmtT )
+                 ( SMT )
 
 import           Test.Kore
 import qualified Test.Kore.Builtin.Bool as Builtin.Bool
@@ -60,7 +60,7 @@ test_andNegation =
 
 evaluate
     :: Syntax.Predicate Variable
-    -> PropertyT (SmtT IO) (Predicate Variable)
+    -> PropertyT SMT (Predicate Variable)
 evaluate = Trans.lift . evalSimplifier testEnv . Evaluator.evaluate
 
 noSimplification :: [(TermLike Variable, [Pattern Variable])]

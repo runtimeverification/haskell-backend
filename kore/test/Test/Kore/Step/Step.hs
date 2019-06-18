@@ -59,7 +59,7 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 evalUnifier
-    :: UnifierT (SimplifierT IO) a
+    :: UnifierT Simplifier a
     -> IO (Either UnificationOrSubstitutionError [a])
 evalUnifier =
     SMT.runSMT SMT.defaultConfig emptyLogger

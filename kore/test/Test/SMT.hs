@@ -10,10 +10,10 @@ import qualified Control.Monad.Morph as Morph
 import qualified GHC.Stack as GHC
 
 import           SMT
-                 ( SMT, SmtT )
+                 ( SMT )
 import qualified SMT
 
-testPropertyWithSolver :: String -> PropertyT (SmtT IO) () -> TestTree
+testPropertyWithSolver :: String -> PropertyT SMT () -> TestTree
 testPropertyWithSolver str =
     testProperty str . Hedgehog.property . Morph.hoist runSMT
 

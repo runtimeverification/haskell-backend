@@ -56,10 +56,11 @@ import qualified Control.Monad.Counter as Counter
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.IO.Unlift
-                 ( MonadUnliftIO, withRunInIO )
+                 ( MonadUnliftIO (..), UnliftIO (..), withRunInIO,
+                 withUnliftIO )
 import qualified Control.Monad.Morph as Morph
 import           Control.Monad.Reader
-                 ( ReaderT, runReaderT )
+                 ( ReaderT (..), runReaderT )
 import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.State.Lazy as State.Lazy
 import qualified Control.Monad.State.Strict as State.Strict
@@ -137,7 +138,14 @@ newtype SmtT m a = SmtT { runSmtT :: ReaderT (MVar Solver) m a }
         , Morph.MFunctor
         )
 
-type SMT a = SmtT IO a
+instance MonadUnliftIO m => MonadUnliftIO (SmtT m) where
+    askUnliftIO =
+        SmtT
+            $ ReaderT $ \r ->
+                withUnliftIO $ \u ->
+                    return (UnliftIO (unliftIO u . flip runReaderT r . runSmtT))
+
+type SMT = SmtT IO
 
 -- | Access 'SMT' through monad transformers.
 class Monad m => MonadSMT m where
