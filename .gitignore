@@ -36,3 +36,4 @@ tags
 .stack-work-test
 test-results.xml
 .directory
+stack.yaml.lock

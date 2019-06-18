@@ -6,12 +6,11 @@ UPSTREAM_BRANCH = origin/master
 
 BUILD_DIR = $(TOP)/.build
 K_NIGHTLY = $(BUILD_DIR)/nightly.tar.gz
-K_NIGHTLY_URL = https://github.com/kframework/k/releases/download/nightly-121d8e122/nightly.tar.gz
+K_NIGHTLY_URL = https://github.com/kframework/k/releases/download/nightly-23f76b81d/nightly.tar.gz
 K_DIST_DEFAULT = $(BUILD_DIR)/k
 K_DIST ?= $(K_DIST_DEFAULT)
 K_DIST_BIN = $(K_DIST)/bin
 K_DIST_LIB = $(K_DIST)/lib
-K_REPO = 'https://github.com/kframework/k'
 
 # The kernel JAR is used as a build timestamp.
 K = $(K_DIST_LIB)/java/kernel-1.0-SNAPSHOT.jar
@@ -26,9 +25,6 @@ KPROVE_REPL_OPTS = --haskell-backend-command "$(KORE_REPL) $(KORE_EXEC_OPTS)"
 
 HS_TOP = $(TOP)/kore
 HS_SOURCE_DIRS = $(HS_TOP)/src $(HS_TOP)/app $(HS_TOP)/test $(HS_TOP)/bench
-STACK_NO_PROFILE = --no-library-profiling --no-executable-profiling
-STACK_FAST = --fast
-STACK_COVERAGE = --coverage
 STACK_BUILD = build --pedantic
 
 STACK = stack
