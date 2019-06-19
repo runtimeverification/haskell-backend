@@ -55,7 +55,7 @@ import           Data.List.NonEmpty
                  ( NonEmpty )
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
-                 ( listToMaybe )
+                 ( fromJust, listToMaybe )
 import           Data.Sequence
                  ( Seq )
 import qualified Data.Text as Text
@@ -71,6 +71,7 @@ import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom (..), RuleIndex (..), sourceLocation )
+import qualified Kore.Attribute.Label as AttrLabel
 import           Kore.Attribute.RuleIndex
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
@@ -141,7 +142,7 @@ replInterpreter printFn replCmd = do
                 ShowUsage          -> showUsage          $> Continue
                 Help               -> help               $> Continue
                 ShowClaim mc       -> showClaim mc       $> Continue
-                ShowAxiom a        -> showAxiom a        $> Continue
+                ShowAxiom ea       -> showAxiom ea       $> Continue
                 Prove i            -> prove i            $> Continue
                 ShowGraph mfile    -> showGraph mfile    $> Continue
                 ProveSteps n       -> proveSteps n       $> Continue
@@ -256,12 +257,15 @@ showAxiom
     :: MonadState (ReplState claim n) m
     => Monad n
     => MonadWriter String m
-    => AxiomIndex
+    => Either AxiomIndex RuleLabel
     -- ^ index in the axioms list
     -> m ()
-showAxiom aindex = do
-    axiom <- getAxiomByIndex . unAxiomIndex $ aindex
-    maybe printNotFound (putStrLn' . showRewriteRule)  $ axiom
+showAxiom axiomIndexOrRuleLabel = do
+    axiom <- either
+                (getAxiomByIndex . unAxiomIndex)
+                (getAxiomByLabel . unRuleLabel)
+                axiomIndexOrRuleLabel
+    maybe printNotFound (putStrLn' . showRewriteRule) $ axiom
 
 -- | Changes the currently focused proof, using an index in the claims list.
 prove

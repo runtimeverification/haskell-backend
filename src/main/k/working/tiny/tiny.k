@@ -4,6 +4,6 @@ module TINY
 
   syntax S ::= "a" | "b" | "c"
 
-  rule a => b
+  rule a => b [label(mylabel)]
 
 endmodule

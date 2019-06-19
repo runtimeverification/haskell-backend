@@ -9,6 +9,7 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 module Kore.Repl.State
     ( emptyExecutionGraph
     , getClaimByIndex, getAxiomByIndex, getAxiomOrClaimByIndex
+    , getAxiomByLabel
     , switchToProof
     , getTargetNode, getInnerGraph, getExecutionGraph
     , getConfigAt, getRuleFor, getLabels, setLabels
@@ -42,6 +43,8 @@ import           Data.Bitraversable
 import           Data.Coerce
                  ( coerce )
 import qualified Data.Default as Default
+import           Data.Foldable
+                 ( find )
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.List.Extra
                  ( groupSort )
@@ -58,7 +61,7 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 import           Data.Text
-                 ( Text )
+                 ( Text, unpack )
 import           Data.Text.Prettyprint.Doc
                  ( Doc )
 import           GHC.Exts
@@ -66,6 +69,8 @@ import           GHC.Exts
 import           System.IO
                  ( Handle, IOMode (AppendMode), hClose, openFile )
 
+import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Attribute.Label as AttrLabel
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
 import           Kore.Internal.Pattern
@@ -117,6 +122,27 @@ getAxiomByIndex
     -- ^ index in the axioms list
     -> m (Maybe Axiom)
 getAxiomByIndex index = Lens.preuse $ lensAxioms . Lens.element index
+
+-- | Get the leftmost axiom which has a specific label from the axioms list.
+getAxiomByLabel
+    :: MonadState (ReplState claim n) m
+    => String
+    -- ^ label attribute
+    -> m (Maybe Axiom)
+getAxiomByLabel label = do
+    axioms <- Lens.use lensAxioms
+    return $ find isLabelEqual axioms
+  where
+    isLabelEqual :: Axiom -> Bool
+    isLabelEqual axiom =
+        maybe False ((== label) . unpack) (getLabelText axiom)
+    getLabelText :: Axiom -> Maybe Text
+    getLabelText =
+        AttrLabel.unLabel
+        . Attribute.label
+        . attributes
+        . getRewriteRule
+        . unAxiom
 
 -- | Transforms an axiom or claim index into an axiom or claim if they could be
 -- found.

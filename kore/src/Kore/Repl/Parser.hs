@@ -117,7 +117,12 @@ showClaim :: Parser ReplCommand
 showClaim = ShowClaim <$$> literal "claim" *> optional parseClaimDecimal
 
 showAxiom :: Parser ReplCommand
-showAxiom = ShowAxiom . AxiomIndex <$$> literal "axiom" *> decimal
+showAxiom =
+    ShowAxiom
+    <$$> literal "axiom"
+    *> ( fmap (Left . AxiomIndex) decimal
+        <|> fmap (Right . RuleLabel) (quotedOrWordWithout "")
+       )
 
 prove :: Parser ReplCommand
 prove = Prove <$$> literal "prove" *> parseClaimDecimal

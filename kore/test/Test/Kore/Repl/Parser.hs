@@ -85,9 +85,9 @@ claimTests =
 
 axiomTests :: [ParserTest ReplCommand]
 axiomTests =
-    [ "axiom 0"  `parsesTo_` ShowAxiom (AxiomIndex 0)
-    , "axiom 0 " `parsesTo_` ShowAxiom (AxiomIndex 0)
-    , "axiom 5"  `parsesTo_` ShowAxiom (AxiomIndex 5)
+    [ "axiom 0"  `parsesTo_` ShowAxiom (Left . AxiomIndex $ 0)
+    , "axiom 0 " `parsesTo_` ShowAxiom (Left . AxiomIndex $ 0)
+    , "axiom 5"  `parsesTo_` ShowAxiom (Left . AxiomIndex $ 5)
     , "axiom"    `fails`     ()
     , "axiom -5" `fails`     ()
     ]
