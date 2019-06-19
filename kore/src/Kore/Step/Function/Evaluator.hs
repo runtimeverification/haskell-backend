@@ -278,7 +278,7 @@ evaluateSortInjection ap
     updateSortInjectionSource head1 fromSort1 children =
         Application
             { applicationSymbolOrAlias =
-                head1 { symbolParams = [fromSort1, toSort1] }
+                Symbol.coerceSortInjection head1 fromSort1 toSort1
             , applicationChildren = children
             }
       where

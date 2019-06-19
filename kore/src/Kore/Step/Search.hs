@@ -93,12 +93,13 @@ See also: 'Kore.Step.Strategy.runStrategy', 'matchWith'
 
 -}
 searchGraph
-    :: Config  -- ^ Search options
-    -> (config -> MaybeT Simplifier substitution)
+    :: MonadSimplify m
+    => Config  -- ^ Search options
+    -> (config -> MaybeT m substitution)
         -- ^ Matching criterion
     -> Strategy.ExecutionGraph config rule
         -- ^ Execution tree
-    -> Simplifier [substitution]
+    -> m [substitution]
 searchGraph Config { searchType, bound } match executionGraph = do
     let selectedConfigs = pick executionGraph
     matches <- catMaybes <$> traverse (runMaybeT . match) selectedConfigs
@@ -112,16 +113,17 @@ searchGraph Config { searchType, bound } match executionGraph = do
             FINAL -> Strategy.pickFinal
 
 matchWith
-    :: forall variable .
+    :: forall variable m .
         ( SortedVariable variable
         , FreshVariable variable
         , Ord variable
         , Show variable
         , Unparse variable
+        , MonadSimplify m
         )
     => Pattern variable
     -> Pattern variable
-    -> MaybeT Simplifier (OrPredicate variable)
+    -> MaybeT m (OrPredicate variable)
 matchWith e1 e2 = do
     eitherUnifiers <-
         Monad.Trans.lift $ Monad.Unify.runUnifierT
@@ -131,13 +133,13 @@ matchWith e1 e2 = do
         maybeUnifiers = hush eitherUnifiers
         mergeAndEvaluate
             :: Predicate variable
-            -> Simplifier (OrPredicate variable)
+            -> m (OrPredicate variable)
         mergeAndEvaluate predSubst = do
             results <- BranchT.gather $ mergeAndEvaluateBranches predSubst
             return (MultiOr.make results)
         mergeAndEvaluateBranches
             :: Predicate variable
-            -> BranchT Simplifier (Predicate variable)
+            -> BranchT m (Predicate variable)
         mergeAndEvaluateBranches predSubst = do
             merged <-
                 mergePredicatesAndSubstitutions

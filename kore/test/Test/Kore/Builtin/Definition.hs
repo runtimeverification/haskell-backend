@@ -1,6 +1,5 @@
 module Test.Kore.Builtin.Definition where
 
-import qualified Control.Lens as Lens
 import qualified Data.Default as Default
 import           Data.Function
 import qualified Data.Map.Strict as Map
@@ -14,13 +13,14 @@ import           Kore.Attribute.Functional
 import           Kore.Attribute.Hook
 import           Kore.Attribute.Injective
 import           Kore.Attribute.Parser
-import           Kore.Attribute.Smthook
 import qualified Kore.Attribute.Sort.Concat as Sort
 import qualified Kore.Attribute.Sort.Element as Sort
 import qualified Kore.Attribute.Sort.Unit as Sort
 import           Kore.Attribute.SortInjection
-import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Domain.Builtin
+import           Kore.Internal.ApplicationSorts
+import           Kore.Internal.Symbol
+                 ( constructor, functional, hook, smthook, sortInjection )
 import qualified Kore.Internal.Symbol as Internal
 import           Kore.Internal.TermLike hiding
                  ( Symbol )
@@ -32,287 +32,367 @@ import Test.Kore
 -- * Builtin symbols
 
 -- | Make an unparameterized builtin symbol with the given name.
-builtinSymbol :: Text -> Internal.Symbol
-builtinSymbol name =
+builtinSymbol :: Text -> Sort -> [Sort] -> Internal.Symbol
+builtinSymbol name resultSort operandSorts =
     Internal.Symbol
         { symbolConstructor = testId name
         , symbolParams = []
         , symbolAttributes = Default.def
+        , symbolSorts = applicationSorts operandSorts resultSort
         }
+
+unarySymbol :: Text -> Sort -> Internal.Symbol
+unarySymbol name sort = builtinSymbol name sort [sort]
+
+binarySymbol :: Text -> Sort -> Internal.Symbol
+binarySymbol name sort = builtinSymbol name sort [sort, sort]
 
 -- ** Bool
 
+binaryBoolSymbol :: Text -> Internal.Symbol
+binaryBoolSymbol name = binarySymbol name boolSort
+
 orBoolSymbol :: Internal.Symbol
-orBoolSymbol = builtinSymbol "orBool" & hook "BOOL.or" & smthook "or"
+orBoolSymbol = binaryBoolSymbol "orBool" & hook "BOOL.or" & smthook "or"
 
 orElseBoolSymbol :: Internal.Symbol
-orElseBoolSymbol = builtinSymbol "orElseBool" & hook "BOOL.orElse"
+orElseBoolSymbol = binaryBoolSymbol "orElseBool" & hook "BOOL.orElse"
 
 andBoolSymbol :: Internal.Symbol
-andBoolSymbol = builtinSymbol "andBool" & hook "BOOL.and" & smthook "and"
+andBoolSymbol = binaryBoolSymbol "andBool" & hook "BOOL.and" & smthook "and"
 
 andThenBoolSymbol :: Internal.Symbol
-andThenBoolSymbol = builtinSymbol "andThenBool" & hook "BOOL.andThen"
+andThenBoolSymbol = binaryBoolSymbol "andThenBool" & hook "BOOL.andThen"
 
 xorBoolSymbol :: Internal.Symbol
-xorBoolSymbol = builtinSymbol "xorBool" & hook "BOOL.xor" & smthook "xor"
+xorBoolSymbol = binaryBoolSymbol "xorBool" & hook "BOOL.xor" & smthook "xor"
 
 neBoolSymbol :: Internal.Symbol
-neBoolSymbol = builtinSymbol "neBool" & hook "BOOL.ne" & smthook "distinct"
+neBoolSymbol = binaryBoolSymbol "neBool" & hook "BOOL.ne" & smthook "distinct"
 
 eqBoolSymbol :: Internal.Symbol
-eqBoolSymbol = builtinSymbol "eqBool" & hook "BOOL.eq" & smthook "="
+eqBoolSymbol = binaryBoolSymbol "eqBool" & hook "BOOL.eq" & smthook "="
 
 notBoolSymbol :: Internal.Symbol
-notBoolSymbol = builtinSymbol "notBool" & hook "BOOL.not" & smthook "not"
+notBoolSymbol =
+    unarySymbol "notBool" boolSort
+    & hook "BOOL.not"
+    & smthook "not"
 
 impliesBoolSymbol :: Internal.Symbol
 impliesBoolSymbol =
-    builtinSymbol "impliesBool" & hook "BOOL.implies" & smthook "=>"
+    binaryBoolSymbol "impliesBool"
+    & hook "BOOL.implies" & smthook "=>"
+
+notBool :: TermLike Variable -> TermLike Variable
+notBool x = mkApplySymbol notBoolSymbol [x]
+
+andBool, impliesBool, eqBool, orBool
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+andBool x y = mkApplySymbol andBoolSymbol [x, y]
+impliesBool x y = mkApplySymbol impliesBoolSymbol [x, y]
+eqBool x y = mkApplySymbol eqBoolSymbol [x, y]
+orBool x y = mkApplySymbol orBoolSymbol [x, y]
 
 -- ** Int
 
+comparisonSymbol :: Text -> Sort -> Internal.Symbol
+comparisonSymbol name sort = builtinSymbol name boolSort [sort, sort]
+
+comparisonIntSymbol :: Text -> Internal.Symbol
+comparisonIntSymbol name = comparisonSymbol name intSort
+
+unaryIntSymbol :: Text -> Internal.Symbol
+unaryIntSymbol name = unarySymbol name intSort
+
+binaryIntSymbol :: Text -> Internal.Symbol
+binaryIntSymbol name = binarySymbol name intSort
+
 gtIntSymbol :: Internal.Symbol
-gtIntSymbol = builtinSymbol "gtInt" & hook "INT.gt" & smthook ">"
+gtIntSymbol = comparisonIntSymbol "gtInt" & hook "INT.gt" & smthook ">"
 
 geIntSymbol :: Internal.Symbol
-geIntSymbol = builtinSymbol "geInt" & hook "INT.ge" & smthook ">="
+geIntSymbol = comparisonIntSymbol "geInt" & hook "INT.ge" & smthook ">="
 
 eqIntSymbol :: Internal.Symbol
-eqIntSymbol = builtinSymbol "eqInt" & hook "INT.eq" & smthook "="
+eqIntSymbol = comparisonIntSymbol "eqInt" & hook "INT.eq" & smthook "="
 
 leIntSymbol :: Internal.Symbol
-leIntSymbol = builtinSymbol "leInt" & hook "INT.le" & smthook "<="
+leIntSymbol = comparisonIntSymbol "leInt" & hook "INT.le" & smthook "<="
 
 ltIntSymbol :: Internal.Symbol
-ltIntSymbol = builtinSymbol "ltInt" & hook "INT.lt" & smthook "<"
+ltIntSymbol = comparisonIntSymbol "ltInt" & hook "INT.lt" & smthook "<"
 
 neIntSymbol :: Internal.Symbol
-neIntSymbol = builtinSymbol "neInt" & hook "INT.ne" & smthook "distinct"
+neIntSymbol = comparisonIntSymbol "neInt" & hook "INT.ne" & smthook "distinct"
 
 minIntSymbol :: Internal.Symbol
-minIntSymbol = builtinSymbol "minInt" & hook "INT.min" & smthook "int_min"
+minIntSymbol = binaryIntSymbol "minInt" & hook "INT.min" & smthook "int_min"
 
 maxIntSymbol :: Internal.Symbol
-maxIntSymbol = builtinSymbol "maxInt" & hook "INT.max" & smthook "int_max"
+maxIntSymbol = binaryIntSymbol "maxInt" & hook "INT.max" & smthook "int_max"
 
 addIntSymbol :: Internal.Symbol
-addIntSymbol = builtinSymbol "addInt" & hook "INT.add" & smthook "+"
+addIntSymbol = binaryIntSymbol "addInt" & hook "INT.add" & smthook "+"
 
 subIntSymbol :: Internal.Symbol
-subIntSymbol = builtinSymbol "subInt" & hook "INT.sub" & smthook "-"
+subIntSymbol = binaryIntSymbol "subInt" & hook "INT.sub" & smthook "-"
 
 mulIntSymbol :: Internal.Symbol
-mulIntSymbol = builtinSymbol "mulInt" & hook "INT.mul" & smthook "*"
+mulIntSymbol = binaryIntSymbol "mulInt" & hook "INT.mul" & smthook "*"
 
 absIntSymbol :: Internal.Symbol
 absIntSymbol =
-    builtinSymbol "absInt" & functional & hook "INT.abs" & smthook "int_abs"
+    unaryIntSymbol "absInt"
+    & functional & hook "INT.abs" & smthook "int_abs"
 
 tdivIntSymbol :: Internal.Symbol
-tdivIntSymbol = builtinSymbol "tdivInt" & hook "INT.tdiv" & smthook "div"
+tdivIntSymbol = binaryIntSymbol "tdivInt" & hook "INT.tdiv" & smthook "div"
 
 tmodIntSymbol :: Internal.Symbol
-tmodIntSymbol = builtinSymbol "tmodInt" & hook "INT.tmod" & smthook "mod"
+tmodIntSymbol = binaryIntSymbol "tmodInt" & hook "INT.tmod" & smthook "mod"
 
 andIntSymbol :: Internal.Symbol
-andIntSymbol = builtinSymbol "andInt" & hook "INT.and"
+andIntSymbol = binaryIntSymbol "andInt" & hook "INT.and"
 
 orIntSymbol :: Internal.Symbol
-orIntSymbol = builtinSymbol "orInt" & hook "INT.or"
+orIntSymbol = binaryIntSymbol "orInt" & hook "INT.or"
 
 xorIntSymbol :: Internal.Symbol
-xorIntSymbol = builtinSymbol "xorInt" & hook "INT.xor"
+xorIntSymbol = binaryIntSymbol "xorInt" & hook "INT.xor"
 
 notIntSymbol :: Internal.Symbol
-notIntSymbol = builtinSymbol "notInt" & hook "INT.not"
+notIntSymbol = unaryIntSymbol "notInt" & hook "INT.not"
 
 shlIntSymbol :: Internal.Symbol
-shlIntSymbol = builtinSymbol "shlInt" & hook "INT.shl"
+shlIntSymbol = binaryIntSymbol "shlInt" & hook "INT.shl"
 
 shrIntSymbol :: Internal.Symbol
-shrIntSymbol = builtinSymbol "shrInt" & hook "INT.shr"
+shrIntSymbol = binaryIntSymbol "shrInt" & hook "INT.shr"
 
 powIntSymbol :: Internal.Symbol
-powIntSymbol = builtinSymbol "powInt" & hook "INT.pow"
+powIntSymbol = binaryIntSymbol "powInt" & hook "INT.pow"
 
 powmodIntSymbol :: Internal.Symbol
-powmodIntSymbol = builtinSymbol "powmodInt" & hook "INT.powmod"
+powmodIntSymbol =
+    builtinSymbol "powmodInt" intSort [intSort, intSort, intSort]
+    & hook "INT.powmod"
 
 log2IntSymbol :: Internal.Symbol
-log2IntSymbol = builtinSymbol "log2Int" & hook "INT.log2"
+log2IntSymbol = unaryIntSymbol "log2Int" & hook "INT.log2"
 
 emodIntSymbol :: Internal.Symbol
-emodIntSymbol = builtinSymbol "emodInt" & hook "INT.emod" & smthook "mod"
+emodIntSymbol = binaryIntSymbol "emodInt" & hook "INT.emod" & smthook "mod"
 
 -- an unhooked, uninterpreted function f : Int -> Int
 dummyIntSymbol :: Internal.Symbol
-dummyIntSymbol = builtinSymbol "f"
+dummyIntSymbol = unaryIntSymbol "f"
+
+dummyInt :: TermLike Variable -> TermLike Variable
+dummyInt x = mkApplySymbol dummyIntSymbol [x]
+
+addInt, subInt, mulInt, divInt, tdivInt, tmodInt
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+addInt i j = mkApplySymbol addIntSymbol  [i, j]
+subInt i j = mkApplySymbol subIntSymbol  [i, j]
+mulInt i j = mkApplySymbol mulIntSymbol  [i, j]
+divInt i j = mkApplySymbol tdivIntSymbol [i, j]
+tdivInt i j = mkApplySymbol tdivIntSymbol [i, j]
+tmodInt i j = mkApplySymbol tmodIntSymbol [i, j]
+
+eqInt, ltInt
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+eqInt i j = mkApplySymbol eqIntSymbol [i, j]
+ltInt i j = mkApplySymbol ltIntSymbol [i, j]
 
 -- ** KEQUAL
 
+comparisonKSymbol :: Text -> Internal.Symbol
+comparisonKSymbol name = comparisonSymbol name kSort
+
 keqBoolSymbol :: Internal.Symbol
-keqBoolSymbol = builtinSymbol "keqBool" & hook "KEQUAL.eq"
+keqBoolSymbol = comparisonKSymbol "keqBool" & hook "KEQUAL.eq"
 
 kneqBoolSymbol :: Internal.Symbol
-kneqBoolSymbol = builtinSymbol "kneqBool" & hook "KEQUAL.neq"
+kneqBoolSymbol = comparisonKSymbol "kneqBool" & hook "KEQUAL.neq"
 
 kiteKSymbol :: Internal.Symbol
-kiteKSymbol = builtinSymbol "kiteK" & hook "KEQUAL.ite"
+kiteKSymbol =
+    builtinSymbol "kiteK" kSort [boolSort, kSort, kSort]
+    & hook "KEQUAL.ite"
 
 kseqSymbol :: Internal.Symbol
-kseqSymbol = builtinSymbol "kseq" & constructor
+kseqSymbol =
+    builtinSymbol "kseq" kSort [kItemSort, kSort]
+    & constructor
 
 dotkSymbol :: Internal.Symbol
-dotkSymbol = builtinSymbol "dotk" & constructor
+dotkSymbol = builtinSymbol "dotk" kSort [] & constructor
 
 injSymbol :: Sort -> Sort -> Internal.Symbol
 injSymbol lSort rSort =
     Internal.Symbol
         { symbolConstructor = testId "inj"
         , symbolParams = [lSort, rSort]
-        , symbolAttributes =
-            Default.def
-                { Attribute.sortInjection = Attribute.SortInjection True }
+        , symbolAttributes = Default.def
+        , symbolSorts = applicationSorts [lSort] rSort
         }
+    & sortInjection
+
+inj :: Sort -> TermLike Variable -> TermLike Variable
+inj toSort termLike =
+    mkApplySymbol (injSymbol fromSort toSort) [termLike]
+  where
+    fromSort = termLikeSort termLike
+
+keqBool, kneqBool
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+keqBool x y = mkApplySymbol keqBoolSymbol [x, y]
+kneqBool x y = mkApplySymbol kneqBoolSymbol [x, y]
+
+kseq :: TermLike Variable -> TermLike Variable -> TermLike Variable
+kseq x y = mkApplySymbol kseqSymbol [x, y]
+
+dotk :: TermLike Variable
+dotk = mkApplySymbol dotkSymbol []
+
+kiteK
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+kiteK i t e = mkApplySymbol kiteKSymbol [i, t, e]
 
 -- ** List
 
 unitListSymbol :: Internal.Symbol
-unitListSymbol = builtinSymbol "unitList" & hook "LIST.unit"
+unitListSymbol = builtinSymbol "unitList" listSort [] & hook "LIST.unit"
 
 unitList2Symbol :: Internal.Symbol
-unitList2Symbol = builtinSymbol "unitList2" & hook "LIST.unit"
+unitList2Symbol = builtinSymbol "unitList2" listSort2 [] & hook "LIST.unit"
 
 elementListSymbol :: Internal.Symbol
 elementListSymbol =
-    builtinSymbol "elementList" & hook "LIST.element" & functional
+    builtinSymbol "elementList" listSort [intSort]
+    & hook "LIST.element" & functional
 
 elementList2Symbol :: Internal.Symbol
 elementList2Symbol =
-    builtinSymbol "elementList2" & hook "LIST.element" & functional
+    builtinSymbol "elementList2" listSort2 [intSort]
+    & hook "LIST.element" & functional
 
 concatListSymbol :: Internal.Symbol
-concatListSymbol = builtinSymbol "concatList" & hook "LIST.concat" & functional
+concatListSymbol =
+    binarySymbol "concatList" listSort & hook "LIST.concat" & functional
 
 concatList2Symbol :: Internal.Symbol
 concatList2Symbol =
-    builtinSymbol "concatList2" & hook "LIST.concat" & functional
+    binarySymbol "concatList2" listSort2 & hook "LIST.concat" & functional
 
 getListSymbol :: Internal.Symbol
-getListSymbol = builtinSymbol "getList" & hook "LIST.get"
+getListSymbol =
+    builtinSymbol "getList" intSort [listSort, intSort] & hook "LIST.get"
 
 -- ** Map
 
 unitMapSymbol :: Internal.Symbol
-unitMapSymbol = builtinSymbol "unitMap" & hook "MAP.unit"
+unitMapSymbol = builtinSymbol "unitMap" mapSort [] & hook "MAP.unit"
 
 updateMapSymbol :: Internal.Symbol
-updateMapSymbol = builtinSymbol "updateMap" & hook "MAP.update"
+updateMapSymbol =
+    builtinSymbol "updateMap" mapSort [mapSort, intSort, intSort]
+    & hook "MAP.update"
 
 lookupMapSymbol :: Internal.Symbol
-lookupMapSymbol = builtinSymbol "lookupMap" & hook "MAP.lookup"
+lookupMapSymbol =
+    builtinSymbol "lookupMap" intSort [mapSort, intSort]
+    & hook "MAP.lookup"
 
 elementMapSymbol :: Internal.Symbol
-elementMapSymbol = builtinSymbol "elementMap" & hook "MAP.element" & functional
+elementMapSymbol =
+    builtinSymbol "elementMap" mapSort [intSort, intSort]
+    & hook "MAP.element" & functional
 
 concatMapSymbol :: Internal.Symbol
-concatMapSymbol = builtinSymbol "concatMap" & hook "MAP.concat" & functional
+concatMapSymbol =
+    binarySymbol "concatMap" mapSort & hook "MAP.concat" & functional
 
 inKeysMapSymbol :: Internal.Symbol
-inKeysMapSymbol = builtinSymbol "inKeysMap" & hook "MAP.in_keys"
+inKeysMapSymbol =
+    builtinSymbol "inKeysMap" boolSort [intSort, mapSort]
+    & hook "MAP.in_keys"
 
 keysMapSymbol :: Internal.Symbol
-keysMapSymbol = builtinSymbol "keysMap" & hook "MAP.keys"
+keysMapSymbol =
+    builtinSymbol "keysMap" setSort [mapSort] & hook "MAP.keys"
 
 removeMapSymbol :: Internal.Symbol
-removeMapSymbol = builtinSymbol "removeMap" & hook "MAP.remove"
+removeMapSymbol =
+    builtinSymbol "removeMap" mapSort [mapSort, intSort] & hook "MAP.remove"
 
 removeAllMapSymbol :: Internal.Symbol
-removeAllMapSymbol = builtinSymbol "removeAllMap" & hook "MAP.removeAll"
+removeAllMapSymbol =
+    builtinSymbol "removeAllMap" mapSort [mapSort, setSort]
+    & hook "MAP.removeAll"
 
 unitMap :: TermLike Variable
-unitMap = mkApplySymbol mapSort unitMapSymbol []
+unitMap = mkApplySymbol unitMapSymbol []
 
 updateMap
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
-updateMap map' key value =
-    mkApplySymbol mapSort updateMapSymbol [map', key, value]
+updateMap map' key value = mkApplySymbol updateMapSymbol [map', key, value]
 
 lookupMap
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
-lookupMap map' key =
-    mkApplySymbol intSort lookupMapSymbol [map', key]
+lookupMap map' key = mkApplySymbol lookupMapSymbol [map', key]
 
 elementMap
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
-elementMap key value =
-    mkApplySymbol mapSort elementMapSymbol [key, value]
+elementMap key value = mkApplySymbol elementMapSymbol [key, value]
 
 concatMap
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
-concatMap map1 map2 =
-    mkApplySymbol mapSort concatMapSymbol [map1, map2]
+concatMap map1 map2 = mkApplySymbol concatMapSymbol [map1, map2]
 
 inKeysMap
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
-inKeysMap key map' =
-    mkApplySymbol boolSort inKeysMapSymbol [key, map']
+inKeysMap key map' = mkApplySymbol inKeysMapSymbol [key, map']
 
 keysMap
     :: TermLike Variable
     -> TermLike Variable
-keysMap map' =
-    mkApplySymbol setSort keysMapSymbol [map']
+keysMap map' = mkApplySymbol keysMapSymbol [map']
 
 removeMap
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
-removeMap map' key =
-    mkApplySymbol mapSort removeMapSymbol [map', key]
+removeMap map' key = mkApplySymbol removeMapSymbol [map', key]
 
 removeAllMap
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
-removeAllMap map' set =
-    mkApplySymbol mapSort removeAllMapSymbol [map', set]
-
-smthook :: SExpr -> Internal.Symbol -> Internal.Symbol
-smthook sExpr =
-    Lens.set
-        (Internal.lensSymbolAttributes . Attribute.lensSmthook)
-        Attribute.Smthook { getSmthook = Just sExpr }
-
-hook :: Text -> Internal.Symbol -> Internal.Symbol
-hook name =
-    Lens.set
-        (Internal.lensSymbolAttributes . Attribute.lensHook)
-        Attribute.Hook { getHook = Just name }
-
-functional :: Internal.Symbol -> Internal.Symbol
-functional =
-    Lens.set
-        (Internal.lensSymbolAttributes . Attribute.lensFunctional)
-        Attribute.Functional { isDeclaredFunctional = True }
-
-constructor :: Internal.Symbol -> Internal.Symbol
-constructor =
-    Lens.set
-        (Internal.lensSymbolAttributes . Attribute.lensConstructor)
-        Attribute.Constructor { isConstructor = True }
+removeAllMap map' set = mkApplySymbol removeAllMapSymbol [map', set]
 
 -- ** Pair
 
@@ -321,86 +401,110 @@ pairSymbol lSort rSort =
     Internal.Symbol
         { symbolConstructor = testId "pair"
         , symbolParams = [lSort, rSort]
-        , symbolAttributes = Default.def { Attribute.constructor = Attribute.Constructor True }
+        , symbolAttributes = Default.def
+        , symbolSorts = applicationSorts [lSort, rSort] (pairSort lSort rSort)
         }
+    & constructor
 
 -- ** Set
 
 unitSetSymbol :: Internal.Symbol
-unitSetSymbol = builtinSymbol "unitSet" & hook "SET.unit"
+unitSetSymbol = builtinSymbol "unitSet" setSort [] & hook "SET.unit"
 
 unitSet :: TermLike Variable
-unitSet = mkApplySymbol setSort unitSetSymbol []
+unitSet = mkApplySymbol unitSetSymbol []
 
 elementSetSymbol :: Internal.Symbol
-elementSetSymbol = builtinSymbol "elementSet" & hook "SET.element" & functional
+elementSetSymbol =
+    builtinSymbol "elementSet" setSort [intSort]
+    & hook "SET.element" & functional
 
 concatSetSymbol :: Internal.Symbol
-concatSetSymbol = builtinSymbol "concatSet" & hook "SET.concat" & functional
+concatSetSymbol =
+    binarySymbol "concatSet" setSort & hook "SET.concat" & functional
 
 inSetSymbol :: Internal.Symbol
-inSetSymbol = builtinSymbol "inSet" & hook "SET.in"
+inSetSymbol =
+    builtinSymbol "inSet" boolSort [intSort, setSort] & hook "SET.in"
 
 differenceSetSymbol :: Internal.Symbol
-differenceSetSymbol = builtinSymbol "differenceSet" & hook "SET.difference"
+differenceSetSymbol =
+    binarySymbol "differenceSet" setSort & hook "SET.difference"
 
 toListSetSymbol :: Internal.Symbol
-toListSetSymbol = builtinSymbol "toListSet" & hook "SET.set2list"
+toListSetSymbol =
+    builtinSymbol "toListSet" listSort [setSort] & hook "SET.set2list"
 
 sizeSetSymbol :: Internal.Symbol
-sizeSetSymbol = builtinSymbol "sizeSet" & hook "SET.size"
+sizeSetSymbol = builtinSymbol "sizeSet" intSort [setSort] & hook "SET.size"
 
 intersectionSetSymbol :: Internal.Symbol
 intersectionSetSymbol =
-    builtinSymbol "intersectionSet" & hook "SET.intersection"
+    binarySymbol "intersectionSet" setSort & hook "SET.intersection"
 
 intersectionSet
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
 intersectionSet set1 set2 =
-    mkApplySymbol setSort intersectionSetSymbol [set1, set2]
+    mkApplySymbol intersectionSetSymbol [set1, set2]
 
 -- ** String
 
 ltStringSymbol :: Internal.Symbol
-ltStringSymbol = builtinSymbol "ltString" & hook "STRING.lt"
+ltStringSymbol =
+    comparisonSymbol "ltString" stringSort & hook "STRING.lt"
 
 concatStringSymbol :: Internal.Symbol
-concatStringSymbol = builtinSymbol "concatString" & hook "STRING.concat"
+concatStringSymbol =
+    binarySymbol "concatString" stringSort & hook "STRING.concat"
 
 substrStringSymbol :: Internal.Symbol
-substrStringSymbol = builtinSymbol "substrString" & hook "STRING.substr"
+substrStringSymbol =
+    builtinSymbol "substrString" stringSort [stringSort, intSort, intSort]
+    & hook "STRING.substr"
 
 lengthStringSymbol :: Internal.Symbol
-lengthStringSymbol = builtinSymbol "lengthString" & hook "STRING.length"
+lengthStringSymbol =
+    builtinSymbol "lengthString" intSort [stringSort] & hook "STRING.length"
 
 chrStringSymbol :: Internal.Symbol
-chrStringSymbol = builtinSymbol "chrString" & hook "STRING.chr"
+chrStringSymbol =
+    builtinSymbol "chrString" stringSort [intSort] & hook "STRING.chr"
 
 ordStringSymbol :: Internal.Symbol
-ordStringSymbol = builtinSymbol "ordString" & hook "STRING.ord"
+ordStringSymbol =
+    builtinSymbol "ordString" intSort [stringSort] & hook "STRING.ord"
 
 findStringSymbol :: Internal.Symbol
-findStringSymbol = builtinSymbol "findString" & hook "STRING.find"
+findStringSymbol =
+    builtinSymbol "findString" intSort [stringSort, stringSort, intSort]
+    & hook "STRING.find"
 
 string2BaseStringSymbol :: Internal.Symbol
 string2BaseStringSymbol =
-    builtinSymbol "string2baseString" & hook "STRING.string2base"
+    builtinSymbol "string2baseString" intSort [stringSort, intSort]
+    & hook "STRING.string2base"
 
 string2IntStringSymbol :: Internal.Symbol
 string2IntStringSymbol =
-    builtinSymbol "string2intString" & hook "STRING.string2int"
+    builtinSymbol "string2intString" intSort [stringSort]
+    & hook "STRING.string2int"
 
 -- * Krypto
 
 ecdsaRecoverSymbol :: Internal.Symbol
 ecdsaRecoverSymbol =
-    builtinSymbol "ecdsaRecoverKrypto" & hook "KRYPTO.ecdsaRecover"
+    builtinSymbol
+        "ecdsaRecoverKrypto"
+        stringSort
+        [stringSort, intSort, stringSort, stringSort]
+    & hook "KRYPTO.ecdsaRecover"
 
 keccakSymbol :: Internal.Symbol
 keccakSymbol =
-    builtinSymbol "keccak256Krypto" & hook "KRYPTO.keccak256"
+    builtinSymbol "keccak256Krypto" stringSort [stringSort]
+    & hook "KRYPTO.keccak256"
 
 -- -------------------------------------------------------------
 -- * Sorts
@@ -680,51 +784,12 @@ elementAttribute = Sort.elementAttribute . Internal.toSymbolOrAlias
 concatAttribute = Sort.concatAttribute . Internal.toSymbolOrAlias
 
 -- | Declare a symbol hooked to the given builtin name.
-symbolDecl
-    :: Internal.Symbol
-    -- ^ symbol
-    -> Sort
-    -- ^ result sort
-    -> [Sort]
-    -- ^ argument sorts
-    -> ParsedSentence
-symbolDecl
-    Internal.Symbol { symbolConstructor, symbolAttributes }
-    sentenceSymbolResultSort
-    sentenceSymbolSorts
-  =
-    asSentence sentence
-  where
-    sentence :: ParsedSentenceSymbol
-    sentence =
-        SentenceSymbol
-            { sentenceSymbolSymbol
-            , sentenceSymbolSorts
-            , sentenceSymbolResultSort
-            , sentenceSymbolAttributes = toAttributes symbolAttributes
-            }
-    sentenceSymbolSymbol =
-        Symbol
-            { symbolConstructor = symbolConstructor
-            , symbolParams = []
-            }
-
--- | Declare a symbol hooked to the given builtin name.
-hookedSymbolDecl
-    :: Internal.Symbol
-    -- ^ symbol
-    -> Sort
-    -- ^ result sort
-    -> [Sort]
-    -- ^ argument sorts
-    -> ParsedSentence
-hookedSymbolDecl
-    Internal.Symbol { symbolConstructor, symbolAttributes }
-    sentenceSymbolResultSort
-    sentenceSymbolSorts
-  =
+hookedSymbolDecl :: Internal.Symbol -> ParsedSentence
+hookedSymbolDecl symbol =
     (asSentence . SentenceHookedSymbol) sentence
   where
+    Internal.Symbol { symbolConstructor, symbolAttributes, symbolSorts } =
+        symbol
     sentence :: ParsedSentenceSymbol
     sentence =
         SentenceSymbol
@@ -738,23 +803,15 @@ hookedSymbolDecl
             { symbolConstructor = symbolConstructor
             , symbolParams = []
             }
+    sentenceSymbolSorts = applicationSortsOperands symbolSorts
+    sentenceSymbolResultSort = applicationSortsResult symbolSorts
 
--- | Declare a symbol with no hook.
-unhookedSymbolDecl
-    :: Internal.Symbol
-    -- ^ symbol
-    -> Sort
-    -- ^ result sort
-    -> [Sort]
-    -- ^ argument sorts
-    -> ParsedSentence
-unhookedSymbolDecl
-    Internal.Symbol { symbolConstructor, symbolAttributes }
-    sentenceSymbolResultSort
-    sentenceSymbolSorts
-  =
+symbolDecl :: Internal.Symbol -> ParsedSentence
+symbolDecl symbol =
     asSentence sentence
   where
+    Internal.Symbol { symbolConstructor, symbolAttributes, symbolSorts } =
+        symbol
     sentence :: ParsedSentenceSymbol
     sentence =
         SentenceSymbol
@@ -768,6 +825,8 @@ unhookedSymbolDecl
             { symbolConstructor = symbolConstructor
             , symbolParams = []
             }
+    sentenceSymbolSorts = applicationSortsOperands symbolSorts
+    sentenceSymbolResultSort = applicationSortsResult symbolSorts
 
 importParsedModule :: ModuleName -> ParsedSentence
 importParsedModule moduleName =
@@ -793,20 +852,17 @@ boolModule =
         , moduleAttributes = Attributes []
         , moduleSentences =
             [ boolSortDecl
-            , binarySymbolDecl orBoolSymbol
-            , binarySymbolDecl orElseBoolSymbol
-            , binarySymbolDecl andBoolSymbol
-            , binarySymbolDecl andThenBoolSymbol
-            , binarySymbolDecl xorBoolSymbol
-            , binarySymbolDecl neBoolSymbol
-            , binarySymbolDecl eqBoolSymbol
-            , binarySymbolDecl impliesBoolSymbol
-            , hookedSymbolDecl notBoolSymbol boolSort [boolSort]
+            , hookedSymbolDecl orBoolSymbol
+            , hookedSymbolDecl orElseBoolSymbol
+            , hookedSymbolDecl andBoolSymbol
+            , hookedSymbolDecl andThenBoolSymbol
+            , hookedSymbolDecl xorBoolSymbol
+            , hookedSymbolDecl neBoolSymbol
+            , hookedSymbolDecl eqBoolSymbol
+            , hookedSymbolDecl impliesBoolSymbol
+            , hookedSymbolDecl notBoolSymbol
             ]
         }
-  where
-    binarySymbolDecl symbol =
-        hookedSymbolDecl symbol boolSort [boolSort, boolSort]
 
 -- ** INT
 
@@ -823,49 +879,34 @@ intModule =
             [ importParsedModule boolModuleName
             , intSortDecl
             -- comparison symbols
-            , comparisonSymbolDecl gtIntSymbol
-            , comparisonSymbolDecl geIntSymbol
-            , comparisonSymbolDecl eqIntSymbol
-            , comparisonSymbolDecl leIntSymbol
-            , comparisonSymbolDecl ltIntSymbol
-            , comparisonSymbolDecl neIntSymbol
+            , hookedSymbolDecl gtIntSymbol
+            , hookedSymbolDecl geIntSymbol
+            , hookedSymbolDecl eqIntSymbol
+            , hookedSymbolDecl leIntSymbol
+            , hookedSymbolDecl ltIntSymbol
+            , hookedSymbolDecl neIntSymbol
 
-            , binarySymbolDecl minIntSymbol
-            , binarySymbolDecl maxIntSymbol
-            , binarySymbolDecl addIntSymbol
-            , binarySymbolDecl subIntSymbol
-            , binarySymbolDecl mulIntSymbol
-            , unarySymbolDecl absIntSymbol
-            , binarySymbolDecl tdivIntSymbol
-            , binarySymbolDecl tmodIntSymbol
-            , binarySymbolDecl emodIntSymbol
-            , unhookedUnarySymbolDecl dummyIntSymbol
-            , binarySymbolDecl andIntSymbol
-            , binarySymbolDecl orIntSymbol
-            , binarySymbolDecl xorIntSymbol
-            , unarySymbolDecl notIntSymbol
-            , binarySymbolDecl shlIntSymbol
-            , binarySymbolDecl shrIntSymbol
-            , binarySymbolDecl powIntSymbol
-            , hookedSymbolDecl
-                powmodIntSymbol
-                intSort
-                [intSort, intSort, intSort]
-            , unarySymbolDecl log2IntSymbol
+            , hookedSymbolDecl minIntSymbol
+            , hookedSymbolDecl maxIntSymbol
+            , hookedSymbolDecl addIntSymbol
+            , hookedSymbolDecl subIntSymbol
+            , hookedSymbolDecl mulIntSymbol
+            , hookedSymbolDecl absIntSymbol
+            , hookedSymbolDecl tdivIntSymbol
+            , hookedSymbolDecl tmodIntSymbol
+            , hookedSymbolDecl emodIntSymbol
+            , symbolDecl dummyIntSymbol
+            , hookedSymbolDecl andIntSymbol
+            , hookedSymbolDecl orIntSymbol
+            , hookedSymbolDecl xorIntSymbol
+            , hookedSymbolDecl notIntSymbol
+            , hookedSymbolDecl shlIntSymbol
+            , hookedSymbolDecl shrIntSymbol
+            , hookedSymbolDecl powIntSymbol
+            , hookedSymbolDecl powmodIntSymbol
+            , hookedSymbolDecl log2IntSymbol
             ]
         }
-  where
-    comparisonSymbolDecl symbol =
-        hookedSymbolDecl symbol boolSort [intSort, intSort]
-
-    unarySymbolDecl symbol =
-        hookedSymbolDecl symbol intSort [intSort]
-
-    binarySymbolDecl symbol =
-        hookedSymbolDecl symbol intSort [intSort, intSort]
-
-    unhookedUnarySymbolDecl symbol =
-        unhookedSymbolDecl symbol intSort [intSort]
 
 -- ** KEQUAL
 
@@ -880,23 +921,14 @@ kEqualModule =
         , moduleAttributes = Attributes []
         , moduleSentences =
             [ importParsedModule boolModuleName
-            , hookedSymbolDecl
-                keqBoolSymbol
-                boolSort
-                [kSort, kSort]
-            , hookedSymbolDecl
-                kneqBoolSymbol
-                boolSort
-                [kSort, kSort]
-            , hookedSymbolDecl
-                kiteKSymbol
-                kSort
-                [boolSort, kSort, kSort]
+            , hookedSymbolDecl keqBoolSymbol
+            , hookedSymbolDecl kneqBoolSymbol
+            , hookedSymbolDecl kiteKSymbol
             , sortDecl kSort
             , sortDecl kItemSort
             , sortDecl idSort
-            , symbolDecl kseqSymbol kSort [kSort, kSort]
-            , symbolDecl dotkSymbol kSort []
+            , symbolDecl kseqSymbol
+            , symbolDecl dotkSymbol
             , injSymbolDecl
             ]
         }
@@ -943,36 +975,15 @@ listModule =
         , moduleSentences =
             [ importParsedModule intModuleName
             , listSortDecl
-            , hookedSymbolDecl
-                unitListSymbol
-                listSort
-                []
-            , hookedSymbolDecl
-                elementListSymbol
-                listSort
-                [intSort]
-            , hookedSymbolDecl
-                concatListSymbol
-                listSort
-                [listSort, listSort]
-            , hookedSymbolDecl
-                getListSymbol
-                intSort
-                [listSort, intSort]
+            , hookedSymbolDecl unitListSymbol
+            , hookedSymbolDecl elementListSymbol
+            , hookedSymbolDecl concatListSymbol
+            , hookedSymbolDecl getListSymbol
             -- A second builtin List sort, to confuse 'asPattern'.
             , listSortDecl2
-            , hookedSymbolDecl
-                unitList2Symbol
-                listSort2
-                []
-            , hookedSymbolDecl
-                elementList2Symbol
-                listSort2
-                [intSort]
-            , hookedSymbolDecl
-                concatList2Symbol
-                listSort2
-                [listSort2, listSort2]
+            , hookedSymbolDecl unitList2Symbol
+            , hookedSymbolDecl elementList2Symbol
+            , hookedSymbolDecl concatList2Symbol
             ]
         }
 
@@ -992,18 +1003,15 @@ mapModule =
             , importParsedModule intModuleName
             , importParsedModule setModuleName
             , mapSortDecl
-            , hookedSymbolDecl unitMapSymbol mapSort []
-            , hookedSymbolDecl elementMapSymbol mapSort [intSort, intSort]
-            , hookedSymbolDecl concatMapSymbol mapSort [mapSort, mapSort]
-            , hookedSymbolDecl lookupMapSymbol intSort [mapSort, intSort]
-            , hookedSymbolDecl
-                updateMapSymbol
-                mapSort
-                [mapSort, intSort, intSort]
-            , hookedSymbolDecl inKeysMapSymbol boolSort [intSort, mapSort]
-            , hookedSymbolDecl keysMapSymbol setSort [mapSort]
-            , hookedSymbolDecl removeMapSymbol mapSort [mapSort, intSort]
-            , hookedSymbolDecl removeAllMapSymbol mapSort [mapSort, setSort]
+            , hookedSymbolDecl unitMapSymbol
+            , hookedSymbolDecl elementMapSymbol
+            , hookedSymbolDecl concatMapSymbol
+            , hookedSymbolDecl lookupMapSymbol
+            , hookedSymbolDecl updateMapSymbol
+            , hookedSymbolDecl inKeysMapSymbol
+            , hookedSymbolDecl keysMapSymbol
+            , hookedSymbolDecl removeMapSymbol
+            , hookedSymbolDecl removeAllMapSymbol
             ]
         }
 
@@ -1070,14 +1078,14 @@ setModule =
             , importParsedModule boolModuleName
             , importParsedModule listModuleName
             , setSortDecl
-            , hookedSymbolDecl unitSetSymbol setSort []
-            , hookedSymbolDecl elementSetSymbol setSort [intSort]
-            , hookedSymbolDecl concatSetSymbol setSort [setSort, setSort]
-            , hookedSymbolDecl inSetSymbol boolSort [intSort, setSort]
-            , hookedSymbolDecl differenceSetSymbol setSort [setSort, setSort]
-            , hookedSymbolDecl toListSetSymbol listSort [setSort]
-            , hookedSymbolDecl sizeSetSymbol intSort [setSort]
-            , hookedSymbolDecl intersectionSetSymbol setSort [setSort, setSort]
+            , hookedSymbolDecl unitSetSymbol
+            , hookedSymbolDecl elementSetSymbol
+            , hookedSymbolDecl concatSetSymbol
+            , hookedSymbolDecl inSetSymbol
+            , hookedSymbolDecl differenceSetSymbol
+            , hookedSymbolDecl toListSetSymbol
+            , hookedSymbolDecl sizeSetSymbol
+            , hookedSymbolDecl intersectionSetSymbol
             ]
         }
 
@@ -1096,27 +1104,15 @@ stringModule =
             [ importParsedModule boolModuleName
             , importParsedModule intModuleName
             , stringSortDecl
-            , hookedSymbolDecl ltStringSymbol boolSort [stringSort, stringSort]
-            , hookedSymbolDecl
-                concatStringSymbol
-                stringSort
-                [stringSort, stringSort]
-            , hookedSymbolDecl
-                substrStringSymbol
-                stringSort
-                [stringSort, intSort, intSort]
-            , hookedSymbolDecl lengthStringSymbol intSort [stringSort]
-            , hookedSymbolDecl chrStringSymbol stringSort [intSort]
-            , hookedSymbolDecl ordStringSymbol intSort [stringSort]
-            , hookedSymbolDecl
-                findStringSymbol
-                intSort
-                [stringSort, stringSort, intSort]
-            , hookedSymbolDecl
-                string2BaseStringSymbol
-                intSort
-                [stringSort, intSort]
-            , hookedSymbolDecl string2IntStringSymbol intSort [stringSort]
+            , hookedSymbolDecl ltStringSymbol
+            , hookedSymbolDecl concatStringSymbol
+            , hookedSymbolDecl substrStringSymbol
+            , hookedSymbolDecl lengthStringSymbol
+            , hookedSymbolDecl chrStringSymbol
+            , hookedSymbolDecl ordStringSymbol
+            , hookedSymbolDecl findStringSymbol
+            , hookedSymbolDecl string2BaseStringSymbol
+            , hookedSymbolDecl string2IntStringSymbol
             ]
         }
 
@@ -1135,11 +1131,8 @@ kryptoModule =
             [ importParsedModule stringModuleName
             , importParsedModule intModuleName
             , importParsedModule listModuleName
-            , hookedSymbolDecl
-                ecdsaRecoverSymbol
-                stringSort
-                [stringSort, intSort, stringSort, stringSort]
-            , hookedSymbolDecl keccakSymbol stringSort [stringSort]
+            , hookedSymbolDecl ecdsaRecoverSymbol
+            , hookedSymbolDecl keccakSymbol
             ]
         }
 

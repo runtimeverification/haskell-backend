@@ -69,6 +69,7 @@ import           Kore.Step.Axiom.Identifier
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import qualified Kore.Syntax.Pattern as Syntax
+import           Kore.Unparser
 
 {- | Verifiers for Kore builtin sorts.
 
@@ -183,7 +184,8 @@ See also: 'asPattern'
 
  -}
 externalizePattern
-    ::  forall variable. Ord variable
+    ::  forall variable
+    .   (Ord variable, SortedVariable variable, Unparse variable)
     =>  TermLike variable
     ->  Syntax.Pattern variable Attribute.Null
 externalizePattern =

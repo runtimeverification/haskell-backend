@@ -28,6 +28,7 @@ import           Kore.Step.Simplification.Data hiding
 import qualified Kore.Step.Simplification.Predicate as PSSimplifier
                  ( create )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 import qualified SMT
@@ -119,9 +120,9 @@ test_predicateSimplification =
                     [   ( AxiomIdentifier.Application Mock.fId
                         , simplificationEvaluator
                             [ makeEvaluator
-                                    [   ( Mock.f Mock.functional00
-                                        , Mock.functional00
-                                        )
+                                [   ( Mock.f Mock.functional00
+                                    , Mock.functional00
+                                    )
                                 , (Mock.f Mock.functional01, Mock.a)
                                 ]
                             ]
@@ -157,8 +158,7 @@ test_predicateSimplification =
                     [   ( AxiomIdentifier.Application Mock.fId
                         , simplificationEvaluator
                             [ makeEvaluator
-                                [ (Mock.f Mock.b, Mock.constr10 Mock.a)
-                                ]
+                                [ (Mock.f Mock.b, Mock.constr10 Mock.a) ]
                             ]
                         )
                     ]
@@ -286,6 +286,7 @@ makeEvaluator
     ::  (forall variable
         .   ( FreshVariable variable
             , SortedVariable variable
+            , Unparse variable
             )
         => [(TermLike variable, TermLike variable)]
         )

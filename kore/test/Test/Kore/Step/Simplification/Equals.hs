@@ -772,19 +772,15 @@ test_equalsSimplification_TermLike =
                         term4
                     )
         ,
-            let term5 = Mock.concatList
-                        (Mock.builtinList [Mock.a])
-                        (mkVar Mock.x)
-                term6 = Mock.builtinList $ [Mock.a, Mock.b]
+            let x = varS "x" Mock.listSort
+                term5 = Mock.concatList (Mock.builtinList [Mock.a]) (mkVar x)
+                term6 = Mock.builtinList [Mock.a, Mock.b]
             in
                 testCase "[a] `concat` x /\\ [a, b] "
                     (assertTermEquals
-                        Conditional
-                            { term = ()
-                            , predicate = makeTruePredicate
-                            , substitution = Substitution.unsafeWrap
-                                [(Mock.x, Mock.builtinList [Mock.b])]
-                            }
+                        (Predicate.fromSingleSubstitution
+                            (x, Mock.builtinList [Mock.b])
+                        )
                         term5
                         term6
                     )
