@@ -13,7 +13,7 @@ module Kore.Repl.Data
     , helpText
     , ExecutionGraph
     , AxiomIndex (..), ClaimIndex (..)
-    , RuleLabel (..)
+    , AxiomLabel (..)
     , ReplNode (..)
     , ReplState (..)
     , NodeState (..)
@@ -114,7 +114,7 @@ newtype ReplNode = ReplNode
     { unReplNode :: Graph.Node
     } deriving (Eq, Show)
 
-newtype RuleLabel = RuleLabel
+newtype AxiomLabel = AxiomLabel
     { unRuleLabel :: String
     } deriving (Eq, Show)
 
@@ -149,7 +149,7 @@ data ReplCommand
     -- ^ Shows the help message.
     | ShowClaim !(Maybe ClaimIndex)
     -- ^ Show the nth claim or the current claim.
-    | ShowAxiom (Either AxiomIndex RuleLabel)
+    | ShowAxiom (Either AxiomIndex AxiomLabel)
     -- ^ Show the nth axiom.
     | Prove !ClaimIndex
     -- ^ Drop the current proof state and re-initialize for the nth claim.

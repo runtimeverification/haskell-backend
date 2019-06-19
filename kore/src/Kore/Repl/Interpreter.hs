@@ -257,7 +257,7 @@ showAxiom
     :: MonadState (ReplState claim n) m
     => Monad n
     => MonadWriter String m
-    => Either AxiomIndex RuleLabel
+    => Either AxiomIndex AxiomLabel
     -- ^ index in the axioms list
     -> m ()
 showAxiom axiomIndexOrRuleLabel = do
@@ -1028,12 +1028,14 @@ graphParams len = Graph.nonClusteredParams
         case listToMaybe . toList $ lbl of
             Nothing -> "Simpl/RD"
             Just rule ->
-                maybe "Unknown" Text.Lazy.pack
-                    . showAxiomOrClaim ln
-                    . Attribute.identifier
-                    . Rule.attributes
-                    . Rule.getRewriteRule
-                    $ rule
+                maybe (maybe "Unknown" Text.Lazy.pack
+                        . showAxiomOrClaim ln
+                        . Attribute.identifier
+                        . Rule.attributes
+                        . Rule.getRewriteRule
+                        $ rule)
+                     Text.Lazy.fromStrict
+                     (getLabelText rule)
 
 showAliasError :: AliasError -> String
 showAliasError =

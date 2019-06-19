@@ -121,7 +121,7 @@ showAxiom =
     ShowAxiom
     <$$> literal "axiom"
     *> ( fmap (Left . AxiomIndex) decimal
-        <|> fmap (Right . RuleLabel) (quotedOrWordWithout "")
+        <|> fmap (Right . AxiomLabel) (quotedOrWordWithout "")
        )
 
 prove :: Parser ReplCommand

@@ -9,7 +9,7 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 module Kore.Repl.State
     ( emptyExecutionGraph
     , getClaimByIndex, getAxiomByIndex, getAxiomOrClaimByIndex
-    , getAxiomByLabel
+    , getAxiomByLabel, getLabelText
     , switchToProof
     , getTargetNode, getInnerGraph, getExecutionGraph
     , getConfigAt, getRuleFor, getLabels, setLabels
@@ -135,14 +135,14 @@ getAxiomByLabel label = do
   where
     isLabelEqual :: Axiom -> Bool
     isLabelEqual axiom =
-        maybe False ((== label) . unpack) (getLabelText axiom)
-    getLabelText :: Axiom -> Maybe Text
-    getLabelText =
-        AttrLabel.unLabel
-        . Attribute.label
-        . attributes
-        . getRewriteRule
-        . unAxiom
+        maybe False ((== label) . unpack) (getLabelText . unAxiom $ axiom)
+
+getLabelText :: RewriteRule Variable -> Maybe Text
+getLabelText =
+    AttrLabel.unLabel
+    . Attribute.label
+    . attributes
+    . getRewriteRule
 
 -- | Transforms an axiom or claim index into an axiom or claim if they could be
 -- found.
