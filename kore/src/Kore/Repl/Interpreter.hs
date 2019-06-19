@@ -639,8 +639,8 @@ redirect cmd path = do
         -> ReplM claim m (ReplState claim)
     runInterpreter config st =
         lift
-            $ (`execStateT` st)
-            $ runReaderT (replInterpreter redirectToFile cmd) config
+            $ execStateReader config st
+            $ replInterpreter redirectToFile cmd
 
 data AlsoApplyRule = Never | IfPossible
 
@@ -822,8 +822,8 @@ pipe cmd file args = do
         -> ReplM claim m (ReplState claim)
     runInterpreter io config st =
         lift
-            $ (`execStateT` st)
-            $ runReaderT (replInterpreter io cmd) config
+            $ execStateReader config st
+            $ replInterpreter io cmd
 
     createProcess' exec =
         liftIO $ createProcess (proc exec args)
@@ -851,8 +851,8 @@ appendTo cmd file = do
         -> ReplM claim m (ReplState claim)
     runInterpreter config st =
         lift
-            $ (`execStateT` st)
-            $ runReaderT (replInterpreter (appendFile file) cmd) config
+            $ execStateReader config st
+            $ replInterpreter (appendFile file) cmd
 
 alias
     :: forall m claim
@@ -1097,8 +1097,7 @@ parseEvalScript file = do
       where
         executeCommands config st =
            lift
-               $ (`execStateT` st)
-               $ (`runReaderT` config)
+               $ execStateReader config st
                $ Foldable.for_ cmds $ replInterpreter $ \_ -> return ()
 
 formatUnificationMessage
@@ -1133,3 +1132,9 @@ showCurrentClaimIndex :: ClaimIndex -> String
 showCurrentClaimIndex ci =
     "You are currently proving claim "
     <> show (unClaimIndex ci)
+
+execStateReader :: Monad m => env -> st -> ReaderT env (StateT st m) a -> m st
+execStateReader config st action =
+    flip execStateT st
+        $ flip runReaderT config
+        $ action
