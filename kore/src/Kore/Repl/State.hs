@@ -77,6 +77,8 @@ import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger.Output as Logger
 import           Kore.OnePath.StrategyPattern
 import           Kore.OnePath.Verification
+                 ( isTrusted )
+import           Kore.OnePath.Verification
                  ( Axiom (..), Claim )
 import           Kore.Predicate.Predicate as Predicate
 import           Kore.Repl.Data
@@ -498,12 +500,18 @@ generateInProgressOPClaims = do
     notStartedOPClaims graphs claims =
         Rule.OnePathRule
         . coerce
-        . (claims !!)
-        . unClaimIndex
-        <$> (Set.toList $ Set.difference
-                (Set.fromList $ fmap ClaimIndex [0..length claims - 1])
-                (Set.fromList $ Map.keys graphs)
-            )
+        <$> filter (not . isTrusted)
+                ( (claims !!)
+                . unClaimIndex
+                <$> (Set.toList $ Set.difference
+                        ( Set.fromList
+                        $ fmap ClaimIndex [0..length claims - 1]
+                        )
+                        ( Set.fromList
+                        $ Map.keys graphs
+                        )
+                    )
+                )
 
 claimsWithPatterns
     :: Map ClaimIndex ExecutionGraph
