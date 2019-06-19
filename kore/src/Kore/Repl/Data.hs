@@ -15,6 +15,7 @@ module Kore.Repl.Data
     , AxiomIndex (..), ClaimIndex (..)
     , ReplNode (..)
     , ReplState (..)
+    , Config (..)
     , NodeState (..)
     , GraphProofStatus (..)
     , AliasDefinition (..), ReplAlias (..), AliasArgument(..), AliasError (..)
@@ -333,8 +334,8 @@ type ExecutionGraph =
 type InnerGraph =
     Gr CommonStrategyPattern (Seq (RewriteRule Variable))
 
--- | State for the rep.
-data ReplState claim m = ReplState
+-- | State for the repl.
+data ReplState claim = ReplState
     { axioms     :: [Axiom]
     -- ^ List of available axioms
     , claims     :: [claim]
@@ -352,7 +353,17 @@ data ReplState claim m = ReplState
     -- TODO(Vladimir): This should be a Set String instead.
     , omit       :: [String]
     -- ^ The omit list, initially empty
-    , stepper
+    , labels  :: Map ClaimIndex (Map String ReplNode)
+    -- ^ Map from labels to nodes
+    , aliases :: Map String AliasDefinition
+    -- ^ Map of command aliases
+    , logging :: (Logger.Severity, LogType)
+    -- ^ The log level and log type decide what gets logged and where.
+    }
+
+-- | Configuration environment for the repl.
+data Config claim m = Config
+    { stepper
         :: Claim claim
         => claim
         -> [claim]
@@ -368,13 +379,10 @@ data ReplState claim m = ReplState
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
     --   failures
-    , labels  :: Map ClaimIndex (Map String ReplNode)
-    -- ^ Map from labels to nodes
-    , aliases :: Map String AliasDefinition
-    -- ^ Map of command aliases
-    , logging :: (Logger.Severity, LogType)
     , logger  :: MVar (Logger.LogAction IO Logger.LogMessage)
+    -- ^ Logger function, see 'logging'.
     , outputFile :: OutputFile
+    -- ^ Output resulting pattern to this file.
     }
 
 type Explanation = Doc ()
@@ -450,6 +458,8 @@ runUnifierWithExplanation (UnifierWithExplanation unifier) =
             r : rs -> Right (r :| rs)
 
 Lens.makeLenses ''ReplState
+
+Lens.makeLenses ''Config
 
 -- | Result after running one or multiple proof steps.
 data StepResult

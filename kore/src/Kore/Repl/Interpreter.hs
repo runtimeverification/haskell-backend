@@ -33,8 +33,12 @@ import           Control.Monad.Extra
                  ( loop, loopM )
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
+import           Control.Monad.Reader
+                 ( MonadReader, ReaderT (..) )
+import qualified Control.Monad.Reader as Reader
+                 ( ask )
 import           Control.Monad.RWS.Strict
-                 ( MonadWriter, RWST, lift, runRWST, tell )
+                 ( MonadWriter, RWST, ask, asks, lift, runRWST, tell )
 import           Control.Monad.State.Class
                  ( get, put )
 import           Control.Monad.State.Strict
@@ -122,7 +126,7 @@ import           Text.Megaparsec
 -- _great care_ of evaluating the RWST to a StateT immediatly, and thus getting
 -- rid of the WriterT part of the stack. This happens in the implementation of
 -- 'replInterpreter'.
-type ReplM claim m a = RWST () String (ReplState claim m) m a
+type ReplM claim m a = RWST (Config claim m) String (ReplState claim) m a
 
 data ReplStatus = Continue | SuccessStop | FailStop
     deriving (Eq, Show)
@@ -135,7 +139,7 @@ replInterpreter
     => MonadIO m
     => (String -> IO ())
     -> ReplCommand
-    -> StateT (ReplState claim m) m ReplStatus
+    -> ReaderT (Config claim m) (StateT (ReplState claim) m) ReplStatus
 replInterpreter printFn replCmd = do
     let command = case replCmd of
                 ShowUsage          -> showUsage          $> Continue
@@ -181,10 +185,14 @@ replInterpreter printFn replCmd = do
     -- monadic result.
     evaluateCommand
         :: ReplM claim m ReplStatus
-        -> StateT (ReplState claim m) m (String, ReplStatus)
+        -> ReaderT (Config claim m) (StateT (ReplState claim) m) (String, ReplStatus)
     evaluateCommand c = do
         st <- get
-        (ext, st', w) <- Monad.Trans.lift $ runRWST c () st
+        config <- Reader.ask
+        (ext, st', w) <-
+            Monad.Trans.lift
+                $ Monad.Trans.lift
+                $ runRWST c config st
         put st'
         pure (w, ext)
 
@@ -213,7 +221,7 @@ exit
     => ReplM claim m ReplStatus
 exit = do
     proofs <- allProofs
-    ofile <- Lens.use lensOutputFile
+    ofile <- Lens.view lensOutputFile
     let fileName =
             maybe (error "Output file not specified") id (unOutputFile ofile)
     onePathClaims <- generateInProgressOPClaims
@@ -237,8 +245,7 @@ help = putStrLn' helpText
 -- | Prints a claim using an index in the claims list.
 showClaim
     :: Claim claim
-    => Monad n
-    => MonadState (ReplState claim n) m
+    => MonadState (ReplState claim) m
     => MonadWriter String m
     => Maybe ClaimIndex
     -> m ()
@@ -253,8 +260,7 @@ showClaim =
 
 -- | Prints an axiom using an index in the axioms list.
 showAxiom
-    :: MonadState (ReplState claim n) m
-    => Monad n
+    :: MonadState (ReplState claim) m
     => MonadWriter String m
     => AxiomIndex
     -- ^ index in the axioms list
@@ -265,10 +271,9 @@ showAxiom aindex = do
 
 -- | Changes the currently focused proof, using an index in the claims list.
 prove
-    :: forall claim m n
+    :: forall claim m
     .  Claim claim
-    => Monad n
-    => MonadState (ReplState claim n) m
+    => MonadState (ReplState claim) m
     => MonadWriter String m
     => ClaimIndex
     -- ^ index in the claims list
@@ -292,11 +297,10 @@ prove cindex = do
 
 showGraph
     :: MonadIO m
-    => Monad n
     => MonadWriter String m
     => Claim claim
     => Maybe FilePath
-    -> MonadState (ReplState claim n) m
+    -> MonadState (ReplState claim) m
     => m ()
 showGraph mfile = do
     graph <- getInnerGraph
@@ -348,21 +352,17 @@ loadScript
     => FilePath
     -- ^ path to file
     -> ReplM claim m ()
-loadScript file = do
-    state <- get
-    mstate <- lift $ parseEvalScript state file
-    put $ maybe state id mstate
+loadScript file = parseEvalScript file
 
 handleLog
-    :: MonadState (ReplState claim n) m
+    :: MonadState (ReplState claim) m
     => (Logger.Severity, LogType)
     -> m ()
 handleLog t = lensLogging .= t
 
 -- | Focuses the node with id equals to 'n'.
 selectNode
-    :: MonadState (ReplState claim n) m
-    => Monad n
+    :: MonadState (ReplState claim) m
     => Claim claim
     => MonadWriter String m
     => ReplNode
@@ -489,9 +489,8 @@ allProofs = do
             Just ns -> StuckProof ns
 
 showRule
-    :: MonadState (ReplState claim n) m
+    :: MonadState (ReplState claim) m
     => MonadWriter String m
-    => Monad n
     => Claim claim
     => Maybe ReplNode
     -> m ()
@@ -550,10 +549,9 @@ showChildren maybeNode = do
 
 -- | Shows existing labels or go to an existing label.
 label
-    :: forall m n claim
-    .  MonadState (ReplState claim n) m
+    :: forall m claim
+    .  MonadState (ReplState claim) m
     => MonadWriter String m
-    => Monad n
     => Claim claim
     => Maybe String
     -- ^ 'Nothing' for show labels, @Just str@ for jumping to the string label.
@@ -579,9 +577,8 @@ label =
 
 -- | Adds label for selected node.
 labelAdd
-    :: MonadState (ReplState claim n) m
+    :: MonadState (ReplState claim) m
     => MonadWriter String m
-    => Monad n
     => Claim claim
     => String
     -- ^ label
@@ -603,9 +600,8 @@ labelAdd lbl maybeNode = do
 
 -- | Removes a label.
 labelDel
-    :: MonadState (ReplState claim n) m
+    :: MonadState (ReplState claim) m
     => MonadWriter String m
-    => Monad n
     => String
     -- ^ label
     -> m ()
@@ -630,16 +626,21 @@ redirect
     -- ^ file path
     -> ReplM claim m ()
 redirect cmd path = do
-    get >>= runInterpreter >>= put
+    config <- ask
+    get >>= runInterpreter config >>= put
     putStrLn' "File created."
   where
     redirectToFile :: String -> IO ()
     redirectToFile = writeFile path
 
     runInterpreter
-        :: ReplState claim m
-        -> ReplM claim m (ReplState claim m)
-    runInterpreter = lift . execStateT (replInterpreter redirectToFile cmd)
+        :: Config claim m
+        -> ReplState claim
+        -> ReplM claim m (ReplState claim)
+    runInterpreter config st =
+        lift
+            $ (`execStateT` st)
+            $ runReaderT (replInterpreter redirectToFile cmd) config
 
 data AlsoApplyRule = Never | IfPossible
 
@@ -734,9 +735,8 @@ tryAxiomClaimWorker mode eac = do
 
 -- | Removes specified node and all its child nodes.
 clear
-    :: forall m n claim
-    .  MonadState (ReplState claim n) m
-    => Monad n
+    :: forall m claim
+    .  MonadState (ReplState claim) m
     => Claim claim
     => MonadWriter String m
     => Maybe ReplNode
@@ -771,7 +771,7 @@ clear =
 
 -- | Save this sessions' commands to the specified file.
 saveSession
-    :: MonadState (ReplState claim n) m
+    :: MonadState (ReplState claim) m
     => MonadWriter String m
     => MonadIO m
     => FilePath
@@ -806,7 +806,8 @@ pipe cmd file args = do
             (maybeInput, maybeOutput, _, _) <- createProcess' exec
             let
                 outputFunc = maybe putStrLn hPutStr maybeInput
-            get >>= runInterpreter outputFunc >>= put
+            config <- ask
+            get >>= runInterpreter outputFunc config >>= put
             case maybeOutput of
                 Nothing ->
                     putStrLn' "Error: couldn't access output handle."
@@ -816,9 +817,13 @@ pipe cmd file args = do
   where
     runInterpreter
         :: (String -> IO ())
-        -> ReplState claim m
-        -> ReplM claim m (ReplState claim m)
-    runInterpreter io = lift . execStateT (replInterpreter io cmd)
+        -> Config claim m
+        -> ReplState claim
+        -> ReplM claim m (ReplState claim)
+    runInterpreter io config st =
+        lift
+            $ (`execStateT` st)
+            $ runReaderT (replInterpreter io cmd) config
 
     createProcess' exec =
         liftIO $ createProcess (proc exec args)
@@ -836,19 +841,23 @@ appendTo
     -- ^ file to append to
     -> ReplM claim m ()
 appendTo cmd file = do
-    get >>= runInterpreter >>= put
+    config <- ask
+    get >>= runInterpreter config >>= put
     putStrLn' $ "Appended output to \"" <> file <> "\"."
   where
     runInterpreter
-        :: ReplState claim m
-        -> ReplM claim m (ReplState claim m)
-    runInterpreter = lift . execStateT (replInterpreter (appendFile file) cmd)
+        :: Config claim m
+        -> ReplState claim
+        -> ReplM claim m (ReplState claim)
+    runInterpreter config st =
+        lift
+            $ (`execStateT` st)
+            $ runReaderT (replInterpreter (appendFile file) cmd) config
 
 alias
-    :: forall m n claim
-    .  MonadState (ReplState claim n) m
+    :: forall m claim
+    .  MonadState (ReplState claim) m
     => MonadWriter String m
-    => Monad n
     => AliasDefinition
     -> m ()
 alias a = do
@@ -874,16 +883,20 @@ tryAlias replAlias@ReplAlias { name } printFn = do
                 command = substituteAlias aliasDef replAlias
                 parsedCommand =
                     maybe ShowUsage id $ parseMaybe commandParser command
-            (cont, st') <- get >>= runInterpreter parsedCommand
+            config <- ask
+            (cont, st') <- get >>= runInterpreter parsedCommand config
             put st'
             return cont
   where
     runInterpreter
         :: ReplCommand
-        -> ReplState claim m
-        -> ReplM claim m (ReplStatus, ReplState claim m)
-    runInterpreter cmd =
-        lift . runStateT (replInterpreter printFn cmd)
+        -> Config claim m
+        -> ReplState claim
+        -> ReplM claim m (ReplStatus, ReplState claim)
+    runInterpreter cmd config st =
+        lift
+            $ (`runStateT` st)
+            $ runReaderT (replInterpreter printFn cmd) config
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
 -- Returns 'Left' while it has to continue looping, and 'Right' when done
@@ -921,7 +934,8 @@ recursiveForcedStep
 recursiveForcedStep n graph node
   | n == 0    = return graph
   | otherwise = do
-      ReplState { claims , axioms , claim , stepper } <- get
+      ReplState { claims , axioms , claim } <- get
+      stepper <- asks stepper
       graph'@Strategy.ExecutionGraph { graph = gr } <-
           lift $ stepper claim claims axioms graph node
       case Graph.suc gr (unReplNode node) of
@@ -1044,47 +1058,48 @@ showAxiomOrClaim len (RuleIndex (Just rid))
   | otherwise = Just $ "Claim " <> show (rid - len)
 
 parseEvalScript
-    :: forall claim m
+    :: forall claim t m
     .  Claim claim
     => MonadSimplify m
     => MonadIO m
-    => ReplState claim m
-    -> FilePath
-    -> m (Maybe (ReplState claim m))
-parseEvalScript state file = do
-    exists <- liftIO . doesFileExist $ file
+    => MonadState (ReplState claim) (t m)
+    => MonadReader (Config claim m) (t m)
+    => Monad.Trans.MonadTrans t
+    => FilePath
+    -> t m ()
+parseEvalScript file = do
+    exists <- lift . liftIO . doesFileExist $ file
     if exists == True
         then do
-            contents <- liftIO $ readFile file
+            contents <- lift . liftIO $ readFile file
             let result = runParser scriptParser file contents
-            either parseFailed (executeScript state) result
+            either parseFailed executeScript result
         else do
-            liftIO . putStrLn
+            lift . liftIO . putStrLn
                 $ "Cannot find " <> file
-            return Nothing
 
   where
-
     parseFailed
         :: ParseErrorBundle String String
-        -> m (Maybe (ReplState claim m))
-    parseFailed err = do
-        liftIO . putStrLn
+        -> t m ()
+    parseFailed err =
+        lift . liftIO . putStrLn
             $ "\nCouldn't parse initial script file."
             <> "\nParser error at: "
             <> errorBundlePretty err
-        return Nothing
 
     executeScript
-        :: ReplState claim m
-        -> [ReplCommand]
-        -> m (Maybe (ReplState claim m))
-    executeScript st cmds = do
-        newSt <- execStateT executeCommands st
-        return . return $ newSt
+        :: [ReplCommand]
+        -> t m ()
+    executeScript cmds = do
+        config <- ask
+        get >>= executeCommands config >>= put
       where
-        executeCommands =
-            Foldable.for_ cmds $ replInterpreter $ \_ -> return ()
+        executeCommands config st =
+           lift
+               $ (`execStateT` st)
+               $ (`runReaderT` config)
+               $ Foldable.for_ cmds $ replInterpreter $ \_ -> return ()
 
 formatUnificationMessage
     :: Either (Pretty.Doc ()) (NonEmpty (Predicate Variable))
