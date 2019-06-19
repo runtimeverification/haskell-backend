@@ -10,6 +10,7 @@ module Kore.Sort
     , SortActual (..)
     , Sort (..)
     , getSortId
+    , sortSubstitution
     , substituteSortVariables
     -- * Meta-sorts
     , MetaSortType (..)
@@ -32,9 +33,13 @@ module Kore.Sort
 
 import           Control.DeepSeq
                  ( NFData )
+import           Data.Align
+import qualified Data.Foldable as Foldable
 import           Data.Hashable
                  ( Hashable )
 import qualified Data.Map.Strict as Map
+import qualified Data.Text.Prettyprint.Doc as Pretty
+import           Data.These
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -136,6 +141,29 @@ getSortId =
             getSortVariable
         SortActualSort SortActual { sortActualName } ->
             sortActualName
+
+{- | The 'Sort' substitution from applying the given sort parameters.
+ -}
+sortSubstitution
+    :: [SortVariable]
+    -> [Sort]
+    -> Map.Map SortVariable Sort
+sortSubstitution variables sorts =
+    Foldable.foldl' insertSortVariable Map.empty (align variables sorts)
+  where
+    insertSortVariable map' =
+        \case
+            These var sort -> Map.insert var sort map'
+            This _ ->
+                (error . show . Pretty.vsep) ("Too few parameters:" : expected)
+            That _ ->
+                (error . show . Pretty.vsep) ("Too many parameters:" : expected)
+    expected =
+        [ "Expected:"
+        , Pretty.indent 4 (parameters variables)
+        , "but found:"
+        , Pretty.indent 4 (parameters sorts)
+        ]
 
 {- | Substitute sort variables in a 'Sort'.
 

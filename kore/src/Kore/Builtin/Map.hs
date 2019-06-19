@@ -82,7 +82,7 @@ import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SmtMetadataTools )
+                 ( SmtMetadataTools )
 import           Kore.Internal.Conditional
                  ( Conditional, andCondition )
 import           Kore.Internal.Pattern
@@ -423,36 +423,32 @@ asInternal tools builtinMapSort builtinMapChild =
         Domain.InternalMap
             { builtinMapSort
             , builtinMapUnit =
-                Builtin.lookupSymbolUnit builtinMapSort attrs
+                Builtin.lookupSymbolUnit tools builtinMapSort
             , builtinMapElement =
-                Builtin.lookupSymbolElement builtinMapSort attrs
+                Builtin.lookupSymbolElement tools builtinMapSort
             , builtinMapConcat =
-                Builtin.lookupSymbolConcat builtinMapSort attrs
+                Builtin.lookupSymbolConcat tools builtinMapSort
             , builtinMapChild
             }
-  where
-    attrs = sortAttributes tools builtinMapSort
 
 {- | Render an 'Domain.InternalMap' as a 'TermLike' domain value pattern.
  -}
 asTermLike
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
     => Domain.InternalMap (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 asTermLike builtin
   | Map.null map' = unit
   | otherwise = foldr1 concat' (element <$> Map.toAscList map')
   where
-    Domain.InternalMap { builtinMapSort = builtinSort } = builtin
     Domain.InternalMap { builtinMapChild = map' } = builtin
     Domain.InternalMap { builtinMapUnit = unitSymbol } = builtin
     Domain.InternalMap { builtinMapElement = elementSymbol } = builtin
     Domain.InternalMap { builtinMapConcat = concatSymbol } = builtin
 
-    apply = mkApplySymbol builtinSort
-    unit = apply unitSymbol []
-    element (key, value) = apply elementSymbol [fromConcrete key, value]
-    concat' map1 map2 = apply concatSymbol [map1, map2]
+    unit = mkApplySymbol unitSymbol []
+    element (key, value) = mkApplySymbol elementSymbol [fromConcrete key, value]
+    concat' map1 map2 = mkApplySymbol concatSymbol [map1, map2]
 
 {- | Render a 'Map' a domain value 'Pattern'.
 

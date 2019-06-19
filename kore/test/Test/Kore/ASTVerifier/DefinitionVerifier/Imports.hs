@@ -14,6 +14,7 @@ import           Kore.Error
 import           Kore.IndexedModule.Error
                  ( noSort )
 import qualified Kore.Internal.Alias as Internal
+import           Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.Symbol as Internal
 import           Kore.Internal.TermLike hiding
                  ( Alias, Symbol )
@@ -490,12 +491,12 @@ sortVisibilityTests =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
-                Builtin.externalizePattern
-                $ mkApplySymbol sort
+                Builtin.externalizePattern $ mkApplySymbol
                     Internal.Symbol
                         { symbolConstructor = testId "symbol2"
                         , symbolParams = [ sort ]
                         , symbolAttributes = Attribute.defaultSymbolAttributes
+                        , symbolSorts = applicationSorts [] sort
                         }
                     []
             , sentenceAxiomAttributes = Attributes []
@@ -589,11 +590,11 @@ symbolVisibilityTests =
   where
     symbolPattern =
         mkApplySymbol
-            defaultSort
             Internal.Symbol
                 { symbolConstructor = testId "symbol1"
                 , symbolParams = [ defaultSort ]
                 , symbolAttributes = Attribute.defaultSymbolAttributes
+                , symbolSorts = applicationSorts [] defaultSort
                 }
             []
     symbolDeclaration =
@@ -610,11 +611,11 @@ symbolVisibilityTests =
     defaultSymbolSupportSentences = [ defaultSortDeclaration ]
     metaSymbolPattern =
         mkApplySymbol
-            charMetaSort
             Internal.Symbol
                 { symbolConstructor = testId "#symbol1"
                 , symbolParams = [ charMetaSort ]
                 , symbolAttributes = Attribute.defaultSymbolAttributes
+                , symbolSorts = applicationSorts [] charMetaSort
                 }
             []
     metaSymbolDeclaration =
@@ -675,11 +676,14 @@ symbolVisibilityTests =
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
                 Builtin.externalizePattern $ mkApplySymbol
-                    defaultSort
                     Internal.Symbol
                         { symbolConstructor = testId "symbol2"
                         , symbolParams = [ defaultSort ]
                         , symbolAttributes = Attribute.defaultSymbolAttributes
+                        , symbolSorts =
+                            applicationSorts
+                                [termLikeSort symbolPattern]
+                                defaultSort
                         }
                     [symbolPattern]
             , sentenceAxiomAttributes = Attributes []
@@ -774,10 +778,10 @@ aliasVisibilityTests =
   where
     aliasPattern =
         mkApplyAlias
-            defaultSort
             Internal.Alias
                 { aliasConstructor = testId "alias1"
                 , aliasParams = [ defaultSort ]
+                , aliasSorts = applicationSorts [] defaultSort
                 }
             []
     aliasDeclaration =
@@ -807,10 +811,10 @@ aliasVisibilityTests =
     defaultAliasSupportSentences = [ defaultSortDeclaration ]
     metaAliasPattern =
         mkApplyAlias
-            charMetaSort
             Internal.Alias
                 { aliasConstructor = testId "#alias1"
                 , aliasParams = [ charMetaSort ]
+                , aliasSorts = applicationSorts [] charMetaSort
                 }
             []
     metaAliasDeclaration =
@@ -883,10 +887,13 @@ aliasVisibilityTests =
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
                 Builtin.externalizePattern $ mkApplyAlias
-                    defaultSort
                     Internal.Alias
                         { aliasConstructor = testId "alias2"
                         , aliasParams = [ defaultSort ]
+                        , aliasSorts =
+                            applicationSorts
+                                [termLikeSort aliasPattern]
+                                defaultSort
                         }
                     [aliasPattern]
             , sentenceAxiomAttributes = Attributes []

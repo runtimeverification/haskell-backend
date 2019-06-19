@@ -35,6 +35,7 @@ import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
+import           Kore.Internal.ApplicationSorts
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
@@ -270,11 +271,11 @@ rewriteAxiom lhsName rhsName =
 applyToNoArgs :: Sort -> Text -> TermLike Variable
 applyToNoArgs sort name =
     mkApplySymbol
-        sort
         Symbol
             { symbolConstructor = testId name
             , symbolParams = []
             , symbolAttributes = Mock.constructorFunctionalAttributes
+            , symbolSorts = applicationSorts [] sort
             }
         []
 
@@ -352,7 +353,7 @@ test_execGetExitCode =
 
     mockGetExitCodeAxiom =
         mkEqualityAxiom
-            (mkApplySymbol myIntSort getExitCodeSym [mkVar v]) (mkVar v) Nothing
+            (mkApplySymbol getExitCodeSym [mkVar v]) (mkVar v) Nothing
       where
         v = Variable
             { variableName = testId "V"
@@ -360,4 +361,9 @@ test_execGetExitCode =
             , variableSort = myIntSort
             }
         getExitCodeSym =
-            Symbol getExitCodeId [] Attribute.defaultSymbolAttributes
+            Symbol
+                { symbolConstructor = getExitCodeId
+                , symbolParams = []
+                , symbolAttributes = Attribute.defaultSymbolAttributes
+                , symbolSorts = applicationSorts [myIntSort] myIntSort
+                }

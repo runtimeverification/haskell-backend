@@ -16,6 +16,7 @@ import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Internal.Pattern as Pattern
                  ( bottom, top )
+import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeFloorPredicate,
@@ -118,36 +119,25 @@ test_floorSimplification =
     -- floor moves predicates and substitutions up
     ]
   where
-    fId = testId "f"
-    gId = testId "g"
-    aSymbol = Symbol
-        { symbolConstructor = testId "a"
-        , symbolParams      = []
-        , symbolAttributes  = Default.def
-        }
-    bSymbol = Symbol
-        { symbolConstructor = testId "b"
-        , symbolParams      = []
-        , symbolAttributes  = Default.def
-        }
-    fSymbol = Symbol
-        { symbolConstructor = fId
-        , symbolParams      = []
-        , symbolAttributes  = Default.def
-        }
-    gSymbol = Symbol
-        { symbolConstructor = gId
-        , symbolParams      = []
-        , symbolAttributes  = Default.def
-        }
+    symbol name operands result =
+        Symbol
+            { symbolConstructor = testId name
+            , symbolParams = []
+            , symbolAttributes = Default.def
+            , symbolSorts = applicationSorts operands result
+            }
+    aSymbol = symbol "a" [] testSort
+    bSymbol = symbol "b" [] testSort
+    fSymbol = symbol "f" [testSort] testSort
+    gSymbol = symbol "g" [testSort] testSort
     x = Variable (testId "x") mempty testSort
     a :: TermLike Variable
-    a = mkApplySymbol testSort aSymbol []
+    a = mkApplySymbol aSymbol []
     b :: TermLike Variable
-    b = mkApplySymbol testSort bSymbol []
-    fOfA = mkApplySymbol testSort fSymbol [a]
-    fOfB = mkApplySymbol testSort fSymbol [b]
-    gOfA = mkApplySymbol testSort gSymbol [a]
+    b = mkApplySymbol bSymbol []
+    fOfA = mkApplySymbol fSymbol [a]
+    fOfB = mkApplySymbol fSymbol [b]
+    gOfA = mkApplySymbol gSymbol [a]
     aExpanded = Conditional
         { term = a
         , predicate = makeTruePredicate

@@ -82,7 +82,7 @@ import qualified Kore.Error as Kore
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools, sortAttributes )
+                 ( SmtMetadataTools )
 import           Kore.Internal.Conditional
                  ( andCondition )
 import           Kore.Internal.Pattern
@@ -390,36 +390,32 @@ asInternal tools builtinSetSort builtinSetChild =
         Domain.InternalSet
             { builtinSetSort
             , builtinSetUnit =
-                Builtin.lookupSymbolUnit builtinSetSort attrs
+                Builtin.lookupSymbolUnit tools builtinSetSort
             , builtinSetElement =
-                Builtin.lookupSymbolElement builtinSetSort attrs
+                Builtin.lookupSymbolElement tools builtinSetSort
             , builtinSetConcat =
-                Builtin.lookupSymbolConcat builtinSetSort attrs
+                Builtin.lookupSymbolConcat tools builtinSetSort
             , builtinSetChild
             }
-  where
-    attrs = sortAttributes tools builtinSetSort
 
 {- | Render an 'Domain.InternalSet' as a 'TermLike' domain value.
  -}
 asTermLike
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable, Unparse variable)
     => Domain.InternalSet (TermLike Concrete)
     -> TermLike variable
 asTermLike builtin
   | Set.null set = unit
   | otherwise = foldr1 concat' (element <$> Foldable.toList set)
   where
-    Domain.InternalSet { builtinSetSort = builtinSort } = builtin
     Domain.InternalSet { builtinSetChild = set } = builtin
     Domain.InternalSet { builtinSetUnit = unitSymbol } = builtin
     Domain.InternalSet { builtinSetElement = elementSymbol } = builtin
     Domain.InternalSet { builtinSetConcat = concatSymbol } = builtin
 
-    apply = mkApplySymbol builtinSort
-    unit = apply unitSymbol []
-    element elem' = apply elementSymbol [fromConcrete elem']
-    concat' set1 set2 = apply concatSymbol [set1, set2]
+    unit = mkApplySymbol unitSymbol []
+    element elem' = mkApplySymbol elementSymbol [fromConcrete elem']
+    concat' set1 set2 = mkApplySymbol concatSymbol [set1, set2]
 
 {- | Render a 'Seq' as an extended domain value pattern.
 

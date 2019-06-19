@@ -16,17 +16,11 @@ module Kore.Internal.MultiOr
     , filterOr
     , flatten
     , flattenGeneric
-    , fmapFlattenWithPairs
-    , fmapWithPairs
     , fullCrossProduct
     , make
     , merge
     , mergeAll
-    , uncheckedMerge
     , singleton
-    , traverseWithPairs
-    , traverseFlattenWithPairs
-    , traverseFlattenWithPairsGeneric
     -- * Re-exports
     , Alternative (..)
     ) where
@@ -81,10 +75,6 @@ instance (Ord child, TopBottom child) => Semigroup (MultiOr child) where
 
 instance (Ord child, TopBottom child) => Monoid (MultiOr child) where
     mempty = make []
-
--- TODO(virgil): Remove all uses of this function.
-uncheckedMerge :: MultiOr child -> MultiOr child -> MultiOr child
-uncheckedMerge (MultiOr a) (MultiOr b) = MultiOr (a <> b)
 
 instance NFData child => NFData (MultiOr child)
 
@@ -153,105 +143,6 @@ extractPatterns
     :: MultiOr term
     -> [term]
 extractPatterns = getMultiOr
-
-
-{-| fmaps an or in a similar way to traverseWithPairs.
--}
-fmapWithPairs
-    :: (Ord term, TopBottom term)
-    =>  (  term
-        -> (term, a)
-        )
-    -> MultiOr term
-    -> (MultiOr term, [a])
-fmapWithPairs mapper patt =
-    ( filterOr (fmap fst mapped)
-    , extractPatterns (fmap snd mapped)
-    )
-  where
-    mapped = fmap mapper patt
-
-{-| 'traverseWithPairs' traverses an or with a function that returns a
-(item, something) pair, then returns a 'MultiOr' of the items and
-a list of that something.
-
-This is handy when one transforms the items in an 'or', also producing
-proofs for each transformation: this function will return the transformed or
-and a list of the proofs involved in the transformation.
--}
-traverseWithPairs
-    ::  ( Monad f
-        , Ord term
-        , TopBottom term
-        )
-    =>  (  term
-        -> f (term, a)
-        )
-    -> MultiOr term
-    -> f (MultiOr term, [a])
-traverseWithPairs mapper patt = do
-    mapped <- traverse mapper patt
-    return
-        ( filterOr (fmap fst mapped)
-        , extractPatterns (fmap snd mapped)
-        )
-
-{-| 'fmapFlattenWithPairs' fmaps an or in a similar way to
-'traverseFlattenWithPairs'.
--}
-fmapFlattenWithPairs
-    :: (Ord term, TopBottom term)
-    =>  (  term
-        -> (MultiOr term, a)
-        )
-    -> MultiOr term
-    -> (MultiOr term, [a])
-fmapFlattenWithPairs mapper patt =
-    ( flatten (fmap fst mapped)
-    , extractPatterns (fmap snd mapped)
-    )
-  where
-    mapped = fmap mapper patt
-
-{-| 'traverseFlattenWithPairs' is similar to 'traverseWithPairs', except
-that its function returns a flattened result.
--}
-traverseFlattenWithPairs
-    ::  ( Monad f
-        , Ord term
-        , TopBottom term
-        )
-    =>  (  term
-        -> f (MultiOr term, a)
-        )
-    -> MultiOr term
-    -> f (MultiOr term, [a])
-traverseFlattenWithPairs mapper patt = do
-    mapped <- traverse mapper patt
-    return
-        ( flatten (fmap fst mapped)
-        , extractPatterns (fmap snd mapped)
-        )
-
-{-| 'traverseFlattenWithPairsGeneric' is similar to 'traverseFlattenWithPairs',
-except that it works on any 'MultiOr'.
--}
-traverseFlattenWithPairsGeneric
-    ::  ( Monad f
-        , Ord term
-        , TopBottom term
-        )
-    =>  (  a
-        -> f (MultiOr term, pair)
-        )
-    -> MultiOr a
-    -> f (MultiOr term, [pair])
-traverseFlattenWithPairsGeneric mapper patt = do
-    mapped <- traverse mapper patt
-    return
-        ( flatten (fmap fst mapped)
-        , extractPatterns (fmap snd mapped)
-        )
 
 {-| 'fullCrossProduct' distributes all the elements in a list of or, making
 all possible tuples. Each of these tuples will be an element of the resulting

@@ -47,7 +47,7 @@ import qualified Kore.Step.Result as StepResult
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), allPathGlobally )
 import           Kore.Step.Simplification.Data
-                 ( Simplifier )
+                 ( MonadSimplify )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyAndRemoveTopExists )
 import qualified Kore.Step.Step as Step
@@ -108,13 +108,15 @@ unroll = Unroll
 computeWeakNext :: [rewrite] -> Prim patt rewrite
 computeWeakNext = ComputeWeakNext
 
-type Transition =
-    TransitionT (RewriteRule Variable) (StateT (Maybe ()) Simplifier)
+type Transition m =
+    TransitionT (RewriteRule Variable) (StateT (Maybe ()) m)
 
 transitionRule
-    :: Prim (CommonModalPattern) (RewriteRule Variable)
+    :: forall m
+    .  MonadSimplify m
+    => Prim (CommonModalPattern) (RewriteRule Variable)
     -> CommonProofState
-    -> Transition CommonProofState
+    -> Transition m CommonProofState
 transitionRule
     strategyPrim
     proofState
@@ -127,7 +129,7 @@ transitionRule
   where
     transitionCheckProofState
         :: CommonProofState
-        -> Transition CommonProofState
+        -> Transition m CommonProofState
     transitionCheckProofState proofState0 = do
         execState <- Monad.Trans.lift State.get
         -- End early if any unprovable state was reached
@@ -139,7 +141,7 @@ transitionRule
 
     transitionSimplify
         :: CommonProofState
-        -> Transition CommonProofState
+        -> Transition m CommonProofState
     transitionSimplify Proven = return Proven
     transitionSimplify Unprovable = return Unprovable
     transitionSimplify (GoalLHS config) =
@@ -162,7 +164,7 @@ transitionRule
     transitionUnroll
         :: CommonModalPattern
         -> CommonProofState
-        -> Transition CommonProofState
+        -> Transition m CommonProofState
     transitionUnroll _ Proven = empty
     transitionUnroll _ Unprovable = empty
     transitionUnroll goalrhs (GoalLHS config)
@@ -197,7 +199,7 @@ transitionRule
     transitionComputeWeakNext
         :: [RewriteRule Variable]
         -> CommonProofState
-        -> Transition CommonProofState
+        -> Transition m CommonProofState
     transitionComputeWeakNext _ Proven = return Proven
     transitionComputeWeakNext _ Unprovable = return Unprovable
     transitionComputeWeakNext rules (GoalLHS config)
@@ -208,7 +210,7 @@ transitionRule
     transitionComputeWeakNextHelper
         :: [RewriteRule Variable]
         -> Pattern Variable
-        -> Transition CommonProofState
+        -> Transition m CommonProofState
     transitionComputeWeakNextHelper _ config
         | Pattern.isBottom config = return Proven
     transitionComputeWeakNextHelper rules config = do
