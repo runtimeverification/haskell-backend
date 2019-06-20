@@ -12,6 +12,7 @@ module Kore.Repl.State
     , getInternalIdentifier
     , getAxiomByLabel, getClaimByLabel, getAxiomOrClaimByLabel
     , getClaimIndexByLabel, getLabelText
+    , ruleReference
     , switchToProof
     , getTargetNode, getInnerGraph, getExecutionGraph
     , getConfigAt, getRuleFor, getLabels, setLabels
@@ -108,6 +109,18 @@ emptyExecutionGraph =
         -> CommonStrategyPattern
     extractConfig (RewriteRule RulePattern { left, requires }) =
         RewritePattern $ Conditional left requires mempty
+
+ruleReference
+    :: (Either AxiomIndex ClaimIndex -> a)
+    -> (RuleLabel -> a)
+    -> RuleReference
+    -> a
+ruleReference f g ref =
+    case ref of
+        ByIndex axiomOrClaimIndex ->
+            f axiomOrClaimIndex
+        ByLabel ruleLabel ->
+            g ruleLabel
 
 -- | Get nth claim from the claims list.
 getClaimByIndex

@@ -707,31 +707,21 @@ tryAxiomClaimWorker
     -- ^ tagged index in the axioms or claims list
     -> ReplM claim m ()
 tryAxiomClaimWorker mode ref = do
-    case ref of
-        ByIndex eac -> do
-            maybeAxiomOrClaim <- getAxiomOrClaimByIndex eac
-            case maybeAxiomOrClaim of
-                Nothing ->
-                    putStrLn' "Could not find axiom or claim."
-                Just axiomOrClaim -> do
-                    node <- Lens.use lensNode
-                    case mode of
-                        Never ->
-                            showUnificationFailure axiomOrClaim node
-                        IfPossible ->
-                            tryForceAxiomOrClaim axiomOrClaim node
-        ByLabel label -> do
-            maybeAxiomOrClaim <- getAxiomOrClaimByLabel label
-            case maybeAxiomOrClaim of
-                Nothing ->
-                    putStrLn' "Could not find axiom or claim."
-                Just axiomOrClaim -> do
-                    node <- Lens.use lensNode
-                    case mode of
-                        Never ->
-                            showUnificationFailure axiomOrClaim node
-                        IfPossible ->
-                            tryForceAxiomOrClaim axiomOrClaim node
+    maybeAxiomOrClaim <-
+        ruleReference
+            getAxiomOrClaimByIndex
+            getAxiomOrClaimByLabel
+            ref
+    case maybeAxiomOrClaim of
+       Nothing ->
+           putStrLn' "Could not find axiom or claim."
+       Just axiomOrClaim -> do
+           node <- Lens.use lensNode
+           case mode of
+               Never ->
+                   showUnificationFailure axiomOrClaim node
+               IfPossible ->
+                   tryForceAxiomOrClaim axiomOrClaim node
   where
     showUnificationFailure
         :: Either Axiom claim
