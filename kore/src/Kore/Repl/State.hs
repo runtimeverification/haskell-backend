@@ -11,7 +11,7 @@ module Kore.Repl.State
     , getClaimByIndex, getAxiomByIndex, getAxiomOrClaimByIndex
     , getInternalIdentifier
     , getAxiomByLabel, getClaimByLabel, getAxiomOrClaimByLabel
-    , getLabelText
+    , getClaimIndexByLabel, getLabelText
     , switchToProof
     , getTargetNode, getInnerGraph, getExecutionGraph
     , getConfigAt, getRuleFor, getLabels, setLabels
@@ -49,7 +49,7 @@ import           Data.Foldable
                  ( find )
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.List.Extra
-                 ( groupSort )
+                 ( findIndex, groupSort )
 import           Data.List.NonEmpty
                  ( NonEmpty (..) )
 import qualified Data.Map as Map
@@ -147,6 +147,17 @@ getClaimByLabel label = do
     claims <- Lens.use lensClaims
     return $ coerce
         <$> find (isLabelEqual label) (fmap coerce claims)
+
+getClaimIndexByLabel
+    :: MonadState (ReplState claim n) m
+    => Claim claim
+    => String
+    -- ^ label attribute
+    -> m (Maybe ClaimIndex)
+getClaimIndexByLabel label = do
+    claims <- Lens.use lensClaims
+    return $ coerce
+        <$> findIndex (isLabelEqual label) (fmap coerce claims)
 
 getAxiomOrClaimByLabel
     :: MonadState (ReplState claim n) m

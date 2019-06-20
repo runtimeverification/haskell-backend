@@ -263,11 +263,11 @@ showAxiom
     => Either AxiomIndex RuleLabel
     -- ^ index in the axioms list
     -> m ()
-showAxiom axiomIndexOrRuleLabel = do
+showAxiom indexOrLabel = do
     axiom <- either
                 (getAxiomByIndex . unAxiomIndex)
                 (getAxiomByLabel . unRuleLabel)
-                axiomIndexOrRuleLabel
+                indexOrLabel
     maybe printNotFound (putStrLn' . showRewriteRule) $ axiom
 
 -- | Changes the currently focused proof, using an index in the claims list.
@@ -280,31 +280,31 @@ prove
     => Either ClaimIndex RuleLabel
     -- ^ index in the claims list
     -> m ()
-prove claimIndexOrRuleLabel = do
+prove indexOrLabel = do
     claim' <- either
                 (getClaimByIndex . unClaimIndex)
                 (getClaimByLabel . unRuleLabel)
-                claimIndexOrRuleLabel
+                indexOrLabel
     maybe
         printNotFound
-        (startProving claimIndexOrRuleLabel)
+        (startProving indexOrLabel)
         claim'
   where
     startProving
         :: Either ClaimIndex RuleLabel
         -> claim
         -> m ()
-    startProving claimIndexOrRuleLabel claim = do
+    startProving indexOrLabel claim = do
         if isTrusted claim
             then putStrLn'
                     $ "Cannot switch to proving claim "
                     <> either
                     (show . unClaimIndex)
                     (show . unRuleLabel)
-                    claimIndexOrRuleLabel
+                    indexOrLabel
                     <> ". Claim is trusted."
             else do
-                case claimIndexOrRuleLabel of
+                case indexOrLabel of
                     Left claimIndex -> do
                         switchToProof claim claimIndex
                         putStrLn'
@@ -312,8 +312,14 @@ prove claimIndexOrRuleLabel = do
                             <> either
                             (show . unClaimIndex)
                             (show . unRuleLabel)
-                            claimIndexOrRuleLabel
-                    Right ruleLabel -> putStrLn' "wip"
+                            indexOrLabel
+                    Right ruleLabel -> do
+                        index <-
+                            getClaimIndexByLabel (unRuleLabel ruleLabel)
+                        switchToProof claim (fromJust index)
+                        putStrLn'
+                            $ "Switched to proving claim "
+                            <> unRuleLabel ruleLabel
 
 showGraph
     :: MonadIO m
