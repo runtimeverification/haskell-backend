@@ -76,9 +76,9 @@ proofStatus =
 
 claimTests :: [ParserTest ReplCommand]
 claimTests =
-    [ "claim 0"  `parsesTo_` ShowClaim (Just . ClaimIndex $ 0)
-    , "claim 0 " `parsesTo_` ShowClaim (Just . ClaimIndex $ 0)
-    , "claim 5"  `parsesTo_` ShowClaim (Just . ClaimIndex $ 5)
+    [ "claim 0"  `parsesTo_` ShowClaim (Just . Left . ClaimIndex $ 0)
+    , "claim 0 " `parsesTo_` ShowClaim (Just . Left . ClaimIndex $ 0)
+    , "claim 5"  `parsesTo_` ShowClaim (Just . Left . ClaimIndex $ 5)
     , "claim"    `parsesTo_` ShowClaim Nothing
     , "claim -5" `fails`     ()
     ]
@@ -232,8 +232,8 @@ redirectTests =
     [ "config > file"     `parsesTo_` redirectConfig Nothing "file"
     , "config 5 > file"   `parsesTo_` redirectConfig (Just $ ReplNode 5) "file"
     , "config 5 > file"   `parsesTo_` redirectConfig (Just $ ReplNode 5) "file"
-    , "claim 3 > cf"      `parsesTo_` redirectClaim (Just . ClaimIndex $ 3) "cf"
-    , "claim 3 > \"c f\"" `parsesTo_` redirectClaim (Just . ClaimIndex $ 3) "c f"
+    , "claim 3 > cf"      `parsesTo_` redirectClaim (Just . Left . ClaimIndex $ 3) "cf"
+    , "claim 3 > \"c f\"" `parsesTo_` redirectClaim (Just . Left . ClaimIndex $ 3) "c f"
     , "config 5 > "       `fails`     ()
     ]
   where

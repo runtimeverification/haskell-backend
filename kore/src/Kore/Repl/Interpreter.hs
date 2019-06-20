@@ -241,15 +241,18 @@ showClaim
     => Monad n
     => MonadState (ReplState claim n) m
     => MonadWriter String m
-    => Maybe ClaimIndex
+    => Maybe (Either ClaimIndex RuleLabel)
     -> m ()
 showClaim =
     \case
         Nothing -> do
             currentCindex <- Lens.use lensClaimIndex
             putStrLn' . showCurrentClaimIndex $ currentCindex
-        Just cindex -> do
-            claim <- getClaimByIndex . unClaimIndex $ cindex
+        Just indexOrLabel -> do
+            claim <- either
+                        (getClaimByIndex . unClaimIndex)
+                        (getClaimByLabel . unRuleLabel)
+                        indexOrLabel
             maybe printNotFound (putStrLn' . showRewriteRule) $ claim
 
 -- | Prints an axiom using an index in the axioms list.

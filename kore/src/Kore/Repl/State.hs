@@ -10,7 +10,8 @@ module Kore.Repl.State
     ( emptyExecutionGraph
     , getClaimByIndex, getAxiomByIndex, getAxiomOrClaimByIndex
     , getInternalIdentifier
-    , getAxiomByLabel, getLabelText, getAxiomOrClaimByLabel
+    , getAxiomByLabel, getClaimByLabel, getAxiomOrClaimByLabel
+    , getLabelText
     , switchToProof
     , getTargetNode, getInnerGraph, getExecutionGraph
     , getConfigAt, getRuleFor, getLabels, setLabels

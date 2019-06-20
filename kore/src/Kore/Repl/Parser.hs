@@ -114,13 +114,17 @@ loadScript :: Parser ReplCommand
 loadScript = LoadScript <$$> literal "load" *> quotedOrWordWithout ""
 
 showClaim :: Parser ReplCommand
-showClaim = ShowClaim <$$> literal "claim" *> optional parseClaimDecimal
+showClaim =
+    ShowClaim
+    <$$> literal "claim"
+    *> optional
+        (Left <$> parseClaimDecimal <|> Right <$> ruleLabelParser)
 
 showAxiom :: Parser ReplCommand
 showAxiom =
     ShowAxiom
     <$$> literal "axiom"
-    *> ( Left <$> axiomIndexParser
+    *> ( Left <$> parseAxiomDecimal
         <|> Right <$> ruleLabelParser
        )
 
@@ -338,3 +342,6 @@ maybeWord = optional word
 
 parseClaimDecimal :: Parser ClaimIndex
 parseClaimDecimal = ClaimIndex <$> decimal
+
+parseAxiomDecimal :: Parser AxiomIndex
+parseAxiomDecimal = AxiomIndex <$> decimal

@@ -152,9 +152,9 @@ data ReplCommand
     -- ^ This is the default action in case parsing all others fail.
     | Help
     -- ^ Shows the help message.
-    | ShowClaim !(Maybe ClaimIndex)
+    | ShowClaim !(Maybe (Either ClaimIndex RuleLabel))
     -- ^ Show the nth claim or the current claim.
-    | ShowAxiom (Either AxiomIndex RuleLabel)
+    | ShowAxiom !(Either AxiomIndex RuleLabel)
     -- ^ Show the nth axiom.
     | Prove !ClaimIndex
     -- ^ Drop the current proof state and re-initialize for the nth claim.

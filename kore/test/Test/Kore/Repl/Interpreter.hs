@@ -340,7 +340,7 @@ showClaim1 =
         claims = [zeroToTen, emptyClaim]
         claim = zeroToTen
         axioms = []
-        command = ShowClaim (Just . ClaimIndex $ 1)
+        command = ShowClaim (Just . Left . ClaimIndex $ 1)
         expectedClaim = emptyClaim
     in do
         Result { output, continue } <-
