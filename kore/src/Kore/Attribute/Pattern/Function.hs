@@ -39,7 +39,7 @@ instance Hashable Function
 
 instance Synthetic (And sort) Function where
     -- TODO (thomas.tuegel):
-    -- synthetic = Foldable.fold
+    -- synthetic = getAny . Foldable.foldMap (Any . isFunction)
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
