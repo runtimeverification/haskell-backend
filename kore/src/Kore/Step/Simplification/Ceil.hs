@@ -163,13 +163,12 @@ makeEvaluateTerm
     => TermLike variable
     -> simplifier (OrPredicate variable)
 makeEvaluateTerm term@(Recursive.project -> _ :< projected) = do
-    tools <- Simplifier.askMetadataTools
-    makeEvaluateTermWorker tools
+    makeEvaluateTermWorker
   where
-    makeEvaluateTermWorker tools
-      | isTop term                = return OrPredicate.top
-      | isBottom term             = return OrPredicate.bottom
-      | isTotalPattern tools term = return OrPredicate.top
+    makeEvaluateTermWorker
+      | isTop term          = return OrPredicate.top
+      | isBottom term       = return OrPredicate.bottom
+      | isTotalPattern term = return OrPredicate.top
 
       | ApplySymbolF app <- projected
       , let Application { applicationSymbolOrAlias = patternHead } = app

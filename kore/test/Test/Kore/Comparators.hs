@@ -29,6 +29,7 @@ import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import qualified Kore.Attribute.Pattern.Function as Attribute.Pattern
 import qualified Kore.Attribute.Pattern.Functional as Attribute.Pattern
+import qualified Kore.Attribute.Pattern.Total as Attribute.Pattern
 import qualified Kore.Attribute.Source as Attribute
 import           Kore.Domain.Builtin as Domain
 import           Kore.Error
@@ -1321,8 +1322,8 @@ instance
     ) => StructEqualWithExplanation (Attribute.Pattern variable)
   where
     structFieldsWithNames
-        expected@(Attribute.Pattern _ _ _ _)
-        actual@(Attribute.Pattern _ _ _ _)
+        expected@(Attribute.Pattern _ _ _ _ _)
+        actual@(Attribute.Pattern _ _ _ _ _)
       =
         [ EqWrap
             "patternSort = "
@@ -1340,6 +1341,10 @@ instance
             "function = "
             (Attribute.function expected)
             (Attribute.function actual)
+        , EqWrap
+            "total = "
+            (Attribute.total expected)
+            (Attribute.total actual)
         ]
     structConstructorName _ = "Pattern"
 
@@ -1375,6 +1380,15 @@ instance WrapperEqualWithExplanation Attribute.Pattern.Function where
     wrapperConstructorName _ = "Function"
     wrapperField =
         Function.on (EqWrap "isFunction = ") Attribute.Pattern.isFunction
+
+instance EqualWithExplanation Attribute.Pattern.Total where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation Attribute.Pattern.Total where
+    wrapperConstructorName _ = "Total"
+    wrapperField =
+        Function.on (EqWrap "isTotal = ") Attribute.Pattern.isTotal
 
 instance
     ( EqualWithExplanation variable, Show variable

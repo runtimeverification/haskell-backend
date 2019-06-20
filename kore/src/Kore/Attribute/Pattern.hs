@@ -12,6 +12,7 @@ module Kore.Attribute.Pattern
     , lensPatternSort
     , lensFunctional
     , lensFunction
+    , lensTotal
     , mapVariables
     , traverseVariables
     , deleteFreeVariable
@@ -34,6 +35,8 @@ import           Kore.Attribute.Pattern.Function
                  ( Function )
 import           Kore.Attribute.Pattern.Functional
                  ( Functional )
+import           Kore.Attribute.Pattern.Total
+                 ( Total )
 import           Kore.Attribute.Synthetic
 import           Kore.Debug
 import           Kore.Sort
@@ -49,6 +52,7 @@ data Pattern variable =
         -- ^ The free variables of the pattern.
         , functional :: !Functional
         , function :: !Function
+        , total :: !Total
         }
     deriving (Eq, GHC.Generic, Show)
 
@@ -69,6 +73,7 @@ instance
     , Synthetic base (FreeVariables variable)
     , Synthetic base Functional
     , Synthetic base Function
+    , Synthetic base Total
     ) =>
     Synthetic base (Pattern variable)
   where
@@ -78,6 +83,7 @@ instance
             , freeVariables = synthetic (freeVariables <$> base)
             , functional = synthetic (functional <$> base)
             , function = synthetic (function <$> base)
+            , total = synthetic (total <$> base)
             }
 
 {- | Use the provided mapping to replace all variables in a 'Pattern'.

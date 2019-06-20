@@ -14,6 +14,7 @@ module Kore.Internal.TermLike
     , extractAttributes
     , isFunctionPattern
     , isFunctionalPattern
+    , isTotalPattern
     , freeVariables
     , termLikeSort
     , hasFreeVariable
@@ -180,6 +181,7 @@ import           Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
+import qualified Kore.Attribute.Pattern.Total as Pattern
 import           Kore.Attribute.Synthetic
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
@@ -464,6 +466,41 @@ instance Synthetic (TermLikeF variable) Pattern.Function where
     synthetic (SetVariableF _) = Pattern.Function False
     {-# INLINE synthetic #-}
 
+instance Synthetic (TermLikeF variable) Pattern.Total where
+    -- TODO (thomas.tuegel): Use SOP.Generic here, after making the children
+    -- Functors.
+    synthetic (ForallF forallF) = synthetic forallF
+    synthetic (ExistsF existsF) = synthetic existsF
+    synthetic (VariableF _) = Pattern.Total True
+
+    synthetic (AndF andF) = synthetic andF
+    synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
+    synthetic (ApplyAliasF applyAliasF) = synthetic applyAliasF
+    synthetic (BottomF bottomF) = synthetic bottomF
+    synthetic (CeilF ceilF) = synthetic ceilF
+    synthetic (DomainValueF domainValueF) = synthetic domainValueF
+    synthetic (EqualsF equalsF) = synthetic equalsF
+    synthetic (FloorF floorF) = synthetic floorF
+    synthetic (IffF iffF) = synthetic iffF
+    synthetic (ImpliesF impliesF) = synthetic impliesF
+    synthetic (InF inF) = synthetic inF
+    synthetic (NextF nextF) = synthetic nextF
+    synthetic (NotF notF) = synthetic notF
+    synthetic (OrF orF) = synthetic orF
+    synthetic (RewritesF rewritesF) = synthetic rewritesF
+    synthetic (TopF topF) = synthetic topF
+    synthetic (BuiltinF builtinF) = synthetic builtinF
+    synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
+
+    synthetic (StringLiteralF _) = Pattern.Total True
+    synthetic (CharLiteralF _) = Pattern.Total True
+    synthetic (InhabitantF _) = Pattern.Total True
+
+    synthetic (MuF muF) = synthetic muF
+    synthetic (NuF nuF) = synthetic nuF
+    synthetic (SetVariableF _) = Pattern.Total False
+    {-# INLINE synthetic #-}
+
 {- | Use the provided mapping to replace all variables in a 'TermLikeF' head.
 
 __Warning__: @mapVariablesF@ will capture variables if the provided mapping is
@@ -746,6 +783,12 @@ isFunctionPattern =
 isFunctionalPattern :: TermLike variable -> Bool
 isFunctionalPattern =
     Pattern.isFunctional . Attribute.functional . extractAttributes
+
+{- | Is the 'TermLike' total, i.e. defined?
+ -}
+isTotalPattern :: TermLike variable -> Bool
+isTotalPattern =
+    Pattern.isTotal . Attribute.total . extractAttributes
 
 {- | Throw an error if the variable occurs free in the pattern.
 
