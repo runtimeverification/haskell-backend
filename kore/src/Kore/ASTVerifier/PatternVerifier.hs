@@ -727,7 +727,9 @@ verifyDomainValue domain = do
             domain'
     let freeVariables =
             Foldable.foldl' Set.union Set.empty
-                (Attribute.freeVariables . Internal.extractAttributes <$> verified)
+                ( Attribute.freeVariables . Internal.extractAttributes
+                <$> verified
+                )
     Monad.unless (Set.null freeVariables)
         (koreFail "Domain value must not contain free variables.")
     return (Attribute.Pattern { patternSort, freeVariables } :< verified)
