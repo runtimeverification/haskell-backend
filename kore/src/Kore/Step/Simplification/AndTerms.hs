@@ -62,8 +62,6 @@ import           Kore.Predicate.Predicate
                  makeNotPredicate, makeTruePredicate )
 import           Kore.Step.PatternAttributes
                  ( isConstructorLikeTop )
-import           Kore.Step.RecursiveAttributes
-                 ( isFunctionPattern )
 import           Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )

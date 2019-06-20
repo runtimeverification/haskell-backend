@@ -32,8 +32,6 @@ import           Kore.Internal.Predicate
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import qualified Kore.Step.Merging.OrPattern as OrPattern
-import           Kore.Step.RecursiveAttributes
-                 ( isFunctionPattern )
 import           Kore.Step.Simplification.AndTerms
                  ( SortInjectionMatch (SortInjectionMatch),
                  simplifySortInjections )
