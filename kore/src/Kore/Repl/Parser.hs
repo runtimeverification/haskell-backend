@@ -129,7 +129,12 @@ showAxiom =
        )
 
 prove :: Parser ReplCommand
-prove = Prove <$$> literal "prove" *> parseClaimDecimal
+prove =
+    Prove
+    <$$> literal "prove"
+    *> ( Left <$> parseClaimDecimal
+       <|> Right <$> ruleLabelParser
+       )
 
 showGraph :: Parser ReplCommand
 showGraph = ShowGraph <$$> literal "graph" *> optional (quotedOrWordWithout "")

@@ -277,25 +277,43 @@ prove
     => Monad n
     => MonadState (ReplState claim n) m
     => MonadWriter String m
-    => ClaimIndex
+    => Either ClaimIndex RuleLabel
     -- ^ index in the claims list
     -> m ()
-prove cindex = do
-    claim' <- getClaimByIndex . unClaimIndex $ cindex
-    maybe printNotFound (startProving cindex) claim'
+prove claimIndexOrRuleLabel = do
+    claim' <- either
+                (getClaimByIndex . unClaimIndex)
+                (getClaimByLabel . unRuleLabel)
+                claimIndexOrRuleLabel
+    maybe
+        printNotFound
+        (startProving claimIndexOrRuleLabel)
+        claim'
   where
-    startProving :: ClaimIndex -> claim -> m ()
-    startProving ci claim = do
+    startProving
+        :: Either ClaimIndex RuleLabel
+        -> claim
+        -> m ()
+    startProving claimIndexOrRuleLabel claim = do
         if isTrusted claim
             then putStrLn'
                     $ "Cannot switch to proving claim "
-                    <> show (unClaimIndex ci)
+                    <> either
+                    (show . unClaimIndex)
+                    (show . unRuleLabel)
+                    claimIndexOrRuleLabel
                     <> ". Claim is trusted."
             else do
-                switchToProof claim ci
-                putStrLn'
-                    $ "Switched to proving claim "
-                    <> show (unClaimIndex ci)
+                case claimIndexOrRuleLabel of
+                    Left claimIndex -> do
+                        switchToProof claim claimIndex
+                        putStrLn'
+                            $ "Switched to proving claim "
+                            <> either
+                            (show . unClaimIndex)
+                            (show . unRuleLabel)
+                            claimIndexOrRuleLabel
+                    Right ruleLabel -> putStrLn' "wip"
 
 showGraph
     :: MonadIO m

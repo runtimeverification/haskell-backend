@@ -156,7 +156,7 @@ data ReplCommand
     -- ^ Show the nth claim or the current claim.
     | ShowAxiom !(Either AxiomIndex RuleLabel)
     -- ^ Show the nth axiom.
-    | Prove !ClaimIndex
+    | Prove !(Either ClaimIndex RuleLabel)
     -- ^ Drop the current proof state and re-initialize for the nth claim.
     | ShowGraph !(Maybe FilePath)
     -- ^ Show the current execution graph.

@@ -94,9 +94,9 @@ axiomTests =
 
 proveTests :: [ParserTest ReplCommand]
 proveTests =
-    [ "prove 0"  `parsesTo_` Prove (ClaimIndex 0)
-    , "prove 0 " `parsesTo_` Prove (ClaimIndex 0)
-    , "prove 5"  `parsesTo_` Prove (ClaimIndex 5)
+    [ "prove 0"  `parsesTo_` Prove (Left . ClaimIndex $ 0)
+    , "prove 0 " `parsesTo_` Prove (Left . ClaimIndex $ 0)
+    , "prove 5"  `parsesTo_` Prove (Left . ClaimIndex $ 5)
     , "prove"    `fails`     ()
     , "prove -5" `fails`     ()
     ]

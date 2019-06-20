@@ -135,7 +135,6 @@ getAxiomByLabel label = do
     axioms <- Lens.use lensAxioms
     return $ Axiom
         <$> find (isLabelEqual label) (fmap unAxiom axioms)
-  where
 
 -- | Get the leftmost claim with a specific label from the claim list.
 getClaimByLabel
