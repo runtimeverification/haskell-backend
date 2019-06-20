@@ -1,6 +1,7 @@
 module Test.Kore.Unification.Unifier
     ( test_unification
     , test_unsupportedConstructs
+    , test_evaluated
     ) where
 
 import Test.Tasty
@@ -567,6 +568,29 @@ test_unification =
             )
         )
 
+    ]
+
+test_evaluated :: [TestTree]
+test_evaluated =
+    [ testCase "variable and functional term" $ do
+        let evaluated = mkEvaluated a2
+        andSimplifySuccess
+            (UnificationTerm x)
+            (UnificationTerm evaluated)
+            [ UnificationResult
+                { term = evaluated
+                , substitution = [("x", evaluated)]
+                , predicate = Syntax.Predicate.makeTruePredicate
+                }
+            ]
+    , unificationProcedureSuccess
+        "variable and non-functional term"
+        (UnificationTerm x)
+        (UnificationTerm (mkEvaluated a5))
+        [   ( [("x", mkEvaluated a5)]
+            , Syntax.Predicate.makeCeilPredicate (mkEvaluated a5)
+            )
+        ]
     ]
 
 test_unsupportedConstructs :: TestTree
