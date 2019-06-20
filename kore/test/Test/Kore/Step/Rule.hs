@@ -352,7 +352,7 @@ test_refreshRulePattern =
                 refreshRulePattern avoiding testRulePattern
             renamed = Set.fromList (Foldable.toList renaming)
             free' = Rule.freeVariables rulePattern'
-            notAvoided x = not (FreeVariables.member x avoiding)
+            notAvoided x = not (FreeVariables.isFreeVariable x avoiding)
         assertEqual
             "Expected to rename all free variables of original RulePattern"
             (getFreeVariables avoiding)

@@ -26,21 +26,16 @@ import           Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import           Control.Lens.TH.Rules
-                 ( makeLenses )
-import           Kore.Attribute.Pattern.FreeVariables
-                 ( FreeVariables )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import           Kore.Attribute.Pattern.Function
-                 ( Function )
-import           Kore.Attribute.Pattern.Functional
-                 ( Functional )
-import           Kore.Attribute.Pattern.Total
-                 ( Total )
-import           Kore.Attribute.Synthetic
-import           Kore.Debug
-import           Kore.Sort
-                 ( Sort )
+import Control.Lens.TH.Rules
+       ( makeLenses )
+import Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Pattern.Function
+import Kore.Attribute.Pattern.Functional
+import Kore.Attribute.Pattern.Total
+import Kore.Attribute.Synthetic
+import Kore.Debug
+import Kore.Sort
+       ( Sort )
 
 {- | @Pattern@ are the attributes of a pattern collected during verification.
  -}
@@ -96,7 +91,7 @@ mapVariables
     => (variable1 -> variable2)
     -> Pattern variable1 -> Pattern variable2
 mapVariables mapping =
-    Lens.over lensFreeVariables (FreeVariables.map mapping)
+    Lens.over lensFreeVariables (mapFreeVariables mapping)
 
 {- | Use the provided traversal to replace the free variables in a 'Pattern'.
 
@@ -110,7 +105,7 @@ traverseVariables
     -> Pattern variable1
     -> m (Pattern variable2)
 traverseVariables traversing =
-    lensFreeVariables (FreeVariables.traverse traversing)
+    lensFreeVariables (traverseFreeVariables traversing)
 
 {- | Delete the given variable from the set of free variables.
  -}
@@ -120,4 +115,4 @@ deleteFreeVariable
     -> Pattern variable
     -> Pattern variable
 deleteFreeVariable variable =
-    Lens.over lensFreeVariables (FreeVariables.delete variable)
+    Lens.over lensFreeVariables (bindVariable variable)

@@ -154,7 +154,7 @@ test_unifyRule =
         Right unified <- unifyRule initial axiom
         let actual = Conditional.term <$> unified
         assertBool ""
-            $ Foldable.all (not . FreeVariables.member Mock.x)
+            $ Foldable.all (not . FreeVariables.isFreeVariable Mock.x)
             $ RulePattern.freeVariables <$> actual
 
     , testCase "performs unification with initial term" $ do

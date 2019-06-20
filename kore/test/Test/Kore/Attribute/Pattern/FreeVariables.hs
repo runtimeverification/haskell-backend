@@ -74,8 +74,8 @@ sigma :: Symbol
 sigma = Mock.sigmaSymbol
 
 x, y, xy :: FreeVariables Variable
-x = FreeVariables.insert Mock.x mempty
-y = FreeVariables.insert Mock.y mempty
+x = FreeVariables.freeVariable Mock.x
+y = FreeVariables.freeVariable Mock.y
 xy = x <> y
 
 gives

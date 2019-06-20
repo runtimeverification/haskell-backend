@@ -31,7 +31,7 @@ import qualified GHC.Generics as GHC
 import           Numeric.Natural
 
 import Data.Sup
-import Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
@@ -189,7 +189,7 @@ instance SortedVariable Concrete where
     fromVariable = error "Cannot construct a variable in a concrete term!"
 
 instance Synthetic (Const Variable) (FreeVariables Variable) where
-    synthetic (Const variable) = FreeVariables.singleton variable
+    synthetic (Const variable) = freeVariable variable
     {-# INLINE synthetic #-}
 
 instance Synthetic (Const Variable) Sort where

@@ -46,8 +46,6 @@ import           Prelude hiding
                  ( null )
 
 import           Kore.Attribute.Pattern.FreeVariables
-                 ( FreeVariables )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Internal.TermLike
                  ( TermLike, pattern Var_, mkVar )
 import qualified Kore.Internal.TermLike as TermLike
@@ -318,7 +316,7 @@ assertNoneAreFreeVarsInRhs lhsVariables =
       where
         commonVars =
             Set.intersection lhsVariables
-            $ FreeVariables.getFreeVariables
+            $ getFreeVariables
             $ TermLike.freeVariables patt
 
 {- | Return the free variables of the 'Substitution'.
@@ -334,4 +332,4 @@ freeVariables
 freeVariables = Foldable.foldMap freeVariablesWorker . unwrap
   where
     freeVariablesWorker (x, t) =
-        FreeVariables.insert x (TermLike.freeVariables t)
+        freeVariable x <> TermLike.freeVariables t

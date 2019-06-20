@@ -177,8 +177,6 @@ import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Attribute.Pattern.FreeVariables
-                 ( FreeVariables )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
 import qualified Kore.Attribute.Pattern.Total as Pattern
@@ -329,7 +327,7 @@ instance
     -- Functors.
     synthetic (ForallF forallF) = synthetic forallF
     synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF variable) = FreeVariables.singleton variable
+    synthetic (VariableF variable) = freeVariable variable
 
     synthetic (AndF andF) = synthetic andF
     synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
@@ -712,55 +710,26 @@ instance TopBottom (TermLike variable) where
 extractAttributes :: TermLike variable -> Attribute.Pattern variable
 extractAttributes = extract . getTermLike
 
-instance Ord variable => Binding (TermLike variable) where
+instance
+    (Ord variable, SortedVariable variable) =>
+    Binding (TermLike variable)
+  where
     type VariableType (TermLike variable) = variable
 
     traverseVariable match termLike =
         case termLikeHead of
-            VariableF variable ->
-                matched <$> match variable
-              where
-                matched variable' =
-                    Recursive.embed (attrs' :< VariableF variable')
-                  where
-                    attrs' =
-                        attrs
-                            { Attribute.freeVariables =
-                                FreeVariables.singleton variable'
-                            }
+            VariableF variable -> synthesize . VariableF <$> match variable
             _ -> pure termLike
       where
-        attrs :< termLikeHead = Recursive.project termLike
+        _ :< termLikeHead = Recursive.project termLike
 
-    traverseBinder match termLike@(Recursive.project -> attrs :< termLikeHead) =
+    traverseBinder match termLike =
         case termLikeHead of
-            ExistsF exists -> matched <$> existsBinder match exists
-              where
-                matched exists' = Recursive.embed (attrs' :< ExistsF exists')
-                  where
-                    Exists { existsChild } = exists'
-                    Exists { existsVariable } = exists'
-                    attrs' =
-                        attrs
-                            { Attribute.freeVariables =
-                                FreeVariables.delete existsVariable
-                                $ freeVariables existsChild
-                            }
-
-            ForallF forall -> matched <$> forallBinder match forall
-              where
-                matched forall' = Recursive.embed (attrs' :< ForallF forall')
-                  where
-                    Forall { forallChild } = forall'
-                    Forall { forallVariable } = forall'
-                    attrs' =
-                        attrs
-                            { Attribute.freeVariables =
-                                FreeVariables.delete forallVariable
-                                $ freeVariables forallChild
-                            }
-
+            ExistsF exists -> synthesize . ExistsF <$> existsBinder match exists
+            ForallF forall -> synthesize . ForallF <$> forallBinder match forall
             _ -> pure termLike
+      where
+        _ :< termLikeHead = Recursive.project termLike
 
 freeVariables :: TermLike variable -> FreeVariables variable
 freeVariables = Attribute.freeVariables . extractAttributes
@@ -770,7 +739,7 @@ hasFreeVariable
     => variable
     -> TermLike variable
     -> Bool
-hasFreeVariable variable = FreeVariables.member variable . freeVariables
+hasFreeVariable variable = isFreeVariable variable . freeVariables
 
 {- | Is the 'TermLike' a function pattern?
  -}
@@ -942,19 +911,19 @@ externalizeFreshVariables termLike =
     -- counter, usually because they were introduced by applying some axiom.
     (originalFreeVariables, generatedFreeVariables) =
         Set.partition Variable.isOriginalVariable
-        $ FreeVariables.getFreeVariables $ freeVariables termLike
+        $ getFreeVariables $ freeVariables termLike
 
     -- | The map of generated free variables, renamed to be unique from the
     -- original free variables.
     (renamedFreeVariables, _) =
         Foldable.foldl' rename initial generatedFreeVariables
       where
-        initial = (Map.empty, FreeVariables.FreeVariables originalFreeVariables)
+        initial = (Map.empty, FreeVariables originalFreeVariables)
         rename (renaming, avoiding) variable =
             let
                 variable' = safeVariable avoiding variable
                 renaming' = Map.insert variable variable' renaming
-                avoiding' = FreeVariables.insert variable' avoiding
+                avoiding' = freeVariable variable' <> avoiding
             in
                 (renaming', avoiding')
 
@@ -981,7 +950,7 @@ externalizeFreshVariables termLike =
         $ Variable.externalizeFreshVariable
         <$> iterate nextVariable variable
       where
-        wouldCapture var = FreeVariables.member var avoiding
+        wouldCapture var = isFreeVariable var avoiding
 
     underBinder freeVariables' variable child = do
         let variable' = safeVariable freeVariables' variable

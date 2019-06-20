@@ -25,7 +25,7 @@ import           Control.Monad.Trans.Maybe
 import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import           Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.Predicate
                  ( Predicate )
@@ -430,7 +430,7 @@ checkVariableEscape
     -> Predicate variable
     -> Predicate variable
 checkVariableEscape vars predSubst
-  | any (`FreeVariables.member` freeVars) vars = error
+  | any (`isFreeVariable` freeVars) vars = error
         "quantified variables in substitution or predicate escaping context"
   | otherwise = predSubst
   where

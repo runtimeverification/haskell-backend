@@ -51,7 +51,6 @@ import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.SortVerifier
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Attribute.Synthetic
 import qualified Kore.Builtin as Builtin
@@ -720,7 +719,7 @@ verifyDomainValue domain = do
             domain'
     let attrs = synthetic (Internal.extractAttributes <$> verified)
         Attribute.Pattern { freeVariables } = attrs
-    Monad.unless (FreeVariables.null freeVariables)
+    Monad.unless (null freeVariables)
         (koreFail "Domain value must not contain free variables.")
     return (attrs :< verified)
 

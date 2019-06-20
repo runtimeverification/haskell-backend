@@ -280,7 +280,7 @@ test_predicate =
                 )
                 (FreeVariables.getFreeVariables $ Predicate.freeVariables pr1)
             assertBool "quantified variables are not included"
-                $ not . FreeVariables.member (a Mock.testSort)
+                $ not . FreeVariables.isFreeVariable (a Mock.testSort)
                 $ Predicate.freeVariables
                 $ makeExistsPredicate (a Mock.testSort)
                 $ makeEqualsPredicate

@@ -59,8 +59,6 @@ import           GHC.Stack
                  ( HasCallStack )
 
 import           Kore.Attribute.Pattern.FreeVariables
-                 ( FreeVariables )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Error
                  ( Error, koreFail )
 import           Kore.Internal.TermLike as TermLike
@@ -470,7 +468,7 @@ hasFreeVariable
     -> Predicate variable
     -> Bool
 hasFreeVariable variable =
-    FreeVariables.member variable . Kore.Predicate.Predicate.freeVariables
+    isFreeVariable variable . Kore.Predicate.Predicate.freeVariables
 
 {- | 'substitutionToPredicate' transforms a substitution in a predicate.
 

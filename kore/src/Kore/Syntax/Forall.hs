@@ -18,7 +18,7 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
@@ -80,7 +80,7 @@ instance
     Synthetic (Forall sort variable) (FreeVariables variable)
   where
     synthetic Forall { forallVariable, forallChild } =
-        FreeVariables.delete forallVariable forallChild
+        bindVariable forallVariable forallChild
     {-# INLINE synthetic #-}
 
 instance Synthetic (Forall Sort variable) Sort where
