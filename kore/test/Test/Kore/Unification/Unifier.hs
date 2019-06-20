@@ -194,6 +194,7 @@ tools = MetadataTools
     , isSubsortOf = const $ const False
     , subsorts = Set.singleton
     , applicationSorts = undefined
+    , symbolAttributes = undefined
     , smtData = undefined
     }
 

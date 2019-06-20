@@ -9,6 +9,7 @@ Portability : POSIX
 -}
 module Kore.IndexedModule.Resolvers
     ( getSortAttributes
+    , getSymbolAttributes
     , resolveSort
     , resolveAlias
     , resolveSymbol
@@ -92,6 +93,15 @@ getSortAttributes m (SortActualSort (SortActual sortId _)) =
     Left _ -> error $ noSort sortId
 getSortAttributes _ _ = error "Can't lookup attributes for sort variables"
 
+getSymbolAttributes
+    :: HasCallStack
+    => IndexedModule patternType declAtts axiomAtts
+    -> Id
+    -> declAtts
+getSymbolAttributes m symbolId =
+  case resolveSymbol m symbolId of
+    Right (atts, _) -> atts
+    Left _ -> error $ noSymbol symbolId
 
 {-|'resolveThing' looks up an id in an 'IndexedModule', also searching in the
 imported modules.
