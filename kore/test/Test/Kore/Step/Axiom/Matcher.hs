@@ -21,10 +21,9 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPredicate
                  ( OrPredicate )
 import qualified Kore.Internal.OrPredicate as OrPredicate
-                 ( fromPredicates )
 import           Kore.Internal.Predicate
                  ( Conditional (..) )
-import qualified Kore.Internal.Predicate as Conditional
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
@@ -127,7 +126,7 @@ test_matcherEqualHeads =
             assertEqualWithExplanation "" expect actual
 
     , testCase "Bottom" $ do
-        let expect = Just $ MultiOr.make [Conditional.topPredicate]
+        let expect = Just $ OrPredicate.fromPredicate Predicate.topPredicate
         actual <- matchDefinition mkBottom_ mkBottom_
         assertEqualWithExplanation "" expect actual
 
@@ -146,7 +145,7 @@ test_matcherEqualHeads =
         assertEqualWithExplanation "" expect actual
 
     , testCase "CharLiteral" $ do
-        let expect = Just $ MultiOr.make [Conditional.topPredicate]
+        let expect = Just $ OrPredicate.fromPredicate Predicate.topPredicate
         actual <-
             matchDefinition
                 (mkCharLiteral 'a')
@@ -154,7 +153,7 @@ test_matcherEqualHeads =
         assertEqualWithExplanation "" expect actual
 
     , testCase "Builtin" $ do
-        let expect = Just $ MultiOr.make [Conditional.topPredicate]
+        let expect = Just $ OrPredicate.fromPredicate Predicate.topPredicate
         actual <-
             matchDefinition
                 (mkDomainValue DomainValue
@@ -170,7 +169,7 @@ test_matcherEqualHeads =
         assertEqualWithExplanation "" expect actual
 
     , testCase "DomainValue" $ do
-        let expect = Just $ MultiOr.make [Conditional.topPredicate]
+        let expect = Just $ OrPredicate.fromPredicate Predicate.topPredicate
         actual <-
             matchDefinition
                 (mkDomainValue DomainValue
@@ -340,7 +339,7 @@ test_matcherEqualHeads =
         assertEqualWithExplanation "" expect actual
 
     , testCase "StringLiteral" $ do
-        let expect = Just $ MultiOr.make [Conditional.topPredicate]
+        let expect = Just $ OrPredicate.fromPredicate Predicate.topPredicate
         actual <-
             matchDefinition
                 (mkStringLiteral "10")
@@ -348,7 +347,7 @@ test_matcherEqualHeads =
         assertEqualWithExplanation "" expect actual
 
     , testCase "Top" $ do
-        let expect = Just $ MultiOr.make [Conditional.topPredicate]
+        let expect = Just $ OrPredicate.fromPredicate Predicate.topPredicate
         actual <-
             matchDefinition
                 mkTop_
@@ -356,7 +355,7 @@ test_matcherEqualHeads =
         assertEqualWithExplanation "" expect actual
 
     , testCase "Variable (quantified)" $ do
-        let expect = Just $ MultiOr.make [Conditional.topPredicate]
+        let expect = Just $ OrPredicate.fromPredicate Predicate.topPredicate
         actual <-
             matchDefinition
                 (mkExists Mock.x (Mock.plain10 (mkVar Mock.x)))
@@ -555,6 +554,24 @@ test_matcherVariableFunction =
                 matchSimplification
                     (mkVar Mock.x)
                     (Mock.constr10 Mock.cf)
+            assertEqualWithExplanation "" expect actual
+        ]
+    , testGroup "Evaluated"
+        [ testCase "Functional" $ do
+            let evaluated = mkEvaluated Mock.functional00
+                expect =
+                    Just . OrPredicate.fromPredicate
+                    $ Predicate.fromSingleSubstitution (Mock.x, evaluated)
+            actual <- matchDefinition (mkVar Mock.x) evaluated
+            assertEqualWithExplanation "" expect actual
+
+        , testCase "Function" $ do
+            let evaluated = mkEvaluated Mock.cf
+                expect =
+                    (Just . OrPredicate.fromPredicate)
+                    (Predicate.fromSingleSubstitution (Mock.x, evaluated))
+                        { predicate = makeCeilPredicate evaluated }
+            actual <- matchDefinition (mkVar Mock.x) evaluated
             assertEqualWithExplanation "" expect actual
         ]
     ]
@@ -758,7 +775,7 @@ test_unificationWithAppMatchOnTop :: [TestTree]
 test_unificationWithAppMatchOnTop =
     [ testCase "Simple match same top" $ do
         let
-            expect = Just (MultiOr.make [Conditional.topPredicate])
+            expect = Just $ OrPredicate.fromPredicate Predicate.topPredicate
         actual <- unificationWithMatch Mock.cg Mock.cg
         assertEqualWithExplanation "" expect actual
     , testCase "variable vs function" $ do
