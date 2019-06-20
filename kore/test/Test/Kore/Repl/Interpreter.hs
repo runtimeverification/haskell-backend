@@ -244,7 +244,7 @@ unificationFailure =
         impossibleAxiom = coerce $ rulePattern one one
         axioms = [ impossibleAxiom ]
         claim = zeroToTen
-        command = Try . Left $ AxiomIndex 0
+        command = Try . ByIndex . Left $ AxiomIndex 0
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
         expectedOutput <-
@@ -261,7 +261,7 @@ unificationSuccess = do
         impossibleAxiom = coerce $ rulePattern zero one
         axioms = [ impossibleAxiom ]
         claim = zeroToTen
-        command = Try . Left $ AxiomIndex 0
+        command = Try . ByIndex . Left $ AxiomIndex 0
         expectedOutput = formatUnifiers (Predicate.top :| [])
 
     Result { output, continue, state } <- run command axioms [claim] claim
@@ -277,7 +277,7 @@ forceFailure =
         impossibleAxiom = coerce $ rulePattern one one
         axioms = [ impossibleAxiom ]
         claim = zeroToTen
-        command = TryF . Left $ AxiomIndex 0
+        command = TryF . ByIndex . Left $ AxiomIndex 0
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
         expectedOutput <-
@@ -294,7 +294,7 @@ forceSuccess = do
         impossibleAxiom = coerce $ rulePattern zero one
         axioms = [ impossibleAxiom ]
         claim = zeroToTen
-        command = TryF . Left $ AxiomIndex 0
+        command = TryF . ByIndex . Left $ AxiomIndex 0
         expectedOutput = ""
 
     Result { output, continue, state } <- run command axioms [claim] claim

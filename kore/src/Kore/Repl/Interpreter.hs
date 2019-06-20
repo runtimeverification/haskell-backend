@@ -158,7 +158,7 @@ replInterpreter printFn replCmd = do
                 LabelAdd l mn      -> labelAdd l mn      $> Continue
                 LabelDel l         -> labelDel l         $> Continue
                 Redirect inn file  -> redirect inn file  $> Continue
-                Try ac             -> tryAxiomClaim ac   $> Continue
+                Try ref            -> tryAxiomClaim ref  $> Continue
                 TryF ac            -> tryFAxiomClaim ac  $> Continue
                 Clear n            -> clear n            $> Continue
                 SaveSession file   -> saveSession file   $> Continue
@@ -257,7 +257,7 @@ showAxiom
     :: MonadState (ReplState claim n) m
     => Monad n
     => MonadWriter String m
-    => Either AxiomIndex AxiomLabel
+    => Either AxiomIndex RuleLabel
     -- ^ index in the axioms list
     -> m ()
 showAxiom axiomIndexOrRuleLabel = do
@@ -654,7 +654,7 @@ tryAxiomClaim
     .  Claim claim
     => MonadSimplify m
     => MonadIO m
-    => Either AxiomIndex ClaimIndex
+    => RuleReference
     -- ^ tagged index in the axioms or claims list
     -> ReplM claim m ()
 tryAxiomClaim = tryAxiomClaimWorker Never
@@ -665,7 +665,7 @@ tryFAxiomClaim
     .  Claim claim
     => MonadSimplify m
     => MonadIO m
-    => Either AxiomIndex ClaimIndex
+    => RuleReference
     -- ^ tagged index in the axioms or claims list
     -> ReplM claim m ()
 tryFAxiomClaim = tryAxiomClaimWorker IfPossible
@@ -676,19 +676,35 @@ tryAxiomClaimWorker
     => MonadSimplify m
     => MonadIO m
     => AlsoApplyRule
-    -> Either AxiomIndex ClaimIndex
+    -> RuleReference
     -- ^ tagged index in the axioms or claims list
     -> ReplM claim m ()
-tryAxiomClaimWorker mode eac = do
-    maybeAxiomOrClaim <- getAxiomOrClaimByIndex eac
-    case maybeAxiomOrClaim of
-        Nothing ->
-            putStrLn' "Could not find axiom or claim."
-        Just axiomOrClaim -> do
-            node <- Lens.use lensNode
-            case mode of
-                Never      -> showUnificationFailure axiomOrClaim node
-                IfPossible -> tryForceAxiomOrClaim axiomOrClaim node
+tryAxiomClaimWorker mode ref = do
+    case ref of
+        ByIndex eac -> do
+            maybeAxiomOrClaim <- getAxiomOrClaimByIndex eac
+            case maybeAxiomOrClaim of
+                Nothing ->
+                    putStrLn' "Could not find axiom or claim."
+                Just axiomOrClaim -> do
+                    node <- Lens.use lensNode
+                    case mode of
+                        Never ->
+                            showUnificationFailure axiomOrClaim node
+                        IfPossible ->
+                            tryForceAxiomOrClaim axiomOrClaim node
+        ByLabel label -> do
+            maybeAxiomOrClaim <- getAxiomOrClaimByLabel label
+            case maybeAxiomOrClaim of
+                Nothing ->
+                    putStrLn' "Could not find axiom or claim."
+                Just axiomOrClaim -> do
+                    node <- Lens.use lensNode
+                    case mode of
+                        Never ->
+                            showUnificationFailure axiomOrClaim node
+                        IfPossible ->
+                            tryForceAxiomOrClaim axiomOrClaim node
   where
     showUnificationFailure
         :: Either Axiom claim

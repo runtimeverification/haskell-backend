@@ -10,7 +10,7 @@ module Kore.Repl.State
     ( emptyExecutionGraph
     , getClaimByIndex, getAxiomByIndex, getAxiomOrClaimByIndex
     , getInternalIdentifier
-    , getAxiomByLabel, getLabelText
+    , getAxiomByLabel, getLabelText, getAxiomOrClaimByLabel
     , switchToProof
     , getTargetNode, getInnerGraph, getExecutionGraph
     , getConfigAt, getRuleFor, getLabels, setLabels
@@ -124,7 +124,7 @@ getAxiomByIndex
     -> m (Maybe Axiom)
 getAxiomByIndex index = Lens.preuse $ lensAxioms . Lens.element index
 
--- | Get the leftmost axiom which has a specific label from the axioms list.
+-- | Get the leftmost axiom with a specific label from the axioms list.
 getAxiomByLabel
     :: MonadState (ReplState claim n) m
     => String
@@ -132,11 +132,48 @@ getAxiomByLabel
     -> m (Maybe Axiom)
 getAxiomByLabel label = do
     axioms <- Lens.use lensAxioms
-    return $ find isLabelEqual axioms
+    return $ Axiom
+        <$> find (isLabelEqual label) (fmap unAxiom axioms)
   where
-    isLabelEqual :: Axiom -> Bool
-    isLabelEqual axiom =
-        maybe False ((== label) . unpack) (AttrLabel.unLabel . getLabelText . unAxiom $ axiom)
+
+-- | Get the leftmost claim with a specific label from the claim list.
+getClaimByLabel
+    :: MonadState (ReplState claim n) m
+    => Claim claim
+    => String
+    -- ^ label attribute
+    -> m (Maybe claim)
+getClaimByLabel label = do
+    claims <- Lens.use lensClaims
+    return $ coerce
+        <$> find (isLabelEqual label) (fmap coerce claims)
+
+getAxiomOrClaimByLabel
+    :: MonadState (ReplState claim n) m
+    => Claim claim
+    => RuleLabel
+    -> m (Maybe (Either Axiom claim))
+getAxiomOrClaimByLabel (RuleLabel label) = do
+    mAxiom <- getAxiomByLabel label
+    case mAxiom of
+        Nothing -> do
+            mClaim <- getClaimByLabel label
+            case mClaim of
+                Nothing -> return Nothing
+                Just claim ->
+                    return . Just . Right $ claim
+        Just axiom ->
+            return . Just . Left $ axiom
+
+isLabelEqual :: String -> RewriteRule Variable -> Bool
+isLabelEqual label rule =
+    maybe
+        False
+        ( (== label) . unpack)
+          (AttrLabel.unLabel
+          . getLabelText
+          $ rule
+        )
 
 getLabelText :: RewriteRule Variable -> AttrLabel.Label
 getLabelText =

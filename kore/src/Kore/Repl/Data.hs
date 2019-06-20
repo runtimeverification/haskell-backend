@@ -13,7 +13,7 @@ module Kore.Repl.Data
     , helpText
     , ExecutionGraph
     , AxiomIndex (..), ClaimIndex (..)
-    , AxiomLabel (..)
+    , RuleLabel (..), RuleReference(..)
     , ReplNode (..)
     , ReplState (..)
     , NodeState (..)
@@ -114,7 +114,7 @@ newtype ReplNode = ReplNode
     { unReplNode :: Graph.Node
     } deriving (Eq, Show)
 
-newtype AxiomLabel = AxiomLabel
+newtype RuleLabel = RuleLabel
     { unRuleLabel :: String
     } deriving (Eq, Show)
 
@@ -140,6 +140,11 @@ data LogType
     | LogToFile !FilePath
     deriving (Eq, Show)
 
+data RuleReference
+    = ByIndex (Either AxiomIndex ClaimIndex)
+    | ByLabel RuleLabel
+    deriving (Eq, Show)
+
 -- | List of available commands for the Repl. Note that we are always in a proof
 -- state. We pick the first available Claim when we initialize the state.
 data ReplCommand
@@ -149,7 +154,7 @@ data ReplCommand
     -- ^ Shows the help message.
     | ShowClaim !(Maybe ClaimIndex)
     -- ^ Show the nth claim or the current claim.
-    | ShowAxiom (Either AxiomIndex AxiomLabel)
+    | ShowAxiom (Either AxiomIndex RuleLabel)
     -- ^ Show the nth axiom.
     | Prove !ClaimIndex
     -- ^ Drop the current proof state and re-initialize for the nth claim.
@@ -181,9 +186,9 @@ data ReplCommand
     -- ^ Remove a label.
     | Redirect ReplCommand FilePath
     -- ^ Prints the output of the inner command to the file.
-    | Try !(Either AxiomIndex ClaimIndex)
+    | Try !RuleReference
     -- ^ Attempt to apply axiom or claim to current node.
-    | TryF !(Either AxiomIndex ClaimIndex)
+    | TryF !RuleReference
     -- ^ Force application of an axiom or claim to current node.
     | Clear !(Maybe ReplNode)
     -- ^ Remove child nodes from graph.

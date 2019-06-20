@@ -195,31 +195,31 @@ labelTests =
 
 tryTests :: [ParserTest ReplCommand]
 tryTests =
-    [ "try a5" `parsesTo_` tryAxiom 5
-    , "try c5" `parsesTo_` tryClaim 5
+    [ "try a5" `parsesTo_` tryAxiomIndex 5
+    , "try c5" `parsesTo_` tryClaimIndex 5
     , "try 5"  `fails`     ()
     , "try"    `fails`     ()
     ]
 
 tryFTests :: [ParserTest ReplCommand]
 tryFTests =
-    [ "tryf a5" `parsesTo_` tryFAxiom 5
-    , "tryf c5" `parsesTo_` tryFClaim 5
+    [ "tryf a5" `parsesTo_` tryFAxiomIndex 5
+    , "tryf c5" `parsesTo_` tryFClaimIndex 5
     , "tryf 5"  `fails`     ()
     , "tryf"    `fails`     ()
     ]
 
-tryAxiom :: Int -> ReplCommand
-tryAxiom = Try . Left . AxiomIndex
+tryAxiomIndex :: Int -> ReplCommand
+tryAxiomIndex = Try . ByIndex . Left . AxiomIndex
 
-tryClaim :: Int -> ReplCommand
-tryClaim = Try . Right . ClaimIndex
+tryClaimIndex :: Int -> ReplCommand
+tryClaimIndex = Try . ByIndex . Right . ClaimIndex
 
-tryFAxiom :: Int -> ReplCommand
-tryFAxiom = TryF . Left . AxiomIndex
+tryFAxiomIndex :: Int -> ReplCommand
+tryFAxiomIndex = TryF . ByIndex . Left . AxiomIndex
 
-tryFClaim :: Int -> ReplCommand
-tryFClaim = TryF . Right . ClaimIndex
+tryFClaimIndex :: Int -> ReplCommand
+tryFClaimIndex = TryF . ByIndex . Right . ClaimIndex
 
 exitTests :: [ParserTest ReplCommand]
 exitTests =
@@ -390,7 +390,7 @@ initScriptTests =
             \select    9    \n"
         commands1 =
             [ ProveSteps 5
-            , tryAxiom 3
+            , tryAxiomIndex 3
             , ProveStepsF 10
             , pipeRedirectConfig (Just (ReplNode 5)) "grep" ["predicate"] "file"
             , SelectNode (ReplNode 9)

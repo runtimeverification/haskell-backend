@@ -120,8 +120,8 @@ showAxiom :: Parser ReplCommand
 showAxiom =
     ShowAxiom
     <$$> literal "axiom"
-    *> ( fmap (Left . AxiomIndex) decimal
-        <|> fmap (Right . AxiomLabel) (quotedOrWordWithout "")
+    *> ( Left <$> axiomIndexParser
+        <|> Right <$> ruleLabelParser
        )
 
 prove :: Parser ReplCommand
@@ -188,23 +188,30 @@ tryAxiomClaim :: Parser ReplCommand
 tryAxiomClaim =
     Try
     <$$> literal "try"
-    *> ( Left <$> axiomIndexParser
-        <|> Right <$> claimIndexParser
+    *> ( ByIndex <$> ruleIndexParser
+        <|> ByLabel <$> ruleLabelParser
        )
 
 tryForceAxiomClaim :: Parser ReplCommand
 tryForceAxiomClaim =
     TryF
     <$$> literal "tryf"
-    *> ( Left <$> axiomIndexParser
-        <|> Right <$> claimIndexParser
+    *> ( ByIndex <$> ruleIndexParser
+        <|> ByLabel <$> ruleLabelParser
        )
+
+ruleIndexParser :: Parser (Either AxiomIndex ClaimIndex)
+ruleIndexParser =
+    Left <$> axiomIndexParser <|> Right <$> claimIndexParser
 
 axiomIndexParser :: Parser AxiomIndex
 axiomIndexParser = AxiomIndex <$$> Char.string "a" *> decimal
 
 claimIndexParser :: Parser ClaimIndex
 claimIndexParser = ClaimIndex <$$> Char.string "c" *> decimal
+
+ruleLabelParser :: Parser RuleLabel
+ruleLabelParser = RuleLabel <$$> quotedOrWordWithout ""
 
 clear :: Parser ReplCommand
 clear = do
