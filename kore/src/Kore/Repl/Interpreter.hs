@@ -1028,14 +1028,19 @@ graphParams len = Graph.nonClusteredParams
         case listToMaybe . toList $ lbl of
             Nothing -> "Simpl/RD"
             Just rule ->
-                maybe (maybe "Unknown" Text.Lazy.pack
-                        . showAxiomOrClaim ln
-                        . Attribute.identifier
-                        . Rule.attributes
-                        . Rule.getRewriteRule
-                        $ rule)
-                     Text.Lazy.fromStrict
-                     (getLabelText rule)
+                maybe
+                    ( maybe "Unknown"
+                        Text.Lazy.pack
+                        ( showAxiomOrClaim ln
+                        . getInternalIdentifier
+                        $ rule
+                        )
+                    )
+                    Text.Lazy.fromStrict
+                    ( showAxiomOrClaimLabel ln (getInternalIdentifier rule)
+                    . getLabelText
+                    $ rule
+                    )
 
 showAliasError :: AliasError -> String
 showAliasError =
@@ -1048,6 +1053,17 @@ showAxiomOrClaim _   (RuleIndex Nothing) = Nothing
 showAxiomOrClaim len (RuleIndex (Just rid))
   | rid < len = Just $ "Axiom " <> show rid
   | otherwise = Just $ "Claim " <> show (rid - len)
+
+showAxiomOrClaimLabel
+    :: Int
+    -> Attribute.RuleIndex
+    -> AttrLabel.Label
+    -> Maybe Text.Text
+showAxiomOrClaimLabel _ _ (AttrLabel.Label Nothing) = Nothing
+showAxiomOrClaimLabel _ (RuleIndex Nothing) _ = Nothing
+showAxiomOrClaimLabel len (RuleIndex (Just rid)) (AttrLabel.Label (Just label))
+  | rid < len = Just $ "Axiom " <> label
+  | otherwise = Just $ "Claim " <> label
 
 parseEvalScript
     :: forall claim m

@@ -9,6 +9,7 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 module Kore.Repl.State
     ( emptyExecutionGraph
     , getClaimByIndex, getAxiomByIndex, getAxiomOrClaimByIndex
+    , getInternalIdentifier
     , getAxiomByLabel, getLabelText
     , switchToProof
     , getTargetNode, getInnerGraph, getExecutionGraph
@@ -135,12 +136,11 @@ getAxiomByLabel label = do
   where
     isLabelEqual :: Axiom -> Bool
     isLabelEqual axiom =
-        maybe False ((== label) . unpack) (getLabelText . unAxiom $ axiom)
+        maybe False ((== label) . unpack) (AttrLabel.unLabel . getLabelText . unAxiom $ axiom)
 
-getLabelText :: RewriteRule Variable -> Maybe Text
+getLabelText :: RewriteRule Variable -> AttrLabel.Label
 getLabelText =
-    AttrLabel.unLabel
-    . Attribute.label
+    Attribute.label
     . attributes
     . getRewriteRule
 
@@ -155,6 +155,13 @@ getAxiomOrClaimByIndex =
         . bitraverse
             (getAxiomByIndex . coerce)
             (getClaimByIndex . coerce)
+
+getInternalIdentifier
+    :: RewriteRule Variable -> Attribute.RuleIndex
+getInternalIdentifier =
+    Attribute.identifier
+    . Rule.attributes
+    . Rule.getRewriteRule
 
 -- | Update the currently selected claim to prove.
 switchToProof
