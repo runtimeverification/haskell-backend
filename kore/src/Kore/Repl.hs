@@ -130,7 +130,7 @@ runRepl axioms' claims' logger replScript replMode = do
             , commands   = Seq.empty
             -- TODO(Vladimir): should initialize this to the value obtained from
             -- the frontend via '--omit-labels'.
-            , omit       = []
+            , omit       = mempty
             , stepper    = stepper0
             , unifier    = unificationProcedure
             , labels     = Map.empty

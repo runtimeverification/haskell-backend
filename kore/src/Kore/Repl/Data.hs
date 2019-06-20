@@ -366,8 +366,7 @@ data ReplState claim = ReplState
     -- ^ Currently selected node in the graph; initialized with node = root
     , commands   :: Seq String
     -- ^ All commands evaluated by the current repl session
-    -- TODO(Vladimir): This should be a Set String instead.
-    , omit       :: [String]
+    , omit       :: Set String
     -- ^ The omit list, initially empty
     , stepper
         :: Claim claim
