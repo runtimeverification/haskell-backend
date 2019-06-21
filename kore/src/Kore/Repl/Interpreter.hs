@@ -298,28 +298,23 @@ prove indexOrLabel = do
         if isTrusted claim
             then putStrLn'
                     $ "Cannot switch to proving claim "
-                    <> either
-                    (show . unClaimIndex)
-                    (show . unRuleLabel)
-                    indexOrLabel
+                    <> showIndexOrLabel indexOrLabel
                     <> ". Claim is trusted."
             else do
-                case indexOrLabel of
-                    Left claimIndex -> do
-                        switchToProof claim claimIndex
-                        putStrLn'
-                            $ "Switched to proving claim "
-                            <> either
-                            (show . unClaimIndex)
-                            (show . unRuleLabel)
-                            indexOrLabel
-                    Right ruleLabel -> do
-                        index <-
-                            getClaimIndexByLabel (unRuleLabel ruleLabel)
-                        switchToProof claim (fromJust index)
-                        putStrLn'
-                            $ "Switched to proving claim "
-                            <> unRuleLabel ruleLabel
+                claimIndex <-
+                    either
+                        (return . return)
+                        (getClaimIndexByLabel . unRuleLabel)
+                        indexOrLabel
+                switchToProof claim $ fromJust claimIndex
+                putStrLn'
+                    $ "Switched to proving claim "
+                    <> showIndexOrLabel indexOrLabel
+    showIndexOrLabel
+        :: Either ClaimIndex RuleLabel
+        -> String
+    showIndexOrLabel =
+        either (show . unClaimIndex) (show . unRuleLabel)
 
 showGraph
     :: MonadIO m
