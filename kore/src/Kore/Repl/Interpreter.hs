@@ -11,6 +11,7 @@ module Kore.Repl.Interpreter
     , showUsageMessage
     , showStepStoppedMessage
     , showProofStatus
+    , showClaimSwitch
     , printIfNotEmpty
     , showRewriteRule
     , parseEvalScript
@@ -297,7 +298,7 @@ prove indexOrLabel = do
         if isTrusted claim
             then putStrLn'
                     $ "Cannot switch to proving claim "
-                    <> showIndexOrLabel
+                    <> showIndexOrLabel indexOrLabel
                     <> ". Claim is trusted."
             else do
                 claimIndex <-
@@ -308,11 +309,18 @@ prove indexOrLabel = do
                 switchToProof claim $ fromJust claimIndex
                 putStrLn'
                     $ "Switched to proving claim "
-                    <> showIndexOrLabel
-    showIndexOrLabel
-        :: String
-    showIndexOrLabel =
-        either (show . unClaimIndex) (show . unRuleLabel) indexOrLabel
+                    <> showIndexOrLabel indexOrLabel
+
+showClaimSwitch :: Either ClaimIndex RuleLabel -> String
+showClaimSwitch indexOrLabel =
+    "Switched to proving claim "
+    <> showIndexOrLabel indexOrLabel
+
+showIndexOrLabel
+    :: Either ClaimIndex RuleLabel
+    -> String
+showIndexOrLabel =
+        either (show . unClaimIndex) (show . unRuleLabel)
 
 showGraph
     :: MonadIO m

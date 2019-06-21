@@ -13,15 +13,21 @@ import           Control.Monad.Trans.State.Strict
                  ( evalStateT, runStateT )
 import           Data.Coerce
                  ( coerce )
+import           Data.Default
+                 ( def )
 import           Data.IORef
                  ( newIORef, readIORef, writeIORef )
 import           Data.List.NonEmpty
                  ( NonEmpty (..) )
 import qualified Data.Map as Map
 import qualified Data.Sequence as Seq
+import           Data.Text
+                 ( pack )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Data.Map.Strict as StrictMap
+import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Attribute.Label as AttrLabel
 import qualified Kore.Builtin.Int as Int
 import           Kore.Internal.Predicate
                  ( Predicate )
@@ -31,11 +37,13 @@ import           Kore.Internal.TermLike
 import qualified Kore.Logger.Output as Logger
 import           Kore.OnePath.Verification
                  ( Axiom (..), verifyClaimStep )
+import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
 import           Kore.Repl.State
 import           Kore.Step.Rule
-                 ( OnePathRule (..), RewriteRule (..), rulePattern )
+                 ( OnePathRule (..), RewriteRule (..), RulePattern (..),
+                 rulePattern )
 
 import           Kore.Step.Simplification.AndTerms
                  ( cannotUnifyDistinctDomainValues )
@@ -57,25 +65,34 @@ type Claim = OnePathRule Variable
 
 test_replInterpreter :: [TestTree]
 test_replInterpreter =
-    [ showUsage              `tests` "Showing the usage message"
-    , help                   `tests` "Showing the help message"
-    , step5                  `tests` "Performing 5 steps"
-    , step100                `tests` "Stepping over proof completion"
-    , makeSimpleAlias        `tests` "Creating an alias with no arguments"
-    , trySimpleAlias         `tests` "Executing an existing alias with no arguments"
-    , makeAlias              `tests` "Creating an alias with arguments"
-    , aliasOfExistingCommand `tests` "Create alias of existing command"
-    , aliasOfUnknownCommand  `tests` "Create alias of unknown command"
-    , recursiveAlias         `tests` "Create alias of unknown command"
-    , tryAlias               `tests` "Executing an existing alias with arguments"
-    , unificationFailure     `tests` "Try axiom that doesn't unify"
-    , unificationSuccess     `tests` "Try axiom that does unify"
-    , forceFailure           `tests` "TryF axiom that doesn't unify"
-    , forceSuccess           `tests` "TryF axiom that does unify"
-    , proofStatus            `tests` "Multi claim proof status"
-    , logUpdatesState        `tests` "Log command updates the state"
-    , showCurrentClaim       `tests` "Showing current claim"
-    , showClaim1             `tests` "Showing the claim at index 1"
+    [ showUsage                   `tests` "Showing the usage message"
+    , help                        `tests` "Showing the help message"
+    , step5                       `tests` "Performing 5 steps"
+    , step100                     `tests` "Stepping over proof completion"
+    , makeSimpleAlias             `tests` "Creating an alias with no arguments"
+    , trySimpleAlias              `tests` "Executing an existing alias with no arguments"
+    , makeAlias                   `tests` "Creating an alias with arguments"
+    , aliasOfExistingCommand      `tests` "Create alias of existing command"
+    , aliasOfUnknownCommand       `tests` "Create alias of unknown command"
+    , recursiveAlias              `tests` "Create alias of unknown command"
+    , tryAlias                    `tests` "Executing an existing alias with arguments"
+    , unificationFailure          `tests` "Try axiom that doesn't unify"
+    , unificationSuccess          `tests` "Try axiom that does unify"
+    , forceFailure                `tests` "TryF axiom that doesn't unify"
+    , forceSuccess                `tests` "TryF axiom that does unify"
+    , proofStatus                 `tests` "Multi claim proof status"
+    , logUpdatesState             `tests` "Log command updates the state"
+    , showCurrentClaim            `tests` "Showing current claim"
+    , showClaim1                  `tests` "Showing the claim at index 1"
+    , showClaimByLabel            `tests` "Showing the claim with the label 0to10Claim"
+    , showAxiomByLabel            `tests` "Showing the axiom with the label add1Axiom"
+    , unificationFailureWithLabel `tests` "Try axiom by label that doesn't unify"
+    , unificationSuccessWithLabel `tests` "Try axiom by label that does unify"
+    , forceFailureWithLabel       `tests` "TryF axiom by label that doesn't unify"
+    , forceSuccessWithLabel       `tests` "TryF axiom by label that does unify"
+    , proveSecondClaim            `tests` "Starting to prove the second claim"
+    , proveSecondClaimByLabel     `tests` "Starting to prove the second claim\
+                                           \ referenced by label"
     ]
 
 showUsage :: IO ()
@@ -253,15 +270,48 @@ unificationFailure =
         continue `equals` Continue
         state `hasCurrentNode` ReplNode 0
 
+unificationFailureWithLabel :: IO ()
+unificationFailureWithLabel =
+    let
+        zero = Int.asInternal intSort 0
+        one = Int.asInternal intSort 1
+        impossibleAxiom = coerce $ rulePatternWithLabel one one "impossible"
+        axioms = [ impossibleAxiom ]
+        claim = zeroToTen
+        command = Try . ByLabel . RuleLabel $ "impossible"
+    in do
+        Result { output, continue, state } <- run command axioms [claim] claim
+        expectedOutput <-
+            formatUnificationError cannotUnifyDistinctDomainValues one zero
+        output `equalsOutput` expectedOutput
+        continue `equals` Continue
+        state `hasCurrentNode` ReplNode 0
+
 unificationSuccess :: IO ()
 unificationSuccess = do
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        impossibleAxiom = coerce $ rulePattern zero one
-        axioms = [ impossibleAxiom ]
+        axiom = coerce $ rulePattern zero one
+        axioms = [ axiom ]
         claim = zeroToTen
         command = Try . ByIndex . Left $ AxiomIndex 0
+        expectedOutput = formatUnifiers (Predicate.top :| [])
+
+    Result { output, continue, state } <- run command axioms [claim] claim
+    output `equalsOutput` expectedOutput
+    continue `equals` Continue
+    state `hasCurrentNode` ReplNode 0
+
+unificationSuccessWithLabel :: IO ()
+unificationSuccessWithLabel = do
+    let
+        zero = Int.asInternal intSort 0
+        one = Int.asInternal intSort 1
+        axiom = coerce $ rulePatternWithLabel zero one "0to1"
+        axioms = [ axiom ]
+        claim = zeroToTen
+        command = Try . ByLabel . RuleLabel $ "0to1"
         expectedOutput = formatUnifiers (Predicate.top :| [])
 
     Result { output, continue, state } <- run command axioms [claim] claim
@@ -286,15 +336,48 @@ forceFailure =
         continue `equals` Continue
         state `hasCurrentNode` ReplNode 0
 
+forceFailureWithLabel :: IO ()
+forceFailureWithLabel =
+    let
+        zero = Int.asInternal intSort 0
+        one = Int.asInternal intSort 1
+        impossibleAxiom = coerce $ rulePatternWithLabel one one "impossible"
+        axioms = [ impossibleAxiom ]
+        claim = zeroToTen
+        command = TryF . ByLabel . RuleLabel $ "impossible"
+    in do
+        Result { output, continue, state } <- run command axioms [claim] claim
+        expectedOutput <-
+            formatUnificationError cannotUnifyDistinctDomainValues one zero
+        output `equalsOutput` expectedOutput
+        continue `equals` Continue
+        state `hasCurrentNode` ReplNode 0
+
 forceSuccess :: IO ()
 forceSuccess = do
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        impossibleAxiom = coerce $ rulePattern zero one
-        axioms = [ impossibleAxiom ]
+        axiom = coerce $ rulePattern zero one
+        axioms = [ axiom ]
         claim = zeroToTen
         command = TryF . ByIndex . Left $ AxiomIndex 0
+        expectedOutput = ""
+
+    Result { output, continue, state } <- run command axioms [claim] claim
+    output `equalsOutput` expectedOutput
+    continue `equals` Continue
+    state `hasCurrentNode` ReplNode 1
+
+forceSuccessWithLabel :: IO ()
+forceSuccessWithLabel = do
+    let
+        zero = Int.asInternal intSort 0
+        one = Int.asInternal intSort 1
+        axiom = coerce $ rulePatternWithLabel zero one "0to1"
+        axioms = [ axiom ]
+        claim = zeroToTen
+        command = TryF . ByLabel . RuleLabel $ "0to1"
         expectedOutput = ""
 
     Result { output, continue, state } <- run command axioms [claim] claim
@@ -348,6 +431,34 @@ showClaim1 =
         output `equalsOutput` showRewriteRule expectedClaim
         continue `equals` Continue
 
+showClaimByLabel :: IO ()
+showClaimByLabel =
+    let
+        claims = [zeroToTen, emptyClaim]
+        claim = zeroToTen
+        axioms = []
+        command = ShowClaim (Just . Right . RuleLabel $ "0to10Claim")
+        expectedClaim = zeroToTen
+    in do
+        Result { output, continue } <-
+            run command axioms claims claim
+        output `equalsOutput` showRewriteRule expectedClaim
+        continue `equals` Continue
+
+showAxiomByLabel :: IO ()
+showAxiomByLabel =
+    let
+        claims = [zeroToTen, emptyClaim]
+        claim = zeroToTen
+        axioms = [add1]
+        command = ShowAxiom (Right . RuleLabel $ "add1Axiom")
+        expectedAxiom = add1
+    in do
+        Result { output, continue } <-
+            run command axioms claims claim
+        output `equalsOutput` showRewriteRule expectedAxiom
+        continue `equals` Continue
+
 logUpdatesState :: IO ()
 logUpdatesState =
     let
@@ -360,21 +471,90 @@ logUpdatesState =
         continue `equals`     Continue
         state    `hasLogging` (Logger.Info, LogToStdOut)
 
+proveSecondClaim :: IO ()
+proveSecondClaim =
+    let
+        claims = [zeroToTen, emptyClaim]
+        claim = zeroToTen
+        axioms = [add1]
+        indexOrLabel = Left . ClaimIndex $ 1
+        command = Prove indexOrLabel
+        expectedClaimIndex = ClaimIndex 1
+    in do
+        Result { output, continue, state } <-
+            run command axioms claims claim
+        output `equalsOutput` showClaimSwitch indexOrLabel
+        state `hasCurrentClaimIndex` expectedClaimIndex
+        continue `equals` Continue
+
+proveSecondClaimByLabel :: IO ()
+proveSecondClaimByLabel =
+    let
+        claims = [zeroToTen, emptyClaim]
+        claim = zeroToTen
+        axioms = [add1]
+        indexOrLabel = Right . RuleLabel $ "emptyClaim"
+        command = Prove indexOrLabel
+        expectedClaimIndex = ClaimIndex 1
+    in do
+        Result { output, continue, state } <-
+            run command axioms claims claim
+        output `equalsOutput` showClaimSwitch indexOrLabel
+        state `hasCurrentClaimIndex` expectedClaimIndex
+        continue `equals` Continue
+
 add1 :: Axiom
-add1 = coerce $ rulePattern n plusOne
+add1 =
+    coerce $ rulePatternWithLabel n plusOne "add1Axiom"
   where
     one     = Int.asInternal intSort 1
     n       = mkVar $ varS "x" intSort
     plusOne = n `addInt` one
 
 zeroToTen :: Claim
-zeroToTen = coerce $ rulePattern zero ten
+zeroToTen =
+    coerce $ rulePatternWithLabel zero ten "0to10Claim"
   where
     zero = Int.asInternal intSort 0
     ten  = Int.asInternal intSort 10
 
 emptyClaim :: Claim
-emptyClaim = coerce $ rulePattern mkBottom_ mkBottom_
+emptyClaim =
+    coerce
+    $ rulePatternWithLabel mkBottom_ mkBottom_ "emptyClaim"
+
+rulePatternWithLabel
+    :: TermLike variable
+    -> TermLike variable
+    -> String
+    -> RulePattern variable
+rulePatternWithLabel left right label =
+    RulePattern
+        { left
+        , right
+        , requires = Predicate.makeTruePredicate
+        , ensures  = Predicate.makeTruePredicate
+        , attributes =
+            Attribute.Axiom
+                { heatCool = def
+                , productionID = def
+                , assoc = def
+                , comm = def
+                , unit = def
+                , idem = def
+                , trusted = def
+                , concrete = def
+                , simplification = def
+                , overload = def
+                , smtLemma = def
+                , label =
+                    AttrLabel.Label . return . pack $ label
+                , sourceLocation = def
+                , constructor = def
+                , identifier = def
+                }
+        }
+
 
 run :: ReplCommand -> [Axiom] -> [Claim] -> Claim -> IO Result
 run command axioms claims claim =
@@ -448,6 +628,13 @@ hasLogging st expectedLogging =
         actualLogging = logging st
     in
         actualLogging `equals` expectedLogging
+
+hasCurrentClaimIndex :: ReplState Claim Simplifier -> ClaimIndex -> IO ()
+hasCurrentClaimIndex st expectedClaimIndex =
+    let
+        actualClaimIndex = claimIndex st
+    in
+        actualClaimIndex `equals` expectedClaimIndex
 
 tests :: IO () -> String -> TestTree
 tests = flip testCase
