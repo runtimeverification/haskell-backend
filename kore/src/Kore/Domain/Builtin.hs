@@ -393,8 +393,10 @@ instance (Hashable key, Hashable child) => Hashable (Builtin key child)
 instance (NFData key, NFData child) => NFData (Builtin key child)
 
 instance (Unparse key, Unparse child) => Unparse (Builtin key child) where
-    unparse = unparseGeneric
-    unparse2 = unparse2Generic
+    unparse evaluated =
+        Pretty.sep ["/* builtin: */", unparseGeneric evaluated]
+    unparse2 evaluated =
+        Pretty.sep ["/* builtin: */", unparse2Generic evaluated]
 
 makeLenses ''InternalMap
 makeLenses ''InternalList

@@ -12,7 +12,7 @@ module Kore.Unification.Unify
     ) where
 
 import           Control.Applicative
-                 ( Alternative )
+                 ( Alternative, empty )
 import           Control.Error
 import           Control.Monad
                  ( MonadPlus )
@@ -75,11 +75,20 @@ class (Alternative unifier, MonadSimplify unifier) => MonadUnify unifier where
         -> unifier ()
     explainBottom _ _ _ = pure ()
 
+    explainAndReturnBottom
+        :: (SortedVariable variable, Unparse variable)
+        => Doc ()
+        -> TermLike variable
+        -> TermLike variable
+        -> unifier a
+    explainAndReturnBottom message first second = do
+        explainBottom message first second
+        empty
+
 newtype UnifierT (m :: * -> *) a =
     UnifierT
         { getUnifierT :: BranchT (ExceptT UnificationOrSubstitutionError m) a }
-    deriving (Functor, Applicative, Monad)
-    deriving (Alternative, MonadPlus)
+    deriving (Functor, Applicative, Monad, Alternative, MonadPlus)
 
 instance MonadTrans UnifierT where
     lift = UnifierT . lift . lift
@@ -117,7 +126,7 @@ lowerExceptT
     :: MonadUnify unifier
     => ExceptT UnificationOrSubstitutionError unifier a
     -> unifier a
-lowerExceptT e = do
+lowerExceptT e =
     runExceptT e >>= either throwUnificationOrSubstitutionError pure
 
 throwUnificationOrSubstitutionError
