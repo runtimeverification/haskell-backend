@@ -242,8 +242,8 @@ helpText =
                                            \ claim\n\
     \graph [file]                          shows the current proof graph (*)\n\
     \                                      (saves image in .jpeg format if file\
-                                           \ argument is given; file extension is\
-                                           \ added automatically)\n\
+                                           \ argument is given; file extension\
+                                           \ is added automatically)\n\
     \step [n]                              attempts to run 'n' proof steps at\
                                            \the current node (n=1 by default)\n\
     \stepf [n]                             attempts to run 'n' proof steps at\
@@ -281,10 +281,11 @@ helpText =
     \load file                             loads the file as a repl script\n\
     \proof-status                          shows status for each claim\n\
     \log <severity> <type>                 configures the logging outout\n\
-                                           \<severity> can be debug, info, warning,\
-                                           \error, or critical\n\
-    \                                      <type> can be NoLogging, LogToStdOut,\
-                                           \or LogToFile filename\n\
+                                           \<severity> can be debug, info,\
+                                           \ warning, error, or critical\n\
+    \                                      <type> can be NoLogging,\
+                                           \ LogToStdOut,\
+                                           \ or LogToFile filename\n\
     \exit                                  exits the repl\
     \\n\
     \Available modifiers:\n\
@@ -398,7 +399,9 @@ newtype UnifierWithExplanation m a =
 
 deriving instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
 
-instance Logger.WithLog Logger.LogMessage m => Logger.WithLog Logger.LogMessage (UnifierWithExplanation m) where
+instance Logger.WithLog Logger.LogMessage m
+    => Logger.WithLog Logger.LogMessage (UnifierWithExplanation m)
+  where
     askLogAction =
         Logger.hoistLogAction UnifierWithExplanation
         <$> UnifierWithExplanation Logger.askLogAction

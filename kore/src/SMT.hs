@@ -255,7 +255,9 @@ withSolverT' action = SmtT $ do
     mvar <- Reader.ask
     Trans.lift $ withRunInIO $ \runInIO -> withMVar mvar (runInIO . action)
 
-instance (MonadIO m, MonadUnliftIO m) => Logger.WithLog Logger.LogMessage (SmtT m) where
+instance (MonadIO m, MonadUnliftIO m)
+    => Logger.WithLog Logger.LogMessage (SmtT m)
+  where
     askLogAction =
         withSolverT' (return . hoistLogAction . SimpleSMT.logger)
       where
@@ -283,16 +285,20 @@ instance (MonadIO m, MonadUnliftIO m) => MonadSMT (SmtT m) where
 
     declareFun declaration =
         Logger.withLogScope "SMT.declareFun"
-        $ withSolverT' $ \solver -> liftIO $ SimpleSMT.declareFun solver declaration
+        $ withSolverT' $ \solver ->
+            liftIO $ SimpleSMT.declareFun solver declaration
 
     declareSort declaration =
-        withSolverT' $ \solver -> liftIO $ SimpleSMT.declareSort solver declaration
+        withSolverT' $ \solver ->
+            liftIO $ SimpleSMT.declareSort solver declaration
 
     declareDatatype declaration =
-        withSolverT' $ \solver -> liftIO $ SimpleSMT.declareDatatype solver declaration
+        withSolverT' $ \solver ->
+            liftIO $ SimpleSMT.declareDatatype solver declaration
 
     declareDatatypes datatypes =
-        withSolverT' $ \solver -> liftIO $ SimpleSMT.declareDatatypes solver datatypes
+        withSolverT' $ \solver ->
+            liftIO $ SimpleSMT.declareDatatypes solver datatypes
 
     assert fact =
         withSolverT' $ \solver -> liftIO $ SimpleSMT.assert solver fact
