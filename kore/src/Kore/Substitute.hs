@@ -28,6 +28,7 @@ import qualified Data.Set as Set
 import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import           Kore.Attribute.Synthetic
 import           Kore.Syntax
 import           Kore.Variables.Binding
 import           Kore.Variables.Fresh
@@ -41,8 +42,6 @@ The substitution must be normalized, i.e. no target (left-hand side) variable
 may appear in the right-hand side of any substitution, but this is not checked.
 
  -}
--- TODO (thomas.tuegel): In the future, patterns may have other types of
--- attributes which need to be re-synthesized after substitution.
 substitute
     ::  forall patternType patternBase attribute variable.
         ( FreshVariable variable
@@ -53,6 +52,7 @@ substitute
         , CofreeF patternBase attribute ~ Base patternType
         , Binding patternType
         , VariableType patternType ~ variable
+        , Synthetic patternBase attribute
         )
     => Lens.Lens' patternType (FreeVariables variable)
     -- ^ Lens into free variables of the pattern
@@ -133,16 +133,10 @@ substitute lensFreeVariables =
 
         -- | Default case: Descend into sub-patterns and apply the substitution.
         substituteDefault =
-            embed termLikeHead'
+            synthesize termLikeHead'
           where
-            attrib :< termLikeHead = Recursive.project termLike
+            _ :< termLikeHead = Recursive.project termLike
             termLikeHead' = substituteWorker subst' <$> termLikeHead
-            embed =
-                Lens.set
-                    lensFreeVariables
-                    (FreeVariables.FreeVariables freeVariables')
-                . Recursive.embed
-                . (attrib :<)
 
         freeVariables = extractFreeVariables termLike
 

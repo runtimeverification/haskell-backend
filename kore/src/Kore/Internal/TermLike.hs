@@ -717,19 +717,19 @@ instance
     type VariableType (TermLike variable) = variable
 
     traverseVariable match termLike =
-        case termLikeHead of
+        case termLikeF of
             VariableF variable -> synthesize . VariableF <$> match variable
             _ -> pure termLike
       where
-        _ :< termLikeHead = Recursive.project termLike
+        _ :< termLikeF = Recursive.project termLike
 
     traverseBinder match termLike =
-        case termLikeHead of
+        case termLikeF of
             ExistsF exists -> synthesize . ExistsF <$> existsBinder match exists
             ForallF forall -> synthesize . ForallF <$> forallBinder match forall
             _ -> pure termLike
       where
-        _ :< termLikeHead = Recursive.project termLike
+        _ :< termLikeF = Recursive.project termLike
 
 freeVariables :: TermLike variable -> FreeVariables variable
 freeVariables = Attribute.freeVariables . extractAttributes
