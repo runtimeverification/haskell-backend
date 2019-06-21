@@ -287,18 +287,17 @@ prove indexOrLabel = do
                 indexOrLabel
     maybe
         printNotFound
-        (startProving indexOrLabel)
+        startProving
         claim'
   where
     startProving
-        :: Either ClaimIndex RuleLabel
-        -> claim
+        :: claim
         -> m ()
-    startProving indexOrLabel claim = do
+    startProving claim = do
         if isTrusted claim
             then putStrLn'
                     $ "Cannot switch to proving claim "
-                    <> showIndexOrLabel indexOrLabel
+                    <> showIndexOrLabel
                     <> ". Claim is trusted."
             else do
                 claimIndex <-
@@ -309,12 +308,11 @@ prove indexOrLabel = do
                 switchToProof claim $ fromJust claimIndex
                 putStrLn'
                     $ "Switched to proving claim "
-                    <> showIndexOrLabel indexOrLabel
+                    <> showIndexOrLabel
     showIndexOrLabel
-        :: Either ClaimIndex RuleLabel
-        -> String
+        :: String
     showIndexOrLabel =
-        either (show . unClaimIndex) (show . unRuleLabel)
+        either (show . unClaimIndex) (show . unRuleLabel) indexOrLabel
 
 showGraph
     :: MonadIO m
@@ -1089,9 +1087,12 @@ showAxiomOrClaimLabel
     -> Maybe Text.Text
 showAxiomOrClaimLabel _ _ (AttrLabel.Label Nothing) = Nothing
 showAxiomOrClaimLabel _ (RuleIndex Nothing) _ = Nothing
-showAxiomOrClaimLabel len (RuleIndex (Just rid)) (AttrLabel.Label (Just label))
-  | rid < len = Just $ "Axiom " <> label
-  | otherwise = Just $ "Claim " <> label
+showAxiomOrClaimLabel
+    len
+    (RuleIndex (Just rid))
+    (AttrLabel.Label (Just ruleLabel))
+  | rid < len = Just $ "Axiom " <> ruleLabel
+  | otherwise = Just $ "Claim " <> ruleLabel
 
 parseEvalScript
     :: forall claim m
