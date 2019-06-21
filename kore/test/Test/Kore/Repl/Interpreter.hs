@@ -9,6 +9,8 @@ import Test.Tasty.HUnit
 
 import           Control.Applicative
 import           Control.Concurrent.MVar
+import           Control.Monad.Reader
+                 ( runReaderT )
 import           Control.Monad.Trans.State.Strict
                  ( evalStateT, runStateT )
 import           Data.Coerce
@@ -391,16 +393,18 @@ runWithState
     -> [Axiom]
     -> [Claim]
     -> Claim
-    -> (ReplState Claim Simplifier -> ReplState Claim Simplifier)
+    -> (ReplState Claim -> ReplState Claim)
     -> IO Result
 runWithState command axioms claims claim stateTransformer
   = Logger.withLogger logOptions $ \logger -> do
         output <- newIORef ""
         mvar <- newMVar logger
-        let state = stateTransformer $ mkState axioms claims claim mvar
+        let state = stateTransformer $ mkState axioms claims claim
+        let config = mkConfig mvar
         (c, s) <-
             liftSimplifier (Logger.swappableLogger mvar)
             $ flip runStateT state
+            $ flip runReaderT config
             $ replInterpreter (writeIORefIfNotEmpty output) command
         output' <- readIORef output
         return $ Result output' c s
@@ -416,7 +420,7 @@ runWithState command axioms claims claim stateTransformer
 data Result = Result
     { output   :: String
     , continue :: ReplStatus
-    , state    :: ReplState Claim Simplifier
+    , state    :: ReplState Claim
     }
 
 equals :: (Eq a, Show a) => a -> a -> Assertion
@@ -426,7 +430,7 @@ equalsOutput :: String -> String -> Assertion
 equalsOutput "" expected     = "" @?= expected
 equalsOutput actual expected = actual @?= expected <> "\n"
 
-hasCurrentNode :: ReplState Claim Simplifier -> ReplNode -> IO ()
+hasCurrentNode :: ReplState Claim -> ReplNode -> IO ()
 hasCurrentNode st n = do
     node st `equals` n
     graphNode <- evalStateT (getTargetNode justNode) st
@@ -434,7 +438,7 @@ hasCurrentNode st n = do
   where
     justNode = Just n
 
-hasAlias :: ReplState Claim Simplifier -> AliasDefinition -> IO ()
+hasAlias :: ReplState Claim -> AliasDefinition -> IO ()
 hasAlias st alias@AliasDefinition { name } =
     let
         aliasMap = aliases st
@@ -442,7 +446,7 @@ hasAlias st alias@AliasDefinition { name } =
     in
         actual `equals` Just alias
 
-hasLogging :: ReplState Claim Simplifier -> (Logger.Severity, LogType) -> IO ()
+hasLogging :: ReplState Claim -> (Logger.Severity, LogType) -> IO ()
 hasLogging st expectedLogging =
     let
         actualLogging = logging st
@@ -456,9 +460,8 @@ mkState
     :: [Axiom]
     -> [Claim]
     -> Claim
-    -> MVar (Logger.LogAction IO Logger.LogMessage)
-    -> ReplState Claim Simplifier
-mkState axioms claims claim logger =
+    -> ReplState Claim
+mkState axioms claims claim =
     ReplState
         { axioms      = axioms
         , claims      = claims
@@ -468,16 +471,22 @@ mkState axioms claims claim logger =
         , node        = ReplNode 0
         , commands    = Seq.empty
         , omit        = []
-        , stepper     = stepper0
-        , unifier     = unificationProcedure
         , labels      = Map.singleton (ClaimIndex 0) Map.empty
         , aliases     = Map.empty
         , logging     = (Logger.Debug, NoLogging)
+        }
+  where
+    graph' = emptyExecutionGraph claim
+
+mkConfig :: MVar (Logger.LogAction IO Logger.LogMessage) -> Config Claim Simplifier
+mkConfig logger =
+    Config
+        { stepper     = stepper0
+        , unifier     = unificationProcedure
         , logger
         , outputFile  = OutputFile Nothing
         }
   where
-    graph' = emptyExecutionGraph claim
     stepper0 claim' claims' axioms' graph (ReplNode node) =
         verifyClaimStep claim' claims' axioms' graph node
 
