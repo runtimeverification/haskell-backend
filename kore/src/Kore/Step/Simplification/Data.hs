@@ -10,6 +10,7 @@ Portability : portable
 module Kore.Step.Simplification.Data
     ( MonadSimplify (..)
     , Simplifier
+    , SimplifierT, runSimplifierT
     , Env (..)
     , runSimplifier
     , evalSimplifier
@@ -48,6 +49,8 @@ import           Control.DeepSeq
 import qualified Control.Monad as Monad
 import           Control.Monad.Catch
                  ( MonadCatch, MonadThrow )
+import           Control.Monad.IO.Unlift
+                 ( MonadUnliftIO )
 import           Control.Monad.Morph
                  ( MFunctor )
 import qualified Control.Monad.Morph as Monad.Morph
@@ -94,7 +97,7 @@ import           ListT
                  ( ListT (..), mapListT )
 import qualified ListT
 import           SMT
-                 ( MonadSMT (..), SMT (..) )
+                 ( MonadSMT (..), SMT, SmtT (..) )
 
 {-| 'And' simplification is very similar to 'Equals' simplification.
 This type is used to distinguish between the two in the common code.
@@ -153,7 +156,9 @@ class (WithLog LogMessage m, MonadSMT m) => MonadSimplify m where
     localSimplifierAxioms locally =
         Monad.Morph.hoist (localSimplifierAxioms locally)
 
-instance (WithLog LogMessage m, MonadSimplify m, Monoid w) => MonadSimplify (AccumT w m) where
+instance (WithLog LogMessage m, MonadSimplify m, Monoid w)
+    => MonadSimplify (AccumT w m)
+  where
     localSimplifierTermLike locally =
         mapAccumT (localSimplifierTermLike locally)
     {-# INLINE localSimplifierTermLike #-}
@@ -316,22 +321,28 @@ A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.
 A @Simplifier@ can write to the log through 'HasLog'.
 
  -}
-newtype Simplifier a = Simplifier
-    { getSimplifier :: ReaderT Env SMT a
+newtype SimplifierT m a = SimplifierT
+    { runSimplifierT :: ReaderT Env m a
     }
     deriving (Functor, Applicative, Monad, MonadSMT)
     deriving (MonadIO, MonadCatch, MonadThrow)
     deriving (MonadReader Env)
 
-instance WithLog LogMessage Simplifier where
-    askLogAction = Simplifier (hoistLogAction Simplifier <$> askLogAction)
+type Simplifier = SimplifierT (SmtT IO)
+
+instance (MonadUnliftIO m, WithLog LogMessage m)
+    => WithLog LogMessage (SimplifierT m)
+  where
+    askLogAction = SimplifierT (hoistLogAction SimplifierT <$> askLogAction)
     {-# INLINE askLogAction #-}
 
     localLogAction mapping =
-        Simplifier . localLogAction mapping . getSimplifier
+        SimplifierT . localLogAction mapping . runSimplifierT
     {-# INLINE localLogAction #-}
 
-instance MonadSimplify Simplifier where
+instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m)
+    => MonadSimplify (SimplifierT m)
+  where
     askMetadataTools = asks metadataTools
     {-# INLINE askMetadataTools #-}
 
@@ -395,7 +406,7 @@ evalSimplifier
     => Env
     -> Simplifier a
     -> SMT a
-evalSimplifier env = flip runReaderT env . getSimplifier
+evalSimplifier env = flip runReaderT env . runSimplifierT
 
 -- * Implementation
 

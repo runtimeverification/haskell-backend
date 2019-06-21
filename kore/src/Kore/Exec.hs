@@ -60,6 +60,7 @@ import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeMultipleOrPredicate,
                  unwrapPredicate )
 import qualified Kore.Repl as Repl
+import qualified Kore.Repl.Data as Repl.Data
 import           Kore.Step
 import           Kore.Step.Axiom.EvaluationStrategy
                  ( builtinEvaluation, simplifierWithFallback )
@@ -262,12 +263,14 @@ proveWithRepl
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
     -> MVar (Log.LogAction IO Log.LogMessage)
-    -> Repl.ReplScript
+    -> Repl.Data.ReplScript
     -- ^ Optional script
-    -> Repl.ReplMode
+    -> Repl.Data.ReplMode
     -- ^ Run in a specific repl mode
+    -> Repl.Data.OutputFile
+    -- ^ Optional Output file
     -> SMT ()
-proveWithRepl definitionModule specModule mvar replScript replMode =
+proveWithRepl definitionModule specModule mvar replScript replMode outputFile =
     evalSimplifier env $ initialize definitionModule $ \initialized -> do
         let Initialized { rewriteRules } = initialized
             specClaims = extractOnePathClaims specModule
@@ -276,7 +279,7 @@ proveWithRepl definitionModule specModule mvar replScript replMode =
         let
             axioms = fmap Axiom rewriteRules
             claims = fmap makeClaim specAxioms
-        Repl.runRepl axioms claims mvar replScript replMode
+        Repl.runRepl axioms claims mvar replScript replMode outputFile
   where
     metadataTools = MetadataTools.build definitionModule
     env =

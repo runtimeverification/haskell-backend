@@ -8,8 +8,6 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 
 module Kore.Repl
     ( runRepl
-    , ReplScript (..)
-    , ReplMode (..)
     ) where
 
 import           Control.Concurrent.MVar
@@ -23,6 +21,10 @@ import           Control.Monad.Catch
                  ( MonadCatch, catch )
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
+import           Control.Monad.Reader
+                 ( ReaderT (..) )
+import           Control.Monad.RWS.Strict
+                 ( RWST, execRWST )
 import           Control.Monad.State.Strict
                  ( MonadState, StateT, evalStateT )
 import           Data.Coerce
@@ -33,7 +35,6 @@ import           Data.List
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import           Kore.Attribute.RuleIndex
-import           System.Exit
 import           System.IO
                  ( hFlush, stdout )
 import           Text.Megaparsec
@@ -49,9 +50,10 @@ import           Kore.OnePath.Verification
 import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
 import           Kore.Repl.Parser
+import           Kore.Repl.State
 import qualified Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
-                 ( Simplifier )
+                 ( MonadSimplify )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Variable
 import           Kore.Unification.Procedure
@@ -59,21 +61,15 @@ import           Kore.Unification.Procedure
 import           Kore.Unparser
                  ( Unparse )
 
--- | Represents an optional file name which contains a sequence of
--- repl commands.
-newtype ReplScript = ReplScript
-    { unReplScript :: Maybe FilePath
-    } deriving (Eq, Show)
-
-data ReplMode = Interactive | RunScript
-    deriving (Eq, Show)
-
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
 -- that would otherwise be required in the proof and allows for step-by-step
 -- execution of proofs. Currently works via stdin/stdout interaction.
 runRepl
-    :: forall claim
+    :: forall claim m
     .  Unparse (Variable)
+    => MonadSimplify m
+    => MonadIO m
+    => MonadCatch m
     => Claim claim
     => [Axiom]
     -- ^ list of axioms to used in the proof
@@ -84,34 +80,36 @@ runRepl
     -- ^ optional script
     -> ReplMode
     -- ^ mode to run in
-    -> Simplifier ()
-runRepl axioms' claims' logger replScript replMode = do
-    mNewState <- evaluateScript replScript
+    -> OutputFile
+    -- ^ optional output file
+    -> m ()
+runRepl axioms' claims' logger replScript replMode outputFile = do
+    (newState, _) <-
+            (\rwst -> execRWST rwst config state)
+            $ evaluateScript replScript
     case replMode of
         Interactive -> do
             replGreeting
-            evalStateT (forever repl0) (maybe state id mNewState)
-        RunScript ->
-            case mNewState of
-                Nothing -> liftIO exitFailure
-                Just newState -> do
-                    runReplCommand ProofStatus newState
-                    runReplCommand Exit newState
+            flip evalStateT newState
+                $ flip runReaderT config
+                $ forever repl0
+        RunScript -> do
+            runReplCommand ProofStatus newState
+            runReplCommand Exit newState
 
   where
 
-    runReplCommand :: ReplCommand -> ReplState claim -> Simplifier ()
+    runReplCommand :: ReplCommand -> ReplState claim -> m ()
     runReplCommand cmd st =
-        void $ evalStateT (replInterpreter printIfNotEmpty cmd) st
+        void
+            $ flip evalStateT st
+            $ flip runReaderT config
+            $ replInterpreter printIfNotEmpty cmd
 
-    evaluateScript :: ReplScript -> Simplifier (Maybe (ReplState claim))
-    evaluateScript rs =
-        maybe
-            (pure . pure $ state)
-            (parseEvalScript state)
-            (unReplScript rs)
+    evaluateScript :: ReplScript -> RWST (Config claim m) String (ReplState claim) m ()
+    evaluateScript = maybe (pure ()) parseEvalScript . unReplScript
 
-    repl0 :: StateT (ReplState claim) Simplifier ()
+    repl0 :: ReaderT (Config claim m) (StateT (ReplState claim) m) ()
     repl0 = do
         str <- prompt
         let command = maybe ShowUsage id $ parseMaybe commandParser str
@@ -131,12 +129,18 @@ runRepl axioms' claims' logger replScript replMode = do
             -- TODO(Vladimir): should initialize this to the value obtained from
             -- the frontend via '--omit-labels'.
             , omit       = mempty
-            , stepper    = stepper0
-            , unifier    = unificationProcedure
             , labels     = Map.empty
             , aliases    = Map.empty
             , logging    = (Logger.Debug, NoLogging)
+            }
+
+    config :: Config claim m
+    config =
+        Config
+            { stepper    = stepper0
+            , unifier    = unificationProcedure
             , logger
+            , outputFile
             }
 
     firstClaimIndex :: ClaimIndex
@@ -196,7 +200,7 @@ runRepl axioms' claims' logger replScript replMode = do
         -> [Axiom]
         -> ExecutionGraph
         -> ReplNode
-        -> Simplifier ExecutionGraph
+        -> m ExecutionGraph
     stepper0 claim claims axioms graph rnode = do
         let node = unReplNode rnode
         if Graph.outdeg (Strategy.graph graph) node == 0
@@ -216,7 +220,7 @@ runRepl axioms' claims' logger replScript replMode = do
         liftIO $
             putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
-    prompt :: MonadIO m => MonadState (ReplState claim) m => m String
+    prompt :: MonadIO n => MonadState (ReplState claim) n => n String
     prompt = do
         node <- Lens.use lensNode
         liftIO $ do

@@ -9,6 +9,8 @@ import Test.Tasty.HUnit
 
 import           Control.Applicative
 import           Control.Concurrent.MVar
+import           Control.Monad.Reader
+                 ( runReaderT )
 import           Control.Monad.Trans.State.Strict
                  ( evalStateT, runStateT )
 import           Data.Coerce
@@ -27,12 +29,13 @@ import           Kore.Internal.Predicate
                  ( Predicate )
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
-                 ( TermLike, mkApplySymbol, mkBottom_, mkVar, varS )
+                 ( TermLike, mkBottom_, mkVar, varS )
 import qualified Kore.Logger.Output as Logger
 import           Kore.OnePath.Verification
                  ( Axiom (..), verifyClaimStep )
 import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
+import           Kore.Repl.State
 import           Kore.Step.Rule
                  ( OnePathRule (..), RewriteRule (..), rulePattern )
 
@@ -364,7 +367,7 @@ add1 = coerce $ rulePattern n plusOne
   where
     one     = Int.asInternal intSort 1
     n       = mkVar $ varS "x" intSort
-    plusOne = mkApplySymbol intSort addIntSymbol [n, one]
+    plusOne = n `addInt` one
 
 zeroToTen :: Claim
 zeroToTen = coerce $ rulePattern zero ten
@@ -396,10 +399,12 @@ runWithState command axioms claims claim stateTransformer
   = Logger.withLogger logOptions $ \logger -> do
         output <- newIORef ""
         mvar <- newMVar logger
-        let state = stateTransformer $ mkState axioms claims claim mvar
+        let state = stateTransformer $ mkState axioms claims claim
+        let config = mkConfig mvar
         (c, s) <-
             liftSimplifier (Logger.swappableLogger mvar)
             $ flip runStateT state
+            $ flip runReaderT config
             $ replInterpreter (writeIORefIfNotEmpty output) command
         output' <- readIORef output
         return $ Result output' c s
@@ -455,9 +460,8 @@ mkState
     :: [Axiom]
     -> [Claim]
     -> Claim
-    -> MVar (Logger.LogAction IO Logger.LogMessage)
     -> ReplState Claim
-mkState axioms claims claim logger =
+mkState axioms claims claim =
     ReplState
         { axioms      = axioms
         , claims      = claims
@@ -467,15 +471,22 @@ mkState axioms claims claim logger =
         , node        = ReplNode 0
         , commands    = Seq.empty
         , omit        = mempty
-        , stepper     = stepper0
-        , unifier     = unificationProcedure
         , labels      = Map.singleton (ClaimIndex 0) Map.empty
         , aliases     = Map.empty
         , logging     = (Logger.Debug, NoLogging)
-        , logger
         }
   where
     graph' = emptyExecutionGraph claim
+
+mkConfig :: MVar (Logger.LogAction IO Logger.LogMessage) -> Config Claim Simplifier
+mkConfig logger =
+    Config
+        { stepper     = stepper0
+        , unifier     = unificationProcedure
+        , logger
+        , outputFile  = OutputFile Nothing
+        }
+  where
     stepper0 claim' claims' axioms' graph (ReplNode node) =
         verifyClaimStep claim' claims' axioms' graph node
 

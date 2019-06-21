@@ -204,12 +204,11 @@ test_andTermsSimplification =
                     (   [ Conditional
                             { term =
                                 Mock.sortInjectionSubToTop
-                                    (mkAnd
-                                        (Mock.sortInjectionSubSubToSub
-                                            Mock.plain00SubSubsort
-                                        )
-                                        Mock.plain00Subsort
+                                $ mkAnd
+                                    (Mock.sortInjectionSubSubToSub
+                                        Mock.plain00SubSubsort
                                     )
+                                    Mock.plain00Subsort
                             , predicate = makeTruePredicate
                             , substitution = mempty
                             }
@@ -637,10 +636,9 @@ test_andTermsSimplification =
                 expected = Just
                     [ Conditional
                         { term = Mock.builtinMap
-                            [   ( Mock.sortInjectionSubToTop
-                                    (Mock.sortInjectionSubSubToSub
+                            [   ( Mock.sortInjection Mock.testSort
+                                    $ Mock.sortInjectionSubSubToSub
                                         Mock.aSubSubsort
-                                    )
                                 , fOfA
                                 )
                             ]
@@ -655,41 +653,44 @@ test_andTermsSimplification =
                     ]
             actual <- unify
                 (Mock.builtinMap
-                    [ (Mock.sortInjectionSubSubToTop Mock.aSubSubsort, fOfA) ]
+                    [   ( Mock.sortInjection Mock.testSort Mock.aSubSubsort
+                        , fOfA
+                        )
+                    ]
                 )
                 (Mock.elementMap
-                    (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
+                    (Mock.sortInjection Mock.testSort (mkVar Mock.xSubSort))
                     (mkVar Mock.y)
                 )
             assertEqualWithExplanation "" expected actual
         , testCase "map elem value inj splitting" $ do
             let
+                key = Mock.a
+                value = Mock.sortInjection Mock.testSort Mock.aSubSubsort
+                testMap = Mock.builtinMap [(key, value)]
+                valueInj =
+                    Mock.sortInjection Mock.testSort
+                    $ Mock.sortInjection Mock.subSort Mock.aSubSubsort
+                testMapInj = Mock.builtinMap [(key, valueInj)]
                 expected = Just
                     [ Conditional
-                        { term = Mock.builtinMap
-                            [   ( Mock.a
-                                , Mock.sortInjectionSubToTop
-                                    (Mock.sortInjectionSubSubToSub
-                                        Mock.aSubSubsort
-                                    )
-                                )
-                            ]
+                        { term = testMapInj
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [   ( Mock.xSubSort
-                                , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
+                                , Mock.sortInjection
+                                    Mock.subSort
+                                    Mock.aSubSubsort
                                 )
                             ,   ( Mock.y, Mock.a )
                             ]
                         }
                     ]
             actual <- unify
-                (Mock.builtinMap
-                    [ (Mock.a, Mock.sortInjectionSubSubToTop Mock.aSubSubsort) ]
-                )
+                testMap
                 (Mock.elementMap
                     (mkVar Mock.y)
-                    (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
+                    (Mock.sortInjection Mock.testSort (mkVar Mock.xSubSort))
                 )
             assertEqualWithExplanation "" expected actual
         , testCase "map concat key inj splitting" $ do
@@ -697,7 +698,7 @@ test_andTermsSimplification =
                 expected = Just
                     [ Conditional
                         { term = Mock.builtinMap
-                            [   ( Mock.sortInjectionSubToTop
+                            [   ( Mock.sortInjection Mock.testSort
                                     (Mock.sortInjectionSubSubToSub
                                         Mock.aSubSubsort
                                     )
@@ -716,11 +717,14 @@ test_andTermsSimplification =
                     ]
             actual <- unify
                 (Mock.builtinMap
-                    [ (Mock.sortInjectionSubSubToTop Mock.aSubSubsort, fOfA) ]
+                    [   ( Mock.sortInjection Mock.testSort Mock.aSubSubsort
+                        , fOfA
+                        )
+                    ]
                 )
                 (Mock.concatMap
                     (Mock.elementMap
-                        (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
+                        (Mock.sortInjection Mock.testSort (mkVar Mock.xSubSort))
                         (mkVar Mock.y)
                     )
                     (mkVar Mock.m)
@@ -732,7 +736,7 @@ test_andTermsSimplification =
                     [ Conditional
                         { term = Mock.builtinMap
                             [   ( Mock.a
-                                , Mock.sortInjectionSubToTop
+                                , Mock.sortInjection Mock.testSort
                                     (Mock.sortInjectionSubSubToSub
                                         Mock.aSubSubsort
                                     )
@@ -750,12 +754,12 @@ test_andTermsSimplification =
                     ]
             actual <- unify
                 (Mock.builtinMap
-                    [ (Mock.a, Mock.sortInjectionSubSubToTop Mock.aSubSubsort) ]
+                    [ (Mock.a, Mock.sortInjection Mock.testSort Mock.aSubSubsort) ]
                 )
                 (Mock.concatMap
                     (Mock.elementMap
                         (mkVar Mock.y)
-                        (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
+                        (Mock.sortInjection Mock.testSort (mkVar Mock.xSubSort))
                     )
                     (mkVar Mock.m)
                 )
@@ -788,16 +792,16 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
 
         , testCase "[a] `concat` x /\\ [a, b] " $ do
-            let term5 = Mock.concatList
-                        (Mock.builtinList [Mock.a])
-                        (mkVar Mock.x)
+            let x = varS "x" Mock.listSort
+                term5 =
+                    Mock.concatList (Mock.builtinList [Mock.a]) (mkVar $ x)
                 term6 = Mock.builtinList [Mock.a, Mock.b]
                 expect = Just
                     [ Conditional
                         { term = Mock.builtinList [Mock.a, Mock.b]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [(Mock.x, Mock.builtinList [Mock.b])]
+                            [(x, Mock.builtinList [Mock.b])]
                         }
                     ]
             actual <- unify term5 term6
@@ -865,7 +869,7 @@ test_andTermsSimplification =
                 expected = Just
                     [ Conditional
                         { term = Mock.builtinSet
-                            [ Mock.sortInjectionSubSubToTop Mock.aSubSubsort ]
+                            [ Mock.sortInjection Mock.testSort Mock.aSubSubsort ]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [   ( Mock.xSubSort
@@ -876,20 +880,20 @@ test_andTermsSimplification =
                     ]
             actual <- unify
                 (Mock.elementSet
-                    (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
+                    (Mock.sortInjection Mock.testSort (mkVar Mock.xSubSort))
                 )
                 (Mock.builtinSet
-                    [Mock.sortInjectionSubSubToTop Mock.aSubSubsort]
+                    [Mock.sortInjection Mock.testSort Mock.aSubSubsort]
                 )
             assertEqualWithExplanation "" expected actual
         , testCase "set concat inj splitting" $ do
             let
                 expected = Just $ do -- list monad
                     set <-
-                        [[], [Mock.sortInjectionSubSubToTop Mock.aSubSubsort]]
+                        [[], [Mock.sortInjection Mock.testSort Mock.aSubSubsort]]
                     return Conditional
                         { term = Mock.builtinSet
-                            [ Mock.sortInjectionSubSubToTop Mock.aSubSubsort ]
+                            [ Mock.sortInjection Mock.testSort Mock.aSubSubsort ]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [   ( Mock.xSubSort
@@ -903,35 +907,38 @@ test_andTermsSimplification =
             actual <- unify
                 (Mock.concatSet
                     (Mock.elementSet
-                        (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
+                        (Mock.sortInjection Mock.testSort (mkVar Mock.xSubSort))
                     )
                     (mkVar Mock.xSet)
                 )
                 (Mock.builtinSet
-                    [Mock.sortInjectionSubSubToTop Mock.aSubSubsort]
+                    [Mock.sortInjection Mock.testSort Mock.aSubSubsort]
                 )
             assertEqualWithExplanation "" expected actual
         , testCase "set concat 2 inj splitting" $ do
             let
+                testSet =
+                    Mock.builtinSet
+                        [ Mock.a
+                        , Mock.sortInjection Mock.testSort Mock.aSubSubsort
+                        ]
                 expected1 = do -- list monad
                     set <-
                         [ []
-                        , [Mock.sortInjectionSubSubToTop Mock.aSubSubsort]
-                        , [Mock.aTopSort]
-                        ,   [ Mock.aTopSort
-                            , Mock.sortInjectionSubSubToTop Mock.aSubSubsort
+                        , [Mock.sortInjection Mock.testSort Mock.aSubSubsort]
+                        , [Mock.a]
+                        ,   [ Mock.a
+                            , Mock.sortInjection Mock.testSort Mock.aSubSubsort
                             ]
                         ]
                     return Conditional
-                            { term = Mock.builtinSet
-                                [ Mock.aTopSort
-                                , Mock.sortInjectionSubSubToTop Mock.aSubSubsort
-                                ]
+                            { term = testSet
                             , predicate = makeTruePredicate
                             , substitution = Substitution.unsafeWrap
-                                [   (Mock.xTopSort, Mock.aTopSort)
+                                [   (Mock.x, Mock.a)
                                 ,   ( Mock.xSubSort
-                                    , Mock.sortInjectionSubSubToSub
+                                    , Mock.sortInjection
+                                        Mock.subSort
                                         Mock.aSubSubsort
                                     )
                                 ,   (Mock.xSet, Mock.builtinSet set)
@@ -939,24 +946,21 @@ test_andTermsSimplification =
                             }
                 expected2 = do -- list monad
                     set <-
-                        [ [Mock.aTopSort]
-                        ,   [ Mock.aTopSort
-                            , Mock.sortInjectionSubSubToTop Mock.aSubSubsort
+                        [ [Mock.a]
+                        ,   [ Mock.a
+                            , Mock.sortInjection Mock.testSort Mock.aSubSubsort
                             ]
                         ]
                     return Conditional
-                            { term = Mock.builtinSet
-                                [ Mock.aTopSort
-                                , Mock.sortInjectionSubSubToTop Mock.aSubSubsort
-                                ]
+                            { term = testSet
                             , predicate = makeTruePredicate
                             , substitution = Substitution.unsafeWrap
-                                [   ( Mock.xTopSort
-                                    , Mock.sortInjectionSubSubToTop
+                                [   ( Mock.x
+                                    , Mock.sortInjection Mock.testSort
                                         Mock.aSubSubsort
                                     )
                                 ,   ( Mock.xSubSort
-                                    , Mock.sortInjectionSubSubToSub
+                                    , Mock.sortInjection Mock.subSort
                                         Mock.aSubSubsort
                                     )
                                 ,   (Mock.xSet, Mock.builtinSet set)
@@ -964,19 +968,18 @@ test_andTermsSimplification =
                             }
             actual <- unify
                 (Mock.concatSet
-                    (Mock.elementSet (mkVar Mock.xTopSort))
+                    (Mock.elementSet (mkVar Mock.x))
                     (Mock.concatSet
                         (Mock.elementSet
-                            (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort))
+                            (Mock.sortInjection
+                                Mock.testSort
+                                (mkVar Mock.xSubSort)
+                            )
                         )
                         (mkVar Mock.xSet)
                     )
                 )
-                (Mock.builtinSet
-                    [ Mock.aTopSort
-                    , Mock.sortInjectionSubSubToTop Mock.aSubSubsort
-                    ]
-                )
+                testSet
             assertEqualWithExplanation "" (Just $ expected1 ++ expected2) actual
         ]
     ]

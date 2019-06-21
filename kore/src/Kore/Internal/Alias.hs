@@ -4,30 +4,54 @@ License     : NCSA
 
 -}
 
+{-# LANGUAGE TemplateHaskell #-}
+
 module Kore.Internal.Alias
     ( Alias (..)
+    , lensAliasConstructor, lensAliasParams, lensAliasSorts
     , toSymbolOrAlias
+    -- * Re-exports
+    , module Kore.Internal.ApplicationSorts
     ) where
 
 import           Control.DeepSeq
+import qualified Data.Function as Function
 import           Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Kore.Debug
-import Kore.Sort
-import Kore.Syntax.Application
-       ( SymbolOrAlias (..) )
-import Kore.Unparser
+import qualified Control.Lens.TH.Rules as Lens
+import           Kore.Debug
+import           Kore.Internal.ApplicationSorts
+import           Kore.Sort
+import           Kore.Syntax.Application
+                 ( SymbolOrAlias (..) )
+import           Kore.Unparser
 
 data Alias =
     Alias
         { aliasConstructor :: !Id
         , aliasParams      :: ![Sort]
+        , aliasSorts       :: !ApplicationSorts
         }
-    deriving (Eq, GHC.Generic, Ord, Show)
+    deriving (GHC.Generic, Show)
 
-instance Hashable Alias
+Lens.makeLenses ''Alias
+
+instance Eq Alias where
+    (==) a b =
+            Function.on (==) aliasConstructor a b
+        &&  Function.on (==) aliasParams a b
+    {-# INLINE (==) #-}
+
+instance Ord Alias where
+    compare a b =
+            Function.on compare aliasConstructor a b
+        <>  Function.on compare aliasParams a b
+
+instance Hashable Alias where
+    hashWithSalt salt Alias { aliasConstructor, aliasParams } =
+        salt `hashWithSalt` aliasConstructor `hashWithSalt` aliasParams
 
 instance NFData Alias
 

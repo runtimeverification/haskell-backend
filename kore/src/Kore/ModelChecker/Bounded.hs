@@ -37,7 +37,7 @@ import           Kore.Step.Rule
                  ( ImplicationRule (ImplicationRule), RewriteRule,
                  RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( Simplifier )
+                 ( MonadSimplify )
 import           Kore.Step.Strategy
                  ( ExecutionGraph (..), GraphSearchOrder, Strategy, pickFinal,
                  runStrategyWithSearchOrder )
@@ -58,7 +58,8 @@ data CheckResult
     deriving (Show)
 
 check
-    ::  (  CommonModalPattern
+    :: MonadSimplify m
+    =>  (  CommonModalPattern
         -> [Strategy
             (Prim
                 (CommonModalPattern)
@@ -72,7 +73,7 @@ check
     -> [(ImplicationRule Variable, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
-    -> Simplifier [CheckResult]
+    -> m [CheckResult]
 check strategyBuilder searchOrder =
     mapM (checkClaim strategyBuilder searchOrder)
 
@@ -91,7 +92,9 @@ bmcStrategy
         unwrap (Axiom a) = a
 
 checkClaim
-    ::  (  CommonModalPattern
+    :: forall m
+    .  MonadSimplify m
+    =>  (  CommonModalPattern
         -> [Strategy
             (Prim
                 (CommonModalPattern)
@@ -101,7 +104,7 @@ checkClaim
         )
     -> GraphSearchOrder
     -> (ImplicationRule Variable, Limit Natural)
-    -> Simplifier CheckResult
+    -> m CheckResult
 checkClaim
     strategyBuilder
     searchOrder
@@ -137,7 +140,7 @@ checkClaim
     transitionRule'
         :: Prim (CommonModalPattern) (RewriteRule Variable)
         -> (CommonProofState)
-        -> ModelChecker.Transition (CommonProofState)
+        -> ModelChecker.Transition m CommonProofState
     transitionRule' = ModelChecker.transitionRule
 
     checkFinalNodes

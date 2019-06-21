@@ -82,10 +82,11 @@ rewriteStep a =
  -}
 transitionRule
     :: GHC.HasCallStack
+    => MonadSimplify m
     => Prim (RewriteRule Variable)
     -> Pattern Variable
     -- ^ Configuration being rewritten
-    -> TransitionT (RewriteRule Variable) Simplifier (Pattern Variable)
+    -> TransitionT (RewriteRule Variable) m (Pattern Variable)
 transitionRule =
     \case
         Simplify -> transitionSimplify
@@ -93,7 +94,8 @@ transitionRule =
   where
     transitionSimplify config =
         do
-            configs <- Monad.Trans.lift $ Pattern.simplifyAndRemoveTopExists config
+            configs <- Monad.Trans.lift $
+                Pattern.simplifyAndRemoveTopExists config
             let
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = MultiOr.filterOr configs

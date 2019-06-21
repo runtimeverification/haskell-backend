@@ -46,7 +46,8 @@ import           Kore.Syntax.Variable
 import qualified Kore.Syntax.Variable as DoNotUse
                  ( Variable (..) )
 import qualified Kore.Unification.Substitution as Substitution
-import qualified SMT
+import           SMT
+                 ( SMT )
 
 
 import           Test.Kore
@@ -84,10 +85,9 @@ test_getUnit =
             patKey <- forAll genIntegerPattern
             let patIn =
                     mkApplySymbol
-                        boolSort
                         inSetSymbol
                         [ patKey
-                        , mkApplySymbol setSort unitSetSymbol []
+                        , mkApplySymbol unitSetSymbol []
                         ]
                 patFalse = Test.Bool.asInternal False
                 predicate = mkEquals_ patFalse patIn
@@ -101,8 +101,8 @@ test_inElement =
         "in{}(x, element{}(x)) === \\dv{Bool{}}(\"true\")"
         (do
             patKey <- forAll genIntegerPattern
-            let patIn = mkApplySymbol boolSort inSetSymbol [ patKey, patElement ]
-                patElement = mkApplySymbol setSort elementSetSymbol [ patKey ]
+            let patIn = mkApplySymbol inSetSymbol [ patKey, patElement ]
+                patElement = mkApplySymbol elementSetSymbol [ patKey ]
                 patTrue = Test.Bool.asInternal True
                 predicate = mkEquals_ patIn patTrue
             (===) (Test.Bool.asPattern True) =<< evaluateT patIn
@@ -116,7 +116,7 @@ test_inConcat =
         (do
             elem' <- forAll genConcreteIntegerPattern
             values <- forAll genSetConcreteIntegerPattern
-            let patIn = mkApplySymbol boolSort inSetSymbol [ patElem , patSet ]
+            let patIn = mkApplySymbol inSetSymbol [ patElem , patSet ]
                 patSet = asTermLike $ Set.insert elem' values
                 patElem = fromConcrete elem'
                 patTrue = Test.Bool.asInternal True
@@ -131,11 +131,11 @@ test_concatUnit =
         "concat{}(unit{}(), xs) === concat{}(xs, unit{}()) === xs"
         (do
             patValues <- forAll genSetPattern
-            let patUnit = mkApplySymbol setSort unitSetSymbol []
+            let patUnit = mkApplySymbol unitSetSymbol []
                 patConcat1 =
-                    mkApplySymbol setSort concatSetSymbol [ patUnit, patValues ]
+                    mkApplySymbol concatSetSymbol [ patUnit, patValues ]
                 patConcat2 =
-                    mkApplySymbol setSort concatSetSymbol [ patValues, patUnit ]
+                    mkApplySymbol concatSetSymbol [ patValues, patUnit ]
                 predicate1 = mkEquals_ patValues patConcat1
                 predicate2 = mkEquals_ patValues patConcat2
             expect <- evaluateT patValues
@@ -153,12 +153,12 @@ test_concatAssociates =
             patSet1 <- forAll genSetPattern
             patSet2 <- forAll genSetPattern
             patSet3 <- forAll genSetPattern
-            let patConcat12 = mkApplySymbol setSort concatSetSymbol [ patSet1, patSet2 ]
-                patConcat23 = mkApplySymbol setSort concatSetSymbol [ patSet2, patSet3 ]
+            let patConcat12 = mkApplySymbol concatSetSymbol [ patSet1, patSet2 ]
+                patConcat23 = mkApplySymbol concatSetSymbol [ patSet2, patSet3 ]
                 patConcat12_3 =
-                    mkApplySymbol setSort concatSetSymbol [ patConcat12, patSet3 ]
+                    mkApplySymbol concatSetSymbol [ patConcat12, patSet3 ]
                 patConcat1_23 =
-                    mkApplySymbol setSort concatSetSymbol [ patSet1, patConcat23 ]
+                    mkApplySymbol concatSetSymbol [ patSet1, patConcat23 ]
                 predicate = mkEquals_ patConcat12_3 patConcat1_23
             concat12_3 <- evaluateT patConcat12_3
             concat1_23 <- evaluateT patConcat1_23
@@ -177,7 +177,6 @@ test_difference =
                 patSet3 = asTermLike set3
                 patDifference =
                     mkApplySymbol
-                        setSort
                         differenceSetSymbol
                         [ asTermLike set1, asTermLike set2 ]
                 predicate = mkEquals_ patSet3 patDifference
@@ -196,7 +195,6 @@ test_toList =
                 patSet2 = Test.List.asTermLike set2
                 patToList =
                     mkApplySymbol
-                        listSort
                         toListSetSymbol
                         [ asTermLike set1 ]
                 predicate = mkEquals_ patSet2 patToList
@@ -216,7 +214,6 @@ test_size =
                 patExpected = Test.Int.asInternal $ toInteger size
                 patActual =
                     mkApplySymbol
-                        intSort
                         sizeSetSymbol
                         [ asTermLike set ]
                 predicate = mkEquals_ patExpected patActual
@@ -274,9 +271,9 @@ asSymbolicPattern result
     | otherwise =
         foldr1 applyConcat (applyElement <$> Set.toAscList result)
   where
-    applyUnit = mkApplySymbol setSort unitSetSymbol []
-    applyElement key = mkApplySymbol setSort elementSetSymbol [key]
-    applyConcat set1 set2 = mkApplySymbol setSort concatSetSymbol [set1, set2]
+    applyUnit = mkApplySymbol unitSetSymbol []
+    applyElement key = mkApplySymbol elementSetSymbol [key]
+    applyConcat set1 set2 = mkApplySymbol concatSetSymbol [set1, set2]
 
 {- | Check that unifying a concrete set with itself results in the same set
  -}
@@ -324,7 +321,7 @@ test_unifyFramingVariable =
             let framedSet = Set.singleton framedElem
                 patConcreteSet = asTermLike concreteSet
                 patFramedSet =
-                    mkApplySymbol setSort concatSetSymbol
+                    mkApplySymbol concatSetSymbol
                         [ asTermLike framedSet
                         , mkVar frameVar
                         ]
@@ -353,14 +350,14 @@ selectFunctionPattern
     -> (forall a . [a] -> [a])  -- ^scrambling function
     -> TermLike Variable
 selectFunctionPattern elementVar setVar permutation  =
-    mkApplySymbol setSort concatSetSymbol $ permutation [singleton, mkVar setVar]
+    mkApplySymbol concatSetSymbol $ permutation [singleton, mkVar setVar]
   where
-    element = mkApplySymbol intSort absIntSymbol  [mkVar elementVar]
-    singleton = mkApplySymbol setSort elementSetSymbol [ element ]
+    element = mkApplySymbol absIntSymbol  [mkVar elementVar]
+    singleton = mkApplySymbol elementSetSymbol [ element ]
 
 makeElementVariable :: Variable -> TermLike Variable
 makeElementVariable var =
-    mkApplySymbol setSort elementSetSymbol [mkVar var]
+    mkApplySymbol elementSetSymbol [mkVar var]
 
 -- Given a function to scramble the arguments to concat, i.e.,
 -- @id@ or @reverse@, produces a pattern of the form
@@ -371,7 +368,7 @@ selectPattern
     -> (forall a . [a] -> [a])  -- ^scrambling function
     -> TermLike Variable
 selectPattern elementVar setVar permutation  =
-    mkApplySymbol setSort concatSetSymbol
+    mkApplySymbol concatSetSymbol
     $ permutation [makeElementVariable elementVar, mkVar setVar]
 
 addSelectElement
@@ -379,7 +376,7 @@ addSelectElement
     -> TermLike Variable  -- ^existingPattern
     -> TermLike Variable
 addSelectElement elementVar setPattern  =
-    mkApplySymbol setSort concatSetSymbol [makeElementVariable elementVar, setPattern]
+    mkApplySymbol concatSetSymbol [makeElementVariable elementVar, setPattern]
 
 test_unifySelectFromEmpty :: TestTree
 test_unifySelectFromEmpty =
@@ -623,7 +620,7 @@ unifiesWith
     => TermLike Variable
     -> TermLike Variable
     -> Pattern Variable
-    -> PropertyT SMT.SMT ()
+    -> PropertyT SMT ()
 unifiesWith pat1 pat2 expected =
     unifiesWithMulti pat1 pat2 [expected]
 
@@ -633,7 +630,7 @@ unifiesWithMulti
     => TermLike Variable
     -> TermLike Variable
     -> [Pattern Variable]
-    -> PropertyT SMT.SMT ()
+    -> PropertyT SMT ()
 unifiesWithMulti pat1 pat2 expectedResults = do
     actualResults <- Trans.lift $ evaluateToList (mkAnd pat1 pat2)
     compareElements (List.sort expectedResults) actualResults
@@ -673,7 +670,7 @@ test_unifyFnSelectFromSingleton =
                 fnSelectPatRev = selectFunctionPattern elementVar setVar reverse
                 singleton      = asInternal (Set.singleton concreteElem)
                 elemStepPatt   = fromConcrete concreteElem
-                elementVarPatt = mkApplySymbol intSort absIntSymbol  [mkVar elementVar]
+                elementVarPatt = mkApplySymbol absIntSymbol [mkVar elementVar]
                 expect = do  -- list monad
                     expectedSet <- [[], [concreteElem]]
                     return Conditional

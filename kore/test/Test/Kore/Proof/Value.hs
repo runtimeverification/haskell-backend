@@ -12,7 +12,7 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Internal.Symbol
-                 ( toSymbolOrAlias )
+                 ( applicationSorts, toSymbolOrAlias )
 import           Kore.Internal.TermLike
 import qualified Kore.Proof.Value as Value
 
@@ -87,20 +87,18 @@ varX = varS "X" intSort
 
 test_fun :: [TestTree]
 test_fun =
-    [ testNotValue "fun(1)" (mkApplySymbol intSort funSymbol [oneTermLike])
-    , testNotValue "fun(1)" (mkApplySymbol intSort funSymbol [oneInternal])
+    [ testNotValue "fun(1)" (mkApplySymbol funSymbol [oneTermLike])
+    , testNotValue "fun(1)" (mkApplySymbol funSymbol [oneInternal])
     ]
 
 mkInj :: TermLike Variable -> TermLike Variable
-mkInj input =
-    mkApplySymbol supSort (injSymbol (termLikeSort input) supSort) [input]
+mkInj input = mkApplySymbol (injSymbol (termLikeSort input) supSort) [input]
 
 mkPair
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
-mkPair a b =
-    mkApplySymbol (pairSort inputSort') (pairSymbol inputSort') [a, b]
+mkPair a b = mkApplySymbol (pairSymbol inputSort') [a, b]
   where
     inputSort' = termLikeSort a
 
@@ -114,7 +112,7 @@ mkSet :: [TermLike Concrete] -> TermLike Variable
 mkSet = mkBuiltin . Domain.BuiltinSet . builtinSet
 
 unitPattern :: TermLike Variable
-unitPattern = mkApplySymbol unitSort unitSymbol []
+unitPattern = mkApplySymbol unitSymbol []
 
 oneInternal :: Ord variable => TermLike variable
 oneInternal = Builtin.Int.asInternal intSort 1
@@ -155,6 +153,7 @@ unitSymbol =
         { symbolConstructor = testId "unit"
         , symbolParams = []
         , symbolAttributes = Mock.constructorAttributes
+        , symbolSorts = applicationSorts [] unitSort
         }
 
 pairSort :: Sort -> Sort
@@ -170,6 +169,7 @@ pairSymbol sort =
         { symbolConstructor = testId "pair"
         , symbolParams = [sort]
         , symbolAttributes = Mock.constructorAttributes
+        , symbolSorts = applicationSorts [sort, sort] (pairSort sort)
         }
 
 injSymbol :: Sort -> Sort -> Symbol
@@ -178,6 +178,7 @@ injSymbol sub sup =
         { symbolConstructor = testId "inj"
         , symbolParams = [sub, sup]
         , symbolAttributes = Mock.sortInjectionAttributes
+        , symbolSorts = applicationSorts [sub] sup
         }
 
 funSymbol :: Symbol
@@ -186,6 +187,7 @@ funSymbol =
         { symbolConstructor = testId "fun"
         , symbolParams = []
         , symbolAttributes = Mock.functionAttributes
+        , symbolSorts = applicationSorts [intSort] intSort
         }
 
 subSort :: Sort
@@ -213,7 +215,6 @@ tools :: SmtMetadataTools Attribute.Symbol
 tools =
     Mock.makeMetadataTools
         symbolOrAliasAttrs
-        []
         []
         []
         []
