@@ -23,6 +23,8 @@ import qualified Kore.Internal.Alias as Internal
 import qualified Kore.Internal.Symbol as Internal
 import           Kore.Syntax
 
+{- | A pattern is 'Functional' if it matches exactly one element.
+ -}
 newtype Functional = Functional { isFunctional :: Bool }
     deriving (Eq, GHC.Generic, Show)
     deriving (Semigroup, Monoid) via All
@@ -45,6 +47,8 @@ instance Synthetic (Bottom sort) Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
+-- | An 'Application' pattern is 'Functional' if its symbol is functional and
+-- its arguments are 'Functional'.
 instance Synthetic (Application Internal.Symbol) Functional where
     synthetic application =
         functionalSymbol <> Foldable.fold children
@@ -61,6 +65,7 @@ instance Synthetic (Ceil sort) Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
+-- | A 'DomainValue' pattern is 'Functional' if its argument is 'Functional'.
 instance Synthetic (DomainValue sort) Functional where
     synthetic = domainValueChild
     {-# INLINE synthetic #-}
@@ -116,6 +121,7 @@ instance Synthetic (Rewrites sort) Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
+-- | A 'Builtin' pattern is 'Functional' if its subterms are 'Functional'.
 instance Synthetic (Builtin key) Functional where
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}
@@ -124,20 +130,19 @@ instance Synthetic (Top sort) Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
+-- | A 'Variable' pattern is always 'Functional'.
 instance Synthetic (Const Variable) Functional where
     synthetic = const (Functional True)
     {-# INLINE synthetic #-}
 
+-- | A 'StringLiteral' pattern is always 'Functional'.
 instance Synthetic (Const StringLiteral) Functional where
     synthetic = const (Functional True)
     {-# INLINE synthetic #-}
 
+-- | A 'CharLiteral' pattern is always 'Functional'.
 instance Synthetic (Const CharLiteral) Functional where
     synthetic = const (Functional True)
-    {-# INLINE synthetic #-}
-
-instance Synthetic (Const (SetVariable variable)) Functional where
-    synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Const Sort) Functional where
