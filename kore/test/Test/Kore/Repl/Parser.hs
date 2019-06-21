@@ -79,8 +79,8 @@ claimTests =
     [ "claim 0"            `parsesTo_` ShowClaim (Just . Left . ClaimIndex $ 0)
     , "claim 0 "           `parsesTo_` ShowClaim (Just . Left . ClaimIndex $ 0)
     , "claim 5"            `parsesTo_` ShowClaim (Just . Left . ClaimIndex $ 5)
-    , "claim lbl"          `parsesTo_` ShowClaim (Just . Right . RuleLabel $ "lbl")
-    , "claim \"my lbl\" "  `parsesTo_` ShowClaim (Just . Right . RuleLabel $ "my lbl")
+    , "claim lbl"          `parsesTo_` ShowClaim (Just . Right . RuleName $ "lbl")
+    , "claim \"my lbl\" "  `parsesTo_` ShowClaim (Just . Right . RuleName $ "my lbl")
     , "claim"              `parsesTo_` ShowClaim Nothing
     ]
 
@@ -89,8 +89,8 @@ axiomTests =
     [ "axiom 0"            `parsesTo_` ShowAxiom (Left . AxiomIndex $ 0)
     , "axiom 0 "           `parsesTo_` ShowAxiom (Left . AxiomIndex $ 0)
     , "axiom 5"            `parsesTo_` ShowAxiom (Left . AxiomIndex $ 5)
-    , "axiom lbl"          `parsesTo_` ShowAxiom (Right . RuleLabel $ "lbl")
-    , "axiom \"my lbl\" "  `parsesTo_` ShowAxiom (Right . RuleLabel $ "my lbl")
+    , "axiom lbl"          `parsesTo_` ShowAxiom (Right . RuleName$ "lbl")
+    , "axiom \"my lbl\" "  `parsesTo_` ShowAxiom (Right . RuleName $ "my lbl")
     , "axiom"              `fails`     ()
     ]
 
@@ -99,8 +99,8 @@ proveTests =
     [ "prove 0"  `parsesTo_` Prove (Left . ClaimIndex $ 0)
     , "prove 0 " `parsesTo_` Prove (Left . ClaimIndex $ 0)
     , "prove 5"  `parsesTo_` Prove (Left . ClaimIndex $ 5)
-    , "prove lbl"          `parsesTo_` Prove (Right . RuleLabel $ "lbl")
-    , "prove \"my lbl\" "  `parsesTo_` Prove (Right . RuleLabel $ "my lbl")
+    , "prove lbl"          `parsesTo_` Prove (Right . RuleName $ "lbl")
+    , "prove \"my lbl\" "  `parsesTo_` Prove (Right . RuleName $ "my lbl")
     , "prove"    `fails`     ()
     ]
 
@@ -200,10 +200,10 @@ tryTests :: [ParserTest ReplCommand]
 tryTests =
     [ "try a5"            `parsesTo_` tryAxiomIndex 5
     , "try c5"            `parsesTo_` tryClaimIndex 5
-    , "try lbl"           `parsesTo_` tryRuleLabel "lbl"
-    , "try \"my lbl\" "   `parsesTo_` tryRuleLabel "my lbl"
-    , "try albl"          `parsesTo_` tryRuleLabel "albl"
-    , "try clbl"          `parsesTo_` tryRuleLabel "clbl"
+    , "try lbl"           `parsesTo_` tryRuleName "lbl"
+    , "try \"my lbl\" "   `parsesTo_` tryRuleName "my lbl"
+    , "try albl"          `parsesTo_` tryRuleName "albl"
+    , "try clbl"          `parsesTo_` tryRuleName "clbl"
     , "try"               `fails`     ()
     ]
 
@@ -211,10 +211,10 @@ tryFTests :: [ParserTest ReplCommand]
 tryFTests =
     [ "tryf a5"            `parsesTo_` tryFAxiomIndex 5
     , "tryf c5"            `parsesTo_` tryFClaimIndex 5
-    , "tryf lbl"           `parsesTo_` tryFRuleLabel "lbl"
-    , "tryf \"my lbl\" "   `parsesTo_` tryFRuleLabel "my lbl"
-    , "tryf albl"          `parsesTo_` tryFRuleLabel "albl"
-    , "tryf clbl"          `parsesTo_` tryFRuleLabel "clbl"
+    , "tryf lbl"           `parsesTo_` tryFRuleName "lbl"
+    , "tryf \"my lbl\" "   `parsesTo_` tryFRuleName "my lbl"
+    , "tryf albl"          `parsesTo_` tryFRuleName "albl"
+    , "tryf clbl"          `parsesTo_` tryFRuleName "clbl"
     , "tryf"               `fails`     ()
     ]
 
@@ -224,8 +224,8 @@ tryAxiomIndex = Try . ByIndex . Left . AxiomIndex
 tryClaimIndex :: Int -> ReplCommand
 tryClaimIndex = Try . ByIndex . Right . ClaimIndex
 
-tryRuleLabel :: String -> ReplCommand
-tryRuleLabel = Try . ByLabel . RuleLabel
+tryRuleName :: String -> ReplCommand
+tryRuleName = Try . ByName . RuleName
 
 tryFAxiomIndex :: Int -> ReplCommand
 tryFAxiomIndex = TryF . ByIndex . Left . AxiomIndex
@@ -233,8 +233,8 @@ tryFAxiomIndex = TryF . ByIndex . Left . AxiomIndex
 tryFClaimIndex :: Int -> ReplCommand
 tryFClaimIndex = TryF . ByIndex . Right . ClaimIndex
 
-tryFRuleLabel :: String -> ReplCommand
-tryFRuleLabel = TryF . ByLabel . RuleLabel
+tryFRuleName :: String -> ReplCommand
+tryFRuleName = TryF . ByName . RuleName
 
 exitTests :: [ParserTest ReplCommand]
 exitTests =

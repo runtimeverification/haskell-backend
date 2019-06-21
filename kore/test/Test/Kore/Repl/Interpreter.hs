@@ -86,15 +86,15 @@ test_replInterpreter =
     , logUpdatesState             `tests` "Log command updates the state"
     , showCurrentClaim            `tests` "Showing current claim"
     , showClaim1                  `tests` "Showing the claim at index 1"
-    , showClaimByLabel            `tests` "Showing the claim with the label 0to10Claim"
-    , showAxiomByLabel            `tests` "Showing the axiom with the label add1Axiom"
-    , unificationFailureWithLabel `tests` "Try axiom by label that doesn't unify"
-    , unificationSuccessWithLabel `tests` "Try axiom by label that does unify"
-    , forceFailureWithLabel       `tests` "TryF axiom by label that doesn't unify"
-    , forceSuccessWithLabel       `tests` "TryF axiom by label that does unify"
+    , showClaimByName             `tests` "Showing the claim with the name 0to10Claim"
+    , showAxiomByName             `tests` "Showing the axiom with the name add1Axiom"
+    , unificationFailureWithName  `tests` "Try axiom by name that doesn't unify"
+    , unificationSuccessWithName  `tests` "Try axiom by name that does unify"
+    , forceFailureWithName        `tests` "TryF axiom by name that doesn't unify"
+    , forceSuccessWithName        `tests` "TryF axiom by name that does unify"
     , proveSecondClaim            `tests` "Starting to prove the second claim"
-    , proveSecondClaimByLabel     `tests` "Starting to prove the second claim\
-                                           \ referenced by label"
+    , proveSecondClaimByName      `tests` "Starting to prove the second claim\
+                                           \ referenced by name"
     ]
 
 showUsage :: IO ()
@@ -272,15 +272,15 @@ unificationFailure =
         continue `equals` Continue
         state `hasCurrentNode` ReplNode 0
 
-unificationFailureWithLabel :: IO ()
-unificationFailureWithLabel =
+unificationFailureWithName :: IO ()
+unificationFailureWithName =
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        impossibleAxiom = coerce $ rulePatternWithLabel one one "impossible"
+        impossibleAxiom = coerce $ rulePatternWithName one one "impossible"
         axioms = [ impossibleAxiom ]
         claim = zeroToTen
-        command = Try . ByLabel . RuleLabel $ "impossible"
+        command = Try . ByName . RuleName $ "impossible"
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
         expectedOutput <-
@@ -305,15 +305,15 @@ unificationSuccess = do
     continue `equals` Continue
     state `hasCurrentNode` ReplNode 0
 
-unificationSuccessWithLabel :: IO ()
-unificationSuccessWithLabel = do
+unificationSuccessWithName :: IO ()
+unificationSuccessWithName = do
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        axiom = coerce $ rulePatternWithLabel zero one "0to1"
+        axiom = coerce $ rulePatternWithName zero one "0to1"
         axioms = [ axiom ]
         claim = zeroToTen
-        command = Try . ByLabel . RuleLabel $ "0to1"
+        command = Try . ByName . RuleName $ "0to1"
         expectedOutput = formatUnifiers (Predicate.top :| [])
 
     Result { output, continue, state } <- run command axioms [claim] claim
@@ -338,15 +338,15 @@ forceFailure =
         continue `equals` Continue
         state `hasCurrentNode` ReplNode 0
 
-forceFailureWithLabel :: IO ()
-forceFailureWithLabel =
+forceFailureWithName :: IO ()
+forceFailureWithName =
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        impossibleAxiom = coerce $ rulePatternWithLabel one one "impossible"
+        impossibleAxiom = coerce $ rulePatternWithName one one "impossible"
         axioms = [ impossibleAxiom ]
         claim = zeroToTen
-        command = TryF . ByLabel . RuleLabel $ "impossible"
+        command = TryF . ByName . RuleName $ "impossible"
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
         expectedOutput <-
@@ -371,15 +371,15 @@ forceSuccess = do
     continue `equals` Continue
     state `hasCurrentNode` ReplNode 1
 
-forceSuccessWithLabel :: IO ()
-forceSuccessWithLabel = do
+forceSuccessWithName :: IO ()
+forceSuccessWithName = do
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        axiom = coerce $ rulePatternWithLabel zero one "0to1"
+        axiom = coerce $ rulePatternWithName zero one "0to1"
         axioms = [ axiom ]
         claim = zeroToTen
-        command = TryF . ByLabel . RuleLabel $ "0to1"
+        command = TryF . ByName . RuleName $ "0to1"
         expectedOutput = ""
 
     Result { output, continue, state } <- run command axioms [claim] claim
@@ -433,13 +433,13 @@ showClaim1 =
         output `equalsOutput` showRewriteRule expectedClaim
         continue `equals` Continue
 
-showClaimByLabel :: IO ()
-showClaimByLabel =
+showClaimByName :: IO ()
+showClaimByName =
     let
         claims = [zeroToTen, emptyClaim]
         claim = zeroToTen
         axioms = []
-        command = ShowClaim (Just . Right . RuleLabel $ "0to10Claim")
+        command = ShowClaim (Just . Right . RuleName $ "0to10Claim")
         expectedClaim = zeroToTen
     in do
         Result { output, continue } <-
@@ -447,13 +447,13 @@ showClaimByLabel =
         output `equalsOutput` showRewriteRule expectedClaim
         continue `equals` Continue
 
-showAxiomByLabel :: IO ()
-showAxiomByLabel =
+showAxiomByName :: IO ()
+showAxiomByName =
     let
         claims = [zeroToTen, emptyClaim]
         claim = zeroToTen
         axioms = [add1]
-        command = ShowAxiom (Right . RuleLabel $ "add1Axiom")
+        command = ShowAxiom (Right . RuleName $ "add1Axiom")
         expectedAxiom = add1
     in do
         Result { output, continue } <-
@@ -479,35 +479,35 @@ proveSecondClaim =
         claims = [zeroToTen, emptyClaim]
         claim = zeroToTen
         axioms = [add1]
-        indexOrLabel = Left . ClaimIndex $ 1
-        command = Prove indexOrLabel
+        indexOrName = Left . ClaimIndex $ 1
+        command = Prove indexOrName
         expectedClaimIndex = ClaimIndex 1
     in do
         Result { output, continue, state } <-
             run command axioms claims claim
-        output `equalsOutput` showClaimSwitch indexOrLabel
+        output `equalsOutput` showClaimSwitch indexOrName
         state `hasCurrentClaimIndex` expectedClaimIndex
         continue `equals` Continue
 
-proveSecondClaimByLabel :: IO ()
-proveSecondClaimByLabel =
+proveSecondClaimByName :: IO ()
+proveSecondClaimByName =
     let
         claims = [zeroToTen, emptyClaim]
         claim = zeroToTen
         axioms = [add1]
-        indexOrLabel = Right . RuleLabel $ "emptyClaim"
-        command = Prove indexOrLabel
+        indexOrName = Right . RuleName $ "emptyClaim"
+        command = Prove indexOrName
         expectedClaimIndex = ClaimIndex 1
     in do
         Result { output, continue, state } <-
             run command axioms claims claim
-        output `equalsOutput` showClaimSwitch indexOrLabel
+        output `equalsOutput` showClaimSwitch indexOrName
         state `hasCurrentClaimIndex` expectedClaimIndex
         continue `equals` Continue
 
 add1 :: Axiom
 add1 =
-    coerce $ rulePatternWithLabel n plusOne "add1Axiom"
+    coerce $ rulePatternWithName n plusOne "add1Axiom"
   where
     one     = Int.asInternal intSort 1
     n       = mkVar $ varS "x" intSort
@@ -515,7 +515,7 @@ add1 =
 
 zeroToTen :: Claim
 zeroToTen =
-    coerce $ rulePatternWithLabel zero ten "0to10Claim"
+    coerce $ rulePatternWithName zero ten "0to10Claim"
   where
     zero = Int.asInternal intSort 0
     ten  = Int.asInternal intSort 10
@@ -523,14 +523,14 @@ zeroToTen =
 emptyClaim :: Claim
 emptyClaim =
     coerce
-    $ rulePatternWithLabel mkBottom_ mkBottom_ "emptyClaim"
+    $ rulePatternWithName mkBottom_ mkBottom_ "emptyClaim"
 
-rulePatternWithLabel
+rulePatternWithName
     :: TermLike variable
     -> TermLike variable
     -> String
     -> RulePattern variable
-rulePatternWithLabel left right label =
+rulePatternWithName left right name =
     RulePattern
         { left
         , right
@@ -550,7 +550,7 @@ rulePatternWithLabel left right label =
                 , overload = def
                 , smtLemma = def
                 , label =
-                    AttrLabel.Label . return . pack $ label
+                    AttrLabel.Label . return . pack $ name
                 , sourceLocation = def
                 , constructor = def
                 , identifier = def

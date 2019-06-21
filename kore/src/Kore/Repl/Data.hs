@@ -13,7 +13,7 @@ module Kore.Repl.Data
     , helpText
     , ExecutionGraph
     , AxiomIndex (..), ClaimIndex (..)
-    , RuleLabel (..), RuleReference(..)
+    , RuleName (..), RuleReference(..)
     , ReplNode (..)
     , ReplState (..)
     , Config (..)
@@ -115,8 +115,8 @@ newtype ReplNode = ReplNode
     { unReplNode :: Graph.Node
     } deriving (Eq, Show)
 
-newtype RuleLabel = RuleLabel
-    { unRuleLabel :: String
+newtype RuleName = RuleName
+    { unRuleName :: String
     } deriving (Eq, Show)
 
 data AliasDefinition = AliasDefinition
@@ -143,7 +143,7 @@ data LogType
 
 data RuleReference
     = ByIndex (Either AxiomIndex ClaimIndex)
-    | ByLabel RuleLabel
+    | ByName RuleName
     deriving (Eq, Show)
 
 -- | List of available commands for the Repl. Note that we are always in a proof
@@ -153,11 +153,11 @@ data ReplCommand
     -- ^ This is the default action in case parsing all others fail.
     | Help
     -- ^ Shows the help message.
-    | ShowClaim !(Maybe (Either ClaimIndex RuleLabel))
+    | ShowClaim !(Maybe (Either ClaimIndex RuleName))
     -- ^ Show the nth claim or the current claim.
-    | ShowAxiom !(Either AxiomIndex RuleLabel)
+    | ShowAxiom !(Either AxiomIndex RuleName)
     -- ^ Show the nth axiom.
-    | Prove !(Either ClaimIndex RuleLabel)
+    | Prove !(Either ClaimIndex RuleName)
     -- ^ Drop the current proof state and re-initialize for the nth claim.
     | ShowGraph !(Maybe FilePath)
     -- ^ Show the current execution graph.

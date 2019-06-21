@@ -10,8 +10,8 @@ module Kore.Repl.State
     ( emptyExecutionGraph
     , getClaimByIndex, getAxiomByIndex, getAxiomOrClaimByIndex
     , getInternalIdentifier
-    , getAxiomByLabel, getClaimByLabel, getAxiomOrClaimByLabel
-    , getClaimIndexByLabel, getLabelText
+    , getAxiomByName, getClaimByName, getAxiomOrClaimByName
+    , getClaimIndexByName, getNameText
     , ruleReference
     , switchToProof
     , getTargetNode, getInnerGraph, getExecutionGraph
@@ -114,15 +114,15 @@ emptyExecutionGraph =
 
 ruleReference
     :: (Either AxiomIndex ClaimIndex -> a)
-    -> (RuleLabel -> a)
+    -> (RuleName -> a)
     -> RuleReference
     -> a
 ruleReference f g ref =
     case ref of
         ByIndex axiomOrClaimIndex ->
             f axiomOrClaimIndex
-        ByLabel ruleLabel ->
-            g ruleLabel
+        ByName ruleName ->
+            g ruleName
 
 -- | Get nth claim from the claims list.
 getClaimByIndex
@@ -140,50 +140,50 @@ getAxiomByIndex
     -> m (Maybe Axiom)
 getAxiomByIndex index = Lens.preuse $ lensAxioms . Lens.element index
 
--- | Get the leftmost axiom with a specific label from the axioms list.
-getAxiomByLabel
+-- | Get the leftmost axiom with a specific name from the axioms list.
+getAxiomByName
     :: MonadState (ReplState claim) m
     => String
     -- ^ label attribute
     -> m (Maybe Axiom)
-getAxiomByLabel label = do
+getAxiomByName name = do
     axioms <- Lens.use lensAxioms
     return $ Axiom
-        <$> find (isLabelEqual label) (fmap unAxiom axioms)
+        <$> find (isNameEqual name) (fmap unAxiom axioms)
 
--- | Get the leftmost claim with a specific label from the claim list.
-getClaimByLabel
+-- | Get the leftmost claim with a specific name from the claim list.
+getClaimByName
     :: MonadState (ReplState claim) m
     => Claim claim
     => String
     -- ^ label attribute
     -> m (Maybe claim)
-getClaimByLabel label = do
+getClaimByName name = do
     claims <- Lens.use lensClaims
     return $ coerce
-        <$> find (isLabelEqual label) (fmap coerce claims)
+        <$> find (isNameEqual name) (fmap coerce claims)
 
-getClaimIndexByLabel
+getClaimIndexByName
     :: MonadState (ReplState claim) m
     => Claim claim
     => String
     -- ^ label attribute
     -> m (Maybe ClaimIndex)
-getClaimIndexByLabel label = do
+getClaimIndexByName name= do
     claims <- Lens.use lensClaims
     return $ coerce
-        <$> findIndex (isLabelEqual label) (fmap coerce claims)
+        <$> findIndex (isNameEqual name) (fmap coerce claims)
 
-getAxiomOrClaimByLabel
+getAxiomOrClaimByName
     :: MonadState (ReplState claim) m
     => Claim claim
-    => RuleLabel
+    => RuleName
     -> m (Maybe (Either Axiom claim))
-getAxiomOrClaimByLabel (RuleLabel label) = do
-    mAxiom <- getAxiomByLabel label
+getAxiomOrClaimByName (RuleName name) = do
+    mAxiom <- getAxiomByName name
     case mAxiom of
         Nothing -> do
-            mClaim <- getClaimByLabel label
+            mClaim <- getClaimByName name
             case mClaim of
                 Nothing -> return Nothing
                 Just claim ->
@@ -191,18 +191,18 @@ getAxiomOrClaimByLabel (RuleLabel label) = do
         Just axiom ->
             return . Just . Left $ axiom
 
-isLabelEqual :: String -> RewriteRule Variable -> Bool
-isLabelEqual label rule =
+isNameEqual :: String -> RewriteRule Variable -> Bool
+isNameEqual name rule =
     maybe
         False
-        ( (== label) . unpack)
+        ( (== name) . unpack)
           (AttrLabel.unLabel
-          . getLabelText
+          . getNameText
           $ rule
         )
 
-getLabelText :: RewriteRule Variable -> AttrLabel.Label
-getLabelText =
+getNameText :: RewriteRule Variable -> AttrLabel.Label
+getNameText =
     Attribute.label
     . attributes
     . getRewriteRule

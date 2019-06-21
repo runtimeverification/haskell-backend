@@ -249,32 +249,32 @@ showClaim
     :: Claim claim
     => MonadState (ReplState claim) m
     => MonadWriter String m
-    => Maybe (Either ClaimIndex RuleLabel)
+    => Maybe (Either ClaimIndex RuleName)
     -> m ()
 showClaim =
     \case
         Nothing -> do
             currentCindex <- Lens.use lensClaimIndex
             putStrLn' . showCurrentClaimIndex $ currentCindex
-        Just indexOrLabel -> do
+        Just indexOrName -> do
             claim <- either
                         (getClaimByIndex . unClaimIndex)
-                        (getClaimByLabel . unRuleLabel)
-                        indexOrLabel
+                        (getClaimByName . unRuleName)
+                        indexOrName
             maybe printNotFound (putStrLn' . showRewriteRule) $ claim
 
 -- | Prints an axiom using an index in the axioms list.
 showAxiom
     :: MonadState (ReplState claim) m
     => MonadWriter String m
-    => Either AxiomIndex RuleLabel
+    => Either AxiomIndex RuleName
     -- ^ index in the axioms list
     -> m ()
-showAxiom indexOrLabel = do
+showAxiom indexOrName = do
     axiom <- either
                 (getAxiomByIndex . unAxiomIndex)
-                (getAxiomByLabel . unRuleLabel)
-                indexOrLabel
+                (getAxiomByName . unRuleName)
+                indexOrName
     maybe printNotFound (putStrLn' . showRewriteRule) $ axiom
 
 -- | Changes the currently focused proof, using an index in the claims list.
@@ -283,14 +283,14 @@ prove
     .  Claim claim
     => MonadState (ReplState claim) m
     => MonadWriter String m
-    => Either ClaimIndex RuleLabel
+    => Either ClaimIndex RuleName
     -- ^ index in the claims list
     -> m ()
-prove indexOrLabel = do
+prove indexOrName = do
     claim' <- either
                 (getClaimByIndex . unClaimIndex)
-                (getClaimByLabel . unRuleLabel)
-                indexOrLabel
+                (getClaimByName . unRuleName)
+                indexOrName
     maybe
         printNotFound
         startProving
@@ -303,29 +303,29 @@ prove indexOrLabel = do
         if isTrusted claim
             then putStrLn'
                     $ "Cannot switch to proving claim "
-                    <> showIndexOrLabel indexOrLabel
+                    <> showIndexOrName indexOrName
                     <> ". Claim is trusted."
             else do
                 claimIndex <-
                     either
                         (return . return)
-                        (getClaimIndexByLabel . unRuleLabel)
-                        indexOrLabel
+                        (getClaimIndexByName . unRuleName)
+                        indexOrName
                 switchToProof claim $ fromJust claimIndex
                 putStrLn'
                     $ "Switched to proving claim "
-                    <> showIndexOrLabel indexOrLabel
+                    <> showIndexOrName indexOrName
 
-showClaimSwitch :: Either ClaimIndex RuleLabel -> String
-showClaimSwitch indexOrLabel =
+showClaimSwitch :: Either ClaimIndex RuleName -> String
+showClaimSwitch indexOrName =
     "Switched to proving claim "
-    <> showIndexOrLabel indexOrLabel
+    <> showIndexOrName indexOrName
 
-showIndexOrLabel
-    :: Either ClaimIndex RuleLabel
+showIndexOrName
+    :: Either ClaimIndex RuleName
     -> String
-showIndexOrLabel =
-        either (show . unClaimIndex) (show . unRuleLabel)
+showIndexOrName =
+        either (show . unClaimIndex) (show . unRuleName)
 
 showGraph
     :: MonadIO m
@@ -712,7 +712,7 @@ tryAxiomClaimWorker mode ref = do
     maybeAxiomOrClaim <-
         ruleReference
             getAxiomOrClaimByIndex
-            getAxiomOrClaimByLabel
+            getAxiomOrClaimByName
             ref
     case maybeAxiomOrClaim of
        Nothing ->
@@ -1085,8 +1085,8 @@ graphParams len = Graph.nonClusteredParams
                         )
                     )
                     Text.Lazy.fromStrict
-                    ( showAxiomOrClaimLabel ln (getInternalIdentifier rule)
-                    . getLabelText
+                    ( showAxiomOrClaimName ln (getInternalIdentifier rule)
+                    . getNameText
                     $ rule
                     )
 
@@ -1102,19 +1102,19 @@ showAxiomOrClaim len (RuleIndex (Just rid))
   | rid < len = Just $ "Axiom " <> show rid
   | otherwise = Just $ "Claim " <> show (rid - len)
 
-showAxiomOrClaimLabel
+showAxiomOrClaimName
     :: Int
     -> Attribute.RuleIndex
     -> AttrLabel.Label
     -> Maybe Text.Text
-showAxiomOrClaimLabel _ _ (AttrLabel.Label Nothing) = Nothing
-showAxiomOrClaimLabel _ (RuleIndex Nothing) _ = Nothing
-showAxiomOrClaimLabel
+showAxiomOrClaimName _ _ (AttrLabel.Label Nothing) = Nothing
+showAxiomOrClaimName _ (RuleIndex Nothing) _ = Nothing
+showAxiomOrClaimName
     len
     (RuleIndex (Just rid))
-    (AttrLabel.Label (Just ruleLabel))
-  | rid < len = Just $ "Axiom " <> ruleLabel
-  | otherwise = Just $ "Claim " <> ruleLabel
+    (AttrLabel.Label (Just ruleName))
+  | rid < len = Just $ "Axiom " <> ruleName
+  | otherwise = Just $ "Claim " <> ruleName
 
 parseEvalScript
     :: forall claim t m

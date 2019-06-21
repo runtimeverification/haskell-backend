@@ -118,14 +118,14 @@ showClaim =
     ShowClaim
     <$$> literal "claim"
     *> optional
-        (Left <$> parseClaimDecimal <|> Right <$> ruleLabelParser)
+        (Left <$> parseClaimDecimal <|> Right <$> ruleNameParser)
 
 showAxiom :: Parser ReplCommand
 showAxiom =
     ShowAxiom
     <$$> literal "axiom"
     *> ( Left <$> parseAxiomDecimal
-        <|> Right <$> ruleLabelParser
+        <|> Right <$> ruleNameParser
        )
 
 prove :: Parser ReplCommand
@@ -133,7 +133,7 @@ prove =
     Prove
     <$$> literal "prove"
     *> ( Left <$> parseClaimDecimal
-       <|> Right <$> ruleLabelParser
+       <|> Right <$> ruleNameParser
        )
 
 showGraph :: Parser ReplCommand
@@ -198,7 +198,7 @@ tryAxiomClaim =
     Try
     <$$> literal "try"
     *> ( try (ByIndex <$> ruleIndexParser)
-        <|> ByLabel <$> ruleLabelParser
+        <|> ByName <$> ruleNameParser
        )
 
 tryForceAxiomClaim :: Parser ReplCommand
@@ -206,7 +206,7 @@ tryForceAxiomClaim =
     TryF
     <$$> literal "tryf"
     *> ( try (ByIndex <$> ruleIndexParser)
-        <|> ByLabel <$> ruleLabelParser
+        <|> ByName <$> ruleNameParser
        )
 
 ruleIndexParser :: Parser (Either AxiomIndex ClaimIndex)
@@ -219,8 +219,8 @@ axiomIndexParser = AxiomIndex <$$> Char.string "a" *> decimal
 claimIndexParser :: Parser ClaimIndex
 claimIndexParser = ClaimIndex <$$> Char.string "c" *> decimal
 
-ruleLabelParser :: Parser RuleLabel
-ruleLabelParser = RuleLabel <$$> quotedOrWordWithout ""
+ruleNameParser :: Parser RuleName
+ruleNameParser = RuleName <$$> quotedOrWordWithout ""
 
 clear :: Parser ReplCommand
 clear = do
