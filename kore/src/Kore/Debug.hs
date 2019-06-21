@@ -63,6 +63,7 @@ module Kore.Debug
     , traceExceptT
     , traceMaybe
     , traceMaybeT
+    , traceMaybeTS
     , traceNonErrorMonad
     , traceFunction
     , applyWhen

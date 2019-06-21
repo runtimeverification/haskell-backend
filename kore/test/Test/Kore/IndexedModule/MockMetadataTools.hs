@@ -42,7 +42,7 @@ makeMetadataTools
     -> [(SymbolOrAlias, ApplicationSorts)]
     -> SMT.AST.SmtDeclarations
     -> SmtMetadataTools StepperAttributes
-makeMetadataTools _attr sortTypes isSubsortOf sorts declarations =
+makeMetadataTools attr sortTypes isSubsortOf sorts declarations =
     MetadataTools
         { sortAttributes = caseBasedFunction sortTypes
         -- TODO(Vladimir): fix the inconsistency that both 'subsorts' and
@@ -52,6 +52,14 @@ makeMetadataTools _attr sortTypes isSubsortOf sorts declarations =
         , subsorts = \sort ->
             Set.fromList . fmap snd . filter ((==) sort . fst) $ isSubsortOf
         , applicationSorts = caseBasedFunction sorts
+        , symbolAttributes =
+            caseBasedFunction
+                (map
+                    (  \(SymbolOrAlias {symbolOrAliasConstructor}, a)
+                    -> (symbolOrAliasConstructor, a)
+                    )
+                    attr
+                )
         , smtData = declarations
         }
 

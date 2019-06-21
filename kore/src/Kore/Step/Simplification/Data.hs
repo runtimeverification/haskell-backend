@@ -156,7 +156,9 @@ class (WithLog LogMessage m, MonadSMT m) => MonadSimplify m where
     localSimplifierAxioms locally =
         Monad.Morph.hoist (localSimplifierAxioms locally)
 
-instance (WithLog LogMessage m, MonadSimplify m, Monoid w) => MonadSimplify (AccumT w m) where
+instance (WithLog LogMessage m, MonadSimplify m, Monoid w)
+    => MonadSimplify (AccumT w m)
+  where
     localSimplifierTermLike locally =
         mapAccumT (localSimplifierTermLike locally)
     {-# INLINE localSimplifierTermLike #-}
@@ -328,7 +330,9 @@ newtype SimplifierT m a = SimplifierT
 
 type Simplifier = SimplifierT (SmtT IO)
 
-instance (MonadUnliftIO m, WithLog LogMessage m) => WithLog LogMessage (SimplifierT m) where
+instance (MonadUnliftIO m, WithLog LogMessage m)
+    => WithLog LogMessage (SimplifierT m)
+  where
     askLogAction = SimplifierT (hoistLogAction SimplifierT <$> askLogAction)
     {-# INLINE askLogAction #-}
 
@@ -336,7 +340,9 @@ instance (MonadUnliftIO m, WithLog LogMessage m) => WithLog LogMessage (Simplifi
         SimplifierT . localLogAction mapping . runSimplifierT
     {-# INLINE localLogAction #-}
 
-instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m) => MonadSimplify (SimplifierT m) where
+instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m)
+    => MonadSimplify (SimplifierT m)
+  where
     askMetadataTools = asks metadataTools
     {-# INLINE askMetadataTools #-}
 

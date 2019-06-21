@@ -21,6 +21,10 @@ import           Control.Monad.Catch
                  ( MonadCatch, catch )
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
+import           Control.Monad.Reader
+                 ( ReaderT (..) )
+import           Control.Monad.RWS.Strict
+                 ( RWST, execRWST )
 import           Control.Monad.State.Strict
                  ( MonadState, StateT, evalStateT )
 import           Data.Coerce
@@ -31,7 +35,6 @@ import           Data.List
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import           Kore.Attribute.RuleIndex
-import           System.Exit
 import           System.IO
                  ( hFlush, stdout )
 import           Text.Megaparsec
@@ -81,39 +84,39 @@ runRepl
     -- ^ optional output file
     -> m ()
 runRepl axioms' claims' logger replScript replMode outputFile = do
-    mNewState <- evaluateScript replScript
+    (newState, _) <-
+            (\rwst -> execRWST rwst config state)
+            $ evaluateScript replScript
     case replMode of
         Interactive -> do
             replGreeting
-            evalStateT (forever repl0) (maybe state id mNewState)
-        RunScript ->
-            case mNewState of
-                Nothing -> liftIO exitFailure
-                Just newState -> do
-                    runReplCommand ProofStatus newState
-                    runReplCommand Exit newState
+            flip evalStateT newState
+                $ flip runReaderT config
+                $ forever repl0
+        RunScript -> do
+            runReplCommand ProofStatus newState
+            runReplCommand Exit newState
 
   where
 
-    runReplCommand :: ReplCommand -> ReplState claim m -> m ()
+    runReplCommand :: ReplCommand -> ReplState claim -> m ()
     runReplCommand cmd st =
-        void $ evalStateT (replInterpreter printIfNotEmpty cmd) st
+        void
+            $ flip evalStateT st
+            $ flip runReaderT config
+            $ replInterpreter printIfNotEmpty cmd
 
-    evaluateScript :: ReplScript -> m (Maybe (ReplState claim m))
-    evaluateScript rs =
-        maybe
-            (pure . pure $ state)
-            (parseEvalScript state)
-            (unReplScript rs)
+    evaluateScript :: ReplScript -> RWST (Config claim m) String (ReplState claim) m ()
+    evaluateScript = maybe (pure ()) parseEvalScript . unReplScript
 
-    repl0 :: StateT (ReplState claim m) m ()
+    repl0 :: ReaderT (Config claim m) (StateT (ReplState claim) m) ()
     repl0 = do
         str <- prompt
         let command = maybe ShowUsage id $ parseMaybe commandParser str
         when (shouldStore command) $ lensCommands Lens.%= (Seq.|> str)
         void $ replInterpreter printIfNotEmpty command
 
-    state :: ReplState claim m
+    state :: ReplState claim
     state =
         ReplState
             { axioms     = addIndexesToAxioms axioms'
@@ -125,14 +128,19 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
             , commands   = Seq.empty
             -- TODO(Vladimir): should initialize this to the value obtained from
             -- the frontend via '--omit-labels'.
-            , omit       = []
-            , stepper    = stepper0
-            , unifier    = unificationProcedure
+            , omit       = mempty
             , labels     = Map.empty
             , aliases    = Map.empty
             , logging    = (Logger.Debug, NoLogging)
+            }
+
+    config :: Config claim m
+    config =
+        Config
+            { stepper    = stepper0
+            , unifier    = unificationProcedure
             , logger
-            , outputFile = outputFile
+            , outputFile
             }
 
     firstClaimIndex :: ClaimIndex
@@ -212,7 +220,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         liftIO $
             putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
-    prompt :: MonadIO n => MonadState (ReplState claim m) n => n String
+    prompt :: MonadIO n => MonadState (ReplState claim) n => n String
     prompt = do
         node <- Lens.use lensNode
         liftIO $ do

@@ -94,7 +94,8 @@ transitionRule =
   where
     transitionSimplify config =
         do
-            configs <- Monad.Trans.lift $ Pattern.simplifyAndRemoveTopExists config
+            configs <- Monad.Trans.lift $
+                Pattern.simplifyAndRemoveTopExists config
             let
                 -- Filter out ⊥ patterns
                 nonEmptyConfigs = MultiOr.filterOr configs

@@ -768,7 +768,7 @@ lookupSymbolUnit tools builtinSort =
     Symbol
         { symbolConstructor
         , symbolParams
-        , symbolAttributes = Attribute.defaultSymbolAttributes
+        , symbolAttributes
         , symbolSorts
         }
   where
@@ -779,6 +779,7 @@ lookupSymbolUnit tools builtinSort =
     symbolConstructor = symbolOrAliasConstructor symbolOrAlias
     symbolParams = symbolOrAliasParams symbolOrAlias
     symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
+    symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
     missingUnitAttribute =
         verifierBug
         $ "missing 'unit' attribute of sort '"
@@ -802,7 +803,7 @@ lookupSymbolElement tools builtinSort =
     Symbol
         { symbolConstructor
         , symbolParams
-        , symbolAttributes = Attribute.defaultSymbolAttributes
+        , symbolAttributes
         , symbolSorts
         }
   where
@@ -813,6 +814,7 @@ lookupSymbolElement tools builtinSort =
     symbolConstructor = symbolOrAliasConstructor symbolOrAlias
     symbolParams = symbolOrAliasParams symbolOrAlias
     symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
+    symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
     missingElementAttribute =
         verifierBug
         $ "missing 'element' attribute of sort '"
@@ -836,7 +838,7 @@ lookupSymbolConcat tools builtinSort =
     Symbol
         { symbolConstructor
         , symbolParams
-        , symbolAttributes = Attribute.defaultSymbolAttributes
+        , symbolAttributes
         , symbolSorts
         }
   where
@@ -847,6 +849,7 @@ lookupSymbolConcat tools builtinSort =
     symbolConstructor = symbolOrAliasConstructor symbolOrAlias
     symbolParams = symbolOrAliasParams symbolOrAlias
     symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
+    symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
     missingConcatAttribute =
         verifierBug
         $ "missing 'concat' attribute of sort '"
