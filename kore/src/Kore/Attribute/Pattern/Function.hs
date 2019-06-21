@@ -23,6 +23,8 @@ import qualified Kore.Internal.Alias as Internal
 import qualified Kore.Internal.Symbol as Internal
 import           Kore.Syntax
 
+{- | A pattern is 'Function' if it matches zero or one elements.
+ -}
 newtype Function = Function { isFunction :: Bool }
     deriving (Eq, GHC.Generic, Show)
     deriving (Semigroup, Monoid) via All
@@ -43,10 +45,13 @@ instance Synthetic (And sort) Function where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
+-- | A 'Bottom' pattern is always 'Function'.
 instance Synthetic (Bottom sort) Function where
     synthetic = const (Function True)
     {-# INLINE synthetic #-}
 
+-- | An 'Application' pattern is 'Function' if its symbol is a function and its
+-- arguments are 'Function'.
 instance Synthetic (Application Internal.Symbol) Function where
     synthetic application =
         functionSymbol <> Foldable.fold children
@@ -63,6 +68,7 @@ instance Synthetic (Ceil sort) Function where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
+-- | A 'DomainValue' pattern is 'Function' if its argument is 'Function'.
 instance Synthetic (DomainValue sort) Function where
     synthetic = domainValueChild
     {-# INLINE synthetic #-}
@@ -118,6 +124,7 @@ instance Synthetic (Rewrites sort) Function where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
+-- | A 'Builtin' pattern is 'Function' if its subterms are 'Function'.
 instance Synthetic (Builtin key) Function where
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}
@@ -126,14 +133,17 @@ instance Synthetic (Top sort) Function where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
+-- | A 'StringLiteral' pattern is always 'Function'.
 instance Synthetic (Const StringLiteral) Function where
     synthetic = const (Function True)
     {-# INLINE synthetic #-}
 
+-- | A 'CharLiteral' pattern is always 'Function'.
 instance Synthetic (Const CharLiteral) Function where
     synthetic = const (Function True)
     {-# INLINE synthetic #-}
 
+-- | A 'Variable' pattern is always 'Function'.
 instance Synthetic (Const Variable) Function where
     synthetic = const (Function True)
     {-# INLINE synthetic #-}
