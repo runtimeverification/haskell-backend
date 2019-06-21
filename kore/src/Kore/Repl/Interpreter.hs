@@ -62,6 +62,9 @@ import           Data.Maybe
                  ( listToMaybe )
 import           Data.Sequence
                  ( Seq )
+import           Data.Set
+                 ( Set )
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as Text.Lazy
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -406,18 +409,18 @@ omitCell =
   where
     showCells :: ReplM claim m ()
     showCells = do
-        omitList <- Lens.use lensOmit
-        case omitList of
-            [] -> putStrLn' "Omit list is currently empty."
-            _  -> Foldable.traverse_ putStrLn' omitList
+        omit <- Lens.use lensOmit
+        if Set.null omit
+            then putStrLn' "Omit list is currently empty."
+            else Foldable.traverse_ putStrLn' omit
 
     addOrRemove :: String -> ReplM claim m ()
     addOrRemove str = lensOmit %= toggle str
 
-    toggle :: String -> [String] -> [String]
+    toggle :: String -> Set String -> Set String
     toggle x xs
-      | x `elem` xs = filter (/= x) xs
-      | otherwise   = x : xs
+      | x `Set.member` xs = x `Set.delete` xs
+      | otherwise         = x `Set.insert` xs
 
 -- | Shows all leaf nodes identifiers which are either stuck or can be
 -- evaluated further.
@@ -963,7 +966,7 @@ showRewriteRule rule =
 
 -- | Unparses a strategy node, using an omit list to hide specified children.
 unparseStrategy
-    :: [String]
+    :: Set String
     -- ^ omit list
     -> CommonStrategyPattern
     -- ^ pattern

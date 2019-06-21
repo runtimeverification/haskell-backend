@@ -128,7 +128,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
             , commands   = Seq.empty
             -- TODO(Vladimir): should initialize this to the value obtained from
             -- the frontend via '--omit-labels'.
-            , omit       = []
+            , omit       = mempty
             , labels     = Map.empty
             , aliases    = Map.empty
             , logging    = (Logger.Debug, NoLogging)
