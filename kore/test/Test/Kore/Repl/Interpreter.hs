@@ -633,7 +633,7 @@ hasLogging st expectedLogging =
     in
         actualLogging `equals` expectedLogging
 
-hasCurrentClaimIndex :: ReplState Claim Simplifier -> ClaimIndex -> IO ()
+hasCurrentClaimIndex :: ReplState Claim -> ClaimIndex -> IO ()
 hasCurrentClaimIndex st expectedClaimIndex =
     let
         actualClaimIndex = claimIndex st

@@ -202,6 +202,8 @@ tryTests =
     , "try c5"            `parsesTo_` tryClaimIndex 5
     , "try lbl"           `parsesTo_` tryRuleLabel "lbl"
     , "try \"my lbl\" "   `parsesTo_` tryRuleLabel "my lbl"
+    , "try albl"          `parsesTo_` tryRuleLabel "albl"
+    , "try clbl"          `parsesTo_` tryRuleLabel "clbl"
     , "try"               `fails`     ()
     ]
 
@@ -211,6 +213,8 @@ tryFTests =
     , "tryf c5"            `parsesTo_` tryFClaimIndex 5
     , "tryf lbl"           `parsesTo_` tryFRuleLabel "lbl"
     , "tryf \"my lbl\" "   `parsesTo_` tryFRuleLabel "my lbl"
+    , "tryf albl"          `parsesTo_` tryFRuleLabel "albl"
+    , "tryf clbl"          `parsesTo_` tryFRuleLabel "clbl"
     , "tryf"               `fails`     ()
     ]
 

@@ -197,7 +197,7 @@ tryAxiomClaim :: Parser ReplCommand
 tryAxiomClaim =
     Try
     <$$> literal "try"
-    *> ( ByIndex <$> ruleIndexParser
+    *> ( try (ByIndex <$> ruleIndexParser)
         <|> ByLabel <$> ruleLabelParser
        )
 
@@ -205,7 +205,7 @@ tryForceAxiomClaim :: Parser ReplCommand
 tryForceAxiomClaim =
     TryF
     <$$> literal "tryf"
-    *> ( ByIndex <$> ruleIndexParser
+    *> ( try (ByIndex <$> ruleIndexParser)
         <|> ByLabel <$> ruleLabelParser
        )
 
