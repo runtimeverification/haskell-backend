@@ -278,9 +278,9 @@ helpText =
     \label <+l> [n]                        add a new label for a node\
                                            \ (defaults to current node)\n\
     \label <-l>                            remove a label\n\
-    \try <a|c><num>|<name>                 attempts <a>xiom or <c>laim at\
+    \try (<a|c><num>)|<name>               attempts <a>xiom or <c>laim at\
                                            \ index <num> or rule with <name>\n\
-    \tryf <a|c><num>|<name>                attempts <a>xiom or <c>laim at\
+    \tryf (<a|c><num>)|<name>              attempts <a>xiom or <c>laim at\
                                            \ index <num> or rule with <name>,\
                                            \ and if successful, it will apply it.\n\
     \clear [n]                             removes all node children from the\
@@ -319,7 +319,9 @@ helpText =
     \Rule names can be added in two ways:\n\
     \    a) rule <k> ... </k> [label(myName)]\n\
     \    b) rule [myName] : <k> ... </k>\n\
-    \Names added via a) can be used as-is.\n\
+    \Names added via a) can be used as-is. Note that names which match the\n\
+    \ indexing syntax for the try and tryf commands shouldn't be added\
+    \ (e.g. a5 as a rule name).\
     \Namess added via b) need to be prefixed with the module name followed by dot,\
     \ e.g. IMP.myName"
 
