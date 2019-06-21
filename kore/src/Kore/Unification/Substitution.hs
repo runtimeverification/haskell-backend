@@ -13,6 +13,7 @@ module Kore.Unification.Substitution
     , unwrap
     , toMap
     , fromMap
+    , singleton
     , wrap
     , modify
     , Kore.Unification.Substitution.mapVariables
@@ -141,6 +142,21 @@ fromMap
     => Map variable (TermLike variable)
     -> Substitution variable
 fromMap = wrap . Map.toList
+
+{- | Construct substitution for a single variable.
+
+The substitution is normalized if the variable does not occur free in the term.
+
+ -}
+singleton
+    :: Ord variable
+    => variable
+    -> TermLike variable
+    -> Substitution variable
+singleton var termLike
+  | TermLike.hasFreeVariable var termLike = Substitution [(var, termLike)]
+  | otherwise =
+    NormalizedSubstitution (Map.singleton var termLike)
 
 -- | Wrap the list of substitutions to an un-normalized substitution. Note that
 -- @wrap . unwrap@ is not @id@ because the normalization state is lost.
