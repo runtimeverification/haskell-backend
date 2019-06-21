@@ -46,7 +46,8 @@ import           Kore.Syntax.Variable
 import qualified Kore.Syntax.Variable as DoNotUse
                  ( Variable (..) )
 import qualified Kore.Unification.Substitution as Substitution
-import qualified SMT
+import           SMT
+                 ( SMT )
 
 
 import           Test.Kore
@@ -619,7 +620,7 @@ unifiesWith
     => TermLike Variable
     -> TermLike Variable
     -> Pattern Variable
-    -> PropertyT (SMT.SmtT IO) ()
+    -> PropertyT SMT ()
 unifiesWith pat1 pat2 expected =
     unifiesWithMulti pat1 pat2 [expected]
 
@@ -629,7 +630,7 @@ unifiesWithMulti
     => TermLike Variable
     -> TermLike Variable
     -> [Pattern Variable]
-    -> PropertyT (SMT.SmtT IO) ()
+    -> PropertyT SMT ()
 unifiesWithMulti pat1 pat2 expectedResults = do
     actualResults <- Trans.lift $ evaluateToList (mkAnd pat1 pat2)
     compareElements (List.sort expectedResults) actualResults
