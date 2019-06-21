@@ -143,7 +143,6 @@ import           Control.Comonad.Trans.Cofree
 import qualified Control.Comonad.Trans.Env as Env
 import           Control.DeepSeq
                  ( NFData (..) )
-import qualified Control.Lens as Lens
 import           Control.Monad.Reader
                  ( Reader )
 import qualified Control.Monad.Reader as Reader
@@ -886,13 +885,7 @@ substitute
     =>  Map variable (TermLike variable)
     ->  TermLike variable
     ->  TermLike variable
-substitute = Substitute.substitute lensFreeVariables
-
-lensFreeVariables :: Lens.Lens' (TermLike variable) (FreeVariables variable)
-lensFreeVariables mapping (Recursive.project -> attrs :< termLikeHead) =
-    embed <$> Attribute.lensFreeVariables mapping attrs
-  where
-    embed = Recursive.embed . (:< termLikeHead)
+substitute = Substitute.substitute freeVariables
 
 {- | Reset the 'variableCounter' of all 'Variables'.
 

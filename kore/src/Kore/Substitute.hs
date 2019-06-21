@@ -9,7 +9,6 @@ module Kore.Substitute
     ) where
 
 import           Control.Applicative
-import qualified Control.Lens as Lens
 import qualified Data.Foldable as Foldable
 import           Data.Function
                  ( (&) )
@@ -54,19 +53,19 @@ substitute
         , VariableType patternType ~ variable
         , Synthetic patternBase attribute
         )
-    => Lens.Lens' patternType (FreeVariables variable)
-    -- ^ Lens into free variables of the pattern
+    => (patternType -> FreeVariables variable)
+    -- ^ View into free variables of the pattern
     -> Map variable patternType
     -- ^ Substitution
     -> patternType
     -- ^ Original pattern
     -> patternType
-substitute lensFreeVariables =
+substitute viewFreeVariables =
     \subst -> substituteWorker (Map.map Left subst)
   where
     extractFreeVariables :: patternType -> Set variable
     extractFreeVariables =
-        FreeVariables.getFreeVariables . Lens.view lensFreeVariables
+        FreeVariables.getFreeVariables . viewFreeVariables
 
     -- | Insert an optional variable renaming into the substitution.
     renaming
