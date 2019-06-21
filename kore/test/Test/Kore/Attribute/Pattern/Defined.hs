@@ -27,7 +27,6 @@ test_instance_Synthetic =
         map (isn't . ImpliesF) (Implies sort <$> range <*> range)
     , testGroup "InF" $ map (isn't . InF) (In sort sort <$> range <*> range)
     , testGroup "NotF" $ map (isn't . NotF) (Not sort <$> range)
-    , testGroup "OrF" $ map (isn't . OrF) (Or sort <$> range <*> range)
     , testGroup "RewritesF" $
         map (isn't . RewritesF) (Rewrites sort <$> range <*> range)
     , testGroup "TopF" [ is $ TopF (Top sort) ]
@@ -48,6 +47,10 @@ test_instance_Synthetic =
     , testGroup "NextF" $ do
         x <- range
         [ expect x $ NextF (Next sort x) ]
+    , testGroup "OrF" $ do
+        x <- range
+        y <- range
+        [ expect (Defined $ isDefined x || isDefined y) $ OrF $ Or sort x y ]
     ]
   where
     sort = Mock.testSort

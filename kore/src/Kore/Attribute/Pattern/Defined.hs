@@ -114,10 +114,9 @@ instance Synthetic (Nu sort) Defined where
     synthetic = const (Defined False)
     {-# INLINE synthetic #-}
 
+-- | An 'Or' pattern is 'Defined' if any of its subterms is 'Defined'.
 instance Synthetic (Or sort) Defined where
-    -- TODO (thomas.tuegel):
-    -- synthetic = Defined . getAny . Foldable.foldMap (Any . isDefined)
-    synthetic = const (Defined False)
+    synthetic = Defined . getAny . Foldable.foldMap (Any . isDefined)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Rewrites sort) Defined where
