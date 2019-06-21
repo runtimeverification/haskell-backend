@@ -5,6 +5,8 @@ License     : NCSA
 
 -}
 
+{-# LANGUAGE TemplateHaskell #-}
+
 module Kore.Step.Rule
     ( EqualityRule (..)
     , RewriteRule (..)
@@ -12,6 +14,9 @@ module Kore.Step.Rule
     , AllPathRule (..)
     , ImplicationRule (..)
     , RulePattern (..)
+    , lensLeft, lensRight
+    , lensRequires, lensEnsures
+    , lensAttributes
     , allPathGlobally
     , rulePattern
     , isHeatingRule
@@ -45,6 +50,8 @@ import           Data.Text.Prettyprint.Doc
                  ( Pretty )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import           Control.Lens.TH.Rules
+                 ( makeLenses )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import           Kore.Attribute.Pattern.FreeVariables
@@ -74,6 +81,8 @@ data RulePattern variable = RulePattern
     , ensures :: !(Predicate variable)
     , attributes :: !Attribute.Axiom
     }
+
+makeLenses ''RulePattern
 
 deriving instance Eq variable => Eq (RulePattern variable)
 deriving instance Ord variable => Ord (RulePattern variable)
