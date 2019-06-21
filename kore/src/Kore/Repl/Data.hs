@@ -244,13 +244,13 @@ helpText :: String
 helpText =
     "Available commands in the Kore REPL: \n\
     \help                                  shows this help message\n\
-    \claim [n|<label>]                     shows the nth claim, the claim with\
-                                           \ <label> or if used without args\
+    \claim [n|<name>]                      shows the nth claim, the claim with\
+                                           \ <name> or if used without args\
                                            \ shows the currently focused claim\n\
-    \axiom <n|label>                       shows the nth axiom or the axiom\
-                                           \ with <label>\n\
-    \prove <n|label>                       initializes proof mode for the nth\
-                                           \ claim or for the claim with <label>\n\
+    \axiom <n|name>                        shows the nth axiom or the axiom\
+                                           \ with <name>\n\
+    \prove <n|name>                        initializes proof mode for the nth\
+                                           \ claim or for the claim with <name>\n\
     \graph [file]                          shows the current proof graph (*)\n\
     \                                      (saves image in .jpeg format if file\
                                            \ argument is given; file extension\
@@ -278,10 +278,10 @@ helpText =
     \label <+l> [n]                        add a new label for a node\
                                            \ (defaults to current node)\n\
     \label <-l>                            remove a label\n\
-    \try <a|c><num>|<label>                attempts <a>xiom or <c>laim at\
-                                           \ index <num> or rule with <label>\n\
-    \tryf <a|c><num>|<label>               attempts <a>xiom or <c>laim at\
-                                           \ index <num> or rule with <label>,\
+    \try <a|c><num>|<name>                 attempts <a>xiom or <c>laim at\
+                                           \ index <num> or rule with <name>\n\
+    \tryf <a|c><num>|<name>                attempts <a>xiom or <c>laim at\
+                                           \ index <num> or rule with <name>,\
                                            \ and if successful, it will apply it.\n\
     \clear [n]                             removes all node children from the\
                                            \ proof graph\n\
@@ -314,7 +314,14 @@ helpText =
     \\n\
     \(*) If an edge is labeled as Simpl/RD it means that\
     \ either the target node was reached using the SMT solver\
-    \ or it was reached through the Remove Destination step."
+    \ or it was reached through the Remove Destination step.\n\
+    \\n\
+    \Rule names can be added in two ways:\n\
+    \    a) rule <k> ... </k> [label(myName)]\n\
+    \    b) rule [myName] : <k> ... </k>\n\
+    \Names added via a) can be used as-is.\n\
+    \Namess added via b) need to be prefixed with the module name followed by dot,\
+    \ e.g. IMP.myName"
 
 -- | Determines whether the command needs to be stored or not. Commands that
 -- affect the outcome of the proof are stored.
