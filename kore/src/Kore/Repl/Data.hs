@@ -243,12 +243,13 @@ helpText :: String
 helpText =
     "Available commands in the Kore REPL: \n\
     \help                                  shows this help message\n\
-    \claim [n]                             shows the nth claim or if\
-                                           \ used without args shows the\
-                                           \ currently focused claim\n\
-    \axiom <n>                             shows the nth axiom\n\
-    \prove <n>                             initializes proof mode for the nth\
-                                           \ claim\n\
+    \claim [n|<label>]                     shows the nth claim, the claim with\
+                                           \ <label> or if used without args\
+                                           \ shows the currently focused claim\n\
+    \axiom <n|label>                       shows the nth axiom or the axiom\
+                                           \ with <label>\n\
+    \prove <n|label>                       initializes proof mode for the nth\
+                                           \ claim or for the claim with <label>\n\
     \graph [file]                          shows the current proof graph (*)\n\
     \                                      (saves image in .jpeg format if file\
                                            \ argument is given; file extension is\
@@ -276,11 +277,11 @@ helpText =
     \label <+l> [n]                        add a new label for a node\
                                            \ (defaults to current node)\n\
     \label <-l>                            remove a label\n\
-    \try <a|c><num>                        attempts <a>xiom or <c>laim at\
-                                           \ index <num>\n\
-    \tryf <a|c><num>                       attempts <a>xiom or <c>laim at\
-                                           \ index <num> and if successful, it\
-                                           \ will apply it.\n\
+    \try <a|c><num>|<label>                attempts <a>xiom or <c>laim at\
+                                           \ index <num> or rule with <label>\n\
+    \tryf <a|c><num>|<label>               attempts <a>xiom or <c>laim at\
+                                           \ index <num> or rule with <label>,\
+                                           \ and if successful, it will apply it.\n\
     \clear [n]                             removes all node children from the\
                                            \ proof graph\n\
     \                                      (defaults to current node)\n\

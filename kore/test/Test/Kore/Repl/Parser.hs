@@ -198,20 +198,20 @@ labelTests =
 
 tryTests :: [ParserTest ReplCommand]
 tryTests =
-    [ "try a5"          `parsesTo_` tryAxiomIndex 5
-    , "try c5"          `parsesTo_` tryClaimIndex 5
-    , "try lbl"         `parsesTo_` tryRuleLabel "lbl"
-    , "try \"my lbl\" " `parsesTo_` tryRuleLabel "my lbl"
-    , "try"             `fails`     ()
+    [ "try a5"            `parsesTo_` tryAxiomIndex 5
+    , "try c5"            `parsesTo_` tryClaimIndex 5
+    , "try lbl"           `parsesTo_` tryRuleLabel "lbl"
+    , "try \"my lbl\" "   `parsesTo_` tryRuleLabel "my lbl"
+    , "try"               `fails`     ()
     ]
 
 tryFTests :: [ParserTest ReplCommand]
 tryFTests =
-    [ "tryf a5"          `parsesTo_` tryFAxiomIndex 5
-    , "tryf c5"          `parsesTo_` tryFClaimIndex 5
-    , "tryf lbl"         `parsesTo_` tryFRuleLabel "lbl"
-    , "tryf \"my lbl\" " `parsesTo_` tryFRuleLabel "my lbl"
-    , "tryf"             `fails`     ()
+    [ "tryf a5"            `parsesTo_` tryFAxiomIndex 5
+    , "tryf c5"            `parsesTo_` tryFClaimIndex 5
+    , "tryf lbl"           `parsesTo_` tryFRuleLabel "lbl"
+    , "tryf \"my lbl\" "   `parsesTo_` tryFRuleLabel "my lbl"
+    , "tryf"               `fails`     ()
     ]
 
 tryAxiomIndex :: Int -> ReplCommand
