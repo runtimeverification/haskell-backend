@@ -30,8 +30,6 @@ import           Kore.Internal.MultiOr
                  ( MultiOr (..) )
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-                 ( TermLike, fromConcrete, mkAnd, mkApplySymbol, mkEquals_,
-                 mkVar )
 import           Kore.Predicate.Predicate as Predicate
 import           Kore.Sort
                  ( Sort )
@@ -60,7 +58,8 @@ import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.SMT
+import           Test.SMT hiding
+                 ( runSMT )
 import           Test.Tasty.HUnit.Extensions
 
 genSetInteger :: Gen (Set Integer)
@@ -79,6 +78,21 @@ genSetPattern = asTermLike <$> genSetConcreteIntegerPattern
 intSetToSetPattern :: Set Integer -> TermLike Variable
 intSetToSetPattern intSet =
     asTermLike (Set.map Test.Int.asInternal intSet)
+
+test_unit :: [TestTree]
+test_unit =
+    [ testCase "unit() === /* builtin */ unit()" $ do
+        let expect = asPattern Set.empty
+            original = unitSet
+        actual <- runSMT $ evaluate original
+        assertEqual "" expect actual
+    , testCase "concat(x:Set, unit()) === x:Set" $ do
+        let x = varS "x" setSort
+            expect = Pattern.fromTermLike (mkVar x)
+            original = concatSet (mkVar x) unitSet
+        actual <- runSMT $ evaluate original
+        assertEqual "" expect actual
+    ]
 
 test_getUnit :: TestTree
 test_getUnit =
