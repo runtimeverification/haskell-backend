@@ -80,9 +80,9 @@ unificationProcedure  p1 p2
             orCeil <- Ceil.makeEvaluateTerm term
             orResult <-
                 BranchT.alternate $ OrPattern.mergeWithPredicateAssumesEvaluated
-                createPredicatesAndSubstitutionsMerger
-                (Conditional.withoutTerm pat)
-                orCeil
+                    createPredicatesAndSubstitutionsMerger
+                    (Conditional.withoutTerm pat)
+                    orCeil
             Monad.Unify.scatter orResult
   where
       p1Sort = termLikeSort p1
