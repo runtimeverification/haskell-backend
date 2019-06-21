@@ -11,6 +11,7 @@ module Kore.Repl.Interpreter
     , showUsageMessage
     , showStepStoppedMessage
     , showProofStatus
+    , showClaimSwitch
     , printIfNotEmpty
     , showRewriteRule
     , parseEvalScript
@@ -59,7 +60,7 @@ import           Data.List.NonEmpty
                  ( NonEmpty )
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
-                 ( listToMaybe )
+                 ( fromJust, listToMaybe )
 import           Data.Sequence
                  ( Seq )
 import           Data.Set
@@ -78,6 +79,7 @@ import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom (..), RuleIndex (..), sourceLocation )
+import qualified Kore.Attribute.Label as AttrLabel
 import           Kore.Attribute.RuleIndex
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
@@ -148,7 +150,7 @@ replInterpreter printFn replCmd = do
                 ShowUsage          -> showUsage          $> Continue
                 Help               -> help               $> Continue
                 ShowClaim mc       -> showClaim mc       $> Continue
-                ShowAxiom a        -> showAxiom a        $> Continue
+                ShowAxiom ea       -> showAxiom ea       $> Continue
                 Prove i            -> prove i            $> Continue
                 ShowGraph mfile    -> showGraph mfile    $> Continue
                 ProveSteps n       -> proveSteps n       $> Continue
@@ -164,7 +166,7 @@ replInterpreter printFn replCmd = do
                 LabelAdd l mn      -> labelAdd l mn      $> Continue
                 LabelDel l         -> labelDel l         $> Continue
                 Redirect inn file  -> redirect inn file  $> Continue
-                Try ac             -> tryAxiomClaim ac   $> Continue
+                Try ref            -> tryAxiomClaim ref  $> Continue
                 TryF ac            -> tryFAxiomClaim ac  $> Continue
                 Clear n            -> clear n            $> Continue
                 SaveSession file   -> saveSession file   $> Continue
@@ -250,27 +252,33 @@ showClaim
     :: Claim claim
     => MonadState (ReplState claim) m
     => MonadWriter String m
-    => Maybe ClaimIndex
+    => Maybe (Either ClaimIndex RuleName)
     -> m ()
 showClaim =
     \case
         Nothing -> do
             currentCindex <- Lens.use lensClaimIndex
             putStrLn' . showCurrentClaimIndex $ currentCindex
-        Just cindex -> do
-            claim <- getClaimByIndex . unClaimIndex $ cindex
+        Just indexOrName -> do
+            claim <- either
+                        (getClaimByIndex . unClaimIndex)
+                        (getClaimByName . unRuleName)
+                        indexOrName
             maybe printNotFound (putStrLn' . showRewriteRule) $ claim
 
 -- | Prints an axiom using an index in the axioms list.
 showAxiom
     :: MonadState (ReplState claim) m
     => MonadWriter String m
-    => AxiomIndex
+    => Either AxiomIndex RuleName
     -- ^ index in the axioms list
     -> m ()
-showAxiom aindex = do
-    axiom <- getAxiomByIndex . unAxiomIndex $ aindex
-    maybe printNotFound (putStrLn' . showRewriteRule)  $ axiom
+showAxiom indexOrName = do
+    axiom <- either
+                (getAxiomByIndex . unAxiomIndex)
+                (getAxiomByName . unRuleName)
+                indexOrName
+    maybe printNotFound (putStrLn' . showRewriteRule) $ axiom
 
 -- | Changes the currently focused proof, using an index in the claims list.
 prove
@@ -278,25 +286,49 @@ prove
     .  Claim claim
     => MonadState (ReplState claim) m
     => MonadWriter String m
-    => ClaimIndex
+    => Either ClaimIndex RuleName
     -- ^ index in the claims list
     -> m ()
-prove cindex = do
-    claim' <- getClaimByIndex . unClaimIndex $ cindex
-    maybe printNotFound (startProving cindex) claim'
+prove indexOrName = do
+    claim' <- either
+                (getClaimByIndex . unClaimIndex)
+                (getClaimByName . unRuleName)
+                indexOrName
+    maybe
+        printNotFound
+        startProving
+        claim'
   where
-    startProving :: ClaimIndex -> claim -> m ()
-    startProving ci claim = do
+    startProving
+        :: claim
+        -> m ()
+    startProving claim = do
         if isTrusted claim
             then putStrLn'
                     $ "Cannot switch to proving claim "
-                    <> show (unClaimIndex ci)
+                    <> showIndexOrName indexOrName
                     <> ". Claim is trusted."
             else do
-                switchToProof claim ci
+                claimIndex <-
+                    either
+                        (return . return)
+                        (getClaimIndexByName . unRuleName)
+                        indexOrName
+                switchToProof claim $ fromJust claimIndex
                 putStrLn'
                     $ "Switched to proving claim "
-                    <> show (unClaimIndex ci)
+                    <> showIndexOrName indexOrName
+
+showClaimSwitch :: Either ClaimIndex RuleName -> String
+showClaimSwitch indexOrName =
+    "Switched to proving claim "
+    <> showIndexOrName indexOrName
+
+showIndexOrName
+    :: Either ClaimIndex RuleName
+    -> String
+showIndexOrName =
+        either (show . unClaimIndex) (show . unRuleName)
 
 showGraph
     :: MonadIO m
@@ -654,7 +686,7 @@ tryAxiomClaim
     .  Claim claim
     => MonadSimplify m
     => MonadIO m
-    => Either AxiomIndex ClaimIndex
+    => RuleReference
     -- ^ tagged index in the axioms or claims list
     -> ReplM claim m ()
 tryAxiomClaim = tryAxiomClaimWorker Never
@@ -665,7 +697,7 @@ tryFAxiomClaim
     .  Claim claim
     => MonadSimplify m
     => MonadIO m
-    => Either AxiomIndex ClaimIndex
+    => RuleReference
     -- ^ tagged index in the axioms or claims list
     -> ReplM claim m ()
 tryFAxiomClaim = tryAxiomClaimWorker IfPossible
@@ -676,19 +708,25 @@ tryAxiomClaimWorker
     => MonadSimplify m
     => MonadIO m
     => AlsoApplyRule
-    -> Either AxiomIndex ClaimIndex
+    -> RuleReference
     -- ^ tagged index in the axioms or claims list
     -> ReplM claim m ()
-tryAxiomClaimWorker mode eac = do
-    maybeAxiomOrClaim <- getAxiomOrClaimByIndex eac
+tryAxiomClaimWorker mode ref = do
+    maybeAxiomOrClaim <-
+        ruleReference
+            getAxiomOrClaimByIndex
+            getAxiomOrClaimByName
+            ref
     case maybeAxiomOrClaim of
-        Nothing ->
-            putStrLn' "Could not find axiom or claim."
-        Just axiomOrClaim -> do
-            node <- Lens.use lensNode
-            case mode of
-                Never      -> showUnificationFailure axiomOrClaim node
-                IfPossible -> tryForceAxiomOrClaim axiomOrClaim node
+       Nothing ->
+           putStrLn' "Could not find axiom or claim."
+       Just axiomOrClaim -> do
+           node <- Lens.use lensNode
+           case mode of
+               Never ->
+                   showUnificationFailure axiomOrClaim node
+               IfPossible ->
+                   tryForceAxiomOrClaim axiomOrClaim node
   where
     showUnificationFailure
         :: Either Axiom claim
@@ -1041,12 +1079,19 @@ graphParams len = Graph.nonClusteredParams
         case listToMaybe . toList $ lbl of
             Nothing -> "Simpl/RD"
             Just rule ->
-                maybe "Unknown" Text.Lazy.pack
-                    . showAxiomOrClaim ln
-                    . Attribute.identifier
-                    . Rule.attributes
-                    . Rule.getRewriteRule
+                maybe
+                    ( maybe "Unknown"
+                        Text.Lazy.pack
+                        ( showAxiomOrClaim ln
+                        . getInternalIdentifier
+                        $ rule
+                        )
+                    )
+                    Text.Lazy.fromStrict
+                    ( showAxiomOrClaimName ln (getInternalIdentifier rule)
+                    . getNameText
                     $ rule
+                    )
 
 showAliasError :: AliasError -> String
 showAliasError =
@@ -1059,6 +1104,20 @@ showAxiomOrClaim _   (RuleIndex Nothing) = Nothing
 showAxiomOrClaim len (RuleIndex (Just rid))
   | rid < len = Just $ "Axiom " <> show rid
   | otherwise = Just $ "Claim " <> show (rid - len)
+
+showAxiomOrClaimName
+    :: Int
+    -> Attribute.RuleIndex
+    -> AttrLabel.Label
+    -> Maybe Text.Text
+showAxiomOrClaimName _ _ (AttrLabel.Label Nothing) = Nothing
+showAxiomOrClaimName _ (RuleIndex Nothing) _ = Nothing
+showAxiomOrClaimName
+    len
+    (RuleIndex (Just rid))
+    (AttrLabel.Label (Just ruleName))
+  | rid < len = Just $ "Axiom " <> ruleName
+  | otherwise = Just $ "Claim " <> ruleName
 
 parseEvalScript
     :: forall claim t m

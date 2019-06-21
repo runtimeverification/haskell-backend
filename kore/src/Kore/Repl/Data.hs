@@ -13,6 +13,7 @@ module Kore.Repl.Data
     , helpText
     , ExecutionGraph
     , AxiomIndex (..), ClaimIndex (..)
+    , RuleName (..), RuleReference(..)
     , ReplNode (..)
     , ReplState (..)
     , Config (..)
@@ -114,6 +115,10 @@ newtype ReplNode = ReplNode
     { unReplNode :: Graph.Node
     } deriving (Eq, Show)
 
+newtype RuleName = RuleName
+    { unRuleName :: String
+    } deriving (Eq, Show)
+
 data AliasDefinition = AliasDefinition
     { name      :: String
     , arguments :: [String]
@@ -136,6 +141,11 @@ data LogType
     | LogToFile !FilePath
     deriving (Eq, Show)
 
+data RuleReference
+    = ByIndex (Either AxiomIndex ClaimIndex)
+    | ByName RuleName
+    deriving (Eq, Show)
+
 -- | List of available commands for the Repl. Note that we are always in a proof
 -- state. We pick the first available Claim when we initialize the state.
 data ReplCommand
@@ -143,11 +153,11 @@ data ReplCommand
     -- ^ This is the default action in case parsing all others fail.
     | Help
     -- ^ Shows the help message.
-    | ShowClaim !(Maybe ClaimIndex)
+    | ShowClaim !(Maybe (Either ClaimIndex RuleName))
     -- ^ Show the nth claim or the current claim.
-    | ShowAxiom !AxiomIndex
+    | ShowAxiom !(Either AxiomIndex RuleName)
     -- ^ Show the nth axiom.
-    | Prove !ClaimIndex
+    | Prove !(Either ClaimIndex RuleName)
     -- ^ Drop the current proof state and re-initialize for the nth claim.
     | ShowGraph !(Maybe FilePath)
     -- ^ Show the current execution graph.
@@ -177,9 +187,9 @@ data ReplCommand
     -- ^ Remove a label.
     | Redirect ReplCommand FilePath
     -- ^ Prints the output of the inner command to the file.
-    | Try !(Either AxiomIndex ClaimIndex)
+    | Try !RuleReference
     -- ^ Attempt to apply axiom or claim to current node.
-    | TryF !(Either AxiomIndex ClaimIndex)
+    | TryF !RuleReference
     -- ^ Force application of an axiom or claim to current node.
     | Clear !(Maybe ReplNode)
     -- ^ Remove child nodes from graph.
@@ -234,12 +244,13 @@ helpText :: String
 helpText =
     "Available commands in the Kore REPL: \n\
     \help                                  shows this help message\n\
-    \claim [n]                             shows the nth claim or if\
-                                           \ used without args shows the\
-                                           \ currently focused claim\n\
-    \axiom <n>                             shows the nth axiom\n\
-    \prove <n>                             initializes proof mode for the nth\
-                                           \ claim\n\
+    \claim [n|<name>]                      shows the nth claim, the claim with\
+                                           \ <name> or if used without args\
+                                           \ shows the currently focused claim\n\
+    \axiom <n|name>                        shows the nth axiom or the axiom\
+                                           \ with <name>\n\
+    \prove <n|name>                        initializes proof mode for the nth\
+                                           \ claim or for the claim with <name>\n\
     \graph [file]                          shows the current proof graph (*)\n\
     \                                      (saves image in .jpeg format if file\
                                            \ argument is given; file extension\
@@ -267,11 +278,11 @@ helpText =
     \label <+l> [n]                        add a new label for a node\
                                            \ (defaults to current node)\n\
     \label <-l>                            remove a label\n\
-    \try <a|c><num>                        attempts <a>xiom or <c>laim at\
-                                           \ index <num>\n\
-    \tryf <a|c><num>                       attempts <a>xiom or <c>laim at\
-                                           \ index <num> and if successful, it\
-                                           \ will apply it.\n\
+    \try (<a|c><num>)|<name>               attempts <a>xiom or <c>laim at\
+                                           \ index <num> or rule with <name>\n\
+    \tryf (<a|c><num>)|<name>              attempts <a>xiom or <c>laim at\
+                                           \ index <num> or rule with <name>,\
+                                           \ and if successful, it will apply it.\n\
     \clear [n]                             removes all node children from the\
                                            \ proof graph\n\
     \                                      (defaults to current node)\n\
@@ -303,7 +314,16 @@ helpText =
     \\n\
     \(*) If an edge is labeled as Simpl/RD it means that\
     \ either the target node was reached using the SMT solver\
-    \ or it was reached through the Remove Destination step."
+    \ or it was reached through the Remove Destination step.\n\
+    \\n\
+    \Rule names can be added in two ways:\n\
+    \    a) rule <k> ... </k> [label(myName)]\n\
+    \    b) rule [myName] : <k> ... </k>\n\
+    \Names added via a) can be used as-is. Note that names which match the\n\
+    \ indexing syntax for the try and tryf commands shouldn't be added\
+    \ (e.g. a5 as a rule name).\
+    \Namess added via b) need to be prefixed with the module name followed by dot,\
+    \ e.g. IMP.myName"
 
 -- | Determines whether the command needs to be stored or not. Commands that
 -- affect the outcome of the proof are stored.

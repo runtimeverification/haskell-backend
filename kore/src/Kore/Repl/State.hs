@@ -9,6 +9,10 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 module Kore.Repl.State
     ( emptyExecutionGraph
     , getClaimByIndex, getAxiomByIndex, getAxiomOrClaimByIndex
+    , getInternalIdentifier
+    , getAxiomByName, getClaimByName, getAxiomOrClaimByName
+    , getClaimIndexByName, getNameText
+    , ruleReference
     , switchToProof
     , getTargetNode, getInnerGraph, getExecutionGraph
     , getConfigAt, getRuleFor, getLabels, setLabels
@@ -42,9 +46,11 @@ import           Data.Bitraversable
 import           Data.Coerce
                  ( coerce )
 import qualified Data.Default as Default
+import           Data.Foldable
+                 ( find )
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.List.Extra
-                 ( groupSort )
+                 ( findIndex, groupSort )
 import           Data.List.NonEmpty
                  ( NonEmpty (..) )
 import qualified Data.Map as Map
@@ -58,7 +64,7 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 import           Data.Text
-                 ( Text )
+                 ( Text, unpack )
 import           Data.Text.Prettyprint.Doc
                  ( Doc )
 import           GHC.Exts
@@ -68,6 +74,8 @@ import           System.IO
 
 import           Control.Monad.Reader
                  ( MonadReader, asks )
+import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Attribute.Label as AttrLabel
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
 import           Kore.Internal.Pattern
@@ -104,6 +112,18 @@ emptyExecutionGraph =
     extractConfig (RewriteRule RulePattern { left, requires }) =
         RewritePattern $ Conditional left requires mempty
 
+ruleReference
+    :: (Either AxiomIndex ClaimIndex -> a)
+    -> (RuleName -> a)
+    -> RuleReference
+    -> a
+ruleReference f g ref =
+    case ref of
+        ByIndex axiomOrClaimIndex ->
+            f axiomOrClaimIndex
+        ByName ruleName ->
+            g ruleName
+
 -- | Get nth claim from the claims list.
 getClaimByIndex
     :: MonadState (ReplState claim) m
@@ -120,6 +140,73 @@ getAxiomByIndex
     -> m (Maybe Axiom)
 getAxiomByIndex index = Lens.preuse $ lensAxioms . Lens.element index
 
+-- | Get the leftmost axiom with a specific name from the axioms list.
+getAxiomByName
+    :: MonadState (ReplState claim) m
+    => String
+    -- ^ label attribute
+    -> m (Maybe Axiom)
+getAxiomByName name = do
+    axioms <- Lens.use lensAxioms
+    return $ Axiom
+        <$> find (isNameEqual name) (fmap unAxiom axioms)
+
+-- | Get the leftmost claim with a specific name from the claim list.
+getClaimByName
+    :: MonadState (ReplState claim) m
+    => Claim claim
+    => String
+    -- ^ label attribute
+    -> m (Maybe claim)
+getClaimByName name = do
+    claims <- Lens.use lensClaims
+    return $ coerce
+        <$> find (isNameEqual name) (fmap coerce claims)
+
+getClaimIndexByName
+    :: MonadState (ReplState claim) m
+    => Claim claim
+    => String
+    -- ^ label attribute
+    -> m (Maybe ClaimIndex)
+getClaimIndexByName name= do
+    claims <- Lens.use lensClaims
+    return $ coerce
+        <$> findIndex (isNameEqual name) (fmap coerce claims)
+
+getAxiomOrClaimByName
+    :: MonadState (ReplState claim) m
+    => Claim claim
+    => RuleName
+    -> m (Maybe (Either Axiom claim))
+getAxiomOrClaimByName (RuleName name) = do
+    mAxiom <- getAxiomByName name
+    case mAxiom of
+        Nothing -> do
+            mClaim <- getClaimByName name
+            case mClaim of
+                Nothing -> return Nothing
+                Just claim ->
+                    return . Just . Right $ claim
+        Just axiom ->
+            return . Just . Left $ axiom
+
+isNameEqual :: String -> RewriteRule Variable -> Bool
+isNameEqual name rule =
+    maybe
+        False
+        ( (== name) . unpack)
+          (AttrLabel.unLabel
+          . getNameText
+          $ rule
+        )
+
+getNameText :: RewriteRule Variable -> AttrLabel.Label
+getNameText =
+    Attribute.label
+    . attributes
+    . getRewriteRule
+
 -- | Transforms an axiom or claim index into an axiom or claim if they could be
 -- found.
 getAxiomOrClaimByIndex
@@ -131,6 +218,13 @@ getAxiomOrClaimByIndex =
         . bitraverse
             (getAxiomByIndex . coerce)
             (getClaimByIndex . coerce)
+
+getInternalIdentifier
+    :: RewriteRule Variable -> Attribute.RuleIndex
+getInternalIdentifier =
+    Attribute.identifier
+    . Rule.attributes
+    . Rule.getRewriteRule
 
 -- | Update the currently selected claim to prove.
 switchToProof
