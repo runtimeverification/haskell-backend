@@ -110,6 +110,8 @@ import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Sort
                  ( Sort )
 import           Kore.Step.Simplification.Data as Simplifier
+import           Kore.Step.Simplification.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
 import           Kore.Syntax.Sentence
                  ( SentenceSort (SentenceSort) )
 import qualified Kore.Syntax.Sentence as Sentence.DoNotUse
@@ -302,7 +304,7 @@ evalConcat =
                     _set2 <- expectBuiltinSet ctx _set2
                     if Set.null (Set.intersection _set1 _set2)
                         then returnSet resultSort (_set1 <> _set2)
-                        else empty
+                        else return (AttemptedAxiom.Applied mempty)
             leftIdentity <|> rightIdentity <|> bothConcrete
 
 evalDifference :: Builtin.Function
@@ -441,21 +443,30 @@ asTermLike builtin
     element elem' = mkApplySymbol elementSymbol [TermLike.fromConcrete elem']
     concat' set1 set2 = mkApplySymbol concatSymbol [set1, set2]
 
-listAsTermLike
+{-| Transforms a list of set elements together with an optional set into
+a single big set. This function does not attempt to create an internal
+set representation if possible, it just builds terms using
+'Set.concat' and 'Set.element' application.
+-}
+elementListAsTermLike
     ::  ( Ord variable
         , SortedVariable variable
         , Unparse variable
         )
     => SmtMetadataTools Attribute.Symbol
     -> Sort
+    -- ^ result set sort.
     -> [TermLike variable]
+    -- ^ list of set elements (i.e. things that are transformed into sets by
+    -- the 'Set.element' builtin).
     -> Maybe (TermLike variable)
+    -- ^ optional set to be concatenated with the element list.
     -> TermLike variable
-listAsTermLike tools sort1 = listAsTermLikeHelper
+elementListAsTermLike tools sort1 = elementListAsTermLikeHelper
   where
-    listAsTermLikeHelper terms (Just v) = foldr concatWithElement v terms
-    listAsTermLikeHelper [] Nothing = asInternal tools sort1 Set.empty
-    listAsTermLikeHelper (term:terms) Nothing =
+    elementListAsTermLikeHelper terms (Just v) = foldr concatWithElement v terms
+    elementListAsTermLikeHelper [] Nothing = asInternal tools sort1 Set.empty
+    elementListAsTermLikeHelper (term:terms) Nothing =
         foldr concatWithElement (element term) terms
 
     concatWithElement = concat' . element
@@ -479,13 +490,14 @@ asTermLikeAndInternal tools sort1 terms = do
     let (withVariables, concrete) = splitVariableConcrete terms
     _withVariablesSet <- disjointSet withVariables
     case concrete of
-        [] -> return $ listAsTermLike tools sort1 withVariables Nothing
+        [] -> return $ elementListAsTermLike tools sort1 withVariables Nothing
         _ -> do
             concreteSet <- disjointSet concrete
             let
                 internalSet :: TermLike variable
                 internalSet = asInternal tools sort1 concreteSet
-            return $ listAsTermLike tools sort1 withVariables (Just internalSet)
+            return $ elementListAsTermLike
+                tools sort1 withVariables (Just internalSet)
 
 disjointSet :: Ord a => [a] -> Maybe (Set a)
 disjointSet input =
@@ -1269,20 +1281,8 @@ unifyEquals
         Monad.Trans.lift (unifyEqualsConcrete builtin1 builtin2)
 
     unifyEquals0 pat1 pat2 = do
-        let firstNormalizedOrBottom = normalize tools pat1
-            secondNormalizedOrBottom = normalize tools pat2
-        firstNormalized <- case firstNormalizedOrBottom of
-            Bottom -> Monad.Trans.lift $ Monad.Unify.explainAndReturnBottom
-                "Duplicated elements in normalization."
-                first
-                second
-            Normalized n -> return n
-        secondNormalized <- case secondNormalizedOrBottom of
-            Bottom -> Monad.Trans.lift $ Monad.Unify.explainAndReturnBottom
-                "Duplicated elements in normalization."
-                first
-                second
-            Normalized n -> return n
+        firstNormalized <- normalize1 pat1
+        secondNormalized <- normalize1 pat2
 
         unifierNormalized <-
             unifyEqualsNormalizedSet
@@ -1297,31 +1297,40 @@ unifyEquals
             unifierPredicate :: Predicate variable
             (unifierNormalizedTerm, unifierPredicate) =
                 Conditional.splitTerm unifierNormalized
-            renormalizedOrBottom :: NormalizedSetOrBottom variable
-            renormalizedOrBottom =
-                -- TODO(virgil): remove this ugly hack after representing all
-                -- set builtins as NormalizedSet. Right now it is needed
-                -- because, say, we don't always normalize before adding
-                -- something to the sets.
-                normalize
-                    tools
-                $ normalizedToTerm
+            normalizedTerm :: TermLike variable
+            normalizedTerm = normalizedToTerm
+                tools
+                (termLikeSort first)
+                unifierNormalizedTerm
+
+        -- TODO(virgil): remove this ugly hack after representing all
+        -- set builtins as NormalizedSet. Right now it is needed
+        -- because, say, we don't always normalize before adding
+        -- something to the sets.
+        renormalized <- normalize1 normalizedTerm
+
+        let unifierTerm :: TermLike variable
+            unifierTerm =
+                normalizedToTerm
                     tools
                     (termLikeSort first)
-                    unifierNormalizedTerm
-        case renormalizedOrBottom of
-            Bottom -> Monad.Trans.lift $ Monad.Unify.explainAndReturnBottom
-                "Duplicated elements in renormalization."
-                first
-                second
-            Normalized renormalized -> do
-                let unifierTerm :: TermLike variable
-                    unifierTerm =
-                        normalizedToTerm
-                            tools
-                            (termLikeSort first)
-                            renormalized
-                return (unifierTerm `withCondition` unifierPredicate)
+                    renormalized
+        return (unifierTerm `withCondition` unifierPredicate)
+      where
+        normalize1
+            ::  ( HasCallStack
+                , MonadUnify unifier
+                , Ord variable
+                )
+            => TermLike variable
+            -> MaybeT unifier (NormalizedSet variable)
+        normalize1 patt =
+            case normalize tools patt of
+                Bottom -> Monad.Trans.lift $ Monad.Unify.explainAndReturnBottom
+                    "Duplicated elements in normalization."
+                    first
+                    second
+                Normalized n -> return n
 
     -- | Unify two concrete sets
     unifyEqualsConcrete
