@@ -164,9 +164,9 @@ makeEvaluateTerm term@(Recursive.project -> _ :< projected) = do
     makeEvaluateTermWorker
   where
     makeEvaluateTermWorker
-      | isTop term          = return OrPredicate.top
-      | isBottom term       = return OrPredicate.bottom
-      | isTotalPattern term = return OrPredicate.top
+      | isTop term            = return OrPredicate.top
+      | isBottom term         = return OrPredicate.bottom
+      | isDefinedPattern term = return OrPredicate.top
 
       | ApplySymbolF app <- projected
       , let Application { applicationSymbolOrAlias = patternHead } = app

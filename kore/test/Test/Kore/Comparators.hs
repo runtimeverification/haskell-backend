@@ -26,10 +26,10 @@ import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Location as Attribute
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
+import qualified Kore.Attribute.Pattern.Defined as Attribute.Pattern
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import qualified Kore.Attribute.Pattern.Function as Attribute.Pattern
 import qualified Kore.Attribute.Pattern.Functional as Attribute.Pattern
-import qualified Kore.Attribute.Pattern.Total as Attribute.Pattern
 import qualified Kore.Attribute.Source as Attribute
 import           Kore.Domain.Builtin as Domain
 import           Kore.Error
@@ -1342,9 +1342,9 @@ instance
             (Attribute.function expected)
             (Attribute.function actual)
         , EqWrap
-            "total = "
-            (Attribute.total expected)
-            (Attribute.total actual)
+            "defined = "
+            (Attribute.defined expected)
+            (Attribute.defined actual)
         ]
     structConstructorName _ = "Pattern"
 
@@ -1381,14 +1381,14 @@ instance WrapperEqualWithExplanation Attribute.Pattern.Function where
     wrapperField =
         Function.on (EqWrap "isFunction = ") Attribute.Pattern.isFunction
 
-instance EqualWithExplanation Attribute.Pattern.Total where
+instance EqualWithExplanation Attribute.Pattern.Defined where
     compareWithExplanation = wrapperCompareWithExplanation
     printWithExplanation = show
 
-instance WrapperEqualWithExplanation Attribute.Pattern.Total where
-    wrapperConstructorName _ = "Total"
+instance WrapperEqualWithExplanation Attribute.Pattern.Defined where
+    wrapperConstructorName _ = "Defined"
     wrapperField =
-        Function.on (EqWrap "isTotal = ") Attribute.Pattern.isTotal
+        Function.on (EqWrap "isDefined = ") Attribute.Pattern.isDefined
 
 instance
     ( EqualWithExplanation variable, Show variable

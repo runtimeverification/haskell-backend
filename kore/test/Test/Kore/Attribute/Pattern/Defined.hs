@@ -1,11 +1,11 @@
-module Test.Kore.Attribute.Pattern.Total where
+module Test.Kore.Attribute.Pattern.Defined where
 
 import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified GHC.Stack as GHC
 
-import Kore.Attribute.Pattern.Total
+import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Synthetic
 import Kore.Internal.TermLike
        ( TermLikeF (..) )
@@ -53,32 +53,32 @@ test_instance_Synthetic =
     sort = Mock.testSort
     sigma = Mock.sigmaSymbol
 
-    total = Total True
-    nonTotal = Total False
-    range = [total, nonTotal]
+    defined = Defined True
+    nonDefined = Defined False
+    range = [defined, nonDefined]
 
     check
         :: GHC.HasCallStack
         => TestName
-        -> (Total -> Bool)
-        -> TermLikeF Variable Total
+        -> (Defined -> Bool)
+        -> TermLikeF Variable Defined
         -> TestTree
     check name checking termLikeF =
         testCase name $ do
             let actual = synthetic termLikeF
             assertBool "" (checking actual)
 
-    is :: GHC.HasCallStack => TermLikeF Variable Total -> TestTree
-    is = check "Total pattern" isTotal
+    is :: GHC.HasCallStack => TermLikeF Variable Defined -> TestTree
+    is = check "Defined pattern" isDefined
 
-    isn't :: GHC.HasCallStack => TermLikeF Variable Total -> TestTree
-    isn't = check "Non-total pattern" (not . isTotal)
+    isn't :: GHC.HasCallStack => TermLikeF Variable Defined -> TestTree
+    isn't = check "Non-defined pattern" (not . isDefined)
 
     expect
         :: GHC.HasCallStack
-        => Total
-        -> TermLikeF Variable Total
+        => Defined
+        -> TermLikeF Variable Defined
         -> TestTree
     expect x
-      | isTotal x = is
+      | isDefined x = is
       | otherwise      = isn't

@@ -12,9 +12,6 @@ module Kore.Step.PatternAttributes
     ( isConstructorLikePattern
     , isConstructorLikeTop
     , isConstructorModuloLikePattern
-    , isFunctionPattern
-    , isFunctionalPattern
-    , isTotalPattern
     ) where
 
 import           Data.Either
