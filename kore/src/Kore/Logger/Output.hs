@@ -34,6 +34,8 @@ import qualified Control.Monad.Trans as Trans
 import           Data.Foldable
                  ( fold )
 import qualified Data.Foldable as Fold
+import           Data.Functor
+                 ( void )
 import           Data.Functor.Contravariant
                  ( contramap )
 import           Data.List
@@ -45,6 +47,7 @@ import           Data.String
                  ( IsString, fromString )
 import           Data.Text
                  ( Text )
+import qualified Data.Text as Text
 import qualified Data.Text.Lazy as Text.Lazy
 import           Data.Text.Lazy.Builder
                  ( Builder )
@@ -58,7 +61,9 @@ import           Data.Time.LocalTime
 import           GHC.Stack
                  ( CallStack, getCallStack, popCallStack, prettyCallStack )
 import           Options.Applicative
-                 ( Parser, auto, help, long, option, str )
+                 ( Parser, auto, help, long, maybeReader, option, str )
+import qualified Text.Megaparsec as Parser
+import qualified Text.Megaparsec.Char as Parser
 import           Text.Read
                  ( readMaybe )
 
@@ -140,9 +145,21 @@ parseKoreLogOptions =
             <> help "Log level: Debug, Info, Warning, Error, or Critical"
     parseScope =
         option
-            auto
+            parseCommaSeparatedScopes
             $ long "log-scope"
             <> help "Log scope"
+    parseCommaSeparatedScopes = maybeReader $ Parser.parseMaybe scopeParser
+
+    scopeParser :: Parser.Parsec String String (Set Scope)
+    scopeParser = do
+        args <- many itemParser
+        pure . Set.fromList $ args
+
+    itemParser :: Parser.Parsec String String Scope
+    itemParser = do
+        argument <- some (Parser.noneOf [','])
+        _ <- void (Parser.char ',') <|> Parser.eof
+        pure . Scope . Text.pack $ argument
 
 -- Creates a kore logger which:
 --     * filters messages that have lower severity than the provided severity
