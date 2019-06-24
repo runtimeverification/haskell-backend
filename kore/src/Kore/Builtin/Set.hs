@@ -18,14 +18,18 @@ module Kore.Builtin.Set
     ( sort
     , assertSort
     , sortDeclVerifiers
+    , isSetSort
     , symbolVerifiers
     , builtinFunctions
     , Domain.Builtin
+    , returnConcreteSet
     , returnSet
     , asInternal
+    , asInternalConcrete
     , asPattern
     , asTermLike
     , expectBuiltinSet
+    , expectConcreteBuiltinSet
       -- * Symbols
     , lookupSymbolIn
     , lookupSymbolDifference
@@ -48,7 +52,7 @@ module Kore.Builtin.Set
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
-                 ( MaybeT (MaybeT), partitionEithers, runMaybeT )
+                 ( MaybeT (MaybeT), fromMaybe, partitionEithers, runMaybeT )
 import           Control.Error.Util
                  ( note )
 import           Control.Monad
@@ -57,6 +61,7 @@ import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.List as List
+import qualified Data.List
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
@@ -131,6 +136,14 @@ import           Kore.Variables.Fresh
 sort :: Text
 sort = "SET.Set"
 
+{- | Is the given sort hooked to the builtin Set sort?
+
+Returns Nothing if the sort is unknown (i.e. the _PREDICATE sort).
+Returns Just False if the sort is a variable.
+-}
+isSetSort :: SmtMetadataTools attrs -> Sort -> Maybe Bool
+isSetSort = Builtin.isSort sort
+
 {- | Verify that the sort is hooked to the builtin @Set@ sort.
 
   See also: 'sort', 'Builtin.verifySort'
@@ -198,21 +211,17 @@ symbolVerifiers =
       )
     ]
 
-{- | Abort function evaluation if the argument is not a @Set@ domain value.
+{- | Returns @empty@ if the argument is not a @NormalizedSet@ domain value.
 
-    If the operand pattern is not a domain value, the function is simply
-    'NotApplicable'. If the operand is a domain value, but not represented by a
-    'BuiltinDomainSet', it is a bug.
-
- -}
+Returns the @NormalizedSet@ otherwise.
+-}
 expectBuiltinSet
     :: MonadSimplify m
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
-    -> MaybeT m (Set (TermLike Concrete))
-expectBuiltinSet ctx _set = do
-    _set <- Builtin.expectNormalConcreteTerm _set
-    case _set of
+    -> MaybeT m (TermNormalizedSet variable)
+expectBuiltinSet ctx set =
+    case set of
         Builtin_ domain ->
             case domain of
                 Domain.BuiltinSet Domain.InternalSet { builtinSetChild } ->
@@ -222,16 +231,55 @@ expectBuiltinSet ctx _set = do
                     $ Text.unpack ctx ++ ": Domain value is not a set"
         _ -> empty
 
+{- | Returns @empty@ if the argument is not a @NormalizedSet@ domain value
+which consists only of concrete elements.
+
+Returns the @Set@ of concrete elements otherwise.
+-}
+expectConcreteBuiltinSet
+    :: MonadSimplify m
+    => Text  -- ^ Context for error message
+    -> TermLike variable  -- ^ Operand pattern
+    -> MaybeT m (Set (TermLike Concrete))
+expectConcreteBuiltinSet ctx _set = do
+    _set <- expectBuiltinSet ctx _set
+    case _set of
+        Domain.NormalizedSet
+            { elementsWithVariables = []
+            , concreteElements
+            , sets = []
+            } -> return concreteElements
+        _ -> empty
+
+{- | Given a @NormalizedSet@, returns it as a function result.
+-}
 returnSet
     :: (MonadSimplify m, Ord variable, SortedVariable variable)
     => Sort
-    -> Set (TermLike Concrete)
+    -> TermNormalizedSet variable
     -> m (AttemptedAxiom variable)
 returnSet resultSort set = do
     tools <- Simplifier.askMetadataTools
     Builtin.appliedFunction
         $ Pattern.fromTermLike
         $ asInternal tools resultSort set
+
+{- | Converts a @Set@ of concrete elements to a @NormalizedSet@ and returns it
+as a function result.
+-}
+returnConcreteSet
+    :: (MonadSimplify m, Ord variable, SortedVariable variable)
+    => Sort
+    -> Set (TermLike Concrete)
+    -> m (AttemptedAxiom variable)
+returnConcreteSet resultSort concrete =
+    returnSet
+        resultSort
+        Domain.NormalizedSet
+            { elementsWithVariables = []
+            , concreteElements = concrete
+            , sets = []
+            }
 
 evalElement :: Builtin.Function
 evalElement =
@@ -241,8 +289,19 @@ evalElement =
         Builtin.getAttemptedAxiom
             (case arguments of
                 [_elem] -> do
-                    _elem <- Builtin.expectNormalConcreteTerm _elem
-                    returnSet resultSort (Set.singleton _elem)
+                    case TermLike.asConcrete _elem of
+                        Just concrete ->
+                            returnConcreteSet
+                                resultSort
+                                (Set.singleton concrete)
+                        Nothing ->
+                            returnSet
+                                resultSort
+                                Domain.NormalizedSet
+                                    { elementsWithVariables = [_elem]
+                                    , concreteElements = Set.empty
+                                    , sets = []
+                                    }
                 _ -> Builtin.wrongArity elementKey
             )
 
@@ -258,7 +317,7 @@ evalIn =
                         [_elem, _set] -> (_elem, _set)
                         _ -> Builtin.wrongArity inKey
             _elem <- Builtin.expectNormalConcreteTerm _elem
-            _set <- expectBuiltinSet inKey _set
+            _set <- expectConcreteBuiltinSet inKey _set
             (Builtin.appliedFunction . asExpandedBoolPattern)
                 (Set.member _elem _set)
       where
@@ -270,42 +329,75 @@ evalUnit =
   where
     evalUnit0 _ resultSort =
         \case
-            [] -> returnSet resultSort Set.empty
+            [] -> returnConcreteSet resultSort Set.empty
             _ -> Builtin.wrongArity unitKey
 
 evalConcat :: Builtin.Function
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
-    ctx = concatKey
-    evalConcat0 :: Builtin.FunctionImplementation
-    evalConcat0 _ resultSort = \arguments ->
-        Builtin.getAttemptedAxiom $ do
-            let (_set1, _set2) =
-                    case arguments of
-                        [_set1, _set2] -> (_set1, _set2)
-                        _ -> Builtin.wrongArity concatKey
-                leftIdentity = do
-                    _set1 <- expectBuiltinSet ctx _set1
-                    if Set.null _set1
-                        then
-                            Builtin.appliedFunction
-                            $ Pattern.fromTermLike _set2
-                        else empty
-                rightIdentity = do
-                    _set2 <- expectBuiltinSet ctx _set2
-                    if Set.null _set2
-                        then
-                            Builtin.appliedFunction
-                            $ Pattern.fromTermLike _set1
-                        else empty
-                bothConcrete = do
-                    _set1 <- expectBuiltinSet ctx _set1
-                    _set2 <- expectBuiltinSet ctx _set2
-                    if Set.null (Set.intersection _set1 _set2)
-                        then returnSet resultSort (_set1 <> _set2)
-                        else return (AttemptedAxiom.Applied mempty)
-            leftIdentity <|> rightIdentity <|> bothConcrete
+    evalConcat0
+        :: forall variable m
+        .  (Ord variable, SortedVariable variable)
+        => MonadSimplify m
+        => TermLikeSimplifier
+        -> Sort
+        -> [TermLike variable]
+        -> m (AttemptedAxiom variable)
+    evalConcat0 _ resultSort arguments = Builtin.getAttemptedAxiom $ do
+        tools <- askMetadataTools
+
+        let (_set1, _set2) =
+                case arguments of
+                    [_set1, _set2] -> (_set1, _set2)
+                    _ -> Builtin.wrongArity concatKey
+
+            emptyResult :: AttemptedAxiom variable
+            emptyResult = AttemptedAxiom.Applied mempty
+
+        case (toNormalizedSet tools _set1, toNormalizedSet tools _set2) of
+            (Bottom, _) -> return emptyResult
+            (_, Bottom) -> return emptyResult
+            -- The NormalizedSet matching is useful only for getting
+            -- notified when new fields are being added.
+            ( Normalized _set1@(Domain.NormalizedSet _ _ _)
+              , Normalized _set2
+              ) -> do
+                let
+                    Domain.NormalizedSet
+                        { elementsWithVariables = withVariable1
+                        , concreteElements = concrete1
+                        , sets = sets1
+                        } = _set1
+                    Domain.NormalizedSet
+                        { elementsWithVariables = withVariable2
+                        , concreteElements = concrete2
+                        , sets = sets2
+                        } = _set2
+
+                    maybeResult :: Maybe (MaybeT m (AttemptedAxiom variable))
+                    maybeResult = do
+                        variableSetPartial <-
+                            addToSetDisjoint Set.empty withVariable1
+                        variableSet <-
+                            addToSetDisjoint variableSetPartial withVariable2
+
+                        concrete <-
+                            addToSetDisjoint concrete1 (Set.toList concrete2)
+
+                        -- If these sets would be non-empty, we could test for
+                        -- equality as above, but we don't know that.
+                        let allSets = Data.List.sort (sets1 ++ sets2)
+
+                        return $ returnSet
+                            resultSort
+                            Domain.NormalizedSet
+                                { elementsWithVariables = Set.toList variableSet
+                                , concreteElements = concrete
+                                , sets = allSets
+                                }
+
+                fromMaybe (return emptyResult) maybeResult
 
 evalDifference :: Builtin.Function
 evalDifference =
@@ -313,23 +405,23 @@ evalDifference =
   where
     ctx = differenceKey
     evalDifference0 :: Builtin.FunctionImplementation
-    evalDifference0 _ resultSort = \arguments ->
+    evalDifference0 _ resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let (_set1, _set2) =
                     case arguments of
                         [_set1, _set2] -> (_set1, _set2)
                         _ -> Builtin.wrongArity differenceKey
                 rightIdentity = do
-                    _set2 <- expectBuiltinSet ctx _set2
+                    _set2 <- expectConcreteBuiltinSet ctx _set2
                     if Set.null _set2
                         then
                             Builtin.appliedFunction
                             $ Pattern.fromTermLike _set1
                         else empty
                 bothConcrete = do
-                    _set1 <- expectBuiltinSet ctx _set1
-                    _set2 <- expectBuiltinSet ctx _set2
-                    returnSet resultSort (Set.difference _set1 _set2)
+                    _set1 <- expectConcreteBuiltinSet ctx _set1
+                    _set2 <- expectConcreteBuiltinSet ctx _set2
+                    returnConcreteSet resultSort (Set.difference _set1 _set2)
             rightIdentity <|> bothConcrete
 
 evalToList :: Builtin.Function
@@ -342,7 +434,7 @@ evalToList = Builtin.functionEvaluator evalToList0
                         case arguments of
                             [_set] -> _set
                             _      -> Builtin.wrongArity toListKey
-            _set <- expectBuiltinSet toListKey _set
+            _set <- expectConcreteBuiltinSet toListKey _set
             List.returnList resultSort
                 . fmap TermLike.fromConcrete
                 . Seq.fromList
@@ -359,7 +451,7 @@ evalSize = Builtin.functionEvaluator evalSize0
                         case arguments of
                             [_set] -> _set
                             _      -> Builtin.wrongArity sizeKey
-            _set <- expectBuiltinSet sizeKey _set
+            _set <- expectConcreteBuiltinSet sizeKey _set
             Builtin.appliedFunction
                 . Int.asPattern resultSort
                 . toInteger
@@ -372,15 +464,15 @@ evalIntersection =
   where
     ctx = intersectionKey
     evalIntersection0 :: Builtin.FunctionImplementation
-    evalIntersection0 _ resultSort = \arguments ->
+    evalIntersection0 _ resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let (_set1, _set2) =
                     case arguments of
                         [_set1, _set2] -> (_set1, _set2)
                         _ -> Builtin.wrongArity intersectionKey
-            _set1 <- expectBuiltinSet ctx _set1
-            _set2 <- expectBuiltinSet ctx _set2
-            returnSet resultSort (Set.intersection _set1 _set2)
+            _set1 <- expectConcreteBuiltinSet ctx _set1
+            _set2 <- expectConcreteBuiltinSet ctx _set2
+            returnConcreteSet resultSort (Set.intersection _set1 _set2)
 
 {- | Implement builtin function evaluation.
  -}
@@ -400,7 +492,7 @@ builtinFunctions =
 {- | Render a 'Set' as an internal domain value pattern of the given sort.
 
 The result sort must be hooked to the builtin @Set@ sort. The pattern will use
-the internal representation of concrete 'Set' domain values; it will not use a
+the internal representation of 'Set' domain values; it will not use a
 valid external representation. Use 'asPattern' to construct an externally-valid
 pattern.
 
@@ -409,7 +501,7 @@ asInternal
     :: (Ord variable, SortedVariable variable)
     => SmtMetadataTools Attribute.Symbol
     -> Sort
-    -> Set (TermLike Concrete)
+    -> TermNormalizedSet variable
     -> TermLike variable
 asInternal tools builtinSetSort builtinSetChild =
     (mkBuiltin . Domain.BuiltinSet)
@@ -424,59 +516,87 @@ asInternal tools builtinSetSort builtinSetChild =
             , builtinSetChild
             }
 
+{- | The same as 'asInternal', but for sets made only of concrete elements.
+-}
+asInternalConcrete
+    :: (Ord variable, SortedVariable variable)
+    => SmtMetadataTools Attribute.Symbol
+    -> Sort
+    -> Set (TermLike Concrete)
+    -> TermLike variable
+asInternalConcrete tools sort1 concreteSet =
+    asInternal
+        tools
+        sort1
+        Domain.NormalizedSet
+            { elementsWithVariables = []
+            , concreteElements = concreteSet
+            , sets = []
+            }
+
 {- | Render an 'Domain.InternalSet' as a 'TermLike' domain value.
  -}
 asTermLike
-    :: (Ord variable, SortedVariable variable, Unparse variable)
-    => Domain.InternalSet (TermLike Concrete)
+    :: forall variable
+    .  (Ord variable, SortedVariable variable, Unparse variable)
+    => Domain.InternalSet (TermLike Concrete) (TermLike variable)
     -> TermLike variable
-asTermLike builtin
-  | Set.null set = unit
-  | otherwise = foldr1 concat' (element <$> Foldable.toList set)
+asTermLike builtin =
+    if Set.null concreteElements
+    then
+        case filteredSets of
+            [] -> case elementsWithVariables of
+                [] -> normalizedConcrete
+                (ewv : ewvs) -> addElements (element ewv) ewvs
+            (set:sets1) ->
+                let base = addSets set sets1
+                in addElements base elementsWithVariables
+    else
+        let baseC = normalizedConcrete
+            baseS = addSets baseC filteredSets
+        in addElements baseS elementsWithVariables
   where
-    Domain.InternalSet { builtinSetChild = set } = builtin
+    normalizedConcrete :: TermLike variable
+    normalizedConcrete =
+        case Set.toList concreteElements of
+            [] -> mkApplySymbol unitSymbol []
+            nonEmpty -> List.foldr1 concat' (map concreteElement nonEmpty)
+
+    addElements :: TermLike variable -> [TermLike variable] -> TermLike variable
+    addElements = List.foldr (\elem1 term -> concat' (element elem1) term)
+
+    addSets :: TermLike variable -> [TermLike variable] -> TermLike variable
+    addSets = List.foldr concat'
+
+    filteredSets :: [TermLike variable]
+    filteredSets = filter (not . isEmptySet) sets
+
+    isEmptySet :: TermLike variable -> Bool
+    isEmptySet
+        (Builtin_ (Domain.BuiltinSet Domain.InternalSet { builtinSetChild }))
+      = builtinSetChild == Domain.emptyNormalizedSet
+    isEmptySet (App_ symbol _)
+      | unitSymbol == symbol = True
+      | otherwise = False
+    isEmptySet _ = False
+
+    Domain.InternalSet { builtinSetChild = normalizedSet } = builtin
     Domain.InternalSet { builtinSetUnit = unitSymbol } = builtin
     Domain.InternalSet { builtinSetElement = elementSymbol } = builtin
     Domain.InternalSet { builtinSetConcat = concatSymbol } = builtin
 
-    unit = mkApplySymbol unitSymbol []
-    element elem' = mkApplySymbol elementSymbol [TermLike.fromConcrete elem']
-    concat' set1 set2 = mkApplySymbol concatSymbol [set1, set2]
+    Domain.NormalizedSet { elementsWithVariables } = normalizedSet
+    Domain.NormalizedSet { concreteElements } = normalizedSet
+    Domain.NormalizedSet { sets } = normalizedSet
 
-{-| Transforms a list of set elements together with an optional set into
-a single big set. This function does not attempt to create an internal
-set representation if possible, it just builds terms using
-'Set.concat' and 'Set.element' application.
--}
-elementListAsTermLike
-    ::  ( Ord variable
-        , SortedVariable variable
-        , Unparse variable
-        )
-    => SmtMetadataTools Attribute.Symbol
-    -> Sort
-    -- ^ result set sort.
-    -> [TermLike variable]
-    -- ^ list of set elements (i.e. things that are transformed into sets by
-    -- the 'Set.element' builtin).
-    -> Maybe (TermLike variable)
-    -- ^ optional set to be concatenated with the element list.
-    -> TermLike variable
-elementListAsTermLike tools sort1 = elementListAsTermLikeHelper
-  where
-    elementListAsTermLikeHelper terms (Just v) = foldr concatWithElement v terms
-    elementListAsTermLikeHelper [] Nothing = asInternal tools sort1 Set.empty
-    elementListAsTermLikeHelper (term:terms) Nothing =
-        foldr concatWithElement (element term) terms
-
-    concatWithElement = concat' . element
-
-    elementSymbol = Builtin.lookupSymbolElement tools sort1
-    concatSymbol = Builtin.lookupSymbolConcat tools sort1
+    concreteElement :: TermLike Concrete -> TermLike variable
+    concreteElement elem' = element (TermLike.fromConcrete elem')
+    element :: TermLike variable -> TermLike variable
     element elem' = mkApplySymbol elementSymbol [elem']
+    concat' :: TermLike variable -> TermLike variable -> TermLike variable
     concat' set1 set2 = mkApplySymbol concatSymbol [set1, set2]
 
-asTermLikeAndInternal
+elementListAsInternal
     :: forall variable
     .   ( Ord variable
         , SortedVariable variable
@@ -486,18 +606,20 @@ asTermLikeAndInternal
     -> Sort
     -> [TermLike variable]
     -> Maybe (TermLike variable)
-asTermLikeAndInternal tools sort1 terms = do
+elementListAsInternal tools sort1 terms = do
     let (withVariables, concrete) = splitVariableConcrete terms
     _withVariablesSet <- disjointSet withVariables
-    case concrete of
-        [] -> return $ elementListAsTermLike tools sort1 withVariables Nothing
-        _ -> do
-            concreteSet <- disjointSet concrete
-            let
-                internalSet :: TermLike variable
-                internalSet = asInternal tools sort1 concreteSet
-            return $ elementListAsTermLike
-                tools sort1 withVariables (Just internalSet)
+    concreteSet <- disjointSet concrete
+    return
+        (asInternal
+            tools
+            sort1
+            Domain.NormalizedSet
+                { elementsWithVariables = withVariables
+                , concreteElements = concreteSet
+                , sets = []
+                }
+        )
 
 disjointSet :: Ord a => [a] -> Maybe (Set a)
 disjointSet input =
@@ -519,17 +641,14 @@ splitVariableConcrete terms =
     toConcreteEither term =
         note term (TermLike.asConcrete term)
 
-{- | Render a 'Seq' as an extended domain value pattern.
-
-    See also: 'asPattern'
-
- -}
+{- | Render a 'NormalizedSet' as an extended domain value pattern.
+-}
 asPattern
     ::  ( Ord variable, SortedVariable variable
         , Given (SmtMetadataTools Attribute.Symbol)
         )
     => Sort
-    -> Set (TermLike Concrete)
+    -> TermNormalizedSet variable
     -> Pattern variable
 asPattern resultSort =
     Pattern.fromTermLike . asInternal tools resultSort
@@ -601,31 +720,23 @@ isSymbolUnit
     -> Bool
 isSymbolUnit = Builtin.isSymbol "SET.unit"
 
-{- | A normalized representation of a set, with elements separated from
-other set terms, and with concrete elements separated from non-concrete ones
--}
--- TODO(virgil): Use this as the internal representation of a set.
-data NormalizedSet variable = NormalizedSet
-    { elementsWithVariables :: Set (TermLike variable)
-    , concreteElements :: Set (TermLike Concrete)
-    , sets :: Set (TermLike variable)
-    }
-    deriving (Eq, Show)
+type TermNormalizedSet variable =
+    Domain.NormalizedSet (TermLike Concrete) (TermLike variable)
 
 data NormalizedSetOrBottom variable
-    = Normalized (NormalizedSet variable)
+    = Normalized (TermNormalizedSet variable)
     | Bottom
     deriving (Eq, Show)
 
 instance Ord variable => Semigroup (NormalizedSetOrBottom variable) where
     Bottom <> _ = Bottom
     _ <> Bottom = Bottom
-    Normalized NormalizedSet
+    Normalized Domain.NormalizedSet
         { elementsWithVariables = elementsWithVariables1
         , concreteElements = concreteElements1
         , sets = sets1
         }
-      <> Normalized NormalizedSet
+      <> Normalized Domain.NormalizedSet
         { elementsWithVariables = elementsWithVariables2
         , concreteElements = concreteElements2
         , sets = sets2
@@ -636,15 +747,19 @@ instance Ord variable => Semigroup (NormalizedSetOrBottom variable) where
       where
         mergeDisjoint = do
             withVariables <-
-                addAllDisjoint elementsWithVariables1 elementsWithVariables2
-            concrete <- addAllDisjoint concreteElements1 concreteElements2
-            sets <- addAllDisjoint sets1 sets2
-            return NormalizedSet
+                addAllListDisjoint elementsWithVariables1 elementsWithVariables2
+            concrete <- addAllSetDisjoint concreteElements1 concreteElements2
+            let sets = Data.List.sort (sets1 ++ sets2)
+            return Domain.NormalizedSet
                 { elementsWithVariables = withVariables
                 , concreteElements = concrete
                 , sets = sets
                 }
-        addAllDisjoint set1 set2 = addToSetDisjoint set1 (Set.toList set2)
+        addAllSetDisjoint set1 set2 = addToSetDisjoint set1 (Set.toList set2)
+        addAllListDisjoint set1 = addToListDisjoint (Set.fromList set1) set1
+
+instance Ord variable => Monoid (NormalizedSetOrBottom variable) where
+    mempty = Normalized Domain.emptyNormalizedSet
 
 {- | Computes the union of two sets if they are disjoint. Returns @Nothing@
 otherwise.
@@ -658,65 +773,24 @@ addToSetDisjoint = foldM addElementDisjoint
         then Nothing
         else return (Set.insert element set)
 
-{- | Transforms a normalized set into a @TermLike@ representation.
+{- | Computes the union of two sets if they are disjoint. Returns @Nothing@
+otherwise.
 -}
-normalizedToTerm
-    :: forall variable
-    .   ( Ord variable
-        , SortedVariable variable
-        , Unparse variable
-        )
-    => SmtMetadataTools Attribute.Symbol
-    -> Sort
-    -> NormalizedSet variable
-    -> TermLike variable
-normalizedToTerm
-    tools
-    sort1
-    NormalizedSet
-        { elementsWithVariables
-        , concreteElements
-        , sets
-        }
-  =
-    if Set.null concreteElements
-    then
-        case filteredSets of
-            [] -> case Set.toList elementsWithVariables of
-                [] -> asInternal tools sort1 concreteElements
-                (ewv : ewvs) -> addElements (element ewv) ewvs
-            (set:sets1) ->
-                let base = addSets set sets1
-                in addElements base (Set.toList elementsWithVariables)
-    else
-        let baseC = asInternal tools sort1 concreteElements
-            baseS = addSets baseC filteredSets
-        in addElements baseS (Set.toList elementsWithVariables)
+addToListDisjoint
+    :: (Ord a, Traversable t)
+    => Set a
+    -> [a]
+    -> t a
+    -> Maybe [a]
+addToListDisjoint set1 list1 list2 = do
+    (listResult, _) <- foldM addElementDisjoint (list1, set1) list2
+    return listResult
   where
-    addElements :: TermLike variable -> [TermLike variable] -> TermLike variable
-    addElements = List.foldr (\elem1 term -> concat' (element elem1) term)
-
-    addSets :: TermLike variable -> [TermLike variable] -> TermLike variable
-    addSets = List.foldr concat'
-
-    filteredSets :: [TermLike variable]
-    filteredSets = filter (not . isEmptySet) (Set.toList sets)
-
-    isEmptySet :: TermLike variable -> Bool
-    isEmptySet
-        (Builtin_ (Domain.BuiltinSet Domain.InternalSet { builtinSetChild }))
-      = Set.null builtinSetChild
-    isEmptySet (App_ symbol _)
-      | isSymbolUnit hookTools symbol = True
-      | otherwise = False
-    isEmptySet _ = False
-
-    elementSymbol = Builtin.lookupSymbolElement tools sort1
-    concatSymbol = Builtin.lookupSymbolConcat tools sort1
-    element elem' = mkApplySymbol elementSymbol [elem']
-    concat' set1 set2 = mkApplySymbol concatSymbol [set1, set2]
-
-    hookTools = Attribute.Symbol.hook <$> tools
+    addElementDisjoint :: Ord a => ([a], Set a) -> a -> Maybe ([a], Set a)
+    addElementDisjoint (list, set) element =
+        if element `Set.member` set
+        then Nothing
+        else return (element : list, Set.insert element set)
 
 {- |Transforms a @TermLike@ representation into a @NormalizedSetOrBottom@.
 
@@ -729,51 +803,41 @@ concat(elem(Y:Int), concat({1}, elem(Y:Int)))
 concat(X:Set, concat({1}, X:Set))
 @
 -}
-normalize
+toNormalizedSet
     :: Ord variable
     => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> NormalizedSetOrBottom variable
-normalize
+toNormalizedSet
     _tools
     (Builtin_ (Domain.BuiltinSet Domain.InternalSet { builtinSetChild }))
-  =
-    Normalized NormalizedSet
-        { elementsWithVariables = Set.empty
-        , concreteElements = builtinSetChild
-        , sets = Set.empty
-        }
-normalize tools (App_ symbol args)
+  = Normalized builtinSetChild
+toNormalizedSet tools (App_ symbol args)
   | isSymbolUnit hookTools symbol =
     case args of
-        [] ->
-            Normalized NormalizedSet
-                { elementsWithVariables = Set.empty
-                , concreteElements = Set.empty
-                , sets = Set.empty
-                }
+        [] -> Normalized Domain.emptyNormalizedSet
         _ -> Builtin.wrongArity "SET.unit"
   | isSymbolElement hookTools symbol =
     case args of
         [elem1] ->
-            Normalized NormalizedSet
-                { elementsWithVariables = Set.singleton elem1
+            Normalized Domain.NormalizedSet
+                { elementsWithVariables = [elem1]
                 , concreteElements = Set.empty
-                , sets = Set.empty
+                , sets = []
                 }
         _ -> Builtin.wrongArity "SET.element"
   | isSymbolConcat hookTools symbol =
     case args of
         [set1, set2] ->
-            normalize tools set1 <> normalize tools set2
+            toNormalizedSet tools set1 <> toNormalizedSet tools set2
         _ -> Builtin.wrongArity "SET.concat"
   where
     hookTools = Attribute.Symbol.hook <$> tools
-normalize _ patt =
-    Normalized NormalizedSet
-        { elementsWithVariables = Set.empty
+toNormalizedSet _ patt =
+    Normalized Domain.NormalizedSet
+        { elementsWithVariables = []
         , concreteElements = Set.empty
-        , sets = Set.singleton patt
+        , sets = [patt]
         }
 
 {- | Unifies two sets represented as @NormalizedSet@.
@@ -794,23 +858,21 @@ unifyEqualsNormalizedSet
     -> TermLike variable
     -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     -> Bool
-    -> Bool
-    -> NormalizedSet variable
-    -> NormalizedSet variable
-    -> MaybeT unifier (Conditional variable (NormalizedSet variable))
+    -> TermNormalizedSet variable
+    -> TermNormalizedSet variable
+    -> MaybeT unifier (Conditional variable (TermNormalizedSet variable))
 unifyEqualsNormalizedSet
     tools
     first
     second
     unifyEqualsChildren
-    alreadyNormalized1
-    alreadyNormalized2
-    NormalizedSet
+    alreadyNormalized
+    Domain.NormalizedSet
         { elementsWithVariables = elementsWithVariables1
         , concreteElements = concreteElements1
         , sets = sets1
         }
-    NormalizedSet
+    Domain.NormalizedSet
         { elementsWithVariables = elementsWithVariables2
         , concreteElements = concreteElements2
         , sets = sets2
@@ -831,12 +893,7 @@ unifyEqualsNormalizedSet
                 (  null elementsWithVariables1
                 && null concreteElements1
                 && (length sets1 == 1)
-                -- TODO(virgil): remove this hack after representing all
-                -- set builtins as NormalizedSet. Right now it is needed
-                -- because we sometimes receive unnormalized terms, so we let
-                -- that pass the first time. If this is called a second time
-                -- recursively, then both terms will be normalized.
-                && alreadyNormalized1
+                && alreadyNormalized
                 )
                 errorForOpaqueSets
 
@@ -854,7 +911,7 @@ unifyEqualsNormalizedSet
                 (  null elementsWithVariables2
                 && null concreteElements2
                 && (length sets2 == 1)
-                && alreadyNormalized2
+                && alreadyNormalized
                 )
                 errorForOpaqueSets
             Monad.Trans.lift $
@@ -882,26 +939,44 @@ unifyEqualsNormalizedSet
                 let
                     (almostResultTerms, almostResultPredicates) =
                         unzip (map Pattern.splitTerm unifiedSimplified)
-                    (setsTerms, setsPredicates) =
-                        unzip (map Pattern.splitTerm setsSimplified)
                     (withVariableTerms, concreteTerms) =
                         splitVariableConcrete almostResultTerms
+
+                    (setsTerms, setsPredicates) =
+                        unzip (map Pattern.splitTerm setsSimplified)
+                    setsNormalized :: NormalizedSetOrBottom variable
+                    setsNormalized =
+                        Foldable.fold (map (toNormalizedSet tools) setsTerms)
+
+                Domain.NormalizedSet
+                    { elementsWithVariables = setsTermsWithVariables
+                    , concreteElements = setsConcreteTerms
+                    , sets = setsSets
+                    } <- case setsNormalized of
+                        Bottom -> Monad.Unify.explainAndReturnBottom
+                            "Duplicated elements after set unification."
+                            first
+                            second
+                        Normalized result -> return result
 
                 -- Add back all the common objects that were removed before
                 -- unification.
                 withVariableSet <-
-                    addAllDisjoint commonVariables withVariableTerms
+                    addAllDisjoint
+                        commonVariables
+                        (withVariableTerms ++ setsTermsWithVariables)
                 concreteSet <-
-                    addAllDisjoint commonElements concreteTerms
-                setsSet <-
-                    addAllDisjoint commonSets setsTerms
+                    addAllDisjoint
+                        commonElements
+                        (concreteTerms ++ Set.toList setsConcreteTerms)
+                let allSets = Data.List.sort (commonSets ++ setsSets)
 
                 let
                     incompleteResult = Conditional
-                        { term = NormalizedSet
-                            { elementsWithVariables = withVariableSet
+                        { term = Domain.NormalizedSet
+                            { elementsWithVariables = Set.toList withVariableSet
                             , concreteElements = concreteSet
-                            , sets = setsSet
+                            , sets = allSets
                             }
                         , predicate
                         , substitution
@@ -916,23 +991,44 @@ unifyEqualsNormalizedSet
                             )
                 return result
   where
+    listToMap :: Ord a => [a] -> Map a Int
+    listToMap = List.foldl' (\m k -> Map.insertWith (+) k 1 m) Map.empty
+    mapToList :: Map a Int -> [a]
+    mapToList =
+        Map.foldrWithKey
+            (\key count result -> replicate count key ++ result)
+            []
+
+    sets1Map = listToMap sets1
+    sets2Map = listToMap sets2
+
+    elementsWithVariables1Set = Set.fromList elementsWithVariables1
+    elementsWithVariables2Set = Set.fromList elementsWithVariables2
+
     commonElements = Set.intersection concreteElements1 concreteElements2
     commonVariables =
-        Set.intersection elementsWithVariables1 elementsWithVariables2
-    commonSets = Set.intersection sets1 sets2
+        Set.intersection elementsWithVariables1Set elementsWithVariables2Set
+
+    -- Duplicates must be kept in case any of the sets turns out to be
+    -- non-empty, in which case one of the terms is bottom, which
+    -- means that the unification result is bottom.
+    commonSetsMap = Map.intersectionWith max sets1Map sets2Map
+
+    commonSets = mapToList commonSetsMap
+    commonSetsKeys = Map.keysSet commonSetsMap
 
     elementDifference1 =
         Set.toList (Set.difference concreteElements1 commonElements)
     elementDifference2 =
         Set.toList (Set.difference concreteElements2 commonElements)
     elementVariableDifference1 =
-        Set.toList (Set.difference elementsWithVariables1 commonVariables)
+        Set.toList (Set.difference elementsWithVariables1Set commonVariables)
     elementVariableDifference2 =
-        Set.toList (Set.difference elementsWithVariables2 commonVariables)
+        Set.toList (Set.difference elementsWithVariables2Set commonVariables)
     setsDifference1 =
-        Set.toList (Set.difference sets1 commonSets)
+        mapToList (Map.withoutKeys sets1Map commonSetsKeys)
     setsDifference2 =
-        Set.toList (Set.difference sets2 commonSets)
+        mapToList (Map.withoutKeys sets2Map commonSetsKeys)
 
     errorForOpaqueSets =
         (error . unlines)
@@ -1115,7 +1211,7 @@ unifyEqualsNormalizedElements
 
     let remainder2Terms = map fromConcreteOrWithVariable remainder2
 
-    case asTermLikeAndInternal tools (termLikeSort first) remainder2Terms of
+    case elementListAsInternal tools (termLikeSort first) remainder2Terms of
         Nothing -> Monad.Unify.explainAndReturnBottom
             "Duplicated set element in unification results"
             first
@@ -1274,32 +1370,32 @@ unifyEquals
     unifyEqualsChildren
     first
     second
+  | fromMaybe False (isSetSort tools sort1)
   = MaybeT $ do
-    unifiers <- Monad.Unify.gather (runMaybeT (unifyEquals0 first second))
+    unifiers <- Monad.Unify.gather (runMaybeT (unifyEquals0 True first second))
     case sequence unifiers of
         Nothing -> return Nothing
         Just us -> Monad.Unify.scatter (map Just us)
+  | otherwise = empty
   where
+    sort1 = termLikeSort first
+
     -- | Unify the two argument patterns.
     unifyEquals0
-        :: TermLike variable
+        :: Bool
+        -> TermLike variable
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
     unifyEquals0
-        (Builtin_ (Domain.BuiltinSet builtin1))
-        (Builtin_ (Domain.BuiltinSet builtin2))
-      =
-        Monad.Trans.lift (unifyEqualsConcrete builtin1 builtin2)
-
-    unifyEquals0 pat1 pat2 = do
-        firstNormalized <- normalize1 pat1
-        secondNormalized <- normalize1 pat2
-
+        alreadyNormalized
+        (Builtin_ (Domain.BuiltinSet normalized1))
+        (Builtin_ (Domain.BuiltinSet normalized2))
+      = do
         let
-            firstWasNormalized = pat1 ==
-                normalizedToTerm tools sort1 firstNormalized
-            secondWasNormalized =
-                pat2 == normalizedToTerm tools sort1 secondNormalized
+            Domain.InternalSet { builtinSetChild = firstNormalized } =
+                normalized1
+            Domain.InternalSet { builtinSetChild = secondNormalized } =
+                normalized2
 
         unifierNormalized <-
             unifyEqualsNormalizedSet
@@ -1307,17 +1403,16 @@ unifyEquals
                 first
                 second
                 unifyEqualsChildren
-                firstWasNormalized
-                secondWasNormalized
+                alreadyNormalized
                 firstNormalized
                 secondNormalized
         let
-            unifierNormalizedTerm :: NormalizedSet variable
+            unifierNormalizedTerm :: TermNormalizedSet variable
             unifierPredicate :: Predicate variable
             (unifierNormalizedTerm, unifierPredicate) =
                 Conditional.splitTerm unifierNormalized
             normalizedTerm :: TermLike variable
-            normalizedTerm = normalizedToTerm tools sort1 unifierNormalizedTerm
+            normalizedTerm = asInternal tools sort1 unifierNormalizedTerm
 
         -- TODO(virgil): remove this ugly hack after representing all
         -- set builtins as NormalizedSet. Right now it is needed
@@ -1326,45 +1421,36 @@ unifyEquals
         renormalized <- normalize1 normalizedTerm
 
         let unifierTerm :: TermLike variable
-            unifierTerm = normalizedToTerm tools sort1 renormalized
+            unifierTerm = asInternal tools sort1 renormalized
         return (unifierTerm `withCondition` unifierPredicate)
       where
-        sort1 = termLikeSort first
         normalize1
-            ::  ( HasCallStack
-                , MonadUnify unifier
+            ::  ( MonadUnify unifier
                 , Ord variable
                 )
             => TermLike variable
-            -> MaybeT unifier (NormalizedSet variable)
+            -> MaybeT unifier (TermNormalizedSet variable)
         normalize1 patt =
-            case normalize tools patt of
+            case toNormalizedSet tools patt of
                 Bottom -> Monad.Trans.lift $ Monad.Unify.explainAndReturnBottom
                     "Duplicated elements in normalization."
                     first
                     second
                 Normalized n -> return n
 
-    -- | Unify two concrete sets
-    unifyEqualsConcrete
-        :: Domain.InternalSet (TermLike Concrete)
-        -> Domain.InternalSet (TermLike Concrete)
-        -> unifier (Pattern variable)
-    unifyEqualsConcrete builtin1 builtin2
-      | set1 == set2 = return unified
-      | otherwise = bottomWithExplanation
+    unifyEquals0 _ pat1 pat2 = do
+        firstDomain <- asDomain pat1
+        secondDomain <- asDomain pat2
+        unifyEquals0 False firstDomain secondDomain
       where
-        Domain.InternalSet { builtinSetSort } = builtin1
-        Domain.InternalSet { builtinSetChild = set1 } = builtin1
-        Domain.InternalSet { builtinSetChild = set2 } = builtin2
-        unified =
-            Reflection.give tools
-            $ asPattern builtinSetSort set1
-
-    bottomWithExplanation :: unifier (Pattern variable)
-    bottomWithExplanation = do
-        Monad.Unify.explainBottom
-            "Cannot unify sets with different sizes."
-            first
-            second
-        empty
+        asDomain
+            :: TermLike variable
+            -> MaybeT unifier (TermLike variable)
+        asDomain patt =
+            case toNormalizedSet tools patt of
+                Normalized normalized ->
+                    return (asInternal tools sort1 normalized)
+                Bottom -> Monad.Trans.lift $ Monad.Unify.explainAndReturnBottom
+                    "Duplicated elements in normalization."
+                    first
+                    second

@@ -1039,12 +1039,15 @@ instance
     ) =>
     StructEqualWithExplanation (InternalMap key child)
   where
-    structFieldsWithNames expect actual =
+    structFieldsWithNames expect actual@(InternalMap _ _ _ _ _) =
         [ Function.on (EqWrap "builtinMapSort = ") builtinMapSort expect actual
         , Function.on (EqWrap "builtinMapUnit = ") builtinMapUnit expect actual
-        , Function.on (EqWrap "builtinMapElement = ") builtinMapElement expect actual
-        , Function.on (EqWrap "builtinMapConcat = ") builtinMapConcat expect actual
-        , Function.on (EqWrap "builtinMapChild = ") builtinMapChild expect actual
+        , Function.on
+            (EqWrap "builtinMapElement = ") builtinMapElement expect actual
+        , Function.on
+            (EqWrap "builtinMapConcat = ") builtinMapConcat expect actual
+        , Function.on
+            (EqWrap "builtinMapChild = ") builtinMapChild expect actual
         ]
     structConstructorName _ = "InternalMap"
 
@@ -1059,34 +1062,73 @@ instance
     (EqualWithExplanation child, Show child) =>
     StructEqualWithExplanation (InternalList child)
   where
-    structFieldsWithNames expect actual =
-        [ Function.on (EqWrap "builtinListSort = ") builtinListSort expect actual
-        , Function.on (EqWrap "builtinListUnit = ") builtinListUnit expect actual
-        , Function.on (EqWrap "builtinListElement = ") builtinListElement expect actual
-        , Function.on (EqWrap "builtinListConcat = ") builtinListConcat expect actual
-        , Function.on (EqWrap "builtinListChild = ") builtinListChild expect actual
+    structFieldsWithNames expect actual@(InternalList _ _ _ _ _) =
+        [ Function.on
+            (EqWrap "builtinListSort = ") builtinListSort expect actual
+        , Function.on
+            (EqWrap "builtinListUnit = ") builtinListUnit expect actual
+        , Function.on
+            (EqWrap "builtinListElement = ") builtinListElement expect actual
+        , Function.on
+            (EqWrap "builtinListConcat = ") builtinListConcat expect actual
+        , Function.on
+            (EqWrap "builtinListChild = ") builtinListChild expect actual
         ]
     structConstructorName _ = "InternalList"
 
 instance
-    (EqualWithExplanation key, Show key) =>
-    EqualWithExplanation (InternalSet key)
+    ( EqualWithExplanation key, Show key
+    , EqualWithExplanation child, Show child
+    ) =>
+    EqualWithExplanation (InternalSet key child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance
-    (EqualWithExplanation key, Show key) =>
-    StructEqualWithExplanation (InternalSet key)
+    ( EqualWithExplanation key, Show key
+    , EqualWithExplanation child, Show child
+    ) =>
+    StructEqualWithExplanation (InternalSet key child)
   where
-    structFieldsWithNames expect actual =
+    structFieldsWithNames expect actual@(InternalSet _ _ _ _ _) =
         [ Function.on (EqWrap "builtinSetSort = ") builtinSetSort expect actual
         , Function.on (EqWrap "builtinSetUnit = ") builtinSetUnit expect actual
-        , Function.on (EqWrap "builtinSetElement = ") builtinSetElement expect actual
-        , Function.on (EqWrap "builtinSetConcat = ") builtinSetConcat expect actual
-        , Function.on (EqWrap "builtinSetChild = ") builtinSetChild expect actual
+        , Function.on
+            (EqWrap "builtinSetElement = ") builtinSetElement expect actual
+        , Function.on
+            (EqWrap "builtinSetConcat = ") builtinSetConcat expect actual
+        , Function.on
+            (EqWrap "builtinSetChild = ") builtinSetChild expect actual
         ]
     structConstructorName _ = "InternalSet"
+
+instance
+    ( EqualWithExplanation key, Show key
+    , EqualWithExplanation child, Show child
+    ) =>
+    EqualWithExplanation (NormalizedSet key child)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation key, Show key
+    , EqualWithExplanation child, Show child
+    ) =>
+    StructEqualWithExplanation (NormalizedSet key child)
+  where
+    structFieldsWithNames expect actual@(NormalizedSet _ _ _) =
+        [ Function.on
+            (EqWrap "elementsWithVariables = ")
+            elementsWithVariables
+            expect
+            actual
+        , Function.on
+            (EqWrap "concreteElements = ") concreteElements expect actual
+        , Function.on (EqWrap "sets = ") sets expect actual
+        ]
+    structConstructorName _ = "NormalizedSet"
 
 instance
     ( EqualWithExplanation key, Show key

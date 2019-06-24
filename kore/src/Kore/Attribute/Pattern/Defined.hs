@@ -13,6 +13,7 @@ import qualified Data.Foldable as Foldable
 import           Data.Functor.Const
 import           Data.Hashable
 import           Data.Monoid
+import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -125,7 +126,34 @@ instance Synthetic (Rewrites sort) Defined where
 
 -- | A 'Builtin' pattern is defined if its subterms are 'Defined'.
 instance Synthetic (Builtin key) Defined where
-    synthetic = Foldable.fold
+    synthetic (BuiltinSet InternalSet {builtinSetChild}) =
+        normalizedSetDefined builtinSetChild
+      where
+        normalizedSetDefined :: NormalizedSet key Defined -> Defined
+        normalizedSetDefined
+            NormalizedSet
+                { elementsWithVariables = []
+                , sets = []
+                }
+          = Defined True
+        normalizedSetDefined
+          NormalizedSet
+              { elementsWithVariables = [withVariable]
+              , concreteElements
+              , sets = []
+              }
+          | Set.null concreteElements
+          = withVariable
+        normalizedSetDefined
+          NormalizedSet
+              { elementsWithVariables = []
+              , concreteElements
+              , sets = [set]
+              }
+          | Set.null concreteElements
+          = set
+        normalizedSetDefined _ = Defined False
+    synthetic builtin = Foldable.fold builtin
     {-# INLINE synthetic #-}
 
 -- | A 'Top' pattern is always 'Defined'.

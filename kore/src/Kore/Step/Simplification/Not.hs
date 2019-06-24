@@ -9,6 +9,7 @@ Portability : portable
 -}
 module Kore.Step.Simplification.Not
     ( makeEvaluate
+    , makeEvaluatePredicate
     , simplify
     , simplifyEvaluated
     ) where
@@ -111,17 +112,35 @@ makeEvaluateNot
 makeEvaluateNot Not { notChild } =
     OrPattern.fromPatterns
         [ Pattern.fromTermLike $ makeTermNot term
-        , Conditional
-            { term = mkTop (termLikeSort term)
-            , predicate =
-                makeNotPredicate
-                $ makeAndPredicate predicate
-                $ Predicate.fromSubstitution substitution
-            , substitution = mempty
-            }
+        , Pattern.fromPredicateSorted
+            (termLikeSort term)
+            (makeEvaluatePredicate predicate)
         ]
   where
-    Conditional { term, predicate, substitution } = notChild
+    (term, predicate) = Conditional.splitTerm notChild
+
+makeEvaluatePredicate
+    ::  ( Ord variable
+        , Show variable
+        , SortedVariable variable
+        , Unparse variable
+        )
+    => Predicate variable
+    -> Predicate variable
+makeEvaluatePredicate
+    Conditional
+        { term = ()
+        , predicate
+        , substitution
+        }
+  = Conditional
+        { term = ()
+        , predicate =
+            makeNotPredicate
+            $ makeAndPredicate predicate
+            $ Predicate.fromSubstitution substitution
+        , substitution = mempty
+        }
 
 makeTermNot
     ::  ( SortedVariable variable
