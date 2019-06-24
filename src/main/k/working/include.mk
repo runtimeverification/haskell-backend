@@ -35,6 +35,9 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 %.krepl: %.k $(DEFINITION) $(KORE_EXEC)
 	$(KPROVE) $(KPROVE_REPL_OPTS) -d . -m VERIFICATION $<
 
+%.kscript: $(DEFINITION) $(KORE_EXEC) 
+	$(KPROVE) --haskell-backend-command "$(KORE_REPL) -r --repl-script $@" -d ../.. -m VERIFICATION $(SPEC_NAME)
+
 %.search.star.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-all
 
