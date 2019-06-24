@@ -12,7 +12,6 @@ module Kore.Step.Remainder
 import           Control.Applicative
                  ( Alternative (..) )
 import qualified Data.Foldable as Foldable
-import qualified Data.Set as Set
 
 import           Kore.Internal.Conditional
                  ( Conditional (Conditional) )
@@ -90,7 +89,8 @@ existentiallyQuantifyTarget predicate =
     Syntax.Predicate.makeMultipleExists freeTargetVariables predicate
   where
     freeTargetVariables =
-        Set.filter Target.isTarget
+        filter Target.isTarget
+        $ Foldable.toList
         $ Syntax.Predicate.freeVariables predicate
 
 {- | Negate a disjunction of many terms.

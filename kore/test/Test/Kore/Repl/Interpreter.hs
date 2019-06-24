@@ -9,14 +9,14 @@ import Test.Tasty.HUnit
 
 import           Control.Applicative
 import           Control.Concurrent.MVar
+import qualified Control.Lens as Lens
 import           Control.Monad.Reader
                  ( runReaderT )
 import           Control.Monad.Trans.State.Strict
                  ( evalStateT, runStateT )
 import           Data.Coerce
                  ( coerce )
-import           Data.Default
-                 ( def )
+import           Data.Function
 import           Data.IORef
                  ( newIORef, readIORef, writeIORef )
 import           Data.List.NonEmpty
@@ -29,7 +29,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Data.Map.Strict as StrictMap
 import qualified Kore.Attribute.Axiom as Attribute
-import qualified Kore.Attribute.Label as AttrLabel
 import qualified Kore.Builtin.Int as Int
 import           Kore.Internal.Predicate
                  ( Predicate )
@@ -39,20 +38,17 @@ import           Kore.Internal.TermLike
 import qualified Kore.Logger.Output as Logger
 import           Kore.OnePath.Verification
                  ( Axiom (..), verifyClaimStep )
-import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
 import           Kore.Repl.State
 import           Kore.Step.Rule
-                 ( OnePathRule (..), RewriteRule (..), RulePattern (..),
-                 rulePattern )
 
 import           Kore.Step.Simplification.AndTerms
                  ( cannotUnifyDistinctDomainValues )
 import           Kore.Step.Simplification.Data
                  ( Simplifier, evalSimplifier )
 import           Kore.Syntax.Variable
-                 ( Variable )
+                 ( SortedVariable, Variable )
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import           Kore.Unification.Unify
@@ -526,37 +522,16 @@ emptyClaim =
     $ rulePatternWithName mkBottom_ mkBottom_ "emptyClaim"
 
 rulePatternWithName
-    :: TermLike variable
+    :: (Ord variable, SortedVariable variable)
+    => TermLike variable
     -> TermLike variable
     -> String
     -> RulePattern variable
 rulePatternWithName left right name =
-    RulePattern
-        { left
-        , right
-        , requires = Predicate.makeTruePredicate
-        , ensures  = Predicate.makeTruePredicate
-        , attributes =
-            Attribute.Axiom
-                { heatCool = def
-                , productionID = def
-                , assoc = def
-                , comm = def
-                , unit = def
-                , idem = def
-                , trusted = def
-                , concrete = def
-                , simplification = def
-                , overload = def
-                , smtLemma = def
-                , label =
-                    AttrLabel.Label . return . pack $ name
-                , sourceLocation = def
-                , constructor = def
-                , identifier = def
-                }
-        }
-
+    rulePattern left right
+    & Lens.set (lensAttributes . Attribute.lensLabel) label
+  where
+    label = Attribute.Label . pure $ pack name
 
 run :: ReplCommand -> [Axiom] -> [Claim] -> Claim -> IO Result
 run command axioms claims claim =

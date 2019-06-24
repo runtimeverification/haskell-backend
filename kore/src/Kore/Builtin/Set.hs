@@ -223,7 +223,7 @@ expectBuiltinSet ctx _set = do
         _ -> empty
 
 returnSet
-    :: (MonadSimplify m, Ord variable)
+    :: (MonadSimplify m, Ord variable, SortedVariable variable)
     => Sort
     -> Set (TermLike Concrete)
     -> m (AttemptedAxiom variable)
@@ -406,7 +406,7 @@ pattern.
 
  -}
 asInternal
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => SmtMetadataTools Attribute.Symbol
     -> Sort
     -> Set (TermLike Concrete)
@@ -525,7 +525,7 @@ splitVariableConcrete terms =
 
  -}
 asPattern
-    ::  ( Ord variable
+    ::  ( Ord variable, SortedVariable variable
         , Given (SmtMetadataTools Attribute.Symbol)
         )
     => Sort

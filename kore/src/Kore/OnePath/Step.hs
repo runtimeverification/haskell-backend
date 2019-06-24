@@ -24,6 +24,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Debug
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -261,10 +262,11 @@ removalPredicate destination config =
         -- The variables of the destination that are missing from the
         -- configuration. These are the variables which should be existentially
         -- quantified in the removal predicate.
-        extraVariables =
-            Set.difference
-                (Pattern.freeVariables destination)
-                (Pattern.freeVariables config)
+        configVariables =
+            FreeVariables.getFreeVariables $ Pattern.freeVariables config
+        destinationVariables =
+            FreeVariables.getFreeVariables $ Pattern.freeVariables destination
+        extraVariables = Set.difference destinationVariables configVariables
         quantifyPredicate = Predicate.makeMultipleExists extraVariables
     in
         Predicate.makeNotPredicate

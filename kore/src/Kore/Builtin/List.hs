@@ -170,7 +170,7 @@ expectBuiltinList ctx =
         _ -> empty
 
 returnList
-    :: (MonadSimplify m, Ord variable)
+    :: (MonadSimplify m, Ord variable, SortedVariable variable)
     => Sort
     -> Seq (TermLike variable)
     -> m (AttemptedAxiom variable)
@@ -194,7 +194,7 @@ evalGet =
     Builtin.functionEvaluator evalGet0
   where
     evalGet0
-        :: (Ord variable, MonadSimplify simplifier)
+        :: (Ord variable, SortedVariable variable, MonadSimplify simplifier)
         => TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
@@ -241,7 +241,7 @@ evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
     evalConcat0
-        :: (Ord variable, MonadSimplify simplifier)
+        :: (Ord variable, SortedVariable variable, MonadSimplify simplifier)
         => TermLikeSimplifier
         -> Sort
         -> [TermLike variable]
@@ -308,7 +308,7 @@ asTermLike builtin
 {- | Render a 'Seq' as an expanded internal list pattern.
  -}
 asInternal
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => SmtMetadataTools Attribute.Symbol
     -> Sort
     -> Seq (TermLike variable)
@@ -332,7 +332,7 @@ See also: 'asPattern'
 
  -}
 asPattern
-    ::  ( Ord variable
+    ::  ( Ord variable, SortedVariable variable
         , Given (SmtMetadataTools Attribute.Symbol)
         )
     => Sort

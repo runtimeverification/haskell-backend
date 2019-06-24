@@ -59,7 +59,7 @@ See also: 'fromPattern'
 
  -}
 fromTermLike
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => TermLike variable
     -> OrPattern variable
 fromTermLike = fromPattern . Pattern.fromTermLike
@@ -86,7 +86,7 @@ isFalse = isBottom
 @
 
  -}
-top :: Ord variable => OrPattern variable
+top :: (Ord variable, SortedVariable variable) => OrPattern variable
 top = fromPattern Pattern.top
 
 {-| 'isTrue' checks if the 'Or' has a single top pattern.
