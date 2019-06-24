@@ -564,7 +564,7 @@ runWithState command axioms claims claim stateTransformer
         output' <- readIORef output
         return $ Result output' c s
   where
-    logOptions = Logger.KoreLogOptions Logger.LogNone Logger.Debug
+    logOptions = Logger.KoreLogOptions Logger.LogNone Logger.Debug mempty
     liftSimplifier logger =
         SMT.runSMT SMT.defaultConfig logger . evalSimplifier testEnv
     writeIORefIfNotEmpty out =
