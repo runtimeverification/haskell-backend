@@ -423,6 +423,12 @@ concatSetSymbol :: Internal.Symbol
 concatSetSymbol =
     binarySymbol "concatSet" setSort & hook "SET.concat" & functional
 
+concatSet
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+concatSet s1 s2 = mkApplySymbol concatSetSymbol [s1, s2]
+
 inSetSymbol :: Internal.Symbol
 inSetSymbol =
     builtinSymbol "inSet" boolSort [intSort, setSort] & hook "SET.in"

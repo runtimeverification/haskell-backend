@@ -457,6 +457,8 @@ var_z_1 :: Variable
 var_z_1 = Variable (testId "z") (Just (Element 1)) testSort
 x :: Variable
 x = Variable (testId "x") mempty testSort
+x0 :: Variable
+x0 = Variable (testId "x") mempty testSort0
 y :: Variable
 y = Variable (testId "y") mempty testSort
 z :: Variable

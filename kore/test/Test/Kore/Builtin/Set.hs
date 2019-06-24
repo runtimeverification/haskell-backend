@@ -1,7 +1,5 @@
 module Test.Kore.Builtin.Set where
 
-import           GHC.Stack
-                 ( HasCallStack )
 import           Hedgehog hiding
                  ( Concrete, property )
 import qualified Hedgehog.Gen as Gen
@@ -19,6 +17,8 @@ import qualified Data.Sequence as Seq
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
+import           GHC.Stack as GHC
+                 ( HasCallStack )
 
 import           Kore.Attribute.Hook
                  ( Hook )
@@ -29,16 +29,20 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Internal.MultiOr
                  ( MultiOr (..) )
 import           Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
-                 ( TermLike, fromConcrete, mkAnd, mkApplySymbol, mkEquals_,
-                 mkVar )
-import           Kore.Predicate.Predicate as Predicate
+import           Kore.Predicate.Predicate as Predicate hiding
+                 ( fromSubstitution )
 import           Kore.Sort
                  ( Sort )
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
+import           Kore.Step.Simplification.AndTerms
+                 ( termUnification )
+import           Kore.Step.Simplification.Data
+                 ( evalSimplifier )
 import           Kore.Syntax.Id
                  ( Id )
 import           Kore.Syntax.Variable
@@ -46,6 +50,8 @@ import           Kore.Syntax.Variable
 import qualified Kore.Syntax.Variable as DoNotUse
                  ( Variable (..) )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unification.Unify
+                 ( runUnifierT )
 import           SMT
                  ( SMT )
 
@@ -60,7 +66,8 @@ import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.SMT
+import           Test.SMT hiding
+                 ( runSMT )
 import           Test.Tasty.HUnit.Extensions
 
 genSetInteger :: Gen (Set Integer)
@@ -79,6 +86,26 @@ genSetPattern = asTermLike <$> genSetConcreteIntegerPattern
 intSetToSetPattern :: Set Integer -> TermLike Variable
 intSetToSetPattern intSet =
     asTermLike (Set.map Test.Int.asInternal intSet)
+
+test_unit :: [TestTree]
+test_unit =
+    [ unitSet `becomes` asInternal Set.empty
+        $ "unit() === /* builtin */ unit()"
+    , concatSet (mkVar xSet) unitSet `becomes` mkVar xSet
+        $ "concat(x:Set, unit()) === x:Set"
+    ]
+  where
+    xSet = varS "xSet" setSort
+    becomes
+        :: GHC.HasCallStack
+        => TermLike Variable
+        -> TermLike Variable
+        -> TestName
+        -> TestTree
+    becomes original expect name =
+        testCase name $ do
+            actual <- runSMT $ evaluate original
+            assertEqual "" (Pattern.fromTermLike expect) actual
 
 test_getUnit :: TestTree
 test_getUnit =
@@ -1251,6 +1278,17 @@ test_unifyFnSelectFromSingleton =
             (fnSelectPatRev `unifiesWithMulti` singleton) expect
          )
 
+test_unify_concat_xSet_unit_unit_vs_unit :: [TestTree]
+test_unify_concat_xSet_unit_unit_vs_unit =
+    [ (concatSet (mkVar xSet) unitSet, internalUnit)
+        `unifiedBy`
+        [(xSet, internalUnit)]
+        $ "concat(xSet:Set, unit()) ~ unit()"
+    ]
+  where
+    xSet = varS "xSet" setSort
+    internalUnit = asInternal Set.empty
+
 {- | Unify a concrete Set with symbolic-keyed Set.
 
 @
@@ -1408,6 +1446,23 @@ unifiesWithMulti pat1 pat2 expectedResults = do
             === Substitution.toMap actualSubstitution
         expectedPredicate === actualPredicate
         expectedTerm === actualTerm
+
+unifiedBy
+    :: HasCallStack
+    => (TermLike Variable, TermLike Variable)
+    -> [(Variable, TermLike Variable)]
+    -> TestName
+    -> TestTree
+unifiedBy (termLike1, termLike2) substitution testName =
+    testCase testName $ do
+        Right actual <-
+            runSMT
+            $ evalSimplifier testEnv
+            $ runUnifierT
+            $ termUnification termLike1 termLike2
+        Trans.liftIO $ assertEqual "" [expect] (Pattern.withoutTerm <$> actual)
+  where
+    expect = Predicate.fromSubstitution $ Substitution.unsafeWrap substitution
 
 -- | Specialize 'Set.asTermLike' to the builtin sort 'setSort'.
 asTermLike

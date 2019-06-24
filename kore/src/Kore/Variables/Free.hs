@@ -93,16 +93,14 @@ free variables as a synthetic attribute.
  -}
 synthetic
     :: Ord variable
-    => CofreeF (PatternF variable) a (Set.Set variable)
+    => PatternF variable (Set.Set variable)
     -> Set.Set variable
-synthetic (_ :< patternHead) =
-    case patternHead of
-        ExistsF Exists { existsVariable, existsChild } ->
-            Set.delete existsVariable existsChild
-        ForallF Forall { forallVariable, forallChild } ->
-            Set.delete forallVariable forallChild
-        VariableF variable ->
-            Set.singleton variable
-        _ -> Foldable.foldl' Set.union Set.empty patternHead
-
+synthetic (ExistsF Exists { existsVariable, existsChild }) =
+    Set.delete existsVariable existsChild
+synthetic (ForallF Forall { forallVariable, forallChild }) =
+    Set.delete forallVariable forallChild
+synthetic (VariableF variable) =
+    Set.singleton variable
+synthetic patternHead =
+    Foldable.foldl' Set.union Set.empty patternHead
 {-# INLINE synthetic #-}

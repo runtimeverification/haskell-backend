@@ -20,7 +20,7 @@ import           Kore.Internal.TermLike
 an or containing a term made of that literal.
 -}
 simplify
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => StringLiteral
     -> OrPattern variable
 simplify (StringLiteral str) =

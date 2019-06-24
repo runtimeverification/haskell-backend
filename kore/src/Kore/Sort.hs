@@ -12,6 +12,11 @@ module Kore.Sort
     , getSortId
     , sortSubstitution
     , substituteSortVariables
+    , rigidSort
+    , sameSort
+    , matchSort
+    , matchSorts
+    , alignSorts
     -- * Meta-sorts
     , MetaSortType (..)
     , MetaBasicSortType (..)
@@ -27,19 +32,32 @@ module Kore.Sort
     , predicateSortId
     , predicateSortActual
     , predicateSort
+    -- * Exceptions
+    , SortMismatch (..)
+    , sortMismatch
+    , MissingArgument (..)
+    , missingArgument
+    , UnexpectedArgument (..)
+    , unexpectedArgument
     -- * Re-exports
     , module Kore.Syntax.Id
     ) where
 
 import           Control.DeepSeq
                  ( NFData )
+import           Control.Exception
+                 ( Exception (..), throw )
 import           Data.Align
 import qualified Data.Foldable as Foldable
 import           Data.Hashable
                  ( Hashable )
 import qualified Data.Map.Strict as Map
+import           Data.Maybe
+                 ( fromMaybe )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Data.These
+import           Data.Typeable
+                 ( Typeable )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -271,3 +289,86 @@ Kore.ASTVerifier.DefinitionVerifier.indexImplicitModule.
 
 -}
 predicateSort = SortActualSort predicateSortActual
+
+rigidSort :: Sort -> Maybe Sort
+rigidSort sort
+  | sort == predicateSort = Nothing
+  | otherwise             = Just sort
+
+data SortMismatch = SortMismatch !Sort !Sort
+    deriving (Eq, Show, Typeable)
+
+instance Exception SortMismatch where
+    displayException (SortMismatch sort1 sort2) =
+        (show . Pretty.vsep)
+            [ "Could not make sort"
+            , Pretty.indent 4 (unparse sort2)
+            , "match sort"
+            , Pretty.indent 4 (unparse sort1)
+            , "This is a program bug!"
+            ]
+
+{- | Throw a 'SortMismatch' exception.
+ -}
+sortMismatch :: Sort -> Sort -> a
+sortMismatch sort1 sort2 = throw (SortMismatch sort1 sort2)
+
+newtype MissingArgument = MissingArgument Sort
+    deriving (Eq, Show, Typeable)
+
+instance Exception MissingArgument  where
+    displayException (MissingArgument sort1) =
+        (show . Pretty.sep)
+            [ "Expected another argument of sort"
+            , unparse sort1
+            ]
+
+newtype UnexpectedArgument = UnexpectedArgument Sort
+    deriving (Eq, Show, Typeable)
+
+instance Exception UnexpectedArgument where
+    displayException (UnexpectedArgument sort2) =
+        (show . Pretty.sep)
+            [ "Unexpected argument of sort"
+            , unparse sort2
+            ]
+
+missingArgument :: Sort -> a
+missingArgument sort1 = throw (MissingArgument sort1)
+
+unexpectedArgument :: Sort -> a
+unexpectedArgument sort2 = throw (UnexpectedArgument sort2)
+
+{- | Throw an error if two sorts are not the same, or return the first sort.
+ -}
+sameSort :: Sort -> Sort -> Sort
+sameSort sort1 sort2
+  | sort1 == sort2 = sort1
+  | otherwise = sortMismatch sort1 sort2
+
+{- | Match the second sort to the first.
+
+If the second sort is flexible, it matches the first sort. If the second sort is
+rigid, it must be equal to the first sort.
+
+ -}
+matchSort :: Sort -> Sort -> Sort
+matchSort sort1 sort2 =
+    maybe sort1 (sameSort sort1) (rigidSort sort2)
+
+matchSorts :: [Sort] -> [Sort] -> [Sort]
+matchSorts = alignWith matchTheseSorts
+  where
+    matchTheseSorts (This sort1) = missingArgument sort1
+    matchTheseSorts (That sort2) = unexpectedArgument sort2
+    matchTheseSorts (These sort1 sort2) = matchSort sort1 sort2
+
+alignSorts :: Foldable f => f Sort -> Sort
+alignSorts = fromMaybe predicateSort . Foldable.foldl' worker Nothing
+  where
+    worker Nothing      sort2 = rigidSort sort2
+    worker (Just sort1) sort2 =
+        Just $ maybe sort1 (alignSort sort1) (rigidSort sort2)
+    alignSort sort1 sort2
+      | sort1 == sort2 = sort1
+      | otherwise = sortMismatch sort1 sort2

@@ -545,7 +545,10 @@ unaryOperator
     :: forall a b
     .   (forall variable. Text -> Builtin (TermLike variable) -> a)
     -- ^ Parse operand
-    ->  (forall variable. Ord variable => Sort -> b -> Pattern variable)
+    ->  (forall variable
+            .   (Ord variable, SortedVariable variable)
+            =>  Sort -> b -> Pattern variable
+        )
     -- ^ Render result as pattern with given sort
     -> Text
     -- ^ Builtin function name (for error messages)
@@ -563,7 +566,7 @@ unaryOperator
     get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
     unaryOperator0
-        :: Ord variable
+        :: (Ord variable, SortedVariable variable)
         => MonadSimplify m
         => TermLikeSimplifier
         -> Sort
@@ -592,7 +595,10 @@ binaryOperator
     :: forall a b
     .  (forall variable. Text -> Builtin (TermLike variable) -> a)
     -- ^ Extract domain value
-    -> (forall variable . Ord variable => Sort -> b -> Pattern variable)
+    ->  (forall variable
+            .   (Ord variable, SortedVariable variable)
+            =>  Sort -> b -> Pattern variable
+        )
     -- ^ Render result as pattern with given sort
     -> Text
     -- ^ Builtin function name (for error messages)
@@ -610,7 +616,7 @@ binaryOperator
     get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
     binaryOperator0
-        :: Ord variable
+        :: (Ord variable, SortedVariable variable)
         => MonadSimplify m
         => TermLikeSimplifier
         -> Sort
@@ -639,7 +645,10 @@ ternaryOperator
     :: forall a b
     .  (forall variable. Text -> Builtin (TermLike variable) -> a)
     -- ^ Extract domain value
-    -> (forall variable. Ord variable => Sort -> b -> Pattern variable)
+    ->  (forall variable
+            .   (Ord variable, SortedVariable variable)
+            =>  Sort -> b -> Pattern variable
+        )
     -- ^ Render result as pattern with given sort
     -> Text
     -- ^ Builtin function name (for error messages)
@@ -657,7 +666,7 @@ ternaryOperator
     get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
     ternaryOperator0
-        :: Ord variable
+        :: (Ord variable, SortedVariable variable)
         => MonadSimplify m
         => TermLikeSimplifier
         -> Sort
@@ -674,7 +683,7 @@ ternaryOperator
 
 type FunctionImplementation
     = forall variable m
-        .  Ord variable
+        .  (Ord variable, SortedVariable variable)
         => MonadSimplify m
         => TermLikeSimplifier
         -> Sort
@@ -686,7 +695,8 @@ functionEvaluator impl =
     applicationAxiomSimplifier evaluator
   where
     evaluator
-        :: (Ord variable, Show variable, MonadSimplify simplifier)
+        :: (Ord variable, Show variable, SortedVariable variable)
+        => MonadSimplify simplifier
         => PredicateSimplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap

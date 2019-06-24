@@ -223,7 +223,7 @@ expectBuiltinSet ctx _set = do
         _ -> empty
 
 returnSet
-    :: (MonadSimplify m, Ord variable)
+    :: (MonadSimplify m, Ord variable, SortedVariable variable)
     => Sort
     -> Set (TermLike Concrete)
     -> m (AttemptedAxiom variable)
@@ -406,7 +406,7 @@ pattern.
 
  -}
 asInternal
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => SmtMetadataTools Attribute.Symbol
     -> Sort
     -> Set (TermLike Concrete)
@@ -525,7 +525,7 @@ splitVariableConcrete terms =
 
  -}
 asPattern
-    ::  ( Ord variable
+    ::  ( Ord variable, SortedVariable variable
         , Given (SmtMetadataTools Attribute.Symbol)
         )
     => Sort
@@ -793,6 +793,8 @@ unifyEqualsNormalizedSet
     -> TermLike variable
     -> TermLike variable
     -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
+    -> Bool
+    -> Bool
     -> NormalizedSet variable
     -> NormalizedSet variable
     -> MaybeT unifier (Conditional variable (NormalizedSet variable))
@@ -801,6 +803,8 @@ unifyEqualsNormalizedSet
     first
     second
     unifyEqualsChildren
+    alreadyNormalized1
+    alreadyNormalized2
     NormalizedSet
         { elementsWithVariables = elementsWithVariables1
         , concreteElements = concreteElements1
@@ -827,6 +831,12 @@ unifyEqualsNormalizedSet
                 (  null elementsWithVariables1
                 && null concreteElements1
                 && (length sets1 == 1)
+                -- TODO(virgil): remove this hack after representing all
+                -- set builtins as NormalizedSet. Right now it is needed
+                -- because we sometimes receive unnormalized terms, so we let
+                -- that pass the first time. If this is called a second time
+                -- recursively, then both terms will be normalized.
+                && alreadyNormalized1
                 )
                 errorForOpaqueSets
 
@@ -844,6 +854,7 @@ unifyEqualsNormalizedSet
                 (  null elementsWithVariables2
                 && null concreteElements2
                 && (length sets2 == 1)
+                && alreadyNormalized2
                 )
                 errorForOpaqueSets
             Monad.Trans.lift $
@@ -1284,12 +1295,20 @@ unifyEquals
         firstNormalized <- normalize1 pat1
         secondNormalized <- normalize1 pat2
 
+        let
+            firstWasNormalized = pat1 ==
+                normalizedToTerm tools sort1 firstNormalized
+            secondWasNormalized =
+                pat2 == normalizedToTerm tools sort1 secondNormalized
+
         unifierNormalized <-
             unifyEqualsNormalizedSet
                 tools
                 first
                 second
                 unifyEqualsChildren
+                firstWasNormalized
+                secondWasNormalized
                 firstNormalized
                 secondNormalized
         let
@@ -1298,10 +1317,7 @@ unifyEquals
             (unifierNormalizedTerm, unifierPredicate) =
                 Conditional.splitTerm unifierNormalized
             normalizedTerm :: TermLike variable
-            normalizedTerm = normalizedToTerm
-                tools
-                (termLikeSort first)
-                unifierNormalizedTerm
+            normalizedTerm = normalizedToTerm tools sort1 unifierNormalizedTerm
 
         -- TODO(virgil): remove this ugly hack after representing all
         -- set builtins as NormalizedSet. Right now it is needed
@@ -1310,13 +1326,10 @@ unifyEquals
         renormalized <- normalize1 normalizedTerm
 
         let unifierTerm :: TermLike variable
-            unifierTerm =
-                normalizedToTerm
-                    tools
-                    (termLikeSort first)
-                    renormalized
+            unifierTerm = normalizedToTerm tools sort1 renormalized
         return (unifierTerm `withCondition` unifierPredicate)
       where
+        sort1 = termLikeSort first
         normalize1
             ::  ( HasCallStack
                 , MonadUnify unifier

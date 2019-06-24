@@ -24,16 +24,14 @@ import           Control.Monad.Trans.Maybe
                  ( MaybeT (..) )
 import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
-import qualified Data.Set as Set
 
+import           Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.Predicate
                  ( Predicate )
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import qualified Kore.Step.Merging.OrPattern as OrPattern
-import           Kore.Step.RecursiveAttributes
-                 ( isFunctionPattern )
 import           Kore.Step.Simplification.AndTerms
                  ( SortInjectionMatch (SortInjectionMatch),
                  simplifySortInjections )
@@ -410,8 +408,7 @@ matchVariableFunction
     -> MaybeT unifier (Predicate variable)
 matchVariableFunction quantifiedVariables (Var_ var) second
   | not (var `Map.member` quantifiedVariables) = do
-    tools <- Simplifier.askMetadataTools
-    Monad.guard (isFunctionPattern tools second)
+    Monad.guard (isFunctionPattern second)
     Monad.Trans.lift $ do
         ceilOr <- Ceil.makeEvaluateTerm second
         result <-
@@ -433,7 +430,7 @@ checkVariableEscape
     -> Predicate variable
     -> Predicate variable
 checkVariableEscape vars predSubst
-  | any (`Set.member` freeVars) vars = error
+  | any (`isFreeVariable` freeVars) vars = error
         "quantified variables in substitution or predicate escaping context"
   | otherwise = predSubst
   where

@@ -13,11 +13,15 @@ import           SMT
                  ( SMT )
 import qualified SMT
 
-testPropertyWithSolver :: String -> PropertyT SMT () -> TestTree
+testPropertyWithSolver
+    :: GHC.HasCallStack
+    => String
+    -> PropertyT SMT ()
+    -> TestTree
 testPropertyWithSolver str =
     testProperty str . Hedgehog.property . Morph.hoist runSMT
 
-testCaseWithSMT :: String -> SMT () -> TestTree
+testCaseWithSMT :: GHC.HasCallStack => String -> SMT () -> TestTree
 testCaseWithSMT str = testCase str . runSMT
 
 assertEqual'

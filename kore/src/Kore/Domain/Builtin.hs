@@ -10,6 +10,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 
 module Kore.Domain.Builtin
     ( Builtin (..)
+    , builtinSort
     , InternalMap (..)
     , lensBuiltinMapSort
     , lensBuiltinMapUnit
@@ -61,6 +62,7 @@ import qualified GHC.Generics as GHC
 
 import Control.Lens.TH.Rules
        ( makeLenses )
+import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Domain.Class
 import Kore.Internal.Symbol
@@ -398,6 +400,20 @@ instance (Unparse key, Unparse child) => Unparse (Builtin key child) where
     unparse2 evaluated =
         Pretty.sep ["/* builtin: */", unparse2Generic evaluated]
 
+builtinSort :: Builtin key child -> Sort
+builtinSort builtin =
+    case builtin of
+        BuiltinInt InternalInt { builtinIntSort } -> builtinIntSort
+        BuiltinBool InternalBool { builtinBoolSort } -> builtinBoolSort
+        BuiltinString InternalString { internalStringSort } -> internalStringSort
+        BuiltinMap InternalMap { builtinMapSort } -> builtinMapSort
+        BuiltinList InternalList { builtinListSort } -> builtinListSort
+        BuiltinSet InternalSet { builtinSetSort } -> builtinSetSort
+
+instance Synthetic (Builtin key) Sort where
+    synthetic = builtinSort
+    {-# INLINE synthetic #-}
+
 makeLenses ''InternalMap
 makeLenses ''InternalList
 makeLenses ''InternalSet
@@ -412,16 +428,8 @@ instance Domain (Builtin key) where
         original =
             DomainValue
                 { domainValueChild = builtin
-                , domainValueSort = originalSort
+                , domainValueSort = builtinSort builtin
                 }
-        originalSort =
-            case builtin of
-                BuiltinInt InternalInt { builtinIntSort } -> builtinIntSort
-                BuiltinBool InternalBool { builtinBoolSort } -> builtinBoolSort
-                BuiltinString InternalString { internalStringSort } -> internalStringSort
-                BuiltinMap InternalMap { builtinMapSort } -> builtinMapSort
-                BuiltinList InternalList { builtinListSort } -> builtinListSort
-                BuiltinSet InternalSet { builtinSetSort } -> builtinSetSort
         getBuiltin
             :: forall child
             .  DomainValue Sort (Builtin key child)

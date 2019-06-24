@@ -26,6 +26,10 @@ import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Location as Attribute
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
+import qualified Kore.Attribute.Pattern.Defined as Attribute.Pattern
+import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
+import qualified Kore.Attribute.Pattern.Function as Attribute.Pattern
+import qualified Kore.Attribute.Pattern.Functional as Attribute.Pattern
 import qualified Kore.Attribute.Source as Attribute
 import           Kore.Domain.Builtin as Domain
 import           Kore.Error
@@ -1317,7 +1321,10 @@ instance
     ( EqualWithExplanation variable, Show variable
     ) => StructEqualWithExplanation (Attribute.Pattern variable)
   where
-    structFieldsWithNames expected@(Attribute.Pattern _ _) actual@(Attribute.Pattern _ _) =
+    structFieldsWithNames
+        expected@(Attribute.Pattern _ _ _ _ _)
+        actual@(Attribute.Pattern _ _ _ _ _)
+      =
         [ EqWrap
             "patternSort = "
             (Attribute.patternSort expected)
@@ -1326,8 +1333,62 @@ instance
             "freeVariables = "
             (Attribute.freeVariables expected)
             (Attribute.freeVariables actual)
+        , EqWrap
+            "functional = "
+            (Attribute.functional expected)
+            (Attribute.functional actual)
+        , EqWrap
+            "function = "
+            (Attribute.function expected)
+            (Attribute.function actual)
+        , EqWrap
+            "defined = "
+            (Attribute.defined expected)
+            (Attribute.defined actual)
         ]
     structConstructorName _ = "Pattern"
+
+instance
+    (EqualWithExplanation variable, Show variable) =>
+    EqualWithExplanation (Attribute.FreeVariables variable)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    (EqualWithExplanation variable, Show variable) =>
+    WrapperEqualWithExplanation (Attribute.FreeVariables variable)
+  where
+    wrapperConstructorName _ = "FreeVariables"
+    wrapperField =
+        Function.on (EqWrap "getFreeVariables = ") Attribute.getFreeVariables
+
+instance EqualWithExplanation Attribute.Pattern.Functional where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation Attribute.Pattern.Functional where
+    wrapperConstructorName _ = "Functional"
+    wrapperField =
+        Function.on (EqWrap "isFunctional = ") Attribute.Pattern.isFunctional
+
+instance EqualWithExplanation Attribute.Pattern.Function where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation Attribute.Pattern.Function where
+    wrapperConstructorName _ = "Function"
+    wrapperField =
+        Function.on (EqWrap "isFunction = ") Attribute.Pattern.isFunction
+
+instance EqualWithExplanation Attribute.Pattern.Defined where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation Attribute.Pattern.Defined where
+    wrapperConstructorName _ = "Defined"
+    wrapperField =
+        Function.on (EqWrap "isDefined = ") Attribute.Pattern.isDefined
 
 instance
     ( EqualWithExplanation variable, Show variable

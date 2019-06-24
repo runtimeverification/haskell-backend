@@ -53,14 +53,12 @@ import           Data.List
                  ( foldl', nub )
 import           Data.Map.Strict
                  ( Map )
-import           Data.Set
-                 ( Set )
-import qualified Data.Set as Set
 import           GHC.Generics
                  ( Generic )
 import           GHC.Stack
                  ( HasCallStack )
 
+import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Error
                  ( Error, koreFail )
 import           Kore.Internal.TermLike as TermLike
@@ -272,7 +270,7 @@ simplification.
 -}
 makeNotPredicate
     ::  ( SortedVariable variable
-        , Eq variable
+        , Ord variable
         , Show variable
         , Unparse variable
         )
@@ -317,7 +315,8 @@ makeInPredicate first second =
 predicate.
 -}
 makeCeilPredicate
-    ::  ( SortedVariable variable
+    ::  ( Ord variable
+        , SortedVariable variable
         , Show variable
         , Unparse variable
         )
@@ -330,8 +329,9 @@ makeCeilPredicate patt =
 predicate.
 -}
 makeFloorPredicate
-    ::  ( SortedVariable variable
+    ::  ( Ord variable
         , Show variable
+        , SortedVariable variable
         , Unparse variable
         )
     => TermLike variable
@@ -388,12 +388,14 @@ makeForallPredicate v (GenericPredicate p) =
 
 {-| 'makeTruePredicate' produces a predicate wrapping a 'top'.
 -}
-makeTruePredicate :: Predicate variable
+makeTruePredicate
+    :: (Ord variable, SortedVariable variable) => Predicate variable
 makeTruePredicate = GenericPredicate TermLike.mkTop_
 
 {-| 'makeFalsePredicate' produces a predicate wrapping a 'bottom'.
 -}
-makeFalsePredicate :: Predicate variable
+makeFalsePredicate
+    :: (Ord variable, SortedVariable variable) => Predicate variable
 makeFalsePredicate = GenericPredicate TermLike.mkBottom_
 
 makePredicate
@@ -457,7 +459,7 @@ mapVariables f = fmap (TermLike.mapVariables f)
 freeVariables
     :: Ord variable
     => Predicate variable
-    -> Set variable
+    -> FreeVariables variable
 freeVariables = TermLike.freeVariables . unwrapPredicate
 
 hasFreeVariable
@@ -466,7 +468,7 @@ hasFreeVariable
     -> Predicate variable
     -> Bool
 hasFreeVariable variable =
-    Set.member variable . Kore.Predicate.Predicate.freeVariables
+    isFreeVariable variable . Kore.Predicate.Predicate.freeVariables
 
 {- | 'substitutionToPredicate' transforms a substitution in a predicate.
 

@@ -9,10 +9,8 @@ import qualified Data.List as List
 import qualified Data.Map as Map
 import           Data.Ord
                  ( comparing )
-import qualified Data.Set as Set
 
 import           Data.Sup
-import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -39,8 +37,6 @@ import qualified SMT
 import           Test.Kore
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
-import           Test.Kore.Step.MockSymbols
-                 ( testSort )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Kore.Step.Simplifier
                  ( mockSimplifier )
@@ -79,7 +75,6 @@ test_applicationSimplification =
                 (mockSimplifier noSimplification)
                 Map.empty
                 (makeApplication
-                    testSort
                     Mock.sigmaSymbol
                     [ [aExpanded, bExpanded]
                     , [cExpanded, dExpanded]
@@ -95,7 +90,6 @@ test_applicationSimplification =
                 (mockSimplifier noSimplification)
                 Map.empty
                 (makeApplication
-                    testSort
                     Mock.sigmaSymbol
                     [ [aExpanded, bExpanded]
                     , []
@@ -122,7 +116,7 @@ test_applicationSimplification =
                         ]
                     )
                 )
-                (makeApplication testSort Mock.fSymbol [[aExpanded]])
+                (makeApplication Mock.fSymbol [[aExpanded]])
         assertEqualWithExplanation "" expect actual
 
     , testGroup "Combines child predicates and substitutions"
@@ -150,7 +144,6 @@ test_applicationSimplification =
                     (mockSimplifier noSimplification)
                     Map.empty
                     (makeApplication
-                        testSort
                         Mock.sigmaSymbol
                         [   [ Conditional
                                 { term = Mock.a
@@ -240,7 +233,6 @@ test_applicationSimplification =
                             )
                         )
                     (makeApplication
-                        testSort
                         Mock.sigmaSymbol
                         [   [ Conditional
                                 { term = Mock.a
@@ -310,38 +302,21 @@ simplificationEvaluator = firstFullEvaluation
 
 makeApplication
     :: (Ord variable, Show variable, HasCallStack)
-    => Sort
-    -> Symbol
+    => Symbol
     -> [[Pattern variable]]
-    -> CofreeF
-        (Application Symbol)
-        (Attribute.Pattern variable)
-        (OrPattern variable)
-makeApplication patternSort symbol patterns =
-    (:<)
-        valid
-        Application
-            { applicationSymbolOrAlias = symbol
-            , applicationChildren = map OrPattern.fromPatterns patterns
-            }
-  where
-    termFreeVariables = TermLike.freeVariables . Pattern.term
-    valid =
-        Attribute.Pattern
-            { patternSort
-            , freeVariables =
-                Set.unions (Set.unions . map termFreeVariables <$> patterns)
-            }
+    -> Application Symbol (OrPattern variable)
+makeApplication symbol patterns =
+    Application
+        { applicationSymbolOrAlias = symbol
+        , applicationChildren = map OrPattern.fromPatterns patterns
+        }
 
 evaluate
     :: TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> CofreeF
-        (Application Symbol)
-        (Attribute.Pattern Variable)
-        (OrPattern Variable)
+    -> Application Symbol (OrPattern Variable)
     -> IO (OrPattern Variable)
 evaluate simplifier axiomIdToEvaluator application =
     SMT.runSMT SMT.defaultConfig emptyLogger
