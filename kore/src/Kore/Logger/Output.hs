@@ -31,7 +31,6 @@ import           Control.Monad.Catch
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import qualified Control.Monad.Trans as Trans
-import qualified Data.Char as Char
 import           Data.Foldable
                  ( fold )
 import qualified Data.Foldable as Fold
@@ -62,11 +61,9 @@ import           Data.Time.LocalTime
 import           GHC.Stack
                  ( CallStack, getCallStack, popCallStack, prettyCallStack )
 import           Options.Applicative
-                 ( Parser, auto, help, long, maybeReader, option, str )
+                 ( Parser, help, long, maybeReader, option )
 import qualified Text.Megaparsec as Parser
 import qualified Text.Megaparsec.Char as Parser
-import           Text.Read
-                 ( readMaybe )
 
 import Kore.Logger
 
