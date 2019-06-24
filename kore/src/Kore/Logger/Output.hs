@@ -33,10 +33,14 @@ import           Control.Monad.IO.Class
 import qualified Control.Monad.Trans as Trans
 import           Data.Foldable
                  ( fold )
+import qualified Data.Foldable as Fold
 import           Data.Functor.Contravariant
                  ( contramap )
 import           Data.List
                  ( intersperse )
+import           Data.Set
+                 ( Set )
+import qualified Data.Set as Set
 import           Data.String
                  ( IsString, fromString )
 import           Data.Text
@@ -74,10 +78,12 @@ data KoreLogType
 -- | 'KoreLogOptions' is the top-level options type for logging, containing the
 -- desired output method and the minimum 'Severity'.
 data KoreLogOptions = KoreLogOptions
-    { logType  :: KoreLogType
+    { logType   :: KoreLogType
     -- ^ desired output method, see 'KoreLogType'
-    , logLevel :: Severity
+    , logLevel  :: Severity
     -- ^ minimal log level, passed via "--log-level"
+    , logScopes :: Set Scope
+    -- ^ scopes to show, empty means show all
     }
 
 -- | Internal type used to add timestamps to a 'LogMessage'.
@@ -90,16 +96,16 @@ withLogger
     => KoreLogOptions
     -> (LogAction m LogMessage -> IO a)
     -> IO a
-withLogger KoreLogOptions { logType, logLevel } cont =
+withLogger KoreLogOptions { logType, logLevel, logScopes } cont =
     case logType of
         LogNone     ->
             cont mempty
         LogStdOut   ->
-            cont (stdoutLogger logLevel)
+            cont (stdoutLogger logLevel logScopes)
         LogFileText -> do
             fileName <- getKoreLogFileName
             Colog.withLogTextFile fileName
-                $ cont . makeKoreLogger logLevel
+                $ cont . makeKoreLogger logLevel logScopes
   where
     getKoreLogFileName :: IO String
     getKoreLogFileName = do
@@ -115,6 +121,7 @@ parseKoreLogOptions =
     KoreLogOptions
     <$> (parseType <|> pure LogNone)
     <*> (parseLevel <|> pure Info)
+    <*> (parseScope <|> pure mempty)
   where
     parseType =
         option
@@ -131,6 +138,11 @@ parseKoreLogOptions =
             auto
             $ long "log-level"
             <> help "Log level: Debug, Info, Warning, Error, or Critical"
+    parseScope =
+        option
+            auto
+            $ long "log-scope"
+            <> help "Log scope"
 
 -- Creates a kore logger which:
 --     * filters messages that have lower severity than the provided severity
@@ -140,10 +152,11 @@ makeKoreLogger
     :: forall m
     .  MonadIO m
     => Severity
+    -> Set Scope
     -> LogAction m Text
     -> LogAction m LogMessage
-makeKoreLogger severity logToText =
-    Colog.cfilter (\(LogMessage _ s _ _) -> s >= severity)
+makeKoreLogger severity scopeSet logToText =
+    Colog.cfilter (\(LogMessage _ logSeverity logScope _) -> logSeverity >= severity && logScope `member` scopeSet)
         . Colog.cmapM addTimeStamp
         $ contramap messageToText logToText
   where
@@ -185,6 +198,11 @@ makeKoreLogger severity logToText =
     callStackToBuilder :: CallStack -> Builder
     callStackToBuilder = Builder.fromString . prettyCallStack . popCallStack
 
+    member :: [Scope] -> Set Scope -> Bool
+    member s set
+      | Set.null set = True
+      | otherwise    = Fold.any (`Set.member` set) s
+
 -- Helper to get the local time in 'MonadIO'.
 getLocalTime :: MonadIO m => m LocalTime
 getLocalTime =
@@ -197,8 +215,8 @@ formatLocalTime format = fromString . formatTime defaultTimeLocale format
 emptyLogger :: Applicative m => LogAction m msg
 emptyLogger = mempty
 
-stdoutLogger :: MonadIO m => Severity -> LogAction m LogMessage
-stdoutLogger logLevel = makeKoreLogger logLevel Colog.logTextStdout
+stdoutLogger :: MonadIO m => Severity -> Set Scope -> LogAction m LogMessage
+stdoutLogger logLevel logScopes = makeKoreLogger logLevel logScopes Colog.logTextStdout
 
 {- | @swappableLogger@ delegates to the logger contained in the 'MVar'.
 
