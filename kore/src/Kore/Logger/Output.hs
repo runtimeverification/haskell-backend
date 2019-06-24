@@ -31,6 +31,7 @@ import           Control.Monad.Catch
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import qualified Control.Monad.Trans as Trans
+import qualified Data.Char as Char
 import           Data.Foldable
                  ( fold )
 import qualified Data.Foldable as Fold
@@ -130,31 +131,40 @@ parseKoreLogOptions =
   where
     parseType =
         option
-            parseTypeString
+            (maybeReader parseTypeString)
             $ long "log"
             <> help "Log type: None, StdOut, FileText"
-    -- TODO(Vladimir): This should be implemented as
-    -- `Read deriving via StripPrefix "Log"`
-    parseTypeString = do
-        t <- str
-        pure $ maybe LogNone id $ readMaybe ("Log" ++ t)
+    parseTypeString =
+        \case
+            "none"     -> pure LogNone
+            "stdout"   -> pure LogStdOut
+            "filetext" -> pure LogFileText
+            _          -> Nothing
+
     parseLevel =
         option
-            auto
+            (maybeReader parseSeverity)
             $ long "log-level"
             <> help "Log level: Debug, Info, Warning, Error, or Critical"
+    parseSeverity =
+        \case
+            "debug"    -> pure Debug
+            "info"     -> pure Info
+            "warning"  -> pure Warning
+            "error"    -> pure Error
+            "critical" -> pure Critical
+            _          -> Nothing
+
     parseScope =
         option
             parseCommaSeparatedScopes
             $ long "log-scope"
             <> help "Log scope"
     parseCommaSeparatedScopes = maybeReader $ Parser.parseMaybe scopeParser
-
     scopeParser :: Parser.Parsec String String (Set Scope)
     scopeParser = do
         args <- many itemParser
         pure . Set.fromList $ args
-
     itemParser :: Parser.Parsec String String Scope
     itemParser = do
         argument <- some (Parser.noneOf [','])
