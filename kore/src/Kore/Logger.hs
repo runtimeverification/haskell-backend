@@ -69,7 +69,7 @@ data Severity
 -- | Logging scope, used by 'LogMessage'.
 newtype Scope = Scope
     { unScope :: Text
-    } deriving (Eq, Ord, Show, Semigroup, Monoid, IsString)
+    } deriving (Eq, Ord, Read, Show, Semigroup, Monoid, IsString)
 
 -- | This type should not be used directly, but rather should be created and
 -- dispatched through the `log` functions.

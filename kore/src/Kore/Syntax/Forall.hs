@@ -18,6 +18,8 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Syntax.Variable
@@ -72,3 +74,16 @@ instance
             , unparse2SortedVariable forallVariable
             , unparse2 forallChild
             ])
+
+instance
+    Ord variable =>
+    Synthetic (Forall sort variable) (FreeVariables variable)
+  where
+    synthetic Forall { forallVariable, forallChild } =
+        bindVariable forallVariable forallChild
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Forall Sort variable) Sort where
+    synthetic Forall { forallSort, forallChild } =
+        forallSort `matchSort` forallChild
+    {-# INLINE synthetic #-}

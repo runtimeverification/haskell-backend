@@ -68,7 +68,7 @@ bottom = fromPredicates []
 @
 
  -}
-top :: Ord variable => OrPredicate variable
+top :: (Ord variable, SortedVariable variable) => OrPredicate variable
 top = fromPredicate Predicate.top
 
 {-| 'isFalse' checks if the 'OrPredicate' is composed only of bottom items.

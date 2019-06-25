@@ -24,12 +24,12 @@ import           Control.DeepSeq
 import           Data.Hashable
 import           Data.Monoid
                  ( (<>) )
-import           Data.Set
-                 ( Set )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
                  ( Generic )
 
+import           Kore.Attribute.Pattern.FreeVariables
+                 ( FreeVariables )
 import           Kore.Internal.TermLike
                  ( TermLike )
 import           Kore.Predicate.Predicate
@@ -239,7 +239,7 @@ The result has a true 'Predicate'.
 
  -}
 fromSubstitution
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => Substitution variable
     -> Conditional variable ()
 fromSubstitution substitution =
@@ -255,7 +255,7 @@ The result has a true 'Predicate'.
 
  -}
 fromSingleSubstitution
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => (variable, TermLike variable)
     -> Conditional variable ()
 fromSingleSubstitution pair =
@@ -284,10 +284,10 @@ See also: 'Predicate.freeVariables'.
 -}
 freeVariables
     :: Ord variable
-    => (term -> Set variable)
+    => (term -> FreeVariables variable)
     -- ^ Extract the free variables of @term@.
     -> Conditional variable term
-    -> Set variable
+    -> FreeVariables variable
 freeVariables getFreeVariables Conditional { term, predicate, substitution } =
     getFreeVariables term
     <> Predicate.freeVariables predicate

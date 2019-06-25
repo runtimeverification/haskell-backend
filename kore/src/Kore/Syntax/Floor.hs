@@ -13,11 +13,14 @@ module Kore.Syntax.Floor
 import           Control.DeepSeq
                  ( NFData (..) )
 import qualified Data.Deriving as Deriving
+import           Data.Function
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
@@ -60,3 +63,13 @@ instance Unparse child => Unparse (Floor Sort child) where
 
     unparse2 Floor { floorChild } =
         Pretty.parens (Pretty.fillSep ["\\floor", unparse2 floorChild])
+
+instance Ord variable => Synthetic (Floor sort) (FreeVariables variable) where
+    synthetic = floorChild
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Floor Sort) Sort where
+    synthetic Floor { floorOperandSort, floorResultSort, floorChild } =
+        floorResultSort
+        & seq (matchSort floorOperandSort floorChild)
+    {-# INLINE synthetic #-}

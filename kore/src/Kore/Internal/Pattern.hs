@@ -26,11 +26,11 @@ module Kore.Internal.Pattern
     , Predicate
     ) where
 
-import Data.Set
-       ( Set )
 import GHC.Stack
        ( HasCallStack )
 
+import           Kore.Attribute.Pattern.FreeVariables
+                 ( FreeVariables )
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
 import qualified Kore.Internal.Conditional as Conditional
@@ -53,13 +53,16 @@ program configuration for Kore execution.
  -}
 type Pattern variable = Conditional variable (TermLike variable)
 
-fromPredicate :: Predicate variable -> Pattern variable
+fromPredicate
+    :: (Ord variable, SortedVariable variable)
+    => Predicate variable
+    -> Pattern variable
 fromPredicate = (<$) mkTop_
 
 freeVariables
     :: Ord variable
     => Pattern variable
-    -> Set variable
+    -> FreeVariables variable
 freeVariables = Conditional.freeVariables TermLike.freeVariables
 
 {-|'mapVariables' transforms all variables, including the quantified ones,
@@ -121,7 +124,7 @@ toTermLike Conditional { term, predicate, substitution } =
 {-|'bottom' is an expanded pattern that has a bottom condition and that
 should become Bottom when transformed to a ML pattern.
 -}
-bottom :: Ord variable => Pattern variable
+bottom :: (Ord variable, SortedVariable variable) => Pattern variable
 bottom =
     Conditional
         { term      = mkBottom_
@@ -134,7 +137,7 @@ bottom =
 The 'predicate' is set to 'makeFalsePredicate'.
 
  -}
-bottomOf :: Ord variable => Sort -> Pattern variable
+bottomOf :: (Ord variable, SortedVariable variable) => Sort -> Pattern variable
 bottomOf resultSort =
     Conditional
         { term      = mkBottom resultSort
@@ -145,7 +148,7 @@ bottomOf resultSort =
 {-|'top' is an expanded pattern that has a top condition and that
 should become Top when transformed to a ML pattern.
 -}
-top :: Ord variable => Pattern variable
+top :: (Ord variable, SortedVariable variable) => Pattern variable
 top =
     Conditional
         { term      = mkTop_
@@ -155,7 +158,7 @@ top =
 
 {- | An 'Pattern' where the 'term' is 'Top' of the given 'Sort'.
  -}
-topOf :: Ord variable => Sort -> Pattern variable
+topOf :: (Ord variable, SortedVariable variable) => Sort -> Pattern variable
 topOf resultSort =
     Conditional
         { term      = mkTop resultSort
@@ -172,7 +175,7 @@ See also: 'makeTruePredicate', 'pure'
 
  -}
 fromTermLike
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => TermLike variable
     -> Pattern variable
 fromTermLike term

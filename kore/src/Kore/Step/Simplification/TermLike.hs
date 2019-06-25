@@ -125,7 +125,7 @@ simplifyInternal = simplifyInternalWorker
 
     simplifyInternalWorker termLike =
         let doNotSimplify = return (OrPattern.fromTermLike termLike)
-            (attrs :< termLikeF) = Recursive.project termLike
+            (_ :< termLikeF) = Recursive.project termLike
         in case termLikeF of
             -- Unimplemented cases
             ApplyAliasF _ -> doNotSimplify
@@ -135,8 +135,7 @@ simplifyInternal = simplifyInternalWorker
             AndF andF ->
                 And.simplify =<< simplifyChildren andF
             ApplySymbolF applySymbolF ->
-                Application.simplify . (attrs :<)
-                =<< simplifyChildren applySymbolF
+                Application.simplify =<< simplifyChildren applySymbolF
             CeilF ceilF ->
                 Ceil.simplify =<< simplifyChildren ceilF
             EqualsF equalsF ->
