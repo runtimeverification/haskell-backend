@@ -56,13 +56,7 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 %.test: %.output
 	diff -u $<.golden $<
 
-%.repl.test: %.repl.output
-	diff -u $<.golden $<
-
 %.output.golden: %.output
-	mv $< $<.golden
-
-%.repl.output.golden: %.repl.output
 	mv $< $<.golden
 
 .PHONY: test-k test golden clean %.test %.krun
