@@ -35,8 +35,8 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 %.krepl: %.k $(DEFINITION) $(KORE_EXEC)
 	$(KPROVE) $(KPROVE_REPL_OPTS) -d . -m VERIFICATION $<
 
-%.kscript: $(DEFINITION) $(KORE_EXEC) 
-	$(KPROVE) --haskell-backend-command "$(KORE_REPL) -r --repl-script $@" -d ../.. -m VERIFICATION $(SPEC_NAME)
+%.kscript: % $(DEFINITION) $(KORE_EXEC) 
+	$(KPROVE) --haskell-backend-command "$(KORE_REPL) -r --repl-script $<" -d ../.. -m VERIFICATION $(SPEC_FILE)
 
 %.search.star.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-all
@@ -50,10 +50,19 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 %.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
+%.repl.output: % $(DEFINITION) $(KORE_EXEC)
+	$(KPROVE) --haskell-backend-command "$(KORE_REPL) -r --repl-script $<" -d ../.. -m VERIFICATION $(SPEC_FILE) --output-file $@
+
 %.test: %.output
 	diff -u $<.golden $<
 
+%.repl.test: %.repl.output
+	diff -u $<.golden $<
+
 %.output.golden: %.output
+	mv $< $<.golden
+
+%.repl.output.golden: %.repl.output
 	mv $< $<.golden
 
 .PHONY: test-k test golden clean %.test %.krun
