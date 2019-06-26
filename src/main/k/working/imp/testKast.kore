@@ -1,0 +1,84 @@
+\and{_}(
+    /* term: */
+    Lbl'-LT-'generatedTop'-GT-'{}(
+        Lbl'-LT-'T'-GT-'{}(
+            Lbl'-LT-'k'-GT-'{}(
+                kseq{}(
+                    inj{SortStmt{}, SortKItem{}}(
+                        Lblwhile'LParUndsRParUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block{}(
+                            Lbl'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp{}(
+                                Lbl'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(
+                                    inj{SortId{}, SortAExp{}}(
+                                        \dv{SortId{}}("n")
+                                    ),
+                                    inj{SortInt{}, SortAExp{}}(
+                                        /* builtin: */ \dv{SortInt{}}("0")
+                                    )
+                                )
+                            ),
+                            Lbl'LBraUndsRBraUnds'IMP-SYNTAX'UndsUnds'Stmt{}(
+                                Lbl'UndsUndsUnds'IMP-SYNTAX'UndsUnds'Stmt'Unds'Stmt{}(
+                                    Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'Id'Unds'AExp{}(
+                                        \dv{SortId{}}("sum"),
+                                        Lbl'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(
+                                            Lbl'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(
+                                                inj{SortId{}, SortAExp{}}(
+                                                    \dv{SortId{}}("sum")
+                                                ),
+                                                inj{SortId{}, SortAExp{}}(
+                                                    \dv{SortId{}}("n")
+                                                )
+                                            ),
+                                            inj{SortId{}, SortAExp{}}(
+                                                \dv{SortId{}}("n")
+                                            )
+                                        )
+                                    ),
+                                    Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'Id'Unds'AExp{}(
+                                        \dv{SortId{}}("n"),
+                                        Lbl'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(
+                                            inj{SortId{}, SortAExp{}}(
+                                                \dv{SortId{}}("n")
+                                            ),
+                                            inj{SortInt{}, SortAExp{}}(
+                                                /* builtin: */
+                                                \dv{SortInt{}}("-1")
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    VarDotVar2:SortK{}
+                )
+            ),
+            Lbl'-LT-'state'-GT-'{}(
+                /* builtin: */
+                Lbl'Unds'Map'Unds'{}(
+                    Lbl'UndsPipe'-'-GT-Unds'{}(
+                        inj{SortId{}, SortKItem{}}(\dv{SortId{}}("n")),
+                        inj{SortInt{}, SortKItem{}}(VarN:SortInt{})
+                    ),
+                    Lbl'UndsPipe'-'-GT-Unds'{}(
+                        inj{SortId{}, SortKItem{}}(\dv{SortId{}}("sum")),
+                        inj{SortInt{}, SortKItem{}}(VarS:SortInt{})
+                    )
+                )
+            )
+        ),
+        VarDotVar0:SortGeneratedCounterCell{}
+    ),
+    \and{_}(
+        /* predicate: */
+        \equals{SortBool{}, SortGeneratedTopCell{}}(
+            Lbl'Unds-GT-Eqls'Int'Unds'{}(
+                VarN:SortInt{},
+                /* builtin: */ \dv{SortInt{}}("0")
+            ),
+            /* builtin: */ \dv{SortBool{}}("true")
+        ),
+        /* substitution: */
+        \top{_PREDICATE{}}()
+    )
+)
