@@ -671,7 +671,7 @@ redirect cmd path = do
         whenPathIsReachable path (redirectCommand str)
     redirectCommand :: String -> FilePath -> IO ()
     redirectCommand str file = do
-        writeFile path str
+        writeFile file str
         putStrLn "File created."
     runInterpreter
         :: Config claim m
@@ -831,7 +831,7 @@ saveSession path =
     saveToFile :: FilePath -> m ()
     saveToFile file = do
         content <- seqUnlines <$> Lens.use lensCommands
-        liftIO $ writeFile path content
+        liftIO $ writeFile file content
         putStrLn' "Done."
     seqUnlines :: Seq String -> String
     seqUnlines = unlines . toList
@@ -898,7 +898,7 @@ appendTo cmd file =
     appendCommand path = do
         config <- ask
         get >>= runInterpreter config >>= put
-        putStrLn' $ "Appended output to \"" <> file <> "\"."
+        putStrLn' $ "Appended output to \"" <> path <> "\"."
     runInterpreter
         :: Config claim m
         -> ReplState claim
