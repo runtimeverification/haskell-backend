@@ -93,8 +93,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
             flip evalStateT newState
                 $ flip runReaderT config
                 $ forever repl0
-        RunScript -> do
-            runReplCommand ProofStatus newState
+        RunScript ->
             runReplCommand Exit newState
 
   where
