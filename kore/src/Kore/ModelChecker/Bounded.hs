@@ -15,6 +15,7 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Limit
                  ( Limit )
 import qualified Data.Limit as Limit
+import qualified Data.Text as Text
 -- TODO (thomas.tuegel): Remove Debug.Trace
 import Debug.Trace
 
@@ -23,6 +24,7 @@ import           Kore.Internal.Pattern
 import           Kore.Internal.Pattern as Conditional
                  ( Conditional (..) )
 import           Kore.Internal.TermLike
+import qualified Kore.Logger as Logger
 import           Kore.ModelChecker.Step
                  ( CommonModalPattern, CommonProofState, ModalPattern (..),
                  Prim (..), defaultOneStepStrategy )
@@ -132,7 +134,12 @@ checkClaim
                                 searchOrder
                                 startState)
                             Nothing
-        traceM ("searched states: " ++ (show . Graph.order . graph $ executionGraph))
+
+        Logger.withLogScope (Logger.Scope "BMCStats")
+            . Logger.logInfo
+            . Text.pack
+            $ ("searched states: " ++ (show . Graph.order . graph $ executionGraph))
+
         let
             finalResult = (checkFinalNodes . pickFinal) executionGraph
         trace (show finalResult) (return finalResult)
