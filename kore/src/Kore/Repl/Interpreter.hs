@@ -1219,9 +1219,14 @@ execStateReader config st action =
         $ action
 
 checkIfCorrectFilePath :: MonadIO m => FilePath -> m Bool
-checkIfCorrectFilePath = liftIO . doesDirectoryExist . fst . splitFileName
+checkIfCorrectFilePath =
+    liftIO . doesDirectoryExist . fst . splitFileName
 
-whenPathIsReachable :: MonadIO m => FilePath -> (FilePath -> m ()) -> m ()
+whenPathIsReachable
+    :: MonadIO m
+    => FilePath
+    -> (FilePath -> m ())
+    -> m ()
 whenPathIsReachable path action =
     ifM
         (checkIfCorrectFilePath path)
