@@ -322,7 +322,7 @@ helpText =
     \Names added via a) can be used as-is. Note that names which match the\n\
     \ indexing syntax for the try and tryf commands shouldn't be added\
     \ (e.g. a5 as a rule name).\
-    \Namess added via b) need to be prefixed with the module name followed by dot,\
+    \ Names added via b) need to be prefixed with the module name followed by dot,\
     \ e.g. IMP.myName"
 
 -- | Determines whether the command needs to be stored or not. Commands that

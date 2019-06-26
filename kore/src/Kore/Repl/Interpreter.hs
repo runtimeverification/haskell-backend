@@ -31,7 +31,7 @@ import qualified Control.Lens as Lens hiding
 import           Control.Monad
                  ( foldM, void )
 import           Control.Monad.Extra
-                 ( loop, loopM )
+                 ( ifM, loop, loopM )
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.Reader
@@ -119,7 +119,9 @@ import           Kore.Unparser
                  ( unparse, unparseToString )
 import           Numeric.Natural
 import           System.Directory
-                 ( doesFileExist, findExecutable )
+                 ( doesDirectoryExist, doesFileExist, findExecutable )
+import           System.FilePath.Posix
+                 ( splitFileName )
 import           System.Process
                  ( StdStream (CreatePipe), createProcess, proc, std_in,
                  std_out )
@@ -663,11 +665,14 @@ redirect
 redirect cmd path = do
     config <- ask
     get >>= runInterpreter config >>= put
-    putStrLn' "File created."
   where
     redirectToFile :: String -> IO ()
-    redirectToFile = writeFile path
-
+    redirectToFile str =
+        whenPathIsReachable path (redirectCommand str)
+    redirectCommand :: String -> FilePath -> IO ()
+    redirectCommand str file = do
+        writeFile file str
+        putStrLn "File created."
     runInterpreter
         :: Config claim m
         -> ReplState claim
@@ -812,19 +817,24 @@ clear =
 
 -- | Save this sessions' commands to the specified file.
 saveSession
-    :: MonadState (ReplState claim) m
+    :: forall m
+    .  forall claim
+    .  MonadState (ReplState claim) m
     => MonadWriter String m
     => MonadIO m
     => FilePath
     -- ^ path to file
     -> m ()
-saveSession path = do
-   content <- seqUnlines <$> Lens.use lensCommands
-   liftIO $ writeFile path content
-   putStrLn' "Done."
- where
-   seqUnlines :: Seq String -> String
-   seqUnlines = unlines . toList
+saveSession path =
+    whenPathIsReachable path saveToFile
+  where
+    saveToFile :: FilePath -> m ()
+    saveToFile file = do
+        content <- seqUnlines <$> Lens.use lensCommands
+        liftIO $ writeFile file content
+        putStrLn' "Done."
+    seqUnlines :: Seq String -> String
+    seqUnlines = unlines . toList
 
 -- | Pipe result of command to specified program.
 pipe
@@ -881,11 +891,14 @@ appendTo
     -> FilePath
     -- ^ file to append to
     -> ReplM claim m ()
-appendTo cmd file = do
-    config <- ask
-    get >>= runInterpreter config >>= put
-    putStrLn' $ "Appended output to \"" <> file <> "\"."
+appendTo cmd file =
+    whenPathIsReachable file appendCommand
   where
+    appendCommand :: FilePath -> ReplM claim m ()
+    appendCommand path = do
+        config <- ask
+        get >>= runInterpreter config >>= put
+        putStrLn' $ "Appended output to \"" <> path <> "\"."
     runInterpreter
         :: Config claim m
         -> ReplState claim
@@ -1057,10 +1070,14 @@ showDotGraph len =
 
 saveDotGraph :: Int -> InnerGraph -> FilePath -> IO ()
 saveDotGraph len gr file =
-    void
-    . Graph.runGraphviz
-        (Graph.graphToDot (graphParams len) gr) Graph.Jpeg
-    $ file <> ".jpeg"
+    whenPathIsReachable file saveGraphImg
+  where
+    saveGraphImg :: FilePath -> IO ()
+    saveGraphImg path =
+        void
+        . Graph.runGraphviz
+            (Graph.graphToDot (graphParams len) gr) Graph.Jpeg
+        $ path <> ".jpeg"
 
 graphParams
     :: Int
@@ -1200,3 +1217,18 @@ execStateReader config st action =
     flip execStateT st
         $ flip runReaderT config
         $ action
+
+checkIfCorrectFilePath :: MonadIO m => FilePath -> m Bool
+checkIfCorrectFilePath =
+    liftIO . doesDirectoryExist . fst . splitFileName
+
+whenPathIsReachable
+    :: MonadIO m
+    => FilePath
+    -> (FilePath -> m ())
+    -> m ()
+whenPathIsReachable path action =
+    ifM
+        (checkIfCorrectFilePath path)
+        (action path)
+        $ liftIO . putStrLn $ "Directory does not exist."
