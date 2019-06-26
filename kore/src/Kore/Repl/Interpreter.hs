@@ -31,7 +31,7 @@ import qualified Control.Lens as Lens hiding
 import           Control.Monad
                  ( foldM, void )
 import           Control.Monad.Extra
-                 ( loop, loopM )
+                 ( ifM, loop, loopM )
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
 import           Control.Monad.Reader
@@ -667,14 +667,12 @@ redirect cmd path = do
     get >>= runInterpreter config >>= put
   where
     redirectToFile :: String -> IO ()
-    redirectToFile str = do
-        isCorrectPath <- checkIfCorrectFilePath path
-        if isCorrectPath
-            then do
-                writeFile path str
-                putStrLn "File created."
-            else putStrLn "Directory does not exist."
-
+    redirectToFile str =
+        whenPathIsReachable path (redirectCommand str)
+    redirectCommand :: String -> FilePath -> IO ()
+    redirectCommand str file = do
+        writeFile path str
+        putStrLn "File created."
     runInterpreter
         :: Config claim m
         -> ReplState claim
@@ -819,22 +817,22 @@ clear =
 
 -- | Save this sessions' commands to the specified file.
 saveSession
-    :: MonadState (ReplState claim) m
+    :: forall m
+    .  forall claim
+    .  MonadState (ReplState claim) m
     => MonadWriter String m
     => MonadIO m
     => FilePath
     -- ^ path to file
     -> m ()
-saveSession path = do
-    isCorrectPath <- liftIO $ checkIfCorrectFilePath path
-    if isCorrectPath
-        then do
-            content <- seqUnlines <$> Lens.use lensCommands
-            liftIO $ writeFile path content
-            putStrLn' "Done."
-        else
-            putStrLn' "Directory does not exist."
+saveSession path =
+    whenPathIsReachable path saveToFile
   where
+    saveToFile :: FilePath -> m ()
+    saveToFile file = do
+        content <- seqUnlines <$> Lens.use lensCommands
+        liftIO $ writeFile path content
+        putStrLn' "Done."
     seqUnlines :: Seq String -> String
     seqUnlines = unlines . toList
 
@@ -893,15 +891,14 @@ appendTo
     -> FilePath
     -- ^ file to append to
     -> ReplM claim m ()
-appendTo cmd file = do
-    isCorrectPath <- liftIO $ checkIfCorrectFilePath file
-    if isCorrectPath
-        then do
-            config <- ask
-            get >>= runInterpreter config >>= put
-            putStrLn' $ "Appended output to \"" <> file <> "\"."
-        else putStrLn' "Directory does not exist."
+appendTo cmd file =
+    whenPathIsReachable file appendCommand
   where
+    appendCommand :: FilePath -> ReplM claim m ()
+    appendCommand path = do
+        config <- ask
+        get >>= runInterpreter config >>= put
+        putStrLn' $ "Appended output to \"" <> file <> "\"."
     runInterpreter
         :: Config claim m
         -> ReplState claim
@@ -1072,16 +1069,15 @@ showDotGraph len =
         . Graph.graphToDot (graphParams len)
 
 saveDotGraph :: Int -> InnerGraph -> FilePath -> IO ()
-saveDotGraph len gr file = do
-    isCorrectPath <- checkIfCorrectFilePath file
-    if isCorrectPath
-        then
-            void
-            . Graph.runGraphviz
-                (Graph.graphToDot (graphParams len) gr) Graph.Jpeg
-            $ file <> ".jpeg"
-        else
-            putStrLn "Directory does not exist."
+saveDotGraph len gr file =
+    whenPathIsReachable file saveGraphImg
+  where
+    saveGraphImg :: FilePath -> IO ()
+    saveGraphImg path =
+        void
+        . Graph.runGraphviz
+            (Graph.graphToDot (graphParams len) gr) Graph.Jpeg
+        $ path <> ".jpeg"
 
 graphParams
     :: Int
@@ -1222,5 +1218,12 @@ execStateReader config st action =
         $ flip runReaderT config
         $ action
 
-checkIfCorrectFilePath :: FilePath -> IO Bool
-checkIfCorrectFilePath = doesDirectoryExist . fst . splitFileName
+checkIfCorrectFilePath :: MonadIO m => FilePath -> m Bool
+checkIfCorrectFilePath = liftIO . doesDirectoryExist . fst . splitFileName
+
+whenPathIsReachable :: MonadIO m => FilePath -> (FilePath -> m ()) -> m ()
+whenPathIsReachable path action =
+    ifM
+        (checkIfCorrectFilePath path)
+        (action path)
+        $ liftIO . putStrLn $ "Directory does not exist."
