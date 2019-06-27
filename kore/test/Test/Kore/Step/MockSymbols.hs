@@ -469,6 +469,10 @@ xSet :: Variable
 xSet = Variable (testId "xSet") mempty setSort
 xInt :: Variable
 xInt = Variable (testId "xInt") mempty intSort
+yInt :: Variable
+yInt = Variable (testId "yInt") mempty intSort
+xBool :: Variable
+xBool = Variable (testId "xBool") mempty boolSort
 xSubSort :: Variable
 xSubSort = Variable (testId "xSubSort") mempty subSort
 xTopSort :: Variable
@@ -972,6 +976,9 @@ sortAttributesMapping =
     ,   ( boolSort
         , Default.def { Attribute.hook = Hook (Just "BOOL.Bool") }
         )
+    ,   ( stringSort
+        , Default.def { Attribute.hook = Hook (Just "STRING.String") }
+        )
     ]
 
 headSortsMapping :: [(SymbolOrAlias, ApplicationSorts)]
@@ -1116,6 +1123,8 @@ intSortId :: Id
 intSortId = testId "intSort"
 boolSortId :: Id
 boolSortId = testId "boolSort"
+stringSortId :: Id
+stringSortId = testId "stringSort"
 
 testSort :: Sort
 testSort =
@@ -1191,6 +1200,13 @@ intSort :: Sort
 intSort =
     SortActualSort SortActual
         { sortActualName  = intSortId
+        , sortActualSorts = []
+        }
+
+stringSort :: Sort
+stringSort =
+    SortActualSort SortActual
+        { sortActualName  = stringSortId
         , sortActualSorts = []
         }
 

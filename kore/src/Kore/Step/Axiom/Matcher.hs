@@ -23,9 +23,13 @@ import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Maybe
                  ( MaybeT (..) )
 import qualified Data.Foldable as Foldable
+import           Data.Function
+                 ( on )
 import qualified Data.Map as Map
+import qualified Data.Sequence as Seq
 
 import           Kore.Attribute.Pattern.FreeVariables
+import qualified Kore.Domain.Builtin as Builtin
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.Predicate
                  ( Predicate )
@@ -221,8 +225,12 @@ matchEqualHeadPatterns quantifiedVariables first second = do
                 _ -> nothing
         (CharLiteral_ _) ->
             topWhenEqualOrNothing first second
-        (Builtin_ _) ->
-            topWhenEqualOrNothing first second
+        (Builtin_ b1) ->
+            (<|>)
+                (topWhenEqualOrNothing first second)
+                $ case second of
+                    (Builtin_ b2) -> matchBuiltins quantifiedVariables b1 b2
+                    _             -> nothing
         (DV_ _ _) ->
             topWhenEqualOrNothing first second
         (Equals_ _ _ firstFirst firstSecond) ->
@@ -435,3 +443,35 @@ checkVariableEscape vars predSubst
   | otherwise = predSubst
   where
     freeVars = Predicate.freeVariables predSubst
+
+matchBuiltins
+    :: FreshVariable variable
+    => Show variable
+    => Unparse variable
+    => SortedVariable variable
+    => MonadUnify unifier
+    => Map.Map variable variable
+    -> Builtin.Builtin (TermLike Concrete) (TermLike variable)
+    -> Builtin.Builtin (TermLike Concrete) (TermLike variable)
+    -> MaybeT unifier (Predicate variable)
+matchBuiltins qv (Builtin.BuiltinList l1) (Builtin.BuiltinList l2)
+  | ((==) `on` (Seq.length)) seq1 seq2 =
+    fmap Foldable.fold
+        . traverse match'
+        $ Seq.zip seq1 seq2
+  where
+    seq1 = Builtin.builtinListChild l1
+    seq2 = Builtin.builtinListChild l2
+    match' = uncurry (match qv)
+matchBuiltins qv (Builtin.BuiltinMap m1) (Builtin.BuiltinMap m2)
+  | ((==) `on` (Map.keys)) map1 map2 =
+    fmap Foldable.fold
+        . traverse match'
+        $ zip asList1 asList2
+  where
+    map1 = Builtin.builtinMapChild m1
+    map2 = Builtin.builtinMapChild m2
+    asList1 = Map.elems map1
+    asList2 = Map.elems map2
+    match' = uncurry (match qv)
+matchBuiltins _ _ _ = nothing
