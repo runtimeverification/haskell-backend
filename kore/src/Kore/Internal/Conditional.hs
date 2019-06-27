@@ -165,15 +165,14 @@ instance
                 )
                 (below
                     "/* substitution: */"
-                    (unparse $ Predicate.fromSubstitution substitution)
+                    (unparse . (Predicate.fromSubstitutionWithSort sort) $ substitution)
                 )
             )
       where
         unparseAnd first second =
-            "\\and" <> parameters' [sort] <> arguments' [first, second]
+            "\\and" <> parameters' [unparse sort] <> arguments' [first, second]
         sort =
-            unparse
-            . termLikeSort
+            termLikeSort
             . Predicate.unwrapPredicate
             $ predicate
         below first second =
@@ -188,15 +187,14 @@ instance
                 )
                 (below
                     "/* substitution: */"
-                    (unparse2 $ Predicate.fromSubstitution substitution)
+                    (unparse2 . (Predicate.fromSubstitutionWithSort sort) $ substitution)
                 )
             )
       where
         unparseAnd2 first second =
-            "\\and2" <> parameters' [sort] <> arguments' [first, second]
+            "\\and2" <> parameters' [unparse sort] <> arguments' [first, second]
         sort =
-            unparse
-            . termLikeSort
+            termLikeSort
             . Predicate.unwrapPredicate
             $ predicate
         below first second =
