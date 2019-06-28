@@ -31,7 +31,6 @@ module Kore.Predicate.Predicate
     , makeOrPredicate
     , makeMultipleOrPredicate
     , makeTruePredicate
-    , makeTruePredicateWithSort
     , Kore.Predicate.Predicate.freeVariables
     , Kore.Predicate.Predicate.hasFreeVariable
     , Kore.Predicate.Predicate.mapVariables
@@ -39,7 +38,6 @@ module Kore.Predicate.Predicate
     , substitutionToPredicate
     , fromPredicate
     , fromSubstitution
-    , fromSubstitutionWithSort
     , unwrapPredicate
     , wrapPredicate
     , Kore.Predicate.Predicate.substitute
@@ -171,18 +169,6 @@ makeMultipleAndPredicate =
     foldl' makeAndPredicate makeTruePredicate . nub
     -- 'and' is idempotent so we eliminate duplicates
     -- TODO: This is O(n^2), consider doing something better.
-
-makeMultipleAndPredicateWithSort
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
-    => Sort
-    -> [Predicate variable]
-    -> Predicate variable
-makeMultipleAndPredicateWithSort sort =
-    foldl' makeAndPredicate (makeTruePredicateWithSort sort) . nub
 
 {-| 'makeMultipleOrPredicate' combines a list of Predicates with 'or',
 doing some simplification.
@@ -406,13 +392,6 @@ makeTruePredicate
     :: (Ord variable, SortedVariable variable) => Predicate variable
 makeTruePredicate = GenericPredicate TermLike.mkTop_
 
-makeTruePredicateWithSort
-    :: (Ord variable, SortedVariable variable)
-    => Sort
-    -> Predicate variable
-makeTruePredicateWithSort sort =
-    GenericPredicate . TermLike.mkTop $ sort
-
 {-| 'makeFalsePredicate' produces a predicate wrapping a 'bottom'.
 -}
 makeFalsePredicate
@@ -510,20 +489,6 @@ substitutionToPredicate =
     . fmap singleSubstitutionToPredicate
     . Substitution.unwrap
 
-substitutionToPredicateWithSort
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
-    => Sort
-    -> Substitution variable
-    -> Predicate variable
-substitutionToPredicateWithSort sort =
-    (makeMultipleAndPredicateWithSort sort)
-    . fmap singleSubstitutionToPredicate
-    . Substitution.unwrap
-
 singleSubstitutionToPredicate
     ::  ( SortedVariable variable
         , Ord variable
@@ -550,17 +515,6 @@ fromSubstitution
     => Substitution variable
     -> Predicate variable
 fromSubstitution = substitutionToPredicate
-
-fromSubstitutionWithSort
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
-    => Sort
-    -> Substitution variable
-    -> Predicate variable
-fromSubstitutionWithSort = substitutionToPredicateWithSort
 
 {- | Traverse the predicate from the top down and apply substitutions.
 

@@ -31,7 +31,7 @@ import           GHC.Generics
 import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
 import           Kore.Internal.TermLike
-                 ( TermLike, termLikeSort )
+                 ( TermLike )
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
@@ -165,16 +165,12 @@ instance
                 )
                 (below
                     "/* substitution: */"
-                    (unparse . (Predicate.fromSubstitutionWithSort sort) $ substitution)
+                    (unparse . Predicate.fromSubstitution $ substitution)
                 )
             )
       where
         unparseAnd first second =
-            "\\and" <> parameters' [unparse sort] <> arguments' [first, second]
-        sort =
-            termLikeSort
-            . Predicate.unwrapPredicate
-            $ predicate
+            "\\and" <> parameters' ["_"] <> arguments' [first, second]
         below first second =
             (Pretty.align . Pretty.vsep) [first, second]
     unparse2 Conditional { term, predicate, substitution } =
@@ -187,16 +183,12 @@ instance
                 )
                 (below
                     "/* substitution: */"
-                    (unparse2 . (Predicate.fromSubstitutionWithSort sort) $ substitution)
+                    (unparse2 . Predicate.fromSubstitution $ substitution)
                 )
             )
       where
         unparseAnd2 first second =
-            "\\and2" <> parameters' [unparse sort] <> arguments' [first, second]
-        sort =
-            termLikeSort
-            . Predicate.unwrapPredicate
-            $ predicate
+            "\\and2" <> parameters' ["_"] <> arguments' [first, second]
         below first second =
             (Pretty.align . Pretty.vsep) [first, second]
 
