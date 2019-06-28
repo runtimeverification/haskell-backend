@@ -59,6 +59,7 @@ import           Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
+import           Kore.Internal.ApplicationSorts
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate )
@@ -346,8 +347,6 @@ fromSentenceAxiom sentenceAxiom = do
             (Syntax.sentenceAxiomAttributes sentenceAxiom)
     patternToAxiomPattern attributes (Syntax.sentenceAxiomPattern sentenceAxiom)
 
--- TODO(ana.pantilie): should apply `weakExistsFinally` to the
--- second mkAnd when the frontend will be able to unparse one path claims
 onePathRuleToPattern
     :: Ord variable
     => SortedVariable variable
@@ -360,10 +359,28 @@ onePathRuleToPattern (OnePathRule rulePatt) =
             (Predicate.unwrapPredicate . requires $ rulePatt)
             (left rulePatt)
         )
-        ( mkAnd
-            (Predicate.unwrapPredicate . ensures $ rulePatt)
-            (right rulePatt)
-        )
+       ( mkApplyAlias
+            wEF
+            [( mkAnd
+                (Predicate.unwrapPredicate . ensures $ rulePatt)
+                (right rulePatt)
+            )]
+       )
+  where
+    wEF :: Alias
+    wEF = Alias
+        { aliasConstructor = Id
+            { getId = weakExistsFinally
+            , idLocation = AstLocationNone
+            }
+        , aliasParams = []
+        , aliasSorts = ApplicationSorts
+            { applicationSortsOperands = [sort]
+            , applicationSortsResult = sort
+            }
+        }
+    sort :: Sort
+    sort = termLikeSort . right $ rulePatt
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 

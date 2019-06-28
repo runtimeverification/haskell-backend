@@ -39,6 +39,7 @@ dependencies:
   - extra
   - fgl
   - free
+  - filepath
   - generics-sop
   - gitrev
   - graphviz
