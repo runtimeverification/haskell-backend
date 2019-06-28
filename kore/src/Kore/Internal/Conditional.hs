@@ -165,7 +165,7 @@ instance
                 )
                 (below
                     "/* substitution: */"
-                    (unparse . Predicate.fromSubstitution $ substitution)
+                    (unparse $ Predicate.fromSubstitution substitution)
                 )
             )
       where
@@ -183,7 +183,7 @@ instance
                 )
                 (below
                     "/* substitution: */"
-                    (unparse2 . Predicate.fromSubstitution $ substitution)
+                    (unparse2 $ Predicate.fromSubstitution substitution)
                 )
             )
       where
