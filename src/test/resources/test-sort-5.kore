@@ -2,6 +2,6 @@
 
 module TEST-SORT-5
 
-  sort #a{} []
+  sort a{} []
 
 endmodule []
