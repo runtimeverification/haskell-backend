@@ -27,7 +27,7 @@ import           Kore.Syntax
 {- | A pattern is 'Functional' if it matches exactly one element.
  -}
 newtype Functional = Functional { isFunctional :: Bool }
-    deriving (Eq, GHC.Generic, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
     deriving (Semigroup, Monoid) via All
 
 instance SOP.Generic Functional
