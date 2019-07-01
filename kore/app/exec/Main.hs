@@ -400,8 +400,13 @@ mainWithOptions
                           where
                             failure pat = (ExitFailure 1, pat)
                             success = (ExitSuccess, mkTop $ mkSortVariable "R")
-                            unknown = (ExitSuccess,
-                                       mkTop $ mkSortVariable "Unknown")
+                            unknown =
+                                ( ExitSuccess
+                                , mkVar
+                                    $ varS
+                                        "Unkown"
+                                        (mkSort $ noLocationId "SortUnknown")
+                                )
                 )
         let unparsed = (unparse . externalizeFreshVariables) finalPattern
         case outputFileName of
