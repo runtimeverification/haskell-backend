@@ -19,6 +19,8 @@ module Kore.Repl.Interpreter
     , formatUnificationMessage
     , allProofs
     , ReplStatus(..)
+    , PrintAuxOutput (..)
+    , PrintKoreOutput (..)
     , showCurrentClaimIndex
     ) where
 
@@ -152,17 +154,23 @@ instance Monoid ReplOutput where
 data ReplStatus = Continue | SuccessStop | FailStop
     deriving (Eq, Show)
 
+newtype PrintAuxOutput = PrintAuxOutput
+    { unPrintAuxOutput :: String -> IO () }
+
+newtype PrintKoreOutput = PrintKoreOutput
+    { unPrintKoreOutput :: String -> IO () }
+
 -- | Interprets a REPL command in a stateful Simplifier context.
 replInterpreter
     :: forall claim m
     .  Claim claim
     => MonadSimplify m
     => MonadIO m
-    => (String -> IO ())
-    -> (String -> IO ())
+    => PrintAuxOutput
+    -> PrintKoreOutput
     -> ReplCommand
     -> ReaderT (Config claim m) (StateT (ReplState claim) m) ReplStatus
-replInterpreter printFn1 printFn2 replCmd = do
+replInterpreter printAux printKore replCmd = do
     let command = case replCmd of
                 ShowUsage          -> showUsage          $> Continue
                 Help               -> help               $> Continue
@@ -190,14 +198,14 @@ replInterpreter printFn1 printFn2 replCmd = do
                 Pipe inn file args -> pipe inn file args $> Continue
                 AppendTo inn file  -> appendTo inn file  $> Continue
                 Alias a            -> alias a            $> Continue
-                TryAlias name      -> tryAlias name printFn
+                TryAlias name      -> tryAlias name printAux printKore
                 LoadScript file    -> loadScript file    $> Continue
                 ProofStatus        -> proofStatus        $> Continue
                 Log s t            -> handleLog (s,t)    $> Continue
                 Exit               -> exit
     (output, shouldContinue) <- evaluateCommand command
-    liftIO . printFn1 . auxOutput $ output
-    liftIO . printFn2 . koreOutput $ output
+    liftIO . unPrintAuxOutput printAux . auxOutput $ output
+    liftIO . unPrintKoreOutput printKore . koreOutput $ output
     case shouldContinue of
         Continue -> pure Continue
         SuccessStop -> liftIO exitSuccess
@@ -694,7 +702,11 @@ redirect
     -> ReplM claim m ()
 redirect cmd path = do
     config <- ask
-    get >>= runInterpreter config >>= put
+    get >>= runInterpreter
+            (PrintAuxOutput putStrLn)
+            (PrintKoreOutput redirectToFile)
+            config
+        >>= put
   where
     redirectToFile :: String -> IO ()
     redirectToFile str =
@@ -704,13 +716,15 @@ redirect cmd path = do
         writeFile file str
         putStrLn "File created."
     runInterpreter
-        :: Config claim m
+        :: PrintAuxOutput
+        -> PrintKoreOutput
+        -> Config claim m
         -> ReplState claim
         -> ReplM claim m (ReplState claim)
-    runInterpreter config st =
+    runInterpreter printAux printKore config st =
         lift
             $ execStateReader config st
-            $ replInterpreter redirectToFile cmd
+            $ replInterpreter printAux printKore cmd
 
 data AlsoApplyRule = Never | IfPossible
 
@@ -888,7 +902,21 @@ pipe cmd file args = do
             let
                 outputFunc = maybe putStrLn hPutStr maybeInput
             config <- ask
-            get >>= runInterpreter outputFunc config >>= put
+            case cmd of
+                ShowConfig _ ->
+                    get >>=
+                        runInterpreter
+                            (PrintAuxOutput $ \_ -> return ())
+                            (PrintKoreOutput outputFunc)
+                            config
+                        >>= put
+                _ ->
+                    get >>=
+                        runInterpreter
+                            (PrintAuxOutput outputFunc)
+                            (PrintKoreOutput outputFunc)
+                            config
+                        >>= put
             case maybeOutput of
                 Nothing ->
                     putStrLn' "Error: couldn't access output handle."
@@ -897,14 +925,15 @@ pipe cmd file args = do
                     putStrLn' output
   where
     runInterpreter
-        :: (String -> IO ())
+        :: PrintAuxOutput
+        -> PrintKoreOutput
         -> Config claim m
         -> ReplState claim
         -> ReplM claim m (ReplState claim)
-    runInterpreter io config st =
+    runInterpreter printAux printKore config st =
         lift
             $ execStateReader config st
-            $ replInterpreter io cmd
+            $ replInterpreter printAux printKore cmd
 
     createProcess' exec =
         liftIO $ createProcess (proc exec args)
@@ -927,16 +956,23 @@ appendTo cmd file =
     appendCommand :: FilePath -> ReplM claim m ()
     appendCommand path = do
         config <- ask
-        get >>= runInterpreter config >>= put
+        get >>=
+            runInterpreter
+                (PrintAuxOutput putStrLn)
+                (PrintKoreOutput . appendFile $ file)
+                config
+            >>= put
         putStrLn' $ "Appended output to \"" <> path <> "\"."
     runInterpreter
-        :: Config claim m
+        :: PrintAuxOutput
+        -> PrintKoreOutput
+        -> Config claim m
         -> ReplState claim
         -> ReplM claim m (ReplState claim)
-    runInterpreter config st =
+    runInterpreter printAux printKore config st =
         lift
             $ execStateReader config st
-            $ replInterpreter (appendFile file) cmd
+            $ replInterpreter printAux printKore cmd
 
 alias
     :: forall m claim
@@ -956,9 +992,10 @@ tryAlias
     => MonadSimplify m
     => MonadIO m
     => ReplAlias
-    -> (String -> IO ())
+    -> PrintAuxOutput
+    -> PrintKoreOutput
     -> ReplM claim m ReplStatus
-tryAlias replAlias@ReplAlias { name } printFn = do
+tryAlias replAlias@ReplAlias { name } printAux printKore = do
     res <- findAlias name
     case res of
         Nothing  -> showUsage $> Continue
@@ -980,7 +1017,7 @@ tryAlias replAlias@ReplAlias { name } printFn = do
     runInterpreter cmd config st =
         lift
             $ (`runStateT` st)
-            $ runReaderT (replInterpreter printFn cmd) config
+            $ runReaderT (replInterpreter printAux printKore cmd) config
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
 -- Returns 'Left' while it has to continue looping, and 'Right' when done
@@ -1218,7 +1255,10 @@ parseEvalScript file = do
         executeCommands config st =
            lift
                $ execStateReader config st
-               $ Foldable.for_ cmds $ replInterpreter $ \_ -> return ()
+               $ Foldable.for_ cmds
+               $ replInterpreter
+                    (PrintAuxOutput $ \_ -> return ())
+                    (PrintKoreOutput $ \_ -> return ())
 
 formatUnificationMessage
     :: Either (Pretty.Doc ()) (NonEmpty (Predicate Variable))
