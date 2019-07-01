@@ -404,7 +404,7 @@ mainWithOptions
                                 ( ExitSuccess
                                 , mkVar
                                     $ varS
-                                        "Unkown"
+                                        "Unknown"
                                         (mkSort $ noLocationId "SortUnknown")
                                 )
                 )
