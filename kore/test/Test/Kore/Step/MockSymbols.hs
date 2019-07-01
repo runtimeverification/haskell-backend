@@ -475,6 +475,8 @@ xBool :: Variable
 xBool = Variable (testId "xBool") mempty boolSort
 xList :: Variable
 xList = Variable (testId "xList") mempty listSort
+xMap :: Variable
+xMap = Variable (testId "xMap") mempty mapSort
 xSubSort :: Variable
 xSubSort = Variable (testId "xSubSort") mempty subSort
 xTopSort :: Variable

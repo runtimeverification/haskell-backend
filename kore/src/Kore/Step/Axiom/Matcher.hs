@@ -218,7 +218,11 @@ matchEqualHeadPatterns quantifiedVariables first second = do
                                     quantifiedVariables
                                     [(firstChild, secondChild)]
                 (Builtin_ b2) ->
-                    matchAppBuiltins quantifiedVariables firstHead firstChildren b2
+                    matchAppBuiltins
+                        quantifiedVariables
+                        firstHead
+                        firstChildren
+                        b2
                 _ -> nothing
         (Bottom_ _) -> topWhenEqualOrNothing first second
         (Ceil_ _ _ firstChild) ->
@@ -448,7 +452,8 @@ checkVariableEscape vars predSubst
     freeVars = Predicate.freeVariables predSubst
 
 matchAppBuiltins
-    :: FreshVariable variable
+    :: forall variable unifier
+    .  FreshVariable variable
     => Show variable
     => Unparse variable
     => SortedVariable variable
@@ -496,6 +501,39 @@ matchAppBuiltins qv symbol args (Builtin.BuiltinList l2)
             (\inner -> l { Builtin.builtinListChild = inner })
             . Seq.splitAt idx
             $ Builtin.builtinListChild l
+matchAppBuiltins qv symbol args (Builtin.BuiltinMap m2)
+  | symbol == Builtin.builtinMapConcat m2 =
+    case args of
+        [ Builtin_ (Builtin.BuiltinMap m1), x@(Var_ _) ] -> matchMaps m1 x
+        [ x@(Var_ _), Builtin_ (Builtin.BuiltinMap m1) ] -> matchMaps m1 x
+        _ -> nothing
+  where
+    matchMaps
+        :: Builtin.InternalMap (TermLike Concrete) (TermLike variable)
+        -> TermLike variable
+        -> MaybeT unifier (Predicate variable)
+    matchMaps m1 x = do
+        let (prefix2, suffix2) = splitMap m1
+        prefix  <-
+            matchBuiltins
+                qv
+                (Builtin.BuiltinMap m1)
+                (Builtin.BuiltinMap prefix2)
+        suffix <- match qv x (mkBuiltin $ Builtin.BuiltinMap suffix2)
+        pure $ prefix <> suffix
+
+    splitMap
+        :: Builtin.InternalMap (TermLike Concrete) (TermLike variable)
+        ->  ( Builtin.InternalMap (TermLike Concrete) (TermLike variable)
+            , Builtin.InternalMap (TermLike Concrete) (TermLike variable)
+            )
+    splitMap m =
+        Bifunctor.bimap
+            (\inner -> m { Builtin.builtinMapChild = inner })
+            (\inner -> m { Builtin.builtinMapChild = inner })
+            . Map.partitionWithKey
+                (\k _ -> Map.member k . Builtin.builtinMapChild $ m)
+            $ Builtin.builtinMapChild m2
 matchAppBuiltins _ _ _ _ = nothing
 
 matchBuiltins
