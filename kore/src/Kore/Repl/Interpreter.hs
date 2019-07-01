@@ -83,6 +83,7 @@ import qualified Kore.Attribute.Label as AttrLabel
 import           Kore.Attribute.RuleIndex
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Predicate
                  ( Predicate )
 import           Kore.Internal.TermLike
@@ -1024,9 +1025,9 @@ unparseStrategy
     -> String
 unparseStrategy omitList =
     strategyPattern StrategyPatternTransformer
-        { rewriteTransformer = \pat -> unparseToString (hide <$> pat)
+        { rewriteTransformer = \pat -> unparseToString . Pattern.toTermLike $ hide <$> pat
         , stuckTransformer =
-            \pat -> "Stuck: \n" <> unparseToString (hide <$> pat)
+            \pat -> "Stuck: \n" <> (unparseToString . Pattern.toTermLike $ hide <$> pat)
         , bottomValue = "Reached bottom"
         }
   where
