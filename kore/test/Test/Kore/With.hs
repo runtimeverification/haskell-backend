@@ -273,7 +273,7 @@ newtype ConcreteElement =
     ConcreteElement {getConcreteElement :: TermLike Concrete}
 
 instance With
-    (Domain.NormalizedSet (TermLike Concrete) (TermLike variable))
+    (Domain.NormalizedSet (TermLike Concrete) child)
     ConcreteElement
   where
     with
@@ -283,40 +283,37 @@ instance With
       | otherwise = s {Domain.concreteElements = Set.insert c concreteElements}
 
 instance With
-    (Domain.NormalizedSet (TermLike Concrete) (TermLike variable))
+    (Domain.NormalizedSet (TermLike Concrete) child)
     [ConcreteElement]
   where
     with = foldl' with
 
-newtype VariableElement variable =
-    VariableElement {getVariableElement :: TermLike variable}
+newtype VariableElement child = VariableElement {getVariableElement :: child}
 
-instance Ord variable
+instance Ord child
     => With
-        (Domain.NormalizedSet (TermLike Concrete) (TermLike variable))
-        (VariableElement variable)
+        (Domain.NormalizedSet (TermLike Concrete) child)
+        (VariableElement child)
   where
     with
         s@Domain.NormalizedSet {elementsWithVariables}
         (VariableElement v)
-      | List.elem v elementsWithVariables = error "Duplicated key in set."
-      | otherwise = s
+      = s
         { Domain.elementsWithVariables = List.sort (v : elementsWithVariables) }
 
-instance Ord variable
+instance Ord child
     => With
-        (Domain.NormalizedSet (TermLike Concrete) (TermLike variable))
-        [VariableElement variable]
+        (Domain.NormalizedSet (TermLike Concrete) child)
+        [VariableElement child]
   where
     with = foldl' with
 
-newtype OpaqueSet variable =
-    OpaqueSet {getOpaqueSet :: TermLike variable}
+newtype OpaqueSet child = OpaqueSet {getOpaqueSet :: child}
 
-instance Ord variable
+instance Ord child
     => With
-        (Domain.NormalizedSet (TermLike Concrete) (TermLike variable))
-        (OpaqueSet variable)
+        (Domain.NormalizedSet (TermLike Concrete) child)
+        (OpaqueSet child)
   where
     with
         s@Domain.NormalizedSet {sets}
@@ -324,9 +321,9 @@ instance Ord variable
       = s
         { Domain.sets = List.sort (v : sets) }
 
-instance Ord variable
+instance Ord child
     => With
-        (Domain.NormalizedSet (TermLike Concrete) (TermLike variable))
-        [OpaqueSet variable]
+        (Domain.NormalizedSet (TermLike Concrete) child)
+        [OpaqueSet child]
   where
     with = foldl' with

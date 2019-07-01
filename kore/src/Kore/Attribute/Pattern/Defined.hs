@@ -27,7 +27,7 @@ import           Kore.Syntax
 {- | A pattern is 'Defined' if it matches at least one element.
  -}
 newtype Defined = Defined { isDefined :: Bool }
-    deriving (Eq, GHC.Generic, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
     deriving (Semigroup, Monoid) via All
 
 instance SOP.Generic Defined

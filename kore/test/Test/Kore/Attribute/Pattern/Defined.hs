@@ -5,14 +5,19 @@ import Test.Tasty.HUnit
 
 import qualified GHC.Stack as GHC
 
-import Kore.Attribute.Pattern.Defined
-import Kore.Attribute.Synthetic
-import Kore.Internal.TermLike
-       ( TermLikeF (..) )
-import Kore.Syntax hiding
-       ( PatternF (..) )
+import           Kore.Attribute.Pattern.Defined
+import           Kore.Attribute.Synthetic
+import qualified Kore.Builtin.Set as Set
+import           Kore.Domain.Builtin
+                 ( emptyNormalizedSet )
+import qualified Kore.Domain.Builtin as Domain
+import           Kore.Internal.TermLike
+                 ( TermLike, TermLikeF (..) )
+import           Kore.Syntax hiding
+                 ( PatternF (..) )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
+import           Test.Kore.With
 
 test_instance_Synthetic :: [TestTree]
 test_instance_Synthetic =
@@ -51,6 +56,35 @@ test_instance_Synthetic =
         x <- range
         y <- range
         [ expect (Defined $ isDefined x || isDefined y) $ OrF $ Or sort x y ]
+    , testGroup "BuiltinSet"
+        [ is . asSetBuiltin
+            $ emptyNormalizedSet
+        , is . asSetBuiltin
+            $ emptyNormalizedSet
+                `with` [ConcreteElement Mock.a, ConcreteElement Mock.b]
+        , is . asSetBuiltin
+            $ emptyNormalizedSet `with` VariableElement defined
+        , isn't . asSetBuiltin
+            $ emptyNormalizedSet `with` VariableElement nonDefined
+        , isn't . asSetBuiltin
+            $ emptyNormalizedSet
+                `with` [VariableElement defined, VariableElement defined]
+        , isn't . asSetBuiltin
+            $ emptyNormalizedSet
+                `with` [ConcreteElement Mock.a]
+                `with` VariableElement defined
+        , is . asSetBuiltin
+            $ emptyNormalizedSet `with` OpaqueSet defined
+        , isn't . asSetBuiltin
+            $ emptyNormalizedSet `with` OpaqueSet nonDefined
+        , isn't . asSetBuiltin
+            $ emptyNormalizedSet
+                `with` [OpaqueSet defined, OpaqueSet defined]
+        , isn't . asSetBuiltin
+            $ emptyNormalizedSet
+                `with` [ConcreteElement Mock.a]
+                `with` OpaqueSet defined
+        ]
     ]
   where
     sort = Mock.testSort
@@ -61,20 +95,28 @@ test_instance_Synthetic =
     range = [defined, nonDefined]
 
     check
-        :: GHC.HasCallStack
+        :: (GHC.HasCallStack, Synthetic term Defined)
         => TestName
         -> (Defined -> Bool)
-        -> TermLikeF Variable Defined
+        -> term Defined
         -> TestTree
-    check name checking termLikeF =
+    check name checking term =
         testCase name $ do
-            let actual = synthetic termLikeF
+            let actual = synthetic term
             assertBool "" (checking actual)
 
-    is :: GHC.HasCallStack => TermLikeF Variable Defined -> TestTree
-    is = check "Defined pattern" isDefined
+    is
+        ::  ( GHC.HasCallStack
+            , Synthetic term Defined
+            )
+        => term Defined -> TestTree
+    is = check "Defined term" isDefined
 
-    isn't :: GHC.HasCallStack => TermLikeF Variable Defined -> TestTree
+    isn't
+        ::  ( GHC.HasCallStack
+            , Synthetic term Defined
+            )
+        => term Defined -> TestTree
     isn't = check "Non-defined pattern" (not . isDefined)
 
     expect
@@ -84,4 +126,9 @@ test_instance_Synthetic =
         -> TestTree
     expect x
       | isDefined x = is
-      | otherwise      = isn't
+      | otherwise   = isn't
+
+    asSetBuiltin
+        :: Domain.NormalizedSet (TermLike Concrete) Defined
+        -> Domain.Builtin (TermLike Concrete) Defined
+    asSetBuiltin = Set.asInternalBuiltin Mock.metadataTools Mock.setSort

@@ -25,6 +25,7 @@ module Kore.Builtin.Set
     , returnConcreteSet
     , returnSet
     , asInternal
+    , asInternalBuiltin
     , asInternalConcrete
     , asPattern
     , asTermLike
@@ -489,6 +490,24 @@ builtinFunctions =
         , (intersectionKey, evalIntersection)
         ]
 
+{- | Render a 'NormalizedSet' as a Domain.Builtin.
+
+The result sort must be hooked to the builtin @Set@ sort.
+-}
+asInternalBuiltin
+    :: SmtMetadataTools Attribute.Symbol
+    -> Sort
+    -> Domain.NormalizedSet key child
+    -> Domain.Builtin key child
+asInternalBuiltin tools builtinSetSort builtinSetChild =
+    Domain.BuiltinSet Domain.InternalSet
+        { builtinSetSort
+        , builtinSetUnit = Builtin.lookupSymbolUnit tools builtinSetSort
+        , builtinSetElement = Builtin.lookupSymbolElement tools builtinSetSort
+        , builtinSetConcat = Builtin.lookupSymbolConcat tools builtinSetSort
+        , builtinSetChild
+        }
+
 {- | Render a 'Set' as an internal domain value pattern of the given sort.
 
 The result sort must be hooked to the builtin @Set@ sort. The pattern will use
@@ -504,17 +523,7 @@ asInternal
     -> TermNormalizedSet variable
     -> TermLike variable
 asInternal tools builtinSetSort builtinSetChild =
-    (mkBuiltin . Domain.BuiltinSet)
-        Domain.InternalSet
-            { builtinSetSort
-            , builtinSetUnit =
-                Builtin.lookupSymbolUnit tools builtinSetSort
-            , builtinSetElement =
-                Builtin.lookupSymbolElement tools builtinSetSort
-            , builtinSetConcat =
-                Builtin.lookupSymbolConcat tools builtinSetSort
-            , builtinSetChild
-            }
+    mkBuiltin (asInternalBuiltin tools builtinSetSort builtinSetChild)
 
 {- | The same as 'asInternal', but for sets made only of concrete elements.
 -}
