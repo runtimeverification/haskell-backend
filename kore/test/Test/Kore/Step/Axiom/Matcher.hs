@@ -1061,9 +1061,13 @@ matchingBool =
         let expect = Nothing
         actual <- matchConcrete True False
         assertEqualWithExplanation "" expect actual
-    , testCase "variable" $ do
+    , testCase "variable vs concrete" $ do
         let expect = substitution [(Mock.xBool, True)]
         actual <- matchVariable Mock.xBool True
+        assertEqualWithExplanation "" expect actual
+    , testCase "concrete vs variable does not work" $ do
+        let expect = Nothing
+        actual <- matchDefinition (mkBool True) (mkVar Mock.xBool)
         assertEqualWithExplanation "" expect actual
     ]
   where
@@ -1092,9 +1096,13 @@ matchingInt =
         let expect = Nothing
         actual <- matchConcrete 1 0
         assertEqualWithExplanation "" expect actual
-    , testCase "variable" $ do
+    , testCase "variable vs concrete" $ do
         let expect = substitution [(Mock.xInt, 1)]
         actual <- matchVariable Mock.xInt 1
+        assertEqualWithExplanation "" expect actual
+    , testCase "concrete vs variable does not work" $ do
+        let expect = Nothing
+        actual <- matchDefinition (mkInt 1) (mkVar Mock.xInt)
         assertEqualWithExplanation "" expect actual
     ]
   where
@@ -1123,9 +1131,21 @@ matchingList =
         let expect = Nothing
         actual <- matchConcrete [1, 2] [1, 3]
         assertEqualWithExplanation "" expect actual
+    , testCase "concrete bottom" $ do
+        let expect = Nothing
+        actual <- matchDefinition (mkList [mkInt 1]) (mkVar Mock.xList)
+        assertEqualWithExplanation "" expect actual
     , testCase "single variable" $ do
         let expect = substitution [(Mock.xInt, 2)]
         actual <- matchVariable [Right 1, Left Mock.xInt] [1, 2]
+        assertEqualWithExplanation "" expect actual
+    , testCase "two variables (simple)" $ do
+        let expect = substitution [(Mock.xInt, 1), (Mock.yInt, 2)]
+        actual <- matchVariable
+            [ Left Mock.xInt
+            , Left Mock.yInt
+            ]
+            [ 1, 2 ]
         assertEqualWithExplanation "" expect actual
     , testCase "two variables" $ do
         let expect = substitution [(Mock.xInt, 2), (Mock.yInt, 4)]
@@ -1142,6 +1162,128 @@ matchingList =
         actual <- matchVariable
             [ Right 1, Left Mock.xInt] [ 2, 1 ]
         assertEqualWithExplanation "" expect actual
+    , testCase "cons(empty, var) vs concrete" $ do
+        let expect =
+                Just $ MultiOr.make
+                    [ Conditional
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.xList, mkList [mkInt 1, mkInt 2, mkInt 3])
+                            ]
+                        }
+                    ]
+        actual <- matchCons
+            (mkList [] `cons` mkVar Mock.xList)
+            [1, 2, 3]
+        assertEqualWithExplanation "" expect actual
+    , testCase "cons(unit, var) vs concrete" $ do
+        let expect =
+                Just $ MultiOr.make
+                    [ Conditional
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.xList, mkList [mkInt 2, mkInt 3])
+                            ]
+                        }
+                    ]
+        actual <- matchCons
+            (mkList [mkInt 1] `cons` mkVar Mock.xList)
+            [1, 2, 3]
+        assertEqualWithExplanation "" expect actual
+    , testCase "cons(concrete, var) vs concrete" $ do
+        let expect =
+                Just $ MultiOr.make
+                    [ Conditional
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.xList, mkList [])
+                            ]
+                        }
+                    ]
+        actual <- matchCons
+            (mkList [mkInt 1, mkInt 2, mkInt 3] `cons` mkVar Mock.xList)
+            [1, 2, 3]
+        assertEqualWithExplanation "" expect actual
+    , testCase "cons(var, empty) vs concrete" $ do
+        let expect =
+                Just $ MultiOr.make
+                    [ Conditional
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.xList, mkList [mkInt 1, mkInt 2, mkInt 3])
+                            ]
+                        }
+                    ]
+        actual <- matchCons
+            (mkVar Mock.xList `cons` mkList [] )
+            [1, 2, 3]
+        assertEqualWithExplanation "" expect actual
+    , testCase "cons(var, unit) vs concrete" $ do
+        let expect =
+                Just $ MultiOr.make
+                    [ Conditional
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.xList, mkList [mkInt 1, mkInt 2])
+                            ]
+                        }
+                    ]
+        actual <- matchCons
+            (mkVar Mock.xList `cons` mkList [mkInt 3] )
+            [1, 2, 3]
+        assertEqualWithExplanation "" expect actual
+    , testCase "cons(var, concrete) vs concrete" $ do
+        let expect =
+                Just $ MultiOr.make
+                    [ Conditional
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.xList, mkList [])
+                            ]
+                        }
+                    ]
+        actual <- matchCons
+            (mkVar Mock.xList `cons` mkList [mkInt 1, mkInt 2, mkInt 3] )
+            [1, 2, 3]
+        assertEqualWithExplanation "" expect actual
+    , testCase "cons(x, var) vs concrete" $ do
+        let expect =
+                Just $ MultiOr.make
+                    [ Conditional
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.xInt, mkInt 1)
+                            , (Mock.xList, mkList [mkInt 2, mkInt 3])
+                            ]
+                        }
+                    ]
+        actual <- matchCons
+            (mkList [mkVar Mock.xInt] `cons` mkVar Mock.xList)
+            [1, 2, 3]
+        assertEqualWithExplanation "" expect actual
+    , testCase "cons(var, x) vs concrete" $ do
+        let expect =
+                Just $ MultiOr.make
+                    [ Conditional
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.xInt, mkInt 3)
+                            , (Mock.xList, mkList [mkInt 1, mkInt 2])
+                            ]
+                        }
+                    ]
+        actual <- matchCons
+            (mkVar Mock.xList `cons` mkList [mkVar Mock.xInt])
+            [1, 2, 3]
+        assertEqualWithExplanation "" expect actual
     ]
   where
     top = Just $ OrPredicate.fromPredicate Predicate.topPredicate
@@ -1155,15 +1297,20 @@ matchingList =
             }
         ]
     mkInt = Int.asInternal Mock.intSort
-    matchList =
-        matchDefinition `on`
-            (List.asInternal Mock.metadataTools Mock.listSort . Seq.fromList)
+    mkList = List.asInternal Mock.metadataTools Mock.listSort . Seq.fromList
+    cons = Mock.concatList
+    matchList = matchDefinition `on` mkList
     matchConcrete =
         matchList `on` fmap mkInt
     matchVariable var val =
             matchList
             (either mkVar mkInt <$> var)
             (mkInt <$> val)
+    matchCons t1 l2 =
+        matchDefinition t1
+            . mkList
+            . fmap mkInt
+            $ l2
 
 matchingMap :: [TestTree]
 matchingMap =

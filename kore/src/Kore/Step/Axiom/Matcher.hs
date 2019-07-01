@@ -22,6 +22,7 @@ import           Control.Monad.Except
 import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Maybe
                  ( MaybeT (..) )
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import           Data.Function
                  ( on )
@@ -216,6 +217,8 @@ matchEqualHeadPatterns quantifiedVariables first second = do
                                 matchJoin
                                     quantifiedVariables
                                     [(firstChild, secondChild)]
+                (Builtin_ b2) ->
+                    matchAppBuiltins quantifiedVariables firstHead firstChildren b2
                 _ -> nothing
         (Bottom_ _) -> topWhenEqualOrNothing first second
         (Ceil_ _ _ firstChild) ->
@@ -443,6 +446,57 @@ checkVariableEscape vars predSubst
   | otherwise = predSubst
   where
     freeVars = Predicate.freeVariables predSubst
+
+matchAppBuiltins
+    :: FreshVariable variable
+    => Show variable
+    => Unparse variable
+    => SortedVariable variable
+    => MonadUnify unifier
+    => Map.Map variable variable
+    -> Symbol
+    -> [TermLike variable]
+    -> Builtin.Builtin (TermLike Concrete) (TermLike variable)
+    -> MaybeT unifier (Predicate variable)
+matchAppBuiltins qv symbol args (Builtin.BuiltinList l2)
+  | symbol == Builtin.builtinListConcat l2 =
+    case args of
+        [ Builtin_ (Builtin.BuiltinList l1), x@(Var_ _) ] -> do
+            let (prefix2, suffix2) = splitList (listLength l1) l2
+            prefix  <-
+                matchBuiltins
+                    qv
+                    (Builtin.BuiltinList l1)
+                    (Builtin.BuiltinList prefix2)
+            suffix <- match qv x (mkBuiltin $ Builtin.BuiltinList suffix2)
+            pure $ prefix <> suffix
+        [ x@(Var_ _), Builtin_ (Builtin.BuiltinList l1) ] -> do
+            let (prefix2, suffix2) = splitList (listLength l2 - listLength l1) l2
+            prefix <- match qv x (mkBuiltin $ Builtin.BuiltinList prefix2)
+            suffix  <-
+                matchBuiltins
+                    qv
+                    (Builtin.BuiltinList l1)
+                    (Builtin.BuiltinList suffix2)
+            pure $ prefix <> suffix
+        _ -> nothing
+  where
+    listLength :: Builtin.InternalList (TermLike variable) -> Int
+    listLength = Seq.length . Builtin.builtinListChild
+
+    splitList
+        :: Int
+        -> Builtin.InternalList (TermLike variable)
+        ->  ( Builtin.InternalList (TermLike variable)
+            , Builtin.InternalList (TermLike variable)
+            )
+    splitList idx l =
+        Bifunctor.bimap
+            (\inner -> l { Builtin.builtinListChild = inner })
+            (\inner -> l { Builtin.builtinListChild = inner })
+            . Seq.splitAt idx
+            $ Builtin.builtinListChild l
+matchAppBuiltins _ _ _ _ = nothing
 
 matchBuiltins
     :: FreshVariable variable
