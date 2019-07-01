@@ -13,7 +13,7 @@ module Kore.Repl.Interpreter
     , showProofStatus
     , showClaimSwitch
     , printIfNotEmpty
-    , showRewriteRule
+    , showRewriteRuleLocation
     , parseEvalScript
     , showAliasError
     , formatUnificationMessage
@@ -158,9 +158,10 @@ replInterpreter
     => MonadSimplify m
     => MonadIO m
     => (String -> IO ())
+    -> (String -> IO ())
     -> ReplCommand
     -> ReaderT (Config claim m) (StateT (ReplState claim) m) ReplStatus
-replInterpreter printFn replCmd = do
+replInterpreter printFn1 printFn2 replCmd = do
     let command = case replCmd of
                 ShowUsage          -> showUsage          $> Continue
                 Help               -> help               $> Continue
@@ -194,8 +195,8 @@ replInterpreter printFn replCmd = do
                 Log s t            -> handleLog (s,t)    $> Continue
                 Exit               -> exit
     (output, shouldContinue) <- evaluateCommand command
-    liftIO . putStrLn . auxOutput $ output
-    liftIO . printFn . koreOutput $ output
+    liftIO . printFn1 . auxOutput $ output
+    liftIO . printFn2 . koreOutput $ output
     case shouldContinue of
         Continue -> pure Continue
         SuccessStop -> liftIO exitSuccess
@@ -216,6 +217,11 @@ replInterpreter printFn replCmd = do
                 $ runRWST c config st
         put st'
         pure (w, ext)
+    printOutput :: ReplOutput -> (String -> IO ()) -> (String -> IO ()) -> IO ()
+    printOutput output fn1 fn2 = do
+        fn1 . auxOutput $ output
+        fn2 . koreOutput $ output
+
 
 showUsageMessage :: String
 showUsageMessage = "Could not parse command, try using 'help'."
@@ -280,7 +286,11 @@ showClaim =
                         (getClaimByIndex . unClaimIndex)
                         (getClaimByName . unRuleName)
                         indexOrName
-            maybe printNotFound (korePutStrLn . showRewriteRule) $ claim
+            case claim of
+                Just rule -> do
+                    korePutStrLn . unparseToString $ rule
+                    putStrLn' $ "\n" <> showRewriteRuleLocation rule
+                Nothing -> printNotFound
 
 -- | Prints an axiom using an index in the axioms list.
 showAxiom
@@ -294,7 +304,11 @@ showAxiom indexOrName = do
                 (getAxiomByIndex . unAxiomIndex)
                 (getAxiomByName . unRuleName)
                 indexOrName
-    maybe printNotFound (korePutStrLn . showRewriteRule) $ axiom
+    case axiom of
+        Just rule -> do
+            korePutStrLn . unparseToString $ unAxiom rule
+            putStrLn' $ "\n" <> showRewriteRuleLocation (unAxiom rule)
+        Nothing -> printNotFound
 
 -- | Changes the currently focused proof, using an index in the claims list.
 prove
@@ -551,9 +565,10 @@ showRule configNode = do
         Nothing -> putStrLn' "Invalid node!"
         Just rule -> do
             axioms <- Lens.use lensAxioms
-            putStrLn' $ showRewriteRule rule
+            korePutStrLn . unparseToString $ rule
+            putStrLn' $ "\n" <> showRewriteRuleLocation rule
             let ruleIndex = getRuleIndex rule
-            korePutStrLn $ maybe
+            putStrLn' $ maybe
                 "Error: identifier attribute wasn't initialized."
                 id
                 (showAxiomOrClaim (length axioms) ruleIndex)
@@ -1011,14 +1026,12 @@ recursiveForcedStep n graph node
           xs -> foldM (recursiveForcedStep $ n-1) graph' (fmap ReplNode xs)
 
 -- | Display a rule as a String.
-showRewriteRule
+showRewriteRuleLocation
     :: Coercible (RewriteRule Variable) rule
     => rule
     -> String
-showRewriteRule rule =
-    unparseToString rule'
-    <> "\n"
-    <> (show . Pretty.pretty . extractSourceAndLocation $ rule')
+showRewriteRuleLocation rule =
+    show . Pretty.pretty . extractSourceAndLocation $ rule'
   where
     rule' = coerce rule
 
