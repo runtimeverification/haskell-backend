@@ -133,7 +133,20 @@ import           Text.Megaparsec
 -- _great care_ of evaluating the RWST to a StateT immediatly, and thus getting
 -- rid of the WriterT part of the stack. This happens in the implementation of
 -- 'replInterpreter'.
-type ReplM claim m a = RWST (Config claim m) String (ReplState claim) m a
+type ReplM claim m a = RWST (Config claim m) ReplOutput (ReplState claim) m a
+
+data ReplOutput =
+    ReplOutput
+    { auxOutput  :: String
+    , koreOutput :: String
+    }
+
+instance Semigroup ReplOutput where
+    (ReplOutput aux1 kore1) <> (ReplOutput aux2 kore2) =
+        ReplOutput (aux1 <> aux2) (kore1 <> kore2)
+
+instance Monoid ReplOutput where
+    mempty = ReplOutput mempty mempty
 
 data ReplStatus = Continue | SuccessStop | FailStop
     deriving (Eq, Show)
@@ -181,7 +194,8 @@ replInterpreter printFn replCmd = do
                 Log s t            -> handleLog (s,t)    $> Continue
                 Exit               -> exit
     (output, shouldContinue) <- evaluateCommand command
-    liftIO $ printFn output
+    liftIO . putStrLn . auxOutput $ output
+    liftIO . printFn . koreOutput $ output
     case shouldContinue of
         Continue -> pure Continue
         SuccessStop -> liftIO exitSuccess
@@ -192,7 +206,7 @@ replInterpreter printFn replCmd = do
     -- monadic result.
     evaluateCommand
         :: ReplM claim m ReplStatus
-        -> ReaderT (Config claim m) (StateT (ReplState claim) m) (String, ReplStatus)
+        -> ReaderT (Config claim m) (StateT (ReplState claim) m) (ReplOutput, ReplStatus)
     evaluateCommand c = do
         st <- get
         config <- Reader.ask
@@ -219,7 +233,7 @@ showStepStoppedMessage n sr =
             "branching on "
             <> show (fmap unReplNode xs)
 
-showUsage :: MonadWriter String m => m ()
+showUsage :: MonadWriter ReplOutput m => m ()
 showUsage = putStrLn' showUsageMessage
 
 exit
@@ -246,14 +260,14 @@ exit = do
             True
             (fmap (\x -> x == Completed || x == TrustedClaim) xs)
 
-help :: MonadWriter String m => m ()
+help :: MonadWriter ReplOutput m => m ()
 help = putStrLn' helpText
 
 -- | Prints a claim using an index in the claims list.
 showClaim
     :: Claim claim
     => MonadState (ReplState claim) m
-    => MonadWriter String m
+    => MonadWriter ReplOutput m
     => Maybe (Either ClaimIndex RuleName)
     -> m ()
 showClaim =
@@ -266,12 +280,12 @@ showClaim =
                         (getClaimByIndex . unClaimIndex)
                         (getClaimByName . unRuleName)
                         indexOrName
-            maybe printNotFound (putStrLn' . showRewriteRule) $ claim
+            maybe printNotFound (korePutStrLn . showRewriteRule) $ claim
 
 -- | Prints an axiom using an index in the axioms list.
 showAxiom
     :: MonadState (ReplState claim) m
-    => MonadWriter String m
+    => MonadWriter ReplOutput m
     => Either AxiomIndex RuleName
     -- ^ index in the axioms list
     -> m ()
@@ -280,14 +294,14 @@ showAxiom indexOrName = do
                 (getAxiomByIndex . unAxiomIndex)
                 (getAxiomByName . unRuleName)
                 indexOrName
-    maybe printNotFound (putStrLn' . showRewriteRule) $ axiom
+    maybe printNotFound (korePutStrLn . showRewriteRule) $ axiom
 
 -- | Changes the currently focused proof, using an index in the claims list.
 prove
     :: forall claim m
     .  Claim claim
     => MonadState (ReplState claim) m
-    => MonadWriter String m
+    => MonadWriter ReplOutput m
     => Either ClaimIndex RuleName
     -- ^ index in the claims list
     -> m ()
@@ -334,7 +348,7 @@ showIndexOrName =
 
 showGraph
     :: MonadIO m
-    => MonadWriter String m
+    => MonadWriter ReplOutput m
     => Claim claim
     => Maybe FilePath
     -> MonadState (ReplState claim) m
@@ -401,7 +415,7 @@ handleLog t = lensLogging .= t
 selectNode
     :: MonadState (ReplState claim) m
     => Claim claim
-    => MonadWriter String m
+    => MonadWriter ReplOutput m
     => ReplNode
     -- ^ node identifier
     -> m ()
@@ -426,7 +440,7 @@ showConfig configNode = do
         Just (ReplNode node, config) -> do
             omit <- Lens.use lensOmit
             putStrLn' $ "Config at node " <> show node <> " is:"
-            putStrLn' $ unparseStrategy omit config
+            korePutStrLn $ unparseStrategy omit config
 
 -- | Shows current omit list if passed 'Nothing'. Adds/removes from the list
 -- depending on whether the string already exists in the list or not.
@@ -527,7 +541,7 @@ allProofs = do
 
 showRule
     :: MonadState (ReplState claim) m
-    => MonadWriter String m
+    => MonadWriter ReplOutput m
     => Claim claim
     => Maybe ReplNode
     -> m ()
@@ -539,7 +553,7 @@ showRule configNode = do
             axioms <- Lens.use lensAxioms
             putStrLn' $ showRewriteRule rule
             let ruleIndex = getRuleIndex rule
-            putStrLn' $ maybe
+            korePutStrLn $ maybe
                 "Error: identifier attribute wasn't initialized."
                 id
                 (showAxiomOrClaim (length axioms) ruleIndex)
@@ -588,7 +602,7 @@ showChildren maybeNode = do
 label
     :: forall m claim
     .  MonadState (ReplState claim) m
-    => MonadWriter String m
+    => MonadWriter ReplOutput m
     => Claim claim
     => Maybe String
     -- ^ 'Nothing' for show labels, @Just str@ for jumping to the string label.
@@ -615,7 +629,7 @@ label =
 -- | Adds label for selected node.
 labelAdd
     :: MonadState (ReplState claim) m
-    => MonadWriter String m
+    => MonadWriter ReplOutput m
     => Claim claim
     => String
     -- ^ label
@@ -638,7 +652,7 @@ labelAdd lbl maybeNode = do
 -- | Removes a label.
 labelDel
     :: MonadState (ReplState claim) m
-    => MonadWriter String m
+    => MonadWriter ReplOutput m
     => String
     -- ^ label
     -> m ()
@@ -784,7 +798,7 @@ clear
     :: forall m claim
     .  MonadState (ReplState claim) m
     => Claim claim
-    => MonadWriter String m
+    => MonadWriter ReplOutput m
     => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> m ()
@@ -820,7 +834,7 @@ saveSession
     :: forall m
     .  forall claim
     .  MonadState (ReplState claim) m
-    => MonadWriter String m
+    => MonadWriter ReplOutput m
     => MonadIO m
     => FilePath
     -- ^ path to file
@@ -911,7 +925,7 @@ appendTo cmd file =
 alias
     :: forall m claim
     .  MonadState (ReplState claim) m
-    => MonadWriter String m
+    => MonadWriter ReplOutput m
     => AliasDefinition
     -> m ()
 alias a = do
@@ -1048,8 +1062,21 @@ unparseStrategy omitList =
            . Id.getId
            . TermLike.symbolConstructor
 
-putStrLn' :: MonadWriter String m => String -> m ()
-putStrLn' str = tell $ str <> "\n"
+putStrLn' :: MonadWriter ReplOutput m => String -> m ()
+putStrLn' str
+  = tell
+  $ ReplOutput
+      { auxOutput = str <> "\n"
+      , koreOutput = mempty
+      }
+
+korePutStrLn :: MonadWriter ReplOutput m => String -> m ()
+korePutStrLn str
+  = tell
+  $ ReplOutput
+      { auxOutput = mempty
+      , koreOutput = str <> "\n"
+      }
 
 printIfNotEmpty :: String -> IO ()
 printIfNotEmpty =
@@ -1057,7 +1084,7 @@ printIfNotEmpty =
         "" -> pure ()
         xs -> putStrLn xs
 
-printNotFound :: MonadWriter String m => m ()
+printNotFound :: MonadWriter ReplOutput m => m ()
 printNotFound = putStrLn' "Variable or index not found"
 
 -- | Shows the 'dot' graph. This currently only works on Linux. The 'Int'
