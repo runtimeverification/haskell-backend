@@ -19,6 +19,7 @@ module Kore.Repl.Interpreter
     , formatUnificationMessage
     , allProofs
     , ReplStatus(..)
+    , ReplOutput (..)
     , PrintAuxOutput (..)
     , PrintKoreOutput (..)
     , showCurrentClaimIndex
@@ -100,6 +101,7 @@ import qualified Kore.OnePath.StrategyPattern as StrategyPatternTransformer
                  ( StrategyPatternTransformer (..) )
 import           Kore.OnePath.Verification
                  ( Axiom (..), Claim, isTrusted )
+import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Repl.Data
 import           Kore.Repl.Parser
 import           Kore.Repl.Parser
@@ -143,6 +145,7 @@ data ReplOutput =
     { auxOutput  :: String
     , koreOutput :: String
     }
+    deriving (Eq, Show)
 
 instance Semigroup ReplOutput where
     (ReplOutput aux1 kore1) <> (ReplOutput aux2 kore2) =
@@ -1282,7 +1285,16 @@ formatUnificationMessage =
         . List.intersperse (Pretty.indent 2 "and")
         . map (Pretty.indent 4 . unparseUnifier)
         . Foldable.toList
-    unparseUnifier = unparse . (<$) (TermLike.mkTop_ :: TermLike Variable)
+    unparseUnifier c =
+        unparse . Pattern.toTermLike
+        $ (TermLike.mkTop $ TermLike.mkSortVariable "R"
+          -- (TermLike.termLikeSort
+          -- . Predicate.unwrapPredicate
+          -- . predicate
+          -- $ c)
+                )
+        <$ c
+       -- . ((<$) :: _) (TermLike.mkTop_ :: TermLike Variable)
 
 showProofStatus :: Map.Map ClaimIndex GraphProofStatus -> String
 showProofStatus m =
