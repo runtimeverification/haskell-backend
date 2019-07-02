@@ -209,6 +209,59 @@ test_concatAssociates =
             (===) Pattern.top =<< evaluateT predicate
         )
 
+test_concatNormalizes :: TestTree
+test_concatNormalizes =
+    testPropertyWithSolver
+        "concat{}(concat{}(1, x:Int), concat(y:set, concat(z:int, 2))) \
+            \=== NormalizedSet([x, y], {1, 2}, [y])"
+        (do
+            int1 <- forAll genInteger
+            int2 <- forAll genInteger
+            elemVar1 <- forAll (standaloneGen $ variableGen intSort)
+            elemVar2 <- forAll (standaloneGen $ variableGen intSort)
+            setVar <- forAll (standaloneGen $ variableGen setSort)
+
+            let elemVars = [elemVar1, elemVar2]
+                allVars = setVar : elemVars
+
+            Monad.unless (distinctVars allVars) discard
+            Monad.when (int1 == int2) discard
+
+            let intPat1 = Test.Int.asInternal int1
+                intPat2 = Test.Int.asInternal int2
+                Just concretePat1 = asConcrete intPat1
+                Just concretePat2 = asConcrete intPat2
+                [elementVar1, elementVar2] = map mkVar (List.sort elemVars)
+
+                patConcat =
+                    mkApplySymbol concatSetSymbol
+                        [mkApplySymbol concatSetSymbol
+                            [ mkApplySymbol elementSetSymbol [intPat1]
+                            , mkApplySymbol elementSetSymbol [elementVar1]
+                            ]
+                        , mkApplySymbol concatSetSymbol
+                            [ mkVar setVar
+                            , mkApplySymbol concatSetSymbol
+                                [ mkApplySymbol elementSetSymbol [elementVar2]
+                                , mkApplySymbol elementSetSymbol [intPat2]
+                                ]
+                            ]
+                        ]
+                normalized = emptyNormalizedSet
+                    `with` ConcreteElement concretePat1
+                    `with` ConcreteElement concretePat2
+                    `with` VariableElement elementVar1
+                    `with` VariableElement elementVar2
+                    `with` OpaqueSet (mkVar setVar)
+                patNormalized = asInternalNormalized normalized
+
+                predicate = mkEquals_ patConcat patNormalized
+            evalConcat <- evaluateT patConcat
+            evalNormalized <- evaluateT patNormalized
+            (===) evalConcat evalNormalized
+            (===) Pattern.top =<< evaluateT predicate
+        )
+
 test_difference :: TestTree
 test_difference =
     testPropertyWithSolver

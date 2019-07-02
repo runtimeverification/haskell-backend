@@ -758,6 +758,8 @@ instance Ord variable => Semigroup (NormalizedSetOrBottom variable) where
             withVariables <-
                 addAllListDisjoint elementsWithVariables1 elementsWithVariables2
             concrete <- addAllSetDisjoint concreteElements1 concreteElements2
+            -- We may have common sets if they are empty, so we can't do an
+            -- `addAll*Disjoint` as above.
             let sets = Data.List.sort (sets1 ++ sets2)
             return Domain.NormalizedSet
                 { elementsWithVariables = withVariables
