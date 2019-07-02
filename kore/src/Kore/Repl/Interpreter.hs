@@ -689,6 +689,15 @@ labelDel lbl = do
        else
            putStrLn' "Label doesn't exist."
 
+outputsKore :: ReplCommand -> Bool
+outputsKore =
+    \case
+        ShowClaim _  -> True
+        ShowAxiom _  -> True
+        ShowConfig _ -> True
+        ShowRule _   -> True
+        _            -> False
+
 -- | Redirect command to specified file.
 redirect
     :: forall claim m
@@ -702,11 +711,19 @@ redirect
     -> ReplM claim m ()
 redirect cmd path = do
     config <- ask
-    get >>= runInterpreter
-            (PrintAuxOutput putStrLn)
-            (PrintKoreOutput redirectToFile)
-            config
-        >>= put
+    if outputsKore cmd
+        then
+            runInterpreterWithOutput
+                (PrintAuxOutput $ \_ -> return () )
+                (PrintKoreOutput redirectToFile)
+                cmd
+                config
+        else
+            runInterpreterWithOutput
+                (PrintAuxOutput redirectToFile)
+                (PrintKoreOutput $ \_ -> return () )
+                cmd
+                config
   where
     redirectToFile :: String -> IO ()
     redirectToFile str =
@@ -715,16 +732,23 @@ redirect cmd path = do
     redirectCommand str file = do
         writeFile file str
         putStrLn "File created."
-    runInterpreter
-        :: PrintAuxOutput
-        -> PrintKoreOutput
-        -> Config claim m
-        -> ReplState claim
-        -> ReplM claim m (ReplState claim)
-    runInterpreter printAux printKore config st =
-        lift
+
+runInterpreterWithOutput
+    :: forall claim m
+    .  Claim claim
+    => MonadSimplify m
+    => MonadIO m
+    => PrintAuxOutput
+    -> PrintKoreOutput
+    -> ReplCommand
+    -> Config claim m
+    -> ReplM claim m ()
+runInterpreterWithOutput printAux printKore cmd config =
+    get >>= (\st -> lift
             $ execStateReader config st
             $ replInterpreter printAux printKore cmd
+            )
+        >>= put
 
 data AlsoApplyRule = Never | IfPossible
 
@@ -902,21 +926,19 @@ pipe cmd file args = do
             let
                 outputFunc = maybe putStrLn hPutStr maybeInput
             config <- ask
-            case cmd of
-                ShowConfig _ ->
-                    get >>=
-                        runInterpreter
-                            (PrintAuxOutput $ \_ -> return ())
-                            (PrintKoreOutput outputFunc)
-                            config
-                        >>= put
-                _ ->
-                    get >>=
-                        runInterpreter
-                            (PrintAuxOutput outputFunc)
-                            (PrintKoreOutput outputFunc)
-                            config
-                        >>= put
+            if outputsKore cmd
+                then
+                    runInterpreterWithOutput
+                        (PrintAuxOutput $ \_ -> return () )
+                        (PrintKoreOutput outputFunc)
+                        cmd
+                        config
+                else
+                    runInterpreterWithOutput
+                        (PrintAuxOutput outputFunc)
+                        (PrintKoreOutput $ \_ -> return () )
+                        cmd
+                        config
             case maybeOutput of
                 Nothing ->
                     putStrLn' "Error: couldn't access output handle."
@@ -924,17 +946,6 @@ pipe cmd file args = do
                     output <- liftIO $ hGetContents handle
                     putStrLn' output
   where
-    runInterpreter
-        :: PrintAuxOutput
-        -> PrintKoreOutput
-        -> Config claim m
-        -> ReplState claim
-        -> ReplM claim m (ReplState claim)
-    runInterpreter printAux printKore config st =
-        lift
-            $ execStateReader config st
-            $ replInterpreter printAux printKore cmd
-
     createProcess' exec =
         liftIO $ createProcess (proc exec args)
             { std_in = CreatePipe, std_out = CreatePipe }
@@ -956,23 +967,20 @@ appendTo cmd file =
     appendCommand :: FilePath -> ReplM claim m ()
     appendCommand path = do
         config <- ask
-        get >>=
-            runInterpreter
-                (PrintAuxOutput putStrLn)
-                (PrintKoreOutput . appendFile $ file)
-                config
-            >>= put
+        if outputsKore cmd
+            then
+                runInterpreterWithOutput
+                    (PrintAuxOutput $ \_ -> return () )
+                    (PrintKoreOutput $ appendFile file)
+                    cmd
+                    config
+            else
+                runInterpreterWithOutput
+                    (PrintAuxOutput $ appendFile file)
+                    (PrintKoreOutput $ \_ -> return () )
+                    cmd
+                    config
         putStrLn' $ "Appended output to \"" <> path <> "\"."
-    runInterpreter
-        :: PrintAuxOutput
-        -> PrintKoreOutput
-        -> Config claim m
-        -> ReplState claim
-        -> ReplM claim m (ReplState claim)
-    runInterpreter printAux printKore config st =
-        lift
-            $ execStateReader config st
-            $ replInterpreter printAux printKore cmd
 
 alias
     :: forall m claim
