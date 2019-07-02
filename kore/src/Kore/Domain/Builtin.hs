@@ -236,6 +236,18 @@ deriveEq1 ''NormalizedSet
 deriveOrd1 ''NormalizedSet
 deriveShow1 ''NormalizedSet
 
+instance (Hashable key, Hashable child) => Hashable (NormalizedSet key child)
+  where
+    hashWithSalt salt normalized@(NormalizedSet _ _ _) =
+        salt
+            `hashWithSalt` elementsWithVariables
+            `hashWithSalt` Set.toList concreteElements
+            `hashWithSalt` sets
+      where
+        NormalizedSet { elementsWithVariables } = normalized
+        NormalizedSet { concreteElements } = normalized
+        NormalizedSet { sets } = normalized
+
 instance (NFData key, NFData child) => NFData (NormalizedSet key child)
 
 instance SOP.Generic (NormalizedSet key child)
@@ -270,7 +282,7 @@ deriveShow1 ''InternalSet
 instance (Hashable key, Hashable child) => Hashable (InternalSet key child)
   where
     hashWithSalt salt builtin =
-        hashWithSalt salt (Foldable.toList builtinSetChild)
+        hashWithSalt salt builtinSetChild
       where
         InternalSet { builtinSetChild } = builtin
 
