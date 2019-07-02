@@ -362,43 +362,49 @@ evalConcat =
             -- The NormalizedSet matching is useful only for getting
             -- notified when new fields are being added.
             ( Normalized _set1@(Domain.NormalizedSet _ _ _)
-              , Normalized _set2
-              ) -> do
-                let
-                    Domain.NormalizedSet
-                        { elementsWithVariables = withVariable1
-                        , concreteElements = concrete1
-                        , sets = sets1
-                        } = _set1
-                    Domain.NormalizedSet
-                        { elementsWithVariables = withVariable2
-                        , concreteElements = concrete2
-                        , sets = sets2
-                        } = _set2
+                , Normalized _set2
+                ) -> do
+                    let
+                        Domain.NormalizedSet
+                            { elementsWithVariables = withVariable1
+                            , concreteElements = concrete1
+                            , sets = sets1
+                            } = _set1
+                        Domain.NormalizedSet
+                            { elementsWithVariables = withVariable2
+                            , concreteElements = concrete2
+                            , sets = sets2
+                            } = _set2
 
-                    maybeResult :: Maybe (MaybeT m (AttemptedAxiom variable))
-                    maybeResult = do
-                        variableSetPartial <-
-                            addToSetDisjoint Set.empty withVariable1
-                        variableSet <-
-                            addToSetDisjoint variableSetPartial withVariable2
+                        maybeResult
+                            :: Maybe (MaybeT m (AttemptedAxiom variable))
+                        maybeResult = do
+                            variableSetPartial <-
+                                addToSetDisjoint Set.empty withVariable1
+                            variableSet <-
+                                addToSetDisjoint
+                                    variableSetPartial
+                                    withVariable2
 
-                        concrete <-
-                            addToSetDisjoint concrete1 (Set.toList concrete2)
+                            concrete <-
+                                addToSetDisjoint
+                                    concrete1
+                                    (Set.toList concrete2)
 
-                        -- If these sets would be non-empty, we could test for
-                        -- equality as above, but we don't know that.
-                        let allSets = Data.List.sort (sets1 ++ sets2)
+                            -- If these sets would be non-empty, we could test
+                            -- for equality as above, but we don't know that.
+                            let allSets = Data.List.sort (sets1 ++ sets2)
 
-                        return $ returnSet
-                            resultSort
-                            Domain.NormalizedSet
-                                { elementsWithVariables = Set.toList variableSet
-                                , concreteElements = concrete
-                                , sets = allSets
-                                }
+                            return $ returnSet
+                                resultSort
+                                Domain.NormalizedSet
+                                    { elementsWithVariables =
+                                        Set.toList variableSet
+                                    , concreteElements = concrete
+                                    , sets = allSets
+                                    }
 
-                fromMaybe (return emptyResult) maybeResult
+                    fromMaybe (return emptyResult) maybeResult
 
 evalDifference :: Builtin.Function
 evalDifference =
@@ -543,7 +549,7 @@ asInternalConcrete tools sort1 concreteSet =
             , sets = []
             }
 
-{- | Render an 'Domain.InternalSet' as a 'TermLike' domain value.
+{- | Externnalizes a 'Domain.InternalSet' as a 'TermLike'.
  -}
 asTermLike
     :: forall variable
@@ -776,13 +782,9 @@ instance Ord variable => Monoid (NormalizedSetOrBottom variable) where
 otherwise.
 -}
 addToSetDisjoint :: (Ord a, Traversable t) => Set a -> t a -> Maybe (Set a)
-addToSetDisjoint = foldM addElementDisjoint
-  where
-    addElementDisjoint :: Ord a => Set a -> a -> Maybe (Set a)
-    addElementDisjoint set element =
-        if element `Set.member` set
-        then Nothing
-        else return (Set.insert element set)
+addToSetDisjoint set traversable = do
+    (_, setResult) <- foldM addElementDisjoint ([], set) traversable
+    return setResult
 
 {- | Computes the union of two sets if they are disjoint. Returns @Nothing@
 otherwise.
@@ -796,12 +798,12 @@ addToListDisjoint
 addToListDisjoint set1 list1 list2 = do
     (listResult, _) <- foldM addElementDisjoint (list1, set1) list2
     return listResult
-  where
-    addElementDisjoint :: Ord a => ([a], Set a) -> a -> Maybe ([a], Set a)
-    addElementDisjoint (list, set) element =
-        if element `Set.member` set
-        then Nothing
-        else return (element : list, Set.insert element set)
+
+addElementDisjoint :: Ord a => ([a], Set a) -> a -> Maybe ([a], Set a)
+addElementDisjoint (list, set) element =
+    if element `Set.member` set
+    then Nothing
+    else return (element : list, Set.insert element set)
 
 {- |Transforms a @TermLike@ representation into a @NormalizedSetOrBottom@.
 
