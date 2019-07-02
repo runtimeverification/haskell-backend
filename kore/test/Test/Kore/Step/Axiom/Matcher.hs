@@ -26,6 +26,7 @@ import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
+import qualified Kore.Builtin.String as String
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( make )
@@ -1045,6 +1046,7 @@ test_matchingBuiltins =
     Foldable.fold
         [ matchingBool
         , matchingInt
+        , matchingString
         , matchingList
         -- TODO(Vladimir): implement after Virgil's set changes is done
         -- , matchingSet
@@ -1120,6 +1122,41 @@ matchingInt =
     matchConcrete = matchDefinition `on` mkInt
     matchVariable var val =
         matchDefinition (mkVar var) (mkInt val)
+
+matchingString :: [TestTree]
+matchingString =
+    [ testCase "concrete top" $ do
+        let expect = top
+        actual <- matchConcrete "str" "str"
+        assertEqualWithExplanation "" expect actual
+    , testCase "concrete bottom" $ do
+        let expect = Nothing
+        actual <- matchConcrete "s1" "s2"
+        assertEqualWithExplanation "" expect actual
+    , testCase "variable vs concrete" $ do
+        let expect = substitution [(Mock.xString, "str")]
+        actual <- matchVariable Mock.xString "str"
+        assertEqualWithExplanation "" expect actual
+    , testCase "concrete vs variable does not work" $ do
+        let expect = Nothing
+        actual <- matchDefinition (mkStr "str") (mkVar Mock.xString)
+        assertEqualWithExplanation "" expect actual
+    ]
+  where
+    top = Just $ OrPredicate.fromPredicate Predicate.topPredicate
+    substitution subst = Just $ MultiOr.make
+        [ Conditional
+            { term = ()
+            , predicate = makeTruePredicate
+            , substitution =
+                Substitution.unsafeWrap
+                    ((fmap . fmap) mkStr subst)
+            }
+        ]
+    mkStr = String.asInternal Mock.stringSort
+    matchConcrete = matchDefinition `on` mkStr
+    matchVariable var val =
+        matchDefinition (mkVar var) (mkStr val)
 
 matchingList :: [TestTree]
 matchingList =

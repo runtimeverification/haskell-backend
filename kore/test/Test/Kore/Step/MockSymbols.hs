@@ -473,6 +473,8 @@ yInt :: Variable
 yInt = Variable (testId "yInt") mempty intSort
 xBool :: Variable
 xBool = Variable (testId "xBool") mempty boolSort
+xString :: Variable
+xString = Variable (testId "xString") mempty stringSort
 xList :: Variable
 xList = Variable (testId "xList") mempty listSort
 xMap :: Variable
