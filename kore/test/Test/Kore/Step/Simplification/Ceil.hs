@@ -10,6 +10,9 @@ import Test.Tasty.HUnit
 import qualified Data.Map as Map
 
 import qualified Data.Sup as Sup
+import qualified Kore.Builtin.Set as Set
+import           Kore.Domain.Builtin
+                 ( emptyNormalizedSet )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -46,6 +49,7 @@ import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Kore.Step.MockSymbols
                  ( testSort )
 import qualified Test.Kore.Step.MockSymbols as Mock
+import           Test.Kore.With
 import           Test.Tasty.HUnit.Extensions
 
 test_ceilSimplification :: [TestTree]
@@ -427,14 +431,48 @@ test_ceilSimplification =
                 , substitution = mempty
                 }
         assertEqualWithExplanation "ceil(list)" expected actual
-    , testCase "ceil with set domain value" $ do
-        -- sets assume that their elements are relatively functional,
+    , testCase "ceil with concrete set domain value" $ do
+        -- sets assume that their concrete elements are relatively functional,
         -- so ceil({a, b}) = top
         let
             expected = OrPattern.fromPatterns [ Pattern.top ]
         actual <- makeEvaluate
             Conditional
                 { term = Mock.builtinSet [asConcrete' fOfA, asConcrete' fOfB]
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertEqualWithExplanation "ceil(set)" expected actual
+    , testCase "ceil with element variable" $ do
+        let
+            expected = OrPattern.fromPatterns
+                [ Conditional
+                    { term = mkTop_
+                    , predicate = makeCeilPredicate fOfX
+                    , substitution = mempty
+                    }
+                ]
+        actual <- makeEvaluate
+            Conditional
+                { term = asInternalSet $
+                    emptyNormalizedSet `with` VariableElement fOfX
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertEqualWithExplanation "ceil(set)" expected actual
+    , testCase "ceil with opaque set" $ do
+        let
+            expected = OrPattern.fromPatterns
+                [ Conditional
+                    { term = mkTop_
+                    , predicate = makeCeilPredicate fOfXset
+                    , substitution = mempty
+                    }
+                ]
+        actual <- makeEvaluate
+            Conditional
+                { term = asInternalSet $
+                    emptyNormalizedSet `with` OpaqueSet fOfXset
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
@@ -447,6 +485,10 @@ test_ceilSimplification =
     fOfB = Mock.f Mock.b
     gOfA = Mock.g Mock.a
     gOfB = Mock.g Mock.b
+    fOfX :: TermLike Variable
+    fOfX = Mock.f (mkVar Mock.x)
+    fOfXset :: TermLike Variable
+    fOfXset = Mock.fSet (mkVar Mock.xSet)
     somethingOfA = Mock.plain10 Mock.a
     somethingOfB = Mock.plain10 Mock.b
     somethingOfAExpanded = Conditional
@@ -460,6 +502,7 @@ test_ceilSimplification =
         , substitution = mempty
         }
     asConcrete' p = let Just r = TermLike.asConcrete p in r
+    asInternalSet = Set.asInternal Mock.metadataTools Mock.setSort
 
 appliedMockEvaluator
     :: Pattern Variable -> BuiltinAndAxiomSimplifier
