@@ -6,7 +6,7 @@ License     : NCSA
 module Kore.ModelChecker.Bounded
     ( CheckResult (..)
     , bmcStrategy
-    , check
+    , checkClaim
     ) where
 
 import qualified Control.Monad.State.Strict as State
@@ -16,13 +16,12 @@ import           Data.Limit
                  ( Limit )
 import qualified Data.Limit as Limit
 import qualified Data.Text as Text
--- TODO (thomas.tuegel): Remove Debug.Trace
-import Debug.Trace
 
 import           Kore.Internal.Pattern
                  ( Conditional (Conditional) )
 import           Kore.Internal.Pattern as Conditional
                  ( Conditional (..) )
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import qualified Kore.Logger as Logger
 import           Kore.ModelChecker.Step
@@ -50,34 +49,14 @@ import           Kore.Syntax.Variable
 import           Numeric.Natural
                  ( Natural )
 
-data CheckResult
+data CheckResult patt
     = Proved
     -- ^ Property is proved within the bound.
-    | Failed
+    | Failed !patt
     -- ^ Counter example is found within the bound.
     | Unknown
     -- ^ Result is unknown within the bound.
     deriving (Show)
-
-check
-    :: MonadSimplify m
-    =>  (  CommonModalPattern
-        -> [Strategy
-            (Prim
-                (CommonModalPattern)
-                (RewriteRule Variable)
-            )
-           ]
-        )
-    -- ^ Creates a one-step strategy from a target pattern. See
-    -- 'defaultStrategy'.
-    -> GraphSearchOrder
-    -> [(ImplicationRule Variable, Limit Natural)]
-    -- ^ List of claims, together with a maximum number of verification steps
-    -- for each.
-    -> m [CheckResult]
-check strategyBuilder searchOrder =
-    mapM (checkClaim strategyBuilder searchOrder)
 
 bmcStrategy
     :: [Axiom]
@@ -104,9 +83,13 @@ checkClaim
             )
            ]
         )
+    -- ^ Creates a one-step strategy from a target pattern. See
+    -- 'defaultStrategy'.
     -> GraphSearchOrder
     -> (ImplicationRule Variable, Limit Natural)
-    -> m CheckResult
+    -- a claim to check, together with a maximum number of verification steps
+    -- for each.
+    -> m (CheckResult (TermLike Variable))
 checkClaim
     strategyBuilder
     searchOrder
@@ -142,7 +125,7 @@ checkClaim
 
         let
             finalResult = (checkFinalNodes . pickFinal) executionGraph
-        trace (show finalResult) (return finalResult)
+        return finalResult
   where
     transitionRule'
         :: Prim (CommonModalPattern) (RewriteRule Variable)
@@ -152,13 +135,15 @@ checkClaim
 
     checkFinalNodes
         :: [CommonProofState]
-        -> CheckResult
+        -> CheckResult (TermLike Variable)
     checkFinalNodes nodes
       = Foldable.foldl' checkFinalNodesHelper Proved nodes
       where
         checkFinalNodesHelper Proved  ProofState.Proven = Proved
-        checkFinalNodesHelper Proved  ProofState.Unprovable = Failed
+        checkFinalNodesHelper Proved  (ProofState.Unprovable config) =
+            Failed (Pattern.toTermLike config)
         checkFinalNodesHelper Proved  _ = Unknown
-        checkFinalNodesHelper Unknown ProofState.Unprovable = Failed
+        checkFinalNodesHelper Unknown (ProofState.Unprovable config) =
+            Failed (Pattern.toTermLike config)
         checkFinalNodesHelper Unknown _ = Unknown
-        checkFinalNodesHelper Failed  _ = Failed
+        checkFinalNodesHelper (Failed config) _ = Failed config
