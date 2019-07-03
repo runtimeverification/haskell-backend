@@ -11,11 +11,14 @@ module Kore.Step.Simplification.And
     ( makeEvaluate
     , simplify
     , simplifyEvaluated
+    , simplifyEvaluatedMultiple
     , And (..)
     ) where
 
 import Control.Applicative
        ( Alternative (empty) )
+import Control.Monad
+       ( foldM )
 import Data.List
        ( foldl1', nub )
 import GHC.Stack
@@ -124,6 +127,19 @@ simplifyEvaluated first second
             second1 <- scatter second
             makeEvaluate first1 second1
     return (OrPattern.fromPatterns result)
+
+simplifyEvaluatedMultiple
+    ::  ( SortedVariable variable
+        , Show variable
+        , Unparse variable
+        , FreshVariable variable
+        , MonadSimplify simplifier
+        )
+    => [OrPattern variable]
+    -> simplifier (OrPattern variable)
+simplifyEvaluatedMultiple [] = return OrPattern.top
+simplifyEvaluatedMultiple (pat : patterns) =
+    foldM simplifyEvaluated pat patterns
 
 {-|'makeEvaluate' simplifies an 'And' of 'Pattern's.
 

@@ -13,6 +13,7 @@ import qualified Data.Foldable as Foldable
 import           Data.Functor.Const
 import           Data.Hashable
 import           Data.Monoid
+import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -26,7 +27,7 @@ import           Kore.Syntax
 {- | A pattern is 'Functional' if it matches exactly one element.
  -}
 newtype Functional = Functional { isFunctional :: Bool }
-    deriving (Eq, GHC.Generic, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
     deriving (Semigroup, Monoid) via All
 
 instance SOP.Generic Functional
@@ -123,7 +124,34 @@ instance Synthetic (Rewrites sort) Functional where
 
 -- | A 'Builtin' pattern is 'Functional' if its subterms are 'Functional'.
 instance Synthetic (Builtin key) Functional where
-    synthetic = Foldable.fold
+    synthetic (BuiltinSet InternalSet {builtinSetChild}) =
+        normalizedSetDefined builtinSetChild
+      where
+        normalizedSetDefined :: NormalizedSet key Functional -> Functional
+        normalizedSetDefined
+            NormalizedSet
+                { elementsWithVariables = []
+                , sets = []
+                }
+          = Functional True
+        normalizedSetDefined
+          NormalizedSet
+              { elementsWithVariables = [withVariable]
+              , concreteElements
+              , sets = []
+              }
+          | Set.null concreteElements
+          = withVariable
+        normalizedSetDefined
+          NormalizedSet
+              { elementsWithVariables = []
+              , concreteElements
+              , sets = [set]
+              }
+          | Set.null concreteElements
+          = set
+        normalizedSetDefined _ = Functional False
+    synthetic builtin = Foldable.fold builtin
     {-# INLINE synthetic #-}
 
 instance Synthetic (Top sort) Functional where

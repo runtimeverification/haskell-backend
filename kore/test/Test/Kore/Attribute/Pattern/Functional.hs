@@ -5,14 +5,19 @@ import Test.Tasty.HUnit
 
 import qualified GHC.Stack as GHC
 
-import Kore.Attribute.Pattern.Functional
-import Kore.Attribute.Synthetic
-import Kore.Internal.TermLike
-       ( TermLikeF (..) )
-import Kore.Syntax hiding
-       ( PatternF (..) )
+import           Kore.Attribute.Pattern.Functional
+import           Kore.Attribute.Synthetic
+import qualified Kore.Builtin.Set as Set
+import           Kore.Domain.Builtin
+                 ( emptyNormalizedSet )
+import qualified Kore.Domain.Builtin as Domain
+import           Kore.Internal.TermLike
+                 ( TermLike, TermLikeF (..) )
+import           Kore.Syntax hiding
+                 ( PatternF (..) )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
+import           Test.Kore.With
 
 test_instance_Synthetic :: [TestTree]
 test_instance_Synthetic =
@@ -47,6 +52,35 @@ test_instance_Synthetic =
     , testGroup "MuF" $ map (isn't . MuF) (Mu (SetVariable Mock.x) <$> range)
     , testGroup "NuF" $ map (isn't . NuF) (Nu (SetVariable Mock.x) <$> range)
     , testGroup "SetVariableF" [ isn't $ SetVariableF (SetVariable Mock.x) ]
+    , testGroup "BuiltinSet"
+        [ is . asSetBuiltin
+            $ emptyNormalizedSet
+        , is . asSetBuiltin
+            $ emptyNormalizedSet
+                `with` [ConcreteElement Mock.a, ConcreteElement Mock.b]
+        , is . asSetBuiltin
+            $ emptyNormalizedSet `with` VariableElement functional
+        , isn't . asSetBuiltin
+            $ emptyNormalizedSet `with` VariableElement nonFunctional
+        , isn't . asSetBuiltin
+            $ emptyNormalizedSet
+                `with` [VariableElement functional, VariableElement functional]
+        , isn't . asSetBuiltin
+            $ emptyNormalizedSet
+                `with` [ConcreteElement Mock.a]
+                `with` VariableElement functional
+        , is . asSetBuiltin
+            $ emptyNormalizedSet `with` OpaqueSet functional
+        , isn't . asSetBuiltin
+            $ emptyNormalizedSet `with` OpaqueSet nonFunctional
+        , isn't . asSetBuiltin
+            $ emptyNormalizedSet
+                `with` [OpaqueSet functional, OpaqueSet nonFunctional]
+        , isn't . asSetBuiltin
+            $ emptyNormalizedSet
+                `with` [ConcreteElement Mock.a]
+                `with` OpaqueSet functional
+        ]
     ]
   where
     sort = Mock.testSort
@@ -57,20 +91,28 @@ test_instance_Synthetic =
     range = [functional, nonFunctional]
 
     check
-        :: GHC.HasCallStack
+        :: (GHC.HasCallStack, Synthetic term Functional)
         => TestName
         -> (Functional -> Bool)
-        -> TermLikeF Variable Functional
+        -> term Functional
         -> TestTree
-    check name checking termLikeF =
+    check name checking term =
         testCase name $ do
-            let actual = synthetic termLikeF
+            let actual = synthetic term
             assertBool "" (checking actual)
 
-    is :: GHC.HasCallStack => TermLikeF Variable Functional -> TestTree
+    is
+        ::  ( GHC.HasCallStack
+            , Synthetic term Functional
+            )
+        => term Functional -> TestTree
     is = check "Functional pattern" isFunctional
 
-    isn't :: GHC.HasCallStack => TermLikeF Variable Functional -> TestTree
+    isn't
+        ::  ( GHC.HasCallStack
+            , Synthetic term Functional
+            )
+        => term Functional -> TestTree
     isn't = check "Non-functional pattern" (not . isFunctional)
 
     expect
@@ -81,3 +123,8 @@ test_instance_Synthetic =
     expect x
       | isFunctional x = is
       | otherwise      = isn't
+
+    asSetBuiltin
+        :: Domain.NormalizedSet (TermLike Concrete) Functional
+        -> Domain.Builtin (TermLike Concrete) Functional
+    asSetBuiltin = Set.asInternalBuiltin Mock.metadataTools Mock.setSort

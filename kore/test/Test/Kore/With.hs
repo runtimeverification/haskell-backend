@@ -1,14 +1,22 @@
 module Test.Kore.With
     ( With (..)
     , Attribute (..)
+    , ConcreteElement (..)
+    , OpaqueSet (..)
+    , VariableElement (..)
     ) where
 
 import           Data.List
                  ( foldl' )
+import qualified Data.List as List
 import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 
 import           Kore.Attribute.Attributes
                  ( AttributePattern )
+import qualified Kore.Domain.Builtin as Domain
+import           Kore.Internal.TermLike
+                 ( TermLike )
 import qualified Kore.Sort as Kore
                  ( Sort )
 import qualified Kore.Step.SMT.AST as AST
@@ -51,6 +59,8 @@ import qualified Kore.Syntax.Sentence as SentenceSort
                  ( SentenceSort (..) )
 import qualified Kore.Syntax.Sentence as SentenceSymbol
                  ( SentenceSymbol (..) )
+import           Kore.Syntax.Variable
+                 ( Concrete )
 import qualified SMT.AST as AST
                  ( Constructor (Constructor), ConstructorArgument,
                  DataTypeDeclaration (DataTypeDeclaration) )
@@ -258,3 +268,62 @@ instance With AST.UnresolvedIndirectSymbolDeclaration Kore.Sort where
         { AST.IndirectSymbolDeclaration.sorts =
             sorts `with` AST.SortReference sort
         }
+
+newtype ConcreteElement =
+    ConcreteElement {getConcreteElement :: TermLike Concrete}
+
+instance With
+    (Domain.NormalizedSet (TermLike Concrete) child)
+    ConcreteElement
+  where
+    with
+        s@Domain.NormalizedSet {concreteElements}
+        (ConcreteElement c)
+      | Set.member c concreteElements = error "Duplicated key in set."
+      | otherwise = s {Domain.concreteElements = Set.insert c concreteElements}
+
+instance With
+    (Domain.NormalizedSet (TermLike Concrete) child)
+    [ConcreteElement]
+  where
+    with = foldl' with
+
+newtype VariableElement child = VariableElement {getVariableElement :: child}
+
+instance Ord child
+    => With
+        (Domain.NormalizedSet (TermLike Concrete) child)
+        (VariableElement child)
+  where
+    with
+        s@Domain.NormalizedSet {elementsWithVariables}
+        (VariableElement v)
+      = s
+        { Domain.elementsWithVariables = List.sort (v : elementsWithVariables) }
+
+instance Ord child
+    => With
+        (Domain.NormalizedSet (TermLike Concrete) child)
+        [VariableElement child]
+  where
+    with = foldl' with
+
+newtype OpaqueSet child = OpaqueSet {getOpaqueSet :: child}
+
+instance Ord child
+    => With
+        (Domain.NormalizedSet (TermLike Concrete) child)
+        (OpaqueSet child)
+  where
+    with
+        s@Domain.NormalizedSet {sets}
+        (OpaqueSet v)
+      = s
+        { Domain.sets = List.sort (v : sets) }
+
+instance Ord child
+    => With
+        (Domain.NormalizedSet (TermLike Concrete) child)
+        [OpaqueSet child]
+  where
+    with = foldl' with

@@ -9,6 +9,7 @@ Portability : portable
 -}
 module Kore.Step.Simplification.Not
     ( makeEvaluate
+    , makeEvaluatePredicate
     , simplify
     , simplifyEvaluated
     ) where
@@ -111,17 +112,45 @@ makeEvaluateNot
 makeEvaluateNot Not { notChild } =
     OrPattern.fromPatterns
         [ Pattern.fromTermLike $ makeTermNot term
-        , Conditional
-            { term = mkTop (termLikeSort term)
-            , predicate =
-                makeNotPredicate
-                $ makeAndPredicate predicate
-                $ Predicate.fromSubstitution substitution
-            , substitution = mempty
-            }
+        , Pattern.fromPredicateSorted
+            (termLikeSort term)
+            (makeEvaluatePredicate predicate)
         ]
   where
-    Conditional { term, predicate, substitution } = notChild
+    (term, predicate) = Conditional.splitTerm notChild
+
+{- | Given a not's @Internal.Predicate@ argument, simplifies the @not@.
+
+Right now there is no actual simplification, this function just creates
+a negated @Internal.Predicate@.
+
+I.e. if we want to simplify @not (predicate and substitution)@, we may pass
+@predicate and substitution@ to this function, which will convert
+@predicate and substitution@ into a @Kore.Predicate.Predicate@ and will apply
+a @not@ on top of that.
+-}
+makeEvaluatePredicate
+    ::  ( Ord variable
+        , Show variable
+        , SortedVariable variable
+        , Unparse variable
+        )
+    => Predicate variable
+    -> Predicate variable
+makeEvaluatePredicate
+    Conditional
+        { term = ()
+        , predicate
+        , substitution
+        }
+  = Conditional
+        { term = ()
+        , predicate =
+            makeNotPredicate
+            $ makeAndPredicate predicate
+            $ Predicate.fromSubstitution substitution
+        , substitution = mempty
+        }
 
 makeTermNot
     ::  ( SortedVariable variable
