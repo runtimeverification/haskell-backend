@@ -28,8 +28,10 @@ import           Data.Function
                  ( on )
 import qualified Data.Map as Map
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 
 import           Kore.Attribute.Pattern.FreeVariables
+import qualified Kore.Builtin.Set as Set
 import qualified Kore.Domain.Builtin as Builtin
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.Predicate
@@ -555,8 +557,47 @@ matchBuiltins qv (Builtin.BuiltinList l1) (Builtin.BuiltinList l2)
     seq1 = Builtin.builtinListChild l1
     seq2 = Builtin.builtinListChild l2
     match' = uncurry (match qv)
+matchBuiltins qv (Builtin.BuiltinSet s1) (Builtin.BuiltinSet s2)
+  | varElems2 == [] && varSets2 == [] && length varSets1 <= 1 = do
+    Monad.guard $ concrete1 `Set.intersection` concrete2 == concrete1
+
+    let remainder = Set.toList $ concrete2 Set.\\ concrete1
+    Monad.guard $ length remainder >= length varElems1
+
+    variableMatches <-
+        fmap Foldable.fold
+            . traverse match'
+            . zip varElems1
+            $ fmap fromConcrete remainder
+
+    let setRemainder = drop (length varElems1) remainder
+    case (varSets1, setRemainder) of
+        ([]   , []) -> pure variableMatches
+        ([set], _ ) -> do
+            tools <- Simplifier.askMetadataTools
+            let subset =
+                    Set.asInternalConcrete tools builtinSetSort
+                        $ Set.fromList setRemainder
+            setsMatches <- match qv set subset
+            pure $ variableMatches <> setsMatches
+        _           -> nothing
+  where
+    Builtin.InternalSet { builtinSetSort } = s2
+    Builtin.InternalSet { builtinSetChild = internalSet1 } = s1
+    Builtin.InternalSet { builtinSetChild = internalSet2 } = s2
+    Builtin.NormalizedSet
+        { elementsWithVariables = varElems1
+        , concreteElements      = concrete1
+        , sets                  = varSets1
+        } = internalSet1
+    Builtin.NormalizedSet
+        { elementsWithVariables = varElems2
+        , concreteElements      = concrete2
+        , sets                  = varSets2
+        } = internalSet2
+    match' = uncurry (match qv)
 matchBuiltins qv (Builtin.BuiltinMap m1) (Builtin.BuiltinMap m2)
-  | ((==) `on` (Map.keys)) map1 map2 =
+  | ((==) `on` Map.keys) map1 map2 =
     fmap Foldable.fold
         . traverse match'
         $ zip asList1 asList2

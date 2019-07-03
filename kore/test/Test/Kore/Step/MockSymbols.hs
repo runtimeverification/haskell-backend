@@ -502,6 +502,8 @@ m :: Variable
 m = Variable (testId "m") mempty mapSort
 xSet :: Variable
 xSet = Variable (testId "xSet") mempty setSort
+ySet :: Variable
+ySet = Variable (testId "ySet") mempty setSort
 xInt :: Variable
 xInt = Variable (testId "xInt") mempty intSort
 yInt :: Variable

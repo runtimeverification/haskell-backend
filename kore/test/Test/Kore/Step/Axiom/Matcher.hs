@@ -18,6 +18,7 @@ import           Data.Function
                  ( on )
 import qualified Data.Map as Map
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Simplification
@@ -26,6 +27,7 @@ import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
+import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.String as String
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -1049,7 +1051,7 @@ test_matchingBuiltins =
         , matchingString
         , matchingList
         -- TODO(Vladimir): implement after Virgil's set changes is done
-        -- , matchingSet
+        , matchingSet
         , matchingMap
         ]
 
@@ -1348,6 +1350,296 @@ matchingList =
             . mkList
             . fmap mkInt
             $ l2
+
+data SetElementType concrete elem set
+    = Concrete concrete
+    | ElemVar elem
+    | SetVar set
+
+concrete :: [SetElementType concrete elem set] -> [concrete]
+concrete = concat . fmap isConcrete'
+  where
+    isConcrete' =
+        \case
+            Concrete x -> [x]
+            _ -> []
+elemVars :: [SetElementType concrete elem set] -> [elem]
+elemVars = concat . fmap isElemVar
+  where
+    isElemVar =
+        \case
+            ElemVar x -> [x]
+            _ -> []
+setVars :: [SetElementType concrete elem set] -> [set]
+setVars = concat . fmap isSetVar
+  where
+    isSetVar =
+        \case
+            SetVar x -> [x]
+            _ -> []
+
+matchingSet :: [TestTree]
+matchingSet =
+    [ testCase "empty vs empty" $ do
+        let expect = top
+        actual <- matchConcrete [] []
+        assertEqualWithExplanation "" expect actual
+    , testCase "concrete vs concrete" $ do
+        let expect = top
+        actual <- matchConcrete [1, 2, 3] [1, 2, 3]
+        assertEqualWithExplanation "" expect actual
+    , testCase "empty vs concrete" $ do
+        let expect = Nothing
+        actual <- matchConcrete [] [1, 2, 3]
+        assertEqualWithExplanation "" expect actual
+    , testCase "concrete vs empty" $ do
+        let expect = Nothing
+        actual <- matchConcrete [1, 2, 3] []
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "elementVar vs singleton" $ do
+        let expect = substitution [(Mock.xInt, 1)]
+        actual <- matchVariable [ElemVar Mock.xInt] [1]
+        assertEqualWithExplanation "" expect actual
+    , testCase "{elementVar, rest} vs {set}" $ do
+        let expect = substitution [(Mock.xInt, 2)]
+        actual <- matchVariable [Concrete 1, Concrete 3, ElemVar Mock.xInt] [1, 2, 3]
+        assertEqualWithExplanation "" expect actual
+    , testCase "{elementVars, rest} vs {set}" $ do
+        let expect =
+                substitution
+                    [ (Mock.xInt, 2)
+                    , (Mock.yInt, 4)
+                    ]
+        actual <-
+            matchVariable
+                [Concrete 1, Concrete 3, ElemVar Mock.xInt, ElemVar Mock.yInt]
+                [1, 2, 3, 4]
+        assertEqualWithExplanation "" expect actual
+    , testCase "more variables than available items" $ do
+        let expect = Nothing
+        actual <-
+            matchVariable
+                [Concrete 1, Concrete 3, ElemVar Mock.xInt, ElemVar Mock.yInt]
+                [1, 2, 3]
+        assertEqualWithExplanation "" expect actual
+    , testCase "more items than available variables" $ do
+        let expect = Nothing
+        actual <-
+            matchVariable
+                [Concrete 1, Concrete 3, ElemVar Mock.xInt, ElemVar Mock.yInt]
+                [1, 2, 3, 4, 5]
+        assertEqualWithExplanation "" expect actual
+    , testCase "{elementVariable} vs empty" $ do
+        let expect = Nothing
+        actual <- matchVariable [ElemVar Mock.xInt] []
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "setVar vs empty" $ do
+        let expect =
+                Just $ MultiOr.make
+                    [ Conditional
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.xSet, mkConcreteSet [])
+                            ]
+                        }
+                    ]
+        actual <- matchVariable [SetVar Mock.xSet] []
+        assertEqualWithExplanation "" expect actual
+    , testCase "setVar vs unit" $ do
+        let expect =
+                Just $ MultiOr.make
+                    [ Conditional
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.xSet, mkConcreteSet [mkKey 1])
+                            ]
+                        }
+                    ]
+        actual <- matchVariable [SetVar Mock.xSet] [1]
+        assertEqualWithExplanation "" expect actual
+    , testCase "setVar vs {set}" $ do
+        let expect =
+                Just $ MultiOr.make
+                    [ Conditional
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.xSet, mkConcreteSet [mkKey 1, mkKey 2, mkKey 3])
+                            ]
+                        }
+                    ]
+        actual <- matchVariable [SetVar Mock.xSet] [1, 2, 3]
+        assertEqualWithExplanation "" expect actual
+    , testCase "{setVar, rest} vs {set}" $ do
+        let expect =
+                Just $ MultiOr.make
+                    [ Conditional
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.xSet, mkConcreteSet [mkKey 2, mkKey 3])
+                            ]
+                        }
+                    ]
+        actual <- matchVariable [SetVar Mock.xSet, Concrete 1] [1, 2, 3]
+        assertEqualWithExplanation "" expect actual
+    , testCase "{setVar, set} vs {set}" $ do
+        let expect =
+                Just $ MultiOr.make
+                    [ Conditional
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.xSet, mkConcreteSet [])
+                            ]
+                        }
+                    ]
+        actual <-
+            matchVariable
+                [SetVar Mock.xSet, Concrete 1, Concrete 2, Concrete 3]
+                [1, 2, 3]
+        assertEqualWithExplanation "" expect actual
+    , testCase "{setVar, set, a} vs {set}" $ do
+        let expect = Nothing
+        actual <-
+            matchVariable
+                [SetVar Mock.xSet, Concrete 1, Concrete 2, Concrete 3, Concrete 4]
+                [1, 2, 3]
+        assertEqualWithExplanation "" expect actual
+    , testCase "multiple setVars don't match" $ do
+        let expect = Nothing
+        actual <-
+            matchVariable
+                [SetVar Mock.xSet, SetVar Mock.ySet]
+                [1, 2]
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "{setVar, elemVar} vs empty" $ do
+        let expect = Nothing
+        actual <-
+            matchVariable
+                [SetVar Mock.xSet, ElemVar Mock.xInt]
+                []
+        assertEqualWithExplanation "" expect actual
+    , testCase "{setVar, elemVar} vs unit" $ do
+        let expect =
+                Just $ MultiOr.make
+                    [ Conditional
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.xSet, mkConcreteSet [])
+                            , (Mock.xInt, mkKey 1)
+                            ]
+                        }
+                    ]
+        actual <-
+            matchVariable
+                [SetVar Mock.xSet, ElemVar Mock.xInt]
+                [1]
+        assertEqualWithExplanation "" expect actual
+    , testCase "{setVar, elemVar} vs set" $ do
+        let expect =
+                Just $ MultiOr.make
+                    [ Conditional
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.xSet, mkConcreteSet [mkKey 2, mkKey 3])
+                            , (Mock.xInt, mkKey 1)
+                            ]
+                        }
+                    ]
+        actual <-
+            matchVariable
+                [SetVar Mock.xSet, ElemVar Mock.xInt]
+                [1, 2, 3]
+        assertEqualWithExplanation "" expect actual
+    , testCase "{setVar, elemVar, concrete} vs set" $ do
+        let expect =
+                Just $ MultiOr.make
+                    [ Conditional
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.xSet, mkConcreteSet [mkKey 3])
+                            , (Mock.xInt, mkKey 2)
+                            ]
+                        }
+                    ]
+        actual <-
+            matchVariable
+                [SetVar Mock.xSet, ElemVar Mock.xInt, Concrete 1]
+                [1, 2, 3]
+        assertEqualWithExplanation "" expect actual
+    , testCase "{setVar, elemVars, concrete} vs set" $ do
+        let expect =
+                Just $ MultiOr.make
+                    [ Conditional
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [ (Mock.xSet, mkConcreteSet [mkKey 5])
+                            , (Mock.xInt, mkKey 2)
+                            , (Mock.yInt, mkKey 4)
+                            ]
+                        }
+                    ]
+        actual <-
+            matchVariable
+                [ SetVar Mock.xSet
+                , ElemVar Mock.xInt
+                , ElemVar Mock.yInt
+                , Concrete 1
+                , Concrete 3
+                ]
+                [1, 2, 3, 4, 5]
+        assertEqualWithExplanation "" expect actual
+
+    ]
+  where
+    top = Just $ OrPredicate.fromPredicate Predicate.topPredicate
+    substitution subst = Just $ MultiOr.make
+        [ Conditional
+            { term = ()
+            , predicate = makeTruePredicate
+            , substitution =
+                Substitution.unsafeWrap
+                    $ fmap mkKey <$> subst
+            }
+        ]
+    mkKey k =
+        (mkBuiltin . Domain.BuiltinInt)
+            Domain.InternalInt
+                { builtinIntSort  = Mock.intSort
+                , builtinIntValue = k
+                }
+    mkConcreteSet =
+        Set.asInternalConcrete Mock.metadataTools Mock.setSort . Set.fromList
+    -- mapWithKey = Bifunctor.bimap mkKey
+    mkSet concrete' evars svars =
+        Set.asInternal Mock.metadataTools Mock.setSort
+            $ Domain.NormalizedSet evars (Set.fromList concrete') svars
+    matchConcreteSet = matchDefinition `on` mkConcreteSet
+    matchConcrete =
+        matchConcreteSet `on` fmap mkKey
+    matchVariable var val =
+            matchDefinition
+                (mkSet
+                    (mkKey <$> concrete var)
+                    (mkVar <$> elemVars var)
+                    (mkVar <$> setVars  var)
+                )
+                (mkConcreteSet $ fmap mkKey val)
+    -- cons = Mock.concatMap
+    -- matchCons t1 m2 =
+    --     matchDefinition t1
+    --         . mkMap
+    --         $ fmap (mapWithKey mkVal) m2
 
 matchingMap :: [TestTree]
 matchingMap =
