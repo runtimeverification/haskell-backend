@@ -16,6 +16,10 @@ module Kore.Repl.Data
     , RuleName (..), RuleReference(..)
     , ReplNode (..)
     , ReplState (..)
+    , ReplOutput (..)
+    , ReplOut (..)
+    , PrintAuxOutput (..)
+    , PrintKoreOutput (..)
     , Config (..)
     , NodeState (..)
     , GraphProofStatus (..)
@@ -36,6 +40,7 @@ module Kore.Repl.Data
     , ReplScript (..)
     , ReplMode (..)
     , OutputFile (..)
+    , makeAuxReplOutput, makeKoreReplOutput
     ) where
 
 import           Control.Applicative
@@ -118,6 +123,20 @@ newtype ReplNode = ReplNode
 newtype RuleName = RuleName
     { unRuleName :: String
     } deriving (Eq, Show)
+
+newtype ReplOutput =
+    ReplOutput
+    { unReplOutput :: [ReplOut]
+    } deriving (Eq, Show, Semigroup, Monoid)
+
+newtype PrintAuxOutput = PrintAuxOutput
+    { unPrintAuxOutput :: String -> IO () }
+
+newtype PrintKoreOutput = PrintKoreOutput
+    { unPrintKoreOutput :: String -> IO () }
+
+data ReplOut = AuxOut String | KoreOut String
+    deriving (Eq, Show)
 
 data AliasDefinition = AliasDefinition
     { name      :: String
@@ -507,3 +526,10 @@ data GraphProofStatus
     | StuckProof [Graph.Node]
     | TrustedClaim
     deriving (Eq, Show)
+
+
+makeAuxReplOutput :: String -> ReplOutput
+makeAuxReplOutput = ReplOutput . return . AuxOut
+
+makeKoreReplOutput :: String -> ReplOutput
+makeKoreReplOutput = ReplOutput . return . KoreOut

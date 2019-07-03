@@ -13,15 +13,12 @@ module Kore.Repl.Interpreter
     , showProofStatus
     , showClaimSwitch
     , printIfNotEmpty
-    , showRewriteRuleLocation
+    , showRewriteRule
     , parseEvalScript
     , showAliasError
     , formatUnificationMessage
     , allProofs
     , ReplStatus(..)
-    , ReplOutput (..)
-    , PrintAuxOutput (..)
-    , PrintKoreOutput (..)
     , showCurrentClaimIndex
     ) where
 
@@ -140,28 +137,8 @@ import           Text.Megaparsec
 -- 'replInterpreter'.
 type ReplM claim m a = RWST (Config claim m) ReplOutput (ReplState claim) m a
 
-data ReplOutput =
-    ReplOutput
-    { auxOutput  :: String
-    , koreOutput :: String
-    }
-    deriving (Eq, Show)
-
-instance Semigroup ReplOutput where
-    (ReplOutput aux1 kore1) <> (ReplOutput aux2 kore2) =
-        ReplOutput (aux1 <> aux2) (kore1 <> kore2)
-
-instance Monoid ReplOutput where
-    mempty = ReplOutput mempty mempty
-
 data ReplStatus = Continue | SuccessStop | FailStop
     deriving (Eq, Show)
-
-newtype PrintAuxOutput = PrintAuxOutput
-    { unPrintAuxOutput :: String -> IO () }
-
-newtype PrintKoreOutput = PrintKoreOutput
-    { unPrintKoreOutput :: String -> IO () }
 
 -- | Interprets a REPL command in a stateful Simplifier context.
 replInterpreter
@@ -206,9 +183,10 @@ replInterpreter printAux printKore replCmd = do
                 ProofStatus        -> proofStatus        $> Continue
                 Log s t            -> handleLog (s,t)    $> Continue
                 Exit               -> exit
-    (output, shouldContinue) <- evaluateCommand command
-    liftIO . unPrintAuxOutput printAux . auxOutput $ output
-    liftIO . unPrintKoreOutput printKore . koreOutput $ output
+    (ReplOutput output, shouldContinue) <- evaluateCommand command
+    liftIO $ Foldable.traverse_
+            (whichOutputFunc printAux printKore)
+            output
     case shouldContinue of
         Continue -> pure Continue
         SuccessStop -> liftIO exitSuccess
@@ -229,11 +207,16 @@ replInterpreter printAux printKore replCmd = do
                 $ runRWST c config st
         put st'
         pure (w, ext)
-    printOutput :: ReplOutput -> (String -> IO ()) -> (String -> IO ()) -> IO ()
-    printOutput output fn1 fn2 = do
-        fn1 . auxOutput $ output
-        fn2 . koreOutput $ output
 
+whichOutputFunc
+    :: PrintAuxOutput
+    -> PrintKoreOutput
+    -> ReplOut
+    -> IO ()
+whichOutputFunc printAux printKore =
+    \case
+        AuxOut str  -> unPrintAuxOutput printAux $ str
+        KoreOut str -> unPrintKoreOutput printKore $ str
 
 showUsageMessage :: String
 showUsageMessage = "Could not parse command, try using 'help'."
@@ -298,11 +281,7 @@ showClaim =
                         (getClaimByIndex . unClaimIndex)
                         (getClaimByName . unRuleName)
                         indexOrName
-            case claim of
-                Just rule -> do
-                    korePutStrLn . unparseToString $ rule
-                    putStrLn' $ "\n" <> showRewriteRuleLocation rule
-                Nothing -> printNotFound
+            maybe printNotFound (tell . showRewriteRule) $ claim
 
 -- | Prints an axiom using an index in the axioms list.
 showAxiom
@@ -316,11 +295,7 @@ showAxiom indexOrName = do
                 (getAxiomByIndex . unAxiomIndex)
                 (getAxiomByName . unRuleName)
                 indexOrName
-    case axiom of
-        Just rule -> do
-            korePutStrLn . unparseToString $ unAxiom rule
-            putStrLn' $ "\n" <> showRewriteRuleLocation (unAxiom rule)
-        Nothing -> printNotFound
+    maybe printNotFound (tell . showRewriteRule) $ axiom
 
 -- | Changes the currently focused proof, using an index in the claims list.
 prove
@@ -466,7 +441,7 @@ showConfig configNode = do
         Just (ReplNode node, config) -> do
             omit <- Lens.use lensOmit
             putStrLn' $ "Config at node " <> show node <> " is:"
-            korePutStrLn $ unparseStrategy omit config
+            tell $ unparseStrategy omit config
 
 -- | Shows current omit list if passed 'Nothing'. Adds/removes from the list
 -- depending on whether the string already exists in the list or not.
@@ -577,8 +552,7 @@ showRule configNode = do
         Nothing -> putStrLn' "Invalid node!"
         Just rule -> do
             axioms <- Lens.use lensAxioms
-            korePutStrLn . unparseToString $ rule
-            putStrLn' $ "\n" <> showRewriteRuleLocation rule
+            tell . showRewriteRule $ rule
             let ruleIndex = getRuleIndex rule
             putStrLn' $ maybe
                 "Error: identifier attribute wasn't initialized."
@@ -841,8 +815,13 @@ tryAxiomClaimWorker mode ref = do
             BranchResult _ ->
                 updateExecutionGraph graph
 
+    runUnifier'
+        :: TermLike Variable
+        -> TermLike Variable
+        -> ReplM claim m ()
     runUnifier' first second =
-        runUnifier first second >>= putStrLn' . formatUnificationMessage
+        runUnifier first second
+        >>= tell . formatUnificationMessage
 
     extractLeftPattern
         :: Either (Axiom) claim
@@ -932,14 +911,14 @@ pipe cmd file args = do
             if outputsKore cmd
                 then
                     runInterpreterWithOutput
-                        (PrintAuxOutput $ \_ -> return () )
+                        (PrintAuxOutput putStrLn)
                         (PrintKoreOutput outputFunc)
                         cmd
                         config
                 else
                     runInterpreterWithOutput
                         (PrintAuxOutput outputFunc)
-                        (PrintKoreOutput $ \_ -> return () )
+                        (PrintKoreOutput putStrLn)
                         cmd
                         config
             case maybeOutput of
@@ -1075,12 +1054,15 @@ recursiveForcedStep n graph node
           xs -> foldM (recursiveForcedStep $ n-1) graph' (fmap ReplNode xs)
 
 -- | Display a rule as a String.
-showRewriteRuleLocation
+showRewriteRule
     :: Coercible (RewriteRule Variable) rule
     => rule
-    -> String
-showRewriteRuleLocation rule =
-    show . Pretty.pretty . extractSourceAndLocation $ rule'
+    -> ReplOutput
+showRewriteRule rule =
+    makeKoreReplOutput (unparseToString rule')
+    <> makeAuxReplOutput "\n"
+    <> makeAuxReplOutput
+        (show . Pretty.pretty . extractSourceAndLocation $ rule')
   where
     rule' = coerce rule
 
@@ -1097,13 +1079,26 @@ unparseStrategy
     -- ^ omit list
     -> CommonStrategyPattern
     -- ^ pattern
-    -> String
+    -> ReplOutput
 unparseStrategy omitList =
     strategyPattern StrategyPatternTransformer
-        { rewriteTransformer = \pat -> unparseToString . Pattern.toTermLike $ hide <$> pat
+        { rewriteTransformer = \pat ->
+            makeKoreReplOutput
+            . unparseToString
+            -- . TermLike.externalizeFreshVariable
+            .  Pattern.toTermLike
+            $ hide
+            <$> pat
         , stuckTransformer =
-            \pat -> "Stuck: \n" <> (unparseToString . Pattern.toTermLike $ hide <$> pat)
-        , bottomValue = "Reached bottom"
+            \pat -> makeAuxReplOutput "Stuck: \n"
+                    <> makeKoreReplOutput
+                    ( unparseToString
+                     -- . TermLike.externalizeFreshVariables
+                     . Pattern.toTermLike
+                     $ hide
+                     <$> pat
+                    )
+        , bottomValue = makeAuxReplOutput "Reached bottom"
         }
   where
     hide :: TermLike Variable -> TermLike Variable
@@ -1125,20 +1120,12 @@ unparseStrategy omitList =
            . TermLike.symbolConstructor
 
 putStrLn' :: MonadWriter ReplOutput m => String -> m ()
-putStrLn' str
-  = tell
-  $ ReplOutput
-      { auxOutput = str <> "\n"
-      , koreOutput = mempty
-      }
+putStrLn' str =
+    tell . makeAuxReplOutput $ str
 
 korePutStrLn :: MonadWriter ReplOutput m => String -> m ()
-korePutStrLn str
-  = tell
-  $ ReplOutput
-      { auxOutput = mempty
-      , koreOutput = str <> "\n"
-      }
+korePutStrLn str =
+    tell . makeKoreReplOutput $ str
 
 printIfNotEmpty :: String -> IO ()
 printIfNotEmpty =
@@ -1273,28 +1260,23 @@ parseEvalScript file = do
 
 formatUnificationMessage
     :: Either (Pretty.Doc ()) (NonEmpty (Predicate Variable))
-    -> String
-formatUnificationMessage =
-    show . either prettyFailure prettyUnifiers
+    -> ReplOutput
+formatUnificationMessage docOrPredicate =
+    either prettyFailure prettyUnifiers docOrPredicate
   where
-    prettyFailure =
-        (<>) "Failed: "
+    prettyFailure doc =
+        makeAuxReplOutput "Failed: "
+        <> makeAuxReplOutput (show doc)
     prettyUnifiers =
-        Pretty.vsep
-        . (:) "Succeeded with unifiers:"
-        . List.intersperse (Pretty.indent 2 "and")
-        . map (Pretty.indent 4 . unparseUnifier)
+        ReplOutput
+        . (:) (AuxOut "Succeeded with unifiers:")
+        . List.intersperse (AuxOut . show $ Pretty.indent 2 "and")
+        . map (KoreOut . show . Pretty.indent 4 . unparseUnifier)
         . Foldable.toList
     unparseUnifier c =
         unparse . Pattern.toTermLike
-        $ (TermLike.mkTop $ TermLike.mkSortVariable "R"
-          -- (TermLike.termLikeSort
-          -- . Predicate.unwrapPredicate
-          -- . predicate
-          -- $ c)
-                )
+        $ (TermLike.mkTop $ TermLike.mkSortVariable "UNKNOWN")
         <$ c
-       -- . ((<$) :: _) (TermLike.mkTop_ :: TermLike Variable)
 
 showProofStatus :: Map.Map ClaimIndex GraphProofStatus -> String
 showProofStatus m =
