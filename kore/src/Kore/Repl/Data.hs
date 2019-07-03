@@ -431,7 +431,7 @@ type Explanation = Doc ()
 newtype UnifierWithExplanation m a =
     UnifierWithExplanation
         { getUnifierWithExplanation
-            :: UnifierT (AccumT (First Explanation) m) a
+            :: UnifierT (AccumT (First ReplOutput) m) a
         }
   deriving (Alternative, Applicative, Functor, Monad)
 
@@ -468,35 +468,13 @@ instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
         . Monad.Trans.lift
         . Monad.Accum.add
         . First
-        . Just $ Pretty.vsep
-            [ info
-            , "When unifying:"
-            , Pretty.indent 4 $ unparse first
-            , "With:"
-            , Pretty.indent 4 $ unparse second
+        . Just $ ReplOutput
+            [ AuxOut . show $ info
+            , AuxOut "When unifying:"
+            , KoreOut . show . Pretty.indent 4 . unparse $ first
+            , AuxOut "With:"
+            , KoreOut . show . Pretty.indent 4 . unparse $ second
             ]
-
-runUnifierWithExplanation
-    :: forall m a
-    .  MonadSimplify m
-    => UnifierWithExplanation m a
-    -> m (Either Explanation (NonEmpty a))
-runUnifierWithExplanation (UnifierWithExplanation unifier) =
-    either explainError failWithExplanation <$> unificationResults
-  where
-    unificationResults
-        ::  m
-                (Either UnificationOrSubstitutionError ([a], First Explanation))
-    unificationResults =
-        fmap (\(r, ex) -> flip (,) ex <$> r)
-        . flip runAccumT mempty
-        . Monad.Unify.runUnifierT
-        $ unifier
-    explainError = Left . Pretty.pretty
-    failWithExplanation (results, explanation) =
-        case results of
-            [] -> Left $ fromMaybe "No explanation given" (getFirst explanation)
-            r : rs -> Right (r :| rs)
 
 Lens.makeLenses ''ReplState
 
@@ -533,3 +511,25 @@ makeAuxReplOutput = ReplOutput . return . AuxOut
 
 makeKoreReplOutput :: String -> ReplOutput
 makeKoreReplOutput = ReplOutput . return . KoreOut
+
+runUnifierWithExplanation
+    :: forall m a
+    .  MonadSimplify m
+    => UnifierWithExplanation m a
+    -> m (Either ReplOutput (NonEmpty a))
+runUnifierWithExplanation (UnifierWithExplanation unifier) =
+    either explainError failWithExplanation <$> unificationResults
+  where
+    unificationResults
+        ::  m
+                (Either UnificationOrSubstitutionError ([a], First ReplOutput))
+    unificationResults =
+        fmap (\(r, ex) -> flip (,) ex <$> r)
+        . flip runAccumT mempty
+        . Monad.Unify.runUnifierT
+        $ unifier
+    explainError = Left . makeAuxReplOutput . show . Pretty.pretty
+    failWithExplanation (results, explanation) =
+        case results of
+            [] -> Left . makeAuxReplOutput $ fromMaybe "No explanation given" (getFirst explanation)
+            r : rs -> Right (r :| rs)

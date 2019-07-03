@@ -673,6 +673,8 @@ outputsKore =
         ShowAxiom _  -> True
         ShowConfig _ -> True
         ShowRule _   -> True
+        Try _        -> True
+        TryF _       -> True
         _            -> False
 
 -- | Redirect command to specified file.
@@ -1266,7 +1268,7 @@ formatUnificationMessage docOrPredicate =
   where
     prettyFailure doc =
         makeAuxReplOutput "Failed: "
-        <> makeAuxReplOutput (show doc)
+        <> makeKoreReplOutput (show doc)
     prettyUnifiers =
         ReplOutput
         . (:) (AuxOut "Succeeded with unifiers:")
