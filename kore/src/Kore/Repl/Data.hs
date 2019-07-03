@@ -481,9 +481,9 @@ instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
         . Just $ ReplOutput
             [ AuxOut . show $ info
             , AuxOut "When unifying:"
-            , KoreOut . show . Pretty.indent 4 . unparse $ first
+            , KoreOut . (<>) "\n" . show . Pretty.indent 4 . unparse $ first
             , AuxOut "With:"
-            , KoreOut . show . Pretty.indent 4 . unparse $ second
+            , KoreOut . (<>) "\n" . show . Pretty.indent 4 . unparse $ second
             ]
 
 Lens.makeLenses ''ReplState
