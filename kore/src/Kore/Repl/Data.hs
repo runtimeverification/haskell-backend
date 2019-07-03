@@ -424,6 +424,16 @@ data Config claim m = Config
     -- ^ Output resulting pattern to this file.
     }
 
+replOutputToString :: ReplOutput -> String
+replOutputToString (ReplOutput out) =
+    out >>= f
+  where
+    f :: ReplOut -> String
+    f =
+        \case
+            AuxOut str -> str
+            KoreOut str -> str
+
 type Explanation = Doc ()
 
 -- | Unifier that stores the first 'explainBottom'.
@@ -505,7 +515,6 @@ data GraphProofStatus
     | TrustedClaim
     deriving (Eq, Show)
 
-
 makeAuxReplOutput :: String -> ReplOutput
 makeAuxReplOutput = ReplOutput . return . AuxOut
 
@@ -529,7 +538,10 @@ runUnifierWithExplanation (UnifierWithExplanation unifier) =
         . Monad.Unify.runUnifierT
         $ unifier
     explainError = Left . makeAuxReplOutput . show . Pretty.pretty
+    failWithExplanation
+        :: ([a], First ReplOutput)
+        -> Either ReplOutput (NonEmpty a)
     failWithExplanation (results, explanation) =
         case results of
-            [] -> Left . makeAuxReplOutput $ fromMaybe "No explanation given" (getFirst explanation)
+            [] -> Left $ fromMaybe (makeAuxReplOutput "No explanation given") (getFirst explanation)
             r : rs -> Right (r :| rs)

@@ -442,7 +442,7 @@ runUnifier
     => MonadIO m
     => TermLike Variable
     -> TermLike Variable
-    -> t m (Either (Doc ()) (NonEmpty (IPredicate.Predicate Variable)))
+    -> t m (Either ReplOutput (NonEmpty (IPredicate.Predicate Variable)))
 runUnifier first second = do
     unifier <- asks unifier
     mvar <- asks logger

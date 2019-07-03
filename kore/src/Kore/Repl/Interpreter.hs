@@ -1261,14 +1261,14 @@ parseEvalScript file = do
                     (PrintKoreOutput $ \_ -> return ())
 
 formatUnificationMessage
-    :: Either (Pretty.Doc ()) (NonEmpty (Predicate Variable))
+    :: Either ReplOutput (NonEmpty (Predicate Variable))
     -> ReplOutput
 formatUnificationMessage docOrPredicate =
-    either prettyFailure prettyUnifiers docOrPredicate
+    either id prettyUnifiers docOrPredicate
   where
-    prettyFailure doc =
-        makeAuxReplOutput "Failed: "
-        <> makeKoreReplOutput (show doc)
+    -- prettyFailure doc =
+    --     makeAuxReplOutput "Failed: "
+    --     <> makeKoreReplOutput doc
     prettyUnifiers =
         ReplOutput
         . (:) (AuxOut "Succeeded with unifiers:")
