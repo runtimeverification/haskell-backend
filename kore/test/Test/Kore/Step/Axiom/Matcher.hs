@@ -1050,7 +1050,6 @@ test_matchingBuiltins =
         , matchingInt
         , matchingString
         , matchingList
-        -- TODO(Vladimir): implement after Virgil's set changes is done
         , matchingSet
         , matchingMap
         ]
