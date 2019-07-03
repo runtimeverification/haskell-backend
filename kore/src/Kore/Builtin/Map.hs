@@ -342,7 +342,7 @@ evalKeys =
                         [_map] -> _map
                         _ -> Builtin.wrongArity lookupKey
             _map <- expectBuiltinMap lookupKey _map
-            Builtin.Set.returnSet resultSort (Map.keysSet _map)
+            Builtin.Set.returnConcreteSet resultSort (Map.keysSet _map)
 
 evalRemove :: Builtin.Function
 evalRemove =
@@ -384,7 +384,8 @@ evalRemoveAll =
                         else empty
                 bothConcrete = do
                     _map <- expectBuiltinMap removeAllKey _map
-                    _set <- Builtin.Set.expectBuiltinSet removeAllKey _set
+                    _set <-
+                        Builtin.Set.expectConcreteBuiltinSet removeAllKey _set
                     returnMap resultSort $ Map.withoutKeys _map _set
             emptyMap <|> bothConcrete
 

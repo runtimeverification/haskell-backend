@@ -50,7 +50,9 @@ simplifyBuiltin =
             _list <- sequence _list
             -- MultiOr propagates \bottom children upward.
             return (Domain.BuiltinList <$> sequenceA _list)
-        Domain.BuiltinSet set -> (return . pure) (Domain.BuiltinSet set)
+        Domain.BuiltinSet _set -> do
+            _set <- sequence _set
+            return (Domain.BuiltinSet <$> sequenceA _set)
         Domain.BuiltinInt int -> (return . pure) (Domain.BuiltinInt int)
         Domain.BuiltinBool bool -> (return . pure) (Domain.BuiltinBool bool)
         Domain.BuiltinString string ->

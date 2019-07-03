@@ -7,6 +7,7 @@ Representation of program configurations as conditional patterns.
 module Kore.Internal.Pattern
     ( Pattern
     , fromPredicate
+    , fromPredicateSorted
     , toPredicate
     , bottom
     , bottomOf
@@ -58,6 +59,13 @@ fromPredicate
     => Predicate variable
     -> Pattern variable
 fromPredicate = (<$) mkTop_
+
+fromPredicateSorted
+    :: (Ord variable, SortedVariable variable)
+    => Sort
+    -> Predicate variable
+    -> Pattern variable
+fromPredicateSorted sort = (<$) (mkTop sort)
 
 freeVariables
     :: Ord variable

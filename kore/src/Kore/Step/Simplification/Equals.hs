@@ -39,7 +39,7 @@ import qualified Kore.Step.Simplification.And as And
                  ( simplifyEvaluated )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
                  ( termEquals )
-import qualified Kore.Step.Simplification.Ceil as Ceil
+import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, makeEvaluateTerm )
 import           Kore.Step.Simplification.Data as Simplifier hiding
                  ( Equals )
