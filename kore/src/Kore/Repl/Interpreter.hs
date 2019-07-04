@@ -39,7 +39,7 @@ import           Control.Monad.Reader
 import qualified Control.Monad.Reader as Reader
                  ( ask )
 import           Control.Monad.RWS.Strict
-                 ( MonadWriter, RWST, ask, asks, lift, runRWST, tell )
+                 ( MonadWriter, RWST, ask, asks, lift, pass, runRWST, tell )
 import           Control.Monad.State.Class
                  ( get, put )
 import           Control.Monad.State.Strict
@@ -55,6 +55,8 @@ import           Data.Functor
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
+import           Data.IORef
+                 ( IORef, modifyIORef, newIORef, readIORef )
 import qualified Data.List as List
 import           Data.List.NonEmpty
                  ( NonEmpty )
@@ -887,25 +889,28 @@ pipe cmd file args = do
         Nothing -> putStrLn' "Cannot find executable."
         Just exec -> do
             config <- ask
+            pipeOutRef <- liftIO $ newIORef (mempty :: ReplOutput)
             if outputsKore cmd
                 then
                     runInterpreterWithOutput
-                        (PrintAuxOutput putStrLn)
-                        (PrintKoreOutput $ runExternalProcess exec)
+                        (PrintAuxOutput $ justPrint pipeOutRef)
+                        (PrintKoreOutput $ runExternalProcess pipeOutRef exec)
                         cmd
                         config
                 else
                     runInterpreterWithOutput
-                        (PrintAuxOutput $ runExternalProcess exec)
-                        (PrintKoreOutput putStrLn)
+                        (PrintAuxOutput $ runExternalProcess pipeOutRef exec)
+                        (PrintKoreOutput $ justPrint pipeOutRef)
                         cmd
                         config
+            pipeOut <- liftIO $ readIORef pipeOutRef
+            tell pipeOut
   where
     createProcess' exec =
         liftIO $ createProcess (proc exec args)
             { std_in = CreatePipe, std_out = CreatePipe }
-    runExternalProcess :: String -> String -> IO ()
-    runExternalProcess exec str = do
+    runExternalProcess :: IORef ReplOutput -> String -> String -> IO ()
+    runExternalProcess pipeOut exec str = do
         (maybeInput, maybeOutput, _, _) <- createProcess' exec
         let outputFunc = maybe putStrLn hPutStr maybeInput
         outputFunc str
@@ -914,7 +919,10 @@ pipe cmd file args = do
                 putStrLn "Error: couldn't access output handle."
             Just handle -> do
                 output <- liftIO $ hGetContents handle
-                putStrLn output
+                modifyIORef pipeOut (appReplOut . AuxOut $ output)
+    justPrint :: IORef ReplOutput -> String -> IO ()
+    justPrint outRef str = do
+        modifyIORef outRef (appReplOut . AuxOut $ str)
 
 -- | Appends output of a command to a file.
 appendTo

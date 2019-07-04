@@ -24,6 +24,7 @@ module Kore.Repl.State
     , generateInProgressOPClaims
     , currentClaimSort
     , conjOfOnePathClaims
+    , appReplOut
     )
     where
 
@@ -657,3 +658,7 @@ sortLeafsByType graph =
 findLeafNodes :: InnerGraph -> [Graph.Node]
 findLeafNodes graph =
     filter ((==) 0 . Graph.outdeg graph) $ Graph.nodes graph
+
+
+appReplOut :: ReplOut -> ReplOutput -> ReplOutput
+appReplOut rout routput = routput <> ReplOutput [rout]
