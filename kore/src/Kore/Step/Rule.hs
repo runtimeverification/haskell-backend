@@ -161,6 +161,15 @@ deriving instance Eq variable => Eq (ImplicationRule variable)
 deriving instance Ord variable => Ord (ImplicationRule variable)
 deriving instance Show variable => Show (ImplicationRule variable)
 
+instance
+    (Ord variable, SortedVariable variable, Unparse variable)
+    => Unparse (ImplicationRule variable)
+  where
+    unparse (ImplicationRule RulePattern { left, right } ) =
+        unparse $ mkImplies left right
+    unparse2 (ImplicationRule RulePattern { left, right } ) =
+        unparse2 $ mkImplies left right
+
 -- | modalities
 weakExistsFinally :: Text
 weakExistsFinally = "weakExistsFinally"
