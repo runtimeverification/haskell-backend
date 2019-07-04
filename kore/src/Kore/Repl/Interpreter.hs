@@ -250,7 +250,12 @@ exit = do
     onePathClaims <- generateInProgressOPClaims
     sort <- currentClaimSort
     let conj = conjOfOnePathClaims onePathClaims sort
-    liftIO $ writeFile fileName (unparseToString conj)
+    liftIO $ writeFile
+            fileName
+            ( unparseToString
+            . TermLike.externalizeFreshVariables
+            $ conj
+            )
     if isCompleted (Map.elems proofs)
        then return SuccessStop
        else return FailStop
@@ -1083,18 +1088,16 @@ unparseStrategy omitList =
         { rewriteTransformer = \pat ->
             makeKoreReplOutput
             . unparseToString
-            -- . TermLike.externalizeFreshVariable
-            .  Pattern.toTermLike
-            $ hide
-            <$> pat
+            . TermLike.externalizeFreshVariables
+            . Pattern.toTermLike
+            $ fmap hide pat
         , stuckTransformer =
             \pat -> makeAuxReplOutput "Stuck: \n"
                     <> makeKoreReplOutput
                     ( unparseToString
-                     -- . TermLike.externalizeFreshVariables
+                     . TermLike.externalizeFreshVariables
                      . Pattern.toTermLike
-                     $ hide
-                     <$> pat
+                     $ fmap hide pat
                     )
         , bottomValue = makeAuxReplOutput "Reached bottom"
         }
@@ -1265,7 +1268,9 @@ formatUnificationMessage docOrPredicate =
         . map (KoreOut . show . Pretty.indent 4 . unparseUnifier)
         . Foldable.toList
     unparseUnifier c =
-        unparse . Pattern.toTermLike
+        unparse
+        . TermLike.externalizeFreshVariables
+        . Pattern.toTermLike
         $ (TermLike.mkTop $ TermLike.mkSortVariable "UNKNOWN")
         <$ c
 
