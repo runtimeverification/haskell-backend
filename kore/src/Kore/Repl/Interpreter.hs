@@ -688,29 +688,27 @@ redirect
     -> FilePath
     -- ^ file path
     -> ReplM claim m ()
-redirect cmd path = do
-    config <- ask
-    if outputsKore cmd
-        then
-            runInterpreterWithOutput
-                (PrintAuxOutput $ \_ -> return () )
-                (PrintKoreOutput redirectToFile)
-                cmd
-                config
-        else
-            runInterpreterWithOutput
-                (PrintAuxOutput redirectToFile)
-                (PrintKoreOutput $ \_ -> return () )
-                cmd
-                config
+redirect cmd file = do
+    liftIO $ whenPathIsReachable file (flip writeFile $ "")
+    redirectCommand file
   where
-    redirectToFile :: String -> IO ()
-    redirectToFile str =
-        whenPathIsReachable path (redirectCommand str)
-    redirectCommand :: String -> FilePath -> IO ()
-    redirectCommand str file = do
-        writeFile file str
-        putStrLn "File created."
+    redirectCommand :: FilePath -> ReplM claim m ()
+    redirectCommand path = do
+        config <- ask
+        if outputsKore cmd
+            then
+                runInterpreterWithOutput
+                    (PrintAuxOutput $ \_ -> return () )
+                    (PrintKoreOutput $ appendFile file)
+                    cmd
+                    config
+            else
+                runInterpreterWithOutput
+                    (PrintAuxOutput $ appendFile file)
+                    (PrintKoreOutput $ \_ -> return () )
+                    cmd
+                    config
+        putStrLn' "File created."
 
 runInterpreterWithOutput
     :: forall claim m
