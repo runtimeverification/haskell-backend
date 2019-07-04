@@ -1619,7 +1619,6 @@ matchingSet =
                 }
     mkConcreteSet =
         Set.asInternalConcrete Mock.metadataTools Mock.setSort . Set.fromList
-    -- mapWithKey = Bifunctor.bimap mkKey
     mkSet concrete' evars svars =
         Set.asInternal Mock.metadataTools Mock.setSort
             $ Domain.NormalizedSet evars (Set.fromList concrete') svars
@@ -1634,11 +1633,6 @@ matchingSet =
                     (mkVar <$> setVars  var)
                 )
                 (mkConcreteSet $ fmap mkKey val)
-    -- cons = Mock.concatMap
-    -- matchCons t1 m2 =
-    --     matchDefinition t1
-    --         . mkMap
-    --         $ fmap (mapWithKey mkVal) m2
 
 matchingMap :: [TestTree]
 matchingMap =
