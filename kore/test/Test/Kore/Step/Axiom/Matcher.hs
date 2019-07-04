@@ -1169,6 +1169,10 @@ matchingList =
         let expect = Nothing
         actual <- matchConcrete [1, 2] [1, 3]
         assertEqualWithExplanation "" expect actual
+    , testCase "concrete bottom 2" $ do
+        let expect = Nothing
+        actual <- matchConcrete [1, 2] [1, 2, 3]
+        assertEqualWithExplanation "" expect actual
     , testCase "variable on right does not match" $ do
         let expect = Nothing
         actual <- matchDefinition (mkList [mkInt 1]) (mkVar Mock.xList)
@@ -1200,7 +1204,7 @@ matchingList =
         actual <- matchVariable
             [ Right 1, Left Mock.xInt] [ 2, 1 ]
         assertEqualWithExplanation "" expect actual
-    , testCase "cons(empty, var) vs concrete" $ do
+    , testCase "concat(empty, var) vs concrete" $ do
         let expect =
                 Just $ MultiOr.make
                     [ Conditional
@@ -1211,11 +1215,11 @@ matchingList =
                             ]
                         }
                     ]
-        actual <- matchCons
-            (mkList [] `cons` mkVar Mock.xList)
+        actual <- matchConcat
+            (mkList [] `concat'` mkVar Mock.xList)
             [1, 2, 3]
         assertEqualWithExplanation "" expect actual
-    , testCase "cons(unit, var) vs concrete" $ do
+    , testCase "concat(unit, var) vs concrete" $ do
         let expect =
                 Just $ MultiOr.make
                     [ Conditional
@@ -1226,11 +1230,11 @@ matchingList =
                             ]
                         }
                     ]
-        actual <- matchCons
-            (mkList [mkInt 1] `cons` mkVar Mock.xList)
+        actual <- matchConcat
+            (mkList [mkInt 1] `concat'` mkVar Mock.xList)
             [1, 2, 3]
         assertEqualWithExplanation "" expect actual
-    , testCase "cons(concrete, var) vs concrete" $ do
+    , testCase "concat(concrete, var) vs concrete" $ do
         let expect =
                 Just $ MultiOr.make
                     [ Conditional
@@ -1241,11 +1245,11 @@ matchingList =
                             ]
                         }
                     ]
-        actual <- matchCons
-            (mkList [mkInt 1, mkInt 2, mkInt 3] `cons` mkVar Mock.xList)
+        actual <- matchConcat
+            (mkList [mkInt 1, mkInt 2, mkInt 3] `concat'` mkVar Mock.xList)
             [1, 2, 3]
         assertEqualWithExplanation "" expect actual
-    , testCase "cons(var, empty) vs concrete" $ do
+    , testCase "concat(var, empty) vs concrete" $ do
         let expect =
                 Just $ MultiOr.make
                     [ Conditional
@@ -1256,11 +1260,11 @@ matchingList =
                             ]
                         }
                     ]
-        actual <- matchCons
-            (mkVar Mock.xList `cons` mkList [] )
+        actual <- matchConcat
+            (mkVar Mock.xList `concat'` mkList [] )
             [1, 2, 3]
         assertEqualWithExplanation "" expect actual
-    , testCase "cons(var, unit) vs concrete" $ do
+    , testCase "concat(var, unit) vs concrete" $ do
         let expect =
                 Just $ MultiOr.make
                     [ Conditional
@@ -1271,11 +1275,11 @@ matchingList =
                             ]
                         }
                     ]
-        actual <- matchCons
-            (mkVar Mock.xList `cons` mkList [mkInt 3] )
+        actual <- matchConcat
+            (mkVar Mock.xList `concat'` mkList [mkInt 3] )
             [1, 2, 3]
         assertEqualWithExplanation "" expect actual
-    , testCase "cons(var, concrete) vs concrete" $ do
+    , testCase "concat(var, concrete) vs concrete" $ do
         let expect =
                 Just $ MultiOr.make
                     [ Conditional
@@ -1286,11 +1290,11 @@ matchingList =
                             ]
                         }
                     ]
-        actual <- matchCons
-            (mkVar Mock.xList `cons` mkList [mkInt 1, mkInt 2, mkInt 3] )
+        actual <- matchConcat
+            (mkVar Mock.xList `concat'` mkList [mkInt 1, mkInt 2, mkInt 3] )
             [1, 2, 3]
         assertEqualWithExplanation "" expect actual
-    , testCase "cons(x, var) vs concrete" $ do
+    , testCase "concat(x, var) vs concrete" $ do
         let expect =
                 Just $ MultiOr.make
                     [ Conditional
@@ -1302,11 +1306,11 @@ matchingList =
                             ]
                         }
                     ]
-        actual <- matchCons
-            (mkList [mkVar Mock.xInt] `cons` mkVar Mock.xList)
+        actual <- matchConcat
+            (mkList [mkVar Mock.xInt] `concat'` mkVar Mock.xList)
             [1, 2, 3]
         assertEqualWithExplanation "" expect actual
-    , testCase "cons(var, x) vs concrete" $ do
+    , testCase "concat(var, x) vs concrete" $ do
         let expect =
                 Just $ MultiOr.make
                     [ Conditional
@@ -1318,8 +1322,8 @@ matchingList =
                             ]
                         }
                     ]
-        actual <- matchCons
-            (mkVar Mock.xList `cons` mkList [mkVar Mock.xInt])
+        actual <- matchConcat
+            (mkVar Mock.xList `concat'` mkList [mkVar Mock.xInt])
             [1, 2, 3]
         assertEqualWithExplanation "" expect actual
     ]
@@ -1336,7 +1340,7 @@ matchingList =
         ]
     mkInt = Int.asInternal Mock.intSort
     mkList = List.asInternal Mock.metadataTools Mock.listSort . Seq.fromList
-    cons = Mock.concatList
+    concat' = Mock.concatList
     matchList = matchDefinition `on` mkList
     matchConcrete =
         matchList `on` fmap mkInt
@@ -1344,7 +1348,7 @@ matchingList =
             matchList
             (either mkVar mkInt <$> var)
             (mkInt <$> val)
-    matchCons t1 l2 =
+    matchConcat t1 l2 =
         matchDefinition t1
             . mkList
             . fmap mkInt
@@ -1402,7 +1406,8 @@ matchingSet =
         assertEqualWithExplanation "" expect actual
     , testCase "{elementVar, rest} vs {set}" $ do
         let expect = substitution [(Mock.xInt, 2)]
-        actual <- matchVariable [Concrete 1, Concrete 3, ElemVar Mock.xInt] [1, 2, 3]
+        actual <-
+            matchVariable [Concrete 1, Concrete 3, ElemVar Mock.xInt] [1, 2, 3]
         assertEqualWithExplanation "" expect actual
     , testCase "{elementVars, rest} vs {set}" $ do
         let expect =
@@ -1644,6 +1649,10 @@ matchingMap =
         let expect = Nothing
         actual <- matchConcrete [(1, 11), (2, 12)] [(1, 11)]
         assertEqualWithExplanation "" expect actual
+    , testCase "concrete bottom values not matching" $ do
+        let expect = Nothing
+        actual <- matchConcrete [(1, 11), (2, 12)] [(1, 11), (2, 13)]
+        assertEqualWithExplanation "" expect actual
     , testCase "variable on right does not match" $ do
         let expect = Nothing
         actual <- matchDefinition (mkMap [(mkKey 1, mkVal 11)]) (mkVar Mock.xMap)
@@ -1672,7 +1681,7 @@ matchingMap =
             , (3, 13)
             ]
         assertEqualWithExplanation "" expect actual
-    , testCase "cons (empty, var) vs concrete" $ do
+    , testCase "concat(empty, var) vs concrete" $ do
         let expect =
                 Just $ MultiOr.make
                     [ Conditional
@@ -1688,14 +1697,14 @@ matchingMap =
                             ]
                         }
                     ]
-        actual <- matchCons
-            (mkMap [] `cons` mkVar Mock.xMap)
+        actual <- matchConcat
+            (mkMap [] `concat'` mkVar Mock.xMap)
             [ (1, 11)
             , (2, 12)
             , (3, 13)
             ]
         assertEqualWithExplanation "" expect actual
-    , testCase "cons (unit, var) vs concrete" $ do
+    , testCase "concat(unit, var) vs concrete" $ do
         let expect =
                 Just $ MultiOr.make
                     [ Conditional
@@ -1710,14 +1719,14 @@ matchingMap =
                             ]
                         }
                     ]
-        actual <- matchCons
-            (mkMap [(mkKey 1, mkVal 11)] `cons` mkVar Mock.xMap)
+        actual <- matchConcat
+            (mkMap [(mkKey 1, mkVal 11)] `concat'` mkVar Mock.xMap)
             [ (1, 11)
             , (2, 12)
             , (3, 13)
             ]
         assertEqualWithExplanation "" expect actual
-    , testCase "cons (concrete, var) vs concrete" $ do
+    , testCase "concat(concrete, var) vs concrete" $ do
         let expect =
                 Just $ MultiOr.make
                     [ Conditional
@@ -1728,20 +1737,20 @@ matchingMap =
                             ]
                         }
                     ]
-        actual <- matchCons
+        actual <- matchConcat
             ( mkMap
                 [ (mkKey 1, mkVal 11)
                 , (mkKey 2, mkVal 12)
                 , (mkKey 3, mkVal 13)
                 ]
-            `cons` mkVar Mock.xMap
+            `concat'` mkVar Mock.xMap
             )
             [ (1, 11)
             , (2, 12)
             , (3, 13)
             ]
         assertEqualWithExplanation "" expect actual
-    , testCase "cons (var, empty) vs concrete" $ do
+    , testCase "concat(var, empty) vs concrete" $ do
         let expect =
                 Just $ MultiOr.make
                     [ Conditional
@@ -1757,14 +1766,14 @@ matchingMap =
                             ]
                         }
                     ]
-        actual <- matchCons
-            (mkVar Mock.xMap `cons` mkMap [])
+        actual <- matchConcat
+            (mkVar Mock.xMap `concat'` mkMap [])
             [ (1, 11)
             , (2, 12)
             , (3, 13)
             ]
         assertEqualWithExplanation "" expect actual
-    , testCase "cons (var, unit) vs concrete" $ do
+    , testCase "concat(var, unit) vs concrete" $ do
         let expect =
                 Just $ MultiOr.make
                     [ Conditional
@@ -1779,14 +1788,14 @@ matchingMap =
                             ]
                         }
                     ]
-        actual <- matchCons
-            (mkVar Mock.xMap `cons` mkMap [(mkKey 2, mkVal 12)])
+        actual <- matchConcat
+            (mkVar Mock.xMap `concat'` mkMap [(mkKey 2, mkVal 12)])
             [ (1, 11)
             , (2, 12)
             , (3, 13)
             ]
         assertEqualWithExplanation "" expect actual
-    , testCase "cons (var, concrete) vs concrete" $ do
+    , testCase "concat(var, concrete) vs concrete" $ do
         let expect =
                 Just $ MultiOr.make
                     [ Conditional
@@ -1797,9 +1806,9 @@ matchingMap =
                             ]
                         }
                     ]
-        actual <- matchCons
+        actual <- matchConcat
             ( mkVar Mock.xMap
-            `cons` mkMap
+            `concat'` mkMap
                 [ (mkKey 1, mkVal 11)
                 , (mkKey 2, mkVal 12)
                 , (mkKey 3, mkVal 13)
@@ -1838,8 +1847,8 @@ matchingMap =
             matchMap
             (mapWithKey (either mkVar mkVal) <$> var)
             (mapWithKey mkVal <$> val)
-    cons = Mock.concatMap
-    matchCons t1 m2 =
+    concat' = Mock.concatMap
+    matchConcat t1 m2 =
         matchDefinition t1
             . mkMap
             $ fmap (mapWithKey mkVal) m2

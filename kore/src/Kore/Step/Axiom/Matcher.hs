@@ -515,7 +515,7 @@ matchAppBuiltins qv symbol args (Builtin.BuiltinMap m2)
         -> TermLike variable
         -> MaybeT unifier (Predicate variable)
     matchMaps m1 x = do
-        let (prefix2, suffix2) = splitMap m1
+        let (prefix2, suffix2) = splitM2By m1
         prefix  <-
             matchBuiltins
                 qv
@@ -524,18 +524,19 @@ matchAppBuiltins qv symbol args (Builtin.BuiltinMap m2)
         suffix <- match qv x (mkBuiltin $ Builtin.BuiltinMap suffix2)
         pure $ prefix <> suffix
 
-    splitMap
+    splitM2By
         :: Builtin.InternalMap (TermLike Concrete) (TermLike variable)
         ->  ( Builtin.InternalMap (TermLike Concrete) (TermLike variable)
             , Builtin.InternalMap (TermLike Concrete) (TermLike variable)
             )
-    splitMap m =
+    splitM2By m =
         Bifunctor.bimap
-            (\inner -> m { Builtin.builtinMapChild = inner })
-            (\inner -> m { Builtin.builtinMapChild = inner })
-            . Map.partitionWithKey
-                (\k _ -> Map.member k . Builtin.builtinMapChild $ m)
-            $ Builtin.builtinMapChild m2
+            (updateInnerMap m)
+            (updateInnerMap m)
+            $ Map.partitionWithKey (memberOfMap m) (Builtin.builtinMapChild m2)
+
+    updateInnerMap m newValue = m { Builtin.builtinMapChild = newValue }
+    memberOfMap m key _value = Map.member key $ Builtin.builtinMapChild m
 matchAppBuiltins _ _ _ _ = nothing
 
 matchBuiltins
@@ -559,9 +560,8 @@ matchBuiltins qv (Builtin.BuiltinList l1) (Builtin.BuiltinList l2)
     match' = uncurry (match qv)
 matchBuiltins qv (Builtin.BuiltinSet s1) (Builtin.BuiltinSet s2)
   | varElems2 == [] && varSets2 == [] && length varSets1 <= 1 = do
-    Monad.guard $ concrete1 `Set.intersection` concrete2 == concrete1
-
     let remainder = Set.toList $ concrete2 Set.\\ concrete1
+    Monad.guard $ length remainder + length concrete1 == length concrete2
     Monad.guard $ length remainder >= length varElems1
 
     variableMatches <-
@@ -580,7 +580,7 @@ matchBuiltins qv (Builtin.BuiltinSet s1) (Builtin.BuiltinSet s2)
                         $ Set.fromList setRemainder
             setsMatches <- match qv set subset
             pure $ variableMatches <> setsMatches
-        _           -> nothing
+        _ -> nothing
   where
     Builtin.InternalSet { builtinSetSort } = s2
     Builtin.InternalSet { builtinSetChild = internalSet1 } = s1
