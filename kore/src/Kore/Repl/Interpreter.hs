@@ -212,16 +212,6 @@ replInterpreter printAux printKore replCmd = do
         put st'
         pure (w, ext)
 
-whichOutputFunc
-    :: PrintAuxOutput
-    -> PrintKoreOutput
-    -> ReplOut
-    -> IO ()
-whichOutputFunc printAux printKore =
-    \case
-        AuxOut str  -> unPrintAuxOutput printAux $ str
-        KoreOut str -> unPrintKoreOutput printKore $ str
-
 showUsageMessage :: String
 showUsageMessage = "Could not parse command, try using 'help'."
 
