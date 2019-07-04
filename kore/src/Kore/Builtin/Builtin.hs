@@ -57,6 +57,7 @@ module Kore.Builtin.Builtin
     , lookupSymbolElement
     , lookupSymbolConcat
     , isSymbol
+    , isSort
     , expectNormalConcreteTerm
     , getAttemptedAxiom
       -- * Implementing builtin unification
@@ -105,7 +106,7 @@ import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule, VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
+                 ( MetadataTools (MetadataTools), SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import           Kore.Internal.ApplicationSorts
@@ -118,14 +119,15 @@ import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate )
 import qualified Kore.Proof.Value as Value
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify, PredicateSimplifier, SimplificationType,
-                 TermLikeSimplifier )
+import           Kore.Sort
+                 ( predicateSort )
 import           Kore.Step.Simplification.Data
                  ( AttemptedAxiom (..),
                  AttemptedAxiomResults (AttemptedAxiomResults),
                  BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
-                 BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier )
+                 BuiltinAndAxiomSimplifierMap, MonadSimplify,
+                 PredicateSimplifier, SimplificationType, TermLikeSimplifier,
+                 applicationAxiomSimplifier )
 import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
@@ -725,10 +727,6 @@ runParser ctx result =
         Right a -> a
 
 {- | Look up the symbol hooked to the named builtin in the provided module.
-
-**WARNING**: The returned 'Symbol' will have the default attributes, not its
-declared attributes, because it is intended only for unparsing.
-
  -}
 lookupSymbol
     :: Text
@@ -863,7 +861,23 @@ isSymbol
     -> Symbol  -- ^ Kore symbol
     -> Bool
 isSymbol builtinName _ Symbol { symbolAttributes = Attribute.Symbol { hook } } =
-  maybe False (== builtinName) (getHook hook)
+    getHook hook == Just builtinName
+
+{- | Is the given sort hooked to the named builtin?
+
+Returns Nothing if the sort is unknown (i.e. the _PREDICATE sort).
+Returns Just False if the sort is a variable.
+-}
+isSort :: Text -> SmtMetadataTools attr -> Sort -> Maybe Bool
+isSort builtinName tools sort
+  | isPredicateSort = Nothing
+  | otherwise =
+    Just (getHook hook == Just builtinName)
+  where
+    MetadataTools {sortAttributes} = tools
+    Attribute.Sort {hook} = sortAttributes sort
+    isPredicateSort = sort == predicateSort
+
 
 {- | Ensure that a 'StepPattern' is a concrete, normalized term.
 

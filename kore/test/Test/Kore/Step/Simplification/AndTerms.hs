@@ -17,7 +17,7 @@ import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Simplification
                  ( Simplification (Simplification) )
 import qualified Kore.Builtin.Set as Set
-                 ( asInternal )
+                 ( asInternalConcrete )
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
 import           Kore.Internal.Pattern as Pattern
@@ -35,9 +35,7 @@ import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.AndTerms
                  ( termAnd, termEquals, termUnification )
 import           Kore.Step.Simplification.Data
-                 ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Simplification.Data
-                 ( Env (..), evalSimplifier )
+                 ( BuiltinAndAxiomSimplifierMap, Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Unification.Substitution as Substitution
@@ -1110,7 +1108,7 @@ test_equalsTermsSimplification =
         assertEqualWithExplanation "" expected actual
     , testCase "handles set ambiguity" $ do
         let
-            asInternal = Set.asInternal Mock.metadataTools Mock.setSort
+            asInternal = Set.asInternalConcrete Mock.metadataTools Mock.setSort
             expected = Just $ do -- list monad
                 (xValue, xSetValue) <-
                     [ (Mock.a, [Mock.b])

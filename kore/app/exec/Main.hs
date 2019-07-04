@@ -40,6 +40,8 @@ import           Kore.Internal.Pattern
 import           Kore.Internal.TermLike
 import           Kore.Logger.Output
                  ( KoreLogOptions (..), parseKoreLogOptions, withLogger )
+import qualified Kore.ModelChecker.Bounded as Bounded
+                 ( CheckResult (..) )
 import           Kore.Parser
                  ( ParsedPattern, parseKorePattern )
 import           Kore.Predicate.Predicate
@@ -380,12 +382,15 @@ mainWithOptions
                                     return (ExitSuccess, pat)
                         Just (specIndexedModule, graphSearch, bmc)
                           | bmc -> do
-                            _ <- boundedModelCheck
-                                    stepLimit
-                                    indexedModule
-                                    specIndexedModule
-                                    graphSearch
-                            return success
+                            checkResult <- boundedModelCheck
+                                            stepLimit
+                                            indexedModule
+                                            specIndexedModule
+                                            graphSearch
+                            case checkResult of
+                                Bounded.Proved -> return success
+                                Bounded.Unknown -> return unknown
+                                Bounded.Failed pat -> return (failure pat)
                           | otherwise ->
                             either failure (const success)
                             <$> prove
@@ -395,6 +400,13 @@ mainWithOptions
                           where
                             failure pat = (ExitFailure 1, pat)
                             success = (ExitSuccess, mkTop $ mkSortVariable "R")
+                            unknown =
+                                ( ExitSuccess
+                                , mkVar
+                                    $ varS
+                                        "Unknown"
+                                        (mkSort $ noLocationId "SortUnknown")
+                                )
                 )
         let unparsed = (unparse . externalizeFreshVariables) finalPattern
         case outputFileName of
