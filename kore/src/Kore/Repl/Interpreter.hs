@@ -1066,7 +1066,6 @@ showRewriteRule
     -> ReplOutput
 showRewriteRule rule =
     makeKoreReplOutput (unparseToString rule')
-    <> makeAuxReplOutput "\n"
     <> makeAuxReplOutput
         (show . Pretty.pretty . extractSourceAndLocation $ rule')
   where
