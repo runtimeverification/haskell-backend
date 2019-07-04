@@ -41,7 +41,6 @@ module Kore.Repl.Data
     , ReplMode (..)
     , OutputFile (..)
     , makeAuxReplOutput, makeKoreReplOutput
-    , replOutputToString
     ) where
 
 import           Control.Applicative
@@ -422,16 +421,6 @@ data Config claim m = Config
     , outputFile :: OutputFile
     -- ^ Output resulting pattern to this file.
     }
-
-replOutputToString :: ReplOutput -> String
-replOutputToString (ReplOutput out) =
-    out >>= unReplOut
-  where
-    unReplOut :: ReplOut -> String
-    unReplOut =
-        \case
-            AuxOut str -> str
-            KoreOut str -> str
 
 -- | Unifier that stores the first 'explainBottom'.
 -- See 'runUnifierWithExplanation'.

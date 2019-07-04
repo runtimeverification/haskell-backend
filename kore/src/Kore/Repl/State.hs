@@ -25,6 +25,7 @@ module Kore.Repl.State
     , currentClaimSort
     , conjOfOnePathClaims
     , appReplOut
+    , replOut, replOutputToString
     )
     where
 
@@ -660,3 +661,18 @@ findLeafNodes graph =
 
 appReplOut :: ReplOut -> ReplOutput -> ReplOutput
 appReplOut rout routput = routput <> ReplOutput [rout]
+
+replOut
+    :: (String -> a)
+    -> (String -> a)
+    -> ReplOut
+    -> a
+replOut f g =
+    \case
+        AuxOut str  -> f str
+        KoreOut str -> g str
+
+
+replOutputToString :: ReplOutput -> String
+replOutputToString (ReplOutput out) =
+    out >>= replOut id id

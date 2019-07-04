@@ -186,7 +186,10 @@ replInterpreter printAux printKore replCmd = do
                 Exit               -> exit
     (ReplOutput output, shouldContinue) <- evaluateCommand command
     liftIO $ Foldable.traverse_
-            (whichOutputFunc printAux printKore)
+            ( replOut
+                (unPrintAuxOutput printAux)
+                (unPrintKoreOutput printKore)
+            )
             output
     case shouldContinue of
         Continue -> pure Continue
