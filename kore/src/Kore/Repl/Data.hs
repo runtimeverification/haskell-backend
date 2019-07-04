@@ -68,8 +68,6 @@ import           Data.Sequence
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
-import           Data.Text.Prettyprint.Doc
-                 ( Doc )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Numeric.Natural
 

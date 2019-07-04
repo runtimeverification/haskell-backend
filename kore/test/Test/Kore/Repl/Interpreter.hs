@@ -18,7 +18,7 @@ import           Data.Coerce
                  ( coerce )
 import           Data.Function
 import           Data.IORef
-                 ( IORef, modifyIORef, newIORef, readIORef, writeIORef )
+                 ( IORef, modifyIORef, newIORef, readIORef )
 import           Data.List.NonEmpty
                  ( NonEmpty (..) )
 import qualified Data.Map as Map
@@ -42,9 +42,6 @@ import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
 import           Kore.Repl.State
 import           Kore.Step.Rule
-import           Kore.Unparser
-                 ( unparseToString )
-
 import           Kore.Step.Simplification.AndTerms
                  ( cannotUnifyDistinctDomainValues )
 import           Kore.Step.Simplification.Data
@@ -586,9 +583,6 @@ runWithState command axioms claims claim stateTransformer
 
     modifyKoreOutput :: IORef ReplOutput -> String -> IO ()
     modifyKoreOutput ref s = modifyIORef ref (appReplOut . KoreOut $ s)
-
-    appReplOut :: ReplOut -> ReplOutput -> ReplOutput
-    appReplOut rout routput = routput <> ReplOutput [rout]
 
 data Result = Result
     { output   :: ReplOutput

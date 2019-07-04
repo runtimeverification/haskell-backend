@@ -66,8 +66,6 @@ import           Data.Set
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text, unpack )
-import           Data.Text.Prettyprint.Doc
-                 ( Doc )
 import           GHC.Exts
                  ( toList )
 import           System.IO

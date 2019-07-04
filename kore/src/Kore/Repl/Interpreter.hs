@@ -39,7 +39,7 @@ import           Control.Monad.Reader
 import qualified Control.Monad.Reader as Reader
                  ( ask )
 import           Control.Monad.RWS.Strict
-                 ( MonadWriter, RWST, ask, asks, lift, pass, runRWST, tell )
+                 ( MonadWriter, RWST, ask, asks, lift, runRWST, tell )
 import           Control.Monad.State.Class
                  ( get, put )
 import           Control.Monad.State.Strict
@@ -100,7 +100,6 @@ import qualified Kore.OnePath.StrategyPattern as StrategyPatternTransformer
                  ( StrategyPatternTransformer (..) )
 import           Kore.OnePath.Verification
                  ( Axiom (..), Claim, isTrusted )
-import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Repl.Data
 import           Kore.Repl.Parser
 import           Kore.Repl.Parser
@@ -1121,10 +1120,6 @@ unparseStrategy omitList =
 putStrLn' :: MonadWriter ReplOutput m => String -> m ()
 putStrLn' str =
     tell . makeAuxReplOutput $ str
-
-korePutStrLn :: MonadWriter ReplOutput m => String -> m ()
-korePutStrLn str =
-    tell . makeKoreReplOutput $ str
 
 printIfNotEmpty :: String -> IO ()
 printIfNotEmpty =
