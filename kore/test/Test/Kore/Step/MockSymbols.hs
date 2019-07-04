@@ -502,8 +502,20 @@ m :: Variable
 m = Variable (testId "m") mempty mapSort
 xSet :: Variable
 xSet = Variable (testId "xSet") mempty setSort
+ySet :: Variable
+ySet = Variable (testId "ySet") mempty setSort
 xInt :: Variable
 xInt = Variable (testId "xInt") mempty intSort
+yInt :: Variable
+yInt = Variable (testId "yInt") mempty intSort
+xBool :: Variable
+xBool = Variable (testId "xBool") mempty boolSort
+xString :: Variable
+xString = Variable (testId "xString") mempty stringSort
+xList :: Variable
+xList = Variable (testId "xList") mempty listSort
+xMap :: Variable
+xMap = Variable (testId "xMap") mempty mapSort
 xSubSort :: Variable
 xSubSort = Variable (testId "xSubSort") mempty subSort
 xSubSubSort :: Variable
@@ -1083,7 +1095,7 @@ sortAttributesMapping =
         , Default.def
         )
     ,   ( stringMetaSort
-        , Default.def
+        , Default.def { Attribute.hook = Hook (Just "STRING.String") }
         )
     ]
 
@@ -1236,6 +1248,8 @@ intSortId :: Id
 intSortId = testId "intSort"
 boolSortId :: Id
 boolSortId = testId "boolSort"
+stringSortId :: Id
+stringSortId = testId "stringSort"
 
 testSort :: Sort
 testSort =
@@ -1318,6 +1332,13 @@ intSort :: Sort
 intSort =
     SortActualSort SortActual
         { sortActualName  = intSortId
+        , sortActualSorts = []
+        }
+
+stringSort :: Sort
+stringSort =
+    SortActualSort SortActual
+        { sortActualName  = stringSortId
         , sortActualSorts = []
         }
 
