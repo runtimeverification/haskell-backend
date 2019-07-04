@@ -469,7 +469,7 @@ matchAppBuiltins qv symbol args (Builtin.BuiltinList l2)
   | symbol == Builtin.builtinListConcat l2 =
     case args of
         [ Builtin_ (Builtin.BuiltinList l1), x@(Var_ _) ] -> do
-            let (prefix2, suffix2) = splitList (listLength l1) l2
+            let (prefix2, suffix2) = splitByL2 (listLength l1) l2
             prefix  <-
                 matchBuiltins
                     qv
@@ -478,7 +478,7 @@ matchAppBuiltins qv symbol args (Builtin.BuiltinList l2)
             suffix <- match qv x (mkBuiltin $ Builtin.BuiltinList suffix2)
             pure $ prefix <> suffix
         [ x@(Var_ _), Builtin_ (Builtin.BuiltinList l1) ] -> do
-            let (prefix2, suffix2) = splitList (listLength l2 - listLength l1) l2
+            let (prefix2, suffix2) = splitByL2 (listLength l2 - listLength l1) l2
             prefix <- match qv x (mkBuiltin $ Builtin.BuiltinList prefix2)
             suffix  <-
                 matchBuiltins
@@ -491,18 +491,19 @@ matchAppBuiltins qv symbol args (Builtin.BuiltinList l2)
     listLength :: Builtin.InternalList (TermLike variable) -> Int
     listLength = Seq.length . Builtin.builtinListChild
 
-    splitList
+    splitByL2
         :: Int
         -> Builtin.InternalList (TermLike variable)
         ->  ( Builtin.InternalList (TermLike variable)
             , Builtin.InternalList (TermLike variable)
             )
-    splitList idx l =
+    splitByL2 idx l =
         Bifunctor.bimap
-            (\inner -> l { Builtin.builtinListChild = inner })
-            (\inner -> l { Builtin.builtinListChild = inner })
-            . Seq.splitAt idx
-            $ Builtin.builtinListChild l
+            (updateInnerList l)
+            (updateInnerList l)
+            $ Seq.splitAt idx (Builtin.builtinListChild l)
+
+    updateInnerList l newValue = l { Builtin.builtinListChild = newValue }
 matchAppBuiltins qv symbol args (Builtin.BuiltinMap m2)
   | symbol == Builtin.builtinMapConcat m2 =
     case args of
