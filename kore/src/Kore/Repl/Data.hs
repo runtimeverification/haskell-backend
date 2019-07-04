@@ -478,9 +478,9 @@ instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
         . Just $ ReplOutput
             [ AuxOut . show $ info
             , AuxOut "When unifying:"
-            , KoreOut . (<>) "\n" . show . Pretty.indent 4 . unparse $ first
+            , KoreOut $ (show . Pretty.indent 4 . unparse $ first) <> "\n"
             , AuxOut "With:"
-            , KoreOut . (<>) "\n" . show . Pretty.indent 4 . unparse $ second
+            , KoreOut $ (show . Pretty.indent 4 . unparse $ second) <> "\n"
             ]
 
 Lens.makeLenses ''ReplState
@@ -513,10 +513,12 @@ data GraphProofStatus
     deriving (Eq, Show)
 
 makeAuxReplOutput :: String -> ReplOutput
-makeAuxReplOutput = ReplOutput . return . AuxOut
+makeAuxReplOutput str =
+    ReplOutput . return . AuxOut $ str <> "\n"
 
 makeKoreReplOutput :: String -> ReplOutput
-makeKoreReplOutput = ReplOutput . return . KoreOut
+makeKoreReplOutput str =
+    ReplOutput . return . KoreOut $ str <> "\n"
 
 runUnifierWithExplanation
     :: forall m a

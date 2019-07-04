@@ -595,9 +595,7 @@ equals = (@?=)
 
 equalsOutput :: ReplOutput -> ReplOutput -> Assertion
 equalsOutput actual expected =
-    if actual == mempty
-        then actual @?= expected
-        else actual @?= expected <> makeAuxReplOutput "\n"
+    actual @?= expected
 
 hasCurrentNode :: ReplState Claim -> ReplNode -> IO ()
 hasCurrentNode st n = do
