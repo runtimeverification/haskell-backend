@@ -690,25 +690,7 @@ redirect
     -> ReplM claim m ()
 redirect cmd file = do
     liftIO $ whenPathIsReachable file (flip writeFile $ "")
-    redirectCommand file
-  where
-    redirectCommand :: FilePath -> ReplM claim m ()
-    redirectCommand path = do
-        config <- ask
-        if outputsKore cmd
-            then
-                runInterpreterWithOutput
-                    (PrintAuxOutput $ \_ -> return () )
-                    (PrintKoreOutput $ appendFile file)
-                    cmd
-                    config
-            else
-                runInterpreterWithOutput
-                    (PrintAuxOutput $ appendFile file)
-                    (PrintKoreOutput $ \_ -> return () )
-                    cmd
-                    config
-        putStrLn' "File created."
+    appendCommand cmd file
 
 runInterpreterWithOutput
     :: forall claim m
@@ -909,12 +891,12 @@ pipe cmd file args = do
                 then
                     runInterpreterWithOutput
                         (PrintAuxOutput putStrLn)
-                        (PrintKoreOutput $ f exec)
+                        (PrintKoreOutput $ runExternalProcess exec)
                         cmd
                         config
                 else
                     runInterpreterWithOutput
-                        (PrintAuxOutput $ f exec)
+                        (PrintAuxOutput $ runExternalProcess exec)
                         (PrintKoreOutput putStrLn)
                         cmd
                         config
@@ -922,8 +904,8 @@ pipe cmd file args = do
     createProcess' exec =
         liftIO $ createProcess (proc exec args)
             { std_in = CreatePipe, std_out = CreatePipe }
-    f :: String -> String -> IO ()
-    f exec str = do
+    runExternalProcess :: String -> String -> IO ()
+    runExternalProcess exec str = do
         (maybeInput, maybeOutput, _, _) <- createProcess' exec
         let outputFunc = maybe putStrLn hPutStr maybeInput
         outputFunc str
@@ -946,25 +928,32 @@ appendTo
     -- ^ file to append to
     -> ReplM claim m ()
 appendTo cmd file =
-    whenPathIsReachable file appendCommand
-  where
-    appendCommand :: FilePath -> ReplM claim m ()
-    appendCommand path = do
-        config <- ask
-        if outputsKore cmd
-            then
-                runInterpreterWithOutput
-                    (PrintAuxOutput $ \_ -> return () )
-                    (PrintKoreOutput $ appendFile file)
-                    cmd
-                    config
-            else
-                runInterpreterWithOutput
-                    (PrintAuxOutput $ appendFile file)
-                    (PrintKoreOutput $ \_ -> return () )
-                    cmd
-                    config
-        putStrLn' $ "Appended output to \"" <> path <> "\"."
+    whenPathIsReachable file (appendCommand cmd)
+
+appendCommand
+    :: forall claim m
+    .  Claim claim
+    => MonadSimplify m
+    => MonadIO m
+    => ReplCommand
+    -> FilePath
+    -> ReplM claim m ()
+appendCommand cmd file = do
+    config <- ask
+    if outputsKore cmd
+        then
+            runInterpreterWithOutput
+                (PrintAuxOutput $ \_ -> return () )
+                (PrintKoreOutput $ appendFile file)
+                cmd
+                config
+        else
+            runInterpreterWithOutput
+                (PrintAuxOutput $ appendFile file)
+                (PrintKoreOutput $ \_ -> return () )
+                cmd
+                config
+    putStrLn' $ "Redirected output to \"" <> file <> "\"."
 
 alias
     :: forall m claim

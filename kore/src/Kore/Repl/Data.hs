@@ -41,6 +41,7 @@ module Kore.Repl.Data
     , ReplMode (..)
     , OutputFile (..)
     , makeAuxReplOutput, makeKoreReplOutput
+    , replOutputToString
     ) where
 
 import           Control.Applicative
@@ -426,15 +427,13 @@ data Config claim m = Config
 
 replOutputToString :: ReplOutput -> String
 replOutputToString (ReplOutput out) =
-    out >>= f
+    out >>= unReplOut
   where
-    f :: ReplOut -> String
-    f =
+    unReplOut :: ReplOut -> String
+    unReplOut =
         \case
             AuxOut str -> str
             KoreOut str -> str
-
-type Explanation = Doc ()
 
 -- | Unifier that stores the first 'explainBottom'.
 -- See 'runUnifierWithExplanation'.
@@ -543,5 +542,8 @@ runUnifierWithExplanation (UnifierWithExplanation unifier) =
         -> Either ReplOutput (NonEmpty a)
     failWithExplanation (results, explanation) =
         case results of
-            [] -> Left $ fromMaybe (makeAuxReplOutput "No explanation given") (getFirst explanation)
+            [] ->
+                Left $ fromMaybe
+                    (makeAuxReplOutput "No explanation given")
+                    (getFirst explanation)
             r : rs -> Right (r :| rs)
