@@ -658,7 +658,6 @@ findLeafNodes :: InnerGraph -> [Graph.Node]
 findLeafNodes graph =
     filter ((==) 0 . Graph.outdeg graph) $ Graph.nodes graph
 
-
 appReplOut :: ReplOut -> ReplOutput -> ReplOutput
 appReplOut rout routput = routput <> ReplOutput [rout]
 
@@ -671,7 +670,6 @@ replOut f g =
     \case
         AuxOut str  -> f str
         KoreOut str -> g str
-
 
 replOutputToString :: ReplOutput -> String
 replOutputToString (ReplOutput out) =
