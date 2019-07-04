@@ -904,33 +904,35 @@ pipe cmd file args = do
     case exists of
         Nothing -> putStrLn' "Cannot find executable."
         Just exec -> do
-            (maybeInput, maybeOutput, _, _) <- createProcess' exec
-            let
-                outputFunc = maybe putStrLn hPutStr maybeInput
             config <- ask
             if outputsKore cmd
                 then
                     runInterpreterWithOutput
                         (PrintAuxOutput putStrLn)
-                        (PrintKoreOutput outputFunc)
+                        (PrintKoreOutput $ f exec)
                         cmd
                         config
                 else
                     runInterpreterWithOutput
-                        (PrintAuxOutput outputFunc)
+                        (PrintAuxOutput $ f exec)
                         (PrintKoreOutput putStrLn)
                         cmd
                         config
-            case maybeOutput of
-                Nothing ->
-                    putStrLn' "Error: couldn't access output handle."
-                Just handle -> do
-                    output <- liftIO $ hGetContents handle
-                    putStrLn' output
   where
     createProcess' exec =
         liftIO $ createProcess (proc exec args)
             { std_in = CreatePipe, std_out = CreatePipe }
+    f :: String -> String -> IO ()
+    f exec str = do
+        (maybeInput, maybeOutput, _, _) <- createProcess' exec
+        let outputFunc = maybe putStrLn hPutStr maybeInput
+        outputFunc str
+        case maybeOutput of
+            Nothing ->
+                putStrLn "Error: couldn't access output handle."
+            Just handle -> do
+                output <- liftIO $ hGetContents handle
+                putStrLn output
 
 -- | Appends output of a command to a file.
 appendTo
@@ -1264,9 +1266,6 @@ formatUnificationMessage
 formatUnificationMessage docOrPredicate =
     either id prettyUnifiers docOrPredicate
   where
-    -- prettyFailure doc =
-    --     makeAuxReplOutput "Failed: "
-    --     <> makeKoreReplOutput doc
     prettyUnifiers =
         ReplOutput
         . (:) (AuxOut "Succeeded with unifiers:")
