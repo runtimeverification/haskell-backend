@@ -518,8 +518,7 @@ runUnifierWithExplanation (UnifierWithExplanation unifier) =
     either explainError failWithExplanation <$> unificationResults
   where
     unificationResults
-        ::  m
-                (Either UnificationOrSubstitutionError ([a], First ReplOutput))
+        ::  m (Either UnificationOrSubstitutionError ([a], First ReplOutput))
     unificationResults =
         fmap (\(r, ex) -> flip (,) ex <$> r)
         . flip runAccumT mempty

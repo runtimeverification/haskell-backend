@@ -7,7 +7,7 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
 
 module Kore.Repl.Interpreter
-    ( replInterpreter0
+    ( replInterpreter
     , showUsageMessage
     , showStepStoppedMessage
     , showProofStatus
@@ -142,6 +142,21 @@ data ReplStatus = Continue | SuccessStop | FailStop
     deriving (Eq, Show)
 
 -- | Interprets a REPL command in a stateful Simplifier context.
+replInterpreter
+    :: forall claim m
+    .  Claim claim
+    => MonadSimplify m
+    => MonadIO m
+    => (String -> IO ())
+    -> (String -> IO ())
+    -> ReplCommand
+    -> ReaderT (Config claim m) (StateT (ReplState claim) m) ReplStatus
+replInterpreter fnAux fnKore cmd =
+    replInterpreter0
+        (PrintAuxOutput fnAux)
+        (PrintKoreOutput fnKore)
+        cmd
+
 replInterpreter0
     :: forall claim m
     .  Claim claim
