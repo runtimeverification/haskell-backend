@@ -567,9 +567,9 @@ runWithState command axioms claims claim stateTransformer
             liftSimplifier (Logger.swappableLogger mvar)
             $ flip runStateT state
             $ flip runReaderT config
-            $ replInterpreter
-                (modifyAuxOutput output)
-                (modifyKoreOutput output)
+            $ replInterpreter0
+                (PrintAuxOutput . modifyAuxOutput $ output)
+                (PrintKoreOutput . modifyKoreOutput $ output)
                 command
         output' <- readIORef output
         return $ Result output' c s

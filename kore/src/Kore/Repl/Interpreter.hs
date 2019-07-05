@@ -8,6 +8,7 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 
 module Kore.Repl.Interpreter
     ( replInterpreter
+    , replInterpreter0
     , showUsageMessage
     , showStepStoppedMessage
     , showProofStatus
@@ -148,13 +149,12 @@ replInterpreter
     => MonadSimplify m
     => MonadIO m
     => (String -> IO ())
-    -> (String -> IO ())
     -> ReplCommand
     -> ReaderT (Config claim m) (StateT (ReplState claim) m) ReplStatus
-replInterpreter fnAux fnKore cmd =
+replInterpreter fn cmd =
     replInterpreter0
-        (PrintAuxOutput fnAux)
-        (PrintKoreOutput fnKore)
+        (PrintAuxOutput fn)
+        (PrintKoreOutput fn)
         cmd
 
 replInterpreter0
