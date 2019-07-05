@@ -45,8 +45,6 @@ module Kore.Domain.Builtin
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import           Data.Deriving
-                 ( deriveEq1, deriveOrd1, deriveShow1 )
 import qualified Data.Foldable as Foldable
 import           Data.Hashable
 import           Data.Map
@@ -108,10 +106,6 @@ data InternalMap key child =
         }
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
-deriveEq1 ''InternalMap
-deriveOrd1 ''InternalMap
-deriveShow1 ''InternalMap
-
 instance
     (Hashable key, Hashable child) =>
     Hashable (InternalMap key child)
@@ -172,10 +166,6 @@ data InternalList child =
         }
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
-deriveEq1 ''InternalList
-deriveOrd1 ''InternalList
-deriveShow1 ''InternalList
-
 instance SOP.Generic (InternalList child)
 
 instance SOP.HasDatatypeInfo (InternalList child)
@@ -232,10 +222,6 @@ data NormalizedSet key child = NormalizedSet
     }
     deriving (Eq, Foldable, Functor, Traversable, GHC.Generic, Ord, Show)
 
-deriveEq1 ''NormalizedSet
-deriveOrd1 ''NormalizedSet
-deriveShow1 ''NormalizedSet
-
 instance (Hashable key, Hashable child) => Hashable (NormalizedSet key child)
   where
     hashWithSalt salt normalized@(NormalizedSet _ _ _) =
@@ -274,10 +260,6 @@ data InternalSet key child =
         , builtinSetChild :: !(NormalizedSet key child)
         }
     deriving (Eq, Foldable, Functor, Traversable, GHC.Generic, Ord, Show)
-
-deriveEq1 ''InternalSet
-deriveOrd1 ''InternalSet
-deriveShow1 ''InternalSet
 
 instance (Hashable key, Hashable child) => Hashable (InternalSet key child)
   where
@@ -442,10 +424,6 @@ data Builtin key child
     | BuiltinBool !InternalBool
     | BuiltinString !InternalString
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
-
-deriveEq1 ''Builtin
-deriveOrd1 ''Builtin
-deriveShow1 ''Builtin
 
 instance SOP.Generic (Builtin key child)
 
