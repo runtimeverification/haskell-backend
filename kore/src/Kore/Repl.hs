@@ -98,15 +98,23 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
 
   where
 
+    replInterpreter
+        :: (String -> IO ())
+        -> ReplCommand
+        -> ReaderT
+            (Config claim m) (StateT (ReplState claim) m ) ReplStatus
+    replInterpreter fn cmd =
+        replInterpreter0
+            (PrintAuxOutput fn)
+            (PrintKoreOutput fn)
+            cmd
+
     runReplCommand :: ReplCommand -> ReplState claim -> m ()
     runReplCommand cmd st =
         void
             $ flip evalStateT st
             $ flip runReaderT config
-            $ replInterpreter
-                (PrintAuxOutput printIfNotEmpty)
-                (PrintKoreOutput printIfNotEmpty)
-                cmd
+            $ replInterpreter printIfNotEmpty cmd
 
     evaluateScript :: ReplScript -> RWST (Config claim m) String (ReplState claim) m ()
     evaluateScript = maybe (pure ()) parseEvalScript . unReplScript
@@ -116,10 +124,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         str <- prompt
         let command = maybe ShowUsage id $ parseMaybe commandParser str
         when (shouldStore command) $ lensCommands Lens.%= (Seq.|> str)
-        void $ replInterpreter
-                (PrintAuxOutput printIfNotEmpty)
-                (PrintKoreOutput printIfNotEmpty)
-                command
+        void $ replInterpreter printIfNotEmpty command
 
     state :: ReplState claim
     state =

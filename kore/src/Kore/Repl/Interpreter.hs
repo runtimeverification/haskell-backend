@@ -7,7 +7,7 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
 
 module Kore.Repl.Interpreter
-    ( replInterpreter
+    ( replInterpreter0
     , showUsageMessage
     , showStepStoppedMessage
     , showProofStatus
@@ -142,7 +142,7 @@ data ReplStatus = Continue | SuccessStop | FailStop
     deriving (Eq, Show)
 
 -- | Interprets a REPL command in a stateful Simplifier context.
-replInterpreter
+replInterpreter0
     :: forall claim m
     .  Claim claim
     => MonadSimplify m
@@ -151,7 +151,7 @@ replInterpreter
     -> PrintKoreOutput
     -> ReplCommand
     -> ReaderT (Config claim m) (StateT (ReplState claim) m) ReplStatus
-replInterpreter printAux printKore replCmd = do
+replInterpreter0 printAux printKore replCmd = do
     let command = case replCmd of
                 ShowUsage          -> showUsage          $> Continue
                 Help               -> help               $> Continue
@@ -704,7 +704,7 @@ runInterpreterWithOutput
 runInterpreterWithOutput printAux printKore cmd config =
     get >>= (\st -> lift
             $ execStateReader config st
-            $ replInterpreter printAux printKore cmd
+            $ replInterpreter0 printAux printKore cmd
             )
         >>= put
 
@@ -1003,7 +1003,7 @@ tryAlias replAlias@ReplAlias { name } printAux printKore = do
     runInterpreter cmd config st =
         lift
             $ (`runStateT` st)
-            $ runReaderT (replInterpreter printAux printKore cmd) config
+            $ runReaderT (replInterpreter0 printAux printKore cmd) config
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
 -- Returns 'Left' while it has to continue looping, and 'Right' when done
@@ -1243,7 +1243,7 @@ parseEvalScript file = do
            lift
                $ execStateReader config st
                $ Foldable.for_ cmds
-               $ replInterpreter
+               $ replInterpreter0
                     (PrintAuxOutput $ \_ -> return ())
                     (PrintKoreOutput $ \_ -> return ())
 
