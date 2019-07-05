@@ -465,10 +465,10 @@ instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
         . Monad.Accum.add
         . First
         . Just $ ReplOutput
-            [ AuxOut . show $ info
-            , AuxOut "When unifying:"
+            [ AuxOut . show $ info <> "\n"
+            , AuxOut "When unifying:\n"
             , KoreOut $ (show . Pretty.indent 4 . unparse $ first) <> "\n"
-            , AuxOut "With:"
+            , AuxOut "With:\n"
             , KoreOut $ (show . Pretty.indent 4 . unparse $ second) <> "\n"
             ]
 

@@ -680,17 +680,6 @@ labelDel lbl = do
        else
            putStrLn' "Label doesn't exist."
 
-outputsKore :: ReplCommand -> Bool
-outputsKore =
-    \case
-        ShowClaim _  -> True
-        ShowAxiom _  -> True
-        ShowConfig _ -> True
-        ShowRule _   -> True
-        Try _        -> True
-        TryF _       -> True
-        _            -> False
-
 -- | Redirect command to specified file.
 redirect
     :: forall claim m
@@ -902,19 +891,11 @@ pipe cmd file args = do
         Just exec -> do
             config <- ask
             pipeOutRef <- liftIO $ newIORef (mempty :: ReplOutput)
-            if outputsKore cmd
-                then
-                    runInterpreterWithOutput
-                        (PrintAuxOutput $ justPrint pipeOutRef)
-                        (PrintKoreOutput $ runExternalProcess pipeOutRef exec)
-                        cmd
-                        config
-                else
-                    runInterpreterWithOutput
-                        (PrintAuxOutput $ runExternalProcess pipeOutRef exec)
-                        (PrintKoreOutput $ justPrint pipeOutRef)
-                        cmd
-                        config
+            runInterpreterWithOutput
+                (PrintAuxOutput $ justPrint pipeOutRef)
+                (PrintKoreOutput $ runExternalProcess pipeOutRef exec)
+                cmd
+                config
             pipeOut <- liftIO $ readIORef pipeOutRef
             tell pipeOut
   where
@@ -960,19 +941,11 @@ appendCommand
     -> ReplM claim m ()
 appendCommand cmd file = do
     config <- ask
-    if outputsKore cmd
-        then
-            runInterpreterWithOutput
-                (PrintAuxOutput $ \_ -> return () )
-                (PrintKoreOutput $ appendFile file)
-                cmd
-                config
-        else
-            runInterpreterWithOutput
-                (PrintAuxOutput $ appendFile file)
-                (PrintKoreOutput $ \_ -> return () )
-                cmd
-                config
+    runInterpreterWithOutput
+        (PrintAuxOutput $ appendFile file)
+        (PrintKoreOutput $ appendFile file)
+        cmd
+        config
     putStrLn' $ "Redirected output to \"" <> file <> "\"."
 
 alias
@@ -1135,7 +1108,7 @@ printIfNotEmpty :: String -> IO ()
 printIfNotEmpty =
     \case
         "" -> pure ()
-        xs -> putStrLn xs
+        xs -> putStr xs
 
 printNotFound :: MonadWriter ReplOutput m => m ()
 printNotFound = putStrLn' "Variable or index not found"
@@ -1270,7 +1243,7 @@ formatUnificationMessage docOrPredicate =
   where
     prettyUnifiers =
         ReplOutput
-        . (:) (AuxOut "Succeeded with unifiers:")
+        . (:) (AuxOut "Succeeded with unifiers:\n")
         . List.intersperse (AuxOut . show $ Pretty.indent 2 "and")
         . map (KoreOut . show . Pretty.indent 4 . unparseUnifier)
         . Foldable.toList
