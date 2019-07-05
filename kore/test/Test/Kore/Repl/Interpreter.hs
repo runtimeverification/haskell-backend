@@ -18,7 +18,7 @@ import           Data.Coerce
                  ( coerce )
 import           Data.Function
 import           Data.IORef
-                 ( newIORef, readIORef, writeIORef )
+                 ( IORef, modifyIORef, newIORef, readIORef )
 import           Data.List.NonEmpty
                  ( NonEmpty (..) )
 import qualified Data.Map as Map
@@ -42,7 +42,6 @@ import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
 import           Kore.Repl.State
 import           Kore.Step.Rule
-
 import           Kore.Step.Simplification.AndTerms
                  ( cannotUnifyDistinctDomainValues )
 import           Kore.Step.Simplification.Data
@@ -101,7 +100,7 @@ showUsage =
         command = ShowUsage
     in do
         Result { output, continue } <- run command axioms [claim] claim
-        output   `equalsOutput` showUsageMessage
+        output   `equalsOutput` makeAuxReplOutput showUsageMessage
         continue `equals`       Continue
 
 help :: IO ()
@@ -112,7 +111,7 @@ help =
         command = Help
     in do
         Result { output, continue } <- run command axioms [claim] claim
-        output   `equalsOutput` helpText
+        output   `equalsOutput` makeAuxReplOutput helpText
         continue `equals`       Continue
 
 step5 :: IO ()
@@ -123,7 +122,7 @@ step5 =
         command = ProveSteps 5
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
-        output     `equalsOutput`   ""
+        output     `equalsOutput`   mempty
         continue   `equals`         Continue
         state      `hasCurrentNode` ReplNode 5
 
@@ -135,7 +134,9 @@ step100 =
         command = ProveSteps 100
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
-        output     `equalsOutput`   showStepStoppedMessage 10 NoResult
+        let expectedOutput =
+                makeAuxReplOutput $ showStepStoppedMessage 10 NoResult
+        output     `equalsOutput`   expectedOutput
         continue   `equals`         Continue
         state      `hasCurrentNode` ReplNode 10
 
@@ -148,7 +149,7 @@ makeSimpleAlias =
         command = Alias alias
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
-        output   `equalsOutput` ""
+        output   `equalsOutput` mempty
         continue `equals`       Continue
         state    `hasAlias`     alias
 
@@ -164,7 +165,7 @@ trySimpleAlias =
     in do
         Result { output, continue } <-
             runWithState command axioms [claim] claim stateT
-        output   `equalsOutput` helpText
+        output   `equalsOutput` makeAuxReplOutput helpText
         continue `equals` Continue
 
 makeAlias :: IO ()
@@ -180,7 +181,7 @@ makeAlias =
         command = Alias alias
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
-        output   `equalsOutput` ""
+        output   `equalsOutput` mempty
         continue `equals`       Continue
         state    `hasAlias`     alias
 
@@ -197,7 +198,9 @@ aliasOfExistingCommand =
         command = Alias alias
     in do
         Result { output, continue } <- run command axioms [claim] claim
-        output   `equalsOutput` showAliasError NameAlreadyDefined
+        let expectedOutput =
+                makeAuxReplOutput . showAliasError $ NameAlreadyDefined
+        output   `equalsOutput` expectedOutput
         continue `equals`       Continue
 
 aliasOfUnknownCommand :: IO ()
@@ -213,7 +216,9 @@ aliasOfUnknownCommand =
         command = Alias alias
     in do
         Result { output, continue } <- run command axioms [claim] claim
-        output   `equalsOutput` showAliasError UnknownCommand
+        let expectedOutput =
+                makeAuxReplOutput . showAliasError $ UnknownCommand
+        output   `equalsOutput` expectedOutput
         continue `equals`       Continue
 
 recursiveAlias :: IO ()
@@ -229,7 +234,9 @@ recursiveAlias =
         command = Alias alias
     in do
         Result { output, continue } <- run command axioms [claim] claim
-        output   `equalsOutput` showAliasError UnknownCommand
+        let expectedOutput =
+                makeAuxReplOutput . showAliasError $ UnknownCommand
+        output   `equalsOutput` expectedOutput
         continue `equals`       Continue
 
 tryAlias :: IO ()
@@ -360,7 +367,7 @@ forceSuccess = do
         axioms = [ axiom ]
         claim = zeroToTen
         command = TryF . ByIndex . Left $ AxiomIndex 0
-        expectedOutput = ""
+        expectedOutput = mempty
 
     Result { output, continue, state } <- run command axioms [claim] claim
     output `equalsOutput` expectedOutput
@@ -376,7 +383,7 @@ forceSuccessWithName = do
         axioms = [ axiom ]
         claim = zeroToTen
         command = TryF . ByName . RuleName $ "0to1"
-        expectedOutput = ""
+        expectedOutput = mempty
 
     Result { output, continue, state } <- run command axioms [claim] claim
     output `equalsOutput` expectedOutput
@@ -398,7 +405,7 @@ proofStatus =
     in do
         Result { output, continue } <-
             run command axioms claims claim
-        output `equalsOutput` showProofStatus expectedProofStatus
+        output `equalsOutput` makeAuxReplOutput (showProofStatus expectedProofStatus)
         continue `equals` Continue
 
 showCurrentClaim :: IO ()
@@ -412,7 +419,7 @@ showCurrentClaim =
     in do
         Result { output, continue } <-
             run command axioms claims claim
-        output `equalsOutput` showCurrentClaimIndex expectedCindex
+        output `equalsOutput` makeAuxReplOutput (showCurrentClaimIndex expectedCindex)
         continue `equals` Continue
 
 showClaim1 :: IO ()
@@ -465,7 +472,7 @@ logUpdatesState =
         command = Log Logger.Info LogToStdOut
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
-        output   `equalsOutput`  ""
+        output   `equalsOutput` mempty
         continue `equals`     Continue
         state    `hasLogging` (Logger.Info, LogToStdOut)
 
@@ -481,7 +488,7 @@ proveSecondClaim =
     in do
         Result { output, continue, state } <-
             run command axioms claims claim
-        output `equalsOutput` showClaimSwitch indexOrName
+        output `equalsOutput` makeAuxReplOutput (showClaimSwitch indexOrName)
         state `hasCurrentClaimIndex` expectedClaimIndex
         continue `equals` Continue
 
@@ -497,7 +504,7 @@ proveSecondClaimByName =
     in do
         Result { output, continue, state } <-
             run command axioms claims claim
-        output `equalsOutput` showClaimSwitch indexOrName
+        output `equalsOutput` makeAuxReplOutput (showClaimSwitch indexOrName)
         state `hasCurrentClaimIndex` expectedClaimIndex
         continue `equals` Continue
 
@@ -552,7 +559,7 @@ runWithState
     -> IO Result
 runWithState command axioms claims claim stateTransformer
   = Logger.withLogger logOptions $ \logger -> do
-        output <- newIORef ""
+        output <- newIORef (mempty :: ReplOutput)
         mvar <- newMVar logger
         let state = stateTransformer $ mkState axioms claims claim
         let config = mkConfig mvar
@@ -560,20 +567,25 @@ runWithState command axioms claims claim stateTransformer
             liftSimplifier (Logger.swappableLogger mvar)
             $ flip runStateT state
             $ flip runReaderT config
-            $ replInterpreter (writeIORefIfNotEmpty output) command
+            $ replInterpreter0
+                (PrintAuxOutput . modifyAuxOutput $ output)
+                (PrintKoreOutput . modifyKoreOutput $ output)
+                command
         output' <- readIORef output
         return $ Result output' c s
   where
     logOptions = Logger.KoreLogOptions Logger.LogNone Logger.Debug mempty
     liftSimplifier logger =
         SMT.runSMT SMT.defaultConfig logger . evalSimplifier testEnv
-    writeIORefIfNotEmpty out =
-        \case
-            "" -> pure ()
-            xs -> writeIORef out xs
+
+    modifyAuxOutput :: IORef ReplOutput -> String -> IO ()
+    modifyAuxOutput ref s = modifyIORef ref (appReplOut . AuxOut $ s)
+
+    modifyKoreOutput :: IORef ReplOutput -> String -> IO ()
+    modifyKoreOutput ref s = modifyIORef ref (appReplOut . KoreOut $ s)
 
 data Result = Result
-    { output   :: String
+    { output   :: ReplOutput
     , continue :: ReplStatus
     , state    :: ReplState Claim
     }
@@ -581,9 +593,9 @@ data Result = Result
 equals :: (Eq a, Show a) => a -> a -> Assertion
 equals = (@?=)
 
-equalsOutput :: String -> String -> Assertion
-equalsOutput "" expected     = "" @?= expected
-equalsOutput actual expected = actual @?= expected <> "\n"
+equalsOutput :: ReplOutput -> ReplOutput -> Assertion
+equalsOutput actual expected =
+    actual @?= expected
 
 hasCurrentNode :: ReplState Claim -> ReplNode -> IO ()
 hasCurrentNode st n = do
@@ -656,12 +668,12 @@ formatUnificationError
     :: Pretty.Doc ()
     -> TermLike Variable
     -> TermLike Variable
-    -> IO String
+    -> IO ReplOutput
 formatUnificationError info first second = do
     res <- runSimplifier . runUnifierWithExplanation $ do
         explainBottom info first second
         empty
     return $ formatUnificationMessage res
 
-formatUnifiers :: NonEmpty (Predicate Variable) -> String
+formatUnifiers :: NonEmpty (Predicate Variable) -> ReplOutput
 formatUnifiers = formatUnificationMessage . Right

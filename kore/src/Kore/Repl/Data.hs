@@ -16,6 +16,10 @@ module Kore.Repl.Data
     , RuleName (..), RuleReference(..)
     , ReplNode (..)
     , ReplState (..)
+    , ReplOutput (..)
+    , ReplOut (..)
+    , PrintAuxOutput (..)
+    , PrintKoreOutput (..)
     , Config (..)
     , NodeState (..)
     , GraphProofStatus (..)
@@ -36,6 +40,7 @@ module Kore.Repl.Data
     , ReplScript (..)
     , ReplMode (..)
     , OutputFile (..)
+    , makeAuxReplOutput, makeKoreReplOutput
     ) where
 
 import           Control.Applicative
@@ -62,8 +67,6 @@ import           Data.Sequence
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
-import           Data.Text.Prettyprint.Doc
-                 ( Doc )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Numeric.Natural
 
@@ -118,6 +121,20 @@ newtype ReplNode = ReplNode
 newtype RuleName = RuleName
     { unRuleName :: String
     } deriving (Eq, Show)
+
+newtype ReplOutput =
+    ReplOutput
+    { unReplOutput :: [ReplOut]
+    } deriving (Eq, Show, Semigroup, Monoid)
+
+newtype PrintAuxOutput = PrintAuxOutput
+    { unPrintAuxOutput :: String -> IO () }
+
+newtype PrintKoreOutput = PrintKoreOutput
+    { unPrintKoreOutput :: String -> IO () }
+
+data ReplOut = AuxOut String | KoreOut String
+    deriving (Eq, Show)
 
 data AliasDefinition = AliasDefinition
     { name      :: String
@@ -405,14 +422,12 @@ data Config claim m = Config
     -- ^ Output resulting pattern to this file.
     }
 
-type Explanation = Doc ()
-
 -- | Unifier that stores the first 'explainBottom'.
 -- See 'runUnifierWithExplanation'.
 newtype UnifierWithExplanation m a =
     UnifierWithExplanation
         { getUnifierWithExplanation
-            :: UnifierT (AccumT (First Explanation) m) a
+            :: UnifierT (AccumT (First ReplOutput) m) a
         }
   deriving (Alternative, Applicative, Functor, Monad)
 
@@ -449,35 +464,13 @@ instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
         . Monad.Trans.lift
         . Monad.Accum.add
         . First
-        . Just $ Pretty.vsep
-            [ info
-            , "When unifying:"
-            , Pretty.indent 4 $ unparse first
-            , "With:"
-            , Pretty.indent 4 $ unparse second
+        . Just $ ReplOutput
+            [ AuxOut . show $ info <> "\n"
+            , AuxOut "When unifying:\n"
+            , KoreOut $ (show . Pretty.indent 4 . unparse $ first) <> "\n"
+            , AuxOut "With:\n"
+            , KoreOut $ (show . Pretty.indent 4 . unparse $ second) <> "\n"
             ]
-
-runUnifierWithExplanation
-    :: forall m a
-    .  MonadSimplify m
-    => UnifierWithExplanation m a
-    -> m (Either Explanation (NonEmpty a))
-runUnifierWithExplanation (UnifierWithExplanation unifier) =
-    either explainError failWithExplanation <$> unificationResults
-  where
-    unificationResults
-        ::  m
-                (Either UnificationOrSubstitutionError ([a], First Explanation))
-    unificationResults =
-        fmap (\(r, ex) -> flip (,) ex <$> r)
-        . flip runAccumT mempty
-        . Monad.Unify.runUnifierT
-        $ unifier
-    explainError = Left . Pretty.pretty
-    failWithExplanation (results, explanation) =
-        case results of
-            [] -> Left $ fromMaybe "No explanation given" (getFirst explanation)
-            r : rs -> Right (r :| rs)
 
 Lens.makeLenses ''ReplState
 
@@ -507,3 +500,38 @@ data GraphProofStatus
     | StuckProof [Graph.Node]
     | TrustedClaim
     deriving (Eq, Show)
+
+makeAuxReplOutput :: String -> ReplOutput
+makeAuxReplOutput str =
+    ReplOutput . return . AuxOut $ str <> "\n"
+
+makeKoreReplOutput :: String -> ReplOutput
+makeKoreReplOutput str =
+    ReplOutput . return . KoreOut $ str <> "\n"
+
+runUnifierWithExplanation
+    :: forall m a
+    .  MonadSimplify m
+    => UnifierWithExplanation m a
+    -> m (Either ReplOutput (NonEmpty a))
+runUnifierWithExplanation (UnifierWithExplanation unifier) =
+    either explainError failWithExplanation <$> unificationResults
+  where
+    unificationResults
+        ::  m (Either UnificationOrSubstitutionError ([a], First ReplOutput))
+    unificationResults =
+        fmap (\(r, ex) -> flip (,) ex <$> r)
+        . flip runAccumT mempty
+        . Monad.Unify.runUnifierT
+        $ unifier
+    explainError = Left . makeAuxReplOutput . show . Pretty.pretty
+    failWithExplanation
+        :: ([a], First ReplOutput)
+        -> Either ReplOutput (NonEmpty a)
+    failWithExplanation (results, explanation) =
+        case results of
+            [] ->
+                Left $ fromMaybe
+                    (makeAuxReplOutput "No explanation given")
+                    (getFirst explanation)
+            r : rs -> Right (r :| rs)

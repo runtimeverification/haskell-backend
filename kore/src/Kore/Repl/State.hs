@@ -24,6 +24,8 @@ module Kore.Repl.State
     , generateInProgressOPClaims
     , currentClaimSort
     , conjOfOnePathClaims
+    , appReplOut
+    , replOut, replOutputToString
     )
     where
 
@@ -65,8 +67,6 @@ import           Data.Set
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text, unpack )
-import           Data.Text.Prettyprint.Doc
-                 ( Doc )
 import           GHC.Exts
                  ( toList )
 import           System.IO
@@ -442,7 +442,7 @@ runUnifier
     => MonadIO m
     => TermLike Variable
     -> TermLike Variable
-    -> t m (Either (Doc ()) (NonEmpty (IPredicate.Predicate Variable)))
+    -> t m (Either ReplOutput (NonEmpty (IPredicate.Predicate Variable)))
 runUnifier first second = do
     unifier <- asks unifier
     mvar <- asks logger
@@ -657,3 +657,20 @@ sortLeafsByType graph =
 findLeafNodes :: InnerGraph -> [Graph.Node]
 findLeafNodes graph =
     filter ((==) 0 . Graph.outdeg graph) $ Graph.nodes graph
+
+appReplOut :: ReplOut -> ReplOutput -> ReplOutput
+appReplOut rout routput = routput <> ReplOutput [rout]
+
+replOut
+    :: (String -> a)
+    -> (String -> a)
+    -> ReplOut
+    -> a
+replOut f g =
+    \case
+        AuxOut str  -> f str
+        KoreOut str -> g str
+
+replOutputToString :: ReplOutput -> String
+replOutputToString (ReplOutput out) =
+    out >>= replOut id id
