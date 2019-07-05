@@ -21,7 +21,6 @@ test_koreLexeme =
     , testGroup "inParenthesesParser" inParenthesesParserTests
     , testGroup "inSquareBracketsParser" inSquareBracketsParserTests
     , testGroup "keywordBasedParsers" keywordBasedParsersTests
-    , testGroup "metaIdParser" metaIdParserTests
     , testGroup "mlLexemeParser" mlLexemeParserTests
     , testGroup "moduleNameParser" moduleNameParserTests
     , testGroup "parenPairParser" parenPairParserTests
@@ -91,37 +90,6 @@ idParserTests =
             ,  "#",  "#'",  "#'a",  "#2",  "#2a"
             , "#`", "#`'", "#`'a", "#`2", "#`2a"
             , "a#"
-            , ",", " a"]
-        ]
-
-metaIdParserTests :: [TestTree]
-metaIdParserTests =
-    parseTree idParser
-        [ success "#a" (testId "#a")
-        , success "#`a" (testId "#`a")
-        , success "#abc" (testId "#abc")
-        , success "#a'" (testId "#a'")
-        , success "#a'2" (testId "#a'2")
-        , success "#sort" (testId "#sort")
-        , success "#\\and" (testId "#\\and")
-        , success "#\\not" (testId "#\\not")
-        , success "#\\or" (testId "#\\or")
-        , success "#\\implies" (testId "#\\implies")
-        , success "#\\iff" (testId "#\\iff")
-        , success "#\\forall" (testId "#\\forall")
-        , success "#\\exists" (testId "#\\exists")
-        , success "#\\ceil" (testId "#\\ceil")
-        , success "#\\floor" (testId "#\\floor")
-        , success "#\\equals" (testId "#\\equals")
-        , success "#\\in" (testId "#\\in")
-        , success "#\\top" (testId "#\\top")
-        , success "#\\bottom" (testId "#\\bottom")
-        , success "#\\something" (testId "#\\something")
-        , FailureWithoutMessage
-            [   "",   "'",   "'a",   "2",   "2a", "`", "`a"
-            ,  "#",  "#'",  "#'a",  "#2",  "#2a"
-            , "#`", "#`'", "#`'a", "#`2", "#`2a"
-            , "a#", "#`\\something"
             , ",", " a"]
         ]
 

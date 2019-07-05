@@ -21,6 +21,7 @@ module Kore.Sort
     , MetaSortType (..)
     , MetaBasicSortType (..)
     , metaSortsList
+    , metaSort
     , metaSortTypeString
     , metaSortsListWithString
     , charMetaSortId
@@ -242,6 +243,11 @@ metaSortTypeString StringSort            = "String"
 
 instance Show MetaSortType where
     show sortType = '#' : metaSortTypeString sortType
+
+metaSort :: MetaSortType -> Sort
+metaSort = \case
+    MetaBasicSortType CharSort -> charMetaSort
+    StringSort -> stringMetaSort
 
 charMetaSortId :: Id
 charMetaSortId = implicitId "#Char"
