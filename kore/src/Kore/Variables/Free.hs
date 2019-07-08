@@ -27,6 +27,9 @@ import qualified Data.Set as Set
 
 import Kore.Syntax
 
+unlessM :: Monad m => m Bool -> m () -> m ()
+unlessM m go = m >>= \b -> Monad.unless b go
+
 -- | The free variables of a pure pattern.
 freePureVariables
     :: Ord variable
@@ -41,7 +44,6 @@ freePureVariables root =
     in
         free
   where
-    unlessM m go = m >>= \b -> Monad.unless b go
     isBound v = Monad.RWS.asks (Set.member v)
     recordFree v = Monad.RWS.modify' (Set.insert v)
 
@@ -77,7 +79,6 @@ freeSetVariables root =
     in
         free
   where
-    unlessM m go = m >>= \b -> Monad.unless b go
     isBound v = Monad.RWS.asks (Set.member v)
     recordFree v = Monad.RWS.modify' (Set.insert v)
 
