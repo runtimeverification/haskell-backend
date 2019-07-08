@@ -88,6 +88,7 @@ test_replInterpreter =
     , forceFailureWithName        `tests` "TryF axiom by name that doesn't unify"
     , forceSuccessWithName        `tests` "TryF axiom by name that does unify"
     , proveSecondClaim            `tests` "Starting to prove the second claim"
+    -- , testPipe                    `tests` "Piping the output to an external process"
     , proveSecondClaimByName      `tests` "Starting to prove the second claim\
                                            \ referenced by name"
     ]
@@ -112,6 +113,17 @@ help =
     in do
         Result { output, continue } <- run command axioms [claim] claim
         output   `equalsOutput` makeAuxReplOutput helpText
+        continue `equals`       Continue
+
+testPipe :: IO ()
+testPipe =
+    let
+        axioms  = []
+        claim   = emptyClaim
+        command = Pipe (ShowConfig Nothing) "/home/ana/repl-script.py" []
+    in do
+        Result { output, continue } <- run command axioms [claim] claim
+        output   `equalsOutput` makeAuxReplOutput ""
         continue `equals`       Continue
 
 step5 :: IO ()
