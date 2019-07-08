@@ -4,8 +4,6 @@ License     : NCSA
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Internal.TermLike
     ( TermLikeF (..)
     , TermLike (..)
@@ -149,10 +147,8 @@ import qualified Control.Monad.Reader as Reader
 import           Data.Align
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
-import qualified Data.Deriving as Deriving
 import qualified Data.Foldable as Foldable
 import           Data.Function
-import           Data.Functor.Classes
 import           Data.Functor.Compose
                  ( Compose (..) )
 import           Data.Functor.Foldable
@@ -229,10 +225,6 @@ could be made.
 newtype Evaluated child = Evaluated { getEvaluated :: child }
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
-Deriving.deriveEq1 ''Evaluated
-Deriving.deriveOrd1 ''Evaluated
-Deriving.deriveShow1 ''Evaluated
-
 instance SOP.Generic (Evaluated child)
 
 instance SOP.HasDatatypeInfo (Evaluated child)
@@ -285,19 +277,7 @@ data TermLikeF variable child
     | SetVariableF   !(SetVariable variable)
     | BuiltinF       !(Builtin child)
     | EvaluatedF     !(Evaluated child)
-    deriving (Foldable, Functor, GHC.Generic, Traversable)
-
-instance (Eq variable, Eq child) => Eq (TermLikeF variable child) where
-    (==) = eq1
-    {-# INLINE (==) #-}
-
-instance (Ord variable, Ord child) => Ord (TermLikeF variable child) where
-    compare = compare1
-    {-# INLINE compare #-}
-
-instance (Show variable, Show child) => Show (TermLikeF variable child) where
-    showsPrec = showsPrec1
-    {-# INLINE showsPrec #-}
+    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance SOP.Generic (TermLikeF variable child)
 
@@ -570,29 +550,21 @@ newtype TermLike variable =
         }
     deriving (GHC.Generic, Show)
 
-Deriving.deriveEq1 ''TermLikeF
-Deriving.deriveOrd1 ''TermLikeF
-Deriving.deriveShow1 ''TermLikeF
+instance (Eq variable, forall a . Eq a => Eq (TermLikeF variable a))
+    => Eq (TermLike variable)
+  where
+    (==)
+        (Recursive.project -> _ :< pat1)
+        (Recursive.project -> _ :< pat2)
+      = pat1 == pat2
 
-instance Eq variable => Eq (TermLike variable) where
-    (==) = eqWorker
-      where
-        eqWorker
-            (Recursive.project -> _ :< pat1)
-            (Recursive.project -> _ :< pat2)
-          =
-            liftEq eqWorker pat1 pat2
-    {-# INLINE (==) #-}
-
-instance Ord variable => Ord (TermLike variable) where
-    compare = compareWorker
-      where
-        compareWorker
-            (Recursive.project -> _ :< pat1)
-            (Recursive.project -> _ :< pat2)
-          =
-            liftCompare compareWorker pat1 pat2
-    {-# INLINE compare #-}
+instance (Ord variable, forall a . Ord a => Ord (TermLikeF variable a))
+    => Ord (TermLike variable)
+  where
+    compare
+        (Recursive.project -> _ :< pat1)
+        (Recursive.project -> _ :< pat2)
+      = compare pat1 pat2
 
 instance Hashable variable => Hashable (TermLike variable) where
     hashWithSalt salt (Recursive.project -> _ :< pat) = hashWithSalt salt pat
