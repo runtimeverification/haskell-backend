@@ -21,19 +21,12 @@ test_koreParser =
     [ testGroup "objectSortParser" objectSortParserTests
     , testGroup "metaSortConverter" metaSortConverterTests
     , testGroup "objectSortListParser" objectSortListParserTests
-    , testGroup "metaSortListParser" metaSortListParserTests
     , testGroup "objectSortVariableParser" objectSortVariableParserTests
-    , testGroup "metaSortVariableParser" metaSortVariableParserTests
     , testGroup
         "objectInCurlyBracesSortVariableListParser"
         objectInCurlyBracesSortVariableListParserTest
-    , testGroup
-        "metaInCurlyBracesSortVariableListParser"
-        metaInCurlyBracesSortVariableListParserTest
     , testGroup "objectAliasParser" objectAliasParserTests
     , testGroup "objectSymbolParser" objectSymbolParserTests
-    , testGroup "metaAliasParser" metaAliasParserTests
-    , testGroup "metaSymbolParser" metaSymbolParserTests
     , testGroup "variableParser" variableParserTests
     , testGroup "andPatternParser" andPatternParserTests
     , testGroup "applicationPatternParser" applicationPatternParserTests
@@ -71,7 +64,7 @@ test_koreParser =
 
 objectSortParserTests :: [TestTree]
 objectSortParserTests =
-    parseTree sortParser
+    parseTree objectSortParser
         [ success "var" $
             SortVariableSort ( SortVariable (testId "var") )
         , success "sort1{}" $
@@ -109,10 +102,8 @@ objectSortParserTests =
 
 metaSortConverterTests :: [TestTree]
 metaSortConverterTests =
-    parseTree sortParser
-        [ success "#var"
-            (SortVariableSort (SortVariable (testId "#var")))
-        , success "#Char{}" charMetaSort
+    parseTree metaSortParser
+        [ success "#Char{}" charMetaSort
         , success "#String{}" stringMetaSort
         , FailureWithoutMessage
             [ "var1, var2", "var1{var1 var2}"
@@ -121,7 +112,7 @@ metaSortConverterTests =
 
 objectSortListParserTests :: [TestTree]
 objectSortListParserTests =
-    parseTree (inParenthesesListParser sortParser)
+    parseTree (inParenthesesListParser objectSortParser)
         [ success "()" []
         , success "(var)"
             [ sortVariableSort "var" ]
@@ -140,35 +131,10 @@ objectSortListParserTests =
         , FailureWithoutMessage ["(var1 var2)"]
         ]
 
-metaSortListParserTests :: [TestTree]
-metaSortListParserTests =
-    parseTree (inCurlyBracesListParser sortParser)
-        [ success "{}" []
-        , success "{#var}"
-            [SortVariableSort (SortVariable (testId "#var"))]
-        , success "{#var1, #var2}"
-            [ SortVariableSort (SortVariable (testId "#var1"))
-            , SortVariableSort (SortVariable (testId "#var2"))
-            ]
-        , success "{#Char{  }  , #var}"
-            [ charMetaSort
-            , SortVariableSort (SortVariable (testId "#var"))
-            ]
-        , FailureWithoutMessage
-            [ "{#var1 #var2}" ]
-        ]
-
 objectSortVariableParserTests :: [TestTree]
 objectSortVariableParserTests =
     parseTree sortVariableParser
         [ success "var" (SortVariable (testId "var"))
-        , FailureWithoutMessage ["", "#"]
-        ]
-
-metaSortVariableParserTests :: [TestTree]
-metaSortVariableParserTests =
-    parseTree sortVariableParser
-        [ success "#var" (SortVariable (testId "#var"))
         , FailureWithoutMessage ["", "#"]
         ]
 
@@ -183,21 +149,7 @@ objectInCurlyBracesSortVariableListParserTest =
             , SortVariable (testId "var2")
             ]
         , FailureWithoutMessage
-            [ "{var1 var2}", "{var, Int{}}" ]
-        ]
-
-metaInCurlyBracesSortVariableListParserTest :: [TestTree]
-metaInCurlyBracesSortVariableListParserTest =
-    parseTree (inCurlyBracesListParser sortVariableParser)
-        [ success "{}" []
-        , success "{#var}"
-            [ SortVariable (testId "#var") ]
-        , success "{#var1, #var2}"
-            [ SortVariable (testId "#var1")
-            , SortVariable (testId "#var2")
-            ]
-        , FailureWithoutMessage
-            [ "{#var1 #var2}", "{#var, #Char{}}" ]
+            [ "{var1 var2}", "{var, Int{}}", "{var, #Char{}}" ]
         ]
 
 objectAliasParserTests :: [TestTree]
@@ -222,7 +174,9 @@ objectAliasParserTests =
                     ]
                 }
         , FailureWithoutMessage
-            ["alias", "a1{a2},a1{a2}", "a1{a2 a2}", "a1{a2}a1{a2}", "c1{s1{}}"]
+            ["alias", "a1{a2},a1{a2}", "a1{a2 a2}", "a1{a2}a1{a2}", "c1{s1{}}"
+            , "c1{#Char{}}"
+            ]
         ]
 
 objectSymbolParserTests :: [TestTree]
@@ -247,60 +201,8 @@ objectSymbolParserTests =
                     ]
                 }
         , FailureWithoutMessage
-            ["symbol", "a1{a2},a1{a2}", "a1{a2 a2}", "a1{a2}a1{a2}", "c1{s1{}}"]
-        ]
-
-metaAliasParserTests :: [TestTree]
-metaAliasParserTests =
-    parseTree aliasParser
-        [ success "#c1{}"
-            Alias
-                { aliasConstructor = testId "#c1"
-                , aliasParams = []
-                }
-        , success "#c1{#s1}"
-            Alias
-                { aliasConstructor = testId "#c1"
-                , aliasParams = [sortVariable "#s1"]
-                }
-        , success "#c1{#s1,#s2}"
-            Alias
-                { aliasConstructor = testId "#c1"
-                , aliasParams =
-                    [ sortVariable "#s1"
-                    , sortVariable "#s2"
-                    ]
-                }
-        , FailureWithoutMessage
-            [ "#alias", "#a1{#a2},#a1{#a2}", "#a1{#a2 #a2}", "#a1{#a2}#a1{#a2}"
-            , "#c1{#Char{}}"
-            ]
-        ]
-
-metaSymbolParserTests :: [TestTree]
-metaSymbolParserTests =
-    parseTree symbolParser
-        [ success "#c1{}"
-            Symbol
-                { symbolConstructor = testId "#c1"
-                , symbolParams = []
-                }
-        , success "#c1{#s1}"
-            Symbol
-                { symbolConstructor = testId "#c1"
-                , symbolParams = [sortVariable "#s1"]
-                }
-        , success "#c1{#s1,#s2}"
-            Symbol
-                { symbolConstructor = testId "#c1"
-                , symbolParams =
-                    [ sortVariable "#s1"
-                    , sortVariable "#s2"
-                    ]
-                }
-        , FailureWithoutMessage
-            [ "#symbol", "#a1{#a2},#a1{#a2}", "#a1{#a2 #a2}", "#a1{#a2}#a1{#a2}"
-            , "#c1{#Char{}}"
+            ["symbol", "a1{a2},a1{a2}", "a1{a2 a2}", "a1{a2}a1{a2}", "c1{s1{}}"
+            , "c1{#Char{}}"
             ]
         ]
 
@@ -323,7 +225,7 @@ variableParserTests =
                         }
                 , variableCounter = mempty
                 }
-        , FailureWithoutMessage ["", "var", "v:", ":s", "#v:s"]
+        , FailureWithoutMessage ["", "var", "v:", ":s", "@v:s"]
         ]
 
 andPatternParserTests :: [TestTree]
@@ -350,10 +252,10 @@ andPatternParserTests =
 applicationPatternParserTests :: [TestTree]
 applicationPatternParserTests =
     parseTree korePatternParser
-        [ success "#v:#Char"
+        [ success "@v:Char"
             ( asParsedPattern . SetVariableF . SetVariable $ Variable
-                { variableName = testId "#v"
-                , variableSort = sortVariableSort "#Char"
+                { variableName = testId "@v"
+                , variableSort = sortVariableSort "Char"
                 , variableCounter = mempty
                 }
             )
@@ -406,9 +308,9 @@ applicationPatternParserTests =
 bottomPatternParserTests :: [TestTree]
 bottomPatternParserTests =
     parseTree korePatternParser
-        [ success "\\bottom{#Sort}()"
+        [ success "\\bottom{Sort}()"
             (asParsedPattern $ BottomF $ Bottom
-                (sortVariableSort "#Sort" :: Sort)
+                (sortVariableSort "Sort" :: Sort)
             )
         , FailureWithoutMessage
             [ ""
@@ -504,7 +406,7 @@ existsPatternParserTests =
             , "\\exists{s}"
             , "\\exists"
             , "\\exists(v:s1, \"b\")"
-            , "\\exists{s}(#v:s, \"b\")"
+            , "\\exists{s}(@v:s, \"b\")"
             ]
         ]
 floorPatternParserTests :: [TestTree]
@@ -642,11 +544,11 @@ memPatternParserTests =
 muPatternParserTests :: [TestTree]
 muPatternParserTests =
     parseTree korePatternParser
-        [ success "\\mu{}(#v:s, \\top{s}())"
+        [ success "\\mu{}(@v:s, \\top{s}())"
             (asParsedPattern $ MuF Mu
                     { muVariable =
                         SetVariable Variable
-                            { variableName = testId "#v"
+                            { variableName = testId "@v"
                             , variableSort = sortVariableSort "s"
                             , variableCounter = mempty
                             }
@@ -668,7 +570,7 @@ muPatternParserTests =
             , "\\mu{s}"
             , "\\mu"
             , "\\mu(v:s1, \"b\")"
-            , "\\mu{s}(#v:s, \"b\")"
+            , "\\mu{s}(@v:s, \"b\")"
             ]
         ]
 notPatternParserTests :: [TestTree]
@@ -714,11 +616,11 @@ nextPatternParserTests =
 nuPatternParserTests :: [TestTree]
 nuPatternParserTests =
     parseTree korePatternParser
-        [ success "\\nu{}(#v:s, \\top{s}())"
+        [ success "\\nu{}(@v:s, \\top{s}())"
             (asParsedPattern $ NuF Nu
                     { nuVariable =
                         SetVariable Variable
-                            { variableName = testId "#v"
+                            { variableName = testId "@v"
                             , variableSort = sortVariableSort "s"
                             , variableCounter = mempty
                             }
@@ -740,7 +642,7 @@ nuPatternParserTests =
             , "\\nu{s}"
             , "\\nu"
             , "\\nu(v:s1, \"b\")"
-            , "\\nu{s}(#v:s, \"b\")"
+            , "\\nu{s}(@v:s, \"b\")"
             ]
         ]
 orPatternParserTests :: [TestTree]
@@ -939,21 +841,21 @@ sentenceAliasParserTests =
                     }
                 :: ParsedSentenceAlias)
             )
-        , success "alias #a{}() : #Char where #a{}() := #b{}() []"
+        , success "alias a{}() : Char where a{}() := b{}() []"
             (SentenceAliasSentence $
                 (SentenceAlias
                     { sentenceAliasAlias = Alias
-                        { aliasConstructor = testId "#a" :: Id
+                        { aliasConstructor = testId "a" :: Id
                         , aliasParams = []
                         }
                     , sentenceAliasSorts = []
-                    , sentenceAliasResultSort = sortVariableSort "#Char"
+                    , sentenceAliasResultSort = sortVariableSort "Char"
                     , sentenceAliasLeftPattern  =
                         Application
                             { applicationSymbolOrAlias =
                                 SymbolOrAlias
                                     { symbolOrAliasConstructor =
-                                        testId "#a" :: Id
+                                        testId "a" :: Id
                                     , symbolOrAliasParams = [ ]
                                     }
                             , applicationChildren = []
@@ -964,7 +866,7 @@ sentenceAliasParserTests =
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
                                         { symbolOrAliasConstructor =
-                                            testId "#b" :: Id
+                                            testId "b" :: Id
                                         , symbolOrAliasParams = [ ]
                                         }
                                 , applicationChildren = []

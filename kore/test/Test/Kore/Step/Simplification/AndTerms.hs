@@ -17,7 +17,7 @@ import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Simplification
                  ( Simplification (Simplification) )
 import qualified Kore.Builtin.Set as Set
-                 ( asInternal )
+                 ( asInternalConcrete )
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
 import           Kore.Internal.Pattern as Pattern
@@ -35,9 +35,7 @@ import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.AndTerms
                  ( termAnd, termEquals, termUnification )
 import           Kore.Step.Simplification.Data
-                 ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Simplification.Data
-                 ( Env (..), evalSimplifier )
+                 ( BuiltinAndAxiomSimplifierMap, Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Unification.Substitution as Substitution
@@ -837,24 +835,22 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expected actual
         ,  testCase "handles set ambiguity" $ do
             let
-                expected1 = do -- list monad
-                    set <- [[Mock.b], [Mock.a, Mock.b]]
-                    return Conditional
+                expected1 =
+                    Conditional
                         { term = Mock.builtinSet [Mock.a, Mock.b]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [ (Mock.x, Mock.a)
-                            , (Mock.xSet, Mock.builtinSet set)
+                            , (Mock.xSet, Mock.builtinSet [Mock.b])
                             ]
                         }
-                expected2 = do -- list monad
-                    set <- [[Mock.a], [Mock.a, Mock.b]]
-                    return Conditional
+                expected2 =
+                    Conditional
                         { term = Mock.builtinSet [Mock.a, Mock.b]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [ (Mock.x, Mock.b)
-                            , (Mock.xSet, Mock.builtinSet set)
+                            , (Mock.xSet, Mock.builtinSet [Mock.a])
                             ]
                         }
             actual <- unify
@@ -863,7 +859,7 @@ test_andTermsSimplification =
                     (mkVar Mock.xSet)
                 )
                 (Mock.builtinSet [Mock.a, Mock.b])
-            assertEqualWithExplanation "" (Just $ expected1 ++ expected2) actual
+            assertEqualWithExplanation "" (Just [expected1, expected2]) actual
         , testCase "set elem inj splitting" $ do
             let
                 expected = Just
@@ -888,10 +884,8 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expected actual
         , testCase "set concat inj splitting" $ do
             let
-                expected = Just $ do -- list monad
-                    set <-
-                        [[], [Mock.sortInjection Mock.testSort Mock.aSubSubsort]]
-                    return Conditional
+                expected = Just
+                    [ Conditional
                         { term = Mock.builtinSet
                             [ Mock.sortInjection Mock.testSort Mock.aSubSubsort ]
                         , predicate = makeTruePredicate
@@ -900,10 +894,11 @@ test_andTermsSimplification =
                                 , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
                                 )
                             ,   ( Mock.xSet
-                                , Mock.builtinSet set
+                                , Mock.builtinSet []
                                 )
                             ]
                         }
+                    ]
             actual <- unify
                 (Mock.concatSet
                     (Mock.elementSet
@@ -922,50 +917,20 @@ test_andTermsSimplification =
                         [ Mock.a
                         , Mock.sortInjection Mock.testSort Mock.aSubSubsort
                         ]
-                expected1 = do -- list monad
-                    set <-
-                        [ []
-                        , [Mock.sortInjection Mock.testSort Mock.aSubSubsort]
-                        , [Mock.a]
-                        ,   [ Mock.a
-                            , Mock.sortInjection Mock.testSort Mock.aSubSubsort
-                            ]
-                        ]
-                    return Conditional
+                expected =
+                    [ Conditional
                             { term = testSet
                             , predicate = makeTruePredicate
                             , substitution = Substitution.unsafeWrap
                                 [   (Mock.x, Mock.a)
                                 ,   ( Mock.xSubSort
-                                    , Mock.sortInjection
-                                        Mock.subSort
-                                        Mock.aSubSubsort
-                                    )
-                                ,   (Mock.xSet, Mock.builtinSet set)
-                                ]
-                            }
-                expected2 = do -- list monad
-                    set <-
-                        [ [Mock.a]
-                        ,   [ Mock.a
-                            , Mock.sortInjection Mock.testSort Mock.aSubSubsort
-                            ]
-                        ]
-                    return Conditional
-                            { term = testSet
-                            , predicate = makeTruePredicate
-                            , substitution = Substitution.unsafeWrap
-                                [   ( Mock.x
-                                    , Mock.sortInjection Mock.testSort
-                                        Mock.aSubSubsort
-                                    )
-                                ,   ( Mock.xSubSort
                                     , Mock.sortInjection Mock.subSort
                                         Mock.aSubSubsort
                                     )
-                                ,   (Mock.xSet, Mock.builtinSet set)
+                                ,   (Mock.xSet, Mock.builtinSet [])
                                 ]
                             }
+                    ]
             actual <- unify
                 (Mock.concatSet
                     (Mock.elementSet (mkVar Mock.x))
@@ -980,7 +945,7 @@ test_andTermsSimplification =
                     )
                 )
                 testSet
-            assertEqualWithExplanation "" (Just $ expected1 ++ expected2) actual
+            assertEqualWithExplanation "" (Just expected) actual
         ]
     ]
 
@@ -1142,13 +1107,11 @@ test_equalsTermsSimplification =
         assertEqualWithExplanation "" expected actual
     , testCase "handles set ambiguity" $ do
         let
-            asInternal = Set.asInternal Mock.metadataTools Mock.setSort
+            asInternal = Set.asInternalConcrete Mock.metadataTools Mock.setSort
             expected = Just $ do -- list monad
                 (xValue, xSetValue) <-
-                    [ (Mock.a, [Mock.a, Mock.b])
-                    , (Mock.a, [Mock.b])
+                    [ (Mock.a, [Mock.b])
                     , (Mock.b, [Mock.a])
-                    , (Mock.b, [Mock.a, Mock.b])
                     ]
                 return Conditional
                     { term = ()

@@ -2,7 +2,7 @@
 
 module TEST-EXCEPTION-7
 
-  axiom{#S}
-    #`2:#S []
+  axiom{S}
+    `2:S []
 
 endmodule []

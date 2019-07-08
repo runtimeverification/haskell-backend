@@ -49,6 +49,7 @@ import           Data.Set
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Internal.Conditional
                  ( Conditional (Conditional) )
 import qualified Kore.Internal.Conditional as Conditional
@@ -172,7 +173,7 @@ unwrapAndQuantifyConfiguration config@Conditional { substitution } =
     targetVariables =
         map Target.unwrapVariable
         $ filter Target.isTarget
-        $ Set.toList
+        $ Foldable.toList
         $ Pattern.freeVariables configWithNewSubst
 
     quantify :: TermLike variable -> variable -> TermLike variable
@@ -533,7 +534,7 @@ wouldNarrowWith unified =
     Set.difference leftAxiomVariables substitutionVariables
   where
     leftAxiomVariables =
-        TermLike.freeVariables leftAxiom
+        FreeVariables.getFreeVariables $ TermLike.freeVariables leftAxiom
       where
         Conditional { term = axiom } = unified
         RulePattern { left = leftAxiom } = axiom

@@ -26,6 +26,10 @@ import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Location as Attribute
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
+import qualified Kore.Attribute.Pattern.Defined as Attribute.Pattern
+import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
+import qualified Kore.Attribute.Pattern.Function as Attribute.Pattern
+import qualified Kore.Attribute.Pattern.Functional as Attribute.Pattern
 import qualified Kore.Attribute.Source as Attribute
 import           Kore.Domain.Builtin as Domain
 import           Kore.Error
@@ -1035,12 +1039,15 @@ instance
     ) =>
     StructEqualWithExplanation (InternalMap key child)
   where
-    structFieldsWithNames expect actual =
+    structFieldsWithNames expect actual@(InternalMap _ _ _ _ _) =
         [ Function.on (EqWrap "builtinMapSort = ") builtinMapSort expect actual
         , Function.on (EqWrap "builtinMapUnit = ") builtinMapUnit expect actual
-        , Function.on (EqWrap "builtinMapElement = ") builtinMapElement expect actual
-        , Function.on (EqWrap "builtinMapConcat = ") builtinMapConcat expect actual
-        , Function.on (EqWrap "builtinMapChild = ") builtinMapChild expect actual
+        , Function.on
+            (EqWrap "builtinMapElement = ") builtinMapElement expect actual
+        , Function.on
+            (EqWrap "builtinMapConcat = ") builtinMapConcat expect actual
+        , Function.on
+            (EqWrap "builtinMapChild = ") builtinMapChild expect actual
         ]
     structConstructorName _ = "InternalMap"
 
@@ -1055,34 +1062,73 @@ instance
     (EqualWithExplanation child, Show child) =>
     StructEqualWithExplanation (InternalList child)
   where
-    structFieldsWithNames expect actual =
-        [ Function.on (EqWrap "builtinListSort = ") builtinListSort expect actual
-        , Function.on (EqWrap "builtinListUnit = ") builtinListUnit expect actual
-        , Function.on (EqWrap "builtinListElement = ") builtinListElement expect actual
-        , Function.on (EqWrap "builtinListConcat = ") builtinListConcat expect actual
-        , Function.on (EqWrap "builtinListChild = ") builtinListChild expect actual
+    structFieldsWithNames expect actual@(InternalList _ _ _ _ _) =
+        [ Function.on
+            (EqWrap "builtinListSort = ") builtinListSort expect actual
+        , Function.on
+            (EqWrap "builtinListUnit = ") builtinListUnit expect actual
+        , Function.on
+            (EqWrap "builtinListElement = ") builtinListElement expect actual
+        , Function.on
+            (EqWrap "builtinListConcat = ") builtinListConcat expect actual
+        , Function.on
+            (EqWrap "builtinListChild = ") builtinListChild expect actual
         ]
     structConstructorName _ = "InternalList"
 
 instance
-    (EqualWithExplanation key, Show key) =>
-    EqualWithExplanation (InternalSet key)
+    ( EqualWithExplanation key, Show key
+    , EqualWithExplanation child, Show child
+    ) =>
+    EqualWithExplanation (InternalSet key child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance
-    (EqualWithExplanation key, Show key) =>
-    StructEqualWithExplanation (InternalSet key)
+    ( EqualWithExplanation key, Show key
+    , EqualWithExplanation child, Show child
+    ) =>
+    StructEqualWithExplanation (InternalSet key child)
   where
-    structFieldsWithNames expect actual =
+    structFieldsWithNames expect actual@(InternalSet _ _ _ _ _) =
         [ Function.on (EqWrap "builtinSetSort = ") builtinSetSort expect actual
         , Function.on (EqWrap "builtinSetUnit = ") builtinSetUnit expect actual
-        , Function.on (EqWrap "builtinSetElement = ") builtinSetElement expect actual
-        , Function.on (EqWrap "builtinSetConcat = ") builtinSetConcat expect actual
-        , Function.on (EqWrap "builtinSetChild = ") builtinSetChild expect actual
+        , Function.on
+            (EqWrap "builtinSetElement = ") builtinSetElement expect actual
+        , Function.on
+            (EqWrap "builtinSetConcat = ") builtinSetConcat expect actual
+        , Function.on
+            (EqWrap "builtinSetChild = ") builtinSetChild expect actual
         ]
     structConstructorName _ = "InternalSet"
+
+instance
+    ( EqualWithExplanation key, Show key
+    , EqualWithExplanation child, Show child
+    ) =>
+    EqualWithExplanation (NormalizedSet key child)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation key, Show key
+    , EqualWithExplanation child, Show child
+    ) =>
+    StructEqualWithExplanation (NormalizedSet key child)
+  where
+    structFieldsWithNames expect actual@(NormalizedSet _ _ _) =
+        [ Function.on
+            (EqWrap "elementsWithVariables = ")
+            elementsWithVariables
+            expect
+            actual
+        , Function.on
+            (EqWrap "concreteElements = ") concreteElements expect actual
+        , Function.on (EqWrap "sets = ") sets expect actual
+        ]
+    structConstructorName _ = "NormalizedSet"
 
 instance
     ( EqualWithExplanation key, Show key
@@ -1317,7 +1363,10 @@ instance
     ( EqualWithExplanation variable, Show variable
     ) => StructEqualWithExplanation (Attribute.Pattern variable)
   where
-    structFieldsWithNames expected@(Attribute.Pattern _ _) actual@(Attribute.Pattern _ _) =
+    structFieldsWithNames
+        expected@(Attribute.Pattern _ _ _ _ _)
+        actual@(Attribute.Pattern _ _ _ _ _)
+      =
         [ EqWrap
             "patternSort = "
             (Attribute.patternSort expected)
@@ -1326,8 +1375,62 @@ instance
             "freeVariables = "
             (Attribute.freeVariables expected)
             (Attribute.freeVariables actual)
+        , EqWrap
+            "functional = "
+            (Attribute.functional expected)
+            (Attribute.functional actual)
+        , EqWrap
+            "function = "
+            (Attribute.function expected)
+            (Attribute.function actual)
+        , EqWrap
+            "defined = "
+            (Attribute.defined expected)
+            (Attribute.defined actual)
         ]
     structConstructorName _ = "Pattern"
+
+instance
+    (EqualWithExplanation variable, Show variable) =>
+    EqualWithExplanation (Attribute.FreeVariables variable)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    (EqualWithExplanation variable, Show variable) =>
+    WrapperEqualWithExplanation (Attribute.FreeVariables variable)
+  where
+    wrapperConstructorName _ = "FreeVariables"
+    wrapperField =
+        Function.on (EqWrap "getFreeVariables = ") Attribute.getFreeVariables
+
+instance EqualWithExplanation Attribute.Pattern.Functional where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation Attribute.Pattern.Functional where
+    wrapperConstructorName _ = "Functional"
+    wrapperField =
+        Function.on (EqWrap "isFunctional = ") Attribute.Pattern.isFunctional
+
+instance EqualWithExplanation Attribute.Pattern.Function where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation Attribute.Pattern.Function where
+    wrapperConstructorName _ = "Function"
+    wrapperField =
+        Function.on (EqWrap "isFunction = ") Attribute.Pattern.isFunction
+
+instance EqualWithExplanation Attribute.Pattern.Defined where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation Attribute.Pattern.Defined where
+    wrapperConstructorName _ = "Defined"
+    wrapperField =
+        Function.on (EqWrap "isDefined = ") Attribute.Pattern.isDefined
 
 instance
     ( EqualWithExplanation variable, Show variable

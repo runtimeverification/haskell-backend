@@ -23,7 +23,7 @@ import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Attribute.SortInjection
 import           Kore.Attribute.Symbol
 import           Kore.IndexedModule.MetadataTools
-                 ( HeadType, MetadataTools (MetadataTools), SmtMetadataTools )
+                 ( MetadataTools (MetadataTools), SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Internal.ApplicationSorts
@@ -37,13 +37,12 @@ import           Kore.Syntax.Application
 
 makeMetadataTools
     :: [(SymbolOrAlias, StepperAttributes)]
-    -> [(SymbolOrAlias, HeadType)]
     -> [(Sort, Attribute.Sort)]
     -> [(Sort, Sort)]
     -> [(SymbolOrAlias, ApplicationSorts)]
     -> SMT.AST.SmtDeclarations
     -> SmtMetadataTools StepperAttributes
-makeMetadataTools _attr _headTypes sortTypes isSubsortOf sorts declarations =
+makeMetadataTools attr sortTypes isSubsortOf sorts declarations =
     MetadataTools
         { sortAttributes = caseBasedFunction sortTypes
         -- TODO(Vladimir): fix the inconsistency that both 'subsorts' and
@@ -53,6 +52,14 @@ makeMetadataTools _attr _headTypes sortTypes isSubsortOf sorts declarations =
         , subsorts = \sort ->
             Set.fromList . fmap snd . filter ((==) sort . fst) $ isSubsortOf
         , applicationSorts = caseBasedFunction sorts
+        , symbolAttributes =
+            caseBasedFunction
+                (map
+                    (  \(SymbolOrAlias {symbolOrAliasConstructor}, a)
+                    -> (symbolOrAliasConstructor, a)
+                    )
+                    attr
+                )
         , smtData = declarations
         }
 

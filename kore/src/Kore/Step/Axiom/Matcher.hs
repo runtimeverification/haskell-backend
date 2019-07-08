@@ -22,18 +22,23 @@ import           Control.Monad.Except
 import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Maybe
                  ( MaybeT (..) )
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
+import           Data.Function
+                 ( on )
 import qualified Data.Map as Map
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 
+import           Kore.Attribute.Pattern.FreeVariables
+import qualified Kore.Builtin.Set as Set
+import qualified Kore.Domain.Builtin as Builtin
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.Predicate
                  ( Predicate )
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import qualified Kore.Step.Merging.OrPattern as OrPattern
-import           Kore.Step.RecursiveAttributes
-                 ( isFunctionPattern )
 import           Kore.Step.Simplification.AndTerms
                  ( SortInjectionMatch (SortInjectionMatch),
                  simplifySortInjections )
@@ -216,6 +221,12 @@ matchEqualHeadPatterns quantifiedVariables first second = do
                                 matchJoin
                                     quantifiedVariables
                                     [(firstChild, secondChild)]
+                (Builtin_ b2) ->
+                    matchAppBuiltins
+                        quantifiedVariables
+                        firstHead
+                        firstChildren
+                        b2
                 _ -> nothing
         (Bottom_ _) -> topWhenEqualOrNothing first second
         (Ceil_ _ _ firstChild) ->
@@ -225,8 +236,12 @@ matchEqualHeadPatterns quantifiedVariables first second = do
                 _ -> nothing
         (CharLiteral_ _) ->
             topWhenEqualOrNothing first second
-        (Builtin_ _) ->
-            topWhenEqualOrNothing first second
+        (Builtin_ b1) ->
+            (<|>)
+                (topWhenEqualOrNothing first second)
+                $ case second of
+                    (Builtin_ b2) -> matchBuiltins quantifiedVariables b1 b2
+                    _             -> nothing
         (DV_ _ _) ->
             topWhenEqualOrNothing first second
         (Equals_ _ _ firstFirst firstSecond) ->
@@ -412,8 +427,7 @@ matchVariableFunction
     -> MaybeT unifier (Predicate variable)
 matchVariableFunction quantifiedVariables (Var_ var) second
   | not (var `Map.member` quantifiedVariables) = do
-    tools <- Simplifier.askMetadataTools
-    Monad.guard (isFunctionPattern tools second)
+    Monad.guard (isFunctionPattern second)
     Monad.Trans.lift $ do
         ceilOr <- Ceil.makeEvaluateTerm second
         result <-
@@ -435,8 +449,165 @@ checkVariableEscape
     -> Predicate variable
     -> Predicate variable
 checkVariableEscape vars predSubst
-  | any (`Set.member` freeVars) vars = error
+  | any (`isFreeVariable` freeVars) vars = error
         "quantified variables in substitution or predicate escaping context"
   | otherwise = predSubst
   where
     freeVars = Predicate.freeVariables predSubst
+
+matchAppBuiltins
+    :: forall variable unifier
+    .  FreshVariable variable
+    => Show variable
+    => Unparse variable
+    => SortedVariable variable
+    => MonadUnify unifier
+    => Map.Map variable variable
+    -> Symbol
+    -> [TermLike variable]
+    -> Builtin.Builtin (TermLike Concrete) (TermLike variable)
+    -> MaybeT unifier (Predicate variable)
+matchAppBuiltins qv symbol args (Builtin.BuiltinList l2)
+  | symbol == Builtin.builtinListConcat l2 =
+    case args of
+        [ Builtin_ (Builtin.BuiltinList l1), x@(Var_ _) ] -> do
+            let (prefix2, suffix2) = splitByL2 (listLength l1) l2
+            prefix  <-
+                matchBuiltins
+                    qv
+                    (Builtin.BuiltinList l1)
+                    (Builtin.BuiltinList prefix2)
+            suffix <- match qv x (mkBuiltin $ Builtin.BuiltinList suffix2)
+            pure $ prefix <> suffix
+        [ x@(Var_ _), Builtin_ (Builtin.BuiltinList l1) ] -> do
+            let (prefix2, suffix2) = splitByL2 (listLength l2 - listLength l1) l2
+            prefix <- match qv x (mkBuiltin $ Builtin.BuiltinList prefix2)
+            suffix  <-
+                matchBuiltins
+                    qv
+                    (Builtin.BuiltinList l1)
+                    (Builtin.BuiltinList suffix2)
+            pure $ prefix <> suffix
+        _ -> nothing
+  where
+    listLength :: Builtin.InternalList (TermLike variable) -> Int
+    listLength = Seq.length . Builtin.builtinListChild
+
+    splitByL2
+        :: Int
+        -> Builtin.InternalList (TermLike variable)
+        ->  ( Builtin.InternalList (TermLike variable)
+            , Builtin.InternalList (TermLike variable)
+            )
+    splitByL2 idx l =
+        Bifunctor.bimap
+            (updateInnerList l)
+            (updateInnerList l)
+            $ Seq.splitAt idx (Builtin.builtinListChild l)
+
+    updateInnerList l newValue = l { Builtin.builtinListChild = newValue }
+matchAppBuiltins qv symbol args (Builtin.BuiltinMap m2)
+  | symbol == Builtin.builtinMapConcat m2 =
+    case args of
+        [ Builtin_ (Builtin.BuiltinMap m1), x@(Var_ _) ] -> matchMaps m1 x
+        [ x@(Var_ _), Builtin_ (Builtin.BuiltinMap m1) ] -> matchMaps m1 x
+        _ -> nothing
+  where
+    matchMaps
+        :: Builtin.InternalMap (TermLike Concrete) (TermLike variable)
+        -> TermLike variable
+        -> MaybeT unifier (Predicate variable)
+    matchMaps m1 x = do
+        let (prefix2, suffix2) = splitM2By m1
+        prefix  <-
+            matchBuiltins
+                qv
+                (Builtin.BuiltinMap m1)
+                (Builtin.BuiltinMap prefix2)
+        suffix <- match qv x (mkBuiltin $ Builtin.BuiltinMap suffix2)
+        pure $ prefix <> suffix
+
+    splitM2By
+        :: Builtin.InternalMap (TermLike Concrete) (TermLike variable)
+        ->  ( Builtin.InternalMap (TermLike Concrete) (TermLike variable)
+            , Builtin.InternalMap (TermLike Concrete) (TermLike variable)
+            )
+    splitM2By m =
+        Bifunctor.bimap
+            (updateInnerMap m)
+            (updateInnerMap m)
+            $ Map.partitionWithKey (memberOfMap m) (Builtin.builtinMapChild m2)
+
+    updateInnerMap m newValue = m { Builtin.builtinMapChild = newValue }
+    memberOfMap m key _value = Map.member key $ Builtin.builtinMapChild m
+matchAppBuiltins _ _ _ _ = nothing
+
+matchBuiltins
+    :: FreshVariable variable
+    => Show variable
+    => Unparse variable
+    => SortedVariable variable
+    => MonadUnify unifier
+    => Map.Map variable variable
+    -> Builtin.Builtin (TermLike Concrete) (TermLike variable)
+    -> Builtin.Builtin (TermLike Concrete) (TermLike variable)
+    -> MaybeT unifier (Predicate variable)
+matchBuiltins qv (Builtin.BuiltinList l1) (Builtin.BuiltinList l2)
+  | ((==) `on` (Seq.length)) seq1 seq2 =
+    fmap Foldable.fold
+        . traverse match'
+        $ Seq.zip seq1 seq2
+  where
+    seq1 = Builtin.builtinListChild l1
+    seq2 = Builtin.builtinListChild l2
+    match' = uncurry (match qv)
+matchBuiltins qv (Builtin.BuiltinSet s1) (Builtin.BuiltinSet s2)
+  | varElems2 == [] && varSets2 == [] && length varSets1 <= 1 = do
+    let remainder = Set.toList $ concrete2 Set.\\ concrete1
+    Monad.guard $ length remainder + length concrete1 == length concrete2
+    Monad.guard $ length remainder >= length varElems1
+
+    variableMatches <-
+        fmap Foldable.fold
+            . traverse match'
+            . zip varElems1
+            $ fmap fromConcrete remainder
+
+    let setRemainder = drop (length varElems1) remainder
+    case (varSets1, setRemainder) of
+        ([]   , []) -> pure variableMatches
+        ([set], _ ) -> do
+            tools <- Simplifier.askMetadataTools
+            let subset =
+                    Set.asInternalConcrete tools builtinSetSort
+                        $ Set.fromList setRemainder
+            setsMatches <- match qv set subset
+            pure $ variableMatches <> setsMatches
+        _ -> nothing
+  where
+    Builtin.InternalSet { builtinSetSort } = s2
+    Builtin.InternalSet { builtinSetChild = internalSet1 } = s1
+    Builtin.InternalSet { builtinSetChild = internalSet2 } = s2
+    Builtin.NormalizedSet
+        { elementsWithVariables = varElems1
+        , concreteElements      = concrete1
+        , sets                  = varSets1
+        } = internalSet1
+    Builtin.NormalizedSet
+        { elementsWithVariables = varElems2
+        , concreteElements      = concrete2
+        , sets                  = varSets2
+        } = internalSet2
+    match' = uncurry (match qv)
+matchBuiltins qv (Builtin.BuiltinMap m1) (Builtin.BuiltinMap m2)
+  | ((==) `on` Map.keys) map1 map2 =
+    fmap Foldable.fold
+        . traverse match'
+        $ zip asList1 asList2
+  where
+    map1 = Builtin.builtinMapChild m1
+    map2 = Builtin.builtinMapChild m2
+    asList1 = Map.elems map1
+    asList2 = Map.elems map2
+    match' = uncurry (match qv)
+matchBuiltins _ _ _ = nothing

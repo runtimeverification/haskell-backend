@@ -30,10 +30,7 @@ import           Data.Maybe
 import           Data.Text
                  ( Text )
 import qualified Data.Text.Prettyprint.Doc as Pretty
--- TODO (thomas.tuegel): Remove Debug.Trace
-import Debug.Trace
-       ( trace )
-import GHC.Generics
+import           GHC.Generics
 
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
@@ -47,7 +44,7 @@ import qualified Kore.Step.Result as StepResult
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), allPathGlobally )
 import           Kore.Step.Simplification.Data
-                 ( Simplifier )
+                 ( MonadSimplify )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyAndRemoveTopExists )
 import qualified Kore.Step.Step as Step
@@ -83,7 +80,7 @@ type CommonModalPattern = ModalPattern Variable
 
 data ProofState patt
     = Proven
-    | Unprovable
+    | Unprovable !patt
     | GoalLHS !patt
     -- ^ State on which a normal 'Rewrite' can be applied. Also used
     -- for the start patterns.
@@ -96,7 +93,7 @@ type CommonProofState = ProofState (Pattern Variable)
 
 instance Hashable patt => Hashable (ProofState patt)
 
-checkProofState :: Prim patt rewriteResult
+checkProofState :: Prim patt rewrite
 checkProofState = CheckProofState
 
 simplify :: Prim patt rewrite
@@ -108,13 +105,15 @@ unroll = Unroll
 computeWeakNext :: [rewrite] -> Prim patt rewrite
 computeWeakNext = ComputeWeakNext
 
-type Transition =
-    TransitionT (RewriteRule Variable) (StateT (Maybe ()) Simplifier)
+type Transition m =
+    TransitionT (RewriteRule Variable) (StateT (Maybe ()) m)
 
 transitionRule
-    :: Prim (CommonModalPattern) (RewriteRule Variable)
+    :: forall m
+    .  MonadSimplify m
+    => Prim (CommonModalPattern) (RewriteRule Variable)
     -> CommonProofState
-    -> Transition CommonProofState
+    -> Transition m CommonProofState
 transitionRule
     strategyPrim
     proofState
@@ -127,21 +126,21 @@ transitionRule
   where
     transitionCheckProofState
         :: CommonProofState
-        -> Transition CommonProofState
+        -> Transition m CommonProofState
     transitionCheckProofState proofState0 = do
         execState <- Monad.Trans.lift State.get
         -- End early if any unprovable state was reached
         when (isJust execState) empty
         case proofState0 of
             Proven -> empty
-            Unprovable -> empty
+            Unprovable _ -> empty
             ps -> return ps
 
     transitionSimplify
         :: CommonProofState
-        -> Transition CommonProofState
+        -> Transition m CommonProofState
     transitionSimplify Proven = return Proven
-    transitionSimplify Unprovable = return Unprovable
+    transitionSimplify (Unprovable config) = return (Unprovable config)
     transitionSimplify (GoalLHS config) =
         applySimplify GoalLHS config
     transitionSimplify (GoalRemLHS config) =
@@ -162,9 +161,9 @@ transitionRule
     transitionUnroll
         :: CommonModalPattern
         -> CommonProofState
-        -> Transition CommonProofState
+        -> Transition m CommonProofState
     transitionUnroll _ Proven = empty
-    transitionUnroll _ Unprovable = empty
+    transitionUnroll _ (Unprovable _) = empty
     transitionUnroll goalrhs (GoalLHS config)
         | Pattern.isBottom config = return Proven
         | otherwise = applyUnroll goalrhs GoalLHS config
@@ -181,13 +180,7 @@ transitionRule
                 then return (wrapper config)
                 else do
                     (Monad.Trans.lift . State.put) (Just ())
-                    trace
-                        (show . Pretty.vsep
-                            $ [ "config failed to prove the invariant:"
-                              , Pretty.indent 4 (unparse config)
-                              ]
-                        )
-                        return Unprovable
+                    return (Unprovable config)
         | otherwise = (error . show . Pretty.vsep)
                       [ "Not implemented error:"
                       , "We don't know how to unroll the modalOp:"
@@ -197,9 +190,9 @@ transitionRule
     transitionComputeWeakNext
         :: [RewriteRule Variable]
         -> CommonProofState
-        -> Transition CommonProofState
+        -> Transition m CommonProofState
     transitionComputeWeakNext _ Proven = return Proven
-    transitionComputeWeakNext _ Unprovable = return Unprovable
+    transitionComputeWeakNext _ (Unprovable config) = return (Unprovable config)
     transitionComputeWeakNext rules (GoalLHS config)
       = transitionComputeWeakNextHelper rules config
     transitionComputeWeakNext _ (GoalRemLHS _)
@@ -208,7 +201,7 @@ transitionRule
     transitionComputeWeakNextHelper
         :: [RewriteRule Variable]
         -> Pattern Variable
-        -> Transition CommonProofState
+        -> Transition m CommonProofState
     transitionComputeWeakNextHelper _ config
         | Pattern.isBottom config = return Proven
     transitionComputeWeakNextHelper rules config = do

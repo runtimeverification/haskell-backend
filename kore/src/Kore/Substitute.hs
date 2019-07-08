@@ -9,7 +9,6 @@ module Kore.Substitute
     ) where
 
 import           Control.Applicative
-import qualified Control.Lens as Lens
 import qualified Data.Foldable as Foldable
 import           Data.Function
                  ( (&) )
@@ -25,9 +24,13 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
-import Kore.Syntax
-import Kore.Variables.Binding
-import Kore.Variables.Fresh
+import           Kore.Attribute.Pattern.FreeVariables
+                 ( FreeVariables )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import           Kore.Attribute.Synthetic
+import           Kore.Syntax
+import           Kore.Variables.Binding
+import           Kore.Variables.Fresh
 
 {- | Traverse the pattern from the top down and apply substitutions.
 
@@ -38,8 +41,6 @@ The substitution must be normalized, i.e. no target (left-hand side) variable
 may appear in the right-hand side of any substitution, but this is not checked.
 
  -}
--- TODO (thomas.tuegel): In the future, patterns may have other types of
--- attributes which need to be re-synthesized after substitution.
 substitute
     ::  forall patternType patternBase attribute variable.
         ( FreshVariable variable
@@ -50,19 +51,21 @@ substitute
         , CofreeF patternBase attribute ~ Base patternType
         , Binding patternType
         , VariableType patternType ~ variable
+        , Synthetic patternBase attribute
         )
-    => Lens.Lens' patternType (Set variable)
-    -- ^ Lens into free variables of the pattern
+    => (patternType -> FreeVariables variable)
+    -- ^ View into free variables of the pattern
     -> Map variable patternType
     -- ^ Substitution
     -> patternType
     -- ^ Original pattern
     -> patternType
-substitute lensFreeVariables =
+substitute viewFreeVariables =
     \subst -> substituteWorker (Map.map Left subst)
   where
     extractFreeVariables :: patternType -> Set variable
-    extractFreeVariables = Lens.view lensFreeVariables
+    extractFreeVariables =
+        FreeVariables.getFreeVariables . viewFreeVariables
 
     -- | Insert an optional variable renaming into the substitution.
     renaming
@@ -129,14 +132,10 @@ substitute lensFreeVariables =
 
         -- | Default case: Descend into sub-patterns and apply the substitution.
         substituteDefault =
-            embed termLikeHead'
+            synthesize termLikeHead'
           where
-            attrib :< termLikeHead = Recursive.project termLike
+            _ :< termLikeHead = Recursive.project termLike
             termLikeHead' = substituteWorker subst' <$> termLikeHead
-            embed =
-                Lens.set lensFreeVariables freeVariables'
-                . Recursive.embed
-                . (attrib :<)
 
         freeVariables = extractFreeVariables termLike
 

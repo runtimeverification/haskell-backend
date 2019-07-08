@@ -25,10 +25,6 @@ module Kore.ASTVerifier.PatternVerifier
     ) where
 
 import           Control.Applicative
-import           Control.Lens
-                 ( (%~), (<>~), _1 )
-import qualified Control.Lens as Lens hiding
-                 ( makeLenses )
 import qualified Control.Monad as Monad
 import           Control.Monad.Reader
                  ( MonadReader, ReaderT, runReaderT )
@@ -56,6 +52,7 @@ import           Kore.ASTVerifier.SortVerifier
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
+import           Kore.Attribute.Synthetic
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.Error
@@ -109,38 +106,8 @@ runPatternVerifier
     :: Context
     -> PatternVerifier a
     -> Either (Error VerifyError) a
-runPatternVerifier ctx PatternVerifier { getPatternVerifier } =
-    ctx
-    & Lens.over lensIndexedModule specialK
-    & runReaderT getPatternVerifier
-
-{- | Apply attributes to special K symbols.
- -}
--- TODO (thomas.tuegel): Remove this after changing prelude.kore.
-specialK
-    :: IndexedModule patternType Attribute.Symbol attrAxiom
-    -> IndexedModule patternType Attribute.Symbol attrAxiom
-specialK indexedModule =
-    indexedModule
-    & lensIndexedModuleImports         %~ fmap recurseIntoImports
-    & lensIndexedModuleSymbolSentences %~ Map.mapWithKey worker
-    & lensIndexedModuleAliasSentences  %~ Map.mapWithKey worker
-  where
-    worker ident decl =
-        decl
-        & _1 . Attribute.lensConstructor   <>~ constructor
-        & _1 . Attribute.lensFunctional    <>~ functional
-        & _1 . Attribute.lensInjective     <>~ injective
-        & _1 . Attribute.lensSortInjection <>~ sortInjection
-      where
-        isInj = getId ident == "inj"
-        isCons = elem (getId ident) ["kseq", "dotk"]
-        constructor = Attribute.Constructor isCons
-        functional = Attribute.Functional (isCons || isInj)
-        injective = Attribute.Injective (isCons || isInj)
-        sortInjection = Attribute.SortInjection isInj
-
-    recurseIntoImports = Lens.over Lens._3 specialK
+runPatternVerifier context PatternVerifier { getPatternVerifier } =
+    runReaderT getPatternVerifier context
 
 lookupSortDeclaration
     :: Id
@@ -289,11 +256,8 @@ verifyAliasLeftPattern leftPattern = do
         -> PatternVerifier (Variable, Attribute.Pattern Variable)
     expectVariable var = do
         verifyVariableDeclaration var
-        let
-            patternSort = variableSort var
-            freeVariables = Set.singleton var
-            valid = Attribute.Pattern { patternSort, freeVariables }
-        return (var, valid)
+        let attrs = synthetic (Const var)
+        return (var, attrs)
 
 {- | Verify that a Kore pattern is well-formed.
 
@@ -418,7 +382,7 @@ verifyPatternSort patternSort = do
     return ()
 
 verifyOperands
-    :: Traversable operator
+    :: (Traversable operator, Synthetic operator (Attribute.Pattern Variable))
     => (forall a. operator a -> Sort)
     -> operator (PatternVerifier Verified.Pattern)
     ->  PatternVerifier
@@ -432,10 +396,8 @@ verifyOperands operandSort = \operator -> do
             assertExpectedSort expectedSort (Internal.extractAttributes child)
             return child
     verified <- traverse verifyChildWithSort operator
-    let freeVariables =
-            Foldable.foldl' Set.union Set.empty
-                (Internal.freeVariables <$> verified)
-    return (Attribute.Pattern { patternSort, freeVariables } :< verified)
+    let attrs = synthetic (Internal.extractAttributes <$> verified)
+    return (attrs :< verified)
 {-# INLINE verifyOperands #-}
 
 verifyAnd
@@ -504,6 +466,7 @@ verifyRewrites = verifyOperands rewritesSort
 
 verifyPredicate
     ::  ( Traversable predicate
+        , Synthetic predicate (Attribute.Pattern Variable)
         , valid ~ Attribute.Pattern Variable
         )
     => (forall a. predicate a -> Sort)  -- ^ Operand sort
@@ -513,9 +476,7 @@ verifyPredicate
 verifyPredicate operandSort resultSort = \predicate -> do
     let patternSort = resultSort predicate
     verifyPatternSort patternSort
-    Attribute.Pattern { freeVariables } :< verified <-
-        verifyOperands operandSort predicate
-    return (Attribute.Pattern { patternSort, freeVariables } :< verified)
+    verifyOperands operandSort predicate
 {-# INLINE verifyPredicate #-}
 
 verifyCeil
@@ -618,7 +579,8 @@ verifyApplySymbol getChildAttributes application =
     Application { applicationSymbolOrAlias = symbolOrAlias } = application
 
 verifyApplicationChildren
-    ::  (child -> Attribute.Pattern Variable)
+    ::  Synthetic (Application head) (Attribute.Pattern Variable)
+    =>  (child -> Attribute.Pattern Variable)
     ->  Application head (PatternVerifier child)
     ->  ApplicationSorts
     ->  PatternVerifier
@@ -630,14 +592,11 @@ verifyApplicationChildren
 verifyApplicationChildren getChildAttributes application sorts = do
     let operandSorts = applicationSortsOperands sorts
     verifiedChildren <- verifyChildren operandSorts children
-    let patternSort = applicationSortsResult sorts
-        verified = application { applicationChildren = verifiedChildren }
-        freeVariables = Set.unions (getChildFreeVariables <$> verifiedChildren)
-        patternAttrs = Attribute.Pattern { patternSort, freeVariables }
-    return (patternAttrs :< verified)
+    let verified = application { applicationChildren = verifiedChildren }
+        attrs = synthetic (getChildAttributes <$> verified)
+    return (attrs :< verified)
   where
     verifyChildren = verifyPatternsWithSorts getChildAttributes
-    getChildFreeVariables = Attribute.freeVariables . getChildAttributes
     Application { applicationChildren = children } = application
 
 verifyApplication
@@ -658,7 +617,7 @@ verifyApplication getChildAttributes application = do
         <$> verifyApplySymbol getChildAttributes application
 
 verifyBinder
-    ::  ( Traversable binder
+    ::  ( Traversable binder, Synthetic binder (Attribute.Pattern Variable)
         , valid ~ Attribute.Pattern Variable
         )
     => (forall a. binder a -> Sort)
@@ -724,7 +683,7 @@ verifyNu = verifyBinder nuSort nuVar
     nuSort = variableSort . nuVar
 
 verifyVariable
-    ::  ( base ~ Const (Variable)
+    ::  ( base ~ Const Variable
         , valid ~ Attribute.Pattern Variable
         )
     => Variable
@@ -736,10 +695,9 @@ verifyVariable variable@Variable { variableName, variableSort } = do
         (variableSort /= declaredSort)
         [ variable, declaredVariable ]
         "The declared sort is different."
-    let patternSort = variableSort
-        verified = Const variable
-        freeVariables = Set.singleton variable
-    return (Attribute.Pattern { patternSort, freeVariables } :< verified)
+    let verified = Const variable
+        attrs = synthetic (Internal.extractAttributes <$> verified)
+    return (attrs :< verified)
 
 verifyDomainValue
     :: DomainValue Sort (PatternVerifier Verified.Pattern)
@@ -759,32 +717,29 @@ verifyDomainValue domain = do
             builtinDomainValueVerifiers
             lookupSortDeclaration'
             domain'
-    let freeVariables =
-            Foldable.foldl' Set.union Set.empty
-                (Attribute.freeVariables . Internal.extractAttributes <$> verified)
-    Monad.unless (Set.null freeVariables)
+    let attrs = synthetic (Internal.extractAttributes <$> verified)
+        Attribute.Pattern { freeVariables } = attrs
+    Monad.unless (null freeVariables)
         (koreFail "Domain value must not contain free variables.")
-    return (Attribute.Pattern { patternSort, freeVariables } :< verified)
+    return (attrs :< verified)
 
 verifyStringLiteral
-    :: (base ~ Const StringLiteral, valid ~ Attribute.Pattern variable)
+    :: (base ~ Const StringLiteral, valid ~ Attribute.Pattern Variable)
     => StringLiteral
     -> PatternVerifier (CofreeF base valid Verified.Pattern)
 verifyStringLiteral str = do
-    let patternSort = stringMetaSort
-        freeVariables = Set.empty
-        verified = Const str
-    return (Attribute.Pattern { patternSort, freeVariables } :< verified)
+    let verified = Const str
+        attrs = synthetic (Internal.extractAttributes <$> verified)
+    return (attrs :< verified)
 
 verifyCharLiteral
-    :: (base ~ Const CharLiteral, valid ~ Attribute.Pattern variable)
+    :: (base ~ Const CharLiteral, valid ~ Attribute.Pattern Variable)
     => CharLiteral
     -> PatternVerifier (CofreeF base valid Verified.Pattern)
 verifyCharLiteral char = do
-    let patternSort = charMetaSort
-        freeVariables = Set.empty
-        verified = Const char
-    return (Attribute.Pattern { patternSort, freeVariables } :< verified)
+    let verified = Const char
+        attrs = synthetic (Internal.extractAttributes <$> verified)
+    return (attrs :< verified)
 
 verifyVariableDeclaration :: Variable -> PatternVerifier VerifySuccess
 verifyVariableDeclaration Variable { variableSort } = do

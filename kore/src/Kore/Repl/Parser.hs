@@ -114,13 +114,27 @@ loadScript :: Parser ReplCommand
 loadScript = LoadScript <$$> literal "load" *> quotedOrWordWithout ""
 
 showClaim :: Parser ReplCommand
-showClaim = ShowClaim <$$> literal "claim" *> optional parseClaimDecimal
+showClaim =
+    ShowClaim
+    <$$> literal "claim"
+    *> optional
+        (Left <$> parseClaimDecimal <|> Right <$> ruleNameParser)
 
 showAxiom :: Parser ReplCommand
-showAxiom = ShowAxiom . AxiomIndex <$$> literal "axiom" *> decimal
+showAxiom =
+    ShowAxiom
+    <$$> literal "axiom"
+    *> ( Left <$> parseAxiomDecimal
+        <|> Right <$> ruleNameParser
+       )
 
 prove :: Parser ReplCommand
-prove = Prove <$$> literal "prove" *> parseClaimDecimal
+prove =
+    Prove
+    <$$> literal "prove"
+    *> ( Left <$> parseClaimDecimal
+       <|> Right <$> ruleNameParser
+       )
 
 showGraph :: Parser ReplCommand
 showGraph = ShowGraph <$$> literal "graph" *> optional (quotedOrWordWithout "")
@@ -183,23 +197,30 @@ tryAxiomClaim :: Parser ReplCommand
 tryAxiomClaim =
     Try
     <$$> literal "try"
-    *> ( Left <$> axiomIndexParser
-        <|> Right <$> claimIndexParser
+    *> ( try (ByIndex <$> ruleIndexParser)
+        <|> ByName <$> ruleNameParser
        )
 
 tryForceAxiomClaim :: Parser ReplCommand
 tryForceAxiomClaim =
     TryF
     <$$> literal "tryf"
-    *> ( Left <$> axiomIndexParser
-        <|> Right <$> claimIndexParser
+    *> ( try (ByIndex <$> ruleIndexParser)
+        <|> ByName <$> ruleNameParser
        )
+
+ruleIndexParser :: Parser (Either AxiomIndex ClaimIndex)
+ruleIndexParser =
+    Left <$> axiomIndexParser <|> Right <$> claimIndexParser
 
 axiomIndexParser :: Parser AxiomIndex
 axiomIndexParser = AxiomIndex <$$> Char.string "a" *> decimal
 
 claimIndexParser :: Parser ClaimIndex
 claimIndexParser = ClaimIndex <$$> Char.string "c" *> decimal
+
+ruleNameParser :: Parser RuleName
+ruleNameParser = RuleName <$$> quotedOrWordWithout ""
 
 clear :: Parser ReplCommand
 clear = do
@@ -326,3 +347,6 @@ maybeWord = optional word
 
 parseClaimDecimal :: Parser ClaimIndex
 parseClaimDecimal = ClaimIndex <$> decimal
+
+parseAxiomDecimal :: Parser AxiomIndex
+parseAxiomDecimal = AxiomIndex <$> decimal

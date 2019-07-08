@@ -62,7 +62,7 @@ parseKoreDefinition
     :: FilePath  -- ^ Filename used for error messages
     -> String  -- ^ The concrete syntax of a valid Kore definition
     -> Either String ParsedDefinition
-parseKoreDefinition = parseOnly koreParser
+parseKoreDefinition = parseOnly (skipWhitespace *> koreParser)
 
 {- | Parse a string representing a Kore pattern.
 
@@ -74,4 +74,4 @@ parseKorePattern
     :: FilePath  -- ^ Filename used for error messages
     -> String  -- ^ The concrete syntax of a valid Kore pattern
     -> Either String ParsedPattern
-parseKorePattern = parseOnly korePatternParser
+parseKorePattern = parseOnly (skipWhitespace *> korePatternParser)

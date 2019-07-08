@@ -21,10 +21,9 @@ module Kore.Internal.Predicate
     , Conditional (..)
     ) where
 
-import           Data.Set
-                 ( Set )
-import qualified Data.Set as Set
 
+import           Kore.Attribute.Pattern.FreeVariables
+                 ( FreeVariables )
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
 import qualified Kore.Internal.Conditional as Conditional
@@ -43,7 +42,7 @@ eraseConditionalTerm
     -> Predicate variable
 eraseConditionalTerm = Conditional.withoutTerm
 
-top :: Ord variable => Predicate variable
+top :: (Ord variable, SortedVariable variable) => Predicate variable
 top =
     Conditional
         { term = ()
@@ -51,7 +50,7 @@ top =
         , substitution = mempty
         }
 
-bottom :: Ord variable => Predicate variable
+bottom :: (Ord variable, SortedVariable variable) => Predicate variable
 bottom =
     Conditional
         { term = ()
@@ -59,11 +58,11 @@ bottom =
         , substitution = mempty
         }
 
-topPredicate :: Ord variable => Predicate variable
+topPredicate :: (Ord variable, SortedVariable variable) => Predicate variable
 topPredicate = top
 
 bottomPredicate
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => Predicate variable
 bottomPredicate = bottom
 
@@ -79,8 +78,8 @@ freeVariables
        , SortedVariable variable
        )
     => Predicate variable
-    -> Set variable
-freeVariables = Conditional.freeVariables (const Set.empty)
+    -> FreeVariables variable
+freeVariables = Conditional.freeVariables (const mempty)
 
 {- | Transform a predicate and substitution into a predicate only.
 

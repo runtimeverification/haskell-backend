@@ -35,13 +35,11 @@ import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeAndPredicate,
                  makeEqualsPredicate, makeNotPredicate )
-import           Kore.Step.RecursiveAttributes
-                 ( isFunctionPattern )
 import qualified Kore.Step.Simplification.And as And
                  ( simplifyEvaluated )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
                  ( termEquals )
-import qualified Kore.Step.Simplification.Ceil as Ceil
+import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, makeEvaluateTerm )
 import           Kore.Step.Simplification.Data as Simplifier hiding
                  ( Equals )
@@ -171,8 +169,7 @@ simplifyEvaluated first second
   | first == second = return OrPattern.top
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
   | otherwise = do
-    tools <- Simplifier.askMetadataTools
-    let isFunctionConditional Conditional {term} = isFunctionPattern tools term
+    let isFunctionConditional Conditional {term} = isFunctionPattern term
     case (firstPatterns, secondPatterns) of
         ([firstP], [secondP]) -> makeEvaluate firstP secondP
         ([firstP], _)

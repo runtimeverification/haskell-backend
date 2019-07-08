@@ -10,6 +10,7 @@ module Kore.ModelChecker.Simplification
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Internal.Pattern as Pattern
@@ -24,9 +25,10 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 checkImplicationIsTop
-    :: Pattern Variable
+    :: MonadSimplify m
+    => Pattern Variable
     -> TermLike Variable
-    -> Simplifier Bool
+    -> m Bool
 checkImplicationIsTop lhs rhs =
     case stripForallQuantifiers rhs of
         ( forallQuantifiers, Implies_ _ implicationLHS implicationRHS ) -> do
@@ -53,7 +55,8 @@ checkImplicationIsTop lhs rhs =
              , Pretty.indent 4 (unparse rhs)
              ]
       where
-        lhsFreeVariables = Pattern.freeVariables lhs
+        lhsFreeVariables =
+            FreeVariables.getFreeVariables (Pattern.freeVariables lhs)
         lhsMLPatt = Pattern.toTermLike lhs
 
 stripForallQuantifiers

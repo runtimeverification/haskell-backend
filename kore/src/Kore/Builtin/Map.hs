@@ -199,7 +199,7 @@ expectBuiltinMap ctx (Builtin_ builtin) =
 expectBuiltinMap _ _ = empty
 
 returnMap
-    :: (MonadSimplify m, Ord variable)
+    :: (MonadSimplify m, Ord variable, SortedVariable variable)
     => Sort
     -> Map (TermLike Concrete) (TermLike variable)
     -> m (AttemptedAxiom variable)
@@ -342,7 +342,7 @@ evalKeys =
                         [_map] -> _map
                         _ -> Builtin.wrongArity lookupKey
             _map <- expectBuiltinMap lookupKey _map
-            Builtin.Set.returnSet resultSort (Map.keysSet _map)
+            Builtin.Set.returnConcreteSet resultSort (Map.keysSet _map)
 
 evalRemove :: Builtin.Function
 evalRemove =
@@ -384,7 +384,8 @@ evalRemoveAll =
                         else empty
                 bothConcrete = do
                     _map <- expectBuiltinMap removeAllKey _map
-                    _set <- Builtin.Set.expectBuiltinSet removeAllKey _set
+                    _set <-
+                        Builtin.Set.expectConcreteBuiltinSet removeAllKey _set
                     returnMap resultSort $ Map.withoutKeys _map _set
             emptyMap <|> bothConcrete
 
@@ -413,7 +414,7 @@ See also: 'sort'
 
  -}
 asInternal
-    :: Ord variable
+    :: (Ord variable, SortedVariable variable)
     => SmtMetadataTools Attribute.Symbol
     -> Sort
     -> Map (TermLike Concrete) (TermLike variable)
@@ -456,7 +457,7 @@ See also: 'asPattern'
 
  -}
 asPattern
-    ::  ( Ord variable
+    ::  ( Ord variable, SortedVariable variable
         , Given (SmtMetadataTools Attribute.Symbol)
         )
     => Sort

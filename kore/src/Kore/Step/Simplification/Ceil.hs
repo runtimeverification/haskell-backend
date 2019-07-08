@@ -17,13 +17,18 @@ module Kore.Step.Simplification.Ceil
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
+import qualified Data.List as List
 import qualified Data.Map as Map
+import           Data.Maybe
+                 ( fromMaybe )
+import qualified Data.Set as Set
 
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
                  ( isTotal )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
+import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiAnd as MultiAnd
                  ( make )
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -38,16 +43,17 @@ import           Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Logger
                  ( LogMessage, WithLog )
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeTruePredicate )
 import qualified Kore.Step.Function.Evaluator as Axiom
                  ( evaluatePattern )
-import           Kore.Step.RecursiveAttributes
-                 ( isTotalPattern )
 import qualified Kore.Step.Simplification.AndPredicates as And
 import           Kore.Step.Simplification.Data as Simplifier
+import qualified Kore.Step.Simplification.Equals as Equals
+import qualified Kore.Step.Simplification.Not as Not
 import           Kore.TopBottom
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -117,8 +123,8 @@ makeEvaluate
     => Pattern variable
     -> simplifier (OrPattern variable)
 makeEvaluate child
-  | Pattern.isTop    child = return (OrPattern.top)
-  | Pattern.isBottom child = return (OrPattern.bottom)
+  | Pattern.isTop    child = return OrPattern.top
+  | Pattern.isBottom child = return OrPattern.bottom
   | otherwise              = makeEvaluateNonBoolCeil child
 
 makeEvaluateNonBoolCeil
@@ -162,14 +168,13 @@ makeEvaluateTerm
         )
     => TermLike variable
     -> simplifier (OrPredicate variable)
-makeEvaluateTerm term@(Recursive.project -> _ :< projected) = do
-    tools <- Simplifier.askMetadataTools
-    makeEvaluateTermWorker tools
+makeEvaluateTerm term@(Recursive.project -> _ :< projected) =
+    makeEvaluateTermWorker
   where
-    makeEvaluateTermWorker tools
-      | isTop term                = return OrPredicate.top
-      | isBottom term             = return OrPredicate.bottom
-      | isTotalPattern tools term = return OrPredicate.top
+    makeEvaluateTermWorker
+      | isTop term            = return OrPredicate.top
+      | isBottom term         = return OrPredicate.bottom
+      | isDefinedPattern term = return OrPredicate.top
 
       | ApplySymbolF app <- projected
       , let Application { applicationSymbolOrAlias = patternHead } = app
@@ -246,9 +251,87 @@ makeEvaluateBuiltin (Domain.BuiltinList l) = do
         ceils :: [OrPredicate variable]
         ceils = children
     And.simplifyEvaluatedMultiPredicate (MultiAnd.make ceils)
-makeEvaluateBuiltin (Domain.BuiltinSet _) =
-    -- Sets assume that their elements are relatively functional.
-    return OrPredicate.top
+makeEvaluateBuiltin
+    patt@(Domain.BuiltinSet Domain.InternalSet
+        {builtinSetChild}
+    )
+  =
+    fromMaybe (return unsimplified) (makeEvaluateNormalizedSet builtinSetChild)
+  where
+    unsimplified =
+        OrPredicate.fromPredicate
+            (Predicate.fromPredicate
+                (makeCeilPredicate (mkBuiltin patt))
+            )
 makeEvaluateBuiltin (Domain.BuiltinBool _) = return OrPredicate.top
 makeEvaluateBuiltin (Domain.BuiltinInt _) = return OrPredicate.top
 makeEvaluateBuiltin (Domain.BuiltinString _) = return OrPredicate.top
+
+makeEvaluateNormalizedSet
+    :: forall variable simplifier
+    .   ( FreshVariable variable
+        , MonadSimplify simplifier
+        , Ord variable
+        , Show variable
+        , SortedVariable variable
+        , Unparse variable
+        )
+    => Domain.NormalizedSet (TermLike Concrete) (TermLike variable)
+    -> Maybe (simplifier (OrPredicate variable))
+makeEvaluateNormalizedSet
+    Domain.NormalizedSet
+        { elementsWithVariables
+        , concreteElements
+        , sets = []
+        }
+  = Just $ do
+    elementsWithVariablesCeils <-
+        mapM makeEvaluateTerm elementsWithVariables
+    let
+        concreteElementsList :: [TermLike variable]
+        concreteElementsList =
+            map TermLike.fromConcrete (Set.toList concreteElements)
+    elementsWithVariablesDistinct <-
+        evaluateDistinct elementsWithVariables concreteElementsList
+    let allConditions :: [OrPredicate variable]
+        allConditions =
+            elementsWithVariablesCeils
+            ++ elementsWithVariablesDistinct
+    And.simplifyEvaluatedMultiPredicate (MultiAnd.make allConditions)
+  where
+    evaluateDistinct
+        :: [TermLike variable]
+        -> [TermLike variable]
+        -> simplifier [OrPredicate variable]
+    evaluateDistinct [] _ = return []
+    evaluateDistinct (variableTerm : variableTerms) concreteTerms = do
+        equalities <-
+            mapM
+                (Equals.makeEvaluateTermsToPredicate variableTerm)
+                -- TODO(virgil): consider eliminating these repeated
+                -- concatenations.
+                (variableTerms ++ concreteTerms)
+        let negateEquality
+                :: OrPredicate variable -> Predicate.Predicate variable
+            negateEquality orPredicate =
+                mergeAnd
+                    (map
+                        Not.makeEvaluatePredicate
+                        (Foldable.toList orPredicate)
+                    )
+        let negations =
+                map (OrPredicate.fromPredicate . negateEquality) equalities
+        remainingConditions <- evaluateDistinct variableTerms concreteTerms
+        return (negations ++ remainingConditions)
+    mergeAnd :: [Predicate.Predicate variable] -> Predicate.Predicate variable
+    mergeAnd [] = Predicate.top
+    mergeAnd (predicate : predicates) =
+        List.foldl' Conditional.andCondition predicate predicates
+makeEvaluateNormalizedSet
+    Domain.NormalizedSet
+        { elementsWithVariables = []
+        , concreteElements
+        , sets = [set]
+        }
+    | Set.null concreteElements = Just $ makeEvaluateTerm set
+makeEvaluateNormalizedSet _ = Nothing

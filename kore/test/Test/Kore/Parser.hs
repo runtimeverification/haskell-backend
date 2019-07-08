@@ -102,7 +102,8 @@ parseSkipTest _ (Success test) =
         (assertBool "Not Expecting Success Tests here" False)
 parseSkipTest parser test = parseTest parser test
 
-parseSuccess :: (Show a, Eq a) => a -> Parser a -> String -> Assertion
+parseSuccess
+    :: (HasCallStack,Show a, Eq a) => a -> Parser a -> String -> Assertion
 parseSuccess expected parser input =
     assertEqual
         ""

@@ -5,6 +5,8 @@ License     : NCSA
 
 -}
 
+{-# LANGUAGE TemplateHaskell #-}
+
 module Kore.Step.Rule
     ( EqualityRule (..)
     , RewriteRule (..)
@@ -12,6 +14,9 @@ module Kore.Step.Rule
     , AllPathRule (..)
     , ImplicationRule (..)
     , RulePattern (..)
+    , lensLeft, lensRight
+    , lensRequires, lensEnsures
+    , lensAttributes
     , allPathGlobally
     , rulePattern
     , isHeatingRule
@@ -29,6 +34,7 @@ module Kore.Step.Rule
     , mkEqualityAxiom
     , mkCeilAxiom
     , refreshRulePattern
+    , onePathRuleToPattern
     , Kore.Step.Rule.freeVariables
     , Kore.Step.Rule.mapVariables
     , Kore.Step.Rule.substitute
@@ -38,19 +44,22 @@ import qualified Data.Default as Default
 import           Data.Map.Strict
                  ( Map )
 import           Data.Maybe
-import           Data.Set
-                 ( Set )
-import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 import           Data.Text.Prettyprint.Doc
                  ( Pretty )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import           Control.Lens.TH.Rules
+                 ( makeLenses )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
+import           Kore.Attribute.Pattern.FreeVariables
+                 ( FreeVariables )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
+import           Kore.Internal.ApplicationSorts
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate )
@@ -73,6 +82,8 @@ data RulePattern variable = RulePattern
     , ensures :: !(Predicate variable)
     , attributes :: !Attribute.Axiom
     }
+
+makeLenses ''RulePattern
 
 deriving instance Eq variable => Eq (RulePattern variable)
 deriving instance Ord variable => Ord (RulePattern variable)
@@ -97,7 +108,8 @@ instance
         RulePattern { left, right, requires, ensures } = rulePattern'
 
 rulePattern
-    :: TermLike variable
+    :: (Ord variable, SortedVariable variable)
+    => TermLike variable
     -> TermLike variable
     -> RulePattern variable
 rulePattern left right =
@@ -149,6 +161,15 @@ deriving instance Eq variable => Eq (ImplicationRule variable)
 deriving instance Ord variable => Ord (ImplicationRule variable)
 deriving instance Show variable => Show (ImplicationRule variable)
 
+instance
+    (Ord variable, SortedVariable variable, Unparse variable)
+    => Unparse (ImplicationRule variable)
+  where
+    unparse (ImplicationRule RulePattern { left, right } ) =
+        unparse $ mkImplies left right
+    unparse2 (ImplicationRule RulePattern { left, right } ) =
+        unparse2 $ mkImplies left right
+
 -- | modalities
 weakExistsFinally :: Text
 weakExistsFinally = "weakExistsFinally"
@@ -177,6 +198,13 @@ newtype OnePathRule variable =
 deriving instance Eq variable => Eq (OnePathRule variable)
 deriving instance Ord variable => Ord (OnePathRule variable)
 deriving instance Show variable => Show (OnePathRule variable)
+
+instance
+    (Ord variable, SortedVariable variable, Unparse variable)
+    => Unparse (OnePathRule variable)
+  where
+    unparse = unparse . onePathRuleToPattern
+    unparse2 = unparse2 . onePathRuleToPattern
 
 {-  | All-Path-Claim rule pattern.
 -}
@@ -328,6 +356,41 @@ fromSentenceAxiom sentenceAxiom = do
             (Syntax.sentenceAxiomAttributes sentenceAxiom)
     patternToAxiomPattern attributes (Syntax.sentenceAxiomPattern sentenceAxiom)
 
+onePathRuleToPattern
+    :: Ord variable
+    => SortedVariable variable
+    => Unparse variable
+    => OnePathRule variable
+    -> TermLike variable
+onePathRuleToPattern (OnePathRule rulePatt) =
+    mkImplies
+        ( mkAnd
+            (Predicate.unwrapPredicate . requires $ rulePatt)
+            (left rulePatt)
+        )
+       ( mkApplyAlias
+            wEF
+            [( mkAnd
+                (Predicate.unwrapPredicate . ensures $ rulePatt)
+                (right rulePatt)
+            )]
+       )
+  where
+    wEF :: Alias
+    wEF = Alias
+        { aliasConstructor = Id
+            { getId = weakExistsFinally
+            , idLocation = AstLocationNone
+            }
+        , aliasParams = []
+        , aliasSorts = ApplicationSorts
+            { applicationSortsOperands = [sort]
+            , applicationSortsResult = sort
+            }
+        }
+    sort :: Sort
+    sort = termLikeSort . right $ rulePatt
+
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 
 @patternToAxiomPattern@ returns an error if the given 'CommonPattern' does
@@ -474,10 +537,10 @@ refreshRulePattern
     .   ( FreshVariable variable
         , SortedVariable variable
         )
-    => Set variable  -- ^ Variables to avoid
+    => FreeVariables variable  -- ^ Variables to avoid
     -> RulePattern variable
     -> (Map variable variable, RulePattern variable)
-refreshRulePattern avoid rule1 =
+refreshRulePattern (FreeVariables.getFreeVariables -> avoid) rule1 =
     let rename = refreshVariables avoid originalFreeVariables
         subst = mkVar <$> rename
         left' = TermLike.substitute subst left
@@ -492,20 +555,20 @@ refreshRulePattern avoid rule1 =
     in (rename, rule2)
   where
     RulePattern { left, right, requires } = rule1
-    originalFreeVariables = Kore.Step.Rule.freeVariables rule1
+    originalFreeVariables =
+        FreeVariables.getFreeVariables
+        $ Kore.Step.Rule.freeVariables rule1
 
 {- | Extract the free variables of a 'RulePattern'.
  -}
 freeVariables
     :: Ord variable
     => RulePattern variable
-    -> Set variable
+    -> FreeVariables variable
 freeVariables RulePattern { left, right, requires } =
-    Set.unions
-        [ TermLike.freeVariables left
-        , TermLike.freeVariables right
-        , Predicate.freeVariables requires
-        ]
+    TermLike.freeVariables left
+    <> TermLike.freeVariables right
+    <> Predicate.freeVariables requires
 
 {- | Apply the given function to all variables in a 'RulePattern'.
  -}

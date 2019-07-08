@@ -242,7 +242,8 @@ verifyHookSentence
             verifySymbolHookAttribute
                 attributesVerification
                 sentenceSymbolAttributes
-        Builtin.runSymbolVerifier (Builtin.symbolVerifier builtinVerifiers hook) findSort sentence
+        Builtin.runSymbolVerifier
+            (Builtin.symbolVerifier builtinVerifiers hook) findSort sentence
         return verified
 
     findSort = findIndexedSort indexedModule

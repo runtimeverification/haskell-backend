@@ -181,7 +181,7 @@ test_parse =
         , testProperty "Object SortVariable" $
             roundtrip sortVariableGen sortVariableParser
         , testProperty "Object Sort" $
-            roundtrip (standaloneGen sortGen) sortParser
+            roundtrip (standaloneGen sortGen) objectSortParser
         , testProperty "ParsedPattern" $
             roundtrip korePatternGen korePatternParser
         , testProperty "Attributes" $

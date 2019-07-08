@@ -9,8 +9,7 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.IndexedModule.MetadataTools
-    ( HeadType (..)
-    , MetadataTools (..)
+    ( MetadataTools (..)
     , SmtMetadataTools
     , extractMetadataTools
     ) where
@@ -46,6 +45,8 @@ data MetadataTools smt attributes = MetadataTools
     -- ^ get the subsorts for a sort
     , applicationSorts :: SymbolOrAlias -> ApplicationSorts
     -- ^ Sorts for a specific symbol application.
+    , symbolAttributes :: Id -> attributes
+    -- ^ get the attributes of a symbol
     , smtData :: smt
     -- ^ The SMT data for the given module.
     }
@@ -72,6 +73,7 @@ extractMetadataTools m smtExtractor =
         , isSubsortOf = checkSubsort
         , subsorts = Set.fromList . fmap getSortFromId . getSubsorts
         , applicationSorts = getHeadApplicationSorts m
+        , symbolAttributes = getSymbolAttributes m
         , smtData = smtExtractor m
         }
   where

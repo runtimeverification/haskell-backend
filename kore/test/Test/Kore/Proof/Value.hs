@@ -218,7 +218,6 @@ tools =
         []
         []
         []
-        []
         Mock.emptySmtDeclarations
 
 assertValue :: GHC.HasCallStack => TermLike Variable -> Assertion

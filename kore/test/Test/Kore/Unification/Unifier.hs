@@ -1,6 +1,7 @@
 module Test.Kore.Unification.Unifier
     ( test_unification
     , test_unsupportedConstructs
+    , test_evaluated
     ) where
 
 import Test.Tasty
@@ -10,33 +11,23 @@ import Test.Tasty.HUnit.Extensions
 
 import           Control.Exception
                  ( ErrorCall (ErrorCall), catch, evaluate )
-import qualified Control.Lens as Lens
 import qualified Data.Bifunctor as Bifunctor
-import           Data.Function
 import           Data.List.NonEmpty
                  ( NonEmpty ((:|)) )
 import qualified Data.Map as Map
-import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.IndexedModule.MetadataTools hiding
-                 ( HeadType (..) )
-import           Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike hiding
                  ( V )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Simplification.Data
-                 ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Simplification.Data
-                 ( Env (..), evalSimplifier )
+                 ( BuiltinAndAxiomSimplifierMap, Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Unification.Error
 import           Kore.Unification.Procedure
@@ -49,34 +40,9 @@ import           SMT
 import qualified SMT
 
 import           Test.Kore
-import           Test.Kore.ASTVerifier.DefinitionVerifier
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
-
-inj :: Sort -> TermLike Variable -> TermLike Variable
-inj toSort termLike =
-    mkApplySymbol (injSymbol fromSort toSort) [termLike]
-  where
-    fromSort = termLikeSort termLike
-
-s1, s2, s3, s4 :: Sort
-s1 = simpleSort (SortName "s1")
-s2 = simpleSort (SortName "s2")
-s3 = simpleSort (SortName "s3")
-s4 = simpleSort (SortName "s4")
-
-symbol :: Text -> Sort -> [Sort] -> Symbol
-symbol name resultSort operandSorts =
-    Symbol
-        { symbolConstructor = testId name
-        , symbolParams = []
-        , symbolAttributes = Attribute.defaultSymbolAttributes
-        , symbolSorts =
-            Kore.Internal.ApplicationSorts.applicationSorts
-                operandSorts
-                resultSort
-        }
 
 var :: Text -> Sort -> Variable
 var name variableSort =
@@ -86,123 +52,72 @@ var name variableSort =
         , variableCounter = mempty
         }
 
-a1Symbol, a2Symbol, a3Symbol, a4Symbol, a5Symbol :: Symbol
-a1Symbol = symbol "a1" s1 [] & constructor & functional & injective
-a2Symbol = symbol "a2" s1 [] & functional
-a3Symbol = symbol "a3" s1 [] & constructor & injective
-a4Symbol = symbol "a4" s1 [] & functional & injective
-a5Symbol = symbol "a5" s1 [] & function
-
 a1, a2, a3, a4, a5 :: TermLike Variable
-a1 = mkApplySymbol a1Symbol []
-a2 = mkApplySymbol a2Symbol []
-a3 = mkApplySymbol a3Symbol []
-a4 = mkApplySymbol a4Symbol []
-a5 = mkApplySymbol a5Symbol []
+a1 = Mock.c
+a2 = Mock.functional00
+a3 = Mock.constr00
+a4 = Mock.functionalInjective00
+a5 = Mock.cf
 
-aSymbol, bSymbol, fSymbol :: Symbol
-aSymbol = symbol "a" s1 []   & constructor & functional & injective
-bSymbol = symbol "b" s2 []   & constructor & functional & injective
-fSymbol = symbol "f" s2 [s1] & constructor & functional & injective
-
-a, b :: TermLike Variable
-a = mkApplySymbol aSymbol []
-b = mkApplySymbol bSymbol []
+a :: TermLike Variable
+a = Mock.a
 
 f :: TermLike Variable -> TermLike Variable
-f x' = mkApplySymbol fSymbol [x']
-
-efSymbol, egSymbol, ehSymbol :: Symbol
-efSymbol = symbol "ef" s1 [s1, s1, s1] & constructor & functional & injective
-egSymbol = symbol "eg" s1 [s1]         & constructor & functional & injective
-ehSymbol = symbol "eh" s1 [s1]         & constructor & functional & injective
+f = Mock.constr10
 
 ef
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
-ef x' y' z' = mkApplySymbol efSymbol [x', y', z']
+ef = Mock.functionalConstr30
 
 eg, eh :: TermLike Variable -> TermLike Variable
-eg x' = mkApplySymbol egSymbol [x']
-eh x' = mkApplySymbol ehSymbol [x']
-
-nonLinFSymbol, nonLinGSymbol, nonLinASymbol :: Symbol
-nonLinFSymbol =
-    symbol "nonLinF" s1 [s1, s1] & constructor & functional & injective
-nonLinGSymbol =
-    symbol "nonLinG" s1 [s1] & constructor & functional & injective
-nonLinASymbol =
-    symbol "nonLinA" s1 [] & constructor & functional & injective
+eg = Mock.functionalConstr10
+eh = Mock.functionalConstr11
 
 nonLinF :: TermLike Variable -> TermLike Variable -> TermLike Variable
-nonLinF x' y' = mkApplySymbol nonLinFSymbol [x', y']
+nonLinF = Mock.functionalConstr20
 
 nonLinG :: TermLike Variable -> TermLike Variable
-nonLinG x' = mkApplySymbol nonLinGSymbol [x']
+nonLinG = Mock.functionalConstr12
 
 nonLinA, nonLinX, nonLinY :: TermLike Variable
-nonLinA = mkApplySymbol nonLinASymbol []
-nonLinX = mkVar $ var "x" s1
-nonLinY = mkVar $ var "y" s1
-
-expBinSymbol :: Symbol
-expBinSymbol = symbol "times" s1 [s1, s1] & constructor & functional & injective
+nonLinA = Mock.d
+nonLinX = mkVar Mock.x
+nonLinY = mkVar Mock.y
 
 expBin :: TermLike Variable -> TermLike Variable -> TermLike Variable
-expBin x' y' = mkApplySymbol expBinSymbol [x', y']
+expBin = Mock.functionalConstr21
 
 expA, expX, expY :: TermLike Variable
-expA = mkVar $ var "a" s1
-expX = mkVar $ var "x" s1
-expY = mkVar $ var "y" s1
+expA = mkVar $ var "a" Mock.testSort
+expX = mkVar $ var "x" Mock.testSort
+expY = mkVar $ var "y" Mock.testSort
 
 ex1, ex2, ex3, ex4 :: TermLike Variable
-ex1 = mkVar $ var "ex1" s1
-ex2 = mkVar $ var "ex2" s1
-ex3 = mkVar $ var "ex3" s1
-ex4 = mkVar $ var "ex4" s1
+ex1 = mkVar $ var "ex1" Mock.testSort
+ex2 = mkVar $ var "ex2" Mock.testSort
+ex3 = mkVar $ var "ex3" Mock.testSort
+ex4 = mkVar $ var "ex4" Mock.testSort
 
 
 dv1, dv2 :: TermLike Variable
 dv1 =
     mkDomainValue DomainValue
-        { domainValueSort = s1
+        { domainValueSort = Mock.testSort
         , domainValueChild = mkStringLiteral "dv1"
         }
 dv2 =
     mkDomainValue DomainValue
-        { domainValueSort = s1
+        { domainValueSort = Mock.testSort
         , domainValueChild = mkStringLiteral "dv2"
         }
-
-x :: TermLike Variable
-x = mkVar $ var "x" s1
-
-xs2 :: TermLike Variable
-xs2 = mkVar $ var "xs2" s2
-
-injSymbol :: Sort -> Sort -> Symbol
-injSymbol fromSort toSort =
-    symbol "inj" toSort [fromSort]
-    & Lens.set lensSymbolParams [fromSort, toSort]
-    & functional & injective & sortInjection
-
-tools :: SmtMetadataTools Attribute.Symbol
-tools = MetadataTools
-    { sortAttributes = undefined
-    , isSubsortOf = const $ const False
-    , subsorts = Set.singleton
-    , applicationSorts = undefined
-    , smtData = undefined
-    }
 
 testEnv :: Env
 testEnv =
     Mock.env
-        { metadataTools = tools
-        , simplifierPredicate = Mock.substitutionSimplifier
+        { simplifierPredicate = Mock.substitutionSimplifier
         }
 
 unificationProblem
@@ -374,7 +289,7 @@ test_unification =
             ]
     , testCase "Variable" $
         andSimplifySuccess
-            (UnificationTerm x)
+            (UnificationTerm (mkVar Mock.x))
             (UnificationTerm a)
             [ UnificationResult
                 { term = a
@@ -384,7 +299,7 @@ test_unification =
             ]
     , testCase "one level" $
         andSimplifySuccess
-            (UnificationTerm (f x))
+            (UnificationTerm (f (mkVar Mock.x)))
             (UnificationTerm (f a))
             [ UnificationResult
                 { term = f a
@@ -405,7 +320,7 @@ test_unification =
     , testCase "variable + non-constructor pattern" $
         andSimplifySuccess
             (UnificationTerm a2)
-            (UnificationTerm x)
+            (UnificationTerm (mkVar Mock.x))
             [ UnificationResult
                 { term = a2
                 , substitution = [("x", a2)]
@@ -440,7 +355,7 @@ test_unification =
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]
-    , testCase "times(times(a, y), x) = times(x, times(y, a))" $
+    , testCase "times(times(a, y), (mkVar Mock.x)) = times(x, times(y, a))" $
         andSimplifySuccess
             (UnificationTerm (expBin (expBin expA expY) expX))
             (UnificationTerm (expBin expX (expBin expY expA)))
@@ -459,7 +374,7 @@ test_unification =
         (UnificationTerm (expBin expA expA))
         []
     , unificationProcedureSuccess
-        "times(times(a, y), x) = times(x, times(y, a))"
+        "times(times(a, y), (mkVar Mock.x)) = times(x, times(y, a))"
         (UnificationTerm (expBin (expBin expA expY) expX))
         (UnificationTerm (expBin expX (expBin expY expA)))
         [   (   [ ("a", expY)
@@ -475,7 +390,7 @@ test_unification =
         [ ([], makeEqualsPredicate a2 a4) ]
     , unificationProcedureSuccess
         "Unifying function and variable results in ceil predicate"
-        (UnificationTerm x)
+        (UnificationTerm (mkVar Mock.x))
         (UnificationTerm a5)
         [   ( [("x", a5)]
             , Syntax.Predicate.makeCeilPredicate a5
@@ -496,12 +411,12 @@ test_unification =
         (UnificationTerm a)
         (UnificationTerm dv2)
         "Cannot handle Constructor and DomainValue:\n\
-        \a{}()\n\\dv{s1{}}(\"dv2\")\n"
+        \a{}()\n\\dv{testSort{}}(\"dv2\")\n"
     , andSimplifyException "Unmatching domain value + constructor constant"
         (UnificationTerm dv1)
         (UnificationTerm a)
         "Cannot handle DomainValue and Constructor:\n\
-        \\\dv{s1{}}(\"dv1\")\na{}()\n"
+        \\\dv{testSort{}}(\"dv1\")\na{}()\n"
     , testCase "Unmatching domain value + nonconstructor constant" $
         andSimplifySuccess
             (UnificationTerm dv1)
@@ -524,9 +439,9 @@ test_unification =
             ]
     , testCase "non-functional pattern" $
         andSimplifyFailure
-            (UnificationTerm x)
+            (UnificationTerm (mkVar Mock.x))
             (UnificationTerm a3)
-            (unsupportedPatterns "Unknown unification case."  x a3)
+            (unsupportedPatterns "Unknown unification case."  (mkVar Mock.x) a3)
     , testCase "non-constructor symbolHead right" $
         andSimplifySuccess
             (UnificationTerm a)
@@ -568,6 +483,29 @@ test_unification =
             )
         )
 
+    ]
+
+test_evaluated :: [TestTree]
+test_evaluated =
+    [ testCase "variable and functional term" $ do
+        let evaluated = mkEvaluated a2
+        andSimplifySuccess
+            (UnificationTerm (mkVar Mock.x))
+            (UnificationTerm evaluated)
+            [ UnificationResult
+                { term = evaluated
+                , substitution = [("x", evaluated)]
+                , predicate = Syntax.Predicate.makeTruePredicate
+                }
+            ]
+    , unificationProcedureSuccess
+        "variable and non-functional term"
+        (UnificationTerm (mkVar Mock.x))
+        (UnificationTerm (mkEvaluated a5))
+        [   ( [("x", mkEvaluated a5)]
+            , Syntax.Predicate.makeCeilPredicate (mkEvaluated a5)
+            )
+        ]
     ]
 
 test_unsupportedConstructs :: TestTree
@@ -622,81 +560,119 @@ injUnificationTests :: [TestTree]
 injUnificationTests =
     [ testCase "Injected Variable" $
         andSimplifySuccess
-            (UnificationTerm (inj s2 x))
-            (UnificationTerm (inj s2 a))
+            (UnificationTerm (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort)))
+            (UnificationTerm (Mock.sortInjectionSubToTop Mock.aSubsort))
             [ UnificationResult
-                { term = inj s2 a
-                , substitution = [("x", a)]
+                { term = Mock.sortInjectionSubToTop Mock.aSubsort
+                , substitution = [("xSubSort", Mock.aSubsort)]
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]
     , testCase "Variable" $
         andSimplifySuccess
-            (UnificationTerm xs2)
-            (UnificationTerm (inj s2 a))
+            (UnificationTerm (mkVar Mock.xTopSort))
+            (UnificationTerm (Mock.sortInjectionSubToTop Mock.aSubsort))
             [ UnificationResult
-                { term = inj s2 a
-                , substitution = [("xs2", inj s2 a)]
+                { term = Mock.sortInjectionSubToTop Mock.aSubsort
+                , substitution =
+                    [("xTopSort", Mock.sortInjectionSubToTop Mock.aSubsort)]
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]
     , testCase "Injected Variable vs doubly injected term" $ do
         term2 <-
             simplifyPattern
-            $ UnificationTerm (inj s2 (inj s3 a))
+            $ UnificationTerm
+                (Mock.sortInjectionSubToTop
+                    (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
+                )
         andSimplifySuccess
-            (UnificationTerm (inj s2 x))
+            (UnificationTerm
+                (Mock.sortInjectionSubSubToTop (mkVar Mock.xSubSubSort))
+            )
             term2
             [ UnificationResult
-                { term = inj s2 a
-                , substitution = [("x", a)]
+                { term = Mock.sortInjectionSubSubToTop Mock.aSubSubsort
+                , substitution = [("xSubSubSort", Mock.aSubSubsort)]
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]
     , testCase "doubly injected variable vs injected term" $ do
-        term1 <- simplifyPattern $ UnificationTerm (inj s2 (inj s3 x))
+        term1 <- simplifyPattern $ UnificationTerm
+            (Mock.sortInjectionSubToTop
+                (Mock.sortInjectionSubSubToSub (mkVar Mock.xSubSubSort))
+            )
         andSimplifySuccess
             term1
-            (UnificationTerm (inj s2 a))
+            (UnificationTerm (Mock.sortInjectionSubSubToTop Mock.aSubSubsort))
             [ UnificationResult
-                { term = inj s2 a
-                , substitution = [("x", a)]
+                { term = Mock.sortInjectionSubSubToTop Mock.aSubSubsort
+                , substitution = [("xSubSubSort", Mock.aSubSubsort)]
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]
     , testCase "doubly injected variable vs doubly injected term" $ do
-        term1 <- simplifyPattern $ UnificationTerm (inj s2 (inj s4 x))
-        term2 <- simplifyPattern $ UnificationTerm (inj s2 (inj s3 a))
+        term1 <- simplifyPattern $ UnificationTerm
+            (Mock.sortInjectionSubToTop
+                (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
+            )
+        term2 <- simplifyPattern $ UnificationTerm
+            (Mock.sortInjectionOtherToTop
+                (Mock.sortInjectionSubSubToOther (mkVar Mock.xSubSubSort))
+            )
         andSimplifySuccess
             term1
             term2
             [ UnificationResult
-                { term = inj s2 a
-                , substitution = [("x", a)]
+                { term = Mock.sortInjectionSubSubToTop Mock.aSubSubsort
+                , substitution = [("xSubSubSort", Mock.aSubSubsort)]
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]
     , testCase "constant vs injection is bottom" $
         andSimplifySuccess
-            (UnificationTerm a)
-            (UnificationTerm (inj s1 xs2))
+            (UnificationTerm Mock.aTopSort)
+            (UnificationTerm (Mock.sortInjectionSubSubToTop Mock.aSubSubsort))
             []
     , testCase "unmatching nested injections" $ do
         term1 <-
             simplifyPattern
-            $ UnificationTerm (inj s4 (inj s2 a))
+            $ UnificationTerm
+                (Mock.sortInjectionSubToTop
+                    (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
+                )
         term2 <-
             simplifyPattern
-            $ UnificationTerm (inj s4 (inj s3 b))
+            $ UnificationTerm
+                (Mock.sortInjectionOtherToTop
+                    (Mock.sortInjectionSubOtherToOther Mock.aSubOthersort)
+                )
         andSimplifySuccess
             term1
             term2
             []
+    , testCase "matching injections" $
+        andSimplifySuccess
+            (UnificationTerm (Mock.sortInjectionSubSubToTop Mock.aSubSubsort))
+            (UnificationTerm (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort)))
+            [ UnificationResult
+                { term =
+                    -- TODO (virgil): Fix this in unification, injection
+                    -- composition should be reduced to one injection.
+                    Mock.sortInjectionSubToTop
+                        (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
+                , substitution =
+                    [   ( "xSubSort"
+                        , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
+                        )
+                    ]
+                , predicate = Syntax.Predicate.makeTruePredicate
+                }
+            ]
     , testCase "unmatching injections" $
         andSimplifySuccess
-            -- TODO(traiansf): this should succeed if s1 < s2 < s3
-            (UnificationTerm (inj s3 a))
-            (UnificationTerm (inj s3 xs2))
+            (UnificationTerm (Mock.sortInjectionOtherToTop Mock.aOtherSort))
+            (UnificationTerm (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort)))
             []
     ]
 

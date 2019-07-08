@@ -43,9 +43,7 @@ import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
-                 ( HeadType, SmtMetadataTools )
-import qualified Kore.IndexedModule.MetadataTools as HeadType
-                 ( HeadType (..) )
+                 ( SmtMetadataTools )
 import           Kore.Internal.ApplicationSorts
                  ( ApplicationSorts )
 import           Kore.Internal.Symbol
@@ -78,6 +76,8 @@ aSort1Id :: Id
 aSort1Id = testId "aSort1"
 aSubsortId :: Id
 aSubsortId = testId "aSubsort"
+aSubOthersortId :: Id
+aSubOthersortId = testId "aSubOthersort"
 aSubSubsortId :: Id
 aSubSubsortId = testId "aSubSubsort"
 aTopSortId :: Id
@@ -112,6 +112,8 @@ cgSort0Id :: Id
 cgSort0Id = testId "cgSort0"
 chId :: Id
 chId = testId "ch"
+fSetId :: Id
+fSetId = testId "fSet"
 plain00Id :: Id
 plain00Id = testId "plain00"
 plain00Sort0Id :: Id
@@ -126,6 +128,8 @@ plain11Id :: Id
 plain11Id = testId "plain11"
 plain20Id :: Id
 plain20Id = testId "plain20"
+constr00Id :: Id
+constr00Id = testId "constr00"
 constr10Id :: Id
 constr10Id = testId "constr10"
 constr11Id :: Id
@@ -146,6 +150,8 @@ functional20Id :: Id
 functional20Id = testId "functional20"
 functional00SubSubSortId :: Id
 functional00SubSubSortId = testId "functional00SubSubSort"
+functionalInjective00Id :: Id
+functionalInjective00Id = testId "functionalInjective00"
 functionalConstr10Id :: Id
 functionalConstr10Id = testId "functionalConstr10"
 functionalConstr11Id :: Id
@@ -154,6 +160,8 @@ functionalConstr12Id :: Id
 functionalConstr12Id = testId "functionalConstr12"
 functionalConstr20Id :: Id
 functionalConstr20Id = testId "functionalConstr20"
+functionalConstr21Id :: Id
+functionalConstr21Id = testId "functionalConstr21"
 functionalConstr30Id :: Id
 functionalConstr30Id = testId "functionalConstr30"
 functionalTopConstr20Id :: Id
@@ -214,6 +222,10 @@ aSort1Symbol = symbol aSort1Id [] testSort1 & functional & constructor
 aSubsortSymbol :: Symbol
 aSubsortSymbol = symbol aSubsortId [] subSort & functional & constructor
 
+aSubOthersortSymbol :: Symbol
+aSubOthersortSymbol =
+    symbol aSubOthersortId [] subOthersort & functional & constructor
+
 aSubSubsortSymbol :: Symbol
 aSubSubsortSymbol =
     symbol aSubSubsortId [] subSubsort & functional & constructor
@@ -266,6 +278,9 @@ cgSort0Symbol = symbol cgSort0Id [] testSort0 & function
 chSymbol :: Symbol
 chSymbol = symbol chId [] testSort & function
 
+fSetSymbol :: Symbol
+fSetSymbol = symbol fSetId [setSort] setSort & function
+
 plain00Symbol :: Symbol
 plain00Symbol = symbol plain00Id [] testSort
 
@@ -286,6 +301,9 @@ plain11Symbol = symbol plain11Id [testSort] testSort
 
 plain20Symbol :: Symbol
 plain20Symbol = symbol plain20Id [testSort, testSort] testSort
+
+constr00Symbol :: Symbol
+constr00Symbol = symbol constr00Id [] testSort & constructor
 
 constr10Symbol :: Symbol
 constr10Symbol = symbol constr10Id [testSort] testSort & constructor
@@ -320,6 +338,10 @@ functional00SubSubSortSymbol :: Symbol
 functional00SubSubSortSymbol =
     symbol functional00SubSubSortId [] subSubsort & functional
 
+functionalInjective00Symbol :: Symbol
+functionalInjective00Symbol =
+    symbol functionalInjective00Id [] testSort & functional & injective
+
 functionalConstr10Symbol :: Symbol
 functionalConstr10Symbol =
     symbol functionalConstr10Id [testSort] testSort & functional & constructor
@@ -335,6 +357,11 @@ functionalConstr12Symbol =
 functionalConstr20Symbol :: Symbol
 functionalConstr20Symbol =
     symbol functionalConstr20Id [testSort, testSort] testSort
+    & functional & constructor
+
+functionalConstr21Symbol :: Symbol
+functionalConstr21Symbol =
+    symbol functionalConstr21Id [testSort, testSort] testSort
     & functional & constructor
 
 functionalConstr30Symbol :: Symbol
@@ -383,6 +410,12 @@ sortInjectionSubSubToTopSymbol = sortInjectionSymbol subSubsort topSort
 
 sortInjectionSubSubToSubSymbol :: Symbol
 sortInjectionSubSubToSubSymbol = sortInjectionSymbol subSubsort subSort
+
+sortInjectionSubSubToOtherSymbol :: Symbol
+sortInjectionSubSubToOtherSymbol = sortInjectionSymbol subSubsort otherSort
+
+sortInjectionSubOtherToOtherSymbol :: Symbol
+sortInjectionSubOtherToOtherSymbol = sortInjectionSymbol subOthersort otherSort
 
 sortInjectionOtherToTopSymbol :: Symbol
 sortInjectionOtherToTopSymbol = sortInjectionSymbol otherSort topSort
@@ -459,6 +492,8 @@ var_z_1 :: Variable
 var_z_1 = Variable (testId "z") (Just (Element 1)) testSort
 x :: Variable
 x = Variable (testId "x") mempty testSort
+x0 :: Variable
+x0 = Variable (testId "x") mempty testSort0
 y :: Variable
 y = Variable (testId "y") mempty testSort
 z :: Variable
@@ -467,10 +502,24 @@ m :: Variable
 m = Variable (testId "m") mempty mapSort
 xSet :: Variable
 xSet = Variable (testId "xSet") mempty setSort
+ySet :: Variable
+ySet = Variable (testId "ySet") mempty setSort
 xInt :: Variable
 xInt = Variable (testId "xInt") mempty intSort
+yInt :: Variable
+yInt = Variable (testId "yInt") mempty intSort
+xBool :: Variable
+xBool = Variable (testId "xBool") mempty boolSort
+xString :: Variable
+xString = Variable (testId "xString") mempty stringSort
+xList :: Variable
+xList = Variable (testId "xList") mempty listSort
+xMap :: Variable
+xMap = Variable (testId "xMap") mempty mapSort
 xSubSort :: Variable
 xSubSort = Variable (testId "xSubSort") mempty subSort
+xSubSubSort :: Variable
+xSubSubSort = Variable (testId "xSubSubSort") mempty subSubsort
 xTopSort :: Variable
 xTopSort = Variable (testId "xTopSort") mempty topSort
 
@@ -489,7 +538,14 @@ aSort1 = Internal.mkApplySymbol aSort1Symbol []
 aSubsort :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
 aSubsort = Internal.mkApplySymbol aSubsortSymbol []
 
-aSubSubsort :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+aSubOthersort
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
+aSubOthersort = Internal.mkApplySymbol aSubOthersortSymbol []
+
+aSubSubsort
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 aSubSubsort = Internal.mkApplySymbol aSubSubsortSymbol []
 
 aTopSort :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
@@ -543,6 +599,13 @@ cgSort0 = Internal.mkApplySymbol cgSort0Symbol []
 ch :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
 ch = Internal.mkApplySymbol chSymbol []
 
+fSet
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+fSet arg = Internal.mkApplySymbol fSetSymbol [arg]
+
 plain00 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
 plain00 = Internal.mkApplySymbol plain00Symbol []
 
@@ -570,6 +633,12 @@ plain20
     -> TermLike variable
 plain20 arg1 arg2 = Internal.mkApplySymbol plain20Symbol [arg1, arg2]
 
+constr00
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
+    => TermLike variable
+constr00 = Internal.mkApplySymbol constr00Symbol []
+
 constr10, constr11
     :: (Ord variable, SortedVariable variable, Unparse variable)
     => GHC.HasCallStack
@@ -594,10 +663,14 @@ function20MapTest
 function20MapTest arg1 arg2 =
     Internal.mkApplySymbol function20MapTestSymbol [arg1, arg2]
 
-functional00 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+functional00
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 functional00 = Internal.mkApplySymbol functional00Symbol []
 
-functional01 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+functional01
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 functional01 = Internal.mkApplySymbol functional01Symbol []
 
 functional10
@@ -621,9 +694,18 @@ functional20
     -> TermLike variable
 functional20 arg1 arg2 = Internal.mkApplySymbol functional20Symbol [arg1, arg2]
 
-functional00SubSubSort :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+functional00SubSubSort
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 functional00SubSubSort =
     Internal.mkApplySymbol functional00SubSubSortSymbol []
+
+functionalInjective00
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
+    => TermLike variable
+functionalInjective00 =
+    Internal.mkApplySymbol functionalInjective00Symbol []
 
 functionalConstr10
     :: (Ord variable, SortedVariable variable, Unparse variable)
@@ -654,6 +736,15 @@ functionalConstr20
     -> TermLike variable
 functionalConstr20 arg1 arg2 =
     Internal.mkApplySymbol functionalConstr20Symbol [arg1, arg2]
+
+functionalConstr21
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+functionalConstr21 arg1 arg2 =
+    Internal.mkApplySymbol functionalConstr21Symbol [arg1, arg2]
 
 functionalConstr30
     :: (Ord variable, SortedVariable variable, Unparse variable)
@@ -753,6 +844,22 @@ sortInjectionSubSubToSub
 sortInjectionSubSubToSub arg =
     Internal.mkApplySymbol sortInjectionSubSubToSubSymbol [arg]
 
+sortInjectionSubSubToOther
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+sortInjectionSubSubToOther arg =
+    Internal.mkApplySymbol sortInjectionSubSubToOtherSymbol [arg]
+
+sortInjectionSubOtherToOther
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+sortInjectionSubOtherToOther arg =
+    Internal.mkApplySymbol sortInjectionSubOtherToOtherSymbol [arg]
+
 sortInjectionOtherToTop
     :: (Ord variable, SortedVariable variable, Unparse variable)
     => GHC.HasCallStack
@@ -845,6 +952,7 @@ symbols =
     , aSort0Symbol
     , aSort1Symbol
     , aSubsortSymbol
+    , aSubOthersortSymbol
     , aSubSubsortSymbol
     , aTopSortSymbol
     , aOtherSortSymbol
@@ -862,6 +970,7 @@ symbols =
     , cgSymbol
     , cgSort0Symbol
     , chSymbol
+    , fSetSymbol
     , plain00Symbol
     , plain00Sort0Symbol
     , plain00SubsortSymbol
@@ -869,6 +978,7 @@ symbols =
     , plain10Symbol
     , plain11Symbol
     , plain20Symbol
+    , constr00Symbol
     , constr10Symbol
     , constr11Symbol
     , constr20Symbol
@@ -879,10 +989,12 @@ symbols =
     , functional11Symbol
     , functional20Symbol
     , functional00SubSubSortSymbol
+    , functionalInjective00Symbol
     , functionalConstr10Symbol
     , functionalConstr11Symbol
     , functionalConstr12Symbol
     , functionalConstr20Symbol
+    , functionalConstr21Symbol
     , functionalConstr30Symbol
     , functionalTopConstr20Symbol
     , functionalTopConstr21Symbol
@@ -894,6 +1006,8 @@ symbols =
     , sortInjectionSubToTopSymbol
     , sortInjectionSubSubToTopSymbol
     , sortInjectionSubSubToSubSymbol
+    , sortInjectionSubSubToOtherSymbol
+    , sortInjectionSubOtherToOtherSymbol
     , sortInjectionOtherToTopSymbol
     , unitMapSymbol
     , elementMapSymbol
@@ -910,10 +1024,6 @@ symbols =
     , anywhereSymbol
     ]
 
-headTypeMapping :: [(SymbolOrAlias, HeadType)]
-headTypeMapping =
-    map (liftA2 (,) toSymbolOrAlias $ pure HeadType.Symbol) symbols
-
 sortAttributesMapping :: [(Sort, Attribute.Sort)]
 sortAttributesMapping =
     [   ( testSort
@@ -929,6 +1039,9 @@ sortAttributesMapping =
         , Default.def
         )
     ,   ( subSort
+        , Default.def
+        )
+    ,   ( subOthersort
         , Default.def
         )
     ,   ( subSubsort
@@ -975,6 +1088,13 @@ sortAttributesMapping =
         )
     ,   ( boolSort
         , Default.def { Attribute.hook = Hook (Just "BOOL.Bool") }
+        )
+    -- Also add attributes for the implicitly defined sorts.
+    ,   ( charMetaSort
+        , Default.def
+        )
+    ,   ( stringMetaSort
+        , Default.def { Attribute.hook = Hook (Just "STRING.String") }
         )
     ]
 
@@ -1059,6 +1179,7 @@ smtUnresolvedDeclarations = SMT.Declarations
         , ( aSort0Id, smtConstructor aSort0Id [] testSort1)
         , ( aSort1Id, smtConstructor aSort1Id [] testSort1)
         , ( aSubsortId, smtConstructor aSubsortId [] subSort)
+        , ( aSubOthersortId, smtConstructor aSubOthersortId [] subSubsort)
         , ( aSubSubsortId, smtConstructor aSubSubsortId [] subSubsort)
         , ( aTopSortId, smtConstructor aTopSortId [] topSort)
         , ( aOtherSortId, smtConstructor aOtherSortId [] otherSort)
@@ -1067,6 +1188,7 @@ smtUnresolvedDeclarations = SMT.Declarations
         , ( cId, smtConstructor cId [] testSort)
         , ( dId, smtConstructor dId [] testSort)
         , ( eId, smtConstructor eId [] testSort)
+        , ( constr00Id, smtConstructor constr00Id [] testSort)
         , ( constr10Id, smtConstructor constr10Id [testSort] testSort)
         , ( constr11Id, smtConstructor constr11Id [testSort] testSort)
         , ( constr20Id, smtConstructor constr20Id [testSort, testSort] testSort)
@@ -1081,6 +1203,9 @@ smtUnresolvedDeclarations = SMT.Declarations
             )
         ,   ( functionalConstr20Id
             , smtConstructor functionalConstr20Id [testSort, testSort] testSort
+            )
+        ,   ( functionalConstr21Id
+            , smtConstructor functionalConstr21Id [testSort, testSort] testSort
             )
         ,   ( functionalConstr30Id
             , smtConstructor
@@ -1112,6 +1237,8 @@ topSortId :: Id
 topSortId = testId "topSort"
 subSortId :: Id
 subSortId = testId "subSort"
+subOthersortId :: Id
+subOthersortId = testId "subOthersort"
 subSubsortId :: Id
 subSubsortId = testId "subSubsort"
 otherSortId :: Id
@@ -1120,6 +1247,8 @@ intSortId :: Id
 intSortId = testId "intSort"
 boolSortId :: Id
 boolSortId = testId "boolSort"
+stringSortId :: Id
+stringSortId = testId "stringSort"
 
 testSort :: Sort
 testSort =
@@ -1153,6 +1282,13 @@ subSort :: Sort
 subSort =
     SortActualSort SortActual
         { sortActualName  = subSortId
+        , sortActualSorts = []
+        }
+
+subOthersort :: Sort
+subOthersort =
+    SortActualSort SortActual
+        { sortActualName  = subOthersortId
         , sortActualSorts = []
         }
 
@@ -1198,6 +1334,13 @@ intSort =
         , sortActualSorts = []
         }
 
+stringSort :: Sort
+stringSort =
+    SortActualSort SortActual
+        { sortActualName  = stringSortId
+        , sortActualSorts = []
+        }
+
 boolSort :: Sort
 boolSort =
     SortActualSort SortActual
@@ -1211,6 +1354,7 @@ subsorts =
     , (subSubsort, topSort)
     , (subSort, topSort)
     , (subSubsort, otherSort)
+    , (subOthersort, otherSort)
     , (otherSort, topSort)
     ]
 
@@ -1250,7 +1394,11 @@ builtinSet child =
         , builtinSetUnit = unitSetSymbol
         , builtinSetElement = elementSetSymbol
         , builtinSetConcat = concatSetSymbol
-        , builtinSetChild = Set.fromList child
+        , builtinSetChild = Domain.NormalizedSet
+            { elementsWithVariables = []
+            , concreteElements = Set.fromList child
+            , sets = []
+            }
         }
 
 builtinInt
@@ -1272,14 +1420,12 @@ emptyMetadataTools =
         [] -- headTypeMapping
         [] -- sortAttributesMapping
         [] -- subsorts
-        [] -- headSortsMapping
         emptySmtDeclarations
 
 metadataTools :: SmtMetadataTools Attribute.Symbol
 metadataTools =
     Mock.makeMetadataTools
         attributesMapping
-        headTypeMapping
         sortAttributesMapping
         subsorts
         headSortsMapping

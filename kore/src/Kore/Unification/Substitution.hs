@@ -13,6 +13,7 @@ module Kore.Unification.Substitution
     , unwrap
     , toMap
     , fromMap
+    , singleton
     , wrap
     , modify
     , Kore.Unification.Substitution.mapVariables
@@ -45,6 +46,7 @@ import           GHC.Stack
 import           Prelude hiding
                  ( null )
 
+import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Internal.TermLike
                  ( TermLike, pattern Var_, mkVar )
 import qualified Kore.Internal.TermLike as TermLike
@@ -140,6 +142,21 @@ fromMap
     => Map variable (TermLike variable)
     -> Substitution variable
 fromMap = wrap . Map.toList
+
+{- | Construct substitution for a single variable.
+
+The substitution is normalized if the variable does not occur free in the term.
+
+ -}
+singleton
+    :: Ord variable
+    => variable
+    -> TermLike variable
+    -> Substitution variable
+singleton var termLike
+  | TermLike.hasFreeVariable var termLike = Substitution [(var, termLike)]
+  | otherwise =
+    NormalizedSubstitution (Map.singleton var termLike)
 
 -- | Wrap the list of substitutions to an un-normalized substitution. Note that
 -- @wrap . unwrap@ is not @id@ because the normalization state is lost.
@@ -314,9 +331,9 @@ assertNoneAreFreeVarsInRhs lhsVariables =
             ]
       where
         commonVars =
-            Set.intersection
-                lhsVariables
-                (TermLike.freeVariables patt)
+            Set.intersection lhsVariables
+            $ getFreeVariables
+            $ TermLike.freeVariables patt
 
 {- | Return the free variables of the 'Substitution'.
 
@@ -327,8 +344,8 @@ the free variables are @variable@ and all the free variables of @term@.
 freeVariables
     :: Ord variable
     => Substitution variable
-    -> Set variable
-freeVariables = Foldable.foldl' freeVariablesWorker Set.empty . unwrap
+    -> FreeVariables variable
+freeVariables = Foldable.foldMap freeVariablesWorker . unwrap
   where
-    freeVariablesWorker freeVars (x, t) =
-        freeVars <> Set.insert x (TermLike.freeVariables t)
+    freeVariablesWorker (x, t) =
+        freeVariable x <> TermLike.freeVariables t

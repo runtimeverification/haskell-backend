@@ -12,7 +12,6 @@ module Kore.Step.Simplification.Application
     , Application (..)
     ) where
 
-import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( fullCrossProduct, mergeAll )
 import           Kore.Internal.OrPattern
@@ -33,13 +32,7 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 type ExpandedApplication variable =
-    Conditional
-        variable
-        (CofreeF
-            (Application Symbol)
-            (Attribute.Pattern variable)
-            (TermLike variable)
-        )
+    Conditional variable (Application Symbol (TermLike variable))
 
 {-|'simplify' simplifies an 'Application' of 'OrPattern'.
 
@@ -58,15 +51,12 @@ simplify
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => CofreeF
-        (Application Symbol)
-        (Attribute.Pattern variable)
-        (OrPattern variable)
+    => Application Symbol (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify (valid :< app) = do
+simplify application = do
     evaluated <-
         traverse
-            (makeAndEvaluateApplications valid symbol)
+            (makeAndEvaluateApplications symbol)
             -- The "Propagation Or" inference rule together with
             -- "Propagation Bottom" for the case when a child or is empty.
             (MultiOr.fullCrossProduct children)
@@ -76,7 +66,7 @@ simplify (valid :< app) = do
         { applicationSymbolOrAlias = symbol
         , applicationChildren = children
         }
-      = app
+      = application
 
 makeAndEvaluateApplications
     ::  ( Show variable
@@ -85,12 +75,11 @@ makeAndEvaluateApplications
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => Attribute.Pattern variable
-    -> Symbol
+    => Symbol
     -> [Pattern variable]
     -> simplifier (OrPattern variable)
-makeAndEvaluateApplications valid symbol children = do
-    makeAndEvaluateSymbolApplications valid symbol children
+makeAndEvaluateApplications symbol children = do
+    makeAndEvaluateSymbolApplications symbol children
 
 makeAndEvaluateSymbolApplications
     ::  ( Show variable
@@ -99,13 +88,12 @@ makeAndEvaluateSymbolApplications
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => Attribute.Pattern variable
-    -> Symbol
+    => Symbol
     -> [Pattern variable]
     -> simplifier (OrPattern variable)
-makeAndEvaluateSymbolApplications valid symbol children = do
+makeAndEvaluateSymbolApplications symbol children = do
     expandedApplications <-
-        BranchT.gather $ makeExpandedApplication valid symbol children
+        BranchT.gather $ makeExpandedApplication symbol children
     orResults <- traverse evaluateApplicationFunction expandedApplications
     return (MultiOr.mergeAll orResults)
 
@@ -131,17 +119,16 @@ makeExpandedApplication
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => Attribute.Pattern variable
-    -> Symbol
+    => Symbol
     -> [Pattern variable]
     -> BranchT simplifier (ExpandedApplication variable)
-makeExpandedApplication valid symbol children = do
+makeExpandedApplication symbol children = do
     merged <-
         mergePredicatesAndSubstitutions
             (map Pattern.predicate children)
             (map Pattern.substitution children)
     let term =
-            valid :< Application
+            Application
                 { applicationSymbolOrAlias = symbol
                 , applicationChildren = Pattern.term <$> children
                 }

@@ -8,7 +8,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 
 
 module SMT
-    ( SMT, getSMT
+    ( SMT, SmtT, runSmtT
     , Solver
     , newSolver, stopSolver
     , runSMT
@@ -55,9 +55,12 @@ import           Control.Monad.Catch
 import qualified Control.Monad.Counter as Counter
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
+import           Control.Monad.IO.Unlift
+                 ( MonadUnliftIO (..), UnliftIO (..), withRunInIO,
+                 withUnliftIO )
 import qualified Control.Monad.Morph as Morph
 import           Control.Monad.Reader
-                 ( ReaderT, runReaderT )
+                 ( ReaderT (..), runReaderT )
 import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.State.Lazy as State.Lazy
 import qualified Control.Monad.State.Strict as State.Strict
@@ -124,8 +127,25 @@ different threads may be interleaved; use 'inNewScope' to acquire exclusive
 access to the solver for a sequence of commands.
 
  -}
-newtype SMT a = SMT { getSMT :: ReaderT (MVar Solver) IO a }
-    deriving (Applicative, Functor, Monad, MonadCatch, MonadIO, MonadThrow)
+newtype SmtT m a = SmtT { runSmtT :: ReaderT (MVar Solver) m a }
+    deriving
+        ( Applicative
+        , Functor
+        , Monad
+        , MonadCatch
+        , MonadIO
+        , MonadThrow
+        , Morph.MFunctor
+        )
+
+instance MonadUnliftIO m => MonadUnliftIO (SmtT m) where
+    askUnliftIO =
+        SmtT
+            $ ReaderT $ \r ->
+                withUnliftIO $ \u ->
+                    return (UnliftIO (unliftIO u . flip runReaderT r . runSmtT))
+
+type SMT = SmtT IO
 
 -- | Access 'SMT' through monad transformers.
 class Monad m => MonadSMT m where
@@ -226,58 +246,70 @@ class Monad m => MonadSMT m where
     {-# INLINE loadFile #-}
 
 withSolver' :: (Solver -> IO a) -> SMT a
-withSolver' action = SMT $ do
+withSolver' action = SmtT $ do
     mvar <- Reader.ask
     liftIO $ withMVar mvar action
 
-instance Logger.WithLog Logger.LogMessage SMT where
+withSolverT' :: MonadUnliftIO m => (Solver -> m a) -> SmtT m a
+withSolverT' action = SmtT $ do
+    mvar <- Reader.ask
+    Trans.lift $ withRunInIO $ \runInIO -> withMVar mvar (runInIO . action)
+
+instance (MonadIO m, MonadUnliftIO m)
+    => Logger.WithLog Logger.LogMessage (SmtT m)
+  where
     askLogAction =
-        withSolver' (return . hoistLogAction . SimpleSMT.logger)
+        withSolverT' (return . hoistLogAction . SimpleSMT.logger)
       where
-        hoistLogAction = Logger.hoistLogAction (SMT . liftIO)
+        hoistLogAction = Logger.hoistLogAction (SmtT . liftIO)
 
-    localLogAction mapping (SMT action) =
-        withSolver' $ \solver -> do
+    localLogAction mapping (SmtT action) =
+        withSolverT' $ \solver -> do
             let solver' = Lens.over SimpleSMT.lensLogger mapping solver
-            runReaderT action =<< newMVar solver'
+            runReaderT action =<< liftIO (newMVar solver')
 
-instance MonadSMT SMT where
-    withSolver (SMT action) =
+instance (MonadIO m, MonadUnliftIO m) => MonadSMT (SmtT m) where
+    withSolver (SmtT action) =
         Logger.withLogScope "SMT.withSolver"
-        $ withSolver' $ \solver -> do
+        $ withSolverT' $ \solver -> do
             -- Create an unshared "dummy" mutex for the solver.
-            mvar <- newMVar solver
+            mvar <- liftIO $ newMVar solver
             -- Run the inner action with the unshared mutex.
             -- The action will never block waiting to acquire the solver.
-            SimpleSMT.inNewScope solver (runReaderT action mvar)
+            withRunInIO $ \runInIO -> do
+                SimpleSMT.inNewScope solver (runInIO $ runReaderT action mvar)
 
     declare name typ =
         Logger.withLogScope "SMT.declare"
-        $ withSolver' $ \solver -> SimpleSMT.declare solver name typ
+        $ withSolverT' $ \solver -> liftIO $ SimpleSMT.declare solver name typ
 
     declareFun declaration =
         Logger.withLogScope "SMT.declareFun"
-        $ withSolver' $ \solver -> SimpleSMT.declareFun solver declaration
+        $ withSolverT' $ \solver ->
+            liftIO $ SimpleSMT.declareFun solver declaration
 
     declareSort declaration =
-        withSolver' $ \solver -> SimpleSMT.declareSort solver declaration
+        withSolverT' $ \solver ->
+            liftIO $ SimpleSMT.declareSort solver declaration
 
     declareDatatype declaration =
-        withSolver' $ \solver -> SimpleSMT.declareDatatype solver declaration
+        withSolverT' $ \solver ->
+            liftIO $ SimpleSMT.declareDatatype solver declaration
 
     declareDatatypes datatypes =
-        withSolver' $ \solver -> SimpleSMT.declareDatatypes solver datatypes
+        withSolverT' $ \solver ->
+            liftIO $ SimpleSMT.declareDatatypes solver datatypes
 
     assert fact =
-        withSolver' $ \solver -> SimpleSMT.assert solver fact
+        withSolverT' $ \solver -> liftIO $ SimpleSMT.assert solver fact
 
-    check = withSolver' SimpleSMT.check
+    check = Morph.hoist liftIO $ withSolver' SimpleSMT.check
 
     ackCommand command =
-        withSolver' $ \solver -> SimpleSMT.ackCommand solver command
+        withSolverT' $ \solver -> liftIO $ SimpleSMT.ackCommand solver command
 
     loadFile path =
-        withSolver' $ \solver -> SimpleSMT.loadFile solver path
+        withSolverT' $ \solver -> liftIO $ SimpleSMT.loadFile solver path
 
 instance (MonadSMT m, Monoid w) => MonadSMT (AccumT w m) where
     withSolver = mapAccumT withSolver
@@ -310,13 +342,13 @@ newSolver :: Config -> Logger -> IO (MVar Solver)
 newSolver config logger = do
     solver <- SimpleSMT.newSolver exe args logger
     mvar <- newMVar solver
-    runReaderT getSMT mvar
+    runReaderT runSmtT mvar
     return mvar
   where
     Config { timeOut } = config
     Config { executable = exe, arguments = args } = config
     Config { preludeFile } = config
-    SMT { getSMT } = do
+    SmtT { runSmtT } = do
         setTimeOut timeOut
         maybe (pure ()) loadFile preludeFile
 
@@ -335,9 +367,9 @@ stopSolver mvar = do
 
 -- | Run an external SMT solver.
 runSMT :: Config -> Logger -> SMT a -> IO a
-runSMT config logger SMT { getSMT } = do
+runSMT config logger SmtT { runSmtT } = do
     solver <- newSolver config logger
-    a <- runReaderT getSMT solver
+    a <- runReaderT runSmtT solver
     stopSolver solver
     return a
 

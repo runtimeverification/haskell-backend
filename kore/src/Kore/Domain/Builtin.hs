@@ -10,6 +10,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 
 module Kore.Domain.Builtin
     ( Builtin (..)
+    , builtinSort
     , InternalMap (..)
     , lensBuiltinMapSort
     , lensBuiltinMapUnit
@@ -23,6 +24,8 @@ module Kore.Domain.Builtin
     , lensBuiltinListConcat
     , lensBuiltinListChild
     , InternalSet (..)
+    , NormalizedSet (..)
+    , emptyNormalizedSet
     , lensBuiltinSetSort
     , lensBuiltinSetUnit
     , lensBuiltinSetElement
@@ -53,6 +56,7 @@ import           Data.Sequence
                  ( Seq )
 import           Data.Set
                  ( Set )
+import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -61,6 +65,7 @@ import qualified GHC.Generics as GHC
 
 import Control.Lens.TH.Rules
        ( makeLenses )
+import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Domain.Class
 import Kore.Internal.Symbol
@@ -212,56 +217,116 @@ instance Unparse child => Unparse (InternalList child) where
 
 -- * Builtin Set
 
+{- | Optimized set representation, with elements separated from
+other set terms, and with concrete elements separated from non-concrete ones.
+-}
+data NormalizedSet key child = NormalizedSet
+    { elementsWithVariables :: [child]
+    -- ^ Non-concrete elements of the set. These would be of sort @Int@s for a
+    -- set with @Int@ elements.
+    , concreteElements :: Set key
+    -- ^ Concrete elements of the set. These would be of sort @Int@s for a set
+    -- with @Int@ elements.
+    , sets :: [child]
+    -- ^ Unoptimized (non-element) parts of the set.
+    }
+    deriving (Eq, Foldable, Functor, Traversable, GHC.Generic, Ord, Show)
+
+deriveEq1 ''NormalizedSet
+deriveOrd1 ''NormalizedSet
+deriveShow1 ''NormalizedSet
+
+instance (Hashable key, Hashable child) => Hashable (NormalizedSet key child)
+  where
+    hashWithSalt salt normalized@(NormalizedSet _ _ _) =
+        salt
+            `hashWithSalt` elementsWithVariables
+            `hashWithSalt` Set.toList concreteElements
+            `hashWithSalt` sets
+      where
+        NormalizedSet { elementsWithVariables } = normalized
+        NormalizedSet { concreteElements } = normalized
+        NormalizedSet { sets } = normalized
+
+instance (NFData key, NFData child) => NFData (NormalizedSet key child)
+
+instance SOP.Generic (NormalizedSet key child)
+
+instance SOP.HasDatatypeInfo (NormalizedSet key child)
+
+instance (Debug key, Debug child) => Debug (NormalizedSet key child)
+
+emptyNormalizedSet :: NormalizedSet key child
+emptyNormalizedSet = NormalizedSet
+    { elementsWithVariables = []
+    , concreteElements = Set.empty
+    , sets = []
+    }
+
 {- | Internal representation of the builtin @SET.Set@ domain.
  -}
-data InternalSet key =
+data InternalSet key child =
     InternalSet
         { builtinSetSort :: !Sort
         , builtinSetUnit :: !Symbol
         , builtinSetElement :: !Symbol
         , builtinSetConcat :: !Symbol
-        , builtinSetChild :: !(Set key)
+        , builtinSetChild :: !(NormalizedSet key child)
         }
-    deriving (Eq, Ord, GHC.Generic, Show)
+    deriving (Eq, Foldable, Functor, Traversable, GHC.Generic, Ord, Show)
 
-instance Hashable key => Hashable (InternalSet key) where
+deriveEq1 ''InternalSet
+deriveOrd1 ''InternalSet
+deriveShow1 ''InternalSet
+
+instance (Hashable key, Hashable child) => Hashable (InternalSet key child)
+  where
     hashWithSalt salt builtin =
-        hashWithSalt salt (Foldable.toList builtinSetChild)
+        hashWithSalt salt builtinSetChild
       where
         InternalSet { builtinSetChild } = builtin
 
-instance NFData key => NFData (InternalSet key)
+instance (NFData key, NFData child) => NFData (InternalSet key child)
 
-instance SOP.Generic (InternalSet key)
+instance SOP.Generic (InternalSet key child)
 
-instance SOP.HasDatatypeInfo (InternalSet key)
+instance SOP.HasDatatypeInfo (InternalSet key child)
 
-instance Debug key => Debug (InternalSet key)
+instance (Debug key, Debug child) => Debug (InternalSet key child)
 
-instance Unparse key => Unparse (InternalSet key) where
-    unparse builtinSet =
-        unparseCollection
-            builtinSetUnit
-            builtinSetElement
-            builtinSetConcat
-            (argument' . unparse <$> Foldable.toList builtinSetChild)
-      where
-        InternalSet { builtinSetChild } = builtinSet
-        InternalSet { builtinSetUnit } = builtinSet
-        InternalSet { builtinSetElement } = builtinSet
-        InternalSet { builtinSetConcat } = builtinSet
+instance (Unparse key, Unparse child) => Unparse (InternalSet key child)
+  where
+    unparse = unparseInternalSet unparse unparse
+    unparse2 = unparseInternalSet unparse2 unparse2
 
-    unparse2 builtinSet =
-        unparseCollection
-            builtinSetUnit
-            builtinSetElement
-            builtinSetConcat
-            (argument' . unparse2 <$> Foldable.toList builtinSetChild)
-      where
-        InternalSet { builtinSetChild } = builtinSet
-        InternalSet { builtinSetUnit } = builtinSet
-        InternalSet { builtinSetElement } = builtinSet
-        InternalSet { builtinSetConcat } = builtinSet
+unparseInternalSet
+    :: (key -> Pretty.Doc ann)
+    -> (child -> Pretty.Doc ann)
+    -> InternalSet key child
+    -> Pretty.Doc ann
+unparseInternalSet keyUnparser childUnparser builtinSet =
+    unparseCollection
+        builtinSetUnit
+        builtinSetElement
+        builtinSetConcat
+        unparsedChildren
+    where
+    InternalSet { builtinSetChild } = builtinSet
+    InternalSet { builtinSetUnit } = builtinSet
+    InternalSet { builtinSetElement } = builtinSet
+    InternalSet { builtinSetConcat } = builtinSet
+
+    NormalizedSet {elementsWithVariables} = builtinSetChild
+    NormalizedSet {concreteElements} = builtinSetChild
+    NormalizedSet {sets} = builtinSetChild
+
+    -- case statement needed only for getting compiler notifications when
+    -- the NormalizedSet field count changes
+    unparsedChildren = case builtinSetChild of
+        NormalizedSet _ _ _ ->
+            (argument' . childUnparser <$> elementsWithVariables)
+            ++ (argument' . keyUnparser <$> Set.toList concreteElements)
+            ++ (argument' . childUnparser <$> sets)
 
 -- * Builtin Int
 
@@ -372,7 +437,7 @@ instance Unparse InternalString where
 data Builtin key child
     = BuiltinMap !(InternalMap key child)
     | BuiltinList !(InternalList child)
-    | BuiltinSet !(InternalSet key)
+    | BuiltinSet !(InternalSet key child)
     | BuiltinInt !InternalInt
     | BuiltinBool !InternalBool
     | BuiltinString !InternalString
@@ -393,8 +458,24 @@ instance (Hashable key, Hashable child) => Hashable (Builtin key child)
 instance (NFData key, NFData child) => NFData (Builtin key child)
 
 instance (Unparse key, Unparse child) => Unparse (Builtin key child) where
-    unparse = unparseGeneric
-    unparse2 = unparse2Generic
+    unparse evaluated =
+        Pretty.sep ["/* builtin: */", unparseGeneric evaluated]
+    unparse2 evaluated =
+        Pretty.sep ["/* builtin: */", unparse2Generic evaluated]
+
+builtinSort :: Builtin key child -> Sort
+builtinSort builtin =
+    case builtin of
+        BuiltinInt InternalInt { builtinIntSort } -> builtinIntSort
+        BuiltinBool InternalBool { builtinBoolSort } -> builtinBoolSort
+        BuiltinString InternalString { internalStringSort } -> internalStringSort
+        BuiltinMap InternalMap { builtinMapSort } -> builtinMapSort
+        BuiltinList InternalList { builtinListSort } -> builtinListSort
+        BuiltinSet InternalSet { builtinSetSort } -> builtinSetSort
+
+instance Synthetic (Builtin key) Sort where
+    synthetic = builtinSort
+    {-# INLINE synthetic #-}
 
 makeLenses ''InternalMap
 makeLenses ''InternalList
@@ -410,16 +491,8 @@ instance Domain (Builtin key) where
         original =
             DomainValue
                 { domainValueChild = builtin
-                , domainValueSort = originalSort
+                , domainValueSort = builtinSort builtin
                 }
-        originalSort =
-            case builtin of
-                BuiltinInt InternalInt { builtinIntSort } -> builtinIntSort
-                BuiltinBool InternalBool { builtinBoolSort } -> builtinBoolSort
-                BuiltinString InternalString { internalStringSort } -> internalStringSort
-                BuiltinMap InternalMap { builtinMapSort } -> builtinMapSort
-                BuiltinList InternalList { builtinListSort } -> builtinListSort
-                BuiltinSet InternalSet { builtinSetSort } -> builtinSetSort
         getBuiltin
             :: forall child
             .  DomainValue Sort (Builtin key child)

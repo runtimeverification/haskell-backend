@@ -156,8 +156,7 @@ test_simplificationIntegration =
             expect = OrPattern.fromPatterns
                 [ Conditional
                     { term =
-                        mkEvaluated
-                        $ Mock.function20MapTest (Mock.builtinMap []) Mock.a
+                        Mock.function20MapTest (Mock.builtinMap []) Mock.a
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }

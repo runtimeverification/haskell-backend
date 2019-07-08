@@ -13,8 +13,8 @@ import Test.Tasty.HUnit
 import           Data.Default as Default
                  ( def )
 import qualified Data.Foldable as Foldable
-import qualified Data.Set as Set
 
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.MultiOr
                  ( MultiOr )
@@ -154,7 +154,7 @@ test_unifyRule =
         Right unified <- unifyRule initial axiom
         let actual = Conditional.term <$> unified
         assertBool ""
-            $ Foldable.all (Set.notMember Mock.x)
+            $ Foldable.all (not . FreeVariables.isFreeVariable Mock.x)
             $ RulePattern.freeVariables <$> actual
 
     , testCase "performs unification with initial term" $ do

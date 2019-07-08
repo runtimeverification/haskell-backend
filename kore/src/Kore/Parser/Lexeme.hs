@@ -37,7 +37,6 @@ module Kore.Parser.Lexeme
     , inParenthesesParser
     , inSquareBracketsParser
     , keywordBasedParsers
-    , metaSortConverter
     , mlLexemeParser
     , moduleNameParser
     , parenPairParser
@@ -56,9 +55,6 @@ import           Control.Monad.Combinators
 import qualified Data.ByteString.Char8 as Char8
 import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
-import           Data.HashMap.Strict
-                 ( HashMap )
-import qualified Data.HashMap.Strict as HashMap
 import           Data.HashSet
                  ( HashSet )
 import qualified Data.HashSet as HashSet
@@ -94,14 +90,16 @@ sourcePosToFileLocation
     , column   = unPos column'
     }
 
-{-|'idParser' parses either an @object-identifier@, or a @meta-identifier@.
+{-|'idParser' parses either an @object-identifier@, or a
+@set-variable-identifier@.
 
-The @meta-@ version always starts with @#@, while the @object-@ one does not.
+The @set-variable-@ version always starts with @\@@, while the @object-@
+one does not.
 -}
 idParser :: Parser Id
 idParser = do
     pos <- sourcePosToFileLocation <$> getSourcePos
-    name <- lexeme (objectIdRawParser KeywordsForbidden <|> metaIdRawParser)
+    name <- lexeme (objectIdRawParser KeywordsForbidden <|> setVarIdRawParser)
     return Id
         { getId = Text.pack name
         , idLocation = AstLocationFile pos
@@ -217,14 +215,14 @@ objectNonslashIdRawParser :: IdKeywordParsing -> Parser String
 objectNonslashIdRawParser =
     genericIdRawParser idFirstCharSet idCharSet
 
-{-|'metaIdRawParser' extracts the string representing a @meta-identifier@.
-Does not consume whitespace.
+{-|'setVarIdRawParser' extracts the string representing a
+@set-variable-identifier@. Does not consume whitespace.
 
-Always starts with @#@
+Always starts with @@@
 -}
-metaIdRawParser :: Parser String
-metaIdRawParser = do
-    c <- Parser.char '#'
+setVarIdRawParser :: Parser String
+setVarIdRawParser = do
+    c <- Parser.char '@'
     c' <- peekChar'
     case c' of
         '`' -> do
@@ -500,17 +498,3 @@ prefixBasedParsers prefixParser stringParsers = do
             else Parser.char c *> prefixBasedParsers prefixParser ts
     dict = CharDict.memoize tailParser
 
-{-|'metaSortTrie' is a trie containing all the possible metasorts.-}
-metaSortTrie :: HashMap Char8.ByteString MetaSortType
-metaSortTrie =
-    HashMap.fromList $
-        map (\s -> (Char8.pack (show s), s)) metaSortsListWithString
-
-{-|'metaSortConverter' converts a string representation of a metasort name
-(without the leading '#') to a 'MetaSortType'.
--}
-metaSortConverter :: String -> Maybe MetaSortType
--- TODO(virgil): Does the pack call matter for performance? Should we try to
--- improve it?
-metaSortConverter identifier =
-    HashMap.lookup (Char8.pack identifier) metaSortTrie

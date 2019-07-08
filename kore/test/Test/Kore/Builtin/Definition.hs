@@ -18,6 +18,7 @@ import qualified Kore.Attribute.Sort.Element as Sort
 import qualified Kore.Attribute.Sort.Unit as Sort
 import           Kore.Attribute.SortInjection
 import           Kore.Domain.Builtin
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.Internal.ApplicationSorts
 import           Kore.Internal.Symbol
                  ( constructor, functional, hook, smthook, sortInjection )
@@ -423,6 +424,12 @@ concatSetSymbol :: Internal.Symbol
 concatSetSymbol =
     binarySymbol "concatSet" setSort & hook "SET.concat" & functional
 
+concatSet
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+concatSet s1 s2 = mkApplySymbol concatSetSymbol [s1, s2]
+
 inSetSymbol :: Internal.Symbol
 inSetSymbol =
     builtinSymbol "inSet" boolSort [intSort, setSort] & hook "SET.in"
@@ -747,14 +754,18 @@ setSortDecl =
 
 builtinSet
     :: [TermLike Concrete]
-    -> InternalSet (TermLike Concrete)
+    -> InternalSet (TermLike Concrete) (TermLike Variable)
 builtinSet children =
     InternalSet
         { builtinSetSort = setSort
         , builtinSetUnit = unitSetSymbol
         , builtinSetElement = elementSetSymbol
         , builtinSetConcat = concatSetSymbol
-        , builtinSetChild = Set.fromList children
+        , builtinSetChild = Domain.NormalizedSet
+            { elementsWithVariables = []
+            , concreteElements = Set.fromList children
+            , sets = []
+            }
         }
 
 -- ** String

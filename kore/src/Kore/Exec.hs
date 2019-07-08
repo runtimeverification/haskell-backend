@@ -60,6 +60,7 @@ import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue, makeMultipleOrPredicate,
                  unwrapPredicate )
 import qualified Kore.Repl as Repl
+import qualified Kore.Repl.Data as Repl.Data
 import           Kore.Step
 import           Kore.Step.Axiom.EvaluationStrategy
                  ( builtinEvaluation, simplifierWithFallback )
@@ -68,10 +69,10 @@ import           Kore.Step.Axiom.Identifier
 import           Kore.Step.Axiom.Registry
                  ( axiomPatternsToEvaluators, extractEqualityAxioms )
 import           Kore.Step.Rule
-                 ( EqualityRule (EqualityRule), OnePathRule (..),
-                 RewriteRule (RewriteRule), RulePattern (RulePattern),
-                 extractImplicationClaims, extractOnePathClaims,
-                 extractRewriteAxioms, getRewriteRule )
+                 ( EqualityRule (EqualityRule), ImplicationRule (..),
+                 OnePathRule (..), RewriteRule (RewriteRule),
+                 RulePattern (RulePattern), extractImplicationClaims,
+                 extractOnePathClaims, extractRewriteAxioms, getRewriteRule )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Search
@@ -262,12 +263,14 @@ proveWithRepl
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
     -> MVar (Log.LogAction IO Log.LogMessage)
-    -> Repl.ReplScript
+    -> Repl.Data.ReplScript
     -- ^ Optional script
-    -> Repl.ReplMode
+    -> Repl.Data.ReplMode
     -- ^ Run in a specific repl mode
+    -> Repl.Data.OutputFile
+    -- ^ Optional Output file
     -> SMT ()
-proveWithRepl definitionModule specModule mvar replScript replMode =
+proveWithRepl definitionModule specModule mvar replScript replMode outputFile =
     evalSimplifier env $ initialize definitionModule $ \initialized -> do
         let Initialized { rewriteRules } = initialized
             specClaims = extractOnePathClaims specModule
@@ -276,7 +279,7 @@ proveWithRepl definitionModule specModule mvar replScript replMode =
         let
             axioms = fmap Axiom rewriteRules
             claims = fmap makeClaim specAxioms
-        Repl.runRepl axioms claims mvar replScript replMode
+        Repl.runRepl axioms claims mvar replScript replMode outputFile
   where
     metadataTools = MetadataTools.build definitionModule
     env =
@@ -295,18 +298,21 @@ boundedModelCheck
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
     -> Strategy.GraphSearchOrder
-    -> SMT [Bounded.CheckResult]
+    -> SMT (Bounded.CheckResult (TermLike Variable))
 boundedModelCheck limit definitionModule specModule searchOrder =
     evalSimplifier env $ initialize definitionModule $ \initialized -> do
         let Initialized { rewriteRules } = initialized
-
+            specClaims = extractImplicationClaims specModule
+        assertSomeClaims specClaims
+        assertSingleClaim specClaims
+        let
             axioms = fmap Axiom rewriteRules
-            specAxioms = fmap snd $ extractImplicationClaims specModule
+            claims = fmap makeClaim specClaims
 
-        Bounded.check
+        Bounded.checkClaim
             (Bounded.bmcStrategy axioms)
             searchOrder
-            (map (\x -> (x,limit)) specAxioms)
+            (head claims, limit)
   where
     metadataTools = MetadataTools.build definitionModule
     env =
@@ -316,6 +322,11 @@ boundedModelCheck limit definitionModule specModule searchOrder =
             , simplifierPredicate = emptyPredicateSimplifier
             , simplifierAxioms = emptyAxiomSimplifiers
             }
+
+assertSingleClaim :: Monad m => [claim] -> m ()
+assertSingleClaim claims =
+    Monad.when ((length claims) > 1) . error
+        $ "More than one claim is found in the module."
 
 assertSomeClaims :: Monad m => [claim] -> m ()
 assertSomeClaims claims =
