@@ -20,7 +20,6 @@ module Kore.Proof.Value
 import           Control.Comonad.Trans.Cofree
                  ( Cofree, CofreeF (..) )
 import qualified Control.Comonad.Trans.Cofree as Cofree
-import qualified Data.Deriving as Deriving
 import           Data.Functor.Compose
 import           Data.Functor.Foldable
                  ( Base, Corecursive, Recursive )
@@ -60,10 +59,6 @@ data ValueF child
     | StringLiteral !StringLiteral
     | CharLiteral !CharLiteral
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
-
-Deriving.deriveEq1 ''ValueF
-Deriving.deriveOrd1 ''ValueF
-Deriving.deriveShow1 ''ValueF
 
 newtype Value =
     Value { getValue :: Cofree ValueF (Attribute.Pattern Concrete) }
