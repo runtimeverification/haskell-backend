@@ -88,7 +88,10 @@ test_replInterpreter =
     , forceFailureWithName        `tests` "TryF axiom by name that doesn't unify"
     , forceSuccessWithName        `tests` "TryF axiom by name that does unify"
     , proveSecondClaim            `tests` "Starting to prove the second claim"
-    -- , testPipe                    `tests` "Piping the output to an external process"
+    , testPipeConfig              `tests` "Piping the output of config to an\
+                                           \ external process"
+    , testPipeTry                 `tests` "Piping the output of try to an\
+                                           \ external process"
     , proveSecondClaimByName      `tests` "Starting to prove the second claim\
                                            \ referenced by name"
     ]
@@ -115,15 +118,18 @@ help =
         output   `equalsOutput` makeAuxReplOutput helpText
         continue `equals`       Continue
 
-testPipe :: IO ()
-testPipe =
+testPipeConfig :: IO ()
+testPipeConfig =
     let
         axioms  = []
         claim   = emptyClaim
-        command = Pipe (ShowConfig Nothing) "/home/ana/repl-script.py" []
+        config  = ShowConfig Nothing
+        command = Pipe config "cat" ["/dev/stdin"]
     in do
         Result { output, continue } <- run command axioms [claim] claim
-        output   `equalsOutput` makeAuxReplOutput ""
+        Result { output = configOutput }
+            <- run config axioms [claim] claim
+        output   `equalsOutput` koreToAux configOutput
         continue `equals`       Continue
 
 step5 :: IO ()
@@ -269,6 +275,22 @@ tryAlias =
             runWithState command axioms [claim] claim stateT
         output   `equalsOutput` showRewriteRule claim
         continue `equals` Continue
+
+testPipeTry :: IO ()
+testPipeTry =
+    let
+        one = Int.asInternal intSort 1
+        impossibleAxiom = coerce $ rulePattern one one
+        axioms = [ impossibleAxiom ]
+        claim = zeroToTen
+        try = Try . ByIndex . Left $ AxiomIndex 0
+        command = Pipe try "cat" ["/dev/stdin"]
+    in do
+        Result { output, continue, state } <- run command axioms [claim] claim
+        Result { output = tryOutput } <- run try axioms [claim] claim
+        output `equalsOutput` koreToAux tryOutput
+        continue `equals` Continue
+        state `hasCurrentNode` ReplNode 0
 
 unificationFailure :: IO ()
 unificationFailure =
@@ -689,3 +711,13 @@ formatUnificationError info first second = do
 
 formatUnifiers :: NonEmpty (Predicate Variable) -> ReplOutput
 formatUnifiers = formatUnificationMessage . Right
+
+koreToAux :: ReplOutput -> ReplOutput
+koreToAux (ReplOutput output) =
+    ReplOutput $ fmap makeAux output
+  where
+    makeAux :: ReplOut -> ReplOut
+    makeAux =
+        \case
+            KoreOut out -> AuxOut out
+            AuxOut out -> AuxOut out
