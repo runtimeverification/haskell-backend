@@ -726,3 +726,22 @@ koreToAux (ReplOutput output) =
         \case
             KoreOut out -> AuxOut out
             AuxOut out -> AuxOut out
+
+-- newtype PipeMockIO a =
+--     PipeMockIO
+--     { unPipeMockIO :: IO a }
+--     deriving (Functor, Applicative, Monad)
+--
+-- instance MonadReplIO PipeMockIO where
+--     printLn _ = PipeMockIO . pure $ ()
+--     findExec _ = PipeMockIO . pure . pure $ ""
+--     makeProcess =
+--         PipeMockIO
+--         . const
+--         $ ( pure Nothing
+--           , pure . Just $ stdout
+--           , pure Nothing
+--           ()
+--           )
+--     getContentsFromHandle _ =
+
