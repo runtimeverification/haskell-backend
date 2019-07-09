@@ -327,6 +327,7 @@ newtype SimplifierT m a = SimplifierT
     deriving (Functor, Applicative, Monad, MonadSMT)
     deriving (MonadIO, MonadCatch, MonadThrow)
     deriving (MonadReader Env)
+    deriving (Monad.Trans.MonadTrans)
 
 type Simplifier = SimplifierT (SmtT IO)
 

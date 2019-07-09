@@ -10,6 +10,7 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 
 module Kore.Repl.Data
     ( ReplCommand (..)
+    , MonadReplIO (..)
     , helpText
     , ExecutionGraph
     , AxiomIndex (..), ClaimIndex (..)
@@ -50,10 +51,17 @@ import qualified Control.Lens.TH.Rules as Lens
 import           Control.Monad.Trans.Accum
                  ( AccumT, runAccumT )
 import qualified Control.Monad.Trans.Accum as Monad.Accum
+import           Control.Monad.Trans.Class
+                 ( MonadTrans (..) )
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Graph.Inductive.PatriciaTree
                  ( Gr )
+import qualified Data.GraphViz as Graph
+import           Data.IORef
+                 ( IORef (..) )
+import           Data.IORef
+                 ( IORef, modifyIORef, newIORef, readIORef )
 import           Data.List.NonEmpty
                  ( NonEmpty (..) )
 import           Data.Map.Strict
@@ -68,7 +76,18 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import           GHC.IO.Handle
+                 ( Handle (..), hGetContents, hPutStr )
 import           Numeric.Natural
+import           System.Directory
+                 ( doesDirectoryExist, doesFileExist, findExecutable )
+import           System.Exit
+                 ( ExitCode (..), exitSuccess, exitWith )
+import           System.IO
+                 ( IOMode (..), hClose, hFlush, openFile )
+import           System.Process
+                 ( CreateProcess (..), ProcessHandle (..),
+                 StdStream (CreatePipe), createProcess, proc, std_in, std_out )
 
 import qualified Kore.Internal.Predicate as IPredicate
 import           Kore.Internal.TermLike
@@ -92,6 +111,100 @@ import           Kore.Unparser
                  ( unparse )
 import           SMT
                  ( MonadSMT )
+
+
+class (Monad m) => MonadReplIO m where
+    printLn :: String -> m ()
+    printNoLn :: String -> m ()
+    readLine :: m String
+    writeToFile :: FilePath -> String -> m ()
+    appendToFile :: FilePath -> String -> m ()
+    open :: FilePath -> IOMode -> m Handle
+    replReadFile :: FilePath -> m String
+    getContentsFromHandle :: Handle -> m String
+    printToHandle :: Handle -> String -> m ()
+    flushHandle :: Handle -> m ()
+    canFindDirectory :: FilePath -> m Bool
+    canFindFile :: FilePath -> m Bool
+    findExec :: String -> m (Maybe FilePath)
+    makeProcess
+        :: CreateProcess
+        -> m (Maybe Handle, Maybe Handle, Maybe Handle, ProcessHandle)
+    canFindGraphviz :: m Bool
+    runGraphCanvas
+        :: Graph.PrintDotRepr dg n
+        => dg n
+        -> Graph.GraphvizCanvas
+        -> m ()
+    runGraph
+        :: Graph.PrintDotRepr dg n
+        => dg n
+        -> Graph.GraphvizOutput
+        -> FilePath
+        -> m FilePath
+    exitSucc :: forall a . m a
+    exitWithCode :: forall a . ExitCode -> m a
+    replSwapMVar :: forall a . MVar a -> a -> m a
+    closeHandle :: Handle -> m ()
+    newReplIORef :: forall a . a -> m (IORef a)
+    readReplIORef :: forall a . IORef a -> m a
+    modifyReplIORef
+        :: forall a
+        .  IORef a
+        -> (a -> a)
+        -> m ()
+
+instance (MonadReplIO m, MonadTrans t, Monad (t m)) => MonadReplIO (t m) where
+    printLn = lift . printLn
+    printNoLn = lift . printNoLn
+    readLine = lift readLine
+    writeToFile file str = lift $ writeToFile file str
+    appendToFile file str = lift $ appendToFile file str
+    open file mode = lift $ open file mode
+    replReadFile = lift . replReadFile
+    getContentsFromHandle = lift . getContentsFromHandle
+    printToHandle handle str = lift $ printToHandle handle str
+    flushHandle = lift . flushHandle
+    canFindDirectory = lift . canFindDirectory
+    canFindFile = lift . canFindFile
+    findExec = lift . findExec
+    makeProcess = lift . makeProcess
+    canFindGraphviz = lift canFindGraphviz
+    runGraphCanvas x canv = lift $ runGraphCanvas x canv
+    runGraph x gout file = lift $ runGraph x gout file
+    exitSucc = lift exitSucc
+    exitWithCode = lift . exitWithCode
+    replSwapMVar mvar x = lift $ replSwapMVar mvar x
+    closeHandle = lift . closeHandle
+    newReplIORef = lift . newReplIORef
+    readReplIORef = lift . readReplIORef
+    modifyReplIORef ref f = lift $ modifyReplIORef ref f
+
+instance MonadReplIO IO where
+    printLn = putStrLn
+    printNoLn = putStr
+    readLine = getLine
+    writeToFile = writeFile
+    appendToFile = appendFile
+    open = openFile
+    replReadFile = readFile
+    getContentsFromHandle = hGetContents
+    printToHandle = hPutStr
+    flushHandle = hFlush
+    canFindDirectory = doesDirectoryExist
+    canFindFile = doesFileExist
+    findExec = findExecutable
+    makeProcess = createProcess
+    canFindGraphviz = Graph.isGraphvizInstalled
+    runGraphCanvas = Graph.runGraphvizCanvas'
+    runGraph = Graph.runGraphviz
+    exitSucc = exitSuccess
+    exitWithCode = exitWith
+    replSwapMVar = swapMVar
+    closeHandle = hClose
+    newReplIORef = newIORef
+    readReplIORef = readIORef
+    modifyReplIORef = modifyIORef
 
 -- | Represents an optional file name which contains a sequence of
 -- repl commands.
@@ -127,11 +240,11 @@ newtype ReplOutput =
     { unReplOutput :: [ReplOut]
     } deriving (Eq, Show, Semigroup, Monoid)
 
-newtype PrintAuxOutput = PrintAuxOutput
-    { unPrintAuxOutput :: String -> IO () }
+newtype PrintAuxOutput m = PrintAuxOutput
+    { unPrintAuxOutput :: String -> m () }
 
-newtype PrintKoreOutput = PrintKoreOutput
-    { unPrintKoreOutput :: String -> IO () }
+newtype PrintKoreOutput m = PrintKoreOutput
+    { unPrintKoreOutput :: String -> m () }
 
 data ReplOut = AuxOut String | KoreOut String
     deriving (Eq, Show)

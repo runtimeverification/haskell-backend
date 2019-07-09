@@ -68,7 +68,7 @@ runRepl
     :: forall claim m
     .  Unparse (Variable)
     => MonadSimplify m
-    => MonadIO m
+    => MonadReplIO m
     => MonadCatch m
     => Claim claim
     => [Axiom]
@@ -208,21 +208,24 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
                 $ verifyClaimStep claim claims axioms graph node
             else pure graph
 
-    catchInterruptWithDefault :: MonadCatch m => MonadIO m => a -> m a -> m a
+    catchInterruptWithDefault
+        :: MonadCatch m
+        => MonadReplIO m
+        => a
+        -> m a
+        -> m a
     catchInterruptWithDefault def sa =
         catch sa $ \UserInterrupt -> do
-            liftIO $ putStrLn "Step evaluation interrupted."
+            printLn "Step evaluation interrupted."
             pure def
 
-    replGreeting :: MonadIO m => m ()
+    replGreeting :: MonadReplIO m => m ()
     replGreeting =
-        liftIO $
-            putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
+        printLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
-    prompt :: MonadIO n => MonadState (ReplState claim) n => n String
+    prompt :: MonadReplIO n => MonadState (ReplState claim) n => n String
     prompt = do
         node <- Lens.use lensNode
-        liftIO $ do
-            putStr $ "Kore (" <> show (unReplNode node) <> ")> "
-            hFlush stdout
-            getLine
+        printNoLn $ "Kore (" <> show (unReplNode node) <> ")> "
+        flushHandle stdout
+        readLine

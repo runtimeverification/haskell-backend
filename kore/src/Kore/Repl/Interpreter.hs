@@ -75,8 +75,19 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Exts
                  ( toList )
 import           GHC.IO.Handle
-                 ( hGetContents, hPutStr )
+                 ( Handle (..), hGetContents, hPutStr )
+import           Numeric.Natural
+import           System.Directory
+                 ( doesDirectoryExist, doesFileExist, findExecutable )
 import           System.Exit
+import           System.FilePath.Posix
+                 ( splitFileName )
+import           System.Process
+                 ( CreateProcess (..), ProcessHandle (..),
+                 StdStream (CreatePipe), createProcess, proc, std_in, std_out )
+import           Text.Megaparsec
+                 ( ParseErrorBundle (..), errorBundlePretty, parseMaybe,
+                 runParser )
 
 import           Kore.Attribute.Axiom
                  ( SourceLocation (..) )
@@ -121,17 +132,6 @@ import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unparser
                  ( unparse, unparseToString )
-import           Numeric.Natural
-import           System.Directory
-                 ( doesDirectoryExist, doesFileExist, findExecutable )
-import           System.FilePath.Posix
-                 ( splitFileName )
-import           System.Process
-                 ( StdStream (CreatePipe), createProcess, proc, std_in,
-                 std_out )
-import           Text.Megaparsec
-                 ( ParseErrorBundle (..), errorBundlePretty, parseMaybe,
-                 runParser )
 
 -- | Warning: you should never use WriterT or RWST. It is used here with
 -- _great care_ of evaluating the RWST to a StateT immediatly, and thus getting
@@ -147,8 +147,8 @@ replInterpreter
     :: forall claim m
     .  Claim claim
     => MonadSimplify m
-    => MonadIO m
-    => (String -> IO ())
+    => MonadReplIO m
+    => (String -> m ())
     -> ReplCommand
     -> ReaderT (Config claim m) (StateT (ReplState claim) m) ReplStatus
 replInterpreter fn cmd =
@@ -161,9 +161,9 @@ replInterpreter0
     :: forall claim m
     .  Claim claim
     => MonadSimplify m
-    => MonadIO m
-    => PrintAuxOutput
-    -> PrintKoreOutput
+    => MonadReplIO m
+    => PrintAuxOutput m
+    -> PrintKoreOutput m
     -> ReplCommand
     -> ReaderT (Config claim m) (StateT (ReplState claim) m) ReplStatus
 replInterpreter0 printAux printKore replCmd = do
@@ -200,16 +200,16 @@ replInterpreter0 printAux printKore replCmd = do
                 Log s t            -> handleLog (s,t)    $> Continue
                 Exit               -> exit
     (ReplOutput output, shouldContinue) <- evaluateCommand command
-    liftIO $ Foldable.traverse_
-            ( replOut
-                (unPrintAuxOutput printAux)
-                (unPrintKoreOutput printKore)
-            )
-            output
+    lift . lift $ Foldable.traverse_
+        ( replOut
+            (unPrintAuxOutput printAux)
+            (unPrintKoreOutput printKore)
+        )
+        output
     case shouldContinue of
         Continue -> pure Continue
-        SuccessStop -> liftIO exitSuccess
-        FailStop -> liftIO . exitWith $ ExitFailure 2
+        SuccessStop -> exitSucc
+        FailStop -> exitWithCode $ ExitFailure 2
   where
     -- Extracts the Writer out of the RWST monad using the current state
     -- and updates the state, returning the writer output along with the
@@ -248,7 +248,7 @@ showUsage = putStrLn' showUsageMessage
 
 exit
     :: Claim claim
-    => MonadIO m
+    => MonadReplIO m
     => ReplM claim m ReplStatus
 exit = do
     proofs <- allProofs
@@ -258,12 +258,12 @@ exit = do
     onePathClaims <- generateInProgressOPClaims
     sort <- currentClaimSort
     let conj = conjOfOnePathClaims onePathClaims sort
-    liftIO $ writeFile
-            fileName
-            ( unparseToString
-            . TermLike.externalizeFreshVariables
-            $ conj
-            )
+    writeToFile
+        fileName
+        ( unparseToString
+        . TermLike.externalizeFreshVariables
+        $ conj
+        )
     if isCompleted (Map.elems proofs)
        then return SuccessStop
        else return FailStop
@@ -362,7 +362,7 @@ showIndexOrName =
         either (show . unClaimIndex) (show . unRuleName)
 
 showGraph
-    :: MonadIO m
+    :: MonadReplIO m
     => MonadWriter ReplOutput m
     => Claim claim
     => Maybe FilePath
@@ -371,19 +371,19 @@ showGraph
 showGraph mfile = do
     graph <- getInnerGraph
     axioms <- Lens.use lensAxioms
-    installed <- liftIO Graph.isGraphvizInstalled
+    installed <- canFindGraphviz
     if installed == True
-       then liftIO $ maybe
-                        (showDotGraph (length axioms) graph)
-                        (saveDotGraph (length axioms) graph)
-                        mfile
+       then maybe
+               (showDotGraph (length axioms) graph)
+               (saveDotGraph (length axioms) graph)
+               mfile
        else putStrLn' "Graphviz is not installed."
 
 -- | Executes 'n' prove steps, or until branching occurs.
 proveSteps
     :: Claim claim
     => MonadSimplify m
-    => MonadIO m
+    => MonadReplIO m
     => Natural
     -- ^ maximum number of steps to perform
     -> ReplM claim m ()
@@ -414,7 +414,7 @@ loadScript
     :: forall claim m
     .  Claim claim
     => MonadSimplify m
-    => MonadIO m
+    => MonadReplIO m
     => FilePath
     -- ^ path to file
     -> ReplM claim m ()
@@ -685,23 +685,23 @@ redirect
     :: forall claim m
     .  Claim claim
     => MonadSimplify m
-    => MonadIO m
+    => MonadReplIO m
     => ReplCommand
     -- ^ command to redirect
     -> FilePath
     -- ^ file path
     -> ReplM claim m ()
 redirect cmd file = do
-    liftIO $ whenPathIsReachable file (flip writeFile $ "")
+    whenPathIsReachable file (flip writeToFile $ "")
     appendCommand cmd file
 
 runInterpreterWithOutput
     :: forall claim m
     .  Claim claim
     => MonadSimplify m
-    => MonadIO m
-    => PrintAuxOutput
-    -> PrintKoreOutput
+    => MonadReplIO m
+    => PrintAuxOutput m
+    -> PrintKoreOutput m
     -> ReplCommand
     -> Config claim m
     -> ReplM claim m ()
@@ -720,7 +720,7 @@ tryAxiomClaim
     :: forall claim m
     .  Claim claim
     => MonadSimplify m
-    => MonadIO m
+    => MonadReplIO m
     => RuleReference
     -- ^ tagged index in the axioms or claims list
     -> ReplM claim m ()
@@ -731,7 +731,7 @@ tryFAxiomClaim
     :: forall claim m
     .  Claim claim
     => MonadSimplify m
-    => MonadIO m
+    => MonadReplIO m
     => RuleReference
     -- ^ tagged index in the axioms or claims list
     -> ReplM claim m ()
@@ -741,7 +741,7 @@ tryAxiomClaimWorker
     :: forall claim m
     .  Claim claim
     => MonadSimplify m
-    => MonadIO m
+    => MonadReplIO m
     => AlsoApplyRule
     -> RuleReference
     -- ^ tagged index in the axioms or claims list
@@ -856,7 +856,7 @@ saveSession
     .  forall claim
     .  MonadState (ReplState claim) m
     => MonadWriter ReplOutput m
-    => MonadIO m
+    => MonadReplIO m
     => FilePath
     -- ^ path to file
     -> m ()
@@ -866,7 +866,7 @@ saveSession path =
     saveToFile :: FilePath -> m ()
     saveToFile file = do
         content <- seqUnlines <$> Lens.use lensCommands
-        liftIO $ writeFile file content
+        writeToFile file content
         putStrLn' "Done."
     seqUnlines :: Seq String -> String
     seqUnlines = unlines . toList
@@ -875,7 +875,7 @@ saveSession path =
 pipe
     :: forall claim m
     .  Claim claim
-    => MonadIO m
+    => MonadReplIO m
     => MonadSimplify m
     => ReplCommand
     -- ^ command to pipe
@@ -885,44 +885,45 @@ pipe
     -- ^ additional arguments to be passed to the program
     -> ReplM claim m ()
 pipe cmd file args = do
-    exists <- liftIO $ findExecutable file
+    exists <- findExec file
     case exists of
         Nothing -> putStrLn' "Cannot find executable."
         Just exec -> do
             config <- ask
-            pipeOutRef <- liftIO $ newIORef (mempty :: ReplOutput)
+            pipeOutRef <- newReplIORef (mempty :: ReplOutput)
             runInterpreterWithOutput
                 (PrintAuxOutput $ justPrint pipeOutRef)
                 (PrintKoreOutput $ runExternalProcess pipeOutRef exec)
                 cmd
                 config
-            pipeOut <- liftIO $ readIORef pipeOutRef
+            pipeOut <- readReplIORef pipeOutRef
             tell pipeOut
   where
     createProcess' exec =
-        liftIO $ createProcess (proc exec args)
+        makeProcess (proc exec args)
             { std_in = CreatePipe, std_out = CreatePipe }
-    runExternalProcess :: IORef ReplOutput -> String -> String -> IO ()
+    runExternalProcess :: IORef ReplOutput -> String -> String -> m ()
     runExternalProcess pipeOut exec str = do
         (maybeInput, maybeOutput, _, _) <- createProcess' exec
-        let outputFunc = maybe putStrLn hPutStr maybeInput
+        let outputFunc =
+                maybe printLn printToHandle maybeInput
         outputFunc str
         case maybeOutput of
             Nothing ->
-                putStrLn "Error: couldn't access output handle."
+                printLn "Error: couldn't access output handle."
             Just handle -> do
-                output <- liftIO $ hGetContents handle
-                modifyIORef pipeOut (appReplOut . AuxOut $ output)
-    justPrint :: IORef ReplOutput -> String -> IO ()
+                output <- getContentsFromHandle handle
+                modifyReplIORef pipeOut (appReplOut . AuxOut $ output)
+    justPrint :: IORef ReplOutput -> String -> m ()
     justPrint outRef str = do
-        modifyIORef outRef (appReplOut . AuxOut $ str)
+        modifyReplIORef outRef (appReplOut . AuxOut $ str)
 
 -- | Appends output of a command to a file.
 appendTo
     :: forall claim m
     .  Claim claim
     => MonadSimplify m
-    => MonadIO m
+    => MonadReplIO m
     => ReplCommand
     -- ^ command
     -> FilePath
@@ -935,15 +936,15 @@ appendCommand
     :: forall claim m
     .  Claim claim
     => MonadSimplify m
-    => MonadIO m
+    => MonadReplIO m
     => ReplCommand
     -> FilePath
     -> ReplM claim m ()
 appendCommand cmd file = do
     config <- ask
     runInterpreterWithOutput
-        (PrintAuxOutput $ appendFile file)
-        (PrintKoreOutput $ appendFile file)
+        (PrintAuxOutput $ appendToFile file)
+        (PrintKoreOutput $ appendToFile file)
         cmd
         config
     putStrLn' $ "Redirected output to \"" <> file <> "\"."
@@ -964,10 +965,10 @@ tryAlias
     :: forall claim m
     .  Claim claim
     => MonadSimplify m
-    => MonadIO m
+    => MonadReplIO m
     => ReplAlias
-    -> PrintAuxOutput
-    -> PrintKoreOutput
+    -> PrintAuxOutput m
+    -> PrintKoreOutput m
     -> ReplM claim m ReplStatus
 tryAlias replAlias@ReplAlias { name } printAux printKore = do
     res <- findAlias name
@@ -1002,7 +1003,7 @@ performStepNoBranching
     :: forall claim m
     .  Claim claim
     => MonadSimplify m
-    => MonadIO m
+    => MonadReplIO m
     => (Natural, StepResult)
     -- ^ (current step, last result)
     -> ReplM claim m (Either (Natural, StepResult) (Natural, StepResult))
@@ -1104,11 +1105,11 @@ putStrLn' :: MonadWriter ReplOutput m => String -> m ()
 putStrLn' str =
     tell . makeAuxReplOutput $ str
 
-printIfNotEmpty :: String -> IO ()
+printIfNotEmpty :: MonadReplIO m => String -> m ()
 printIfNotEmpty =
     \case
         "" -> pure ()
-        xs -> putStr xs
+        xs -> printNoLn xs
 
 printNotFound :: MonadWriter ReplOutput m => m ()
 printNotFound = putStrLn' "Variable or index not found"
@@ -1116,19 +1117,29 @@ printNotFound = putStrLn' "Variable or index not found"
 -- | Shows the 'dot' graph. This currently only works on Linux. The 'Int'
 -- parameter is needed in order to distinguish between axioms and claims and
 -- represents the number of available axioms.
-showDotGraph :: Int -> InnerGraph -> IO ()
+showDotGraph
+    :: MonadReplIO m
+    => Int
+    -> InnerGraph
+    -> m ()
 showDotGraph len =
-    (flip Graph.runGraphvizCanvas') Graph.Xlib
+    (flip runGraphCanvas) Graph.Xlib
         . Graph.graphToDot (graphParams len)
 
-saveDotGraph :: Int -> InnerGraph -> FilePath -> IO ()
+saveDotGraph
+    :: forall m
+    .  MonadReplIO m
+    => Int
+    -> InnerGraph
+    -> FilePath
+    -> m ()
 saveDotGraph len gr file =
     whenPathIsReachable file saveGraphImg
   where
-    saveGraphImg :: FilePath -> IO ()
+    saveGraphImg :: FilePath -> m ()
     saveGraphImg path =
         void
-        . Graph.runGraphviz
+        . runGraph
             (Graph.graphToDot (graphParams len) gr) Graph.Jpeg
         $ path <> ".jpeg"
 
@@ -1193,21 +1204,21 @@ parseEvalScript
     :: forall claim t m
     .  Claim claim
     => MonadSimplify m
-    => MonadIO m
+    => MonadReplIO m
     => MonadState (ReplState claim) (t m)
     => MonadReader (Config claim m) (t m)
     => Monad.Trans.MonadTrans t
     => FilePath
     -> t m ()
 parseEvalScript file = do
-    exists <- lift . liftIO . doesFileExist $ file
+    exists <- canFindFile file
     if exists == True
         then do
-            contents <- lift . liftIO $ readFile file
+            contents <- replReadFile file
             let result = runParser scriptParser file contents
             either parseFailed executeScript result
         else do
-            lift . liftIO . putStrLn
+            printLn
                 $ "Cannot find " <> file
 
   where
@@ -1215,7 +1226,7 @@ parseEvalScript file = do
         :: ParseErrorBundle String String
         -> t m ()
     parseFailed err =
-        lift . liftIO . putStrLn
+        printLn
             $ "\nCouldn't parse initial script file."
             <> "\nParser error at: "
             <> errorBundlePretty err
@@ -1277,12 +1288,12 @@ execStateReader config st action =
         $ flip runReaderT config
         $ action
 
-checkIfCorrectFilePath :: MonadIO m => FilePath -> m Bool
+checkIfCorrectFilePath :: MonadReplIO m => FilePath -> m Bool
 checkIfCorrectFilePath =
-    liftIO . doesDirectoryExist . fst . splitFileName
+    canFindDirectory . fst . splitFileName
 
 whenPathIsReachable
-    :: MonadIO m
+    :: MonadReplIO m
     => FilePath
     -> (FilePath -> m ())
     -> m ()
@@ -1290,4 +1301,4 @@ whenPathIsReachable path action =
     ifM
         (checkIfCorrectFilePath path)
         (action path)
-        $ liftIO . putStrLn $ "Directory does not exist."
+        $ printLn "Directory does not exist."

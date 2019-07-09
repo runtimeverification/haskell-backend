@@ -11,7 +11,7 @@ import           Control.Applicative
 import           Control.Concurrent.MVar
 import qualified Control.Lens as Lens
 import           Control.Monad.Reader
-                 ( runReaderT )
+                 ( liftIO, runReaderT )
 import           Control.Monad.Trans.State.Strict
                  ( evalStateT, runStateT )
 import           Data.Coerce
@@ -602,21 +602,26 @@ runWithState command axioms claims claim stateTransformer
             $ flip runStateT state
             $ flip runReaderT config
             $ replInterpreter0
-                (PrintAuxOutput . modifyAuxOutput $ output)
-                (PrintKoreOutput . modifyKoreOutput $ output)
+               (PrintAuxOutput . modifyAuxOutput $ output)
+               (PrintKoreOutput . modifyKoreOutput $ output)
                 command
         output' <- readIORef output
         return $ Result output' c s
   where
     logOptions = Logger.KoreLogOptions Logger.LogNone Logger.Debug mempty
+
+    liftSimplifier
+        :: Logger.LogAction IO Logger.LogMessage
+        -> Simplifier a
+        -> IO a
     liftSimplifier logger =
         SMT.runSMT SMT.defaultConfig logger . evalSimplifier testEnv
 
-    modifyAuxOutput :: IORef ReplOutput -> String -> IO ()
-    modifyAuxOutput ref s = modifyIORef ref (appReplOut . AuxOut $ s)
+    modifyAuxOutput :: IORef ReplOutput -> String -> Simplifier ()
+    modifyAuxOutput ref s = liftIO $ modifyIORef ref (appReplOut . AuxOut $ s)
 
-    modifyKoreOutput :: IORef ReplOutput -> String -> IO ()
-    modifyKoreOutput ref s = modifyIORef ref (appReplOut . KoreOut $ s)
+    modifyKoreOutput :: IORef ReplOutput -> String -> Simplifier ()
+    modifyKoreOutput ref s = liftIO $ modifyIORef ref (appReplOut . KoreOut $ s)
 
 data Result = Result
     { output   :: ReplOutput

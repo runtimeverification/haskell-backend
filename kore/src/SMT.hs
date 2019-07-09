@@ -136,6 +136,7 @@ newtype SmtT m a = SmtT { runSmtT :: ReaderT (MVar Solver) m a }
         , MonadIO
         , MonadThrow
         , Morph.MFunctor
+        , Trans.MonadTrans
         )
 
 instance MonadUnliftIO m => MonadUnliftIO (SmtT m) where

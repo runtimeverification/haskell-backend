@@ -361,7 +361,7 @@ liftSimplifierWithLogger
     :: forall a t m claim
     .  MonadState (ReplState claim) (t m)
     => MonadSimplify m
-    => MonadIO m
+    => MonadReplIO m
     => Monad.Trans.MonadTrans t
     => MVar (Logger.LogAction IO Logger.LogMessage)
     -> m a
@@ -370,9 +370,9 @@ liftSimplifierWithLogger mLogger simplifier = do
    (severity, logType) <- logging <$> get
    (textLogger, maybeHandle) <- logTypeToLogger logType
    let logger = Logger.makeKoreLogger severity mempty textLogger
-   _ <- Monad.Trans.lift . liftIO $ swapMVar mLogger logger
+   _ <- replSwapMVar mLogger logger
    result <- Monad.Trans.lift simplifier
-   maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
+   maybe (pure ()) closeHandle maybeHandle
    pure result
   where
     logTypeToLogger
@@ -383,7 +383,7 @@ liftSimplifierWithLogger mLogger simplifier = do
             NoLogging   -> pure (mempty, Nothing)
             LogToStdOut -> pure (Logger.logTextStdout, Nothing)
             LogToFile file -> do
-                handle <- Monad.Trans.lift . liftIO $ openFile file AppendMode
+                handle <- open file AppendMode
                 pure (Logger.logTextHandle handle, Just handle)
 
 -- | Run a single step for the data in state
@@ -393,7 +393,7 @@ runStepper
     => MonadReader (Config claim m) (t m)
     => Monad.Trans.MonadTrans t
     => MonadSimplify m
-    => MonadIO m
+    => MonadReplIO m
     => Claim claim
     => t m StepResult
 runStepper = do
@@ -413,7 +413,7 @@ runStepper'
     => MonadReader (Config claim m) (t m)
     => Monad.Trans.MonadTrans t
     => MonadSimplify m
-    => MonadIO m
+    => MonadReplIO m
     => Claim claim
     => [claim]
     -> [Axiom]
@@ -439,7 +439,7 @@ runUnifier
     => MonadReader (Config claim m) (t m)
     => Monad.Trans.MonadTrans t
     => MonadSimplify m
-    => MonadIO m
+    => MonadReplIO m
     => TermLike Variable
     -> TermLike Variable
     -> t m (Either ReplOutput (NonEmpty (IPredicate.Predicate Variable)))
