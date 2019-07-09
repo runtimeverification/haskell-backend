@@ -795,7 +795,10 @@ verifyFreeVariables unifiedPattern =
     Monad.foldM
         addFreeVariable
         emptyDeclaredVariables
+        $
         (Set.toList (Variables.freePureVariables unifiedPattern))
+        ++
+        (Set.toList (Variables.freeSetVariables unifiedPattern))
 
 addFreeVariable
     :: DeclaredVariables
