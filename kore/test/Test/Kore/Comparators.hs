@@ -1025,33 +1025,6 @@ instance StructEqualWithExplanation InternalString where
     structConstructorName _ = "InternalString"
 
 instance
-    ( EqualWithExplanation key, Show key
-    , EqualWithExplanation child, Show child
-    ) =>
-    EqualWithExplanation (InternalMap key child)
-  where
-    compareWithExplanation = structCompareWithExplanation
-    printWithExplanation = show
-
-instance
-    ( EqualWithExplanation key, Show key
-    , EqualWithExplanation child, Show child
-    ) =>
-    StructEqualWithExplanation (InternalMap key child)
-  where
-    structFieldsWithNames expect actual@(InternalMap _ _ _ _ _) =
-        [ Function.on (EqWrap "builtinMapSort = ") builtinMapSort expect actual
-        , Function.on (EqWrap "builtinMapUnit = ") builtinMapUnit expect actual
-        , Function.on
-            (EqWrap "builtinMapElement = ") builtinMapElement expect actual
-        , Function.on
-            (EqWrap "builtinMapConcat = ") builtinMapConcat expect actual
-        , Function.on
-            (EqWrap "builtinMapChild = ") builtinMapChild expect actual
-        ]
-    structConstructorName _ = "InternalMap"
-
-instance
     (EqualWithExplanation child, Show child) =>
     EqualWithExplanation (InternalList child)
   where
@@ -1078,30 +1051,52 @@ instance
 
 instance
     ( EqualWithExplanation key, Show key
+    , EqualWithExplanation (normalized key child), Show (normalized key child)
     , EqualWithExplanation child, Show child
     ) =>
-    EqualWithExplanation (InternalSet key child)
+    EqualWithExplanation (InternalAc key normalized child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance
     ( EqualWithExplanation key, Show key
+    , EqualWithExplanation (normalized key child), Show (normalized key child)
     , EqualWithExplanation child, Show child
     ) =>
-    StructEqualWithExplanation (InternalSet key child)
+    StructEqualWithExplanation (InternalAc key normalized child)
   where
-    structFieldsWithNames expect actual@(InternalSet _ _ _ _ _) =
-        [ Function.on (EqWrap "builtinSetSort = ") builtinSetSort expect actual
-        , Function.on (EqWrap "builtinSetUnit = ") builtinSetUnit expect actual
+    structFieldsWithNames expect actual@(InternalAc _ _ _ _ _) =
+        [ Function.on (EqWrap "builtinAcSort = ") builtinAcSort expect actual
+        , Function.on (EqWrap "builtinAcUnit = ") builtinAcUnit expect actual
         , Function.on
-            (EqWrap "builtinSetElement = ") builtinSetElement expect actual
+            (EqWrap "builtinAcElement = ") builtinAcElement expect actual
         , Function.on
-            (EqWrap "builtinSetConcat = ") builtinSetConcat expect actual
+            (EqWrap "builtinAcConcat = ") builtinAcConcat expect actual
         , Function.on
-            (EqWrap "builtinSetChild = ") builtinSetChild expect actual
+            (EqWrap "builtinAcChild = ") builtinAcChild expect actual
         ]
-    structConstructorName _ = "InternalSet"
+    structConstructorName _ = "InternalAc"
+
+instance SumEqualWithExplanation (NoValue child)
+  where
+    sumConstructorPair NoValue NoValue =
+        SumConstructorSameNoArguments
+
+instance EqualWithExplanation (NoValue child)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation key, Show key
+    , EqualWithExplanation child, Show child
+    ) =>
+    SumEqualWithExplanation (NormalizedSet key child)
+  where
+    sumConstructorPair (NormalizedSet a1) (NormalizedSet a2) =
+        SumConstructorSameWithArguments
+            (EqWrap "NormalizedSet" a1 a2)
 
 instance
     ( EqualWithExplanation key, Show key
@@ -1109,16 +1104,59 @@ instance
     ) =>
     EqualWithExplanation (NormalizedSet key child)
   where
-    compareWithExplanation = structCompareWithExplanation
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance (EqualWithExplanation child, Show child)
+    => SumEqualWithExplanation (Value child)
+  where
+    sumConstructorPair (Value a1) (Value a2) =
+        SumConstructorSameWithArguments
+            (EqWrap "Value" a1 a2)
+
+instance (EqualWithExplanation child, Show child)
+    => EqualWithExplanation (Value child)
+  where
+    compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
 instance
     ( EqualWithExplanation key, Show key
     , EqualWithExplanation child, Show child
     ) =>
-    StructEqualWithExplanation (NormalizedSet key child)
+    SumEqualWithExplanation (NormalizedMap key child)
   where
-    structFieldsWithNames expect actual@(NormalizedSet _ _ _) =
+    sumConstructorPair (NormalizedMap a1) (NormalizedMap a2) =
+        SumConstructorSameWithArguments
+            (EqWrap "NormalizedMap" a1 a2)
+
+instance
+    ( EqualWithExplanation key, Show key
+    , EqualWithExplanation child, Show child
+    ) =>
+    EqualWithExplanation (NormalizedMap key child)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation key, Show key
+    , EqualWithExplanation (valueWrapper child), Show (valueWrapper child)
+    , EqualWithExplanation child, Show child
+    ) =>
+    EqualWithExplanation (NormalizedAc key valueWrapper child)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation key, Show key
+    , EqualWithExplanation (valueWrapper child), Show (valueWrapper child)
+    , EqualWithExplanation child, Show child
+    ) =>
+    StructEqualWithExplanation (NormalizedAc key valueWrapper child)
+  where
+    structFieldsWithNames expect actual@(NormalizedAc _ _ _) =
         [ Function.on
             (EqWrap "elementsWithVariables = ")
             elementsWithVariables
@@ -1126,9 +1164,9 @@ instance
             actual
         , Function.on
             (EqWrap "concreteElements = ") concreteElements expect actual
-        , Function.on (EqWrap "sets = ") sets expect actual
+        , Function.on (EqWrap "opaque = ") opaque expect actual
         ]
-    structConstructorName _ = "NormalizedSet"
+    structConstructorName _ = "NormalizedAc"
 
 instance
     ( EqualWithExplanation key, Show key

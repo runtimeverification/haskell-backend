@@ -23,11 +23,10 @@ import qualified Data.Set as Set
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Simplification
                  ( Simplification (Simplification) )
+import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as List
-import qualified Kore.Builtin.Map as Map
-import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.String as String
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -51,8 +50,6 @@ import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import qualified Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
-import           Kore.Step.Simplification.Data
-                 ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
@@ -1622,11 +1619,19 @@ matchingSet =
                 { builtinIntSort  = Mock.intSort
                 , builtinIntValue = k
                 }
+    mkConcreteSet :: [TermLike Concrete] -> TermLike Variable
     mkConcreteSet =
-        Set.asInternalConcrete Mock.metadataTools Mock.setSort . Set.fromList
+        Ac.asInternalConcrete Mock.metadataTools Mock.setSort
+        . Map.fromSet (const Domain.NoValue)
+        . Set.fromList
     mkSet concrete' evars svars =
-        Set.asInternal Mock.metadataTools Mock.setSort
-            $ Domain.NormalizedSet evars (Set.fromList concrete') svars
+        Ac.asInternal Mock.metadataTools Mock.setSort
+            Domain.NormalizedAc
+                { elementsWithVariables = map (\x -> (x, Domain.NoValue)) evars
+                , concreteElements =
+                    Map.fromSet (const Domain.NoValue) (Set.fromList concrete')
+                , opaque = svars
+                }
     matchConcreteSet = matchDefinition `on` mkConcreteSet
     matchConcrete =
         matchConcreteSet `on` fmap mkKey
@@ -1655,7 +1660,7 @@ matchingMap =
         assertEqualWithExplanation "" expect actual
     , testCase "variable on right does not match" $ do
         let expect = Nothing
-        actual <- matchDefinition (mkMap [(mkKey 1, mkVal 11)]) (mkVar Mock.xMap)
+        actual <- matchDefinition (mkConcreteMap [(mkKey 1, mkVal 11)]) (mkVar Mock.xMap)
         assertEqualWithExplanation "" expect actual
     , testCase "single variable" $ do
         let expect = substitution [(Mock.xInt, 12)]
@@ -1681,75 +1686,6 @@ matchingMap =
             , (3, 13)
             ]
         assertEqualWithExplanation "" expect actual
-    , testCase "concat(empty, var) vs concrete" $ do
-        let expect =
-                Just $ MultiOr.make
-                    [ Conditional
-                        { term = ()
-                        , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
-                            [ (Mock.xMap, mkMap
-                                  [ (mkKey 1, mkVal 11)
-                                  , (mkKey 2, mkVal 12)
-                                  , (mkKey 3, mkVal 13)
-                                  ]
-                              )
-                            ]
-                        }
-                    ]
-        actual <- matchConcat
-            (mkMap [] `concat'` mkVar Mock.xMap)
-            [ (1, 11)
-            , (2, 12)
-            , (3, 13)
-            ]
-        assertEqualWithExplanation "" expect actual
-    , testCase "concat(unit, var) vs concrete" $ do
-        let expect =
-                Just $ MultiOr.make
-                    [ Conditional
-                        { term = ()
-                        , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
-                            [ (Mock.xMap, mkMap
-                                  [ (mkKey 2, mkVal 12)
-                                  , (mkKey 3, mkVal 13)
-                                  ]
-                              )
-                            ]
-                        }
-                    ]
-        actual <- matchConcat
-            (mkMap [(mkKey 1, mkVal 11)] `concat'` mkVar Mock.xMap)
-            [ (1, 11)
-            , (2, 12)
-            , (3, 13)
-            ]
-        assertEqualWithExplanation "" expect actual
-    , testCase "concat(concrete, var) vs concrete" $ do
-        let expect =
-                Just $ MultiOr.make
-                    [ Conditional
-                        { term = ()
-                        , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
-                            [ (Mock.xMap, mkMap [])
-                            ]
-                        }
-                    ]
-        actual <- matchConcat
-            ( mkMap
-                [ (mkKey 1, mkVal 11)
-                , (mkKey 2, mkVal 12)
-                , (mkKey 3, mkVal 13)
-                ]
-            `concat'` mkVar Mock.xMap
-            )
-            [ (1, 11)
-            , (2, 12)
-            , (3, 13)
-            ]
-        assertEqualWithExplanation "" expect actual
     , testCase "concat(var, empty) vs concrete" $ do
         let expect =
                 Just $ MultiOr.make
@@ -1757,7 +1693,7 @@ matchingMap =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xMap, mkMap
+                            [ (Mock.xMap, mkConcreteMap
                                   [ (mkKey 1, mkVal 11)
                                   , (mkKey 2, mkVal 12)
                                   , (mkKey 3, mkVal 13)
@@ -1766,21 +1702,21 @@ matchingMap =
                             ]
                         }
                     ]
-        actual <- matchConcat
-            (mkVar Mock.xMap `concat'` mkMap [])
+        actual <- matchBuiltin
+            [ SetVar Mock.xMap ]
             [ (1, 11)
             , (2, 12)
             , (3, 13)
             ]
         assertEqualWithExplanation "" expect actual
-    , testCase "concat(var, unit) vs concrete" $ do
+    , testCase "concat(var, singleton) vs concrete" $ do
         let expect =
                 Just $ MultiOr.make
                     [ Conditional
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xMap, mkMap
+                            [ (Mock.xMap, mkConcreteMap
                                   [ (mkKey 1, mkVal 11)
                                   , (mkKey 3, mkVal 13)
                                   ]
@@ -1788,8 +1724,10 @@ matchingMap =
                             ]
                         }
                     ]
-        actual <- matchConcat
-            (mkVar Mock.xMap `concat'` mkMap [(mkKey 2, mkVal 12)])
+        actual <- matchBuiltin
+            [ SetVar Mock.xMap
+            , Concrete (2, 12)
+            ]
             [ (1, 11)
             , (2, 12)
             , (3, 13)
@@ -1802,18 +1740,16 @@ matchingMap =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xMap, mkMap [])
+                            [ (Mock.xMap, mkConcreteMap [])
                             ]
                         }
                     ]
-        actual <- matchConcat
-            ( mkVar Mock.xMap
-            `concat'` mkMap
-                [ (mkKey 1, mkVal 11)
-                , (mkKey 2, mkVal 12)
-                , (mkKey 3, mkVal 13)
-                ]
-            )
+        actual <- matchBuiltin
+            [ SetVar Mock.xMap
+            , Concrete (1, 11)
+            , Concrete (2, 12)
+            , Concrete (3, 13)
+            ]
             [ (1, 11)
             , (2, 12)
             , (3, 13)
@@ -1831,6 +1767,7 @@ matchingMap =
                     ((fmap . fmap) mkVal subst)
             }
         ]
+    mkKey :: Integer -> TermLike Concrete
     mkKey k =
         (mkBuiltin . Domain.BuiltinInt)
             Domain.InternalInt
@@ -1838,20 +1775,41 @@ matchingMap =
                 , builtinIntValue = k
                 }
     mkVal = Int.asInternal Mock.intSort
-    mkMap = Map.asInternal Mock.metadataTools Mock.mapSort . Map.fromList
+    wrapValue (x, y) = (x, Domain.Value y)
+    mkConcreteMap
+        :: [(TermLike Concrete, TermLike Variable)] -> TermLike Variable
+    mkConcreteMap =
+        Ac.asInternalConcrete Mock.metadataTools Mock.mapSort
+        . fmap Domain.Value
+        . Map.fromList
+    mkMap
+        :: [(TermLike Concrete, TermLike Variable)]
+        -> [(TermLike Variable, TermLike Variable)]
+        -> [TermLike Variable]
+        -> TermLike Variable
+    mkMap concrete' evars svars =
+        Ac.asInternal Mock.metadataTools Mock.setSort
+            Domain.NormalizedAc
+                { elementsWithVariables = map wrapValue evars
+                , concreteElements = fmap Domain.Value (Map.fromList concrete')
+                , opaque = svars
+                }
     mapWithKey = Bifunctor.bimap mkKey
-    matchMap = matchDefinition `on` mkMap
+    matchMap = matchDefinition `on` mkConcreteMap
     matchConcrete =
         matchMap `on` fmap (mapWithKey mkVal)
     matchVariable var val =
-            matchMap
+        matchMap
             (mapWithKey (either mkVar mkVal) <$> var)
             (mapWithKey mkVal <$> val)
-    concat' = Mock.concatMap
-    matchConcat t1 m2 =
-        matchDefinition t1
-            . mkMap
-            $ fmap (mapWithKey mkVal) m2
+    matchBuiltin varComponents concreteElements =
+        matchDefinition
+            (mkMap
+                (Bifunctor.bimap mkKey mkVal <$> concrete varComponents)
+                (Bifunctor.bimap mkVar mkVal <$> elemVars varComponents)
+                (mkVar <$> setVars  varComponents)
+            )
+            (mkConcreteMap (Bifunctor.bimap mkKey mkVal <$> concreteElements))
 
 matchDefinition
     :: TermLike Variable

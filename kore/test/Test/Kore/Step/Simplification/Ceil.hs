@@ -10,9 +10,7 @@ import Test.Tasty.HUnit
 import qualified Data.Map as Map
 
 import qualified Data.Sup as Sup
-import qualified Kore.Builtin.Set as Set
-import           Kore.Domain.Builtin
-                 ( emptyNormalizedSet )
+import qualified Kore.Builtin.AssociativeCommutative as Ac
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -31,10 +29,8 @@ import           Kore.Step.Simplification.Data
                  ( AttemptedAxiom,
                  AttemptedAxiomResults (AttemptedAxiomResults),
                  BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
-                 BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Simplification.Data
-                 ( Env (..), MonadSimplify, PredicateSimplifier,
-                 TermLikeSimplifier, evalSimplifier )
+                 BuiltinAndAxiomSimplifierMap, Env (..), MonadSimplify,
+                 PredicateSimplifier, TermLikeSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiom
@@ -44,6 +40,8 @@ import           Kore.Variables.Fresh
                  ( FreshVariable )
 import qualified SMT
 
+import           Test.Kore.Builtin.Builtin
+                 ( emptyNormalizedSet )
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Kore.Step.MockSymbols
@@ -502,7 +500,7 @@ test_ceilSimplification =
         , substitution = mempty
         }
     asConcrete' p = let Just r = TermLike.asConcrete p in r
-    asInternalSet = Set.asInternal Mock.metadataTools Mock.setSort
+    asInternalSet = Ac.asInternal Mock.metadataTools Mock.setSort
 
 appliedMockEvaluator
     :: Pattern Variable -> BuiltinAndAxiomSimplifier

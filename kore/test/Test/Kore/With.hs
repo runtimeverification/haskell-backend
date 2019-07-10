@@ -10,7 +10,6 @@ import           Data.List
                  ( foldl' )
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
 
 import           Kore.Attribute.Attributes
                  ( AttributePattern )
@@ -273,14 +272,32 @@ newtype ConcreteElement =
     ConcreteElement {getConcreteElement :: TermLike Concrete}
 
 instance With
+    (Domain.NormalizedAc (TermLike Concrete) Domain.NoValue child)
+    ConcreteElement
+  where
+    with
+        s@Domain.NormalizedAc {concreteElements}
+        (ConcreteElement c)
+      | Map.member c concreteElements = error "Duplicated key in set."
+      | otherwise = s
+        { Domain.concreteElements =
+            Map.insert c Domain.NoValue concreteElements
+        }
+
+instance With
+    (Domain.NormalizedAc (TermLike Concrete) Domain.NoValue child)
+    [ConcreteElement]
+  where
+    with = foldl' with
+
+instance With
     (Domain.NormalizedSet (TermLike Concrete) child)
     ConcreteElement
   where
     with
-        s@Domain.NormalizedSet {concreteElements}
-        (ConcreteElement c)
-      | Set.member c concreteElements = error "Duplicated key in set."
-      | otherwise = s {Domain.concreteElements = Set.insert c concreteElements}
+        (Domain.NormalizedSet ac)
+        value
+      = Domain.NormalizedSet (ac `with` value)
 
 instance With
     (Domain.NormalizedSet (TermLike Concrete) child)
@@ -288,7 +305,29 @@ instance With
   where
     with = foldl' with
 
+-- VariableElement
+
 newtype VariableElement child = VariableElement {getVariableElement :: child}
+
+instance Ord child
+    => With
+        (Domain.NormalizedAc (TermLike Concrete) Domain.NoValue child)
+        (VariableElement child)
+  where
+    with
+        s@Domain.NormalizedAc {elementsWithVariables}
+        (VariableElement v)
+      = s
+        { Domain.elementsWithVariables =
+            List.sort ((v, Domain.NoValue) : elementsWithVariables)
+        }
+
+instance Ord child
+    => With
+        (Domain.NormalizedAc (TermLike Concrete) Domain.NoValue child)
+        [VariableElement child]
+  where
+    with = foldl' with
 
 instance Ord child
     => With
@@ -296,10 +335,9 @@ instance Ord child
         (VariableElement child)
   where
     with
-        s@Domain.NormalizedSet {elementsWithVariables}
-        (VariableElement v)
-      = s
-        { Domain.elementsWithVariables = List.sort (v : elementsWithVariables) }
+        (Domain.NormalizedSet ac)
+        value
+      = Domain.NormalizedSet (ac `with` value)
 
 instance Ord child
     => With
@@ -308,7 +346,28 @@ instance Ord child
   where
     with = foldl' with
 
+-- OpaqueSet
+
 newtype OpaqueSet child = OpaqueSet {getOpaqueSet :: child}
+
+instance Ord child
+    => With
+        (Domain.NormalizedAc (TermLike Concrete) Domain.NoValue child)
+        (OpaqueSet child)
+  where
+    with
+        s@Domain.NormalizedAc {opaque}
+        (OpaqueSet v)
+      = s
+        { Domain.opaque = List.sort (v : opaque) }
+
+instance Ord child
+    => With
+        (Domain.NormalizedAc (TermLike Concrete) Domain.NoValue child)
+        [OpaqueSet child]
+  where
+    with = foldl' with
+
 
 instance Ord child
     => With
@@ -316,10 +375,9 @@ instance Ord child
         (OpaqueSet child)
   where
     with
-        s@Domain.NormalizedSet {sets}
-        (OpaqueSet v)
-      = s
-        { Domain.sets = List.sort (v : sets) }
+        (Domain.NormalizedSet ac)
+        value
+      = Domain.NormalizedSet (ac `with` value)
 
 instance Ord child
     => With

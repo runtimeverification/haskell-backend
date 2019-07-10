@@ -7,15 +7,15 @@ import qualified GHC.Stack as GHC
 
 import           Kore.Attribute.Pattern.Defined
 import           Kore.Attribute.Synthetic
-import qualified Kore.Builtin.Set as Set
-import           Kore.Domain.Builtin
-                 ( emptyNormalizedSet )
+import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Internal.TermLike
                  ( TermLike, TermLikeF (..) )
 import           Kore.Syntax hiding
                  ( PatternF (..) )
 
+import           Test.Kore.Builtin.Builtin
+                 ( emptyNormalizedSet )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Kore.With
 
@@ -129,6 +129,7 @@ test_instance_Synthetic =
       | otherwise   = isn't
 
     asSetBuiltin
-        :: Domain.NormalizedSet (TermLike Concrete) Defined
+        :: Domain.NormalizedAc (TermLike Concrete) Domain.NoValue Defined
         -> Domain.Builtin (TermLike Concrete) Defined
-    asSetBuiltin = Set.asInternalBuiltin Mock.metadataTools Mock.setSort
+    asSetBuiltin =
+        Ac.asInternalBuiltin Mock.metadataTools Mock.setSort . Domain.wrapAc

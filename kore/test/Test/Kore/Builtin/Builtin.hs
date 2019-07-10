@@ -1,5 +1,6 @@
 module Test.Kore.Builtin.Builtin
     ( mkPair
+    , emptyNormalizedSet
     , hpropUnparse
     , testMetadataTools
     , testEnv
@@ -38,6 +39,8 @@ import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Null as Attribute
 import           Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
+import           Kore.Domain.Builtin
+                 ( NoValue, NormalizedAc, emptyNormalizedAc )
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.IndexedModule.MetadataTools
@@ -77,6 +80,9 @@ import qualified SMT
 
 import Test.Kore
 import Test.Kore.Builtin.Definition
+
+emptyNormalizedSet :: NormalizedAc key NoValue child
+emptyNormalizedSet = emptyNormalizedAc
 
 mkPair
     :: Sort
