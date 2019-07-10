@@ -766,7 +766,7 @@ unifyEquals
                             [ "Unexpected map unification term."
                             , "builtin=" ++ unparseToString builtin1
                             , "key2=" ++ unparseToString key2
-                            , "unifier=" ++ unparseToString mapUnifier
+                            , "unifier=" ++ unparseToString (Pattern.toTermLike mapUnifier)
                             ]
 
                     eitherResult =
@@ -884,8 +884,8 @@ unifyEquals
                 case eitherResult of
                     Left KeyInMap -> (error . unlines)
                         [ "Unexpected key in empty map."
-                        , "key=" ++ unparseToString keyUnifier
-                        , "value=" ++ unparseToString valueUnifier
+                        , "key=" ++ unparseToString (Pattern.toTermLike keyUnifier)
+                        , "value=" ++ unparseToString (Pattern.toTermLike valueUnifier)
                         ]
                     Right result -> return result
             _ -> bottomWithExplanation
@@ -949,7 +949,7 @@ addKeyValuePatternsToMap tools sort1 keyPattern valuePattern existingMap =
         fromMaybe
             ((error . unlines)
                 [ "Unexpected variable in map key term"
-                , "key=" ++ unparseToString keyPattern
+                , "key=" ++ unparseToString (Pattern.toTermLike keyPattern)
                 ]
             )
             (asConcrete keyTerm)

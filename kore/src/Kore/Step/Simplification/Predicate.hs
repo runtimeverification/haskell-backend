@@ -153,5 +153,5 @@ simplifyPartial
       | otherwise =
         (error . show . Pretty.vsep)
             [ "Expecting a \\top term, but found:"
-            , unparse conditional
+            , unparse . Pattern.toTermLike $ conditional
             ]

@@ -60,11 +60,11 @@ test_simplifyEvaluated =
         message actual =
             (show . Pretty.vsep)
                 [ "expected simplification of:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> originals
+                , Pretty.indent 4 $ Pretty.vsep $ unparse . Pattern.toTermLike <$> originals
                 , "would give:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> expecteds
+                , Pretty.indent 4 $ Pretty.vsep $ unparse . Pattern.toTermLike <$> expecteds
                 , "but got:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> actuals
+                , Pretty.indent 4 $ Pretty.vsep $ unparse . Pattern.toTermLike <$> actuals
                 ]
           where
             actuals = Foldable.toList actual

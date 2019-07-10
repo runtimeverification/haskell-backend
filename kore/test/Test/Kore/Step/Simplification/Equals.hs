@@ -16,7 +16,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.OrPredicate
                  ( OrPredicate )
 import           Kore.Internal.Pattern
-                 ( Pattern )
+                 ( Pattern, toTermLike )
 import qualified Kore.Internal.Pattern as Conditional
 import           Kore.Internal.Predicate
                  ( Conditional (..), Predicate )
@@ -288,11 +288,11 @@ test_equalsSimplification_Or_Pattern =
         let message1 =
                 unlines
                     [ "Expected"
-                    , unparseToString (OrPattern.toPattern <$> test1)
+                    , unparseToString (fmap (toTermLike . OrPattern.toPattern) $ test1)
                     , "would simplify to:"
-                    , unlines (unparseToString <$> Foldable.toList expect)
+                    , unlines (fmap (unparseToString . toTermLike) $ Foldable.toList expect)
                     , "but instead found:"
-                    , unlines (unparseToString <$> Foldable.toList actual1)
+                    , unlines (fmap (unparseToString . toTermLike) $ Foldable.toList actual1)
                     ]
         assertEqualWithExplanation message1 expect actual1
         actual2 <-

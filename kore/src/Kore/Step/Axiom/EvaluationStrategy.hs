@@ -275,10 +275,10 @@ applyFirstSimplifierThatWorks
                         , Pretty.indent 4 (unparse patt)
                         , Pretty.indent 2 "results:"
                         , (Pretty.indent 4 . Pretty.vsep)
-                            (unparse <$> Foldable.toList orResults)
+                            (fmap (unparse . Pattern.toTermLike) $ Foldable.toList orResults)
                         , Pretty.indent 2 "remainders:"
                         , (Pretty.indent 4 . Pretty.vsep)
-                            (unparse <$> Foldable.toList orRemainders)
+                            (fmap (unparse . Pattern.toTermLike) $ Foldable.toList orRemainders)
                         ]
                     )
                 return applicationResult

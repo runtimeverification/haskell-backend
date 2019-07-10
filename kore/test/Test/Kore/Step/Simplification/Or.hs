@@ -246,7 +246,7 @@ becomes
         (stateIntention
             [ prettyOr or1 or2
             , "to become:"
-            , Unparser.unparse $ OrPattern.toPattern expected
+            , Unparser.unparse . Pattern.toTermLike $ OrPattern.toPattern expected
             ]
         )
 
@@ -266,7 +266,7 @@ simplifiesTo (orChild -> or1, orChild -> or2) (orChild -> simplified) =
         (stateIntention
             [ prettyOr or1 or2
             , "to simplify to:"
-            , Unparser.unparse simplified
+            , Unparser.unparse . Pattern.toTermLike $ simplified
             ]
         )
 
@@ -294,10 +294,12 @@ prettyOr
     :: Pattern Variable
     -> Pattern Variable
     -> Pretty.Doc a
-prettyOr orFirst orSecond =
+prettyOr patOrFirst patOrSecond =
     Unparser.unparse Or { orSort, orFirst, orSecond }
   where
-    orSort = termLikeSort (Pattern.term orFirst)
+    orSort = termLikeSort (Pattern.term patOrFirst)
+    orFirst = Pattern.toTermLike patOrFirst
+    orSecond = Pattern.toTermLike patOrSecond
 
 stateIntention :: [Pretty.Doc ann] -> String
 stateIntention actualAndSoOn =
