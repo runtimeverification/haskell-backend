@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Test.Kore.Repl.Interpreter
     ( test_replInterpreter
     ) where
@@ -10,6 +12,7 @@ import Test.Tasty.HUnit
 import           Control.Applicative
 import           Control.Concurrent.MVar
 import qualified Control.Lens as Lens
+import           Control.Monad.Mock
 import           Control.Monad.Reader
                  ( liftIO, runReaderT )
 import           Control.Monad.Trans.State.Strict
@@ -745,3 +748,14 @@ koreToAux (ReplOutput output) =
 --           )
 --     getContentsFromHandle _ =
 
+-- makeAction "ReplIOAction" [ts| MonadReplIO |]
+
+-- copyFile :: MonadReplIO m => FilePath -> FilePath -> m ()
+-- copyFile a b = do
+--     x <- replReadFile a
+--     writeToFile b x
+--
+-- testCopyFile =
+--     evaluate $ copyFile "foo.txt" "bar.txt"
+--       & runMock [ ReplReadFile "foo.txt" :-> "contents"
+--                 , WriteToFile "bar.txt" "contents" :-> () ]

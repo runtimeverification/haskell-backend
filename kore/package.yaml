@@ -51,6 +51,7 @@ dependencies:
   - megaparsec >= 7.0.4
   - memory
   - mmorph
+    # - monad-mock
   - mtl
   - optparse-applicative
   - parser-combinators
@@ -59,7 +60,7 @@ dependencies:
   - profunctors
   - recursion-schemes
   - reflection
-  - template-haskell
+  - template-haskell 
   - text
   - these
   - time
