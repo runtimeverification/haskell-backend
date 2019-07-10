@@ -26,6 +26,7 @@ import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Set as Set
+import qualified Kore.Builtin.SetSymbols as Set
 import           Kore.Domain.Builtin
                  ( NormalizedAc (NormalizedAc) )
 import qualified Kore.Domain.Builtin as Domain
@@ -64,8 +65,6 @@ import           Test.Kore
                  ( standaloneGen, testId, variableGen )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
-import           Test.Kore.Builtin.Builtin
-                 ( emptyNormalizedSet )
 import           Test.Kore.Builtin.Definition
 import           Test.Kore.Builtin.Int
                  ( genConcreteIntegerPattern, genInteger, genIntegerPattern )

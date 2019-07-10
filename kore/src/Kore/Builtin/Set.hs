@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 {- |
 Module      : Kore.Builtin.Set
 Description : Built-in sets
@@ -27,21 +26,6 @@ module Kore.Builtin.Set
     , asTermLike
     , expectBuiltinSet
     , expectConcreteBuiltinSet
-      -- * Symbols
-    , lookupSymbolIn
-    , lookupSymbolDifference
-    , isSymbolConcat
-    , isSymbolElement
-    , isSymbolUnit
-      -- * Keys
-    , unitKey
-    , elementKey
-    , concatKey
-    , inKey
-    , differenceKey
-    , toListKey
-    , sizeKey
-    , intersectionKey
       -- * Unification
     , unifyEquals
     ) where
@@ -56,17 +40,12 @@ import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
-import           Data.String
-                 ( IsString )
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.Attribute.Hook
-                 ( Hook )
 import qualified Kore.Attribute.Symbol as Attribute
                  ( Symbol )
-import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.Builtin.Builtin
@@ -74,17 +53,13 @@ import           Kore.Builtin.Builtin
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as List
+import qualified Kore.Builtin.SetSymbols as Set
 import qualified Kore.Domain.Builtin as Domain
-import qualified Kore.Error as Kore
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Symbol
-                 ( Symbol )
 import           Kore.Internal.TermLike
                  ( pattern App_, pattern Builtin_, Concrete, TermLike,
                  mkApplySymbol, mkSort, termLikeSort )
@@ -141,13 +116,13 @@ sortDeclVerifiers =
     verifySortDecl indexedModule sentenceSort attrs = do
         Builtin.verifySortDecl indexedModule sentenceSort attrs
         unitId <- Builtin.getUnitId attrs
-        Builtin.assertSymbolHook indexedModule unitId unitKey
+        Builtin.assertSymbolHook indexedModule unitId Set.unitKey
         Builtin.assertSymbolResultSort indexedModule unitId expectedSort
         elementId <- Builtin.getElementId attrs
-        Builtin.assertSymbolHook indexedModule elementId elementKey
+        Builtin.assertSymbolHook indexedModule elementId Set.elementKey
         Builtin.assertSymbolResultSort indexedModule elementId expectedSort
         concatId <- Builtin.getConcatId attrs
-        Builtin.assertSymbolHook indexedModule concatId concatKey
+        Builtin.assertSymbolHook indexedModule concatId Set.concatKey
         Builtin.assertSymbolResultSort indexedModule concatId expectedSort
         return ()
       where
@@ -162,28 +137,28 @@ sortDeclVerifiers =
 symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
-    [ ( concatKey
+    [ ( Set.concatKey
       , Builtin.verifySymbol assertSort [assertSort , assertSort]
       )
-    , ( elementKey
+    , ( Set.elementKey
       , Builtin.verifySymbol assertSort [acceptAnySort]
       )
-    , ( unitKey
+    , ( Set.unitKey
       , Builtin.verifySymbol assertSort []
       )
-    , ( inKey
+    , ( Set.inKey
       , Builtin.verifySymbol Bool.assertSort [acceptAnySort, assertSort]
       )
-    , ( differenceKey
+    , ( Set.differenceKey
       , Builtin.verifySymbol assertSort [assertSort, assertSort]
       )
-    , ( toListKey
+    , ( Set.toListKey
       , Builtin.verifySymbol List.assertSort [assertSort]
       )
-    , ( sizeKey
+    , ( Set.sizeKey
       , Builtin.verifySymbol Int.assertSort [assertSort]
       )
-    , ( intersectionKey
+    , ( Set.intersectionKey
       , Builtin.verifySymbol assertSort [assertSort, assertSort]
       )
     ]
@@ -263,7 +238,7 @@ evalElement =
                                     , concreteElements = Map.empty
                                     , opaque = []
                                     }
-                _ -> Builtin.wrongArity elementKey
+                _ -> Builtin.wrongArity Set.elementKey
             )
 
 evalIn :: Builtin.Function
@@ -276,9 +251,9 @@ evalIn =
             let (_elem, _set) =
                     case arguments of
                         [_elem, _set] -> (_elem, _set)
-                        _ -> Builtin.wrongArity inKey
+                        _ -> Builtin.wrongArity Set.inKey
             _elem <- Builtin.expectNormalConcreteTerm _elem
-            _set <- expectConcreteBuiltinSet inKey _set
+            _set <- expectConcreteBuiltinSet Set.inKey _set
             (Builtin.appliedFunction . asExpandedBoolPattern)
                 (Map.member _elem _set)
       where
@@ -291,7 +266,7 @@ evalUnit =
     evalUnit0 _ resultSort =
         \case
             [] -> returnConcreteSet resultSort Map.empty
-            _ -> Builtin.wrongArity unitKey
+            _ -> Builtin.wrongArity Set.unitKey
 
 evalConcat :: Builtin.Function
 evalConcat =
@@ -311,7 +286,7 @@ evalConcat =
         let (_set1, _set2) =
                 case arguments of
                     [_set1, _set2] -> (_set1, _set2)
-                    _ -> Builtin.wrongArity concatKey
+                    _ -> Builtin.wrongArity Set.concatKey
 
             normalized1 :: Ac.NormalizedOrBottom Domain.NoValue variable
             normalized1 = Ac.toNormalized tools _set1
@@ -324,14 +299,14 @@ evalDifference :: Builtin.Function
 evalDifference =
     Builtin.functionEvaluator evalDifference0
   where
-    ctx = differenceKey
+    ctx = Set.differenceKey
     evalDifference0 :: Builtin.FunctionImplementation
     evalDifference0 _ resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let (_set1, _set2) =
                     case arguments of
                         [_set1, _set2] -> (_set1, _set2)
-                        _ -> Builtin.wrongArity differenceKey
+                        _ -> Builtin.wrongArity Set.differenceKey
                 rightIdentity = do
                     _set2 <- expectConcreteBuiltinSet ctx _set2
                     if Map.null _set2
@@ -354,8 +329,8 @@ evalToList = Builtin.functionEvaluator evalToList0
             let _set =
                         case arguments of
                             [_set] -> _set
-                            _      -> Builtin.wrongArity toListKey
-            _set <- expectConcreteBuiltinSet toListKey _set
+                            _      -> Builtin.wrongArity Set.toListKey
+            _set <- expectConcreteBuiltinSet Set.toListKey _set
             List.returnList resultSort
                 . fmap TermLike.fromConcrete
                 . Seq.fromList
@@ -374,8 +349,8 @@ evalSize = Builtin.functionEvaluator evalSize0
             let _set =
                         case arguments of
                             [_set] -> _set
-                            _      -> Builtin.wrongArity sizeKey
-            _set <- expectConcreteBuiltinSet sizeKey _set
+                            _      -> Builtin.wrongArity Set.sizeKey
+            _set <- expectConcreteBuiltinSet Set.sizeKey _set
             Builtin.appliedFunction
                 . Int.asPattern resultSort
                 . toInteger
@@ -386,14 +361,14 @@ evalIntersection :: Builtin.Function
 evalIntersection =
     Builtin.functionEvaluator evalIntersection0
   where
-    ctx = intersectionKey
+    ctx = Set.intersectionKey
     evalIntersection0 :: Builtin.FunctionImplementation
     evalIntersection0 _ resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let (_set1, _set2) =
                     case arguments of
                         [_set1, _set2] -> (_set1, _set2)
-                        _ -> Builtin.wrongArity intersectionKey
+                        _ -> Builtin.wrongArity Set.intersectionKey
             _set1 <- expectConcreteBuiltinSet ctx _set1
             _set2 <- expectConcreteBuiltinSet ctx _set2
             returnConcreteSet resultSort (Map.intersection _set1 _set2)
@@ -403,14 +378,14 @@ evalIntersection =
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
-        [ (concatKey, evalConcat)
-        , (elementKey, evalElement)
-        , (unitKey, evalUnit)
-        , (inKey, evalIn)
-        , (differenceKey, evalDifference)
-        , (toListKey, evalToList)
-        , (sizeKey, evalSize)
-        , (intersectionKey, evalIntersection)
+        [ (Set.concatKey, evalConcat)
+        , (Set.elementKey, evalElement)
+        , (Set.unitKey, evalUnit)
+        , (Set.inKey, evalIn)
+        , (Set.differenceKey, evalDifference)
+        , (Set.toListKey, evalToList)
+        , (Set.sizeKey, evalSize)
+        , (Set.intersectionKey, evalIntersection)
         ]
 
 {- | Externalizes a 'Domain.InternalSet' as a 'TermLike'.
@@ -466,70 +441,6 @@ asTermLike builtin =
         :: (TermLike variable, Domain.NoValue (TermLike variable))
         -> TermLike variable
     element (key, Domain.NoValue) = mkApplySymbol elementSymbol [key]
-
-concatKey :: IsString s => s
-concatKey = "SET.concat"
-
-elementKey :: IsString s => s
-elementKey = "SET.element"
-
-unitKey :: IsString s => s
-unitKey = "SET.unit"
-
-inKey :: IsString s => s
-inKey = "SET.in"
-
-differenceKey :: IsString s => s
-differenceKey = "SET.difference"
-
-toListKey :: IsString s => s
-toListKey = "SET.set2list"
-
-sizeKey :: IsString s => s
-sizeKey = "SET.size"
-
-intersectionKey :: IsString s => s
-intersectionKey = "SET.intersection"
-
-{- | Find the symbol hooked to @SET.get@ in an indexed module.
- -}
-lookupSymbolIn
-    :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
-    -> Either (Kore.Error e) Symbol
-lookupSymbolIn = Builtin.lookupSymbol inKey
-
-{- | Find the symbol hooked to @SET.difference@ in an indexed module.
- -}
-lookupSymbolDifference
-    :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
-    -> Either (Kore.Error e) Symbol
-lookupSymbolDifference = Builtin.lookupSymbol differenceKey
-
-{- | Check if the given symbol is hooked to @SET.concat@.
- -}
-isSymbolConcat
-    :: SmtMetadataTools Hook
-    -> Symbol
-    -> Bool
-isSymbolConcat = Builtin.isSymbol concatKey
-
-{- | Check if the given symbol is hooked to @SET.element@.
- -}
-isSymbolElement
-    :: SmtMetadataTools Hook
-    -> Symbol
-    -> Bool
-isSymbolElement = Builtin.isSymbol elementKey
-
-{- | Check if the given symbol is hooked to @SET.unit@.
--}
-isSymbolUnit
-    :: SmtMetadataTools Hook
-    -> Symbol
-    -> Bool
-isSymbolUnit = Builtin.isSymbol unitKey
 
 {- | Simplify the conjunction or equality of two concrete Set domain values.
 
@@ -619,59 +530,3 @@ unifyEquals
             normalizedOrBottom
                 :: Ac.NormalizedOrBottom Domain.NoValue variable
             normalizedOrBottom = Ac.toNormalized tools patt
-
-instance Ac.TermWrapper Domain.NormalizedSet Domain.NoValue where
-    {- | Render a 'NormalizedSet' as a Domain.Builtin.
-
-    The result sort must be hooked to the builtin @Set@ sort.
-    -}
-    asInternalBuiltin tools builtinAcSort builtinAcChild =
-        Domain.BuiltinSet Domain.InternalAc
-            { builtinAcSort
-            , builtinAcUnit = Builtin.lookupSymbolUnit tools builtinAcSort
-            , builtinAcElement = Builtin.lookupSymbolElement tools builtinAcSort
-            , builtinAcConcat = Builtin.lookupSymbolConcat tools builtinAcSort
-            , builtinAcChild
-            }
-    {- |Transforms a @TermLike@ representation into a @NormalizedSetOrBottom@.
-
-    The set may become bottom if we had conflicts between elements that were
-    not detected before, e.g.
-
-    @
-    concat({1}, concat(X:Set, {1}))
-    concat(elem(Y:Int), concat({1}, elem(Y:Int)))
-    concat(X:Set, concat({1}, X:Set))
-    @
-    -}
-    toNormalized
-        _tools
-        (Builtin_ (Domain.BuiltinSet Domain.InternalAc { builtinAcChild }))
-      = Ac.Normalized (Domain.unwrapAc builtinAcChild)
-    toNormalized tools (App_ symbol args)
-      | isSymbolUnit hookTools symbol =
-        case args of
-            [] -> Ac.Normalized Domain.emptyNormalizedAc
-            _ -> Builtin.wrongArity "SET.unit"
-      | isSymbolElement hookTools symbol =
-        case args of
-            [elem1] ->
-                Ac.Normalized Domain.NormalizedAc
-                    { elementsWithVariables = [(elem1, Domain.NoValue)]
-                    , concreteElements = Map.empty
-                    , opaque = []
-                    }
-            _ -> Builtin.wrongArity "SET.element"
-      | isSymbolConcat hookTools symbol =
-        case args of
-            [set1, set2] ->
-                Ac.toNormalized tools set1 <> Ac.toNormalized tools set2
-            _ -> Builtin.wrongArity "SET.concat"
-      where
-        hookTools = Attribute.Symbol.hook <$> tools
-    toNormalized _ patt =
-        Ac.Normalized Domain.NormalizedAc
-            { elementsWithVariables = []
-            , concreteElements = Map.empty
-            , opaque = [patt]
-            }

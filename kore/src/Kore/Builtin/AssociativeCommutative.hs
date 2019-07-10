@@ -58,7 +58,10 @@ import           GHC.Stack
 
 import qualified Kore.Attribute.Symbol as Attribute
                  ( Symbol )
+import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import qualified Kore.Builtin.Builtin as Builtin
+import qualified Kore.Builtin.MapSymbols as Map
+import qualified Kore.Builtin.SetSymbols as Set
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
@@ -74,7 +77,8 @@ import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.Symbol
                  ( Symbol )
 import           Kore.Internal.TermLike
-                 ( Concrete, TermLike, mkApplySymbol, mkBuiltin, termLikeSort )
+                 ( pattern App_, pattern Builtin_, Concrete, TermLike,
+                 mkApplySymbol, mkBuiltin, termLikeSort )
 import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Sort
                  ( Sort )
@@ -129,6 +133,117 @@ class
         -> TermLike variable
         -> NormalizedOrBottom valueWrapper variable
 
+instance TermWrapper Domain.NormalizedMap Domain.Value where
+    {- | Render a 'NormalizedMap' as a Domain.Builtin.
+
+    The result sort must be hooked to the builtin @Map@ sort.
+    -}
+    asInternalBuiltin tools builtinAcSort builtinAcChild =
+        Domain.BuiltinMap Domain.InternalAc
+            { builtinAcSort
+            , builtinAcUnit = Builtin.lookupSymbolUnit tools builtinAcSort
+            , builtinAcElement = Builtin.lookupSymbolElement tools builtinAcSort
+            , builtinAcConcat = Builtin.lookupSymbolConcat tools builtinAcSort
+            , builtinAcChild
+            }
+    {- |Transforms a @TermLike@ representation into a @NormalizedOrBottom@.
+
+    The map may become bottom if we had conflicts between elements that were
+    not detected before, e.g.
+
+    @
+    concat({1->"a"}, concat(X:Map, {1}))
+    concat(elem(Y:Int), concat({1}, elem(Y:Int)))
+    concat(X:Map, concat({1}, X:Map))
+    @
+    -}
+    toNormalized
+        _tools
+        (Builtin_ (Domain.BuiltinMap Domain.InternalAc { builtinAcChild }))
+      = Normalized (Domain.unwrapAc builtinAcChild)
+    toNormalized tools (App_ symbol args)
+      | Map.isSymbolUnit hookTools symbol =
+        case args of
+            [] -> Normalized Domain.emptyNormalizedAc
+            _ -> Builtin.wrongArity "MAP.unit"
+      | Map.isSymbolElement hookTools symbol =
+        case args of
+            [key, value] ->
+                Normalized Domain.NormalizedAc
+                    { elementsWithVariables = [(key, Domain.Value value)]
+                    , concreteElements = Map.empty
+                    , opaque = []
+                    }
+            _ -> Builtin.wrongArity "MAP.element"
+      | Map.isSymbolConcat hookTools symbol =
+        case args of
+            [set1, set2] ->
+                toNormalized tools set1 <> toNormalized tools set2
+            _ -> Builtin.wrongArity "MAP.concat"
+      where
+        hookTools = Attribute.Symbol.hook <$> tools
+    toNormalized _ patt =
+        Normalized Domain.NormalizedAc
+            { elementsWithVariables = []
+            , concreteElements = Map.empty
+            , opaque = [patt]
+            }
+
+instance TermWrapper Domain.NormalizedSet Domain.NoValue where
+    {- | Render a 'NormalizedSet' as a Domain.Builtin.
+
+    The result sort must be hooked to the builtin @Set@ sort.
+    -}
+    asInternalBuiltin tools builtinAcSort builtinAcChild =
+        Domain.BuiltinSet Domain.InternalAc
+            { builtinAcSort
+            , builtinAcUnit = Builtin.lookupSymbolUnit tools builtinAcSort
+            , builtinAcElement = Builtin.lookupSymbolElement tools builtinAcSort
+            , builtinAcConcat = Builtin.lookupSymbolConcat tools builtinAcSort
+            , builtinAcChild
+            }
+    {- |Transforms a @TermLike@ representation into a @NormalizedSetOrBottom@.
+
+    The set may become bottom if we had conflicts between elements that were
+    not detected before, e.g.
+
+    @
+    concat({1}, concat(X:Set, {1}))
+    concat(elem(Y:Int), concat({1}, elem(Y:Int)))
+    concat(X:Set, concat({1}, X:Set))
+    @
+    -}
+    toNormalized
+        _tools
+        (Builtin_ (Domain.BuiltinSet Domain.InternalAc { builtinAcChild }))
+      = Normalized (Domain.unwrapAc builtinAcChild)
+    toNormalized tools (App_ symbol args)
+      | Set.isSymbolUnit hookTools symbol =
+        case args of
+            [] -> Normalized Domain.emptyNormalizedAc
+            _ -> Builtin.wrongArity "SET.unit"
+      | Set.isSymbolElement hookTools symbol =
+        case args of
+            [elem1] ->
+                Normalized Domain.NormalizedAc
+                    { elementsWithVariables = [(elem1, Domain.NoValue)]
+                    , concreteElements = Map.empty
+                    , opaque = []
+                    }
+            _ -> Builtin.wrongArity "SET.element"
+      | Set.isSymbolConcat hookTools symbol =
+        case args of
+            [set1, set2] ->
+                toNormalized tools set1 <> toNormalized tools set2
+            _ -> Builtin.wrongArity "SET.concat"
+      where
+        hookTools = Attribute.Symbol.hook <$> tools
+    toNormalized _ patt =
+        Normalized Domain.NormalizedAc
+            { elementsWithVariables = []
+            , concreteElements = Map.empty
+            , opaque = [patt]
+            }
 
 {- | Wrapper for terms that keeps the "concrete" vs "with variable" distinction
 after converting @TermLike Concrete@ to @TermLike variable@.

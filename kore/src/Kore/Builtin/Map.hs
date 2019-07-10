@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 {- |
 Module      : Kore.Builtin.Map
 Description : Built-in key-value maps
@@ -21,26 +20,6 @@ module Kore.Builtin.Map
     , symbolVerifiers
     , builtinFunctions
     , asTermLike
-      -- * Symbols
-    , lookupSymbolUpdate
-    , lookupSymbolLookup
-    , lookupSymbolInKeys
-    , lookupSymbolKeys
-    , lookupSymbolRemove
-    , lookupSymbolRemoveAll
-    , isSymbolConcat
-    , isSymbolElement
-    , isSymbolUnit
-    , isSymbolRemove
-    , isSymbolRemoveAll
-      -- * keys
-    , concatKey
-    , lookupKey
-    , elementKey
-    , unitKey
-    , updateKey
-    , in_keysKey
-    , keysKey
     -- * Unification
     , unifyEquals
     -- * Raw evaluators
@@ -57,33 +36,24 @@ import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
-import           Data.String
-                 ( IsString )
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.Attribute.Hook
-                 ( Hook )
 import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.Builtin.Builtin
                  ( acceptAnySort )
 import qualified Kore.Builtin.Builtin as Builtin
+import qualified Kore.Builtin.MapSymbols as Map
 import qualified Kore.Builtin.Set as Builtin.Set
 import qualified Kore.Domain.Builtin as Domain
-import qualified Kore.Error as Kore
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Symbol
-                 ( Symbol )
 import           Kore.Internal.TermLike
                  ( pattern App_, pattern Builtin_, TermLike, mkApplySymbol,
                  termLikeSort )
@@ -137,13 +107,13 @@ sortDeclVerifiers =
     verifySortDecl indexedModule sentenceSort attrs = do
         Builtin.verifySortDecl indexedModule sentenceSort attrs
         unitId <- Builtin.getUnitId attrs
-        Builtin.assertSymbolHook indexedModule unitId unitKey
+        Builtin.assertSymbolHook indexedModule unitId Map.unitKey
         Builtin.assertSymbolResultSort indexedModule unitId expectedSort
         elementId <- Builtin.getElementId attrs
-        Builtin.assertSymbolHook indexedModule elementId elementKey
+        Builtin.assertSymbolHook indexedModule elementId Map.elementKey
         Builtin.assertSymbolResultSort indexedModule elementId expectedSort
         concatId <- Builtin.getConcatId attrs
-        Builtin.assertSymbolHook indexedModule concatId concatKey
+        Builtin.assertSymbolHook indexedModule concatId Map.concatKey
         Builtin.assertSymbolResultSort indexedModule concatId expectedSort
         return ()
       where
@@ -158,32 +128,32 @@ sortDeclVerifiers =
 symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
-    [ ( concatKey
+    [ ( Map.concatKey
       , Builtin.verifySymbol assertSort [assertSort , assertSort]
       )
-    , ( elementKey
+    , ( Map.elementKey
       , Builtin.verifySymbol assertSort [acceptAnySort, acceptAnySort]
       )
-    , ( lookupKey
+    , ( Map.lookupKey
       , Builtin.verifySymbol acceptAnySort [assertSort, acceptAnySort]
       )
-    , ( unitKey
+    , ( Map.unitKey
       , Builtin.verifySymbol assertSort []
       )
-    , ( updateKey
+    , ( Map.updateKey
       , Builtin.verifySymbol assertSort
             [assertSort, acceptAnySort, acceptAnySort]
       )
-    , ( in_keysKey
+    , ( Map.in_keysKey
       , Builtin.verifySymbol Bool.assertSort [acceptAnySort, assertSort]
       )
-    , ( keysKey
+    , ( Map.keysKey
       , Builtin.verifySymbol Builtin.Set.assertSort [assertSort]
       )
-    , ( removeKey
+    , ( Map.removeKey
       , Builtin.verifySymbol assertSort [assertSort, acceptAnySort]
       )
-    , ( removeAllKey
+    , ( Map.removeAllKey
       , Builtin.verifySymbol assertSort [assertSort, Builtin.Set.assertSort]
       )
     ]
@@ -249,15 +219,15 @@ evalLookup =
             let (_map, _key) =
                     case arguments of
                         [_map, _key] -> (_map, _key)
-                        _ -> Builtin.wrongArity lookupKey
+                        _ -> Builtin.wrongArity Map.lookupKey
                 emptyMap = do
-                    _map <- expectConcreteBuiltinMap lookupKey _map
+                    _map <- expectConcreteBuiltinMap Map.lookupKey _map
                     if Map.null _map
                         then Builtin.appliedFunction Pattern.bottom
                         else empty
                 bothConcrete = do
                     _key <- Builtin.expectNormalConcreteTerm _key
-                    _map <- expectConcreteBuiltinMap lookupKey _map
+                    _map <- expectConcreteBuiltinMap Map.lookupKey _map
                     Builtin.appliedFunction
                         $ maybeBottom
                             (Domain.getValue <$> Map.lookup _key _map)
@@ -275,7 +245,7 @@ evalElement =
             let (_key, _value) =
                     case arguments of
                         [_key, _value] -> (_key, _value)
-                        _ -> Builtin.wrongArity elementKey
+                        _ -> Builtin.wrongArity Map.elementKey
             case TermLike.asConcrete _key of
                 Just concrete ->
                     returnConcreteMap
@@ -309,7 +279,7 @@ evalConcat =
         let (_map1, _map2) =
                 case arguments of
                     [_map1, _map2] -> (_map1, _map2)
-                    _ -> Builtin.wrongArity concatKey
+                    _ -> Builtin.wrongArity Map.concatKey
 
             normalized1 :: Ac.NormalizedOrBottom Domain.Value variable
             normalized1 = Ac.toNormalized tools _map1
@@ -325,7 +295,7 @@ evalUnit =
     evalUnit0 _ resultSort =
         \case
             [] -> returnConcreteMap resultSort Map.empty
-            _ -> Builtin.wrongArity unitKey
+            _ -> Builtin.wrongArity Map.unitKey
 
 evalUpdate :: Builtin.Function
 evalUpdate =
@@ -336,9 +306,9 @@ evalUpdate =
             let (_map, _key, value) =
                     case arguments of
                         [_map, _key, value'] -> (_map, _key, value')
-                        _ -> Builtin.wrongArity updateKey
+                        _ -> Builtin.wrongArity Map.updateKey
             _key <- Builtin.expectNormalConcreteTerm _key
-            _map <- expectConcreteBuiltinMap updateKey _map
+            _map <- expectConcreteBuiltinMap Map.updateKey _map
             returnConcreteMap
                 resultSort
                 (Map.insert _key (Domain.Value value) _map)
@@ -352,9 +322,9 @@ evalInKeys =
             let (_key, _map) =
                     case arguments of
                         [_key, _map] -> (_key, _map)
-                        _ -> Builtin.wrongArity in_keysKey
+                        _ -> Builtin.wrongArity Map.in_keysKey
             _key <- Builtin.expectNormalConcreteTerm _key
-            _map <- expectConcreteBuiltinMap in_keysKey _map
+            _map <- expectConcreteBuiltinMap Map.in_keysKey _map
             Builtin.appliedFunction
                 $ Bool.asPattern resultSort
                 $ Map.member _key _map
@@ -368,8 +338,8 @@ evalKeys =
             let _map =
                     case arguments of
                         [_map] -> _map
-                        _ -> Builtin.wrongArity lookupKey
-            _map <- expectConcreteBuiltinMap lookupKey _map
+                        _ -> Builtin.wrongArity Map.lookupKey
+            _map <- expectConcreteBuiltinMap Map.lookupKey _map
             Builtin.Set.returnConcreteSet
                 resultSort
                 (fmap (const Domain.NoValue) _map)
@@ -379,19 +349,19 @@ evalRemove =
     Builtin.functionEvaluator evalRemove0
   where
     evalRemove0 :: Builtin.FunctionImplementation
-    evalRemove0 _ resultSort = \arguments ->
+    evalRemove0 _ resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let (_map, _key) =
                     case arguments of
                         [_map, _key] -> (_map, _key)
-                        _ -> Builtin.wrongArity removeKey
+                        _ -> Builtin.wrongArity Map.removeKey
                 emptyMap = do
-                    _map <- expectConcreteBuiltinMap removeKey _map
+                    _map <- expectConcreteBuiltinMap Map.removeKey _map
                     if Map.null _map
                         then returnConcreteMap resultSort Map.empty
                         else empty
                 bothConcrete = do
-                    _map <- expectConcreteBuiltinMap removeKey _map
+                    _map <- expectConcreteBuiltinMap Map.removeKey _map
                     _key <- Builtin.expectNormalConcreteTerm _key
                     returnConcreteMap resultSort $ Map.delete _key _map
             emptyMap <|> bothConcrete
@@ -401,21 +371,23 @@ evalRemoveAll =
     Builtin.functionEvaluator evalRemoveAll0
   where
     evalRemoveAll0 :: Builtin.FunctionImplementation
-    evalRemoveAll0 _ resultSort = \arguments ->
+    evalRemoveAll0 _ resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let (_map, _set) =
                     case arguments of
                         [_map, _set] -> (_map, _set)
-                        _ -> Builtin.wrongArity removeAllKey
+                        _ -> Builtin.wrongArity Map.removeAllKey
                 emptyMap = do
-                    _map <- expectConcreteBuiltinMap removeAllKey _map
+                    _map <- expectConcreteBuiltinMap Map.removeAllKey _map
                     if Map.null _map
                         then returnConcreteMap resultSort Map.empty
                         else empty
                 bothConcrete = do
-                    _map <- expectConcreteBuiltinMap removeAllKey _map
+                    _map <- expectConcreteBuiltinMap Map.removeAllKey _map
                     _set <-
-                        Builtin.Set.expectConcreteBuiltinSet removeAllKey _set
+                        Builtin.Set.expectConcreteBuiltinSet
+                            Map.removeAllKey
+                            _set
                     returnConcreteMap resultSort
                         $ Map.difference _map _set
             emptyMap <|> bothConcrete
@@ -426,15 +398,15 @@ evalRemoveAll =
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
-        [ (concatKey, evalConcat)
-        , (lookupKey, evalLookup)
-        , (elementKey, evalElement)
-        , (unitKey, evalUnit)
-        , (updateKey, evalUpdate)
-        , (in_keysKey, evalInKeys)
-        , (keysKey, evalKeys)
-        , (removeKey, evalRemove)
-        , (removeAllKey, evalRemoveAll)
+        [ (Map.concatKey, evalConcat)
+        , (Map.lookupKey, evalLookup)
+        , (Map.elementKey, evalElement)
+        , (Map.unitKey, evalUnit)
+        , (Map.updateKey, evalUpdate)
+        , (Map.in_keysKey, evalInKeys)
+        , (Map.keysKey, evalKeys)
+        , (Map.removeKey, evalRemove)
+        , (Map.removeAllKey, evalRemoveAll)
         ]
 
 {- | Externalizes a 'Domain.InternalMap' as a 'TermLike'.
@@ -487,123 +459,8 @@ asTermLike builtin =
     element
         :: (TermLike variable, Domain.Value (TermLike variable))
         -> TermLike variable
-    element (key, (Domain.Value value)) =
+    element (key, Domain.Value value) =
         mkApplySymbol elementSymbol [key, value]
-
-concatKey :: IsString s => s
-concatKey = "MAP.concat"
-
-lookupKey :: IsString s => s
-lookupKey = "MAP.lookup"
-
-elementKey :: IsString s => s
-elementKey = "MAP.element"
-
-unitKey :: IsString s => s
-unitKey = "MAP.unit"
-
-updateKey :: IsString s => s
-updateKey = "MAP.update"
-
-in_keysKey :: IsString s => s
-in_keysKey = "MAP.in_keys"
-
-keysKey :: IsString s => s
-keysKey = "MAP.keys"
-
-removeKey :: IsString s => s
-removeKey = "MAP.remove"
-
-removeAllKey :: IsString s => s
-removeAllKey = "MAP.removeAll"
-
-{- | Find the symbol hooked to @MAP.update@ in an indexed module.
- -}
-lookupSymbolUpdate
-    :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
-    -> Either (Kore.Error e) Symbol
-lookupSymbolUpdate = Builtin.lookupSymbol updateKey
-
-{- | Find the symbol hooked to @MAP.lookup@ in an indexed module.
- -}
-lookupSymbolLookup
-    :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
-    -> Either (Kore.Error e) Symbol
-lookupSymbolLookup = Builtin.lookupSymbol lookupKey
-
-{- | Find the symbol hooked to @MAP.in_keys@ in an indexed module.
- -}
-lookupSymbolInKeys
-    :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
-    -> Either (Kore.Error e) Symbol
-lookupSymbolInKeys = Builtin.lookupSymbol in_keysKey
-
-{- | Find the symbol hooked to @MAP.keys@ in an indexed module.
- -}
-lookupSymbolKeys
-    :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
-    -> Either (Kore.Error e) Symbol
-lookupSymbolKeys = Builtin.lookupSymbol keysKey
-
-{- | Find the symbol hooked to @MAP.remove@ in an indexed module.
- -}
-lookupSymbolRemove
-    :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
-    -> Either (Kore.Error e) Symbol
-lookupSymbolRemove = Builtin.lookupSymbol removeKey
-
-{- | Find the symbol hooked to @MAP.removeAll@ in an indexed module.
- -}
-lookupSymbolRemoveAll
-    :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
-    -> Either (Kore.Error e) Symbol
-lookupSymbolRemoveAll = Builtin.lookupSymbol removeAllKey
-
-{- | Check if the given symbol is hooked to @MAP.concat@.
- -}
-isSymbolConcat
-    :: SmtMetadataTools Hook
-    -> Symbol
-    -> Bool
-isSymbolConcat = Builtin.isSymbol concatKey
-
-{- | Check if the given symbol is hooked to @MAP.element@.
- -}
-isSymbolElement
-    :: SmtMetadataTools Hook
-    -> Symbol
-    -> Bool
-isSymbolElement = Builtin.isSymbol elementKey
-
-{- | Check if the given symbol is hooked to @MAP.unit@.
--}
-isSymbolUnit
-    :: SmtMetadataTools Hook
-    -> Symbol
-    -> Bool
-isSymbolUnit = Builtin.isSymbol unitKey
-
-{- | Check if the given symbol is hooked to @MAP.remove@.
--}
-isSymbolRemove
-    :: SmtMetadataTools Hook
-    -> Symbol
-    -> Bool
-isSymbolRemove = Builtin.isSymbol removeKey
-
-{- | Check if the given symbol is hooked to @MAP.removeAll@.
--}
-isSymbolRemoveAll
-    :: SmtMetadataTools Hook
-    -> Symbol
-    -> Bool
-isSymbolRemoveAll = Builtin.isSymbol removeAllKey
 
 {- | Simplify the conjunction or equality of two concrete Map domain values.
 
@@ -693,59 +550,3 @@ unifyEquals
             normalizedOrBottom
                 :: Ac.NormalizedOrBottom Domain.Value variable
             normalizedOrBottom = Ac.toNormalized tools patt
-
-instance Ac.TermWrapper Domain.NormalizedMap Domain.Value where
-    {- | Render a 'NormalizedMap' as a Domain.Builtin.
-
-    The result sort must be hooked to the builtin @Map@ sort.
-    -}
-    asInternalBuiltin tools builtinAcSort builtinAcChild =
-        Domain.BuiltinMap Domain.InternalAc
-            { builtinAcSort
-            , builtinAcUnit = Builtin.lookupSymbolUnit tools builtinAcSort
-            , builtinAcElement = Builtin.lookupSymbolElement tools builtinAcSort
-            , builtinAcConcat = Builtin.lookupSymbolConcat tools builtinAcSort
-            , builtinAcChild
-            }
-    {- |Transforms a @TermLike@ representation into a @NormalizedOrBottom@.
-
-    The map may become bottom if we had conflicts between elements that were
-    not detected before, e.g.
-
-    @
-    concat({1->"a"}, concat(X:Map, {1}))
-    concat(elem(Y:Int), concat({1}, elem(Y:Int)))
-    concat(X:Map, concat({1}, X:Map))
-    @
-    -}
-    toNormalized
-        _tools
-        (Builtin_ (Domain.BuiltinMap Domain.InternalAc { builtinAcChild }))
-      = Ac.Normalized (Domain.unwrapAc builtinAcChild)
-    toNormalized tools (App_ symbol args)
-      | isSymbolUnit hookTools symbol =
-        case args of
-            [] -> Ac.Normalized Domain.emptyNormalizedAc
-            _ -> Builtin.wrongArity "MAP.unit"
-      | isSymbolElement hookTools symbol =
-        case args of
-            [key, value] ->
-                Ac.Normalized Domain.NormalizedAc
-                    { elementsWithVariables = [(key, Domain.Value value)]
-                    , concreteElements = Map.empty
-                    , opaque = []
-                    }
-            _ -> Builtin.wrongArity "MAP.element"
-      | isSymbolConcat hookTools symbol =
-        case args of
-            [set1, set2] ->
-                Ac.toNormalized tools set1 <> Ac.toNormalized tools set2
-            _ -> Builtin.wrongArity "MAP.concat"
-      where
-        hookTools = Attribute.Symbol.hook <$> tools
-    toNormalized _ patt =
-        Ac.Normalized Domain.NormalizedAc
-            { elementsWithVariables = []
-            , concreteElements = Map.empty
-            , opaque = [patt]
-            }

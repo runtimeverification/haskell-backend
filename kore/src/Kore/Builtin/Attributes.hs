@@ -22,8 +22,8 @@ import Data.Reflection
 
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.List as List
-import qualified Kore.Builtin.Map as Map
-import qualified Kore.Builtin.Set as Set
+import qualified Kore.Builtin.MapSymbols as Map
+import qualified Kore.Builtin.SetSymbols as Set
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Internal.Symbol
