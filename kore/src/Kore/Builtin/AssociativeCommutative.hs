@@ -5,8 +5,6 @@ Description : Built-in
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
 
 This module is intended to be imported qualified, to avoid collision with other
 builtin modules.
@@ -683,6 +681,7 @@ unifyEqualsNormalizedAc
         , opaque = opaque2
         }
   = do
+    -- TODO (virgil): Split this into multiple functions.
     (simpleUnifier, opaques) <- case (opaqueDifference1, opaqueDifference2) of
         ([], []) -> Monad.Trans.lift $
             unifyEqualsElementLists'

@@ -4,8 +4,6 @@ Description : Built-in sets
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
-Stability   : experimental
-Portability : portable
 
 This module is intended to be imported qualified, to avoid collision with other
 builtin modules.

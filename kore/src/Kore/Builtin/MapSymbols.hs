@@ -4,8 +4,6 @@ Description : Tools for handling the symbols involved with map biltins
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
 
 This module is intended to be imported qualified, to avoid collision with other
 builtin modules.
