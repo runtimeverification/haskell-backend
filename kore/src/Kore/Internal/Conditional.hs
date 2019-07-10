@@ -19,14 +19,13 @@ module Kore.Internal.Conditional
     , Kore.Internal.Conditional.mapVariables
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Data.Hashable
-import           Data.Monoid
-                 ( (<>) )
-import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Generics
-                 ( Generic )
+import Control.DeepSeq
+       ( NFData )
+import Data.Hashable
+import Data.Monoid
+       ( (<>) )
+import GHC.Generics
+       ( Generic )
 
 import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
