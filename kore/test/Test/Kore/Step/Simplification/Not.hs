@@ -26,7 +26,6 @@ import qualified Kore.Step.Simplification.Not as Not
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
 import qualified SMT
 
 import           Test.Kore
@@ -60,11 +59,11 @@ test_simplifyEvaluated =
         message actual =
             (show . Pretty.vsep)
                 [ "expected simplification of:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse . Pattern.toTermLike <$> originals
+                , Pretty.indent 4 $ Pretty.vsep $ Pattern.unparsePattern <$> originals
                 , "would give:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse . Pattern.toTermLike <$> expecteds
+                , Pretty.indent 4 $ Pretty.vsep $ Pattern.unparsePattern <$> expecteds
                 , "but got:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse . Pattern.toTermLike <$> actuals
+                , Pretty.indent 4 $ Pretty.vsep $ Pattern.unparsePattern <$> actuals
                 ]
           where
             actuals = Foldable.toList actual

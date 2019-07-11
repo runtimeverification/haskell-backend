@@ -19,6 +19,7 @@ module Kore.Internal.Pattern
     , top
     , topOf
     , fromTermLike
+    , unparsePattern, unparsePatternToString
     , Kore.Internal.Pattern.freeVariables
     -- * Re-exports
     , Conditional (..)
@@ -27,6 +28,7 @@ module Kore.Internal.Pattern
     , Predicate
     ) where
 
+import Data.Text.Prettyprint.Doc
 import GHC.Stack
        ( HasCallStack )
 
@@ -207,3 +209,21 @@ toPredicate = Conditional.toPredicate
 
 splitTerm :: Pattern variable -> (TermLike variable, Predicate variable)
 splitTerm = Conditional.splitTerm
+
+unparsePattern
+    :: SortedVariable variable
+    => Unparse variable
+    => Ord variable
+    => Show variable
+    => Pattern variable
+    -> Doc ann
+unparsePattern = unparse . toTermLike
+
+unparsePatternToString
+    :: SortedVariable variable
+    => Unparse variable
+    => Ord variable
+    => Show variable
+    => Pattern variable
+    -> String
+unparsePatternToString = unparseToString . toTermLike

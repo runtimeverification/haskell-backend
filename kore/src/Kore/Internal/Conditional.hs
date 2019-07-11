@@ -145,54 +145,6 @@ instance TopBottom term
     isBottom Conditional {term, predicate, substitution} =
         isBottom term || isBottom predicate || isBottom substitution
 
--- instance
---     ( SortedVariable variable
---     , Ord variable
---     , Show variable
---     , Unparse variable
---     , Unparse child
---     ) =>
---     Unparse (Conditional variable child)
---   where
---     unparse Conditional { term, predicate, substitution } =
---         unparseAnd
---             (below "/* term: */" (unparse term))
---             (unparseAnd
---                 (below
---                     "/* predicate: */"
---                     (unparse predicate)
---                 )
---                 (below
---                     "/* substitution: */"
---                     (unparse $ Predicate.fromSubstitution substitution)
---                 )
---             )
---       where
---         unparseAnd first second =
---             "\\and" <> parameters' ["_"] <> arguments' [first, second]
---         below first second =
---             (Pretty.align . Pretty.vsep) [first, second]
---     unparse2 Conditional { term, predicate, substitution } =
---         unparseAnd2
---             (below "/* term: */" (unparse2 term))
---             (unparseAnd2
---                 (below
---                     "/* predicate: */"
---                     (unparse2 predicate)
---                 )
---                 (below
---                     "/* substitution: */"
---                     (unparse2 $ Predicate.fromSubstitution substitution)
---                 )
---             )
---       where
---         unparseAnd2 first second =
---             "\\and2" <> parameters' ["_"] <> arguments' [first, second]
---         below first second =
---             (Pretty.align . Pretty.vsep) [first, second]
-
-
-
 {- | Forget the 'term', keeping only the attached conditions.
  -}
 withoutTerm :: Conditional variable term -> Conditional variable ()

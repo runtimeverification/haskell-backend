@@ -34,7 +34,7 @@ import           Numeric.Natural
 
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
-                 ( Pattern, toTermLike )
+                 ( Pattern, unparsePattern )
 import qualified Kore.Step.Result as Result
                  ( mergeResults )
 import           Kore.Step.Rule
@@ -114,7 +114,7 @@ transitionRule =
                     [ "Could not apply the axiom:"
                     , unparse rule
                     , "to the configuration:"
-                    , unparse . toTermLike $ config
+                    , unparsePattern config
                     , "Un-implemented unification case; aborting execution."
                     , "err=" <> Pretty.pretty err
                     ]

@@ -507,9 +507,9 @@ checkSubstitutionCoverage initial unified
         [ "While applying axiom:"
         , Pretty.indent 4 (Pretty.pretty axiom)
         , "from the initial configuration:"
-        , Pretty.indent 4 (unparse . Pattern.toTermLike $ initial)
+        , Pretty.indent 4 (Pattern.unparsePattern initial)
         , "with the unifier:"
-        , Pretty.indent 4 (unparse . Pattern.toTermLike $ unifier)
+        , Pretty.indent 4 (Pattern.unparsePattern unifier)
         , "Failed substitution coverage check!"
         , "The substitution (above, in the unifier) \
           \did not cover the axiom variables:"

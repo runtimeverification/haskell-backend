@@ -194,7 +194,7 @@ transitionRule strategy expandedPattern =
                 [ "Not implemented error:"
                 , Pretty.indent 4 (Pretty.pretty err)
                 , "while applying a \\rewrite axiom to the pattern:"
-                , Pretty.indent 4 (unparse . Pattern.toTermLike $ config)
+                , Pretty.indent 4 (Pattern.unparsePattern config)
                 ,   "We decided to end the execution because we don't \
                     \understand this case well enough at the moment."
                 ]
