@@ -21,7 +21,6 @@ import qualified Data.List as List
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
-import qualified Data.Set as Set
 
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
                  ( isTotal )
@@ -234,17 +233,19 @@ makeEvaluateBuiltin
     => Builtin (TermLike variable)
     -> simplifier (OrPredicate variable)
 makeEvaluateBuiltin
-    (Domain.BuiltinMap Domain.InternalMap { builtinMapChild = m })
-  = do
-    children <- mapM makeEvaluateTerm values
-    let
-        ceils :: [OrPredicate variable]
-        ceils = children
-    And.simplifyEvaluatedMultiPredicate (MultiAnd.make ceils)
+    patt@(Domain.BuiltinMap Domain.InternalAc
+        {builtinAcChild}
+    )
+  =
+    fromMaybe
+        (return unsimplified)
+        (makeEvaluateNormalizedAc (Domain.unwrapAc builtinAcChild))
   where
-    values :: [TermLike variable]
-    -- Maps assume that their keys are relatively functional.
-    values = Map.elems m
+    unsimplified =
+        OrPredicate.fromPredicate
+            (Predicate.fromPredicate
+                (makeCeilPredicate (mkBuiltin patt))
+            )
 makeEvaluateBuiltin (Domain.BuiltinList l) = do
     children <- mapM makeEvaluateTerm (Foldable.toList l)
     let
@@ -252,11 +253,13 @@ makeEvaluateBuiltin (Domain.BuiltinList l) = do
         ceils = children
     And.simplifyEvaluatedMultiPredicate (MultiAnd.make ceils)
 makeEvaluateBuiltin
-    patt@(Domain.BuiltinSet Domain.InternalSet
-        {builtinSetChild}
+    patt@(Domain.BuiltinSet Domain.InternalAc
+        {builtinAcChild}
     )
   =
-    fromMaybe (return unsimplified) (makeEvaluateNormalizedSet builtinSetChild)
+    fromMaybe
+        (return unsimplified)
+        (makeEvaluateNormalizedAc (Domain.unwrapAc builtinAcChild))
   where
     unsimplified =
         OrPredicate.fromPredicate
@@ -267,38 +270,48 @@ makeEvaluateBuiltin (Domain.BuiltinBool _) = return OrPredicate.top
 makeEvaluateBuiltin (Domain.BuiltinInt _) = return OrPredicate.top
 makeEvaluateBuiltin (Domain.BuiltinString _) = return OrPredicate.top
 
-makeEvaluateNormalizedSet
-    :: forall variable simplifier
+makeEvaluateNormalizedAc
+    :: forall variable simplifier valueWrapper
     .   ( FreshVariable variable
         , MonadSimplify simplifier
         , Ord variable
         , Show variable
         , SortedVariable variable
+        , Traversable valueWrapper
         , Unparse variable
         )
-    => Domain.NormalizedSet (TermLike Concrete) (TermLike variable)
+    => Domain.NormalizedAc (TermLike Concrete) valueWrapper (TermLike variable)
     -> Maybe (simplifier (OrPredicate variable))
-makeEvaluateNormalizedSet
-    Domain.NormalizedSet
+makeEvaluateNormalizedAc
+    Domain.NormalizedAc
         { elementsWithVariables
         , concreteElements
-        , sets = []
+        , opaque = []
         }
   = Just $ do
-    elementsWithVariablesCeils <-
-        mapM makeEvaluateTerm elementsWithVariables
-    let
-        concreteElementsList :: [TermLike variable]
-        concreteElementsList =
-            map TermLike.fromConcrete (Set.toList concreteElements)
+    variableKeyConditions <- mapM makeEvaluateTerm variableKeys
+    variableValueConditions <- evaluateValues variableValues
+    concreteValueConditions <- evaluateValues concreteValues
+
     elementsWithVariablesDistinct <-
-        evaluateDistinct elementsWithVariables concreteElementsList
+        evaluateDistinct variableKeys concreteKeys
     let allConditions :: [OrPredicate variable]
         allConditions =
-            elementsWithVariablesCeils
+            concreteValueConditions
+            ++ variableValueConditions
+            ++ variableKeyConditions
             ++ elementsWithVariablesDistinct
     And.simplifyEvaluatedMultiPredicate (MultiAnd.make allConditions)
   where
+    concreteElementsList
+        :: [(TermLike variable, valueWrapper (TermLike variable))]
+    concreteElementsList =
+        map
+            (\(a, b) -> (TermLike.fromConcrete a, b))
+            (Map.toList concreteElements)
+    (variableKeys, variableValues) = unzip elementsWithVariables
+    (concreteKeys, concreteValues) = unzip concreteElementsList
+
     evaluateDistinct
         :: [TermLike variable]
         -> [TermLike variable]
@@ -321,17 +334,38 @@ makeEvaluateNormalizedSet
                     )
         let negations =
                 map (OrPredicate.fromPredicate . negateEquality) equalities
-        remainingConditions <- evaluateDistinct variableTerms concreteTerms
+
+        remainingConditions <-
+            evaluateDistinct variableTerms concreteTerms
         return (negations ++ remainingConditions)
+
+    evaluateValues
+        :: [valueWrapper (TermLike variable)]
+        -> simplifier [OrPredicate variable]
+    evaluateValues elements = do
+        wrapped <- evaluateWrappers elements
+        let unwrapped = map Foldable.toList wrapped
+        return (concat unwrapped)
+      where
+        evaluateWrapper
+            :: valueWrapper (TermLike variable)
+            -> simplifier (valueWrapper (OrPredicate variable))
+        evaluateWrapper = traverse makeEvaluateTerm
+
+        evaluateWrappers
+            :: [valueWrapper (TermLike variable)]
+            -> simplifier [valueWrapper (OrPredicate variable)]
+        evaluateWrappers = traverse evaluateWrapper
+
     mergeAnd :: [Predicate.Predicate variable] -> Predicate.Predicate variable
     mergeAnd [] = Predicate.top
     mergeAnd (predicate : predicates) =
         List.foldl' Conditional.andCondition predicate predicates
-makeEvaluateNormalizedSet
-    Domain.NormalizedSet
+makeEvaluateNormalizedAc
+    Domain.NormalizedAc
         { elementsWithVariables = []
         , concreteElements
-        , sets = [set]
+        , opaque = [opaqueAc]
         }
-    | Set.null concreteElements = Just $ makeEvaluateTerm set
-makeEvaluateNormalizedSet _ = Nothing
+  | Map.null concreteElements = Just $ makeEvaluateTerm opaqueAc
+makeEvaluateNormalizedAc _ = Nothing

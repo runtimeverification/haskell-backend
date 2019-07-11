@@ -36,6 +36,7 @@ module Kore.Step.Simplification.Data
     , isApplicable, isNotApplicable
     , AttemptedAxiomResults (..)
     , CommonAttemptedAxiom
+    , emptyAttemptedAxiom
     , hasRemainders
     , maybeNotApplicable
     , exceptNotApplicable
@@ -645,6 +646,9 @@ isNotApplicable _             = False
 following the same pattern as the other `Common*` types.
 -}
 type CommonAttemptedAxiom = AttemptedAxiom Variable
+
+emptyAttemptedAxiom :: Ord variable => AttemptedAxiom variable
+emptyAttemptedAxiom = Applied mempty
 
 {- | Does the 'AttemptedAxiom' have remainders?
 

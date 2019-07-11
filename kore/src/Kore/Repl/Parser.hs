@@ -279,7 +279,7 @@ alias = do
         then customFailure "Error when parsing alias: duplicate argument name."
         else pure ()
     literal "="
-    command <- some L.charLiteral
+    command <- some (noneOf ['\n'])
     return . Alias $ AliasDefinition { name, arguments, command }
 
 tryAlias :: Parser ReplCommand

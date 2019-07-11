@@ -12,8 +12,8 @@ import           Control.DeepSeq
 import qualified Data.Foldable as Foldable
 import           Data.Functor.Const
 import           Data.Hashable
+import qualified Data.Map as Map
 import           Data.Monoid
-import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -124,35 +124,43 @@ instance Synthetic (Rewrites sort) Functional where
 
 -- | A 'Builtin' pattern is 'Functional' if its subterms are 'Functional'.
 instance Synthetic (Builtin key) Functional where
-    synthetic (BuiltinSet InternalSet {builtinSetChild}) =
-        normalizedSetDefined builtinSetChild
-      where
-        normalizedSetDefined :: NormalizedSet key Functional -> Functional
-        normalizedSetDefined
-            NormalizedSet
-                { elementsWithVariables = []
-                , sets = []
-                }
-          = Functional True
-        normalizedSetDefined
-          NormalizedSet
-              { elementsWithVariables = [withVariable]
-              , concreteElements
-              , sets = []
-              }
-          | Set.null concreteElements
-          = withVariable
-        normalizedSetDefined
-          NormalizedSet
-              { elementsWithVariables = []
-              , concreteElements
-              , sets = [set]
-              }
-          | Set.null concreteElements
-          = set
-        normalizedSetDefined _ = Functional False
+    synthetic
+        (BuiltinSet InternalAc
+            {builtinAcChild = NormalizedSet builtinSetChild}
+        )
+      = normalizedAcFunctional builtinSetChild
+    synthetic
+        (BuiltinMap InternalAc
+            {builtinAcChild = NormalizedMap builtinMapChild}
+        )
+      = normalizedAcFunctional builtinMapChild
     synthetic builtin = Foldable.fold builtin
     {-# INLINE synthetic #-}
+
+normalizedAcFunctional
+    :: Foldable valueWrapper
+    => NormalizedAc key valueWrapper Functional -> Functional
+normalizedAcFunctional ac@(NormalizedAc _ _ _) =
+    case ac of
+        NormalizedAc
+            { elementsWithVariables = []
+            , opaque = []
+            } -> sameAsChildren
+        NormalizedAc
+            { elementsWithVariables = [_]
+            , concreteElements
+            , opaque = []
+            }
+          | Map.null concreteElements -> sameAsChildren
+        NormalizedAc
+            { elementsWithVariables = []
+            , concreteElements
+            , opaque = [_]
+            }
+          | Map.null concreteElements -> sameAsChildren
+        _ -> Functional False
+  where
+    sameAsChildren = Foldable.fold ac
 
 instance Synthetic (Top sort) Functional where
     synthetic = const (Functional False)

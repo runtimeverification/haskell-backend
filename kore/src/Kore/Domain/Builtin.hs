@@ -11,26 +11,27 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 module Kore.Domain.Builtin
     ( Builtin (..)
     , builtinSort
-    , InternalMap (..)
-    , lensBuiltinMapSort
-    , lensBuiltinMapUnit
-    , lensBuiltinMapElement
-    , lensBuiltinMapConcat
-    , lensBuiltinMapChild
     , InternalList (..)
     , lensBuiltinListSort
     , lensBuiltinListUnit
     , lensBuiltinListElement
     , lensBuiltinListConcat
     , lensBuiltinListChild
-    , InternalSet (..)
+    , InternalMap
+    , NormalizedMap (..)
+    , Value (..)
+    , InternalSet
     , NormalizedSet (..)
-    , emptyNormalizedSet
-    , lensBuiltinSetSort
-    , lensBuiltinSetUnit
-    , lensBuiltinSetElement
-    , lensBuiltinSetConcat
-    , lensBuiltinSetChild
+    , NoValue (..)
+    , AcWrapper (..)
+    , InternalAc (..)
+    , NormalizedAc (..)
+    , emptyNormalizedAc
+    , lensBuiltinAcSort
+    , lensBuiltinAcUnit
+    , lensBuiltinAcElement
+    , lensBuiltinAcConcat
+    , lensBuiltinAcChild
     , InternalInt (..)
     , lensBuiltinIntSort
     , lensBuiltinIntValue
@@ -45,8 +46,6 @@ module Kore.Domain.Builtin
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import           Data.Deriving
-                 ( deriveEq1, deriveOrd1, deriveShow1 )
 import qualified Data.Foldable as Foldable
 import           Data.Hashable
 import           Data.Map
@@ -54,9 +53,6 @@ import           Data.Map
 import qualified Data.Map as Map
 import           Data.Sequence
                  ( Seq )
-import           Data.Set
-                 ( Set )
-import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -94,70 +90,6 @@ unparseCollection unitSymbol elementSymbol concatSymbol =
     applyElement elem' = unparse elementSymbol <> elem'
     applyConcat set1 set2 = unparse concatSymbol <> arguments' [set1, set2]
 
--- * Builtin Map
-
-{- | Internal representation of the builtin @MAP.Map@ domain.
- -}
-data InternalMap key child =
-    InternalMap
-        { builtinMapSort :: !Sort
-        , builtinMapUnit :: !Symbol
-        , builtinMapElement :: !Symbol
-        , builtinMapConcat :: !Symbol
-        , builtinMapChild :: !(Map key child)
-        }
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
-
-deriveEq1 ''InternalMap
-deriveOrd1 ''InternalMap
-deriveShow1 ''InternalMap
-
-instance
-    (Hashable key, Hashable child) =>
-    Hashable (InternalMap key child)
-  where
-    hashWithSalt salt builtin =
-        hashWithSalt salt (Map.toAscList builtinMapChild)
-      where
-        InternalMap { builtinMapChild } = builtin
-
-instance (NFData key, NFData child) => NFData (InternalMap key child)
-
-instance SOP.Generic (InternalMap key child)
-
-instance SOP.HasDatatypeInfo (InternalMap key child)
-
-instance (Debug key, Debug child) => Debug (InternalMap key child)
-
-instance (Unparse key, Unparse child) => Unparse (InternalMap key child) where
-    unparse builtinMap =
-        unparseCollection
-            builtinMapUnit
-            builtinMapElement
-            builtinMapConcat
-            (unparseElementArguments <$> Map.toAscList builtinMapChild)
-      where
-        InternalMap { builtinMapChild } = builtinMap
-        InternalMap { builtinMapUnit } = builtinMap
-        InternalMap { builtinMapElement } = builtinMap
-        InternalMap { builtinMapConcat } = builtinMap
-        unparseElementArguments (key, value) =
-            arguments' [unparse key, unparse value]
-
-    unparse2 builtinMap =
-        unparseCollection
-            builtinMapUnit
-            builtinMapElement
-            builtinMapConcat
-            (unparseElementArguments <$> Map.toAscList builtinMapChild)
-      where
-        InternalMap { builtinMapChild } = builtinMap
-        InternalMap { builtinMapUnit } = builtinMap
-        InternalMap { builtinMapElement } = builtinMap
-        InternalMap { builtinMapConcat } = builtinMap
-        unparseElementArguments (key, value) =
-            arguments' [unparse2 key, unparse2 value]
-
 -- * Builtin List
 
 {- | Internal representation of the builtin @LIST.List@ domain.
@@ -171,10 +103,6 @@ data InternalList child =
         , builtinListChild :: !(Seq child)
         }
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
-
-deriveEq1 ''InternalList
-deriveOrd1 ''InternalList
-deriveShow1 ''InternalList
 
 instance SOP.Generic (InternalList child)
 
@@ -215,38 +143,329 @@ instance Unparse child => Unparse (InternalList child) where
         InternalList { builtinListElement } = builtinList
         InternalList { builtinListConcat } = builtinList
 
--- * Builtin Set
+-- * Builtin AC (associative-commutative) generic stuff
 
-{- | Optimized set representation, with elements separated from
-other set terms, and with concrete elements separated from non-concrete ones.
+{- | Internal representation for associative-commutative domain values.
 -}
-data NormalizedSet key child = NormalizedSet
-    { elementsWithVariables :: [child]
-    -- ^ Non-concrete elements of the set. These would be of sort @Int@s for a
-    -- set with @Int@ elements.
-    , concreteElements :: Set key
-    -- ^ Concrete elements of the set. These would be of sort @Int@s for a set
-    -- with @Int@ elements.
-    , sets :: [child]
-    -- ^ Unoptimized (non-element) parts of the set.
+data NormalizedAc key valueWrapper child = NormalizedAc
+    { elementsWithVariables :: [(child, valueWrapper child)]
+    -- ^ Non-concrete elements of the structure.
+    -- These would be of sorts @(Int, String)@ for a map from @Int@ to @String@.
+    , concreteElements :: Map key (valueWrapper child)
+    -- ^ Concrete elements of the structure.
+    -- These would be of sorts @(Int, String)@ for a map from @Int@ to @String@.
+    , opaque :: [child]
+    -- ^ Unoptimized (i.e. non-element) parts of the structure.
     }
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance Functor valueWrapper => Functor (NormalizedAc key valueWrapper) where
+    fmap
+        f
+        NormalizedAc
+            { elementsWithVariables
+            , concreteElements
+            , opaque
+            }
+      =
+        NormalizedAc
+            { elementsWithVariables = fmap pairF elementsWithVariables
+            , concreteElements = fmap wrappedF concreteElements
+            , opaque = fmap f opaque
+            }
+      where
+        wrappedF a = fmap f a
+        pairF (a, b) = (f a, fmap f b)
+
+instance Foldable valueWrapper => Foldable (NormalizedAc key valueWrapper) where
+    foldr
+        :: forall child b
+        . (child -> b -> b)
+        -> b
+        -> NormalizedAc key valueWrapper child
+        -> b
+    foldr
+        f
+        start
+        ac@(NormalizedAc _ _ _)
+      =
+        foldr pairF
+            (foldr wrappedF
+                (foldr f start opaque)
+                concreteElements
+            )
+            elementsWithVariables
+      where
+        NormalizedAc
+            { elementsWithVariables
+            , concreteElements
+            , opaque
+            }
+          = ac
+
+        wrappedF :: valueWrapper child -> b -> b
+        wrappedF a merged = foldr f merged a
+
+        pairF :: (child, valueWrapper child) -> b -> b
+        pairF (a, b) merged = f a (foldr f merged b)
+
+instance Traversable valueWrapper => Traversable (NormalizedAc key valueWrapper)
+  where
+    traverse
+        :: forall child child' f
+        .  Applicative f
+        => (child -> f child')
+        -> NormalizedAc key valueWrapper child
+        -> f (NormalizedAc key valueWrapper child')
+    traverse
+        f
+        NormalizedAc
+            { elementsWithVariables
+            , concreteElements
+            , opaque
+            }
+      =
+        NormalizedAc
+        <$> traverse pairF elementsWithVariables
+        <*> traverse wrappedF concreteElements
+        <*> traverse f opaque
+      where
+        wrappedF :: valueWrapper child -> f (valueWrapper child')
+        wrappedF a = traverse f a
+
+        pairF :: (child, valueWrapper child) -> f (child', valueWrapper child')
+        pairF (a, b) = (,) <$> f a <*> traverse f b
+
+instance (Hashable key, Hashable (valueWrapper child), Hashable child)
+    => Hashable (NormalizedAc key valueWrapper child)
+  where
+    hashWithSalt salt normalized@(NormalizedAc _ _ _) =
+        salt
+            `hashWithSalt` elementsWithVariables
+            `hashWithSalt` Map.toList concreteElements
+            `hashWithSalt` opaque
+      where
+        NormalizedAc { elementsWithVariables } = normalized
+        NormalizedAc { concreteElements } = normalized
+        NormalizedAc { opaque } = normalized
+
+instance (NFData key, NFData (valueWrapper child), NFData child)
+    => NFData (NormalizedAc key valueWrapper child)
+
+instance SOP.Generic (NormalizedAc key valueWrapper child)
+
+instance SOP.HasDatatypeInfo (NormalizedAc key valueWrapper child)
+
+instance (Debug key, Debug (valueWrapper child), Debug child)
+    => Debug (NormalizedAc key valueWrapper child)
+
+emptyNormalizedAc :: NormalizedAc key valueWrapper child
+emptyNormalizedAc = NormalizedAc
+    { elementsWithVariables = []
+    , concreteElements = Map.empty
+    , opaque = []
+    }
+
+{- | Internal representation of associative-commutative domain values.
+-}
+data InternalAc key (normalized :: * -> * -> *) child =
+    InternalAc
+        { builtinAcSort :: !Sort
+        , builtinAcUnit :: !Symbol
+        , builtinAcElement :: !Symbol
+        , builtinAcConcat :: !Symbol
+        , builtinAcChild :: normalized key child
+        }
     deriving (Eq, Foldable, Functor, Traversable, GHC.Generic, Ord, Show)
 
-deriveEq1 ''NormalizedSet
-deriveOrd1 ''NormalizedSet
-deriveShow1 ''NormalizedSet
+{- | Establishes a bijection between value wrappers and entire-structure
+wrappers, with a few utility functions for the two.
+-}
+class AcWrapper (normalized :: * -> * -> *) (valueWrapper :: * -> *)
+    | normalized -> valueWrapper
+    , valueWrapper -> normalized
+  where
+    unwrapAc :: normalized key child -> NormalizedAc key valueWrapper child
+    wrapAc :: NormalizedAc key valueWrapper child -> normalized key child
+
+    {-| Pairs the values in two wrappers as they should be paired for
+    unification.
+    -}
+    acExactZip
+        :: valueWrapper a -> valueWrapper b -> Maybe (valueWrapper (a, b))
+    unparseElement
+        :: (key -> Pretty.Doc ann)
+        -> (child -> Pretty.Doc ann)
+        -> (child, valueWrapper child) -> Pretty.Doc ann
+    unparseConcreteElement
+        :: (key -> Pretty.Doc ann)
+        -> (child -> Pretty.Doc ann)
+        -> (key, valueWrapper child) -> Pretty.Doc ann
+
+unparsedChildren
+    :: forall ann child key normalized valueWrapper
+    .  (AcWrapper normalized valueWrapper)
+    => (key -> Pretty.Doc ann)
+    -> (child -> Pretty.Doc ann)
+    -> normalized key child
+    -> [Pretty.Doc ann]
+unparsedChildren keyUnparser childUnparser wrapped =
+    case unwrapped of
+        -- case statement needed only for getting compiler notifications when
+        -- the NormalizedAc field count changes
+        NormalizedAc _ _ _ ->
+            (elementUnparser <$> elementsWithVariables)
+            ++ (concreteElementUnparser <$> Map.toAscList concreteElements)
+            ++ (argument' . childUnparser <$> opaque)
+  where
+    unwrapped :: NormalizedAc key valueWrapper child
+    unwrapped = unwrapAc wrapped
+
+    NormalizedAc {elementsWithVariables} = unwrapped
+    NormalizedAc {concreteElements} = unwrapped
+    NormalizedAc {opaque} = unwrapped
+
+    elementUnparser :: (child, valueWrapper child) -> Pretty.Doc ann
+    elementUnparser = unparseElement keyUnparser childUnparser
+
+    concreteElementUnparser :: (key, valueWrapper child) -> Pretty.Doc ann
+    concreteElementUnparser =
+        unparseConcreteElement keyUnparser childUnparser
+
+instance Hashable (normalized key child)
+    => Hashable (InternalAc key normalized child)
+  where
+    hashWithSalt salt builtin =
+        hashWithSalt salt builtinAcChild
+      where
+        InternalAc { builtinAcChild } = builtin
+
+instance (NFData (normalized key child))
+    => NFData (InternalAc key normalized child)
+
+instance SOP.Generic (InternalAc key normalized child)
+
+instance SOP.HasDatatypeInfo (InternalAc key normalized child)
+
+instance (Debug (normalized key child))
+    => Debug (InternalAc key normalized child)
+
+instance
+    ( Unparse key
+    , Unparse child
+    , AcWrapper normalized value
+    )
+    => Unparse (InternalAc key normalized child)
+  where
+    unparse = unparseInternalAc unparse unparse
+    unparse2 = unparseInternalAc unparse2 unparse2
+
+unparseInternalAc
+    :: (AcWrapper normalized value)
+    => (key -> Pretty.Doc ann)
+    -> (child -> Pretty.Doc ann)
+    -> InternalAc key normalized child
+    -> Pretty.Doc ann
+unparseInternalAc keyUnparser childUnparser builtinAc =
+    unparseCollection
+        builtinAcUnit
+        builtinAcElement
+        builtinAcConcat
+        (unparsedChildren keyUnparser childUnparser builtinAcChild)
+  where
+    InternalAc { builtinAcChild } = builtinAc
+    InternalAc { builtinAcUnit } = builtinAc
+    InternalAc { builtinAcElement } = builtinAc
+    InternalAc { builtinAcConcat } = builtinAc
+
+-- * Builtin Map
+
+{- | Wrapper for map values.
+-}
+newtype Value child = Value {getValue :: child}
+    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
+
+instance Hashable child => Hashable (Value child)
+  where
+    hashWithSalt salt (Value child) = hashWithSalt salt child
+
+instance NFData child => NFData (Value child)
+
+instance SOP.Generic (Value child)
+
+instance SOP.HasDatatypeInfo (Value child)
+
+instance Debug child => Debug (Value child)
+
+instance Unparse a => Unparse (Value a) where
+    unparse (Value a) = unparse a
+    unparse2 (Value a) = unparse2 a
+
+{- | Wrapper for normalized maps, to be used in the `builtinAcChild` field.
+-}
+newtype NormalizedMap key child =
+    NormalizedMap {getNormalizedMap :: NormalizedAc key Value child}
+    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
+
+instance (Hashable key, Hashable child) => Hashable (NormalizedMap key child)
+  where
+    hashWithSalt salt (NormalizedMap m) = hashWithSalt salt m
+
+instance (NFData key, NFData child) => NFData (NormalizedMap key child)
+
+instance SOP.Generic (NormalizedMap key child)
+
+instance SOP.HasDatatypeInfo (NormalizedMap key child)
+
+instance (Debug key, Debug child) => Debug (NormalizedMap key child)
+
+instance AcWrapper NormalizedMap Value where
+    wrapAc = NormalizedMap
+    unwrapAc = getNormalizedMap
+    acExactZip (Value a) (Value b) = Just (Value (a, b))
+    unparseElement _keyUnparser childUnparser (key, Value value) =
+        arguments' [childUnparser key, childUnparser value]
+    unparseConcreteElement keyUnparser childUnparser (key, Value value) =
+        arguments' [keyUnparser key, childUnparser value]
+
+{- | Internal representation of the builtin @MAP.Map@ domain.
+-}
+type InternalMap key child = InternalAc key NormalizedMap child
+
+-- * Builtin Set
+
+{- | Wrapper for set values, i.e. a wrapper which does not allow any value
+for a given key.
+-}
+data NoValue child = NoValue
+    deriving (Eq, Foldable, Functor, Traversable, GHC.Generic, Ord, Show)
+
+instance Unparse (NoValue a) where
+    unparse _ = "<nothing>"
+    unparse2 _ = "<nothing>"
+
+instance Hashable (NoValue child)
+  where
+    hashWithSalt salt NoValue = hashWithSalt salt (0 :: Int)
+
+instance NFData (NoValue child)
+
+instance SOP.Generic (NoValue child)
+
+instance SOP.HasDatatypeInfo (NoValue child)
+
+instance Debug (NoValue child)
+
+{- | Wrapper for normalized sets, to be used in the `builtinAcChild` field.
+-}
+newtype NormalizedSet key child =
+    NormalizedSet {getNormalizedSet :: NormalizedAc key NoValue child}
+    deriving (Eq, Foldable, Functor, Traversable, GHC.Generic, Ord, Show)
 
 instance (Hashable key, Hashable child) => Hashable (NormalizedSet key child)
   where
-    hashWithSalt salt normalized@(NormalizedSet _ _ _) =
-        salt
-            `hashWithSalt` elementsWithVariables
-            `hashWithSalt` Set.toList concreteElements
-            `hashWithSalt` sets
-      where
-        NormalizedSet { elementsWithVariables } = normalized
-        NormalizedSet { concreteElements } = normalized
-        NormalizedSet { sets } = normalized
+    hashWithSalt salt (NormalizedSet set) =
+        hashWithSalt salt set
 
 instance (NFData key, NFData child) => NFData (NormalizedSet key child)
 
@@ -256,77 +475,18 @@ instance SOP.HasDatatypeInfo (NormalizedSet key child)
 
 instance (Debug key, Debug child) => Debug (NormalizedSet key child)
 
-emptyNormalizedSet :: NormalizedSet key child
-emptyNormalizedSet = NormalizedSet
-    { elementsWithVariables = []
-    , concreteElements = Set.empty
-    , sets = []
-    }
+instance AcWrapper NormalizedSet NoValue where
+    wrapAc = NormalizedSet
+    unwrapAc = getNormalizedSet
+    acExactZip _ _ = Just NoValue
+    unparseElement _keyUnparser childUnparser (key, NoValue) =
+        argument' (childUnparser key)
+    unparseConcreteElement keyUnparser _childUnparser (key, NoValue) =
+        argument' (keyUnparser key)
 
 {- | Internal representation of the builtin @SET.Set@ domain.
  -}
-data InternalSet key child =
-    InternalSet
-        { builtinSetSort :: !Sort
-        , builtinSetUnit :: !Symbol
-        , builtinSetElement :: !Symbol
-        , builtinSetConcat :: !Symbol
-        , builtinSetChild :: !(NormalizedSet key child)
-        }
-    deriving (Eq, Foldable, Functor, Traversable, GHC.Generic, Ord, Show)
-
-deriveEq1 ''InternalSet
-deriveOrd1 ''InternalSet
-deriveShow1 ''InternalSet
-
-instance (Hashable key, Hashable child) => Hashable (InternalSet key child)
-  where
-    hashWithSalt salt builtin =
-        hashWithSalt salt builtinSetChild
-      where
-        InternalSet { builtinSetChild } = builtin
-
-instance (NFData key, NFData child) => NFData (InternalSet key child)
-
-instance SOP.Generic (InternalSet key child)
-
-instance SOP.HasDatatypeInfo (InternalSet key child)
-
-instance (Debug key, Debug child) => Debug (InternalSet key child)
-
-instance (Unparse key, Unparse child) => Unparse (InternalSet key child)
-  where
-    unparse = unparseInternalSet unparse unparse
-    unparse2 = unparseInternalSet unparse2 unparse2
-
-unparseInternalSet
-    :: (key -> Pretty.Doc ann)
-    -> (child -> Pretty.Doc ann)
-    -> InternalSet key child
-    -> Pretty.Doc ann
-unparseInternalSet keyUnparser childUnparser builtinSet =
-    unparseCollection
-        builtinSetUnit
-        builtinSetElement
-        builtinSetConcat
-        unparsedChildren
-    where
-    InternalSet { builtinSetChild } = builtinSet
-    InternalSet { builtinSetUnit } = builtinSet
-    InternalSet { builtinSetElement } = builtinSet
-    InternalSet { builtinSetConcat } = builtinSet
-
-    NormalizedSet {elementsWithVariables} = builtinSetChild
-    NormalizedSet {concreteElements} = builtinSetChild
-    NormalizedSet {sets} = builtinSetChild
-
-    -- case statement needed only for getting compiler notifications when
-    -- the NormalizedSet field count changes
-    unparsedChildren = case builtinSetChild of
-        NormalizedSet _ _ _ ->
-            (argument' . childUnparser <$> elementsWithVariables)
-            ++ (argument' . keyUnparser <$> Set.toList concreteElements)
-            ++ (argument' . childUnparser <$> sets)
+type InternalSet key child = InternalAc key NormalizedSet child
 
 -- * Builtin Int
 
@@ -443,10 +603,6 @@ data Builtin key child
     | BuiltinString !InternalString
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
-deriveEq1 ''Builtin
-deriveOrd1 ''Builtin
-deriveShow1 ''Builtin
-
 instance SOP.Generic (Builtin key child)
 
 instance SOP.HasDatatypeInfo (Builtin key child)
@@ -468,18 +624,18 @@ builtinSort builtin =
     case builtin of
         BuiltinInt InternalInt { builtinIntSort } -> builtinIntSort
         BuiltinBool InternalBool { builtinBoolSort } -> builtinBoolSort
-        BuiltinString InternalString { internalStringSort } -> internalStringSort
-        BuiltinMap InternalMap { builtinMapSort } -> builtinMapSort
+        BuiltinString InternalString { internalStringSort } ->
+            internalStringSort
+        BuiltinMap InternalAc { builtinAcSort } -> builtinAcSort
         BuiltinList InternalList { builtinListSort } -> builtinListSort
-        BuiltinSet InternalSet { builtinSetSort } -> builtinSetSort
+        BuiltinSet InternalAc { builtinAcSort } -> builtinAcSort
 
 instance Synthetic (Builtin key) Sort where
     synthetic = builtinSort
     {-# INLINE synthetic #-}
 
-makeLenses ''InternalMap
 makeLenses ''InternalList
-makeLenses ''InternalSet
+makeLenses ''InternalAc
 makeLenses ''InternalInt
 makeLenses ''InternalBool
 makeLenses ''InternalString
@@ -507,8 +663,8 @@ instance Domain (Builtin key) where
                     BuiltinString internal
                         { internalStringSort = domainValueSort }
                 BuiltinMap internal ->
-                    BuiltinMap internal { builtinMapSort = domainValueSort }
+                    BuiltinMap internal { builtinAcSort = domainValueSort }
                 BuiltinList internal ->
                     BuiltinList internal { builtinListSort = domainValueSort }
                 BuiltinSet internal ->
-                    BuiltinSet internal { builtinSetSort = domainValueSort }
+                    BuiltinSet internal { builtinAcSort = domainValueSort }

@@ -11,6 +11,7 @@ Portability : portable
 -}
 module Kore.Variables.Free
     ( freePureVariables
+    , freeSetVariables
     , pureAllVariables
     , synthetic
     ) where
@@ -26,6 +27,9 @@ import qualified Data.Set as Set
 
 import Kore.Syntax
 
+unlessM :: Monad m => m Bool -> m () -> m ()
+unlessM m go = m >>= \b -> Monad.unless b go
+
 -- | The free variables of a pure pattern.
 freePureVariables
     :: Ord variable
@@ -40,7 +44,6 @@ freePureVariables root =
     in
         free
   where
-    unlessM m go = m >>= \b -> Monad.unless b go
     isBound v = Monad.RWS.asks (Set.member v)
     recordFree v = Monad.RWS.modify' (Set.insert v)
 
@@ -60,6 +63,41 @@ freePureVariables root =
                     -- descend into the bound pattern
                     (freePureVariables1 forallChild)
             p -> mapM_ freePureVariables1 p
+
+-- | The free set variables of a pure pattern.
+freeSetVariables
+    :: forall variable annotation
+     . Ord variable
+    => Pattern variable annotation
+    -> Set variable
+freeSetVariables root =
+    let (free, ()) =
+            Monad.RWS.execRWS
+                (freeSetVariables1 root)
+                Set.empty  -- initial set of bound variables
+                Set.empty  -- initial set of free variables
+    in
+        free
+  where
+    isBound v = Monad.RWS.asks (Set.member v)
+    recordFree v = Monad.RWS.modify' (Set.insert v)
+
+    freeSetVariables1 recursive =
+        case Cofree.tailF (Recursive.project recursive) of
+            SetVariableF (SetVariable v) -> unlessM (isBound v) (recordFree v)
+            MuF Mu { muVariable = SetVariable v, muChild } ->
+                Monad.RWS.local
+                    -- record the bound variable
+                    (Set.insert v)
+                    -- descend into the bound pattern
+                    (freeSetVariables1 muChild)
+            NuF Nu { nuVariable = SetVariable v, nuChild } ->
+                Monad.RWS.local
+                    -- record the bound variable
+                    (Set.insert v)
+                    -- descend into the bound pattern
+                    (freeSetVariables1 nuChild)
+            p -> mapM_ freeSetVariables1 p
 
 pureMergeVariables
     :: Ord variable

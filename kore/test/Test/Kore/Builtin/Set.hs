@@ -12,6 +12,7 @@ import qualified Control.Monad.Trans as Trans
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
+import qualified Data.Map as Map
 import qualified Data.Reflection as Reflection
 import qualified Data.Sequence as Seq
 import           Data.Set
@@ -23,10 +24,12 @@ import           GHC.Stack as GHC
 import           Kore.Attribute.Hook
                  ( Hook )
 import qualified Kore.Attribute.Symbol as StepperAttributes
+import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Set as Set
+import qualified Kore.Builtin.SetSymbols as Set
 import           Kore.Domain.Builtin
-                 ( NormalizedSet (NormalizedSet), emptyNormalizedSet )
-import qualified Kore.Domain.Builtin as Builtin.DoNotUse
+                 ( NormalizedAc (NormalizedAc) )
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Internal.MultiOr
@@ -1645,23 +1648,25 @@ asTermLike =
 -- elements.
 asPattern :: Set (TermLike Concrete) -> Pattern Variable
 asPattern concreteSet = Reflection.give testMetadataTools
-    $ Set.asPattern
+    $ Ac.asPattern
         setSort
-        NormalizedSet
+        NormalizedAc
             { elementsWithVariables = []
-            , concreteElements = concreteSet
-            , sets = []
+            , concreteElements = Map.fromSet (const Domain.NoValue) concreteSet
+            , opaque = []
             }
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 asInternal :: Set (TermLike Concrete) -> TermLike Variable
-asInternal = Set.asInternalConcrete testMetadataTools setSort
+asInternal =
+    Ac.asInternalConcrete testMetadataTools setSort
+    . Map.fromSet (const Domain.NoValue)
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 asInternalNormalized
-    :: NormalizedSet (TermLike Concrete) (TermLike Variable)
+    :: NormalizedAc (TermLike Concrete) Domain.NoValue (TermLike Variable)
     -> TermLike Variable
-asInternalNormalized = Set.asInternal testMetadataTools setSort
+asInternalNormalized = Ac.asInternal testMetadataTools setSort
 
 -- * Constructors
 

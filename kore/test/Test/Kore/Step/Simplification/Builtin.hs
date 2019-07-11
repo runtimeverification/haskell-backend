@@ -49,12 +49,18 @@ mkMapDomainValue
     :: [(TermLike Concrete, child)]
     -> Builtin child
 mkMapDomainValue children =
-    Domain.BuiltinMap Domain.InternalMap
-        { builtinMapSort = Mock.mapSort
-        , builtinMapUnit = Mock.unitMapSymbol
-        , builtinMapElement = Mock.elementMapSymbol
-        , builtinMapConcat = Mock.concatMapSymbol
-        , builtinMapChild = Map.fromList children
+    Domain.BuiltinMap Domain.InternalAc
+        { builtinAcSort = Mock.mapSort
+        , builtinAcUnit = Mock.unitMapSymbol
+        , builtinAcElement = Mock.elementMapSymbol
+        , builtinAcConcat = Mock.concatMapSymbol
+        , builtinAcChild = Domain.NormalizedMap Domain.NormalizedAc
+            { elementsWithVariables = []
+            , concreteElements =
+                Map.fromList
+                    (map (\(key, value) -> (key, Domain.Value value)) children)
+            , opaque = []
+            }
         }
 
 mkListDomainValue :: [child] -> Builtin child

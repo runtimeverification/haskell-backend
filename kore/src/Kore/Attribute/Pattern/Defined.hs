@@ -12,8 +12,8 @@ import           Control.DeepSeq
 import qualified Data.Foldable as Foldable
 import           Data.Functor.Const
 import           Data.Hashable
+import qualified Data.Map as Map
 import           Data.Monoid
-import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -126,35 +126,44 @@ instance Synthetic (Rewrites sort) Defined where
 
 -- | A 'Builtin' pattern is defined if its subterms are 'Defined'.
 instance Synthetic (Builtin key) Defined where
-    synthetic (BuiltinSet InternalSet {builtinSetChild}) =
-        normalizedSetDefined builtinSetChild
-      where
-        normalizedSetDefined :: NormalizedSet key Defined -> Defined
-        normalizedSetDefined
-            NormalizedSet
-                { elementsWithVariables = []
-                , sets = []
-                }
-          = Defined True
-        normalizedSetDefined
-          NormalizedSet
-              { elementsWithVariables = [withVariable]
-              , concreteElements
-              , sets = []
-              }
-          | Set.null concreteElements
-          = withVariable
-        normalizedSetDefined
-          NormalizedSet
-              { elementsWithVariables = []
-              , concreteElements
-              , sets = [set]
-              }
-          | Set.null concreteElements
-          = set
-        normalizedSetDefined _ = Defined False
+    synthetic
+        (BuiltinSet InternalAc
+            {builtinAcChild = NormalizedSet builtinSetChild}
+        )
+      = normalizedAcDefined builtinSetChild
+    synthetic
+        (BuiltinMap InternalAc
+            {builtinAcChild = NormalizedMap builtinMapChild}
+        )
+      = normalizedAcDefined builtinMapChild
     synthetic builtin = Foldable.fold builtin
     {-# INLINE synthetic #-}
+
+normalizedAcDefined
+    :: Foldable valueWrapper
+    => NormalizedAc key valueWrapper Defined -> Defined
+normalizedAcDefined ac@(NormalizedAc _ _ _) =
+    case ac of
+        NormalizedAc
+            { elementsWithVariables = []
+            , opaque = []
+            } -> sameAsChildren
+        NormalizedAc
+            { elementsWithVariables = [_]
+            , concreteElements
+            , opaque = []
+            }
+          | Map.null concreteElements -> sameAsChildren
+        NormalizedAc
+            { elementsWithVariables = []
+            , concreteElements
+            , opaque = [_]
+            }
+          | Map.null concreteElements -> sameAsChildren
+        _ -> Defined False
+  where
+    sameAsChildren = Foldable.fold ac
+
 
 -- | A 'Top' pattern is always 'Defined'.
 instance Synthetic (Top sort) Defined where

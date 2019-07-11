@@ -4,7 +4,6 @@ import qualified Data.Default as Default
 import           Data.Function
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
-import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
@@ -694,12 +693,17 @@ builtinMap
     :: [(TermLike Concrete, TermLike Variable)]
     -> InternalMap (TermLike Concrete) (TermLike Variable)
 builtinMap children =
-    InternalMap
-        { builtinMapSort = mapSort
-        , builtinMapUnit = unitMapSymbol
-        , builtinMapElement = elementMapSymbol
-        , builtinMapConcat = concatMapSymbol
-        , builtinMapChild = Map.fromList children
+    InternalAc
+        { builtinAcSort = mapSort
+        , builtinAcUnit = unitMapSymbol
+        , builtinAcElement = elementMapSymbol
+        , builtinAcConcat = concatMapSymbol
+        , builtinAcChild = Domain.NormalizedMap Domain.NormalizedAc
+            { elementsWithVariables = []
+            , concreteElements =
+                Map.fromList (map (\(x, y) -> (x, Value y)) children)
+            , opaque = []
+            }
         }
 
 -- ** Pair
@@ -756,15 +760,16 @@ builtinSet
     :: [TermLike Concrete]
     -> InternalSet (TermLike Concrete) (TermLike Variable)
 builtinSet children =
-    InternalSet
-        { builtinSetSort = setSort
-        , builtinSetUnit = unitSetSymbol
-        , builtinSetElement = elementSetSymbol
-        , builtinSetConcat = concatSetSymbol
-        , builtinSetChild = Domain.NormalizedSet
+    InternalAc
+        { builtinAcSort = setSort
+        , builtinAcUnit = unitSetSymbol
+        , builtinAcElement = elementSetSymbol
+        , builtinAcConcat = concatSetSymbol
+        , builtinAcChild = Domain.NormalizedSet Domain.NormalizedAc
             { elementsWithVariables = []
-            , concreteElements = Set.fromList children
-            , sets = []
+            , concreteElements =
+                Map.fromList (map (\x -> (x, NoValue)) children)
+            , opaque = []
             }
         }
 
