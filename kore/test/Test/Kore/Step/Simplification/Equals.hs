@@ -654,8 +654,8 @@ test_equalsSimplification_TermLike =
                     { term = ()
                     , predicate =
                         makeAndPredicate
-                            (makeCeilPredicate fOfA)
                             (makeCeilPredicate fOfB)
+                            (makeCeilPredicate fOfA)
                     , substitution = Substitution.wrap
                         [ (Mock.x, fOfA)
                         , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
@@ -677,8 +677,8 @@ test_equalsSimplification_TermLike =
                     { term = ()
                     , predicate =
                         makeAndPredicate
-                            (makeCeilPredicate fOfA)
                             (makeCeilPredicate fOfB)
+                            (makeCeilPredicate fOfA)
                     , substitution = Substitution.wrap
                         [ (Mock.x, fOfA)
                         , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
@@ -700,8 +700,8 @@ test_equalsSimplification_TermLike =
                     { term = ()
                     , predicate =
                         makeAndPredicate
-                            (makeCeilPredicate fOfA)
                             (makeCeilPredicate fOfB)
+                            (makeCeilPredicate fOfA)
                     , substitution = Substitution.wrap
                         [ (Mock.x, fOfA)
                         , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
@@ -723,8 +723,8 @@ test_equalsSimplification_TermLike =
                     { term = ()
                     , predicate =
                         makeAndPredicate
-                            (makeCeilPredicate fOfA)
                             (makeCeilPredicate fOfB)
+                            (makeCeilPredicate fOfA)
                     , substitution = Substitution.wrap
                         [ (Mock.x, fOfA)
                         , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])

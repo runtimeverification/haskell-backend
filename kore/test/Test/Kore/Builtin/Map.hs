@@ -22,7 +22,10 @@ import           Prelude hiding
 import           Kore.Attribute.Hook
                  ( Hook )
 import qualified Kore.Attribute.Symbol as StepperAttributes
+import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Map as Map
+import qualified Kore.Builtin.MapSymbols as Map
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Internal.MultiOr
@@ -386,11 +389,12 @@ test_simplify =
 test_symbolic :: TestTree
 test_symbolic =
     testPropertyWithSolver
-        "builtin functions are not evaluated on symbolic keys"
+        "builtin functions are evaluated on symbolic keys"
         (do
             elements <- forAll $ genMapSortedVariable intSort genIntegerPattern
-            let patMap = asSymbolicPattern (Map.mapKeys mkVar elements)
-                expect = Pattern.fromTermLike patMap
+            let varMap = Map.mapKeys mkVar elements
+                patMap = asSymbolicPattern varMap
+                expect = asVariablePattern varMap
             if Map.null elements
                 then discard
                 else (===) expect =<< evaluateT patMap
@@ -942,14 +946,31 @@ asTermLike =
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asPattern :: Map (TermLike Concrete) (TermLike Variable) -> Pattern Variable
-asPattern =
-    Reflection.give testMetadataTools Map.asPattern mapSort
+asPattern concreteMap =
+    Reflection.give testMetadataTools Ac.asPattern mapSort
+        Domain.NormalizedAc
+            { elementsWithVariables = []
+            , concreteElements = fmap Domain.Value concreteMap
+            , opaque = []
+            }
 
--- | Specialize 'Map.asInternal' to the builtin sort 'mapSort'.
+asVariablePattern
+    :: Map (TermLike Variable) (TermLike Variable) -> Pattern Variable
+asVariablePattern variableMap =
+    Reflection.give testMetadataTools Ac.asPattern mapSort
+        Domain.NormalizedAc
+            { elementsWithVariables = Map.toList (fmap Domain.Value variableMap)
+            , concreteElements = Map.empty
+            , opaque = []
+            }
+
+-- | Specialize 'Ac.asInternal' to the builtin sort 'mapSort'.
 asInternal
     :: Map (TermLike Concrete) (TermLike Variable)
     -> TermLike Variable
-asInternal = Map.asInternal testMetadataTools mapSort
+asInternal =
+    Ac.asInternalConcrete testMetadataTools mapSort
+    . fmap Domain.Value
 
 -- * Constructors
 

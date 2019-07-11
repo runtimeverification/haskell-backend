@@ -16,8 +16,8 @@ import qualified Data.Set as Set
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Simplification
                  ( Simplification (Simplification) )
-import qualified Kore.Builtin.Set as Set
-                 ( asInternalConcrete )
+import qualified Kore.Builtin.AssociativeCommutative as Ac
+import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
 import           Kore.Internal.Pattern as Pattern
@@ -636,8 +636,7 @@ test_andTermsSimplification =
                     [ Conditional
                         { term = Mock.builtinMap
                             [   ( Mock.sortInjection Mock.testSort
-                                    $ Mock.sortInjectionSubSubToSub
-                                        Mock.aSubSubsort
+                                    Mock.aSubSubsort
                                 , fOfA
                                 )
                             ]
@@ -667,9 +666,7 @@ test_andTermsSimplification =
                 key = Mock.a
                 value = Mock.sortInjection Mock.testSort Mock.aSubSubsort
                 testMap = Mock.builtinMap [(key, value)]
-                valueInj =
-                    Mock.sortInjection Mock.testSort
-                    $ Mock.sortInjection Mock.subSort Mock.aSubSubsort
+                valueInj = Mock.sortInjection Mock.testSort Mock.aSubSubsort
                 testMapInj = Mock.builtinMap [(key, valueInj)]
                 expected = Just
                     [ Conditional
@@ -698,9 +695,7 @@ test_andTermsSimplification =
                     [ Conditional
                         { term = Mock.builtinMap
                             [   ( Mock.sortInjection Mock.testSort
-                                    (Mock.sortInjectionSubSubToSub
-                                        Mock.aSubSubsort
-                                    )
+                                    Mock.aSubSubsort
                                 , fOfA
                                 )
                             ]
@@ -736,9 +731,7 @@ test_andTermsSimplification =
                         { term = Mock.builtinMap
                             [   ( Mock.a
                                 , Mock.sortInjection Mock.testSort
-                                    (Mock.sortInjectionSubSubToSub
-                                        Mock.aSubSubsort
-                                    )
+                                    Mock.aSubSubsort
                                 )
                             ]
                         , predicate = makeTruePredicate
@@ -753,7 +746,10 @@ test_andTermsSimplification =
                     ]
             actual <- unify
                 (Mock.builtinMap
-                    [ (Mock.a, Mock.sortInjection Mock.testSort Mock.aSubSubsort) ]
+                    [   ( Mock.a
+                        , Mock.sortInjection Mock.testSort Mock.aSubSubsort
+                        )
+                    ]
                 )
                 (Mock.concatMap
                     (Mock.elementMap
@@ -793,7 +789,7 @@ test_andTermsSimplification =
         , testCase "[a] `concat` x /\\ [a, b] " $ do
             let x = varS "x" Mock.listSort
                 term5 =
-                    Mock.concatList (Mock.builtinList [Mock.a]) (mkVar $ x)
+                    Mock.concatList (Mock.builtinList [Mock.a]) (mkVar x)
                 term6 = Mock.builtinList [Mock.a, Mock.b]
                 expect = Just
                     [ Conditional
@@ -1108,7 +1104,11 @@ test_equalsTermsSimplification =
         assertEqualWithExplanation "" expected actual
     , testCase "handles set ambiguity" $ do
         let
-            asInternal = Set.asInternalConcrete Mock.metadataTools Mock.setSort
+            asInternal set =
+                Ac.asInternalConcrete
+                    Mock.metadataTools
+                    Mock.setSort
+                    (Map.fromSet (const Domain.NoValue) set)
             expected = Just $ do -- list monad
                 (xValue, xSetValue) <-
                     [ (Mock.a, [Mock.b])

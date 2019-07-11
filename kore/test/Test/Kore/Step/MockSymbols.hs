@@ -26,7 +26,6 @@ import qualified Data.Default as Default
 import           Data.Function
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
-import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 import qualified GHC.Stack as GHC
@@ -1364,12 +1363,18 @@ builtinMap
     => [(TermLike Concrete, TermLike variable)]
     -> TermLike variable
 builtinMap child =
-    Internal.mkBuiltin $ Domain.BuiltinMap Domain.InternalMap
-        { builtinMapSort = mapSort
-        , builtinMapUnit = unitMapSymbol
-        , builtinMapElement = elementMapSymbol
-        , builtinMapConcat = concatMapSymbol
-        , builtinMapChild = Map.fromList child
+    Internal.mkBuiltin $ Domain.BuiltinMap Domain.InternalAc
+        { builtinAcSort = mapSort
+        , builtinAcUnit = unitMapSymbol
+        , builtinAcElement = elementMapSymbol
+        , builtinAcConcat = concatMapSymbol
+        , builtinAcChild = Domain.NormalizedMap Domain.NormalizedAc
+            { elementsWithVariables = []
+            , concreteElements =
+                Map.fromList
+                    (map (\(key, value) -> (key, Domain.Value value)) child)
+            , opaque = []
+            }
         }
 
 builtinList
@@ -1390,15 +1395,16 @@ builtinSet
     => [TermLike Concrete]
     -> TermLike variable
 builtinSet child =
-    Internal.mkBuiltin $ Domain.BuiltinSet Domain.InternalSet
-        { builtinSetSort = setSort
-        , builtinSetUnit = unitSetSymbol
-        , builtinSetElement = elementSetSymbol
-        , builtinSetConcat = concatSetSymbol
-        , builtinSetChild = Domain.NormalizedSet
+    Internal.mkBuiltin $ Domain.BuiltinSet Domain.InternalAc
+        { builtinAcSort = setSort
+        , builtinAcUnit = unitSetSymbol
+        , builtinAcElement = elementSetSymbol
+        , builtinAcConcat = concatSetSymbol
+        , builtinAcChild = Domain.NormalizedSet Domain.NormalizedAc
             { elementsWithVariables = []
-            , concreteElements = Set.fromList child
-            , sets = []
+            , concreteElements =
+                Map.fromList (map (\key -> (key, Domain.NoValue)) child)
+            , opaque = []
             }
         }
 
