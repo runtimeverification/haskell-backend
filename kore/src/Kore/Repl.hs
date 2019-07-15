@@ -113,7 +113,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
     repl0 = do
         str <- prompt
         let command = maybe ShowUsage id $ parseMaybe commandParser str
-        when (shouldStore command) $ lensCommands Lens.%= (Seq.|> str)
+        when (shouldStore command) $ field @"commands" Lens.%= (Seq.|> str)
         void $ replInterpreter printIfNotEmpty command
 
     state :: ReplState claim
@@ -222,7 +222,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
 
     prompt :: MonadIO n => MonadState (ReplState claim) n => n String
     prompt = do
-        node <- Lens.use lensNode
+        node <- Lens.use (field @"node")
         liftIO $ do
             putStr $ "Kore (" <> show (unReplNode node) <> ")> "
             hFlush stdout
