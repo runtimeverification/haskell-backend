@@ -39,6 +39,7 @@ dependencies:
   - fgl
   - free
   - filepath
+  - generic-lens
   - generics-sop
   - gitrev
   - graphviz
