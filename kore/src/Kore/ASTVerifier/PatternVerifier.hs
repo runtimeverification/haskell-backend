@@ -3,8 +3,6 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.ASTVerifier.PatternVerifier
     ( verifyPattern
     , verifyStandalonePattern
@@ -15,10 +13,6 @@ module Kore.ASTVerifier.PatternVerifier
     , PatternVerifier (..)
     , runPatternVerifier
     , Context (..)
-    , lensDeclaredVariables
-    , lensDeclaredSortVariables
-    , lensIndexedModule
-    , lensBuiltinDomainValueVerifiers
     , DeclaredVariables (..), emptyDeclaredVariables
     , assertExpectedSort
     , assertSameSort
@@ -45,7 +39,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Data.Text.Prettyprint.Doc.Render.String
                  ( renderString )
 
-import qualified Control.Lens.TH.Rules as Lens
 import           Kore.AST.Error
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.SortVerifier
@@ -90,8 +83,6 @@ data Context =
         , builtinDomainValueVerifiers
             :: !(Builtin.DomainValueVerifiers Verified.Pattern)
         }
-
-Lens.makeLenses ''Context
 
 newtype PatternVerifier a =
     PatternVerifier
