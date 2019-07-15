@@ -8,8 +8,6 @@ Stability   : experimental
 Portability : POSIX
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.IndexedModule.IndexedModule
     ( ImplicitIndexedModule (ImplicitIndexedModule)
     , IndexedModule
@@ -22,16 +20,6 @@ module Kore.IndexedModule.IndexedModule
         , indexedModuleAttributes, indexedModuleImports
         , indexedModuleHooks
         )
-    , lensIndexedModuleName
-    , lensIndexedModuleAliasSentences
-    , lensIndexedModuleSymbolSentences
-    , lensIndexedModuleSortDescriptions
-    , lensIndexedModuleAxioms
-    , lensIndexedModuleClaims
-    , lensIndexedModuleAttributes
-    , lensIndexedModuleImports
-    , lensIndexedModuleHooks
-    , lensIndexedModuleHookedIdentifiers
     , IndexModuleError
     , KoreImplicitIndexedModule
     , KoreIndexedModule
@@ -84,7 +72,6 @@ import           Data.Text
 import           GHC.Generics
                  ( Generic )
 
-import qualified Control.Lens.TH.Rules as Lens
 import           Kore.AST.Error
 import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Null as Attribute
@@ -154,8 +141,6 @@ data IndexedModule pat declAtts axiomAtts =
         -- identifiers
     }
     deriving (Generic, Show)
-
-Lens.makeLenses ''IndexedModule
 
 recursiveIndexedModuleSortDescriptions
     :: forall pat declAtts axiomAtts
