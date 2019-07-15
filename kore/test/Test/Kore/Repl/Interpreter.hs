@@ -12,7 +12,7 @@ import Test.Tasty.HUnit
 import           Control.Applicative
 import           Control.Concurrent.MVar
 import qualified Control.Lens as Lens
-import           Control.Monad.Mock
+-- import           Control.Monad.Mock
 import           Control.Monad.Reader
                  ( liftIO, runReaderT )
 import           Control.Monad.Trans.State.Strict
@@ -729,6 +729,14 @@ koreToAux (ReplOutput output) =
         \case
             KoreOut out -> AuxOut out
             AuxOut out -> AuxOut out
+
+newtype PipeMock a =
+        PipeMock
+        { unPipeMock :: Either (IO (IORef String)) a }
+        deriving (Functor, Applicative, Monad)
+
+instance MonadReplIO PipeMock where
+    makeProcess _ = PipeMock . Left $ newIORef "heyy"
 
 -- newtype PipeMockIO a =
 --     PipeMockIO
