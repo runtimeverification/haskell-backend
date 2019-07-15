@@ -38,6 +38,7 @@ import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function
+import           Data.Generics.Product
 import           Data.Hashable
 import           Data.Text
                  ( Text )
@@ -164,43 +165,43 @@ symbolHook = Attribute.hook . symbolAttributes
 constructor :: Symbol -> Symbol
 constructor =
     Lens.set
-        (lensSymbolAttributes . Attribute.lensConstructor)
+        (lensSymbolAttributes . typed)
         Attribute.Constructor { isConstructor = True }
 
 functional :: Symbol -> Symbol
 functional =
     Lens.set
-        (lensSymbolAttributes . Attribute.lensFunctional)
+        (lensSymbolAttributes . typed)
         Attribute.Functional { isDeclaredFunctional = True }
 
 function :: Symbol -> Symbol
 function =
     Lens.set
-        (lensSymbolAttributes . Attribute.lensFunction)
+        (lensSymbolAttributes . typed)
         Attribute.Function { isDeclaredFunction = True }
 
 injective :: Symbol -> Symbol
 injective =
     Lens.set
-        (lensSymbolAttributes . Attribute.lensInjective)
+        (lensSymbolAttributes . typed)
         Attribute.Injective { isDeclaredInjective = True }
 
 sortInjection :: Symbol -> Symbol
 sortInjection =
     Lens.set
-        (lensSymbolAttributes . Attribute.lensSortInjection)
+        (lensSymbolAttributes . typed)
         Attribute.SortInjection { isSortInjection = True }
 
 smthook :: SExpr -> Symbol -> Symbol
 smthook sExpr =
     Lens.set
-        (lensSymbolAttributes . Attribute.lensSmthook)
+        (lensSymbolAttributes . typed)
         Attribute.Smthook { getSmthook = Just sExpr }
 
 hook :: Text -> Symbol -> Symbol
 hook name =
     Lens.set
-        (lensSymbolAttributes . Attribute.lensHook)
+        (lensSymbolAttributes . typed)
         Attribute.Hook { getHook = Just name }
 
 {- | Coerce a sort injection symbol's source and target sorts.
