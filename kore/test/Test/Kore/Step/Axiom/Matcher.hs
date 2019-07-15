@@ -18,8 +18,10 @@ import qualified Data.Foldable as Foldable
 import           Data.Function
                  ( on )
 import qualified Data.Map as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Simplification
@@ -54,7 +56,6 @@ import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( BuiltinAndAxiomSimplifierMap )
 import           Kore.Step.Simplification.Data
-import           Kore.TopBottom
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Substitution as Substitution
@@ -1801,7 +1802,8 @@ match first second = do
         $ matchAsUnification first second
 
 withMatch
-    :: (Maybe (OrPredicate Variable) -> Bool)
+    :: GHC.HasCallStack
+    => (Maybe (OrPredicate Variable) -> Bool)
     -> TermLike Variable
     -> TermLike Variable
     -> TestName
@@ -1812,8 +1814,9 @@ withMatch check term1 term2 comment =
         assertBool "" (check actual)
 
 notMatches
-    :: TermLike Variable
+    :: GHC.HasCallStack
+    => TermLike Variable
     -> TermLike Variable
     -> TestName
     -> TestTree
-notMatches = withMatch (maybe False isBottom)
+notMatches = withMatch Maybe.isNothing
