@@ -84,7 +84,7 @@ resynthesizeAux synth =
     worker (_ :< ft) = synthesizeAux synth ft
 {-# INLINE resynthesizeAux #-}
 
-{- | @/synthesize/@ an attribute @a@ bottom-up along a tree @s@.
+{- | @/synthesize/@ an attribute @a@ from one level of a tree @s@.
  -}
 synthesize
     ::  ( Functor f, Synthetic f a
