@@ -4,15 +4,12 @@ License     : NCSA
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Syntax.Top
     ( Top (..)
     ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import qualified Data.Deriving as Deriving
 import           Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -32,10 +29,6 @@ Section 9.1.4 (Patterns).
 -}
 newtype Top sort child = Top { topSort :: sort }
     deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-Deriving.deriveEq1 ''Top
-Deriving.deriveOrd1 ''Top
-Deriving.deriveShow1 ''Top
 
 instance Hashable sort => Hashable (Top sort child)
 

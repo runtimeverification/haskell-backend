@@ -4,15 +4,12 @@ License     : NCSA
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Syntax.Bottom
     ( Bottom (..)
     ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import qualified Data.Deriving as Deriving
 import           Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -31,10 +28,6 @@ category from the Semantics of K, Section 9.1.4 (Patterns).
  -}
 newtype Bottom sort child = Bottom { bottomSort :: sort }
     deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Traversable, Show)
-
-Deriving.deriveEq1 ''Bottom
-Deriving.deriveOrd1 ''Bottom
-Deriving.deriveShow1 ''Bottom
 
 instance Hashable sort => Hashable (Bottom sort child)
 
