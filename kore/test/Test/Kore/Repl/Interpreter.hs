@@ -537,7 +537,7 @@ rulePatternWithName
     -> RulePattern variable
 rulePatternWithName left right name =
     rulePattern left right
-    & Lens.set (lensAttributes . typed @Attribute.Label) label
+    & Lens.set (field @"attributes" . typed @Attribute.Label) label
   where
     label = Attribute.Label . pure $ pack name
 
