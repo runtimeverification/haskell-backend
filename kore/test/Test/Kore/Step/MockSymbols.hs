@@ -481,7 +481,7 @@ anywhereSymbol =
     symbol anywhereId [] testSort
     & functional
     & Lens.set
-        (lensSymbolAttributes . typed)
+        (typed @Attribute.Symbol . typed @Attribute.Anywhere)
         (Attribute.Anywhere True)
 
 var_x_1 :: Variable
