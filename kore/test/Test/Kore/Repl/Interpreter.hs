@@ -17,6 +17,7 @@ import           Control.Monad.Trans.State.Strict
 import           Data.Coerce
                  ( coerce )
 import           Data.Function
+import           Data.Generics.Product
 import           Data.IORef
                  ( IORef, modifyIORef, newIORef, readIORef )
 import           Data.List.NonEmpty
@@ -536,7 +537,7 @@ rulePatternWithName
     -> RulePattern variable
 rulePatternWithName left right name =
     rulePattern left right
-    & Lens.set (lensAttributes . Attribute.lensLabel) label
+    & Lens.set (lensAttributes . typed @Attribute.Label) label
   where
     label = Attribute.Label . pure $ pack name
 

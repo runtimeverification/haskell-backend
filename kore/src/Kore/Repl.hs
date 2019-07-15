@@ -29,6 +29,7 @@ import           Control.Monad.State.Strict
                  ( MonadState, StateT, evalStateT )
 import           Data.Coerce
                  ( coerce )
+import           Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.List
                  ( findIndex )
@@ -181,7 +182,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
 
     mapAttribute :: Int -> Attribute.Axiom -> Attribute.Axiom
     mapAttribute n attr =
-        Lens.over Attribute.lensIdentifier (makeRuleIndex n) attr
+        Lens.over (field @"identifier") (makeRuleIndex n) attr
 
     makeRuleIndex :: Int -> RuleIndex -> RuleIndex
     makeRuleIndex n _ = RuleIndex (Just n)
