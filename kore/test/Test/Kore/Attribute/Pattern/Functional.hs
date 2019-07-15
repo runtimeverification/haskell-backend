@@ -118,7 +118,7 @@ test_instance_Synthetic =
     expect
         :: GHC.HasCallStack
         => Functional
-        -> TermLikeF Variable Functional
+        -> TermLikeF (TermLike Concrete) Variable Functional
         -> TestTree
     expect x
       | isFunctional x = is

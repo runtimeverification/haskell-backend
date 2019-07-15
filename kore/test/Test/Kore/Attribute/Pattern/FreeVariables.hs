@@ -10,7 +10,7 @@ import           Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Attribute.Synthetic
 import           Kore.Internal.TermLike
-                 ( Symbol, TermLikeF (..) )
+                 ( Symbol, TermLike, TermLikeF (..) )
 import           Kore.Syntax hiding
                  ( PatternF (..) )
 
@@ -65,7 +65,7 @@ test_instance_Synthetic_TermLike =
     , VariableF    Mock.x                     `gives'` x      $ "VariableF"
     ]
   where
-    gives' = gives @(TermLikeF Variable)
+    gives' = gives @(TermLikeF (TermLike Concrete) Variable)
 
 sort :: Sort
 sort = Mock.testSort

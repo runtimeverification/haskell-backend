@@ -472,7 +472,9 @@ verifyDomainValue
     :: DomainValueVerifiers (TermLike variable)
     -> (Id -> Either (Error VerifyError) (SentenceSort patternType))
     -> DomainValue Sort (TermLike variable)
-    -> Either (Error VerifyError) (TermLikeF variable (TermLike variable))
+    ->  Either
+            (Error VerifyError)
+            (TermLikeF (TermLike Concrete) variable (TermLike variable))
 verifyDomainValue
     verifiers
     findSort

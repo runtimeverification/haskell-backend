@@ -8,7 +8,7 @@ import qualified GHC.Stack as GHC
 
 import Kore.Attribute.Synthetic
 import Kore.Internal.TermLike
-       ( TermLikeF (..) )
+       ( TermLike, TermLikeF (..) )
 import Kore.Sort
 import Kore.Syntax hiding
        ( PatternF (..) )
@@ -112,7 +112,7 @@ test_instance_Synthetic =
     expected = sort
     success
         :: GHC.HasCallStack
-        => TermLikeF Variable Sort
+        => TermLikeF (TermLike Concrete) Variable Sort
         -> TestTree
     success termLikeF =
         testCase "Sorts match" $ do
@@ -120,7 +120,7 @@ test_instance_Synthetic =
             assertEqual "" expected actual
     failure
         :: GHC.HasCallStack
-        => TermLikeF Variable Sort
+        => TermLikeF (TermLike Concrete) Variable Sort
         -> TestTree
     failure termLikeF =
         testCase "Sorts mismatch" $ do
