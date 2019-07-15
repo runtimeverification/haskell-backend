@@ -32,7 +32,6 @@ dependencies:
   - cryptonite
   - data-default
   - deepseq
-  - deriving-compat
   - directory
   - errors
   - exceptions
