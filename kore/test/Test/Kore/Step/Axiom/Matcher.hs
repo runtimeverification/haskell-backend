@@ -1040,16 +1040,17 @@ test_unificationWithAppMatchOnTop =
         assertEqualWithExplanation "" expected actual
     ]
 
-test_matchingBuiltins :: [TestTree]
+test_matchingBuiltins :: TestTree
 test_matchingBuiltins =
-    Foldable.fold
-        [ matchingBool
-        , matchingInt
-        , matchingString
-        , matchingList
-        , matchingSet
-        , matchingMap
-        ]
+    testGroup "matching builtins"
+        . fmap (uncurry testGroup)
+        $   [ ("Bool", matchingBool)
+            , ("Int", matchingInt)
+            , ("String", matchingString)
+            , ("List", matchingList)
+            , ("Set", matchingSet)
+            , ("Map", matchingMap)
+            ]
 
 matchingBool :: [TestTree]
 matchingBool =
