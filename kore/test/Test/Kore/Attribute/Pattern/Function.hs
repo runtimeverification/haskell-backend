@@ -8,7 +8,7 @@ import qualified GHC.Stack as GHC
 import Kore.Attribute.Pattern.Function
 import Kore.Attribute.Synthetic
 import Kore.Internal.TermLike
-       ( TermLike, TermLikeF (..) )
+       ( TermLikeF (..) )
 import Kore.Syntax hiding
        ( PatternF (..) )
 
@@ -57,32 +57,26 @@ test_instance_Synthetic =
     range = [function, nonFunction]
 
     check
-        :: (GHC.HasCallStack, Synthetic term Function)
+        :: GHC.HasCallStack
         => TestName
         -> (Function -> Bool)
-        -> term Function
+        -> TermLikeF Variable Function
         -> TestTree
     check name checking termLikeF =
         testCase name $ do
             let actual = synthetic termLikeF
             assertBool "" (checking actual)
 
-    is
-        :: (GHC.HasCallStack, Synthetic term Function)
-        => term Function
-        -> TestTree
+    is :: GHC.HasCallStack => TermLikeF Variable Function -> TestTree
     is = check "Function pattern" isFunction
 
-    isn't
-        :: (GHC.HasCallStack, Synthetic term Function)
-        => term Function
-        -> TestTree
+    isn't :: GHC.HasCallStack => TermLikeF Variable Function -> TestTree
     isn't = check "Non-functional pattern" (not . isFunction)
 
     expect
         :: GHC.HasCallStack
         => Function
-        -> TermLikeF (TermLike Concrete) Variable Function
+        -> TermLikeF Variable Function
         -> TestTree
     expect x
       | isFunction x = is

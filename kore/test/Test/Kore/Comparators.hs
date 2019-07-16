@@ -268,10 +268,7 @@ instance
     , Show child
     , EqualWithExplanation variable
     , Show variable
-    , EqualWithExplanation key
-    , Eq key
-    , Show key
-    ) => EqualWithExplanation (TermLikeF key variable child)
+    ) => EqualWithExplanation (TermLikeF variable child)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
@@ -2206,14 +2203,11 @@ instance
     ( EqualWithExplanation child
     , Eq child
     , Show child
-    , EqualWithExplanation key
-    , Eq key
-    , Show key
     , EqualWithExplanation variable
     , Eq variable
     , Show variable
     )
-    => SumEqualWithExplanation (TermLikeF key variable child)
+    => SumEqualWithExplanation (TermLikeF variable child)
   where
     sumConstructorPair (TermLike.AndF a1) (TermLike.AndF a2) =
         SumConstructorSameWithArguments (EqWrap "AndF" a1 a2)

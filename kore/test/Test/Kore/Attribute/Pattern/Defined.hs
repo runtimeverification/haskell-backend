@@ -122,7 +122,7 @@ test_instance_Synthetic =
     expect
         :: GHC.HasCallStack
         => Defined
-        -> TermLikeF (TermLike Concrete) Variable Defined
+        -> TermLikeF Variable Defined
         -> TestTree
     expect x
       | isDefined x = is
