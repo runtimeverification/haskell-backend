@@ -122,11 +122,16 @@ newtype RuleName = RuleName
     { unRuleName :: String
     } deriving (Eq, Show)
 
+-- | The repl keeps Kore output separated from any other kinds of auxiliary output.
+-- This makes it possible to treat the output differently by using different
+-- printing functions. For example, the pipe command will only send KoreOut to the
+-- process' input handle.
 newtype ReplOutput =
     ReplOutput
     { unReplOutput :: [ReplOut]
     } deriving (Eq, Show, Semigroup, Monoid)
 
+-- | Newtypes for printing functions called by Kore.Repl.Interpreter.replInterpreter0
 newtype PrintAuxOutput = PrintAuxOutput
     { unPrintAuxOutput :: String -> IO () }
 
