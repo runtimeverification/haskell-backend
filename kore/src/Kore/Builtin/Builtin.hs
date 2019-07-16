@@ -344,10 +344,7 @@ assertSymbolHook indexedModule symbolId expected = do
           | otherwise ->
             Kore.Error.koreFailWithLocations
                 [symbol]
-                ("Symbol is not hooked to builtin symbol '"
-                    ++ expectedForError ++ "'")
-          where
-            expectedForError = Text.unpack expected
+                ("Symbol is not hooked to builtin symbol '" <> expected <> "'")
         Nothing ->
             Kore.Error.koreFailWithLocations
                 [symbol]
@@ -374,7 +371,7 @@ assertSymbolResultSort indexedModule symbolId expectedSort = do
         $ Kore.Error.koreFailWithLocations
             [symbol]
             ("Symbol does not return sort '"
-                ++ unparseToString expectedSort ++ "'")
+                <> unparseToText expectedSort <> "'")
 
 {- | Verify the occurrence of a builtin sort.
 

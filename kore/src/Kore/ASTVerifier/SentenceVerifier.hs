@@ -21,7 +21,6 @@ import           Data.Maybe
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
-import qualified Data.Text as Text
 
 import           Kore.AST.Error
 import           Kore.ASTVerifier.AttributesVerifier
@@ -58,16 +57,15 @@ verifyUniqueNames sentences existingNames =
         concatMap definedNamesForSentence sentences
 
 data UnparameterizedId = UnparameterizedId
-    { unparameterizedIdName     :: String
+    { unparameterizedIdName     :: Text
     , unparameterizedIdLocation :: AstLocation
     }
     deriving (Show)
 
-
 toUnparameterizedId :: Id -> UnparameterizedId
 toUnparameterizedId Id {getId = name, idLocation = location} =
     UnparameterizedId
-        { unparameterizedIdName = Text.unpack name
+        { unparameterizedIdName = name
         , unparameterizedIdLocation = location
         }
 
@@ -76,13 +74,11 @@ verifyUniqueId
     -> UnparameterizedId
     -> Either (Error VerifyError) (Map.Map Text AstLocation)
 verifyUniqueId existing (UnparameterizedId name location) =
-    case Map.lookup name' existing of
+    case Map.lookup name existing of
         Just location' ->
             koreFailWithLocations [location, location']
-                ("Duplicated name: '" ++ name ++ "'.")
-        _ -> Right (Map.insert name' location existing)
-  where
-    name' = Text.pack name
+                ("Duplicated name: '" <> name <> "'.")
+        _ -> Right (Map.insert name location existing)
 
 definedNamesForSentence :: Sentence pat -> [UnparameterizedId]
 definedNamesForSentence (SentenceAliasSentence sentenceAlias) =
@@ -353,7 +349,7 @@ verifyAxiomSentence axiom builtinVerifiers indexedModule =
                     , declaredSortVariables = variables
                     , declaredVariables = emptyDeclaredVariables
                     }
-        verifiedAxiomPattern <- runPatternVerifier context $ do
+        verifiedAxiomPattern <- runPatternVerifier context $
             verifyStandalonePattern Nothing sentenceAxiomPattern
         return axiom { sentenceAxiomPattern = verifiedAxiomPattern }
   where
@@ -376,8 +372,8 @@ buildDeclaredSortVariables (unifiedVariable : list) = do
         (unifiedVariable `Set.member` variables)
         [unifiedVariable]
         (  "Duplicated sort variable: '"
-        ++ extractVariableName unifiedVariable
-        ++ "'.")
+        <> extractVariableName unifiedVariable
+        <> "'.")
     return (Set.insert unifiedVariable variables)
   where
-    extractVariableName variable = getIdForError (getSortVariable variable)
+    extractVariableName variable = getId (getSortVariable variable)

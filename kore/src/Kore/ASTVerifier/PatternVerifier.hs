@@ -39,11 +39,13 @@ import qualified Data.Map as Map
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
 import           Data.Text.Prettyprint.Doc
                  ( (<+>) )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           Data.Text.Prettyprint.Doc.Render.String
-                 ( renderString )
+import           Data.Text.Prettyprint.Doc.Render.Text
+                 ( renderStrict )
 
 import qualified Control.Lens.TH.Rules as Lens
 import           Kore.AST.Error
@@ -166,7 +168,7 @@ lookupDeclaredVariable varId = do
     errorUnquantified :: PatternVerifier Variable
     errorUnquantified =
         koreFailWithLocations [varId]
-            ("Unquantified variable: '" ++ getIdForError varId ++ "'.")
+            ("Unquantified variable: '" <> getId varId <> "'.")
 
 addDeclaredVariable
     :: Variable
@@ -193,9 +195,9 @@ newDeclaredVariable declared variable@Variable { variableName } = do
     alreadyDeclared :: Variable -> PatternVerifier DeclaredVariables
     alreadyDeclared variable' =
         koreFailWithLocations [variable', variable]
-            ("Variable '"
-                ++ getIdForError variableName
-                ++ "' was already declared."
+            (  "Variable '"
+            <> getId variableName
+            <> "' was already declared."
             )
 
 {- | Collect 'DeclaredVariables'.
@@ -768,11 +770,11 @@ assertSameSort
     :: Sort
     -> Sort
     -> PatternVerifier ()
-assertSameSort expectedSort actualSort = do
+assertSameSort expectedSort actualSort =
     koreFailWithLocationsWhen
         (expectedSort /= actualSort)
         [expectedSort, actualSort]
-        ((renderString . Pretty.layoutCompact)
+        ((renderStrict . Pretty.layoutCompact)
          ("Expecting sort"
           <+> Pretty.squotes (unparse expectedSort)
           <+> "but got"
@@ -817,33 +819,33 @@ checkVariable var vars =
   where
     inconsistent v =
         koreFailWithLocations [v, var]
-        $ renderString $ Pretty.layoutCompact
+        $ renderStrict $ Pretty.layoutCompact
         $ "Inconsistent free variable usage:"
             <+> unparse v
             <+> "and"
             <+> unparse var
             <> Pretty.dot
 
-patternNameForContext :: PatternF Variable p -> String
+patternNameForContext :: PatternF Variable p -> Text
 patternNameForContext (AndF _) = "\\and"
 patternNameForContext (ApplicationF application) =
     "symbol or alias '"
-    ++ getIdForError
+    <> getId
         (symbolOrAliasConstructor (applicationSymbolOrAlias application))
-    ++ "'"
+    <> "'"
 patternNameForContext (BottomF _) = "\\bottom"
 patternNameForContext (CeilF _) = "\\ceil"
 patternNameForContext (DomainValueF _) = "\\dv"
 patternNameForContext (EqualsF _) = "\\equals"
 patternNameForContext (ExistsF exists) =
     "\\exists '"
-    ++ variableNameForContext (existsVariable exists)
-    ++ "'"
+    <> variableNameForContext (existsVariable exists)
+    <> "'"
 patternNameForContext (FloorF _) = "\\floor"
 patternNameForContext (ForallF forall) =
     "\\forall '"
-    ++ variableNameForContext (forallVariable forall)
-    ++ "'"
+    <> variableNameForContext (forallVariable forall)
+    <> "'"
 patternNameForContext (IffF _) = "\\iff"
 patternNameForContext (ImpliesF _) = "\\implies"
 patternNameForContext (InF _) = "\\in"
@@ -857,10 +859,10 @@ patternNameForContext (StringLiteralF _) = "<string>"
 patternNameForContext (CharLiteralF _) = "<char>"
 patternNameForContext (TopF _) = "\\top"
 patternNameForContext (VariableF variable) =
-    "variable '" ++ variableNameForContext variable ++ "'"
+    "variable '" <> variableNameForContext variable <> "'"
 patternNameForContext (InhabitantF _) = "\\inh"
 patternNameForContext (SetVariableF (SetVariable variable)) =
-    "set variable '" ++ variableNameForContext variable ++ "'"
+    "set variable '" <> variableNameForContext variable <> "'"
 
-variableNameForContext :: Variable -> String
-variableNameForContext variable = getIdForError (variableName variable)
+variableNameForContext :: Variable -> Text
+variableNameForContext variable = getId (variableName variable)
