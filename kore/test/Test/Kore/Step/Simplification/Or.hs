@@ -246,7 +246,7 @@ becomes
         (stateIntention
             [ prettyOr or1 or2
             , "to become:"
-            , Pattern.unparsePattern $ OrPattern.toPattern expected
+            , Unparser.unparse $ OrPattern.toPattern expected
             ]
         )
 
@@ -266,7 +266,7 @@ simplifiesTo (orChild -> or1, orChild -> or2) (orChild -> simplified) =
         (stateIntention
             [ prettyOr or1 or2
             , "to simplify to:"
-            , Pattern.unparsePattern $ simplified
+            , Unparser.unparse simplified
             ]
         )
 

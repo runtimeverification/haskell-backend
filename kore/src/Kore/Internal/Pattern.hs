@@ -19,7 +19,6 @@ module Kore.Internal.Pattern
     , top
     , topOf
     , fromTermLike
-    , unparsePattern, unparsePatternToString
     , Kore.Internal.Pattern.freeVariables
     -- * Re-exports
     , Conditional (..)
@@ -39,10 +38,15 @@ import           Kore.Internal.Conditional
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.Predicate
                  ( Predicate )
-import           Kore.Internal.TermLike as TermLike
+import           Kore.Internal.TermLike
+                 ( Sort (..), TermLike (..), mkAnd, mkBottom, mkBottom_, mkTop,
+                 mkTop_, termLikeSort )
+import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import           Kore.Syntax.Variable
+                 ( SortedVariable (..) )
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -210,20 +214,18 @@ toPredicate = Conditional.toPredicate
 splitTerm :: Pattern variable -> (TermLike variable, Predicate variable)
 splitTerm = Conditional.splitTerm
 
-unparsePattern
-    :: SortedVariable variable
-    => Unparse variable
-    => Ord variable
-    => Show variable
-    => Pattern variable
-    -> Doc ann
-unparsePattern = unparse . toTermLike
-
-unparsePatternToString
-    :: SortedVariable variable
-    => Unparse variable
-    => Ord variable
-    => Show variable
-    => Pattern variable
-    -> String
-unparsePatternToString = unparseToString . toTermLike
+instance ( SortedVariable variable
+         , Ord variable
+         , Show variable
+         , Unparse variable
+         ) => Unparse (Pattern variable) where
+    unparse patt =
+        unparse
+        . TermLike.externalizeFreshVariables
+        . toTermLike
+        $ mapVariables toVariable patt
+    unparse2 patt =
+        unparse2
+        . TermLike.externalizeFreshVariables
+        . toTermLike
+        $ mapVariables toVariable patt

@@ -55,6 +55,7 @@ import           Kore.Syntax.Variable
                  ( Variable )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
+import           Kore.Unparser
 
 data Prim patt rewrite =
       CheckProofState
@@ -216,7 +217,7 @@ transitionRule
                 (error . show . Pretty.vsep)
                 [ "Not implemented error:"
                 , "while applying a \\rewrite axiom to the pattern:"
-                , Pretty.indent 4 (Pattern.unparsePattern config)
+                , Pretty.indent 4 (unparse config)
                 ,   "We decided to end the execution because we don't \
                     \understand this case well enough at the moment."
                 ]

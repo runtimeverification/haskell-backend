@@ -476,7 +476,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
                                 , "Second:"
                                 , Pretty.indent 4 $ unparse t2
                                 , "Result:"
-                                , Pretty.indent 4 $ Pattern.unparsePattern result
+                                , Pretty.indent 4 $ unparse result
                                 ]
                             ]
                     return mresult
