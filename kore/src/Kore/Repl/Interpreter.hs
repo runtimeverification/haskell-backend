@@ -260,10 +260,7 @@ exit = do
     let conj = conjOfOnePathClaims onePathClaims sort
     liftIO $ writeFile
             fileName
-            ( unparseToString
-            . TermLike.externalizeFreshVariables
-            $ conj
-            )
+            ( unparseToString conj )
     if isCompleted (Map.elems proofs)
        then return SuccessStop
        else return FailStop
@@ -1068,15 +1065,11 @@ unparseStrategy omitList =
         { rewriteTransformer = \pat ->
             makeKoreReplOutput
             . unparseToString
-            . TermLike.externalizeFreshVariables
-            . Pattern.toTermLike
             $ fmap hide pat
         , stuckTransformer =
             \pat -> makeAuxReplOutput "Stuck: \n"
                     <> makeKoreReplOutput
                     ( unparseToString
-                     . TermLike.externalizeFreshVariables
-                     . Pattern.toTermLike
                      $ fmap hide pat
                     )
         , bottomValue = makeAuxReplOutput "Reached bottom"

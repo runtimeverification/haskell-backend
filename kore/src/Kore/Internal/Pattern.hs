@@ -38,9 +38,8 @@ import           Kore.Internal.Conditional
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.Predicate
                  ( Predicate )
-import           Kore.Internal.TermLike
-                 ( Sort (..), TermLike (..), mkAnd, mkBottom, mkBottom_, mkTop,
-                 mkTop_, termLikeSort )
+import           Kore.Internal.TermLike hiding
+                 ( mapVariables )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
@@ -219,13 +218,5 @@ instance ( SortedVariable variable
          , Show variable
          , Unparse variable
          ) => Unparse (Pattern variable) where
-    unparse patt =
-        unparse
-        . TermLike.externalizeFreshVariables
-        . toTermLike
-        $ mapVariables toVariable patt
-    unparse2 patt =
-        unparse2
-        . TermLike.externalizeFreshVariables
-        . toTermLike
-        $ mapVariables toVariable patt
+    unparse = unparse . toTermLike
+    unparse2 = unparse2 . toTermLike
