@@ -54,6 +54,7 @@ import qualified Data.Foldable as Foldable
 import           Data.Functor
                  ( ($>) )
 import qualified Data.Functor.Foldable as Recursive
+import           Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
 import           Data.IORef
@@ -252,7 +253,7 @@ exit
     => ReplM claim m ReplStatus
 exit = do
     proofs <- allProofs
-    ofile <- Lens.view lensOutputFile
+    ofile <- Lens.view (field @"outputFile")
     let fileName =
             maybe (error "Output file not specified") id (unOutputFile ofile)
     onePathClaims <- generateInProgressOPClaims
@@ -288,7 +289,7 @@ showClaim
 showClaim =
     \case
         Nothing -> do
-            currentCindex <- Lens.use lensClaimIndex
+            currentCindex <- Lens.use (field @"claimIndex")
             putStrLn' . showCurrentClaimIndex $ currentCindex
         Just indexOrName -> do
             claim <- either
@@ -370,7 +371,7 @@ showGraph
     => m ()
 showGraph mfile = do
     graph <- getInnerGraph
-    axioms <- Lens.use lensAxioms
+    axioms <- Lens.use (field @"axioms")
     installed <- liftIO Graph.isGraphvizInstalled
     if installed == True
        then liftIO $ maybe
@@ -405,7 +406,7 @@ proveStepsF
     -> ReplM claim m ()
 proveStepsF n = do
     graph  <- getExecutionGraph
-    node   <- Lens.use lensNode
+    node   <- Lens.use (field @"node")
     graph' <- recursiveForcedStep n graph node
     updateExecutionGraph graph'
 
@@ -424,7 +425,7 @@ handleLog
     :: MonadState (ReplState claim) m
     => (Logger.Severity, LogType)
     -> m ()
-handleLog t = lensLogging .= t
+handleLog t = field @"logging" .= t
 
 -- | Focuses the node with id equals to 'n'.
 selectNode
@@ -438,7 +439,7 @@ selectNode rnode = do
     graph <- getInnerGraph
     let i = unReplNode rnode
     if i `elem` Graph.nodes graph
-        then lensNode .= rnode
+        then field @"node" .= rnode
         else putStrLn' "Invalid node!"
 
 -- | Shows configuration at node 'n', or current node if 'Nothing' is passed.
@@ -453,7 +454,7 @@ showConfig configNode = do
     case maybeConfig of
         Nothing -> putStrLn' "Invalid node!"
         Just (ReplNode node, config) -> do
-            omit <- Lens.use lensOmit
+            omit <- Lens.use (field @"omit")
             putStrLn' $ "Config at node " <> show node <> " is:"
             tell $ unparseStrategy omit config
 
@@ -472,13 +473,13 @@ omitCell =
   where
     showCells :: ReplM claim m ()
     showCells = do
-        omit <- Lens.use lensOmit
+        omit <- Lens.use (field @"omit")
         if Set.null omit
             then putStrLn' "Omit list is currently empty."
             else Foldable.traverse_ putStrLn' omit
 
     addOrRemove :: String -> ReplM claim m ()
-    addOrRemove str = lensOmit %= toggle str
+    addOrRemove str = field @"omit" %= toggle str
 
     toggle :: String -> Set String -> Set String
     toggle x xs
@@ -516,8 +517,8 @@ allProofs
     => Monad m
     => ReplM claim m (Map.Map ClaimIndex GraphProofStatus)
 allProofs = do
-    graphs <- Lens.use lensGraphs
-    claims <- Lens.use lensClaims
+    graphs <- Lens.use (field @"graphs")
+    claims <- Lens.use (field @"claims")
     let cindexes = ClaimIndex <$> [0..length claims - 1]
     return
         $ Map.union
@@ -565,7 +566,7 @@ showRule configNode = do
     case maybeRule of
         Nothing -> putStrLn' "Invalid node!"
         Just rule -> do
-            axioms <- Lens.use lensAxioms
+            axioms <- Lens.use (field @"axioms")
             tell . showRewriteRule $ rule
             let ruleIndex = getRuleIndex rule
             putStrLn' $ maybe
@@ -756,7 +757,7 @@ tryAxiomClaimWorker mode ref = do
        Nothing ->
            putStrLn' "Could not find axiom or claim."
        Just axiomOrClaim -> do
-           node <- Lens.use lensNode
+           node <- Lens.use (field @"node")
            case mode of
                Never ->
                    showUnificationFailure axiomOrClaim node
@@ -796,7 +797,7 @@ tryAxiomClaimWorker mode ref = do
                 showUnificationFailure axiomOrClaim node
             SingleResult nextNode -> do
                 updateExecutionGraph graph
-                lensNode .= nextNode
+                field @"node" .= nextNode
             BranchResult _ ->
                 updateExecutionGraph graph
 
@@ -825,7 +826,7 @@ clear
     -> m ()
 clear =
     \case
-        Nothing -> Just <$> Lens.use lensNode >>= clear
+        Nothing -> Just <$> Lens.use (field @"node") >>= clear
         Just node
           | unReplNode node == 0 -> putStrLn' "Cannot clear initial node (0)."
           | otherwise -> clear0 node
@@ -838,7 +839,7 @@ clear =
             nodesToBeRemoved = collect (next graph) node
             graph' = Graph.delNodes nodesToBeRemoved graph
         updateInnerGraph graph'
-        lensNode .= ReplNode (prevNode graph' node)
+        field @"node" .= ReplNode (prevNode graph' node)
         putStrLn' $ "Removed " <> show (length nodesToBeRemoved) <> " node(s)."
 
     next :: InnerGraph -> Graph.Node -> [Graph.Node]
@@ -865,7 +866,7 @@ saveSession path =
   where
     saveToFile :: FilePath -> m ()
     saveToFile file = do
-        content <- seqUnlines <$> Lens.use lensCommands
+        content <- seqUnlines <$> Lens.use (field @"commands")
         liftIO $ writeFile file content
         putStrLn' "Done."
     seqUnlines :: Seq String -> String

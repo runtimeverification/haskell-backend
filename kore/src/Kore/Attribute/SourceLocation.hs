@@ -7,8 +7,6 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Attribute.SourceLocation
     ( SourceLocation (..)
     , Source (..)
@@ -20,26 +18,24 @@ import           Control.DeepSeq
 import           Control.Monad
                  ( (>=>) )
 import           Data.Default
+import           Data.Generics.Product
 import           Data.Text.Prettyprint.Doc
                  ( Pretty )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
                  ( Generic )
 
-import qualified Control.Lens.TH.Rules as Lens
-import           Kore.Attribute.Location
-                 ( LineColumn (..), Location (..) )
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import           Kore.Attribute.Source
-                 ( Source (..) )
+import Kore.Attribute.Location
+       ( LineColumn (..), Location (..) )
+import Kore.Attribute.Parser
+       ( ParseAttributes (..) )
+import Kore.Attribute.Source
+       ( Source (..) )
 
 data SourceLocation = SourceLocation
     { location :: !Location
     , source   :: !Source
     } deriving (Eq, Ord, Show, Generic)
-
-Lens.makeLenses ''SourceLocation
 
 instance NFData SourceLocation
 
@@ -48,8 +44,8 @@ instance Default SourceLocation where
 
 instance ParseAttributes SourceLocation where
     parseAttribute attr =
-        lensLocation (parseAttribute attr)
-        >=> lensSource (parseAttribute attr)
+        typed @Location (parseAttribute attr)
+        >=> typed @Source (parseAttribute attr)
 
     -- TODO (thomas.tuegel): Implement
     toAttributes _ = def

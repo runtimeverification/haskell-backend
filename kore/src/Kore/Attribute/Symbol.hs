@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 {- |
 Description : Symbol declaration attributes
 Copyright   : (c) Runtime Verification, 2018
@@ -17,30 +15,30 @@ module Kore.Attribute.Symbol
     , StepperAttributes
     , defaultSymbolAttributes
     -- * Function symbols
-    , lensFunction, Function (..)
+    , Function (..)
     , functionAttribute
     -- * Functional symbols
-    , lensFunctional, Functional (..)
+    , Functional (..)
     , functionalAttribute
     -- * Constructor symbols
-    , lensConstructor, Constructor (..)
+    , Constructor (..)
     , constructorAttribute
     -- * Injective symbols
-    , lensInjective, Injective (..)
+    , Injective (..)
     , injectiveAttribute
     -- * Anywhere symbols
-    , lensAnywhere, Anywhere (..)
+    , Anywhere (..)
     , anywhereAttribute
     -- * Sort injection symbols
-    , lensSortInjection, SortInjection (..)
+    , SortInjection (..)
     , sortInjectionAttribute
     -- * Hooked symbols
-    , lensHook, Hook (..)
+    , Hook (..)
     , hookAttribute
     -- * SMT symbols
-    , lensSmthook, Smthook (..)
+    , Smthook (..)
     , smthookAttribute
-    , lensSmtlib, Smtlib (..)
+    , Smtlib (..)
     , smtlibAttribute
     -- * Derived attributes
     , isNonSimplifiable
@@ -53,11 +51,10 @@ module Kore.Attribute.Symbol
 import           Control.DeepSeq
                  ( NFData )
 import qualified Control.Lens as Lens
-                 ( view )
-import qualified Control.Lens.TH.Rules as Lens
 import           Control.Monad
                  ( (>=>) )
 import           Data.Default
+import           Data.Generics.Product
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -102,8 +99,6 @@ data Symbol =
     }
     deriving (Eq, Ord, GHC.Generic, Show)
 
-Lens.makeLenses ''Symbol
-
 instance NFData Symbol
 
 instance SOP.Generic Symbol
@@ -114,15 +109,15 @@ instance Debug Symbol
 
 instance ParseAttributes Symbol where
     parseAttribute attr =
-        lensFunction (parseAttribute attr)
-        >=> lensFunctional (parseAttribute attr)
-        >=> lensConstructor (parseAttribute attr)
-        >=> lensSortInjection (parseAttribute attr)
-        >=> lensInjective (parseAttribute attr)
-        >=> lensAnywhere (parseAttribute attr)
-        >=> lensHook (parseAttribute attr)
-        >=> lensSmtlib (parseAttribute attr)
-        >=> lensSmthook (parseAttribute attr)
+        typed @Function (parseAttribute attr)
+        >=> typed @Functional (parseAttribute attr)
+        >=> typed @Constructor (parseAttribute attr)
+        >=> typed @SortInjection (parseAttribute attr)
+        >=> typed @Injective (parseAttribute attr)
+        >=> typed @Anywhere (parseAttribute attr)
+        >=> typed @Hook (parseAttribute attr)
+        >=> typed @Smtlib (parseAttribute attr)
+        >=> typed @Smthook (parseAttribute attr)
 
     toAttributes =
         mconcat . sequence
@@ -176,7 +171,7 @@ See also: 'functionAttribute', 'isFunctional'
  -}
 isFunction :: StepperAttributes -> Bool
 isFunction = do
-    Function isFunction' <- Lens.view lensFunction
+    Function isFunction' <- Lens.view typed
     isFunctional' <- isFunctional
     return (isFunction' || isFunctional')
 
@@ -199,7 +194,7 @@ isTotal :: StepperAttributes -> Bool
 isTotal = do
     isFunctional' <- isFunctional
     -- TODO (thomas.tuegel): Constructors are not total.
-    Constructor isConstructor' <- Lens.view lensConstructor
+    Constructor isConstructor' <- Lens.view typed
     return (isFunctional' || isConstructor')
 
 {- | Is the symbol injective?

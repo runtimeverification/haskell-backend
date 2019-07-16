@@ -9,17 +9,10 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 A module for interacting with an external SMT solver, using SMT-LIB 2 format.
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module SMT.SimpleSMT
     (
     -- * Basic Solver Interface
       Solver (..)
-    , lensLogger
-    , lensHIn
-    , lensHOut
-    , lensHErr
-    , lensHProc
     , send
     , recv
     , info
@@ -173,6 +166,7 @@ import qualified Data.Text as Text
 import qualified Data.Text.Internal.Builder as Text.Builder
 import qualified Data.Text.IO as Text
 import qualified Data.Text.Lazy as Text.Lazy
+import qualified GHC.Generics as GHC
 import           GHC.Stack
                  ( callStack )
 import qualified GHC.Stack as GHC
@@ -191,8 +185,6 @@ import qualified Text.Megaparsec as Parser
 import           Text.Read
                  ( readMaybe )
 
-import           Control.Lens.TH.Rules
-                 ( makeLenses )
 import           Kore.Debug
 import qualified Kore.Logger as Logger
 import           SMT.AST
@@ -223,8 +215,7 @@ data Solver = Solver
     , hProc  :: !ProcessHandle
     , logger :: !Logger
     }
-
-makeLenses ''Solver
+    deriving (GHC.Generic)
 
 -- | Start a new solver process.
 newSolver
