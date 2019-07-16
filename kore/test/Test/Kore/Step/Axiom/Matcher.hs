@@ -13,7 +13,6 @@ import Test.Tasty.HUnit
 import qualified Data.Bifunctor as Bifunctor
 import           Data.Default
                  ( Default (..) )
-import qualified Data.Foldable as Foldable
 import           Data.Function
                  ( on )
 import qualified Data.Map as Map
