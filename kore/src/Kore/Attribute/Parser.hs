@@ -169,7 +169,7 @@ withApplication ident go kore =
           | symbolOrAliasConstructor == ident -> \attrs ->
             Kore.Error.withLocationAndContext
                 symbol
-                ("attribute '" ++ show symbol ++ "'")
+                ("attribute '" <> Text.pack (show symbol) <> "'")
                 (go symbolOrAliasParams applicationChildren attrs)
           where
             Application { applicationSymbolOrAlias = symbol } = app
@@ -184,7 +184,7 @@ getZeroParams =
         [] -> return ()
         params ->
             Kore.Error.koreFailWithLocations params
-                ("expected zero parameters, found " ++ show arity)
+                ("expected zero parameters, found " <> Text.pack (show arity))
           where
             arity = length params
 
@@ -194,7 +194,7 @@ getTwoParams =
         [param1, param2] -> return (param1, param2)
         params ->
             Kore.Error.koreFailWithLocations params
-                ("expected two parameters, found " ++ show arity)
+                ("expected two parameters, found " <> Text.pack (show arity))
           where
             arity = length params
 
@@ -250,7 +250,7 @@ getSymbolOrAlias kore =
           | otherwise ->
             Kore.Error.withLocationAndContext
                 symbol
-                ("symbol '" ++ show symbol ++ "'")
+                ("symbol '" <> Text.pack (show symbol) <> "'")
                 (Kore.Error.koreFail "expected zero arguments")
           where
             Application { applicationSymbolOrAlias = symbol } = app
