@@ -14,7 +14,7 @@ import           Control.Concurrent.MVar
 import qualified Control.Lens as Lens
 -- import           Control.Monad.Mock
 import           Control.Monad.Reader
-                 ( liftIO, runReaderT )
+                 ( ReaderT, ask, lift, liftIO, runReaderT )
 import           Control.Monad.Trans.State.Strict
                  ( evalStateT, runStateT )
 import           Data.Coerce
@@ -25,12 +25,18 @@ import           Data.IORef
 import           Data.List.NonEmpty
                  ( NonEmpty (..) )
 import qualified Data.Map as Map
+import qualified Data.Map.Strict as StrictMap
 import qualified Data.Sequence as Seq
 import           Data.Text
                  ( pack )
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import           System.Exit
+                 ( exitSuccess )
+import           System.IO
+                 ( stdin )
+import           System.Process
+                 ( ProcessHandle (..) )
 
-import qualified Data.Map.Strict as StrictMap
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Builtin.Int as Int
 import           Kore.Internal.Predicate
@@ -122,18 +128,25 @@ help =
         continue `equals`       Continue
 
 testPipeConfig :: IO ()
-testPipeConfig =
-    let
-        axioms  = []
-        claim   = emptyClaim
-        config  = ShowConfig Nothing
-        command = Pipe config "cat" ["/dev/stdin"]
-    in do
-        Result { output, continue } <- run command axioms [claim] claim
-        Result { output = configOutput }
-            <- run config axioms [claim] claim
-        output   `equalsOutput` koreToAux configOutput
-        continue `equals`       Continue
+testPipeConfig = do
+    ref <- newIORef ""
+    runReaderT ref
+
+-- testPipeConfig :: Mock' ()
+-- testPipeConfig =
+--     let
+--         axioms  = []
+--         claim   = emptyClaim
+--         config  = ShowConfig Nothing
+--         command = Pipe config "" [""]
+--     in do
+--         ref <- newIORef ""
+--         pure ()
+       -- Result { output, continue } <- run command axioms [claim] claim
+       -- Result { output = configOutput }
+       --     <- run config axioms [claim] claim
+       -- output   `equalsOutput` koreToAux configOutput
+       -- continue `equals`       Continue
 
 step5 :: IO ()
 step5 =
@@ -735,8 +748,88 @@ newtype PipeMock a =
         { unPipeMock :: Either (IO (IORef String)) a }
         deriving (Functor, Applicative, Monad)
 
-instance MonadReplIO PipeMock where
-    makeProcess _ = PipeMock . Left $ newIORef "heyy"
+type Mock' = ReaderT (IORef String) IO
+
+instance MonadReplIO Mock' where
+    printLn = const $ lift . pure $ ()
+    printNoLn = const $ lift . pure $ ()
+    readLine = lift . pure $ ""
+    writeToFile _ _ = lift . pure $ ()
+    appendToFile _ _ = lift . pure $ ()
+    open _ _ = lift . pure $ stdin
+    replReadFile = const $ lift . pure $ ""
+    getContentsFromHandle = const $ lift . pure $ ""
+    printToHandle _ str = do
+        ref <- ask
+        lift $ modifyIORef ref ((<>) str)
+        pure ()
+    flushHandle = const $ lift . pure $ ()
+    canFindDirectory = const $ lift . pure $ True
+    canFindFile = const $ lift . pure $ True
+    findExec = const $ lift . pure . pure $ ""
+    makeProcess =
+        const
+        $ lift
+        . pure
+        $ (pure stdin, pure stdin, pure stdin, mockProcessHandle)
+      where
+        mockProcessHandle :: ProcessHandle
+        mockProcessHandle = undefined
+    canFindGraphviz = lift . pure $ True
+    runGraphCanvas _ _ = lift . pure $ ()
+    runGraph _ _ _ = lift . pure $ ""
+    exitSucc = lift exitSuccess
+    exitWithCode = lift . exitWithCode
+    replSwapMVar x y = lift $ swapMVar x y
+    closeHandle _ = lift . pure $ ()
+    newReplIORef = lift . newIORef
+    readReplIORef = lift . readIORef
+    modifyReplIORef x y = lift $ modifyIORef x y
+
+-- instance MonadReplIO PipeMock where
+--     printLn = const $ PipeMock . pure $ ()
+--     printNoLn = const $ PipeMock . pure $ ()
+--     readLine = PipeMock . pure $ ""
+--     writeToFile _ _ = PipeMock . pure $ ()
+--     appendToFile _ _ = PipeMock . pure $ ()
+--     open _ _ = PipeMock . Left $ newIORef "not used"
+--     replReadFile = const $ PipeMock . pure $ ""
+--     getContentsFromHandle = const $ PipeMock . pure $ ""
+--     printToHandle _ _ = PipeMock . pure $ ()
+--     flushHandle = const $ PipeMock . pure $ ()
+--     canFindDirectory = const $ PipeMock . Left $ newIORef "not used"
+--     canFindFile = const $ PipeMock . Left $ newIORef "not used"
+--     findExec = const $ PipeMock . pure . pure $ "mock exec"
+--     makeProcess _ = PipeMock . Left $ newIORef "heyy"
+--     canFindGraphviz = PipeMock . Left $ newIORef "not used"
+--     runGraphCanvas _ _ = PipeMock . pure $ ()
+--     runGraph _ _ _ = PipeMock . pure $ ""
+--     exitSucc = PipeMock . Left $ exitSuccess
+--     exitWithCode _ = PipeMock . Left $ exitSuccess
+--     replSwapMVar _ _ = PipeMock . Left $ exitSuccess
+--     closeHandle = const $ PipeMock . pure $ ()
+--     newReplIORef = const $ PipeMock . Left $ newIORef "not used"
+--     readReplIORef = const $ PipeMock . Left $ newIORef "not used"
+--     modifyReplIORef _ _ = PipeMock . pure $ ()
+--
+-- crazyPipeTest :: IO () -- (PipeMock ())
+-- crazyPipeTest =
+--     let
+--         axioms  = []
+--         claim   = emptyClaim
+--         config  = ShowConfig Nothing
+--         command = Pipe config "mockexec" []
+--     in do
+--         Result { output, continue } <- run command axioms [claim] claim
+--         Result { output = configOutput }
+--             <- run config axioms [claim] claim
+--         putStrLn . show $ output
+--         pure ()
+        -- pure . PipeMock . pure $ ()
+        -- output   `equalsOutput` koreToAux configOutput
+        -- continue `equals`       Continue
+
+
 
 -- newtype PipeMockIO a =
 --     PipeMockIO
