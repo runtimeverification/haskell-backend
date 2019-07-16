@@ -692,7 +692,7 @@ redirect
     -- ^ file path
     -> ReplM claim m ()
 redirect cmd file = do
-    liftIO $ whenPathIsReachable file (flip writeFile $ "")
+    liftIO $ withExistingDirectory file (flip writeFile $ "")
     appendCommand cmd file
 
 runInterpreterWithOutput
@@ -861,7 +861,7 @@ saveSession
     -- ^ path to file
     -> m ()
 saveSession path =
-    whenPathIsReachable path saveToFile
+    withExistingDirectory path saveToFile
   where
     saveToFile :: FilePath -> m ()
     saveToFile file = do
@@ -929,7 +929,7 @@ appendTo
     -- ^ file to append to
     -> ReplM claim m ()
 appendTo cmd file =
-    whenPathIsReachable file (appendCommand cmd)
+    withExistingDirectory file (appendCommand cmd)
 
 appendCommand
     :: forall claim m
@@ -1123,7 +1123,7 @@ showDotGraph len =
 
 saveDotGraph :: Int -> InnerGraph -> FilePath -> IO ()
 saveDotGraph len gr file =
-    whenPathIsReachable file saveGraphImg
+    withExistingDirectory file saveGraphImg
   where
     saveGraphImg :: FilePath -> IO ()
     saveGraphImg path =
@@ -1277,17 +1277,17 @@ execStateReader config st action =
         $ flip runReaderT config
         $ action
 
-checkIfCorrectFilePath :: MonadIO m => FilePath -> m Bool
-checkIfCorrectFilePath =
+doesParentDirectoryExist :: MonadIO m => FilePath -> m Bool
+doesParentDirectoryExist =
     liftIO . doesDirectoryExist . fst . splitFileName
 
-whenPathIsReachable
+withExistingDirectory
     :: MonadIO m
     => FilePath
     -> (FilePath -> m ())
     -> m ()
-whenPathIsReachable path action =
+withExistingDirectory path action =
     ifM
-        (checkIfCorrectFilePath path)
+        (doesParentDirectoryExist path)
         (action path)
         $ liftIO . putStrLn $ "Directory does not exist."
