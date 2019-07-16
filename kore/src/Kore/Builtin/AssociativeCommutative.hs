@@ -64,7 +64,7 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Internal.Conditional
-                 ( Conditional (Conditional), andCondition, withCondition )
+                 ( Conditional, andCondition, withCondition )
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.Pattern
                  ( Pattern )
@@ -681,7 +681,6 @@ unifyEqualsNormalizedAc
         , opaque = opaque2
         }
   = do
-    -- TODO (virgil): Split this into multiple functions.
     (simpleUnifier, opaques) <- case (opaqueDifference1, opaqueDifference2) of
         ([], []) -> Monad.Trans.lift $
             unifyEqualsElementLists'
@@ -716,103 +715,33 @@ unifyEqualsNormalizedAc
                     allElements1
                     (Just opaque)
         (_, _) -> empty
-    Monad.Trans.lift $ case simpleUnifier of
-        Conditional
-            { term = unifiedElements
-            , predicate
-            , substitution
-            } -> do -- unifier monad
+    let (unifiedElements, unifierPredicate) =
+            Conditional.splitTerm simpleUnifier
+    Monad.Trans.lift $ do -- unifier monad
+        -- unify the parts not sent to unifyEqualsNormalizedElements.
+        (commonElementsTerms, commonElementsPredicate) <-
+            unifyElementList (Map.toList commonElements)
+        (commonVariablesTerms, commonVariablesPredicate) <-
+            unifyElementList (Map.toList commonVariables)
 
-                -- unify the parts not sent to unifyEqualsNormalizedElements.
-                (commonElementsTerms, commonElementsPredicate) <-
-                    unifyElementList (Map.toList commonElements)
-                (commonVariablesTerms, commonVariablesPredicate) <-
-                    unifyElementList (Map.toList commonVariables)
+        -- simplify results so that things like inj applications that
+        -- may have been broken into smaller pieces are being put
+        -- back together.
+        unifiedSimplified <- mapM simplifyPair unifiedElements
+        opaquesSimplified <- mapM simplify opaques
 
-                -- simplify results so that things like inj applications that
-                -- may have been broken into smaller pieces are being put
-                -- back together.
-                unifiedSimplified <- mapM simplifyPair unifiedElements
-                opaquesSimplified <- mapM simplify opaques
-
-                let
-                    almostResultTerms
-                        ::  [   ( TermLike variable
-                                , valueWrapper (TermLike variable)
-                                )
-                            ]
-                    almostResultPredicates :: [Predicate variable]
-                    (almostResultTerms, almostResultPredicates) =
-                        unzip (map Conditional.splitTerm unifiedSimplified)
-                    (withVariableTerms, concreteTerms) =
-                        splitVariableConcrete almostResultTerms
-
-                    (opaquesTerms, opaquesPredicates) =
-                        unzip (map Conditional.splitTerm opaquesSimplified)
-                    opaquesNormalized
-                        :: NormalizedOrBottom valueWrapper variable
-                    opaquesNormalized =
-                        Foldable.fold (map (toNormalized tools) opaquesTerms)
-
-                Domain.NormalizedAc
-                    { elementsWithVariables = opaquesElementsWithVariables
-                    , concreteElements = opaquesConcreteTerms
-                    , opaque = opaquesOpaque
-                    } <- case opaquesNormalized of
-                        Bottom -> Monad.Unify.explainAndReturnBottom
-                            "Duplicated elements after unification."
-                            first
-                            second
-                        Normalized result -> return result
-
-                -- Add back all the common objects that were removed before
-                -- unification.
-                withVariableMap <-
-                    addAllDisjoint
-                        Map.empty
-                        (  commonVariablesTerms
-                        ++ withVariableTerms
-                        ++ opaquesElementsWithVariables
-                        )
-                concreteMap <-
-                    addAllDisjoint
-                        Map.empty
-                        (  commonElementsTerms
-                        ++ concreteTerms
-                        ++ Map.toList opaquesConcreteTerms
-                        )
-                let allOpaque = Data.List.sort (commonOpaque ++ opaquesOpaque)
-
-                let
-                    incompleteResult
-                        :: Conditional
-                            variable
-                            (Domain.NormalizedAc
-                                (TermLike Concrete)
-                                valueWrapper
-                                (TermLike variable)
-                            )
-                    incompleteResult = Conditional
-                        { term = Domain.NormalizedAc
-                            { elementsWithVariables = Map.toList withVariableMap
-                            , concreteElements = concreteMap
-                            , opaque = allOpaque
-                            }
-                        , predicate
-                        , substitution
-                        }
-                    -- Add all unification predicates to the result.
-                    result =
-                        List.foldl'
-                            andCondition
-                            incompleteResult
-                            (  almostResultPredicates
-                            ++ opaquesPredicates
-                            ++  [ commonElementsPredicate
-                                , commonVariablesPredicate
-                                ]
-                            )
-                return result
+        buildResultFromUnifiers
+            tools
+            bottomWithExplanation
+            commonElementsTerms
+            commonVariablesTerms
+            commonOpaque
+            unifiedSimplified
+            opaquesSimplified
+            [ unifierPredicate
+            , commonElementsPredicate
+            , commonVariablesPredicate
+            ]
   where
     listToMap :: Ord a => [a] -> Map a Int
     listToMap = List.foldl' (\m k -> Map.insertWith (+) k 1 m) Map.empty
@@ -821,6 +750,10 @@ unifyEqualsNormalizedAc
         Map.foldrWithKey
             (\key count result -> replicate count key ++ result)
             []
+
+    bottomWithExplanation :: Doc () -> unifier a
+    bottomWithExplanation explanation =
+        Monad.Unify.explainAndReturnBottom explanation first second
 
     unifyEqualsElementLists' =
         unifyEqualsElementLists
@@ -887,16 +820,6 @@ unifyEqualsNormalizedAc
         :: (TermLike Concrete, valueWrapper (TermLike variable))
         -> ConcreteOrWithVariable valueWrapper variable
     toConcretePat (a, b) = ConcretePat (TermLike.fromConcrete a, b)
-
-    addAllDisjoint :: Ord a => Map a b -> [(a, b)] -> unifier (Map a b)
-    addAllDisjoint existing elements =
-        case addToMapDisjoint existing elements of
-            Nothing ->
-                Monad.Unify.explainAndReturnBottom
-                    "Duplicated elements after AC unification."
-                    first
-                    second
-            Just result -> return result
 
     unifyElementList
         :: forall key
@@ -972,6 +895,115 @@ unifyEqualsNormalizedAc
         simplifyTermLike :: TermLike variable -> unifier (Pattern variable)
         simplifyTermLike term =
             alternate $ simplifyConditionalTerm term Predicate.top
+
+buildResultFromUnifiers
+    :: forall normalized unifier valueWrapper variable
+    .   ( Monad unifier
+        , Ord variable
+        , Show variable
+        , SortedVariable variable
+        , TermWrapper normalized valueWrapper
+        , Unparse variable
+        )
+    => SmtMetadataTools Attribute.Symbol
+    -> (forall result . Doc () -> unifier result)
+    -> [(TermLike Concrete, valueWrapper (TermLike variable))]
+    -> [(TermLike variable, valueWrapper (TermLike variable))]
+    -> [TermLike variable]
+    ->  [ Conditional
+            variable
+            (TermLike variable, valueWrapper (TermLike variable))
+        ]
+    -> [Pattern variable]
+    -> [Predicate variable]
+    -> unifier (Conditional variable (TermNormalizedAc valueWrapper variable))
+buildResultFromUnifiers
+    tools
+    bottomWithExplanation
+    commonElementsTerms
+    commonVariablesTerms
+    commonOpaque
+    unifiedElementsSimplified
+    opaquesSimplified
+    predicates
+  = do -- unifier monad
+    let
+        almostResultTerms
+            ::  [(TermLike variable, valueWrapper (TermLike variable))]
+        almostResultPredicates :: [Predicate variable]
+        (almostResultTerms, almostResultPredicates) =
+            unzip (map Conditional.splitTerm unifiedElementsSimplified)
+        (withVariableTerms, concreteTerms) =
+            splitVariableConcrete almostResultTerms
+
+        (opaquesTerms, opaquesPredicates) =
+            unzip (map Conditional.splitTerm opaquesSimplified)
+        opaquesNormalized
+            :: NormalizedOrBottom valueWrapper variable
+        opaquesNormalized =
+            Foldable.fold (map (toNormalized tools) opaquesTerms)
+
+    Domain.NormalizedAc
+        { elementsWithVariables = opaquesElementsWithVariables
+        , concreteElements = opaquesConcreteTerms
+        , opaque = opaquesOpaque
+        } <- case opaquesNormalized of
+            Bottom ->
+                bottomWithExplanation "Duplicated elements after unification."
+            Normalized result -> return result
+
+    -- Add back all the common objects that were removed before
+    -- unification.
+    withVariableMap <-
+        addAllDisjoint
+            bottomWithExplanation
+            Map.empty
+            (  commonVariablesTerms
+            ++ withVariableTerms
+            ++ opaquesElementsWithVariables
+            )
+    concreteMap <-
+        addAllDisjoint
+            bottomWithExplanation
+            Map.empty
+            (  commonElementsTerms
+            ++ concreteTerms
+            ++ Map.toList opaquesConcreteTerms
+            )
+    let allOpaque = Data.List.sort (commonOpaque ++ opaquesOpaque)
+        -- Merge all unification predicates.
+        predicate = List.foldl'
+            andCondition
+            Predicate.top
+            (almostResultPredicates ++ opaquesPredicates ++ predicates)
+        result
+            :: Conditional
+                variable
+                (Domain.NormalizedAc
+                    (TermLike Concrete)
+                    valueWrapper
+                    (TermLike variable)
+                )
+        result = Domain.NormalizedAc
+            { elementsWithVariables = Map.toList withVariableMap
+            , concreteElements = concreteMap
+            , opaque = allOpaque
+            }
+            `Conditional.withCondition` predicate
+
+    return result
+
+addAllDisjoint
+    :: (Monad unifier, Ord a)
+    => (forall result . Doc () -> unifier result)
+    -> Map a b
+    -> [(a, b)]
+    -> unifier (Map a b)
+addAllDisjoint bottomWithExplanation existing elements =
+    case addToMapDisjoint existing elements of
+        Nothing ->
+            bottomWithExplanation "Duplicated elements after AC unification."
+        Just result -> return result
 
 unifyCommonElements
     :: forall key normalized unifier valueWrapper variable
