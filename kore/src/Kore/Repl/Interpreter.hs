@@ -871,7 +871,9 @@ saveSession path =
     seqUnlines :: Seq String -> String
     seqUnlines = unlines . toList
 
--- | Pipe result of command to specified program.
+-- | Pipe result of the command to the specified program. This function will start
+-- one process for each KoreOut in the command's output. AuxOut will not be piped,
+-- instead it will be sent directly to the repl's output.
 pipe
     :: forall claim m
     .  Claim claim
