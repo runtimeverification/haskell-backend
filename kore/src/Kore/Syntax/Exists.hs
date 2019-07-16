@@ -4,15 +4,12 @@ License     : NCSA
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Syntax.Exists
     ( Exists (..)
     ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import qualified Data.Deriving as Deriving
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
@@ -38,10 +35,6 @@ data Exists sort variable child = Exists
     , existsChild    :: child
     }
     deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-Deriving.deriveEq1 ''Exists
-Deriving.deriveOrd1 ''Exists
-Deriving.deriveShow1 ''Exists
 
 instance
     (Hashable sort, Hashable variable, Hashable child) =>

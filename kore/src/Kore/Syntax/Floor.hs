@@ -4,15 +4,12 @@ License     : NCSA
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Syntax.Floor
     ( Floor (..)
     ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import qualified Data.Deriving as Deriving
 import           Data.Function
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -40,10 +37,6 @@ data Floor sort child = Floor
     , floorChild       :: child
     }
     deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-Deriving.deriveEq1 ''Floor
-Deriving.deriveOrd1 ''Floor
-Deriving.deriveShow1 ''Floor
 
 instance (Hashable sort, Hashable child) => Hashable (Floor sort child)
 

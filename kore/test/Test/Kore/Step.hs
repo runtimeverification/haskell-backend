@@ -8,6 +8,7 @@ import qualified Control.Lens as Lens
 import           Data.Default
                  ( def )
 import           Data.Function
+import           Data.Generics.Product
 import qualified Data.Set as Set
 
 import           Data.Text
@@ -373,7 +374,7 @@ sigmaSymbol :: Symbol
 sigmaSymbol =
     symbol "#sigma"
     & functional & constructor
-    & Lens.set lensSymbolSorts sorts
+    & Lens.set (field @"symbolSorts") sorts
   where
     sorts = Symbol.applicationSorts [Mock.testSort, Mock.testSort] Mock.testSort
 

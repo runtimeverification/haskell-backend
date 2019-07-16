@@ -14,8 +14,6 @@ Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Syntax.Application
     ( SymbolOrAlias (..)
     , Application (..)
@@ -24,8 +22,6 @@ module Kore.Syntax.Application
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import qualified Data.Deriving as Deriving
-import           Data.Functor.Classes
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
@@ -75,20 +71,7 @@ data Application head child = Application
     { applicationSymbolOrAlias :: !head
     , applicationChildren      :: [child]
     }
-    deriving (Functor, Foldable, Traversable, GHC.Generic)
-
-Deriving.deriveEq1 ''Application
-Deriving.deriveOrd1 ''Application
-Deriving.deriveShow1 ''Application
-
-instance (Eq head, Eq child) => Eq (Application head child) where
-    (==) = eq1
-
-instance (Ord head, Ord child) => Ord (Application head child) where
-    compare = compare1
-
-instance (Show head, Show child) => Show (Application head child) where
-    showsPrec = showsPrec1
+    deriving (Eq, Functor, Foldable, Ord, Traversable, GHC.Generic, Show)
 
 instance (Hashable head, Hashable child) => Hashable (Application head child)
 

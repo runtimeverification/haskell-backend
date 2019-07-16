@@ -26,7 +26,6 @@ import qualified Control.Comonad.Trans.Env as Env
 import           Control.DeepSeq
                  ( NFData (..) )
 import qualified Data.Bifunctor as Bifunctor
-import           Data.Functor.Classes
 import           Data.Functor.Compose
                  ( Compose (..) )
 import           Data.Functor.Foldable
@@ -74,7 +73,7 @@ instance Eq variable => Eq (Pattern variable annotation) where
             (Recursive.project -> _ :< pat1)
             (Recursive.project -> _ :< pat2)
           =
-            liftEq eqWorker pat1 pat2
+            pat1 == pat2
     {-# INLINE (==) #-}
 
 instance Ord variable => Ord (Pattern variable annotation) where
@@ -84,7 +83,7 @@ instance Ord variable => Ord (Pattern variable annotation) where
             (Recursive.project -> _ :< pat1)
             (Recursive.project -> _ :< pat2)
           =
-            liftCompare compareWorker pat1 pat2
+            compare pat1 pat2
     {-# INLINE compare #-}
 
 deriving instance
