@@ -561,7 +561,7 @@ test_Nat =
                         ]
             assertBool (show message) (check actual)
     matches = withMatch (maybe False (not . isBottom))
-    notMatches = withMatch (maybe False isBottom)
+    notMatches = withMatch isNothing
 
     -- Applied tests: check that one or more rules applies or not
     withApplied check rules term comment =
