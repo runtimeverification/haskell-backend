@@ -33,7 +33,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Matcher
-                 ( unificationWithAppMatchOnTop )
+                 ( matchAsUnification )
 import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
@@ -321,6 +321,7 @@ evaluateWithDefinitionAxioms
         expanded = Pattern.fromTermLike patt
 
     results <- applyRules expanded (map unwrapEqualityRule definitionRules)
+    Monad.guard (any Result.hasResults results)
     mapM_ rejectNarrowing results
 
     let
@@ -348,4 +349,15 @@ evaluateWithDefinitionAxioms
         Monad.Unify.maybeUnifierT
         $ Step.applyRulesSequence unificationProcedure initial rules
 
-    unificationProcedure = UnificationProcedure unificationWithAppMatchOnTop
+    ignoreUnificationErrors unification pattern1 pattern2 =
+        Monad.Unify.runUnifierT (unification pattern1 pattern2)
+        >>= either (couldNotMatch pattern1 pattern2) Monad.Unify.scatter
+
+    couldNotMatch pattern1 pattern2 _ =
+        Monad.Unify.explainAndReturnBottom
+            "Could not match patterns"
+            pattern1
+            pattern2
+
+    unificationProcedure =
+        UnificationProcedure (ignoreUnificationErrors matchAsUnification)
