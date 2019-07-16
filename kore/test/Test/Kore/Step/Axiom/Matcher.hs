@@ -14,7 +14,6 @@ import Test.Tasty.HUnit
 import qualified Data.Bifunctor as Bifunctor
 import           Data.Default
                  ( Default (..) )
-import qualified Data.Foldable as Foldable
 import           Data.Function
                  ( on )
 import qualified Data.Map as Map
@@ -978,16 +977,17 @@ test_unificationWithAppMatchOnTop =
         assertEqualWithExplanation "" expected actual
     ]
 
-test_matchingBuiltins :: [TestTree]
+test_matchingBuiltins :: TestTree
 test_matchingBuiltins =
-    Foldable.fold
-        [ matchingBool
-        , matchingInt
-        , matchingString
-        , matchingList
-        , matchingSet
-        , matchingMap
-        ]
+    testGroup "matching builtins"
+        . fmap (uncurry testGroup)
+        $   [ ("Bool", matchingBool)
+            , ("Int", matchingInt)
+            , ("String", matchingString)
+            , ("List", matchingList)
+            , ("Set", matchingSet)
+            , ("Map", matchingMap)
+            ]
 
 matchingBool :: [TestTree]
 matchingBool =

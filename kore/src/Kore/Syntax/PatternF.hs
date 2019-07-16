@@ -4,8 +4,6 @@ License     : NCSA
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Syntax.PatternF
     ( PatternF (..)
     , mapVariables
@@ -17,8 +15,6 @@ module Kore.Syntax.PatternF
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import qualified Data.Deriving as Deriving
-import           Data.Functor.Classes
 import           Data.Functor.Identity
                  ( Identity (..) )
 import           Data.Hashable
@@ -82,23 +78,7 @@ data PatternF variable child
     | VariableF      !variable
     | InhabitantF    !Sort
     | SetVariableF   !(SetVariable variable)
-    deriving (Foldable, Functor, GHC.Generic, Traversable)
-
-Deriving.deriveEq1 ''PatternF
-Deriving.deriveOrd1 ''PatternF
-Deriving.deriveShow1 ''PatternF
-
-instance (Eq variable, Eq child) => Eq (PatternF variable child) where
-    (==) = eq1
-    {-# INLINE (==) #-}
-
-instance (Ord variable, Ord child) => Ord (PatternF variable child) where
-    compare = compare1
-    {-# INLINE compare #-}
-
-instance (Show variable, Show child) => Show (PatternF variable child) where
-    showsPrec = showsPrec1
-    {-# INLINE showsPrec #-}
+    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance SOP.Generic (PatternF variable child)
 

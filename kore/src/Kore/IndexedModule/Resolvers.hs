@@ -41,7 +41,8 @@ import           Kore.AST.Error
 import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Error
 import           Kore.IndexedModule.Error
-                 ( noAlias, noHead, noSort, noSymbol )
+                 ( noAliasText, noHead, noSort, noSortText, noSymbol,
+                 noSymbolText )
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), getIndexedSentence,
                  indexedModulesInScope )
@@ -169,7 +170,7 @@ resolveSymbol
 resolveSymbol m headId =
     case resolveThing symbolSentencesMap m headId of
         Nothing ->
-            koreFailWithLocations [headId] (noSymbol headId)
+            koreFailWithLocations [headId] (noSymbolText headId)
         Just result ->
             return result
 
@@ -184,7 +185,7 @@ resolveAlias
 resolveAlias m headId =
     case resolveThing aliasSentencesMap m headId of
         Nothing ->
-            koreFailWithLocations [headId] (noAlias headId)
+            koreFailWithLocations [headId] (noAliasText headId)
         Just result ->
             return result
 
@@ -201,7 +202,7 @@ resolveSort
 resolveSort m sortId =
     case resolveThing sortSentencesMap m sortId of
         Nothing ->
-            koreFailWithLocations [sortId] $ noSort sortId
+            koreFailWithLocations [sortId] $ noSortText sortId
         Just sortDescription ->
             return sortDescription
 

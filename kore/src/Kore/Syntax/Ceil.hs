@@ -4,15 +4,12 @@ License     : NCSA
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Syntax.Ceil
     ( Ceil (..)
     ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import qualified Data.Deriving as Deriving
 import           Data.Function
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -41,10 +38,6 @@ data Ceil sort child = Ceil
     , ceilChild       :: child
     }
     deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Traversable, Show)
-
-Deriving.deriveEq1 ''Ceil
-Deriving.deriveOrd1 ''Ceil
-Deriving.deriveShow1 ''Ceil
 
 instance (Hashable sort, Hashable child) => Hashable (Ceil sort child)
 
