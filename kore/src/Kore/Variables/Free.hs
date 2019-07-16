@@ -17,7 +17,7 @@ module Kore.Variables.Free
     ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
-import qualified Control.Monad as Monad
+import qualified Control.Monad.Extra as Monad
 import qualified Control.Monad.RWS.Strict as Monad.RWS
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
@@ -26,9 +26,6 @@ import           Data.Set
 import qualified Data.Set as Set
 
 import Kore.Syntax
-
-unlessM :: Monad m => m Bool -> m () -> m ()
-unlessM m go = m >>= \b -> Monad.unless b go
 
 -- | The free variables of a pure pattern.
 freePureVariables
@@ -49,7 +46,7 @@ freePureVariables root =
 
     freePureVariables1 recursive =
         case Cofree.tailF (Recursive.project recursive) of
-            VariableF v -> unlessM (isBound v) (recordFree v)
+            VariableF v -> Monad.unlessM (isBound v) (recordFree v)
             ExistsF Exists { existsVariable, existsChild } ->
                 Monad.RWS.local
                     -- record the bound variable
@@ -84,7 +81,7 @@ freeSetVariables root =
 
     freeSetVariables1 recursive =
         case Cofree.tailF (Recursive.project recursive) of
-            SetVariableF (SetVariable v) -> unlessM (isBound v) (recordFree v)
+            SetVariableF (SetVariable v) -> Monad.unlessM (isBound v) (recordFree v)
             MuF Mu { muVariable = SetVariable v, muChild } ->
                 Monad.RWS.local
                     -- record the bound variable

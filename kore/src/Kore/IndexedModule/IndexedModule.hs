@@ -66,6 +66,8 @@ import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import           Control.Monad
                  ( foldM )
+import           Control.Monad.Extra
+                 ( unlessM )
 import           Control.Monad.State.Strict
                  ( execState )
 import qualified Control.Monad.State.Strict as Monad.State
@@ -840,10 +842,6 @@ indexedModulesInScope
 indexedModulesInScope =
     \imod -> execState (resolveModule imod) Map.empty
   where
-    unlessM condM action = do
-        cond <- condM
-        if cond then return () else action
-
     alreadyResolved name =
         Monad.State.gets (Map.member name)
 
