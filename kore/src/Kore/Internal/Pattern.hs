@@ -37,9 +37,7 @@ import           Kore.Internal.Conditional
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.Predicate
                  ( Predicate )
-import           Kore.Internal.TermLike hiding
-                 ( mapVariables )
-import qualified Kore.Internal.TermLike as TermLike
+import           Kore.Internal.TermLike as TermLike
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
