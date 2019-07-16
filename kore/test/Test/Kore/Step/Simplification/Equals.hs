@@ -16,7 +16,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.OrPredicate
                  ( OrPredicate )
 import           Kore.Internal.Pattern
-                 ( Pattern, toTermLike )
+                 ( Pattern )
 import qualified Kore.Internal.Pattern as Conditional
 import           Kore.Internal.Predicate
                  ( Conditional (..), Predicate )
