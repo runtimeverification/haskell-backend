@@ -369,15 +369,18 @@ onePathRuleToPattern (OnePathRule rulePatt) =
             (left rulePatt)
         )
        ( mkApplyAlias
-            (wEF rulePatt)
+            (wEF sort)
             [( mkAnd
                 (Predicate.unwrapPredicate . ensures $ rulePatt)
                 (right rulePatt)
             )]
        )
+  where
+    sort :: Sort
+    sort = termLikeSort . right $ rulePatt
 
-wEF :: RulePattern variable -> Alias
-wEF rulePatt = Alias
+wEF :: Sort -> Alias
+wEF sort = Alias
     { aliasConstructor = Id
         { getId = weakExistsFinally
         , idLocation = AstLocationNone
@@ -388,9 +391,6 @@ wEF rulePatt = Alias
         , applicationSortsResult = sort
         }
     }
-  where
-    sort :: Sort
-    sort = termLikeSort . right $ rulePatt
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 
