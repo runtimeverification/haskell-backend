@@ -12,19 +12,25 @@ module Kore.Error
     , printError
     , koreError
     , koreFail
+    , koreFailText
     , koreFailWhen
+    , koreFailWhenText
     , withContext
+    , withTextContext
     , castError
     , assertRight
     , module Control.Monad.Except
     ) where
 
-import Control.Monad
-       ( when )
-import Control.Monad.Except
-       ( MonadError (..) )
-import Data.List
-       ( intercalate )
+import           Control.Monad
+                 ( when )
+import           Control.Monad.Except
+                 ( MonadError (..) )
+import           Data.List
+                 ( intercalate )
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
 
 {-|'Error' represents a Kore error with a stacktrace-like context.
 
@@ -53,12 +59,24 @@ koreFail :: MonadError (Error a) m => String -> m b
 koreFail errorMessage =
     throwError (koreError errorMessage)
 
+{-|'koreFailText' produces an error result with an empty context. -}
+koreFailText :: MonadError (Error a) m => Text -> m b
+koreFailText errorMessage =
+    throwError (koreError (Text.unpack errorMessage))
+
 {-|'koreFailWhen' produces an error result with an empty context whenever the
 provided flag is true.
 -}
 koreFailWhen :: MonadError (Error a) m => Bool -> String -> m ()
 koreFailWhen condition errorMessage =
     when condition (koreFail errorMessage)
+
+{-|'koreFailWhen' produces an error result with an empty context whenever the
+provided flag is true.
+-}
+koreFailWhenText :: MonadError (Error a) m => Bool -> Text -> m ()
+koreFailWhenText condition errorMessage =
+    koreFailWhen condition (Text.unpack errorMessage)
 
 {-|'withContext' prepends the given string to the context whenever the given
 action fails.
@@ -69,6 +87,12 @@ withContext localContext action =
   where
     inContext err@Error { errorContext } =
         throwError err { errorContext = localContext : errorContext }
+
+{-|'withContext' prepends the given text to the context whenever the given
+action fails.
+-}
+withTextContext :: MonadError (Error a) m => Text -> m result -> m result
+withTextContext localContext = withContext (Text.unpack localContext)
 
 {-|'castError' changes an error's tag.
 -}
