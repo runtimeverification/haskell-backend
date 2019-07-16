@@ -27,7 +27,6 @@ module Kore.Internal.Pattern
     , Predicate
     ) where
 
-import Data.Text.Prettyprint.Doc
 import GHC.Stack
        ( HasCallStack )
 
