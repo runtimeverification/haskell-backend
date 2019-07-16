@@ -31,8 +31,8 @@ import qualified GHC.Generics as GHC
 import           Numeric.Natural
 
 import Data.Sup
-import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Pattern.FreeSetVariables
+import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort

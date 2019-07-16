@@ -22,10 +22,10 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import qualified Control.Lens.TH.Rules as Lens
-import           Kore.Attribute.Pattern.FreeVariables
-                 ( FreeVariables )
 import           Kore.Attribute.Pattern.FreeSetVariables
                  ( FreeSetVariables )
+import           Kore.Attribute.Pattern.FreeVariables
+                 ( FreeVariables )
 import           Kore.Attribute.Synthetic
 import           Kore.Debug
 import           Kore.Internal.ApplicationSorts

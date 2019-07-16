@@ -55,11 +55,11 @@ import           Control.Lens.TH.Rules
                  ( makeLenses )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
+import           Kore.Attribute.Pattern.FreeSetVariables
+                 ( FreeSetVariables )
 import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import           Kore.Attribute.Pattern.FreeSetVariables
-                 ( FreeSetVariables )
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Internal.ApplicationSorts

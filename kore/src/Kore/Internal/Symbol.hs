@@ -45,8 +45,8 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import qualified Control.Lens.TH.Rules as Lens
-import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Attribute.Pattern.FreeSetVariables
+import           Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Attribute.Synthetic
 import           Kore.Debug

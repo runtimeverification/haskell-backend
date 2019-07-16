@@ -18,10 +18,10 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Kore.Attribute.Pattern.FreeVariables
-       ( FreeVariables )
 import Kore.Attribute.Pattern.FreeSetVariables
        ( FreeSetVariables )
+import Kore.Attribute.Pattern.FreeVariables
+       ( FreeVariables )
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort

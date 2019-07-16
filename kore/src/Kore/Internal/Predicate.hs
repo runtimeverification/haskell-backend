@@ -23,10 +23,10 @@ module Kore.Internal.Predicate
     ) where
 
 
-import           Kore.Attribute.Pattern.FreeVariables
-                 ( FreeVariables )
 import           Kore.Attribute.Pattern.FreeSetVariables
                  ( FreeSetVariables )
+import           Kore.Attribute.Pattern.FreeVariables
+                 ( FreeVariables )
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
 import qualified Kore.Internal.Conditional as Conditional

@@ -60,8 +60,8 @@ import           GHC.Generics
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Attribute.Pattern.FreeSetVariables
+import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Error
                  ( Error, koreFail )
 import           Kore.Internal.TermLike as TermLike

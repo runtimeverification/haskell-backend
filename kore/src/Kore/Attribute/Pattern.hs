@@ -31,8 +31,8 @@ import qualified GHC.Generics as GHC
 import Control.Lens.TH.Rules
        ( makeLenses )
 import Kore.Attribute.Pattern.Defined
-import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Pattern.FreeSetVariables
+import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Pattern.Function
 import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Synthetic

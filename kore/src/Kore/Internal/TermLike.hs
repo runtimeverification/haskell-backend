@@ -173,8 +173,8 @@ import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Pattern.Defined as Pattern
-import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Attribute.Pattern.FreeSetVariables
+import           Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
 import           Kore.Attribute.Synthetic

@@ -29,10 +29,10 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.Attribute.Pattern.FreeVariables
-                 ( FreeVariables )
 import           Kore.Attribute.Pattern.FreeSetVariables
                  ( FreeSetVariables )
+import           Kore.Attribute.Pattern.FreeVariables
+                 ( FreeVariables )
 import           Kore.Internal.TermLike
                  ( TermLike )
 import           Kore.Predicate.Predicate

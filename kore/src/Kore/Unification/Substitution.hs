@@ -47,8 +47,8 @@ import           GHC.Stack
 import           Prelude hiding
                  ( null )
 
-import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Attribute.Pattern.FreeSetVariables
+import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Internal.TermLike
                  ( TermLike, pattern Var_, mkVar )
 import qualified Kore.Internal.TermLike as TermLike
