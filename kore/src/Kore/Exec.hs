@@ -17,6 +17,7 @@ module Kore.Exec
     , boundedModelCheck
     , Rewrite
     , Equality
+    , simplifyRulePattern
     ) where
 
 import           Control.Concurrent.MVar
