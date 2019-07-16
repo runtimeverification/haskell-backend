@@ -294,12 +294,10 @@ prettyOr
     :: Pattern Variable
     -> Pattern Variable
     -> Pretty.Doc a
-prettyOr patOrFirst patOrSecond =
+prettyOr orFirst orSecond =
     Unparser.unparse Or { orSort, orFirst, orSecond }
   where
-    orSort = termLikeSort (Pattern.term patOrFirst)
-    orFirst = Pattern.toTermLike patOrFirst
-    orSecond = Pattern.toTermLike patOrSecond
+    orSort = termLikeSort (Pattern.term orFirst)
 
 stateIntention :: [Pretty.Doc ann] -> String
 stateIntention actualAndSoOn =
