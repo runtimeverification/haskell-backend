@@ -31,7 +31,7 @@ verifySort _ declaredSortVariables (SortVariableSort variable)
     koreFailWithLocationsWhen
         (Set.notMember variable declaredSortVariables)
         [variableId]
-        ("Sort variable '" ++ getIdForError variableId ++ "' not declared.")
+        ("Sort variable '" <> getId variableId <> "' not declared.")
     verifySuccess
   where
     variableId = getSortVariable variable
@@ -39,7 +39,7 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort)
   = do
     withLocationAndContext
         sortName
-        ("sort '" ++ getIdForError (sortActualName sort) ++ "'")
+        ("sort '" <> getId (sortActualName sort) <> "'")
         ( do
             sortDescription <- findSortDescription sortName
             verifySortMatchesDeclaration
@@ -51,14 +51,14 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort)
         (sortIsMeta && sortActualSorts sort /= [])
         [sortName]
         (  "Malformed meta sort '"
-        ++ sortId
-        ++ "' with non-empty Parameter sorts."
+        <> sortId
+        <> "' with non-empty Parameter sorts."
         )
     verifySuccess
   where
     sortIsMeta = False
     sortName   = sortActualName sort
-    sortId     = getIdForError sortName
+    sortId     = getId sortName
 
 verifySortMatchesDeclaration
     :: MonadError (Error VerifyError) m

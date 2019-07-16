@@ -12,6 +12,9 @@ module Kore.AST.AstWithLocation
     , prettyPrintLocationFromAst
     ) where
 
+import Data.Text
+       ( Text )
+
 import Kore.Syntax
 import Kore.Syntax.Definition
 import Kore.Syntax.PatternF
@@ -26,7 +29,7 @@ class AstWithLocation awl where
 
 prettyPrintLocationFromAst
     :: AstWithLocation astWithLocation
-    => astWithLocation -> String
+    => astWithLocation -> Text
 prettyPrintLocationFromAst = prettyPrintAstLocation . locationFromAst
 
 instance AstWithLocation AstLocation where
