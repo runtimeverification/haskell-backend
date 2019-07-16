@@ -15,6 +15,7 @@ import           Data.Default
 import qualified Data.Map.Strict as Map
 
 import qualified Kore.Builtin.Map as Map
+import qualified Kore.Exec as Exec
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -32,6 +33,7 @@ import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
+import qualified Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
@@ -188,47 +190,30 @@ test_simplificationIntegration =
         assertEqualWithExplanation "" expect actual
     , testCase "map function, matching" $ do
         let
-            expect = OrPattern.fromPatterns
-                [ Conditional
-                    { term = Mock.c
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-                ]
-        actual <-
-            evaluateWithAxioms
-                (axiomPatternsToEvaluators
-                    (Map.fromList
-                        [   ( AxiomIdentifier.Application
-                                Mock.function20MapTestId
-                            ,   [ EqualityRule RulePattern
-                                    { left =
-                                        Mock.function20MapTest
-                                            (Mock.concatMap
-                                                (Mock.elementMap
-                                                    (mkVar Mock.x)
-                                                    (mkVar Mock.y)
-                                                )
-                                                (mkVar Mock.m)
-                                            )
-                                            (mkVar Mock.x)
-                                    , right = mkVar Mock.y
-                                    , requires = makeTruePredicate
-                                    , ensures = makeTruePredicate
-                                    , attributes = def
-                                    }
-                                ]
-                            )
-                        ]
+            expect = OrPattern.fromPattern $ Pattern.fromTermLike Mock.c
+            rule =
+                Rule.rulePattern
+                    (Mock.function20MapTest
+                        (Mock.concatMap
+                            (Mock.elementMap (mkVar Mock.x) (mkVar Mock.y))
+                            (mkVar Mock.m)
+                        )
+                        (mkVar Mock.x)
                     )
+                    (mkVar Mock.y)
+        rule' <- simplifyRulePattern rule
+        let function20MapTestEvaluators =
+                ( AxiomIdentifier.Application Mock.function20MapTestId
+                , [ EqualityRule rule' ]
                 )
-                Conditional
-                    { term =
-                        Mock.function20MapTest
-                            (Mock.builtinMap [(Mock.a, Mock.c)]) Mock.a
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
+            evaluateFunction20MapTest =
+                evaluateWithAxioms
+                $ axiomPatternsToEvaluators
+                $ Map.fromList [ function20MapTestEvaluators ]
+        actual <-
+            evaluateFunction20MapTest
+            $ Pattern.fromTermLike
+            $ Mock.function20MapTest (Mock.builtinMap [(Mock.a, Mock.c)]) Mock.a
         assertEqualWithExplanation "" expect actual
     , testCase "exists variable equality" $ do
         let
@@ -450,8 +435,7 @@ test_substituteList =
     mkDomainBuiltinList = Mock.builtinList
 
 evaluate :: Pattern Variable -> IO (OrPattern Variable)
-evaluate patt =
-    evaluateWithAxioms Map.empty patt
+evaluate patt = evaluateWithAxioms Map.empty patt
 
 evaluateWithAxioms
     :: BuiltinAndAxiomSimplifierMap
@@ -469,13 +453,24 @@ evaluateWithAxioms axioms =
             simplifierWithFallback
             builtinAxioms
             axioms
-    builtinAxioms :: BuiltinAndAxiomSimplifierMap
-    builtinAxioms =
-        Map.fromList
-            [   ( AxiomIdentifier.Application Mock.concatMapId
-                , builtinEvaluation Map.evalConcat
-                )
-            ,   ( AxiomIdentifier.Application Mock.elementMapId
-                , builtinEvaluation Map.evalElement
-                )
-            ]
+
+-- | A selection of builtin axioms used in the tests above.
+builtinAxioms :: BuiltinAndAxiomSimplifierMap
+builtinAxioms =
+    Map.fromList
+        [   ( AxiomIdentifier.Application Mock.concatMapId
+            , builtinEvaluation Map.evalConcat
+            )
+        ,   ( AxiomIdentifier.Application Mock.elementMapId
+            , builtinEvaluation Map.evalElement
+            )
+        ]
+
+-- | Simplify a 'RulePattern' using 'builtinAxioms'.
+simplifyRulePattern :: RulePattern Variable -> IO (RulePattern Variable)
+simplifyRulePattern =
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    . evalSimplifier env
+    . Exec.simplifyRulePattern
+  where
+    env = Mock.env { simplifierAxioms = builtinAxioms }
