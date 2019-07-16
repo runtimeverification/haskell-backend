@@ -14,6 +14,7 @@ import qualified Data.Set as Set
 import           Kore.AST.AstWithLocation
 import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Hook as Attribute.Hook
+import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.Error
@@ -38,7 +39,7 @@ data TestPattern = TestPattern
     , testPatternErrorStack :: !ErrorStack
     }
 
-newtype VariableOfDeclaredSort = VariableOfDeclaredSort (Variable)
+newtype VariableOfDeclaredSort = VariableOfDeclaredSort Variable
 
 testPatternErrorStackStrings :: TestPattern -> [String]
 testPatternErrorStackStrings
@@ -638,6 +639,29 @@ test_patternVerifier =
         (DeclaredSort boolSort)
         [ asSentence boolSortSentence ]
         NeedsInternalDefinitions
+    , failureTestsForObjectPattern "Domain value - sort without DVs"
+        (ExpectedErrorMessage
+            "Sorts used with domain value must have the hasDomainValues \
+                \attribute."
+        )
+        (ErrorStack
+            [ "\\dv (<test data>)"
+            , "(<test data>)"
+            ]
+        )
+        (DomainValueF DomainValue
+            { domainValueSort = intSort
+            , domainValueChild =
+                Builtin.externalizePattern
+                $ Internal.mkStringLiteral "1"  -- Not a decimal integer
+            }
+        )
+        (NamePrefix "dummy")
+        (TestedPatternSort (updateAstLocation intSort AstLocationTest))
+        (SortVariablesThatMustBeDeclared [])
+        (DeclaredSort intSort)
+        [ asSentence intSortSentenceWithoutDv ]
+        NeedsInternalDefinitions
     ]
   where
     objectSortName = SortName "ObjectSort"
@@ -709,6 +733,18 @@ test_patternVerifier =
             { sentenceSortName = testId name
             , sentenceSortParameters = []
             , sentenceSortAttributes =
+                Attributes
+                    [ Attribute.Hook.hookAttribute "INT.Int"
+                    , Attribute.HasDomainValues.hasDomainValuesAttribute
+                    ]
+            }
+      where
+        SortName name = intSortName
+    intSortSentenceWithoutDv =
+        SentenceHookedSort SentenceSort
+            { sentenceSortName = testId name
+            , sentenceSortParameters = []
+            , sentenceSortAttributes =
                 Attributes [ Attribute.Hook.hookAttribute "INT.Int" ]
             }
       where
@@ -722,7 +758,10 @@ test_patternVerifier =
             { sentenceSortName = testId name
             , sentenceSortParameters = []
             , sentenceSortAttributes =
-                Attributes [ Attribute.Hook.hookAttribute "BOOL.Bool" ]
+                Attributes
+                    [ Attribute.Hook.hookAttribute "BOOL.Bool"
+                    , Attribute.HasDomainValues.hasDomainValuesAttribute
+                    ]
             }
       where
         SortName name = boolSortName
@@ -772,7 +811,8 @@ dummyVariableAndSentences (NamePrefix namePrefix) =
 
 
 successTestsForObjectPattern
-    :: String
+    :: HasCallStack
+    => String
     -> PatternF Variable ParsedPattern
     -> NamePrefix
     -> TestedPatternSort
@@ -816,7 +856,8 @@ successTestsForObjectPattern
             patternRestrict
 
 successTestsForMetaPattern
-    :: String
+    :: HasCallStack
+    => String
     -> PatternF Variable ParsedPattern
     -> NamePrefix
     -> TestedPatternSort
