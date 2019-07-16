@@ -20,6 +20,8 @@ import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Pattern.FreeVariables
        ( FreeVariables )
+import Kore.Attribute.Pattern.FreeSetVariables
+       ( FreeSetVariables )
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
@@ -48,6 +50,13 @@ instance Unparse CharLiteral where
 instance
     Ord variable =>
     Synthetic (Const CharLiteral) (FreeVariables variable)
+  where
+    synthetic = const mempty
+    {-# INLINE synthetic #-}
+
+instance
+    Ord variable =>
+    Synthetic (Const CharLiteral) (FreeSetVariables variable)
   where
     synthetic = const mempty
     {-# INLINE synthetic #-}

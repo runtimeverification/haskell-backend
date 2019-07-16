@@ -13,7 +13,6 @@ module Kore.Syntax.Mu
 import           Control.DeepSeq
                  ( NFData (..) )
 import qualified Data.Deriving as Deriving
-import qualified Data.Foldable as Foldable
 import           Data.Function
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -21,6 +20,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Pattern.FreeSetVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
@@ -71,7 +71,15 @@ instance
             ])
 
 instance Ord variable => Synthetic (Mu variable) (FreeVariables variable) where
-    synthetic = Foldable.fold
+    synthetic = muChild
+    {-# INLINE synthetic #-}
+
+instance
+    Ord variable =>
+    Synthetic (Mu variable) (FreeSetVariables variable)
+  where
+    synthetic Mu { muVariable = SetVariable variable, muChild } =
+        bindSetVariable variable muChild
     {-# INLINE synthetic #-}
 
 instance SortedVariable variable => Synthetic (Mu variable) Sort where

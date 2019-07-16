@@ -32,7 +32,9 @@ module Kore.Predicate.Predicate
     , makeMultipleOrPredicate
     , makeTruePredicate
     , Kore.Predicate.Predicate.freeVariables
+    , Kore.Predicate.Predicate.freeSetVariables
     , Kore.Predicate.Predicate.hasFreeVariable
+    , Kore.Predicate.Predicate.hasFreeSetVariable
     , Kore.Predicate.Predicate.mapVariables
     , stringFromPredicate
     , substitutionToPredicate
@@ -59,6 +61,7 @@ import           GHC.Stack
                  ( HasCallStack )
 
 import           Kore.Attribute.Pattern.FreeVariables
+import           Kore.Attribute.Pattern.FreeSetVariables
 import           Kore.Error
                  ( Error, koreFail )
 import           Kore.Internal.TermLike as TermLike
@@ -462,6 +465,14 @@ freeVariables
     -> FreeVariables variable
 freeVariables = TermLike.freeVariables . unwrapPredicate
 
+{- | Extract the set of free set variables from a @Predicate@.
+-}
+freeSetVariables
+    :: Ord variable
+    => Predicate variable
+    -> FreeSetVariables variable
+freeSetVariables = TermLike.freeSetVariables . unwrapPredicate
+
 hasFreeVariable
     :: Ord variable
     => variable
@@ -469,6 +480,14 @@ hasFreeVariable
     -> Bool
 hasFreeVariable variable =
     isFreeVariable variable . Kore.Predicate.Predicate.freeVariables
+
+hasFreeSetVariable
+    :: Ord variable
+    => variable
+    -> Predicate variable
+    -> Bool
+hasFreeSetVariable variable =
+    isFreeSetVariable variable . Kore.Predicate.Predicate.freeSetVariables
 
 {- | 'substitutionToPredicate' transforms a substitution in a predicate.
 

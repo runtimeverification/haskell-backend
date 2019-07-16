@@ -21,6 +21,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Pattern.FreeSetVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
@@ -70,6 +71,13 @@ instance Unparse child => Unparse (Rewrites Sort child) where
 instance
     Ord variable =>
     Synthetic (Rewrites sort) (FreeVariables variable)
+  where
+    synthetic = Foldable.fold
+    {-# INLINE synthetic #-}
+
+instance
+    Ord variable =>
+    Synthetic (Rewrites sort) (FreeSetVariables variable)
   where
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}

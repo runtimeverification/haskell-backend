@@ -19,6 +19,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Pattern.FreeSetVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
@@ -81,6 +82,10 @@ instance
   where
     synthetic Exists { existsVariable, existsChild } =
         bindVariable existsVariable existsChild
+    {-# INLINE synthetic #-}
+
+instance Ord variable => Synthetic (Exists sort variable) (FreeSetVariables variable) where
+    synthetic = existsChild
     {-# INLINE synthetic #-}
 
 instance Synthetic (Exists Sort variable) Sort where

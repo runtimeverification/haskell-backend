@@ -20,6 +20,7 @@ module Kore.Internal.Pattern
     , topOf
     , fromTermLike
     , Kore.Internal.Pattern.freeVariables
+    , Kore.Internal.Pattern.freeSetVariables
     -- * Re-exports
     , Conditional (..)
     , Conditional.withCondition
@@ -32,6 +33,8 @@ import GHC.Stack
 
 import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
+import           Kore.Attribute.Pattern.FreeSetVariables
+                 ( FreeSetVariables )
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
 import qualified Kore.Internal.Conditional as Conditional
@@ -72,6 +75,12 @@ freeVariables
     => Pattern variable
     -> FreeVariables variable
 freeVariables = Conditional.freeVariables TermLike.freeVariables
+
+freeSetVariables
+    :: Ord variable
+    => Pattern variable
+    -> FreeSetVariables variable
+freeSetVariables = Conditional.freeSetVariables TermLike.freeSetVariables
 
 {-|'mapVariables' transforms all variables, including the quantified ones,
 in an Pattern.

@@ -14,6 +14,7 @@ module Kore.Internal.TermLike
     , isFunctionalPattern
     , isDefinedPattern
     , freeVariables
+    , freeSetVariables
     , termLikeSort
     , hasFreeVariable
     , withoutFreeVariable
@@ -173,6 +174,7 @@ import qualified GHC.Stack as GHC
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Pattern.Defined as Pattern
 import           Kore.Attribute.Pattern.FreeVariables
+import           Kore.Attribute.Pattern.FreeSetVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
 import           Kore.Attribute.Synthetic
@@ -331,10 +333,47 @@ instance
     synthetic (CharLiteralF charLiteral) = synthetic (Const charLiteral)
     synthetic (InhabitantF _) = mempty
 
-    -- TODO (thomas.tuegel): Track free set variables.
     synthetic (MuF muF) = synthetic muF
     synthetic (NuF nuF) = synthetic nuF
     synthetic (SetVariableF _) = mempty
+    {-# INLINE synthetic #-}
+
+instance
+    Ord variable =>
+    Synthetic (TermLikeF variable) (FreeSetVariables variable)
+  where
+    -- TODO (thomas.tuegel): Use SOP.Generic here, after making the children
+    -- Functors.
+    synthetic (ForallF forallF) = synthetic forallF
+    synthetic (ExistsF existsF) = synthetic existsF
+    synthetic (VariableF _) = mempty
+
+    synthetic (AndF andF) = synthetic andF
+    synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
+    synthetic (ApplyAliasF applyAliasF) = synthetic applyAliasF
+    synthetic (BottomF bottomF) = synthetic bottomF
+    synthetic (CeilF ceilF) = synthetic ceilF
+    synthetic (DomainValueF domainValueF) = synthetic domainValueF
+    synthetic (EqualsF equalsF) = synthetic equalsF
+    synthetic (FloorF floorF) = synthetic floorF
+    synthetic (IffF iffF) = synthetic iffF
+    synthetic (ImpliesF impliesF) = synthetic impliesF
+    synthetic (InF inF) = synthetic inF
+    synthetic (NextF nextF) = synthetic nextF
+    synthetic (NotF notF) = synthetic notF
+    synthetic (OrF orF) = synthetic orF
+    synthetic (RewritesF rewritesF) = synthetic rewritesF
+    synthetic (TopF topF) = synthetic topF
+    synthetic (BuiltinF builtinF) = Foldable.fold builtinF
+    synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
+
+    synthetic (StringLiteralF stringLiteral) = synthetic (Const stringLiteral)
+    synthetic (CharLiteralF charLiteral) = synthetic (Const charLiteral)
+    synthetic (InhabitantF _) = mempty
+
+    synthetic (MuF muF) = synthetic muF
+    synthetic (NuF nuF) = synthetic nuF
+    synthetic (SetVariableF (SetVariable variable)) = freeSetVariable variable
     {-# INLINE synthetic #-}
 
 instance SortedVariable variable => Synthetic (TermLikeF variable) Sort where
@@ -704,6 +743,9 @@ instance
 
 freeVariables :: TermLike variable -> FreeVariables variable
 freeVariables = Attribute.freeVariables . extractAttributes
+
+freeSetVariables :: TermLike variable -> FreeSetVariables variable
+freeSetVariables = Attribute.freeSetVariables . extractAttributes
 
 hasFreeVariable
     :: Ord variable

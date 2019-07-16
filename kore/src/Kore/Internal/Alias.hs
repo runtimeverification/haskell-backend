@@ -24,6 +24,8 @@ import qualified GHC.Generics as GHC
 import qualified Control.Lens.TH.Rules as Lens
 import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
+import           Kore.Attribute.Pattern.FreeSetVariables
+                 ( FreeSetVariables )
 import           Kore.Attribute.Synthetic
 import           Kore.Debug
 import           Kore.Internal.ApplicationSorts
@@ -75,6 +77,14 @@ instance Unparse Alias where
 instance
     Ord variable =>
     Synthetic (Application Alias) (FreeVariables variable)
+  where
+    -- TODO (thomas.tuegel): Consider that there could be bound variables here.
+    synthetic = Foldable.fold
+    {-# INLINE synthetic #-}
+
+instance
+    Ord variable =>
+    Synthetic (Application Alias) (FreeSetVariables variable)
   where
     -- TODO (thomas.tuegel): Consider that there could be bound variables here.
     synthetic = Foldable.fold

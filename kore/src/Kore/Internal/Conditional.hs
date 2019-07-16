@@ -14,6 +14,7 @@ module Kore.Internal.Conditional
     , fromSingleSubstitution
     , andPredicate
     , Kore.Internal.Conditional.freeVariables
+    , Kore.Internal.Conditional.freeSetVariables
     , splitTerm
     , toPredicate
     , Kore.Internal.Conditional.mapVariables
@@ -30,6 +31,8 @@ import           GHC.Generics
 
 import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
+import           Kore.Attribute.Pattern.FreeSetVariables
+                 ( FreeSetVariables )
 import           Kore.Internal.TermLike
                  ( TermLike )
 import           Kore.Predicate.Predicate
@@ -292,6 +295,21 @@ freeVariables getFreeVariables Conditional { term, predicate, substitution } =
     getFreeVariables term
     <> Predicate.freeVariables predicate
     <> Substitution.freeVariables substitution
+
+{- | Extract the set of free set variables from a 'Conditional' term.
+
+See also: 'Predicate.freeSetVariables'.
+-}
+freeSetVariables
+    :: Ord variable
+    => (term -> FreeSetVariables variable)
+    -- ^ Extract the free variables of @term@.
+    -> Conditional variable term
+    -> FreeSetVariables variable
+freeSetVariables getFreeSetVariables Conditional { term, predicate, substitution } =
+    getFreeSetVariables term
+    <> Predicate.freeSetVariables predicate
+    <> Substitution.freeSetVariables substitution
 
 {- | Transform a predicate and substitution into a predicate only.
 

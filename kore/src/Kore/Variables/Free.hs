@@ -14,6 +14,7 @@ module Kore.Variables.Free
     , freeSetVariables
     , pureAllVariables
     , synthetic
+    , syntheticSet
     ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
@@ -139,3 +140,23 @@ synthetic (VariableF variable) =
 synthetic patternHead =
     Foldable.foldl' Set.union Set.empty patternHead
 {-# INLINE synthetic #-}
+
+{- | @syntheticSet@ is an algebra for the free set variables of a pattern.
+
+Use @syntheticSet@ with 'Kore.Annotation.synthesize' to annotate a pattern with its
+free variables as a synthetic attribute.
+
+ -}
+syntheticSet
+    :: Ord variable
+    => PatternF variable (Set.Set variable)
+    -> Set.Set variable
+syntheticSet (MuF Mu { muVariable = SetVariable v, muChild }) =
+    Set.delete v muChild
+syntheticSet (NuF Nu { nuVariable = SetVariable v, nuChild }) =
+    Set.delete v nuChild
+syntheticSet (SetVariableF (SetVariable variable)) =
+    Set.singleton variable
+syntheticSet patternHead =
+    Foldable.foldl' Set.union Set.empty patternHead
+{-# INLINE syntheticSet #-}

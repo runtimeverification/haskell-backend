@@ -20,6 +20,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Pattern.FreeSetVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
@@ -66,6 +67,10 @@ instance Unparse child => Unparse (Ceil Sort child) where
         Pretty.parens (Pretty.fillSep ["\\ceil", unparse2 ceilChild])
 
 instance Ord variable => Synthetic (Ceil sort) (FreeVariables variable) where
+    synthetic = ceilChild
+    {-# INLINE synthetic #-}
+
+instance Ord variable => Synthetic (Ceil sort) (FreeSetVariables variable) where
     synthetic = ceilChild
     {-# INLINE synthetic #-}
 

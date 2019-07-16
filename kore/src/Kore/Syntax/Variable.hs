@@ -32,6 +32,7 @@ import           Numeric.Natural
 
 import Data.Sup
 import Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Pattern.FreeSetVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
@@ -190,6 +191,10 @@ instance SortedVariable Concrete where
 
 instance Synthetic (Const Variable) (FreeVariables Variable) where
     synthetic (Const variable) = freeVariable variable
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Const Variable) (FreeSetVariables Variable) where
+    synthetic = const mempty
     {-# INLINE synthetic #-}
 
 instance Synthetic (Const Variable) Sort where
