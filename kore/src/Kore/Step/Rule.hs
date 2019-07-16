@@ -369,25 +369,26 @@ onePathRuleToPattern (OnePathRule rulePatt) =
             (left rulePatt)
         )
        ( mkApplyAlias
-            wEF
+            (wEF rulePatt)
             [( mkAnd
                 (Predicate.unwrapPredicate . ensures $ rulePatt)
                 (right rulePatt)
             )]
        )
-  where
-    wEF :: Alias
-    wEF = Alias
-        { aliasConstructor = Id
-            { getId = weakExistsFinally
-            , idLocation = AstLocationNone
-            }
-        , aliasParams = []
-        , aliasSorts = ApplicationSorts
-            { applicationSortsOperands = [sort]
-            , applicationSortsResult = sort
-            }
+
+wEF :: RulePattern variable -> Alias
+wEF rulePatt = Alias
+    { aliasConstructor = Id
+        { getId = weakExistsFinally
+        , idLocation = AstLocationNone
         }
+    , aliasParams = []
+    , aliasSorts = ApplicationSorts
+        { applicationSortsOperands = [sort]
+        , applicationSortsResult = sort
+        }
+    }
+  where
     sort :: Sort
     sort = termLikeSort . right $ rulePatt
 
