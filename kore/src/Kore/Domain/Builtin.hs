@@ -370,10 +370,6 @@ instance SOP.HasDatatypeInfo (MapValue child)
 
 instance Debug child => Debug (MapValue child)
 
-instance Unparse a => Unparse (MapValue a) where
-    unparse (MapValue a) = unparse a
-    unparse2 (MapValue a) = unparse2 a
-
 type MapElement = Element NormalizedMap
 
 instance Hashable child => Hashable (MapElement child) where
@@ -437,10 +433,6 @@ type InternalMap key child = InternalAc key NormalizedMap child
 for a given key.
 -}
 type SetValue = Value NormalizedSet
-
-instance Unparse (SetValue a) where
-    unparse _ = error "Unexpected unparse call."
-    unparse2 _ = error "Unexpected unparse2 call."
 
 instance Hashable (SetValue child) where
     hashWithSalt salt SetValue = hashWithSalt salt (0 :: Int)

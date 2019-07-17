@@ -590,7 +590,6 @@ unifyEqualsNormalized
         , FreshVariable variable
         , TermWrapper normalized
         , MonadUnify unifier
-        , Unparse (Domain.Value normalized (TermLike variable))
         )
     => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
@@ -668,7 +667,6 @@ unifyEqualsNormalizedAc
         , FreshVariable variable
         , TermWrapper normalized
         , MonadUnify unifier
-        , Unparse (Domain.Value normalized (TermLike variable))
         )
     => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
@@ -758,10 +756,10 @@ unifyEqualsNormalizedAc
 
     unifyEqualsElementLists' =
         unifyEqualsElementLists
-        tools
-        first
-        second
-        unifyEqualsChildren
+            tools
+            first
+            second
+            unifyEqualsChildren
 
     opaque1Map = listToMap opaque1
     opaque2Map = listToMap opaque2
@@ -1066,7 +1064,6 @@ unifyEqualsElementLists
         , SortedVariable variable
         , TermWrapper normalized
         , Traversable (Domain.Value normalized)
-        , Unparse (Domain.Value normalized (TermLike variable))
         , Unparse variable
         )
     => SmtMetadataTools Attribute.Symbol
@@ -1374,7 +1371,7 @@ nonEmptyRemainderError
     .   ( HasCallStack
         , SortedVariable variable
         , Unparse variable
-        , Unparse (Domain.Value normalized (TermLike variable))
+        , Domain.AcWrapper normalized
         )
     => TermLike variable
     -> TermLike variable
@@ -1395,9 +1392,7 @@ nonEmptyRemainderError first second input1 input2 remainder =
   where
     unparseWrapped =
         Unparser.renderDefault . unparsePair . fromConcreteOrWithVariable
-    unparsePair
-        :: (TermLike variable, Domain.Value normalized (TermLike variable)) -> Doc ann
-    unparsePair (key, value) = Unparser.arguments' [unparse key, unparse value]
+    unparsePair = Domain.unparseElement unparse . Domain.wrapElement
 
 -- | Wrapper for giving names to arguments.
 newtype UnitSymbol = UnitSymbol {getUnitSymbol :: Symbol}
