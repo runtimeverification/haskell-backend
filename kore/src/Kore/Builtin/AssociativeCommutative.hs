@@ -98,16 +98,10 @@ import           Kore.Variables.Fresh
 
 {- | Class for things that can fill the @builtinAcChild@ value of a
 @InternalAc@ struct inside a @Domain.Builtin.Builtin@ value.
-
-There is a bijection between @normalized@ and @valueWrapper@ types
-(see @Domain.AcWrapper@).
 -}
 class
-    ( Domain.AcWrapper (normalized :: * -> * -> *)
-    , valueWrapper ~ Domain.Value normalized
-    )
-    -- TODO (thomas.tuegel): Remove second parameter
-    => TermWrapper normalized valueWrapper
+    Domain.AcWrapper (normalized :: * -> * -> *) =>
+    TermWrapper normalized
   where
     {- | Render a normalized value (e.g. 'NormalizedSet') as a Domain.Builtin.
 
@@ -135,7 +129,7 @@ class
         -> TermLike variable
         -> NormalizedOrBottom normalized variable
 
-instance TermWrapper Domain.NormalizedMap Domain.MapValue where
+instance TermWrapper Domain.NormalizedMap where
     {- | Render a 'NormalizedMap' as a Domain.Builtin.
 
     The result sort must be hooked to the builtin @Map@ sort.
@@ -191,7 +185,7 @@ instance TermWrapper Domain.NormalizedMap Domain.MapValue where
             , opaque = [patt]
             }
 
-instance TermWrapper Domain.NormalizedSet Domain.SetValue where
+instance TermWrapper Domain.NormalizedSet where
     {- | Render a 'NormalizedSet' as a Domain.Builtin.
 
     The result sort must be hooked to the builtin @Set@ sort.
@@ -250,13 +244,13 @@ instance TermWrapper Domain.NormalizedSet Domain.SetValue where
 {- | Wrapper for terms that keeps the "concrete" vs "with variable" distinction
 after converting @TermLike Concrete@ to @TermLike variable@.
 -}
-data ConcreteOrWithVariable valueWrapper variable
-    = ConcretePat (TermLike variable, valueWrapper (TermLike variable))
-    | WithVariablePat (TermLike variable, valueWrapper (TermLike variable))
+data ConcreteOrWithVariable normalized variable
+    = ConcretePat (TermLike variable, Domain.Value normalized (TermLike variable))
+    | WithVariablePat (TermLike variable, Domain.Value normalized (TermLike variable))
 
 fromConcreteOrWithVariable
-    :: ConcreteOrWithVariable valueWrapper variable
-    -> (TermLike variable, valueWrapper (TermLike variable))
+    :: ConcreteOrWithVariable normalized variable
+    -> (TermLike variable, Domain.Value normalized (TermLike variable))
 fromConcreteOrWithVariable (ConcretePat result) = result
 fromConcreteOrWithVariable (WithVariablePat result) = result
 
@@ -371,7 +365,7 @@ returnAc
     ::  ( MonadSimplify m
         , Ord variable
         , SortedVariable variable
-        , TermWrapper normalized valueWrapper
+        , TermWrapper normalized
         )
     => Sort
     -> TermNormalizedAc normalized variable
@@ -389,10 +383,10 @@ returnConcreteAc
     ::  ( MonadSimplify m
         , Ord variable
         , SortedVariable variable
-        , TermWrapper normalized valueWrapper
+        , TermWrapper normalized
         )
     => Sort
-    -> Map (TermLike Concrete) (valueWrapper (TermLike variable))
+    -> Map (TermLike Concrete) (Domain.Value normalized (TermLike variable))
     -> m (AttemptedAxiom variable)
 returnConcreteAc resultSort concrete =
     returnAc
@@ -415,7 +409,7 @@ pattern.
 asInternal
     ::  ( Ord variable
         , SortedVariable variable
-        , TermWrapper normalized valueWrapper
+        , TermWrapper normalized
         )
     => SmtMetadataTools Attribute.Symbol
     -> Sort
@@ -431,11 +425,11 @@ elements.
 asInternalConcrete
     ::  ( Ord variable
         , SortedVariable variable
-        , TermWrapper normalized valueWrapper
+        , TermWrapper normalized
         )
     => SmtMetadataTools Attribute.Symbol
     -> Sort
-    -> Map (TermLike Concrete) (valueWrapper (TermLike variable))
+    -> Map (TermLike Concrete) (Domain.Value normalized (TermLike variable))
     -> TermLike variable
 asInternalConcrete tools sort1 concreteAc =
     asInternal
@@ -448,15 +442,15 @@ asInternalConcrete tools sort1 concreteAc =
             }
 
 elementListAsInternal
-    :: forall normalized valueWrapper variable
+    :: forall normalized variable
     .   ( Ord variable
         , SortedVariable variable
-        , TermWrapper normalized valueWrapper
+        , TermWrapper normalized
         , Unparse variable
         )
     => SmtMetadataTools Attribute.Symbol
     -> Sort
-    -> [(TermLike variable, valueWrapper (TermLike variable))]
+    -> [(TermLike variable, Domain.Value normalized (TermLike variable))]
     -> Maybe (TermLike variable)
 elementListAsInternal tools sort1 terms = do
     let (withVariables, concrete) = splitVariableConcrete terms
@@ -479,7 +473,7 @@ elementListAsInternal tools sort1 terms = do
 asPattern
     ::  ( Ord variable, SortedVariable variable
         , Given (SmtMetadataTools Attribute.Symbol)
-        , TermWrapper normalized valueWrapper
+        , TermWrapper normalized
         )
     => Sort
     -> TermNormalizedAc normalized variable
@@ -494,11 +488,11 @@ asPattern resultSort =
 NormalizedOrBottom, providind the result in the form of a function result.
 -}
 evalConcatNormalizedOrBottom
-    :: forall m normalized valueWrapper variable
+    :: forall m normalized variable
     .   ( MonadSimplify m
         , Ord variable
         , SortedVariable variable
-        , TermWrapper normalized valueWrapper
+        , TermWrapper normalized
         )
     => Sort
     -> NormalizedOrBottom normalized variable
@@ -588,15 +582,15 @@ multiple sorts are hooked to the same builtin domain, the verifier should
 reject the definition.
 -}
 unifyEqualsNormalized
-    :: forall normalized unifier (valueWrapper :: * -> *) variable
+    :: forall normalized unifier variable
     .   ( SortedVariable variable
         , Unparse variable
         , Show variable
-        , Traversable valueWrapper
+        , Traversable (Domain.Value normalized)
         , FreshVariable variable
-        , TermWrapper normalized valueWrapper
+        , TermWrapper normalized
         , MonadUnify unifier
-        , Unparse (valueWrapper (TermLike variable))
+        , Unparse (Domain.Value normalized (TermLike variable))
         )
     => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
@@ -666,15 +660,15 @@ unifyEqualsNormalized
 Currently allows at most one opaque term in the two arguments taken together.
 -}
 unifyEqualsNormalizedAc
-    ::  forall normalized valueWrapper variable unifier
+    ::  forall normalized variable unifier
     .   ( SortedVariable variable
         , Unparse variable
         , Show variable
-        , Traversable valueWrapper
+        , Traversable (Domain.Value normalized)
         , FreshVariable variable
-        , TermWrapper normalized valueWrapper
+        , TermWrapper normalized
         , MonadUnify unifier
-        , Unparse (valueWrapper (TermLike variable))
+        , Unparse (Domain.Value normalized (TermLike variable))
         )
     => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
@@ -815,27 +809,27 @@ unifyEqualsNormalizedAc
         ++ map toConcretePat elementDifference2
 
     toConcretePat
-        :: (TermLike Concrete, valueWrapper (TermLike variable))
-        -> ConcreteOrWithVariable valueWrapper variable
+        :: (TermLike Concrete, Domain.Value normalized (TermLike variable))
+        -> ConcreteOrWithVariable normalized variable
     toConcretePat (a, b) = ConcretePat (TermLike.fromConcrete a, b)
 
     unifyElementList
         :: forall key
         .   [
                 (key
-                ,   ( valueWrapper (TermLike variable)
-                    , valueWrapper (TermLike variable)
+                ,   ( Domain.Value normalized (TermLike variable)
+                    , Domain.Value normalized (TermLike variable)
                     )
                 )
             ]
         -> unifier
-            ( [(key, valueWrapper (TermLike variable))]
+            ( [(key, Domain.Value normalized (TermLike variable))]
             , Predicate variable
             )
     unifyElementList elements = do
         result <- mapM (unifyCommonElements unifyEqualsChildren) elements
         let
-            terms :: [(key, valueWrapper (TermLike variable))]
+            terms :: [(key, Domain.Value normalized (TermLike variable))]
             predicates :: [Predicate variable]
             (terms, predicates) = unzip (map Conditional.splitTerm result)
             predicate :: Predicate variable
@@ -850,11 +844,11 @@ unifyEqualsNormalizedAc
     simplify term = alternate $ simplifyConditionalTerm term Predicate.top
 
     simplifyPair
-        :: (TermLike variable, valueWrapper (TermLike variable))
+        :: (TermLike variable, Domain.Value normalized (TermLike variable))
         -> unifier
             (Conditional
                 variable
-                (TermLike variable, valueWrapper (TermLike variable))
+                (TermLike variable, Domain.Value normalized (TermLike variable))
             )
     simplifyPair (key, value) = do
         simplifiedKey <- simplifyTermLike key
@@ -862,12 +856,12 @@ unifyEqualsNormalizedAc
         simplifiedValue <- traverse simplifyTermLike value
         let
             splitSimplifiedValue
-                :: valueWrapper (TermLike variable, Predicate variable)
+                :: Domain.Value normalized (TermLike variable, Predicate variable)
             splitSimplifiedValue =
                 fmap Conditional.splitTerm simplifiedValue
-            simplifiedValueTerm :: valueWrapper (TermLike variable)
+            simplifiedValueTerm :: Domain.Value normalized (TermLike variable)
             simplifiedValueTerm = fmap fst splitSimplifiedValue
-            simplifiedValuePredicates :: valueWrapper (Predicate variable)
+            simplifiedValuePredicates :: Domain.Value normalized (Predicate variable)
             simplifiedValuePredicates = fmap snd splitSimplifiedValue
             simplifiedValuePredicate :: Predicate variable
             simplifiedValuePredicate =
@@ -886,22 +880,22 @@ unifyEqualsNormalizedAc
             alternate $ simplifyConditionalTerm term Predicate.top
 
 buildResultFromUnifiers
-    :: forall normalized unifier valueWrapper variable
+    :: forall normalized unifier variable
     .   ( Monad unifier
         , Ord variable
         , Show variable
         , SortedVariable variable
-        , TermWrapper normalized valueWrapper
+        , TermWrapper normalized
         , Unparse variable
         )
     => SmtMetadataTools Attribute.Symbol
     -> (forall result . Doc () -> unifier result)
-    -> [(TermLike Concrete, valueWrapper (TermLike variable))]
-    -> [(TermLike variable, valueWrapper (TermLike variable))]
+    -> [(TermLike Concrete, Domain.Value normalized (TermLike variable))]
+    -> [(TermLike variable, Domain.Value normalized (TermLike variable))]
     -> [TermLike variable]
     ->  [ Conditional
             variable
-            (TermLike variable, valueWrapper (TermLike variable))
+            (TermLike variable, Domain.Value normalized (TermLike variable))
         ]
     -> [Pattern variable]
     -> [Predicate variable]
@@ -918,7 +912,7 @@ buildResultFromUnifiers
   = do -- unifier monad
     let
         almostResultTerms
-            ::  [(TermLike variable, valueWrapper (TermLike variable))]
+            ::  [(TermLike variable, Domain.Value normalized (TermLike variable))]
         almostResultPredicates :: [Predicate variable]
         (almostResultTerms, almostResultPredicates) =
             unzip (map Conditional.splitTerm unifiedElementsSimplified)
@@ -1064,15 +1058,15 @@ together with some part of the second structure.
 The keys of the two structures are assumend to be disjoint.
 -}
 unifyEqualsElementLists
-    ::  forall normalized valueWrapper variable unifier
+    ::  forall normalized variable unifier
     .   ( Domain.AcWrapper normalized
         , FreshVariable variable
         , MonadUnify unifier
         , Show variable
         , SortedVariable variable
-        , TermWrapper normalized valueWrapper
-        , Traversable valueWrapper
-        , Unparse (valueWrapper (TermLike variable))
+        , TermWrapper normalized
+        , Traversable (Domain.Value normalized)
+        , Unparse (Domain.Value normalized (TermLike variable))
         , Unparse variable
         )
     => SmtMetadataTools Attribute.Symbol
@@ -1080,16 +1074,16 @@ unifyEqualsElementLists
     -> TermLike variable
     -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     -- ^ unifier function
-    -> [ConcreteOrWithVariable valueWrapper variable]
+    -> [ConcreteOrWithVariable normalized variable]
     -- ^ First structure elements
-    -> [ConcreteOrWithVariable valueWrapper variable]
+    -> [ConcreteOrWithVariable normalized variable]
     -- ^ Second structure elements
     -> Maybe (TermLike variable)
     -- ^ Opaque part of the first structure
     -> unifier
         ( Conditional
             variable
-            [(TermLike variable, valueWrapper (TermLike variable))]
+            [(TermLike variable, Domain.Value normalized (TermLike variable))]
         , [TermLike variable]
         )
 unifyEqualsElementLists
@@ -1129,15 +1123,15 @@ unifyEqualsElementLists
     return (result, [])
   where
     unifyWithPermutations
-        :: [ConcreteOrWithVariable valueWrapper variable]
+        :: [ConcreteOrWithVariable normalized variable]
         -- ^ First structure elements
-        -> [ConcreteOrWithVariable valueWrapper variable]
+        -> [ConcreteOrWithVariable normalized variable]
         -- ^ Second structure elements
         -> unifier
             (Conditional variable
-                [(TermLike variable, valueWrapper (TermLike variable))]
-            , [ConcreteOrWithVariable valueWrapper variable]
-            , [ConcreteOrWithVariable valueWrapper variable]
+                [(TermLike variable, Domain.Value normalized (TermLike variable))]
+            , [ConcreteOrWithVariable normalized variable]
+            , [ConcreteOrWithVariable normalized variable]
             )
     unifyWithPermutations =
         unifyEqualsElementPermutations
@@ -1224,8 +1218,8 @@ unifyEqualsConcreteOrWithVariable
         , Unparse variable
         )
     => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
-    -> ConcreteOrWithVariable (Domain.Value normalized) variable
-    -> ConcreteOrWithVariable (Domain.Value normalized) variable
+    -> ConcreteOrWithVariable normalized variable
+    -> ConcreteOrWithVariable normalized variable
     -> unifier
         (Conditional
             variable
@@ -1376,17 +1370,17 @@ kPermutationsBacktracking transform firstList secondList =
 
 
 nonEmptyRemainderError
-    :: forall a valueWrapper variable
+    :: forall a normalized variable
     .   ( HasCallStack
         , SortedVariable variable
         , Unparse variable
-        , Unparse (valueWrapper (TermLike variable))
+        , Unparse (Domain.Value normalized (TermLike variable))
         )
     => TermLike variable
     -> TermLike variable
-    -> [ConcreteOrWithVariable valueWrapper variable]
-    -> [ConcreteOrWithVariable valueWrapper variable]
-    -> [ConcreteOrWithVariable valueWrapper variable]
+    -> [ConcreteOrWithVariable normalized variable]
+    -> [ConcreteOrWithVariable normalized variable]
+    -> [ConcreteOrWithVariable normalized variable]
     -> a
 nonEmptyRemainderError first second input1 input2 remainder =
     (error . unlines)
@@ -1402,7 +1396,7 @@ nonEmptyRemainderError first second input1 input2 remainder =
     unparseWrapped =
         Unparser.renderDefault . unparsePair . fromConcreteOrWithVariable
     unparsePair
-        :: (TermLike variable, valueWrapper (TermLike variable)) -> Doc ann
+        :: (TermLike variable, Domain.Value normalized (TermLike variable)) -> Doc ann
     unparsePair (key, value) = Unparser.arguments' [unparse key, unparse value]
 
 -- | Wrapper for giving names to arguments.

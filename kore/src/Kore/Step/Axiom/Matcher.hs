@@ -545,17 +545,17 @@ matchBuiltins qv (Builtin.BuiltinMap m1) (Builtin.BuiltinMap m2) =
 matchBuiltins _ _ _ = nothing
 
 matchAc
-    :: forall normalized unifier valueWrapper variable
+    :: forall normalized unifier variable
     .   ( Builtin.AcWrapper normalized
-        , Foldable valueWrapper
+        , Foldable (Builtin.Value normalized)
         , FreshVariable variable
         , Simplifier.MonadSimplify unifier
         , MonadUnify unifier
         , Ord variable
         , Show variable
         , SortedVariable variable
-        , Ac.TermWrapper normalized valueWrapper
-        , Traversable valueWrapper
+        , Ac.TermWrapper normalized
+        , Traversable (Builtin.Value normalized)
         , Unparse variable
         )
     => Map.Map variable variable
@@ -581,8 +581,8 @@ matchAc
     let intersection
             :: Map.Map
                 (TermLike Concrete)
-                ( valueWrapper (TermLike variable)
-                , valueWrapper (TermLike variable)
+                ( Builtin.Value normalized (TermLike variable)
+                , Builtin.Value normalized (TermLike variable)
                 )
         intersection = Map.intersectionWith (,) concrete1 concrete2
         remainder = Map.toList $ Map.difference concrete2 concrete1
@@ -614,8 +614,8 @@ matchAc
         _ -> nothing
   where
     matchElements
-        ::  ( (TermLike variable, valueWrapper (TermLike variable))
-            , (TermLike Concrete, valueWrapper (TermLike variable))
+        ::  ( (TermLike variable, Builtin.Value normalized (TermLike variable))
+            , (TermLike Concrete, Builtin.Value normalized (TermLike variable))
             )
         -> MaybeT unifier (Predicate variable)
     matchElements
@@ -627,8 +627,8 @@ matchAc
         return (keyUnifier <> wrappedValueUnifier)
 
     matchWrapped
-        ::  ( valueWrapper (TermLike variable)
-            , valueWrapper (TermLike variable)
+        ::  ( Builtin.Value normalized (TermLike variable)
+            , Builtin.Value normalized (TermLike variable)
             )
         -> MaybeT unifier (Predicate variable)
     matchWrapped (variableValue, concreteValue) = do
