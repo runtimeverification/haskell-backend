@@ -41,8 +41,6 @@ import           Kore.Internal.TermLike as TermLike
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Syntax.Variable
-                 ( SortedVariable (..) )
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import qualified Kore.Unification.Substitution as Substitution
