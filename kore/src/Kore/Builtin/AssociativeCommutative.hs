@@ -833,16 +833,7 @@ unifyEqualsNormalizedAc
             , Predicate variable
             )
     unifyElementList elements = do
-        result <-
-            mapM
-                (unifyCommonElements
-                    (\explanation ->
-                        Monad.Unify.explainAndReturnBottom
-                            explanation first second
-                    )
-                    unifyEqualsChildren
-                )
-                elements
+        result <- mapM (unifyCommonElements unifyEqualsChildren) elements
         let
             terms :: [(key, valueWrapper (TermLike variable))]
             predicates :: [Predicate variable]
@@ -1014,8 +1005,7 @@ unifyCommonElements
         , Traversable (Domain.Value normalized)
         , Unparse variable
         )
-    => (forall a . Doc () -> unifier a)
-    -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
+    => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     ->  ( key
         ,   ( Domain.Value normalized (TermLike variable)
             , Domain.Value normalized (TermLike variable)
@@ -1026,12 +1016,10 @@ unifyCommonElements
             (key, Domain.Value normalized (TermLike variable))
         )
 unifyCommonElements
-    bottomWithExplanation
     unifier
     (key, (firstValue, secondValue))
   = do
-    valuesUnifier <-
-        unifyWrappedValues bottomWithExplanation unifier firstValue secondValue
+    valuesUnifier <- unifyWrappedValues unifier firstValue secondValue
     let
         (valuesTerm, valuePredicate) = Conditional.splitTerm valuesUnifier
 
@@ -1047,18 +1035,14 @@ unifyWrappedValues
         , Traversable (Domain.Value normalized)
         , Unparse variable
         )
-    => (forall a . Doc () -> unifier a)
-    -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
+    => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     -> Domain.Value normalized (TermLike variable)
     -> Domain.Value normalized (TermLike variable)
     ->  unifier
             (Conditional variable (Domain.Value normalized (TermLike variable)))
-unifyWrappedValues bottomWithExplanation unifier firstValue secondValue = do
-    zippedValues <- case Domain.acExactZip firstValue secondValue of
-        Nothing -> bottomWithExplanation "Unmatched map values"
-        Just zipped -> return zipped
-
-    unifiedValues <- traverse (uncurry unifier) zippedValues
+unifyWrappedValues unifier firstValue secondValue = do
+    let aligned = Domain.alignValues firstValue secondValue
+    unifiedValues <- traverse (uncurry unifier) aligned
     let
         splitValues :: Domain.Value normalized (TermLike variable, Predicate variable)
         splitValues = fmap Pattern.splitTerm unifiedValues
@@ -1157,12 +1141,7 @@ unifyEqualsElementLists
             )
     unifyWithPermutations =
         unifyEqualsElementPermutations
-            (unifyEqualsConcreteOrWithVariable
-                (\explanation ->
-                    Monad.Unify.explainAndReturnBottom explanation first second
-                )
-                unifyEqualsChildren
-            )
+            (unifyEqualsConcreteOrWithVariable unifyEqualsChildren)
     remainderError = nonEmptyRemainderError first second
 unifyEqualsElementLists
     tools
@@ -1217,12 +1196,7 @@ unifyEqualsElementLists
   where
     unifyWithPermutations =
         unifyEqualsElementPermutations
-            (unifyEqualsConcreteOrWithVariable
-                (\explanation ->
-                    Monad.Unify.explainAndReturnBottom explanation first second
-                )
-                unifyEqualsChildren
-            )
+            (unifyEqualsConcreteOrWithVariable unifyEqualsChildren)
     remainderError = nonEmptyRemainderError first second
 
 {- |Unifies two patterns represented as @ConcreteOrWithVariable@, making sure
@@ -1249,8 +1223,7 @@ unifyEqualsConcreteOrWithVariable
         , Traversable (Domain.Value normalized)
         , Unparse variable
         )
-    => (forall a . Doc () -> unifier a)
-    -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
+    => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     -> ConcreteOrWithVariable (Domain.Value normalized) variable
     -> ConcreteOrWithVariable (Domain.Value normalized) variable
     -> unifier
@@ -1259,29 +1232,25 @@ unifyEqualsConcreteOrWithVariable
             (TermLike variable, Domain.Value normalized (TermLike variable))
         )
 unifyEqualsConcreteOrWithVariable
-    bottomWithExplanation
     unifier
     (ConcretePat concrete1)
     (ConcretePat concrete2)
-  = unifyEqualsPair bottomWithExplanation unifier concrete1 concrete2
+  = unifyEqualsPair unifier concrete1 concrete2
 unifyEqualsConcreteOrWithVariable
-    bottomWithExplanation
     unifier
     (ConcretePat concrete1)
     (WithVariablePat withVariable2)
-  = unifyEqualsPair bottomWithExplanation unifier concrete1 withVariable2
+  = unifyEqualsPair unifier concrete1 withVariable2
 unifyEqualsConcreteOrWithVariable
-    bottomWithExplanation
     unifier
     (WithVariablePat withVariable1)
     (ConcretePat concrete2)
-  = unifyEqualsPair bottomWithExplanation unifier concrete2 withVariable1
+  = unifyEqualsPair unifier concrete2 withVariable1
 unifyEqualsConcreteOrWithVariable
-    bottomWithExplanation
     unifier
     (WithVariablePat withVariable1)
     (WithVariablePat withVariable2)
-  = unifyEqualsPair bottomWithExplanation unifier withVariable1 withVariable2
+  = unifyEqualsPair unifier withVariable1 withVariable2
 
 unifyEqualsPair
     :: forall normalized unifier variable
@@ -1293,8 +1262,7 @@ unifyEqualsPair
         , Traversable (Domain.Value normalized)
         , Unparse variable
         )
-    => (forall a . Doc () -> unifier a)
-    -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
+    => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     -> (TermLike variable, Domain.Value normalized (TermLike variable))
     -> (TermLike variable, Domain.Value normalized (TermLike variable))
     -> unifier
@@ -1303,15 +1271,13 @@ unifyEqualsPair
             (TermLike variable, Domain.Value normalized (TermLike variable))
         )
 unifyEqualsPair
-    bottomWithExplanation
     unifier
     (firstKey, firstValue)
     (secondKey, secondValue)
   = do
     keyUnifier <- unifier firstKey secondKey
 
-    valueUnifier <-
-        unifyWrappedValues bottomWithExplanation unifier firstValue secondValue
+    valueUnifier <- unifyWrappedValues unifier firstValue secondValue
 
     let
         valueUnifierTerm :: Domain.Value normalized (TermLike variable)

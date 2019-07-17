@@ -632,10 +632,6 @@ matchAc
             )
         -> MaybeT unifier (Predicate variable)
     matchWrapped (variableValue, concreteValue) = do
-        wrappedValueUnifier <-
-            case Builtin.acExactZip variableValue concreteValue of
-                Nothing -> error "Cannot pair ac values"
-                Just zipped ->
-                    traverse (uncurry (match quantifiedVariables)) zipped
-        return (Foldable.fold wrappedValueUnifier)
+        let aligned = Builtin.alignValues variableValue concreteValue
+        Foldable.fold <$> traverse (uncurry (match quantifiedVariables)) aligned
 matchAc _ _ _ _ = nothing

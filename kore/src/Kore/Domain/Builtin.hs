@@ -250,18 +250,17 @@ class AcWrapper (normalized :: * -> * -> *) where
     {-| Pairs the values in two wrappers as they should be paired for
     unification.
     -}
-    -- TODO (thomas.tuegel): Rename acExactZip to alignValues
-    acExactZip
+    alignValues
         :: Value normalized a
         -> Value normalized b
-        -> Maybe (Value normalized (a, b))
+        -> Value normalized (a, b)
+
+    elementIso
+        :: Iso' (Element normalized child) (child, Value normalized child)
 
     unparseElement
         :: (child -> Pretty.Doc ann)
         -> Element normalized child -> Pretty.Doc ann
-
-    elementIso
-        :: Iso' (Element normalized child) (child, Value normalized child)
 
     unparseConcreteElement
         :: (key -> Pretty.Doc ann)
@@ -416,7 +415,7 @@ instance AcWrapper NormalizedMap where
 
     wrapAc = NormalizedMap
     unwrapAc = getNormalizedMap
-    acExactZip (MapValue a) (MapValue b) = Just (MapValue (a, b))
+    alignValues (MapValue a) (MapValue b) = MapValue (a, b)
 
     elementIso =
         Lens.iso
@@ -496,7 +495,7 @@ instance AcWrapper NormalizedSet where
 
     wrapAc = NormalizedSet
     unwrapAc = getNormalizedSet
-    acExactZip _ _ = Just SetValue
+    alignValues _ _ = SetValue
 
     elementIso = Lens.iso (flip (,) SetValue . getSetElement) (SetElement . fst)
 
