@@ -28,7 +28,7 @@ import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.SetSymbols as Set
 import           Kore.Domain.Builtin
-                 ( NormalizedAc (NormalizedAc) )
+                 ( NormalizedAc (NormalizedAc), NormalizedSet )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
@@ -1652,7 +1652,7 @@ asPattern concreteSet = Reflection.give testMetadataTools
         setSort
         NormalizedAc
             { elementsWithVariables = []
-            , concreteElements = Map.fromSet (const Domain.NoValue) concreteSet
+            , concreteElements = Map.fromSet (const Domain.SetValue) concreteSet
             , opaque = []
             }
 
@@ -1660,11 +1660,11 @@ asPattern concreteSet = Reflection.give testMetadataTools
 asInternal :: Set (TermLike Concrete) -> TermLike Variable
 asInternal =
     Ac.asInternalConcrete testMetadataTools setSort
-    . Map.fromSet (const Domain.NoValue)
+    . Map.fromSet (const Domain.SetValue)
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 asInternalNormalized
-    :: NormalizedAc (TermLike Concrete) Domain.NoValue (TermLike Variable)
+    :: NormalizedAc NormalizedSet (TermLike Concrete) (TermLike Variable)
     -> TermLike Variable
 asInternalNormalized = Ac.asInternal testMetadataTools setSort
 

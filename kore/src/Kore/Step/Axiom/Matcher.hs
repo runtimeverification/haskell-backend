@@ -546,7 +546,7 @@ matchBuiltins _ _ _ = nothing
 
 matchAc
     :: forall normalized unifier valueWrapper variable
-    .   ( Builtin.AcWrapper normalized valueWrapper
+    .   ( Builtin.AcWrapper normalized
         , Foldable valueWrapper
         , FreshVariable variable
         , Simplifier.MonadSimplify unifier
@@ -560,8 +560,8 @@ matchAc
         )
     => Map.Map variable variable
     -> Sort
-    -> Builtin.NormalizedAc (TermLike Concrete) valueWrapper (TermLike variable)
-    -> Builtin.NormalizedAc (TermLike Concrete) valueWrapper (TermLike variable)
+    -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
+    -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
     -> MaybeT unifier (Predicate variable)
 matchAc
     quantifiedVariables

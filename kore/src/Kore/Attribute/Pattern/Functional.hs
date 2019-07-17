@@ -138,8 +138,8 @@ instance Synthetic (Builtin key) Functional where
     {-# INLINE synthetic #-}
 
 normalizedAcFunctional
-    :: Foldable valueWrapper
-    => NormalizedAc key valueWrapper Functional -> Functional
+    :: Foldable (Value collection)
+    => NormalizedAc collection key Functional -> Functional
 normalizedAcFunctional ac@(NormalizedAc _ _ _) =
     case ac of
         NormalizedAc

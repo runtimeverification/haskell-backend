@@ -102,7 +102,10 @@ There is a bijection between @normalized@ and @valueWrapper@ types
 (see @Domain.AcWrapper@).
 -}
 class
-    (Domain.AcWrapper (normalized :: * -> * -> *) (valueWrapper :: * -> *))
+    ( Domain.AcWrapper (normalized :: * -> * -> *)
+    , valueWrapper ~ Domain.Value normalized
+    )
+    -- TODO (thomas.tuegel): Remove second parameter
     => TermWrapper normalized valueWrapper
   where
     {- | Render a normalized value (e.g. 'NormalizedSet') as a Domain.Builtin.
@@ -129,9 +132,9 @@ class
         :: Ord variable
         => SmtMetadataTools Attribute.Symbol
         -> TermLike variable
-        -> NormalizedOrBottom valueWrapper variable
+        -> NormalizedOrBottom normalized variable
 
-instance TermWrapper Domain.NormalizedMap Domain.Value where
+instance TermWrapper Domain.NormalizedMap Domain.MapValue where
     {- | Render a 'NormalizedMap' as a Domain.Builtin.
 
     The result sort must be hooked to the builtin @Map@ sort.
@@ -168,7 +171,7 @@ instance TermWrapper Domain.NormalizedMap Domain.Value where
         case args of
             [key, value] ->
                 Normalized Domain.NormalizedAc
-                    { elementsWithVariables = [(key, Domain.Value value)]
+                    { elementsWithVariables = [(key, Domain.MapValue value)]
                     , concreteElements = Map.empty
                     , opaque = []
                     }
@@ -187,7 +190,7 @@ instance TermWrapper Domain.NormalizedMap Domain.Value where
             , opaque = [patt]
             }
 
-instance TermWrapper Domain.NormalizedSet Domain.NoValue where
+instance TermWrapper Domain.NormalizedSet Domain.SetValue where
     {- | Render a 'NormalizedSet' as a Domain.Builtin.
 
     The result sort must be hooked to the builtin @Set@ sort.
@@ -224,7 +227,7 @@ instance TermWrapper Domain.NormalizedSet Domain.NoValue where
         case args of
             [elem1] ->
                 Normalized Domain.NormalizedAc
-                    { elementsWithVariables = [(elem1, Domain.NoValue)]
+                    { elementsWithVariables = [(elem1, Domain.SetValue)]
                     , concreteElements = Map.empty
                     , opaque = []
                     }
@@ -258,26 +261,28 @@ fromConcreteOrWithVariable (WithVariablePat result) = result
 
 {- | Particularizes @Domain.NormalizedAc@ to the most common types.
 -}
-type TermNormalizedAc valueWrapper variable =
-    Domain.NormalizedAc (TermLike Concrete) valueWrapper (TermLike variable)
+type TermNormalizedAc collection variable =
+    Domain.NormalizedAc collection (TermLike Concrete) (TermLike variable)
 
 {-| A normalized representation of an associative-commutative structure that
 also allows bottom values.
 -}
-data NormalizedOrBottom valueWrapper variable
-    = Normalized (TermNormalizedAc valueWrapper variable)
+data NormalizedOrBottom collection variable
+    = Normalized (TermNormalizedAc collection variable)
     | Bottom
 
-deriving instance (Eq variable, Eq (valueWrapper (TermLike variable)))
-    => Eq (NormalizedOrBottom valueWrapper variable)
+deriving instance
+    (Eq variable, Eq (Domain.Value collection (TermLike variable))) =>
+    Eq (NormalizedOrBottom collection variable)
 
-deriving instance (Show variable, Show (valueWrapper (TermLike variable)))
-    => Show (NormalizedOrBottom valueWrapper variable)
+deriving instance
+    (Show variable, Show (Domain.Value collection (TermLike variable))) =>
+    Show (NormalizedOrBottom collection variable)
 
 {- | The semigroup defined by the `concat` operation.
 -}
 instance Ord variable
-    => Semigroup (NormalizedOrBottom valueWrapper variable)
+    => Semigroup (NormalizedOrBottom collection variable)
   where
     Bottom <> _ = Bottom
     _ <> Bottom = Bottom
@@ -357,7 +362,7 @@ returnAc
         , TermWrapper normalized valueWrapper
         )
     => Sort
-    -> TermNormalizedAc valueWrapper variable
+    -> TermNormalizedAc normalized variable
     -> m (AttemptedAxiom variable)
 returnAc resultSort ac = do
     tools <- Simplifier.askMetadataTools
@@ -402,7 +407,7 @@ asInternal
         )
     => SmtMetadataTools Attribute.Symbol
     -> Sort
-    -> TermNormalizedAc valueWrapper variable
+    -> TermNormalizedAc normalized variable
     -> TermLike variable
 asInternal tools builtinAcSort builtinAcChild =
     mkBuiltin
@@ -464,7 +469,7 @@ asPattern
         , TermWrapper normalized valueWrapper
         )
     => Sort
-    -> TermNormalizedAc valueWrapper variable
+    -> TermNormalizedAc normalized variable
     -> Pattern variable
 asPattern resultSort =
     Pattern.fromTermLike . asInternal tools resultSort
@@ -483,8 +488,8 @@ evalConcatNormalizedOrBottom
         , TermWrapper normalized valueWrapper
         )
     => Sort
-    -> NormalizedOrBottom valueWrapper variable
-    -> NormalizedOrBottom valueWrapper variable
+    -> NormalizedOrBottom normalized variable
+    -> NormalizedOrBottom normalized variable
     -> MaybeT m (AttemptedAxiom variable)
 evalConcatNormalizedOrBottom _ Bottom _ = return emptyAttemptedAxiom
 evalConcatNormalizedOrBottom _ _ Bottom = return emptyAttemptedAxiom
@@ -500,9 +505,9 @@ evalConcatNormalizedOrBottom
     concatNormalized
         :: forall child key
         .  (Ord key, Ord child)
-        => Domain.NormalizedAc key valueWrapper child
-        -> Domain.NormalizedAc key valueWrapper child
-        -> Maybe (Domain.NormalizedAc key valueWrapper child)
+        => Domain.NormalizedAc normalized key child
+        -> Domain.NormalizedAc normalized key child
+        -> Maybe (Domain.NormalizedAc normalized key child)
     -- The NormalizedAc matching is useful only for getting
     -- notified when new fields are being added.
     concatNormalized ac1@(Domain.NormalizedAc _ _ _) ac2 = do
@@ -609,7 +614,7 @@ unifyEqualsNormalized
             firstNormalized
             secondNormalized
     let
-        unifierNormalizedTerm :: TermNormalizedAc valueWrapper variable
+        unifierNormalizedTerm :: TermNormalizedAc normalized variable
         unifierPredicate :: Predicate variable
         (unifierNormalizedTerm, unifierPredicate) =
             Conditional.splitTerm unifierNormalized
@@ -631,7 +636,7 @@ unifyEqualsNormalized
             , Ord variable
             )
         => TermLike variable
-        -> MaybeT unifier (TermNormalizedAc valueWrapper variable)
+        -> MaybeT unifier (TermNormalizedAc normalized variable)
     normalize1 patt =
         case toNormalized tools patt of
             Bottom -> Monad.Trans.lift $ Monad.Unify.explainAndReturnBottom
@@ -659,11 +664,11 @@ unifyEqualsNormalizedAc
     -> TermLike variable
     -> TermLike variable
     -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
-    -> TermNormalizedAc valueWrapper variable
-    -> TermNormalizedAc valueWrapper variable
+    -> TermNormalizedAc normalized variable
+    -> TermNormalizedAc normalized variable
     -> MaybeT
         unifier
-        (Conditional variable (TermNormalizedAc valueWrapper variable))
+        (Conditional variable (TermNormalizedAc normalized variable))
 unifyEqualsNormalizedAc
     tools
     first
@@ -891,7 +896,7 @@ buildResultFromUnifiers
         ]
     -> [Pattern variable]
     -> [Predicate variable]
-    -> unifier (Conditional variable (TermNormalizedAc valueWrapper variable))
+    -> unifier (Conditional variable (TermNormalizedAc normalized variable))
 buildResultFromUnifiers
     tools
     bottomWithExplanation
@@ -913,8 +918,7 @@ buildResultFromUnifiers
 
         (opaquesTerms, opaquesPredicates) =
             unzip (map Conditional.splitTerm opaquesSimplified)
-        opaquesNormalized
-            :: NormalizedOrBottom valueWrapper variable
+        opaquesNormalized :: NormalizedOrBottom normalized variable
         opaquesNormalized =
             Foldable.fold (map (toNormalized tools) opaquesTerms)
 
@@ -955,8 +959,8 @@ buildResultFromUnifiers
             :: Conditional
                 variable
                 (Domain.NormalizedAc
+                    normalized
                     (TermLike Concrete)
-                    valueWrapper
                     (TermLike variable)
                 )
         result = Domain.NormalizedAc
@@ -981,21 +985,26 @@ addAllDisjoint bottomWithExplanation existing elements =
         Just result -> return result
 
 unifyCommonElements
-    :: forall key normalized unifier valueWrapper variable
-    .   ( Domain.AcWrapper normalized valueWrapper
+    :: forall key normalized unifier variable
+    .   ( Domain.AcWrapper normalized
         , MonadUnify unifier
         , Ord variable
         , Show variable
         , SortedVariable variable
-        , Traversable valueWrapper
+        , Traversable (Domain.Value normalized)
         , Unparse variable
         )
     => (forall a . Doc () -> unifier a)
     -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     ->  ( key
-        , (valueWrapper (TermLike variable), valueWrapper (TermLike variable))
+        ,   ( Domain.Value normalized (TermLike variable)
+            , Domain.Value normalized (TermLike variable)
+            )
         )
-    -> unifier (Conditional variable (key, valueWrapper (TermLike variable)))
+    ->  unifier
+        ( Conditional variable
+            (key, Domain.Value normalized (TermLike variable))
+        )
 unifyCommonElements
     bottomWithExplanation
     unifier
@@ -1009,20 +1018,21 @@ unifyCommonElements
     return ((key, valuesTerm) `withCondition` valuePredicate)
 
 unifyWrappedValues
-    :: forall normalized unifier valueWrapper variable
-    .   ( Domain.AcWrapper normalized valueWrapper
+    :: forall normalized unifier variable
+    .   ( Domain.AcWrapper normalized
         , MonadUnify unifier
         , Ord variable
         , Show variable
         , SortedVariable variable
-        , Traversable valueWrapper
+        , Traversable (Domain.Value normalized)
         , Unparse variable
         )
     => (forall a . Doc () -> unifier a)
     -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
-    -> valueWrapper (TermLike variable)
-    -> valueWrapper (TermLike variable)
-    -> unifier (Conditional variable (valueWrapper (TermLike variable)))
+    -> Domain.Value normalized (TermLike variable)
+    -> Domain.Value normalized (TermLike variable)
+    ->  unifier
+            (Conditional variable (Domain.Value normalized (TermLike variable)))
 unifyWrappedValues bottomWithExplanation unifier firstValue secondValue = do
     zippedValues <- case Domain.acExactZip firstValue secondValue of
         Nothing -> bottomWithExplanation "Unmatched map values"
@@ -1030,11 +1040,11 @@ unifyWrappedValues bottomWithExplanation unifier firstValue secondValue = do
 
     unifiedValues <- traverse (uncurry unifier) zippedValues
     let
-        splitValues :: valueWrapper (TermLike variable, Predicate variable)
+        splitValues :: Domain.Value normalized (TermLike variable, Predicate variable)
         splitValues = fmap Pattern.splitTerm unifiedValues
-        valueUnifierTerm :: valueWrapper (TermLike variable)
+        valueUnifierTerm :: Domain.Value normalized (TermLike variable)
         valueUnifierTerm = fmap fst splitValues
-        valuePredicates :: valueWrapper (Predicate variable)
+        valuePredicates :: Domain.Value normalized (Predicate variable)
         valuePredicates = fmap snd splitValues
         valueUnifierPredicate :: Predicate variable
         valueUnifierPredicate =
@@ -1051,7 +1061,7 @@ The keys of the two structures are assumend to be disjoint.
 -}
 unifyEqualsElementLists
     ::  forall normalized valueWrapper variable unifier
-    .   ( Domain.AcWrapper normalized valueWrapper
+    .   ( Domain.AcWrapper normalized
         , FreshVariable variable
         , MonadUnify unifier
         , Show variable
@@ -1211,22 +1221,22 @@ and it would probably be more useful to have a concrete term as the
 unification term. Also, tests are easier to write.
 -}
 unifyEqualsConcreteOrWithVariable
-    ::  ( Domain.AcWrapper normalized valueWrapper
+    ::  ( Domain.AcWrapper normalized
         , MonadUnify unifier
         , Ord variable
         , Show variable
         , SortedVariable variable
-        , Traversable valueWrapper
+        , Traversable (Domain.Value normalized)
         , Unparse variable
         )
     => (forall a . Doc () -> unifier a)
     -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
-    -> ConcreteOrWithVariable valueWrapper variable
-    -> ConcreteOrWithVariable valueWrapper variable
+    -> ConcreteOrWithVariable (Domain.Value normalized) variable
+    -> ConcreteOrWithVariable (Domain.Value normalized) variable
     -> unifier
         (Conditional
             variable
-            (TermLike variable, valueWrapper (TermLike variable))
+            (TermLike variable, Domain.Value normalized (TermLike variable))
         )
 unifyEqualsConcreteOrWithVariable
     bottomWithExplanation
@@ -1254,23 +1264,23 @@ unifyEqualsConcreteOrWithVariable
   = unifyEqualsPair bottomWithExplanation unifier withVariable1 withVariable2
 
 unifyEqualsPair
-    :: forall normalized unifier valueWrapper variable
-    .   ( Domain.AcWrapper normalized valueWrapper
+    :: forall normalized unifier variable
+    .   ( Domain.AcWrapper normalized
         , MonadUnify unifier
         , Ord variable
         , Show variable
         , SortedVariable variable
-        , Traversable valueWrapper
+        , Traversable (Domain.Value normalized)
         , Unparse variable
         )
     => (forall a . Doc () -> unifier a)
     -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
-    -> (TermLike variable, valueWrapper (TermLike variable))
-    -> (TermLike variable, valueWrapper (TermLike variable))
+    -> (TermLike variable, Domain.Value normalized (TermLike variable))
+    -> (TermLike variable, Domain.Value normalized (TermLike variable))
     -> unifier
         (Conditional
             variable
-            (TermLike variable, valueWrapper (TermLike variable))
+            (TermLike variable, Domain.Value normalized (TermLike variable))
         )
 unifyEqualsPair
     bottomWithExplanation
@@ -1284,7 +1294,7 @@ unifyEqualsPair
         unifyWrappedValues bottomWithExplanation unifier firstValue secondValue
 
     let
-        valueUnifierTerm :: valueWrapper (TermLike variable)
+        valueUnifierTerm :: Domain.Value normalized (TermLike variable)
         valueUnifierPredicate :: Predicate variable
         (valueUnifierTerm, valueUnifierPredicate) =
             Conditional.splitTerm valueUnifier
