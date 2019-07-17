@@ -31,6 +31,7 @@ module Kore.Step.Rule
     , refreshRulePattern
     , onePathRuleToPattern
     , Kore.Step.Rule.freeVariables
+    , Kore.Step.Rule.freeSetVariables
     , Kore.Step.Rule.mapVariables
     , Kore.Step.Rule.substitute
     ) where
@@ -48,6 +49,8 @@ import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
+import           Kore.Attribute.Pattern.FreeSetVariables
+                 ( FreeSetVariables )
 import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
@@ -563,6 +566,17 @@ freeVariables RulePattern { left, right, requires } =
     TermLike.freeVariables left
     <> TermLike.freeVariables right
     <> Predicate.freeVariables requires
+
+{- | Extract the free set variables of a 'RulePattern'.
+ -}
+freeSetVariables
+    :: Ord variable
+    => RulePattern variable
+    -> FreeSetVariables variable
+freeSetVariables RulePattern { left, right, requires } =
+    TermLike.freeSetVariables left
+    <> TermLike.freeSetVariables right
+    <> Predicate.freeSetVariables requires
 
 {- | Apply the given function to all variables in a 'RulePattern'.
  -}

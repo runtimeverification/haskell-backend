@@ -59,6 +59,7 @@ import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT
                  ( resolve )
 import           Kore.Syntax.Application
+import           Kore.Syntax.SetVariable
 import           Kore.Syntax.Variable
 import           Kore.Unparser
 import qualified SMT.AST as SMT
@@ -492,10 +493,14 @@ var_z_1 :: Variable
 var_z_1 = Variable (testId "z") (Just (Element 1)) testSort
 x :: Variable
 x = Variable (testId "x") mempty testSort
+setX :: SetVariable Variable
+setX = SetVariable x
 x0 :: Variable
 x0 = Variable (testId "x") mempty testSort0
 y :: Variable
 y = Variable (testId "y") mempty testSort
+setY :: SetVariable Variable
+setY = SetVariable y
 z :: Variable
 z = Variable (testId "z") mempty testSort
 m :: Variable

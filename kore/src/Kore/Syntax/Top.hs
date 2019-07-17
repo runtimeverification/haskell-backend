@@ -14,6 +14,7 @@ import           Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Pattern.FreeSetVariables
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -46,6 +47,10 @@ instance Unparse (Top Sort child) where
     unparse2 _ = "\\top"
 
 instance Ord variable => Synthetic (Top sort) (FreeVariables variable) where
+    synthetic = const mempty
+    {-# INLINE synthetic #-}
+
+instance Ord variable => Synthetic (Top sort) (FreeSetVariables variable) where
     synthetic = const mempty
     {-# INLINE synthetic #-}
 
