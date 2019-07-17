@@ -4,16 +4,8 @@ License     : NCSA
 
  -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Attribute.Pattern
     ( Pattern (..)
-    , lensFreeVariables
-    , lensFreeSetVariables
-    , lensPatternSort
-    , lensFunctional
-    , lensFunction
-    , lensDefined
     , mapVariables
     , traverseVariables
     , deleteFreeVariable
@@ -23,13 +15,12 @@ module Kore.Attribute.Pattern
 import           Control.DeepSeq
                  ( NFData )
 import qualified Control.Lens as Lens
+import           Data.Generics.Product
 import           Data.Hashable
                  ( Hashable (..) )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Control.Lens.TH.Rules
-       ( makeLenses )
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeSetVariables
 import Kore.Attribute.Pattern.FreeVariables
@@ -55,8 +46,6 @@ data Pattern variable =
         , defined :: !Defined
         }
     deriving (Eq, GHC.Generic, Show)
-
-makeLenses ''Pattern
 
 instance NFData variable => NFData (Pattern variable)
 
@@ -131,7 +120,7 @@ deleteFreeVariable
     -> Pattern variable
     -> Pattern variable
 deleteFreeVariable variable =
-    Lens.over lensFreeVariables (bindVariable variable)
+    Lens.over typed (bindVariable variable)
 
 {- | Delete the given variable from the set of free variables.
  -}
@@ -141,4 +130,4 @@ deleteFreeSetVariable
     -> Pattern variable
     -> Pattern variable
 deleteFreeSetVariable variable =
-    Lens.over lensFreeSetVariables (bindSetVariable variable)
+    Lens.over typed (bindSetVariable variable)

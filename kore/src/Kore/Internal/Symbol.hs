@@ -4,14 +4,8 @@ License     : NCSA
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Internal.Symbol
     ( Symbol (..)
-    , lensSymbolConstructor
-    , lensSymbolParams
-    , lensSymbolAttributes
-    , lensSymbolSorts
     , toSymbolOrAlias
     , isNonSimplifiable
     , isConstructor
@@ -38,13 +32,13 @@ import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function
+import           Data.Generics.Product
 import           Data.Hashable
 import           Data.Text
                  ( Text )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import qualified Control.Lens.TH.Rules as Lens
 import           Kore.Attribute.Pattern.FreeSetVariables
 import           Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Symbol as Attribute
@@ -65,8 +59,6 @@ data Symbol =
         , symbolAttributes  :: !Attribute.Symbol
         }
     deriving (GHC.Generic, Show)
-
-Lens.makeLenses ''Symbol
 
 instance Eq Symbol where
     (==) a b =
@@ -172,43 +164,43 @@ symbolHook = Attribute.hook . symbolAttributes
 constructor :: Symbol -> Symbol
 constructor =
     Lens.set
-        (lensSymbolAttributes . Attribute.lensConstructor)
+        (typed @Attribute.Symbol . typed @Attribute.Constructor)
         Attribute.Constructor { isConstructor = True }
 
 functional :: Symbol -> Symbol
 functional =
     Lens.set
-        (lensSymbolAttributes . Attribute.lensFunctional)
+        (typed @Attribute.Symbol . typed @Attribute.Functional)
         Attribute.Functional { isDeclaredFunctional = True }
 
 function :: Symbol -> Symbol
 function =
     Lens.set
-        (lensSymbolAttributes . Attribute.lensFunction)
+        (typed @Attribute.Symbol . typed @Attribute.Function)
         Attribute.Function { isDeclaredFunction = True }
 
 injective :: Symbol -> Symbol
 injective =
     Lens.set
-        (lensSymbolAttributes . Attribute.lensInjective)
+        (typed @Attribute.Symbol . typed @Attribute.Injective)
         Attribute.Injective { isDeclaredInjective = True }
 
 sortInjection :: Symbol -> Symbol
 sortInjection =
     Lens.set
-        (lensSymbolAttributes . Attribute.lensSortInjection)
+        (typed @Attribute.Symbol . typed @Attribute.SortInjection)
         Attribute.SortInjection { isSortInjection = True }
 
 smthook :: SExpr -> Symbol -> Symbol
 smthook sExpr =
     Lens.set
-        (lensSymbolAttributes . Attribute.lensSmthook)
+        (typed @Attribute.Symbol . typed @Attribute.Smthook)
         Attribute.Smthook { getSmthook = Just sExpr }
 
 hook :: Text -> Symbol -> Symbol
 hook name =
     Lens.set
-        (lensSymbolAttributes . Attribute.lensHook)
+        (typed @Attribute.Symbol . typed @Attribute.Hook)
         Attribute.Hook { getHook = Just name }
 
 {- | Coerce a sort injection symbol's source and target sorts.

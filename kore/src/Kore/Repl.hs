@@ -29,6 +29,7 @@ import           Control.Monad.State.Strict
                  ( MonadState, StateT, evalStateT )
 import           Data.Coerce
                  ( coerce )
+import           Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.List
                  ( findIndex )
@@ -112,7 +113,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
     repl0 = do
         str <- prompt
         let command = maybe ShowUsage id $ parseMaybe commandParser str
-        when (shouldStore command) $ lensCommands Lens.%= (Seq.|> str)
+        when (shouldStore command) $ field @"commands" Lens.%= (Seq.|> str)
         void $ replInterpreter printIfNotEmpty command
 
     state :: ReplState claim
@@ -181,7 +182,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
 
     mapAttribute :: Int -> Attribute.Axiom -> Attribute.Axiom
     mapAttribute n attr =
-        Lens.over Attribute.lensIdentifier (makeRuleIndex n) attr
+        Lens.over (field @"identifier") (makeRuleIndex n) attr
 
     makeRuleIndex :: Int -> RuleIndex -> RuleIndex
     makeRuleIndex n _ = RuleIndex (Just n)
@@ -221,7 +222,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
 
     prompt :: MonadIO n => MonadState (ReplState claim) n => n String
     prompt = do
-        node <- Lens.use lensNode
+        node <- Lens.use (field @"node")
         liftIO $ do
             putStr $ "Kore (" <> show (unReplNode node) <> ")> "
             hFlush stdout

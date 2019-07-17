@@ -4,15 +4,12 @@ License     : NCSA
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Syntax.Nu
     ( Nu (..)
     ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import qualified Data.Deriving as Deriving
 import           Data.Function
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -39,10 +36,6 @@ data Nu variable child = Nu
     , nuChild    :: child
     }
     deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-Deriving.deriveEq1 ''Nu
-Deriving.deriveOrd1 ''Nu
-Deriving.deriveShow1 ''Nu
 
 instance (Hashable variable, Hashable child) => Hashable (Nu variable child)
 

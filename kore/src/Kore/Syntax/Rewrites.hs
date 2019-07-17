@@ -4,15 +4,12 @@ License     : NCSA
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Syntax.Rewrites
     ( Rewrites (..)
     ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import qualified Data.Deriving as Deriving
 import qualified Data.Foldable as Foldable
 import           Data.Function
 import           Data.Hashable
@@ -40,10 +37,6 @@ data Rewrites sort child = Rewrites
     , rewritesSecond :: child
     }
     deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-Deriving.deriveEq1 ''Rewrites
-Deriving.deriveOrd1 ''Rewrites
-Deriving.deriveShow1 ''Rewrites
 
 instance (Hashable sort, Hashable child) => Hashable (Rewrites sort child)
 

@@ -4,15 +4,12 @@ License     : NCSA
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Syntax.Or
     ( Or (..)
     ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import qualified Data.Deriving as Deriving
 import qualified Data.Foldable as Foldable
 import           Data.Function
 import           Data.Hashable
@@ -40,10 +37,6 @@ data Or sort child = Or
     , orSecond :: child
     }
     deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-Deriving.deriveEq1 ''Or
-Deriving.deriveOrd1 ''Or
-Deriving.deriveShow1 ''Or
 
 instance (Hashable sort, Hashable child) => Hashable (Or sort child)
 

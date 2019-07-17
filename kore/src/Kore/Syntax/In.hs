@@ -4,15 +4,12 @@ License     : NCSA
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Syntax.In
     ( In (..)
     ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import qualified Data.Deriving as Deriving
 import qualified Data.Foldable as Foldable
 import           Data.Function
 import           Data.Hashable
@@ -43,10 +40,6 @@ data In sort child = In
     , inContainingChild :: child
     }
     deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-Deriving.deriveEq1 ''In
-Deriving.deriveOrd1 ''In
-Deriving.deriveShow1 ''In
 
 instance (Hashable sort, Hashable child) => Hashable (In sort child)
 

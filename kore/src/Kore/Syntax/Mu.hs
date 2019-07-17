@@ -4,15 +4,12 @@ License     : NCSA
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Syntax.Mu
     ( Mu (..)
     ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import qualified Data.Deriving as Deriving
 import           Data.Function
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -39,10 +36,6 @@ data Mu variable child = Mu
     , muChild    :: child
     }
     deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-Deriving.deriveEq1 ''Mu
-Deriving.deriveOrd1 ''Mu
-Deriving.deriveShow1 ''Mu
 
 instance (Hashable variable, Hashable child) => Hashable (Mu variable child)
 

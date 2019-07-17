@@ -6,17 +6,10 @@ License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Domain.Builtin
     ( Builtin (..)
     , builtinSort
     , InternalList (..)
-    , lensBuiltinListSort
-    , lensBuiltinListUnit
-    , lensBuiltinListElement
-    , lensBuiltinListConcat
-    , lensBuiltinListChild
     , InternalMap
     , NormalizedMap (..)
     , Value (..)
@@ -27,20 +20,9 @@ module Kore.Domain.Builtin
     , InternalAc (..)
     , NormalizedAc (..)
     , emptyNormalizedAc
-    , lensBuiltinAcSort
-    , lensBuiltinAcUnit
-    , lensBuiltinAcElement
-    , lensBuiltinAcConcat
-    , lensBuiltinAcChild
     , InternalInt (..)
-    , lensBuiltinIntSort
-    , lensBuiltinIntValue
     , InternalBool (..)
-    , lensBuiltinBoolSort
-    , lensBuiltinBoolValue
     , InternalString (..)
-    , lensInternalStringSort
-    , lensInternalStringValue
     , Domain (..)
     ) where
 
@@ -59,8 +41,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Control.Lens.TH.Rules
-       ( makeLenses )
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Domain.Class
@@ -633,12 +613,6 @@ builtinSort builtin =
 instance Synthetic (Builtin key) Sort where
     synthetic = builtinSort
     {-# INLINE synthetic #-}
-
-makeLenses ''InternalList
-makeLenses ''InternalAc
-makeLenses ''InternalInt
-makeLenses ''InternalBool
-makeLenses ''InternalString
 
 instance Domain (Builtin key) where
     lensDomainValue mapDomainValue builtin =

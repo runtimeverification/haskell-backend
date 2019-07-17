@@ -4,15 +4,12 @@ License     : NCSA
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Syntax.Next
     ( Next (..)
     ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import qualified Data.Deriving as Deriving
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
@@ -36,10 +33,6 @@ data Next sort child = Next
     , nextChild :: child
     }
     deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-Deriving.deriveEq1 ''Next
-Deriving.deriveOrd1 ''Next
-Deriving.deriveShow1 ''Next
 
 instance (Hashable sort, Hashable child) => Hashable (Next sort child)
 
