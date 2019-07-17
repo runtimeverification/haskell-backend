@@ -42,10 +42,15 @@ test_instance_Synthetic =
     , testGroup "NuF" $ map (isn't . NuF) (Nu (SetVariable Mock.x) <$> range)
     , testGroup "SetVariableF" [ isn't $ SetVariableF (SetVariable Mock.x) ]
     -- Interesting cases
-    , testGroup "ApplySymbolF" $ do
-        x <- range
-        y <- range
-        [ expect (x <> y) $ ApplySymbolF $ Application sigma [x, y] ]
+    , testGroup "ApplySymbolF"
+        [ testGroup "functional" $ do
+            x <- range
+            y <- range
+            [ expect (x <> y) $ ApplySymbolF $ Application sigma [x, y] ]
+        , testGroup "non-functional" $ do
+            x <- range
+            [ expect nonDefined $ ApplySymbolF $ Application plain [x] ]
+        ]
     , testGroup "DomainValueF" $ do
         x <- range
         [ expect x $ DomainValueF (DomainValue sort x)]
@@ -89,6 +94,7 @@ test_instance_Synthetic =
   where
     sort = Mock.testSort
     sigma = Mock.sigmaSymbol
+    plain = Mock.plain10Symbol
 
     defined = Defined True
     nonDefined = Defined False

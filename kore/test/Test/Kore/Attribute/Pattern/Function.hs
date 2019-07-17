@@ -17,10 +17,15 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 test_instance_Synthetic :: [TestTree]
 test_instance_Synthetic =
     [ testGroup "AndF" $ map (isn't . AndF) (And sort <$> range <*> range)
-    , testGroup "ApplySymbolF" $ do
-        x <- range
-        y <- range
-        [ expect (x <> y) $ ApplySymbolF $ Application sigma [x, y] ]
+    , testGroup "ApplySymbolF"
+        [ testGroup "function" $ do
+            x <- range
+            y <- range
+            [ expect (x <> y) $ ApplySymbolF $ Application sigma [x, y] ]
+        , testGroup "non-function" $ do
+            x <- range
+            [ expect nonFunction $ ApplySymbolF $ Application plain [x] ]
+        ]
     , testGroup "BottomF" [ is $ BottomF (Bottom sort) ]
     , testGroup "CeilF" $ map (isn't . CeilF) (Ceil sort sort <$> range)
     , testGroup "DomainValueF" $ do
@@ -51,6 +56,7 @@ test_instance_Synthetic =
   where
     sort = Mock.testSort
     sigma = Mock.sigmaSymbol
+    plain = Mock.plain10Symbol
 
     function = Function True
     nonFunction = Function False
