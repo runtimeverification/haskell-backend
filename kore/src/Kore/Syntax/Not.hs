@@ -15,6 +15,7 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Pattern.FreeSetVariables
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -59,6 +60,10 @@ instance TopBottom child => TopBottom (Not sort child) where
     isBottom = isTop . notChild
 
 instance Ord variable => Synthetic (Not child) (FreeVariables variable) where
+    synthetic = notChild
+    {-# INLINE synthetic #-}
+
+instance Ord variable => Synthetic (Not child) (FreeSetVariables variable) where
     synthetic = notChild
     {-# INLINE synthetic #-}
 
