@@ -354,9 +354,6 @@ unparseInternalAc keyUnparser childUnparser builtinAc =
 
 {- | Wrapper for map values.
 -}
--- newtype MapValue child = MapValue { getMapValue :: child }
---     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
-
 type MapValue = Value NormalizedMap
 
 instance Hashable child => Hashable (MapValue child) where
@@ -370,6 +367,8 @@ instance SOP.HasDatatypeInfo (MapValue child)
 
 instance Debug child => Debug (MapValue child)
 
+{- | Wrapper for map elements.
+ -}
 type MapElement = Element NormalizedMap
 
 instance Hashable child => Hashable (MapElement child) where
@@ -445,6 +444,8 @@ instance SOP.HasDatatypeInfo (SetValue child)
 
 instance Debug (SetValue child)
 
+{- | Wrapper for set elements.
+-}
 type SetElement = Element NormalizedSet
 
 instance Hashable child => Hashable (SetElement child) where
