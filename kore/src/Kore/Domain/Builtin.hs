@@ -295,6 +295,7 @@ wrappers, with a few utility functions for the two.
 class AcWrapper (normalized :: * -> * -> *) where
     -- TODO (thomas.tuegel): Make this a type family?
     data family Value normalized child
+    data family Element normalized child
 
     unwrapAc :: normalized key child -> NormalizedAc normalized key child
     wrapAc :: NormalizedAc normalized key child -> normalized key child
@@ -437,6 +438,10 @@ instance AcWrapper NormalizedMap where
     newtype Value NormalizedMap child = MapValue { getMapValue :: child }
         deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
+    newtype Element NormalizedMap child =
+        MapElement { getMapElement :: (child, child) }
+        deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
+
     wrapAc = NormalizedMap
     unwrapAc = getNormalizedMap
     acExactZip (MapValue a) (MapValue b) = Just (MapValue (a, b))
@@ -493,6 +498,10 @@ instance (Debug key, Debug child) => Debug (NormalizedSet key child)
 
 instance AcWrapper NormalizedSet where
     data Value NormalizedSet child = SetValue
+        deriving (Eq, Foldable, Functor, Traversable, GHC.Generic, Ord, Show)
+
+    newtype Element NormalizedSet child =
+        SetElement { getSetElement :: child }
         deriving (Eq, Foldable, Functor, Traversable, GHC.Generic, Ord, Show)
 
     wrapAc = NormalizedSet
