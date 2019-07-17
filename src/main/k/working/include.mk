@@ -32,10 +32,10 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final \
 	    $(foreach pat, $(wildcard $*.search.pattern), --pattern "$$(cat $(pat))")
 
-%.krepl: %.k $(DEFINITION) $(KORE_EXEC)
+%.krepl: %.k $(DEFINITION) $(KORE_REPL)
 	$(KPROVE) $(KPROVE_REPL_OPTS) -d . -m VERIFICATION $<
 
-%.kscript: % $(DEFINITION) $(KORE_EXEC) 
+%.kscript: % $(DEFINITION) $(KORE_REPL)
 	$(KPROVE) --haskell-backend-command "$(KORE_REPL) -r --repl-script $<" -d ../.. -m VERIFICATION $(SPEC_FILE)
 
 %.search.star.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
@@ -50,7 +50,7 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 %.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
-%.repl.output: % $(DEFINITION) $(KORE_EXEC)
+%.repl.output: % $(DEFINITION) $(KORE_REPL)
 	$(KPROVE) --haskell-backend-command "$(KORE_REPL) -r --repl-script $<" -d ../.. -m VERIFICATION $(SPEC_FILE) --output-file $@
 
 %.test: %.output
