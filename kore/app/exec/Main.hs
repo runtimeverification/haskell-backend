@@ -408,7 +408,7 @@ mainWithOptions
                                         (mkSort $ noLocationId "SortUnknown")
                                 )
                 )
-        let unparsed = (unparse . externalizeFreshVariables) finalPattern
+        let unparsed = unparse finalPattern
         case outputFileName of
             Nothing ->
                 putDoc unparsed

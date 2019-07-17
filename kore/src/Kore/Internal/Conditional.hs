@@ -34,7 +34,7 @@ import           Kore.Attribute.Pattern.FreeSetVariables
 import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
 import           Kore.Internal.TermLike
-                 ( TermLike )
+                 ( TermLike, termLikeSort )
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
@@ -149,53 +149,60 @@ instance TopBottom term
     isBottom Conditional {term, predicate, substitution} =
         isBottom term || isBottom predicate || isBottom substitution
 
-instance
-    ( SortedVariable variable
-    , Ord variable
-    , Show variable
-    , Unparse variable
-    , Unparse child
-    ) =>
-    Unparse (Conditional variable child)
-  where
+instance ( SortedVariable variable
+         , Ord variable
+         , Show variable
+         , Unparse variable
+         ) => Unparse (Conditional variable (TermLike variable)) where
     unparse Conditional { term, predicate, substitution } =
         unparseAnd
             (below "/* term: */" (unparse term))
             (unparseAnd
                 (below
                     "/* predicate: */"
-                    (unparse predicate)
+                    (unparse termLikePredicate)
                 )
                 (below
                     "/* substitution: */"
-                    (unparse $ Predicate.fromSubstitution substitution)
+                    (unparse termLikeSubstitution)
                 )
             )
       where
         unparseAnd first second =
-            "\\and" <> parameters' ["_"] <> arguments' [first, second]
+            "\\and" <> parameters' [unparse sort] <> arguments' [first, second]
         below first second =
             (Pretty.align . Pretty.vsep) [first, second]
+        sort = termLikeSort term
+        termLikePredicate = Predicate.fromPredicate sort predicate
+        termLikeSubstitution =
+            Predicate.fromPredicate
+                sort
+                $ Predicate.fromSubstitution substitution
+
     unparse2 Conditional { term, predicate, substitution } =
         unparseAnd2
             (below "/* term: */" (unparse2 term))
             (unparseAnd2
                 (below
                     "/* predicate: */"
-                    (unparse2 predicate)
+                    (unparse2 termLikePredicate)
                 )
                 (below
                     "/* substitution: */"
-                    (unparse2 $ Predicate.fromSubstitution substitution)
+                    (unparse2 termLikeSubstitution)
                 )
             )
-      where
-        unparseAnd2 first second =
-            "\\and2" <> parameters' ["_"] <> arguments' [first, second]
-        below first second =
-            (Pretty.align . Pretty.vsep) [first, second]
-
-
+        where
+          unparseAnd2 first second =
+              "\\and2" <> parameters' [unparse sort] <> arguments' [first, second]
+          below first second =
+              (Pretty.align . Pretty.vsep) [first, second]
+          sort = termLikeSort term
+          termLikePredicate = Predicate.fromPredicate sort predicate
+          termLikeSubstitution =
+              Predicate.fromPredicate
+                  sort
+                  $ Predicate.fromSubstitution substitution
 
 {- | Forget the 'term', keeping only the attached conditions.
  -}
