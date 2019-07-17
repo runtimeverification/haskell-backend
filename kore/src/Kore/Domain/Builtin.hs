@@ -33,6 +33,9 @@ module Kore.Domain.Builtin
 
 import           Control.DeepSeq
                  ( NFData (..) )
+import qualified Control.Lens as Lens
+import           Control.Lens.Iso
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import           Data.Hashable
 import           Data.Map
@@ -310,9 +313,11 @@ class AcWrapper (normalized :: * -> * -> *) where
         -> Maybe (Value normalized (a, b))
 
     unparseElement
-        :: (key -> Pretty.Doc ann)
-        -> (child -> Pretty.Doc ann)
-        -> (child, Value normalized child) -> Pretty.Doc ann
+        :: (child -> Pretty.Doc ann)
+        -> Element normalized child -> Pretty.Doc ann
+
+    elementIso
+        :: Iso' (Element normalized child) (child, Value normalized child)
 
     unparseConcreteElement
         :: (key -> Pretty.Doc ann)
@@ -341,7 +346,7 @@ unparsedChildren keyUnparser childUnparser wrapped =
     NormalizedAc {opaque} = unwrapped
 
     elementUnparser :: (child, Value normalized child) -> Pretty.Doc ann
-    elementUnparser = unparseElement keyUnparser childUnparser
+    elementUnparser = unparseElement childUnparser . Lens.review elementIso
 
     concreteElementUnparser :: (key, Value normalized child) -> Pretty.Doc ann
     concreteElementUnparser = unparseConcreteElement keyUnparser childUnparser
@@ -445,7 +450,13 @@ instance AcWrapper NormalizedMap where
     wrapAc = NormalizedMap
     unwrapAc = getNormalizedMap
     acExactZip (MapValue a) (MapValue b) = Just (MapValue (a, b))
-    unparseElement _keyUnparser childUnparser (key, MapValue value) =
+
+    elementIso =
+        Lens.iso
+            (Bifunctor.second MapValue . getMapElement)
+            (MapElement . Bifunctor.second getMapValue)
+
+    unparseElement childUnparser (MapElement (key, value)) =
         arguments' [childUnparser key, childUnparser value]
     unparseConcreteElement keyUnparser childUnparser (key, MapValue value) =
         arguments' [keyUnparser key, childUnparser value]
@@ -507,7 +518,10 @@ instance AcWrapper NormalizedSet where
     wrapAc = NormalizedSet
     unwrapAc = getNormalizedSet
     acExactZip _ _ = Just SetValue
-    unparseElement _keyUnparser childUnparser (key, SetValue) =
+
+    elementIso = Lens.iso (flip (,) SetValue . getSetElement) (SetElement . fst)
+
+    unparseElement childUnparser (SetElement key) =
         argument' (childUnparser key)
     unparseConcreteElement keyUnparser _childUnparser (key, SetValue) =
         argument' (keyUnparser key)
