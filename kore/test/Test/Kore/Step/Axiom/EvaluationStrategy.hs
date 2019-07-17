@@ -56,6 +56,7 @@ test_definitionEvaluation =
                                 { term = Mock.g Mock.c
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
+                                , setSubstitution = mempty
                                 }
                             ]
                         , remainders = OrPattern.fromPatterns []
@@ -80,6 +81,7 @@ test_definitionEvaluation =
                             { term = Mock.g Mock.a
                             , predicate = requirement
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                     , remainders =
                         OrPattern.fromPatterns
@@ -88,6 +90,7 @@ test_definitionEvaluation =
                                 { term = Mock.functionalConstr10 Mock.a
                                 , predicate = makeNotPredicate requirement
                                 , substitution = mempty
+                                , setSubstitution = mempty
                                 }
                             ]
                     }
@@ -138,11 +141,13 @@ test_definitionEvaluation =
                             { term = final1
                             , predicate = requirement1
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                         , Conditional
                             { term = final2
                             , predicate = requirement2
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                         ]
                     , remainders =
@@ -154,6 +159,7 @@ test_definitionEvaluation =
                                         (makeNotPredicate requirement1)
                                         (makeNotPredicate requirement2)
                                 , substitution = mempty
+                                , setSubstitution = mempty
                                 }
                             ]
                     }
@@ -172,6 +178,7 @@ test_firstFullEvaluation =
                                 { term = Mock.g Mock.c
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
+                                , setSubstitution = mempty
                                 }
                             ]
                         , remainders = OrPattern.fromPatterns []
@@ -195,6 +202,7 @@ test_firstFullEvaluation =
                                 { term = Mock.f Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
+                                , setSubstitution = mempty
                                 }
                             ]
                         , remainders = OrPattern.fromPatterns []
@@ -224,6 +232,7 @@ test_firstFullEvaluation =
                                 { term = Mock.f Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
+                                , setSubstitution = mempty
                                 }
                             ]
                         , remainders = OrPattern.fromPatterns []
@@ -315,6 +324,7 @@ test_simplifierWithFallback =
                                 { term = Mock.g Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
+                                , setSubstitution = mempty
                                 }
                             ]
                         , remainders = OrPattern.fromPatterns []
@@ -342,6 +352,7 @@ test_simplifierWithFallback =
                             { term = Mock.g Mock.a
                             , predicate = requirement
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                         ]
                     , remainders =
@@ -350,6 +361,7 @@ test_simplifierWithFallback =
                                 { term = Mock.functionalConstr10 Mock.a
                                 , predicate = makeNotPredicate requirement
                                 , substitution = mempty
+                                , setSubstitution = mempty
                                 }
                             ]
                     }
@@ -382,6 +394,7 @@ test_simplifierWithFallback =
                                 { term = Mock.f Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
+                                , setSubstitution = mempty
                                 }
                             ]
                         , remainders = OrPattern.fromPatterns []
@@ -431,6 +444,7 @@ test_builtinEvaluation =
                                 { term = Mock.g Mock.a
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
+                                , setSubstitution = mempty
                                 }
                             ]
                         , remainders = OrPattern.fromPatterns []

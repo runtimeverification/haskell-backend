@@ -79,6 +79,7 @@ test_simplificationIntegration =
                             mkTop_
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "" expect actual
 
@@ -116,6 +117,7 @@ test_simplificationIntegration =
                             mkTop_
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "" expect actual
 
@@ -131,6 +133,7 @@ test_simplificationIntegration =
                             )
                         , substitution = Substitution.unsafeWrap
                             [(Mock.y, Mock.b)]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <-
@@ -149,6 +152,7 @@ test_simplificationIntegration =
                         )
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "" expect actual
     , testCase "map function, non-matching" $ do
@@ -160,6 +164,7 @@ test_simplificationIntegration =
                         $ Mock.function20MapTest (Mock.builtinMap []) Mock.a
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 ]
         actual <-
@@ -193,6 +198,7 @@ test_simplificationIntegration =
                     { term = Mock.function20MapTest (Mock.builtinMap []) Mock.a
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "" expect actual
     , testCase "map function, matching" $ do
@@ -202,6 +208,7 @@ test_simplificationIntegration =
                     { term = Mock.c
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 ]
         actual <-
@@ -237,6 +244,7 @@ test_simplificationIntegration =
                             (Mock.builtinMap [(Mock.a, Mock.c)]) Mock.a
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "" expect actual
     , testCase "exists variable equality" $ do
@@ -252,6 +260,7 @@ test_simplificationIntegration =
                             (mkEquals_ (mkVar Mock.x) (mkVar Mock.y))
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "" expect actual
     , testCase "exists variable equality reverse" $ do
@@ -267,6 +276,7 @@ test_simplificationIntegration =
                             (mkEquals_ (mkVar Mock.y) (mkVar Mock.x))
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "" expect actual
     , testCase "exists variable equality" $ do
@@ -282,6 +292,7 @@ test_simplificationIntegration =
                             (mkEquals_ (mkVar Mock.x) (mkVar Mock.y))
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "" expect actual
     , testCase "exists variable equality reverse" $ do
@@ -297,6 +308,7 @@ test_simplificationIntegration =
                             (mkEquals_ (mkVar Mock.y) (mkVar Mock.x))
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "" expect actual
     , testCase "new variable quantification" $ do
@@ -306,6 +318,7 @@ test_simplificationIntegration =
                     { term = mkExists Mock.x (Mock.f (mkVar Mock.x))
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 ]
         actual <-
@@ -327,6 +340,7 @@ test_simplificationIntegration =
                     { term = Mock.cf
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "" expect actual
     ]
@@ -346,6 +360,7 @@ test_substitute =
                             [ (Mock.x, Mock.a)
                             , (Mock.y, Mock.functionalConstr10 Mock.a)
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <-
@@ -374,6 +389,7 @@ test_substitute =
                             [ (Mock.x, Mock.a)
                             , (Mock.y, Mock.a)
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <-
@@ -408,6 +424,7 @@ test_substituteMap =
                             [ (Mock.x, Mock.a)
                             , (Mock.y, testMapA)
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <-
@@ -442,6 +459,7 @@ test_substituteList =
                             [ (Mock.x, Mock.a)
                             , (Mock.y, testListA)
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <-

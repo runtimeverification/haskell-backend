@@ -307,7 +307,7 @@ orChild
     :: (TestTerm, TestPredicate, TestSubstitution)
     -> Pattern Variable
 orChild (term, predicate, substitution) =
-    Conditional { term, predicate, substitution }
+    Conditional { term, predicate, substitution, setSubstitution = mempty }
 
 -- Note: we intentionally take care *not* to simplify out tops or bottoms
 -- during conversion of a Conditional into an OrPattern

@@ -80,6 +80,7 @@ test_andSimplification =
                         { term = mkAnd plain0OfX plain1OfX
                         , predicate = makeTruePredicate
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
             actual <- evaluatePatterns plain0OfXExpanded plain1OfXExpanded
             assertEqualWithExplanation "" (OrPattern.fromPatterns [expect]) actual
@@ -90,6 +91,7 @@ test_andSimplification =
                         { term = fOfX
                         , predicate = makeEqualsPredicate fOfX gOfX
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
             actual <- evaluatePatterns fOfXExpanded gOfXExpanded
             assertEqualWithExplanation "" (OrPattern.fromPatterns [expect]) actual
@@ -103,6 +105,7 @@ test_andSimplification =
                                 (makeCeilPredicate fOfX)
                                 (makeCeilPredicate gOfX)
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
             actual <-
                 evaluatePatterns
@@ -110,11 +113,13 @@ test_andSimplification =
                         { term = mkTop_
                         , predicate = makeCeilPredicate fOfX
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     Conditional
                         { term = mkTop_
                         , predicate = makeCeilPredicate gOfX
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
             assertEqualWithExplanation "" (OrPattern.fromPatterns [expect]) actual
 
@@ -125,6 +130,7 @@ test_andSimplification =
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [(Mock.y, fOfX), (Mock.z, gOfX)]
+                        , setSubstitution = mempty
                         }
             actual <-
                 evaluatePatterns
@@ -132,11 +138,13 @@ test_andSimplification =
                         { term = mkTop_
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap [(Mock.y, fOfX)]
+                        , setSubstitution = mempty
                         }
                     Conditional
                         { term = mkTop_
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap [(Mock.z, gOfX)]
+                        , setSubstitution = mempty
                         }
             assertEqualWithExplanation "" (OrPattern.fromPatterns [expect]) actual
 
@@ -147,17 +155,20 @@ test_andSimplification =
                         { term = mkAnd (mkAnd Mock.a Mock.b) Mock.c
                         , predicate = makeTruePredicate
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
             actual <- evaluatePatterns
                 Conditional
                     { term = mkAnd Mock.a Mock.b
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 Conditional
                     { term = mkAnd Mock.b Mock.c
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
             assertEqualWithExplanation "" (OrPattern.fromPatterns [expect]) actual
 
@@ -169,17 +180,20 @@ test_andSimplification =
                         , predicate = makeEqualsPredicate fOfX gOfX
                         , substitution =
                             Substitution.unsafeWrap [(Mock.y, fOfX)]
+                        , setSubstitution = mempty
                         }
             actual <- evaluatePatterns
                 Conditional
                     { term = mkTop_
                     , predicate = makeTruePredicate
                     , substitution = Substitution.wrap [(Mock.y, fOfX)]
+                    , setSubstitution = mempty
                     }
                 Conditional
                     { term = mkTop_
                     , predicate = makeTruePredicate
                     , substitution = Substitution.wrap [(Mock.y, gOfX)]
+                    , setSubstitution = mempty
                     }
             assertEqualWithExplanation "" (OrPattern.fromPatterns [expect]) actual
 
@@ -194,6 +208,7 @@ test_andSimplification =
                                 , Mock.functionalConstr10 (mkVar Mock.x)
                                 )
                             ]
+                        , setSubstitution = mempty
                         }
                     Conditional
                         { term = mkTop_
@@ -203,6 +218,7 @@ test_andSimplification =
                                 , Mock.functionalConstr11 (mkVar Mock.x)
                                 )
                             ]
+                        , setSubstitution = mempty
                         }
             assertEqualWithExplanation "" (OrPattern.bottom) actual
             {-
@@ -221,6 +237,7 @@ test_andSimplification =
                             )
                             (givemakeEqualsPredicate fOfX gOfX)
                     , substitution = [(y, fOfX)]
+                    , setSubstitution = mempty
                     }
                 (evaluatePatternsWithAttributes
                     [ (fSymbol, mock.functionAttributes)
@@ -230,11 +247,13 @@ test_andSimplification =
                         { term = mkTop_
                         , predicate = makeCeilPredicate fOfX
                         , substitution = [(y, fOfX)]
+                        , setSubstitution = mempty
                         }
                     Pattern
                         { term = mkTop_
                         , predicate = makeCeilPredicate gOfX
                         , substitution = [(y, gOfX)]
+                        , setSubstitution = mempty
                         }
                 )
             -}
@@ -247,6 +266,7 @@ test_andSimplification =
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [(Mock.y, fOfX)]
+                        , setSubstitution = mempty
                         }
             actual <- evaluatePatterns yExpanded fOfXExpanded
             assertEqualWithExplanation "" (MultiOr [expect]) actual
@@ -258,6 +278,7 @@ test_andSimplification =
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [(Mock.y, fOfX)]
+                        , setSubstitution = mempty
                         }
             actual <- evaluatePatterns fOfXExpanded yExpanded
             assertEqualWithExplanation "" (MultiOr [expect]) actual
@@ -270,6 +291,7 @@ test_andSimplification =
                         { term = Mock.constr10 fOfX
                         , predicate = makeEqualsPredicate fOfX gOfX
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
             actual <-
                 evaluatePatterns
@@ -277,11 +299,13 @@ test_andSimplification =
                         { term = Mock.constr10 fOfX
                         , predicate = makeTruePredicate
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     Conditional
                         { term = Mock.constr10 gOfX
                         , predicate = makeTruePredicate
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
             assertEqualWithExplanation "" (MultiOr [expect]) actual
 
@@ -292,11 +316,13 @@ test_andSimplification =
                         { term = Mock.constr10 fOfX
                         , predicate = makeTruePredicate
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     Conditional
                         { term = Mock.constr11 gOfX
                         , predicate = makeTruePredicate
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
             assertEqualWithExplanation "" (MultiOr []) actual
         ]
@@ -309,16 +335,19 @@ test_andSimplification =
                         { term = fOfX
                         , predicate = makeEqualsPredicate fOfX gOfX
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     , Conditional
                         { term = fOfX
                         , predicate = makeCeilPredicate gOfX
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     , Conditional
                         { term = gOfX
                         , predicate = makeCeilPredicate fOfX
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     , Conditional
                         { term = mkTop_
@@ -327,6 +356,7 @@ test_andSimplification =
                                 (makeCeilPredicate fOfX)
                                 (makeCeilPredicate gOfX)
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     ]
         actual <-
@@ -337,6 +367,7 @@ test_andSimplification =
                         { term = mkTop_
                         , predicate = makeCeilPredicate fOfX
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     ]
                     [ gOfXExpanded
@@ -344,6 +375,7 @@ test_andSimplification =
                         { term = mkTop_
                         , predicate = makeCeilPredicate gOfX
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     ]
                 )
@@ -354,40 +386,47 @@ test_andSimplification =
         { term = mkVar Mock.y
         , predicate = makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
     fOfX = Mock.f (mkVar Mock.x)
     fOfXExpanded = Conditional
         { term = fOfX
         , predicate = makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
     gOfX = Mock.g (mkVar Mock.x)
     gOfXExpanded = Conditional
         { term = gOfX
         , predicate = makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
     plain0OfX = Mock.plain10 (mkVar Mock.x)
     plain0OfXExpanded = Conditional
         { term = plain0OfX
         , predicate = makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
     plain1OfX = Mock.plain11 (mkVar Mock.x)
     plain1OfXExpanded = Conditional
         { term = plain1OfX
         , predicate = makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
     bottomTerm = Conditional
         { term = mkBottom_
         , predicate = makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
     falsePredicate = Conditional
         { term = mkTop_
         , predicate = makeFalsePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
 
 makeAnd

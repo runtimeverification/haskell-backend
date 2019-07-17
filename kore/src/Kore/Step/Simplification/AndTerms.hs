@@ -196,6 +196,7 @@ termEqualsAnd
                 { term = mkTop_
                 , predicate = makeEqualsPredicate first second
                 , substitution = mempty
+                , setSubstitution = mempty
                 }
 
 maybeTermEquals
@@ -827,6 +828,7 @@ bottomTermEquals
                     $ OrPredicate.toPredicate
                     $ Predicate.toPredicate <$> secondCeil
                 , substitution = mempty
+                , setSubstitution = mempty
                 }
 bottomTermEquals _ _ _ _ _ _ = empty
 
@@ -899,6 +901,7 @@ variableFunctionAndEquals
         , substitution =
             Substitution.wrap
                 [ if v2 > v1 then (v1, second) else (v2, first) ]
+        , setSubstitution = mempty
         }
 variableFunctionAndEquals
     simplificationType
@@ -1460,5 +1463,6 @@ functionAnd
         -- one must be careful to not just drop the term.
         , predicate = makeEqualsPredicate first second
         , substitution = mempty
+        , setSubstitution = mempty
         }
   | otherwise = empty

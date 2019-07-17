@@ -30,6 +30,7 @@ test_stringLiteralSimplification =
                     { term = mkStringLiteral "a"
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 ]
             )

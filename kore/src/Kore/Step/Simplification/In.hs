@@ -116,4 +116,5 @@ makeEvaluateNonBoolIn patt1 patt2 =
                 (Pattern.toTermLike patt1)
                 (Pattern.toTermLike patt2)
         , substitution = mempty
+        , setSubstitution = mempty
         }

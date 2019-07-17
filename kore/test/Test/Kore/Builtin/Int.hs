@@ -378,6 +378,7 @@ test_unifyAnd_Fn =
                     { term = dv
                     , predicate = makeEqualsPredicate dv fnPat
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         actual <- evaluateT $ mkAnd dv fnPat
         (===) expect actual

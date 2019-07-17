@@ -46,6 +46,7 @@ checkImplicationIsTop lhs rhs =
                     { term = resultTerm
                     , predicate = Predicate.makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
             orResult <- Pattern.simplifyAndRemoveTopExists result
             return (isBottom orResult)

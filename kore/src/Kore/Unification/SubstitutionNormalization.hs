@@ -144,6 +144,7 @@ normalizeSortedSubstitution [] result _ =
         { term = ()
         , predicate = makeTruePredicate
         , substitution = Substitution.unsafeWrap result
+        , setSubstitution = mempty
         }
 normalizeSortedSubstitution
     ((var, varPattern) : unprocessed)

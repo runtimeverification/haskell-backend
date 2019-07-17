@@ -303,6 +303,7 @@ makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
                 { term = mkTop_
                 , predicate = makeEqualsPredicate firstTerm secondTerm
                 , substitution = mempty
+                , setSubstitution = mempty
                 }
 
 -- Do not export this. This not valid as a standalone function, it

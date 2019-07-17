@@ -51,6 +51,7 @@ top =
         { term = ()
         , predicate = Syntax.Predicate.makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
 
 bottom :: (Ord variable, SortedVariable variable) => Predicate variable
@@ -59,6 +60,7 @@ bottom =
         { term = ()
         , predicate = Syntax.Predicate.makeFalsePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
 
 topPredicate :: (Ord variable, SortedVariable variable) => Predicate variable

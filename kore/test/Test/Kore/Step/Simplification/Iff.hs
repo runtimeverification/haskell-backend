@@ -76,6 +76,7 @@ test_makeEvaluate =
                                 (makeEqualsPredicate (mkVar Mock.y) Mock.b)
                             )
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 ]
             )
@@ -84,11 +85,13 @@ test_makeEvaluate =
                     { term = mkTop_
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.wrap [(Mock.x, Mock.a)]
+                    , setSubstitution = mempty
                     }
                 Conditional
                     { term = mkTop_
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution = Substitution.wrap [(Mock.y, Mock.b)]
+                    , setSubstitution = mempty
                     }
             )
         )
@@ -114,6 +117,7 @@ test_makeEvaluate =
                             )
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 ]
             )
@@ -122,11 +126,13 @@ test_makeEvaluate =
                     { term = Mock.f Mock.a
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.wrap [(Mock.x, Mock.a)]
+                    , setSubstitution = mempty
                     }
                 Conditional
                     { term = Mock.g Mock.b
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution = Substitution.wrap [(Mock.y, Mock.b)]
+                    , setSubstitution = mempty
                     }
             )
         )
@@ -173,6 +179,7 @@ termA =
         { term = Mock.a
         , predicate = makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
 
 termNotA :: Pattern Variable

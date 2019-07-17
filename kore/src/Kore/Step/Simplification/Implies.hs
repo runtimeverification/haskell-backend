@@ -168,6 +168,7 @@ makeEvaluateImpliesNonBool
                         (Syntax.Predicate.fromSubstitution secondSubstitution)
                     )
             , substitution = mempty
+            , setSubstitution = mempty
             }
         ]
   | otherwise =
@@ -179,5 +180,6 @@ makeEvaluateImpliesNonBool
                     (Pattern.toTermLike pattern2)
             , predicate = Syntax.Predicate.makeTruePredicate
             , substitution = mempty
+            , setSubstitution = mempty
             }
         ]

@@ -203,11 +203,13 @@ test_onePathStrategy =
                 { term = Mock.f Mock.b
                 , predicate = makeTruePredicate
                 , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                , setSubstitution = mempty
                 }
             , RewritePattern Conditional
                 { term = Mock.f Mock.c
                 , predicate = makeTruePredicate
                 , substitution = Substitution.unsafeWrap [(Mock.x, Mock.c)]
+                , setSubstitution = mempty
                 }
             , RewritePattern Conditional
                 { term = Mock.h (TermLike.mkVar Mock.x)
@@ -229,6 +231,7 @@ test_onePathStrategy =
                             (makeEqualsPredicate (TermLike.mkVar Mock.x) Mock.c)
                         )
                 , substitution = mempty
+                , setSubstitution = mempty
                 }
             ]
             actual
@@ -265,11 +268,13 @@ test_onePathStrategy =
                 { term = Mock.f Mock.b
                 , predicate = makeTruePredicate
                 , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                , setSubstitution = mempty
                 }
             , RewritePattern Conditional
                 { term = Mock.f Mock.c
                 , predicate = makeTruePredicate
                 , substitution = Substitution.unsafeWrap [(Mock.x, Mock.c)]
+                , setSubstitution = mempty
                 }
             , Stuck Conditional
                 { term = Mock.functionalConstr11 (TermLike.mkVar Mock.x)
@@ -280,6 +285,7 @@ test_onePathStrategy =
                         , makeNotPredicate equalsXC
                         ]
                 , substitution = mempty
+                , setSubstitution = mempty
                 }
             ]
             [ _actual1
@@ -315,6 +321,7 @@ test_onePathStrategy =
                             Mock.c
                             $ Mock.f Mock.b
                 , substitution = mempty
+                , setSubstitution = mempty
                 }
             , Bottom
             ]

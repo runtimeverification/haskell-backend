@@ -52,6 +52,7 @@ test_functionIntegration =
                     { term = Mock.g Mock.c
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         actual <-
             evaluate
@@ -71,6 +72,7 @@ test_functionIntegration =
                     { term = Mock.g Mock.c
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         actual <-
             evaluate
@@ -91,6 +93,7 @@ test_functionIntegration =
                     { term = Mock.g Mock.c
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         actual <-
             evaluate
@@ -117,6 +120,7 @@ test_functionIntegration =
                     { term = Mock.g Mock.c
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         actual <-
             evaluate
@@ -141,6 +145,7 @@ test_functionIntegration =
                     { term = Mock.functional10 (Mock.functional10 Mock.c)
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         actual <-
             evaluate
@@ -163,6 +168,7 @@ test_functionIntegration =
                             (Mock.functional10 (Mock.functional10 Mock.d))
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         actual <-
             evaluate
@@ -192,6 +198,7 @@ test_functionIntegration =
                             )
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         actual <-
             evaluate
@@ -216,6 +223,7 @@ test_functionIntegration =
                     { term = Mock.f Mock.d
                     , predicate = makeCeilPredicate (Mock.plain10 Mock.e)
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         actual <-
             evaluate
@@ -225,6 +233,7 @@ test_functionIntegration =
                         { term   = Mock.d
                         , predicate = makeCeilPredicate (Mock.plain10 Mock.e)
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     )
                 )
@@ -240,6 +249,7 @@ test_functionIntegration =
                             (makeCeilPredicate Mock.cg)
                             (makeCeilPredicate Mock.cf)
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         actual <-
             evaluate
@@ -249,6 +259,7 @@ test_functionIntegration =
                             { term = Mock.e
                             , predicate = makeCeilPredicate Mock.cg
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                         )
                     ,   ( AxiomIdentifier.Application Mock.dId
@@ -256,6 +267,7 @@ test_functionIntegration =
                             { term = Mock.e
                             , predicate = makeCeilPredicate Mock.cf
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                         )
                     ,   ( AxiomIdentifier.Application Mock.functionalConstr10Id
@@ -274,6 +286,7 @@ test_functionIntegration =
                     { term = Mock.f Mock.e
                     , predicate = makeEqualsPredicate (Mock.f Mock.e) Mock.e
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         actual <-
             evaluate
@@ -287,6 +300,7 @@ test_functionIntegration =
                             , predicate =
                                 makeEqualsPredicate (Mock.f Mock.e) Mock.e
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                         )
                     ]
@@ -307,6 +321,7 @@ test_functionIntegration =
                             , Mock.a
                             )
                         ]
+                    , setSubstitution = mempty
                     }
         actual <-
             evaluate
@@ -320,6 +335,7 @@ test_functionIntegration =
                                     , mkVar Mock.z
                                     )
                                 ]
+                            , setSubstitution = mempty
                             }
                         )
                     ,   ( AxiomIdentifier.Application Mock.dId
@@ -331,6 +347,7 @@ test_functionIntegration =
                                     , Mock.a
                                     )
                                 ]
+                            , setSubstitution = mempty
                             }
                         )
                     ]
@@ -351,6 +368,7 @@ test_functionIntegration =
                             (Mock.plain10 Mock.cf)
                     , substitution = Substitution.unsafeWrap
                         [ (Mock.var_x_1, Mock.cf), (Mock.var_y_1, Mock.b) ]
+                    , setSubstitution = mempty
                     }
         actual <-
             evaluate
@@ -372,6 +390,7 @@ test_functionIntegration =
                                     )
                             , substitution =
                                 Substitution.wrap [(Mock.x, Mock.cf)]
+                            , setSubstitution = mempty
                             }
                         )
                     ]
@@ -385,6 +404,7 @@ test_functionIntegration =
                     { term = Mock.b
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         actual <-
             evaluate
@@ -395,6 +415,7 @@ test_functionIntegration =
                                 { term = Mock.b
                                 , predicate = makeTruePredicate
                                 , substitution = mempty
+                                , setSubstitution = mempty
                                 }
                             )
                             (definitionEvaluation
@@ -416,6 +437,7 @@ test_functionIntegration =
                     { term = Mock.b
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         actual <-
             evaluate
@@ -430,11 +452,13 @@ test_functionIntegration =
                                     { term = Mock.b
                                     , predicate = makeTruePredicate
                                     , substitution = mempty
+                                    , setSubstitution = mempty
                                     }
                                 ,  appliedMockEvaluator Conditional
                                     { term = Mock.c
                                     , predicate = makeTruePredicate
                                     , substitution = mempty
+                                    , setSubstitution = mempty
                                     }
                                 ]
                             )
@@ -457,6 +481,7 @@ test_functionIntegration =
                     { term = Mock.a
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         actual <-
             evaluate
@@ -488,6 +513,7 @@ test_functionIntegration =
                         (mkAnd Mock.b (mkNot (mkCeil Mock.testSort Mock.cf)))
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         actual <-
             evaluate

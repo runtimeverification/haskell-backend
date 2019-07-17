@@ -68,7 +68,7 @@ asPredicate
         )
     => Pattern variable
     -> Predicate variable
-asPredicate Conditional {term, predicate, substitution} =
+asPredicate Conditional {term, predicate, substitution, setSubstitution} =
     let
         andPatt =
             Syntax.Predicate.makeAndPredicate predicate
@@ -78,4 +78,5 @@ asPredicate Conditional {term, predicate, substitution} =
             { term = ()
             , predicate = andPatt
             , substitution = substitution
+            , setSubstitution = setSubstitution
             }

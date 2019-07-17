@@ -32,11 +32,13 @@ test_forallSimplification =
                     { term = mkForall Mock.x something1OfX
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 , Conditional
                     { term = mkForall Mock.x something2OfX
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 ]
             )
@@ -107,6 +109,7 @@ test_forallSimplification =
                         )
                 , predicate = makeTruePredicate
                 , substitution = mempty
+                , setSubstitution = mempty
                 }
             (makeEvaluate
                 Mock.x
@@ -115,6 +118,7 @@ test_forallSimplification =
                     , predicate = makeCeilPredicate (Mock.h (mkVar Mock.x))
                     , substitution =
                         Substitution.wrap [(Mock.x, gOfA), (Mock.y, fOfA)]
+                    , setSubstitution = mempty
                     }
             )
         )
@@ -126,6 +130,7 @@ test_forallSimplification =
                     mkForall Mock.x (mkAnd fOfA (mkCeil_ gOfA))
                 , predicate = makeTruePredicate
                 , substitution = mempty
+                , setSubstitution = mempty
                 }
             (makeEvaluate
                 Mock.x
@@ -133,6 +138,7 @@ test_forallSimplification =
                     { term = fOfA
                     , predicate = makeCeilPredicate gOfA
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
             )
         )
@@ -143,6 +149,7 @@ test_forallSimplification =
                 { term = mkForall Mock.x (mkAnd fOfX (mkCeil_ gOfA))
                 , predicate = makeTruePredicate
                 , substitution = mempty
+                , setSubstitution = mempty
                 }
             (makeEvaluate
                 Mock.x
@@ -150,6 +157,7 @@ test_forallSimplification =
                     { term = fOfX
                     , predicate = makeCeilPredicate gOfA
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
             )
         )
@@ -162,6 +170,7 @@ test_forallSimplification =
                 { term = mkForall Mock.x (mkAnd fOfA (mkCeil_ fOfX))
                 , predicate = makeTruePredicate
                 , substitution = mempty
+                , setSubstitution = mempty
                 }
             (makeEvaluate
                 Mock.x
@@ -169,6 +178,7 @@ test_forallSimplification =
                     { term = fOfA
                     , predicate = makeCeilPredicate fOfX
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
             )
         )
@@ -184,6 +194,7 @@ test_forallSimplification =
                         )
                 , predicate = makeTruePredicate
                 , substitution = mempty
+                , setSubstitution = mempty
                 }
             (makeEvaluate
                 Mock.x
@@ -191,6 +202,7 @@ test_forallSimplification =
                     { term = fOfX
                     , predicate = makeEqualsPredicate fOfX gOfA
                     , substitution = Substitution.wrap [(Mock.y, hOfA)]
+                    , setSubstitution = mempty
                     }
             )
         )
@@ -223,11 +235,13 @@ test_forallSimplification =
         { term = something1OfX
         , predicate = makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
     something2OfXExpanded = Conditional
         { term = something2OfX
         , predicate = makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
 
 makeForall

@@ -60,11 +60,13 @@ test_ceilSimplification =
                     { term = mkTop_
                     , predicate = makeCeilPredicate somethingOfA
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 , Conditional
                     { term = mkTop_
                     , predicate = makeCeilPredicate somethingOfB
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 ]
         actual <- evaluate
@@ -125,6 +127,7 @@ test_ceilSimplification =
                         (makeCeilPredicate somethingOfA)
                         (makeEqualsPredicate fOfA gOfA)
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
+                    , setSubstitution = mempty
                     }
                 ]
         actual <- makeEvaluate
@@ -132,6 +135,7 @@ test_ceilSimplification =
                 { term = somethingOfA
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                , setSubstitution = mempty
                 }
         assertEqualWithExplanation "ceil(something(a) and equals(f(a), g(a)))"
             expected
@@ -156,6 +160,7 @@ test_ceilSimplification =
                                 (makeEqualsPredicate fOfA gOfA)
                         , substitution =
                             Substitution.unsafeWrap [(Mock.x, fOfB)]
+                        , setSubstitution = mempty
                         }
                     ]
             actual <- makeEvaluate
@@ -163,6 +168,7 @@ test_ceilSimplification =
                     { term = constructorTerm
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                    , setSubstitution = mempty
                     }
             assertEqualWithExplanation
                 "ceil(constr(something(a), something(b)) and eq(f(a), g(a)))"
@@ -176,6 +182,7 @@ test_ceilSimplification =
                 { term = Mock.constr10 Mock.a
                 , predicate = makeTruePredicate
                 , substitution = mempty
+                , setSubstitution = mempty
                 }
         assertEqualWithExplanation "" expected actual
     , testCase "ceil with functional symbols" $ do
@@ -194,6 +201,7 @@ test_ceilSimplification =
                             )
                             (makeEqualsPredicate fOfA gOfA)
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
+                    , setSubstitution = mempty
                     }
                 ]
         actual <- makeEvaluate
@@ -201,6 +209,7 @@ test_ceilSimplification =
                 { term = Mock.functional20 somethingOfA somethingOfB
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                , setSubstitution = mempty
                 }
         assertEqualWithExplanation
             "ceil(functional(something(a), something(b)) and eq(f(a), g(a)))"
@@ -219,6 +228,7 @@ test_ceilSimplification =
                             (makeCeilPredicate fOfA)
                             (makeEqualsPredicate fOfA gOfA)
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
+                    , setSubstitution = mempty
                     }
                 ]
         actual <- makeEvaluate
@@ -226,6 +236,7 @@ test_ceilSimplification =
                 { term = fOfA
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                , setSubstitution = mempty
                 }
         assertEqualWithExplanation
             "ceil(f(a)) and eq(f(a), g(a)))"
@@ -244,6 +255,7 @@ test_ceilSimplification =
                             (makeCeilPredicate fOfA)
                             (makeEqualsPredicate fOfA gOfA)
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
+                    , setSubstitution = mempty
                     }
                 ]
         actual <- makeEvaluate
@@ -251,6 +263,7 @@ test_ceilSimplification =
                 { term = fOfA
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                , setSubstitution = mempty
                 }
         assertEqualWithExplanation
             "ceil(f(a)) and eq(f(a), g(a)))"
@@ -266,6 +279,7 @@ test_ceilSimplification =
                     { term = mkTop_
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
+                    , setSubstitution = mempty
                     }
                 ]
         actual <- makeEvaluate
@@ -273,6 +287,7 @@ test_ceilSimplification =
                 { term = Mock.a
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                , setSubstitution = mempty
                 }
         assertEqualWithExplanation
             "ceil(functional and eq(f(a), g(a)))"
@@ -288,6 +303,7 @@ test_ceilSimplification =
                     { term = mkTop_
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
+                    , setSubstitution = mempty
                     }
                 ]
         actual <- makeEvaluate
@@ -295,6 +311,7 @@ test_ceilSimplification =
                 { term = mkEvaluated Mock.a
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                , setSubstitution = mempty
                 }
         assertEqualWithExplanation
             "ceil(functional and eq(f(a), g(a)))"
@@ -318,6 +335,7 @@ test_ceilSimplification =
                             )
                             (makeEqualsPredicate fOfA gOfA)
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
+                    , setSubstitution = mempty
                     }
                 ]
         actual <- makeEvaluate
@@ -325,6 +343,7 @@ test_ceilSimplification =
                 { term = Mock.functional20 fOfA fOfB
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                , setSubstitution = mempty
                 }
         assertEqualWithExplanation
             "ceil(functional(non-funct, non-funct) and eq(f(a), g(a)))"
@@ -345,6 +364,7 @@ test_ceilSimplification =
                             (makeEqualsPredicate Mock.a Mock.cf)
                             (makeEqualsPredicate fOfA gOfA)
                     , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
+                    , setSubstitution = mempty
                     }
                 ]
         actual <- makeEvaluateWithAxioms
@@ -357,6 +377,7 @@ test_ceilSimplification =
                         { term = mkTop_
                         , predicate = makeEqualsPredicate Mock.a Mock.cf
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                 )
             )
@@ -364,6 +385,7 @@ test_ceilSimplification =
                 { term = Mock.functional20 fOfA fOfB
                 , predicate = makeEqualsPredicate fOfA gOfA
                 , substitution = Substitution.wrap [(Mock.x, fOfB)]
+                , setSubstitution = mempty
                 }
         assertEqualWithExplanation
             "ceil(functional(non-funct, non-funct) and eq(f(a), g(a)))"
@@ -377,6 +399,7 @@ test_ceilSimplification =
                     { term = mkTop_
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 ]
         actual <- makeEvaluate
@@ -398,6 +421,7 @@ test_ceilSimplification =
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate gOfB)
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 ]
         actual <- makeEvaluate
@@ -407,6 +431,7 @@ test_ceilSimplification =
                         [(asConcrete' fOfA, fOfB), (asConcrete' gOfA, gOfB)]
                 , predicate = makeTruePredicate
                 , substitution = mempty
+                , setSubstitution = mempty
                 }
         assertEqualWithExplanation "ceil(map)" expected actual
     , testCase "ceil with list domain value" $ do
@@ -420,6 +445,7 @@ test_ceilSimplification =
                             (makeCeilPredicate fOfA)
                             (makeCeilPredicate fOfB)
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 ]
         actual <- makeEvaluate
@@ -427,6 +453,7 @@ test_ceilSimplification =
                 { term = Mock.builtinList [fOfA, fOfB]
                 , predicate = makeTruePredicate
                 , substitution = mempty
+                , setSubstitution = mempty
                 }
         assertEqualWithExplanation "ceil(list)" expected actual
     , testCase "ceil with concrete set domain value" $ do
@@ -439,6 +466,7 @@ test_ceilSimplification =
                 { term = Mock.builtinSet [asConcrete' fOfA, asConcrete' fOfB]
                 , predicate = makeTruePredicate
                 , substitution = mempty
+                , setSubstitution = mempty
                 }
         assertEqualWithExplanation "ceil(set)" expected actual
     , testCase "ceil with element variable" $ do
@@ -448,6 +476,7 @@ test_ceilSimplification =
                     { term = mkTop_
                     , predicate = makeCeilPredicate fOfX
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 ]
         actual <- makeEvaluate
@@ -456,6 +485,7 @@ test_ceilSimplification =
                     emptyNormalizedSet `with` VariableElement fOfX
                 , predicate = makeTruePredicate
                 , substitution = mempty
+                , setSubstitution = mempty
                 }
         assertEqualWithExplanation "ceil(set)" expected actual
     , testCase "ceil with opaque set" $ do
@@ -465,6 +495,7 @@ test_ceilSimplification =
                     { term = mkTop_
                     , predicate = makeCeilPredicate fOfXset
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 ]
         actual <- makeEvaluate
@@ -473,6 +504,7 @@ test_ceilSimplification =
                     emptyNormalizedSet `with` OpaqueSet fOfXset
                 , predicate = makeTruePredicate
                 , substitution = mempty
+                , setSubstitution = mempty
                 }
         assertEqualWithExplanation "ceil(set)" expected actual
     ]
@@ -493,11 +525,13 @@ test_ceilSimplification =
         { term = somethingOfA
         , predicate = makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
     somethingOfBExpanded = Conditional
         { term = somethingOfB
         , predicate = makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
     asConcrete' p = let Just r = TermLike.asConcrete p in r
     asInternalSet = Ac.asInternal Mock.metadataTools Mock.setSort

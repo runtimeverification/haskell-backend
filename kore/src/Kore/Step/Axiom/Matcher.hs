@@ -433,6 +433,7 @@ matchVariableFunction quantifiedVariables (Var_ var) second
                 (Conditional.fromSingleSubstitution (var, second))
                 ceilOr
         Monad.Unify.scatter result
+
 matchVariableFunction _ _ _ = nothing
 
 checkVariableEscape

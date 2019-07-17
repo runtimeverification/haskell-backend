@@ -1218,7 +1218,7 @@ instance
     => StructEqualWithExplanation (Conditional variable child)
   where
     structFieldsWithNames
-        expected@(Conditional _ _ _) actual@(Conditional _ _ _)
+        expected@(Conditional _ _ _ _) actual@(Conditional _ _ _ _)
       =
         [ EqWrap
             "term = "
@@ -1232,6 +1232,10 @@ instance
             "substitution = "
             (substitution expected)
             (substitution actual)
+        , EqWrap
+            "setSubstitution = "
+            (setSubstitution expected)
+            (setSubstitution actual)
         ]
     structConstructorName _ = "Conditional"
 

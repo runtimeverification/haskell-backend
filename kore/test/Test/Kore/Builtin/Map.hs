@@ -528,6 +528,7 @@ test_unifyEmptyWithEmpty =
             { term = emptyMapDV
             , predicate = makeTruePredicate
             , substitution = Substitution.unsafeWrap []
+            , setSubstitution = mempty
             }
 
 test_unifySelectFromEmpty :: TestTree
@@ -591,6 +592,7 @@ test_unifySelectFromSingleton =
                                 , (keyVar, keyStepPattern)
                                 , (valueVar, value)
                                 ]
+                        , setSubstitution = mempty
                         }
             -- { 5 -> 7 } /\ Item(K:Int, V:Int) Rest:Map
             (singleton `unifiesWith` selectPat) expect
@@ -624,6 +626,7 @@ test_unifySelectSingletonFromSingleton =
                                 [ (keyVar, keyStepPattern)
                                 , (valueVar, value)
                                 ]
+                        , setSubstitution = mempty
                         }
             -- { 5 -> 7 } /\ Item(K:Int, V:Int) Map.unit
             (singleton `unifiesWith` selectPat) expect
@@ -653,6 +656,7 @@ test_unifySelectFromSingletonWithoutLeftovers =
                                 [ (keyVar, keyStepPattern)
                                 , (valueVar, value)
                                 ]
+                        , setSubstitution = mempty
                         }
             -- { 5 -> 7 } /\ Item(K:Int, V:Int)
             (singleton `unifiesWith` selectPat) expect
@@ -698,6 +702,7 @@ test_unifySelectFromTwoElementMap =
                                 , (keyVar, keyStepPattern1)
                                 , (valueVar, value1)
                                 ]
+                        , setSubstitution = mempty
                         }
                 expect2 =
                     Conditional
@@ -712,6 +717,7 @@ test_unifySelectFromTwoElementMap =
                                 , (keyVar, keyStepPattern2)
                                 , (valueVar, value2)
                                 ]
+                        , setSubstitution = mempty
                         }
             -- { 5 -> 6, 7 -> 8 } /\ Item(K:Int, V:Int) Rest:Map
             (mapDV `unifiesWithMulti` selectPat) [expect1, expect2]
@@ -765,6 +771,7 @@ test_unifySelectTwoFromTwoElementMap =
                                 , (valueVar1, value1)
                                 , (valueVar2, value2)
                                 ]
+                        , setSubstitution = mempty
                         }
                 expect2 =
                     Conditional
@@ -780,6 +787,7 @@ test_unifySelectTwoFromTwoElementMap =
                                 , (valueVar1, value2)
                                 , (valueVar2, value1)
                                 ]
+                        , setSubstitution = mempty
                         }
 
             -- { 5 } /\ MapItem(X:Int) Rest:Map
@@ -883,6 +891,7 @@ test_concretizeKeys =
                 [ (v, val)
                 , (x, symbolicKey)
                 ]
+            , setSubstitution = mempty
             }
 
 {- | Unify a concrete map with symbolic-keyed map in an axiom

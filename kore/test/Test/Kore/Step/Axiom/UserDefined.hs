@@ -56,6 +56,7 @@ test_userDefinedFunction =
                             { term = Mock.functionalConstr11 (mkVar Mock.x)
                             , predicate = makeTruePredicate
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                         ]
                     , remainders = OrPattern.fromPatterns []
@@ -114,7 +115,8 @@ test_userDefinedFunction =
                             { term = Mock.functionalConstr10 (mkVar Mock.x)
                             , predicate = makeTruePredicate
                             , substitution = mempty
-                             }
+                            , setSubstitution = mempty
+                            }
                         ]
                     }
         actual <-
@@ -164,6 +166,7 @@ test_userDefinedFunction =
                             , predicate = makeTruePredicate
                             , substitution = Substitution.wrap
                                 [(Mock.y, mkVar Mock.z)]
+                            , setSubstitution = mempty
                             }
                         ]
                     , remainders = OrPattern.fromPatterns
@@ -177,6 +180,7 @@ test_userDefinedFunction =
                                         (mkVar Mock.y) (mkVar Mock.z)
                                     )
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                         ]
                     }
@@ -234,11 +238,14 @@ evaluateWithAxiom axiom simplifier patt =
                         }
             result -> result
 
-    sortSubstitution Conditional {term, predicate, substitution} =
+    sortSubstitution
+        Conditional {term, predicate, substitution, setSubstitution}
+      =
         Conditional
             { term = term
             , predicate = predicate
             , substitution = Substitution.modify sort substitution
+            , setSubstitution = Substitution.modify sort setSubstitution
             }
     evaluated :: IO CommonAttemptedAxiom
     evaluated =

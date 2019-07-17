@@ -42,6 +42,7 @@ mockPredicateSimplifier values =
                 { term = mkTop_
                 , predicate = wrapPredicate patt
                 , substitution = mempty
+                , setSubstitution = mempty
                 }
             )
             values

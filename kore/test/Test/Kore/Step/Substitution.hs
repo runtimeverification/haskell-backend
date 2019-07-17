@@ -164,6 +164,7 @@ test_mergeAndNormalizeSubstitutions =
                                     , Mock.constr10 Mock.a
                                     )
                                 ]
+                            , setSubstitution = mempty
                             }
                         ]
             actual <-
@@ -285,6 +286,7 @@ test_mergeAndNormalizeSubstitutions =
                             Syntax.Predicate.makeEqualsPredicate Mock.cf Mock.cg
                         , substitution = Substitution.unsafeWrap
                             [ (Mock.x, Mock.constr10 Mock.cf) ]
+                        , setSubstitution = mempty
                         }
                     ]
             actual <-
@@ -296,6 +298,7 @@ test_mergeAndNormalizeSubstitutions =
                             [ (Mock.x, Mock.constr10 Mock.cf)
                             , (Mock.x, Mock.constr10 Mock.cg)
                             ]
+                        , setSubstitution = mempty
                         }
             assertEqualWithExplanation "" expect actual
             assertNormalizedPredicatesMulti actual
@@ -312,6 +315,7 @@ test_mergeAndNormalizeSubstitutions =
                             [ (Mock.x, Mock.constr10 Mock.a)
                             , (Mock.y, Mock.a)
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
             actual <-
@@ -325,6 +329,7 @@ test_mergeAndNormalizeSubstitutions =
                             [ (Mock.x, Mock.constr10 Mock.a)
                             , (Mock.x, Mock.constr10 (mkVar Mock.y))
                             ]
+                        , setSubstitution = mempty
                         }
             assertEqualWithExplanation "" expect actual
             assertNormalizedPredicatesMulti actual

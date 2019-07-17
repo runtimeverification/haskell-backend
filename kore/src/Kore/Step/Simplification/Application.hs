@@ -107,9 +107,9 @@ evaluateApplicationFunction
     => ExpandedApplication variable
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
-evaluateApplicationFunction Conditional { term, predicate, substitution } =
+evaluateApplicationFunction patt@Conditional { term } =
     evaluateApplication
-        Conditional { term = (), predicate, substitution }
+        patt { term = () }
         term
 
 makeExpandedApplication

@@ -72,13 +72,14 @@ normalize
         )
     => Conditional variable term
     -> BranchT simplifier (Conditional variable term)
-normalize Conditional { term, predicate, substitution } = do
+normalize Conditional { term, predicate, substitution, setSubstitution } = do
     -- We collect all the results here because we should promote the
     -- substitution to the predicate when there is an error on *any* branch.
     results <-
         Monad.Trans.lift
         $ Monad.Unify.runUnifierT
-        $ normalizeExcept Conditional { term = (), predicate, substitution }
+        $ normalizeExcept Conditional
+            { term = (), predicate, substitution, setSubstitution }
     case results of
         Right normal -> scatter (applyTerm <$> normal)
         Left _ ->
@@ -88,6 +89,7 @@ normalize Conditional { term, predicate, substitution } = do
                     Syntax.Predicate.makeAndPredicate predicate
                     $ Syntax.Predicate.fromSubstitution substitution
                 , substitution = mempty
+                , setSubstitution = mempty
                 }
   where
     applyTerm predicated = predicated { term }
@@ -133,6 +135,7 @@ normalizeExcept Conditional { predicate, substitution } = do
             { term = ()
             , predicate = mergedPredicate
             , substitution = normalizedSubstitution
+            , setSubstitution = mempty
             }
   where
 
@@ -203,6 +206,7 @@ mergePredicatesAndSubstitutionsExcept predicates substitutions = do
             { term = ()
             , predicate = mergedPredicate
             , substitution = mergedSubstitution
+            , setSubstitution = mempty
             }
 
 {-| Creates a 'PredicateMerger' that returns errors on unifications it

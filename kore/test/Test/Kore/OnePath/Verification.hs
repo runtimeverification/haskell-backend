@@ -172,6 +172,7 @@ test_onePathVerification =
                 , predicate =
                     makeNotPredicate $ makeEqualsPredicate (mkVar Mock.x) Mock.a
                 , substitution = mempty
+                , setSubstitution = mempty
                 }
             )
             actual

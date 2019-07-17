@@ -92,13 +92,15 @@ mapVariables
     -> Pattern variableTo
 mapVariables
     variableMapper
-    Conditional { term, predicate, substitution }
+    Conditional { term, predicate, substitution, setSubstitution }
   =
     Conditional
         { term = TermLike.mapVariables variableMapper term
         , predicate = Syntax.Predicate.mapVariables variableMapper predicate
         , substitution =
             Substitution.mapVariables variableMapper substitution
+        , setSubstitution =
+            Substitution.mapVariables variableMapper setSubstitution
         }
 
 {- | Convert an 'Pattern' to an ordinary 'TermLike'.
@@ -147,6 +149,7 @@ bottom =
         { term      = mkBottom_
         , predicate = Syntax.Predicate.makeFalsePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
 
 {- | An 'Pattern' where the 'term' is 'Bottom' of the given 'Sort'.
@@ -160,6 +163,7 @@ bottomOf resultSort =
         { term      = mkBottom resultSort
         , predicate = Syntax.Predicate.makeFalsePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
 
 {-|'top' is an expanded pattern that has a top condition and that
@@ -171,6 +175,7 @@ top =
         { term      = mkTop_
         , predicate = Syntax.Predicate.makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
 
 {- | An 'Pattern' where the 'term' is 'Top' of the given 'Sort'.
@@ -181,6 +186,7 @@ topOf resultSort =
         { term      = mkTop resultSort
         , predicate = Syntax.Predicate.makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
 
 {- | Construct an 'Pattern' from a 'TermLike'.
@@ -202,6 +208,7 @@ fromTermLike term
         { term
         , predicate = Syntax.Predicate.makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
 
 toPredicate

@@ -70,6 +70,7 @@ test_matcherEqualHeads =
                     { term = ()
                     , predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                    , setSubstitution = mempty
                     }
                 ]
         actual <-
@@ -86,6 +87,7 @@ test_matcherEqualHeads =
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [(Mock.x, Mock.a)]
+                        , setSubstitution = mempty
                         }
                     ]
             actual <-
@@ -146,6 +148,7 @@ test_matcherEqualHeads =
                     { term = ()
                     , predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
+                    , setSubstitution = mempty
                     }
                 ]
         actual <-
@@ -200,6 +203,7 @@ test_matcherEqualHeads =
                     { term = ()
                     , predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                    , setSubstitution = mempty
                     }
                 ]
         actual <-
@@ -213,6 +217,7 @@ test_matcherEqualHeads =
                 [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.y, Mock.a)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -227,6 +232,7 @@ test_matcherEqualHeads =
                 [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -241,6 +247,7 @@ test_matcherEqualHeads =
                 [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.y, Mock.a)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -255,6 +262,7 @@ test_matcherEqualHeads =
                 [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -269,6 +277,7 @@ test_matcherEqualHeads =
                 [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -283,6 +292,7 @@ test_matcherEqualHeads =
                 [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -297,6 +307,7 @@ test_matcherEqualHeads =
                 [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -311,6 +322,7 @@ test_matcherEqualHeads =
                 [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -325,6 +337,7 @@ test_matcherEqualHeads =
                 [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -339,6 +352,7 @@ test_matcherEqualHeads =
                 [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -388,6 +402,7 @@ test_matcherEqualHeads =
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [(Mock.x, Mock.a)]
+                        , setSubstitution = mempty
                         }
                     ]
             actual <-
@@ -414,6 +429,7 @@ test_matcherVariableFunction =
                     { predicate = makeTruePredicate
                     , substitution =
                         Substitution.unsafeWrap [(Mock.x, Mock.functional00)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -425,6 +441,7 @@ test_matcherVariableFunction =
                 [ Conditional
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.cf)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -453,6 +470,7 @@ test_matcherVariableFunction =
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap
                         [(x, Mock.sortInjectionSubSubToSub a)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -484,6 +502,7 @@ test_matcherVariableFunction =
                         [ (xSub, Mock.sortInjectionSubSubToSub aSubSub)
                         , (Mock.x, Mock.functional10 Mock.a)
                         ]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -510,6 +529,7 @@ test_matcherVariableFunction =
                         [ (xSub, Mock.sortInjectionSubSubToSub aSubSub)
                         , (Mock.x, Mock.functional10 Mock.a)
                         ]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -530,6 +550,7 @@ test_matcherVariableFunction =
                 [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -552,6 +573,7 @@ test_matcherVariableFunction =
                         { predicate = makeCeilPredicate Mock.cf
                         , substitution =
                             Substitution.unsafeWrap [(Mock.x, Mock.cf)]
+                        , setSubstitution = mempty
                         , term = ()
                         }
                     ]
@@ -629,6 +651,7 @@ test_matcherMergeSubresults =
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -644,6 +667,7 @@ test_matcherMergeSubresults =
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -665,6 +689,7 @@ test_matcherMergeSubresults =
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -683,6 +708,7 @@ test_matcherMergeSubresults =
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -698,6 +724,7 @@ test_matcherMergeSubresults =
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -719,6 +746,7 @@ test_matcherMergeSubresults =
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                        [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -734,6 +762,7 @@ test_matcherMergeSubresults =
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -749,6 +778,7 @@ test_matcherMergeSubresults =
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                    , setSubstitution = mempty
                     , term = ()
                     }
                 ]
@@ -797,6 +827,7 @@ test_unificationWithAppMatchOnTop =
                         , predicate = makeCeilPredicate Mock.cf
                         , substitution = Substitution.unsafeWrap
                             [(Mock.x, Mock.cf)]
+                        , setSubstitution = mempty
                         }
                     ]
                 )
@@ -814,6 +845,7 @@ test_unificationWithAppMatchOnTop =
                         , predicate = makeCeilPredicate Mock.cf
                         , substitution = Substitution.unsafeWrap
                             [(Mock.x, Mock.cf)]
+                        , setSubstitution = mempty
                         }
                     ]
                 )
@@ -831,6 +863,7 @@ test_unificationWithAppMatchOnTop =
                         , predicate = makeCeilPredicate Mock.cf
                         , substitution = Substitution.unsafeWrap
                             [(Mock.x, Mock.cf)]
+                        , setSubstitution = mempty
                         }
                     ]
                 )
@@ -849,6 +882,7 @@ test_unificationWithAppMatchOnTop =
                             Mock.a
                             (Mock.g (mkVar Mock.x))
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     ]
                 )
@@ -871,6 +905,7 @@ test_unificationWithAppMatchOnTop =
                             (makeCeilPredicate Mock.cf)
                         , substitution = Substitution.unsafeWrap
                             [(Mock.y, Mock.cf)]
+                        , setSubstitution = mempty
                         }
                     ]
                 )
@@ -895,11 +930,13 @@ test_unificationWithAppMatchOnTop =
                     { term = ()
                     , predicate = makeEqualsPredicate (Mock.f Mock.a) Mock.a
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.cf)]
+                    , setSubstitution = mempty
                     }
                 , Conditional
                     { term = ()
                     , predicate = makeEqualsPredicate (Mock.f Mock.b) Mock.b
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.cf)]
+                    , setSubstitution = mempty
                     }
                 ]
             sortVar = SortVariableSort (SortVariable (testId "S"))
@@ -948,6 +985,7 @@ test_unificationWithAppMatchOnTop =
                         (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
                     , substitution = Substitution.unsafeWrap
                         [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
+                    , setSubstitution = mempty
                     }
                 , Conditional
                     { term = ()
@@ -956,6 +994,7 @@ test_unificationWithAppMatchOnTop =
                         (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
                     , substitution = Substitution.unsafeWrap
                         [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
+                    , setSubstitution = mempty
                     }
                 , Conditional
                     { term = ()
@@ -964,6 +1003,7 @@ test_unificationWithAppMatchOnTop =
                         (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
                     , substitution = Substitution.unsafeWrap
                         [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
+                    , setSubstitution = mempty
                     }
                 , Conditional
                     { term = ()
@@ -972,6 +1012,7 @@ test_unificationWithAppMatchOnTop =
                         (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
                     , substitution = Substitution.unsafeWrap
                         [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
+                    , setSubstitution = mempty
                     }
                 ]
             sortVar = SortVariableSort (SortVariable (testId "S"))
@@ -1079,6 +1120,7 @@ matchingBool =
             , substitution =
                 Substitution.unsafeWrap
                     ((fmap . fmap) mkBool subst)
+            , setSubstitution = mempty
             }
         ]
     mkBool = Bool.asInternal Mock.boolSort
@@ -1114,6 +1156,7 @@ matchingInt =
             , substitution =
                 Substitution.unsafeWrap
                     ((fmap . fmap) mkInt subst)
+            , setSubstitution = mempty
             }
         ]
     mkInt = Int.asInternal Mock.intSort
@@ -1149,6 +1192,7 @@ matchingString =
             , substitution =
                 Substitution.unsafeWrap
                     ((fmap . fmap) mkStr subst)
+            , setSubstitution = mempty
             }
         ]
     mkStr = String.asInternal Mock.stringSort
@@ -1210,6 +1254,7 @@ matchingList =
                         , substitution = Substitution.unsafeWrap
                             [ (Mock.xList, mkList [mkInt 1, mkInt 2, mkInt 3])
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <- matchConcat
@@ -1225,6 +1270,7 @@ matchingList =
                         , substitution = Substitution.unsafeWrap
                             [ (Mock.xList, mkList [mkInt 2, mkInt 3])
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <- matchConcat
@@ -1240,6 +1286,7 @@ matchingList =
                         , substitution = Substitution.unsafeWrap
                             [ (Mock.xList, mkList [])
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <- matchConcat
@@ -1255,6 +1302,7 @@ matchingList =
                         , substitution = Substitution.unsafeWrap
                             [ (Mock.xList, mkList [mkInt 1, mkInt 2, mkInt 3])
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <- matchConcat
@@ -1270,6 +1318,7 @@ matchingList =
                         , substitution = Substitution.unsafeWrap
                             [ (Mock.xList, mkList [mkInt 1, mkInt 2])
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <- matchConcat
@@ -1285,6 +1334,7 @@ matchingList =
                         , substitution = Substitution.unsafeWrap
                             [ (Mock.xList, mkList [])
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <- matchConcat
@@ -1301,6 +1351,7 @@ matchingList =
                             [ (Mock.xInt, mkInt 1)
                             , (Mock.xList, mkList [mkInt 2, mkInt 3])
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <- matchConcat
@@ -1317,6 +1368,7 @@ matchingList =
                             [ (Mock.xInt, mkInt 3)
                             , (Mock.xList, mkList [mkInt 1, mkInt 2])
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <- matchConcat
@@ -1333,6 +1385,7 @@ matchingList =
             , substitution =
                 Substitution.unsafeWrap
                     ((fmap . fmap) mkInt subst)
+            , setSubstitution = mempty
             }
         ]
     mkInt = Int.asInternal Mock.intSort
@@ -1445,6 +1498,7 @@ matchingSet =
                         , substitution = Substitution.unsafeWrap
                             [ (Mock.xSet, mkConcreteSet [])
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <- matchVariable [SetVar Mock.xSet] []
@@ -1458,6 +1512,7 @@ matchingSet =
                         , substitution = Substitution.unsafeWrap
                             [ (Mock.xSet, mkConcreteSet [mkKey 1])
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <- matchVariable [SetVar Mock.xSet] [1]
@@ -1471,6 +1526,7 @@ matchingSet =
                         , substitution = Substitution.unsafeWrap
                             [ (Mock.xSet, mkConcreteSet [mkKey 1, mkKey 2, mkKey 3])
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <- matchVariable [SetVar Mock.xSet] [1, 2, 3]
@@ -1484,6 +1540,7 @@ matchingSet =
                         , substitution = Substitution.unsafeWrap
                             [ (Mock.xSet, mkConcreteSet [mkKey 2, mkKey 3])
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <- matchVariable [SetVar Mock.xSet, Concrete 1] [1, 2, 3]
@@ -1497,6 +1554,7 @@ matchingSet =
                         , substitution = Substitution.unsafeWrap
                             [ (Mock.xSet, mkConcreteSet [])
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <-
@@ -1536,6 +1594,7 @@ matchingSet =
                             [ (Mock.xSet, mkConcreteSet [])
                             , (Mock.xInt, mkKey 1)
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <-
@@ -1553,6 +1612,7 @@ matchingSet =
                             [ (Mock.xSet, mkConcreteSet [mkKey 2, mkKey 3])
                             , (Mock.xInt, mkKey 1)
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <-
@@ -1570,6 +1630,7 @@ matchingSet =
                             [ (Mock.xSet, mkConcreteSet [mkKey 3])
                             , (Mock.xInt, mkKey 2)
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <-
@@ -1588,6 +1649,7 @@ matchingSet =
                             , (Mock.xInt, mkKey 2)
                             , (Mock.yInt, mkKey 4)
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <-
@@ -1611,6 +1673,7 @@ matchingSet =
             , substitution =
                 Substitution.unsafeWrap
                     $ fmap mkKey <$> subst
+            , setSubstitution = mempty
             }
         ]
     mkKey k =
@@ -1700,6 +1763,7 @@ matchingMap =
                                   ]
                               )
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <- matchBuiltin
@@ -1722,6 +1786,7 @@ matchingMap =
                                   ]
                               )
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <- matchBuiltin
@@ -1742,6 +1807,7 @@ matchingMap =
                         , substitution = Substitution.unsafeWrap
                             [ (Mock.xMap, mkConcreteMap [])
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <- matchBuiltin
@@ -1765,6 +1831,7 @@ matchingMap =
             , substitution =
                 Substitution.unsafeWrap
                     ((fmap . fmap) mkVal subst)
+            , setSubstitution = mempty
             }
         ]
     mkKey :: Integer -> TermLike Concrete

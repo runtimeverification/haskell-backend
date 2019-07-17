@@ -83,6 +83,7 @@ test_applyInitialConditions =
                     { term = ()
                     , predicate = Predicate.makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
             initial = Predicate.bottom
             expect = Right mempty
@@ -300,6 +301,7 @@ test_applyRewriteRule_ =
                             (Mock.functionalConstr10 (mkVar Mock.y))
                     , predicate = Predicate.makeTruePredicate
                     , substitution = Substitution.wrap [(Mock.y, mkVar Mock.x)]
+                    , setSubstitution = mempty
                     }
         actual <- applyRewriteRule_ initial axiomSigmaId
         assertEqualWithExplanation "" expect actual
@@ -322,6 +324,7 @@ test_applyRewriteRule_ =
                             (Mock.functional10 (mkVar Mock.y))
                     , predicate = makeTruePredicate
                     , substitution = Substitution.wrap [(Mock.y, mkVar Mock.x)]
+                    , setSubstitution = mempty
                     }
         actual <- applyRewriteRule_ initial axiomSigmaId
         assertEqualWithExplanation "" expect actual
@@ -353,6 +356,7 @@ test_applyRewriteRule_ =
                                 [ (Mock.x, zz)
                                 , (Mock.y, mkVar Mock.z)
                                 ]
+                            , setSubstitution = mempty
                             }
                         ]
                     ]
@@ -378,6 +382,7 @@ test_applyRewriteRule_ =
                             { term = Mock.sigma fb fb
                             , predicate = makeTruePredicate
                             , substitution = Substitution.wrap [(Mock.x, fb)]
+                            , setSubstitution = mempty
                             }
                         ]
                     ]
@@ -405,6 +410,7 @@ test_applyRewriteRule_ =
                                     [ (Mock.x, fz)
                                     , (Mock.y, mkVar Mock.z)
                                     ]
+                            , setSubstitution = mempty
                             }
                         ]
                     ]
@@ -414,6 +420,7 @@ test_applyRewriteRule_ =
                         Mock.sigma (Mock.sigma (mkVar Mock.x) fy) (mkVar Mock.x)
                     , predicate = makeTruePredicate
                     , substitution = Substitution.wrap [(Mock.x, fz)]
+                    , setSubstitution = mempty
                     }
         actual <- applyRewriteRule_ initial axiomSigmaXXY
         assertEqualWithExplanation "" expect actual
@@ -451,6 +458,7 @@ test_applyRewriteRule_ =
                     { term = Mock.a
                     , predicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         actual <- applyRewriteRule_ initial axiomId
         assertEqualWithExplanation "" expect actual
@@ -472,6 +480,7 @@ test_applyRewriteRule_ =
                                     (Mock.functional11 fb)
                                     (Mock.functional10 fb)
                             , substitution = Substitution.wrap [(Mock.x, fb)]
+                            , setSubstitution = mempty
                             }
                         ]
                     ]
@@ -486,6 +495,7 @@ test_applyRewriteRule_ =
                             (Mock.functional11 (mkVar Mock.x))
                             (Mock.functional10 (mkVar Mock.x))
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         actual <- applyRewriteRule_ initial axiomSigmaXXY
         assertEqualWithExplanation "" expect actual
@@ -691,6 +701,7 @@ test_applyRewriteRulesParallel =
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution =
                         Substitution.wrap [(Mock.x, Mock.a)]
+                    , setSubstitution = mempty
                     }
             remainders =
                 OrPattern.fromPatterns
@@ -702,6 +713,7 @@ test_applyRewriteRulesParallel =
                                 (makeCeilPredicate Mock.cg)
                                 (makeEqualsPredicate (mkVar Mock.x) Mock.a)
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     ]
             initialTerm = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
@@ -734,6 +746,7 @@ test_applyRewriteRulesParallel =
                     , substitution =
                         Substitution.wrap
                             [(Mock.x, Mock.a)]
+                    , setSubstitution = mempty
                     }
             remainders =
                 OrPattern.fromPatterns
@@ -749,6 +762,7 @@ test_applyRewriteRulesParallel =
                                 (makeCeilPredicate Mock.cg)
                                 (makeEqualsPredicate (mkVar Mock.x) Mock.a)
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     ]
             initialTerm = Mock.functionalConstr20 (mkVar Mock.x) Mock.cg
@@ -757,6 +771,7 @@ test_applyRewriteRulesParallel =
                     { term = initialTerm
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         Right actual <- applyRewriteRulesParallel initial [axiomIfThen]
         checkResults results actual
@@ -781,12 +796,14 @@ test_applyRewriteRulesParallel =
                     { term = Mock.a
                     , predicate = requirement
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
             remainders =
                 MultiOr.singleton Conditional
                     { term = Mock.functionalConstr10 (mkVar Mock.x)
                     , predicate = makeNotPredicate requirement
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
             initial = pure (Mock.functionalConstr10 (mkVar Mock.x))
             requirement = makeEqualsPredicate (Mock.f (mkVar Mock.x)) Mock.b
@@ -814,6 +831,7 @@ test_applyRewriteRulesParallel =
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution =
                         Substitution.wrap [(Mock.x, Mock.a)]
+                    , setSubstitution = mempty
                     }
             remainders =
                 OrPattern.fromPatterns
@@ -864,12 +882,14 @@ test_applyRewriteRulesParallel =
                         , predicate = definedBranches
                         , substitution =
                             Substitution.wrap [(Mock.x, Mock.a)]
+                        , setSubstitution = mempty
                         }
                     , Conditional
                         { term = Mock.cg
                         , predicate = definedBranches
                         , substitution =
                             Substitution.wrap [(Mock.x, Mock.b)]
+                        , setSubstitution = mempty
                         }
                     ]
             remainders =
@@ -917,6 +937,7 @@ test_applyRewriteRulesParallel =
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution =
                         Substitution.wrap [(Mock.x, Mock.a)]
+                    , setSubstitution = mempty
                     }
             remainders =
                 OrPattern.fromPatterns
@@ -1059,12 +1080,14 @@ test_applyRewriteRulesSequence =
                         , predicate = definedBranches
                         , substitution =
                             Substitution.wrap [(Mock.x, Mock.a)]
+                        , setSubstitution = mempty
                         }
                     , Conditional
                         { term = Mock.cg
                         , predicate = definedBranches
                         , substitution =
                             Substitution.wrap [(Mock.x, Mock.b)]
+                        , setSubstitution = mempty
                         }
                     ]
             remainders =
@@ -1171,6 +1194,7 @@ test_sequenceMatchingRules =
                                 )
                         , predicate = Predicate.makeTruePredicate
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     ]
             remainders =

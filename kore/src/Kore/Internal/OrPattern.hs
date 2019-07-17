@@ -113,6 +113,7 @@ toPattern multiOr =
                 { term = Foldable.foldr1 mkOr (Pattern.toTermLike <$> patts)
                 , predicate = Syntax.Predicate.makeTruePredicate
                 , substitution = mempty
+                , setSubstitution = mempty
                 }
 
 {-| Transforms a 'Pattern' into a 'TermLike'.

@@ -221,13 +221,18 @@ verifyClaim
                     { term = right
                     , predicate = ensures
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 )
         startPattern :: CommonStrategyPattern
         startPattern =
             StrategyPattern.RewritePattern
                 Conditional
-                    {term = left, predicate = requires, substitution = mempty}
+                    { term = left
+                    , predicate = requires
+                    , substitution = mempty
+                    , setSubstitution = mempty
+                    }
     executionGraph <- runStrategy transitionRule' strategy startPattern
     -- Throw the first unproven configuration as an error.
     -- This might appear to be unnecessary because transitionRule' (below)

@@ -12,6 +12,8 @@ module Kore.Internal.Conditional
     , fromPredicate
     , fromSubstitution
     , fromSingleSubstitution
+    , fromSetSubstitution
+    , fromSingleSetSubstitution
     , andPredicate
     , Kore.Internal.Conditional.freeVariables
     , Kore.Internal.Conditional.freeSetVariables
@@ -64,6 +66,7 @@ data Conditional variable child =
         { term :: child
         , predicate :: !(Predicate variable)
         , substitution :: !(Substitution variable)
+        , setSubstitution :: !(Substitution variable)
         }
     deriving (Foldable, Functor, Generic, Traversable)
 
@@ -111,6 +114,7 @@ instance
             { term = mempty
             , predicate = Predicate.makeTruePredicate
             , substitution = mempty
+            , setSubstitution = mempty
             }
     {-# INLINE mempty #-}
 
@@ -129,6 +133,7 @@ instance
             { term
             , predicate = Predicate.makeTruePredicate
             , substitution = mempty
+            , setSubstitution = mempty
             }
 
     (<*>) predicated1 predicated2 =
@@ -136,10 +141,11 @@ instance
             { term = f a
             , predicate = Predicate.makeAndPredicate predicate1 predicate2
             , substitution = substitution1 <> substitution2
+            , setSubstitution = setSubstitution1 <> setSubstitution2
             }
       where
-        Conditional f predicate1 substitution1 = predicated1
-        Conditional a predicate2 substitution2 = predicated2
+        Conditional f predicate1 substitution1 setSubstitution1 = predicated1
+        Conditional a predicate2 substitution2 setSubstitution2 = predicated2
 
 instance TopBottom term
     => TopBottom (Conditional variable term)
@@ -234,7 +240,12 @@ fromPredicate
     => Predicate variable
     -> Conditional variable ()
 fromPredicate predicate =
-    Conditional { term = (), predicate, substitution = mempty }
+    Conditional
+        { term = ()
+        , predicate
+        , substitution = mempty
+        , setSubstitution = mempty
+        }
 
 {- | Construct a 'Conditional' holding the given 'Substitution'.
 
@@ -250,6 +261,24 @@ fromSubstitution substitution =
         { term = ()
         , predicate = Predicate.makeTruePredicate
         , substitution
+        , setSubstitution = mempty
+        }
+
+{- | Construct a 'Conditional' holding the given set 'Substitution'.
+
+The result has a true 'Predicate'.
+
+ -}
+fromSetSubstitution
+    :: (Ord variable, SortedVariable variable)
+    => Substitution variable
+    -> Conditional variable ()
+fromSetSubstitution setSubstitution =
+    Conditional
+        { term = ()
+        , predicate = Predicate.makeTruePredicate
+        , substitution = mempty
+        , setSubstitution
         }
 
 {- | Construct a 'Conditional' holding a single substitution.
@@ -266,6 +295,24 @@ fromSingleSubstitution pair =
         { term = ()
         , predicate = Predicate.makeTruePredicate
         , substitution = Substitution.wrap [pair]
+        , setSubstitution = mempty
+        }
+
+{- | Construct a 'Conditional' holding a single set substitution.
+
+The result has a true 'Predicate'.
+
+ -}
+fromSingleSetSubstitution
+    :: (Ord variable, SortedVariable variable)
+    => (variable, TermLike variable)
+    -> Conditional variable ()
+fromSingleSetSubstitution pair =
+    Conditional
+        { term = ()
+        , predicate = Predicate.makeTruePredicate
+        , substitution = mempty
+        , setSubstitution = Substitution.wrap [pair]
         }
 
 {- | Combine the predicate with the conditions of the first argument.
@@ -349,12 +396,14 @@ mapVariables
 mapVariables
     mapTermVariables
     mapVariable
-    Conditional { term, predicate, substitution }
+    Conditional { term, predicate, substitution, setSubstitution }
   =
     Conditional
         { term = mapTermVariables mapVariable term
         , predicate = Predicate.mapVariables mapVariable predicate
         , substitution = Substitution.mapVariables mapVariable substitution
+        , setSubstitution =
+            Substitution.mapVariables mapVariable setSubstitution
         }
 
 splitTerm :: Conditional variable term -> (term, Conditional variable ())

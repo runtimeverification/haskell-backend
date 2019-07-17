@@ -207,6 +207,7 @@ actualTwoAxioms =
             { term = mkVar (v1 Mock.testSort)
             , predicate = makeTruePredicate
             , substitution = mempty
+            , setSubstitution = mempty
             }
         [ rewriteIdentity
         , rewriteImplies
@@ -221,6 +222,7 @@ initialFailSimple =
                 (metaF (mkVar $ b1 Mock.testSort))
         , predicate = makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
 
 expectFailSimple :: [Pattern Variable]
@@ -252,6 +254,7 @@ initialFailCycle =
                 (mkVar $ a1 Mock.testSort)
         , predicate = makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
 
 expectFailCycle :: [Pattern Variable]
@@ -280,6 +283,7 @@ initialIdentity =
         { term = mkVar (v1 Mock.testSort)
         , predicate = makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
 
 expectIdentity :: [Pattern Variable]
@@ -336,6 +340,7 @@ actualUnificationError =
                     (metaI (mkVar $ b1 Mock.testSort))
             , predicate = makeTruePredicate
             , substitution = mempty
+            , setSubstitution = mempty
             }
         [axiomMetaSigmaId]
 

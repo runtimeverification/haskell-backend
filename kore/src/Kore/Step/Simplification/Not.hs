@@ -150,6 +150,7 @@ makeEvaluatePredicate
             $ makeAndPredicate predicate
             $ Predicate.fromSubstitution substitution
         , substitution = mempty
+        , setSubstitution = mempty
         }
 
 makeTermNot

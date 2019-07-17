@@ -437,6 +437,7 @@ test_unifyFramingVariable =
                     , substitution =
                         Substitution.unsafeWrap
                             [(frameVar, asInternal remainder)]
+                    , setSubstitution = mempty
                     }
             actual <- Trans.lift $
                 evaluateToList (mkAnd patConcreteSet patFramedSet)
@@ -537,6 +538,7 @@ test_unifySelectFromSingleton =
                                 [ (setVar, asInternal Set.empty)
                                 , (elementVar, elemStepPattern)
                                 ]
+                        , setSubstitution = mempty
                         }
             -- { 5 } /\ SetItem(X:Int) Rest:Set
             (singleton `unifiesWithMulti` selectPat) [expect]
@@ -563,6 +565,7 @@ test_unifySelectFromSingletonWithoutLeftovers =
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (elementVar, elemStepPattern) ]
+                        , setSubstitution = mempty
                         }
             -- { 5 } /\ SetItem(X:Int)
             (singleton `unifiesWith` selectPat) expect
@@ -598,6 +601,7 @@ test_unifySelectFromTwoElementSet =
                                     )
                                 , (elementVar, elemStepPattern1)
                                 ]
+                        , setSubstitution = mempty
                         }
                 expect2 =
                     Conditional
@@ -610,6 +614,7 @@ test_unifySelectFromTwoElementSet =
                                     )
                                 , (elementVar, elemStepPattern2)
                                 ]
+                        , setSubstitution = mempty
                         }
             -- { 5 } /\ SetItem(X:Int) Rest:Set
             (set `unifiesWithMulti` selectPat)
@@ -660,6 +665,7 @@ test_unifySelectTwoFromTwoElementSet =
                                 , (elementVar1, elementUnifier1)
                                 , (elementVar2, elementUnifier2)
                                 ]
+                        , setSubstitution = mempty
                         }
             -- { 5, 6 } /\ SetItem(X:Int) SetItem(Y:Int) Rest:Set
             (set `unifiesWithMulti` selectPat) expect
@@ -706,6 +712,7 @@ test_unifyConcatElemVarVsElemSet =
                                 [ (setVar, setUnifier)
                                 , (elementVar1, elemUnifier)
                                 ]
+                        , setSubstitution = mempty
                         }
             -- { Y:Int, 6 } /\ SetItem(X:Int) Rest:Set
             (patSet `unifiesWithMulti` selectPat) expect
@@ -753,6 +760,7 @@ test_unifyConcatElemVarVsElemElem =
                                 [ (setVar, setUnifier)
                                 , (elementVar1, elemUnifier)
                                 ]
+                        , setSubstitution = mempty
                         }
             -- { Y:Int, 6 } /\ SetItem(X:Int) Rest:Set
             (patSet `unifiesWithMulti` selectPat) expect
@@ -796,6 +804,7 @@ test_unifyConcatElemElemVsElemConcrete =
                                 [ (elementVar1, elemUnifier1)
                                 , (elementVar2, elemUnifier2)
                                 ]
+                        , setSubstitution = mempty
                         }
             -- { X:Int, Y:Int } /\ { Z:Int, 6 }
             (patSet `unifiesWithMulti` selectPat) expect
@@ -838,6 +847,7 @@ test_unifyConcatElemElemVsElemElem =
                                 [ (elementVar1, elemUnifier1)
                                 , (elementVar2, elemUnifier2)
                                 ]
+                        , setSubstitution = mempty
                         }
             -- { X:Int, Y:Int } /\ { Z:Int, T:Int }
             (patSet `unifiesWithMulti` selectPat) expect
@@ -894,6 +904,7 @@ test_unifyConcatElemConcatVsElemConcrete =
                                 , (elementVar2, elemUnifier2)
                                 , (elementVar3, elemStepPattern1)
                                 ]
+                        , setSubstitution = mempty
                         }
             -- SetItem(X:Int) SetItem(Y:Int) {5} /\ { Z:Int, 6, 7 }
             (patSet `unifiesWithMulti` selectPat) expect
@@ -928,6 +939,7 @@ test_unifyConcatElemConcreteVsElemConcrete1 =
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (elementVar1, mkVar elementVar2) ]
+                        , setSubstitution = mempty
                         }
                     ]
             -- { X:Int, 6 } /\ { Y:Int, 6 }
@@ -968,6 +980,7 @@ test_unifyConcatElemConcreteVsElemConcrete2 =
                                 [ (elementVar1, elemStepPattern2)
                                 , (elementVar2, elemStepPattern1)
                                 ]
+                        , setSubstitution = mempty
                         }
                     ]
             -- { X:Int, 5 } /\ { Y:Int, 6 }
@@ -1014,6 +1027,7 @@ test_unifyConcatElemConcreteVsElemConcrete3 =
                                 [ (elementVar1, elemStepPattern3)
                                 , (elementVar2, elemStepPattern2)
                                 ]
+                        , setSubstitution = mempty
                         }
                     ]
             -- { X:Int, 5, 6 } /\ { Y:Int, 5, 7 }
@@ -1087,6 +1101,7 @@ test_unifyConcatElemConcreteVsElemConcrete5 =
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (elementVar1, mkVar elementVar2) ]
+                        , setSubstitution = mempty
                         }
                     ]
             -- { X:Int, 5, 6 } /\ { Y:Int, 5, 6 }
@@ -1117,6 +1132,7 @@ test_unifyConcatElemVsElem =
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (elementVar1, mkVar elementVar2) ]
+                        , setSubstitution = mempty
                         }
                     ]
             -- { X:Int } /\ { Y:Int }
@@ -1148,6 +1164,7 @@ test_unifyConcatElemVsElemConcrete1 =
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (elementVar1, mkVar elementVar2) ]
+                        , setSubstitution = mempty
                         }
                     ]
             -- { X:Int } /\ { Y:Int, {} }
@@ -1257,6 +1274,7 @@ test_unifyConcatElemVsElemVar =
                                 [ (setVar, asInternal Set.empty)
                                 , (elementVar1, mkVar elementVar2)
                                 ]
+                        , setSubstitution = mempty
                         }
                     ]
             -- { X:Int } /\ concat(Y:Int, Z:Set)
@@ -1338,6 +1356,7 @@ test_unifyConcatElemElemVsElemConcatSet =
                                 , (elementVar2, secondUnifier)
                                 , (setVar, asInternal Set.empty)
                                 ]
+                        , setSubstitution = mempty
                         }
             -- { X:Int, Y:Int } /\ { Z:Int, T:Int, U:Set }
             (patSet `unifiesWithMulti` selectPat) expect
@@ -1369,6 +1388,7 @@ test_unifyFnSelectFromSingleton =
                                     , asInternal Set.empty
                                     )
                                 ]
+                        , setSubstitution = mempty
                         }
                     ]
             -- { 5 } /\ SetItem(absInt(X:Int)) Rest:Set
@@ -1451,6 +1471,7 @@ test_unifyMultipleIdenticalOpaqueSets =
                                 [ (elementVar1, (mkVar elementVar2))
                                 , (setVar3, asInternal Set.empty)
                                 ]
+                        , setSubstitution = mempty
                         }
                     ]
             -- { X:Int, Y:Int } /\ { Z:Int, T:Int, U:Set }
@@ -1500,6 +1521,7 @@ test_concretizeKeys =
             , predicate = Predicate.makeTruePredicate
             , substitution = Substitution.unsafeWrap
                 [ (x, symbolicKey) ]
+            , setSubstitution = mempty
             }
 
 {- | Unify a concrete Set with symbolic-keyed Set in an axiom

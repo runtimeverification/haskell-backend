@@ -144,14 +144,13 @@ unificationSubstitution = map trans
         )
 
 unificationResult :: UnificationResult -> Pattern Variable
-unificationResult
-    UnificationResult { term, substitution, predicate }
-  =
+unificationResult UnificationResult { term, predicate, substitution } =
     Conditional
-        { term
-        , predicate
-        , substitution =
-            Substitution.unsafeWrap $ unificationSubstitution substitution
+        { term = term
+        , predicate = predicate
+        , substitution = Substitution.unsafeWrap $
+            unificationSubstitution substitution
+        , setSubstitution = mempty
         }
 
 newtype UnificationTerm = UnificationTerm (TermLike Variable)

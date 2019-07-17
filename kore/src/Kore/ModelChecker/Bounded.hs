@@ -109,6 +109,7 @@ checkClaim
                         { term = left
                         , predicate = Predicate.makeTruePredicate
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
         executionGraph <- State.evalStateT
                             (runStrategyWithSearchOrder

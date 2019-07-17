@@ -55,6 +55,7 @@ test_andNegation =
             { term = ()
             , predicate = makeFalsePredicate
             , substitution = mempty
+            , setSubstitution = mempty
             }
 
 evaluate

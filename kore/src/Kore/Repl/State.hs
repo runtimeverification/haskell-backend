@@ -111,7 +111,7 @@ emptyExecutionGraph =
         :: RewriteRule Variable
         -> CommonStrategyPattern
     extractConfig (RewriteRule RulePattern { left, requires }) =
-        RewritePattern $ Conditional left requires mempty
+        RewritePattern $ Conditional left requires mempty mempty
 
 ruleReference
     :: (Either AxiomIndex ClaimIndex -> a)

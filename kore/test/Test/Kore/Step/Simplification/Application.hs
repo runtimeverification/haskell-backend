@@ -53,21 +53,25 @@ test_applicationSimplification =
                         { term = Mock.sigma Mock.a Mock.c
                         , predicate = makeTruePredicate
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     , Conditional
                         { term = Mock.sigma Mock.a Mock.d
                         , predicate = makeTruePredicate
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     , Conditional
                         { term = Mock.sigma Mock.b Mock.c
                         , predicate = makeTruePredicate
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     ,  Conditional
                         { term = Mock.sigma Mock.b Mock.d
                         , predicate = makeTruePredicate
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     ]
         actual <-
@@ -137,6 +141,7 @@ test_applicationSimplification =
                                 [ (Mock.x, fOfA)
                                 , (Mock.y, gOfA)
                                 ]
+                            , setSubstitution = mempty
                             }
                         ]
             actual <-
@@ -150,6 +155,7 @@ test_applicationSimplification =
                                 , predicate = makeEqualsPredicate fOfA fOfB
                                 , substitution =
                                     Substitution.wrap [ (Mock.x, fOfA) ]
+                                , setSubstitution = mempty
                                 }
                             ]
                         ,   [ Conditional
@@ -157,6 +163,7 @@ test_applicationSimplification =
                                 , predicate = makeEqualsPredicate gOfA gOfB
                                 , substitution =
                                     Substitution.wrap [ (Mock.y, gOfA) ]
+                                , setSubstitution = mempty
                                 }
                             ]
                         ]
@@ -189,6 +196,7 @@ test_applicationSimplification =
                                     , (Mock.x, fOfA)
                                     , (Mock.y, gOfA)
                                     ]
+                            , setSubstitution = mempty
                             }
                         ]
             actual <-
@@ -217,6 +225,7 @@ test_applicationSimplification =
                                 , predicate = makeEqualsPredicate fOfA gOfA
                                 , substitution =
                                     Substitution.wrap [ (zvar, gOfB) ]
+                                , setSubstitution = mempty
                                 }
                             ]
                         , remainders = OrPattern.fromPatterns []
@@ -239,6 +248,7 @@ test_applicationSimplification =
                                 , predicate = makeEqualsPredicate fOfA fOfB
                                 , substitution =
                                     Substitution.wrap [ (Mock.x, fOfA) ]
+                                , setSubstitution = mempty
                                 }
                             ]
                         ,   [ Conditional
@@ -246,6 +256,7 @@ test_applicationSimplification =
                                 , predicate = makeEqualsPredicate gOfA gOfB
                                 , substitution =
                                     Substitution.wrap [ (Mock.y, gOfA) ]
+                                , setSubstitution = mempty
                                 }
                             ]
                         ]
@@ -266,21 +277,25 @@ test_applicationSimplification =
         { term = Mock.a
         , predicate = makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
     bExpanded = Conditional
         { term = Mock.b
         , predicate = makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
     cExpanded = Conditional
         { term = Mock.c
         , predicate = makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
     dExpanded = Conditional
         { term = Mock.d
         , predicate = makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
 
     gOfAExpanded
@@ -290,6 +305,7 @@ test_applicationSimplification =
         { term = gOfA
         , predicate = makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
 
     noSimplification :: [(TermLike Variable, [Pattern Variable])]

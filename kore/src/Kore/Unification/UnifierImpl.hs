@@ -80,6 +80,7 @@ simplifyAnds patterns = do
                         { term = Pattern.term result
                         , predicate = Conditional.predicate predSubst
                         , substitution = Conditional.substitution predSubst
+                        , setSubstitution = mempty
                         }
     result <- foldM simplifyAnds' Pattern.top patterns
     if Predicate.isFalse . Pattern.predicate $ result
@@ -118,6 +119,7 @@ solveGroupedSubstitution var patterns = do
         { term = ()
         , predicate = Pattern.predicate predSubst
         , substitution = Substitution.wrap $ termAndSubstitution predSubst
+        , setSubstitution = mempty
         }
   where
     termAndSubstitution s =
@@ -161,6 +163,7 @@ normalizeSubstitutionDuplication subst
         { term = ()
         , predicate = pred'
         , substitution = Conditional.substitution finalSubst
+        , setSubstitution = mempty
         }
   where
     groupedSubstitution =

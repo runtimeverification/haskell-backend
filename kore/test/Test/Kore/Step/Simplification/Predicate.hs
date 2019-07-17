@@ -60,6 +60,7 @@ test_predicateSimplification =
                         [ (Mock.x, Mock.a)
                         , (Mock.y, Mock.b)
                         ]
+                    , setSubstitution = mempty
                     }
         actual <-
             runSimplifier Map.empty
@@ -73,6 +74,7 @@ test_predicateSimplification =
                         [ (Mock.x, Mock.a)
                         , (Mock.y, Mock.b)
                         ]
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "" (MultiOr.singleton expect) actual
 
@@ -88,6 +90,7 @@ test_predicateSimplification =
                         [ (Mock.x, Mock.functional00)
                         , (Mock.y, Mock.functional01)
                         ]
+                    , setSubstitution = mempty
                     }
         actual <-
             runSimplifier Map.empty
@@ -101,6 +104,7 @@ test_predicateSimplification =
                         [ (Mock.x, Mock.functional00)
                         , (Mock.y, Mock.functional01)
                         ]
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "" (MultiOr.singleton expect) actual
 
@@ -113,6 +117,7 @@ test_predicateSimplification =
                         [ (Mock.x, Mock.functional00)
                         , (Mock.y, Mock.functional01)
                         ]
+                    , setSubstitution = mempty
                     }
         actual <-
             runSimplifier
@@ -139,6 +144,7 @@ test_predicateSimplification =
                         [ (Mock.x, Mock.functional00)
                         , (Mock.y, Mock.functional01)
                         ]
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "" (MultiOr.singleton expect) actual
 
@@ -151,6 +157,7 @@ test_predicateSimplification =
                         [ (Mock.x, Mock.a)
                         , (Mock.y, Mock.b)
                         ]
+                    , setSubstitution = mempty
                     }
         actual <-
             runSimplifier
@@ -172,6 +179,7 @@ test_predicateSimplification =
                     , substitution = Substitution.unsafeWrap
                         [ (Mock.y, Mock.b)
                         ]
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "" (MultiOr.singleton expect) actual
 
@@ -187,6 +195,7 @@ test_predicateSimplification =
                         [ (Mock.x, Mock.a)
                         , (Mock.y, Mock.b)
                         ]
+                    , setSubstitution = mempty
                     }
         actual <-
             runSimplifier
@@ -215,6 +224,7 @@ test_predicateSimplification =
                     , substitution = Substitution.unsafeWrap
                         [ (Mock.y, Mock.b)
                         ]
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "" (MultiOr.singleton expect) actual
 
@@ -230,6 +240,7 @@ test_predicateSimplification =
                         [ (Mock.x, Mock.a)
                         , (Mock.y, Mock.b)
                         ]
+                    , setSubstitution = mempty
                     }
         actual <-
             runSimplifier
@@ -259,6 +270,7 @@ test_predicateSimplification =
                     , substitution = Substitution.unsafeWrap
                         [ (Mock.y, Mock.b)
                         ]
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "" (MultiOr.singleton expect) actual
     ]

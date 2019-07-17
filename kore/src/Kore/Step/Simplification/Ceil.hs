@@ -198,18 +198,19 @@ makeEvaluateTerm term@(Recursive.project -> _ :< projected) =
                     { term = ()
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 (mkCeil_ term)
                 (OrPattern.fromPattern Conditional
                     { term = mkTop_
                     , predicate = makeCeilPredicate term
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 )
             return (fmap toPredicate evaluation)
 
-    toPredicate Conditional {term = Top_ _, predicate, substitution} =
-        Conditional {term = (), predicate, substitution}
+    toPredicate patt@Conditional { term = Top_ _ } = patt { term = () }
     toPredicate patt =
         error
             (  "Ceil simplification is expected to result ai a predicate, but"

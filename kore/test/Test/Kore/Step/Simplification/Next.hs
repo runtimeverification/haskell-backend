@@ -30,6 +30,7 @@ test_nextSimplification =
                     { term = mkNext Mock.a
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 ]
             )
@@ -39,6 +40,7 @@ test_nextSimplification =
                         { term = Mock.a
                         , predicate = makeTruePredicate
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     ]
                 )
@@ -56,6 +58,7 @@ test_nextSimplification =
                             )
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 ]
             )
@@ -65,11 +68,13 @@ test_nextSimplification =
                         { term = Mock.a
                         , predicate = makeTruePredicate
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     , Conditional
                         { term = Mock.b
                         , predicate = makeEqualsPredicate Mock.a Mock.b
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     ]
                 )

@@ -164,6 +164,7 @@ searchPattern = Conditional
     { term = searchVar
     , predicate = makeTruePredicate
     , substitution = mempty
+    , setSubstitution = mempty
     }
 
 -- | Turn a disjunction of "v = ???" into Just a set of the ???. If the input is

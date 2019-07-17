@@ -66,6 +66,7 @@ test_simplify =
                 $ Predicate.makeExistsPredicate Mock.x
                 $ Predicate.fromSubstitution substitution
             , substitution = mempty
+            , setSubstitution = mempty
             }
     substForX =
         (Pattern.topOf Mock.testSort)
@@ -119,6 +120,7 @@ test_makeEvaluate =
                             makeCeilPredicate (Mock.h gOfA)
                         , substitution = Substitution.unsafeWrap
                             [(Mock.y, fOfA)]
+                        , setSubstitution = mempty
                         }
                     ]
         actual <-
@@ -129,6 +131,7 @@ test_makeEvaluate =
                     , predicate = makeCeilPredicate (Mock.h (mkVar Mock.x))
                     , substitution =
                         Substitution.wrap [(Mock.x, gOfA), (Mock.y, fOfA)]
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "exists with substitution" expect actual
 
@@ -142,6 +145,7 @@ test_makeEvaluate =
                         { term = fOfA
                         , predicate = makeCeilPredicate gOfA
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     ]
         actual <-
@@ -151,6 +155,7 @@ test_makeEvaluate =
                     { term = fOfA
                     , predicate = makeCeilPredicate gOfA
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "exists with substitution" expect actual
 
@@ -164,6 +169,7 @@ test_makeEvaluate =
                         { term = mkExists Mock.x fOfX
                         , predicate = makeCeilPredicate gOfA
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     ]
         actual <-
@@ -173,6 +179,7 @@ test_makeEvaluate =
                     { term = fOfX
                     , predicate = makeCeilPredicate gOfA
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "exists on term" expect actual
 
@@ -187,6 +194,7 @@ test_makeEvaluate =
                         , predicate =
                             makeExistsPredicate Mock.x (makeCeilPredicate fOfX)
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     ]
         actual <-
@@ -196,6 +204,7 @@ test_makeEvaluate =
                     { term = fOfA
                     , predicate = makeCeilPredicate fOfX
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "exists on predicate" expect actual
 
@@ -208,6 +217,7 @@ test_makeEvaluate =
                     { term = fOfX
                     , predicate = makeEqualsPredicate fOfX gOfA
                     , substitution = Substitution.wrap [(Mock.y, hOfA)]
+                    , setSubstitution = mempty
                     }
 
     , testCase "exists reevaluates" $ do
@@ -221,6 +231,7 @@ test_makeEvaluate =
                     { term = mkTop_
                     , predicate = makeEqualsPredicate fOfX (Mock.f gOfA)
                     , substitution = Substitution.wrap [(Mock.x, gOfA)]
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "exists reevaluates" expect actual
     , testCase "exists matches equality if result is top" $ do
@@ -231,6 +242,7 @@ test_makeEvaluate =
                     { term = fOfA
                     , predicate = makeTruePredicate
                     , substitution = Substitution.wrap [(Mock.y, fOfA)]
+                    , setSubstitution = mempty
                     }
                 ]
         actual <-
@@ -240,6 +252,7 @@ test_makeEvaluate =
                     { term = fOfA
                     , predicate = makeEqualsPredicate fOfX (Mock.f Mock.a)
                     , substitution = Substitution.wrap [(Mock.y, fOfA)]
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "exists matching" expect actual
     , testCase "exists does not match equality if free var in subst" $ do
@@ -256,6 +269,7 @@ test_makeEvaluate =
                                 (makeEqualsPredicate (mkVar Mock.y) fOfX)
                             )
                     , substitution = Substitution.wrap [(Mock.z, fOfA)]
+                    , setSubstitution = mempty
                     }
                 ]
         actual <-
@@ -266,6 +280,7 @@ test_makeEvaluate =
                     , predicate = makeEqualsPredicate fOfX (Mock.f Mock.a)
                     , substitution =
                         Substitution.wrap [(Mock.y, fOfX), (Mock.z, fOfA)]
+                    , setSubstitution = mempty
                     }
         assertEqualWithExplanation "exists matching" expect actual
     , testCase "exists does not match equality if free var in term" $
@@ -277,6 +292,7 @@ test_makeEvaluate =
                     { term = fOfX
                     , predicate = makeEqualsPredicate fOfX (Mock.f Mock.a)
                     , substitution = Substitution.wrap [(Mock.y, fOfA)]
+                    , setSubstitution = mempty
                     }
     ]
   where

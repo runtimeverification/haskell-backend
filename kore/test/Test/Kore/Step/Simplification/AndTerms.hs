@@ -56,6 +56,7 @@ test_andTermsSimplification =
                         { term = fOfA
                         , predicate = makeTruePredicate
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
             actual <- simplifyUnify fOfA mkTop_
             assertEqualWithExplanation "" ([expected], Just [expected]) actual
@@ -66,6 +67,7 @@ test_andTermsSimplification =
                         { term = fOfA
                         , predicate = makeTruePredicate
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
             actual <- simplifyUnify mkTop_ fOfA
             assertEqualWithExplanation "" ([expected], Just [expected]) actual
@@ -93,6 +95,7 @@ test_andTermsSimplification =
                     { term = fOfA
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
         actual <- simplifyUnify fOfA fOfA
         assertEqualWithExplanation "" ([expect], Just [expect]) actual
@@ -105,6 +108,7 @@ test_andTermsSimplification =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap [(Mock.x, fOfA)]
+                        , setSubstitution = mempty
                         }
             actual <- simplifyUnify (mkVar Mock.x) fOfA
             assertEqualWithExplanation "" ([expect], Just [expect]) actual
@@ -116,6 +120,7 @@ test_andTermsSimplification =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap [(Mock.x, fOfA)]
+                        , setSubstitution = mempty
                         }
             actual <- simplifyUnify fOfA (mkVar Mock.x)
             assertEqualWithExplanation "" ([expect], Just [expect]) actual
@@ -128,6 +133,7 @@ test_andTermsSimplification =
                         { term = Mock.injective10 fOfA
                         , predicate = makeEqualsPredicate fOfA gOfA
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
             actual <-
                 simplifyUnify
@@ -139,6 +145,7 @@ test_andTermsSimplification =
                         { term = Mock.injective10 fOfA
                         , predicate = makeTruePredicate
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
             actual <-
                 simplifyUnify
@@ -153,6 +160,7 @@ test_andTermsSimplification =
                                     (Mock.injective11 gOfA)
                             , predicate = makeTruePredicate
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                         ]
                     , Nothing
@@ -171,6 +179,7 @@ test_andTermsSimplification =
                         , predicate =
                             makeEqualsPredicate Mock.cfSort0 Mock.cgSort0
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
             actual <-
                 simplifyUnify
@@ -184,6 +193,7 @@ test_andTermsSimplification =
                             Mock.sortInjection10 Mock.cfSort0
                         , predicate = makeTruePredicate
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
             actual <-
                 simplifyUnify
@@ -210,6 +220,7 @@ test_andTermsSimplification =
                                     )
                             , predicate = makeTruePredicate
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                         ]
                     , Nothing
@@ -232,6 +243,7 @@ test_andTermsSimplification =
                                     )
                             , predicate = makeTruePredicate
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                         ]
                     , Nothing
@@ -279,6 +291,7 @@ test_andTermsSimplification =
                             { term = Mock.constr10 Mock.cf
                             , predicate = makeEqualsPredicate Mock.cf Mock.cg
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                     in ([expected], Just [expected])
             actual <-
@@ -294,6 +307,7 @@ test_andTermsSimplification =
                             { term = Mock.constr10 Mock.cf
                             , predicate = makeTruePredicate
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                     in ([expected], Just [expected])
             actual <-
@@ -327,6 +341,7 @@ test_andTermsSimplification =
                             { term = aDomainValue
                             , predicate = makeTruePredicate
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                     in ([expected], Just [expected])
             actual <- simplifyUnify aDomainValue aDomainValue
@@ -346,6 +361,7 @@ test_andTermsSimplification =
                             { term = mkStringLiteral "a"
                             , predicate = makeTruePredicate
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                     in ([expected], Just [expected])
             actual <-
@@ -371,6 +387,7 @@ test_andTermsSimplification =
                             { term = mkCharLiteral 'a'
                             , predicate = makeTruePredicate
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                     in ([expected], Just [expected])
             actual <- simplifyUnify (mkCharLiteral 'a') (mkCharLiteral 'a')
@@ -390,6 +407,7 @@ test_andTermsSimplification =
                             { term = fOfA
                             , predicate = makeTruePredicate
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                     in ([expanded], Just [expanded])
             actual <- simplifyUnify fOfA fOfA
@@ -402,6 +420,7 @@ test_andTermsSimplification =
                             { term = fOfA
                             , predicate = makeEqualsPredicate fOfA gOfA
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                     in ([expanded], Just [expanded])
             actual <- simplifyUnify fOfA gOfA
@@ -415,6 +434,7 @@ test_andTermsSimplification =
                             { term = mkAnd plain0OfA plain1OfA
                             , predicate = makeTruePredicate
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                         ]
                     , Nothing
@@ -428,6 +448,7 @@ test_andTermsSimplification =
                             { term = Mock.constr10 (mkAnd plain0OfA plain1OfA)
                             , predicate = makeTruePredicate
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                         ]
                     , Nothing
@@ -445,6 +466,7 @@ test_andTermsSimplification =
                                     (Mock.constr10 (mkAnd plain0OfA plain1OfA))
                             , predicate = makeTruePredicate
                             , substitution = mempty
+                            , setSubstitution = mempty
                             }
                         ]
                     , Nothing
@@ -465,6 +487,7 @@ test_andTermsSimplification =
                                 (mkAnd plain0OfB plain1OfB)
                         , predicate = makeTruePredicate
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     ]
                 , Nothing
@@ -483,6 +506,7 @@ test_andTermsSimplification =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                        , setSubstitution = mempty
                         }
                     ]
             actual <-
@@ -512,6 +536,7 @@ test_andTermsSimplification =
                             [ (Mock.x, fOfA)
                             , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
             actual <-
@@ -540,6 +565,7 @@ test_andTermsSimplification =
                             [ (Mock.x, fOfA)
                             , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
             actual <-
@@ -568,6 +594,7 @@ test_andTermsSimplification =
                             [ (Mock.x, fOfA)
                             , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
             actual <-
@@ -596,6 +623,7 @@ test_andTermsSimplification =
                             [ (Mock.x, fOfA)
                             , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
             actual <-
@@ -620,6 +648,7 @@ test_andTermsSimplification =
                             [ (Mock.x, Mock.a)
                             , (Mock.y, fOfA)
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
             actual <-
@@ -647,6 +676,7 @@ test_andTermsSimplification =
                                 )
                             ,   ( Mock.y, fOfA )
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
             actual <- unify
@@ -680,6 +710,7 @@ test_andTermsSimplification =
                                 )
                             ,   ( Mock.y, Mock.a )
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
             actual <- unify
@@ -707,6 +738,7 @@ test_andTermsSimplification =
                             ,   ( Mock.y, fOfA )
                             ,   ( Mock.m, Mock.builtinMap [])
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
             actual <- unify
@@ -742,6 +774,7 @@ test_andTermsSimplification =
                             ,   ( Mock.y, Mock.a )
                             ,   ( Mock.m, Mock.builtinMap [])
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
             actual <- unify
@@ -774,6 +807,7 @@ test_andTermsSimplification =
                         { term = term1
                         , predicate = makeTruePredicate
                         , substitution = mempty
+                        , setSubstitution = mempty
                         }
                     ]
             actual <- unify term1 term1
@@ -797,6 +831,7 @@ test_andTermsSimplification =
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [(x, Mock.builtinList [Mock.b])]
+                        , setSubstitution = mempty
                         }
                     ]
             actual <- unify term5 term6
@@ -821,6 +856,7 @@ test_andTermsSimplification =
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [ (Mock.x, Mock.a) ]
+                        , setSubstitution = mempty
                         }
                     ]
             actual <- unify
@@ -840,6 +876,7 @@ test_andTermsSimplification =
                             [ (Mock.x, Mock.a)
                             , (Mock.xSet, Mock.builtinSet [Mock.b])
                             ]
+                        , setSubstitution = mempty
                         }
                 expected2 =
                     Conditional
@@ -849,6 +886,7 @@ test_andTermsSimplification =
                             [ (Mock.x, Mock.b)
                             , (Mock.xSet, Mock.builtinSet [Mock.a])
                             ]
+                        , setSubstitution = mempty
                         }
             actual <- unify
                 (Mock.concatSet
@@ -869,6 +907,7 @@ test_andTermsSimplification =
                                 , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
                                 )
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
             actual <- unify
@@ -894,6 +933,7 @@ test_andTermsSimplification =
                                 , Mock.builtinSet []
                                 )
                             ]
+                        , setSubstitution = mempty
                         }
                     ]
             actual <- unify
@@ -926,6 +966,7 @@ test_andTermsSimplification =
                                     )
                                 ,   (Mock.xSet, Mock.builtinSet [])
                                 ]
+                            , setSubstitution = mempty
                             }
                     ]
             actual <- unify
@@ -954,6 +995,7 @@ test_equalsTermsSimplification =
                     { term = ()
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.cf)]
+                    , setSubstitution = mempty
                     }
                 ]
         actual <- simplifyEquals Map.empty (mkVar Mock.x) Mock.cf
@@ -965,11 +1007,13 @@ test_equalsTermsSimplification =
                     { term = ()
                     , predicate = makeEqualsPredicate (Mock.f Mock.a) Mock.a
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.cf)]
+                    , setSubstitution = mempty
                     }
                 , Conditional
                     { term = ()
                     , predicate = makeEqualsPredicate (Mock.f Mock.b) Mock.b
                     , substitution = Substitution.unsafeWrap [(Mock.x, Mock.cf)]
+                    , setSubstitution = mempty
                     }
                 ]
             sortVar = SortVariableSort (SortVariable (testId "S"))
@@ -1014,6 +1058,7 @@ test_equalsTermsSimplification =
                         (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
                     , substitution = Substitution.unsafeWrap
                         [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
+                    , setSubstitution = mempty
                     }
                 , Conditional
                     { term = ()
@@ -1022,6 +1067,7 @@ test_equalsTermsSimplification =
                         (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
                     , substitution = Substitution.unsafeWrap
                         [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
+                    , setSubstitution = mempty
                     }
                 , Conditional
                     { term = ()
@@ -1030,6 +1076,7 @@ test_equalsTermsSimplification =
                         (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
                     , substitution = Substitution.unsafeWrap
                         [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
+                    , setSubstitution = mempty
                     }
                 , Conditional
                     { term = ()
@@ -1038,6 +1085,7 @@ test_equalsTermsSimplification =
                         (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
                     , substitution = Substitution.unsafeWrap
                         [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
+                    , setSubstitution = mempty
                     }
                 ]
             sortVar = SortVariableSort (SortVariable (testId "S"))
@@ -1121,6 +1169,7 @@ test_equalsTermsSimplification =
                         [ (Mock.x, xValue)
                         , (Mock.xSet, asInternal (Set.fromList xSetValue))
                         ]
+                    , setSubstitution = mempty
                     }
         actual <- simplifyEquals
             Map.empty

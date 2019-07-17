@@ -84,15 +84,7 @@ evaluateApplication childrenPredicate application = do
                 childrenPredicate
                 termLike
                 unchanged
-        unchangedPatt =
-            Conditional
-                { term         = termLike
-                , predicate    = predicate
-                , substitution = substitution
-                }
-          where
-            Conditional { term = (), predicate, substitution } =
-                childrenPredicate
+        unchangedPatt = childrenPredicate { term = termLike }
         unchanged = OrPattern.fromPattern unchangedPatt
 
         getSymbolHook = getHook . Attribute.hook . symbolAttributes
@@ -237,11 +229,13 @@ maybeEvaluatePattern
     unchangedPatt =
         Conditional
             { term         = patt
-            , predicate    = predicate
-            , substitution = substitution
+            , predicate
+            , substitution
+            , setSubstitution
             }
       where
-        Conditional { term = (), predicate, substitution } = childrenPredicate
+        Conditional { term = (), predicate, substitution, setSubstitution } =
+            childrenPredicate
 
     simplifyIfNeeded :: Pattern variable -> simplifier (OrPattern variable)
     simplifyIfNeeded toSimplify

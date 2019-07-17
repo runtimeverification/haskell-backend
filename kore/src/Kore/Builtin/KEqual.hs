@@ -145,6 +145,7 @@ evalKEq true _ _ _ (valid :< app) =
                         (Bool.asInternal sort true)
                         (Predicate.makeEqualsPredicate t1 t2)
                         mempty
+                        mempty
                     )
                 )
                 (OrPattern.fromPattern
@@ -153,6 +154,7 @@ evalKEq true _ _ _ (valid :< app) =
                         ( Predicate.makeNotPredicate $
                             Predicate.makeEqualsPredicate t1 t2
                         )
+                        mempty
                         mempty
                     )
                 )

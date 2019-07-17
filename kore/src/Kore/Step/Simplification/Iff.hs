@@ -146,6 +146,7 @@ makeEvaluateNonBoolIff
                         (Syntax.Predicate.fromSubstitution secondSubstitution)
                     )
             , substitution = mempty
+            , setSubstitution = mempty
             }
         ]
   | otherwise =

@@ -40,12 +40,14 @@ test_expandedPattern =
                 { term = war "1"
                 , predicate = makeEquals (war "2") (war "3")
                 , substitution = Substitution.wrap [(W "4", war "5")]
+                , setSubstitution = mempty
                 }
             (Pattern.mapVariables showVar
                 Conditional
                     { term = var 1
                     , predicate = makeEquals (var 2) (var 3)
                     , substitution = Substitution.wrap [(V 4, var 5)]
+                    , setSubstitution = mempty
                     }
             )
         )
@@ -63,6 +65,7 @@ test_expandedPattern =
                     { term = var 1
                     , predicate = makeEquals (var 2) (var 3)
                     , substitution = Substitution.wrap [(V 4, var 5)]
+                    , setSubstitution = mempty
                     }
             )
         )
@@ -77,6 +80,7 @@ test_expandedPattern =
                     { term = mkTop sortVariable
                     , predicate = makeEquals (var 2) (var 3)
                     , substitution = Substitution.wrap [(V 4, var 5)]
+                    , setSubstitution = mempty
                     }
             )
         )
@@ -88,6 +92,7 @@ test_expandedPattern =
                     { term = var 1
                     , predicate = makeTruePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
             )
         )
@@ -99,6 +104,7 @@ test_expandedPattern =
                     { term = mkBottom sortVariable
                     , predicate = makeEquals (var 2) (var 3)
                     , substitution = Substitution.wrap [(V 4, var 5)]
+                    , setSubstitution = mempty
                     }
             )
         )
@@ -110,6 +116,7 @@ test_expandedPattern =
                     { term = var 1
                     , predicate = makeFalsePredicate
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
             )
         )

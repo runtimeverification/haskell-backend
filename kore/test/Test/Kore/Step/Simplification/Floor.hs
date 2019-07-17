@@ -42,6 +42,7 @@ test_floorSimplification =
                     { term = mkTop_
                     , predicate = makeFloorPredicate (mkOr a b)
                     , substitution = mempty
+                    , setSubstitution = mempty
                     }
                 ]
             )
@@ -105,6 +106,7 @@ test_floorSimplification =
                             (makeFloorPredicate a)
                             (makeEqualsPredicate fOfA gOfA)
                     , substitution = Substitution.wrap [(x, fOfB)]
+                    , setSubstitution = mempty
                     }
                 ]
             )
@@ -113,6 +115,7 @@ test_floorSimplification =
                     { term = a
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution = Substitution.wrap [(x, fOfB)]
+                    , setSubstitution = mempty
                     }
             )
         )
@@ -142,11 +145,13 @@ test_floorSimplification =
         { term = a
         , predicate = makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
     bExpanded = Conditional
         { term = b
         , predicate = makeTruePredicate
         , substitution = mempty
+        , setSubstitution = mempty
         }
 
 makeFloor
