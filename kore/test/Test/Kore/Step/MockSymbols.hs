@@ -24,6 +24,7 @@ import           Control.Applicative
 import qualified Control.Lens as Lens
 import qualified Data.Default as Default
 import           Data.Function
+import           Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import           Data.Text
@@ -58,6 +59,7 @@ import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT
                  ( resolve )
 import           Kore.Syntax.Application
+import           Kore.Syntax.SetVariable
 import           Kore.Syntax.Variable
 import           Kore.Unparser
 import qualified SMT.AST as SMT
@@ -480,7 +482,7 @@ anywhereSymbol =
     symbol anywhereId [] testSort
     & functional
     & Lens.set
-        (lensSymbolAttributes . Attribute.lensAnywhere)
+        (typed @Attribute.Symbol . typed @Attribute.Anywhere)
         (Attribute.Anywhere True)
 
 var_x_1 :: Variable
@@ -491,10 +493,14 @@ var_z_1 :: Variable
 var_z_1 = Variable (testId "z") (Just (Element 1)) testSort
 x :: Variable
 x = Variable (testId "x") mempty testSort
+setX :: SetVariable Variable
+setX = SetVariable x
 x0 :: Variable
 x0 = Variable (testId "x") mempty testSort0
 y :: Variable
 y = Variable (testId "y") mempty testSort
+setY :: SetVariable Variable
+setY = SetVariable y
 z :: Variable
 z = Variable (testId "z") mempty testSort
 m :: Variable

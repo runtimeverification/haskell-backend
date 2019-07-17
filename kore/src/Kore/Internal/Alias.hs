@@ -4,11 +4,8 @@ License     : NCSA
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Internal.Alias
     ( Alias (..)
-    , lensAliasConstructor, lensAliasParams, lensAliasSorts
     , toSymbolOrAlias
     -- * Re-exports
     , module Kore.Internal.ApplicationSorts
@@ -21,15 +18,16 @@ import           Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import qualified Control.Lens.TH.Rules as Lens
-import           Kore.Attribute.Pattern.FreeVariables
-                 ( FreeVariables )
-import           Kore.Attribute.Synthetic
-import           Kore.Debug
-import           Kore.Internal.ApplicationSorts
-import           Kore.Sort
-import           Kore.Syntax.Application
-import           Kore.Unparser
+import Kore.Attribute.Pattern.FreeSetVariables
+       ( FreeSetVariables )
+import Kore.Attribute.Pattern.FreeVariables
+       ( FreeVariables )
+import Kore.Attribute.Synthetic
+import Kore.Debug
+import Kore.Internal.ApplicationSorts
+import Kore.Sort
+import Kore.Syntax.Application
+import Kore.Unparser
 
 data Alias =
     Alias
@@ -38,8 +36,6 @@ data Alias =
         , aliasSorts       :: !ApplicationSorts
         }
     deriving (GHC.Generic, Show)
-
-Lens.makeLenses ''Alias
 
 instance Eq Alias where
     (==) a b =
@@ -75,6 +71,14 @@ instance Unparse Alias where
 instance
     Ord variable =>
     Synthetic (Application Alias) (FreeVariables variable)
+  where
+    -- TODO (thomas.tuegel): Consider that there could be bound variables here.
+    synthetic = Foldable.fold
+    {-# INLINE synthetic #-}
+
+instance
+    Ord variable =>
+    Synthetic (Application Alias) (FreeSetVariables variable)
   where
     -- TODO (thomas.tuegel): Consider that there could be bound variables here.
     synthetic = Foldable.fold
