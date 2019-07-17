@@ -1,7 +1,8 @@
 {- |
 Module      : Kore.Builtin.AssociativeCommutative
-Description : Built-in
-              associative+commutative+unit+non-idempotent-unique-key structures.
+Description : Handles built-in operations which are associative, commutative,
+              with neutral elements, key-based, with unique keys, and which
+              return bottom when applied to unique keys.
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
@@ -274,6 +275,8 @@ deriving instance (Eq variable, Eq (valueWrapper (TermLike variable)))
 deriving instance (Show variable, Show (valueWrapper (TermLike variable)))
     => Show (NormalizedOrBottom valueWrapper variable)
 
+{- | The semigroup defined by the `concat` operation.
+-}
 instance Ord variable
     => Semigroup (NormalizedOrBottom valueWrapper variable)
   where
@@ -309,6 +312,8 @@ instance Ord variable
         addAllListDisjoint :: Ord a => [(a, b)] -> [(a, b)] -> Maybe [(a, b)]
         addAllListDisjoint map1 = addToListDisjoint (Map.fromList map1) map1
 
+{- | The monoid defined by the `concat` and `unit` operations.
+-}
 instance Ord variable
     => Monoid (NormalizedOrBottom valueWrapper variable)
   where
