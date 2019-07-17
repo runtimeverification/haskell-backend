@@ -22,6 +22,7 @@ module Kore.Repl.Interpreter
     , ReplStatus(..)
     , showCurrentClaimIndex
     , pipe
+    , ReplM
     ) where
 
 import           Control.Comonad.Trans.Cofree

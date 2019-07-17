@@ -56,13 +56,15 @@ import           Kore.Step.Rule
 import           Kore.Step.Simplification.AndTerms
                  ( cannotUnifyDistinctDomainValues )
 import           Kore.Step.Simplification.Data
-                 ( Simplifier, evalSimplifier )
+                 ( Simplifier, SimplifierT, evalSimplifier, runSimplifierT )
 import           Kore.Syntax.Variable
                  ( SortedVariable, Variable )
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import           Kore.Unification.Unify
                  ( explainBottom )
+import           SMT
+                 ( MonadSMT (..), SMT, SmtT (..) )
 import qualified SMT
 
 import Test.Kore
@@ -99,8 +101,8 @@ test_replInterpreter =
     , forceFailureWithName        `tests` "TryF axiom by name that doesn't unify"
     , forceSuccessWithName        `tests` "TryF axiom by name that does unify"
     , proveSecondClaim            `tests` "Starting to prove the second claim"
-    , testPipeConfig              `tests` "Piping the output of config to an\
-                                           \ external process"
+--    , testPipeConfig              `tests` "Piping the output of config to an\
+--                                          \ external process"
     , testPipeTry                 `tests` "Piping the output of try to an\
                                            \ external process"
     , proveSecondClaimByName      `tests` "Starting to prove the second claim\
@@ -134,23 +136,31 @@ testPipeConfig
   = Logger.withLogger logOptions $ \logger -> do
         ref <- newIORef ""
         mvar <- newMVar logger
+        smtSolver <- SMT.newSolver SMT.defaultConfig logger
         let axioms = []
         let claim = emptyClaim
         let claims = [claim]
         let state = mkState axioms claims claim
         newref <-
             runReaderT
-                ( runRWST
-                    ( pipe
-                        (ShowConfig Nothing)
-                        ""
-                        [""]
-                    )
-                    ( mkConfig mvar )
-                    state
-                )
-                ref
-        val <- readIORef newref
+            ( unMock'
+             ( runReaderT
+                 ( runSmtT
+                     ( runReaderT
+                         ( runSimplifierT
+                             ( runRWST
+                                 (pipe (ShowConfig Nothing) "" [""])
+                                 ( mkConfig' mvar )
+                                 state
+                             )
+                         )
+                         testEnv
+                     )
+                 )
+                 smtSolver
+             ))
+            ref
+        val <- readIORef ref
         putStrLn val
   where
     logOptions = Logger.KoreLogOptions Logger.LogNone Logger.Debug mempty
@@ -730,6 +740,19 @@ mkState axioms claims claim =
   where
     graph' = emptyExecutionGraph claim
 
+type MockSimplifier = SimplifierT (SmtT Mock')
+
+mkConfig' :: MVar (Logger.LogAction IO Logger.LogMessage) -> Config Claim MockSimplifier
+mkConfig' logger =
+    Config
+        { stepper     = stepper0
+        , unifier     = unificationProcedure
+        , logger
+        , outputFile  = OutputFile Nothing
+        }
+  where
+    stepper0 claim' claims' axioms' graph (ReplNode node) =
+        verifyClaimStep claim' claims' axioms' graph node
 mkConfig :: MVar (Logger.LogAction IO Logger.LogMessage) -> Config Claim Simplifier
 mkConfig logger =
     Config
@@ -771,7 +794,10 @@ newtype PipeMock a =
         { unPipeMock :: Either (IO (IORef String)) a }
         deriving (Functor, Applicative, Monad)
 
-type Mock' = ReaderT (IORef String) IO
+newtype Mock' a =
+    Mock'
+    { unMock' :: ReaderT (IORef String) IO a }
+    deriving (Functor, Applicative, Monad, MonadUnliftIO)
 
 instance MonadReplIO Mock' where
     printLn = const $ lift . pure $ ()
@@ -808,78 +834,3 @@ instance MonadReplIO Mock' where
     newReplIORef = lift . newIORef
     readReplIORef = lift . readIORef
     modifyReplIORef x y = lift $ modifyIORef x y
-
--- instance MonadReplIO PipeMock where
---     printLn = const $ PipeMock . pure $ ()
---     printNoLn = const $ PipeMock . pure $ ()
---     readLine = PipeMock . pure $ ""
---     writeToFile _ _ = PipeMock . pure $ ()
---     appendToFile _ _ = PipeMock . pure $ ()
---     open _ _ = PipeMock . Left $ newIORef "not used"
---     replReadFile = const $ PipeMock . pure $ ""
---     getContentsFromHandle = const $ PipeMock . pure $ ""
---     printToHandle _ _ = PipeMock . pure $ ()
---     flushHandle = const $ PipeMock . pure $ ()
---     canFindDirectory = const $ PipeMock . Left $ newIORef "not used"
---     canFindFile = const $ PipeMock . Left $ newIORef "not used"
---     findExec = const $ PipeMock . pure . pure $ "mock exec"
---     makeProcess _ = PipeMock . Left $ newIORef "heyy"
---     canFindGraphviz = PipeMock . Left $ newIORef "not used"
---     runGraphCanvas _ _ = PipeMock . pure $ ()
---     runGraph _ _ _ = PipeMock . pure $ ""
---     exitSucc = PipeMock . Left $ exitSuccess
---     exitWithCode _ = PipeMock . Left $ exitSuccess
---     replSwapMVar _ _ = PipeMock . Left $ exitSuccess
---     closeHandle = const $ PipeMock . pure $ ()
---     newReplIORef = const $ PipeMock . Left $ newIORef "not used"
---     readReplIORef = const $ PipeMock . Left $ newIORef "not used"
---     modifyReplIORef _ _ = PipeMock . pure $ ()
---
--- crazyPipeTest :: IO () -- (PipeMock ())
--- crazyPipeTest =
---     let
---         axioms  = []
---         claim   = emptyClaim
---         config  = ShowConfig Nothing
---         command = Pipe config "mockexec" []
---     in do
---         Result { output, continue } <- run command axioms [claim] claim
---         Result { output = configOutput }
---             <- run config axioms [claim] claim
---         putStrLn . show $ output
---         pure ()
-        -- pure . PipeMock . pure $ ()
-        -- output   `equalsOutput` koreToAux configOutput
-        -- continue `equals`       Continue
-
-
-
--- newtype PipeMockIO a =
---     PipeMockIO
---     { unPipeMockIO :: IO a }
---     deriving (Functor, Applicative, Monad)
---
--- instance MonadReplIO PipeMockIO where
---     printLn _ = PipeMockIO . pure $ ()
---     findExec _ = PipeMockIO . pure . pure $ ""
---     makeProcess =
---         PipeMockIO
---         . const
---         $ ( pure Nothing
---           , pure . Just $ stdout
---           , pure Nothing
---           ()
---           )
---     getContentsFromHandle _ =
-
--- makeAction "ReplIOAction" [ts| MonadReplIO |]
-
--- copyFile :: MonadReplIO m => FilePath -> FilePath -> m ()
--- copyFile a b = do
---     x <- replReadFile a
---     writeToFile b x
---
--- testCopyFile =
---     evaluate $ copyFile "foo.txt" "bar.txt"
---       & runMock [ ReplReadFile "foo.txt" :-> "contents"
---                 , WriteToFile "bar.txt" "contents" :-> () ]
