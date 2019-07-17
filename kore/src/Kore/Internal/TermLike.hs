@@ -613,12 +613,22 @@ instance NFData variable => NFData (TermLike variable) where
     rnf (Recursive.project -> annotation :< pat) =
         rnf annotation `seq` rnf pat `seq` ()
 
-instance
-    (SortedVariable variable, Unparse variable) =>
-    Unparse (TermLike variable)
-  where
-    unparse (Recursive.project -> _ :< pat) = unparse pat
-    unparse2 (Recursive.project -> _ :< pat) = unparse2 pat
+instance SortedVariable variable => Unparse (TermLike variable) where
+    unparse term =
+        case Recursive.project freshVarTerm of
+          (_ :< pat) -> unparse pat
+      where
+        freshVarTerm =
+            externalizeFreshVariables
+            $ mapVariables toVariable term
+
+    unparse2 term =
+        case Recursive.project freshVarTerm of
+          (_ :< pat) -> unparse2 pat
+      where
+        freshVarTerm =
+            externalizeFreshVariables
+            $ mapVariables toVariable term
 
 type instance Base (TermLike variable) =
     CofreeF (TermLikeF variable) (Attribute.Pattern variable)
