@@ -7,25 +7,23 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Attribute.Axiom
     ( Axiom (..)
-    , lensHeatCool, HeatCool (..)
-    , lensProductionID, ProductionID (..)
-    , lensAssoc, Assoc (..)
-    , lensComm, Comm (..)
-    , lensUnit, Unit (..)
-    , lensIdem, Idem (..)
-    , lensTrusted, Trusted (..)
-    , lensConcrete, Concrete (..)
-    , lensSimplification, Simplification (..)
-    , lensOverload, Overload (..)
-    , lensSmtLemma, SmtLemma (..)
-    , lensLabel, Label (..)
-    , lensSourceLocation, SourceLocation (..)
-    , lensConstructor, Constructor (..)
-    , lensIdentifier, RuleIndex (..)
+    , HeatCool (..)
+    , ProductionID (..)
+    , Assoc (..)
+    , Comm (..)
+    , Unit (..)
+    , Idem (..)
+    , Trusted (..)
+    , Concrete (..)
+    , Simplification (..)
+    , Overload (..)
+    , SmtLemma (..)
+    , Label (..)
+    , SourceLocation (..)
+    , Constructor (..)
+    , RuleIndex (..)
     ) where
 
 import           Control.DeepSeq
@@ -33,27 +31,26 @@ import           Control.DeepSeq
 import qualified Control.Monad as Monad
 import           Data.Default
                  ( Default (..) )
-import           GHC.Generics
-                 ( Generic )
+import           Data.Generics.Product
+import qualified GHC.Generics as GHC
 
-import qualified Control.Lens.TH.Rules as Lens
-import           Kore.Attribute.Assoc
-import           Kore.Attribute.Axiom.Concrete
-import           Kore.Attribute.Axiom.Constructor
-import           Kore.Attribute.Axiom.Unit
-import           Kore.Attribute.Comm
-import           Kore.Attribute.HeatCool
-import           Kore.Attribute.Idem
-import           Kore.Attribute.Label
-import           Kore.Attribute.Overload
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
-import           Kore.Attribute.ProductionID
-import           Kore.Attribute.RuleIndex
-import           Kore.Attribute.Simplification
-import           Kore.Attribute.SmtLemma
-import           Kore.Attribute.SourceLocation
-import           Kore.Attribute.Trusted
+import Kore.Attribute.Assoc
+import Kore.Attribute.Axiom.Concrete
+import Kore.Attribute.Axiom.Constructor
+import Kore.Attribute.Axiom.Unit
+import Kore.Attribute.Comm
+import Kore.Attribute.HeatCool
+import Kore.Attribute.Idem
+import Kore.Attribute.Label
+import Kore.Attribute.Overload
+import Kore.Attribute.Parser
+       ( ParseAttributes (..) )
+import Kore.Attribute.ProductionID
+import Kore.Attribute.RuleIndex
+import Kore.Attribute.Simplification
+import Kore.Attribute.SmtLemma
+import Kore.Attribute.SourceLocation
+import Kore.Attribute.Trusted
 
 {- | Attributes specific to Kore axiom sentences.
  -}
@@ -90,11 +87,10 @@ data Axiom =
     -- (e.g. no confusion, no junk)
     , identifier :: !RuleIndex
     -- ^ Used to identify an axiom in the repl.
-    } deriving (Eq, Ord, Show, Generic)
+    }
+    deriving (Eq, GHC.Generic, Ord, Show)
 
 instance NFData Axiom
-
-Lens.makeLenses ''Axiom
 
 instance Default Axiom where
     def =
@@ -118,20 +114,20 @@ instance Default Axiom where
 
 instance ParseAttributes Axiom where
     parseAttribute attr =
-        lensHeatCool (parseAttribute attr)
-        Monad.>=> lensProductionID (parseAttribute attr)
-        Monad.>=> lensAssoc (parseAttribute attr)
-        Monad.>=> lensComm (parseAttribute attr)
-        Monad.>=> lensUnit (parseAttribute attr)
-        Monad.>=> lensIdem (parseAttribute attr)
-        Monad.>=> lensTrusted (parseAttribute attr)
-        Monad.>=> lensConcrete (parseAttribute attr)
-        Monad.>=> lensSimplification (parseAttribute attr)
-        Monad.>=> lensOverload (parseAttribute attr)
-        Monad.>=> lensSmtLemma (parseAttribute attr)
-        Monad.>=> lensLabel (parseAttribute attr)
-        Monad.>=> lensSourceLocation (parseAttribute attr)
-        Monad.>=> lensConstructor (parseAttribute attr)
+        typed @HeatCool (parseAttribute attr)
+        Monad.>=> typed @ProductionID (parseAttribute attr)
+        Monad.>=> typed @Assoc (parseAttribute attr)
+        Monad.>=> typed @Comm (parseAttribute attr)
+        Monad.>=> typed @Unit (parseAttribute attr)
+        Monad.>=> typed @Idem (parseAttribute attr)
+        Monad.>=> typed @Trusted (parseAttribute attr)
+        Monad.>=> typed @Concrete (parseAttribute attr)
+        Monad.>=> typed @Simplification (parseAttribute attr)
+        Monad.>=> typed @Overload (parseAttribute attr)
+        Monad.>=> typed @SmtLemma (parseAttribute attr)
+        Monad.>=> typed @Label (parseAttribute attr)
+        Monad.>=> typed @SourceLocation (parseAttribute attr)
+        Monad.>=> typed @Constructor (parseAttribute attr)
 
     toAttributes =
         mconcat . sequence

@@ -23,6 +23,7 @@ module Kore.Unification.Substitution
     , unsafeWrap
     , Kore.Unification.Substitution.filter
     , Kore.Unification.Substitution.freeVariables
+    , Kore.Unification.Substitution.freeSetVariables
     , partition
     , reverseIfRhsIsVar
     ) where
@@ -46,6 +47,7 @@ import           GHC.Stack
 import           Prelude hiding
                  ( null )
 
+import           Kore.Attribute.Pattern.FreeSetVariables
 import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Internal.TermLike
                  ( TermLike, pattern Var_, mkVar )
@@ -349,3 +351,18 @@ freeVariables = Foldable.foldMap freeVariablesWorker . unwrap
   where
     freeVariablesWorker (x, t) =
         freeVariable x <> TermLike.freeVariables t
+
+{- | Return the free set variables of the 'Substitution'.
+
+In a substitution of the form @variable = term@
+the free variables are all the free variables of @term@.
+
+ -}
+freeSetVariables
+    :: Ord variable
+    => Substitution variable
+    -> FreeSetVariables variable
+freeSetVariables = Foldable.foldMap freeSetVariablesWorker . unwrap
+  where
+    freeSetVariablesWorker (_, t) =
+        TermLike.freeSetVariables t

@@ -8,11 +8,11 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( Assertion, assertEqual, assertFailure, testCase )
 
-import qualified Control.Lens as Lens
-import           Data.Default
-                 ( def )
-import           Data.Function
-                 ( (&) )
+import Data.Default
+       ( def )
+import Data.Function
+       ( (&) )
+import Data.Generics.Product
 
 import Kore.Attribute.Attributes
        ( Attributes (..) )
@@ -100,9 +100,9 @@ test_stepperAttributes =
     , testCase "Testing parseAttributes"
         (assertEqual "[functional{}(),function{}(),hook{}(\"builtin\")]"
             (defaultSymbolAttributes
-                & Lens.set lensFunction (Function True)
-                & Lens.set lensFunctional (Functional True)
-                & Lens.set lensHook (Hook $ Just "builtin")
+                & setTyped (Function True)
+                & setTyped (Functional True)
+                & setTyped (Hook $ Just "builtin")
                 & Right
             )
             (parse

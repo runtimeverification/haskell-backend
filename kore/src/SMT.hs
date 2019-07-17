@@ -69,6 +69,7 @@ import           Control.Monad.Trans.Accum
 import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Identity
 import qualified Control.Monad.Trans.Maybe as Maybe
+import           Data.Generics.Product
 import           Data.Limit
 import           Data.Text
                  ( Text )
@@ -265,7 +266,7 @@ instance (MonadIO m, MonadUnliftIO m)
 
     localLogAction mapping (SmtT action) =
         withSolverT' $ \solver -> do
-            let solver' = Lens.over SimpleSMT.lensLogger mapping solver
+            let solver' = Lens.over (field @"logger") mapping solver
             runReaderT action =<< liftIO (newMVar solver')
 
 instance (MonadIO m, MonadUnliftIO m) => MonadSMT (SmtT m) where

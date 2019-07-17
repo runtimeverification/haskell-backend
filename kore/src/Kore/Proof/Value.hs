@@ -6,8 +6,6 @@ License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
  -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Proof.Value
     ( ValueF (..)
     , Value

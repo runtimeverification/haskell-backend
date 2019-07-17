@@ -32,7 +32,6 @@ dependencies:
   - cryptonite
   - data-default
   - deepseq
-  - deriving-compat
   - directory
   - errors
   - exceptions
@@ -40,6 +39,7 @@ dependencies:
   - fgl
   - free
   - filepath
+  - generic-lens
   - generics-sop
   - gitrev
   - graphviz
