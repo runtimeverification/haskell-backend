@@ -12,6 +12,8 @@ import Test.Tasty.HUnit
 import           Control.Applicative
 import           Control.Concurrent.MVar
 import qualified Control.Lens as Lens
+import           Control.Monad.RWS.Strict
+                 ( runRWST )
 -- import           Control.Monad.Mock
 import           Control.Monad.Reader
                  ( ReaderT, ask, lift, liftIO, runReaderT )
@@ -128,9 +130,30 @@ help =
         continue `equals`       Continue
 
 testPipeConfig :: IO ()
-testPipeConfig = do
-    ref <- newIORef ""
-    runReaderT ref
+testPipeConfig
+  = Logger.withLogger logOptions $ \logger -> do
+        ref <- newIORef ""
+        mvar <- newMVar logger
+        let axioms = []
+        let claim = emptyClaim
+        let claims = [claim]
+        let state = mkState axioms claims claim
+        newref <-
+            runReaderT
+                ( runRWST
+                    ( pipe
+                        (ShowConfig Nothing)
+                        ""
+                        [""]
+                    )
+                    ( mkConfig mvar )
+                    state
+                )
+                ref
+        val <- readIORef newref
+        putStrLn val
+  where
+    logOptions = Logger.KoreLogOptions Logger.LogNone Logger.Debug mempty
 
 -- testPipeConfig :: Mock' ()
 -- testPipeConfig =

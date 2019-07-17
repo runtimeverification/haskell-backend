@@ -21,6 +21,7 @@ module Kore.Repl.Interpreter
     , allProofs
     , ReplStatus(..)
     , showCurrentClaimIndex
+    , pipe
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -210,22 +211,23 @@ replInterpreter0 printAux printKore replCmd = do
         Continue -> pure Continue
         SuccessStop -> exitSucc
         FailStop -> exitWithCode $ ExitFailure 2
-  where
+
     -- Extracts the Writer out of the RWST monad using the current state
     -- and updates the state, returning the writer output along with the
     -- monadic result.
-    evaluateCommand
-        :: ReplM claim m ReplStatus
-        -> ReaderT (Config claim m) (StateT (ReplState claim) m) (ReplOutput, ReplStatus)
-    evaluateCommand c = do
-        st <- get
-        config <- Reader.ask
-        (ext, st', w) <-
-            Monad.Trans.lift
-                $ Monad.Trans.lift
-                $ runRWST c config st
-        put st'
-        pure (w, ext)
+evaluateCommand
+    :: Monad m
+    => ReplM claim m ReplStatus
+    -> ReaderT (Config claim m) (StateT (ReplState claim) m) (ReplOutput, ReplStatus)
+evaluateCommand c = do
+    st <- get
+    config <- Reader.ask
+    (ext, st', w) <-
+        Monad.Trans.lift
+            $ Monad.Trans.lift
+            $ runRWST c config st
+    put st'
+    pure (w, ext)
 
 showUsageMessage :: String
 showUsageMessage = "Could not parse command, try using 'help'."
