@@ -960,7 +960,7 @@ asVariablePattern variableMap =
     Reflection.give testMetadataTools Ac.asPattern mapSort
         Domain.NormalizedAc
             { elementsWithVariables =
-                Map.toList (fmap Domain.MapValue variableMap)
+                Domain.MapElement <$> Map.toList variableMap
             , concreteElements = Map.empty
             , opaque = []
             }

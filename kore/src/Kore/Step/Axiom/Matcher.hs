@@ -567,7 +567,8 @@ matchAc
     quantifiedVariables
     acSort
     Builtin.NormalizedAc
-        { elementsWithVariables = varElems1
+        { elementsWithVariables =
+            map Builtin.unwrapElement -> varElems1
         , concreteElements      = concrete1
         , opaque                = varOpaque1
         }

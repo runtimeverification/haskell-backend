@@ -279,6 +279,7 @@ makeEvaluateNormalizedAc
         , SortedVariable variable
         , Traversable (Domain.Value normalized)
         , Unparse variable
+        , Domain.AcWrapper normalized
         )
     =>  Domain.NormalizedAc
             normalized
@@ -315,7 +316,8 @@ makeEvaluateNormalizedAc
         map
             (\(a, b) -> (TermLike.fromConcrete a, b))
             (Map.toList concreteElements)
-    (variableKeys, variableValues) = unzip elementsWithVariables
+    (variableKeys, variableValues) =
+        unzip (Domain.unwrapElement <$> elementsWithVariables)
     (concreteKeys, concreteValues) = unzip concreteElementsList
 
     evaluateDistinct

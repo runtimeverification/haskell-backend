@@ -232,7 +232,7 @@ evalElement =
                                 resultSort
                                 Domain.NormalizedAc
                                     { elementsWithVariables =
-                                        [(_elem, Domain.SetValue)]
+                                        [Domain.SetElement _elem]
                                     , concreteElements = Map.empty
                                     , opaque = []
                                     }
@@ -401,7 +401,7 @@ asTermLike builtin =
             (map concreteElement (Map.toAscList concreteElements))
         )
         (Ac.VariableElements
-            (map element elementsWithVariables)
+            (element . Domain.unwrapElement <$> elementsWithVariables)
         )
         (Ac.Opaque filteredSets)
   where

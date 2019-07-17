@@ -319,7 +319,7 @@ instance Ord child
         (VariableElement v)
       = s
         { Domain.elementsWithVariables =
-            List.sort ((v, Domain.SetValue) : elementsWithVariables)
+            List.sort (Domain.SetElement v : elementsWithVariables)
         }
 
 instance Ord child

@@ -1627,7 +1627,7 @@ matchingSet =
     mkSet concrete' evars svars =
         Ac.asInternal Mock.metadataTools Mock.setSort
             Domain.NormalizedAc
-                { elementsWithVariables = map (\x -> (x, Domain.SetValue)) evars
+                { elementsWithVariables = Domain.SetElement <$> evars
                 , concreteElements =
                     Map.fromSet (const Domain.SetValue) (Set.fromList concrete')
                 , opaque = svars
@@ -1775,7 +1775,6 @@ matchingMap =
                 , builtinIntValue = k
                 }
     mkVal = Int.asInternal Mock.intSort
-    wrapValue (x, y) = (x, Domain.MapValue y)
     mkConcreteMap
         :: [(TermLike Concrete, TermLike Variable)] -> TermLike Variable
     mkConcreteMap =
@@ -1790,7 +1789,7 @@ matchingMap =
     mkMap concrete' evars svars =
         Ac.asInternal Mock.metadataTools Mock.setSort
             Domain.NormalizedAc
-                { elementsWithVariables = map wrapValue evars
+                { elementsWithVariables = Domain.MapElement <$> evars
                 , concreteElements = Domain.MapValue <$> Map.fromList concrete'
                 , opaque = svars
                 }

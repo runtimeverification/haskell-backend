@@ -140,7 +140,7 @@ instance Synthetic (Builtin key) Defined where
     {-# INLINE synthetic #-}
 
 normalizedAcDefined
-    :: Foldable (Value collection)
+    :: (Foldable (Element collection), Foldable (Value collection))
     => NormalizedAc collection key Defined -> Defined
 normalizedAcDefined ac@(NormalizedAc _ _ _) =
     case ac of

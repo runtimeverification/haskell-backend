@@ -254,7 +254,7 @@ evalElement =
                         resultSort
                         Domain.NormalizedAc
                             { elementsWithVariables =
-                                [(_key, Domain.MapValue _value)]
+                                [Domain.MapElement (_key, _value)]
                             , concreteElements = Map.empty
                             , opaque = []
                             }
@@ -421,7 +421,9 @@ asTermLike builtin =
         (Ac.ConcreteElements
             (map concreteElement (Map.toAscList concreteElements))
         )
-        (Ac.VariableElements (map element elementsWithVariables))
+        (Ac.VariableElements
+            (element . Domain.unwrapElement <$> elementsWithVariables)
+        )
         (Ac.Opaque filteredMaps)
   where
     filteredMaps :: [TermLike variable]

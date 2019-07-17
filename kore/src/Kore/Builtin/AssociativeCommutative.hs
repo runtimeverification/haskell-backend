@@ -38,6 +38,7 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT, partitionEithers )
+import qualified Control.Lens as Lens
 import           Control.Monad
                  ( foldM, unless )
 import qualified Control.Monad.Trans as Monad.Trans
@@ -171,7 +172,7 @@ instance TermWrapper Domain.NormalizedMap Domain.MapValue where
         case args of
             [key, value] ->
                 Normalized Domain.NormalizedAc
-                    { elementsWithVariables = [(key, Domain.MapValue value)]
+                    { elementsWithVariables = [Domain.MapElement (key, value)]
                     , concreteElements = Map.empty
                     , opaque = []
                     }
@@ -227,7 +228,7 @@ instance TermWrapper Domain.NormalizedSet Domain.SetValue where
         case args of
             [elem1] ->
                 Normalized Domain.NormalizedAc
-                    { elementsWithVariables = [(elem1, Domain.SetValue)]
+                    { elementsWithVariables = [Domain.SetElement elem1]
                     , concreteElements = Map.empty
                     , opaque = []
                     }
@@ -272,27 +273,36 @@ data NormalizedOrBottom collection variable
     | Bottom
 
 deriving instance
-    (Eq variable, Eq (Domain.Value collection (TermLike variable))) =>
+    ( Eq variable
+    , Eq (Domain.Element collection (TermLike variable))
+    , Eq (Domain.Value collection (TermLike variable))
+    ) =>
     Eq (NormalizedOrBottom collection variable)
 
 deriving instance
-    (Show variable, Show (Domain.Value collection (TermLike variable))) =>
+    ( Show variable
+    , Show (Domain.Element collection (TermLike variable))
+    , Show (Domain.Value collection (TermLike variable))
+    ) =>
     Show (NormalizedOrBottom collection variable)
 
 {- | The semigroup defined by the `concat` operation.
 -}
-instance Ord variable
-    => Semigroup (NormalizedOrBottom collection variable)
+instance
+    (Ord variable, Domain.AcWrapper collection) =>
+    Semigroup (NormalizedOrBottom collection variable)
   where
     Bottom <> _ = Bottom
     _ <> Bottom = Bottom
     Normalized Domain.NormalizedAc
-        { elementsWithVariables = elementsWithVariables1
+        { elementsWithVariables =
+            map Domain.unwrapElement -> elementsWithVariables1
         , concreteElements = concreteElements1
         , opaque = opaque1
         }
       <> Normalized Domain.NormalizedAc
-        { elementsWithVariables = elementsWithVariables2
+        { elementsWithVariables =
+            map Domain.unwrapElement -> elementsWithVariables2
         , concreteElements = concreteElements2
         , opaque = opaque2
         }
@@ -308,7 +318,8 @@ instance Ord variable
             -- do an `addAll*Disjoint` as above.
             let allOpaque = Data.List.sort (opaque1 ++ opaque2)
             return Domain.NormalizedAc
-                { elementsWithVariables = withVariables
+                { elementsWithVariables =
+                    Lens.review Domain.elementIso <$> withVariables
                 , concreteElements = concrete
                 , opaque = allOpaque
                 }
@@ -318,8 +329,9 @@ instance Ord variable
 
 {- | The monoid defined by the `concat` and `unit` operations.
 -}
-instance Ord variable
-    => Monoid (NormalizedOrBottom valueWrapper variable)
+instance
+    (Ord variable, Domain.AcWrapper collection) =>
+    Monoid (NormalizedOrBottom collection variable)
   where
     mempty = Normalized Domain.emptyNormalizedAc
 
@@ -455,7 +467,8 @@ elementListAsInternal tools sort1 terms = do
             tools
             sort1
             Domain.NormalizedAc
-                { elementsWithVariables = withVariables
+                { elementsWithVariables =
+                    Lens.review Domain.elementIso <$> withVariables
                 , concreteElements = concreteAc
                 , opaque = []
                 }
@@ -513,12 +526,14 @@ evalConcatNormalizedOrBottom
     concatNormalized ac1@(Domain.NormalizedAc _ _ _) ac2 = do
         let
             Domain.NormalizedAc
-                { elementsWithVariables = withVariable1
+                { elementsWithVariables =
+                    map (Lens.view Domain.elementIso) -> withVariable1
                 , concreteElements = concrete1
                 , opaque = opaque1
                 } = ac1
             Domain.NormalizedAc
-                { elementsWithVariables = withVariable2
+                { elementsWithVariables =
+                    map (Lens.view Domain.elementIso) -> withVariable2
                 , concreteElements = concrete2
                 , opaque = opaque2
                 } = ac2
@@ -533,7 +548,8 @@ evalConcatNormalizedOrBottom
         let allOpaque = Data.List.sort (opaque1 ++ opaque2)
 
         return Domain.NormalizedAc
-            { elementsWithVariables = Map.toList withVariables
+            { elementsWithVariables =
+                Lens.review Domain.elementIso <$> Map.toList withVariables
             , concreteElements = concrete
             , opaque = allOpaque
             }
@@ -675,12 +691,14 @@ unifyEqualsNormalizedAc
     second
     unifyEqualsChildren
     Domain.NormalizedAc
-        { elementsWithVariables = elementsWithVariables1
+        { elementsWithVariables =
+            map (Lens.view Domain.elementIso) -> elementsWithVariables1
         , concreteElements = concreteElements1
         , opaque = opaque1
         }
     Domain.NormalizedAc
-        { elementsWithVariables = elementsWithVariables2
+        { elementsWithVariables =
+            map (Lens.view Domain.elementIso) -> elementsWithVariables2
         , concreteElements = concreteElements2
         , opaque = opaque2
         }
@@ -923,7 +941,8 @@ buildResultFromUnifiers
             Foldable.fold (map (toNormalized tools) opaquesTerms)
 
     Domain.NormalizedAc
-        { elementsWithVariables = opaquesElementsWithVariables
+        { elementsWithVariables =
+            map (Lens.view Domain.elementIso) -> opaquesElementsWithVariables
         , concreteElements = opaquesConcreteTerms
         , opaque = opaquesOpaque
         } <- case opaquesNormalized of
@@ -964,7 +983,8 @@ buildResultFromUnifiers
                     (TermLike variable)
                 )
         result = Domain.NormalizedAc
-            { elementsWithVariables = Map.toList withVariableMap
+            { elementsWithVariables =
+                Lens.review Domain.elementIso <$> Map.toList withVariableMap
             , concreteElements = concreteMap
             , opaque = allOpaque
             }

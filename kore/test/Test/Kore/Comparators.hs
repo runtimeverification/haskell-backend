@@ -1079,6 +1079,19 @@ instance
         ]
     structConstructorName _ = "InternalAc"
 
+instance
+    (EqualWithExplanation child, Show child) =>
+    WrapperEqualWithExplanation (SetElement child)
+  where
+    wrapperConstructorName _ = "SetElement"
+    wrapperField = Function.on (EqWrap "getSetElement = ") getSetElement
+
+instance (EqualWithExplanation child, Show child)
+    => EqualWithExplanation (SetElement child)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
 instance SumEqualWithExplanation (SetValue child) where
     sumConstructorPair SetValue SetValue =
         SumConstructorSameNoArguments
@@ -1104,6 +1117,19 @@ instance
     EqualWithExplanation (NormalizedSet key child)
   where
     compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    (EqualWithExplanation child, Show child) =>
+    WrapperEqualWithExplanation (MapElement child)
+  where
+    wrapperConstructorName _ = "MapElement"
+    wrapperField = Function.on (EqWrap "getMapElement = ") getMapElement
+
+instance (EqualWithExplanation child, Show child)
+    => EqualWithExplanation (MapElement child)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
     printWithExplanation = show
 
 instance (EqualWithExplanation child, Show child)
@@ -1141,6 +1167,8 @@ instance
 instance
     ( EqualWithExplanation key, Show key
     , EqualWithExplanation child, Show child
+    , EqualWithExplanation (Element collection child)
+    , Show (Element collection child)
     , EqualWithExplanation (Value collection child)
     , Show (Value collection child)
     ) =>
@@ -1152,6 +1180,8 @@ instance
 instance
     ( EqualWithExplanation key, Show key
     , EqualWithExplanation child, Show child
+    , EqualWithExplanation (Element collection child)
+    , Show (Element collection child)
     , EqualWithExplanation (Value collection child)
     , Show (Value collection child)
     ) =>

@@ -11,17 +11,21 @@ module Kore.Domain.Builtin
     , builtinSort
     , InternalList (..)
     --
+    , Element (..)
     , Value (..)
     , AcWrapper (..)
+    , wrapElement, unwrapElement
     , InternalAc (..)
     , NormalizedAc (..)
     , emptyNormalizedAc
     --
     , InternalMap
+    , MapElement
     , MapValue
     , NormalizedMap (..)
     --
     , InternalSet
+    , SetElement
     , SetValue
     , NormalizedSet (..)
     --
@@ -140,7 +144,7 @@ For a set, the valueWapper would be something equivalent to @Data.Empty.T@.
 For a map, it would be something equivalent to @Identity@.
 -}
 data NormalizedAc (collection :: * -> * -> *) key child = NormalizedAc
-    { elementsWithVariables :: [(child, Value collection child)]
+    { elementsWithVariables :: [Element collection child]
     -- ^ Non-concrete elements of the structure.
     -- These would be of sorts @(Int, String)@ for a map from @Int@ to @String@.
     , concreteElements :: Map key (Value collection child)
@@ -152,106 +156,40 @@ data NormalizedAc (collection :: * -> * -> *) key child = NormalizedAc
     deriving (GHC.Generic)
 
 deriving instance
-    (Eq key, Eq child, Eq (Value collection child)) =>
+    ( Eq key, Eq child
+    , Eq (Element collection child), Eq (Value collection child)
+    ) =>
     Eq (NormalizedAc collection key child)
 
 deriving instance
-    (Ord key, Ord child, Ord (Value collection child)) =>
+    ( Ord key, Ord child
+    , Ord (Element collection child), Ord (Value collection child)
+    ) =>
     Ord (NormalizedAc collection key child)
 
 deriving instance
-    (Show key, Show child, Show (Value collection child)) =>
+    ( Show key, Show child
+    , Show (Element collection child), Show (Value collection child)
+    ) =>
     Show (NormalizedAc collection key child)
 
-instance
-    Functor (Value collection) =>
+deriving instance
+    (Functor (Element collection), Functor (Value collection)) =>
     Functor (NormalizedAc collection key)
-  where
-    fmap
-        f
-        NormalizedAc
-            { elementsWithVariables
-            , concreteElements
-            , opaque
-            }
-      =
-        NormalizedAc
-            { elementsWithVariables = fmap pairF elementsWithVariables
-            , concreteElements = fmap wrappedF concreteElements
-            , opaque = fmap f opaque
-            }
-      where
-        wrappedF = fmap f
-        pairF (a, b) = (f a, fmap f b)
 
-instance
-    Foldable (Value collection) =>
+deriving instance
+    (Foldable (Element collection), Foldable (Value collection)) =>
     Foldable (NormalizedAc collection key)
-  where
-    foldr
-        :: forall child b
-        . (child -> b -> b)
-        -> b
-        -> NormalizedAc collection key child
-        -> b
-    foldr
-        f
-        start
-        ac@(NormalizedAc _ _ _)
-      =
-        foldr pairF
-            (foldr wrappedF
-                (foldr f start opaque)
-                concreteElements
-            )
-            elementsWithVariables
-      where
-        NormalizedAc
-            { elementsWithVariables
-            , concreteElements
-            , opaque
-            }
-          = ac
 
-        wrappedF :: Value collection child -> b -> b
-        wrappedF a merged = foldr f merged a
-
-        pairF :: (child, Value collection child) -> b -> b
-        pairF (a, b) merged = f a (foldr f merged b)
+deriving instance
+    (Traversable (Element collection), Traversable (Value collection)) =>
+    Traversable (NormalizedAc collection key)
 
 instance
-    Traversable (Value collection) =>
-    Traversable (NormalizedAc collection key)
-  where
-    traverse
-        :: forall child child' f
-        .  Applicative f
-        => (child -> f child')
-        -> NormalizedAc collection key child
-        -> f (NormalizedAc collection key child')
-    traverse
-        f
-        NormalizedAc
-            { elementsWithVariables
-            , concreteElements
-            , opaque
-            }
-      =
-        NormalizedAc
-        <$> traverse pairF elementsWithVariables
-        <*> traverse wrappedF concreteElements
-        <*> traverse f opaque
-      where
-        wrappedF :: Value collection child -> f (Value collection child')
-        wrappedF a = traverse f a
-
-        pairF
-            :: (child, Value collection child)
-            -> f (child', Value collection child')
-        pairF (a, b) = (,) <$> f a <*> traverse f b
-
-instance (Hashable key, Hashable (Value collection child), Hashable child)
-    => Hashable (NormalizedAc collection key child)
+    ( Hashable key, Hashable child
+    , Hashable (Element collection child), Hashable (Value collection child)
+    ) =>
+    Hashable (NormalizedAc collection key child)
   where
     hashWithSalt salt normalized@(NormalizedAc _ _ _) =
         salt
@@ -263,15 +201,21 @@ instance (Hashable key, Hashable (Value collection child), Hashable child)
         NormalizedAc { concreteElements } = normalized
         NormalizedAc { opaque } = normalized
 
-instance (NFData key, NFData (Value collection child), NFData child)
-    => NFData (NormalizedAc collection key child)
+instance
+    ( NFData key, NFData child
+    , NFData (Element collection child), NFData (Value collection child)
+    ) =>
+    NFData (NormalizedAc collection key child)
 
 instance SOP.Generic (NormalizedAc key valueWrapper child)
 
 instance SOP.HasDatatypeInfo (NormalizedAc key valueWrapper child)
 
-instance (Debug key, Debug (Value collection child), Debug child)
-    => Debug (NormalizedAc collection key child)
+instance
+    ( Debug key, Debug child
+    , Debug (Element collection child), Debug (Value collection child)
+    ) =>
+    Debug (NormalizedAc collection key child)
 
 emptyNormalizedAc :: NormalizedAc key valueWrapper child
 emptyNormalizedAc = NormalizedAc
@@ -324,6 +268,16 @@ class AcWrapper (normalized :: * -> * -> *) where
         -> (child -> Pretty.Doc ann)
         -> (key, Value normalized child) -> Pretty.Doc ann
 
+unwrapElement
+    :: AcWrapper normalized
+    => Element normalized child -> (child, Value normalized child)
+unwrapElement = Lens.view elementIso
+
+wrapElement
+    :: AcWrapper normalized
+    => (child, Value normalized child) -> Element normalized child
+wrapElement = Lens.review elementIso
+
 unparsedChildren
     :: forall ann child key normalized
     .  (AcWrapper normalized)
@@ -345,8 +299,8 @@ unparsedChildren keyUnparser childUnparser wrapped =
     NormalizedAc {concreteElements} = unwrapped
     NormalizedAc {opaque} = unwrapped
 
-    elementUnparser :: (child, Value normalized child) -> Pretty.Doc ann
-    elementUnparser = unparseElement childUnparser . Lens.review elementIso
+    elementUnparser :: Element normalized child -> Pretty.Doc ann
+    elementUnparser = unparseElement childUnparser
 
     concreteElementUnparser :: (key, Value normalized child) -> Pretty.Doc ann
     concreteElementUnparser = unparseConcreteElement keyUnparser childUnparser
@@ -421,6 +375,19 @@ instance Unparse a => Unparse (MapValue a) where
     unparse (MapValue a) = unparse a
     unparse2 (MapValue a) = unparse2 a
 
+type MapElement = Element NormalizedMap
+
+instance Hashable child => Hashable (MapElement child) where
+    hashWithSalt salt (MapElement child) = hashWithSalt salt child
+
+instance NFData child => NFData (MapElement child)
+
+instance SOP.Generic (MapElement child)
+
+instance SOP.HasDatatypeInfo (MapElement child)
+
+instance Debug child => Debug (MapElement child)
+
 {- | Wrapper for normalized maps, to be used in the `builtinAcChild` field.
 -}
 newtype NormalizedMap key child =
@@ -476,8 +443,7 @@ instance Unparse (SetValue a) where
     unparse _ = error "Unexpected unparse call."
     unparse2 _ = error "Unexpected unparse2 call."
 
-instance Hashable (SetValue child)
-  where
+instance Hashable (SetValue child) where
     hashWithSalt salt SetValue = hashWithSalt salt (0 :: Int)
 
 instance NFData (SetValue child)
@@ -487,6 +453,19 @@ instance SOP.Generic (SetValue child)
 instance SOP.HasDatatypeInfo (SetValue child)
 
 instance Debug (SetValue child)
+
+type SetElement = Element NormalizedSet
+
+instance Hashable child => Hashable (SetElement child) where
+    hashWithSalt salt (SetElement key) = hashWithSalt salt key
+
+instance NFData child => NFData (SetElement child)
+
+instance SOP.Generic (SetElement child)
+
+instance SOP.HasDatatypeInfo (SetElement child)
+
+instance Debug child => Debug (SetElement child)
 
 {- | Wrapper for normalized sets, to be used in the `builtinAcChild` field.
 -}
