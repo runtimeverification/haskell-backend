@@ -209,11 +209,3 @@ toPredicate = Conditional.toPredicate
 
 splitTerm :: Pattern variable -> (TermLike variable, Predicate variable)
 splitTerm = Conditional.splitTerm
-
-instance ( SortedVariable variable
-         , Ord variable
-         , Show variable
-         , Unparse variable
-         ) => Unparse (Pattern variable) where
-    unparse = unparse . toTermLike
-    unparse2 = unparse2 . toTermLike
