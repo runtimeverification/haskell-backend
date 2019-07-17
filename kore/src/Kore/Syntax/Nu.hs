@@ -4,21 +4,19 @@ License     : NCSA
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Syntax.Nu
     ( Nu (..)
     ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import qualified Data.Deriving as Deriving
 import           Data.Function
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Pattern.FreeSetVariables
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -38,10 +36,6 @@ data Nu variable child = Nu
     , nuChild    :: child
     }
     deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-Deriving.deriveEq1 ''Nu
-Deriving.deriveOrd1 ''Nu
-Deriving.deriveShow1 ''Nu
 
 instance (Hashable variable, Hashable child) => Hashable (Nu variable child)
 
@@ -71,6 +65,14 @@ instance
 
 instance Ord variable => Synthetic (Nu variable) (FreeVariables variable) where
     synthetic = nuChild
+    {-# INLINE synthetic #-}
+
+instance
+    Ord variable =>
+    Synthetic (Nu variable) (FreeSetVariables variable)
+  where
+    synthetic Nu { nuVariable = SetVariable variable, nuChild } =
+        bindSetVariable variable nuChild
     {-# INLINE synthetic #-}
 
 instance SortedVariable variable => Synthetic (Nu variable) Sort where

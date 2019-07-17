@@ -4,20 +4,18 @@ License     : NCSA
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Syntax.Forall
     ( Forall (..)
     ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import qualified Data.Deriving as Deriving
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Pattern.FreeSetVariables
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -38,10 +36,6 @@ data Forall sort variable child = Forall
     , forallChild    :: child
     }
     deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-Deriving.deriveEq1 ''Forall
-Deriving.deriveOrd1 ''Forall
-Deriving.deriveShow1 ''Forall
 
 instance
     (Hashable sort, Hashable variable, Hashable child) =>
@@ -81,6 +75,10 @@ instance
   where
     synthetic Forall { forallVariable, forallChild } =
         bindVariable forallVariable forallChild
+    {-# INLINE synthetic #-}
+
+instance Ord variable => Synthetic (Forall sort variable) (FreeSetVariables variable) where
+    synthetic = forallChild
     {-# INLINE synthetic #-}
 
 instance Synthetic (Forall Sort variable) Sort where

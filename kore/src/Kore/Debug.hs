@@ -56,8 +56,6 @@ stack -j3 test --pedantic --test-arguments --pattern=zzz 2>&1 | \
 Enjoy.
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Debug
     ( traceEither
     , traceExceptT

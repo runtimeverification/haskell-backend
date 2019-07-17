@@ -6,8 +6,6 @@ License     : NCSA
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Repl.Data
     ( ReplCommand (..)
     , helpText
@@ -25,12 +23,6 @@ module Kore.Repl.Data
     , GraphProofStatus (..)
     , AliasDefinition (..), ReplAlias (..), AliasArgument(..), AliasError (..)
     , InnerGraph
-    , lensAxioms, lensClaims, lensClaim
-    , lensGraphs, lensNode, lensStepper
-    , lensLabels, lensOmit, lensUnifier
-    , lensCommands, lensAliases, lensClaimIndex
-    , lensLogging, lensLogger
-    , lensOutputFile
     , shouldStore
     , commandSet
     , UnifierWithExplanation (..)
@@ -46,7 +38,6 @@ module Kore.Repl.Data
 import           Control.Applicative
                  ( Alternative )
 import           Control.Concurrent.MVar
-import qualified Control.Lens.TH.Rules as Lens
 import           Control.Monad.Trans.Accum
                  ( AccumT, runAccumT )
 import qualified Control.Monad.Trans.Accum as Monad.Accum
@@ -68,6 +59,7 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified GHC.Generics as GHC
 import           Numeric.Natural
 
 import qualified Kore.Internal.Predicate as IPredicate
@@ -76,7 +68,7 @@ import           Kore.Internal.TermLike
 import qualified Kore.Logger.Output as Logger
 import           Kore.OnePath.StrategyPattern
 import           Kore.OnePath.Verification
-                 ( Axiom (..), Claim )
+                 ( Axiom (..) )
 import           Kore.Step.Rule
                  ( RewriteRule (..) )
 import           Kore.Step.Simplification.Data
@@ -404,12 +396,12 @@ data ReplState claim = ReplState
     , logging :: (Logger.Severity, LogType)
     -- ^ The log level and log type decide what gets logged and where.
     }
+    deriving (GHC.Generic)
 
 -- | Configuration environment for the repl.
 data Config claim m = Config
     { stepper
-        :: Claim claim
-        => claim
+        :: claim
         -> [claim]
         -> [Axiom]
         -> ExecutionGraph
@@ -428,6 +420,7 @@ data Config claim m = Config
     , outputFile :: OutputFile
     -- ^ Output resulting pattern to this file.
     }
+    deriving (GHC.Generic)
 
 -- | Unifier that stores the first 'explainBottom'.
 -- See 'runUnifierWithExplanation'.
@@ -478,10 +471,6 @@ instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
             , AuxOut "With:\n"
             , KoreOut $ (show . Pretty.indent 4 . unparse $ second) <> "\n"
             ]
-
-Lens.makeLenses ''ReplState
-
-Lens.makeLenses ''Config
 
 -- | Result after running one or multiple proof steps.
 data StepResult

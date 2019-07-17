@@ -27,6 +27,7 @@ import qualified Kore.Attribute.Location as Attribute
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Pattern.Defined as Attribute.Pattern
+import qualified Kore.Attribute.Pattern.FreeSetVariables as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import qualified Kore.Attribute.Pattern.Function as Attribute.Pattern
 import qualified Kore.Attribute.Pattern.Functional as Attribute.Pattern
@@ -1402,8 +1403,8 @@ instance
     ) => StructEqualWithExplanation (Attribute.Pattern variable)
   where
     structFieldsWithNames
-        expected@(Attribute.Pattern _ _ _ _ _)
-        actual@(Attribute.Pattern _ _ _ _ _)
+        expected@(Attribute.Pattern _ _ _ _ _ _)
+        actual@(Attribute.Pattern _ _ _ _ _ _)
       =
         [ EqWrap
             "patternSort = "
@@ -1413,6 +1414,10 @@ instance
             "freeVariables = "
             (Attribute.freeVariables expected)
             (Attribute.freeVariables actual)
+        , EqWrap
+            "freeSetVariables = "
+            (Attribute.freeSetVariables expected)
+            (Attribute.freeSetVariables actual)
         , EqWrap
             "functional = "
             (Attribute.functional expected)
@@ -1437,11 +1442,26 @@ instance
 
 instance
     (EqualWithExplanation variable, Show variable) =>
+    EqualWithExplanation (Attribute.FreeSetVariables variable)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    (EqualWithExplanation variable, Show variable) =>
     WrapperEqualWithExplanation (Attribute.FreeVariables variable)
   where
     wrapperConstructorName _ = "FreeVariables"
     wrapperField =
         Function.on (EqWrap "getFreeVariables = ") Attribute.getFreeVariables
+
+instance
+    (EqualWithExplanation variable, Show variable) =>
+    WrapperEqualWithExplanation (Attribute.FreeSetVariables variable)
+  where
+    wrapperConstructorName _ = "FreeSetVariables"
+    wrapperField =
+        Function.on (EqWrap "getFreeSetVariables = ") Attribute.getFreeSetVariables
 
 instance EqualWithExplanation Attribute.Pattern.Functional where
     compareWithExplanation = wrapperCompareWithExplanation
