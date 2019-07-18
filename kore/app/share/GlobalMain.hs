@@ -279,7 +279,7 @@ clockSomethingIO description something = do
             { message =
                 pack $ description ++" "++ show (diffTimeSpec end start)
             , severity = Logger.Info
-            , scope = [Scope "GlobalMain"]
+            , scope = [Scope "TimingInfo"]
             , callstack = emptyCallStack
             }
 
