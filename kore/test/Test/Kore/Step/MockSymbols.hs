@@ -24,6 +24,7 @@ import           Control.Applicative
 import qualified Control.Lens as Lens
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
+import qualified Data.Either as Either
 import           Data.Function
 import           Data.Generics.Product
 import qualified Data.Map.Strict as Map
@@ -1367,22 +1368,27 @@ subsorts =
 
 builtinMap
     :: (Ord variable, SortedVariable variable, Unparse variable)
-    => [(TermLike Concrete, TermLike variable)]
+    => [(TermLike variable, TermLike variable)]
     -> TermLike variable
-builtinMap child =
+builtinMap elements =
     Internal.mkBuiltin $ Domain.BuiltinMap Domain.InternalAc
         { builtinAcSort = mapSort
         , builtinAcUnit = unitMapSymbol
         , builtinAcElement = elementMapSymbol
         , builtinAcConcat = concatMapSymbol
         , builtinAcChild = Domain.NormalizedMap Domain.NormalizedAc
-            { elementsWithVariables = []
-            , concreteElements =
-                Map.fromList
-                    (map (Bifunctor.second Domain.Value) child)
+            { elementsWithVariables = abstractElements
+            , concreteElements
             , opaque = []
             }
         }
+  where
+    asConcrete element@(key, value) =
+        (,) <$> Internal.asConcrete key <*> pure value
+        & maybe (Left element) Right
+    (abstractElements, Map.fromList -> concreteElements) =
+        asConcrete . Bifunctor.second Domain.Value <$> elements
+        & Either.partitionEithers
 
 builtinList
     :: (Ord variable, SortedVariable variable, Unparse variable)

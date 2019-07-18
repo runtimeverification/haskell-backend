@@ -479,7 +479,7 @@ test_andTermsSimplification =
         [ testCase "concrete Map, same keys" $ do
             let expect = Just
                     [ Conditional
-                        { term = Mock.builtinMap [(Mock.aConcrete, Mock.b)]
+                        { term = Mock.builtinMap [(Mock.a, Mock.b)]
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap [(Mock.x, Mock.b)]
@@ -487,42 +487,35 @@ test_andTermsSimplification =
                     ]
             actual <-
                 unify
-                    (Mock.builtinMap [(Mock.aConcrete, Mock.b)])
-                    (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
+                    (Mock.builtinMap [(Mock.a, Mock.b)])
+                    (Mock.builtinMap [(Mock.a, mkVar Mock.x)])
             assertEqualWithExplanation "" expect actual
 
         , testCase "concrete Map, different keys" $ do
             let expect = Just []
             actual <-
                 unify
-                    (Mock.builtinMap [(Mock.aConcrete, Mock.b)])
-                    (Mock.builtinMap [(Mock.bConcrete, mkVar Mock.x)])
+                    (Mock.builtinMap [(Mock.a, Mock.b)])
+                    (Mock.builtinMap [(Mock.b, mkVar Mock.x)])
             assertEqualWithExplanation "" expect actual
 
         , testCase "concrete Map with framed Map" $ do
             let expect = Just
                     [ Conditional
                         { term =
-                            Mock.builtinMap
-                                [ (Mock.aConcrete, fOfA)
-                                , (Mock.bConcrete, fOfB)
-                                ]
+                            Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
                             [ (Mock.x, fOfA)
-                            , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                            , (Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                             ]
                         }
                     ]
             actual <-
                 unify
-                    (Mock.builtinMap
-                        [ (Mock.aConcrete, fOfA)
-                        , (Mock.bConcrete, fOfB)
-                        ]
-                    )
+                    (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
                     (Mock.concatMap
-                        (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
+                        (Mock.builtinMap [(Mock.a, mkVar Mock.x)])
                         (mkVar Mock.m)
                     )
             assertEqualWithExplanation "" expect actual
@@ -531,27 +524,20 @@ test_andTermsSimplification =
             let expect = Just
                     [ Conditional
                         { term =
-                            Mock.builtinMap
-                                [ (Mock.aConcrete, fOfA)
-                                , (Mock.bConcrete, fOfB)
-                                ]
+                            Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
                             [ (Mock.x, fOfA)
-                            , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                            , (Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                             ]
                         }
                     ]
             actual <-
                 unify
-                    (Mock.builtinMap
-                        [ (Mock.aConcrete, fOfA)
-                        , (Mock.bConcrete, fOfB)
-                        ]
-                    )
+                    (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
                     (Mock.concatMap
                         (mkVar Mock.m)
-                        (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
+                        (Mock.builtinMap [(Mock.a, mkVar Mock.x)])
                     )
             assertEqualWithExplanation "" expect actual
 
@@ -559,42 +545,32 @@ test_andTermsSimplification =
             let expect = Just
                     [ Conditional
                         { term =
-                            Mock.builtinMap
-                                [ (Mock.aConcrete, fOfA)
-                                , (Mock.bConcrete, fOfB)
-                                ]
+                            Mock.builtinMap [(Mock.a, fOfA) , (Mock.b, fOfB)]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
                             [ (Mock.x, fOfA)
-                            , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                            , (Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                             ]
                         }
                     ]
             actual <-
                 unify
                     (Mock.concatMap
-                        (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
+                        (Mock.builtinMap [(Mock.a, mkVar Mock.x)])
                         (mkVar Mock.m)
                     )
-                    (Mock.builtinMap
-                        [ (Mock.aConcrete, fOfA)
-                        , (Mock.bConcrete, fOfB)
-                        ]
-                    )
+                    (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
             assertEqualWithExplanation "" expect actual
 
         , testCase "framed Map with concrete Map" $ do
             let expect = Just
                     [ Conditional
                         { term =
-                            Mock.builtinMap
-                                [ (Mock.aConcrete, fOfA)
-                                , (Mock.bConcrete, fOfB)
-                                ]
+                            Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
                             [ (Mock.x, fOfA)
-                            , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                            , (Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                             ]
                         }
                     ]
@@ -602,19 +578,15 @@ test_andTermsSimplification =
                 unify
                     (Mock.concatMap
                         (mkVar Mock.m)
-                        (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
+                        (Mock.builtinMap [(Mock.a, mkVar Mock.x)])
                     )
-                    (Mock.builtinMap
-                        [ (Mock.aConcrete, fOfA)
-                        , (Mock.bConcrete, fOfB)
-                        ]
-                    )
+                    (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
             assertEqualWithExplanation "" expect actual
 
         , testCase "concrete Map with element+unit" $ do
             let expect = Just
                     [ Conditional
-                        { term = Mock.builtinMap [ (Mock.aConcrete, fOfA) ]
+                        { term = Mock.builtinMap [ (Mock.a, fOfA) ]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
                             [ (Mock.x, Mock.a)
@@ -624,7 +596,7 @@ test_andTermsSimplification =
                     ]
             actual <-
                 unify
-                    (Mock.builtinMap [ (Mock.aConcrete, fOfA) ])
+                    (Mock.builtinMap [ (Mock.a, fOfA) ])
                     (Mock.concatMap
                         (Mock.elementMap (mkVar Mock.x) (mkVar Mock.y))
                         Mock.unitMap
