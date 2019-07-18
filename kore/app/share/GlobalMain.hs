@@ -267,12 +267,12 @@ clockSomething description something =
 -- | Time an IO computation and print results.
 clockSomethingIO :: String -> IO a -> GlobalMainIO a
 clockSomethingIO description something = do
-        start <- lift $ getTime Monotonic
-        x     <- lift $ something
-        end   <- lift $ getTime Monotonic
-        logger <- ask
-        lift $ logger <& logMessage end start
-        return x
+    start  <- lift $ getTime Monotonic
+    x      <- lift $ something
+    end    <- lift $ getTime Monotonic
+    logger <- ask
+    lift $ logger <& logMessage end start
+    return x
   where
     logMessage end start =
         Logger.LogMessage
