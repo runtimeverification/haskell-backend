@@ -13,12 +13,12 @@ module LIST-REQUIRES
     </T>
 
 syntax Map ::= removeAs ( Map ) [function, functional]
-             | removeAs ( List , Map ) [function, functional]
+//             | removeAs ( List , Map ) [function, functional]
 // ------------------------------------------------------------------------------
-rule removeAs( M )                                   => removeAs(Set2List(keys(M)), M)
-rule removeAs( .List, .Map )                         => .Map
-rule removeAs( ListItem(KEY) L, KEY |-> 0 REST )     => removeAs(L, REST)
-rule removeAs( ListItem(KEY) L, KEY |-> VALUE REST ) => KEY |-> VALUE removeAs(L, REST) requires VALUE =/=K 0
+//rule removeAs( M )                                   => removeAs(Set2List(keys(M)), M)
+//rule removeAs( .List, .Map )                         => .Map
+//rule removeAs( ListItem(KEY) L, KEY |-> 0 REST )     => removeAs(L, REST)
+//rule removeAs( ListItem(KEY) L, KEY |-> VALUE REST ) => KEY |-> VALUE removeAs(L, REST) requires VALUE =/=K 0
 
 rule
     <k> a => b </k>
