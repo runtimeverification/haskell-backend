@@ -24,8 +24,6 @@ import           Control.Exception
                  ( evaluate )
 import           Control.Monad
                  ( when )
-import           Control.Monad.Reader
-                 ( MonadReader )
 import           Control.Monad.Trans.Class
                  ( lift )
 import           Control.Monad.Trans.Reader
