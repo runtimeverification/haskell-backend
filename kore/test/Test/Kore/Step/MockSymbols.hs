@@ -1370,17 +1370,25 @@ builtinMap
     :: (Ord variable, SortedVariable variable, Unparse variable)
     => [(TermLike variable, TermLike variable)]
     -> TermLike variable
-builtinMap elements =
+builtinMap elements = framedMap elements []
+
+framedMap
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => [(TermLike variable, TermLike variable)]
+    -> [variable]
+    -> TermLike variable
+framedMap elements (map Internal.mkVar -> opaque) =
     Internal.mkBuiltin $ Domain.BuiltinMap Domain.InternalAc
         { builtinAcSort = mapSort
         , builtinAcUnit = unitMapSymbol
         , builtinAcElement = elementMapSymbol
         , builtinAcConcat = concatMapSymbol
-        , builtinAcChild = Domain.NormalizedMap Domain.NormalizedAc
-            { elementsWithVariables = abstractElements
-            , concreteElements
-            , opaque = []
-            }
+        , builtinAcChild =
+            Domain.NormalizedMap Domain.NormalizedAc
+                { elementsWithVariables = abstractElements
+                , concreteElements
+                , opaque
+                }
         }
   where
     asConcrete element@(key, value) =
