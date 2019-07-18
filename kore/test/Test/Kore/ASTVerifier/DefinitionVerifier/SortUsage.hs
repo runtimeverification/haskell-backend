@@ -12,6 +12,8 @@ import           Data.Maybe
                  ( mapMaybe )
 import qualified Data.Text as Text
 
+import           Kore.ASTVerifier.Error
+                 ( noConstructorWithDomainValuesMessage )
 import qualified Kore.Attribute.Constructor as Attribute.Constructor
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
 import qualified Kore.Builtin as Builtin
@@ -78,9 +80,9 @@ test_sortUsage =
                 [ "module 'MODULE'"
                 , "symbol 'a' declaration (<test data>)"
                 ]
-            , errorError   =
-                "Cannot define constructor 'a' for sort with domain values \
-                    \'mySort'."
+            , errorError   = noConstructorWithDomainValuesMessage
+                (testId "a")
+                (simpleSort (SortName "mySort"))
             }
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ sortSentenceWithAttributes

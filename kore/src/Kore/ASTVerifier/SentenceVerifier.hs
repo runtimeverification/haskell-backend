@@ -10,6 +10,7 @@ Portability : POSIX
 module Kore.ASTVerifier.SentenceVerifier
     ( verifyUniqueNames
     , verifySentences
+    , noConstructorWithDomainValuesMessage
     ) where
 
 import           Control.Monad
@@ -31,6 +32,8 @@ import qualified Kore.Attribute.Constructor as Attribute
 import qualified Kore.Attribute.Hook as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Sort as Attribute.Sort
+import qualified Kore.Attribute.Sort as Attribute
+                 ( Sort )
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
@@ -281,14 +284,8 @@ verifySymbolSentence indexedModule sentence =
                 (sortDescription, _) <-
                     Map.lookup resultSortId
                         $ indexedModuleSortDescriptions indexedModule
-                let
-                    maybeHook =
-                        Attribute.getHook . Attribute.Sort.hook
-                        $ sortDescription
-                    hasDvs =
-                        Attribute.HasDomainValues.getHasDomainValues
-                            (Attribute.Sort.hasDomainValues sortDescription)
-                return (maybeHook, hasDvs)
+                return
+                    (maybeHook sortDescription, hasDomainValues sortDescription)
         in case sortData of
             Nothing -> return ()
             Just (resultSortHook, resultHasDomainValues) -> do
@@ -302,12 +299,15 @@ verifySymbolSentence indexedModule sentence =
                     )
                 koreFailWhen
                     (isCtor && resultHasDomainValues)
-                    ( "Cannot define constructor '"
-                    ++ getIdForError symbol
-                    ++ "' for sort with domain values '"
-                    ++ getIdForError resultSortId
-                    ++ "'."
-                    )
+                    (noConstructorWithDomainValuesMessage symbol resultSort)
+
+maybeHook :: Attribute.Sort -> Maybe Text
+maybeHook = Attribute.getHook . Attribute.Sort.hook
+
+hasDomainValues :: Attribute.Sort -> Bool
+hasDomainValues =
+    Attribute.HasDomainValues.getHasDomainValues
+    . Attribute.Sort.hasDomainValues
 
 verifyAliasSentence
     :: Builtin.Verifiers

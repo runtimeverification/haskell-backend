@@ -10,8 +10,11 @@ import Test.Tasty.HUnit
 import           Data.Function
 import qualified Data.List as List
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 
 import           Kore.AST.AstWithLocation
+import           Kore.ASTVerifier.Error
+                 ( sortNeedsDomainValueAttributeMessage )
 import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Hook as Attribute.Hook
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
@@ -641,8 +644,7 @@ test_patternVerifier =
         NeedsInternalDefinitions
     , failureTestsForObjectPattern "Domain value - sort without DVs"
         (ExpectedErrorMessage
-            "Sorts used with domain value must have the hasDomainValues \
-                \attribute."
+            (Text.unpack sortNeedsDomainValueAttributeMessage)
         )
         (ErrorStack
             [ "\\dv (<test data>)"

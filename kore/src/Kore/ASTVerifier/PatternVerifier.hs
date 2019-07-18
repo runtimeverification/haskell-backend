@@ -705,21 +705,7 @@ verifyDomainValue domain = do
         lookupSortDeclaration' sortId = do
             (_, sortDecl) <- resolveSort indexedModule sortId
             return sortDecl
-        dvSortId = case patternSort of
-            SortVariableSort _ ->
-                error "Unimplemented: domain values with variable sorts"
-            SortActualSort SortActual {sortActualName} -> sortActualName
-    (sortAttrs, _) <- resolveSort indexedModule dvSortId
-    koreFailWithLocationsWhen
-        (not
-            (Attribute.HasDomainValues.getHasDomainValues
-                (Attribute.Sort.hasDomainValues sortAttrs)
-            )
-        )
-        [patternSort]
-        (  "Sorts used with domain value must have the '" ++ getIdForError hasDomainValuesId ++ "' " ++
-        <> "attribute."
-        )
+    verifySortHasDomainValues patternSort
     domain' <- sequence domain
     verified <-
         PatternVerifier
@@ -733,6 +719,24 @@ verifyDomainValue domain = do
     Monad.unless (null freeVariables)
         (koreFail "Domain value must not contain free variables.")
     return (attrs :< verified)
+
+verifySortHasDomainValues :: Sort -> PatternVerifier ()
+verifySortHasDomainValues patternSort = do
+    Context { indexedModule } <- Reader.ask
+    (sortAttrs, _) <- resolveSort indexedModule dvSortId
+    koreFailWithLocationsWhen
+        (not
+            (Attribute.HasDomainValues.getHasDomainValues
+                (Attribute.Sort.hasDomainValues sortAttrs)
+            )
+        )
+        [patternSort]
+        sortNeedsDomainValueAttributeMessage
+  where
+    dvSortId = case patternSort of
+        SortVariableSort _ ->
+            error "Unimplemented: domain values with variable sorts"
+        SortActualSort SortActual {sortActualName} -> sortActualName
 
 verifyStringLiteral
     :: (base ~ Const StringLiteral, valid ~ Attribute.Pattern Variable)

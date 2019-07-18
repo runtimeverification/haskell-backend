@@ -9,7 +9,15 @@ Portability : POSIX
 -}
 module Kore.ASTVerifier.Error where
 
-import Kore.Error
+import Data.Text
+       ( Text )
+
+import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
+import           Kore.Error
+import           Kore.Sort
+                 ( Sort, getSortId )
+import           Kore.Syntax.Id
+                 ( Id (getId), getIdForError )
 
 {-| 'VerifyError' is a tag for verification errors. -}
 newtype VerifyError = VerifyError ()
@@ -21,3 +29,15 @@ newtype VerifySuccess = VerifySuccess ()
 {-| 'verifySuccess' helper for signaling verification success. -}
 verifySuccess :: MonadError (Error VerifyError) m => m VerifySuccess
 verifySuccess = return (VerifySuccess ())
+
+noConstructorWithDomainValuesMessage :: Id -> Sort -> String
+noConstructorWithDomainValuesMessage symbol resultSort =
+    "Cannot define constructor '" ++ getIdForError symbol
+    ++ "' for sort with domain values '" ++ getIdForError (getSortId resultSort)
+    ++ "'."
+
+sortNeedsDomainValueAttributeMessage :: Text
+sortNeedsDomainValueAttributeMessage =
+    "Sorts used with domain value must have the '"
+    <> getId Attribute.HasDomainValues.hasDomainValuesId
+    <> "' " <> "attribute."
