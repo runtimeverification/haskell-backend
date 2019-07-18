@@ -717,7 +717,7 @@ verifyDomainValue domain = do
             )
         )
         [patternSort]
-        (  "Sorts used with domain value must have the hasDomainValues "
+        (  "Sorts used with domain value must have the '" ++ getIdForError hasDomainValuesId ++ "' " ++
         <> "attribute."
         )
     domain' <- sequence domain
