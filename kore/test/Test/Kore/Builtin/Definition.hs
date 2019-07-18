@@ -302,6 +302,9 @@ getListSymbol :: Internal.Symbol
 getListSymbol =
     builtinSymbol "getList" intSort [listSort, intSort] & hook "LIST.get"
 
+concatList :: TermLike Variable -> TermLike Variable -> TermLike Variable
+concatList xs ys = mkApplySymbol concatListSymbol [xs, ys]
+
 -- ** Map
 
 unitMapSymbol :: Internal.Symbol

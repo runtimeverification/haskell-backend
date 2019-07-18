@@ -1,6 +1,7 @@
 module Test.Kore.Step.Function.Integration
     ( test_functionIntegration
     , test_Nat
+    , test_List
     ) where
 
 import Test.Tasty
@@ -14,7 +15,11 @@ import           Prelude hiding
                  ( succ )
 
 import           Data.Sup
+import qualified Kore.Builtin.Int as Int
+                 ( builtinFunctions )
 import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
@@ -50,6 +55,9 @@ import           Kore.Variables.Fresh
 import qualified SMT
 
 import           Test.Kore
+import qualified Test.Kore.Builtin.Definition as Builtin
+import qualified Test.Kore.Builtin.Int as Int
+import qualified Test.Kore.Builtin.List as List
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.Axiom.EvaluationStrategy as Axiom
                  ( evaluate )
@@ -548,34 +556,60 @@ test_Nat =
     , fibonacci two `equals` two $ "fibonacci(2) = 2 : Nat"
     ]
   where
-    -- Matching tests: check that the terms match or not
-    withMatch check term1 term2 comment =
-        testCase comment $ do
-            actual <- match term1 term2
-            let message =
-                    Pretty.vsep
-                        [ "matching:"
-                        , Pretty.indent 4 (unparse term1)
-                        , Pretty.indent 2 "with:"
-                        , Pretty.indent 4 (unparse term2)
-                        ]
-            assertBool (show message) (check actual)
-    matches = withMatch (maybe False (not . isBottom))
-    notMatches = withMatch isNothing
-
-    -- Applied tests: check that one or more rules applies or not
-    withApplied check rules term comment =
-        testCase comment $ do
-            actual <- Axiom.evaluate (definitionEvaluation rules) term
-            assertBool "" (check actual)
-    applies = withApplied isApplicable
-    notApplies = withApplied isNotApplicable
-
     -- Evaluation tests: check the result of evaluating the term
     equals term expect comment =
         testCase comment $ do
             actual <- evaluate natSimplifiers term
             assertEqualWithExplanation "" (Pattern.fromTermLike expect) actual
+
+-- Matching tests: check that the terms match or not
+withMatch
+    :: HasCallStack
+    => (Maybe (OrPredicate Variable) -> Bool)
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TestName
+    -> TestTree
+withMatch check term1 term2 comment =
+    testCase comment $ do
+        actual <- match term1 term2
+        let message =
+                Pretty.vsep
+                    [ "matching:"
+                    , Pretty.indent 4 (unparse term1)
+                    , Pretty.indent 2 "with:"
+                    , Pretty.indent 4 (unparse term2)
+                    ]
+        assertBool (show message) (check actual)
+
+matches, notMatches
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TestName
+    -> TestTree
+matches = withMatch (maybe False (not . isBottom))
+notMatches = withMatch isNothing
+
+-- Applied tests: check that one or more rules applies or not
+withApplied
+    :: (CommonAttemptedAxiom -> Bool)
+    -> [EqualityRule Variable]
+    -> TermLike Variable
+    -> TestName
+    -> TestTree
+withApplied check rules term comment =
+    testCase comment $ do
+        actual <- Axiom.evaluate (definitionEvaluation rules) term
+        assertBool "" (check actual)
+
+applies, notApplies
+    :: [EqualityRule Variable]
+    -> TermLike Variable
+    -> TestName
+    -> TestTree
+applies = withApplied isApplicable
+notApplies = withApplied isNotApplicable
+
 
 natSort :: Sort
 natSort =
@@ -671,6 +705,83 @@ natSimplifiers =
         , fibonacciEvaluator
         , factorialEvaluator
         ]
+
+test_List :: [TestTree]
+test_List =
+    [ [lengthListUnitRule] `applies` lengthList unitList  $ "lengthList([]) => ... ~ lengthList([])"
+    , [lengthListUnitRule] `notApplies` lengthList (mkList [mkInt 1])  $ "lengthList([]) => ... !~ lengthList([1])"
+    , [lengthListUnitRule] `notApplies` lengthList (mkList [mkInt 1, mkInt 2])  $ "lengthList([]) => ... !~ lengthList([1, 2])"
+    , [lengthListConsRule] `notApplies` lengthList unitList  $ "lengthList(x : xs) => ... !~ lengthList([])"
+    , [lengthListConsRule] `applies` lengthList (mkList [mkInt 1])  $ "lengthList(x : xs) => ... ~ lengthList([1])"
+    , [lengthListConsRule] `applies` lengthList (mkList [mkInt 1, mkInt 2])  $ "lengthList(x : xs) => ... ~ lengthList([1, 2])"
+    , [lengthListUnitRule, lengthListConsRule] `applies` lengthList unitList  $ "lengthList([]) => ..."
+    , [lengthListUnitRule, lengthListConsRule] `applies` lengthList (mkList [mkInt 1])  $ "lengthList([1]) => ..."
+    , [lengthListUnitRule, lengthListConsRule] `applies` lengthList (mkList [mkInt 1, mkInt 2])  $ "lengthList([12]) => ..."
+    , lengthList (mkList []) `equals` mkInt 0  $ "lengthList([]) = 0 : Int"
+    , lengthList (mkList [mkInt 1]) `equals` mkInt 1  $ "lengthList([1]) = 1 : Int"
+    , lengthList (mkList [mkInt 1, mkInt 2]) `equals` mkInt 2  $ "lengthList([1, 2]) = 2 : Int"
+    ]
+  where
+    -- Evaluation tests: check the result of evaluating the term
+    equals term expect comment =
+        testCase comment $ do
+            actual <- evaluate listSimplifiers term
+            assertEqualWithExplanation "" (Pattern.fromTermLike expect) actual
+
+listSort, intSort :: Sort
+listSort = Builtin.listSort
+intSort = Builtin.intSort
+
+mkList :: [TermLike Variable] -> TermLike Variable
+mkList = List.asInternal
+
+mkInt :: Integer -> TermLike Variable
+mkInt = Int.asInternal
+
+addInt :: TermLike Variable -> TermLike Variable -> TermLike Variable
+addInt = Builtin.addInt
+
+unitList :: TermLike Variable
+unitList = mkList []
+
+varX, varL :: TermLike Variable
+varX = mkVar (varS (testId "xInt") intSort)
+varL = mkVar (varS (testId "lList") listSort)
+
+lengthListSymbol :: Symbol
+lengthListSymbol = Mock.symbol "lengthList" [listSort] intSort & function
+
+lengthList :: TermLike Variable -> TermLike Variable
+lengthList l = mkApplySymbol lengthListSymbol [l]
+
+concatList :: TermLike Variable -> TermLike Variable -> TermLike Variable
+concatList = Builtin.concatList
+
+consList :: TermLike Variable -> TermLike Variable -> TermLike Variable
+consList x xs = concatList (mkList [x]) xs
+
+lengthListUnitRule, lengthListConsRule :: EqualityRule Variable
+lengthListUnitRule = axiom_ (lengthList unitList) (mkInt 0)
+lengthListConsRule =
+    axiom_
+        (lengthList (consList varX varL))
+        (addInt (mkInt 1) (lengthList varL))
+
+lengthListEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
+lengthListEvaluator =
+    functionEvaluator lengthListSymbol
+        [ lengthListUnitRule
+        , lengthListConsRule
+        ]
+
+listSimplifiers :: BuiltinAndAxiomSimplifierMap
+listSimplifiers =
+    Map.fromList
+        [ lengthListEvaluator
+        , (AxiomIdentifier.Application (symbolConstructor Builtin.addIntSymbol), builtinEvaluation addEvaluator)
+        ]
+  where
+    Just addEvaluator = Map.lookup "INT.add" Int.builtinFunctions
 
 axiomEvaluator
     :: TermLike Variable
