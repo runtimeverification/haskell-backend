@@ -17,6 +17,8 @@ module GlobalMain
     , mainParse
     ) where
 
+import           Colog
+                 ( (<&) )
 import           Control.Exception
                  ( evaluate )
 import           Control.Monad
@@ -32,7 +34,7 @@ import           Data.Semigroup
                  ( (<>) )
 import qualified Data.Set as Set
 import           Data.Text
-                 ( Text )
+                 ( Text, pack )
 import           Data.Time.Format
                  ( defaultTimeLocale, formatTime )
 import           Data.Time.LocalTime
@@ -41,6 +43,8 @@ import           Data.Version
                  ( showVersion )
 import           Development.GitRev
                  ( gitBranch, gitCommitDate, gitHash )
+import           GHC.Stack
+                 ( emptyCallStack )
 import           Options.Applicative
                  ( InfoMod, Parser, argument, disabled, execParser, flag,
                  flag', help, helper, hidden, info, internal, long, metavar,
@@ -64,6 +68,7 @@ import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule, VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import           Kore.Logger.Output as Logger
 import           Kore.Parser
                  ( ParsedPattern, parseKoreDefinition )
 import           Kore.Step.Strategy
@@ -256,12 +261,23 @@ clockSomething description something =
 
 -- | Time an IO computation and print results.
 clockSomethingIO :: String -> IO a -> IO a
-clockSomethingIO description something = do
-    start <- getTime Monotonic
-    x     <- something
-    end   <- getTime Monotonic
-    hPutStrLn stderr $ description ++" "++ show (diffTimeSpec end start)
-    return x
+clockSomethingIO description something
+  = Logger.withLogger logOptions $ \logger -> do
+        start <- getTime Monotonic
+        x     <- something
+        end   <- getTime Monotonic
+        logger <& logMessage end start
+        return x
+  where
+    logOptions = Logger.KoreLogOptions Logger.LogStdOut Logger.Info mempty
+    logMessage end start =
+        Logger.LogMessage
+            { message =
+                pack $ description ++" "++ show (diffTimeSpec end start)
+            , severity = Logger.Info
+            , scope = mempty
+            , callstack = emptyCallStack
+            }
 
 -- | Verify that a Kore pattern is well-formed and print timing information.
 mainPatternVerify
