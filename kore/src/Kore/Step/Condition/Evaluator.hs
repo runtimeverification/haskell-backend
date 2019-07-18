@@ -8,7 +8,7 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Condition.Evaluator
-    ( evaluate
+    ( simplify
     ) where
 
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -19,18 +19,12 @@ import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify, simplifyTerm )
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
-{- | Attempt to evaluate a predicate.
-
-If the predicate is non-trivial (not @\\top{_}()@ or @\\bottom{_}()@),
-@evaluate@ attempts to refute the predicate using an external SMT solver.
-
- -}
-evaluate
+{- | Attempt to simplify a predicate. -}
+simplify
     ::  forall variable m .
         ( FreshVariable variable
         , SortedVariable variable
@@ -44,21 +38,9 @@ evaluate
     -- TODO: Can't it happen that I also get a substitution when evaluating
     -- functions? See the Equals case.
     -> m (Predicate variable)
-evaluate
-    predicate
-  = do
+simplify predicate = do
     simplified <- simplifyTerm (Syntax.Predicate.unwrapPredicate predicate)
-    refute <-
-        case () of
-            _ | OrPattern.isTrue simplified  -> return (Just True)
-              | OrPattern.isFalse simplified -> return (Just False)
-              | otherwise -> SMT.Evaluator.decidePredicate predicate
-    let simplified' =
-            case refute of
-                Just False -> Pattern.bottom
-                Just True -> Pattern.top
-                _ -> OrPattern.toPattern simplified
-    return $ asPredicate simplified'
+    return $ asPredicate (OrPattern.toPattern simplified)
 
 asPredicate
     ::  ( SortedVariable variable

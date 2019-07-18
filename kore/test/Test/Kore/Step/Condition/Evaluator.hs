@@ -16,7 +16,6 @@ import           Kore.Predicate.Predicate
                  makeNotPredicate, makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
-import qualified Kore.Step.Condition.Evaluator as Evaluator
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import           SMT
@@ -50,17 +49,12 @@ test_andNegation =
                     (makeNotPredicate predicate)
                 )
         expected === actual
-    expected =
-        Conditional
-            { term = ()
-            , predicate = makeFalsePredicate
-            , substitution = mempty
-            }
+    expected = makeFalsePredicate
 
 evaluate
     :: Syntax.Predicate Variable
-    -> PropertyT SMT (Predicate Variable)
-evaluate = Trans.lift . evalSimplifier testEnv . Evaluator.evaluate
+    -> PropertyT SMT (Syntax.Predicate Variable)
+evaluate = Trans.lift . evalSimplifier testEnv . SMT.Evaluator.evaluate
 
 noSimplification :: [(TermLike Variable, [Pattern Variable])]
 noSimplification = []
