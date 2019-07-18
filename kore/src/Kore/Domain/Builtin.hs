@@ -126,8 +126,12 @@ instance Unparse child => Unparse (InternalList child) where
 -- * Builtin AC (associative-commutative) generic stuff
 
 {- | Internal representation for associative-commutative domain values.
+
+The valueWrapper is a data type holding the non-key part of elements.
+For a set, the valueWapper would be something equivalent to @Data.Empty.T@.
+For a map, it would be something equivalent to @Identity@.
 -}
-data NormalizedAc key valueWrapper child = NormalizedAc
+data NormalizedAc key (valueWrapper :: * -> *) child = NormalizedAc
     { elementsWithVariables :: [(child, valueWrapper child)]
     -- ^ Non-concrete elements of the structure.
     -- These would be of sorts @(Int, String)@ for a map from @Int@ to @String@.
@@ -154,7 +158,7 @@ instance Functor valueWrapper => Functor (NormalizedAc key valueWrapper) where
             , opaque = fmap f opaque
             }
       where
-        wrappedF a = fmap f a
+        wrappedF = fmap f
         pairF (a, b) = (f a, fmap f b)
 
 instance Foldable valueWrapper => Foldable (NormalizedAc key valueWrapper) where
@@ -246,7 +250,7 @@ emptyNormalizedAc = NormalizedAc
     , opaque = []
     }
 
-{- | Internal representation of associative-commutative domain values.
+{- | Internal representation of associative-commutative builtin terms.
 -}
 data InternalAc key (normalized :: * -> * -> *) child =
     InternalAc
@@ -290,16 +294,14 @@ unparsedChildren
     -> normalized key child
     -> [Pretty.Doc ann]
 unparsedChildren keyUnparser childUnparser wrapped =
-    case unwrapped of
-        -- case statement needed only for getting compiler notifications when
-        -- the NormalizedAc field count changes
-        NormalizedAc _ _ _ ->
-            (elementUnparser <$> elementsWithVariables)
-            ++ (concreteElementUnparser <$> Map.toAscList concreteElements)
-            ++ (argument' . childUnparser <$> opaque)
+    (elementUnparser <$> elementsWithVariables)
+    ++ (concreteElementUnparser <$> Map.toAscList concreteElements)
+    ++ (argument' . childUnparser <$> opaque)
   where
     unwrapped :: NormalizedAc key valueWrapper child
-    unwrapped = unwrapAc wrapped
+    -- Matching needed only for getting compiler notifications when
+    -- the NormalizedAc field count changes.
+    unwrapped@(NormalizedAc _ _ _) = unwrapAc wrapped
 
     NormalizedAc {elementsWithVariables} = unwrapped
     NormalizedAc {concreteElements} = unwrapped
@@ -421,8 +423,8 @@ data NoValue child = NoValue
     deriving (Eq, Foldable, Functor, Traversable, GHC.Generic, Ord, Show)
 
 instance Unparse (NoValue a) where
-    unparse _ = "<nothing>"
-    unparse2 _ = "<nothing>"
+    unparse _ = error "Unexpected unparse call."
+    unparse2 _ = error "Unexpected unparse2 call."
 
 instance Hashable (NoValue child)
   where

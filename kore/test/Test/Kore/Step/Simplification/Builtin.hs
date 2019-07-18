@@ -7,6 +7,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 
@@ -58,7 +59,7 @@ mkMapDomainValue children =
             { elementsWithVariables = []
             , concreteElements =
                 Map.fromList
-                    (map (\(key, value) -> (key, Domain.Value value)) children)
+                    (map (Bifunctor.second Domain.Value) children)
             , opaque = []
             }
         }

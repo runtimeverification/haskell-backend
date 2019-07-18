@@ -22,10 +22,15 @@ import           Test.Kore.With
 test_instance_Synthetic :: [TestTree]
 test_instance_Synthetic =
     [ testGroup "AndF" $ map (isn't . AndF) (And sort <$> range <*> range)
-    , testGroup "ApplySymbolF" $ do
-        x <- range
-        y <- range
-        [ expect (x <> y) $ ApplySymbolF $ Application sigma [x, y] ]
+    , testGroup "ApplySymbolF"
+        [ testGroup "functional" $ do
+            x <- range
+            y <- range
+            [ expect (x <> y) $ ApplySymbolF $ Application sigma [x, y] ]
+        , testGroup "non-functional" $ do
+            x <- range
+            [ expect nonFunctional $ ApplySymbolF $ Application plain [x] ]
+        ]
     , testGroup "BottomF" [ isn't $ BottomF (Bottom sort) ]
     , testGroup "CeilF" $ map (isn't . CeilF) (Ceil sort sort <$> range)
     , testGroup "DomainValueF" $ do
@@ -85,6 +90,7 @@ test_instance_Synthetic =
   where
     sort = Mock.testSort
     sigma = Mock.sigmaSymbol
+    plain = Mock.plain10Symbol
 
     functional = Functional True
     nonFunctional = Functional False
