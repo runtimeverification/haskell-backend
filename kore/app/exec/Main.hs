@@ -2,6 +2,8 @@ module Main (main) where
 
 import           Control.Applicative
                  ( Alternative (..), optional, (<$) )
+import           Control.Monad.Trans
+                 ( lift )
 import           Control.Monad.Trans.Reader
                  ( runReaderT )
 import qualified Data.Bifunctor as Bifunctor
@@ -308,134 +310,119 @@ mainWithOptions
                     { SMT.timeOut = smtTimeOut
                     , SMT.preludeFile = smtPrelude
                     }
-        withLogger koreLogOptions (\logger -> do
-            parsedDefinition <-
-                runReaderT
-                    (parseDefinition definitionFileName)
-                    logger
-            indexedDefinition@(indexedModules, _) <-
-                runReaderT
-                    ( verifyDefinitionWithBase
+        withLogger koreLogOptions (\logger ->
+            flip runReaderT logger $ do
+                parsedDefinition <- parseDefinition definitionFileName
+                indexedDefinition@(indexedModules, _) <-
+                    verifyDefinitionWithBase
                         Nothing
                         True
                         parsedDefinition
-                    )
-                    logger
-            indexedModule <- mainModule mainModuleName indexedModules
-            searchParameters <-
-                case koreSearchOptions of
+                indexedModule <- lift $ mainModule mainModuleName indexedModules
+                searchParameters <-
+                    case koreSearchOptions of
+                        Nothing -> return Nothing
+                        Just KoreSearchOptions { searchFileName, bound, searchType } ->
+                            do
+                                searchPattern <-
+                                    mainParseSearchPattern
+                                      indexedModule
+                                      searchFileName
+                                let searchConfig = Search.Config { bound, searchType }
+                                (return . Just) (searchPattern, searchConfig)
+                proveParameters <-
+                    case koreProveOptions of
+                        Nothing -> return Nothing
+                        Just proveOptions -> do
+                            let KoreProveOptions { specFileName } = proveOptions
+                                KoreProveOptions { specMainModule } = proveOptions
+                                KoreProveOptions { graphSearch } = proveOptions
+                                KoreProveOptions { bmc } = proveOptions
+                                unverifiedDefinition =
+                                    (Bifunctor.first . fmap . IndexedModule.mapPatterns)
+                                        Builtin.externalizePattern
+                                        indexedDefinition
+                            specDef <- parseDefinition specFileName
+                            (specDefIndexedModules, _) <-
+                                verifyDefinitionWithBase
+                                   (Just unverifiedDefinition)
+                                   True
+                                   specDef
+                            specDefIndexedModule <-
+                                lift
+                                $ mainModule specMainModule specDefIndexedModules
+                            return (Just (specDefIndexedModule, graphSearch, bmc))
+                maybePattern <- case patternFileName of
                     Nothing -> return Nothing
-                    Just KoreSearchOptions { searchFileName, bound, searchType } ->
-                        do
-                            searchPattern <-
-                                runReaderT
-                                    ( mainParseSearchPattern
+                    Just fileName ->
+                        Just
+                        <$> mainPatternParseAndVerify
+                            indexedModule
+                            fileName
+                (exitCode, finalPattern) <-
+                    clockSomethingIO "Executing"
+                    $ SMT.runSMT smtConfig logger $ do
+                        give
+                            (MetadataTools.build indexedModule)
+                            (declareSMTLemmas indexedModule)
+                        case proveParameters of
+                            Nothing -> do
+                                let
+                                    purePattern = fromMaybe
+                                        (error "Missing: --pattern PATTERN_FILE")
+                                        maybePattern
+                                case searchParameters of
+                                    Nothing -> do
+                                        pat <-
+                                            exec indexedModule strategy' purePattern
+                                        exitCode <-
+                                            execGetExitCode
+                                                indexedModule strategy' pat
+                                        return (exitCode, pat)
+                                    Just (searchPattern, searchConfig) -> do
+                                        pat <-
+                                            search
+                                                indexedModule
+                                                strategy'
+                                                purePattern
+                                                searchPattern
+                                                searchConfig
+                                        return (ExitSuccess, pat)
+                            Just (specIndexedModule, graphSearch, bmc)
+                              | bmc -> do
+                                checkResult <- boundedModelCheck
+                                                stepLimit
+                                                indexedModule
+                                                specIndexedModule
+                                                graphSearch
+                                case checkResult of
+                                    Bounded.Proved -> return success
+                                    Bounded.Unknown -> return unknown
+                                    Bounded.Failed pat -> return (failure pat)
+                              | otherwise ->
+                                either failure (const success)
+                                <$> prove
+                                        stepLimit
                                         indexedModule
-                                        searchFileName
+                                        specIndexedModule
+                              where
+                                failure pat = (ExitFailure 1, pat)
+                                success = (ExitSuccess, mkTop $ mkSortVariable "R")
+                                unknown =
+                                    ( ExitSuccess
+                                    , mkVar
+                                        $ varS
+                                            "Unknown"
+                                            (mkSort $ noLocationId "SortUnknown")
                                     )
-                                    logger
-                            let searchConfig = Search.Config { bound, searchType }
-                            (return . Just) (searchPattern, searchConfig)
-            proveParameters <-
-                case koreProveOptions of
-                    Nothing -> return Nothing
-                    Just proveOptions -> do
-                        let KoreProveOptions { specFileName } = proveOptions
-                            KoreProveOptions { specMainModule } = proveOptions
-                            KoreProveOptions { graphSearch } = proveOptions
-                            KoreProveOptions { bmc } = proveOptions
-                            unverifiedDefinition =
-                                (Bifunctor.first . fmap . IndexedModule.mapPatterns)
-                                    Builtin.externalizePattern
-                                    indexedDefinition
-                        specDef <-
-                            runReaderT
-                                (parseDefinition specFileName)
-                                logger
-                        (specDefIndexedModules, _) <-
-                            runReaderT
-                                ( verifyDefinitionWithBase
-                                    (Just unverifiedDefinition)
-                                    True
-                                    specDef
-                                )
-                                logger
-                        specDefIndexedModule <-
-                            mainModule specMainModule specDefIndexedModules
-                        return (Just (specDefIndexedModule, graphSearch, bmc))
-            maybePattern <- case patternFileName of
-                Nothing -> return Nothing
-                Just fileName ->
-                    (flip runReaderT $ logger)
-                    $ Just
-                    <$> mainPatternParseAndVerify
-                        indexedModule
-                        fileName
-            (exitCode, finalPattern) <-
-                (flip runReaderT $ logger)
-                $ clockSomethingIO "Executing"
-                $ SMT.runSMT smtConfig logger $ do
-                    give
-                        (MetadataTools.build indexedModule)
-                        (declareSMTLemmas indexedModule)
-                    case proveParameters of
-                        Nothing -> do
-                            let
-                                purePattern = fromMaybe
-                                    (error "Missing: --pattern PATTERN_FILE")
-                                    maybePattern
-                            case searchParameters of
-                                Nothing -> do
-                                    pat <-
-                                        exec indexedModule strategy' purePattern
-                                    exitCode <-
-                                        execGetExitCode
-                                            indexedModule strategy' pat
-                                    return (exitCode, pat)
-                                Just (searchPattern, searchConfig) -> do
-                                    pat <-
-                                        search
-                                            indexedModule
-                                            strategy'
-                                            purePattern
-                                            searchPattern
-                                            searchConfig
-                                    return (ExitSuccess, pat)
-                        Just (specIndexedModule, graphSearch, bmc)
-                          | bmc -> do
-                            checkResult <- boundedModelCheck
-                                            stepLimit
-                                            indexedModule
-                                            specIndexedModule
-                                            graphSearch
-                            case checkResult of
-                                Bounded.Proved -> return success
-                                Bounded.Unknown -> return unknown
-                                Bounded.Failed pat -> return (failure pat)
-                          | otherwise ->
-                            either failure (const success)
-                            <$> prove
-                                    stepLimit
-                                    indexedModule
-                                    specIndexedModule
-                          where
-                            failure pat = (ExitFailure 1, pat)
-                            success = (ExitSuccess, mkTop $ mkSortVariable "R")
-                            unknown =
-                                ( ExitSuccess
-                                , mkVar
-                                    $ varS
-                                        "Unknown"
-                                        (mkSort $ noLocationId "SortUnknown")
-                                )
-            let unparsed = unparse finalPattern
-            case outputFileName of
-                Nothing ->
-                    putDoc unparsed
-                Just outputFile ->
-                    withFile outputFile WriteMode (\h -> hPutDoc h unparsed)
-            () <$ exitWith exitCode
-                                )
+                let unparsed = unparse finalPattern
+                case outputFileName of
+                    Nothing ->
+                        lift $ putDoc unparsed
+                    Just outputFile ->
+                        lift $ withFile outputFile WriteMode (\h -> hPutDoc h unparsed)
+                lift $ () <$ exitWith exitCode
+                                    )
 
 -- | IO action that parses a kore pattern from a filename and prints timing
 -- information.

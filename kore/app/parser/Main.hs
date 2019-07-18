@@ -187,7 +187,7 @@ mainVerify willChkAttr definition =
             else DoNotVerifyAttributes
     in do
       verifyResult <-
-          (flip runReaderT $ Logger.emptyLogger)
+          (flip runReaderT Logger.emptyLogger)
           $ clockSomething "Verifying the definition"
             (verifyAndIndexDefinition
                 attributesVerification
