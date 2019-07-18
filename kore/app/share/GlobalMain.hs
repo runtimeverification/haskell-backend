@@ -57,8 +57,6 @@ import           Options.Applicative
                  (<|>) )
 import           System.Clock
                  ( Clock (Monotonic), diffTimeSpec, getTime )
-import           System.IO
-                 ( hPutStrLn, stderr )
 
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
