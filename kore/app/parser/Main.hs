@@ -2,6 +2,8 @@ module Main (main) where
 
 import           Control.Monad
                  ( when )
+import           Control.Monad.Trans.Reader
+                 ( runReaderT )
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
@@ -28,6 +30,7 @@ import           Kore.Error
                  ( printError )
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule, toVerifiedDefinition )
+import qualified Kore.Logger.Output as Logger
 import           Kore.Parser
                  ( ParsedPattern, parseKoreDefinition, parseKorePattern )
 import           Kore.Syntax.Definition
@@ -124,7 +127,10 @@ main = do
         , appKore
         }
       -> do
-        parsedDefinition <- mainDefinitionParse fileName
+        parsedDefinition <-
+            runReaderT
+                (mainDefinitionParse fileName)
+                Logger.emptyLogger
         indexedModules <- if willVerify
             then mainVerify willChkAttr parsedDefinition
             else return Map.empty
@@ -137,23 +143,29 @@ main = do
             else putDoc (debug parsedDefinition)
 
         when (patternFileName /= "") $ do
-            parsedPattern <- mainPatternParse patternFileName
+            parsedPattern <-
+                runReaderT
+                    (mainPatternParse patternFileName)
+                    Logger.emptyLogger
             when willVerify $ do
                 indexedModule <-
                     mainModule (ModuleName mainModuleName) indexedModules
-                _ <- mainPatternVerify indexedModule parsedPattern
+                _ <-
+                    runReaderT
+                        (mainPatternVerify indexedModule parsedPattern)
+                        Logger.emptyLogger
                 return ()
             when willPrintPattern $
                 putDoc (debug parsedPattern)
 
 -- | IO action that parses a kore definition from a filename and prints timing
 -- information.
-mainDefinitionParse :: String -> IO ParsedDefinition
+mainDefinitionParse :: String -> GlobalMainIO ParsedDefinition
 mainDefinitionParse = mainParse parseKoreDefinition
 
 -- | IO action that parses a kore pattern from a filename and prints timing
 -- information.
-mainPatternParse :: String -> IO ParsedPattern
+mainPatternParse :: String -> GlobalMainIO ParsedPattern
 mainPatternParse = mainParse parseKorePattern
 
 -- | IO action verifies well-formedness of Kore definition and prints
@@ -175,7 +187,8 @@ mainVerify willChkAttr definition =
             else DoNotVerifyAttributes
     in do
       verifyResult <-
-        clockSomething "Verifying the definition"
+          (flip runReaderT $ Logger.emptyLogger)
+          $ clockSomething "Verifying the definition"
             (verifyAndIndexDefinition
                 attributesVerification
                 Builtin.koreVerifiers

@@ -6,6 +6,8 @@ module Main (main) where
 import           Control.Applicative
                  ( optional )
 import           Control.Concurrent.MVar
+import           Control.Monad.Trans.Reader
+                 ( runReaderT )
 import qualified Data.Bifunctor as Bifunctor
 import           Data.Semigroup
                  ( (<>) )
@@ -162,15 +164,26 @@ mainWithOptions
         , outputFile
         }
   = do
-    parsedDefinition <- parseDefinition definitionFileName
+    mLogger <- newMVar emptyLogger
+    let emptySwappableLogger = swappableLogger mLogger
+    parsedDefinition <-
+        runReaderT
+            (parseDefinition definitionFileName)
+            emptySwappableLogger
     indexedDefinition@(indexedModules, _) <-
-        verifyDefinitionWithBase
-            Nothing
-            True
-            parsedDefinition
+        runReaderT
+            ( verifyDefinitionWithBase
+                Nothing
+                True
+                parsedDefinition
+            )
+            emptySwappableLogger
     indexedModule <- mainModule mainModuleName indexedModules
 
-    specDef <- parseDefinition specFile
+    specDef <-
+        runReaderT
+            (parseDefinition specFile)
+            emptySwappableLogger
     let unverifiedDefinition =
             Bifunctor.first
                 ((fmap . IndexedModule.mapPatterns)
@@ -178,10 +191,13 @@ mainWithOptions
                 )
                 indexedDefinition
     (specDefIndexedModules, _) <-
-        verifyDefinitionWithBase
-            (Just unverifiedDefinition)
-            True
-            specDef
+        runReaderT
+            ( verifyDefinitionWithBase
+                (Just unverifiedDefinition)
+                True
+                specDef
+            )
+            emptySwappableLogger
     specDefIndexedModule <-
         mainModule specModule specDefIndexedModules
 
@@ -198,7 +214,6 @@ mainWithOptions
                 \ in order to run the repl in run-script mode."
             exitFailure
         else do
-            mLogger <- newMVar emptyLogger
             SMT.runSMT smtConfig (swappableLogger mLogger)
                $ proveWithRepl
                     indexedModule

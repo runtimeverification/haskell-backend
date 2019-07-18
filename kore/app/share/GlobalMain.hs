@@ -4,6 +4,7 @@ module GlobalMain
     ( MainOptions(..)
     , GlobalOptions(..)
     , KoreProveOptions(..)
+    , GlobalMainIO
     , parseKoreProveOptions
     , mainGlobal
     , defaultMainGlobal
@@ -23,6 +24,10 @@ import           Control.Exception
                  ( evaluate )
 import           Control.Monad
                  ( when )
+import           Control.Monad.Trans.Class
+                 ( lift )
+import           Control.Monad.Trans.Reader
+                 ( ReaderT, ask )
 import           Data.Function
                  ( (&) )
 import           Data.List
@@ -79,6 +84,8 @@ import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 import qualified Paths_kore as MetaData
                  ( version )
+
+type GlobalMainIO = ReaderT (LogAction IO Logger.LogMessage) IO
 
 data KoreProveOptions =
     KoreProveOptions
@@ -254,28 +261,27 @@ enableDisableFlag name enabledVal disabledVal defaultVal helpSuffix =
 
 
 -- | Time a pure computation and print results.
-clockSomething :: String -> a -> IO a
+clockSomething :: String -> a -> GlobalMainIO a
 clockSomething description something =
     clockSomethingIO description (evaluate something)
 
 
 -- | Time an IO computation and print results.
-clockSomethingIO :: String -> IO a -> IO a
-clockSomethingIO description something
-  = Logger.withLogger logOptions $ \logger -> do
-        start <- getTime Monotonic
-        x     <- something
-        end   <- getTime Monotonic
-        logger <& logMessage end start
+clockSomethingIO :: String -> IO a -> GlobalMainIO a
+clockSomethingIO description something = do
+        start <- lift $ getTime Monotonic
+        x     <- lift $ something
+        end   <- lift $ getTime Monotonic
+        logger <- ask
+        lift $ logger <& logMessage end start
         return x
   where
-    logOptions = Logger.KoreLogOptions Logger.LogStdOut Logger.Info mempty
     logMessage end start =
         Logger.LogMessage
             { message =
                 pack $ description ++" "++ show (diffTimeSpec end start)
             , severity = Logger.Info
-            , scope = mempty
+            , scope = [Scope "GlobalMain"]
             , callstack = emptyCallStack
             }
 
@@ -284,7 +290,7 @@ mainPatternVerify
     :: VerifiedModule Attribute.Symbol axiomAttrs
     -- ^ Module containing definitions visible in the pattern
     -> ParsedPattern -- ^ Parsed pattern to check well-formedness
-    -> IO Verified.Pattern
+    -> GlobalMainIO Verified.Pattern
 mainPatternVerify verifiedModule patt = do
     verifyResult <-
         clockSomething "Verifying the pattern"
@@ -335,7 +341,7 @@ verifyDefinitionWithBase
     -- ^ whether to check (True) or ignore attributes during verification
     -> ParsedDefinition
     -- ^ Parsed definition to check well-formedness
-    -> IO
+    -> GlobalMainIO
         ( Map.Map ModuleName
             (VerifiedModule Attribute.Symbol Attribute.Axiom)
         , Map.Map Text AstLocation
@@ -363,13 +369,13 @@ verifyDefinitionWithBase maybeBaseModule willChkAttr definition =
 Also prints timing information; see 'mainParse'.
 
  -}
-parseDefinition :: FilePath -> IO ParsedDefinition
+parseDefinition :: FilePath -> GlobalMainIO ParsedDefinition
 parseDefinition = mainParse parseKoreDefinition
 
 mainParse
     :: (FilePath -> String -> Either String a)
     -> String
-    -> IO a
+    -> GlobalMainIO a
 mainParse parser fileName = do
     contents <-
         clockSomethingIO "Reading the input file" (readFile fileName)
