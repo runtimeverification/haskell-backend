@@ -4,7 +4,12 @@ module Test.Kore.Step.Axiom.Matcher
     , test_matcherNonVarToPattern
     , test_matcherMergeSubresults
     , test_unificationWithAppMatchOnTop
-    , test_matchingBuiltins
+    , test_matching_Bool
+    , test_matching_Int
+    , test_matching_String
+    , test_matching_List
+    , test_matching_Set
+    , test_matching_Map
     , match
     ) where
 
@@ -977,20 +982,8 @@ test_unificationWithAppMatchOnTop =
         assertEqualWithExplanation "" expected actual
     ]
 
-test_matchingBuiltins :: TestTree
-test_matchingBuiltins =
-    testGroup "matching builtins"
-        . fmap (uncurry testGroup)
-        $   [ ("Bool", matchingBool)
-            , ("Int", matchingInt)
-            , ("String", matchingString)
-            , ("List", matchingList)
-            , ("Set", matchingSet)
-            , ("Map", matchingMap)
-            ]
-
-matchingBool :: [TestTree]
-matchingBool =
+test_matching_Bool :: [TestTree]
+test_matching_Bool =
     [ testCase "concrete top" $ do
         let expect = top
         actual <- matchConcrete True True
@@ -1003,10 +996,8 @@ matchingBool =
         let expect = substitution [(Mock.xBool, True)]
         actual <- matchVariable Mock.xBool True
         assertEqualWithExplanation "" expect actual
-    , testCase "concrete vs variable does not work" $ do
-        let expect = Nothing
-        actual <- matchDefinition (mkBool True) (mkVar Mock.xBool)
-        assertEqualWithExplanation "" expect actual
+    , mkBool True  `notMatches` mkVar Mock.xBool  $ "true !~ x:Bool"
+    , mkBool False `notMatches` mkVar Mock.xBool  $ "false !~ x:Bool"
     ]
   where
     top = Just $ OrPredicate.fromPredicate Predicate.topPredicate
@@ -1024,8 +1015,8 @@ matchingBool =
     matchVariable var val =
         matchDefinition (mkVar var) (mkBool val)
 
-matchingInt :: [TestTree]
-matchingInt =
+test_matching_Int :: [TestTree]
+test_matching_Int =
     [ testCase "concrete top" $ do
         let expect = top
         actual <- matchConcrete 1 1
@@ -1038,10 +1029,7 @@ matchingInt =
         let expect = substitution [(Mock.xInt, 1)]
         actual <- matchVariable Mock.xInt 1
         assertEqualWithExplanation "" expect actual
-    , testCase "concrete vs variable does not work" $ do
-        let expect = Nothing
-        actual <- matchDefinition (mkInt 1) (mkVar Mock.xInt)
-        assertEqualWithExplanation "" expect actual
+    , mkInt 1 `notMatches` mkVar Mock.xInt  $ "1 !~ x:Int"
     ]
   where
     top = Just $ OrPredicate.fromPredicate Predicate.topPredicate
@@ -1059,8 +1047,8 @@ matchingInt =
     matchVariable var val =
         matchDefinition (mkVar var) (mkInt val)
 
-matchingString :: [TestTree]
-matchingString =
+test_matching_String :: [TestTree]
+test_matching_String =
     [ testCase "concrete top" $ do
         let expect = top
         actual <- matchConcrete "str" "str"
@@ -1073,10 +1061,7 @@ matchingString =
         let expect = substitution [(Mock.xString, "str")]
         actual <- matchVariable Mock.xString "str"
         assertEqualWithExplanation "" expect actual
-    , testCase "concrete vs variable does not work" $ do
-        let expect = Nothing
-        actual <- matchDefinition (mkStr "str") (mkVar Mock.xString)
-        assertEqualWithExplanation "" expect actual
+    , mkStr "str" `notMatches` mkVar Mock.xString  $ "\"str\" !~ x:String"
     ]
   where
     top = Just $ OrPredicate.fromPredicate Predicate.topPredicate
@@ -1094,8 +1079,8 @@ matchingString =
     matchVariable var val =
         matchDefinition (mkVar var) (mkStr val)
 
-matchingList :: [TestTree]
-matchingList =
+test_matching_List :: [TestTree]
+test_matching_List =
     [ testCase "concrete top" $ do
         let expect = top
         actual <- matchConcrete [1, 2] [1, 2]
@@ -1261,8 +1246,76 @@ matchingList =
             (mkVar Mock.xList `concat'` mkList [mkVar Mock.xInt])
             [1, 2, 3]
         assertEqualWithExplanation "" expect actual
+
+    , unitList               `notMatches` mkVar yList  $ "[] !~ y:List"
+    , prefixList [one] xList `notMatches` mkVar yList  $ "[1] x:List !~ y:List"
+    , suffixList xList [one] `notMatches` mkVar yList  $ "x:List [1] !~ y:List"
+
+    , matches "[] ~ []"
+        unitList
+        unitList
+        []
+    , unitList `notMatches` mkList [one]            $ "[] !~ [1]"
+    , unitList `notMatches` prefixList [one] xList  $ "[] !~ [1] x:List"
+    , unitList `notMatches` suffixList xList [one]  $ "[] !~ x:List [1]"
+
+    , mkList [one] `notMatches` unitList                $ "[1] !~ []"
+    , matches "[1] ~ [1]"
+        (mkList [one])
+        (mkList [one])
+        []
+    , matches "[x:Int] ~ [1]"
+        (mkList [mkVar xInt])
+        (mkList [one       ])
+        [(xInt, one)]
+    , mkList [one] `notMatches` prefixList [one] xList  $ "[1] !~ [1] x:List"
+    , mkList [one] `notMatches` suffixList xList [one]  $ "[1] !~ x:List [1]"
+
+    , prefixList [one] xList `notMatches` unitList      $ "[1] x:List !~ []"
+    , matches "[1] x:List ~ [1]"
+        (prefixList [one] xList)
+        (mkList     [one]      )
+        [(xList, unitList)]
+    , matches "[x:Int] y:List ~ [1]"
+        (prefixList [mkVar xInt] yList)
+        (mkList     [one]             )
+        [(xInt, one), (yList, unitList)]
+    , matches "[1] x:List ~ [1, 2]"
+        (prefixList [one] xList)
+        (mkList     [one, two ])
+        [(xList, mkList [two])]
+    , matches "[x:Int] y:List ~ [1, 2]"
+        (prefixList [mkVar xInt] yList)
+        (mkList     [one,        two ])
+        [(xInt, one), (yList, mkList [two])]
+
+    , suffixList xList [one] `notMatches` unitList      $ "x:List [1] !~ []"
+    , matches "x:List [1] ~ [1]"
+        (suffixList xList [one])
+        (mkList           [one])
+        [(xList, unitList)]
+    , matches "y:List [x:Int] ~ [1]"
+        (suffixList yList [mkVar xInt])
+        (mkList           [one       ])
+        [(xInt, one), (yList, unitList)]
+    , matches "x:List [2] ~ [1, 2]"
+        (suffixList xList [two])
+        (mkList    [one,   two])
+        [(xList, mkList [one])]
+    , matches "y:List [x:Int] ~ [1, 2]"
+        (suffixList yList [mkVar xInt])
+        (mkList    [one,   two       ])
+        [(xInt, two), (yList, mkList [one])]
     ]
   where
+    xInt = varS (testId "xInt") Mock.intSort
+    xList = varS (testId "xList") Mock.listSort
+    yList = varS (testId "yList") Mock.listSort
+    one = mkInt 1
+    two = mkInt 2
+    unitList = mkList []
+    prefixList elems frame = Mock.concatList (mkList elems) (mkVar frame)
+    suffixList frame elems = Mock.concatList (mkVar frame) (mkList elems)
     top = Just $ OrPredicate.fromPredicate Predicate.topPredicate
     substitution subst = Just $ MultiOr.make
         [ Conditional
@@ -1316,8 +1369,8 @@ setVars = concat . fmap isSetVar
             SetVar x -> [x]
             _ -> []
 
-matchingSet :: [TestTree]
-matchingSet =
+test_matching_Set :: [TestTree]
+test_matching_Set =
     [ testCase "empty vs empty" $ do
         let expect = top
         actual <- matchConcrete [] []
@@ -1582,8 +1635,8 @@ matchingSet =
                 )
                 (mkConcreteSet $ fmap mkKey val)
 
-matchingMap :: [TestTree]
-matchingMap =
+test_matching_Map :: [TestTree]
+test_matching_Map =
     [ testCase "concrete top" $ do
         let expect = top
         actual <- matchConcrete [(1, 11), (2, 12)] [(1, 11), (2, 12)]
@@ -1693,8 +1746,30 @@ matchingMap =
             , (3, 13)
             ]
         assertEqualWithExplanation "" expect actual
+    , matches "k |-> v m ~ 0 |-> 1"
+        (framedMap [(mkVar kInt, mkVar vInt)] [mMap])
+        (builtinMap [(zero, one)])
+        [(kInt, zero), (vInt, one), (mMap, unitMap)]
+    , matches "k |-> v m ~ 0 |-> 1 2 |-> 4"
+        (framedMap [(mkVar kInt, mkVar vInt)] [mMap])
+        (builtinMap [(zero, one), (two, four)])
+        [ (kInt, zero)
+        , (vInt, one)
+        , (mMap, builtinMap [(two, four)])
+        ]
     ]
   where
+    framedMap = Mock.framedMap
+    builtinMap = Mock.builtinMap
+    mkInt = Int.asInternal Mock.intSort
+    kInt = varS (testId "kInt") Mock.intSort
+    vInt = varS (testId "vInt") Mock.intSort
+    mMap = varS (testId "mMap") Mock.mapSort
+    zero = mkInt 0
+    one = mkInt 1
+    two = mkInt 2
+    four = mkInt 4
+    unitMap = builtinMap []
     top = Just $ OrPredicate.fromPredicate Predicate.topPredicate
     substitution subst = Just $ MultiOr.make
         [ Conditional
@@ -1803,7 +1878,7 @@ match first second = do
 
 withMatch
     :: GHC.HasCallStack
-    => (Maybe (OrPredicate Variable) -> Bool)
+    => (Maybe (OrPredicate Variable) -> Assertion)
     -> TermLike Variable
     -> TermLike Variable
     -> TestName
@@ -1811,7 +1886,7 @@ withMatch
 withMatch check term1 term2 comment =
     testCase comment $ do
         actual <- match term1 term2
-        assertBool "" (check actual)
+        check actual
 
 notMatches
     :: GHC.HasCallStack
@@ -1819,4 +1894,21 @@ notMatches
     -> TermLike Variable
     -> TestName
     -> TestTree
-notMatches = withMatch Maybe.isNothing
+notMatches = withMatch (assertBool "" . Maybe.isNothing)
+
+matches
+    :: GHC.HasCallStack
+    => TestName
+    -> TermLike Variable
+    -> TermLike Variable
+    -> [(Variable, TermLike Variable)]
+    -> TestTree
+matches comment term1 term2 substitutions =
+    withMatch check term1 term2 comment
+  where
+    expect =
+        OrPredicate.fromPredicate
+        $ Predicate.fromSubstitution
+        $ Substitution.unsafeWrap substitutions
+    check Nothing = assertFailure "Expected matching solution."
+    check (Just actual) = assertEqual "" expect actual
