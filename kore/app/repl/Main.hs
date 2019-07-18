@@ -6,6 +6,8 @@ module Main (main) where
 import           Control.Applicative
                  ( optional )
 import           Control.Concurrent.MVar
+import           Control.Monad.Trans
+                 ( lift )
 import           Control.Monad.Trans.Reader
                  ( runReaderT )
 import qualified Data.Bifunctor as Bifunctor
@@ -166,62 +168,54 @@ mainWithOptions
   = do
     mLogger <- newMVar emptyLogger
     let emptySwappableLogger = swappableLogger mLogger
-    parsedDefinition <-
-        runReaderT
-            (parseDefinition definitionFileName)
-            emptySwappableLogger
-    indexedDefinition@(indexedModules, _) <-
-        runReaderT
-            ( verifyDefinitionWithBase
-                Nothing
-                True
-                parsedDefinition
-            )
-            emptySwappableLogger
-    indexedModule <- mainModule mainModuleName indexedModules
+    flip runReaderT emptySwappableLogger . unMain $ do
+        parsedDefinition <- parseDefinition definitionFileName
+        indexedDefinition@(indexedModules, _) <-
+            verifyDefinitionWithBase
+              Nothing
+              True
+              parsedDefinition
+        indexedModule <-
+            Main . lift $ mainModule mainModuleName indexedModules
+        specDef <- parseDefinition specFile
+        let unverifiedDefinition =
+                Bifunctor.first
+                    ((fmap . IndexedModule.mapPatterns)
+                        Builtin.externalizePattern
+                    )
+                    indexedDefinition
+        (specDefIndexedModules, _) <-
+            verifyDefinitionWithBase
+              (Just unverifiedDefinition)
+              True
+              specDef
 
-    specDef <-
-        runReaderT
-            (parseDefinition specFile)
-            emptySwappableLogger
-    let unverifiedDefinition =
-            Bifunctor.first
-                ((fmap . IndexedModule.mapPatterns)
-                    Builtin.externalizePattern
-                )
-                indexedDefinition
-    (specDefIndexedModules, _) <-
-        runReaderT
-            ( verifyDefinitionWithBase
-                (Just unverifiedDefinition)
-                True
-                specDef
-            )
-            emptySwappableLogger
-    specDefIndexedModule <-
-        mainModule specModule specDefIndexedModules
+        specDefIndexedModule <-
+            Main . lift
+            $ mainModule specModule specDefIndexedModules
 
-    let
-        smtConfig =
-            SMT.defaultConfig
-                { SMT.timeOut = smtTimeOut
-                , SMT.preludeFile = smtPrelude
-                }
-    if replMode == RunScript && (unReplScript replScript) == Nothing
-        then do
-            putStrLn
-                "You must supply the path to the repl script\
-                \ in order to run the repl in run-script mode."
-            exitFailure
-        else do
-            SMT.runSMT smtConfig (swappableLogger mLogger)
-               $ proveWithRepl
-                    indexedModule
-                    specDefIndexedModule
-                    mLogger
-                    replScript
-                    replMode
-                    outputFile
+        let
+            smtConfig =
+                SMT.defaultConfig
+                    { SMT.timeOut = smtTimeOut
+                    , SMT.preludeFile = smtPrelude
+                    }
+        if replMode == RunScript && (unReplScript replScript) == Nothing
+            then do
+                Main . lift . putStrLn
+                    $ "You must supply the path to the repl script\
+                      \ in order to run the repl in run-script mode."
+                Main . lift $ exitFailure
+            else
+                Main . lift
+                $ SMT.runSMT smtConfig (swappableLogger mLogger)
+                   $ proveWithRepl
+                        indexedModule
+                        specDefIndexedModule
+                        mLogger
+                        replScript
+                        replMode
+                        outputFile
 
   where
     mainModuleName :: ModuleName

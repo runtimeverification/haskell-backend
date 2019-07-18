@@ -4,7 +4,7 @@ module GlobalMain
     ( MainOptions(..)
     , GlobalOptions(..)
     , KoreProveOptions(..)
-    , GlobalMainIO
+    , Main (..)
     , parseKoreProveOptions
     , mainGlobal
     , defaultMainGlobal
@@ -24,6 +24,8 @@ import           Control.Exception
                  ( evaluate )
 import           Control.Monad
                  ( when )
+import           Control.Monad.Reader
+                 ( MonadReader )
 import           Control.Monad.Trans.Class
                  ( lift )
 import           Control.Monad.Trans.Reader
@@ -83,7 +85,10 @@ import qualified Kore.Verified as Verified
 import qualified Paths_kore as MetaData
                  ( version )
 
-type GlobalMainIO = ReaderT (LogAction IO Logger.LogMessage) IO
+newtype Main a =
+    Main
+    { unMain :: ReaderT (LogAction IO Logger.LogMessage) IO a
+    } deriving (Functor, Applicative, Monad)
 
 data KoreProveOptions =
     KoreProveOptions
@@ -259,14 +264,14 @@ enableDisableFlag name enabledVal disabledVal defaultVal helpSuffix =
 
 
 -- | Time a pure computation and print results.
-clockSomething :: String -> a -> GlobalMainIO a
+clockSomething :: String -> a -> Main a
 clockSomething description something =
     clockSomethingIO description (evaluate something)
 
 
 -- | Time an IO computation and print results.
-clockSomethingIO :: String -> IO a -> GlobalMainIO a
-clockSomethingIO description something = do
+clockSomethingIO :: String -> IO a -> Main a
+clockSomethingIO description something = Main $ do
     start  <- lift $ getTime Monotonic
     x      <- lift $ something
     end    <- lift $ getTime Monotonic
@@ -288,7 +293,7 @@ mainPatternVerify
     :: VerifiedModule Attribute.Symbol axiomAttrs
     -- ^ Module containing definitions visible in the pattern
     -> ParsedPattern -- ^ Parsed pattern to check well-formedness
-    -> GlobalMainIO Verified.Pattern
+    -> Main Verified.Pattern
 mainPatternVerify verifiedModule patt = do
     verifyResult <-
         clockSomething "Verifying the pattern"
@@ -339,7 +344,7 @@ verifyDefinitionWithBase
     -- ^ whether to check (True) or ignore attributes during verification
     -> ParsedDefinition
     -- ^ Parsed definition to check well-formedness
-    -> GlobalMainIO
+    -> Main
         ( Map.Map ModuleName
             (VerifiedModule Attribute.Symbol Attribute.Axiom)
         , Map.Map Text AstLocation
@@ -367,13 +372,13 @@ verifyDefinitionWithBase maybeBaseModule willChkAttr definition =
 Also prints timing information; see 'mainParse'.
 
  -}
-parseDefinition :: FilePath -> GlobalMainIO ParsedDefinition
+parseDefinition :: FilePath -> Main ParsedDefinition
 parseDefinition = mainParse parseKoreDefinition
 
 mainParse
     :: (FilePath -> String -> Either String a)
     -> String
-    -> GlobalMainIO a
+    -> Main a
 mainParse parser fileName = do
     contents <-
         clockSomethingIO "Reading the input file" (readFile fileName)

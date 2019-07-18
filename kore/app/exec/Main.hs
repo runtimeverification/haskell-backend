@@ -311,14 +311,16 @@ mainWithOptions
                     , SMT.preludeFile = smtPrelude
                     }
         withLogger koreLogOptions (\logger ->
-            flip runReaderT logger $ do
+            flip runReaderT logger . unMain $ do
                 parsedDefinition <- parseDefinition definitionFileName
                 indexedDefinition@(indexedModules, _) <-
                     verifyDefinitionWithBase
                         Nothing
                         True
                         parsedDefinition
-                indexedModule <- lift $ mainModule mainModuleName indexedModules
+                indexedModule <-
+                    Main . lift
+                    $ mainModule mainModuleName indexedModules
                 searchParameters <-
                     case koreSearchOptions of
                         Nothing -> return Nothing
@@ -349,7 +351,7 @@ mainWithOptions
                                    True
                                    specDef
                             specDefIndexedModule <-
-                                lift
+                                Main . lift
                                 $ mainModule specMainModule specDefIndexedModules
                             return (Just (specDefIndexedModule, graphSearch, bmc))
                 maybePattern <- case patternFileName of
@@ -418,15 +420,17 @@ mainWithOptions
                 let unparsed = unparse finalPattern
                 case outputFileName of
                     Nothing ->
-                        lift $ putDoc unparsed
+                        Main . lift
+                        $ putDoc unparsed
                     Just outputFile ->
-                        lift $ withFile outputFile WriteMode (\h -> hPutDoc h unparsed)
-                lift $ () <$ exitWith exitCode
+                        Main . lift
+                        $ withFile outputFile WriteMode (\h -> hPutDoc h unparsed)
+                Main . lift $ () <$ exitWith exitCode
                                     )
 
 -- | IO action that parses a kore pattern from a filename and prints timing
 -- information.
-mainPatternParse :: String -> GlobalMainIO ParsedPattern
+mainPatternParse :: String -> Main ParsedPattern
 mainPatternParse = mainParse parseKorePattern
 
 
@@ -435,14 +439,14 @@ mainPatternParse = mainParse parseKorePattern
 mainPatternParseAndVerify
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -> String
-    -> GlobalMainIO (TermLike Variable)
+    -> Main (TermLike Variable)
 mainPatternParseAndVerify indexedModule patternFileName =
     mainPatternParse patternFileName >>= mainPatternVerify indexedModule
 
 mainParseSearchPattern
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -> String
-    -> GlobalMainIO (Pattern Variable)
+    -> Main (Pattern Variable)
 mainParseSearchPattern indexedModule patternFileName = do
     purePattern <- mainPatternParseAndVerify indexedModule patternFileName
     case purePattern of

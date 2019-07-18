@@ -2,6 +2,8 @@ module Main (main) where
 
 import           Control.Monad
                  ( when )
+import           Control.Monad.Trans
+                 ( lift )
 import           Control.Monad.Trans.Reader
                  ( runReaderT )
 import qualified Data.Map as Map
@@ -126,46 +128,38 @@ main = do
         , willChkAttr
         , appKore
         }
-      -> do
-        parsedDefinition <-
-            runReaderT
-                (mainDefinitionParse fileName)
-                Logger.emptyLogger
-        indexedModules <- if willVerify
-            then mainVerify willChkAttr parsedDefinition
-            else return Map.empty
-        when willPrintDefinition
-            $ if appKore
-                then putStrLn
-                    $ unparseToString2
-                    $ completeDefinition
-                    $ toVerifiedDefinition indexedModules
-            else putDoc (debug parsedDefinition)
+      -> flip runReaderT Logger.emptyLogger . unMain $ do
+            parsedDefinition <- mainDefinitionParse fileName
+            indexedModules <- if willVerify
+                then Main . lift $ mainVerify willChkAttr parsedDefinition
+                else return Map.empty
+            Main . lift $ when willPrintDefinition
+                $ if appKore
+                    then putStrLn
+                        $ unparseToString2
+                        $ completeDefinition
+                        $ toVerifiedDefinition indexedModules
+                else putDoc (debug parsedDefinition)
 
-        when (patternFileName /= "") $ do
-            parsedPattern <-
-                runReaderT
-                    (mainPatternParse patternFileName)
-                    Logger.emptyLogger
-            when willVerify $ do
-                indexedModule <-
-                    mainModule (ModuleName mainModuleName) indexedModules
-                _ <-
-                    runReaderT
-                        (mainPatternVerify indexedModule parsedPattern)
-                        Logger.emptyLogger
-                return ()
-            when willPrintPattern $
-                putDoc (debug parsedPattern)
+            when (patternFileName /= "") $ do
+                parsedPattern <- mainPatternParse patternFileName
+                when willVerify $ do
+                    indexedModule <-
+                         Main . lift
+                         $ mainModule (ModuleName mainModuleName) indexedModules
+                    _ <- mainPatternVerify indexedModule parsedPattern
+                    return ()
+                when willPrintPattern $
+                    Main . lift $ putDoc (debug parsedPattern)
 
 -- | IO action that parses a kore definition from a filename and prints timing
 -- information.
-mainDefinitionParse :: String -> GlobalMainIO ParsedDefinition
+mainDefinitionParse :: String -> Main ParsedDefinition
 mainDefinitionParse = mainParse parseKoreDefinition
 
 -- | IO action that parses a kore pattern from a filename and prints timing
 -- information.
-mainPatternParse :: String -> GlobalMainIO ParsedPattern
+mainPatternParse :: String -> Main ParsedPattern
 mainPatternParse = mainParse parseKorePattern
 
 -- | IO action verifies well-formedness of Kore definition and prints
@@ -187,7 +181,8 @@ mainVerify willChkAttr definition =
             else DoNotVerifyAttributes
     in do
       verifyResult <-
-          (flip runReaderT Logger.emptyLogger)
+          flip runReaderT Logger.emptyLogger
+          . unMain
           $ clockSomething "Verifying the definition"
             (verifyAndIndexDefinition
                 attributesVerification
