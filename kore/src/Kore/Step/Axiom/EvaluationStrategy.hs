@@ -38,8 +38,7 @@ import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
 import qualified Kore.Step.Rule as RulePattern
-import           Kore.Step.Simplification.Ceil
-                 ( makeEvaluate )
+import qualified Kore.Step.Simplification.Ceil as Ceil
 import           Kore.Step.Simplification.Data
                  ( AttemptedAxiom,
                  AttemptedAxiomResults (AttemptedAxiomResults),
@@ -370,6 +369,7 @@ evaluateWithDefinitionAxioms
     evaluatedChildOfApplication =
         case patt of
             App_ _ children -> do
-                x <- traverse (makeEvaluate . Pattern.fromTermLike) children
-                pure . OrPattern.toPattern . MultiOr.mergeAll $ x
+                ceil <-
+                    traverse (Ceil.makeEvaluate . Pattern.fromTermLike) children
+                pure . OrPattern.toPattern . MultiOr.mergeAll $ ceil
             _ -> pure $ Pattern.topOf (termLikeSort patt)
