@@ -7,7 +7,9 @@ module Test.Kore.Step.Function.Integration
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import qualified Control.Lens as Lens
 import           Data.Function
+import           Data.Generics.Product
 import qualified Data.Map as Map
 import           Data.Maybe
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -604,7 +606,7 @@ notMatches = withMatch isNothing
 
 -- Applied tests: check that one or more rules applies or not
 withApplied
-    :: (CommonAttemptedAxiom -> Bool)
+    :: (CommonAttemptedAxiom -> Assertion)
     -> TestName
     -> [EqualityRule Variable]
     -> TermLike Variable
@@ -612,16 +614,25 @@ withApplied
 withApplied check comment rules term =
     testCase comment $ do
         actual <- Axiom.evaluate (definitionEvaluation rules) term
-        assertBool "" (check actual)
+        check actual
 
 applies, notApplies
     :: TestName
     -> [EqualityRule Variable]
     -> TermLike Variable
     -> TestTree
-applies = withApplied isApplicable
-notApplies = withApplied isNotApplicable
-
+applies =
+    withApplied $ \attempted -> do
+        results <- expectApplied attempted
+        expectNoRemainders results
+  where
+    expectApplied NotApplicable     = assertFailure "Expected Applied"
+    expectApplied (Applied results) = return results
+    expectNoRemainders =
+        assertBool "Expected no remainders"
+        . isBottom
+        . Lens.view (field @"remainders")
+notApplies = withApplied (assertBool "Expected NotApplicable" . isNotApplicable)
 
 natSort :: Sort
 natSort =
