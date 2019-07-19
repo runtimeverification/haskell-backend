@@ -39,7 +39,7 @@ import           Control.Applicative
 import           Control.Error
                  ( MaybeT, partitionEithers )
 import           Control.Monad
-                 ( foldM, unless, when )
+                 ( foldM, unless )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
@@ -581,7 +581,6 @@ unifyEqualsNormalized
     -> TermLike variable
     -> TermLike variable
     -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
-    -> Bool
     -> Domain.InternalAc (TermLike Concrete) normalized (TermLike variable)
     -> Domain.InternalAc (TermLike Concrete) normalized (TermLike variable)
     -> MaybeT unifier (Pattern variable)
@@ -590,7 +589,6 @@ unifyEqualsNormalized
     first
     second
     unifyEqualsChildren
-    alreadyNormalized
     normalized1
     normalized2
   = do
@@ -608,7 +606,6 @@ unifyEqualsNormalized
             first
             second
             unifyEqualsChildren
-            alreadyNormalized
             firstNormalized
             secondNormalized
     let
@@ -662,7 +659,6 @@ unifyEqualsNormalizedAc
     -> TermLike variable
     -> TermLike variable
     -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
-    -> Bool
     -> TermNormalizedAc valueWrapper variable
     -> TermNormalizedAc valueWrapper variable
     -> MaybeT
@@ -673,7 +669,6 @@ unifyEqualsNormalizedAc
     first
     second
     unifyEqualsChildren
-    alreadyNormalized
     Domain.NormalizedAc
         { elementsWithVariables = elementsWithVariables1
         , concreteElements = concreteElements1
@@ -691,28 +686,13 @@ unifyEqualsNormalizedAc
                 allElements1
                 allElements2
                 Nothing
-        ([opaque], []) -> do
-            when
-                (  null elementsWithVariables1
-                && null concreteElements1
-                && (length opaque1 == 1)
-                && alreadyNormalized
-                )
-                errorForOpaqueTerms
-
+        ([opaque], []) ->
             Monad.Trans.lift $
                 unifyEqualsElementLists'
                     allElements1
                     allElements2
                     (Just opaque)
-        ([], [opaque]) -> do
-            when
-                (  null elementsWithVariables2
-                && null concreteElements2
-                && (length opaque2 == 1)
-                && alreadyNormalized
-                )
-                errorForOpaqueTerms
+        ([], [opaque]) ->
             Monad.Trans.lift $
                 unifyEqualsElementLists'
                     allElements2
@@ -803,15 +783,6 @@ unifyEqualsNormalizedAc
         mapToList (Map.withoutKeys opaque1Map commonOpaqueKeys)
     opaqueDifference2 =
         mapToList (Map.withoutKeys opaque2Map commonOpaqueKeys)
-
-    errorForOpaqueTerms =
-        (error . unlines)
-            [ "Unification case that should be handled somewhere else:"
-            , "attempting normalized unification with only an opaque"
-            , "term could lead to infinite loops."
-            , "first=" ++ unparseToString first
-            , "second=" ++ unparseToString second
-            ]
 
     allElements1 =
         map WithVariablePat elementVariableDifference1
