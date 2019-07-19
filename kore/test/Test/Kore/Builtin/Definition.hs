@@ -1,5 +1,6 @@
 module Test.Kore.Builtin.Definition where
 
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import           Data.Function
 import qualified Data.Map.Strict as Map
@@ -701,7 +702,7 @@ builtinMap children =
         , builtinAcChild = Domain.NormalizedMap Domain.NormalizedAc
             { elementsWithVariables = []
             , concreteElements =
-                Map.fromList (map (\(x, y) -> (x, Value y)) children)
+                Map.fromList (map (Bifunctor.second Value) children)
             , opaque = []
             }
         }
