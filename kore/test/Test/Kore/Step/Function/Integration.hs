@@ -536,28 +536,40 @@ test_Nat =
     [ plus zero varN `matches` plus zero one  $ "plus(0, N) ~ plus(0, 1)"
     , plus (succ varM) varN `notMatches` plus zero one  $ "plus(Succ(M), N) !~ plus(0, 1) "
     , plus (succ varM) varN `matches` plus one one  $ "plus(Succ(M), N) ~ plus(1, 1) "
-    , [plusZeroRule] `applies` plus zero one  $ "plus(0, N) => ... ~ plus (0, 1)"
-    , [plusZeroRule] `notApplies` plus one one  $ "plus(0, N) => ... ~ plus (1, 1)"
-    , [plusSuccRule] `notApplies` plus zero one  $ "plus(Succ(M), N) => ... ~ plus (0, 1)"
-    , [plusSuccRule] `applies` plus one one  $ "plus(Succ(M), N) => ... ~ plus (1, 1)"
-    , [plusZeroRule, plusSuccRule] `applies` plus zero one  $ "plus(0, 1) => ..."
-    , [plusZeroRule, plusSuccRule] `applies` plus one one  $ "plus(1, 1) => ..."
-    , plus zero one `equals` one  $ "0 + 1 = 1 : Nat"
-    , plus one one `equals` two  $ "0 + 1 = 1 : Nat"
-    , times zero one `equals` zero  $ "0 * 1 = 0 : Nat"
-    , times one one `equals` one  $ "1 * 1 = 1 : Nat"
-    , times one two `equals` two  $ "1 * 2 = 2 : Nat"
-    , times two one `equals` two  $ "2 * 1 = 2 : Nat"
-    , factorial zero `equals` one $ "0! = 1 : Nat"
-    , factorial one `equals` one $ "1! = 1 : Nat"
-    , factorial two `equals` two $ "2! = 2 : Nat"
-    , fibonacci zero `equals` one $ "fibonacci(0) = 1 : Nat"
-    , fibonacci one `equals` one $ "fibonacci(1) = 1 : Nat"
-    , fibonacci two `equals` two $ "fibonacci(2) = 2 : Nat"
+    , applies            "plus(0, N) => ... ~ plus (0, 1)"
+        [plusZeroRule]
+        (plus zero one)
+    , notApplies         "plus(0, N) => ... ~ plus (1, 1)"
+        [plusZeroRule]
+        (plus one one)
+    , notApplies         "plus(Succ(M), N) => ... ~ plus (0, 1)"
+        [plusSuccRule]
+        (plus zero one)
+    , applies            "plus(Succ(M), N) => ... ~ plus (1, 1)"
+        [plusSuccRule]
+        (plus one one)
+    , applies            "plus(0, 1) => ..."
+        plusRules
+        (plus zero one)
+    , applies            "plus(1, 1) => ..."
+        plusRules
+        (plus one one)
+    , equals "0 + 1 = 1 : Nat" (plus zero one) one
+    , equals "0 + 1 = 1 : Nat" (plus one one) two
+    , equals "0 * 1 = 0 : Nat" (times zero one) zero
+    , equals "1 * 1 = 1 : Nat" (times one one) one
+    , equals "1 * 2 = 2 : Nat" (times one two) two
+    , equals "2 * 1 = 2 : Nat" (times two one) two
+    , equals "0! = 1 : Nat" (factorial zero) one
+    , equals "1! = 1 : Nat" (factorial one) one
+    , equals "2! = 2 : Nat" (factorial two) two
+    , equals "fibonacci(0) = 1 : Nat" (fibonacci zero) one
+    , equals "fibonacci(1) = 1 : Nat" (fibonacci one) one
+    , equals "fibonacci(2) = 2 : Nat" (fibonacci two) two
     ]
   where
     -- Evaluation tests: check the result of evaluating the term
-    equals term expect comment =
+    equals comment term expect =
         testCase comment $ do
             actual <- evaluate natSimplifiers term
             assertEqualWithExplanation "" (Pattern.fromTermLike expect) actual
@@ -593,19 +605,19 @@ notMatches = withMatch isNothing
 -- Applied tests: check that one or more rules applies or not
 withApplied
     :: (CommonAttemptedAxiom -> Bool)
+    -> TestName
     -> [EqualityRule Variable]
     -> TermLike Variable
-    -> TestName
     -> TestTree
-withApplied check rules term comment =
+withApplied check comment rules term =
     testCase comment $ do
         actual <- Axiom.evaluate (definitionEvaluation rules) term
         assertBool "" (check actual)
 
 applies, notApplies
-    :: [EqualityRule Variable]
+    :: TestName
+    -> [EqualityRule Variable]
     -> TermLike Variable
-    -> TestName
     -> TestTree
 applies = withApplied isApplicable
 notApplies = withApplied isNotApplicable
@@ -670,8 +682,12 @@ plusZeroRule, plusSuccRule :: EqualityRule Variable
 plusZeroRule = axiom_ (plus zero varN) varN
 plusSuccRule = axiom_ (plus (succ varM) varN) (succ (plus varM varN))
 
+
+plusRules :: [EqualityRule Variable]
+plusRules = [plusZeroRule, plusSuccRule]
+
 plusEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
-plusEvaluator = functionEvaluator plusSymbol [plusZeroRule, plusSuccRule]
+plusEvaluator = functionEvaluator plusSymbol plusRules
 
 timesEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
 timesEvaluator =
@@ -708,22 +724,46 @@ natSimplifiers =
 
 test_List :: [TestTree]
 test_List =
-    [ [lengthListUnitRule] `applies` lengthList unitList  $ "lengthList([]) => ... ~ lengthList([])"
-    , [lengthListUnitRule] `notApplies` lengthList (mkList [mkInt 1])  $ "lengthList([]) => ... !~ lengthList([1])"
-    , [lengthListUnitRule] `notApplies` lengthList (mkList [mkInt 1, mkInt 2])  $ "lengthList([]) => ... !~ lengthList([1, 2])"
-    , [lengthListConsRule] `notApplies` lengthList unitList  $ "lengthList(x : xs) => ... !~ lengthList([])"
-    , [lengthListConsRule] `applies` lengthList (mkList [mkInt 1])  $ "lengthList(x : xs) => ... ~ lengthList([1])"
-    , [lengthListConsRule] `applies` lengthList (mkList [mkInt 1, mkInt 2])  $ "lengthList(x : xs) => ... ~ lengthList([1, 2])"
-    , [lengthListUnitRule, lengthListConsRule] `applies` lengthList unitList  $ "lengthList([]) => ..."
-    , [lengthListUnitRule, lengthListConsRule] `applies` lengthList (mkList [mkInt 1])  $ "lengthList([1]) => ..."
-    , [lengthListUnitRule, lengthListConsRule] `applies` lengthList (mkList [mkInt 1, mkInt 2])  $ "lengthList([12]) => ..."
-    , lengthList (mkList []) `equals` mkInt 0  $ "lengthList([]) = 0 : Int"
-    , lengthList (mkList [mkInt 1]) `equals` mkInt 1  $ "lengthList([1]) = 1 : Int"
-    , lengthList (mkList [mkInt 1, mkInt 2]) `equals` mkInt 2  $ "lengthList([1, 2]) = 2 : Int"
+    [ applies                  "lengthList([]) => ... ~ lengthList([])"
+        [lengthListUnitRule]
+        (lengthList unitList)
+    , notApplies               "lengthList([]) => ... !~ lengthList([1])"
+        [lengthListUnitRule]
+        (lengthList (mkList [mkInt 1]))
+    , notApplies               "lengthList([]) => ... !~ lengthList([1, 2])"
+        [lengthListUnitRule]
+        (lengthList (mkList [mkInt 1, mkInt 2]))
+    , notApplies               "lengthList(x : xs) => ... !~ lengthList([])"
+        [lengthListConsRule]
+        (lengthList unitList)
+    , applies                  "lengthList(x : xs) => ... ~ lengthList([1])"
+        [lengthListConsRule]
+        (lengthList (mkList [mkInt 1]))
+    , applies                  "lengthList(x : xs) => ... ~ lengthList([1, 2])"
+        [lengthListConsRule]
+        (lengthList (mkList [mkInt 1, mkInt 2]))
+    , applies                  "lengthList([]) => ..."
+        lengthListRules
+        (lengthList unitList)
+    , applies                  "lengthList([1]) => ..."
+        lengthListRules
+        (lengthList (mkList [mkInt 1]))
+    , applies                  "lengthList([12]) => ..."
+        lengthListRules
+        (lengthList (mkList [mkInt 1, mkInt 2]))
+    , equals                   "lengthList([]) = 0 : Int"
+        (lengthList (mkList []))
+        (mkInt 0)
+    , equals                   "lengthList([1]) = 1 : Int"
+        (lengthList (mkList [mkInt 1]))
+        (mkInt 1)
+    , equals                   "lengthList([1, 2]) = 2 : Int"
+        (lengthList (mkList [mkInt 1, mkInt 2]))
+        (mkInt 2)
     ]
   where
     -- Evaluation tests: check the result of evaluating the term
-    equals term expect comment =
+    equals comment term expect =
         testCase comment $ do
             actual <- evaluate listSimplifiers term
             assertEqualWithExplanation "" (Pattern.fromTermLike expect) actual
@@ -767,12 +807,11 @@ lengthListConsRule =
         (lengthList (consList varX varL))
         (addInt (mkInt 1) (lengthList varL))
 
+lengthListRules :: [EqualityRule Variable]
+lengthListRules = [ lengthListUnitRule , lengthListConsRule ]
+
 lengthListEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
-lengthListEvaluator =
-    functionEvaluator lengthListSymbol
-        [ lengthListUnitRule
-        , lengthListConsRule
-        ]
+lengthListEvaluator = functionEvaluator lengthListSymbol lengthListRules
 
 listSimplifiers :: BuiltinAndAxiomSimplifierMap
 listSimplifiers =
