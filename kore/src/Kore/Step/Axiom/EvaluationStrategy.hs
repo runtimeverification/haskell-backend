@@ -25,7 +25,7 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( extractPatterns )
+                 ( extractPatterns, mergeAll )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Pattern )
@@ -38,6 +38,8 @@ import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
 import qualified Kore.Step.Rule as RulePattern
+import           Kore.Step.Simplification.Ceil
+                 ( makeEvaluate )
 import           Kore.Step.Simplification.Data
                  ( AttemptedAxiom,
                  AttemptedAxiomResults (AttemptedAxiomResults),
@@ -313,29 +315,32 @@ evaluateWithDefinitionAxioms
     _axiomSimplifiers
     patt
   =
-    AttemptedAxiom.maybeNotApplicable $ do
-    let
-        -- TODO (thomas.tuegel): Figure out how to get the initial conditions
-        -- and apply them here, to remove remainder branches sooner.
-        expanded :: Pattern variable
-        expanded = Pattern.fromTermLike patt
+    evaluatedChildOfApplication >>= \evalChild ->
+        AttemptedAxiom.maybeNotApplicable $ do
+        let
+            -- TODO (thomas.tuegel): Figure out how to get the initial conditions
+            -- and apply them here, to remove remainder branches sooner.
+            expanded :: Pattern variable
+            expanded = Pattern.fromTermLike patt
 
-    results <- applyRules expanded (map unwrapEqualityRule definitionRules)
-    mapM_ rejectNarrowing results
+        results <- applyRules expanded (map unwrapEqualityRule definitionRules)
+        mapM_ rejectNarrowing results
 
-    let
-        result =
-            Result.mergeResults results
-            & Result.mapConfigs
-                keepResultUnchanged
-                markRemainderEvaluated
-        keepResultUnchanged = id
-        markRemainderEvaluated = fmap mkEvaluated
+        let
+            result =
+                Result.mergeResults results
+                & Result.mapConfigs
+                    keepResultUnchanged
+                    ( markRemainderEvaluated
+                    . introduceDefinedness evalChild
+                    )
+            keepResultUnchanged = id
+            markRemainderEvaluated = fmap mkEvaluated
 
-    return $ AttemptedAxiom.Applied AttemptedAxiomResults
-        { results = Step.gatherResults result
-        , remainders = Step.remainders result
-        }
+        return $ AttemptedAxiom.Applied AttemptedAxiomResults
+            { results = Step.gatherResults result
+            , remainders = Step.remainders result
+            }
 
   where
     unwrapEqualityRule (EqualityRule rule) =
@@ -349,3 +354,22 @@ evaluateWithDefinitionAxioms
         $ Step.applyRulesSequence unificationProcedure initial rules
 
     unificationProcedure = UnificationProcedure unificationWithAppMatchOnTop
+
+    introduceDefinedness
+        :: Pattern variable
+        -> Pattern variable
+        -> Pattern variable
+    introduceDefinedness cond result =
+        Pattern.fromTermLike
+        $ mkAnd
+            (Pattern.toTermLike result)
+            (Pattern.toTermLike cond)
+
+    evaluatedChildOfApplication
+        :: simplifier (Pattern variable)
+    evaluatedChildOfApplication =
+        case patt of
+            App_ _ children -> do
+                x <- traverse (makeEvaluate . Pattern.fromTermLike) children
+                pure . OrPattern.toPattern . MultiOr.mergeAll $ x
+            _ -> pure $ Pattern.topOf (termLikeSort patt)
