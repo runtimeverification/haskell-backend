@@ -19,6 +19,8 @@ import           Prelude hiding
 import           Data.Sup
 import qualified Kore.Builtin.Int as Int
                  ( builtinFunctions )
+import qualified Kore.Builtin.Map as Map
+                 ( builtinFunctions )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.OrPredicate
                  ( OrPredicate )
@@ -57,9 +59,11 @@ import           Kore.Variables.Fresh
 import qualified SMT
 
 import           Test.Kore
+import qualified Test.Kore.Builtin.Builtin as Builtin
 import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.List as List
+import qualified Test.Kore.Builtin.Map as Map
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.Axiom.EvaluationStrategy as Axiom
                  ( evaluate )
@@ -738,6 +742,9 @@ test_List =
     [ applies                  "lengthList([]) => ... ~ lengthList([])"
         [lengthListUnitRule]
         (lengthList unitList)
+    , notApplies               "lengthList([]) => ... ~ lengthList(L)"
+        [lengthListUnitRule]
+        (lengthList varL)
     , notApplies               "lengthList([]) => ... !~ lengthList([1])"
         [lengthListUnitRule]
         (lengthList (mkList [mkInt 1]))
@@ -747,6 +754,9 @@ test_List =
     , notApplies               "lengthList(x : xs) => ... !~ lengthList([])"
         [lengthListConsRule]
         (lengthList unitList)
+    , notApplies               "lengthList(x : xs) => ... !~ lengthList(L)"
+        [lengthListConsRule]
+        (lengthList varL)
     , applies                  "lengthList(x : xs) => ... ~ lengthList([1])"
         [lengthListConsRule]
         (lengthList (mkList [mkInt 1]))
@@ -771,17 +781,40 @@ test_List =
     , equals                   "lengthList([1, 2]) = 2 : Int"
         (lengthList (mkList [mkInt 1, mkInt 2]))
         (mkInt 2)
+
+    , applies                  "removeList([], M) => ... ~ removeList([], [(0, 1)])"
+        [removeListUnitRule]
+        (removeList unitList (mkMap [(mkInt 0, mkInt 1)]))
+    , equals "removeList([1], [(0, 1)]) = [(0, 1)]"
+        (removeList (mkList [mkInt 1]) (mkMap [(mkInt 0, mkInt 1)]))
+        (mkMap [(mkInt 0, mkInt 1)])
     ]
   where
     -- Evaluation tests: check the result of evaluating the term
     equals comment term expect =
         testCase comment $ do
-            actual <- evaluate listSimplifiers term
+            actual <- evaluate' listSimplifiers term
             assertEqualWithExplanation "" (Pattern.fromTermLike expect) actual
 
-listSort, intSort :: Sort
+    evaluate'
+        :: BuiltinAndAxiomSimplifierMap
+        -> TermLike Variable
+        -> IO (Pattern Variable)
+    evaluate' functionIdToEvaluator patt =
+        SMT.runSMT SMT.defaultConfig emptyLogger
+        $ evalSimplifier env
+        $ TermLike.simplify patt
+      where
+        env =
+            Mock.env
+                { metadataTools = Builtin.testMetadataTools
+                , simplifierAxioms = functionIdToEvaluator
+                }
+
+listSort, intSort, mapSort :: Sort
 listSort = Builtin.listSort
 intSort = Builtin.intSort
+mapSort = Builtin.mapSort
 
 mkList :: [TermLike Variable] -> TermLike Variable
 mkList = List.asInternal
@@ -789,15 +822,22 @@ mkList = List.asInternal
 mkInt :: Integer -> TermLike Variable
 mkInt = Int.asInternal
 
+mkMap :: [(TermLike Variable, TermLike Variable)] -> TermLike Variable
+mkMap = Map.asInternal
+
+removeMap :: TermLike Variable -> TermLike Variable -> TermLike Variable
+removeMap = Builtin.removeMap
+
 addInt :: TermLike Variable -> TermLike Variable -> TermLike Variable
 addInt = Builtin.addInt
 
 unitList :: TermLike Variable
 unitList = mkList []
 
-varX, varL :: TermLike Variable
+varX, varL, mMap :: TermLike Variable
 varX = mkVar (varS (testId "xInt") intSort)
 varL = mkVar (varS (testId "lList") listSort)
+mMap = mkVar (varS (testId "mMap") mapSort)
 
 lengthListSymbol :: Symbol
 lengthListSymbol = Mock.symbol "lengthList" [listSort] intSort & function
@@ -824,14 +864,43 @@ lengthListRules = [ lengthListUnitRule , lengthListConsRule ]
 lengthListEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
 lengthListEvaluator = functionEvaluator lengthListSymbol lengthListRules
 
+removeListSymbol :: Symbol
+removeListSymbol =
+    Mock.symbol "removeList" [listSort, mapSort] mapSort & function
+
+removeList :: TermLike Variable -> TermLike Variable -> TermLike Variable
+removeList l m = mkApplySymbol removeListSymbol [l, m]
+
+removeListUnitRule, removeListConsRule :: EqualityRule Variable
+removeListUnitRule = axiom_ (removeList unitList mMap) mMap
+removeListConsRule =
+    axiom_
+        (removeList (consList varX varL) mMap)
+        (removeMap mMap varX)
+
+removeListRules :: [EqualityRule Variable]
+removeListRules = [removeListUnitRule, removeListConsRule]
+
+removeListEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
+removeListEvaluator = functionEvaluator removeListSymbol removeListRules
+
 listSimplifiers :: BuiltinAndAxiomSimplifierMap
 listSimplifiers =
     Map.fromList
         [ lengthListEvaluator
-        , (AxiomIdentifier.Application (symbolConstructor Builtin.addIntSymbol), builtinEvaluation addEvaluator)
+        , removeListEvaluator
+        , (addIntId, builtinEvaluation addIntEvaluator)
+        , (removeMapId, builtinEvaluation removeMapEvaluator)
         ]
   where
-    Just addEvaluator = Map.lookup "INT.add" Int.builtinFunctions
+    Just addIntEvaluator = Map.lookup "INT.add" Int.builtinFunctions
+    addIntId =
+        AxiomIdentifier.Application
+        $ symbolConstructor Builtin.addIntSymbol
+    Just removeMapEvaluator = Map.lookup "MAP.remove" Map.builtinFunctions
+    removeMapId =
+        AxiomIdentifier.Application
+        $ symbolConstructor Builtin.removeMapSymbol
 
 axiomEvaluator
     :: TermLike Variable
