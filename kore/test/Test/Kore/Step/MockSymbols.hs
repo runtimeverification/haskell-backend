@@ -1450,7 +1450,7 @@ emptyMetadataTools =
         [] -- subsorts
         emptySmtDeclarations
 
-metadataTools :: SmtMetadataTools Attribute.Symbol
+metadataTools :: GHC.HasCallStack => SmtMetadataTools Attribute.Symbol
 metadataTools =
     Mock.makeMetadataTools
         attributesMapping
