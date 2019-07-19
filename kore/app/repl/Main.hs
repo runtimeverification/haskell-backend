@@ -6,6 +6,10 @@ module Main (main) where
 import           Control.Applicative
                  ( optional )
 import           Control.Concurrent.MVar
+import           Control.Monad.Trans
+                 ( lift )
+import           Control.Monad.Trans.Reader
+                 ( runReaderT )
 import qualified Data.Bifunctor as Bifunctor
 import           Data.Semigroup
                  ( (<>) )
@@ -162,51 +166,56 @@ mainWithOptions
         , outputFile
         }
   = do
-    parsedDefinition <- parseDefinition definitionFileName
-    indexedDefinition@(indexedModules, _) <-
-        verifyDefinitionWithBase
-            Nothing
-            True
-            parsedDefinition
-    indexedModule <- mainModule mainModuleName indexedModules
+    mLogger <- newMVar emptyLogger
+    let emptySwappableLogger = swappableLogger mLogger
+    flip runReaderT emptySwappableLogger . unMain $ do
+        parsedDefinition <- parseDefinition definitionFileName
+        indexedDefinition@(indexedModules, _) <-
+            verifyDefinitionWithBase
+              Nothing
+              True
+              parsedDefinition
+        indexedModule <-
+            Main . lift $ mainModule mainModuleName indexedModules
+        specDef <- parseDefinition specFile
+        let unverifiedDefinition =
+                Bifunctor.first
+                    ((fmap . IndexedModule.mapPatterns)
+                        Builtin.externalizePattern
+                    )
+                    indexedDefinition
+        (specDefIndexedModules, _) <-
+            verifyDefinitionWithBase
+              (Just unverifiedDefinition)
+              True
+              specDef
 
-    specDef <- parseDefinition specFile
-    let unverifiedDefinition =
-            Bifunctor.first
-                ((fmap . IndexedModule.mapPatterns)
-                    Builtin.externalizePattern
-                )
-                indexedDefinition
-    (specDefIndexedModules, _) <-
-        verifyDefinitionWithBase
-            (Just unverifiedDefinition)
-            True
-            specDef
-    specDefIndexedModule <-
-        mainModule specModule specDefIndexedModules
+        specDefIndexedModule <-
+            Main . lift
+            $ mainModule specModule specDefIndexedModules
 
-    let
-        smtConfig =
-            SMT.defaultConfig
-                { SMT.timeOut = smtTimeOut
-                , SMT.preludeFile = smtPrelude
-                }
-    if replMode == RunScript && (unReplScript replScript) == Nothing
-        then do
-            putStrLn
-                "You must supply the path to the repl script\
-                \ in order to run the repl in run-script mode."
-            exitFailure
-        else do
-            mLogger <- newMVar emptyLogger
-            SMT.runSMT smtConfig (swappableLogger mLogger)
-               $ proveWithRepl
-                    indexedModule
-                    specDefIndexedModule
-                    mLogger
-                    replScript
-                    replMode
-                    outputFile
+        let
+            smtConfig =
+                SMT.defaultConfig
+                    { SMT.timeOut = smtTimeOut
+                    , SMT.preludeFile = smtPrelude
+                    }
+        if replMode == RunScript && (unReplScript replScript) == Nothing
+            then do
+                Main . lift . putStrLn
+                    $ "You must supply the path to the repl script\
+                      \ in order to run the repl in run-script mode."
+                Main . lift $ exitFailure
+            else
+                Main . lift
+                $ SMT.runSMT smtConfig (swappableLogger mLogger)
+                   $ proveWithRepl
+                        indexedModule
+                        specDefIndexedModule
+                        mLogger
+                        replScript
+                        replMode
+                        outputFile
 
   where
     mainModuleName :: ModuleName
