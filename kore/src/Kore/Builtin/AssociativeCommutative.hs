@@ -77,7 +77,7 @@ import           Kore.Internal.Symbol
                  ( Symbol )
 import           Kore.Internal.TermLike
                  ( pattern App_, pattern Builtin_, Concrete, TermLike,
-                 mkApplySymbol, mkBuiltin, termLikeSort )
+                 pattern Var_, mkApplySymbol, mkBuiltin, termLikeSort )
 import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Sort
                  ( Sort )
@@ -92,9 +92,8 @@ import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse, unparse, unparseToString )
 import qualified Kore.Unparser as Unparser
-
-import Kore.Variables.Fresh
-       ( FreshVariable )
+import           Kore.Variables.Fresh
+                 ( FreshVariable )
 
 {- | Class for things that can fill the @builtinAcChild@ value of a
 @InternalAc@ struct inside a @Domain.Builtin.Builtin@ value.
@@ -1197,13 +1196,23 @@ unifyEqualsElementLists
             "Duplicated element in unification results"
             first
             second
-        Just remainderTerm -> do
-            opaqueUnifier <- unifyEqualsChildren opaque remainderTerm
-            let (opaqueTerm, opaquePredicate) = Pattern.splitTerm opaqueUnifier
+        Just remainderTerm -> case opaque of
+            Var_ _ -> do
+                opaqueUnifier <- unifyEqualsChildren opaque remainderTerm
+                let
+                    (opaqueTerm, opaquePredicate) =
+                        Pattern.splitTerm opaqueUnifier
+                    result = unifier `andCondition` opaquePredicate
 
-                result = unifier `andCondition` opaquePredicate
+                return (result, [opaqueTerm])
+            _ -> (error . unlines)
+                [ "Unification case that should be handled somewhere else:"
+                , "attempting normalized unification with a non-variable opaque"
+                , "term could lead to infinite loops."
+                , "first=" ++ unparseToString first
+                , "second=" ++ unparseToString second
+                ]
 
-            return (result, [opaqueTerm])
   where
     unifyWithPermutations =
         unifyEqualsElementPermutations
