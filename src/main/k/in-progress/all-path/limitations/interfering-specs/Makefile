@@ -15,7 +15,7 @@ $(DEFINITION): path.k
 %.knotprove: %.k $(DEFINITION) $(KORE_EXEC)
 	$(KPROVE) $(KPROVE_OPTS) -d . -m PATH $<
 
-%.krepl: %.k $(DEFINITION) $(KORE_EXEC)
+%.krepl: %.k $(DEFINITION) $(KORE_REPL)
 	!$(KPROVE) $(KPROVE_REPL_OPTS) -d . -m PATH $<
 
 %.output: %.path $(DEFINITION) $(KORE_EXEC)
@@ -32,7 +32,7 @@ $(DEFINITION): path.k
 	mv $< $<.golden
 
 all_tests := $(k_tests)
-k_tests := 
+k_tests :=
 not_prove_tests := \
 	all-path-a-c-b-d-spec
 prove_tests := \

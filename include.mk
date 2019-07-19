@@ -31,20 +31,17 @@ STACK = stack
 STACK_HADDOCK = $(STACK) --work-dir=.stack-work-haddock
 STACK_TEST = $(STACK) --work-dir=.stack-work-test
 
-STACK_LOCAL_INSTALL_ROOT ?= $(shell $(STACK) path --local-install-root)
-STACK_LOCAL_DOC_ROOT ?= $(shell $(STACK_HADDOCK) path --local-doc-root)
-STACK_LOCAL_HPC_ROOT ?= $(shell $(STACK_TEST) path --local-hpc-root)
-export STACK_LOCAL_INSTALL_ROOT  # so that sub-makes do not invoke stack again
-export STACK_LOCAL_DOC_ROOT  # so that sub-makes do not invoke stack again
-export STACK_LOCAL_HPC_ROOT  # so that sub-makes do not invoke stack again
-
-KORE_EXEC = $(STACK_LOCAL_INSTALL_ROOT)/bin/kore-exec
+KORE_EXEC = $(BUILD_DIR)/kore/bin/kore-exec
 KORE_EXEC_OPTS =
 
-KORE_REPL = $(STACK_LOCAL_INSTALL_ROOT)/bin/kore-repl
+KORE_REPL = $(BUILD_DIR)/kore/bin/kore-repl
 
 $(KORE_EXEC):
 	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) kore:exe:kore-exec
+	mkdir -p $(dir $(KORE_EXEC))
+	cp $$($(STACK) path --local-install-root)/bin/kore-exec $(KORE_EXEC)
 
 $(KORE_REPL):
 	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) kore:exe:kore-repl
+	mkdir -p $(dir $(KORE_REPL))
+	cp $$($(STACK) path --local-install-root)/bin/kore-repl $(KORE_REPL)
