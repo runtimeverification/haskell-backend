@@ -479,7 +479,7 @@ unifyEquals
     second
   | fromMaybe False (isSetSort tools sort1)
   = MaybeT $ do
-    unifiers <- Monad.Unify.gather (runMaybeT (unifyEquals0 True first second))
+    unifiers <- Monad.Unify.gather (runMaybeT (unifyEquals0 first second))
     case sequence unifiers of
         Nothing -> return Nothing
         Just us -> Monad.Unify.scatter (map Just us)
@@ -489,12 +489,10 @@ unifyEquals
 
     -- | Unify the two argument patterns.
     unifyEquals0
-        :: Bool
-        -> TermLike variable
+        :: TermLike variable
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
     unifyEquals0
-        alreadyNormalized
         (Builtin_ (Domain.BuiltinSet normalized1))
         (Builtin_ (Domain.BuiltinSet normalized2))
       =
@@ -503,14 +501,13 @@ unifyEquals
             first
             second
             unifyEqualsChildren
-            alreadyNormalized
             normalized1
             normalized2
 
-    unifyEquals0 _ pat1 pat2 = do
+    unifyEquals0 pat1 pat2 = do
         firstDomain <- asDomain pat1
         secondDomain <- asDomain pat2
-        unifyEquals0 False firstDomain secondDomain
+        unifyEquals0 firstDomain secondDomain
       where
         asDomain
             :: TermLike variable
