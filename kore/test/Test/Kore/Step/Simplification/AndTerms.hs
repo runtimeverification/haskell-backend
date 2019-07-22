@@ -18,6 +18,7 @@ import           Kore.Attribute.Simplification
                  ( Simplification (Simplification) )
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Domain.Builtin as Domain
+import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
 import           Kore.Internal.Pattern as Pattern
@@ -808,6 +809,20 @@ test_andTermsSimplification =
                 expect = Just [Pattern.bottom]
             actual <- unify term7 term8
             assertEqualWithExplanation "" expect actual
+
+        , testCase "fallback for external List symbols" $ do
+            let expectTerm = mkAnd rhs lhs
+                expect =
+                    Pattern.fromTermLike expectTerm
+                    `Conditional.andPredicate` makeCeilPredicate expectTerm
+                x = mkVar $ varS "x" Mock.testSort
+                l = mkVar $ varS "y" Mock.listSort
+                -- List unification does not fully succeed because the
+                -- elementList symbol is not simplified to a builtin structure.
+                lhs = Mock.concatList (Mock.elementList x) l
+                rhs = Mock.builtinList [Mock.a, Mock.b]
+            actual <- unify lhs rhs
+            assertEqualWithExplanation "" (Just [expect]) actual
 
         -- TODO: Add tests with non-trivial unifications and predicates.
         ]
