@@ -308,6 +308,9 @@ sizeListSymbol = builtinSymbol "sizeList" intSort [listSort] & hook "LIST.size"
 unitList :: TermLike Variable
 unitList = mkApplySymbol unitListSymbol []
 
+elementList :: TermLike Variable -> TermLike Variable
+elementList x = mkApplySymbol elementListSymbol [x]
+
 sizeList :: TermLike Variable -> TermLike Variable
 sizeList l = mkApplySymbol sizeListSymbol [l]
 
