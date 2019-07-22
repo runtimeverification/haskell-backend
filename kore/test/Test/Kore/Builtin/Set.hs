@@ -682,7 +682,7 @@ test_unifyConcatElemVarVsElemSet =
 
             concreteElem <- forAll genConcreteIntegerPattern
             let set = asInternal (Set.fromList [concreteElem])
-                elementSet = asInternalNormalized
+                elementSet' = asInternalNormalized
                     $ emptyNormalizedSet
                     `with` VariableElement (mkVar elementVar2)
                 patSet = addSelectElement elementVar2 set
@@ -696,7 +696,7 @@ test_unifyConcatElemVarVsElemSet =
                 expect = do  -- list monad
                     (elemUnifier, setUnifier) <-
                         [ (mkVar elementVar2, set)
-                        , (elemStepPattern, elementSet)
+                        , (elemStepPattern, elementSet')
                         ]
                     return Conditional
                         { term = expectedPatSet
