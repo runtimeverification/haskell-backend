@@ -5,6 +5,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Map
+import qualified GHC.Stack as GHC
 import           Prelude hiding
                  ( concatMap )
 
@@ -26,7 +27,7 @@ test_internalize =
         unitList
         (mkList [])
     , internalizes  "elementList"
-        (elementList zero)
+        (elementList x)
         (mkList [x])
     , internalizes  "concatList(internal, internal)"
         (concatList (mkList [x]) (mkList [y]))
@@ -80,7 +81,8 @@ test_internalize =
     y = mkVar (varS "y" intSort)
 
 withInternalized
-    :: (TermLike Variable -> Assertion)
+    :: GHC.HasCallStack
+    => (TermLike Variable -> Assertion)
     -> TestName
     -> TermLike Variable
     -> TestTree
@@ -88,7 +90,8 @@ withInternalized check name origin =
     testCase name (check $ Kore.internalize metadata origin)
 
 internalizes
-    :: TestName
+    :: GHC.HasCallStack
+    => TestName
     -> TermLike Variable
     -> TermLike Variable
     -> TestTree
