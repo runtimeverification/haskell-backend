@@ -58,7 +58,7 @@ module Kore.Builtin.Builtin
     , lookupSymbolConcat
     , isSymbol
     , isSort
-    , expectNormalConcreteTerm
+    , toKey
     , getAttemptedAxiom
       -- * Implementing builtin unification
     , unifyEqualsUnsolved
@@ -128,7 +128,6 @@ import           Kore.Step.Simplification.Data
                  BuiltinAndAxiomSimplifierMap, MonadSimplify,
                  PredicateSimplifier, SimplificationType, TermLikeSimplifier,
                  applicationAxiomSimplifier )
-import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
@@ -875,23 +874,18 @@ isSort builtinName tools sort
     isPredicateSort = sort == predicateSort
 
 
-{- | Ensure that a 'StepPattern' is a concrete, normalized term.
+{- | Ensure that a 'TermLike' is a concrete, normalized term.
 
-    If the pattern is not concrete and normalized, the function is
-    'NotApplicable'.
+If the pattern is not concrete and normalized, the function is
+See also: 'Kore.Proof.Value.Value'
 
  -}
-expectNormalConcreteTerm
-    :: MonadSimplify m
-    => TermLike variable
-    -> MaybeT m (TermLike Concrete)
-expectNormalConcreteTerm purePattern = do
-    tools <- Simplifier.askMetadataTools
-    MaybeT $ return $ do
-        p <- TermLike.asConcrete purePattern
-        -- TODO (thomas.tuegel): Use the return value as the term.
-        _ <- Value.fromConcreteStepPattern tools p
-        return p
+toKey :: TermLike variable -> Maybe (TermLike Concrete)
+toKey purePattern = do
+    p <- TermLike.asConcrete purePattern
+    -- TODO (thomas.tuegel): Use the return value as the term.
+    _ <- Value.fromTermLike p
+    return p
 
 {- | Run a function evaluator that can terminate early.
  -}
