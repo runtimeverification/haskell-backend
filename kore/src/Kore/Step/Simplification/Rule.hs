@@ -131,4 +131,5 @@ simplifyPattern
 simplifyPattern termLike =
     Simplifier.localSimplifierTermLike (const Simplifier.create)
     $ Simplifier.localSimplifierPredicate (const Predicate.create)
+    $ Simplifier.localSimplifierAxioms (const mempty)
     $ Pattern.simplify (Pattern.fromTermLike termLike)
