@@ -435,6 +435,9 @@ elementSetSymbol =
     builtinSymbol "elementSet" setSort [intSort]
     & hook "SET.element" & functional
 
+elementSet :: TermLike Variable -> TermLike Variable
+elementSet x = mkApplySymbol elementSetSymbol [x]
+
 concatSetSymbol :: Internal.Symbol
 concatSetSymbol =
     binarySymbol "concatSet" setSort & hook "SET.concat" & functional
