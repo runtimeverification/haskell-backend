@@ -181,7 +181,6 @@ evaluateBuiltin
     axiomIdToSimplifier
     patt
   = do
-    let isValue pat = isJust $ Value.fromTermLike =<< asConcrete pat
     result <-
         builtinEvaluator
             substitutionSimplifier
@@ -190,20 +189,18 @@ evaluateBuiltin
             patt
     case result of
         AttemptedAxiom.NotApplicable
-          | isPattConcrete
-          , App_ appHead children <- patt
+          | App_ appHead children <- patt
           , Just hook_ <- Text.unpack <$> Attribute.getHook (symbolHook appHead)
           , all isValue children ->
-            error
-                (   "Expecting hook " ++ hook_
-               ++  " to reduce concrete pattern\n\t"
-                ++ show patt
-                )
-          | otherwise ->
-            return AttemptedAxiom.NotApplicable
-        AttemptedAxiom.Applied _ -> return result
+            (error . show . Pretty.vsep)
+                [ "Expecting hook "
+                    <> Pretty.squotes (Pretty.pretty hook_)
+                    <> " to reduce concrete pattern:"
+                , Pretty.indent 4 (unparse patt)
+                ]
+        _ -> return result
   where
-    isPattConcrete = isConcrete patt
+    isValue pat = isJust $ Value.fromTermLike =<< asConcrete pat
 
 applyFirstSimplifierThatWorks
     :: forall variable simplifier
