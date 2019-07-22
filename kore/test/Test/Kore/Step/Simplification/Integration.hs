@@ -15,7 +15,6 @@ import           Data.Default
 import qualified Data.Map.Strict as Map
 
 import qualified Kore.Builtin.Map as Map
-import qualified Kore.Exec as Exec
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -37,6 +36,7 @@ import qualified Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
+import qualified Kore.Step.Simplification.Rule as Rule
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -471,6 +471,6 @@ simplifyRulePattern :: RulePattern Variable -> IO (RulePattern Variable)
 simplifyRulePattern =
     SMT.runSMT SMT.defaultConfig emptyLogger
     . evalSimplifier env
-    . Exec.simplifyRulePattern
+    . Rule.simplifyRulePattern
   where
     env = Mock.env { simplifierAxioms = builtinAxioms }

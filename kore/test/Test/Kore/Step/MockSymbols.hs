@@ -938,6 +938,13 @@ concatList
     -> TermLike variable
 concatList l1 l2 = Internal.mkApplySymbol concatListSymbol [l1, l2]
 
+elementList
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+elementList element = Internal.mkApplySymbol elementListSymbol [element]
+
 sigma
     :: (Ord variable, SortedVariable variable, Unparse variable)
     => GHC.HasCallStack

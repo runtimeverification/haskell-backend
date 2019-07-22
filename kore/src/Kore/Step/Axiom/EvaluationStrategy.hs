@@ -32,6 +32,7 @@ import           Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
+import qualified Kore.Proof.Value as Value
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification )
 import qualified Kore.Step.Result as Result
@@ -48,7 +49,6 @@ import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..), hasRemainders, maybeNotApplicable )
-import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
@@ -57,8 +57,6 @@ import           Kore.Unparser
                  ( Unparse, unparse )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
-
-import qualified Kore.Proof.Value as Value
 
 {-|Describes whether simplifiers are allowed to return multiple results or not.
 -}
@@ -183,10 +181,7 @@ evaluateBuiltin
     axiomIdToSimplifier
     patt
   = do
-    tools <- Simplifier.askMetadataTools
-    let
-        isValue pat = isJust $
-            Value.fromConcreteStepPattern tools =<< asConcrete pat
+    let isValue pat = isJust $ Value.fromTermLike =<< asConcrete pat
     result <-
         builtinEvaluator
             substitutionSimplifier

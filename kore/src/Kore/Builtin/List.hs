@@ -25,6 +25,7 @@ module Kore.Builtin.List
     , asPattern
     , asInternal
     , asTermLike
+    , internalize
       -- * Symbols
     , lookupSymbolGet
     , isSymbolConcat
@@ -43,6 +44,7 @@ import           Control.Applicative
 import           Control.Error
                  ( MaybeT )
 import qualified Control.Monad.Trans as Monad.Trans
+import qualified Data.Function as Function
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
                  ( Map )
@@ -59,8 +61,6 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.Attribute.Hook
-                 ( Hook )
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Builtin.Builtin
                  ( acceptAnySort )
@@ -344,6 +344,20 @@ asPattern resultSort =
     tools :: SmtMetadataTools Attribute.Symbol
     tools = Reflection.given
 
+internalize
+    :: (Ord variable, SortedVariable variable)
+    => SmtMetadataTools Attribute.Symbol
+    -> TermLike variable
+    -> TermLike variable
+internalize tools termLike@(App_ symbol args)
+  | isSymbolUnit    symbol , [ ] <- args = asInternal' (Seq.fromList args)
+  | isSymbolElement symbol , [_] <- args = asInternal' (Seq.fromList args)
+  | isSymbolConcat  symbol , [BuiltinList_ list1, BuiltinList_ list2] <- args =
+    asInternal' (Function.on (<>) Domain.builtinListChild list1 list2)
+  where
+    asInternal' = asInternal tools (termLikeSort termLike)
+internalize _ termLike = termLike
+
 {- | Find the symbol hooked to @LIST.get@ in an indexed module.
  -}
 lookupSymbolGet
@@ -354,26 +368,17 @@ lookupSymbolGet = Builtin.lookupSymbol getKey
 
 {- | Check if the given symbol is hooked to @LIST.concat@.
 -}
-isSymbolConcat
-    :: SmtMetadataTools Hook
-    -> Symbol
-    -> Bool
+isSymbolConcat :: Symbol -> Bool
 isSymbolConcat = Builtin.isSymbol concatKey
 
 {- | Check if the given symbol is hooked to @LIST.element@.
 -}
-isSymbolElement
-    :: SmtMetadataTools Hook
-    -> Symbol
-    -> Bool
+isSymbolElement :: Symbol -> Bool
 isSymbolElement = Builtin.isSymbol elementKey
 
 {- | Check if the given symbol is hooked to @LIST.unit@.
 -}
-isSymbolUnit
-    :: SmtMetadataTools Hook
-    -> Symbol
-    -> Bool
+isSymbolUnit :: Symbol -> Bool
 isSymbolUnit = Builtin.isSymbol unitKey
 
 {- | Simplify the conjunction or equality of two concrete List domain values.
@@ -410,8 +415,6 @@ unifyEquals
   =
     unifyEquals0 first second
   where
-    hookTools = Attribute.hook <$> tools
-
     propagatePredicates
         :: Traversable t
         => t (Conditional variable a)
@@ -437,7 +440,7 @@ unifyEquals
                     , "This should have been a sort error."
                     ]
             app@(App_ symbol2 args2)
-              | isSymbolConcat hookTools symbol2 ->
+              | isSymbolConcat symbol2 ->
                 Monad.Trans.lift $ case args2 of
                     [ Builtin_ (Domain.BuiltinList builtin2), x@(Var_ _) ] ->
                         unifyEqualsFramedRight builtin1 builtin2 x

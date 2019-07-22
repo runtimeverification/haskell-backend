@@ -57,7 +57,6 @@ import           GHC.Stack
 
 import qualified Kore.Attribute.Symbol as Attribute
                  ( Symbol )
-import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.MapSymbols as Map
 import qualified Kore.Builtin.SetSymbols as Set
@@ -160,26 +159,31 @@ instance TermWrapper Domain.NormalizedMap Domain.Value where
         (Builtin_ (Domain.BuiltinMap Domain.InternalAc { builtinAcChild }))
       = Normalized (Domain.unwrapAc builtinAcChild)
     toNormalized tools (App_ symbol args)
-      | Map.isSymbolUnit hookTools symbol =
+      | Map.isSymbolUnit symbol =
         case args of
             [] -> Normalized Domain.emptyNormalizedAc
             _ -> Builtin.wrongArity "MAP.unit"
-      | Map.isSymbolElement hookTools symbol =
+      | Map.isSymbolElement symbol =
         case args of
-            [key, value] ->
+            [key, value]
+              | Just key' <- Builtin.toKey key ->
+                Normalized Domain.NormalizedAc
+                    { elementsWithVariables = []
+                    , concreteElements = Map.singleton key' (Domain.Value value)
+                    , opaque = []
+                    }
+              | otherwise ->
                 Normalized Domain.NormalizedAc
                     { elementsWithVariables = [(key, Domain.Value value)]
                     , concreteElements = Map.empty
                     , opaque = []
                     }
             _ -> Builtin.wrongArity "MAP.element"
-      | Map.isSymbolConcat hookTools symbol =
+      | Map.isSymbolConcat symbol =
         case args of
             [set1, set2] ->
                 toNormalized tools set1 <> toNormalized tools set2
             _ -> Builtin.wrongArity "MAP.concat"
-      where
-        hookTools = Attribute.Symbol.hook <$> tools
     toNormalized _ patt =
         Normalized Domain.NormalizedAc
             { elementsWithVariables = []
@@ -216,26 +220,31 @@ instance TermWrapper Domain.NormalizedSet Domain.NoValue where
         (Builtin_ (Domain.BuiltinSet Domain.InternalAc { builtinAcChild }))
       = Normalized (Domain.unwrapAc builtinAcChild)
     toNormalized tools (App_ symbol args)
-      | Set.isSymbolUnit hookTools symbol =
+      | Set.isSymbolUnit symbol =
         case args of
             [] -> Normalized Domain.emptyNormalizedAc
             _ -> Builtin.wrongArity "SET.unit"
-      | Set.isSymbolElement hookTools symbol =
+      | Set.isSymbolElement symbol =
         case args of
-            [elem1] ->
+            [elem1]
+              | Just elem1' <- Builtin.toKey elem1 ->
+                Normalized Domain.NormalizedAc
+                    { elementsWithVariables = []
+                    , concreteElements = Map.singleton elem1' Domain.NoValue
+                    , opaque = []
+                    }
+              | otherwise ->
                 Normalized Domain.NormalizedAc
                     { elementsWithVariables = [(elem1, Domain.NoValue)]
                     , concreteElements = Map.empty
                     , opaque = []
                     }
             _ -> Builtin.wrongArity "SET.element"
-      | Set.isSymbolConcat hookTools symbol =
+      | Set.isSymbolConcat symbol =
         case args of
             [set1, set2] ->
                 toNormalized tools set1 <> toNormalized tools set2
             _ -> Builtin.wrongArity "SET.concat"
-      where
-        hookTools = Attribute.Symbol.hook <$> tools
     toNormalized _ patt =
         Normalized Domain.NormalizedAc
             { elementsWithVariables = []

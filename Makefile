@@ -8,6 +8,8 @@ kore:
 
 kore-exec: $(KORE_EXEC)
 
+kore-repl: $(KORE_REPL)
+
 k-frontend:
 	mkdir -p $(BUILD_DIR)
 	rm -rf $(K_DIST_DEFAULT) $(K_NIGHTLY)
@@ -18,7 +20,7 @@ k-frontend:
 
 docs: haddock
 
-$(STACK_LOCAL_DOC_ROOT)/index.html:
+haddock:
 	$(STACK_HADDOCK) haddock \
 		--fast \
 		>haddock.log 2>&1 \
@@ -31,25 +33,21 @@ $(STACK_LOCAL_DOC_ROOT)/index.html:
 		rm haddock.log; \
 	fi
 
-haddock: $(STACK_LOCAL_DOC_ROOT)/index.html
-
-haskell_documentation: $(STACK_LOCAL_DOC_ROOT)/index.html
-	cp -r $(STACK_LOCAL_DOC_ROOT) haskell_documentation
+haskell_documentation: haddock
+	cp -r $$($(STACK_HADDOCK) path --local-doc-root) haskell_documentation
 
 all: kore k-frontend
 
 test: test-kore test-k
 
-test-kore: $(STACK_LOCAL_HPC_ROOT)
-
-$(STACK_LOCAL_HPC_ROOT):
+test-kore:
 	$(STACK_TEST) $(STACK_BUILD) \
 		--coverage \
 		--test --bench --no-run-benchmarks \
 		--ta --xml=test-results.xml
 
-coverage_report: $(STACK_LOCAL_HPC_ROOT)
-	cp -r $(STACK_LOCAL_HPC_ROOT) coverage_report
+coverage_report: test-kore
+	cp -r $$($(STACK_TEST) path --local-hpc-root) coverage_report
 
 test-k:
 	$(MAKE) --directory src/main/k/working test-k

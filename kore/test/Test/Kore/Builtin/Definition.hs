@@ -302,8 +302,20 @@ getListSymbol :: Internal.Symbol
 getListSymbol =
     builtinSymbol "getList" intSort [listSort, intSort] & hook "LIST.get"
 
+sizeListSymbol :: Internal.Symbol
+sizeListSymbol = builtinSymbol "sizeList" intSort [listSort] & hook "LIST.size"
+
+unitList :: TermLike Variable
+unitList = mkApplySymbol unitListSymbol []
+
+elementList :: TermLike Variable -> TermLike Variable
+elementList x = mkApplySymbol elementListSymbol [x]
+
 concatList :: TermLike Variable -> TermLike Variable -> TermLike Variable
-concatList xs ys = mkApplySymbol concatListSymbol [xs, ys]
+concatList x y = mkApplySymbol concatListSymbol [x, y]
+
+sizeList :: TermLike Variable -> TermLike Variable
+sizeList l = mkApplySymbol sizeListSymbol [l]
 
 -- ** Map
 
@@ -422,6 +434,9 @@ elementSetSymbol :: Internal.Symbol
 elementSetSymbol =
     builtinSymbol "elementSet" setSort [intSort]
     & hook "SET.element" & functional
+
+elementSet :: TermLike Variable -> TermLike Variable
+elementSet x = mkApplySymbol elementSetSymbol [x]
 
 concatSetSymbol :: Internal.Symbol
 concatSetSymbol =
