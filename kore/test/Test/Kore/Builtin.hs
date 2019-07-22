@@ -43,7 +43,9 @@ test_internalize =
     , internalizes  "concatList(unit, element)"
         (concatList unitList (elementList y))
         (mkList [y])
-    , notInternalizes "l:List" (mkVar (varS "l" listSort))
+    , notInternalizes "l:List" l
+    , internalizes "concatList(l:List, unit)" (concatList l unitList) l
+    , internalizes "concatList(unit, l:List)" (concatList unitList l) l
 
     , internalizes  "unitMap"
         unitMap
@@ -63,7 +65,7 @@ test_internalize =
     , internalizes  "concatMap(unit, element)"
         (concatMap unitMap (elementMap one y))
         (mkMap [(one, y)])
-    , notInternalizes "m:Map" (mkVar (varS "m" mapSort))
+    , notInternalizes "m:Map" m
 
     , internalizes  "unitSet"
         unitSet
@@ -83,7 +85,7 @@ test_internalize =
     , internalizes  "concatSet(unit, element)"
         (concatSet unitSet (elementSet one))
         (mkSet [one])
-    , notInternalizes "s:Set" (mkVar (varS "s" setSort))
+    , notInternalizes "s:Set" s
     ]
   where
     listSort = Builtin.listSort
@@ -91,18 +93,21 @@ test_internalize =
     elementList = Builtin.elementList
     concatList = Builtin.concatList
     mkList = List.asInternal
+    l = mkVar (varS "l" listSort)
 
     mapSort = Builtin.mapSort
     unitMap = Builtin.unitMap
     elementMap = Builtin.elementMap
     concatMap = Builtin.concatMap
     mkMap = Map.asInternal . Data.Map.fromList
+    m = mkVar (varS "m" mapSort)
 
     setSort = Builtin.setSort
     unitSet = Builtin.unitSet
     elementSet = Builtin.elementSet
     concatSet = Builtin.concatSet
     mkSet = Set.asInternal . Data.Set.fromList
+    s = mkVar (varS "s" setSort)
 
     mkInt :: Ord variable => Integer -> TermLike variable
     mkInt = Int.asInternal
