@@ -22,6 +22,7 @@ module Test.Kore.Step.MockSymbols where
 
 import           Control.Applicative
 import qualified Control.Lens as Lens
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import           Data.Function
 import           Data.Generics.Product
@@ -1378,7 +1379,7 @@ builtinMap child =
             { elementsWithVariables = []
             , concreteElements =
                 Map.fromList
-                    (map (\(key, value) -> (key, Domain.Value value)) child)
+                    (map (Bifunctor.second Domain.Value) child)
             , opaque = []
             }
         }
