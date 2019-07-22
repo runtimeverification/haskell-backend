@@ -32,7 +32,7 @@ module Kore.Builtin.Set
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
-                 ( MaybeT (MaybeT), fromMaybe, runMaybeT )
+                 ( MaybeT (MaybeT), fromMaybe, hoistMaybe, runMaybeT )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -251,7 +251,7 @@ evalIn =
                     case arguments of
                         [_elem, _set] -> (_elem, _set)
                         _ -> Builtin.wrongArity Set.inKey
-            _elem <- Builtin.expectNormalConcreteTerm _elem
+            _elem <- hoistMaybe $ Builtin.toKey _elem
             _set <- expectConcreteBuiltinSet Set.inKey _set
             (Builtin.appliedFunction . asExpandedBoolPattern)
                 (Map.member _elem _set)

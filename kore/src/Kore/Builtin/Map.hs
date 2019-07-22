@@ -29,7 +29,7 @@ module Kore.Builtin.Map
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
-                 ( MaybeT (MaybeT), fromMaybe, runMaybeT )
+                 ( MaybeT (MaybeT), fromMaybe, hoistMaybe, runMaybeT )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -225,7 +225,7 @@ evalLookup =
                         then Builtin.appliedFunction Pattern.bottom
                         else empty
                 bothConcrete = do
-                    _key <- Builtin.expectNormalConcreteTerm _key
+                    _key <- hoistMaybe $ Builtin.toKey _key
                     _map <- expectConcreteBuiltinMap Map.lookupKey _map
                     Builtin.appliedFunction
                         $ maybeBottom
@@ -306,7 +306,7 @@ evalUpdate =
                     case arguments of
                         [_map, _key, value'] -> (_map, _key, value')
                         _ -> Builtin.wrongArity Map.updateKey
-            _key <- Builtin.expectNormalConcreteTerm _key
+            _key <- hoistMaybe $ Builtin.toKey _key
             _map <- expectConcreteBuiltinMap Map.updateKey _map
             returnConcreteMap
                 resultSort
@@ -322,7 +322,7 @@ evalInKeys =
                     case arguments of
                         [_key, _map] -> (_key, _map)
                         _ -> Builtin.wrongArity Map.in_keysKey
-            _key <- Builtin.expectNormalConcreteTerm _key
+            _key <- hoistMaybe $ Builtin.toKey _key
             _map <- expectConcreteBuiltinMap Map.in_keysKey _map
             Builtin.appliedFunction
                 $ Bool.asPattern resultSort
@@ -361,7 +361,7 @@ evalRemove =
                         else empty
                 bothConcrete = do
                     _map <- expectConcreteBuiltinMap Map.removeKey _map
-                    _key <- Builtin.expectNormalConcreteTerm _key
+                    _key <- hoistMaybe $ Builtin.toKey _key
                     returnConcreteMap resultSort $ Map.delete _key _map
             emptyMap <|> bothConcrete
 
