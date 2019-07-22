@@ -18,7 +18,7 @@ import qualified Test.SMT
 
 test_simplifyRulePattern :: [TestTree]
 test_simplifyRulePattern =
-    [ simplifies    "simplifies \and (#as) patterns"
+    [ simplifies    "simplifies \\and (#as) patterns"
         (rulePattern (andBool (mkAnd false x) y) x    )
         (rulePattern (andBool false           y) false)
     , notSimplifies "does not simplify disjunctions"
