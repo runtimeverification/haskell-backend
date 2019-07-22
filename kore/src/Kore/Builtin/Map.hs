@@ -18,6 +18,7 @@ module Kore.Builtin.Map
     , symbolVerifiers
     , builtinFunctions
     , asTermLike
+    , internalize
     -- * Unification
     , unifyEquals
     -- * Raw evaluators
@@ -459,6 +460,27 @@ asTermLike builtin =
         -> TermLike variable
     element (key, Domain.Value value) =
         mkApplySymbol elementSymbol [key, value]
+
+{- | Convert a Map-sorted 'TermLike' to its internal representation.
+
+The 'TermLike' is unmodified if it is not Map-sorted. @internalize@ only
+operates at the top-most level, it does not descend into the 'TermLike' to
+internalize subterms.
+
+ -}
+internalize
+    :: (Ord variable, SortedVariable variable)
+    => SmtMetadataTools Attribute.Symbol
+    -> TermLike variable
+    -> TermLike variable
+internalize tools termLike
+  | fromMaybe False (isMapSort tools sort') =
+    case Ac.toNormalized @Domain.NormalizedMap tools termLike of
+        Ac.Bottom                    -> TermLike.mkBottom sort'
+        Ac.Normalized termNormalized -> Ac.asInternal tools sort' termNormalized
+  | otherwise = termLike
+  where
+    sort' = termLikeSort termLike
 
 {- | Simplify the conjunction or equality of two concrete Map domain values.
 
