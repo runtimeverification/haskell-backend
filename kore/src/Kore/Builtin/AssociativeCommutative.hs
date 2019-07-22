@@ -41,15 +41,20 @@ import           Control.Error
 import           Control.Monad
                  ( foldM, unless )
 import qualified Control.Monad.Trans as Monad.Trans
+import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List
+import           Data.List.NonEmpty
+                 ( NonEmpty (..) )
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
                  ( Given )
 import qualified Data.Reflection as Reflection
+import           Data.Semigroup
+                 ( sconcat )
 import           Data.Text.Prettyprint.Doc
                  ( Doc )
 import           GHC.Stack
@@ -157,7 +162,28 @@ instance TermWrapper Domain.NormalizedMap Domain.Value where
     toNormalized
         _tools
         (Builtin_ (Domain.BuiltinMap Domain.InternalAc { builtinAcChild }))
-      = Normalized (Domain.unwrapAc builtinAcChild)
+      = flatAc
+      where
+        normalizedAc = Domain.unwrapAc builtinAcChild
+        concreteAc =
+            Domain.emptyNormalizedAc
+                { Domain.concreteElements =
+                    Domain.concreteElements normalizedAc
+                , Domain.opaque = actuallyOpaque
+                }
+        opaqueAcs = Domain.opaque normalizedAc
+        (builtinChildren, actuallyOpaque) =
+            Either.partitionEithers (selectBuiltinChildren <$> opaqueAcs)
+        abstractAcs = asElement <$> Domain.elementsWithVariables normalizedAc
+        asElement element =
+            Domain.emptyNormalizedAc
+                { Domain.elementsWithVariables = [element] }
+        flatAc =
+            (sconcat . fmap Normalized)
+                (concreteAc :| (abstractAcs <> builtinChildren))
+        selectBuiltinChildren (TermLike.BuiltinMap_ internalMap) =
+            (Left . Domain.unwrapAc) (Domain.builtinAcChild internalMap)
+        selectBuiltinChildren other = Right other
     toNormalized tools (App_ symbol args)
       | Map.isSymbolUnit symbol =
         case args of
