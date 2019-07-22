@@ -10,9 +10,11 @@ module Kore.Step.Simplification.Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Internal.Conditional
                  ( Conditional )
+import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Unparser
 
@@ -57,3 +59,23 @@ simplifyBuiltin =
         Domain.BuiltinBool bool -> (return . pure) (Domain.BuiltinBool bool)
         Domain.BuiltinString string ->
             (return . pure) (Domain.BuiltinString string)
+
+simplifyInternalMap
+    ::  ( Ord variable
+        , Show variable
+        , Unparse variable
+        , SortedVariable variable
+        )
+    =>  Domain.InternalMap (TermLike Concrete) (OrPattern variable)
+    ->  MultiOr
+            (Conditional variable
+                (Domain.InternalMap (TermLike Concrete) (TermLike variable))
+            )
+simplifyInternalMap internalMapOrPattern = do
+    internalMapConditional <- sequence internalMapOrPattern
+    let conditionalInternalMap = sequenceA internalMapConditional
+        normalizedInternalMap =
+            fromMaybe
+                (`Conditional.andPredicate` makeFalsePredicate)
+                (traverse normalizeInternalMap conditionalInternalMap)
+    return (Domain.BuiltinMap <$> normalizedInternalMap)
