@@ -311,6 +311,9 @@ unitList = mkApplySymbol unitListSymbol []
 elementList :: TermLike Variable -> TermLike Variable
 elementList x = mkApplySymbol elementListSymbol [x]
 
+concatList :: TermLike Variable -> TermLike Variable -> TermLike Variable
+concatList x y = mkApplySymbol concatListSymbol [x, y]
+
 sizeList :: TermLike Variable -> TermLike Variable
 sizeList l = mkApplySymbol sizeListSymbol [l]
 
