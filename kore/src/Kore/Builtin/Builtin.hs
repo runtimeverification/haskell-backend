@@ -865,9 +865,9 @@ Returns Just False if the sort is a variable.
 -}
 isSort :: Text -> SmtMetadataTools attr -> Sort -> Maybe Bool
 isSort builtinName tools sort
-  | isPredicateSort = Nothing
-  | otherwise =
-    Just (getHook hook == Just builtinName)
+  | isPredicateSort            = Nothing
+  | SortVariableSort _ <- sort = Nothing
+  | otherwise                  = Just (getHook hook == Just builtinName)
   where
     MetadataTools {sortAttributes} = tools
     Attribute.Sort {hook} = sortAttributes sort
