@@ -1,5 +1,6 @@
 module Test.Kore.Step.Simplification.Ceil
     ( test_ceilSimplification
+    , makeEvaluate
     ) where
 
 import Test.Tasty

@@ -13,6 +13,8 @@ module Kore.Step.Axiom.EvaluationStrategy
     , totalDefinitionEvaluation
     , firstFullEvaluation
     , simplifierWithFallback
+    , evaluatedChildOfApplication
+    , introduceDefinedness
     ) where
 
 import qualified Control.Monad as Monad
@@ -314,7 +316,7 @@ evaluateWithDefinitionAxioms
     _axiomSimplifiers
     patt
   =
-    evaluatedChildOfApplication >>= \evalChild ->
+    evaluatedChildOfApplication patt >>= \evalChild ->
         AttemptedAxiom.maybeNotApplicable $ do
         let
             -- TODO (thomas.tuegel): Figure out how to get the initial conditions
@@ -354,22 +356,35 @@ evaluateWithDefinitionAxioms
 
     unificationProcedure = UnificationProcedure unificationWithAppMatchOnTop
 
-    introduceDefinedness
-        :: Pattern variable
-        -> Pattern variable
-        -> Pattern variable
-    introduceDefinedness cond result =
-        Pattern.fromTermLike
-        $ mkAnd
-            (Pattern.toTermLike result)
-            (Pattern.toTermLike cond)
+introduceDefinedness
+    :: forall variable
+    .  SortedVariable variable
+    => FreshVariable variable
+    => Unparse variable
+    => Show variable
+    => Pattern variable
+    -> Pattern variable
+    -> Pattern variable
+introduceDefinedness cond result =
+    Pattern.fromTermLike
+    $ mkAnd
+        (Pattern.toTermLike result)
+        (Pattern.toTermLike cond)
 
-    evaluatedChildOfApplication
-        :: simplifier (Pattern variable)
-    evaluatedChildOfApplication =
-        case patt of
-            App_ _ children -> do
-                ceil <-
-                    traverse (Ceil.makeEvaluate . Pattern.fromTermLike) children
-                pure . OrPattern.toPattern . MultiOr.mergeAll $ ceil
-            _ -> pure $ Pattern.topOf (termLikeSort patt)
+evaluatedChildOfApplication
+    :: forall variable simplifier
+    .   ( FreshVariable variable
+        , SortedVariable variable
+        , Show variable
+        , Unparse variable
+        , MonadSimplify simplifier
+        )
+    => TermLike variable
+    -> simplifier (Pattern variable)
+evaluatedChildOfApplication patt =
+    case patt of
+        App_ _ children -> do
+            ceil <-
+                traverse (Ceil.makeEvaluate . Pattern.fromTermLike) children
+            pure . OrPattern.toPattern . MultiOr.mergeAll $ ceil
+        _ -> pure $ Pattern.topOf (termLikeSort patt)
