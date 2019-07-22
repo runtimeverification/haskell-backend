@@ -302,8 +302,14 @@ getListSymbol :: Internal.Symbol
 getListSymbol =
     builtinSymbol "getList" intSort [listSort, intSort] & hook "LIST.get"
 
+sizeListSymbol :: Internal.Symbol
+sizeListSymbol = builtinSymbol "sizeList" intSort [listSort] & hook "LIST.size"
+
 unitList :: TermLike Variable
 unitList = mkApplySymbol unitListSymbol []
+
+sizeList :: TermLike Variable -> TermLike Variable
+sizeList l = mkApplySymbol sizeListSymbol [l]
 
 -- ** Map
 
