@@ -27,38 +27,38 @@ test_internalize =
         (mkList [])
     , internalizes  "elementList"
         (elementList zero)
-        (mkList [zero])
+        (mkList [x])
     , internalizes  "concatList(internal, internal)"
-        (concatList (mkList [zero]) (mkList [one]))
-        (mkList [zero, one])
+        (concatList (mkList [x]) (mkList [y]))
+        (mkList [x, y])
     , internalizes  "concatList(element, element)"
-        (concatList (elementList zero) (elementList one))
-        (mkList [zero, one])
+        (concatList (elementList x) (elementList y))
+        (mkList [x, y])
     , internalizes  "concatList(element, unit)"
-        (concatList (elementList zero) unitList)
-        (mkList [zero])
+        (concatList (elementList x) unitList)
+        (mkList [x])
     , internalizes  "concatList(unit, element)"
-        (concatList unitList (elementList one))
-        (mkList [one])
+        (concatList unitList (elementList y))
+        (mkList [y])
 
     , internalizes  "unitMap"
         unitMap
         (mkMap [])
     , internalizes  "elementMap"
-        (elementMap zero one)
-        (mkMap [(zero, one)])
+        (elementMap zero x)
+        (mkMap [(zero, x)])
     , internalizes  "concatMap(internal, internal)"
-        (concatMap (mkMap [(zero, one)]) (mkMap [(one, two)]))
-        (mkMap [(zero, one), (one, two)])
+        (concatMap (mkMap [(zero, x)]) (mkMap [(one, y)]))
+        (mkMap [(zero, x), (one, y)])
     , internalizes  "concatMap(element, element)"
-        (concatMap (elementMap zero one) (elementMap one two))
-        (mkMap [(zero, one), (one, two)])
+        (concatMap (elementMap zero x) (elementMap one y))
+        (mkMap [(zero, x), (one, y)])
     , internalizes  "concatMap(element, unit)"
-        (concatMap (elementMap zero one) unitMap)
-        (mkMap [(zero, one)])
+        (concatMap (elementMap zero x) unitMap)
+        (mkMap [(zero, x)])
     , internalizes  "concatMap(unit, element)"
-        (concatMap unitMap (elementMap one two))
-        (mkMap [(one, two)])
+        (concatMap unitMap (elementMap one y))
+        (mkMap [(one, y)])
     ]
   where
     unitList = Builtin.unitList
@@ -72,10 +72,12 @@ test_internalize =
 
     mkInt :: Ord variable => Integer -> TermLike variable
     mkInt = Int.asInternal
-    zero, one, two :: Ord variable => TermLike variable
+    intSort = Builtin.intSort
+    zero, one :: Ord variable => TermLike variable
     zero = mkInt 0
     one = mkInt 1
-    two = mkInt 2
+    x = mkVar (varS "x" intSort)
+    y = mkVar (varS "y" intSort)
 
 withInternalized
     :: (TermLike Variable -> Assertion)
