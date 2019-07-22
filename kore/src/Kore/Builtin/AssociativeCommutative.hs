@@ -226,7 +226,14 @@ instance TermWrapper Domain.NormalizedSet Domain.NoValue where
             _ -> Builtin.wrongArity "SET.unit"
       | Set.isSymbolElement symbol =
         case args of
-            [elem1] ->
+            [elem1]
+              | Just elem1' <- Builtin.toKey elem1 ->
+                Normalized Domain.NormalizedAc
+                    { elementsWithVariables = []
+                    , concreteElements = Map.singleton elem1' Domain.NoValue
+                    , opaque = []
+                    }
+              | otherwise ->
                 Normalized Domain.NormalizedAc
                     { elementsWithVariables = [(elem1, Domain.NoValue)]
                     , concreteElements = Map.empty
