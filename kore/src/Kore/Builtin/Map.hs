@@ -41,6 +41,8 @@ import qualified Data.Text as Text
 
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.AssociativeCommutative as Ac
+import           Kore.Builtin.Attributes
+                 ( isConstructorModulo_ )
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.Builtin.Builtin
                  ( acceptAnySort )
@@ -474,7 +476,11 @@ internalize
     -> TermLike variable
     -> TermLike variable
 internalize tools termLike
-  | fromMaybe False (isMapSort tools sort') =
+  | fromMaybe False (isMapSort tools sort')
+  -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
+  -- apply it if we know the term head is a constructor-like symbol.
+  , App_ symbol _ <- termLike
+  , isConstructorModulo_ symbol =
     case Ac.toNormalized @Domain.NormalizedMap tools termLike of
         Ac.Bottom                    -> TermLike.mkBottom sort'
         Ac.Normalized termNormalized -> Ac.asInternal tools sort' termNormalized
