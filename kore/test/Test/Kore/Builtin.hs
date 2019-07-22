@@ -88,6 +88,8 @@ test_internalize =
         (concatSet unitSet (elementSet one))
         (mkSet [one])
     , notInternalizes "s:Set" s
+    , internalizes "concatSet(s:Set, unit)" (concatSet s unitSet) s
+    , internalizes "concatSet(unit, s:Set)" (concatSet unitSet s) s
     ]
   where
     listSort = Builtin.listSort
