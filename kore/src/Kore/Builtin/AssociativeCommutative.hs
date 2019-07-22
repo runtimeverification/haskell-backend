@@ -165,7 +165,14 @@ instance TermWrapper Domain.NormalizedMap Domain.Value where
             _ -> Builtin.wrongArity "MAP.unit"
       | Map.isSymbolElement symbol =
         case args of
-            [key, value] ->
+            [key, value]
+              | Just key' <- Builtin.toKey key ->
+                Normalized Domain.NormalizedAc
+                    { elementsWithVariables = []
+                    , concreteElements = Map.singleton key' (Domain.Value value)
+                    , opaque = []
+                    }
+              | otherwise ->
                 Normalized Domain.NormalizedAc
                     { elementsWithVariables = [(key, Domain.Value value)]
                     , concreteElements = Map.empty
