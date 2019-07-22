@@ -483,7 +483,15 @@ internalize tools termLike
   , isConstructorModulo_ symbol =
     case Ac.toNormalized @Domain.NormalizedMap tools termLike of
         Ac.Bottom                    -> TermLike.mkBottom sort'
-        Ac.Normalized termNormalized -> Ac.asInternal tools sort' termNormalized
+        Ac.Normalized termNormalized
+          | null (Domain.elementsWithVariables termNormalized)
+          , null (Domain.concreteElements termNormalized)
+          , [singleOpaqueTerm] <- Domain.opaque termNormalized
+          ->
+            -- When the 'normalized' term consists of a single opaque Map-sorted
+            -- term, we should prefer to return only that term.
+            singleOpaqueTerm
+          | otherwise -> Ac.asInternal tools sort' termNormalized
   | otherwise = termLike
   where
     sort' = termLikeSort termLike
