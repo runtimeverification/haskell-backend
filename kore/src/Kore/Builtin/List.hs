@@ -25,6 +25,7 @@ module Kore.Builtin.List
     , asPattern
     , asInternal
     , asTermLike
+    , internalize
       -- * Symbols
     , lookupSymbolGet
     , isSymbolConcat
@@ -43,6 +44,7 @@ import           Control.Applicative
 import           Control.Error
                  ( MaybeT )
 import qualified Control.Monad.Trans as Monad.Trans
+import qualified Data.Function as Function
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
                  ( Map )
@@ -341,6 +343,20 @@ asPattern resultSort =
   where
     tools :: SmtMetadataTools Attribute.Symbol
     tools = Reflection.given
+
+internalize
+    :: (Ord variable, SortedVariable variable)
+    => SmtMetadataTools Attribute.Symbol
+    -> TermLike variable
+    -> TermLike variable
+internalize tools termLike@(App_ symbol args)
+  | isSymbolUnit    symbol , [ ] <- args = asInternal' (Seq.fromList args)
+  | isSymbolElement symbol , [_] <- args = asInternal' (Seq.fromList args)
+  | isSymbolConcat  symbol , [BuiltinList_ list1, BuiltinList_ list2] <- args =
+    asInternal' (Function.on (<>) Domain.builtinListChild list1 list2)
+  where
+    asInternal' = asInternal tools (termLikeSort termLike)
+internalize _ termLike = termLike
 
 {- | Find the symbol hooked to @LIST.get@ in an indexed module.
  -}
