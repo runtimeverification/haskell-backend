@@ -5,6 +5,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Map
+import qualified Data.Set
 import qualified GHC.Stack as GHC
 import           Prelude hiding
                  ( concatMap )
@@ -20,6 +21,7 @@ import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.List as List
 import qualified Test.Kore.Builtin.Map as Map
+import qualified Test.Kore.Builtin.Set as Set
 
 test_internalize :: [TestTree]
 test_internalize =
@@ -60,16 +62,41 @@ test_internalize =
     , internalizes  "concatMap(unit, element)"
         (concatMap unitMap (elementMap one y))
         (mkMap [(one, y)])
+
+    , internalizes  "unitSet"
+        unitSet
+        (mkSet [])
+    , internalizes  "elementSet"
+        (elementSet zero)
+        (mkSet [zero])
+    , internalizes  "concatSet(internal, internal)"
+        (concatSet (mkSet [zero]) (mkSet [one]))
+        (mkSet [zero, one])
+    , internalizes  "concatSet(element, element)"
+        (concatSet (elementSet zero) (elementSet one))
+        (mkSet [zero, one])
+    , internalizes  "concatSet(element, unit)"
+        (concatSet (elementSet zero) unitSet)
+        (mkSet [zero])
+    , internalizes  "concatSet(unit, element)"
+        (concatSet unitSet (elementSet one))
+        (mkSet [one])
     ]
   where
     unitList = Builtin.unitList
     elementList = Builtin.elementList
     concatList = Builtin.concatList
     mkList = List.asInternal
+
     unitMap = Builtin.unitMap
     elementMap = Builtin.elementMap
     concatMap = Builtin.concatMap
     mkMap = Map.asInternal . Data.Map.fromList
+
+    unitSet = Builtin.unitSet
+    elementSet = Builtin.elementSet
+    concatSet = Builtin.concatSet
+    mkSet = Set.asInternal . Data.Set.fromList
 
     mkInt :: Ord variable => Integer -> TermLike variable
     mkInt = Int.asInternal
