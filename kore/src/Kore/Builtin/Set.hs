@@ -22,6 +22,7 @@ module Kore.Builtin.Set
     , Domain.Builtin
     , returnConcreteSet
     , asTermLike
+    , internalize
     , expectBuiltinSet
     , expectConcreteBuiltinSet
       -- * Unification
@@ -439,6 +440,27 @@ asTermLike builtin =
         :: (TermLike variable, Domain.NoValue (TermLike variable))
         -> TermLike variable
     element (key, Domain.NoValue) = mkApplySymbol elementSymbol [key]
+
+{- | Convert a Set-sorted 'TermLike' to its internal representation.
+
+The 'TermLike' is unmodified if it is not Set-sorted. @internalize@ only
+operates at the top-most level, it does not descend into the 'TermLike' to
+internalize subterms.
+
+ -}
+internalize
+    :: (Ord variable, SortedVariable variable)
+    => SmtMetadataTools Attribute.Symbol
+    -> TermLike variable
+    -> TermLike variable
+internalize tools termLike
+  | fromMaybe False (isSetSort tools sort') =
+    case Ac.toNormalized @Domain.NormalizedSet tools termLike of
+        Ac.Bottom                    -> TermLike.mkBottom sort'
+        Ac.Normalized termNormalized -> Ac.asInternal tools sort' termNormalized
+  | otherwise = termLike
+  where
+    sort' = termLikeSort termLike
 
 {- | Simplify the conjunction or equality of two concrete Set domain values.
 
