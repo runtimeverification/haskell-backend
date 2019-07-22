@@ -43,6 +43,7 @@ test_internalize =
     , internalizes  "concatList(unit, element)"
         (concatList unitList (elementList y))
         (mkList [y])
+    , notInternalizes "l:List" (mkVar (varS "l" listSort))
 
     , internalizes  "unitMap"
         unitMap
@@ -62,6 +63,7 @@ test_internalize =
     , internalizes  "concatMap(unit, element)"
         (concatMap unitMap (elementMap one y))
         (mkMap [(one, y)])
+    , notInternalizes "m:Map" (mkVar (varS "m" mapSort))
 
     , internalizes  "unitSet"
         unitSet
@@ -81,18 +83,22 @@ test_internalize =
     , internalizes  "concatSet(unit, element)"
         (concatSet unitSet (elementSet one))
         (mkSet [one])
+    , notInternalizes "s:Set" (mkVar (varS "s" setSort))
     ]
   where
+    listSort = Builtin.listSort
     unitList = Builtin.unitList
     elementList = Builtin.elementList
     concatList = Builtin.concatList
     mkList = List.asInternal
 
+    mapSort = Builtin.mapSort
     unitMap = Builtin.unitMap
     elementMap = Builtin.elementMap
     concatMap = Builtin.concatMap
     mkMap = Map.asInternal . Data.Map.fromList
 
+    setSort = Builtin.setSort
     unitSet = Builtin.unitSet
     elementSet = Builtin.elementSet
     concatSet = Builtin.concatSet
@@ -124,6 +130,14 @@ internalizes
     -> TestTree
 internalizes name origin expect =
     withInternalized (assertEqual "" expect) name origin
+
+notInternalizes
+    :: GHC.HasCallStack
+    => TestName
+    -> TermLike Variable
+    -> TestTree
+notInternalizes name origin =
+    withInternalized (assertEqual "" origin) name origin
 
 metadata :: SmtMetadataTools Attribute.Symbol
 metadata = Builtin.testMetadataTools
