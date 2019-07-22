@@ -854,10 +854,9 @@ lookupSymbolConcat tools builtinSort =
  -}
 isSymbol
     :: Text  -- ^ Builtin symbol
-    -> SmtMetadataTools Hook
     -> Symbol  -- ^ Kore symbol
     -> Bool
-isSymbol builtinName _ Symbol { symbolAttributes = Attribute.Symbol { hook } } =
+isSymbol builtinName Symbol { symbolAttributes = Attribute.Symbol { hook } } =
     getHook hook == Just builtinName
 
 {- | Is the given sort hooked to the named builtin?

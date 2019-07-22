@@ -59,8 +59,6 @@ import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
 
-import           Kore.Attribute.Hook
-                 ( Hook )
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Builtin.Builtin
                  ( acceptAnySort )
@@ -354,26 +352,17 @@ lookupSymbolGet = Builtin.lookupSymbol getKey
 
 {- | Check if the given symbol is hooked to @LIST.concat@.
 -}
-isSymbolConcat
-    :: SmtMetadataTools Hook
-    -> Symbol
-    -> Bool
+isSymbolConcat :: Symbol -> Bool
 isSymbolConcat = Builtin.isSymbol concatKey
 
 {- | Check if the given symbol is hooked to @LIST.element@.
 -}
-isSymbolElement
-    :: SmtMetadataTools Hook
-    -> Symbol
-    -> Bool
+isSymbolElement :: Symbol -> Bool
 isSymbolElement = Builtin.isSymbol elementKey
 
 {- | Check if the given symbol is hooked to @LIST.unit@.
 -}
-isSymbolUnit
-    :: SmtMetadataTools Hook
-    -> Symbol
-    -> Bool
+isSymbolUnit :: Symbol -> Bool
 isSymbolUnit = Builtin.isSymbol unitKey
 
 {- | Simplify the conjunction or equality of two concrete List domain values.
@@ -410,8 +399,6 @@ unifyEquals
   =
     unifyEquals0 first second
   where
-    hookTools = Attribute.hook <$> tools
-
     propagatePredicates
         :: Traversable t
         => t (Conditional variable a)
@@ -437,7 +424,7 @@ unifyEquals
                     , "This should have been a sort error."
                     ]
             app@(App_ symbol2 args2)
-              | isSymbolConcat hookTools symbol2 ->
+              | isSymbolConcat symbol2 ->
                 Monad.Trans.lift $ case args2 of
                     [ Builtin_ (Domain.BuiltinList builtin2), x@(Var_ _) ] ->
                         unifyEqualsFramedRight builtin1 builtin2 x

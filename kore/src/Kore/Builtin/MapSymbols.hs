@@ -40,8 +40,6 @@ module Kore.Builtin.MapSymbols
 
 import           Data.String
                  ( IsString )
-import           Kore.Attribute.Hook
-                 ( Hook )
 import qualified Kore.Attribute.Symbol as Attribute
                  ( Symbol )
 import qualified Kore.Builtin.Builtin as Builtin
@@ -49,8 +47,6 @@ import qualified Kore.Error as Kore
                  ( Error )
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.Symbol
                  ( Symbol )
 import           Kore.Sort
@@ -133,40 +129,25 @@ lookupSymbolRemoveAll = Builtin.lookupSymbol removeAllKey
 
 {- | Check if the given symbol is hooked to @MAP.concat@.
  -}
-isSymbolConcat
-    :: SmtMetadataTools Hook
-    -> Symbol
-    -> Bool
+isSymbolConcat :: Symbol -> Bool
 isSymbolConcat = Builtin.isSymbol concatKey
 
 {- | Check if the given symbol is hooked to @MAP.element@.
  -}
-isSymbolElement
-    :: SmtMetadataTools Hook
-    -> Symbol
-    -> Bool
+isSymbolElement :: Symbol -> Bool
 isSymbolElement = Builtin.isSymbol elementKey
 
 {- | Check if the given symbol is hooked to @MAP.unit@.
 -}
-isSymbolUnit
-    :: SmtMetadataTools Hook
-    -> Symbol
-    -> Bool
+isSymbolUnit :: Symbol -> Bool
 isSymbolUnit = Builtin.isSymbol unitKey
 
 {- | Check if the given symbol is hooked to @MAP.remove@.
 -}
-isSymbolRemove
-    :: SmtMetadataTools Hook
-    -> Symbol
-    -> Bool
+isSymbolRemove :: Symbol -> Bool
 isSymbolRemove = Builtin.isSymbol removeKey
 
 {- | Check if the given symbol is hooked to @MAP.removeAll@.
 -}
-isSymbolRemoveAll
-    :: SmtMetadataTools Hook
-    -> Symbol
-    -> Bool
+isSymbolRemoveAll :: Symbol -> Bool
 isSymbolRemoveAll = Builtin.isSymbol removeAllKey
