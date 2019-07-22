@@ -153,15 +153,20 @@ test_simplificationIntegration =
         assertEqualWithExplanation "" expect actual
     , testCase "map function, non-matching" $ do
         let
-            expect = OrPattern.fromPatterns
-                [ Conditional
-                    { term =
-                        mkEvaluated
-                        $ Mock.function20MapTest (Mock.builtinMap []) Mock.a
+            result =
+                Conditional
+                    { term = Mock.function20MapTest (Mock.builtinMap []) Mock.a
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-                ]
+            resultAndTop =
+                Pattern.fromTermLike
+                . mkEvaluated
+                $ mkAnd
+                    (Pattern.toTermLike result)
+                    (mkTop $ (termLikeSort . term) result)
+            expect = OrPattern.fromPatterns
+                [ resultAndTop ]
         actual <-
             evaluateWithAxioms
                 (axiomPatternsToEvaluators
