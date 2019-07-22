@@ -66,6 +66,8 @@ test_internalize =
         (concatMap unitMap (elementMap one y))
         (mkMap [(one, y)])
     , notInternalizes "m:Map" m
+    , internalizes "concatMap(m:Map, unit)" (concatMap m unitMap) m
+    , internalizes "concatMap(unit, m:Map)" (concatMap unitMap m) m
 
     , internalizes  "unitSet"
         unitSet
