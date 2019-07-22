@@ -32,11 +32,9 @@ import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
-import qualified Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
-import qualified Kore.Step.Simplification.Rule as Rule
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -187,33 +185,6 @@ test_simplificationIntegration =
                     )
                 )
                 initial
-        assertEqualWithExplanation "" expect actual
-    , testCase "map function, matching" $ do
-        let
-            expect = OrPattern.fromPattern $ Pattern.fromTermLike Mock.c
-            rule =
-                Rule.rulePattern
-                    (Mock.function20MapTest
-                        (Mock.concatMap
-                            (Mock.elementMap (mkVar Mock.x) (mkVar Mock.y))
-                            (mkVar Mock.m)
-                        )
-                        (mkVar Mock.x)
-                    )
-                    (mkVar Mock.y)
-        rule' <- simplifyRulePattern rule
-        let function20MapTestEvaluators =
-                ( AxiomIdentifier.Application Mock.function20MapTestId
-                , [ EqualityRule rule' ]
-                )
-            evaluateFunction20MapTest =
-                evaluateWithAxioms
-                $ axiomPatternsToEvaluators
-                $ Map.fromList [ function20MapTestEvaluators ]
-        actual <-
-            evaluateFunction20MapTest
-            $ Pattern.fromTermLike
-            $ Mock.function20MapTest (Mock.builtinMap [(Mock.a, Mock.c)]) Mock.a
         assertEqualWithExplanation "" expect actual
     , testCase "exists variable equality" $ do
         let
@@ -465,12 +436,3 @@ builtinAxioms =
             , builtinEvaluation Map.evalElement
             )
         ]
-
--- | Simplify a 'RulePattern' using 'builtinAxioms'.
-simplifyRulePattern :: RulePattern Variable -> IO (RulePattern Variable)
-simplifyRulePattern =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    . evalSimplifier env
-    . Rule.simplifyRulePattern
-  where
-    env = Mock.env { simplifierAxioms = builtinAxioms }
