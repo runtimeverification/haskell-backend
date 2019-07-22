@@ -37,6 +37,8 @@ import           Data.Sequence
                  ( Seq )
 import           Data.Text
                  ( Text )
+import           Data.Text.Prettyprint.Doc
+                 ( (<+>) )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -296,7 +298,7 @@ unparsedChildren
 unparsedChildren elementSymbol keyUnparser childUnparser wrapped =
     (elementUnparser <$> elementsWithVariables)
     ++ (concreteElementUnparser <$> Map.toAscList concreteElements)
-    ++ (childUnparser <$> opaque)
+    ++ (child . childUnparser <$> opaque)
   where
     unwrapped :: NormalizedAc key valueWrapper child
     -- Matching needed only for getting compiler notifications when
@@ -306,14 +308,16 @@ unparsedChildren elementSymbol keyUnparser childUnparser wrapped =
     NormalizedAc {elementsWithVariables} = unwrapped
     NormalizedAc {concreteElements} = unwrapped
     NormalizedAc {opaque} = unwrapped
-    element = (<>) (unparse elementSymbol)
+    element = (<>) ("/* element: */" <+> unparse elementSymbol)
+    concreteElement = (<>) ("/* concrete element: */" <+> unparse elementSymbol)
+    child = (<+>) "/* opaque child: */"
 
     elementUnparser :: (child, valueWrapper child) -> Pretty.Doc ann
     elementUnparser = element . unparseElement keyUnparser childUnparser
 
     concreteElementUnparser :: (key, valueWrapper child) -> Pretty.Doc ann
     concreteElementUnparser =
-        element . unparseConcreteElement keyUnparser childUnparser
+        concreteElement . unparseConcreteElement keyUnparser childUnparser
 
 instance Hashable (normalized key child)
     => Hashable (InternalAc key normalized child)
