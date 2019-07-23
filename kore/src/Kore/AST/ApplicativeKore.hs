@@ -5,7 +5,6 @@ License     : NCSA
 module Kore.AST.ApplicativeKore
     ( completeDefinition ) where
 
-import           Kore.Internal.TermLike
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Syntax.Definition
                  ( Definition (..), Module (..), Sentence (..),
