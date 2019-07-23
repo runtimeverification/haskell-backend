@@ -11,6 +11,7 @@ module Kore.Attribute.Location
     , LineColumn (..)
     ) where
 
+import           Data.Maybe
 import qualified Data.Text as Text
 import           Text.Megaparsec
                  ( Parsec, parseMaybe )
@@ -58,7 +59,7 @@ instance ParseAttributes Location where
                     arg <- AttributeParser.getOneArgument args
                     StringLiteral str <- AttributeParser.getStringLiteral arg
                     pure
-                        . maybe def id
+                        . fromMaybe def
                         . parseMaybe locationParser
                         $ Text.unpack str
                 _ ->
