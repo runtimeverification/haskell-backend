@@ -45,11 +45,6 @@ import           Kore.Internal.Pattern
 import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Simplification.Data
-                 ( AttemptedAxiom (..), AttemptedAxiomResults (..),
-                 BuiltinAndAxiomSimplifierMap, applicationAxiomSimplifier,
-                 notApplicableAxiomEvaluator, purePatternAxiomEvaluator )
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify, PredicateSimplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Or as Or
 import           Kore.Syntax.Definition
                  ( SentenceSymbol (..) )
