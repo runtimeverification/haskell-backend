@@ -682,7 +682,7 @@ test_unifyConcatElemVarVsElemSet =
 
             concreteElem <- forAll genConcreteIntegerPattern
             let set = asInternal (Set.fromList [concreteElem])
-                elementSet = asInternalNormalized
+                elementSet' = asInternalNormalized
                     $ emptyNormalizedSet
                     `with` VariableElement (mkVar elementVar2)
                 patSet = addSelectElement elementVar2 set
@@ -696,7 +696,7 @@ test_unifyConcatElemVarVsElemSet =
                 expect = do  -- list monad
                     (elemUnifier, setUnifier) <-
                         [ (mkVar elementVar2, set)
-                        , (elemStepPattern, elementSet)
+                        , (elemStepPattern, elementSet')
                         ]
                     return Conditional
                         { term = expectedPatSet
@@ -1546,26 +1546,17 @@ test_concretizeKeysAxiom =
 test_isBuiltin :: [TestTree]
 test_isBuiltin =
     [ testCase "isSymbolConcat" $ do
-        assertBool ""
-            (Set.isSymbolConcat mockHookTools Mock.concatSetSymbol)
-        assertBool ""
-            (not (Set.isSymbolConcat mockHookTools Mock.aSymbol))
-        assertBool ""
-            (not (Set.isSymbolConcat mockHookTools Mock.elementSetSymbol))
+        assertBool "" (Set.isSymbolConcat Mock.concatSetSymbol)
+        assertBool "" (not (Set.isSymbolConcat Mock.aSymbol))
+        assertBool "" (not (Set.isSymbolConcat Mock.elementSetSymbol))
     , testCase "isSymbolElement" $ do
-        assertBool ""
-            (Set.isSymbolElement mockHookTools Mock.elementSetSymbol)
-        assertBool ""
-            (not (Set.isSymbolElement mockHookTools Mock.aSymbol))
-        assertBool ""
-            (not (Set.isSymbolElement mockHookTools Mock.concatSetSymbol))
+        assertBool "" (Set.isSymbolElement Mock.elementSetSymbol)
+        assertBool "" (not (Set.isSymbolElement Mock.aSymbol))
+        assertBool "" (not (Set.isSymbolElement Mock.concatSetSymbol))
     , testCase "isSymbolUnit" $ do
-        assertBool ""
-            (Set.isSymbolUnit mockHookTools Mock.unitSetSymbol)
-        assertBool ""
-            (not (Set.isSymbolUnit mockHookTools Mock.aSymbol))
-        assertBool ""
-            (not (Set.isSymbolUnit mockHookTools Mock.concatSetSymbol))
+        assertBool "" (Set.isSymbolUnit Mock.unitSetSymbol)
+        assertBool "" (not (Set.isSymbolUnit Mock.aSymbol))
+        assertBool "" (not (Set.isSymbolUnit Mock.concatSetSymbol))
     ]
 
 hprop_unparse :: Property

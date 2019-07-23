@@ -17,37 +17,23 @@ module Kore.Builtin.Attributes
     , isConstructorModuloLike_
     ) where
 
-import Data.Reflection
-       ( Given, given )
-
-import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.MapSymbols as Map
 import qualified Kore.Builtin.SetSymbols as Set
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
 import           Kore.Internal.Symbol
 
 -- | Is the symbol a constructor modulo associativity, commutativity and
 -- neutral element?
-isConstructorModulo_
-    :: Given (SmtMetadataTools Attribute.Symbol)
-    => Symbol
-    -> Bool
+isConstructorModulo_ :: Symbol -> Bool
 isConstructorModulo_ symbol =
-    any (apply given symbol)
+    any (apply symbol)
         [ List.isSymbolConcat, List.isSymbolElement, List.isSymbolUnit
         ,  Map.isSymbolConcat,  Map.isSymbolElement,  Map.isSymbolUnit
         ,  Set.isSymbolConcat,  Set.isSymbolElement,  Set.isSymbolUnit
         ]
   where
-    apply tools pattHead f = f (Attribute.hook <$> tools) pattHead
+    apply pattHead f = f pattHead
 
-isConstructorModuloLike_
-    :: Given (SmtMetadataTools Attribute.Symbol)
-    => Symbol
-    -> Bool
-isConstructorModuloLike_ appHead =
-    isConstructorModulo_ appHead
-        || isConstructor appHead
-        || isSortInjection appHead
+isConstructorModuloLike_ :: Symbol -> Bool
+isConstructorModuloLike_ =
+    or <$> sequence [isConstructorModulo_, isConstructor, isSortInjection]

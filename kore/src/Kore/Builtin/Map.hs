@@ -18,6 +18,7 @@ module Kore.Builtin.Map
     , symbolVerifiers
     , builtinFunctions
     , asTermLike
+    , internalize
     -- * Unification
     , unifyEquals
     -- * Raw evaluators
@@ -28,7 +29,7 @@ module Kore.Builtin.Map
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
-                 ( MaybeT (MaybeT), fromMaybe, runMaybeT )
+                 ( MaybeT (MaybeT), fromMaybe, hoistMaybe, runMaybeT )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -40,6 +41,8 @@ import qualified Data.Text as Text
 
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.AssociativeCommutative as Ac
+import           Kore.Builtin.Attributes
+                 ( isConstructorModulo_ )
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.Builtin.Builtin
                  ( acceptAnySort )
@@ -224,7 +227,7 @@ evalLookup =
                         then Builtin.appliedFunction Pattern.bottom
                         else empty
                 bothConcrete = do
-                    _key <- Builtin.expectNormalConcreteTerm _key
+                    _key <- hoistMaybe $ Builtin.toKey _key
                     _map <- expectConcreteBuiltinMap Map.lookupKey _map
                     Builtin.appliedFunction
                         $ maybeBottom
@@ -305,7 +308,7 @@ evalUpdate =
                     case arguments of
                         [_map, _key, value'] -> (_map, _key, value')
                         _ -> Builtin.wrongArity Map.updateKey
-            _key <- Builtin.expectNormalConcreteTerm _key
+            _key <- hoistMaybe $ Builtin.toKey _key
             _map <- expectConcreteBuiltinMap Map.updateKey _map
             returnConcreteMap
                 resultSort
@@ -321,7 +324,7 @@ evalInKeys =
                     case arguments of
                         [_key, _map] -> (_key, _map)
                         _ -> Builtin.wrongArity Map.in_keysKey
-            _key <- Builtin.expectNormalConcreteTerm _key
+            _key <- hoistMaybe $ Builtin.toKey _key
             _map <- expectConcreteBuiltinMap Map.in_keysKey _map
             Builtin.appliedFunction
                 $ Bool.asPattern resultSort
@@ -360,7 +363,7 @@ evalRemove =
                         else empty
                 bothConcrete = do
                     _map <- expectConcreteBuiltinMap Map.removeKey _map
-                    _key <- Builtin.expectNormalConcreteTerm _key
+                    _key <- hoistMaybe $ Builtin.toKey _key
                     returnConcreteMap resultSort $ Map.delete _key _map
             emptyMap <|> bothConcrete
 
@@ -461,6 +464,39 @@ asTermLike builtin =
         -> TermLike variable
     element (key, Domain.MapValue value) =
         mkApplySymbol elementSymbol [key, value]
+
+{- | Convert a Map-sorted 'TermLike' to its internal representation.
+
+The 'TermLike' is unmodified if it is not Map-sorted. @internalize@ only
+operates at the top-most level, it does not descend into the 'TermLike' to
+internalize subterms.
+
+ -}
+internalize
+    :: (Ord variable, SortedVariable variable)
+    => SmtMetadataTools Attribute.Symbol
+    -> TermLike variable
+    -> TermLike variable
+internalize tools termLike
+  | fromMaybe False (isMapSort tools sort')
+  -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
+  -- apply it if we know the term head is a constructor-like symbol.
+  , App_ symbol _ <- termLike
+  , isConstructorModulo_ symbol =
+    case Ac.toNormalized @Domain.NormalizedMap tools termLike of
+        Ac.Bottom                    -> TermLike.mkBottom sort'
+        Ac.Normalized termNormalized
+          | null (Domain.elementsWithVariables termNormalized)
+          , null (Domain.concreteElements termNormalized)
+          , [singleOpaqueTerm] <- Domain.opaque termNormalized
+          ->
+            -- When the 'normalized' term consists of a single opaque Map-sorted
+            -- term, we should prefer to return only that term.
+            singleOpaqueTerm
+          | otherwise -> Ac.asInternal tools sort' termNormalized
+  | otherwise = termLike
+  where
+    sort' = termLikeSort termLike
 
 {- | Simplify the conjunction or equality of two concrete Map domain values.
 

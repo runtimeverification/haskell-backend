@@ -49,6 +49,8 @@ import           Data.Sequence
                  ( Seq )
 import           Data.Text
                  ( Text )
+import           Data.Text.Prettyprint.Doc
+                 ( (<+>) )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -62,24 +64,23 @@ import Kore.Unparser
 
 -- * Helpers
 
-{- | Unparse a builtin collection type, given its symbols and children.
+{- | Unparse a concatenation of elements, given the @unit@ and @concat@ symbols.
 
-The children are already unparsed.
+The children are already unparsed. If they are @element@s of the collection,
+they are wrapped by the @element@ symbol.
 
  -}
-unparseCollection
+unparseConcat
     :: Symbol  -- ^ unit symbol
-    -> Symbol  -- ^ element symbol
     -> Symbol  -- ^ concat symbol
     -> [Pretty.Doc ann]      -- ^ children
     -> Pretty.Doc ann
-unparseCollection unitSymbol elementSymbol concatSymbol =
+unparseConcat unitSymbol concatSymbol =
     \case
         [] -> applyUnit
-        xs -> foldr1 applyConcat (applyElement <$> xs)
+        xs -> foldr1 applyConcat xs
   where
     applyUnit = unparse unitSymbol <> noArguments
-    applyElement elem' = unparse elementSymbol <> elem'
     applyConcat set1 set2 = unparse concatSymbol <> arguments' [set1, set2]
 
 -- * Builtin List
@@ -112,24 +113,24 @@ instance NFData child => NFData (InternalList child)
 
 instance Unparse child => Unparse (InternalList child) where
     unparse builtinList =
-        unparseCollection
+        unparseConcat
             builtinListUnit
-            builtinListElement
             builtinListConcat
-            (argument' . unparse <$> Foldable.toList builtinListChild)
+            (element <$> Foldable.toList builtinListChild)
       where
+        element x = unparse builtinListElement <> arguments [x]
         InternalList { builtinListChild } = builtinList
         InternalList { builtinListUnit } = builtinList
         InternalList { builtinListElement } = builtinList
         InternalList { builtinListConcat } = builtinList
 
     unparse2 builtinList =
-        unparseCollection
+        unparseConcat
             builtinListUnit
-            builtinListElement
             builtinListConcat
-            (argument' . unparse2 <$> Foldable.toList builtinListChild)
+            (element <$> Foldable.toList builtinListChild)
       where
+        element x = unparse2 builtinListElement <> arguments2 [x]
         InternalList { builtinListChild } = builtinList
         InternalList { builtinListUnit } = builtinList
         InternalList { builtinListElement } = builtinList
@@ -280,14 +281,15 @@ wrapElement = Lens.review elementIso
 unparsedChildren
     :: forall ann child key normalized
     .  (AcWrapper normalized)
-    => (key -> Pretty.Doc ann)
+    => Symbol
+    -> (key -> Pretty.Doc ann)
     -> (child -> Pretty.Doc ann)
     -> normalized key child
     -> [Pretty.Doc ann]
-unparsedChildren keyUnparser childUnparser wrapped =
+unparsedChildren elementSymbol keyUnparser childUnparser wrapped =
     (elementUnparser <$> elementsWithVariables)
     ++ (concreteElementUnparser <$> Map.toAscList concreteElements)
-    ++ (argument' . childUnparser <$> opaque)
+    ++ (child . childUnparser <$> opaque)
   where
     unwrapped :: NormalizedAc normalized key child
     -- Matching needed only for getting compiler notifications when
@@ -297,12 +299,16 @@ unparsedChildren keyUnparser childUnparser wrapped =
     NormalizedAc {elementsWithVariables} = unwrapped
     NormalizedAc {concreteElements} = unwrapped
     NormalizedAc {opaque} = unwrapped
+    element = (<>) ("/* element: */" <+> unparse elementSymbol)
+    concreteElement = (<>) ("/* concrete element: */" <+> unparse elementSymbol)
+    child = (<+>) "/* opaque child: */"
 
     elementUnparser :: Element normalized child -> Pretty.Doc ann
-    elementUnparser = unparseElement childUnparser
+    elementUnparser = element . unparseElement childUnparser
 
     concreteElementUnparser :: (key, Value normalized child) -> Pretty.Doc ann
-    concreteElementUnparser = unparseConcreteElement keyUnparser childUnparser
+    concreteElementUnparser =
+        concreteElement . unparseConcreteElement keyUnparser childUnparser
 
 instance Hashable (normalized key child)
     => Hashable (InternalAc key normalized child)
@@ -339,11 +345,8 @@ unparseInternalAc
     -> InternalAc key normalized child
     -> Pretty.Doc ann
 unparseInternalAc keyUnparser childUnparser builtinAc =
-    unparseCollection
-        builtinAcUnit
-        builtinAcElement
-        builtinAcConcat
-        (unparsedChildren keyUnparser childUnparser builtinAcChild)
+    unparseConcat builtinAcUnit builtinAcConcat
+    $ unparsedChildren builtinAcElement keyUnparser childUnparser builtinAcChild
   where
     InternalAc { builtinAcChild } = builtinAc
     InternalAc { builtinAcUnit } = builtinAc
