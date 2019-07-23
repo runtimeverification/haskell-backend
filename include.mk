@@ -6,7 +6,7 @@ UPSTREAM_BRANCH = origin/master
 
 BUILD_DIR = $(TOP)/.build
 K_NIGHTLY = $(BUILD_DIR)/nightly.tar.gz
-K_NIGHTLY_URL = https://github.com/kframework/k/releases/download/nightly-8ddacfb1e/nightly.tar.gz
+K_NIGHTLY_URL=
 K_DIST_DEFAULT = $(BUILD_DIR)/k
 K_DIST ?= $(K_DIST_DEFAULT)
 K_DIST_BIN = $(K_DIST)/bin
