@@ -41,12 +41,7 @@ test_normalize =
         assertEqual "Expected empty result" expect actual
         assertNormalizedPredicatesMulti actual
     , testCase "∃ y z. x = σ(y, z)" $ do
-        let expect =
-                Predicate.fromPredicate
-                $ Syntax.Predicate.makeMultipleExists [Mock.y, Mock.z]
-                $ Syntax.Predicate.makeEqualsPredicate
-                    (mkVar Mock.x)
-                    (Mock.sigma (mkVar Mock.y) (mkVar Mock.z))
+        let expect = Predicate.fromPredicate existsPredicate
         actual <- normalizeExcept expect
         assertEqualWithExplanation
             "Expected original result"
@@ -56,11 +51,7 @@ test_normalize =
     , testCase "¬∃ y z. x = σ(y, z)" $ do
         let expect =
                 Predicate.fromPredicate
-                $ Syntax.Predicate.makeNotPredicate
-                $ Syntax.Predicate.makeMultipleExists [Mock.y, Mock.z]
-                $ Syntax.Predicate.makeEqualsPredicate
-                    (mkVar Mock.x)
-                    (Mock.sigma (mkVar Mock.y) (mkVar Mock.z))
+                $ Syntax.Predicate.makeNotPredicate existsPredicate
         actual <- normalizeExcept expect
         assertEqualWithExplanation
             "Expected original result"
@@ -68,6 +59,12 @@ test_normalize =
             actual
         Foldable.traverse_ assertNormalizedPredicatesMulti actual
     ]
+  where
+    existsPredicate =
+        Syntax.Predicate.makeMultipleExists [Mock.y, Mock.z]
+        $ Syntax.Predicate.makeEqualsPredicate
+            (mkVar Mock.x)
+            (Mock.sigma (mkVar Mock.y) (mkVar Mock.z))
 
 test_mergeAndNormalizeSubstitutions :: [TestTree]
 test_mergeAndNormalizeSubstitutions =
