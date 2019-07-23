@@ -65,4 +65,4 @@ instance ParseAttributes Anywhere where
         failDuplicate' = Parser.failDuplicate anywhereId
 
     toAttributes Anywhere { isAnywhere } =
-        Attributes $ if isAnywhere then [anywhereAttribute] else []
+        Attributes [anywhereAttribute | isAnywhere]
