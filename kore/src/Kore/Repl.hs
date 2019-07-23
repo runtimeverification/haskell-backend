@@ -34,6 +34,7 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.List
                  ( findIndex )
 import qualified Data.Map.Strict as Map
+import           Data.Maybe
 import qualified Data.Sequence as Seq
 import           Kore.Attribute.RuleIndex
 import           System.IO
@@ -43,10 +44,6 @@ import           Text.Megaparsec
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Logger as Logger
-import           Kore.OnePath.Verification
-                 ( verifyClaimStep )
-import           Kore.OnePath.Verification
-                 ( Axiom, Claim, isTrusted )
 import           Kore.OnePath.Verification
 import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
@@ -59,16 +56,13 @@ import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Variable
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
-import           Kore.Unparser
-                 ( Unparse )
 
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
 -- that would otherwise be required in the proof and allows for step-by-step
 -- execution of proofs. Currently works via stdin/stdout interaction.
 runRepl
     :: forall claim m
-    .  Unparse (Variable)
-    => MonadSimplify m
+    .  MonadSimplify m
     => MonadIO m
     => MonadCatch m
     => Claim claim
@@ -112,7 +106,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
     repl0 :: ReaderT (Config claim m) (StateT (ReplState claim) m) ()
     repl0 = do
         str <- prompt
-        let command = maybe ShowUsage id $ parseMaybe commandParser str
+        let command = fromMaybe ShowUsage $ parseMaybe commandParser str
         when (shouldStore command) $ field @"commands" Lens.%= (Seq.|> str)
         void $ replInterpreter printIfNotEmpty command
 
@@ -146,7 +140,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
     firstClaimIndex :: ClaimIndex
     firstClaimIndex =
         ClaimIndex
-        . maybe (error "No claims found") id
+        . fromMaybe (error "No claims found")
         $ findIndex (not . isTrusted) claims'
 
     addIndexesToAxioms
