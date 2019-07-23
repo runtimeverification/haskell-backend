@@ -1385,8 +1385,7 @@ builtinMap child =
         , builtinAcChild = Domain.NormalizedMap Domain.NormalizedAc
             { elementsWithVariables = []
             , concreteElements =
-                Map.fromList
-                    (map (Bifunctor.second Domain.Value) child)
+                Map.fromList (Bifunctor.second Domain.MapValue <$> child)
             , opaque = []
             }
         }
@@ -1417,7 +1416,7 @@ builtinSet child =
         , builtinAcChild = Domain.NormalizedSet Domain.NormalizedAc
             { elementsWithVariables = []
             , concreteElements =
-                Map.fromList (map (\key -> (key, Domain.NoValue)) child)
+                Map.fromList (map (\key -> (key, Domain.SetValue)) child)
             , opaque = []
             }
         }

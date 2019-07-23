@@ -1079,13 +1079,24 @@ instance
         ]
     structConstructorName _ = "InternalAc"
 
-instance SumEqualWithExplanation (NoValue child)
+instance
+    (EqualWithExplanation child, Show child) =>
+    WrapperEqualWithExplanation (SetElement child)
   where
-    sumConstructorPair NoValue NoValue =
+    wrapperConstructorName _ = "SetElement"
+    wrapperField = Function.on (EqWrap "getSetElement = ") getSetElement
+
+instance (EqualWithExplanation child, Show child)
+    => EqualWithExplanation (SetElement child)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance SumEqualWithExplanation (SetValue child) where
+    sumConstructorPair SetValue SetValue =
         SumConstructorSameNoArguments
 
-instance EqualWithExplanation (NoValue child)
-  where
+instance EqualWithExplanation (SetValue child) where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
@@ -1108,15 +1119,28 @@ instance
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance (EqualWithExplanation child, Show child)
-    => SumEqualWithExplanation (Value child)
+instance
+    (EqualWithExplanation child, Show child) =>
+    WrapperEqualWithExplanation (MapElement child)
   where
-    sumConstructorPair (Value a1) (Value a2) =
-        SumConstructorSameWithArguments
-            (EqWrap "Value" a1 a2)
+    wrapperConstructorName _ = "MapElement"
+    wrapperField = Function.on (EqWrap "getMapElement = ") getMapElement
 
 instance (EqualWithExplanation child, Show child)
-    => EqualWithExplanation (Value child)
+    => EqualWithExplanation (MapElement child)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance (EqualWithExplanation child, Show child)
+    => SumEqualWithExplanation (MapValue child)
+  where
+    sumConstructorPair (MapValue a1) (MapValue a2) =
+        SumConstructorSameWithArguments
+            (EqWrap "MapValue" a1 a2)
+
+instance (EqualWithExplanation child, Show child)
+    => EqualWithExplanation (MapValue child)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
@@ -1142,20 +1166,26 @@ instance
 
 instance
     ( EqualWithExplanation key, Show key
-    , EqualWithExplanation (valueWrapper child), Show (valueWrapper child)
     , EqualWithExplanation child, Show child
+    , EqualWithExplanation (Element collection child)
+    , Show (Element collection child)
+    , EqualWithExplanation (Value collection child)
+    , Show (Value collection child)
     ) =>
-    EqualWithExplanation (NormalizedAc key valueWrapper child)
+    EqualWithExplanation (NormalizedAc collection key child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance
     ( EqualWithExplanation key, Show key
-    , EqualWithExplanation (valueWrapper child), Show (valueWrapper child)
     , EqualWithExplanation child, Show child
+    , EqualWithExplanation (Element collection child)
+    , Show (Element collection child)
+    , EqualWithExplanation (Value collection child)
+    , Show (Value collection child)
     ) =>
-    StructEqualWithExplanation (NormalizedAc key valueWrapper child)
+    StructEqualWithExplanation (NormalizedAc collection key child)
   where
     structFieldsWithNames expect actual@(NormalizedAc _ _ _) =
         [ Function.on
