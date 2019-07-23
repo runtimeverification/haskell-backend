@@ -48,8 +48,7 @@ module Kore.Parser.Lexeme
     , illegalSurrogate
     ) where
 
-import           Control.Monad
-                 ( void, when )
+import qualified Control.Monad as Monad
 import           Control.Monad.Combinators
                  ( manyTill, (<|>) )
 import qualified Data.ByteString.Char8 as Char8
@@ -134,8 +133,9 @@ lexeme = L.lexeme skipWhitespace
 skipWhitespace ::  Parser ()
 skipWhitespace = L.space Parser.space1 (L.skipLineComment "//") blockComment
   where
-    blockComment =
-        Parser.string "/*" >> void (manyTill commentBody (Parser.string "*/"))
+    blockComment = do
+        Monad.void (Parser.string "/*")
+        Monad.void (manyTill commentBody (Parser.string "*/"))
     commentBody = anySingle <|> (eof >> fail "Unfinished comment.")
 
 koreKeywordsSet :: HashSet Char8.ByteString
@@ -161,7 +161,7 @@ genericIdRawParser firstCharSet bodyCharSet idKeywordParsing = do
     idChar <- if not (c `CharSet.elem` firstCharSet)
         then fail ("genericIdRawParser: Invalid first character '" ++ c : "'.")
         else ParserUtils.takeWhile (`CharSet.elem` bodyCharSet)
-    when
+    Monad.when
         (  (idKeywordParsing == KeywordsForbidden)
         && HashSet.member (Char8.pack idChar) koreKeywordsSet
         )
@@ -226,7 +226,7 @@ setVarIdRawParser = do
     c' <- peekChar'
     case c' of
         '`' -> do
-            void (Parser.char c')
+            _ <- Parser.char c'
             idToken <- objectNonslashIdRawParser KeywordsPermitted
             return (c:c':idToken)
         _ -> do
@@ -241,7 +241,7 @@ setVarIdRawParser = do
 stringLiteralRawParser :: Parser StringLiteral
 stringLiteralRawParser = do
     _ <- Parser.char '"'
-    StringLiteral <$> Text.pack <$> Parser.manyTill charParser (Parser.char '"')
+    StringLiteral . Text.pack <$> Parser.manyTill charParser (Parser.char '"')
 
 {- | Parse and unescape a Kore character literal.
 
@@ -250,9 +250,9 @@ stringLiteralRawParser = do
  -}
 charLiteralRawParser :: Parser CharLiteral
 charLiteralRawParser = do
-    void (Parser.char '\'')
+    _ <- Parser.char '\''
     c <- charParser
-    void (Parser.char '\'')
+    _ <- Parser.char '\''
     return (CharLiteral c)
 
 {- | Select printable ASCII characters.
@@ -313,11 +313,11 @@ escapeUnicodeParser
     :: Int  -- ^ Length of expected sequence in characters
     -> Parser Char
 escapeUnicodeParser n = do
-    hs <- sequence (replicate n hexDigitParser)
+    hs <- Monad.replicateM n hexDigitParser
     let i = Foldable.foldl' (\r h -> 0x10 * r + Char.digitToInt h) 0 hs
-    when (i > Char.ord (maxBound :: Char)) $ fail (unrepresentableCode hs)
+    Monad.when (i > Char.ord (maxBound :: Char)) $ fail (unrepresentableCode hs)
     let c = Char.chr i
-    when (isSurrogate c) $ fail (illegalSurrogate hs)
+    Monad.when (isSurrogate c) $ fail (illegalSurrogate hs)
     return c
 {-# INLINE escapeUnicodeParser #-}
 
@@ -454,7 +454,7 @@ followed by a character which could be part of an @object-identifier@.
 -}
 mlLexemeParser :: String -> Parser ()
 mlLexemeParser s =
-    lexeme (void (Parser.string s <* keywordEndParser))
+    lexeme (Monad.void (Parser.string s <* keywordEndParser))
 
 {-|'keywordEndParser' checks that the next character cannot be part of an
 @object-identifier@.
@@ -463,9 +463,10 @@ keywordEndParser :: Parser ()
 keywordEndParser = do
     mc <- peekChar
     case mc of
-        Nothing -> return ()
-        Just c -> when (c `CharSet.elem` idCharSet) $
+        Just c
+          | CharSet.elem c idCharSet ->
             fail "Expecting keyword to end."
+        _ -> return ()
 
 {-|'keywordBasedParsers' consumes one of the strings in the provided pairs,
 then parses an element using the corresponding parser. Checks that the consumed
@@ -497,4 +498,3 @@ prefixBasedParsers prefixParser stringParsers = do
             then fail "Keyword Based Parsers - unexpected character."
             else Parser.char c *> prefixBasedParsers prefixParser ts
     dict = CharDict.memoize tailParser
-
