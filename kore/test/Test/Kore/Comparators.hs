@@ -1338,13 +1338,11 @@ instance
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (PatternAttributesError.FunctionError)
-  where
+instance EqualWithExplanation PatternAttributesError.FunctionError where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (PatternAttributesError.FunctionalError)
-  where
+instance EqualWithExplanation PatternAttributesError.FunctionalError where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
@@ -1508,8 +1506,7 @@ instance EqualWithExplanation ConstructorLikeProof
     printWithExplanation = show
 
 
-instance SumEqualWithExplanation (AxiomIdentifier)
-  where
+instance SumEqualWithExplanation AxiomIdentifier where
     sumConstructorPair
         (AxiomIdentifier.Application p1) (AxiomIdentifier.Application p2)
       =
@@ -1523,8 +1520,7 @@ instance SumEqualWithExplanation (AxiomIdentifier)
             (printWithExplanation p1)
             (printWithExplanation p2)
 
-instance EqualWithExplanation (AxiomIdentifier)
-  where
+instance EqualWithExplanation AxiomIdentifier where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
