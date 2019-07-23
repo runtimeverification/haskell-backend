@@ -633,14 +633,14 @@ symbolVisibilityTests =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
-                Builtin.externalizePattern $ symbolPattern
+                Builtin.externalizePattern symbolPattern
             , sentenceAxiomAttributes = Attributes []
             }
     metaSymbolReferenceInAxiomSentence =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
-                Builtin.externalizePattern $ metaSymbolPattern
+                Builtin.externalizePattern metaSymbolPattern
             , sentenceAxiomAttributes = Attributes []
             }
     symbolReferenceInAndPatternSentence =
@@ -845,14 +845,14 @@ aliasVisibilityTests =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
-                Builtin.externalizePattern $ aliasPattern
+                Builtin.externalizePattern aliasPattern
             , sentenceAxiomAttributes = Attributes []
             }
     metaAliasReferenceInAxiomSentence =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
-                Builtin.externalizePattern $ metaAliasPattern
+                Builtin.externalizePattern metaAliasPattern
             , sentenceAxiomAttributes = Attributes []
             }
     aliasReferenceInAndPatternSentence =
