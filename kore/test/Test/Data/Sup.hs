@@ -18,7 +18,7 @@ genSupInteger :: Gen (Sup Integer)
 genSupInteger = genSup genSmallInteger
 
 sups :: [Sup Integer]
-sups = Sup : map Element [(-3)..(3)]
+sups = Sup : map Element [(-3)..3]
 
 implies :: Monad m => Bool -> Bool -> PropertyT m ()
 implies lhs rhs = when lhs (Hedgehog.assert rhs)
@@ -84,7 +84,7 @@ hprop_negativeEq =
   where
     negative x y = do
         annotateShow (x, y)
-        (x /= y) === (not $ x == y)
+        (x /= y) === not (x == y)
 
 hprop_associativeSemigroup :: Property
 hprop_associativeSemigroup = property $ do
@@ -114,7 +114,7 @@ hprop_compositionFunctor = property $ do
     x <- forAll genSupInteger
     f <- (+) <$> forAll genSmallInteger
     g <- (*) <$> forAll genSmallInteger
-    (fmap (f . g) x) === ((fmap f . fmap g) x)
+    fmap (f . g) x === (fmap f . fmap g) x
 
 hprop_identityApplicative :: Property
 hprop_identityApplicative = property $ do
@@ -138,4 +138,4 @@ hprop_interchangeApplicative :: Property
 hprop_interchangeApplicative = property $ do
     u <- fmap (+) <$> forAll genSupInteger
     y <- forAll genSmallInteger
-    (u <*> pure y) === (($ y) <$> u)
+    (u <*> pure y) === (pure ($ y) <*> u)
