@@ -25,8 +25,6 @@ import           Kore.Internal.Pattern as Conditional
                  ( Conditional (..) )
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-import           Kore.Internal.TermLike
-                 ( TermLike )
 import qualified Kore.OnePath.Verification as OnePath
 import qualified Kore.OnePath.Verification as Claim
 import           Kore.Predicate.Predicate
