@@ -39,7 +39,6 @@ import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
-import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
 import           Kore.IndexedModule.Resolvers
@@ -129,7 +128,7 @@ exec
     -> SMT (TermLike Variable)
 exec indexedModule strategy initialTerm =
     evalSimplifier env $ do
-        execution <- execute indexedModule' strategy initialTerm
+        execution <- execute indexedModule strategy initialTerm
         let
             Execution { executionGraph } = execution
             finalConfig = pickLongest executionGraph
@@ -138,13 +137,6 @@ exec indexedModule strategy initialTerm =
                 $ Pattern.toTermLike finalConfig
         return finalTerm
   where
-    indexedModule' =
-        IndexedModule.mapPatterns
-            (Builtin.internalize metadataTools)
-            indexedModule
-    -- It's safe to build the MetadataTools using the external IndexedModule
-    -- because MetadataTools doesn't retain any knowledge of the patterns which
-    -- are internalized.
     metadataTools = MetadataTools.build indexedModule
     env =
         Simplifier.Env
