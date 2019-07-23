@@ -289,14 +289,12 @@ instance
     Bottom <> _ = Bottom
     _ <> Bottom = Bottom
     Normalized Domain.NormalizedAc
-        { elementsWithVariables =
-            map Domain.unwrapElement -> elementsWithVariables1
+        { elementsWithVariables = preElementsWithVariables1
         , concreteElements = concreteElements1
         , opaque = opaque1
         }
       <> Normalized Domain.NormalizedAc
-        { elementsWithVariables =
-            map Domain.unwrapElement -> elementsWithVariables2
+        { elementsWithVariables = preElementsWithVariables2
         , concreteElements = concreteElements2
         , opaque = opaque2
         }
@@ -304,6 +302,10 @@ instance
         Nothing -> Bottom
         Just result -> Normalized result
       where
+        elementsWithVariables1 =
+            Domain.unwrapElement <$> preElementsWithVariables1
+        elementsWithVariables2 =
+            Domain.unwrapElement <$> preElementsWithVariables2
         mergeDisjoint = do
             withVariables <-
                 addAllListDisjoint elementsWithVariables1 elementsWithVariables2
@@ -520,17 +522,18 @@ evalConcatNormalizedOrBottom
     concatNormalized ac1@(Domain.NormalizedAc _ _ _) ac2 = do
         let
             Domain.NormalizedAc
-                { elementsWithVariables =
-                    map (Lens.view Domain.elementIso) -> withVariable1
+                { elementsWithVariables = preWithVariable1
                 , concreteElements = concrete1
                 , opaque = opaque1
                 } = ac1
             Domain.NormalizedAc
-                { elementsWithVariables =
-                    map (Lens.view Domain.elementIso) -> withVariable2
+                { elementsWithVariables = preWithVariable2
                 , concreteElements = concrete2
                 , opaque = opaque2
                 } = ac2
+
+            withVariable1 = Domain.unwrapElement <$> preWithVariable1
+            withVariable2 = Domain.unwrapElement <$> preWithVariable2
 
         withVariablesPartial <- addToMapDisjoint Map.empty withVariable1
         withVariables <- addToMapDisjoint withVariablesPartial withVariable2
@@ -543,7 +546,7 @@ evalConcatNormalizedOrBottom
 
         return Domain.NormalizedAc
             { elementsWithVariables =
-                Lens.review Domain.elementIso <$> Map.toList withVariables
+                Domain.wrapElement <$> Map.toList withVariables
             , concreteElements = concrete
             , opaque = allOpaque
             }
@@ -683,14 +686,12 @@ unifyEqualsNormalizedAc
     second
     unifyEqualsChildren
     Domain.NormalizedAc
-        { elementsWithVariables =
-            map (Lens.view Domain.elementIso) -> elementsWithVariables1
+        { elementsWithVariables = preElementsWithVariables1
         , concreteElements = concreteElements1
         , opaque = opaque1
         }
     Domain.NormalizedAc
-        { elementsWithVariables =
-            map (Lens.view Domain.elementIso) -> elementsWithVariables2
+        { elementsWithVariables = preElementsWithVariables2
         , concreteElements = concreteElements2
         , opaque = opaque2
         }
@@ -764,6 +765,8 @@ unifyEqualsNormalizedAc
     opaque1Map = listToMap opaque1
     opaque2Map = listToMap opaque2
 
+    elementsWithVariables1 = Domain.unwrapElement <$> preElementsWithVariables1
+    elementsWithVariables2 = Domain.unwrapElement <$> preElementsWithVariables2
     elementsWithVariables1Map = Map.fromList elementsWithVariables1
     elementsWithVariables2Map = Map.fromList elementsWithVariables2
 
@@ -924,14 +927,15 @@ buildResultFromUnifiers
             Foldable.fold (map (toNormalized tools) opaquesTerms)
 
     Domain.NormalizedAc
-        { elementsWithVariables =
-            map (Lens.view Domain.elementIso) -> opaquesElementsWithVariables
+        { elementsWithVariables = preOpaquesElementsWithVariables
         , concreteElements = opaquesConcreteTerms
         , opaque = opaquesOpaque
         } <- case opaquesNormalized of
             Bottom ->
                 bottomWithExplanation "Duplicated elements after unification."
             Normalized result -> return result
+    let opaquesElementsWithVariables =
+            Domain.unwrapElement <$> preOpaquesElementsWithVariables
 
     -- Add back all the common objects that were removed before
     -- unification.

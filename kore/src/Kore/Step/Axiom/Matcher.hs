@@ -567,8 +567,7 @@ matchAc
     quantifiedVariables
     acSort
     Builtin.NormalizedAc
-        { elementsWithVariables =
-            map Builtin.unwrapElement -> varElems1
+        { elementsWithVariables = preVarElems1
         , concreteElements      = concrete1
         , opaque                = varOpaque1
         }
@@ -578,6 +577,7 @@ matchAc
         , opaque                = []
         }
   | length varOpaque1 <= 1 = do
+    let varElems1 = Builtin.unwrapElement <$> preVarElems1
     let intersection
             :: Map.Map
                 (TermLike Concrete)
