@@ -1,6 +1,7 @@
 module Test.Kore.Step.Substitution
     ( test_mergeAndNormalizeSubstitutions
     , test_normalize
+    , normalize
     ) where
 
 import Test.Tasty

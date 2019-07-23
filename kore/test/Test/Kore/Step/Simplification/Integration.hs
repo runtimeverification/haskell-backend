@@ -164,7 +164,7 @@ test_simplificationIntegration =
                 . mkEvaluated
                 $ mkAnd
                     (Pattern.toTermLike result)
-                    (mkTop $ (termLikeSort . term) result)
+                    (mkTop . termLikeSort . term $ result)
             expect = OrPattern.fromPatterns
                 [ resultAndTop ]
         actual <-

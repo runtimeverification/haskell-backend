@@ -26,12 +26,17 @@ import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Symbol as Attribute
+import           Kore.Internal.Conditional
+                 ( andCondition, fromPredicate )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns, mergeAll )
 import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.OrPredicate as OrPredicate
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.Matcher
@@ -40,6 +45,7 @@ import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
 import qualified Kore.Step.Rule as RulePattern
+import qualified Kore.Step.Simplification.AndPredicates as AndPredicates
 import qualified Kore.Step.Simplification.Ceil as Ceil
 import           Kore.Step.Simplification.Data
                  ( AttemptedAxiom,
@@ -362,14 +368,11 @@ introduceDefinedness
     => FreshVariable variable
     => Unparse variable
     => Show variable
-    => Pattern variable
+    => OrPredicate.OrPredicate variable
     -> Pattern variable
     -> Pattern variable
 introduceDefinedness cond result =
-    Pattern.fromTermLike
-    $ mkAnd
-        (Pattern.toTermLike result)
-        (Pattern.toTermLike cond)
+    foldl andCondition result cond
 
 evaluatedChildOfApplication
     :: forall variable simplifier
@@ -380,11 +383,13 @@ evaluatedChildOfApplication
         , MonadSimplify simplifier
         )
     => TermLike variable
-    -> simplifier (Pattern variable)
+    -> simplifier (OrPredicate.OrPredicate variable)
 evaluatedChildOfApplication patt =
     case patt of
         App_ _ children -> do
             ceil <-
-                traverse (Ceil.makeEvaluate . Pattern.fromTermLike) children
-            pure . OrPattern.toPattern . MultiOr.mergeAll $ ceil
-        _ -> pure $ Pattern.topOf (termLikeSort patt)
+                traverse Ceil.makeEvaluateTerm children
+            AndPredicates.simplifyEvaluatedMultiPredicate
+                    . MultiAnd.make
+                    $ ceil
+        _ -> pure OrPredicate.top

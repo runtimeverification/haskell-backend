@@ -7,14 +7,18 @@ import Test.Tasty.HUnit
 
 import           Data.Default
                  ( def )
+import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.OrPredicate as OrPredicate
 import           Kore.Internal.Pattern as Pattern
                  ( Conditional (Conditional) )
 import qualified Kore.Internal.Pattern as Pattern
                  ( Conditional (..), Pattern, fromTermLike, topOf )
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, makeEqualsPredicate,
@@ -26,11 +30,13 @@ import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
+import qualified Kore.Step.Simplification.AndPredicates as AndPredicates
 import           Kore.Step.Simplification.Data
                  ( AttemptedAxiomResults (AttemptedAxiomResults),
                  BuiltinAndAxiomSimplifier (..), CommonAttemptedAxiom )
 import           Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
+import           Kore.Step.Simplification.Data as BranchT
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
@@ -40,6 +46,7 @@ import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import qualified SMT
+import qualified Test.Kore.Step.Substitution as Test.Substitution
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
@@ -521,10 +528,34 @@ evaluate (BuiltinAndAxiomSimplifier simplifier) patt =
     substitutionSimplifier = Predicate.create
     patternSimplifier = Simplifier.create
 
-mockEvaluatedChildOfApplication :: TermLike Variable -> IO (Pattern.Pattern Variable)
+mockEvaluatedChildOfApplication
+    :: TermLike Variable
+    -> IO (OrPredicate.OrPredicate Variable)
 mockEvaluatedChildOfApplication patt =
     case patt of
         App_ _ children -> do
-            ceil <- traverse (Test.Ceil.makeEvaluate . Pattern.fromTermLike) children
-            pure . OrPattern.toPattern . MultiOr.mergeAll $ ceil
-        _ -> pure $ Pattern.topOf (termLikeSort patt)
+            ceil <-
+                traverse Test.Ceil.makeEvaluateTerm children
+            mockSimplifyEvaluatedMultiPredicate
+                    . MultiAnd.make
+                    $ ceil
+        _ -> pure OrPredicate.top
+
+
+mockSimplifyEvaluatedMultiPredicate
+    :: MultiAnd.MultiAnd (OrPredicate.OrPredicate Variable)
+    -> IO (OrPredicate.OrPredicate Variable)
+mockSimplifyEvaluatedMultiPredicate predicates = do
+    let
+        crossProduct :: MultiOr.MultiOr [Predicate.Predicate Variable]
+        crossProduct =
+            MultiOr.fullCrossProduct
+                (MultiAnd.extractPatterns predicates)
+    orResults <- traverse andPredicates crossProduct
+    return (MultiOr.mergeAll . sequence $ orResults)
+  where
+    andPredicates
+        :: [Predicate.Predicate Variable]
+        -> IO [Predicate.Predicate Variable]
+    andPredicates predicates' =
+        Test.Substitution.normalize (Foldable.fold predicates')
