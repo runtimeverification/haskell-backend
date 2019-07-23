@@ -120,7 +120,7 @@ deleteFreeVariable
     -> Pattern variable
     -> Pattern variable
 deleteFreeVariable variable =
-    Lens.over typed (bindVariable variable)
+    Lens.over (field @"freeVariables") (bindVariable variable)
 
 {- | Delete the given variable from the set of free variables.
  -}
@@ -130,4 +130,4 @@ deleteFreeSetVariable
     -> Pattern variable
     -> Pattern variable
 deleteFreeSetVariable variable =
-    Lens.over typed (bindSetVariable variable)
+    Lens.over (field @"freeSetVariables") (bindSetVariable variable)
