@@ -99,7 +99,7 @@ instance
     NFData (Pattern variable annotation)
   where
     rnf (Recursive.project -> annotation :< pat) =
-        rnf annotation `seq` rnf pat `seq` ()
+        rnf annotation `seq` rnf pat
 
 instance SOP.Generic (Pattern variable annotation)
 
