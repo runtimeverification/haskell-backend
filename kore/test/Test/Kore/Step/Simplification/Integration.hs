@@ -15,9 +15,12 @@ import           Data.Default
 import qualified Data.Map.Strict as Map
 
 import qualified Kore.Builtin.Map as Map
+import           Kore.Internal.Conditional
+                 ( andCondition )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.OrPredicate as OrPredicate
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
@@ -159,14 +162,8 @@ test_simplificationIntegration =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-            resultAndTop =
-                Pattern.fromTermLike
-                . mkEvaluated
-                $ mkAnd
-                    (Pattern.toTermLike result)
-                    (mkTop . termLikeSort . term $ result)
             expect = OrPattern.fromPatterns
-                [ resultAndTop ]
+                [ mkEvaluated <$> foldl andCondition result OrPredicate.top ]
         actual <-
             evaluateWithAxioms
                 (axiomPatternsToEvaluators
