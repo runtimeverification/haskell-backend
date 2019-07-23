@@ -30,8 +30,6 @@ module Kore.Builtin
     , internalize
     ) where
 
-import           Control.Category
-                 ( (>>>) )
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.HashMap.Strict as HashMap

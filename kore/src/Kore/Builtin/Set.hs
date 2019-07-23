@@ -178,7 +178,7 @@ expectBuiltinSet ctx set =
         Builtin_ domain ->
             case domain of
                 Domain.BuiltinSet Domain.InternalAc { builtinAcChild } ->
-                    return (Domain.unwrapAc builtinAcChild)
+                    return builtinAcChild
                 _ ->
                     Builtin.verifierBug
                     $ Text.unpack ctx ++ ": Domain value is not a set"
@@ -196,7 +196,7 @@ expectConcreteBuiltinSet
     -> MaybeT m (Map (TermLike Concrete) (Domain.SetValue (TermLike variable)))
 expectConcreteBuiltinSet ctx _set = do
     _set <- expectBuiltinSet ctx _set
-    case _set of
+    case Domain.unwrapAc _set of
         Domain.NormalizedAc
             { elementsWithVariables = []
             , concreteElements
@@ -231,14 +231,13 @@ evalElement =
                                 resultSort
                                 (Map.singleton concrete Domain.SetValue)
                         Nothing ->
-                            Ac.returnAc
-                                resultSort
-                                Domain.NormalizedAc
-                                    { elementsWithVariables =
-                                        [Domain.SetElement _elem]
-                                    , concreteElements = Map.empty
-                                    , opaque = []
-                                    }
+                            Ac.returnAc resultSort
+                            $ Domain.wrapAc Domain.NormalizedAc
+                                { elementsWithVariables =
+                                    [Domain.SetElement _elem]
+                                , concreteElements = Map.empty
+                                , opaque = []
+                                }
                 _ -> Builtin.wrongArity Set.elementKey
             )
 
@@ -464,9 +463,10 @@ internalize tools termLike
     case Ac.toNormalized @Domain.NormalizedSet tools termLike of
         Ac.Bottom                    -> TermLike.mkBottom sort'
         Ac.Normalized termNormalized
-          | null (Domain.elementsWithVariables termNormalized)
-          , null (Domain.concreteElements termNormalized)
-          , [singleOpaqueTerm] <- Domain.opaque termNormalized
+          | let unwrapped = Domain.unwrapAc termNormalized
+          , null (Domain.elementsWithVariables unwrapped)
+          , null (Domain.concreteElements unwrapped)
+          , [singleOpaqueTerm] <- Domain.opaque unwrapped
           ->
             -- When the 'normalized' term consists of a single opaque Map-sorted
             -- term, we should prefer to return only that term.
@@ -483,31 +483,31 @@ operates at the top-most level, it does not descend into the 'TermLike' to
 internalize subterms.
 
  -}
-internalize
-    :: (Ord variable, SortedVariable variable)
-    => SmtMetadataTools Attribute.Symbol
-    -> TermLike variable
-    -> TermLike variable
-internalize tools termLike
-  | fromMaybe False (isSetSort tools sort')
-  -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
-  -- apply it if we know the term head is a constructor-like symbol.
-  , App_ symbol _ <- termLike
-  , isConstructorModulo_ symbol =
-    case Ac.toNormalized @Domain.NormalizedSet tools termLike of
-        Ac.Bottom                    -> TermLike.mkBottom sort'
-        Ac.Normalized termNormalized
-          | null (Domain.elementsWithVariables termNormalized)
-          , null (Domain.concreteElements termNormalized)
-          , [singleOpaqueTerm] <- Domain.opaque termNormalized
-          ->
-            -- When the 'normalized' term consists of a single opaque Map-sorted
-            -- term, we should prefer to return only that term.
-            singleOpaqueTerm
-          | otherwise -> Ac.asInternal tools sort' termNormalized
-  | otherwise = termLike
-  where
-    sort' = termLikeSort termLike
+-- internalize
+--     :: (Ord variable, SortedVariable variable)
+--     => SmtMetadataTools Attribute.Symbol
+--     -> TermLike variable
+--     -> TermLike variable
+-- internalize tools termLike
+--   | fromMaybe False (isSetSort tools sort')
+--   -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
+--   -- apply it if we know the term head is a constructor-like symbol.
+--   , App_ symbol _ <- termLike
+--   , isConstructorModulo_ symbol =
+--     case Ac.toNormalized @Domain.NormalizedSet tools termLike of
+--         Ac.Bottom                    -> TermLike.mkBottom sort'
+--         Ac.Normalized termNormalized
+--           | null (Domain.elementsWithVariables termNormalized)
+--           , null (Domain.concreteElements termNormalized)
+--           , [singleOpaqueTerm] <- Domain.opaque termNormalized
+--           ->
+--             -- When the 'normalized' term consists of a single opaque Map-sorted
+--             -- term, we should prefer to return only that term.
+--             singleOpaqueTerm
+--           | otherwise -> Ac.asInternal tools sort' termNormalized
+--   | otherwise = termLike
+--   where
+--     sort' = termLikeSort termLike
 
 {- | Simplify the conjunction or equality of two concrete Set domain values.
 

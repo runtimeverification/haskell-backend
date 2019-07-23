@@ -7,6 +7,13 @@ module Kore.Step.Simplification.Builtin
     ( simplify
     ) where
 
+import qualified Control.Lens as Lens
+import           Data.Generics.Product
+import           Data.Maybe
+
+import qualified Kore.Builtin.AssociativeCommutative as Builtin
+import           Kore.Domain.Builtin
+                 ( InternalMap )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Internal.Conditional
                  ( Conditional )
@@ -14,8 +21,9 @@ import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
+import           Kore.Predicate.Predicate
+                 ( makeFalsePredicate )
 import           Kore.Unparser
 
 {-| 'simplify' simplifies a 'DomainValue' pattern, which means returning
@@ -44,10 +52,7 @@ simplifyBuiltin
     -> MultiOr (Conditional variable (Builtin (TermLike variable)))
 simplifyBuiltin =
     \case
-        Domain.BuiltinMap _map -> do
-            _map <- sequence _map
-            -- MultiOr propagates \bottom children upward.
-            return (Domain.BuiltinMap <$> sequenceA _map)
+        Domain.BuiltinMap map' -> simplifyInternalMap map'
         Domain.BuiltinList _list -> do
             _list <- sequence _list
             -- MultiOr propagates \bottom children upward.
@@ -69,13 +74,21 @@ simplifyInternalMap
     =>  Domain.InternalMap (TermLike Concrete) (OrPattern variable)
     ->  MultiOr
             (Conditional variable
-                (Domain.InternalMap (TermLike Concrete) (TermLike variable))
+                (Domain.Builtin (TermLike Concrete) (TermLike variable))
             )
 simplifyInternalMap internalMapOrPattern = do
     internalMapConditional <- sequence internalMapOrPattern
     let conditionalInternalMap = sequenceA internalMapConditional
+        bottomInternalMap =
+            conditionalInternalMap `Conditional.andPredicate` makeFalsePredicate
         normalizedInternalMap =
-            fromMaybe
-                (`Conditional.andPredicate` makeFalsePredicate)
-                (traverse normalizeInternalMap conditionalInternalMap)
+            fromMaybe bottomInternalMap
+            $ traverse normalizeInternalMap conditionalInternalMap
     return (Domain.BuiltinMap <$> normalizedInternalMap)
+
+normalizeInternalMap
+    :: Ord variable
+    => InternalMap (TermLike Concrete) (TermLike variable)
+    -> Maybe (InternalMap (TermLike Concrete) (TermLike variable))
+normalizeInternalMap =
+    Lens.traverseOf (field @"builtinAcChild") Builtin.normalize

@@ -38,24 +38,20 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT, partitionEithers )
-import qualified Control.Lens as Lens
 import           Control.Monad
-                 ( foldM, unless )
+                 ( (>=>) )
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
-import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
+import qualified Data.Function as Function
 import qualified Data.List as List
 import qualified Data.List
-import           Data.List.NonEmpty
-                 ( NonEmpty (..) )
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
 import           Data.Reflection
                  ( Given )
 import qualified Data.Reflection as Reflection
-import           Data.Semigroup
-                 ( sconcat )
 import           Data.Text.Prettyprint.Doc
                  ( Doc )
 import           GHC.Stack
@@ -81,8 +77,9 @@ import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.Symbol
                  ( Symbol )
 import           Kore.Internal.TermLike
-                 ( pattern App_, pattern Builtin_, Concrete, TermLike,
-                 pattern Var_, mkApplySymbol, mkBuiltin, termLikeSort )
+                 ( pattern App_, pattern BuiltinMap_, pattern BuiltinSet_,
+                 pattern Builtin_, Concrete, TermLike, pattern Var_,
+                 mkApplySymbol, mkBuiltin, termLikeSort )
 import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Sort
                  ( Sort )
@@ -133,6 +130,18 @@ class
         -> TermLike variable
         -> NormalizedOrBottom normalized variable
 
+    concatNormalized
+        :: Ord variable
+        => normalized (TermLike Concrete) (TermLike variable)
+        -> normalized (TermLike Concrete) (TermLike variable)
+        -> Maybe (normalized (TermLike Concrete) (TermLike variable))
+
+    normalize
+        :: Ord variable
+        => normalized (TermLike Concrete) (TermLike variable)
+        -> Maybe (normalized (TermLike Concrete) (TermLike variable))
+    normalize = concatNormalized (Domain.wrapAc Domain.emptyNormalizedAc)
+
 instance TermWrapper Domain.NormalizedMap where
     {- | Render a 'NormalizedMap' as a Domain.Builtin.
 
@@ -146,6 +155,39 @@ instance TermWrapper Domain.NormalizedMap where
             , builtinAcConcat = Builtin.lookupSymbolConcat tools builtinAcSort
             , builtinAcChild
             }
+
+    concatNormalized
+        :: forall variable
+        .  Ord variable
+        => Domain.NormalizedMap (TermLike Concrete) (TermLike variable)
+        -> Domain.NormalizedMap (TermLike Concrete) (TermLike variable)
+        -> Maybe (Domain.NormalizedMap (TermLike Concrete) (TermLike variable))
+    concatNormalized normalized1 normalized2 = do
+        Monad.guard disjointConcreteElements
+        let concrete' = onBoth Map.union Domain.concreteElements
+            abstract' = onBoth (++) Domain.elementsWithVariables
+            opaque'   = Data.List.sort $ onBoth (++) Domain.opaque
+            normalized' =
+                Domain.wrapAc Domain.NormalizedAc
+                    { elementsWithVariables = abstract'
+                    , concreteElements = concrete'
+                    , opaque = opaque'
+                    }
+        (normalizeAbstractElements >=> flattenOpaqueMap) normalized'
+      where
+        onBoth
+            ::  (a -> a -> r)
+            ->  (   Domain.NormalizedAc
+                        Domain.NormalizedMap
+                        (TermLike Concrete)
+                        (TermLike variable)
+                ->  a
+                )
+            -> r
+        onBoth f g = Function.on f (g . Domain.unwrapAc) normalized1 normalized2
+        disjointConcreteElements =
+            null $ onBoth Map.intersection Domain.concreteElements
+
     {- |Transforms a @TermLike@ representation into a @NormalizedOrBottom@.
 
     The map may become bottom if we had conflicts between elements that were
@@ -160,45 +202,25 @@ instance TermWrapper Domain.NormalizedMap where
     toNormalized
         _tools
         (Builtin_ (Domain.BuiltinMap Domain.InternalAc { builtinAcChild }))
-      = flatAc
-      where
-        normalizedAc = Domain.unwrapAc builtinAcChild
-        concreteAc =
-            Domain.emptyNormalizedAc
-                { Domain.concreteElements =
-                    Domain.concreteElements normalizedAc
-                , Domain.opaque = actuallyOpaque
-                }
-        opaqueAcs = Domain.opaque normalizedAc
-        (builtinChildren, actuallyOpaque) =
-            Either.partitionEithers (selectBuiltinChildren <$> opaqueAcs)
-        abstractAcs = asElement <$> Domain.elementsWithVariables normalizedAc
-        asElement element =
-            Domain.emptyNormalizedAc
-                { Domain.elementsWithVariables = [element] }
-        flatAc =
-            (sconcat . fmap Normalized)
-                (concreteAc :| (abstractAcs <> builtinChildren))
-        selectBuiltinChildren (TermLike.BuiltinMap_ internalMap) =
-            (Left . Domain.unwrapAc) (Domain.builtinAcChild internalMap)
-        selectBuiltinChildren other = Right other
+      =
+        maybe Bottom Normalized (normalize builtinAcChild)
     toNormalized tools (App_ symbol args)
       | Map.isSymbolUnit symbol =
         case args of
-            [] -> Normalized Domain.emptyNormalizedAc
+            [] -> (Normalized . Domain.wrapAc) Domain.emptyNormalizedAc
             _ -> Builtin.wrongArity "MAP.unit"
       | Map.isSymbolElement symbol =
         case args of
             [key, value]
               | Just key' <- Builtin.toKey key ->
-                Normalized Domain.NormalizedAc
+                (Normalized . Domain.wrapAc) Domain.NormalizedAc
                     { elementsWithVariables = []
                     , concreteElements =
                         Map.singleton key' (Domain.MapValue value)
                     , opaque = []
                     }
               | otherwise ->
-                Normalized Domain.NormalizedAc
+                (Normalized . Domain.wrapAc) Domain.NormalizedAc
                     { elementsWithVariables = [Domain.MapElement (key, value)]
                     , concreteElements = Map.empty
                     , opaque = []
@@ -210,7 +232,7 @@ instance TermWrapper Domain.NormalizedMap where
                 toNormalized tools set1 <> toNormalized tools set2
             _ -> Builtin.wrongArity "MAP.concat"
     toNormalized _ patt =
-        Normalized Domain.NormalizedAc
+        (Normalized . Domain.wrapAc) Domain.NormalizedAc
             { elementsWithVariables = []
             , concreteElements = Map.empty
             , opaque = [patt]
@@ -229,6 +251,39 @@ instance TermWrapper Domain.NormalizedSet where
             , builtinAcConcat = Builtin.lookupSymbolConcat tools builtinAcSort
             , builtinAcChild
             }
+
+    concatNormalized
+        :: forall variable
+        .  Ord variable
+        => Domain.NormalizedSet (TermLike Concrete) (TermLike variable)
+        -> Domain.NormalizedSet (TermLike Concrete) (TermLike variable)
+        -> Maybe (Domain.NormalizedSet (TermLike Concrete) (TermLike variable))
+    concatNormalized normalized1 normalized2 = do
+        Monad.guard disjointConcreteElements
+        let concrete' = onBoth Map.union Domain.concreteElements
+            abstract' = onBoth (++) Domain.elementsWithVariables
+            opaque'   = Data.List.sort $ onBoth (++) Domain.opaque
+            normalized' =
+                Domain.wrapAc Domain.NormalizedAc
+                    { elementsWithVariables = abstract'
+                    , concreteElements = concrete'
+                    , opaque = opaque'
+                    }
+        (normalizeAbstractElements >=> flattenOpaqueSet) normalized'
+      where
+        onBoth
+            ::  (a -> a -> r)
+            ->  (   Domain.NormalizedAc
+                        Domain.NormalizedSet
+                        (TermLike Concrete)
+                        (TermLike variable)
+                ->  a
+                )
+            -> r
+        onBoth f g = Function.on f (g . Domain.unwrapAc) normalized1 normalized2
+        disjointConcreteElements =
+            null $ onBoth Map.intersection Domain.concreteElements
+
     {- |Transforms a @TermLike@ representation into a @NormalizedSetOrBottom@.
 
     The set may become bottom if we had conflicts between elements that were
@@ -243,23 +298,24 @@ instance TermWrapper Domain.NormalizedSet where
     toNormalized
         _tools
         (Builtin_ (Domain.BuiltinSet Domain.InternalAc { builtinAcChild }))
-      = Normalized (Domain.unwrapAc builtinAcChild)
+      =
+        maybe Bottom Normalized (normalize builtinAcChild)
     toNormalized tools (App_ symbol args)
       | Set.isSymbolUnit symbol =
         case args of
-            [] -> Normalized Domain.emptyNormalizedAc
+            [] -> (Normalized . Domain.wrapAc) Domain.emptyNormalizedAc
             _ -> Builtin.wrongArity "SET.unit"
       | Set.isSymbolElement symbol =
         case args of
             [elem1]
               | Just elem1' <- Builtin.toKey elem1 ->
-                Normalized Domain.NormalizedAc
+                (Normalized . Domain.wrapAc) Domain.NormalizedAc
                     { elementsWithVariables = []
                     , concreteElements = Map.singleton elem1' Domain.SetValue
                     , opaque = []
                     }
               | otherwise ->
-                Normalized Domain.NormalizedAc
+                (Normalized . Domain.wrapAc) Domain.NormalizedAc
                     { elementsWithVariables = [Domain.SetElement elem1]
                     , concreteElements = Map.empty
                     , opaque = []
@@ -271,7 +327,7 @@ instance TermWrapper Domain.NormalizedSet where
                 toNormalized tools set1 <> toNormalized tools set2
             _ -> Builtin.wrongArity "SET.concat"
     toNormalized _ patt =
-        Normalized Domain.NormalizedAc
+        (Normalized . Domain.wrapAc) Domain.NormalizedAc
             { elementsWithVariables = []
             , concreteElements = Map.empty
             , opaque = [patt]
@@ -292,8 +348,8 @@ fromConcreteOrWithVariable (WithVariablePat result) = result
 
 {- | Particularizes @Domain.NormalizedAc@ to the most common types.
 -}
-type TermNormalizedAc collection variable =
-    Domain.NormalizedAc collection (TermLike Concrete) (TermLike variable)
+type TermNormalizedAc normalized variable =
+    normalized (TermLike Concrete) (TermLike variable)
 
 {-| A normalized representation of an associative-commutative structure that
 also allows bottom values.
@@ -303,69 +359,152 @@ data NormalizedOrBottom collection variable
     | Bottom
 
 deriving instance
-    ( Eq variable
-    , Eq (Domain.Element collection (TermLike variable))
-    , Eq (Domain.Value collection (TermLike variable))
-    ) =>
+    Eq (TermNormalizedAc collection variable) =>
     Eq (NormalizedOrBottom collection variable)
 
 deriving instance
-    ( Show variable
-    , Show (Domain.Element collection (TermLike variable))
-    , Show (Domain.Value collection (TermLike variable))
-    ) =>
+    Ord (TermNormalizedAc collection variable) =>
+    Ord (NormalizedOrBottom collection variable)
+
+deriving instance
+    Show (TermNormalizedAc collection variable) =>
     Show (NormalizedOrBottom collection variable)
 
 {- | The semigroup defined by the `concat` operation.
 -}
 instance
-    (Ord variable, Domain.AcWrapper collection) =>
-    Semigroup (NormalizedOrBottom collection variable)
+    (Ord variable, TermWrapper normalized) =>
+    Semigroup (NormalizedOrBottom normalized variable)
   where
     Bottom <> _ = Bottom
     _ <> Bottom = Bottom
-    Normalized Domain.NormalizedAc
-        { elementsWithVariables = preElementsWithVariables1
-        , concreteElements = concreteElements1
-        , opaque = opaque1
+    Normalized normalized1 <> Normalized normalized2 =
+        maybe Bottom Normalized $ concatNormalized normalized1 normalized2
+
+-- | Insert the @key@-@value@ pair if it is missing from the 'Map'.
+insertMissing
+    :: Ord key
+    => key
+    -> value
+    -> Map key value
+    -> Maybe (Map key value)
+insertMissing k v m
+  | Map.member k m = Nothing
+  | otherwise      = Just (Map.insert k v m)
+
+{- | Insert the new concrete elements into the 'Map'.
+
+Return 'Nothing' if there are any duplicate keys.
+
+ -}
+updateConcreteElements
+    :: Ord key
+    => Map key value
+    -> [(key, value)]
+    -> Maybe (Map key value)
+updateConcreteElements = Foldable.foldrM (uncurry insertMissing)
+
+{- | Sort the abstract elements.
+
+Return 'Nothing' if there are any duplicate keys.
+
+ -}
+updateAbstractElements
+    :: (Domain.AcWrapper collection, Ord child)
+    => [Domain.Element collection child]
+    -> Maybe [Domain.Element collection child]
+updateAbstractElements elements =
+    fmap (map Domain.wrapElement . Map.toList)
+    $ Foldable.foldrM (uncurry insertMissing) Map.empty
+    $ map Domain.unwrapElement elements
+
+{- | Make any abstract elements into concrete elements if possible.
+
+Return 'Nothing' if there are any duplicate keys.
+
+ -}
+normalizeAbstractElements
+    :: (TermWrapper normalized, Ord variable)
+    => normalized (TermLike Concrete) (TermLike variable)
+    -> Maybe (normalized (TermLike Concrete) (TermLike variable))
+normalizeAbstractElements (Domain.unwrapAc -> normalized) = do
+    concrete' <- updateConcreteElements concrete newConcrete
+    abstract' <- updateAbstractElements newAbstract
+    return $ Domain.wrapAc Domain.NormalizedAc
+        { elementsWithVariables = abstract'
+        , concreteElements = concrete'
+        , opaque = Domain.opaque normalized
         }
-      <> Normalized Domain.NormalizedAc
-        { elementsWithVariables = preElementsWithVariables2
-        , concreteElements = concreteElements2
-        , opaque = opaque2
-        }
-      = case mergeDisjoint of
-        Nothing -> Bottom
-        Just result -> Normalized result
-      where
-        elementsWithVariables1 =
-            Domain.unwrapElement <$> preElementsWithVariables1
-        elementsWithVariables2 =
-            Domain.unwrapElement <$> preElementsWithVariables2
-        mergeDisjoint = do
-            withVariables <-
-                addAllListDisjoint elementsWithVariables1 elementsWithVariables2
-            concrete <- addAllMapDisjoint concreteElements1 concreteElements2
-            -- We may have common opaque terms if they are empty, so we can't
-            -- do an `addAll*Disjoint` as above.
-            let allOpaque = Data.List.sort (opaque1 ++ opaque2)
-            return Domain.NormalizedAc
-                { elementsWithVariables =
-                    Lens.review Domain.elementIso <$> withVariables
-                , concreteElements = concrete
-                , opaque = allOpaque
-                }
-        addAllMapDisjoint map1 map2 = addToMapDisjoint map1 (Map.toList map2)
-        addAllListDisjoint :: Ord a => [(a, b)] -> [(a, b)] -> Maybe [(a, b)]
-        addAllListDisjoint map1 = addToListDisjoint (Map.fromList map1) map1
+  where
+    abstract = Domain.elementsWithVariables normalized
+    concrete = Domain.concreteElements normalized
+    (newConcrete, newAbstract) =
+        partitionEithers (extractConcreteElement <$> abstract)
+
+flattenOpaqueMap
+    :: Ord variable
+    => Domain.NormalizedMap (TermLike Concrete) (TermLike variable)
+    -> Maybe (Domain.NormalizedMap (TermLike Concrete) (TermLike variable))
+flattenOpaqueMap = flattenOpaque matchBuiltinMap
+
+flattenOpaqueSet
+    :: Ord variable
+    => Domain.NormalizedSet (TermLike Concrete) (TermLike variable)
+    -> Maybe (Domain.NormalizedSet (TermLike Concrete) (TermLike variable))
+flattenOpaqueSet = flattenOpaque matchBuiltinSet
+
+matchBuiltinSet
+    :: TermLike variable
+    -> Maybe (Domain.NormalizedSet (TermLike Concrete) (TermLike variable))
+matchBuiltinSet =
+    \case
+        (BuiltinSet_ internalSet) -> Just (Domain.builtinAcChild internalSet)
+        _                         -> Nothing
+
+flattenOpaque
+    :: (TermWrapper normalized, Ord variable)
+    =>  (   TermLike variable
+        ->  Maybe (normalized (TermLike Concrete) (TermLike variable))
+        )
+    -> normalized (TermLike Concrete) (TermLike variable)
+    -> Maybe (normalized (TermLike Concrete) (TermLike variable))
+flattenOpaque matchBuiltin (Domain.unwrapAc -> normalized) = do
+    let opaque = Domain.opaque normalized
+        (builtin, opaque') = partitionEithers (extractBuiltin <$> opaque)
+        transparent = Domain.wrapAc normalized { Domain.opaque = opaque' }
+    Foldable.foldrM concatNormalized transparent builtin
+  where
+    extractBuiltin termLike =
+        maybe (Right termLike) Left (matchBuiltin termLike)
+
+matchBuiltinMap
+    :: TermLike variable
+    -> Maybe (Domain.NormalizedMap (TermLike Concrete) (TermLike variable))
+matchBuiltinMap =
+    \case
+        (BuiltinMap_ internalMap) -> Just (Domain.builtinAcChild internalMap)
+        _                         -> Nothing
+
+-- | 'Left' if the element's key can be concretized, or 'Right' if it
+-- remains abstract.
+extractConcreteElement
+    ::  Domain.AcWrapper collection
+    =>  Domain.Element collection (TermLike variable)
+    ->  Either
+            (TermLike Concrete, Domain.Value collection (TermLike variable))
+            (Domain.Element collection (TermLike variable))
+extractConcreteElement element =
+    maybe (Right element) (Left . flip (,) value) (Builtin.toKey key)
+  where
+    (key, value) = Domain.unwrapElement element
 
 {- | The monoid defined by the `concat` and `unit` operations.
 -}
 instance
-    (Ord variable, Domain.AcWrapper collection) =>
-    Monoid (NormalizedOrBottom collection variable)
+    (Ord variable, TermWrapper normalized) =>
+    Monoid (NormalizedOrBottom normalized variable)
   where
-    mempty = Normalized Domain.emptyNormalizedAc
+    mempty = Normalized $ Domain.wrapAc Domain.emptyNormalizedAc
 
 {- | Computes the union of two maps if they are disjoint. Returns @Nothing@
 otherwise.
@@ -373,21 +512,8 @@ otherwise.
 addToMapDisjoint
     :: (Ord a, Traversable t) => Map a b -> t (a, b) -> Maybe (Map a b)
 addToMapDisjoint existing traversable = do
-    (_, mapResult) <- foldM addElementDisjoint ([], existing) traversable
+    (_, mapResult) <- Monad.foldM addElementDisjoint ([], existing) traversable
     return mapResult
-
-{- | Computes the union of two ac structures if they are disjoint.
-Returns @Nothing@ otherwise.
--}
-addToListDisjoint
-    :: (Ord a, Traversable t)
-    => Map a b
-    -> [(a, b)]
-    -> t (a, b)
-    -> Maybe [(a, b)]
-addToListDisjoint map1 list1 list2 = do
-    (listResult, _) <- foldM addElementDisjoint (list1, map1) list2
-    return listResult
 
 addElementDisjoint
     :: Ord a
@@ -427,13 +553,12 @@ returnConcreteAc
     -> Map (TermLike Concrete) (Domain.Value normalized (TermLike variable))
     -> m (AttemptedAxiom variable)
 returnConcreteAc resultSort concrete =
-    returnAc
-        resultSort
-        Domain.NormalizedAc
-            { elementsWithVariables = []
-            , concreteElements = concrete
-            , opaque = []
-            }
+    returnAc resultSort
+    $ Domain.wrapAc Domain.NormalizedAc
+        { elementsWithVariables = []
+        , concreteElements = concrete
+        , opaque = []
+        }
 
 {- | Render an Ac structure as an internal domain value pattern of the given
 sort.
@@ -454,8 +579,7 @@ asInternal
     -> TermNormalizedAc normalized variable
     -> TermLike variable
 asInternal tools builtinAcSort builtinAcChild =
-    mkBuiltin
-        (asInternalBuiltin tools builtinAcSort (Domain.wrapAc builtinAcChild))
+    mkBuiltin $ asInternalBuiltin tools builtinAcSort builtinAcChild
 
 {- | The same as 'asInternal', but for ac structures made only of concrete
 elements.
@@ -470,14 +594,12 @@ asInternalConcrete
     -> Map (TermLike Concrete) (Domain.Value normalized (TermLike variable))
     -> TermLike variable
 asInternalConcrete tools sort1 concreteAc =
-    asInternal
-        tools
-        sort1
-        Domain.NormalizedAc
-            { elementsWithVariables = []
-            , concreteElements = concreteAc
-            , opaque = []
-            }
+    asInternal tools sort1
+    $ Domain.wrapAc Domain.NormalizedAc
+        { elementsWithVariables = []
+        , concreteElements = concreteAc
+        , opaque = []
+        }
 
 elementListAsInternal
     :: forall normalized variable
@@ -495,16 +617,12 @@ elementListAsInternal tools sort1 terms = do
     _checkDisjoinVariables <- disjointMap withVariables
     concreteAc <- disjointMap concrete
     return
-        (asInternal
-            tools
-            sort1
-            Domain.NormalizedAc
-                { elementsWithVariables =
-                    Lens.review Domain.elementIso <$> withVariables
-                , concreteElements = concreteAc
-                , opaque = []
-                }
-        )
+        $ asInternal tools sort1
+        $ Domain.wrapAc Domain.NormalizedAc
+            { elementsWithVariables = Domain.wrapElement <$> withVariables
+            , concreteElements = concreteAc
+            , opaque = []
+            }
 
 {- | Render a 'NormalizedAc' as an extended domain value pattern.
 -}
@@ -543,49 +661,8 @@ evalConcatNormalizedOrBottom
     (Normalized normalized1)
     (Normalized normalized2)
   =
-    case concatNormalized normalized1 normalized2 of
-        Nothing -> return emptyAttemptedAxiom
-        Just concatenation -> returnAc resultSort concatenation
-  where
-    concatNormalized
-        :: forall child key
-        .  (Ord key, Ord child)
-        => Domain.NormalizedAc normalized key child
-        -> Domain.NormalizedAc normalized key child
-        -> Maybe (Domain.NormalizedAc normalized key child)
-    -- The NormalizedAc matching is useful only for getting
-    -- notified when new fields are being added.
-    concatNormalized ac1@(Domain.NormalizedAc _ _ _) ac2 = do
-        let
-            Domain.NormalizedAc
-                { elementsWithVariables = preWithVariable1
-                , concreteElements = concrete1
-                , opaque = opaque1
-                } = ac1
-            Domain.NormalizedAc
-                { elementsWithVariables = preWithVariable2
-                , concreteElements = concrete2
-                , opaque = opaque2
-                } = ac2
-
-            withVariable1 = Domain.unwrapElement <$> preWithVariable1
-            withVariable2 = Domain.unwrapElement <$> preWithVariable2
-
-        withVariablesPartial <- addToMapDisjoint Map.empty withVariable1
-        withVariables <- addToMapDisjoint withVariablesPartial withVariable2
-
-        concrete <- addToMapDisjoint concrete1 (Map.toList concrete2)
-
-        -- If these opaque terms would be non-empty, we could test
-        -- for equality as above, but we don't know that.
-        let allOpaque = Data.List.sort (opaque1 ++ opaque2)
-
-        return Domain.NormalizedAc
-            { elementsWithVariables =
-                Domain.wrapElement <$> Map.toList withVariables
-            , concreteElements = concrete
-            , opaque = allOpaque
-            }
+    maybe (return emptyAttemptedAxiom) (returnAc resultSort)
+    $ concatNormalized normalized1 normalized2
 
 
 disjointMap :: Ord a => [(a, b)] -> Maybe (Map a b)
@@ -646,12 +723,10 @@ unifyEqualsNormalized
     normalized2
   = do
     let
-        Domain.InternalAc { builtinAcChild = firstWrapped } =
+        Domain.InternalAc { builtinAcChild = firstNormalized } =
             normalized1
-        Domain.InternalAc { builtinAcChild = secondWrapped } =
+        Domain.InternalAc { builtinAcChild = secondNormalized } =
             normalized2
-        firstNormalized = Domain.unwrapAc firstWrapped
-        secondNormalized = Domain.unwrapAc secondWrapped
 
     unifierNormalized <-
         unifyEqualsNormalizedAc
@@ -721,16 +796,8 @@ unifyEqualsNormalizedAc
     first
     second
     unifyEqualsChildren
-    Domain.NormalizedAc
-        { elementsWithVariables = preElementsWithVariables1
-        , concreteElements = concreteElements1
-        , opaque = opaque1
-        }
-    Domain.NormalizedAc
-        { elementsWithVariables = preElementsWithVariables2
-        , concreteElements = concreteElements2
-        , opaque = opaque2
-        }
+    normalized1
+    normalized2
   = do
     (simpleUnifier, opaques) <- case (opaqueDifference1, opaqueDifference2) of
         ([], []) -> Monad.Trans.lift $
@@ -797,6 +864,19 @@ unifyEqualsNormalizedAc
             first
             second
             unifyEqualsChildren
+
+    Domain.NormalizedAc
+        { elementsWithVariables = preElementsWithVariables1
+        , concreteElements = concreteElements1
+        , opaque = opaque1
+        }
+        = Domain.unwrapAc normalized1
+    Domain.NormalizedAc
+        { elementsWithVariables = preElementsWithVariables2
+        , concreteElements = concreteElements2
+        , opaque = opaque2
+        }
+        = Domain.unwrapAc normalized2
 
     opaque1Map = listToMap opaque1
     opaque2Map = listToMap opaque2
@@ -969,7 +1049,7 @@ buildResultFromUnifiers
         } <- case opaquesNormalized of
             Bottom ->
                 bottomWithExplanation "Duplicated elements after unification."
-            Normalized result -> return result
+            Normalized result -> return (Domain.unwrapAc result)
     let opaquesElementsWithVariables =
             Domain.unwrapElement <$> preOpaquesElementsWithVariables
 
@@ -998,19 +1078,15 @@ buildResultFromUnifiers
             Predicate.top
             (almostResultPredicates ++ opaquesPredicates ++ predicates)
         result
-            :: Conditional
-                variable
-                (Domain.NormalizedAc
-                    normalized
-                    (TermLike Concrete)
-                    (TermLike variable)
-                )
-        result = Domain.NormalizedAc
-            { elementsWithVariables =
-                Lens.review Domain.elementIso <$> Map.toList withVariableMap
-            , concreteElements = concreteMap
-            , opaque = allOpaque
-            }
+            :: Conditional variable
+                (normalized (TermLike Concrete) (TermLike variable))
+        result =
+            Domain.wrapAc Domain.NormalizedAc
+                { elementsWithVariables =
+                    Domain.wrapElement <$> Map.toList withVariableMap
+                , concreteElements = concreteMap
+                , opaque = allOpaque
+                }
             `Conditional.withCondition` predicate
 
     return result
@@ -1147,13 +1223,13 @@ unifyEqualsElementLists
     -- The second structure does not include an opaque term so there is nothing
     -- to match whatever is left in remainder1. This should have been caught by
     -- the "length" check above so, most likely, this can be an assertion.
-    unless
+    Monad.unless
         (null remainder1)
         (remainderError firstElements secondElements remainder1)
     -- The first structure does not include an opaque term so there is nothing
     -- to match whatever is left in remainder2. This should have been caught by
     -- the "length" check above so, most likely, this can be an assertion.
-    unless
+    Monad.unless
         (null remainder2)
         (remainderError firstElements secondElements remainder2)
 
@@ -1196,7 +1272,7 @@ unifyEqualsElementLists
     -- The second structure does not include an opaque term so there is nothing
     -- to match whatever is left in remainder1. This should have been caught by
     -- the "length" check above so, most likely, this can be an assertion.
-    unless
+    Monad.unless
         (null remainder1)
         (remainderError firstElements secondElements remainder1)
 
