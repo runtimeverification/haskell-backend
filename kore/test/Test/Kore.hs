@@ -99,7 +99,6 @@ couple = Gen.list (Range.linear 0 3)
 couple1 :: MonadGen m => m a -> m [a]
 couple1 = Gen.list (Range.linear 1 3)
 
-{-# ANN genericIdGen ("HLint: ignore Use String" :: String) #-}
 genericIdGen :: MonadGen m => m Char -> m Char -> m Text
 genericIdGen firstChar nextChar = do
     chars <-

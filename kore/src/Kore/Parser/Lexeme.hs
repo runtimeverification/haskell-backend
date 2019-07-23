@@ -187,14 +187,12 @@ moduleNameRawParser =
     genericIdRawParser
         moduleNameFirstCharSet moduleNameCharSet KeywordsForbidden
 
-{-# ANN idFirstChars ("HLint: ignore Use String" :: String) #-}
 idFirstChars :: [Char]
 idFirstChars = ['A'..'Z'] ++ ['a'..'z']
 
 idFirstCharSet :: CharSet
 idFirstCharSet = CharSet.makeCharSet idFirstChars
 
-{-# ANN idOtherChars ("HLint: ignore Use String" :: String) #-}
 idOtherChars :: [Char]
 idOtherChars = ['0'..'9'] ++ "'-"
 

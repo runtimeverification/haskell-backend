@@ -106,8 +106,6 @@ instance EqualWithExplanation Natural where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
-{-# ANN module ("HLint: ignore Use record patterns" :: String) #-}
-
 instance
     ( EqualWithExplanation child
     , Eq child
