@@ -52,4 +52,4 @@ instance ParseAttributes SmtLemma where
         failDuplicate' = Parser.failDuplicate smtLemmaId
 
     toAttributes SmtLemma { isSmtLemma } =
-        Attributes $ if isSmtLemma then [smtLemmaAttribute] else []
+        Attributes [smtLemmaAttribute | isSmtLemma]
