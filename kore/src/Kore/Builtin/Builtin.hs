@@ -212,16 +212,14 @@ sortDeclVerifier Verifiers { sortDeclVerifiers } hook =
             sortName <- getHook hook
             HashMap.lookup sortName sortDeclVerifiers
     in
-        case hookedSortVerifier of
-            Nothing ->
-                -- There is nothing to verify because either
-                -- 1. the sort is not hooked, or
-                -- 2. there is no SortVerifier registered to the hooked name.
-                -- In either case, there is nothing more to do.
-                \_ _ _ -> pure ()
-            Just verifier ->
-                -- Invoke the verifier that is registered to this builtin sort.
-                verifier
+        fromMaybe
+            -- There is nothing to verify because either
+            -- 1. the sort is not hooked, or
+            -- 2. there is no SortVerifier registered to the hooked name.
+            -- In either case, there is nothing more to do.
+            (\_ _ _ -> pure ())
+            -- Invoke the verifier that is registered to this builtin sort.
+            hookedSortVerifier
 
 {- | Look up and apply a builtin symbol verifier.
 
@@ -237,17 +235,14 @@ symbolVerifier Verifiers { symbolVerifiers } hook =
             symbolName <- getHook hook
             HashMap.lookup symbolName symbolVerifiers
     in
-        case hookedSymbolVerifier of
-            Nothing ->
-                -- There is nothing to verify because either
-                -- 1. the symbol is not hooked, or
-                -- 2. there is no SymbolVerifier registered to the hooked name.
-                -- In either case, there is nothing more to do.
-                SymbolVerifier $ \_ _ -> pure ()
-            Just verifier ->
-                -- Invoke the verifier that is registered to this builtin
-                -- symbol.
-                verifier
+        fromMaybe
+            -- There is nothing to verify because either
+            -- 1. the symbol is not hooked, or
+            -- 2. there is no SymbolVerifier registered to the hooked name.
+            -- In either case, there is nothing more to do.
+            (SymbolVerifier $ \_ _ -> pure ())
+            -- Invoke the verifier that is registered to this builtin symbol.
+            hookedSymbolVerifier
 
 notImplemented :: Function
 notImplemented =
