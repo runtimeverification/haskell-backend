@@ -64,7 +64,6 @@ import           Data.List.NonEmpty
                  ( NonEmpty )
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
-                 ( fromJust, listToMaybe )
 import           Data.Sequence
                  ( Seq )
 import           Data.Set
@@ -104,8 +103,6 @@ import           Kore.OnePath.Verification
                  ( Axiom (..), Claim, isTrusted )
 import           Kore.Repl.Data
 import           Kore.Repl.Parser
-import           Kore.Repl.Parser
-                 ( commandParser )
 import           Kore.Repl.State
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
@@ -255,7 +252,7 @@ exit = do
     proofs <- allProofs
     ofile <- Lens.view (field @"outputFile")
     let fileName =
-            maybe (error "Output file not specified") id (unOutputFile ofile)
+            fromMaybe (error "Output file not specified") (unOutputFile ofile)
     onePathClaims <- generateInProgressOPClaims
     sort <- currentClaimSort
     let conj = conjOfOnePathClaims onePathClaims sort
@@ -267,11 +264,7 @@ exit = do
        else return FailStop
   where
     isCompleted :: [GraphProofStatus] -> Bool
-    isCompleted xs =
-        foldr
-            (&&)
-            True
-            (fmap (\x -> x == Completed || x == TrustedClaim) xs)
+    isCompleted = all (\x -> x == Completed || x == TrustedClaim)
 
 help :: MonadWriter ReplOutput m => m ()
 help = putStrLn' helpText
@@ -293,7 +286,7 @@ showClaim =
                         (getClaimByIndex . unClaimIndex)
                         (getClaimByName . unRuleName)
                         indexOrName
-            maybe printNotFound (tell . showRewriteRule) $ claim
+            maybe printNotFound (tell . showRewriteRule) claim
 
 -- | Prints an axiom using an index in the axioms list.
 showAxiom
@@ -307,7 +300,7 @@ showAxiom indexOrName = do
                 (getAxiomByIndex . unAxiomIndex)
                 (getAxiomByName . unRuleName)
                 indexOrName
-    maybe printNotFound (tell . showRewriteRule) $ axiom
+    maybe printNotFound (tell . showRewriteRule) axiom
 
 -- | Changes the currently focused proof, using an index in the claims list.
 prove
@@ -331,22 +324,22 @@ prove indexOrName = do
     startProving
         :: claim
         -> m ()
-    startProving claim = do
-        if isTrusted claim
-            then putStrLn'
-                    $ "Cannot switch to proving claim "
-                    <> showIndexOrName indexOrName
-                    <> ". Claim is trusted."
-            else do
-                claimIndex <-
-                    either
-                        (return . return)
-                        (getClaimIndexByName . unRuleName)
-                        indexOrName
-                switchToProof claim $ fromJust claimIndex
-                putStrLn'
-                    $ "Switched to proving claim "
-                    <> showIndexOrName indexOrName
+    startProving claim
+      | isTrusted claim =
+        putStrLn'
+            $ "Cannot switch to proving claim "
+            <> showIndexOrName indexOrName
+            <> ". Claim is trusted."
+      | otherwise = do
+        claimIndex <-
+            either
+                (return . return)
+                (getClaimIndexByName . unRuleName)
+                indexOrName
+        switchToProof claim $ fromJust claimIndex
+        putStrLn'
+            $ "Switched to proving claim "
+            <> showIndexOrName indexOrName
 
 showClaimSwitch :: Either ClaimIndex RuleName -> String
 showClaimSwitch indexOrName =
@@ -370,7 +363,7 @@ showGraph mfile = do
     graph <- getInnerGraph
     axioms <- Lens.use (field @"axioms")
     installed <- liftIO Graph.isGraphvizInstalled
-    if installed == True
+    if installed
        then liftIO $ maybe
                         (showDotGraph (length axioms) graph)
                         (saveDotGraph (length axioms) graph)
@@ -566,10 +559,9 @@ showRule configNode = do
             axioms <- Lens.use (field @"axioms")
             tell . showRewriteRule $ rule
             let ruleIndex = getRuleIndex rule
-            putStrLn' $ maybe
-                "Error: identifier attribute wasn't initialized."
-                id
-                (showAxiomOrClaim (length axioms) ruleIndex)
+            putStrLn'
+                $ fromMaybe "Error: identifier attribute wasn't initialized."
+                $ showAxiomOrClaim (length axioms) ruleIndex
   where
     getRuleIndex :: RewriteRule Variable -> Attribute.RuleIndex
     getRuleIndex = Attribute.identifier . Rule.attributes . Rule.getRewriteRule
@@ -633,7 +625,7 @@ label =
     gotoLabel :: String -> m ()
     gotoLabel l = do
         lbls <- getLabels
-        selectNode $ maybe (ReplNode $ -1) id (Map.lookup l lbls)
+        selectNode $ fromMaybe (ReplNode $ -1) (Map.lookup l lbls)
 
     acc :: String -> ReplNode -> String -> String
     acc key node res =
@@ -690,7 +682,7 @@ redirect
     -- ^ file path
     -> ReplM claim m ()
 redirect cmd file = do
-    liftIO $ withExistingDirectory file (flip writeFile $ "")
+    liftIO $ withExistingDirectory file (`writeFile` "")
     appendCommand cmd file
 
 runInterpreterWithOutput
@@ -806,11 +798,8 @@ tryAxiomClaimWorker mode ref = do
         runUnifier first second
         >>= tell . formatUnificationMessage
 
-    extractLeftPattern
-        :: Either (Axiom) claim
-        -> TermLike Variable
-    extractLeftPattern =
-            left . getRewriteRule . either unAxiom coerce
+    extractLeftPattern :: Either Axiom claim -> TermLike Variable
+    extractLeftPattern = left . getRewriteRule . either unAxiom coerce
 
 -- | Removes specified node and all its child nodes.
 clear
@@ -846,7 +835,7 @@ clear =
     collect f x = x : [ z | y <- f x, z <- collect f y]
 
     prevNode :: InnerGraph -> Graph.Node -> Graph.Node
-    prevNode graph = maybe 0 id . listToMaybe . fmap fst . Graph.lpre graph
+    prevNode graph = fromMaybe 0 . listToMaybe . fmap fst . Graph.lpre graph
 
 -- | Save this sessions' commands to the specified file.
 saveSession
@@ -914,8 +903,7 @@ pipe cmd file args = do
                 output <- liftIO $ hGetContents handle
                 modifyIORef pipeOut (appReplOut . AuxOut $ output)
     justPrint :: IORef ReplOutput -> String -> IO ()
-    justPrint outRef str = do
-        modifyIORef outRef (appReplOut . AuxOut $ str)
+    justPrint outRef = modifyIORef outRef . appReplOut . AuxOut
 
 -- | Appends output of a command to a file.
 appendTo
@@ -977,7 +965,7 @@ tryAlias replAlias@ReplAlias { name } printAux printKore = do
             let
                 command = substituteAlias aliasDef replAlias
                 parsedCommand =
-                    maybe ShowUsage id $ parseMaybe commandParser command
+                    fromMaybe ShowUsage $ parseMaybe commandParser command
             config <- ask
             (cont, st') <- get >>= runInterpreter parsedCommand config
             put st'
@@ -1053,7 +1041,7 @@ showRewriteRule rule =
         :: RewriteRule Variable
         -> SourceLocation
     extractSourceAndLocation
-        (RewriteRule (RulePattern{ Axiom.attributes })) =
+        (RewriteRule RulePattern { Axiom.attributes }) =
             Attribute.sourceLocation attributes
 
 -- | Unparses a strategy node, using an omit list to hide specified children.
@@ -1065,16 +1053,10 @@ unparseStrategy
     -> ReplOutput
 unparseStrategy omitList =
     strategyPattern StrategyPatternTransformer
-        { rewriteTransformer = \pat ->
-            makeKoreReplOutput
-            . unparseToString
-            $ fmap hide pat
-        , stuckTransformer =
-            \pat -> makeAuxReplOutput "Stuck: \n"
-                    <> makeKoreReplOutput
-                    ( unparseToString
-                     $ fmap hide pat
-                    )
+        { rewriteTransformer = makeKoreReplOutput . unparseToString . fmap hide
+        , stuckTransformer = \pat ->
+            makeAuxReplOutput "Stuck: \n"
+            <> makeKoreReplOutput (unparseToString $ fmap hide pat)
         , bottomValue = makeAuxReplOutput "Reached bottom"
         }
   where
@@ -1114,7 +1096,7 @@ printNotFound = putStrLn' "Variable or index not found"
 -- represents the number of available axioms.
 showDotGraph :: Int -> InnerGraph -> IO ()
 showDotGraph len =
-    (flip Graph.runGraphvizCanvas') Graph.Xlib
+    flip Graph.runGraphvizCanvas' Graph.Xlib
         . Graph.graphToDot (graphParams len)
 
 saveDotGraph :: Int -> InnerGraph -> FilePath -> IO ()
@@ -1197,14 +1179,12 @@ parseEvalScript
     -> t m ()
 parseEvalScript file = do
     exists <- lift . liftIO . doesFileExist $ file
-    if exists == True
+    if exists
         then do
             contents <- lift . liftIO $ readFile file
             let result = runParser scriptParser file contents
             either parseFailed executeScript result
-        else do
-            lift . liftIO . putStrLn
-                $ "Cannot find " <> file
+        else lift . liftIO . putStrLn $ "Cannot find " <> file
 
   where
     parseFailed
@@ -1247,8 +1227,7 @@ formatUnificationMessage docOrPredicate =
         unparse
         . TermLike.externalizeFreshVariables
         . Pattern.toTermLike
-        $ (TermLike.mkTop $ TermLike.mkSortVariable "UNKNOWN")
-        <$ c
+        $ TermLike.mkTop (TermLike.mkSortVariable "UNKNOWN") <$ c
 
 showProofStatus :: Map.Map ClaimIndex GraphProofStatus -> String
 showProofStatus m =
@@ -1268,10 +1247,7 @@ showCurrentClaimIndex ci =
     <> show (unClaimIndex ci)
 
 execStateReader :: Monad m => env -> st -> ReaderT env (StateT st m) a -> m st
-execStateReader config st action =
-    flip execStateT st
-        $ flip runReaderT config
-        $ action
+execStateReader config st = flip execStateT st . flip runReaderT config
 
 doesParentDirectoryExist :: MonadIO m => FilePath -> m Bool
 doesParentDirectoryExist =
