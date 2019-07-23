@@ -27,13 +27,8 @@ mockSimplifier values =
     termLikeSimplifier $ mockSimplifierHelper Pattern.fromTermLike values
 
 mockPredicateSimplifier
-    ::  ( Ord variable
-        , SortedVariable variable
-        )
-    =>  [   ( TermLike variable
-            , ([Pattern variable])
-            )
-        ]
+    :: (Ord variable, SortedVariable variable)
+    => [(TermLike variable, [Pattern variable])]
     -> TermLikeSimplifier
 mockPredicateSimplifier values =
     termLikeSimplifier
