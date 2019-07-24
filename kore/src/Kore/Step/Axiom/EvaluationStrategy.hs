@@ -325,7 +325,7 @@ evaluateWithDefinitionAxioms
     _axiomSimplifiers
     patt
   =
-    ceilChildOfApplication patt >>= \evalChild ->
+    ceilChildOfApplication patt >>= \ceilChild ->
         AttemptedAxiom.maybeNotApplicable $ do
         let
             -- TODO (thomas.tuegel): Figure out how to get the initial conditions
@@ -342,7 +342,7 @@ evaluateWithDefinitionAxioms
                 & Result.mapConfigs
                     keepResultUnchanged
                     ( markRemainderEvaluated
-                    . introduceDefinedness evalChild
+                    . introduceDefinedness ceilChild
                     )
             keepResultUnchanged = id
             markRemainderEvaluated = fmap mkEvaluated
