@@ -99,8 +99,8 @@ import           Kore.Variables.Fresh
 @InternalAc@ struct inside a @Domain.Builtin.Builtin@ value.
 -}
 class
-    Domain.AcWrapper (normalized :: * -> * -> *) =>
-    TermWrapper normalized
+    Domain.AcWrapper (normalized :: * -> * -> *)
+    => TermWrapper normalized
   where
     {- | Render a normalized value (e.g. 'NormalizedSet') as a Domain.Builtin.
 
@@ -280,21 +280,19 @@ deriving instance
     ( Eq variable
     , Eq (Domain.Element collection (TermLike variable))
     , Eq (Domain.Value collection (TermLike variable))
-    ) =>
-    Eq (NormalizedOrBottom collection variable)
+    ) => Eq (NormalizedOrBottom collection variable)
 
 deriving instance
     ( Show variable
     , Show (Domain.Element collection (TermLike variable))
     , Show (Domain.Value collection (TermLike variable))
-    ) =>
-    Show (NormalizedOrBottom collection variable)
+    ) => Show (NormalizedOrBottom collection variable)
 
 {- | The semigroup defined by the `concat` operation.
 -}
 instance
-    (Ord variable, Domain.AcWrapper collection) =>
-    Semigroup (NormalizedOrBottom collection variable)
+    (Ord variable, Domain.AcWrapper collection)
+    => Semigroup (NormalizedOrBottom collection variable)
   where
     Bottom <> _ = Bottom
     _ <> Bottom = Bottom
@@ -336,8 +334,8 @@ instance
 {- | The monoid defined by the `concat` and `unit` operations.
 -}
 instance
-    (Ord variable, Domain.AcWrapper collection) =>
-    Monoid (NormalizedOrBottom collection variable)
+    (Ord variable, Domain.AcWrapper collection)
+    => Monoid (NormalizedOrBottom collection variable)
   where
     mempty = Normalized Domain.emptyNormalizedAc
 
