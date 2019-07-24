@@ -11,6 +11,8 @@ import           Data.Maybe
                  ( mapMaybe )
 
 import qualified Kore.Internal.MultiOr as MultiOr
+import           Kore.Step.Simplification.Data
+                 ( MonadSimplify )
 import           Kore.Step.Strategy
                  ( Strategy )
 import qualified Kore.Step.Strategy as Strategy
@@ -65,18 +67,39 @@ data Prim rule
     | TriviallyValid
     | DerivePar [rule]
 
+class Goal goal where
+    type Rule goal
+
+    -- | Remove the destination of the goal.
+    removeDestination
+        :: MonadSimplify m
+        => goal
+        -> Strategy.TransitionT (Rule goal) m goal
+
+    isTriviallyValid :: goal -> Bool
+
+    isTrusted :: goal -> Bool
+
+    -- | Apply 'Rule's in to the goal in parallel.
+    derivePar
+        :: MonadSimplify m
+        => [Rule goal]
+        -> goal
+        -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+
+    -- | Apply 'Rule's in to the goal in sequence.
+    deriveSeq
+        :: MonadSimplify m
+        => [Rule goal]
+        -> goal
+        -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+
 transitionRule
-    :: Monad m
-    => (goal -> Strategy.TransitionT rule m goal)
-    -- ^ Remove destination from goal
-    -> (goal -> Bool)
-    -- ^ Check if the goal is trivially valid
-    -> ([rule] -> goal -> Strategy.TransitionT rule m (ProofState goal))
-    -- ^ Apply rules in parallel
-    -> Prim rule
+    :: (MonadSimplify m, Goal goal)
+    => Prim (Rule goal)
     -> ProofState goal
-    -> Strategy.TransitionT rule m (ProofState goal)
-transitionRule removeDestination triviallyValid derivePar = transitionRuleWorker
+    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+transitionRule = transitionRuleWorker
   where
     transitionRuleWorker CheckProven Proven = empty
     transitionRuleWorker CheckGoalRem (GoalRem _) = empty
@@ -85,7 +108,7 @@ transitionRule removeDestination triviallyValid derivePar = transitionRuleWorker
         GoalRem <$> removeDestination g
 
     transitionRuleWorker TriviallyValid (GoalRem g)
-      | triviallyValid g = return Proven
+      | isTriviallyValid g = return Proven
 
     transitionRuleWorker (DerivePar rules) (GoalRem g) =
         derivePar rules g
