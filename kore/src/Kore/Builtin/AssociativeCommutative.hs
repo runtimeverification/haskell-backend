@@ -350,22 +350,22 @@ data NormalizedOrBottom collection variable
     | Bottom
 
 deriving instance
-    Eq (TermNormalizedAc collection variable) =>
-    Eq (NormalizedOrBottom collection variable)
+    Eq (TermNormalizedAc collection variable)
+    => Eq (NormalizedOrBottom collection variable)
 
 deriving instance
-    Ord (TermNormalizedAc collection variable) =>
-    Ord (NormalizedOrBottom collection variable)
+    Ord (TermNormalizedAc collection variable)
+    => Ord (NormalizedOrBottom collection variable)
 
 deriving instance
-    Show (TermNormalizedAc collection variable) =>
-    Show (NormalizedOrBottom collection variable)
+    Show (TermNormalizedAc collection variable)
+    => Show (NormalizedOrBottom collection variable)
 
 {- | The semigroup defined by the `concat` operation.
 -}
 instance
-    (Ord variable, TermWrapper normalized) =>
-    Semigroup (NormalizedOrBottom normalized variable)
+    (Ord variable, TermWrapper normalized)
+    => Semigroup (NormalizedOrBottom normalized variable)
   where
     Bottom <> _ = Bottom
     _ <> Bottom = Bottom
@@ -492,8 +492,8 @@ extractConcreteElement element =
 {- | The monoid defined by the `concat` and `unit` operations.
 -}
 instance
-    (Ord variable, TermWrapper normalized) =>
-    Monoid (NormalizedOrBottom normalized variable)
+    (Ord variable, TermWrapper normalized)
+    => Monoid (NormalizedOrBottom normalized variable)
   where
     mempty = Normalized $ Domain.wrapAc Domain.emptyNormalizedAc
 
