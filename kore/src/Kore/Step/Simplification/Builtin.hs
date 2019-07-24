@@ -64,6 +64,22 @@ simplifyBuiltin =
         Domain.BuiltinString string ->
             (return . pure) (Domain.BuiltinString string)
 
+simplifyInternal
+    ::  ( Ord variable
+        , Show variable
+        , Unparse variable
+        , SortedVariable variable
+        , Traversable t
+        )
+    => (t (TermLike variable) -> Maybe (t (TermLike variable)))
+    -> t (OrPattern variable)
+    -> MultiOr (Conditional variable (t (TermLike variable)))
+simplifyInternal normalizer tOrPattern = do
+    conditional <- Lens.ala Compose traverse tOrPattern
+    let bottom = conditional `Conditional.andPredicate` makeFalsePredicate
+        normalized = fromMaybe bottom $ traverse normalizer conditional
+    return normalized
+
 simplifyInternalMap
     ::  ( Ord variable
         , Show variable
@@ -75,15 +91,9 @@ simplifyInternalMap
             (Conditional variable
                 (Domain.Builtin (TermLike Concrete) (TermLike variable))
             )
-simplifyInternalMap internalMapOrPattern = do
-    conditionalInternalMap <- Lens.ala Compose traverse internalMapOrPattern
-    let bottomInternalMap =
-            conditionalInternalMap
-            `Conditional.andPredicate` makeFalsePredicate
-        normalizedInternalMap =
-            fromMaybe bottomInternalMap
-            $ traverse normalizeInternalMap conditionalInternalMap
-    return (Domain.BuiltinMap <$> normalizedInternalMap)
+simplifyInternalMap =
+    (fmap . fmap) Domain.BuiltinMap
+    . simplifyInternal normalizeInternalMap
 
 normalizeInternalMap
     :: Ord variable
@@ -103,15 +113,9 @@ simplifyInternalSet
             (Conditional variable
                 (Domain.Builtin (TermLike Concrete) (TermLike variable))
             )
-simplifyInternalSet internalSetOrPattern = do
-    conditionalInternalSet <- Lens.ala Compose traverse internalSetOrPattern
-    let bottomInternalSet =
-            conditionalInternalSet
-            `Conditional.andPredicate` makeFalsePredicate
-        normalizedInternalSet =
-            fromMaybe bottomInternalSet
-            $ traverse normalizeInternalSet conditionalInternalSet
-    return (Domain.BuiltinSet <$> normalizedInternalSet)
+simplifyInternalSet =
+    (fmap . fmap) Domain.BuiltinSet
+    . simplifyInternal normalizeInternalSet
 
 normalizeInternalSet
     :: Ord variable
