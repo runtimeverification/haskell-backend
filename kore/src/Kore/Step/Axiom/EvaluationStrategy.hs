@@ -13,7 +13,7 @@ module Kore.Step.Axiom.EvaluationStrategy
     , totalDefinitionEvaluation
     , firstFullEvaluation
     , simplifierWithFallback
-    , evaluatedChildOfApplication
+    , withCeilChildOfApplication
     , introduceDefinedness
     ) where
 
@@ -28,10 +28,14 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Internal.Conditional
                  ( andCondition )
+import           Kore.Internal.MultiAnd
+                 ( MultiAnd )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
 import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
 import qualified Kore.Internal.OrPredicate as OrPredicate
 import           Kore.Internal.Pattern
                  ( Pattern )
@@ -321,7 +325,7 @@ evaluateWithDefinitionAxioms
     _axiomSimplifiers
     patt
   =
-    evaluatedChildOfApplication patt >>= \evalChild ->
+    ceilChildOfApplication patt >>= \evalChild ->
         AttemptedAxiom.maybeNotApplicable $ do
         let
             -- TODO (thomas.tuegel): Figure out how to get the initial conditions
@@ -363,32 +367,47 @@ evaluateWithDefinitionAxioms
 
 introduceDefinedness
     :: forall variable
-    .  SortedVariable variable
-    => FreshVariable variable
-    => Unparse variable
-    => Show variable
-    => OrPredicate.OrPredicate variable
+    .  ( SortedVariable variable
+       , FreshVariable variable
+       , Unparse variable
+       , Show variable
+       )
+    => OrPredicate variable
     -> Pattern variable
     -> Pattern variable
 introduceDefinedness cond result =
     foldl andCondition result cond
 
-evaluatedChildOfApplication
+ceilChildOfApplication
     :: forall variable simplifier
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    .  ( FreshVariable variable
+       , SortedVariable variable
+       , Show variable
+       , Unparse variable
+       , MonadSimplify simplifier
+       )
     => TermLike variable
-    -> simplifier (OrPredicate.OrPredicate variable)
-evaluatedChildOfApplication patt =
+    -> simplifier (OrPredicate variable)
+ceilChildOfApplication =
+    withCeilChildOfApplication
+        Ceil.makeEvaluateTerm
+        AndPredicates.simplifyEvaluatedMultiPredicate
+
+withCeilChildOfApplication
+    :: forall variable m
+    .  ( FreshVariable variable
+       , SortedVariable variable
+       , Show variable
+       , Unparse variable
+       , Monad m
+       )
+    => (TermLike variable -> m (OrPredicate variable))
+    -> (MultiAnd (OrPredicate variable) -> m (OrPredicate variable))
+    -> TermLike variable
+    -> m (OrPredicate variable)
+withCeilChildOfApplication f g patt =
     case patt of
         App_ _ children -> do
-            ceil <-
-                traverse Ceil.makeEvaluateTerm children
-            AndPredicates.simplifyEvaluatedMultiPredicate
-                    . MultiAnd.make
-                    $ ceil
+            ceil <- traverse f children
+            g . MultiAnd.make $ ceil
         _ -> pure OrPredicate.top

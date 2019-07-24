@@ -87,7 +87,7 @@ test_definitionEvaluation =
                     , predicate = makeNotPredicate requirement
                     , substitution = mempty
                     }
-        ceil <- mockEvaluatedChildOfApplication term
+        ceil <- ceilChildOfApplication term
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results =
@@ -118,7 +118,7 @@ test_definitionEvaluation =
             remainder =
                 Pattern.fromTermLike
                 $ Mock.functionalConstr10 Mock.b
-        ceil <- mockEvaluatedChildOfApplication term
+        ceil <- ceilChildOfApplication term
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
@@ -149,7 +149,7 @@ test_definitionEvaluation =
             axiom1 = axiom initial final1 requirement1
             axiom2 = axiom initial final2 requirement2
             evaluator = definitionEvaluation [axiom1, axiom2]
-        ceil <- mockEvaluatedChildOfApplication term
+        ceil <- ceilChildOfApplication term
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results = OrPattern.fromPatterns
@@ -356,7 +356,7 @@ test_simplifierWithFallback =
     , testCase "Uses first with remainder" $ do
         let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
             term = Mock.g Mock.a
-        ceil <- mockEvaluatedChildOfApplication term
+        ceil <- ceilChildOfApplication term
         let expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results = OrPattern.fromPatterns
@@ -526,19 +526,13 @@ evaluate (BuiltinAndAxiomSimplifier simplifier) patt =
     substitutionSimplifier = Predicate.create
     patternSimplifier = Simplifier.create
 
-mockEvaluatedChildOfApplication
+ceilChildOfApplication
     :: TermLike Variable
     -> IO (OrPredicate.OrPredicate Variable)
-mockEvaluatedChildOfApplication patt =
-    case patt of
-        App_ _ children -> do
-            ceil <-
-                traverse Test.Ceil.makeEvaluateTerm children
-            mockSimplifyEvaluatedMultiPredicate
-                    . MultiAnd.make
-                    $ ceil
-        _ -> pure OrPredicate.top
-
+ceilChildOfApplication =
+    withCeilChildOfApplication
+        Test.Ceil.makeEvaluateTerm
+        mockSimplifyEvaluatedMultiPredicate
 
 mockSimplifyEvaluatedMultiPredicate
     :: MultiAnd.MultiAnd (OrPredicate.OrPredicate Variable)

@@ -15,8 +15,6 @@ import           Data.Default
 import qualified Data.Map.Strict as Map
 
 import qualified Kore.Builtin.Map as Map
-import           Kore.Internal.Conditional
-                 ( andCondition )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -26,7 +24,8 @@ import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.EvaluationStrategy
-                 ( builtinEvaluation, simplifierWithFallback )
+                 ( builtinEvaluation, introduceDefinedness,
+                 simplifierWithFallback )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Axiom.Registry
@@ -163,7 +162,7 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
             expect = OrPattern.fromPatterns
-                [ mkEvaluated <$> foldl andCondition result OrPredicate.top ]
+                [ mkEvaluated <$> introduceDefinedness OrPredicate.top result ]
         actual <-
             evaluateWithAxioms
                 (axiomPatternsToEvaluators
