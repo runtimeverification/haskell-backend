@@ -8,12 +8,13 @@ module Kore.Step.Simplification.Builtin
     ) where
 
 import qualified Control.Lens as Lens
+import           Data.Functor.Compose
 import           Data.Generics.Product
 import           Data.Maybe
 
 import qualified Kore.Builtin.AssociativeCommutative as Builtin
 import           Kore.Domain.Builtin
-                 ( InternalMap )
+                 ( InternalMap, InternalSet )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Internal.Conditional
                  ( Conditional )
@@ -57,9 +58,7 @@ simplifyBuiltin =
             _list <- sequence _list
             -- MultiOr propagates \bottom children upward.
             return (Domain.BuiltinList <$> sequenceA _list)
-        Domain.BuiltinSet _set -> do
-            _set <- sequence _set
-            return (Domain.BuiltinSet <$> sequenceA _set)
+        Domain.BuiltinSet set' -> simplifyInternalSet set'
         Domain.BuiltinInt int -> (return . pure) (Domain.BuiltinInt int)
         Domain.BuiltinBool bool -> (return . pure) (Domain.BuiltinBool bool)
         Domain.BuiltinString string ->
@@ -77,10 +76,10 @@ simplifyInternalMap
                 (Domain.Builtin (TermLike Concrete) (TermLike variable))
             )
 simplifyInternalMap internalMapOrPattern = do
-    internalMapConditional <- sequence internalMapOrPattern
-    let conditionalInternalMap = sequenceA internalMapConditional
-        bottomInternalMap =
-            conditionalInternalMap `Conditional.andPredicate` makeFalsePredicate
+    conditionalInternalMap <- Lens.ala Compose traverse internalMapOrPattern
+    let bottomInternalMap =
+            conditionalInternalMap
+            `Conditional.andPredicate` makeFalsePredicate
         normalizedInternalMap =
             fromMaybe bottomInternalMap
             $ traverse normalizeInternalMap conditionalInternalMap
@@ -91,4 +90,32 @@ normalizeInternalMap
     => InternalMap (TermLike Concrete) (TermLike variable)
     -> Maybe (InternalMap (TermLike Concrete) (TermLike variable))
 normalizeInternalMap =
+    Lens.traverseOf (field @"builtinAcChild") Builtin.normalize
+
+simplifyInternalSet
+    ::  ( Ord variable
+        , Show variable
+        , Unparse variable
+        , SortedVariable variable
+        )
+    =>  Domain.InternalSet (TermLike Concrete) (OrPattern variable)
+    ->  MultiOr
+            (Conditional variable
+                (Domain.Builtin (TermLike Concrete) (TermLike variable))
+            )
+simplifyInternalSet internalSetOrPattern = do
+    conditionalInternalSet <- Lens.ala Compose traverse internalSetOrPattern
+    let bottomInternalSet =
+            conditionalInternalSet
+            `Conditional.andPredicate` makeFalsePredicate
+        normalizedInternalSet =
+            fromMaybe bottomInternalSet
+            $ traverse normalizeInternalSet conditionalInternalSet
+    return (Domain.BuiltinSet <$> normalizedInternalSet)
+
+normalizeInternalSet
+    :: Ord variable
+    => InternalSet (TermLike Concrete) (TermLike variable)
+    -> Maybe (InternalSet (TermLike Concrete) (TermLike variable))
+normalizeInternalSet =
     Lens.traverseOf (field @"builtinAcChild") Builtin.normalize
