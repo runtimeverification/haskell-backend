@@ -49,7 +49,6 @@ import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..), hasRemainders, maybeNotApplicable )
-import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.OrPattern as OrPattern
                  ( simplifyPredicatesWithSmt )
 import           Kore.Step.Step
