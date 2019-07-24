@@ -941,7 +941,7 @@ asPattern concreteMap =
     Reflection.give testMetadataTools Ac.asPattern mapSort
         Domain.NormalizedAc
             { elementsWithVariables = []
-            , concreteElements = fmap Domain.Value concreteMap
+            , concreteElements = fmap Domain.MapValue concreteMap
             , opaque = []
             }
 
@@ -950,7 +950,8 @@ asVariablePattern
 asVariablePattern variableMap =
     Reflection.give testMetadataTools Ac.asPattern mapSort
         Domain.NormalizedAc
-            { elementsWithVariables = Map.toList (fmap Domain.Value variableMap)
+            { elementsWithVariables =
+                Domain.MapElement <$> Map.toList variableMap
             , concreteElements = Map.empty
             , opaque = []
             }
@@ -961,7 +962,7 @@ asInternal
     -> TermLike Variable
 asInternal =
     Ac.asInternalConcrete testMetadataTools mapSort
-    . fmap Domain.Value
+    . fmap Domain.MapValue
 
 -- * Constructors
 
