@@ -192,7 +192,7 @@ test_userDefinedFunction =
                     , attributes = def
                     }
                 )
-                (mockSimplifier noSimplification)
+                (simplifierTermLike Mock.env)
                 (Mock.functionalConstr20
                     (mkVar Mock.y)
                     (mkVar Mock.z)
@@ -231,7 +231,7 @@ test_userDefinedFunctionSmt =
                     , attributes = def
                     }
                 )
-                (mockSimplifier noSimplification)
+                (simplifierTermLike Mock.env)
                 (baseTerm Mock.z Mock.z)
         assertEqualWithExplanation "sigma(x,x) => bottom + sigma(x,x) remainder"
             expect
@@ -261,7 +261,7 @@ test_userDefinedFunctionSmt =
                     , attributes = def
                     }
                 )
-                (mockSimplifier noSimplification)
+                (simplifierTermLike Mock.env)
                 (baseTerm Mock.z Mock.z)
         assertEqualWithExplanation "sigma(x,x) => a + bottom remainder"
             expect

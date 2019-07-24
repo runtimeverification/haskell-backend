@@ -173,11 +173,11 @@ test_applicationSimplification =
                             { term = fOfA
                             , predicate =
                                 makeAndPredicate
-                                    (makeEqualsPredicate fOfA gOfA)
                                     (makeAndPredicate
+                                        (makeEqualsPredicate fOfA gOfA)
                                         (makeEqualsPredicate fOfA fOfB)
-                                        (makeEqualsPredicate gOfA gOfB)
                                     )
+                                    (makeEqualsPredicate gOfA gOfB)
                             , substitution =
                                 Substitution.unsafeWrap $ List.sortOn fst
                                     [ (z', gOfB)
@@ -218,7 +218,7 @@ test_applicationSimplification =
                         }
                 in
                     evaluate
-                        (mockSimplifier noSimplification)
+                        (simplifierTermLike Mock.env)
                         (Map.singleton
                             (AxiomIdentifier.Application Mock.sigmaId)
                             (simplificationEvaluator

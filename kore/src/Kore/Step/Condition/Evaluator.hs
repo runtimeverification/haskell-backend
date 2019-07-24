@@ -11,14 +11,19 @@ module Kore.Step.Condition.Evaluator
     ( simplify
     ) where
 
-import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Predicate
+                 ( Predicate )
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Simplification.Data
-                 ( MonadSimplify, simplifyTerm )
+                 ( MonadSimplify )
+import qualified Kore.Step.Simplification.Data as BranchT
+                 ( gather )
+import qualified Kore.Step.Simplification.Predicate as Predicate
+                 ( simplify )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
@@ -35,29 +40,14 @@ simplify
         )
     => Syntax.Predicate variable
     -- ^ The condition to be evaluated.
-    -- TODO: Can't it happen that I also get a substitution when evaluating
-    -- functions? See the Equals case.
     -> m (Predicate variable)
+    -- TODO (virgil): use a BranchT m here and stop converting substitutions
+    -- to predicates. Even better, delete this one and use Predicate.simplify.
 simplify predicate = do
-    simplified <- simplifyTerm (Syntax.Predicate.unwrapPredicate predicate)
-    return $ asPredicate (OrPattern.toPattern simplified)
-
-asPredicate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
+    simplifiedPredicates <- BranchT.gather
+        $ Predicate.simplify 0 (Predicate.fromPredicate predicate)
+    return
+        ( Predicate.fromPredicate
+        $ Syntax.Predicate.makeMultipleOrPredicate
+        $ map Predicate.toPredicate simplifiedPredicates
         )
-    => Pattern variable
-    -> Predicate variable
-asPredicate Conditional {term, predicate, substitution} =
-    let
-        andPatt =
-            Syntax.Predicate.makeAndPredicate predicate
-            $ Syntax.Predicate.wrapPredicate term
-    in
-        Conditional
-            { term = ()
-            , predicate = andPatt
-            , substitution = substitution
-            }
