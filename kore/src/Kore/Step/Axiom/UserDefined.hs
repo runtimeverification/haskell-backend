@@ -17,7 +17,6 @@ import qualified Kore.Attribute.Axiom.Concrete as Axiom.Concrete
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Step.Axiom.Matcher
@@ -34,11 +33,8 @@ import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather )
-import qualified Kore.Step.Simplification.Pattern as Pattern
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-                 ( evaluate )
+import qualified Kore.Step.Simplification.OrPattern as OrPattern
+                 ( simplifyPredicatesWithSmt )
 import           Kore.Step.Step
                  ( UnificationProcedure (..) )
 import qualified Kore.Step.Step as Step
@@ -107,28 +103,18 @@ equalityRuleEvaluator
 
     simplifyOrPatternsWithSmt
         :: [OrPattern variable] -> simplifier (OrPattern variable)
-    simplifyOrPatternsWithSmt unsimplified =
-        MultiOr.mergeAll
-        <$> traverse
-            simplifyPatternWithSmt
-            (MultiOr.extractPatterns (MultiOr.mergeAll unsimplified))
-
-    simplifyPatternWithSmt
-        :: Pattern.Pattern variable
-        -- ^ The condition to be evaluated.
-        -> simplifier (OrPattern variable)
-    simplifyPatternWithSmt config = do
-        patterns <- BranchT.gather $ do
-            p <- Pattern.simplifyPredicate config
-            SMT.Evaluator.evaluate p
-        return (OrPattern.fromPatterns patterns)
+    simplifyOrPatternsWithSmt patterns = do
+        simplified <- traverse OrPattern.simplifyPredicatesWithSmt patterns
+        return (MultiOr.mergeAll simplified)
 
     simplifyResults
         :: [Step.Results variable]
         -> simplifier (AttemptedAxiomResults variable)
     simplifyResults stepResults = do
         results <-
-            simplifyOrPatternsWithSmt $ map Step.gatherResults stepResults
+            simplifyOrPatternsWithSmt
+            $ map Step.gatherResults stepResults
         remainders <-
-            simplifyOrPatternsWithSmt $ map Step.remainders stepResults
+            simplifyOrPatternsWithSmt
+            $ map Step.remainders stepResults
         return AttemptedAxiomResults { results, remainders }

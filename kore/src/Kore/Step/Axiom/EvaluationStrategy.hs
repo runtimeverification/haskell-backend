@@ -26,9 +26,7 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( extractPatterns, mergeAll )
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+                 ( extractPatterns )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Pattern )
@@ -47,16 +45,13 @@ import           Kore.Step.Simplification.Data
                  AttemptedAxiomResults (AttemptedAxiomResults),
                  BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap,
                  MonadSimplify, PredicateSimplifier, TermLikeSimplifier )
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..), hasRemainders, maybeNotApplicable )
 import qualified Kore.Step.Simplification.Data as Simplifier
-import qualified Kore.Step.Simplification.Pattern as Pattern
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-                 ( evaluate )
+import qualified Kore.Step.Simplification.OrPattern as OrPattern
+                 ( simplifyPredicatesWithSmt )
 import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
@@ -333,9 +328,11 @@ evaluateWithDefinitionAxioms
         markRemainderEvaluated = fmap mkEvaluated
 
     simplifiedResults <-
-        Monad.Trans.lift $ simplifyOrPatternWithSmt (Step.gatherResults result)
+        Monad.Trans.lift
+        $ OrPattern.simplifyPredicatesWithSmt (Step.gatherResults result)
     simplifiedRemainders <-
-        Monad.Trans.lift $ simplifyOrPatternWithSmt (Step.remainders result)
+        Monad.Trans.lift
+        $ OrPattern.simplifyPredicatesWithSmt (Step.remainders result)
 
     return $ AttemptedAxiom.Applied AttemptedAxiomResults
         { results = simplifiedResults
@@ -354,21 +351,3 @@ evaluateWithDefinitionAxioms
         $ Step.applyRulesSequence unificationProcedure initial rules
 
     unificationProcedure = UnificationProcedure unificationWithAppMatchOnTop
-
-    simplifyOrPatternWithSmt
-        :: OrPattern variable -> simplifier (OrPattern variable)
-    simplifyOrPatternWithSmt unsimplified =
-        MultiOr.mergeAll
-        <$> traverse
-            simplifyPatternWithSmt
-            (MultiOr.extractPatterns unsimplified)
-
-    simplifyPatternWithSmt
-        :: Pattern.Pattern variable
-        -- ^ The condition to be evaluated.
-        -> simplifier (OrPattern variable)
-    simplifyPatternWithSmt config = do
-        patterns <- BranchT.gather $ do
-            p <- Pattern.simplifyPredicate config
-            SMT.Evaluator.evaluate p
-        return (OrPattern.fromPatterns patterns)
