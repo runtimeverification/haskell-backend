@@ -52,5 +52,4 @@ instance ParseAttributes Assoc where
         withApplication' = Parser.withApplication assocId
         failDuplicate' = Parser.failDuplicate assocId
 
-    toAttributes Assoc { isAssoc } =
-        Attributes $ if isAssoc then [assocAttribute] else []
+    toAttributes Assoc { isAssoc } = Attributes [assocAttribute | isAssoc]

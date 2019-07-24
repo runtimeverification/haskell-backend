@@ -25,16 +25,14 @@ import           Numeric
 
 import Kore.Parser.CharSet as CharSet
 
-{-# ANN oneCharEscapes ("HLint: ignore Use String" :: String) #-}
 oneCharEscapes :: [Char]
 oneCharEscapes = "'\"?\\abfnrtv"
 
 oneCharEscapeDict :: CharSet
 oneCharEscapeDict = makeCharSet oneCharEscapes
 
-{-# ANN escapeCString ("HLint: ignore Use ." :: String) #-}
 escapeCString :: String -> String
-escapeCString s = foldr (.) id (map escapeAndAddChar s) ""
+escapeCString s = foldr ((.) . escapeAndAddChar) id s ""
 
 escapeCStringT :: Text -> Text
 escapeCStringT = Text.concatMap escapeAndAddCharT

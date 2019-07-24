@@ -211,7 +211,8 @@ skipWhitespaceTests =
                 \  |\n\
                 \1 | /*/\n\
                 \  |    ^\n\
-                \Unfinished comment.\n"
+                \unexpected end of input\n\
+                \expecting \"*/\"\n"
             }
         , FailureWithoutMessage
             [ "a", "/*", "/**", "/***", "/*hello", "/*//", "*/"

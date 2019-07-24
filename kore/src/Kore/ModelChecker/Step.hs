@@ -111,7 +111,7 @@ type Transition m =
 transitionRule
     :: forall m
     .  MonadSimplify m
-    => Prim (CommonModalPattern) (RewriteRule Variable)
+    => Prim CommonModalPattern (RewriteRule Variable)
     -> CommonProofState
     -> Transition m CommonProofState
 transitionRule

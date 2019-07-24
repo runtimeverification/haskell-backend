@@ -163,7 +163,7 @@ withSentenceImportContext
     :: SentenceImport patternType
     -> Either (Error e) a
     -> Either (Error e) a
-withSentenceImportContext _ = \go -> go
+withSentenceImportContext _ = id
 
 {- | Identify and  locate the given sentence in the error context.
  -}

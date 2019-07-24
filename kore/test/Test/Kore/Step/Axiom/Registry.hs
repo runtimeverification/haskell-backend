@@ -38,8 +38,6 @@ import           Kore.Step.Axiom.Registry
 import           Kore.Step.Rule
                  ( extractRewriteAxioms )
 import           Kore.Step.Simplification.Data
-import           Kore.Step.Simplification.Data
-                 ( Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import           Kore.Syntax.Definition hiding
                  ( Symbol )

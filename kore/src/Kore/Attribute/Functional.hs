@@ -68,4 +68,4 @@ instance ParseAttributes Functional where
         failDuplicate' = Parser.failDuplicate functionalId
 
     toAttributes Functional { isDeclaredFunctional } =
-        Attributes $ if isDeclaredFunctional then [functionalAttribute] else []
+        Attributes [functionalAttribute | isDeclaredFunctional]

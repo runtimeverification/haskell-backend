@@ -78,7 +78,7 @@ makeAndEvaluateApplications
     => Symbol
     -> [Pattern variable]
     -> simplifier (OrPattern variable)
-makeAndEvaluateApplications symbol children = do
+makeAndEvaluateApplications symbol children =
     makeAndEvaluateSymbolApplications symbol children
 
 makeAndEvaluateSymbolApplications

@@ -183,7 +183,7 @@ mergePredicateList
        , Unparse variable
        , SortedVariable variable
        )
-    => [(Predicate variable)]
-    -> (Predicate variable)
+    => [Predicate variable]
+    -> Predicate variable
 mergePredicateList [] = Predicate.top
 mergePredicateList (p:ps) = foldl' (<>) p ps

@@ -26,12 +26,8 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.Simplification.Data
-                 ( AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (..), CommonAttemptedAxiom )
-import           Kore.Step.Simplification.Data as AttemptedAxiom
+import qualified Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Simplification.Predicate as Predicate
@@ -494,7 +490,7 @@ axiom left right predicate =
 evaluate
     :: BuiltinAndAxiomSimplifier
     -> TermLike Variable
-    -> IO (CommonAttemptedAxiom)
+    -> IO CommonAttemptedAxiom
 evaluate (BuiltinAndAxiomSimplifier simplifier) patt =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env

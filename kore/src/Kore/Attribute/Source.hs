@@ -15,6 +15,7 @@ import           Control.Applicative
 import           Control.DeepSeq
                  ( NFData )
 import           Data.Default
+import           Data.Maybe
 import qualified Data.Text as Text
 import           GHC.Generics
                  ( Generic )
@@ -55,7 +56,7 @@ instance ParseAttributes Source where
                     arg <- AttributeParser.getOneArgument args
                     StringLiteral str <- AttributeParser.getStringLiteral arg
                     pure
-                        . maybe def id
+                        . fromMaybe def
                         . parseMaybe sourceParser
                         $ Text.unpack str
                 _ ->

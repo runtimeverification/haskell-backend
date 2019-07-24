@@ -375,7 +375,7 @@ rewriteWithPredicate left right predicate =
         }
 
 runSteps
-    :: (ExecutionGraph (CommonStrategyPattern) -> Maybe (ExecutionGraph b))
+    :: (ExecutionGraph CommonStrategyPattern -> Maybe (ExecutionGraph b))
     -> (ExecutionGraph b -> a)
     -> Pattern Variable
     -- ^left-hand-side of unification
@@ -385,7 +385,7 @@ runSteps graphFilter picker configuration strategy =
     (<$>) picker
     $ SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier mockEnv
-    $ (fromMaybe (error "Unexpected missing tree") . graphFilter)
+    $ fromMaybe (error "Unexpected missing tree") . graphFilter
     <$> runStrategy transitionRule strategy (RewritePattern configuration)
   where
     mockEnv = Mock.env

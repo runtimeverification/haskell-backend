@@ -10,6 +10,8 @@ module Kore.Step.SMT.Declaration.Symbols
     ( declare
     ) where
 
+import qualified Data.Foldable as Foldable
+
 import qualified Kore.Step.SMT.AST as AST
                  ( Declarations (Declarations),
                  KoreSymbolDeclaration (SymbolDeclaredDirectly, SymbolDeclaredIndirectly),
@@ -21,9 +23,8 @@ import qualified SMT
 {-| Sends all symbols in the given declarations to the SMT.
 -}
 declare :: SMT.MonadSMT m => AST.SmtDeclarations -> m ()
-declare AST.Declarations { symbols } = do
-    _ <- traverse declareSymbol symbols
-    return ()
+declare AST.Declarations { symbols } =
+    Foldable.traverse_ declareSymbol symbols
 
 declareSymbol :: SMT.MonadSMT m => AST.SmtSymbol -> m ()
 declareSymbol AST.Symbol {declaration} =
