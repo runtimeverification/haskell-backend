@@ -196,6 +196,44 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
         assertEqualWithExplanation "" expect actual
+    , testCase "f(X /Int X) => 1" $ do
+        let
+            expect = OrPattern.fromPatterns
+                [ Conditional
+                    { term = Mock.builtinInt 1
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+                ]
+        actual <-
+            evaluateWithAxioms
+                (axiomPatternsToEvaluators
+                    (Map.fromList
+                        [ (AxiomIdentifier.Application Mock.fIntId
+                          , [ EqualityRule RulePattern
+                                { left =
+                                    Mock.fInt (mkVar Mock.xInt)
+                                , right = mkVar Mock.xInt
+                                , requires = makeTruePredicate
+                                , ensures = makeTruePredicate
+                                , attributes = def
+                                }
+                            ]
+                          )
+                        ]
+                    )
+                )
+                Conditional
+                    { term =
+                        Mock.fInt
+                            (Mock.tdivInt
+                                (mkVar Mock.xInt)
+                                (mkVar Mock.xInt)
+                            )
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+        assertEqualWithExplanation "" expect actual
     , testCase "map function, matching" $ do
         let
             expect = OrPattern.fromPatterns
