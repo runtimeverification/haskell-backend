@@ -42,6 +42,7 @@ import           Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
+import qualified Kore.Proof.Value as Value
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
 import qualified Kore.Step.Result as Result
@@ -60,7 +61,6 @@ import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..), hasRemainders, maybeNotApplicable )
-import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
@@ -69,8 +69,6 @@ import           Kore.Unparser
                  ( Unparse, unparse )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
-
-import qualified Kore.Proof.Value as Value
 
 {-|Describes whether simplifiers are allowed to return multiple results or not.
 -}
@@ -195,10 +193,6 @@ evaluateBuiltin
     axiomIdToSimplifier
     patt
   = do
-    tools <- Simplifier.askMetadataTools
-    let
-        isValue pat = isJust $
-            Value.fromConcreteStepPattern tools =<< asConcrete pat
     result <-
         builtinEvaluator
             substitutionSimplifier
@@ -207,20 +201,18 @@ evaluateBuiltin
             patt
     case result of
         AttemptedAxiom.NotApplicable
-          | isPattConcrete
-          , App_ appHead children <- patt
+          | App_ appHead children <- patt
           , Just hook_ <- Text.unpack <$> Attribute.getHook (symbolHook appHead)
           , all isValue children ->
-            error
-                (   "Expecting hook " ++ hook_
-               ++  " to reduce concrete pattern\n\t"
-                ++ show patt
-                )
-          | otherwise ->
-            return AttemptedAxiom.NotApplicable
-        AttemptedAxiom.Applied _ -> return result
+            (error . show . Pretty.vsep)
+                [ "Expecting hook "
+                    <> Pretty.squotes (Pretty.pretty hook_)
+                    <> " to reduce concrete pattern:"
+                , Pretty.indent 4 (unparse patt)
+                ]
+        _ -> return result
   where
-    isPattConcrete = isConcrete patt
+    isValue pat = isJust $ Value.fromTermLike =<< asConcrete pat
 
 applyFirstSimplifierThatWorks
     :: forall variable simplifier

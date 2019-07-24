@@ -228,8 +228,8 @@ assertValue termLike =
   where
     concrete = asConcrete termLike
     roundTrip patt = do
-        value <- Value.fromConcreteStepPattern tools patt
-        return (Value.asConcreteStepPattern value)
+        value <- Value.fromTermLike patt
+        return (Value.asTermLike value)
 
 testValue :: GHC.HasCallStack => TestName -> TermLike Variable -> TestTree
 testValue name = testCase name . assertValue
@@ -238,7 +238,7 @@ assertNotValue :: GHC.HasCallStack => TermLike Variable -> Assertion
 assertNotValue purePattern =
     assertEqual "Unexpected normalized pattern"
         Nothing
-        (concretePattern >>= Value.fromConcreteStepPattern tools)
+        (concretePattern >>= Value.fromTermLike)
   where
     concretePattern = asConcrete purePattern
 

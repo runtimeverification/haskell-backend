@@ -83,6 +83,8 @@ module Kore.Internal.TermLike
     , pattern App_
     , pattern Bottom_
     , pattern Builtin_
+    , pattern BuiltinList_
+    , pattern BuiltinMap_
     , pattern Ceil_
     , pattern DV_
     , pattern Equals_
@@ -1886,6 +1888,14 @@ pattern Builtin_
     :: Domain.Builtin (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 
+pattern BuiltinList_
+    :: Domain.InternalList (TermLike variable)
+    -> TermLike variable
+
+pattern BuiltinMap_
+    :: Domain.InternalMap (TermLike Concrete) (TermLike variable)
+    -> TermLike variable
+
 pattern Equals_
     :: Sort
     -> Sort
@@ -1997,6 +2007,12 @@ pattern DV_ domainValueSort domainValueChild <-
     )
 
 pattern Builtin_ builtin <- (Recursive.project -> _ :< BuiltinF builtin)
+
+pattern BuiltinList_ internalList
+    <- (Recursive.project -> _ :< BuiltinF (Domain.BuiltinList internalList))
+
+pattern BuiltinMap_ internalMap
+    <- (Recursive.project -> _ :< BuiltinF (Domain.BuiltinMap internalMap))
 
 pattern Equals_ equalsOperandSort equalsResultSort equalsFirst equalsSecond <-
     (Recursive.project ->

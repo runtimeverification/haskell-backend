@@ -22,6 +22,7 @@ module Kore.Builtin.Set
     , Domain.Builtin
     , returnConcreteSet
     , asTermLike
+    , internalize
     , expectBuiltinSet
     , expectConcreteBuiltinSet
       -- * Unification
@@ -31,7 +32,7 @@ module Kore.Builtin.Set
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
-                 ( MaybeT (MaybeT), fromMaybe, runMaybeT )
+                 ( MaybeT (MaybeT), fromMaybe, hoistMaybe, runMaybeT )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -45,6 +46,8 @@ import qualified Data.Text as Text
 import qualified Kore.Attribute.Symbol as Attribute
                  ( Symbol )
 import qualified Kore.Builtin.AssociativeCommutative as Ac
+import           Kore.Builtin.Attributes
+                 ( isConstructorModulo_ )
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.Builtin.Builtin
                  ( acceptAnySort )
@@ -250,7 +253,7 @@ evalIn =
                     case arguments of
                         [_elem, _set] -> (_elem, _set)
                         _ -> Builtin.wrongArity Set.inKey
-            _elem <- Builtin.expectNormalConcreteTerm _elem
+            _elem <- hoistMaybe $ Builtin.toKey _elem
             _set <- expectConcreteBuiltinSet Set.inKey _set
             (Builtin.appliedFunction . asExpandedBoolPattern)
                 (Map.member _elem _set)
@@ -440,6 +443,39 @@ asTermLike builtin =
         -> TermLike variable
     element (key, Domain.NoValue) = mkApplySymbol elementSymbol [key]
 
+{- | Convert a Set-sorted 'TermLike' to its internal representation.
+
+The 'TermLike' is unmodified if it is not Set-sorted. @internalize@ only
+operates at the top-most level, it does not descend into the 'TermLike' to
+internalize subterms.
+
+ -}
+internalize
+    :: (Ord variable, SortedVariable variable)
+    => SmtMetadataTools Attribute.Symbol
+    -> TermLike variable
+    -> TermLike variable
+internalize tools termLike
+  | fromMaybe False (isSetSort tools sort')
+  -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
+  -- apply it if we know the term head is a constructor-like symbol.
+  , App_ symbol _ <- termLike
+  , isConstructorModulo_ symbol =
+    case Ac.toNormalized @Domain.NormalizedSet tools termLike of
+        Ac.Bottom                    -> TermLike.mkBottom sort'
+        Ac.Normalized termNormalized
+          | null (Domain.elementsWithVariables termNormalized)
+          , null (Domain.concreteElements termNormalized)
+          , [singleOpaqueTerm] <- Domain.opaque termNormalized
+          ->
+            -- When the 'normalized' term consists of a single opaque Map-sorted
+            -- term, we should prefer to return only that term.
+            singleOpaqueTerm
+          | otherwise -> Ac.asInternal tools sort' termNormalized
+  | otherwise = termLike
+  where
+    sort' = termLikeSort termLike
+
 {- | Simplify the conjunction or equality of two concrete Set domain values.
 
     When it is used for simplifying equality, one should separately solve the
@@ -479,7 +515,7 @@ unifyEquals
     second
   | fromMaybe False (isSetSort tools sort1)
   = MaybeT $ do
-    unifiers <- Monad.Unify.gather (runMaybeT (unifyEquals0 True first second))
+    unifiers <- Monad.Unify.gather (runMaybeT (unifyEquals0 first second))
     case sequence unifiers of
         Nothing -> return Nothing
         Just us -> Monad.Unify.scatter (map Just us)
@@ -489,12 +525,10 @@ unifyEquals
 
     -- | Unify the two argument patterns.
     unifyEquals0
-        :: Bool
-        -> TermLike variable
+        :: TermLike variable
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
     unifyEquals0
-        alreadyNormalized
         (Builtin_ (Domain.BuiltinSet normalized1))
         (Builtin_ (Domain.BuiltinSet normalized2))
       =
@@ -503,14 +537,13 @@ unifyEquals
             first
             second
             unifyEqualsChildren
-            alreadyNormalized
             normalized1
             normalized2
 
-    unifyEquals0 _ pat1 pat2 = do
+    unifyEquals0 pat1 pat2 = do
         firstDomain <- asDomain pat1
         secondDomain <- asDomain pat2
-        unifyEquals0 False firstDomain secondDomain
+        unifyEquals0 firstDomain secondDomain
       where
         asDomain
             :: TermLike variable
