@@ -32,8 +32,6 @@ module Kore.Repl.State
 import           Control.Concurrent.MVar
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
-import           Control.Monad
-                 ( join )
 import           Control.Monad.Error.Class
                  ( MonadError )
 import qualified Control.Monad.Error.Class as Monad.Error
@@ -60,7 +58,6 @@ import qualified Data.Map as Map
 import           Data.Map.Strict
                  ( Map )
 import           Data.Maybe
-                 ( catMaybes, listToMaybe )
 import           Data.Sequence
                  ( Seq )
 import           Data.Set
@@ -88,9 +85,6 @@ import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger.Output as Logger
 import           Kore.OnePath.StrategyPattern
 import           Kore.OnePath.Verification
-                 ( isTrusted )
-import           Kore.OnePath.Verification
-                 ( Axiom (..), Claim )
 import           Kore.Predicate.Predicate as Predicate
 import           Kore.Repl.Data
 import           Kore.Step.Rule
@@ -257,7 +251,7 @@ getExecutionGraph
 getExecutionGraph = do
     ReplState { claimIndex, graphs, claim } <- get
     let mgraph = Map.lookup claimIndex graphs
-    return $ maybe (emptyExecutionGraph claim) id mgraph
+    return $ fromMaybe (emptyExecutionGraph claim) mgraph
 
 -- | Update the internal representation of the current execution graph.
 updateInnerGraph
@@ -290,7 +284,7 @@ getLabels
 getLabels = do
     ReplState { claimIndex, labels } <- get
     let mlabels = Map.lookup claimIndex labels
-    return $ maybe Map.empty id mlabels
+    return $ fromMaybe Map.empty mlabels
 
 -- | Update the node labels for the current claim.
 setLabels
@@ -312,11 +306,11 @@ getTargetNode
     -> m (Maybe ReplNode)
 getTargetNode maybeNode = do
     currentNode <- Lens.use (field @"node")
-    let node' = unReplNode $ maybe currentNode id maybeNode
+    let node' = unReplNode $ fromMaybe currentNode maybeNode
     graph <- getInnerGraph
     if node' `elem` Graph.nodes graph
        then pure . Just . ReplNode $ node'
-       else pure $ Nothing
+       else pure Nothing
 
 -- | Get the configuration at selected node (or current node for 'Nothing').
 getConfigAt
@@ -327,7 +321,7 @@ getConfigAt
 getConfigAt maybeNode = do
     node' <- getTargetNode maybeNode
     case node' of
-        Nothing -> pure $ Nothing
+        Nothing -> pure Nothing
         Just n -> do
             graph' <- getInnerGraph
             pure $ Just (n, getLabel graph' (unReplNode n))
@@ -350,10 +344,7 @@ getRuleFor maybeNode = do
         :: forall a b
         .  [(a, b, Seq (RewriteRule Variable))]
         -> Maybe (RewriteRule Variable)
-    getRewriteRule =
-        listToMaybe
-        . join
-        . fmap (toList . third)
+    getRewriteRule = listToMaybe . concatMap (toList . third)
 
     third :: forall a b c. (a, b, c) -> c
     third (_, _, c) = c
@@ -605,7 +596,8 @@ generateInProgressOPClaims = do
         <$> filter (not . isTrusted)
                 ( (claims !!)
                 . unClaimIndex
-                <$> (Set.toList $ Set.difference
+                <$> Set.toList
+                    (Set.difference
                         ( Set.fromList
                         $ fmap ClaimIndex [0..length claims - 1]
                         )
@@ -623,14 +615,13 @@ claimsWithPatterns graphs claims =
     Bifunctor.bimap
         ((claims !!) . unClaimIndex)
         (findTerminalPatterns . Strategy.graph)
-    <$> (Map.toList graphs)
+    <$> Map.toList graphs
 
 findTerminalPatterns
     :: InnerGraph
     -> [TermLike Variable]
 findTerminalPatterns graph =
-    catMaybes
-    . fmap (nodeToPattern graph)
+    mapMaybe (nodeToPattern graph)
     . findLeafNodes
     $ graph
 
@@ -650,8 +641,7 @@ sortLeafsByType :: InnerGraph -> Map.Map NodeState [Graph.Node]
 sortLeafsByType graph =
     Map.fromList
         . groupSort
-        . catMaybes
-        . fmap (getNodeState graph)
+        . mapMaybe (getNodeState graph)
         . findLeafNodes
         $ graph
 

@@ -729,11 +729,11 @@ test_unifyConcatElemVarVsElemElem =
 
             let elementSet2Normalized =
                     emptyNormalizedSet
-                    `with` (VariableElement (mkVar elementVar2))
+                    `with` VariableElement (mkVar elementVar2)
                 elementSet2 = asInternalNormalized elementSet2Normalized
                 elementSet3 = asInternalNormalized $
                     emptyNormalizedSet
-                    `with` (VariableElement (mkVar elementVar3))
+                    `with` VariableElement (mkVar elementVar3)
                 patSet = addSelectElement elementVar2 elementSet3
                 expectedPatSet = asInternalNormalized $
                     elementSet2Normalized
@@ -1448,7 +1448,7 @@ test_unifyMultipleIdenticalOpaqueSets =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (elementVar1, (mkVar elementVar2))
+                                [ (elementVar1, mkVar elementVar2)
                                 , (setVar3, asInternal Set.empty)
                                 ]
                         }

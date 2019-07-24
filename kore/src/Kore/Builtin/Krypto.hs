@@ -106,11 +106,10 @@ evalKeccak =
             let
                 digest :: Digest Keccak_256
                 digest =
-                      hash
+                    hash
                     $ ByteString.pack
                     $ map (fromIntegral . ord)
-                    $ Text.unpack
-                    $ str
+                    $ Text.unpack str
                 result = fromString (show digest)
             Builtin.appliedFunction $ String.asPattern resultSort result
 
@@ -188,10 +187,11 @@ recoverPublicKey recId (r, s) e =
 
     decompressPt x signBit = Point x (if signBit /= even y then y else p - y)
       where
-        y = sqrtMod p $
-              (powMod p x 3)
-            + (mulMod p (ecc_a curveParams) x)
-            + (ecc_b curveParams)
+        y = sqrtMod p
+            ( powMod p x 3
+            + mulMod p (ecc_a curveParams) x
+            + ecc_b curveParams
+            )
 
 invMod
     :: Integer

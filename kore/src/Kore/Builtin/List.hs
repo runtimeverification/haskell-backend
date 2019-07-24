@@ -45,6 +45,8 @@ import           Control.Error
                  ( MaybeT )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Function as Function
+import           Data.Functor
+                 ( (<$) )
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
                  ( Map )
@@ -184,8 +186,8 @@ evalElement :: Builtin.Function
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
-    evalElement0 _ resultSort = \arguments ->
-        case arguments of
+    evalElement0 _ resultSort =
+        \case
             [elem'] -> returnList resultSort (Seq.singleton elem')
             _ -> Builtin.wrongArity elementKey
 
@@ -502,10 +504,7 @@ unifyEquals
                     builtin1 { Domain.builtinListChild = prefix1 }
                     builtin2
             suffixUnified <- simplifyChild frame2 listSuffix1
-            let result =
-                    pure (mkBuiltin internal1)
-                    <* prefixUnified
-                    <* suffixUnified
+            let result = mkBuiltin internal1 <$ prefixUnified <* suffixUnified
             return result
       where
         internal1 = Domain.BuiltinList builtin1
@@ -534,10 +533,7 @@ unifyEquals
                 unifyEqualsConcrete
                     builtin1 { Domain.builtinListChild = suffix1 }
                     builtin2
-            let result =
-                    pure (mkBuiltin internal1)
-                    <* prefixUnified
-                    <* suffixUnified
+            let result = mkBuiltin internal1 <$ prefixUnified <* suffixUnified
             return result
       where
         internal1 = Domain.BuiltinList builtin1

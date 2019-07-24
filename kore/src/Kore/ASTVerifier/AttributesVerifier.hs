@@ -86,7 +86,7 @@ verifySortHookAttribute _indexedModule =
         DoNotVerifyAttributes ->
             \_ -> return emptyHook
         VerifyAttributes _ _ ->
-            \attributes -> parseAttributes attributes
+            parseAttributes
 
 {- | Verify that the @hook{}()@ attribute is present and well-formed.
 
@@ -105,7 +105,7 @@ verifySymbolHookAttribute =
             -- Do not attempt to parse, verify, or return the hook attribute.
             \_ -> return emptyHook
         VerifyAttributes _ _ ->
-            \attributes -> parseAttributes attributes
+            parseAttributes
 
 {- | Verify that the @hook{}()@ attribute is not present.
 
@@ -127,5 +127,5 @@ verifyNoHookAttribute =
                 Nothing ->
                     -- The hook attribute is (correctly) absent.
                     return ()
-                Just _ -> do
+                Just _ ->
                     koreFail "Unexpected 'hook' attribute"
