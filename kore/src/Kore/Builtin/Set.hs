@@ -22,6 +22,7 @@ module Kore.Builtin.Set
     , Domain.Builtin
     , returnConcreteSet
     , asTermLike
+    , internalize
     , expectBuiltinSet
     , expectConcreteBuiltinSet
       -- * Unification
@@ -31,7 +32,7 @@ module Kore.Builtin.Set
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
-                 ( MaybeT (MaybeT), fromMaybe, runMaybeT )
+                 ( MaybeT (MaybeT), fromMaybe, hoistMaybe, runMaybeT )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -45,6 +46,8 @@ import qualified Data.Text as Text
 import qualified Kore.Attribute.Symbol as Attribute
                  ( Symbol )
 import qualified Kore.Builtin.AssociativeCommutative as Ac
+import           Kore.Builtin.Attributes
+                 ( isConstructorModulo_ )
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.Builtin.Builtin
                  ( acceptAnySort )
@@ -250,7 +253,7 @@ evalIn =
                     case arguments of
                         [_elem, _set] -> (_elem, _set)
                         _ -> Builtin.wrongArity Set.inKey
-            _elem <- Builtin.expectNormalConcreteTerm _elem
+            _elem <- hoistMaybe $ Builtin.toKey _elem
             _set <- expectConcreteBuiltinSet Set.inKey _set
             (Builtin.appliedFunction . asExpandedBoolPattern)
                 (Map.member _elem _set)
@@ -439,6 +442,39 @@ asTermLike builtin =
         :: (TermLike variable, Domain.NoValue (TermLike variable))
         -> TermLike variable
     element (key, Domain.NoValue) = mkApplySymbol elementSymbol [key]
+
+{- | Convert a Set-sorted 'TermLike' to its internal representation.
+
+The 'TermLike' is unmodified if it is not Set-sorted. @internalize@ only
+operates at the top-most level, it does not descend into the 'TermLike' to
+internalize subterms.
+
+ -}
+internalize
+    :: (Ord variable, SortedVariable variable)
+    => SmtMetadataTools Attribute.Symbol
+    -> TermLike variable
+    -> TermLike variable
+internalize tools termLike
+  | fromMaybe False (isSetSort tools sort')
+  -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
+  -- apply it if we know the term head is a constructor-like symbol.
+  , App_ symbol _ <- termLike
+  , isConstructorModulo_ symbol =
+    case Ac.toNormalized @Domain.NormalizedSet tools termLike of
+        Ac.Bottom                    -> TermLike.mkBottom sort'
+        Ac.Normalized termNormalized
+          | null (Domain.elementsWithVariables termNormalized)
+          , null (Domain.concreteElements termNormalized)
+          , [singleOpaqueTerm] <- Domain.opaque termNormalized
+          ->
+            -- When the 'normalized' term consists of a single opaque Map-sorted
+            -- term, we should prefer to return only that term.
+            singleOpaqueTerm
+          | otherwise -> Ac.asInternal tools sort' termNormalized
+  | otherwise = termLike
+  where
+    sort' = termLikeSort termLike
 
 {- | Simplify the conjunction or equality of two concrete Set domain values.
 

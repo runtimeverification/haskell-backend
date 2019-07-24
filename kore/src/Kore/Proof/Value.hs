@@ -10,9 +10,9 @@ module Kore.Proof.Value
     ( ValueF (..)
     , Value
     , fromPattern
-    , Kore.Proof.Value.fromConcreteStepPattern
+    , fromTermLike
     , asPattern
-    , Kore.Proof.Value.asConcreteStepPattern
+    , asTermLike
     ) where
 
 import           Control.Comonad.Trans.Cofree
@@ -28,10 +28,7 @@ import           GHC.Generics
 
 import qualified Kore.Attribute.Pattern as Attribute
                  ( Pattern (..) )
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.IndexedModule.MetadataTools
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
                  ( TermLike, TermLikeF (..) )
@@ -93,10 +90,9 @@ eraseSortInjection original@(Recursive.project -> _ :< value) =
 
  -}
 fromPattern
-    :: SmtMetadataTools StepperAttributes
-    -> Base (TermLike Concrete) (Maybe Value)
+    :: Base (TermLike Concrete) (Maybe Value)
     -> Maybe Value
-fromPattern _ (attrs :< termLikeF) =
+fromPattern (attrs :< termLikeF) =
     fmap (Recursive.embed . (attrs :<))
     $ case termLikeF of
         ApplySymbolF applySymbolF
@@ -140,12 +136,8 @@ a sort injection applied only to normalized value.
 See also: 'fromPattern'
 
  -}
-fromConcreteStepPattern
-    :: SmtMetadataTools StepperAttributes
-    -> TermLike Concrete
-    -> Maybe Value
-fromConcreteStepPattern tools =
-    Recursive.fold (fromPattern tools)
+fromTermLike :: TermLike Concrete -> Maybe Value
+fromTermLike = Recursive.fold fromPattern
 
 {- | Project a 'Value' to a concrete 'Pattern' head.
  -}
@@ -161,5 +153,5 @@ asPattern (Recursive.project -> attrs :< value) =
 
 {- | View a normalized value as a 'ConcreteStepPattern'.
  -}
-asConcreteStepPattern :: Value -> TermLike Concrete
-asConcreteStepPattern = Recursive.unfold asPattern
+asTermLike :: Value -> TermLike Concrete
+asTermLike = Recursive.unfold asPattern
