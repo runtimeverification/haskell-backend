@@ -344,7 +344,7 @@ getRuleFor maybeNode = do
         :: forall a b
         .  [(a, b, Seq (RewriteRule Variable))]
         -> Maybe (RewriteRule Variable)
-    getRewriteRule = listToMaybe . ((toList . third) =<<)
+    getRewriteRule = listToMaybe . concatMap (toList . third)
 
     third :: forall a b c. (a, b, c) -> c
     third (_, _, c) = c
