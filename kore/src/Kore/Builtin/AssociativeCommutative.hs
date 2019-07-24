@@ -38,7 +38,6 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT, partitionEithers )
-import qualified Control.Lens as Lens
 import           Control.Monad
                  ( foldM, unless )
 import qualified Control.Monad.Trans as Monad.Trans
@@ -322,8 +321,7 @@ instance
             -- do an `addAll*Disjoint` as above.
             let allOpaque = Data.List.sort (opaque1 ++ opaque2)
             return Domain.NormalizedAc
-                { elementsWithVariables =
-                    Lens.review Domain.elementIso <$> withVariables
+                { elementsWithVariables = Domain.wrapElement <$> withVariables
                 , concreteElements = concrete
                 , opaque = allOpaque
                 }
@@ -471,8 +469,7 @@ elementListAsInternal tools sort1 terms = do
             tools
             sort1
             Domain.NormalizedAc
-                { elementsWithVariables =
-                    Lens.review Domain.elementIso <$> withVariables
+                { elementsWithVariables = Domain.wrapElement <$> withVariables
                 , concreteElements = concreteAc
                 , opaque = []
                 }
@@ -979,7 +976,7 @@ buildResultFromUnifiers
                 )
         result = Domain.NormalizedAc
             { elementsWithVariables =
-                Lens.review Domain.elementIso <$> Map.toList withVariableMap
+                Domain.wrapElement <$> Map.toList withVariableMap
             , concreteElements = concreteMap
             , opaque = allOpaque
             }
