@@ -441,7 +441,7 @@ test_builtinEvaluation =
     , testCase "Failed evaluation"
         (assertErrorIO
             (assertSubstring ""
-                "Expecting hook MAP.unit to reduce concrete pattern"
+                "Expecting hook 'MAP.unit' to reduce concrete pattern"
             )
             (evaluate
                 (builtinEvaluation failingEvaluator)

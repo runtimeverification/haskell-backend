@@ -30,8 +30,6 @@ module Kore.Builtin
     , internalize
     ) where
 
-import           Control.Category
-                 ( (>>>) )
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.HashMap.Strict as HashMap
@@ -272,6 +270,12 @@ externalizePattern =
                 $ getEvaluated evaluatedF
             BuiltinF _ -> error "Unexpected internal builtin"
 
+{- | Convert a 'TermLike' to its internal representation.
+
+@internalize@ modifies the term recursively from the bottom up, so any internal
+representations are fully normalized.
+
+ -}
 internalize
     :: (Ord variable, SortedVariable variable)
     => SmtMetadataTools Attribute.Symbol
@@ -282,5 +286,5 @@ internalize tools =
   where
     internalize1 =
             List.internalize tools
-        >>> Map.internalize tools
-        >>> Set.internalize tools
+        .   Map.internalize tools
+        .   Set.internalize tools

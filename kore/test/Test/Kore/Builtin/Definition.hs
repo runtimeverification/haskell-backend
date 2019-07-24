@@ -720,7 +720,7 @@ builtinMap children =
         , builtinAcChild = Domain.NormalizedMap Domain.NormalizedAc
             { elementsWithVariables = []
             , concreteElements =
-                Map.fromList (map (Bifunctor.second Value) children)
+                Map.fromList (Bifunctor.second Domain.MapValue <$> children)
             , opaque = []
             }
         }
@@ -787,7 +787,7 @@ builtinSet children =
         , builtinAcChild = Domain.NormalizedSet Domain.NormalizedAc
             { elementsWithVariables = []
             , concreteElements =
-                Map.fromList (map (\x -> (x, NoValue)) children)
+                Map.fromList (map (\x -> (x, SetValue)) children)
             , opaque = []
             }
         }

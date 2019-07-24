@@ -1613,16 +1613,16 @@ test_matching_Set =
     mkConcreteSet :: [TermLike Concrete] -> TermLike Variable
     mkConcreteSet =
         Ac.asInternalConcrete Mock.metadataTools Mock.setSort
-        . Map.fromSet (const Domain.NoValue)
+        . Map.fromSet (const Domain.SetValue)
         . Set.fromList
     mkSet concrete' evars svars =
         Ac.asInternal Mock.metadataTools Mock.setSort
-            Domain.NormalizedAc
-                { elementsWithVariables = map (\x -> (x, Domain.NoValue)) evars
-                , concreteElements =
-                    Map.fromSet (const Domain.NoValue) (Set.fromList concrete')
-                , opaque = svars
-                }
+        $ Domain.wrapAc Domain.NormalizedAc
+            { elementsWithVariables = Domain.SetElement <$> evars
+            , concreteElements =
+                Map.fromSet (const Domain.SetValue) (Set.fromList concrete')
+            , opaque = svars
+            }
     matchConcreteSet = matchDefinition `on` mkConcreteSet
     matchConcrete =
         matchConcreteSet `on` fmap mkKey
@@ -1788,12 +1788,11 @@ test_matching_Map =
                 , builtinIntValue = k
                 }
     mkVal = Int.asInternal Mock.intSort
-    wrapValue (x, y) = (x, Domain.Value y)
     mkConcreteMap
         :: [(TermLike Concrete, TermLike Variable)] -> TermLike Variable
     mkConcreteMap =
         Ac.asInternalConcrete Mock.metadataTools Mock.mapSort
-        . fmap Domain.Value
+        . fmap Domain.MapValue
         . Map.fromList
     mkMap
         :: [(TermLike Concrete, TermLike Variable)]
@@ -1802,15 +1801,14 @@ test_matching_Map =
         -> TermLike Variable
     mkMap concrete' evars svars =
         Ac.asInternal Mock.metadataTools Mock.setSort
-            Domain.NormalizedAc
-                { elementsWithVariables = map wrapValue evars
-                , concreteElements = fmap Domain.Value (Map.fromList concrete')
-                , opaque = svars
-                }
+        $ Domain.wrapAc Domain.NormalizedAc
+            { elementsWithVariables = Domain.MapElement <$> evars
+            , concreteElements = Domain.MapValue <$> Map.fromList concrete'
+            , opaque = svars
+            }
     mapWithKey = Bifunctor.bimap mkKey
     matchMap = matchDefinition `on` mkConcreteMap
-    matchConcrete =
-        matchMap `on` fmap (mapWithKey mkVal)
+    matchConcrete = matchMap `on` fmap (mapWithKey mkVal)
     matchVariable var val =
         matchMap
             (mapWithKey (either mkVar mkVal) <$> var)

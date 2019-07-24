@@ -545,29 +545,29 @@ matchBuiltins qv (Builtin.BuiltinMap m1) (Builtin.BuiltinMap m2) =
 matchBuiltins _ _ _ = nothing
 
 matchAc
-    :: forall normalized unifier valueWrapper variable
-    .   ( Builtin.AcWrapper normalized valueWrapper
-        , Foldable valueWrapper
+    :: forall normalized unifier variable
+    .   ( Builtin.AcWrapper normalized
+        , Foldable (Builtin.Value normalized)
         , FreshVariable variable
         , Simplifier.MonadSimplify unifier
         , MonadUnify unifier
         , Ord variable
         , Show variable
         , SortedVariable variable
-        , Ac.TermWrapper normalized valueWrapper
-        , Traversable valueWrapper
+        , Ac.TermWrapper normalized
+        , Traversable (Builtin.Value normalized)
         , Unparse variable
         )
     => Map.Map variable variable
     -> Sort
-    -> Builtin.NormalizedAc (TermLike Concrete) valueWrapper (TermLike variable)
-    -> Builtin.NormalizedAc (TermLike Concrete) valueWrapper (TermLike variable)
+    -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
+    -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
     -> MaybeT unifier (Predicate variable)
 matchAc
     quantifiedVariables
     acSort
     Builtin.NormalizedAc
-        { elementsWithVariables = varElems1
+        { elementsWithVariables = preVarElems1
         , concreteElements      = concrete1
         , opaque                = varOpaque1
         }
@@ -577,11 +577,12 @@ matchAc
         , opaque                = []
         }
   | length varOpaque1 <= 1 = do
+    let varElems1 = Builtin.unwrapElement <$> preVarElems1
     let intersection
             :: Map.Map
                 (TermLike Concrete)
-                ( valueWrapper (TermLike variable)
-                , valueWrapper (TermLike variable)
+                ( Builtin.Value normalized (TermLike variable)
+                , Builtin.Value normalized (TermLike variable)
                 )
         intersection = Map.intersectionWith (,) concrete1 concrete2
         remainder = Map.toList $ Map.difference concrete2 concrete1
@@ -613,8 +614,8 @@ matchAc
         _ -> nothing
   where
     matchElements
-        ::  ( (TermLike variable, valueWrapper (TermLike variable))
-            , (TermLike Concrete, valueWrapper (TermLike variable))
+        ::  ( (TermLike variable, Builtin.Value normalized (TermLike variable))
+            , (TermLike Concrete, Builtin.Value normalized (TermLike variable))
             )
         -> MaybeT unifier (Predicate variable)
     matchElements
@@ -626,15 +627,11 @@ matchAc
         return (keyUnifier <> wrappedValueUnifier)
 
     matchWrapped
-        ::  ( valueWrapper (TermLike variable)
-            , valueWrapper (TermLike variable)
+        ::  ( Builtin.Value normalized (TermLike variable)
+            , Builtin.Value normalized (TermLike variable)
             )
         -> MaybeT unifier (Predicate variable)
     matchWrapped (variableValue, concreteValue) = do
-        wrappedValueUnifier <-
-            case Builtin.acExactZip variableValue concreteValue of
-                Nothing -> error "Cannot pair ac values"
-                Just zipped ->
-                    traverse (uncurry (match quantifiedVariables)) zipped
-        return (Foldable.fold wrappedValueUnifier)
+        let aligned = Builtin.alignValues variableValue concreteValue
+        Foldable.fold <$> traverse (uncurry (match quantifiedVariables)) aligned
 matchAc _ _ _ _ = nothing

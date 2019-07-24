@@ -1095,7 +1095,7 @@ test_equalsTermsSimplification =
                 Ac.asInternalConcrete
                     Mock.metadataTools
                     Mock.setSort
-                    (Map.fromSet (const Domain.NoValue) set)
+                    (Map.fromSet (const Domain.SetValue) set)
             expected = Just $ do -- list monad
                 (xValue, xSetValue) <-
                     [ (Mock.a, [Mock.b])

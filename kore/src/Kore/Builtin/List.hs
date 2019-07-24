@@ -352,8 +352,15 @@ internalize
 internalize tools termLike@(App_ symbol args)
   | isSymbolUnit    symbol , [ ] <- args = asInternal' (Seq.fromList args)
   | isSymbolElement symbol , [_] <- args = asInternal' (Seq.fromList args)
-  | isSymbolConcat  symbol , [BuiltinList_ list1, BuiltinList_ list2] <- args =
-    asInternal' (Function.on (<>) Domain.builtinListChild list1 list2)
+  | isSymbolConcat  symbol =
+    case args of
+        [BuiltinList_ list1, arg2              ]
+          | (null . Domain.builtinListChild) list1 -> arg2
+        [arg1              , BuiltinList_ list2]
+          | (null . Domain.builtinListChild) list2 -> arg1
+        [BuiltinList_ list1, BuiltinList_ list2] ->
+            asInternal' (Function.on (<>) Domain.builtinListChild list1 list2)
+        _ -> termLike
   where
     asInternal' = asInternal tools (termLikeSort termLike)
 internalize _ termLike = termLike

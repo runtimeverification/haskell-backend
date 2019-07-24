@@ -911,42 +911,42 @@ asTermLike =
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asPattern :: Map (TermLike Concrete) (TermLike Variable) -> Pattern Variable
 asPattern concreteMap =
-    Reflection.give testMetadataTools Ac.asPattern mapSort
-        Domain.NormalizedAc
-            { elementsWithVariables = []
-            , concreteElements = fmap Domain.Value concreteMap
-            , opaque = []
-            }
+    Reflection.give testMetadataTools
+    $ Ac.asPattern mapSort
+    $ Domain.wrapAc Domain.NormalizedAc
+        { elementsWithVariables = []
+        , concreteElements = Domain.MapValue <$> concreteMap
+        , opaque = []
+        }
 
 asVariablePattern
     :: Map (TermLike Variable) (TermLike Variable) -> Pattern Variable
 asVariablePattern variableMap =
-    Reflection.give testMetadataTools Ac.asPattern mapSort
-        Domain.NormalizedAc
-            { elementsWithVariables = Map.toList (fmap Domain.Value variableMap)
-            , concreteElements = Map.empty
-            , opaque = []
-            }
+    Reflection.give testMetadataTools
+    $ Ac.asPattern mapSort
+    $ Domain.wrapAc Domain.NormalizedAc
+        { elementsWithVariables = Domain.MapElement <$> Map.toList variableMap
+        , concreteElements = Map.empty
+        , opaque = []
+        }
 
 -- | Specialize 'Ac.asInternal' to the builtin sort 'mapSort'.
 asInternal
     :: [(TermLike Variable, TermLike Variable)]
     -> TermLike Variable
 asInternal elements =
-    Ac.asInternal
-        testMetadataTools
-        mapSort
-        Domain.NormalizedAc
-            { elementsWithVariables = abstractElements
-            , concreteElements
-            , opaque = []
-            }
+    Ac.asInternal testMetadataTools mapSort
+    $ Domain.wrapAc Domain.NormalizedAc
+        { elementsWithVariables = Domain.wrapElement <$> abstractElements
+        , concreteElements
+        , opaque = []
+        }
   where
     asConcrete element@(key, value) =
         (,) <$> TermLike.asConcrete key <*> pure value
         & maybe (Left element) Right
     (abstractElements, Map.fromList -> concreteElements) =
-        asConcrete . Bifunctor.second Domain.Value <$> elements
+        asConcrete . Bifunctor.second Domain.MapValue <$> elements
         & Either.partitionEithers
 
 -- * Constructors

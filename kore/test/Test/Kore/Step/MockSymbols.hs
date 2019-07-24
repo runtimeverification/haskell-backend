@@ -1390,19 +1390,18 @@ framedMap elements (map Internal.mkVar -> opaque) =
         , builtinAcUnit = unitMapSymbol
         , builtinAcElement = elementMapSymbol
         , builtinAcConcat = concatMapSymbol
-        , builtinAcChild =
-            Domain.NormalizedMap Domain.NormalizedAc
-                { elementsWithVariables = abstractElements
-                , concreteElements
-                , opaque
-                }
+        , builtinAcChild = Domain.NormalizedMap Domain.NormalizedAc
+            { elementsWithVariables = Domain.wrapElement <$> abstractElements
+            , concreteElements
+            , opaque
+            }
         }
   where
     asConcrete element@(key, value) =
         (,) <$> Internal.asConcrete key <*> pure value
         & maybe (Left element) Right
     (abstractElements, Map.fromList -> concreteElements) =
-        asConcrete . Bifunctor.second Domain.Value <$> elements
+        asConcrete . Bifunctor.second Domain.MapValue <$> elements
         & Either.partitionEithers
 
 builtinList
@@ -1431,7 +1430,7 @@ builtinSet child =
         , builtinAcChild = Domain.NormalizedSet Domain.NormalizedAc
             { elementsWithVariables = []
             , concreteElements =
-                Map.fromList (map (\key -> (key, Domain.NoValue)) child)
+                Map.fromList (map (\key -> (key, Domain.SetValue)) child)
             , opaque = []
             }
         }
