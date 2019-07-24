@@ -1638,14 +1638,14 @@ asTermLike =
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort' and concrete
 -- elements.
 asPattern :: Set (TermLike Concrete) -> Pattern Variable
-asPattern concreteSet = Reflection.give testMetadataTools
-    $ Ac.asPattern
-        setSort
-        NormalizedAc
-            { elementsWithVariables = []
-            , concreteElements = Map.fromSet (const Domain.SetValue) concreteSet
-            , opaque = []
-            }
+asPattern concreteSet =
+    Reflection.give testMetadataTools
+    $ Ac.asPattern setSort
+    $ Domain.wrapAc NormalizedAc
+        { elementsWithVariables = []
+        , concreteElements = Map.fromSet (const Domain.SetValue) concreteSet
+        , opaque = []
+        }
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 asInternal :: Set (TermLike Concrete) -> TermLike Variable
@@ -1657,7 +1657,7 @@ asInternal =
 asInternalNormalized
     :: NormalizedAc NormalizedSet (TermLike Concrete) (TermLike Variable)
     -> TermLike Variable
-asInternalNormalized = Ac.asInternal testMetadataTools setSort
+asInternalNormalized = Ac.asInternal testMetadataTools setSort . Domain.wrapAc
 
 -- * Constructors
 

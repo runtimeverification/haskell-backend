@@ -78,8 +78,8 @@ import           Kore.Internal.Symbol
                  ( Symbol )
 import           Kore.Internal.TermLike
                  ( pattern App_, pattern BuiltinMap_, pattern BuiltinSet_,
-                 pattern Builtin_, Concrete, TermLike, pattern Var_,
-                 mkApplySymbol, mkBuiltin, termLikeSort )
+                 Concrete, TermLike, pattern Var_, mkApplySymbol, mkBuiltin,
+                 termLikeSort )
 import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Sort
                  ( Sort )
@@ -126,8 +126,7 @@ class
     -}
     toNormalized
         :: Ord variable
-        => SmtMetadataTools Attribute.Symbol
-        -> TermLike variable
+        => TermLike variable
         -> NormalizedOrBottom normalized variable
 
     concatNormalized
@@ -199,12 +198,9 @@ instance TermWrapper Domain.NormalizedMap where
     concat(X:Map, concat({1}, X:Map))
     @
     -}
-    toNormalized
-        _tools
-        (Builtin_ (Domain.BuiltinMap Domain.InternalAc { builtinAcChild }))
-      =
+    toNormalized (BuiltinMap_ Domain.InternalAc { builtinAcChild }) =
         maybe Bottom Normalized (normalize builtinAcChild)
-    toNormalized tools (App_ symbol args)
+    toNormalized (App_ symbol args)
       | Map.isSymbolUnit symbol =
         case args of
             [] -> (Normalized . Domain.wrapAc) Domain.emptyNormalizedAc
@@ -228,10 +224,9 @@ instance TermWrapper Domain.NormalizedMap where
             _ -> Builtin.wrongArity "MAP.element"
       | Map.isSymbolConcat symbol =
         case args of
-            [set1, set2] ->
-                toNormalized tools set1 <> toNormalized tools set2
+            [set1, set2] -> toNormalized set1 <> toNormalized set2
             _ -> Builtin.wrongArity "MAP.concat"
-    toNormalized _ patt =
+    toNormalized patt =
         (Normalized . Domain.wrapAc) Domain.NormalizedAc
             { elementsWithVariables = []
             , concreteElements = Map.empty
@@ -295,12 +290,9 @@ instance TermWrapper Domain.NormalizedSet where
     concat(X:Set, concat({1}, X:Set))
     @
     -}
-    toNormalized
-        _tools
-        (Builtin_ (Domain.BuiltinSet Domain.InternalAc { builtinAcChild }))
-      =
+    toNormalized (BuiltinSet_ Domain.InternalAc { builtinAcChild }) =
         maybe Bottom Normalized (normalize builtinAcChild)
-    toNormalized tools (App_ symbol args)
+    toNormalized (App_ symbol args)
       | Set.isSymbolUnit symbol =
         case args of
             [] -> (Normalized . Domain.wrapAc) Domain.emptyNormalizedAc
@@ -323,10 +315,9 @@ instance TermWrapper Domain.NormalizedSet where
             _ -> Builtin.wrongArity "SET.element"
       | Set.isSymbolConcat symbol =
         case args of
-            [set1, set2] ->
-                toNormalized tools set1 <> toNormalized tools set2
+            [set1, set2] -> toNormalized set1 <> toNormalized set2
             _ -> Builtin.wrongArity "SET.concat"
-    toNormalized _ patt =
+    toNormalized patt =
         (Normalized . Domain.wrapAc) Domain.NormalizedAc
             { elementsWithVariables = []
             , concreteElements = Map.empty
@@ -761,7 +752,7 @@ unifyEqualsNormalized
         => TermLike variable
         -> MaybeT unifier (TermNormalizedAc normalized variable)
     normalize1 patt =
-        case toNormalized tools patt of
+        case toNormalized patt of
             Bottom -> Monad.Trans.lift $ Monad.Unify.explainAndReturnBottom
                 "Duplicated elements in normalization."
                 first
@@ -834,7 +825,6 @@ unifyEqualsNormalizedAc
         opaquesSimplified <- mapM simplify opaques
 
         buildResultFromUnifiers
-            tools
             bottomWithExplanation
             commonElementsTerms
             commonVariablesTerms
@@ -1005,8 +995,7 @@ buildResultFromUnifiers
         , TermWrapper normalized
         , Unparse variable
         )
-    => SmtMetadataTools Attribute.Symbol
-    -> (forall result . Doc () -> unifier result)
+    => (forall result . Doc () -> unifier result)
     -> [(TermLike Concrete, Domain.Value normalized (TermLike variable))]
     -> [(TermLike variable, Domain.Value normalized (TermLike variable))]
     -> [TermLike variable]
@@ -1018,7 +1007,6 @@ buildResultFromUnifiers
     -> [Predicate variable]
     -> unifier (Conditional variable (TermNormalizedAc normalized variable))
 buildResultFromUnifiers
-    tools
     bottomWithExplanation
     commonElementsTerms
     commonVariablesTerms
@@ -1039,8 +1027,7 @@ buildResultFromUnifiers
         (opaquesTerms, opaquesPredicates) =
             unzip (map Conditional.splitTerm opaquesSimplified)
         opaquesNormalized :: NormalizedOrBottom normalized variable
-        opaquesNormalized =
-            Foldable.fold (map (toNormalized tools) opaquesTerms)
+        opaquesNormalized = Foldable.foldMap toNormalized opaquesTerms
 
     Domain.NormalizedAc
         { elementsWithVariables = preOpaquesElementsWithVariables

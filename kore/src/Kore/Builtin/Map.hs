@@ -274,17 +274,15 @@ evalConcat =
         -> [TermLike variable]
         -> m (AttemptedAxiom variable)
     evalConcat0 _ resultSort arguments = Builtin.getAttemptedAxiom $ do
-        tools <- askMetadataTools
-
         let (_map1, _map2) =
                 case arguments of
                     [_map1, _map2] -> (_map1, _map2)
                     _ -> Builtin.wrongArity Map.concatKey
 
             normalized1 :: Ac.NormalizedOrBottom Domain.NormalizedMap variable
-            normalized1 = Ac.toNormalized tools _map1
+            normalized1 = Ac.toNormalized _map1
             normalized2 :: Ac.NormalizedOrBottom Domain.NormalizedMap variable
-            normalized2 = Ac.toNormalized tools _map2
+            normalized2 = Ac.toNormalized _map2
 
         Ac.evalConcatNormalizedOrBottom resultSort normalized1 normalized2
 
@@ -482,7 +480,7 @@ internalize tools termLike
   -- apply it if we know the term head is a constructor-like symbol.
   , App_ symbol _ <- termLike
   , isConstructorModulo_ symbol =
-    case Ac.toNormalized @Domain.NormalizedMap tools termLike of
+    case Ac.toNormalized @Domain.NormalizedMap termLike of
         Ac.Bottom                    -> TermLike.mkBottom sort'
         Ac.Normalized termNormalized
           | let unwrapped = Domain.unwrapAc termNormalized
@@ -582,4 +580,4 @@ unifyEquals
           where
             normalizedOrBottom
                 :: Ac.NormalizedOrBottom Domain.NormalizedMap variable
-            normalizedOrBottom = Ac.toNormalized tools patt
+            normalizedOrBottom = Ac.toNormalized patt
