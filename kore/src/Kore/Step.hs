@@ -32,7 +32,6 @@ import qualified GHC.Stack as GHC
 import           Numeric.Natural
                  ( Natural )
 
-import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Step.Result as Result
@@ -44,7 +43,7 @@ import           Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyAndRemoveTopExists )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-                 ( evaluate )
+                 ( filterMultiOr )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
@@ -98,11 +97,8 @@ transitionRule =
         do
             configs <- Monad.Trans.lift $
                 Pattern.simplifyAndRemoveTopExists config
-            evaluatedConfigs <- SMT.Evaluator.evaluate configs
-            let
-                -- Filter out ⊥ patterns
-                nonEmptyConfigs = MultiOr.filterOr evaluatedConfigs
-            Foldable.asum (pure <$> nonEmptyConfigs)
+            filteredConfigs <- SMT.Evaluator.filterMultiOr configs
+            Foldable.asum (pure <$> filteredConfigs)
     transitionRewrite rule config = do
         Transition.addRule rule
         let unificationProcedure =

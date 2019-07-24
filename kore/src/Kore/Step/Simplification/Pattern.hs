@@ -7,7 +7,6 @@ module Kore.Step.Simplification.Pattern
     ( simplifyAndRemoveTopExists
     , simplify
     , simplifyPredicate
-    , simplifyPredicateWithSmt
     ) where
 
 import qualified Control.Monad.Trans.Class as Monad.Trans
@@ -15,8 +14,6 @@ import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Internal.OrPattern as OrPattern
-                 ( fromPatterns )
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Internal.Pattern as Pattern
@@ -32,8 +29,6 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-                 ( evaluate )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import           Kore.Syntax.Variable
@@ -104,20 +99,3 @@ simplifyPredicate Conditional {term, predicate, substitution} = do
             [substitution, evaluatedSubstitution]
     -- TODO(virgil): Do I need to re-evaluate the predicate?
     return $ Pattern.withCondition term merged
-
-simplifyPredicateWithSmt
-    ::  ( FreshVariable variable
-        , MonadSimplify simplifier
-        , Ord variable
-        , Show variable
-        , SortedVariable variable
-        , Unparse variable
-        )
-    => Pattern.Pattern variable
-    -- ^ The condition to be evaluated.
-    -> simplifier (OrPattern variable)
-simplifyPredicateWithSmt config = do
-    patterns <- BranchT.gather $ do
-        p <- simplifyPredicate config
-        SMT.Evaluator.evaluate p
-    return (OrPattern.fromPatterns patterns)

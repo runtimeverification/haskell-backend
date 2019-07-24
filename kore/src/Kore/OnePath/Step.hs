@@ -27,7 +27,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Debug
 import qualified Kore.Internal.Conditional as Conditional
-import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
@@ -43,7 +42,7 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyAndRemoveTopExists )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-                 ( evaluate )
+                 ( filterMultiOr )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
@@ -161,13 +160,10 @@ transitionRule strategy expandedPattern =
     applySimplify wrapper config = do
         configs <-
             Monad.Trans.lift $ Pattern.simplifyAndRemoveTopExists config
-        evaluatedConfigs <- SMT.Evaluator.evaluate configs
-        let
-            -- Filter out ⊥ patterns
-            nonEmptyConfigs = MultiOr.filterOr evaluatedConfigs
-        if null nonEmptyConfigs
+        filteredConfigs <- SMT.Evaluator.filterMultiOr configs
+        if null filteredConfigs
             then return Bottom
-            else Foldable.asum (pure . wrapper <$> nonEmptyConfigs)
+            else Foldable.asum (pure . wrapper <$> filteredConfigs)
 
     transitionApplyWithRemainders
         :: [RewriteRule Variable]
@@ -244,11 +240,10 @@ transitionRule strategy expandedPattern =
             result = patt `Conditional.andPredicate` removal
         orResult <-
             Monad.Trans.lift $ Pattern.simplifyAndRemoveTopExists result
-        evaluatedOrResult <- SMT.Evaluator.evaluate orResult
-        let nonEmpty = MultiOr.filterOr evaluatedOrResult
-        if null nonEmpty
+        filteredConfigs <- SMT.Evaluator.filterMultiOr orResult
+        if null filteredConfigs
             then return Bottom
-            else Foldable.asum (pure . proofState <$> nonEmpty)
+            else Foldable.asum (pure . proofState <$> filteredConfigs)
 
 {- | The predicate to remove the destination from the present configuration.
  -}

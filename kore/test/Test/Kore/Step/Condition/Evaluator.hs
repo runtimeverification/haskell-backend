@@ -12,8 +12,8 @@ import           Data.Text
 import           Kore.Internal.Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
-                 makeNotPredicate, makeTruePredicate )
+                 ( makeAndPredicate, makeEqualsPredicate, makeNotPredicate,
+                 makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Simplification.Data
@@ -49,11 +49,11 @@ test_andNegation =
                     (makeNotPredicate predicate)
                 )
         expected === actual
-    expected = makeFalsePredicate
+    expected = Just False
 
 evaluate
     :: Syntax.Predicate Variable
-    -> PropertyT SMT (Syntax.Predicate Variable)
+    -> PropertyT SMT (Maybe Bool)
 evaluate = Trans.lift . evalSimplifier testEnv . SMT.Evaluator.evaluate
 
 noSimplification :: [(TermLike Variable, [Pattern Variable])]

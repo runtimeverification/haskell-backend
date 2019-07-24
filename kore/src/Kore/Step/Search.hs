@@ -34,6 +34,8 @@ import           Kore.Internal.OrPredicate
 import           Kore.Internal.Pattern
                  ( Pattern, Predicate )
 import qualified Kore.Internal.Pattern as Conditional
+import qualified Kore.Internal.Predicate as Predicate
+                 ( bottom, fromSubstitution )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( simplify )
 import           Kore.Step.Simplification.Data
@@ -153,13 +155,20 @@ matchWith e1 e2 = do
             simplified <-
                 Monad.Trans.lift
                 $ Predicate.simplify $ Conditional.predicate merged
-            evaluated <-
+            smtEvaluation <-
                 Monad.Trans.lift $ SMT.Evaluator.evaluate simplified
-            mergePredicatesAndSubstitutions
-                [ Conditional.predicate evaluated ]
-                [ Conditional.substitution merged
-                , Conditional.substitution evaluated
-                ]
+            case smtEvaluation of
+                    Nothing ->
+                        mergePredicatesAndSubstitutions
+                            [ Conditional.predicate simplified ]
+                            [ Conditional.substitution merged
+                            , Conditional.substitution simplified
+                            ]
+                    Just False -> return Predicate.bottom
+                    Just True -> return
+                        (Predicate.fromSubstitution
+                            (Conditional.substitution merged)
+                        )
     case maybeUnifiers of
         Nothing -> nothing
         Just unifiers -> do

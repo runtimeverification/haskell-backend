@@ -9,6 +9,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 module Kore.Step.SMT.Evaluator
     ( decidePredicate
     , Evaluable (..)
+    , filterMultiOr
     )
     where
 
@@ -17,10 +18,10 @@ import           Control.Applicative
 import qualified Control.Applicative as Applicative
 import           Control.Error
                  ( MaybeT, runMaybeT )
-import           Control.Monad
-                 ( when )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Map.Strict as Map
+import           Data.Maybe
+                 ( catMaybes )
 import           Data.Reflection
 import qualified Data.Text as Text
 
@@ -49,7 +50,7 @@ import           Kore.Syntax.Variable
 import           Kore.TopBottom
                  ( TopBottom )
 import           Kore.Unparser
-                 ( Unparse, unparseToString )
+                 ( Unparse )
 import           SMT
                  ( Result (..), SExpr (..) )
 import qualified SMT
@@ -60,7 +61,7 @@ or which contain things that can be evaluated with an SMT solver.
 class Evaluable thing where
     {- | Attempt to evaluate the argument wiith an external SMT solver.
     -}
-    evaluate :: MonadSimplify m => thing -> m thing
+    evaluate :: MonadSimplify m => thing -> m (Maybe Bool)
 
 instance
     ( SortedVariable variable
@@ -71,11 +72,10 @@ instance
     => Evaluable (Syntax.Predicate variable)
   where
     evaluate predicate = do
-        refute <- decidePredicate predicate
-        return $ case refute of
-            Just False -> Syntax.Predicate.makeFalsePredicate
-            Just True -> Syntax.Predicate.makeTruePredicate
-            Nothing -> predicate
+        case predicate of
+            Syntax.Predicate.PredicateTrue -> return (Just True)
+            Syntax.Predicate.PredicateFalse -> return (Just False)
+            _ -> decidePredicate predicate
 
 instance
     ( SortedVariable variable
@@ -85,42 +85,36 @@ instance
     )
     => Evaluable (Conditional variable term)
   where
-    evaluate patt = do
-        evaluatedPredicate <- case Predicate.toPredicate predicate of
-            Syntax.Predicate.PredicateTrue -> return predicate
-            Syntax.Predicate.PredicateFalse -> return predicate
-            syntaxPredicate -> do
-                evaluatedPredicate <- evaluate syntaxPredicate
-                case evaluatedPredicate of
-                    Syntax.Predicate.PredicateTrue -> return Predicate.top
-                    Syntax.Predicate.PredicateFalse -> return Predicate.bottom
-                    _ -> do
-                        when (syntaxPredicate /= evaluatedPredicate)
-                            ((error . unlines)
-                                [ "Unexpected SMT change in syntax predicate:"
-                                , "original=" ++ unparseToString syntaxPredicate
-                                , "changed="
-                                    ++ unparseToString evaluatedPredicate
-                                ]
-                            )
-                        return predicate
-        return (term `Conditional.withCondition` evaluatedPredicate)
+    evaluate patt = evaluate (Predicate.toPredicate predicate)
       where
-        (term, predicate) = Conditional.splitTerm patt
+        (_term, predicate) = Conditional.splitTerm patt
 
-instance
-    ( SortedVariable variable
-    , Ord term
-    , Ord variable
-    , Show variable
-    , TopBottom term
-    , Unparse variable
-    )
-    => Evaluable (MultiOr (Conditional variable term))
+{- | Removes from a MultiOr all items refuted by an external SMT solver. -}
+filterMultiOr
+    :: forall simplifier term variable
+    .   ( MonadSimplify simplifier
+        , Ord term
+        , Ord variable
+        , Show variable
+        , SortedVariable variable
+        , TopBottom term
+        , Unparse variable
+        )
+    => MultiOr (Conditional variable term)
+    -> simplifier (MultiOr (Conditional variable term))
+filterMultiOr multiOr = do
+    elements <- mapM refute (MultiOr.extractPatterns multiOr)
+    return (MultiOr.make (catMaybes elements))
   where
-    evaluate orPattern = do
-        patterns <- mapM evaluate (MultiOr.extractPatterns orPattern)
-        return (MultiOr.make patterns)
+    refute
+        :: Conditional variable term
+        -> simplifier (Maybe (Conditional variable term))
+    refute p = do
+        evaluated <- evaluate p
+        return $ case evaluated of
+            Nothing -> Just p
+            Just False -> Nothing
+            Just True -> Just p
 
 {- | Attempt to refute a predicate using an external SMT solver.
 

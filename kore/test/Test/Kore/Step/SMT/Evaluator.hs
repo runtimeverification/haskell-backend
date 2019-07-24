@@ -45,11 +45,11 @@ contradictoryPredicate =
 test_evaluableSyntaxPredicate :: [TestTree]
 test_evaluableSyntaxPredicate =
     [ testCase "refutes false predicate" $ do
-        let expected = makeFalsePredicate
+        let expected = Just False
         actual <- evaluatePredicate makeFalsePredicate
         assertEqualWithExplanation "false refuted to false" expected actual
     , testCase "refutes predicate" $ do
-        let expected = makeFalsePredicate
+        let expected = Just False
         actual <- evaluatePredicate contradictoryPredicate
         assertEqualWithExplanation "x<0 and x>=0 refuted to false"
             expected actual
@@ -58,11 +58,7 @@ test_evaluableSyntaxPredicate =
 test_evaluableConditional :: [TestTree]
 test_evaluableConditional =
     [ testCase "refutes false predicate" $ do
-        let expected = Conditional
-                { term = Mock.a
-                , predicate = makeFalsePredicate
-                , substitution = mempty
-                }
+        let expected = Just False
         actual <- evaluateConditional Conditional
             { term = Mock.a
             , predicate = makeFalsePredicate
@@ -70,11 +66,7 @@ test_evaluableConditional =
             }
         assertEqualWithExplanation "false refuted to false" expected actual
     , testCase "refutes predicate" $ do
-        let expected = Conditional
-                { term = Mock.a
-                , predicate = makeFalsePredicate
-                , substitution = mempty
-                }
+        let expected = Just False
         actual <- evaluateConditional Conditional
             { term = Mock.a
             , predicate = contradictoryPredicate
@@ -137,22 +129,23 @@ test_evaluableMultiOr =
 
 evaluatePredicate
     :: Syntax.Predicate Variable
-    -> IO (Syntax.Predicate Variable)
+    -> IO (Maybe Bool)
 evaluatePredicate = evaluate
 
 evaluateConditional
     :: Pattern Variable
-    -> IO (Pattern Variable)
+    -> IO (Maybe Bool)
 evaluateConditional = evaluate
 
 evaluateMultiOr
     :: MultiOr (Conditional Variable (TermLike Variable))
     -> IO (MultiOr (Conditional Variable (TermLike Variable)))
-evaluateMultiOr = evaluate
+evaluateMultiOr =
+    Test.SMT.runSMT . evalSimplifier Mock.env . SMT.Evaluator.filterMultiOr
 
 evaluate
     :: SMT.Evaluator.Evaluable thing
     => thing
-    -> IO thing
+    -> IO (Maybe Bool)
 evaluate = Test.SMT.runSMT . evalSimplifier Mock.env . SMT.Evaluator.evaluate
 
