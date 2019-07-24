@@ -50,7 +50,7 @@ module Kore.Parser.Lexeme
 
 import qualified Control.Monad as Monad
 import           Control.Monad.Combinators
-                 ( manyTill, (<|>) )
+                 ( (<|>) )
 import qualified Data.ByteString.Char8 as Char8
 import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
@@ -63,7 +63,7 @@ import qualified Data.Map.Strict as Map
 import           Data.Maybe
 import qualified Data.Text as Text
 import           Text.Megaparsec
-                 ( SourcePos (..), anySingle, eof, getSourcePos, unPos, (<?>) )
+                 ( SourcePos (..), anySingle, getSourcePos, unPos, (<?>) )
 import qualified Text.Megaparsec as Parser
 import qualified Text.Megaparsec.Char as Parser
 import qualified Text.Megaparsec.Char.Lexer as L
@@ -128,15 +128,24 @@ comments after the parsed element.
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme skipWhitespace
 
+{- | Parse the character, but skip its result.
+ -}
+skipChar :: Char -> Parser ()
+skipChar = Monad.void . Parser.char
+
+{- | Parse the string, but skip its result.
+ -}
+skipString :: String -> Parser ()
+skipString = Monad.void . Parser.string
+
 {-|'skipWhitespace' skips whitespace and any comments.
 -}
 skipWhitespace ::  Parser ()
-skipWhitespace = L.space Parser.space1 (L.skipLineComment "//") blockComment
+skipWhitespace =
+    L.space Parser.space1 lineComment blockComment
   where
-    blockComment = do
-        Monad.void (Parser.string "/*")
-        Monad.void (manyTill commentBody (Parser.string "*/"))
-    commentBody = anySingle <|> (eof >> fail "Unfinished comment.")
+    lineComment = L.skipLineComment "//"
+    blockComment = L.skipBlockComment "/*" "*/"
 
 koreKeywordsSet :: HashSet Char8.ByteString
 koreKeywordsSet = HashSet.fromList (Char8.pack <$> keywords)
@@ -224,7 +233,7 @@ setVarIdRawParser = do
     c' <- peekChar'
     case c' of
         '`' -> do
-            _ <- Parser.char c'
+            skipChar c'
             idToken <- objectNonslashIdRawParser KeywordsPermitted
             return (c:c':idToken)
         _ -> do
@@ -238,8 +247,8 @@ setVarIdRawParser = do
  -}
 stringLiteralRawParser :: Parser StringLiteral
 stringLiteralRawParser = do
-    _ <- Parser.char '"'
-    StringLiteral . Text.pack <$> Parser.manyTill charParser (Parser.char '"')
+    skipChar '"'
+    StringLiteral . Text.pack <$> Parser.manyTill charParser (skipChar '"')
 
 {- | Parse and unescape a Kore character literal.
 
@@ -248,9 +257,9 @@ stringLiteralRawParser = do
  -}
 charLiteralRawParser :: Parser CharLiteral
 charLiteralRawParser = do
-    _ <- Parser.char '\''
+    skipChar '\''
     c <- charParser
-    _ <- Parser.char '\''
+    skipChar '\''
     return (CharLiteral c)
 
 {- | Select printable ASCII characters.
@@ -340,7 +349,7 @@ illegalSurrogate hs =
 escapeParser :: Parser Char
 escapeParser =
     Parser.label "escape sequence" $ do
-        _ <- Parser.char '\\'
+        skipChar '\\'
         c <- anySingle
         fromMaybe
             (Parser.empty <?> "escape sequence")
@@ -352,9 +361,7 @@ escapeParser =
 Note that it does not enforce the existence of whitespace after the character.
 -}
 tokenCharParser :: Char -> Parser ()
-tokenCharParser c = do
-      _ <- L.symbol skipWhitespace [c]
-      return ()
+tokenCharParser c = Monad.void $ L.symbol skipWhitespace [c]
 
 {-|'colonParser' parses a @:@ character.-}
 colonParser :: Parser ()
@@ -452,7 +459,7 @@ followed by a character which could be part of an @object-identifier@.
 -}
 mlLexemeParser :: String -> Parser ()
 mlLexemeParser s =
-    lexeme (Monad.void (Parser.string s <* keywordEndParser))
+    lexeme (skipString s <* keywordEndParser)
 
 {-|'keywordEndParser' checks that the next character cannot be part of an
 @object-identifier@.
