@@ -23,7 +23,8 @@ import qualified Kore.Internal.OrPredicate as OrPredicate
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
-                 ( makeCeilPredicate, makeTruePredicate )
+                 ( makeCeilPredicate, makeEqualsPredicate, makeNotPredicate,
+                 makeTruePredicate )
 import           Kore.Step.Axiom.EvaluationStrategy
                  ( builtinEvaluation, introduceDefinedness,
                  simplifierWithFallback )
@@ -206,10 +207,14 @@ test_simplificationIntegration =
                             (mkVar Mock.xInt)
                             (mkVar Mock.xInt)
                     , predicate =
-                        makeCeilPredicate
-                        $ Mock.tdivInt
-                            (mkVar Mock.xInt)
-                            (mkVar Mock.xInt)
+                        makeNotPredicate
+                        $ makeEqualsPredicate
+                            (mkVar Mock.yInt)
+                            (Mock.builtinInt 0)
+                        -- makeCeilPredicate
+                        -- $ Mock.tdivInt
+                        --     (mkVar Mock.xInt)
+                        --     (mkVar Mock.xInt)
                     , substitution = mempty
                     }
                 ]
@@ -222,6 +227,25 @@ test_simplificationIntegration =
                                 { left =
                                     Mock.fInt (mkVar Mock.xInt)
                                 , right = mkVar Mock.xInt
+                                , requires = makeTruePredicate
+                                , ensures = makeTruePredicate
+                                , attributes = def
+                                }
+                            ]
+                          )
+                        , (AxiomIdentifier.Ceil
+                                (AxiomIdentifier.Application Mock.tdivIntId)
+                          , [ EqualityRule RulePattern
+                                { left =
+                                    mkCeil Mock.intSort
+                                    $ Mock.tdivInt
+                                        (mkVar Mock.xInt)
+                                        (mkVar Mock.yInt)
+                                , right =
+                                    mkNot
+                                    $ mkEquals Mock.intSort
+                                        (mkVar Mock.yInt)
+                                        (Mock.builtinInt 0)
                                 , requires = makeTruePredicate
                                 , ensures = makeTruePredicate
                                 , attributes = def
