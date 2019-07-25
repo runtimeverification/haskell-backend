@@ -25,15 +25,11 @@ import           Kore.Step.Axiom.Matcher
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
-import           Kore.Step.Simplification.Data as AttemptedAxiom
+import           Kore.Step.Simplification.Data
+import qualified Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
-import           Kore.Step.Simplification.Data as AttemptedAxiomResults
+import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
-import           Kore.Step.Simplification.Data
-                 ( AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify, PredicateSimplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Simplification.Pattern as Pattern

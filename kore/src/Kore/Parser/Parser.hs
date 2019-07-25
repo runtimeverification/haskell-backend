@@ -34,8 +34,7 @@ module Kore.Parser.Parser where
 
 import           Control.Arrow
                  ( (&&&) )
-import           Control.Monad
-                 ( void, when )
+import qualified Control.Monad as Monad
 import           Text.Megaparsec
                  ( some )
 import qualified Text.Megaparsec.Char as Parser
@@ -106,7 +105,7 @@ metaSortParser = do
             metaSortsListWithString
         )
     sorts <- inCurlyBracesListParser objectSortParser
-    when (not (null sorts)) (fail "Expecting no parameters for meta sorts")
+    Monad.unless (null sorts) (fail "Expecting no parameters for meta sorts")
     return sort
 
 
@@ -513,7 +512,7 @@ Always starts with @\@.
 -}
 koreMLConstructorParser :: Parser ParsedPattern
 koreMLConstructorParser = do
-    void (Parser.char '\\')
+    _ <- Parser.char '\\'
     mlPatternParser
   where
     mlPatternParser = keywordBasedParsers
@@ -556,7 +555,7 @@ leveledMLConstructorParser
     -> Parser (DomainValue Sort child)
     -> Parser (PatternF Variable child)
 leveledMLConstructorParser childParser domainValueParser' = do
-    void (Parser.char '\\')
+    _ <- Parser.char '\\'
     keywordBasedParsers
         (map
             (patternString &&& leveledMLConstructorRemainderParser)

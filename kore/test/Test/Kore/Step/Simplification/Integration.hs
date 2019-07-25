@@ -317,35 +317,19 @@ test_simplificationIntegration =
                     }
         assertEqualWithExplanation "" expect actual
     , testCase "exists variable equality" $ do
-        let
-            expect = OrPattern.top
         actual <-
-            evaluateWithAxioms
-                Map.empty
-                Conditional
-                    { term =
-                        mkExists
-                            Mock.x
-                            (mkEquals_ (mkVar Mock.x) (mkVar Mock.y))
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-        assertEqualWithExplanation "" expect actual
+            evaluateWithAxioms Map.empty
+            $ Pattern.fromTermLike
+            $ mkExists Mock.x
+            $ mkEquals_ (mkVar Mock.x) (mkVar Mock.y)
+        assertEqualWithExplanation "" OrPattern.top actual
     , testCase "exists variable equality reverse" $ do
-        let
-            expect = OrPattern.top
         actual <-
-            evaluateWithAxioms
-                Map.empty
-                Conditional
-                    { term =
-                        mkExists
-                            Mock.x
-                            (mkEquals_ (mkVar Mock.y) (mkVar Mock.x))
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-        assertEqualWithExplanation "" expect actual
+            evaluateWithAxioms Map.empty
+            $ Pattern.fromTermLike
+            $ mkExists Mock.x
+            $ mkEquals_ (mkVar Mock.y) (mkVar Mock.x)
+        assertEqualWithExplanation "" OrPattern.top actual
     , testCase "new variable quantification" $ do
         let
             expect = OrPattern.fromPatterns
@@ -506,8 +490,7 @@ test_substituteList =
     mkDomainBuiltinList = Mock.builtinList
 
 evaluate :: Pattern Variable -> IO (OrPattern Variable)
-evaluate patt =
-    evaluateWithAxioms Map.empty patt
+evaluate = evaluateWithAxioms Map.empty
 
 evaluateWithAxioms
     :: BuiltinAndAxiomSimplifierMap

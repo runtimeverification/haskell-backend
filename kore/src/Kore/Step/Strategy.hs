@@ -279,10 +279,7 @@ insChildNode configNode =
             ledges = do
                 (edge, node) <- parents
                 return (node, node', edge)
-            graph' =
-                Graph.insEdges ledges
-                $ Graph.insNode lnode
-                $ graph
+            graph' = Graph.insEdges ledges $ Graph.insNode lnode graph
         in
             (node', graph')
 
@@ -425,7 +422,7 @@ constructExecutionGraph transit instrs0 searchOrder0 config0 = do
 
     getNodeConfig node =
         fromMaybe (error "Node does not exist")
-        <$> State.gets (\graph -> Graph.lab graph node)
+        <$> State.gets (`Graph.lab` node)
 
     childOf
         :: Graph.Node

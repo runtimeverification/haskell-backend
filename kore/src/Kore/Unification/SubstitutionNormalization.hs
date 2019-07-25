@@ -89,7 +89,7 @@ normalizeSubstitution substitution = do
             nonSimplifiableSortResult =
                 topologicalSort (Set.toList <$> nonSimplifiableDependencies)
 
-    ExceptT . sequence . fmap maybeToBottom $ topologicalSortConverted
+    ExceptT . traverse maybeToBottom $ topologicalSortConverted
 
   where
     interestingVariables :: Set variable

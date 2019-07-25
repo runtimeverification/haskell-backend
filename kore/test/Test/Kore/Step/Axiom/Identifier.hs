@@ -6,9 +6,7 @@ import Test.Tasty.HUnit
        ( testCase )
 
 import           Kore.Internal.TermLike
-                 ( mkAnd, mkCeil_ )
-import           Kore.Internal.TermLike
-                 ( TermLike )
+                 ( TermLike, mkAnd, mkCeil_ )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -44,5 +42,5 @@ hasNoId input =
     testCase "AxiomId.extract evaluation"
         (assertEqualWithExplanation "has no id"
             Nothing
-            (AxiomIdentifier.extract input :: Maybe (AxiomIdentifier))
+            (AxiomIdentifier.extract input)
         )

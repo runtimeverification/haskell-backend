@@ -26,13 +26,9 @@ import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
-import           Kore.Step.Simplification.Data as AttemptedAxiom
+import           Kore.Step.Simplification.Data
+import qualified Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
-import           Kore.Step.Simplification.Data
-                 ( AttemptedAxiomResults (AttemptedAxiomResults),
-                 CommonAttemptedAxiom )
-import           Kore.Step.Simplification.Data
-                 ( Env (..), TermLikeSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -219,7 +215,7 @@ evaluateWithAxiom
     :: EqualityRule Variable
     -> TermLikeSimplifier
     -> TermLike Variable
-    -> IO (CommonAttemptedAxiom)
+    -> IO CommonAttemptedAxiom
 evaluateWithAxiom axiom simplifier patt =
     normalizeResult <$> evaluated
   where

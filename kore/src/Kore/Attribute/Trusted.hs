@@ -57,4 +57,4 @@ instance ParseAttributes Trusted where
         failDuplicate' = Parser.failDuplicate trustedId
 
     toAttributes Trusted { isTrusted } =
-        Attributes $ if isTrusted then [trustedAttribute] else []
+        Attributes [trustedAttribute | isTrusted]

@@ -234,31 +234,6 @@ test_ceilSimplification =
             "ceil(f(a)) and eq(f(a), g(a)))"
             expected
             actual
-    , testCase "ceil with function symbols" $ do
-        -- if term is a functional(params), then
-        -- ceil(term and predicate and subst)
-        --     = top and (ceil(params) and predicate) and subst
-        let
-            expected = OrPattern.fromPatterns
-                [ Conditional
-                    { term = mkTop_
-                    , predicate =
-                        makeAndPredicate
-                            (makeCeilPredicate fOfA)
-                            (makeEqualsPredicate fOfA gOfA)
-                    , substitution = Substitution.unsafeWrap [(Mock.x, fOfB)]
-                    }
-                ]
-        actual <- makeEvaluate
-            Conditional
-                { term = fOfA
-                , predicate = makeEqualsPredicate fOfA gOfA
-                , substitution = Substitution.wrap [(Mock.x, fOfB)]
-                }
-        assertEqualWithExplanation
-            "ceil(f(a)) and eq(f(a), g(a)))"
-            expected
-            actual
     , testCase "ceil with functional terms" $ do
         -- if term is functional, then
         -- ceil(term and predicate and subst)

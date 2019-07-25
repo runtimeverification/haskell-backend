@@ -133,7 +133,7 @@ applyConstructorToVariables constr arguments =
 -- | Do the busywork of converting a name into a variable pattern.
 var :: Text -> TestPattern
 var name =
-    mkVar $ (Variable (testId name) mempty) Mock.testSort
+    mkVar $ Variable (testId name) mempty Mock.testSort
 -- can the above be more abstract?
 
 sort :: Text -> Sort

@@ -70,7 +70,7 @@ test_exec = testCase "exec" $ actual >>= assertEqualWithExplanation "" expected
     verifiedModule = verifiedMyModule Module
         { moduleName = ModuleName "MY-MODULE"
         , moduleSentences =
-            [ asSentence $ mySortDecl
+            [ asSentence mySortDecl
             , asSentence $ constructorDecl "a"
             , asSentence $ constructorDecl "b"
             , asSentence $ constructorDecl "c"
@@ -114,7 +114,7 @@ test_search =
     verifiedModule = verifiedMyModule Module
         { moduleName = ModuleName "MY-MODULE"
         , moduleSentences =
-            [ asSentence $ mySortDecl
+            [ asSentence mySortDecl
             , asSentence $ constructorDecl "a"
             , asSentence $ constructorDecl "b"
             , asSentence $ constructorDecl "c"
