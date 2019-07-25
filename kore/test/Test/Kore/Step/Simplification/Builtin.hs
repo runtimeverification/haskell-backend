@@ -58,8 +58,7 @@ mkMapDomainValue children =
         , builtinAcChild = Domain.NormalizedMap Domain.NormalizedAc
             { elementsWithVariables = []
             , concreteElements =
-                Map.fromList
-                    (map (Bifunctor.second Domain.Value) children)
+                Map.fromList (Bifunctor.second Domain.MapValue <$> children)
             , opaque = []
             }
         }

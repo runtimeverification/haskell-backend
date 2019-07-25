@@ -275,10 +275,9 @@ extractOnePathClaims
     -> [(axiomAtts, OnePathRule Variable)]
 extractOnePathClaims idxMod =
     mapMaybe
-        ( sequence                             -- (a, Maybe b) -> Maybe (a,b)
-        . fmap extractOnePathClaimFrom         -- applying on second component
-        )
-    $ (indexedModuleClaims idxMod)
+        -- applying on second component
+        (traverse extractOnePathClaimFrom)
+        (indexedModuleClaims idxMod)
 
 extractOnePathClaimFrom
     :: Verified.SentenceClaim
@@ -296,10 +295,9 @@ extractAllPathClaims
     -> [(axiomAtts, AllPathRule Variable)]
 extractAllPathClaims idxMod =
     mapMaybe
-        ( sequence                             -- (a, Maybe b) -> Maybe (a,b)
-        . fmap extractAllPathClaimFrom         -- applying on second component
-        )
-    (indexedModuleClaims idxMod)
+        -- applying on second component
+        (traverse extractAllPathClaimFrom)
+        (indexedModuleClaims idxMod)
 
 extractAllPathClaimFrom
     :: Verified.SentenceClaim
@@ -318,10 +316,9 @@ extractImplicationClaims
     -> [(axiomAtts, ImplicationRule Variable)]
 extractImplicationClaims idxMod =
     mapMaybe
-        ( sequence                               -- (a, Maybe b) -> Maybe (a,b)
-        . fmap extractImplicationClaimFrom       -- applying on second component
-        )
-    $ (indexedModuleClaims idxMod)
+        -- applying on second component
+        (traverse extractImplicationClaimFrom)
+        (indexedModuleClaims idxMod)
 
 extractImplicationClaimFrom
     :: Verified.SentenceClaim
@@ -365,10 +362,10 @@ onePathRuleToPattern (OnePathRule rulePatt) =
         )
        ( mkApplyAlias
             (wEF sort)
-            [( mkAnd
+            [mkAnd
                 (Predicate.unwrapPredicate . ensures $ rulePatt)
                 (right rulePatt)
-            )]
+            ]
        )
   where
     sort :: Sort
@@ -480,7 +477,7 @@ mkRewriteAxiom
 mkRewriteAxiom lhs rhs requires =
     (Syntax.SentenceAxiomSentence . mkAxiom_)
         (mkRewrites
-            (mkAnd (fromMaybe mkTop requires $ patternSort) lhs)
+            (mkAnd (fromMaybe mkTop requires patternSort) lhs)
             (mkAnd (mkTop patternSort) rhs)
         )
   where

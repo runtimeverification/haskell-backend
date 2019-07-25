@@ -141,33 +141,31 @@ test_makeEvaluate =
 
 testSimplifyBoolean :: HasCallStack => Bool -> Bool -> TestTree
 testSimplifyBoolean a b =
-    testCase ("iff(" ++ name a ++ ", " ++ name b ++ ")") $ do
-        actual <- simplify $ makeIff [value a] [value b]
-        let expect = OrPattern.fromPatterns [value r]
-        assertEqualWithExplanation ("expected: " ++ name r) expect actual
+    testCase ("iff(" ++ nameBool a ++ ", " ++ nameBool b ++ ")") $ do
+        actual <- simplify $ makeIff [valueBool a] [valueBool b]
+        let expect = OrPattern.fromPatterns [valueBool r]
+        assertEqualWithExplanation ("expected: " ++ nameBool r) expect actual
   where
-    name x
-      | x = "⊤"
-      | otherwise = "⊥"
-    value x
-      | x = Pattern.top
-      | otherwise = Pattern.bottom
     r = a == b
 
 testEvaluateBoolean :: HasCallStack => Bool -> Bool -> TestTree
 testEvaluateBoolean a b =
     Terse.equals
-        (OrPattern.fromPatterns [value r])
-        (Function.on makeEvaluate value a b)
-        ("iff(" ++ name a ++ ", " ++ name b ++ ")")
+        (OrPattern.fromPatterns [valueBool r])
+        (Function.on makeEvaluate valueBool a b)
+        ("iff(" ++ nameBool a ++ ", " ++ nameBool b ++ ")")
   where
-    name x
-      | x = "⊤"
-      | otherwise = "⊥"
-    value x
-      | x = Pattern.top
-      | otherwise = Pattern.bottom
     r = a == b
+
+nameBool :: Bool -> String
+nameBool x
+    | x = "⊤"
+    | otherwise = "⊥"
+
+valueBool :: Bool -> Pattern Variable
+valueBool x
+    | x = Pattern.top
+    | otherwise = Pattern.bottom
 
 termA :: Pattern Variable
 termA =

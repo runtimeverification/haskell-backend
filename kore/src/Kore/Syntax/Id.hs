@@ -51,7 +51,6 @@ instance Ord Id where
     compare first@(Id _ _) second@(Id _ _) =
         compare (getId first) (getId second)
 
-{-# ANN module ("HLint: ignore Redundant compare" :: String) #-}
 -- | 'Eq' ignores the 'AstLocation'
 instance Eq Id where
     first == second = compare first second == EQ

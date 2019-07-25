@@ -156,15 +156,13 @@ test_matcherEqualHeads =
         assertEqualWithExplanation "" expect actual
 
     , testCase "CharLiteral" $ do
-        let expect = Just $ OrPredicate.fromPredicate Predicate.topPredicate
         actual <-
             matchDefinition
                 (mkCharLiteral 'a')
                 (mkCharLiteral 'a')
-        assertEqualWithExplanation "" expect actual
+        assertEqualWithExplanation "" topOrPredicate actual
 
     , testCase "Builtin" $ do
-        let expect = Just $ OrPredicate.fromPredicate Predicate.topPredicate
         actual <-
             matchDefinition
                 (mkDomainValue DomainValue
@@ -177,7 +175,7 @@ test_matcherEqualHeads =
                     , domainValueChild = mkStringLiteral "10"
                     }
                 )
-        assertEqualWithExplanation "" expect actual
+        assertEqualWithExplanation "" topOrPredicate actual
 
     , testCase "DomainValue" $ do
         let expect = Just $ OrPredicate.fromPredicate Predicate.topPredicate
@@ -476,8 +474,6 @@ test_matcherVariableFunction =
 
     , testCase "Injection + substitution" $ do
         let
-            aSubSub = Mock.functional00SubSubSort
-            xSub = Variable (testId "x") mempty Mock.subSort
             expect = Just $ MultiOr.make
                 [ Conditional
                     { predicate = makeTruePredicate
@@ -502,8 +498,6 @@ test_matcherVariableFunction =
 
     , testCase "substitution + Injection" $ do
         let
-            aSubSub = Mock.functional00SubSubSort
-            xSub = Variable (testId "x") mempty Mock.subSort
             expect = Just $ MultiOr.make
                 [ Conditional
                     { predicate = makeTruePredicate
@@ -586,6 +580,9 @@ test_matcherVariableFunction =
             assertEqualWithExplanation "" expect actual
         ]
     ]
+  where
+    aSubSub = Mock.functional00SubSubSort
+    xSub = Variable (testId "x") mempty Mock.subSort
 
 test_matcherNonVarToPattern :: [TestTree]
 test_matcherNonVarToPattern =
@@ -1125,7 +1122,7 @@ matchingInt =
 matchingString :: [TestTree]
 matchingString =
     [ testCase "concrete top" $ do
-        let expect = top
+        let expect = topOrPredicate
         actual <- matchConcrete "str" "str"
         assertEqualWithExplanation "" expect actual
     , testCase "concrete bottom" $ do
@@ -1142,7 +1139,6 @@ matchingString =
         assertEqualWithExplanation "" expect actual
     ]
   where
-    top = Just $ OrPredicate.fromPredicate Predicate.topPredicate
     substitution subst = Just $ MultiOr.make
         [ Conditional
             { term = ()
@@ -1160,7 +1156,7 @@ matchingString =
 matchingList :: [TestTree]
 matchingList =
     [ testCase "concrete top" $ do
-        let expect = top
+        let expect = topOrPredicate
         actual <- matchConcrete [1, 2] [1, 2]
         assertEqualWithExplanation "" expect actual
     , testCase "concrete bottom" $ do
@@ -1326,7 +1322,6 @@ matchingList =
         assertEqualWithExplanation "" expect actual
     ]
   where
-    top = Just $ OrPredicate.fromPredicate Predicate.topPredicate
     substitution subst = Just $ MultiOr.make
         [ Conditional
             { term = ()
@@ -1346,11 +1341,11 @@ matchingList =
             matchList
             (either mkVar mkInt <$> var)
             (mkInt <$> val)
-    matchConcat t1 l2 =
-        matchDefinition t1
-            . mkList
-            . fmap mkInt
-            $ l2
+    matchConcat t1 =
+        matchDefinition t1 . mkList . fmap mkInt
+
+topOrPredicate :: Maybe (OrPredicate Variable)
+topOrPredicate = Just $ OrPredicate.fromPredicate Predicate.topPredicate
 
 data SetElementType concrete elem set
     = Concrete concrete
@@ -1358,21 +1353,23 @@ data SetElementType concrete elem set
     | SetVar set
 
 concrete :: [SetElementType concrete elem set] -> [concrete]
-concrete = concat . fmap isConcrete'
+concrete = concatMap isConcrete'
   where
     isConcrete' =
         \case
             Concrete x -> [x]
             _ -> []
+
 elemVars :: [SetElementType concrete elem set] -> [elem]
-elemVars = concat . fmap isElemVar
+elemVars = concatMap isElemVar
   where
     isElemVar =
         \case
             ElemVar x -> [x]
             _ -> []
+
 setVars :: [SetElementType concrete elem set] -> [set]
-setVars = concat . fmap isSetVar
+setVars = concatMap isSetVar
   where
     isSetVar =
         \case
@@ -1623,27 +1620,26 @@ matchingSet =
     mkConcreteSet :: [TermLike Concrete] -> TermLike Variable
     mkConcreteSet =
         Ac.asInternalConcrete Mock.metadataTools Mock.setSort
-        . Map.fromSet (const Domain.NoValue)
+        . Map.fromSet (const Domain.SetValue)
         . Set.fromList
     mkSet concrete' evars svars =
         Ac.asInternal Mock.metadataTools Mock.setSort
             Domain.NormalizedAc
-                { elementsWithVariables = map (\x -> (x, Domain.NoValue)) evars
+                { elementsWithVariables = Domain.SetElement <$> evars
                 , concreteElements =
-                    Map.fromSet (const Domain.NoValue) (Set.fromList concrete')
+                    Map.fromSet (const Domain.SetValue) (Set.fromList concrete')
                 , opaque = svars
                 }
     matchConcreteSet = matchDefinition `on` mkConcreteSet
-    matchConcrete =
-        matchConcreteSet `on` fmap mkKey
+    matchConcrete = matchConcreteSet `on` fmap mkKey
     matchVariable var val =
-            matchDefinition
-                (mkSet
-                    (mkKey <$> concrete var)
-                    (mkVar <$> elemVars var)
-                    (mkVar <$> setVars  var)
-                )
-                (mkConcreteSet $ fmap mkKey val)
+        matchDefinition
+            (mkSet
+                (mkKey <$> concrete var)
+                (mkVar <$> elemVars var)
+                (mkVar <$> setVars  var)
+            )
+            (mkConcreteSet $ fmap mkKey val)
 
 matchingMap :: [TestTree]
 matchingMap =
@@ -1776,12 +1772,11 @@ matchingMap =
                 , builtinIntValue = k
                 }
     mkVal = Int.asInternal Mock.intSort
-    wrapValue (x, y) = (x, Domain.Value y)
     mkConcreteMap
         :: [(TermLike Concrete, TermLike Variable)] -> TermLike Variable
     mkConcreteMap =
         Ac.asInternalConcrete Mock.metadataTools Mock.mapSort
-        . fmap Domain.Value
+        . fmap Domain.MapValue
         . Map.fromList
     mkMap
         :: [(TermLike Concrete, TermLike Variable)]
@@ -1791,8 +1786,8 @@ matchingMap =
     mkMap concrete' evars svars =
         Ac.asInternal Mock.metadataTools Mock.setSort
             Domain.NormalizedAc
-                { elementsWithVariables = map wrapValue evars
-                , concreteElements = fmap Domain.Value (Map.fromList concrete')
+                { elementsWithVariables = Domain.MapElement <$> evars
+                , concreteElements = Domain.MapValue <$> Map.fromList concrete'
                 , opaque = svars
                 }
     mapWithKey = Bifunctor.bimap mkKey
@@ -1847,9 +1842,8 @@ match
     :: TermLike Variable
     -> TermLike Variable
     -> IO (Maybe (OrPredicate Variable))
-match first second = do
-    result <- matchAsEither
-    return $ either (const Nothing) Just result
+match first second =
+    either (const Nothing) Just <$> matchAsEither
   where
     matchAsEither
         :: IO (Either UnificationOrSubstitutionError (OrPredicate Variable))

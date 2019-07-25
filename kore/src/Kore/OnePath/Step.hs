@@ -27,7 +27,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Debug
 import qualified Kore.Internal.Conditional as Conditional
-import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
@@ -42,6 +41,8 @@ import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyAndRemoveTopExists )
+import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
+                 ( filterMultiOr )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
@@ -159,13 +160,12 @@ transitionRule strategy expandedPattern =
     transitionSimplify c = return c
 
     applySimplify wrapper config = do
-        configs <- Monad.Trans.lift $ Pattern.simplifyAndRemoveTopExists config
-        let
-            -- Filter out ⊥ patterns
-            nonEmptyConfigs = MultiOr.filterOr configs
-        if null nonEmptyConfigs
+        configs <-
+            Monad.Trans.lift $ Pattern.simplifyAndRemoveTopExists config
+        filteredConfigs <- SMT.Evaluator.filterMultiOr configs
+        if null filteredConfigs
             then return Bottom
-            else Foldable.asum (pure . wrapper <$> nonEmptyConfigs)
+            else Foldable.asum (pure . wrapper <$> filteredConfigs)
 
     transitionApplyWithRemainders
         :: [RewriteRule Variable]
@@ -240,11 +240,12 @@ transitionRule strategy expandedPattern =
         let
             removal = removalPredicate destination patt
             result = patt `Conditional.andPredicate` removal
-        orResult <- Monad.Trans.lift $ Pattern.simplifyAndRemoveTopExists result
-        let nonEmpty = MultiOr.filterOr orResult
-        if null nonEmpty
+        orResult <-
+            Monad.Trans.lift $ Pattern.simplifyAndRemoveTopExists result
+        filteredConfigs <- SMT.Evaluator.filterMultiOr orResult
+        if null filteredConfigs
             then return Bottom
-            else Foldable.asum (pure . proofState <$> nonEmpty)
+            else Foldable.asum (pure . proofState <$> filteredConfigs)
 
 {- | The predicate to remove the destination from the present configuration.
  -}

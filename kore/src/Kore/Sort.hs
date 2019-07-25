@@ -197,9 +197,7 @@ substituteSortVariables
 substituteSortVariables substitution sort =
     case sort of
         SortVariableSort var ->
-            case Map.lookup var substitution of
-                Just sort' -> sort'
-                Nothing -> sort
+            fromMaybe sort $ Map.lookup var substitution
         SortActualSort sortActual@SortActual { sortActualSorts } ->
             SortActualSort sortActual
                 { sortActualSorts =

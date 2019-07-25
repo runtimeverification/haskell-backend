@@ -272,7 +272,7 @@ newtype ConcreteElement =
     ConcreteElement {getConcreteElement :: TermLike Concrete}
 
 instance With
-    (Domain.NormalizedAc (TermLike Concrete) Domain.NoValue child)
+    (Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) child)
     ConcreteElement
   where
     with
@@ -281,11 +281,11 @@ instance With
       | Map.member c concreteElements = error "Duplicated key in set."
       | otherwise = s
         { Domain.concreteElements =
-            Map.insert c Domain.NoValue concreteElements
+            Map.insert c Domain.SetValue concreteElements
         }
 
 instance With
-    (Domain.NormalizedAc (TermLike Concrete) Domain.NoValue child)
+    (Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) child)
     [ConcreteElement]
   where
     with = foldl' with
@@ -311,7 +311,7 @@ newtype VariableElement child = VariableElement {getVariableElement :: child}
 
 instance Ord child
     => With
-        (Domain.NormalizedAc (TermLike Concrete) Domain.NoValue child)
+        (Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) child)
         (VariableElement child)
   where
     with
@@ -319,12 +319,12 @@ instance Ord child
         (VariableElement v)
       = s
         { Domain.elementsWithVariables =
-            List.sort ((v, Domain.NoValue) : elementsWithVariables)
+            List.sort (Domain.SetElement v : elementsWithVariables)
         }
 
 instance Ord child
     => With
-        (Domain.NormalizedAc (TermLike Concrete) Domain.NoValue child)
+        (Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) child)
         [VariableElement child]
   where
     with = foldl' with
@@ -352,7 +352,7 @@ newtype OpaqueSet child = OpaqueSet {getOpaqueSet :: child}
 
 instance Ord child
     => With
-        (Domain.NormalizedAc (TermLike Concrete) Domain.NoValue child)
+        (Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) child)
         (OpaqueSet child)
   where
     with
@@ -363,7 +363,7 @@ instance Ord child
 
 instance Ord child
     => With
-        (Domain.NormalizedAc (TermLike Concrete) Domain.NoValue child)
+        (Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) child)
         [OpaqueSet child]
   where
     with = foldl' with

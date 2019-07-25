@@ -55,8 +55,8 @@ instance Ord a => Monoid (Limit a) where
 withinLimit :: Ord a => Limit a -> a -> Bool
 withinLimit =
     \case
-        Unlimited -> \_ -> True
-        Limit u -> \a -> a <= u
+        Unlimited -> const True
+        Limit u -> (<= u)
 
 {- | Enumerate values beginning at @a@ and within the limit.
  -}

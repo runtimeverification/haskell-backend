@@ -24,7 +24,8 @@ import           Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate, unwrapPredicate )
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
+                 ( substitute )
 import           Kore.Step.Simplification.Data
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
@@ -66,7 +67,8 @@ simplify
     initialValue@Conditional { predicate, substitution }
   = do
     let substitution' = Substitution.toMap substitution
-        substitutedPredicate = Predicate.substitute substitution' predicate
+        substitutedPredicate =
+            Syntax.Predicate.substitute substitution' predicate
     -- TODO(Vladimir): This is an ugly hack that fixes EVM execution. Should
     -- probably be fixed in 'Kore.Step.Simplification.Pattern'.
     -- This was needed because, when we need to simplify 'requires' clauses,

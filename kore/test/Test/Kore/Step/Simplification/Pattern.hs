@@ -32,14 +32,6 @@ test_Pattern_simplify =
     , bottomLike `becomes` OrPattern.bottom              $ "\\and(a, \\bottom)"
     ]
   where
-    termLike = Pattern.fromTermLike
-    -- | Term is \bottom, but not in a trivial way.
-    notTop = termLike (mkNot mkTop_)
-    -- | Lifting disjunction to the top would duplicate terms.
-    orAs = termLike (mkOr Mock.a Mock.a)
-    -- | Term is defined, but predicate is \bottom.
-    bottomLike =
-        (termLike Mock.a) { Pattern.predicate = Predicate.makeFalsePredicate }
     becomes original expect name =
         testCase name $ do
             actual <- simplify original
@@ -56,14 +48,6 @@ test_Pattern_simplifyAndRemoveTopExists =
     , existentialuniversal `becomes` OrPattern.fromPattern universal $ "..."
     ]
   where
-    termLike = Pattern.fromTermLike
-    -- | Term is \bottom, but not in a trivial way.
-    notTop = termLike (mkNot mkTop_)
-    -- | Lifting disjunction to the top would duplicate terms.
-    orAs = termLike (mkOr Mock.a Mock.a)
-    -- | Term is defined, but predicate is \bottom.
-    bottomLike =
-        (termLike Mock.a) { Pattern.predicate = Predicate.makeFalsePredicate }
     becomes original expect name =
         testCase name $ do
             actual <- simplifyAndRemoveTopExists original
@@ -74,6 +58,18 @@ test_Pattern_simplifyAndRemoveTopExists =
     universal = termLike (mkForall Mock.x unquantified)
     existentialuniversal =
         termLike (mkExists Mock.y (mkForall Mock.x unquantified))
+
+termLike :: TermLike Variable -> Pattern Variable
+termLike = Pattern.fromTermLike
+
+-- | Term is \bottom, but not in a trivial way.
+notTop, orAs, bottomLike :: Pattern Variable
+notTop = termLike (mkNot mkTop_)
+-- | Lifting disjunction to the top would duplicate terms.
+orAs = termLike (mkOr Mock.a Mock.a)
+-- | Term is defined, but predicate is \bottom.
+bottomLike =
+    (termLike Mock.a) { Pattern.predicate = Predicate.makeFalsePredicate }
 
 simplify :: Pattern Variable -> IO (OrPattern Variable)
 simplify =

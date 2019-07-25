@@ -1,4 +1,7 @@
-module Test.Kore.Step.Axiom.UserDefined (test_userDefinedFunction) where
+module Test.Kore.Step.Axiom.UserDefined
+    ( test_userDefinedFunction
+    , test_userDefinedFunctionSmt
+    ) where
 
 import Test.Tasty
        ( TestTree )
@@ -18,21 +21,17 @@ import           Kore.Internal.Pattern as Pattern
                  ( Conditional (..), Pattern, bottom )
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
-                 ( makeEqualsPredicate, makeFalsePredicate, makeNotPredicate,
-                 makeTruePredicate )
+                 ( makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
+                 makeNotPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
-import           Kore.Step.Simplification.Data as AttemptedAxiom
+import           Kore.Step.Simplification.Data
+import qualified Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
-import           Kore.Step.Simplification.Data
-                 ( AttemptedAxiomResults (AttemptedAxiomResults),
-                 CommonAttemptedAxiom )
-import           Kore.Step.Simplification.Data
-                 ( Env (..), TermLikeSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import           Kore.SubstVar
@@ -195,7 +194,7 @@ test_userDefinedFunction =
                     , attributes = def
                     }
                 )
-                (mockSimplifier noSimplification)
+                (simplifierTermLike Mock.env)
                 (Mock.functionalConstr20
                     (mkVar Mock.y)
                     (mkVar Mock.z)
@@ -207,6 +206,84 @@ test_userDefinedFunction =
     -- TODO: Add a test for StepWithAxiom returning a condition.
     -- TODO: Add a test for the stepper giving up
     ]
+
+test_userDefinedFunctionSmt :: [TestTree]
+test_userDefinedFunctionSmt =
+    [ testCase "Prunes results with the SMT" $ do
+        let
+            expect =
+                AttemptedAxiom.Applied AttemptedAxiomResults
+                    { results = OrPattern.bottom
+                    , remainders = OrPattern.fromPatterns
+                        [ Conditional
+                            { term = baseTerm Mock.z Mock.z
+                            , predicate =
+                                makeNotPredicate (basePredicate Mock.z Mock.z)
+                            , substitution = mempty
+                            }
+                        ]
+                    }
+        actual <-
+            evaluateWithAxiom
+                (EqualityRule RulePattern
+                    { left  = baseTerm Mock.x Mock.y
+                    , right = Mock.a
+                    , requires = basePredicate Mock.x Mock.y
+                    , ensures = makeTruePredicate
+                    , attributes = def
+                    }
+                )
+                (simplifierTermLike Mock.env)
+                (baseTerm Mock.z Mock.z)
+        assertEqualWithExplanation "sigma(x,x) => bottom + sigma(x,x) remainder"
+            expect
+            actual
+
+    , testCase "Prunes remainders with the SMT" $ do
+        let
+            expect =
+                AttemptedAxiom.Applied AttemptedAxiomResults
+                    { results = OrPattern.fromPatterns
+                        [ Conditional
+                            { term = Mock.a
+                            , predicate =
+                                makeNotPredicate (basePredicate Mock.z Mock.z)
+                            , substitution = mempty
+                            }
+                        ]
+                    , remainders = OrPattern.bottom
+                    }
+        actual <-
+            evaluateWithAxiom
+                (EqualityRule RulePattern
+                    { left  = baseTerm Mock.x Mock.y
+                    , right = Mock.a
+                    , requires = makeNotPredicate (basePredicate Mock.x Mock.y)
+                    , ensures = makeTruePredicate
+                    , attributes = def
+                    }
+                )
+                (simplifierTermLike Mock.env)
+                (baseTerm Mock.z Mock.z)
+        assertEqualWithExplanation "sigma(x,x) => a + bottom remainder"
+            expect
+            actual
+    ]
+  where
+    comparesTo0 term positive =
+        makeEqualsPredicate
+            (Mock.lessInt
+                (Mock.fTestInt term)
+                (Mock.builtinInt 0)
+            )
+            (Mock.builtinBool positive)
+    fOfLessThan0 term = comparesTo0 term True
+    fOfNotLessThan0 term = comparesTo0 term False
+    basePredicate var1 var2 =
+        makeAndPredicate
+            (fOfLessThan0 (mkVar var1))
+            (fOfNotLessThan0 (mkVar var2))
+    baseTerm var1 var2 = Mock.functionalConstr20 (mkVar var1) (mkVar var2)
 
 noSimplification :: [(TermLike Variable, [Pattern Variable])]
 noSimplification = []
@@ -221,7 +298,7 @@ evaluateWithAxiom
     :: EqualityRule Variable
     -> TermLikeSimplifier
     -> TermLike Variable
-    -> IO (CommonAttemptedAxiom)
+    -> IO CommonAttemptedAxiom
 evaluateWithAxiom axiom simplifier patt =
     normalizeResult <$> evaluated
   where

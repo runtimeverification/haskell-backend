@@ -203,7 +203,7 @@ sortBExp = simpleSort (SortName "BExp")
 
 sortSentenceAInt :: Verified.Sentence
 sortSentenceAInt =
-    (asSentence sentence)
+    asSentence sentence
   where
     sentence :: SentenceSort (TermLike Variable)
     sentence =
@@ -215,7 +215,7 @@ sortSentenceAInt =
 
 sortSentenceKItem :: Verified.Sentence
 sortSentenceKItem =
-    (asSentence sentence)
+    asSentence sentence
   where
     sentence :: SentenceSort (TermLike Variable)
     sentence =

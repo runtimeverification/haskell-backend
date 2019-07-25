@@ -116,6 +116,8 @@ chId :: Id
 chId = testId "ch"
 fSetId :: Id
 fSetId = testId "fSet"
+fTestIntId :: Id
+fTestIntId = testId "fTestInt"
 plain00Id :: Id
 plain00Id = testId "plain00"
 plain00Sort0Id :: Id
@@ -282,6 +284,9 @@ chSymbol = symbol chId [] testSort & function
 
 fSetSymbol :: Symbol
 fSetSymbol = symbol fSetId [setSort] setSort & function
+
+fTestIntSymbol :: Symbol
+fTestIntSymbol = symbol fTestIntId [testSort] intSort & function
 
 plain00Symbol :: Symbol
 plain00Symbol = symbol plain00Id [] testSort
@@ -611,6 +616,13 @@ fSet
     => TermLike variable
     -> TermLike variable
 fSet arg = Internal.mkApplySymbol fSetSymbol [arg]
+
+fTestInt
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+fTestInt arg = Internal.mkApplySymbol fTestIntSymbol [arg]
 
 plain00 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
 plain00 = Internal.mkApplySymbol plain00Symbol []
@@ -984,6 +996,7 @@ symbols =
     , cgSort0Symbol
     , chSymbol
     , fSetSymbol
+    , fTestIntSymbol
     , plain00Symbol
     , plain00Sort0Symbol
     , plain00SubsortSymbol
@@ -1385,8 +1398,7 @@ builtinMap child =
         , builtinAcChild = Domain.NormalizedMap Domain.NormalizedAc
             { elementsWithVariables = []
             , concreteElements =
-                Map.fromList
-                    (map (Bifunctor.second Domain.Value) child)
+                Map.fromList (Bifunctor.second Domain.MapValue <$> child)
             , opaque = []
             }
         }
@@ -1417,7 +1429,7 @@ builtinSet child =
         , builtinAcChild = Domain.NormalizedSet Domain.NormalizedAc
             { elementsWithVariables = []
             , concreteElements =
-                Map.fromList (map (\key -> (key, Domain.NoValue)) child)
+                Map.fromList (map (\key -> (key, Domain.SetValue)) child)
             , opaque = []
             }
         }

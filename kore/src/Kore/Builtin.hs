@@ -27,6 +27,7 @@ module Kore.Builtin
     , koreEvaluators
     , evaluators
     , externalizePattern
+    , internalize
     ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
@@ -61,6 +62,8 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.IndexedModule
                  ( IndexedModule (..), VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import           Kore.IndexedModule.MetadataTools
+                 ( SmtMetadataTools )
 import qualified Kore.Internal.Alias as Alias
 import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
@@ -114,7 +117,7 @@ koreVerifiers =
 koreEvaluators
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ Module under which evaluation takes place
-    -> Map (AxiomIdentifier) Builtin.Function
+    -> Map AxiomIdentifier Builtin.Function
 koreEvaluators = evaluators builtins
   where
     builtins :: Map Text Builtin.Function
@@ -143,7 +146,7 @@ evaluators
     -- ^ Builtin functions indexed by name
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ Module under which evaluation takes place
-    -> Map (AxiomIdentifier) Builtin.Function
+    -> Map AxiomIdentifier Builtin.Function
 evaluators builtins indexedModule =
     Map.mapMaybe
         lookupBuiltins
@@ -173,8 +176,7 @@ evaluators builtins indexedModule =
     lookupBuiltins Attribute.Symbol { Attribute.hook = Hook { getHook } } =
         do
             name <- getHook
-            impl <- Map.lookup name builtins
-            pure impl
+            Map.lookup name builtins
 
 {- | Externalize the 'TermLike' into a 'Syntax.Pattern'.
 
@@ -266,3 +268,16 @@ externalizePattern =
                 $ externalizePatternWorker
                 $ getEvaluated evaluatedF
             BuiltinF _ -> error "Unexpected internal builtin"
+
+internalize
+    :: (Ord variable, SortedVariable variable)
+    => SmtMetadataTools Attribute.Symbol
+    -> TermLike variable
+    -> TermLike variable
+internalize tools =
+    Recursive.fold (internalize1 . Recursive.embed)
+  where
+    internalize1 =
+            List.internalize tools
+        .   Map.internalize tools
+        .   Set.internalize tools

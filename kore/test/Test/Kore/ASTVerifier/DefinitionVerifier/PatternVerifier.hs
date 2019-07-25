@@ -38,7 +38,7 @@ data TestPattern = TestPattern
     , testPatternErrorStack :: !ErrorStack
     }
 
-newtype VariableOfDeclaredSort = VariableOfDeclaredSort (Variable)
+newtype VariableOfDeclaredSort = VariableOfDeclaredSort Variable
 
 testPatternErrorStackStrings :: TestPattern -> [String]
 testPatternErrorStackStrings

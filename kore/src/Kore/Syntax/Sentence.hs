@@ -270,8 +270,8 @@ instance Unparse (SentenceSymbol patternType) where
                   case ss of
                       [] -> ""
                       (s : rest) ->
-                        (Pretty.parens (Pretty.fillSep ["\\inh", unparse2 s]))
-                        <> (unparse2Inhabitant rest)
+                        Pretty.parens (Pretty.fillSep ["\\inh", unparse2 s])
+                        <> unparse2Inhabitant rest
 
 {- | Coerce the pattern type of a 'SentenceSymbol' to any other type.
 
@@ -581,7 +581,7 @@ sentenceAttributes =
             SentenceAxiom { sentenceAxiomAttributes } ->
                 sentenceAxiomAttributes
         SentenceClaimSentence
-            (SentenceClaim (SentenceAxiom { sentenceAxiomAttributes })) ->
+            (SentenceClaim SentenceAxiom { sentenceAxiomAttributes }) ->
                 sentenceAxiomAttributes
         SentenceSortSentence
             SentenceSort { sentenceSortAttributes } ->

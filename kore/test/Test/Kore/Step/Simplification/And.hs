@@ -206,7 +206,7 @@ test_andSimplification =
                                 )
                             ]
                         }
-            assertEqualWithExplanation "" (OrPattern.bottom) actual
+            assertEqualWithExplanation "" OrPattern.bottom actual
             {-
             TODO(virgil): Uncomment this after substitution merge can handle
             function equality.

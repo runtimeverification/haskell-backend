@@ -19,6 +19,8 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyAndRemoveTopExists )
+import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
+                 ( filterMultiOr )
 import           Kore.SubstVar
                  ( SubstVar (..) )
 import           Kore.TopBottom
@@ -50,7 +52,8 @@ checkImplicationIsTop lhs rhs =
                     , substitution = mempty
                     }
             orResult <- Pattern.simplifyAndRemoveTopExists result
-            return (isBottom orResult)
+            orFinalResult <- SMT.Evaluator.filterMultiOr orResult
+            return (isBottom orFinalResult)
         _ -> (error . show . Pretty.vsep)
              [ "Not implemented error:"
              , "We don't know how to simplify the implication whose rhs is:"

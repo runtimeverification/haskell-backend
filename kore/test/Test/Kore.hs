@@ -103,7 +103,6 @@ couple = Gen.list (Range.linear 0 3)
 couple1 :: MonadGen m => m a -> m [a]
 couple1 = Gen.list (Range.linear 1 3)
 
-{-# ANN genericIdGen ("HLint: ignore Use String" :: String) #-}
 genericIdGen :: MonadGen m => m Char -> m Char -> m Text
 genericIdGen firstChar nextChar = do
     chars <-
@@ -187,12 +186,12 @@ sortGen = do
 moduleNameGen :: MonadGen m => m ModuleName
 moduleNameGen = ModuleName <$> objectIdGen
 
-variableGen :: Sort -> Gen (Variable)
+variableGen :: Sort -> Gen Variable
 variableGen patternSort = do
     Context { objectVariables } <- Reader.ask
     variableGen' patternSort [v | RegVar v <- objectVariables]
 
-variableGen' :: Sort -> [Variable] -> Gen (Variable)
+variableGen' :: Sort -> [Variable] -> Gen Variable
 variableGen' patternSort variables =
     case filter bySort variables of
         [] -> freshVariable
@@ -619,8 +618,8 @@ koreSentenceGen =
         , SentenceClaimSentence . SentenceClaim
             <$> sentenceAxiomGen korePatternUnifiedGen
         , SentenceSortSentence <$> sentenceSortGen
-        , (SentenceHookSentence . SentenceHookedSort) <$> sentenceSortGen
-        , (SentenceHookSentence . SentenceHookedSymbol) <$> sentenceSymbolGen
+        , SentenceHookSentence . SentenceHookedSort <$> sentenceSortGen
+        , SentenceHookSentence . SentenceHookedSymbol <$> sentenceSymbolGen
         ]
 
 moduleGen

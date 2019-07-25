@@ -184,8 +184,7 @@ labelAdd = do
     literal "label"
     literal "+"
     w <- word
-    dec <- maybeDecimal
-    return $ LabelAdd w (fmap ReplNode dec)
+    LabelAdd w . fmap ReplNode <$> maybeDecimal
 
 labelDel :: Parser ReplCommand
 labelDel = LabelDel <$$> literal "label" *> literal "-" *> word

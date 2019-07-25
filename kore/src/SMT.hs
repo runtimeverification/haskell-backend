@@ -79,12 +79,10 @@ import           ListT
                  ( ListT, mapListT )
 import           SMT.SimpleSMT
                  ( Constructor (..), ConstructorArgument (..),
-                 DataTypeDeclaration (..), FunctionDeclaration (..),
+                 DataTypeDeclaration (..), FunctionDeclaration (..), Logger,
                  Result (..), SExpr (..), SmtDataTypeDeclaration,
                  SmtFunctionDeclaration, SmtSortDeclaration, Solver,
                  SortDeclaration (..) )
-import           SMT.SimpleSMT
-                 ( Logger )
 import qualified SMT.SimpleSMT as SimpleSMT
 
 -- | Time-limit for SMT queries.
@@ -277,7 +275,7 @@ instance (MonadIO m, MonadUnliftIO m) => MonadSMT (SmtT m) where
             mvar <- liftIO $ newMVar solver
             -- Run the inner action with the unshared mutex.
             -- The action will never block waiting to acquire the solver.
-            withRunInIO $ \runInIO -> do
+            withRunInIO $ \runInIO ->
                 SimpleSMT.inNewScope solver (runInIO $ runReaderT action mvar)
 
     declare name typ =

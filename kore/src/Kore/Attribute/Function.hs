@@ -67,4 +67,4 @@ instance ParseAttributes Function where
         failDuplicate' = Parser.failDuplicate functionId
 
     toAttributes Function { isDeclaredFunction } =
-        Attributes $ if isDeclaredFunction then [functionAttribute] else []
+        Attributes [functionAttribute | isDeclaredFunction]

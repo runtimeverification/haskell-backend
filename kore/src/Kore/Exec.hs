@@ -74,10 +74,8 @@ import           Kore.Step.Search
                  ( searchGraph )
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
-                 ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier (..), Simplifier, TermLikeSimplifier,
-                 evalSimplifier )
+                 ( BuiltinAndAxiomSimplifierMap, PredicateSimplifier (..),
+                 Simplifier, TermLikeSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Predicate as Predicate
@@ -320,7 +318,7 @@ boundedModelCheck limit definitionModule specModule searchOrder =
 
 assertSingleClaim :: Monad m => [claim] -> m ()
 assertSingleClaim claims =
-    Monad.when ((length claims) > 1) . error
+    Monad.when (length claims > 1) . error
         $ "More than one claim is found in the module."
 
 assertSomeClaims :: Monad m => [claim] -> m ()
@@ -334,10 +332,10 @@ makeClaim :: Claim claim => (Attribute.Axiom, claim) -> claim
 makeClaim (attributes, rule) =
     coerce RulePattern
         { attributes = attributes
-        , left = (left . coerce $ rule)
-        , right = (right . coerce $ rule)
-        , requires = (requires . coerce $ rule)
-        , ensures = (ensures . coerce $ rule)
+        , left = left . coerce $ rule
+        , right = right . coerce $ rule
+        , requires = requires . coerce $ rule
+        , ensures = ensures . coerce $ rule
         }
 
 simplifyRuleOnSecond
