@@ -34,11 +34,15 @@ import           Kore.Internal.OrPredicate
 import           Kore.Internal.Pattern
                  ( Pattern, Predicate )
 import qualified Kore.Internal.Pattern as Conditional
+import qualified Kore.Internal.Predicate as Predicate
+                 ( bottom, fromSubstitution )
 import qualified Kore.Step.Condition.Evaluator as Predicate
-                 ( evaluate )
+                 ( simplify )
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
+import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
+                 ( evaluate )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
@@ -148,14 +152,23 @@ matchWith e1 e2 = do
                     , Conditional.predicate e2
                     ]
                     [ Conditional.substitution predSubst ]
-            evaluated <-
+            simplified <-
                 Monad.Trans.lift
-                $ Predicate.evaluate $ Conditional.predicate merged
-            mergePredicatesAndSubstitutions
-                [ Conditional.predicate evaluated ]
-                [ Conditional.substitution merged
-                , Conditional.substitution evaluated
-                ]
+                $ Predicate.simplify $ Conditional.predicate merged
+            smtEvaluation <-
+                Monad.Trans.lift $ SMT.Evaluator.evaluate simplified
+            case smtEvaluation of
+                    Nothing ->
+                        mergePredicatesAndSubstitutions
+                            [ Conditional.predicate simplified ]
+                            [ Conditional.substitution merged
+                            , Conditional.substitution simplified
+                            ]
+                    Just False -> return Predicate.bottom
+                    Just True -> return
+                        (Predicate.fromSubstitution
+                            (Conditional.substitution merged)
+                        )
     case maybeUnifiers of
         Nothing -> nothing
         Just unifiers -> do

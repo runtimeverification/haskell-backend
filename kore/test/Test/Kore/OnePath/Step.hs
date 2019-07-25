@@ -19,7 +19,12 @@ import Numeric.Natural
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
-import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Conditional
+                 ( Conditional (Conditional) )
+import qualified Kore.Internal.Conditional as Conditional.DoNotUse
+import           Kore.Internal.Pattern
+                 ( Pattern )
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Internal.TermLike as TermLike
@@ -74,7 +79,7 @@ test_onePathStrategy =
         -- Coinductive axiom: a => b
         -- Normal axiom: a => c
         -- Start pattern: a
-        -- Expected: bottom, since a->bottom
+        -- Expected: bottom, since a becomes bottom after removing the target.
         [ _actual ] <- runOnePathSteps
             (Limit 1)
             (Pattern.fromTermLike Mock.a)
@@ -345,6 +350,113 @@ test_onePathStrategy =
         assertEqualWithExplanation ""
             Bottom
             _actual
+    , testCase "Configuration with SMT pruning" $ do
+        -- Target: a
+        -- Coinductive axiom: n/a
+        -- Normal axiom: constr10(b) => c | f(b) >= 0
+        -- Normal axiom: constr10(b) => a | f(b) < 0
+        -- Start pattern: constr10(b) | f(b) < 0
+        -- Expected: a | f(b) < 0
+        [ _actual1, _actual2 ] <- runOnePathSteps
+            (Limit 1)
+            Conditional
+                { term = Mock.functionalConstr10 Mock.b
+                , predicate = makeEqualsPredicate
+                    (Mock.lessInt
+                        (Mock.fTestInt Mock.b)
+                        (Mock.builtinInt 0)
+                    )
+                    (Mock.builtinBool True)
+                , substitution = mempty
+                }
+            Mock.a
+            []
+            [ rewriteWithPredicate
+                (Mock.functionalConstr10 (TermLike.mkVar Mock.x))
+                Mock.a
+                (makeEqualsPredicate
+                    (Mock.lessInt
+                        (Mock.fTestInt (TermLike.mkVar Mock.x))
+                        (Mock.builtinInt 0)
+                    )
+                    (Mock.builtinBool True)
+                )
+            , rewriteWithPredicate
+                (Mock.functionalConstr10 (TermLike.mkVar Mock.x))
+                Mock.c
+                (makeEqualsPredicate
+                    (Mock.lessInt
+                        (Mock.fTestInt (TermLike.mkVar Mock.x))
+                        (Mock.builtinInt 0)
+                    )
+                    (Mock.builtinBool False)
+                )
+            ]
+        assertEqualWithExplanation ""
+            [ RewritePattern Conditional
+                { term = Mock.a
+                , predicate =
+                    makeEqualsPredicate
+                        (Mock.lessInt
+                            (Mock.fTestInt Mock.b)
+                            (Mock.builtinInt 0)
+                        )
+                        (Mock.builtinBool True)
+                , substitution = mempty
+                }
+            , Bottom
+            ]
+            [ _actual1
+            , _actual2
+            ]
+    , testCase "Stuck with SMT pruning" $ do
+        -- Target: a
+        -- Coinductive axiom: n/a
+        -- Normal axiom: constr10(b) => a | f(b) < 0
+        -- Start pattern: constr10(b) | f(b) < 0
+        -- Expected: a | f(b) < 0
+        [ _actual1, _actual2 ] <- runOnePathSteps
+            (Limit 1)
+            Conditional
+                { term = Mock.functionalConstr10 Mock.b
+                , predicate = makeEqualsPredicate
+                    (Mock.lessInt
+                        (Mock.fTestInt Mock.b)
+                        (Mock.builtinInt 0)
+                    )
+                    (Mock.builtinBool True)
+                , substitution = mempty
+                }
+            Mock.a
+            []
+            [ rewriteWithPredicate
+                (Mock.functionalConstr10 (TermLike.mkVar Mock.x))
+                Mock.a
+                (makeEqualsPredicate
+                    (Mock.lessInt
+                        (Mock.fTestInt (TermLike.mkVar Mock.x))
+                        (Mock.builtinInt 0)
+                    )
+                    (Mock.builtinBool True)
+                )
+            ]
+        assertEqualWithExplanation ""
+            [ RewritePattern Conditional
+                { term = Mock.a
+                , predicate =
+                    makeEqualsPredicate
+                        (Mock.lessInt
+                            (Mock.fTestInt Mock.b)
+                            (Mock.builtinInt 0)
+                        )
+                        (Mock.builtinBool True)
+                , substitution = mempty
+                }
+            , Bottom
+            ]
+            [ _actual1
+            , _actual2
+            ]
     ]
 
 simpleRewrite

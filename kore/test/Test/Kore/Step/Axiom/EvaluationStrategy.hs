@@ -16,8 +16,8 @@ import qualified Kore.Internal.Pattern as Pattern
                  ( Conditional (..) )
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
-                 ( Predicate, makeAndPredicate, makeEqualsPredicate,
-                 makeNotPredicate, makeTruePredicate )
+                 ( Predicate, makeEqualsPredicate, makeNotPredicate,
+                 makeTruePredicate )
 import           Kore.Step.Axiom.EvaluationStrategy
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
@@ -26,6 +26,9 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.Simplification.Data
+                 ( AttemptedAxiomResults (AttemptedAxiomResults),
+                 BuiltinAndAxiomSimplifier (..), CommonAttemptedAxiom,
+                 evalSimplifier )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
@@ -118,7 +121,7 @@ test_definitionEvaluation =
                 )
                 (Mock.functionalConstr10 Mock.b)
         assertEqualWithExplanation "" expect actual
-    , testCase "Evaluation with multiple branches" $ do
+    , testCase "Evaluation with multiple branches SMT prunes remainders" $ do
         let initial = Mock.functionalConstr10 Mock.a
             final1 = Mock.g Mock.a
             final2 = Mock.g Mock.b
@@ -141,17 +144,7 @@ test_definitionEvaluation =
                             , substitution = mempty
                             }
                         ]
-                    , remainders =
-                        OrPattern.fromPatterns $ (map . fmap) mkEvaluated
-                            [ Conditional
-                                { term = initial
-                                , predicate =
-                                    makeAndPredicate
-                                        (makeNotPredicate requirement1)
-                                        (makeNotPredicate requirement2)
-                                , substitution = mempty
-                                }
-                            ]
+                    , remainders = OrPattern.bottom
                     }
         actual <- evaluate evaluator initial
         assertEqualWithExplanation "" expect actual
