@@ -14,6 +14,7 @@ import           Data.Default
                  ( Default (..) )
 import qualified Data.Map.Strict as Map
 
+import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.Map as Map
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -196,12 +197,19 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
         assertEqualWithExplanation "" expect actual
-    , testCase "f(X /Int X) => 1" $ do
+    , testCase "function introduces definedness condition" $ do
         let
             expect = OrPattern.fromPatterns
                 [ Conditional
-                    { term = Mock.builtinInt 1
-                    , predicate = makeTruePredicate
+                    { term =
+                        Mock.tdivInt
+                            (mkVar Mock.xInt)
+                            (mkVar Mock.xInt)
+                    , predicate =
+                        makeCeilPredicate
+                        $ Mock.tdivInt
+                            (mkVar Mock.xInt)
+                            (mkVar Mock.xInt)
                     , substitution = mempty
                     }
                 ]
@@ -526,4 +534,6 @@ evaluateWithAxioms axioms =
             ,   ( AxiomIdentifier.Application Mock.elementMapId
                 , builtinEvaluation Map.evalElement
                 )
+            ,   ( AxiomIdentifier.Application Mock.tdivIntId
+                , builtinEvaluation (Int.builtinFunctions Map.! Int.tdivKey))
             ]
