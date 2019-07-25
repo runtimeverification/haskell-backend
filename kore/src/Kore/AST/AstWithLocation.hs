@@ -15,10 +15,13 @@ module Kore.AST.AstWithLocation
 import Data.Text
        ( Text )
 
-import Kore.Syntax
-import Kore.Syntax.Definition
-import Kore.Syntax.PatternF
-       ( PatternF (..) )
+import           Kore.SubstVar
+                 ( SubstVar (..) )
+import qualified Kore.SubstVar as SubstVar
+import           Kore.Syntax
+import           Kore.Syntax.Definition
+import           Kore.Syntax.PatternF
+                 ( PatternF (..) )
 
 {-| 'AstWithLocation' should be implemented by all AST terms that have
 an 'AstLocation'.
@@ -64,6 +67,12 @@ instance AstWithLocation Variable where
     locationFromAst = locationFromAst . variableName
     updateAstLocation var loc =
         var {variableName = updateAstLocation (variableName var) loc}
+instance
+    AstWithLocation variable =>
+    AstWithLocation (SubstVar variable)
+  where
+    locationFromAst = locationFromAst . SubstVar.asVariable
+    updateAstLocation var loc = fmap (`updateAstLocation` loc) var
 
 instance AstWithLocation Alias where
     locationFromAst = locationFromAst . aliasConstructor

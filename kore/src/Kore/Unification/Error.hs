@@ -20,12 +20,15 @@ import           Data.Text.Prettyprint.Doc
                  ( Pretty )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import Kore.Internal.TermLike
-       ( TermLike )
-import Kore.Sort
-import Kore.Syntax.Application
-import Kore.Syntax.Variable
-import Kore.Unparser
+import           Kore.Internal.TermLike
+                 ( TermLike )
+import           Kore.Sort
+import           Kore.SubstVar
+                 ( SubstVar (..) )
+import qualified Kore.SubstVar as SubstVar
+import           Kore.Syntax.Application
+import           Kore.Syntax.Variable
+import           Kore.Unparser
 
 -- | Hack sum-type to wrap unification and substitution errors
 data UnificationOrSubstitutionError
@@ -71,7 +74,7 @@ substitutions.
 data SubstitutionError =
     forall variable.
     (Ord variable, Show variable, SortedVariable variable, Unparse variable) =>
-    NonCtorCircularVariableDependency [variable]
+    NonCtorCircularVariableDependency [SubstVar variable]
     -- ^ the circularity path may pass through non-constructors: maybe solvable.
 
 instance Show SubstitutionError where
@@ -84,7 +87,7 @@ instance Pretty SubstitutionError where
     pretty (NonCtorCircularVariableDependency vars) =
         Pretty.vsep
         ( "Non-constructor circular variable dependency:"
-        : (unparse <$> vars)
+        : (unparse . SubstVar.asVariable <$> vars)
         )
 
 -- Trivially promote substitution errors to sum-type errors

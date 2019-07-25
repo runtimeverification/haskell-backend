@@ -16,6 +16,8 @@ import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeTruePredicate )
 import qualified Kore.Step.Simplification.Forall as Forall
                  ( makeEvaluate, simplify )
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore.Comparators ()
@@ -114,7 +116,7 @@ test_forallSimplification =
                     { term = Mock.f $ mkVar Mock.x
                     , predicate = makeCeilPredicate (Mock.h (mkVar Mock.x))
                     , substitution =
-                        Substitution.wrap [(Mock.x, gOfA), (Mock.y, fOfA)]
+                        Substitution.wrap [(RegVar Mock.x, gOfA), (RegVar Mock.y, fOfA)]
                     }
             )
         )
@@ -190,7 +192,7 @@ test_forallSimplification =
                 Conditional
                     { term = fOfX
                     , predicate = makeEqualsPredicate fOfX gOfA
-                    , substitution = Substitution.wrap [(Mock.y, hOfA)]
+                    , substitution = Substitution.wrap [(RegVar Mock.y, hOfA)]
                     }
             )
         )

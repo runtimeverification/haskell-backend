@@ -32,6 +32,8 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Rule hiding
                  ( freeVariables )
 import qualified Kore.Step.Rule as Rule
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
@@ -340,7 +342,7 @@ extractIndexedModule name eModules =
 test_freeVariables :: TestTree
 test_freeVariables =
     testCase "Extract free variables" $ do
-        let expect = FreeVariables $ Set.fromList [Mock.x, Mock.z]
+        let expect = FreeVariables . Set.fromList $ RegVar <$> [Mock.x, Mock.z]
             actual = Rule.freeVariables testRulePattern
         assertEqual "Expected free variables" expect actual
 
@@ -362,7 +364,7 @@ test_refreshRulePattern =
             (all notAvoided renamed)
         assertBool
             "Expected no free variables in common with original RulePattern"
-            (all notAvoided free')
+            (all notAvoided (FreeVariables.getFreeVariables free'))
 
 testRulePattern :: RulePattern Variable
 testRulePattern =

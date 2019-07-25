@@ -50,6 +50,7 @@ import           Kore.Step.Rule
 import qualified Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
+import qualified Kore.SubstVar as SubstVar
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
 import qualified Kore.Unification.Substitution as Substitution
@@ -69,7 +70,7 @@ test_matcherEqualHeads =
                 [ Conditional
                     { term = ()
                     , predicate = makeTruePredicate
-                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                    , substitution = Substitution.unsafeWrap [(SubstVar.RegVar Mock.x, Mock.b)]
                     }
                 ]
         actual <-
@@ -85,7 +86,7 @@ test_matcherEqualHeads =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [(Mock.x, Mock.a)]
+                            [(SubstVar.RegVar Mock.x, Mock.a)]
                         }
                     ]
             actual <-
@@ -145,7 +146,7 @@ test_matcherEqualHeads =
                 [ Conditional
                     { term = ()
                     , predicate = makeTruePredicate
-                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
+                    , substitution = Substitution.unsafeWrap [(SubstVar.RegVar Mock.x, Mock.a)]
                     }
                 ]
         actual <-
@@ -199,7 +200,7 @@ test_matcherEqualHeads =
                 [ Conditional
                     { term = ()
                     , predicate = makeTruePredicate
-                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                    , substitution = Substitution.unsafeWrap [(SubstVar.RegVar Mock.x, Mock.b)]
                     }
                 ]
         actual <-
@@ -212,7 +213,7 @@ test_matcherEqualHeads =
         let expect = Just $ MultiOr.make
                 [ Conditional
                     { predicate = makeTruePredicate
-                    , substitution = Substitution.unsafeWrap [(Mock.y, Mock.a)]
+                    , substitution = Substitution.unsafeWrap [(SubstVar.RegVar Mock.y, Mock.a)]
                     , term = ()
                     }
                 ]
@@ -226,7 +227,7 @@ test_matcherEqualHeads =
         let expect = Just $ MultiOr.make
                 [ Conditional
                     { predicate = makeTruePredicate
-                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
+                    , substitution = Substitution.unsafeWrap [(SubstVar.RegVar Mock.x, Mock.a)]
                     , term = ()
                     }
                 ]
@@ -240,7 +241,7 @@ test_matcherEqualHeads =
         let expect = Just $ MultiOr.make
                 [ Conditional
                     { predicate = makeTruePredicate
-                    , substitution = Substitution.unsafeWrap [(Mock.y, Mock.a)]
+                    , substitution = Substitution.unsafeWrap [(SubstVar.RegVar Mock.y, Mock.a)]
                     , term = ()
                     }
                 ]
@@ -254,7 +255,7 @@ test_matcherEqualHeads =
         let expect = Just $ MultiOr.make
                 [ Conditional
                     { predicate = makeTruePredicate
-                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                    , substitution = Substitution.unsafeWrap [(SubstVar.RegVar Mock.x, Mock.b)]
                     , term = ()
                     }
                 ]
@@ -268,7 +269,7 @@ test_matcherEqualHeads =
         let expect = Just $ MultiOr.make
                 [ Conditional
                     { predicate = makeTruePredicate
-                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                    , substitution = Substitution.unsafeWrap [(SubstVar.RegVar Mock.x, Mock.b)]
                     , term = ()
                     }
                 ]
@@ -282,7 +283,7 @@ test_matcherEqualHeads =
         let expect = Just $ MultiOr.make
                 [ Conditional
                     { predicate = makeTruePredicate
-                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                    , substitution = Substitution.unsafeWrap [(SubstVar.RegVar Mock.x, Mock.b)]
                     , term = ()
                     }
                 ]
@@ -296,7 +297,7 @@ test_matcherEqualHeads =
         let expect = Just $ MultiOr.make
                 [ Conditional
                     { predicate = makeTruePredicate
-                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
+                    , substitution = Substitution.unsafeWrap [(SubstVar.RegVar Mock.x, Mock.a)]
                     , term = ()
                     }
                 ]
@@ -310,7 +311,7 @@ test_matcherEqualHeads =
         let expect = Just $ MultiOr.make
                 [ Conditional
                     { predicate = makeTruePredicate
-                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
+                    , substitution = Substitution.unsafeWrap [(SubstVar.RegVar Mock.x, Mock.a)]
                     , term = ()
                     }
                 ]
@@ -324,7 +325,7 @@ test_matcherEqualHeads =
         let expect = Just $ MultiOr.make
                 [ Conditional
                     { predicate = makeTruePredicate
-                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                    , substitution = Substitution.unsafeWrap [(SubstVar.RegVar Mock.x, Mock.b)]
                     , term = ()
                     }
                 ]
@@ -338,7 +339,7 @@ test_matcherEqualHeads =
         let expect = Just $ MultiOr.make
                 [ Conditional
                     { predicate = makeTruePredicate
-                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                    , substitution = Substitution.unsafeWrap [(SubstVar.RegVar Mock.x, Mock.b)]
                     , term = ()
                     }
                 ]
@@ -387,7 +388,7 @@ test_matcherEqualHeads =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [(Mock.x, Mock.a)]
+                            [(SubstVar.RegVar Mock.x, Mock.a)]
                         }
                     ]
             actual <-
@@ -413,7 +414,7 @@ test_matcherVariableFunction =
                 [ Conditional
                     { predicate = makeTruePredicate
                     , substitution =
-                        Substitution.unsafeWrap [(Mock.x, Mock.functional00)]
+                        Substitution.unsafeWrap [(SubstVar.RegVar Mock.x, Mock.functional00)]
                     , term = ()
                     }
                 ]
@@ -424,7 +425,7 @@ test_matcherVariableFunction =
         let expect = Just $ MultiOr.make
                 [ Conditional
                     { predicate = makeCeilPredicate Mock.cf
-                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.cf)]
+                    , substitution = Substitution.unsafeWrap [(SubstVar.RegVar Mock.x, Mock.cf)]
                     , term = ()
                     }
                 ]
@@ -452,7 +453,7 @@ test_matcherVariableFunction =
                 [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap
-                        [(x, Mock.sortInjectionSubSubToSub a)]
+                        [(SubstVar.RegVar x, Mock.sortInjectionSubSubToSub a)]
                     , term = ()
                     }
                 ]
@@ -481,8 +482,8 @@ test_matcherVariableFunction =
                 [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap
-                        [ (xSub, Mock.sortInjectionSubSubToSub aSubSub)
-                        , (Mock.x, Mock.functional10 Mock.a)
+                        [ (SubstVar.RegVar xSub, Mock.sortInjectionSubSubToSub aSubSub)
+                        , (SubstVar.RegVar Mock.x, Mock.functional10 Mock.a)
                         ]
                     , term = ()
                     }
@@ -507,8 +508,8 @@ test_matcherVariableFunction =
                 [ Conditional
                     { predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap
-                        [ (xSub, Mock.sortInjectionSubSubToSub aSubSub)
-                        , (Mock.x, Mock.functional10 Mock.a)
+                        [ (SubstVar.RegVar xSub, Mock.sortInjectionSubSubToSub aSubSub)
+                        , (SubstVar.RegVar Mock.x, Mock.functional10 Mock.a)
                         ]
                     , term = ()
                     }
@@ -529,7 +530,7 @@ test_matcherVariableFunction =
         let expect = Just $ MultiOr.make
                 [ Conditional
                     { predicate = makeTruePredicate
-                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.a)]
+                    , substitution = Substitution.unsafeWrap [(SubstVar.RegVar Mock.x, Mock.a)]
                     , term = ()
                     }
                 ]
@@ -551,7 +552,7 @@ test_matcherVariableFunction =
                     [ Conditional
                         { predicate = makeCeilPredicate Mock.cf
                         , substitution =
-                            Substitution.unsafeWrap [(Mock.x, Mock.cf)]
+                            Substitution.unsafeWrap [(SubstVar.RegVar Mock.x, Mock.cf)]
                         , term = ()
                         }
                     ]
@@ -571,7 +572,7 @@ test_matcherVariableFunction =
             let evaluated = mkEvaluated Mock.functional00
                 expect =
                     Just . OrPredicate.fromPredicate
-                    $ Predicate.fromSingleSubstitution (Mock.x, evaluated)
+                    $ Predicate.fromSingleSubstitution (SubstVar.RegVar Mock.x, evaluated)
             actual <- matchDefinition (mkVar Mock.x) evaluated
             assertEqualWithExplanation "" expect actual
 
@@ -579,7 +580,7 @@ test_matcherVariableFunction =
             let evaluated = mkEvaluated Mock.cf
                 expect =
                     (Just . OrPredicate.fromPredicate)
-                    (Predicate.fromSingleSubstitution (Mock.x, evaluated))
+                    (Predicate.fromSingleSubstitution (SubstVar.RegVar Mock.x, evaluated))
                         { predicate = makeCeilPredicate evaluated }
             actual <- matchDefinition (mkVar Mock.x) evaluated
             assertEqualWithExplanation "" expect actual
@@ -628,7 +629,7 @@ test_matcherMergeSubresults =
                 [ Conditional
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
-                        [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                        [(SubstVar.RegVar Mock.x, Mock.cf), (SubstVar.RegVar Mock.y, Mock.b)]
                     , term = ()
                     }
                 ]
@@ -643,7 +644,7 @@ test_matcherMergeSubresults =
                 [ Conditional
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
-                        [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                        [(SubstVar.RegVar Mock.x, Mock.cf), (SubstVar.RegVar Mock.y, Mock.b)]
                     , term = ()
                     }
                 ]
@@ -664,7 +665,7 @@ test_matcherMergeSubresults =
                 [ Conditional
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
-                        [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                        [(SubstVar.RegVar Mock.x, Mock.cf), (SubstVar.RegVar Mock.y, Mock.b)]
                     , term = ()
                     }
                 ]
@@ -682,7 +683,7 @@ test_matcherMergeSubresults =
                 [ Conditional
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
-                        [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                        [(SubstVar.RegVar Mock.x, Mock.cf), (SubstVar.RegVar Mock.y, Mock.b)]
                     , term = ()
                     }
                 ]
@@ -697,7 +698,7 @@ test_matcherMergeSubresults =
                 [ Conditional
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
-                        [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                        [(SubstVar.RegVar Mock.x, Mock.cf), (SubstVar.RegVar Mock.y, Mock.b)]
                     , term = ()
                     }
                 ]
@@ -718,7 +719,7 @@ test_matcherMergeSubresults =
                 [ Conditional
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
-                       [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                       [(SubstVar.RegVar Mock.x, Mock.cf), (SubstVar.RegVar Mock.y, Mock.b)]
                     , term = ()
                     }
                 ]
@@ -733,7 +734,7 @@ test_matcherMergeSubresults =
                 [ Conditional
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
-                        [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                        [(SubstVar.RegVar Mock.x, Mock.cf), (SubstVar.RegVar Mock.y, Mock.b)]
                     , term = ()
                     }
                 ]
@@ -748,7 +749,7 @@ test_matcherMergeSubresults =
                 [ Conditional
                     { predicate = makeCeilPredicate Mock.cf
                     , substitution = Substitution.unsafeWrap
-                        [(Mock.x, Mock.cf), (Mock.y, Mock.b)]
+                        [(SubstVar.RegVar Mock.x, Mock.cf), (SubstVar.RegVar Mock.y, Mock.b)]
                     , term = ()
                     }
                 ]
@@ -796,7 +797,7 @@ test_unificationWithAppMatchOnTop =
                         { term = ()
                         , predicate = makeCeilPredicate Mock.cf
                         , substitution = Substitution.unsafeWrap
-                            [(Mock.x, Mock.cf)]
+                            [(SubstVar.RegVar Mock.x, Mock.cf)]
                         }
                     ]
                 )
@@ -813,7 +814,7 @@ test_unificationWithAppMatchOnTop =
                         { term = ()
                         , predicate = makeCeilPredicate Mock.cf
                         , substitution = Substitution.unsafeWrap
-                            [(Mock.x, Mock.cf)]
+                            [(SubstVar.RegVar Mock.x, Mock.cf)]
                         }
                     ]
                 )
@@ -830,7 +831,7 @@ test_unificationWithAppMatchOnTop =
                         { term = ()
                         , predicate = makeCeilPredicate Mock.cf
                         , substitution = Substitution.unsafeWrap
-                            [(Mock.x, Mock.cf)]
+                            [(SubstVar.RegVar Mock.x, Mock.cf)]
                         }
                     ]
                 )
@@ -870,7 +871,7 @@ test_unificationWithAppMatchOnTop =
                             )
                             (makeCeilPredicate Mock.cf)
                         , substitution = Substitution.unsafeWrap
-                            [(Mock.y, Mock.cf)]
+                            [(SubstVar.RegVar Mock.y, Mock.cf)]
                         }
                     ]
                 )
@@ -894,12 +895,12 @@ test_unificationWithAppMatchOnTop =
                 [ Conditional
                     { term = ()
                     , predicate = makeEqualsPredicate (Mock.f Mock.a) Mock.a
-                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.cf)]
+                    , substitution = Substitution.unsafeWrap [(SubstVar.RegVar Mock.x, Mock.cf)]
                     }
                 , Conditional
                     { term = ()
                     , predicate = makeEqualsPredicate (Mock.f Mock.b) Mock.b
-                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.cf)]
+                    , substitution = Substitution.unsafeWrap [(SubstVar.RegVar Mock.x, Mock.cf)]
                     }
                 ]
             sortVar = SortVariableSort (SortVariable (testId "S"))
@@ -947,7 +948,7 @@ test_unificationWithAppMatchOnTop =
                         (makeEqualsPredicate (Mock.f Mock.a) Mock.a)
                         (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
                     , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
+                        [ (SubstVar.RegVar Mock.x, Mock.cf), (SubstVar.RegVar Mock.var_x_1, Mock.cg) ]
                     }
                 , Conditional
                     { term = ()
@@ -955,7 +956,7 @@ test_unificationWithAppMatchOnTop =
                         (makeEqualsPredicate (Mock.f Mock.a) Mock.a)
                         (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
                     , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
+                        [ (SubstVar.RegVar Mock.x, Mock.cf), (SubstVar.RegVar Mock.var_x_1, Mock.cg) ]
                     }
                 , Conditional
                     { term = ()
@@ -963,7 +964,7 @@ test_unificationWithAppMatchOnTop =
                         (makeEqualsPredicate (Mock.f Mock.b) Mock.b)
                         (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
                     , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
+                        [ (SubstVar.RegVar Mock.x, Mock.cf), (SubstVar.RegVar Mock.var_x_1, Mock.cg) ]
                     }
                 , Conditional
                     { term = ()
@@ -971,7 +972,7 @@ test_unificationWithAppMatchOnTop =
                         (makeEqualsPredicate (Mock.f Mock.b) Mock.b)
                         (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
                     , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
+                        [ (SubstVar.RegVar Mock.x, Mock.cf), (SubstVar.RegVar Mock.var_x_1, Mock.cg) ]
                     }
                 ]
             sortVar = SortVariableSort (SortVariable (testId "S"))
@@ -1062,7 +1063,7 @@ matchingBool =
         actual <- matchConcrete True False
         assertEqualWithExplanation "" expect actual
     , testCase "variable vs concrete" $ do
-        let expect = substitution [(Mock.xBool, True)]
+        let expect = substitution [(SubstVar.RegVar Mock.xBool, True)]
         actual <- matchVariable Mock.xBool True
         assertEqualWithExplanation "" expect actual
     , testCase "concrete vs variable does not work" $ do
@@ -1097,7 +1098,7 @@ matchingInt =
         actual <- matchConcrete 1 0
         assertEqualWithExplanation "" expect actual
     , testCase "variable vs concrete" $ do
-        let expect = substitution [(Mock.xInt, 1)]
+        let expect = substitution [(SubstVar.RegVar Mock.xInt, 1)]
         actual <- matchVariable Mock.xInt 1
         assertEqualWithExplanation "" expect actual
     , testCase "concrete vs variable does not work" $ do
@@ -1132,7 +1133,7 @@ matchingString =
         actual <- matchConcrete "s1" "s2"
         assertEqualWithExplanation "" expect actual
     , testCase "variable vs concrete" $ do
-        let expect = substitution [(Mock.xString, "str")]
+        let expect = substitution [(SubstVar.RegVar Mock.xString, "str")]
         actual <- matchVariable Mock.xString "str"
         assertEqualWithExplanation "" expect actual
     , testCase "concrete vs variable does not work" $ do
@@ -1175,11 +1176,11 @@ matchingList =
         actual <- matchDefinition (mkList [mkInt 1]) (mkVar Mock.xList)
         assertEqualWithExplanation "" expect actual
     , testCase "single variable" $ do
-        let expect = substitution [(Mock.xInt, 2)]
+        let expect = substitution [(SubstVar.RegVar Mock.xInt, 2)]
         actual <- matchVariable [Right 1, Left Mock.xInt] [1, 2]
         assertEqualWithExplanation "" expect actual
     , testCase "two variables (simple)" $ do
-        let expect = substitution [(Mock.xInt, 1), (Mock.yInt, 2)]
+        let expect = substitution [(SubstVar.RegVar Mock.xInt, 1), (SubstVar.RegVar Mock.yInt, 2)]
         actual <- matchVariable
             [ Left Mock.xInt
             , Left Mock.yInt
@@ -1187,7 +1188,7 @@ matchingList =
             [ 1, 2 ]
         assertEqualWithExplanation "" expect actual
     , testCase "two variables" $ do
-        let expect = substitution [(Mock.xInt, 2), (Mock.yInt, 4)]
+        let expect = substitution [(SubstVar.RegVar Mock.xInt, 2), (SubstVar.RegVar Mock.yInt, 4)]
         actual <- matchVariable
             [ Right 1
             , Left Mock.xInt
@@ -1208,7 +1209,7 @@ matchingList =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xList, mkList [mkInt 1, mkInt 2, mkInt 3])
+                            [ (SubstVar.RegVar Mock.xList, mkList [mkInt 1, mkInt 2, mkInt 3])
                             ]
                         }
                     ]
@@ -1223,7 +1224,7 @@ matchingList =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xList, mkList [mkInt 2, mkInt 3])
+                            [ (SubstVar.RegVar Mock.xList, mkList [mkInt 2, mkInt 3])
                             ]
                         }
                     ]
@@ -1238,7 +1239,7 @@ matchingList =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xList, mkList [])
+                            [ (SubstVar.RegVar Mock.xList, mkList [])
                             ]
                         }
                     ]
@@ -1253,7 +1254,7 @@ matchingList =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xList, mkList [mkInt 1, mkInt 2, mkInt 3])
+                            [ (SubstVar.RegVar Mock.xList, mkList [mkInt 1, mkInt 2, mkInt 3])
                             ]
                         }
                     ]
@@ -1268,7 +1269,7 @@ matchingList =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xList, mkList [mkInt 1, mkInt 2])
+                            [ (SubstVar.RegVar Mock.xList, mkList [mkInt 1, mkInt 2])
                             ]
                         }
                     ]
@@ -1283,7 +1284,7 @@ matchingList =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xList, mkList [])
+                            [ (SubstVar.RegVar Mock.xList, mkList [])
                             ]
                         }
                     ]
@@ -1298,8 +1299,8 @@ matchingList =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xInt, mkInt 1)
-                            , (Mock.xList, mkList [mkInt 2, mkInt 3])
+                            [ (SubstVar.RegVar Mock.xInt, mkInt 1)
+                            , (SubstVar.RegVar Mock.xList, mkList [mkInt 2, mkInt 3])
                             ]
                         }
                     ]
@@ -1314,8 +1315,8 @@ matchingList =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xInt, mkInt 3)
-                            , (Mock.xList, mkList [mkInt 1, mkInt 2])
+                            [ (SubstVar.RegVar Mock.xInt, mkInt 3)
+                            , (SubstVar.RegVar Mock.xList, mkList [mkInt 1, mkInt 2])
                             ]
                         }
                     ]
@@ -1398,19 +1399,19 @@ matchingSet =
         assertEqualWithExplanation "" expect actual
 
     , testCase "elementVar vs singleton" $ do
-        let expect = substitution [(Mock.xInt, 1)]
+        let expect = substitution [(SubstVar.RegVar Mock.xInt, 1)]
         actual <- matchVariable [ElemVar Mock.xInt] [1]
         assertEqualWithExplanation "" expect actual
     , testCase "{elementVar, rest} vs {set}" $ do
-        let expect = substitution [(Mock.xInt, 2)]
+        let expect = substitution [(SubstVar.RegVar Mock.xInt, 2)]
         actual <-
             matchVariable [Concrete 1, Concrete 3, ElemVar Mock.xInt] [1, 2, 3]
         assertEqualWithExplanation "" expect actual
     , testCase "{elementVars, rest} vs {set}" $ do
         let expect =
                 substitution
-                    [ (Mock.xInt, 2)
-                    , (Mock.yInt, 4)
+                    [ (SubstVar.RegVar Mock.xInt, 2)
+                    , (SubstVar.RegVar Mock.yInt, 4)
                     ]
         actual <-
             matchVariable
@@ -1443,7 +1444,7 @@ matchingSet =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xSet, mkConcreteSet [])
+                            [ (SubstVar.RegVar Mock.xSet, mkConcreteSet [])
                             ]
                         }
                     ]
@@ -1456,7 +1457,7 @@ matchingSet =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xSet, mkConcreteSet [mkKey 1])
+                            [ (SubstVar.RegVar Mock.xSet, mkConcreteSet [mkKey 1])
                             ]
                         }
                     ]
@@ -1469,7 +1470,7 @@ matchingSet =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xSet, mkConcreteSet [mkKey 1, mkKey 2, mkKey 3])
+                            [ (SubstVar.RegVar Mock.xSet, mkConcreteSet [mkKey 1, mkKey 2, mkKey 3])
                             ]
                         }
                     ]
@@ -1482,7 +1483,7 @@ matchingSet =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xSet, mkConcreteSet [mkKey 2, mkKey 3])
+                            [ (SubstVar.RegVar Mock.xSet, mkConcreteSet [mkKey 2, mkKey 3])
                             ]
                         }
                     ]
@@ -1495,7 +1496,7 @@ matchingSet =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xSet, mkConcreteSet [])
+                            [ (SubstVar.RegVar Mock.xSet, mkConcreteSet [])
                             ]
                         }
                     ]
@@ -1533,8 +1534,8 @@ matchingSet =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xSet, mkConcreteSet [])
-                            , (Mock.xInt, mkKey 1)
+                            [ (SubstVar.RegVar Mock.xSet, mkConcreteSet [])
+                            , (SubstVar.RegVar Mock.xInt, mkKey 1)
                             ]
                         }
                     ]
@@ -1550,8 +1551,8 @@ matchingSet =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xSet, mkConcreteSet [mkKey 2, mkKey 3])
-                            , (Mock.xInt, mkKey 1)
+                            [ (SubstVar.RegVar Mock.xSet, mkConcreteSet [mkKey 2, mkKey 3])
+                            , (SubstVar.RegVar Mock.xInt, mkKey 1)
                             ]
                         }
                     ]
@@ -1567,8 +1568,8 @@ matchingSet =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xSet, mkConcreteSet [mkKey 3])
-                            , (Mock.xInt, mkKey 2)
+                            [ (SubstVar.RegVar Mock.xSet, mkConcreteSet [mkKey 3])
+                            , (SubstVar.RegVar Mock.xInt, mkKey 2)
                             ]
                         }
                     ]
@@ -1584,9 +1585,9 @@ matchingSet =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xSet, mkConcreteSet [mkKey 5])
-                            , (Mock.xInt, mkKey 2)
-                            , (Mock.yInt, mkKey 4)
+                            [ (SubstVar.RegVar Mock.xSet, mkConcreteSet [mkKey 5])
+                            , (SubstVar.RegVar Mock.xInt, mkKey 2)
+                            , (SubstVar.RegVar Mock.yInt, mkKey 4)
                             ]
                         }
                     ]
@@ -1663,7 +1664,7 @@ matchingMap =
         actual <- matchDefinition (mkConcreteMap [(mkKey 1, mkVal 11)]) (mkVar Mock.xMap)
         assertEqualWithExplanation "" expect actual
     , testCase "single variable" $ do
-        let expect = substitution [(Mock.xInt, 12)]
+        let expect = substitution [(SubstVar.RegVar Mock.xInt, 12)]
         actual <- matchVariable
             [ (1, Right 11)
             , (2, Left Mock.xInt)
@@ -1673,7 +1674,7 @@ matchingMap =
             ]
         assertEqualWithExplanation "" expect actual
     , testCase "two variables" $ do
-        let expect = substitution [(Mock.xInt, 12), (Mock.yInt, 14)]
+        let expect = substitution [(SubstVar.RegVar Mock.xInt, 12), (SubstVar.RegVar Mock.yInt, 14)]
         actual <- matchVariable
             [ (1, Right 11)
             , (2, Left Mock.xInt)
@@ -1693,7 +1694,7 @@ matchingMap =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xMap, mkConcreteMap
+                            [ (SubstVar.RegVar Mock.xMap, mkConcreteMap
                                   [ (mkKey 1, mkVal 11)
                                   , (mkKey 2, mkVal 12)
                                   , (mkKey 3, mkVal 13)
@@ -1716,7 +1717,7 @@ matchingMap =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xMap, mkConcreteMap
+                            [ (SubstVar.RegVar Mock.xMap, mkConcreteMap
                                   [ (mkKey 1, mkVal 11)
                                   , (mkKey 3, mkVal 13)
                                   ]
@@ -1740,7 +1741,7 @@ matchingMap =
                         { term = ()
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.xMap, mkConcreteMap [])
+                            [ (SubstVar.RegVar Mock.xMap, mkConcreteMap [])
                             ]
                         }
                     ]

@@ -64,6 +64,7 @@ import           Kore.Syntax.Application
 import           Kore.Syntax.Module
 import           Kore.Syntax.Pattern
                  ( Pattern )
+import           Kore.Syntax.SetVariable
 import           Kore.Syntax.Variable
 import           Kore.Unparser
 
@@ -145,7 +146,7 @@ data SentenceAlias (patternType :: *) =
         { sentenceAliasAlias        :: !Alias
         , sentenceAliasSorts        :: ![Sort]
         , sentenceAliasResultSort   :: !Sort
-        , sentenceAliasLeftPattern  :: !(Application SymbolOrAlias Variable)
+        , sentenceAliasLeftPattern  :: !(Application SymbolOrAlias (SetVariable Variable))
         , sentenceAliasRightPattern :: !patternType
         , sentenceAliasAttributes   :: !Attributes
         }

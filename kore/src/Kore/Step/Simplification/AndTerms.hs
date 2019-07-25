@@ -71,6 +71,8 @@ import           Kore.Step.Substitution
                  ( PredicateMerger,
                  createLiftedPredicatesAndSubstitutionsMerger,
                  createPredicatesAndSubstitutionsMergerExcept )
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import           Kore.TopBottom
 import           Kore.Unification.Error
                  ( unsupportedPatterns )
@@ -898,7 +900,54 @@ variableFunctionAndEquals
         , predicate = makeTruePredicate
         , substitution =
             Substitution.wrap
-                [ if v2 > v1 then (v1, second) else (v2, first) ]
+                [ if v2 > v1 then (RegVar v1, second) else (RegVar v2, first) ]
+        }
+variableFunctionAndEquals
+    SimplificationType.And
+    _tools
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSimplifier
+    _substitutionMerger
+    first@(SetVar_ v1)
+    second@(SetVar_ v2)
+  =
+    return Conditional
+        { term = if v2 > v1 then second else first
+        , predicate = makeTruePredicate
+        , substitution =
+            Substitution.wrap
+                [ if v2 > v1 then (SetVar v1, second) else (SetVar v2, first) ]
+        }
+variableFunctionAndEquals
+    SimplificationType.And
+    _tools
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSimplifier
+    _substitutionMerger
+    (SetVar_ v1)
+    second
+  =
+    return Conditional
+        { term = second
+        , predicate = makeTruePredicate
+        , substitution = Substitution.wrap [(SetVar v1, second)]
+        }
+variableFunctionAndEquals
+    SimplificationType.And
+    _tools
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSimplifier
+    _substitutionMerger
+    first
+    (SetVar_ v2)
+  =
+    return Conditional
+        { term = first
+        , predicate = makeTruePredicate
+        , substitution = Substitution.wrap [(SetVar v2, first)]
         }
 variableFunctionAndEquals
     simplificationType
@@ -928,7 +977,7 @@ variableFunctionAndEquals
                            second
                         empty
                     resultPredicates -> Unify.scatter resultPredicates
-    let result = predicate <> Predicate.fromSingleSubstitution (v, second)
+    let result = predicate <> Predicate.fromSingleSubstitution (RegVar v, second)
     return (Pattern.withCondition second result)
 variableFunctionAndEquals _ _ _ _ _ _ _ _ = empty
 

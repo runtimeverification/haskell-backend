@@ -10,6 +10,8 @@ import           Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Synthetic as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Internal.TermLike
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import qualified Kore.Syntax.Pattern as Syntax
 import qualified Kore.Variables.Free as Variables.Free
 
@@ -23,7 +25,7 @@ hprop_synthetic = property $ do
     let
         external :: Syntax.Pattern Variable Attribute.Null
         external = Builtin.externalizePattern termLike
-        synthesized :: Syntax.Pattern Variable (Set Variable)
+        synthesized :: Syntax.Pattern Variable (Set (SubstVar Variable))
         synthesized =
             Attribute.resynthesizeAux Variables.Free.synthetic external
         expect = getFreeVariables (freeVariables termLike)

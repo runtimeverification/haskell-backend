@@ -24,8 +24,10 @@ import qualified GHC.Generics as GHC
 
 import Kore.Debug
 
+import Kore.SubstVar ( SubstVar )
+
 newtype FreeVariables variable =
-    FreeVariables { getFreeVariables :: Set variable }
+    FreeVariables { getFreeVariables :: Set (SubstVar variable) }
     deriving GHC.Generic
     deriving (Eq, Show)
     deriving Foldable
@@ -45,19 +47,19 @@ instance Hashable variable => Hashable (FreeVariables variable) where
 
 bindVariable
     :: Ord variable
-    => variable
+    => SubstVar variable
     -> FreeVariables variable
     -> FreeVariables variable
 bindVariable variable (FreeVariables freeVariables) =
     FreeVariables (Set.delete variable freeVariables)
 {-# INLINE bindVariable #-}
 
-isFreeVariable :: Ord variable => variable -> FreeVariables variable -> Bool
+isFreeVariable :: Ord variable => SubstVar variable -> FreeVariables variable -> Bool
 isFreeVariable variable (FreeVariables freeVariables) =
     Set.member variable freeVariables
 {-# INLINE isFreeVariable #-}
 
-freeVariable :: Ord variable => variable -> FreeVariables variable
+freeVariable :: Ord variable => SubstVar variable -> FreeVariables variable
 freeVariable variable = FreeVariables (Set.singleton variable)
 {-# INLINE freeVariable #-}
 
@@ -66,7 +68,7 @@ mapFreeVariables
     => (variable1 -> variable2)
     -> FreeVariables variable1 -> FreeVariables variable2
 mapFreeVariables mapping (FreeVariables freeVariables) =
-    FreeVariables (Set.map mapping freeVariables)
+    FreeVariables (Set.map (fmap mapping) freeVariables)
 {-# INLINE mapFreeVariables #-}
 
 traverseFreeVariables
@@ -75,5 +77,5 @@ traverseFreeVariables
     -> FreeVariables variable1 -> f (FreeVariables variable2)
 traverseFreeVariables traversing (FreeVariables freeVariables) =
     FreeVariables . Set.fromList
-    <$> Traversable.traverse traversing (Set.toList freeVariables)
+    <$> Traversable.traverse (traverse traversing) (Set.toList freeVariables)
 {-# INLINE traverseFreeVariables #-}

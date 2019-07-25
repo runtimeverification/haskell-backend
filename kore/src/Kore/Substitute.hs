@@ -28,6 +28,8 @@ import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Attribute.Synthetic
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import           Kore.Syntax
 import           Kore.Variables.Binding
 import           Kore.Variables.Fresh
@@ -55,7 +57,7 @@ substitute
         )
     => (patternType -> FreeVariables variable)
     -- ^ View into free variables of the pattern
-    -> Map variable patternType
+    -> Map (SubstVar variable) patternType
     -- ^ Substitution
     -> patternType
     -- ^ Original pattern
@@ -63,20 +65,21 @@ substitute
 substitute viewFreeVariables =
     \subst -> substituteWorker (Map.map Left subst)
   where
-    extractFreeVariables :: patternType -> Set variable
+    extractFreeVariables :: patternType -> Set (SubstVar variable)
     extractFreeVariables =
         FreeVariables.getFreeVariables . viewFreeVariables
 
     -- | Insert an optional variable renaming into the substitution.
     renaming
-        :: variable  -- ^ Original variable
-        -> Maybe variable  -- ^ Renamed variable
-        -> Map variable (Either patternType variable)  -- ^ Substitution
-        -> Map variable (Either patternType variable)
+        :: SubstVar variable  -- ^ Original variable
+        -> Maybe (SubstVar variable)  -- ^ Renamed variable
+        -> Map (SubstVar variable) (Either patternType (SubstVar variable))
+        -- ^ Substitution
+        -> Map (SubstVar variable) (Either patternType (SubstVar variable))
     renaming variable = maybe id (Map.insert variable . Right)
 
     substituteWorker
-        :: Map variable (Either patternType variable)
+        :: Map (SubstVar variable) (Either patternType (SubstVar variable))
         -> patternType
         -> patternType
     substituteWorker subst termLike =
@@ -117,7 +120,7 @@ substitute viewFreeVariables =
         substituteVariable =
             either id id <$> matchWith traverseVariable worker termLike
           where
-            worker :: variable -> Either patternType variable
+            worker :: SubstVar variable -> Either patternType (SubstVar variable)
             worker variable =
                 -- If the variable is not substituted or renamed, return the
                 -- original pattern.

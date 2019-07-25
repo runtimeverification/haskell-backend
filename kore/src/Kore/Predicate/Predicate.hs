@@ -27,14 +27,14 @@ module Kore.Predicate.Predicate
     , makeIffPredicate
     , makeImpliesPredicate
     , makeInPredicate
+    , makeMuPredicate
     , makeNotPredicate
+    , makeNuPredicate
     , makeOrPredicate
     , makeMultipleOrPredicate
     , makeTruePredicate
     , Kore.Predicate.Predicate.freeVariables
-    , Kore.Predicate.Predicate.freeSetVariables
     , Kore.Predicate.Predicate.hasFreeVariable
-    , Kore.Predicate.Predicate.hasFreeSetVariable
     , Kore.Predicate.Predicate.mapVariables
     , stringFromPredicate
     , substitutionToPredicate
@@ -60,11 +60,12 @@ import           GHC.Generics
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.Attribute.Pattern.FreeSetVariables
 import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Error
                  ( Error, koreFail )
 import           Kore.Internal.TermLike as TermLike
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unification.Substitution
@@ -389,6 +390,38 @@ makeForallPredicate _ t@PredicateTrue = t
 makeForallPredicate v (GenericPredicate p) =
     GenericPredicate $ TermLike.mkForall v p
 
+{-| Mu quantification for the given variable in the given predicate.
+-}
+makeMuPredicate
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
+        )
+    => SetVariable variable
+    -> Predicate variable
+    -> Predicate variable
+makeMuPredicate _ p@PredicateFalse = p
+makeMuPredicate _ t@PredicateTrue = t
+makeMuPredicate v (GenericPredicate p) =
+    GenericPredicate $ TermLike.mkMu v p
+
+{-| Nu quantification for the given variable in the given predicate.
+-}
+makeNuPredicate
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
+        )
+    => SetVariable variable
+    -> Predicate variable
+    -> Predicate variable
+makeNuPredicate _ p@PredicateFalse = p
+makeNuPredicate _ t@PredicateTrue = t
+makeNuPredicate v (GenericPredicate p) =
+    GenericPredicate $ TermLike.mkNu v p
+
 {-| 'makeTruePredicate' produces a predicate wrapping a 'top'.
 -}
 makeTruePredicate
@@ -465,29 +498,13 @@ freeVariables
     -> FreeVariables variable
 freeVariables = TermLike.freeVariables . unwrapPredicate
 
-{- | Extract the set of free set variables from a @Predicate@.
--}
-freeSetVariables
-    :: Ord variable
-    => Predicate variable
-    -> FreeSetVariables variable
-freeSetVariables = TermLike.freeSetVariables . unwrapPredicate
-
 hasFreeVariable
     :: Ord variable
-    => variable
+    => SubstVar variable
     -> Predicate variable
     -> Bool
 hasFreeVariable variable =
     isFreeVariable variable . Kore.Predicate.Predicate.freeVariables
-
-hasFreeSetVariable
-    :: Ord variable
-    => variable
-    -> Predicate variable
-    -> Bool
-hasFreeSetVariable variable =
-    isFreeSetVariable variable . Kore.Predicate.Predicate.freeSetVariables
 
 {- | 'substitutionToPredicate' transforms a substitution in a predicate.
 
@@ -514,10 +531,10 @@ singleSubstitutionToPredicate
         , Show variable
         , Unparse variable
         )
-    => (variable, TermLike variable)
+    => (SubstVar variable, TermLike variable)
     -> Predicate variable
 singleSubstitutionToPredicate (var, patt) =
-    makeEqualsPredicate (TermLike.mkVar var) patt
+    makeEqualsPredicate (TermLike.mkSubstVar var) patt
 
 {- | @fromSubstitution@ constructs a 'Predicate' equivalent to 'Substitution'.
 
@@ -545,7 +562,7 @@ substitute
     ::  ( FreshVariable variable
         , SortedVariable variable
         )
-    => Map variable (TermLike variable)
+    => Map (SubstVar variable) (TermLike variable)
     -> Predicate variable
     -> Predicate variable
 substitute subst (GenericPredicate termLike) =

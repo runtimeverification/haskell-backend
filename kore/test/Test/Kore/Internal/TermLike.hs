@@ -9,9 +9,12 @@ import           Control.Monad.Reader as Reader
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
-import Data.Sup
-import Kore.Internal.TermLike
-import Kore.Variables.Fresh
+import           Data.Sup
+import           Kore.Internal.TermLike
+import           Kore.SubstVar
+                 ( SubstVar (..) )
+import qualified Kore.SubstVar as SubstVar
+import           Kore.Variables.Fresh
 
 import           Kore.Internal.ApplicationSorts
 import           Test.Kore hiding
@@ -83,7 +86,7 @@ termLikeChildGen patternSort =
         var <- variableGen varSort
         child <-
             Reader.local
-                (addVariable var)
+                (addVariable (RegVar var))
                 (termLikeChildGen patternSort)
         pure (mkExists var child)
     termLikeForallGen = do
@@ -91,7 +94,7 @@ termLikeChildGen patternSort =
         var <- variableGen varSort
         child <-
             Reader.local
-                (addVariable var)
+                (addVariable (RegVar var))
                 (termLikeChildGen patternSort)
         pure (mkForall var child)
     termLikeFloorGen = do
@@ -125,7 +128,7 @@ test_substitute =
             "Expected substituted variable"
             (mkVar Mock.z)
             (substitute
-                (Map.singleton Mock.x (mkVar Mock.z))
+                (Map.singleton (RegVar Mock.x) (mkVar Mock.z))
                 (mkVar Mock.x)
             )
         )
@@ -135,7 +138,7 @@ test_substitute =
             "Expected original non-target variable"
             (mkVar Mock.y)
             (substitute
-                (Map.singleton Mock.x (mkVar Mock.z))
+                (Map.singleton (RegVar Mock.x) (mkVar Mock.z))
                 (mkVar Mock.y)
             )
         )
@@ -149,7 +152,7 @@ test_substitute =
                 expect = mkPredicate Mock.testSort
                 actual =
                     substitute
-                        (Map.singleton Mock.x (mkVar Mock.z))
+                        (Map.singleton (RegVar Mock.x) (mkVar Mock.z))
                         (mkPredicate Mock.testSort)
         in
             [ testCase "Bottom" (ignoring mkBottom)
@@ -165,7 +168,7 @@ test_substitute =
                 expect = mkQuantifier Mock.x (mkVar Mock.x)
                 actual =
                     substitute
-                        (Map.singleton Mock.x (mkVar Mock.z))
+                        (Map.singleton (RegVar Mock.x) (mkVar Mock.z))
                         (mkQuantifier Mock.x (mkVar Mock.x))
         in
             [ testCase "Exists" (ignoring mkExists)
@@ -179,11 +182,11 @@ test_substitute =
                     expect actual
               where
                 expect =
-                    mkQuantifier z' $ mkAnd (mkVar z') (mkVar Mock.z)
+                    mkQuantifier (SubstVar.asVariable z') $ mkAnd (mkSubstVar z') (mkVar Mock.z)
                   where
-                    Just z' = refreshVariable (Set.singleton Mock.z) Mock.z
+                    Just z' = refreshVariable (Set.singleton (RegVar Mock.z)) (RegVar Mock.z)
                 actual =
-                    substitute (Map.singleton Mock.x (mkVar Mock.z))
+                    substitute (Map.singleton (RegVar Mock.x) (mkVar Mock.z))
                     $ mkQuantifier Mock.z
                     $ mkAnd (mkVar Mock.z) (mkVar Mock.x)
         in

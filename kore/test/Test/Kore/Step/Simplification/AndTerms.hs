@@ -39,6 +39,8 @@ import           Kore.Step.Simplification.Data
                  ( BuiltinAndAxiomSimplifierMap, Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
 import qualified SMT
@@ -105,7 +107,7 @@ test_andTermsSimplification =
                         { term = fOfA
                         , predicate = makeTruePredicate
                         , substitution =
-                            Substitution.unsafeWrap [(Mock.x, fOfA)]
+                            Substitution.unsafeWrap [(RegVar Mock.x, fOfA)]
                         }
             actual <- simplifyUnify (mkVar Mock.x) fOfA
             assertEqualWithExplanation "" ([expect], Just [expect]) actual
@@ -116,7 +118,7 @@ test_andTermsSimplification =
                         { term = fOfA
                         , predicate = makeTruePredicate
                         , substitution =
-                            Substitution.unsafeWrap [(Mock.x, fOfA)]
+                            Substitution.unsafeWrap [(RegVar Mock.x, fOfA)]
                         }
             actual <- simplifyUnify fOfA (mkVar Mock.x)
             assertEqualWithExplanation "" ([expect], Just [expect]) actual
@@ -483,7 +485,7 @@ test_andTermsSimplification =
                         { term = Mock.builtinMap [(Mock.aConcrete, Mock.b)]
                         , predicate = makeTruePredicate
                         , substitution =
-                            Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                            Substitution.unsafeWrap [(RegVar Mock.x, Mock.b)]
                         }
                     ]
             actual <-
@@ -510,8 +512,8 @@ test_andTermsSimplification =
                                 ]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
-                            [ (Mock.x, fOfA)
-                            , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                            [ (RegVar Mock.x, fOfA)
+                            , (RegVar Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                             ]
                         }
                     ]
@@ -538,8 +540,8 @@ test_andTermsSimplification =
                                 ]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
-                            [ (Mock.x, fOfA)
-                            , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                            [ (RegVar Mock.x, fOfA)
+                            , (RegVar Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                             ]
                         }
                     ]
@@ -566,8 +568,8 @@ test_andTermsSimplification =
                                 ]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
-                            [ (Mock.x, fOfA)
-                            , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                            [ (RegVar Mock.x, fOfA)
+                            , (RegVar Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                             ]
                         }
                     ]
@@ -594,8 +596,8 @@ test_andTermsSimplification =
                                 ]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
-                            [ (Mock.x, fOfA)
-                            , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                            [ (RegVar Mock.x, fOfA)
+                            , (RegVar Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                             ]
                         }
                     ]
@@ -618,8 +620,8 @@ test_andTermsSimplification =
                         { term = Mock.builtinMap [ (Mock.aConcrete, fOfA) ]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
-                            [ (Mock.x, Mock.a)
-                            , (Mock.y, fOfA)
+                            [ (RegVar Mock.x, Mock.a)
+                            , (RegVar Mock.y, fOfA)
                             ]
                         }
                     ]
@@ -643,10 +645,10 @@ test_andTermsSimplification =
                             ]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [   ( Mock.xSubSort
+                            [   ( RegVar Mock.xSubSort
                                 , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
                                 )
-                            ,   ( Mock.y, fOfA )
+                            ,   ( RegVar Mock.y, fOfA )
                             ]
                         }
                     ]
@@ -674,12 +676,12 @@ test_andTermsSimplification =
                         { term = testMapInj
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [   ( Mock.xSubSort
+                            [   ( RegVar Mock.xSubSort
                                 , Mock.sortInjection
                                     Mock.subSort
                                     Mock.aSubSubsort
                                 )
-                            ,   ( Mock.y, Mock.a )
+                            ,   ( RegVar Mock.y, Mock.a )
                             ]
                         }
                     ]
@@ -702,11 +704,11 @@ test_andTermsSimplification =
                             ]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [   ( Mock.xSubSort
+                            [   ( RegVar Mock.xSubSort
                                 , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
                                 )
-                            ,   ( Mock.y, fOfA )
-                            ,   ( Mock.m, Mock.builtinMap [])
+                            ,   ( RegVar Mock.y, fOfA )
+                            ,   ( RegVar Mock.m, Mock.builtinMap [])
                             ]
                         }
                     ]
@@ -737,11 +739,11 @@ test_andTermsSimplification =
                             ]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [   ( Mock.xSubSort
+                            [   ( RegVar Mock.xSubSort
                                 , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
                                 )
-                            ,   ( Mock.y, Mock.a )
-                            ,   ( Mock.m, Mock.builtinMap [])
+                            ,   ( RegVar Mock.y, Mock.a )
+                            ,   ( RegVar Mock.m, Mock.builtinMap [])
                             ]
                         }
                     ]
@@ -797,7 +799,7 @@ test_andTermsSimplification =
                         { term = Mock.builtinList [Mock.a, Mock.b]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [(x, Mock.builtinList [Mock.b])]
+                            [(RegVar x, Mock.builtinList [Mock.b])]
                         }
                     ]
             actual <- unify term5 term6
@@ -835,7 +837,7 @@ test_andTermsSimplification =
                         { term = Mock.builtinSet [Mock.a]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.x, Mock.a) ]
+                            [ (RegVar Mock.x, Mock.a) ]
                         }
                     ]
             actual <- unify
@@ -852,8 +854,8 @@ test_andTermsSimplification =
                         { term = Mock.builtinSet [Mock.a, Mock.b]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.x, Mock.a)
-                            , (Mock.xSet, Mock.builtinSet [Mock.b])
+                            [ (RegVar Mock.x, Mock.a)
+                            , (RegVar Mock.xSet, Mock.builtinSet [Mock.b])
                             ]
                         }
                 expected2 =
@@ -861,8 +863,8 @@ test_andTermsSimplification =
                         { term = Mock.builtinSet [Mock.a, Mock.b]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.x, Mock.b)
-                            , (Mock.xSet, Mock.builtinSet [Mock.a])
+                            [ (RegVar Mock.x, Mock.b)
+                            , (RegVar Mock.xSet, Mock.builtinSet [Mock.a])
                             ]
                         }
             actual <- unify
@@ -880,7 +882,7 @@ test_andTermsSimplification =
                             [ Mock.sortInjection Mock.testSort Mock.aSubSubsort ]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [   ( Mock.xSubSort
+                            [   ( RegVar Mock.xSubSort
                                 , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
                                 )
                             ]
@@ -902,10 +904,10 @@ test_andTermsSimplification =
                             [ Mock.sortInjection Mock.testSort Mock.aSubSubsort ]
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [   ( Mock.xSubSort
+                            [   ( RegVar Mock.xSubSort
                                 , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
                                 )
-                            ,   ( Mock.xSet
+                            ,   ( RegVar Mock.xSet
                                 , Mock.builtinSet []
                                 )
                             ]
@@ -934,12 +936,12 @@ test_andTermsSimplification =
                             { term = testSet
                             , predicate = makeTruePredicate
                             , substitution = Substitution.unsafeWrap
-                                [   (Mock.x, Mock.a)
-                                ,   ( Mock.xSubSort
+                                [   (RegVar Mock.x, Mock.a)
+                                ,   ( RegVar Mock.xSubSort
                                     , Mock.sortInjectionSubSubToSub
                                         Mock.aSubSubsort
                                     )
-                                ,   (Mock.xSet, Mock.builtinSet [])
+                                ,   (RegVar Mock.xSet, Mock.builtinSet [])
                                 ]
                             }
                     ]
@@ -968,7 +970,7 @@ test_equalsTermsSimplification =
                 [ Conditional
                     { term = ()
                     , predicate = makeCeilPredicate Mock.cf
-                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.cf)]
+                    , substitution = Substitution.unsafeWrap [(RegVar Mock.x, Mock.cf)]
                     }
                 ]
         actual <- simplifyEquals Map.empty (mkVar Mock.x) Mock.cf
@@ -979,12 +981,12 @@ test_equalsTermsSimplification =
                 [ Conditional
                     { term = ()
                     , predicate = makeEqualsPredicate (Mock.f Mock.a) Mock.a
-                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.cf)]
+                    , substitution = Substitution.unsafeWrap [(RegVar Mock.x, Mock.cf)]
                     }
                 , Conditional
                     { term = ()
                     , predicate = makeEqualsPredicate (Mock.f Mock.b) Mock.b
-                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.cf)]
+                    , substitution = Substitution.unsafeWrap [(RegVar Mock.x, Mock.cf)]
                     }
                 ]
             sortVar = SortVariableSort (SortVariable (testId "S"))
@@ -1028,7 +1030,7 @@ test_equalsTermsSimplification =
                         (makeEqualsPredicate (Mock.f Mock.a) Mock.a)
                         (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
                     , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
+                        [ (RegVar Mock.x, Mock.cf), (RegVar Mock.var_x_1, Mock.cg) ]
                     }
                 , Conditional
                     { term = ()
@@ -1036,7 +1038,7 @@ test_equalsTermsSimplification =
                         (makeEqualsPredicate (Mock.f Mock.a) Mock.a)
                         (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
                     , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
+                        [ (RegVar Mock.x, Mock.cf), (RegVar Mock.var_x_1, Mock.cg) ]
                     }
                 , Conditional
                     { term = ()
@@ -1044,7 +1046,7 @@ test_equalsTermsSimplification =
                         (makeEqualsPredicate (Mock.f Mock.b) Mock.b)
                         (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
                     , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
+                        [ (RegVar Mock.x, Mock.cf), (RegVar Mock.var_x_1, Mock.cg) ]
                     }
                 , Conditional
                     { term = ()
@@ -1052,7 +1054,7 @@ test_equalsTermsSimplification =
                         (makeEqualsPredicate (Mock.f Mock.b) Mock.b)
                         (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
                     , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
+                        [ (RegVar Mock.x, Mock.cf), (RegVar Mock.var_x_1, Mock.cg) ]
                     }
                 ]
             sortVar = SortVariableSort (SortVariable (testId "S"))
@@ -1133,8 +1135,8 @@ test_equalsTermsSimplification =
                     { term = ()
                     , predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, xValue)
-                        , (Mock.xSet, asInternal (Set.fromList xSetValue))
+                        [ (RegVar Mock.x, xValue)
+                        , (RegVar Mock.xSet, asInternal (Set.fromList xSetValue))
                         ]
                     }
         actual <- simplifyEquals

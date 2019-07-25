@@ -35,6 +35,8 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -130,7 +132,7 @@ test_simplificationIntegration =
                                 (Mock.plain10 (mkVar Mock.x))
                             )
                         , substitution = Substitution.unsafeWrap
-                            [(Mock.y, Mock.b)]
+                            [(RegVar Mock.y, Mock.b)]
                         }
                     ]
         actual <-
@@ -343,8 +345,8 @@ test_substitute =
                                 (Mock.functionalConstr10 (mkVar Mock.x))
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.x, Mock.a)
-                            , (Mock.y, Mock.functionalConstr10 Mock.a)
+                            [ (RegVar Mock.x, Mock.a)
+                            , (RegVar Mock.y, Mock.functionalConstr10 Mock.a)
                             ]
                         }
                     ]
@@ -371,8 +373,8 @@ test_substitute =
                         { term = Mock.functionalConstr20 Mock.a (mkVar Mock.y)
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.x, Mock.a)
-                            , (Mock.y, Mock.a)
+                            [ (RegVar Mock.x, Mock.a)
+                            , (RegVar Mock.y, Mock.a)
                             ]
                         }
                     ]
@@ -405,8 +407,8 @@ test_substituteMap =
                         { term = Mock.functionalConstr20 Mock.a testMapX
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.x, Mock.a)
-                            , (Mock.y, testMapA)
+                            [ (RegVar Mock.x, Mock.a)
+                            , (RegVar Mock.y, testMapA)
                             ]
                         }
                     ]
@@ -439,8 +441,8 @@ test_substituteList =
                         { term = Mock.functionalConstr20 Mock.a testListX
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.x, Mock.a)
-                            , (Mock.y, testListA)
+                            [ (RegVar Mock.x, Mock.a)
+                            , (RegVar Mock.y, testListA)
                             ]
                         }
                     ]

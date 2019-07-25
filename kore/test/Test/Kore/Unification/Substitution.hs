@@ -14,6 +14,8 @@ import Prelude hiding
 
 import Kore.Internal.TermLike hiding
        ( mapVariables )
+import Kore.SubstVar
+       ( SubstVar (..) )
 import Kore.TopBottom
        ( isBottom, isTop )
 import Kore.Unification.Substitution
@@ -45,8 +47,8 @@ propertyTests =
   ]
   where
     empty = mempty :: Substitution Variable
-    normalized = unsafeWrap [(Mock.x, Mock.a)]
-    unnormalized = wrap [(Mock.x, Mock.a)]
+    normalized = unsafeWrap [(RegVar Mock.x, Mock.a)]
+    unnormalized = wrap [(RegVar Mock.x, Mock.a)]
 
 
 monoidTests:: TestTree
@@ -199,82 +201,82 @@ reverseRhsTests =
     [ testCase "empty subst unchanged"
         $ assertEqualWithExplanation ""
             emptySubst
-            (reverseIfRhsIsVar Mock.x emptySubst)
+            (reverseIfRhsIsVar (RegVar Mock.x) emptySubst)
     , testCase "unnormalized without RHS unchanged" $ do
         let
-            subst = wrap [(Mock.x, Mock.a)]
+            subst = wrap [(RegVar Mock.x, Mock.a)]
         assertEqualWithExplanation ""
             subst
-            (reverseIfRhsIsVar Mock.x subst)
+            (reverseIfRhsIsVar (RegVar Mock.x) subst)
     , testCase "normalized without RHS unchanged" $ do
         let
-            subst = unsafeWrap [(Mock.x, Mock.a)]
+            subst = unsafeWrap [(RegVar Mock.x, Mock.a)]
         assertEqualWithExplanation ""
             subst
-            (reverseIfRhsIsVar Mock.x subst)
+            (reverseIfRhsIsVar (RegVar Mock.x) subst)
     , testCase "unnormalized reverses RHS" $ do
         let
-            expectedSubst = wrap [(Mock.x, mkVar Mock.y)]
-            originalSubst = wrap [(Mock.y, mkVar Mock.x)]
+            expectedSubst = wrap [(RegVar Mock.x, mkVar Mock.y)]
+            originalSubst = wrap [(RegVar Mock.y, mkVar Mock.x)]
         assertEqualWithExplanation ""
             expectedSubst
-            (reverseIfRhsIsVar Mock.x originalSubst)
+            (reverseIfRhsIsVar (RegVar Mock.x) originalSubst)
     , testCase "normalized reverses RHS" $ do
         let
-            expectedSubst = unsafeWrap [(Mock.x, mkVar Mock.y)]
-            originalSubst = unsafeWrap [(Mock.y, mkVar Mock.x)]
+            expectedSubst = unsafeWrap [(RegVar Mock.x, mkVar Mock.y)]
+            originalSubst = unsafeWrap [(RegVar Mock.y, mkVar Mock.x)]
         assertEqualWithExplanation ""
             expectedSubst
-            (reverseIfRhsIsVar Mock.x originalSubst)
+            (reverseIfRhsIsVar (RegVar Mock.x) originalSubst)
     , testCase "unnormalized reverses multiple RHS" $ do
         let
             expectedSubst =
-                wrap [(Mock.x, mkVar Mock.y), (Mock.x, mkVar Mock.z)]
+                wrap [(RegVar Mock.x, mkVar Mock.y), (RegVar Mock.x, mkVar Mock.z)]
             originalSubst =
-                wrap [(Mock.y, mkVar Mock.x), (Mock.z, mkVar Mock.x)]
+                wrap [(RegVar Mock.y, mkVar Mock.x), (RegVar Mock.z, mkVar Mock.x)]
         assertEqualWithExplanation ""
             expectedSubst
-            (reverseIfRhsIsVar Mock.x originalSubst)
+            (reverseIfRhsIsVar (RegVar Mock.x) originalSubst)
     , testCase "normalized reverses multiple RHS" $ do
         let
             expectedSubst =
-                unsafeWrap [(Mock.x, mkVar Mock.z), (Mock.y, mkVar Mock.z)]
+                unsafeWrap [(RegVar Mock.x, mkVar Mock.z), (RegVar Mock.y, mkVar Mock.z)]
             originalSubst =
-                unsafeWrap [(Mock.y, mkVar Mock.x), (Mock.z, mkVar Mock.x)]
+                unsafeWrap [(RegVar Mock.y, mkVar Mock.x), (RegVar Mock.z, mkVar Mock.x)]
         assertEqualWithExplanation ""
             expectedSubst
-            (reverseIfRhsIsVar Mock.x originalSubst)
+            (reverseIfRhsIsVar (RegVar Mock.x) originalSubst)
     , testCase "unnormalized does not substitute reverse RHS" $ do
         let
             expectedSubst =
-                wrap [(Mock.x, mkVar Mock.y), (Mock.z, Mock.f (mkVar Mock.x))]
+                wrap [(RegVar Mock.x, mkVar Mock.y), (RegVar Mock.z, Mock.f (mkVar Mock.x))]
             originalSubst =
-                wrap [(Mock.y, mkVar Mock.x), (Mock.z, Mock.f (mkVar Mock.x))]
+                wrap [(RegVar Mock.y, mkVar Mock.x), (RegVar Mock.z, Mock.f (mkVar Mock.x))]
         assertEqualWithExplanation ""
             expectedSubst
-            (reverseIfRhsIsVar Mock.x originalSubst)
+            (reverseIfRhsIsVar (RegVar Mock.x) originalSubst)
     , testCase "normalized substitutes reverse RHS" $ do
         let
             expectedSubst = unsafeWrap
-                [ (Mock.x, mkVar Mock.z)
-                , (Mock.y, mkVar Mock.z)
-                , (Mock.var_x_1, Mock.f (mkVar Mock.z))
+                [ (RegVar Mock.x, mkVar Mock.z)
+                , (RegVar Mock.y, mkVar Mock.z)
+                , (RegVar Mock.var_x_1, Mock.f (mkVar Mock.z))
                 ]
             originalSubst = unsafeWrap
-                [ (Mock.y, mkVar Mock.x)
-                , (Mock.z, mkVar Mock.x)
-                , (Mock.var_x_1, Mock.f (mkVar Mock.x))
+                [ (RegVar Mock.y, mkVar Mock.x)
+                , (RegVar Mock.z, mkVar Mock.x)
+                , (RegVar Mock.var_x_1, Mock.f (mkVar Mock.x))
                 ]
         assertEqualWithExplanation ""
             expectedSubst
-            (reverseIfRhsIsVar Mock.x originalSubst)
+            (reverseIfRhsIsVar (RegVar Mock.x) originalSubst)
     ]
 
-emptyRawSubst :: [(Variable, TermLike Variable)]
+emptyRawSubst :: [(SubstVar Variable, TermLike Variable)]
 emptyRawSubst = mempty
 
 emptySubst :: Substitution Variable
 emptySubst = mempty
 
-singletonSubst :: [(Variable, TermLike Variable)]
-singletonSubst = [(Mock.x, Mock.a)]
+singletonSubst :: [(SubstVar Variable, TermLike Variable)]
+singletonSubst = [(RegVar Mock.x, Mock.a)]

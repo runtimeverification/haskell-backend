@@ -75,6 +75,9 @@ import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
 import qualified Kore.Step.Substitution as Substitution
 import qualified Kore.TopBottom as TopBottom
+import           Kore.SubstVar
+                 ( SubstVar )
+import qualified Kore.SubstVar as SubstVar
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
                  ( MonadUnify )
@@ -160,7 +163,9 @@ unwrapAndQuantifyConfiguration config@Conditional { substitution } =
                 targetVariables
             )
   where
-    substitution' = Substitution.filter Target.isNonTarget substitution
+    substitution' =
+        Substitution.filter (Target.isNonTarget . SubstVar.asVariable)
+            substitution
 
     configWithNewSubst :: Pattern (Target variable)
     configWithNewSubst = config { Pattern.substitution = substitution' }
@@ -513,7 +518,8 @@ checkSubstitutionCoverage initial unified
         , "Failed substitution coverage check!"
         , "The substitution (above, in the unifier) \
           \did not cover the axiom variables:"
-        , (Pretty.indent 4 . Pretty.sep) (unparse <$> Set.toAscList uncovered)
+        , (Pretty.indent 4 . Pretty.sep)
+            (unparse . SubstVar.asVariable <$> Set.toAscList uncovered)
         , "in the left-hand side of the axiom."
         ]
   where
@@ -524,12 +530,14 @@ checkSubstitutionCoverage initial unified
     substitutionVariables = Map.keysSet (Substitution.toMap substitution)
     uncovered = wouldNarrowWith unified
     isCoveringSubstitution = Set.null uncovered
-    isSymbolic = Foldable.any Target.isNonTarget substitutionVariables
+    isSymbolic =
+        Foldable.any (Target.isNonTarget . SubstVar.asVariable)
+            substitutionVariables
 
 {- | The 'Set' of variables that would be introduced by narrowing.
  -}
 -- TODO (thomas.tuegel): Unit tests
-wouldNarrowWith :: Ord variable => UnifiedRule variable -> Set variable
+wouldNarrowWith :: Ord variable => UnifiedRule variable -> Set (SubstVar variable)
 wouldNarrowWith unified =
     Set.difference leftAxiomVariables substitutionVariables
   where

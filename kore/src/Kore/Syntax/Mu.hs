@@ -16,11 +16,12 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Kore.Attribute.Pattern.FreeSetVariables
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
+import Kore.SubstVar
+       ( SubstVar (..) )
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
 import Kore.Unparser
@@ -63,16 +64,12 @@ instance
             , unparse2 muChild
             ])
 
-instance Ord variable => Synthetic (Mu variable) (FreeVariables variable) where
-    synthetic = muChild
-    {-# INLINE synthetic #-}
-
 instance
     Ord variable =>
-    Synthetic (Mu variable) (FreeSetVariables variable)
+    Synthetic (Mu variable) (FreeVariables variable)
   where
     synthetic Mu { muVariable = SetVariable variable, muChild } =
-        bindSetVariable variable muChild
+        bindVariable (SetVar variable) muChild
     {-# INLINE synthetic #-}
 
 instance SortedVariable variable => Synthetic (Mu variable) Sort where

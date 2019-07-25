@@ -31,6 +31,7 @@ import           Kore.Logger
                  ( LogMessage, WithLog )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse, makeAndPredicate )
+import           Kore.SubstVar ( SubstVar (..) )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -88,14 +89,22 @@ simplifyAnds patterns = do
 
 groupSubstitutionByVariable
     :: Ord variable
-    => [(variable, TermLike variable)]
-    -> [[(variable, TermLike variable)]]
+    => [(SubstVar variable, TermLike variable)]
+    -> [[(SubstVar variable, TermLike variable)]]
 groupSubstitutionByVariable =
     groupBy ((==) `on` fst) . sortBy (compare `on` fst) . map sortRenaming
   where
-    sortRenaming (var, Recursive.project -> ann :< VariableF var')
+    sortRenaming (RegVar var, Recursive.project -> ann :< VariableF var')
         | var' < var =
-          (var', Recursive.embed (ann :< VariableF var))
+            (RegVar var', Recursive.embed (ann :< VariableF var))
+    sortRenaming
+        ( SetVar var
+        , Recursive.project -> ann :< SetVariableF (SetVariable var')
+        )
+        | var' < var =
+            ( SetVar var'
+            , Recursive.embed (ann :< SetVariableF (SetVariable var))
+            )
     sortRenaming eq = eq
 
 -- simplifies x = t1 /\ x = t2 /\ ... /\ x = tn by transforming it into
@@ -109,7 +118,7 @@ solveGroupedSubstitution
        , MonadUnify unifier
        , WithLog LogMessage unifier
        )
-    => variable
+    => SubstVar variable
     -> NonEmpty (TermLike variable)
     -> unifier (Predicate variable)
 solveGroupedSubstitution var patterns = do
@@ -168,10 +177,10 @@ normalizeSubstitutionDuplication subst
     isSingleton [_] = True
     isSingleton _   = False
     singletonSubstitutions, nonSingletonSubstitutions
-        :: [[(variable, TermLike variable)]]
+        :: [[(SubstVar variable, TermLike variable)]]
     (singletonSubstitutions, nonSingletonSubstitutions) =
         partition isSingleton groupedSubstitution
-    varAndSubstList :: [(variable, NonEmpty (TermLike variable))]
+    varAndSubstList :: [(SubstVar variable, NonEmpty (TermLike variable))]
     varAndSubstList =
         nonSingletonSubstitutions >>= \case
             [] -> []
@@ -183,7 +192,7 @@ mergePredicateList
        , Unparse variable
        , SortedVariable variable
        )
-    => [(Predicate variable)]
-    -> (Predicate variable)
+    => [Predicate variable]
+    -> Predicate variable
 mergePredicateList [] = Predicate.top
 mergePredicateList (p:ps) = foldl' (<>) p ps

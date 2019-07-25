@@ -28,6 +28,8 @@ import           Kore.Step.Simplification.Data
                  ( TermLikeSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
                  ( Unparse )
@@ -134,8 +136,8 @@ test_applicationSimplification =
                                     (makeEqualsPredicate fOfA fOfB)
                                     (makeEqualsPredicate gOfA gOfB)
                             , substitution = Substitution.unsafeWrap
-                                [ (Mock.x, fOfA)
-                                , (Mock.y, gOfA)
+                                [ (RegVar Mock.x, fOfA)
+                                , (RegVar Mock.y, gOfA)
                                 ]
                             }
                         ]
@@ -149,14 +151,14 @@ test_applicationSimplification =
                                 { term = Mock.a
                                 , predicate = makeEqualsPredicate fOfA fOfB
                                 , substitution =
-                                    Substitution.wrap [ (Mock.x, fOfA) ]
+                                    Substitution.wrap [ (RegVar Mock.x, fOfA) ]
                                 }
                             ]
                         ,   [ Conditional
                                 { term = Mock.b
                                 , predicate = makeEqualsPredicate gOfA gOfB
                                 , substitution =
-                                    Substitution.wrap [ (Mock.y, gOfA) ]
+                                    Substitution.wrap [ (RegVar Mock.y, gOfA) ]
                                 }
                             ]
                         ]
@@ -185,9 +187,9 @@ test_applicationSimplification =
                             , substitution =
                                 Substitution.unsafeWrap
                                 $ List.sortBy (comparing fst)
-                                    [ (z', gOfB)
-                                    , (Mock.x, fOfA)
-                                    , (Mock.y, gOfA)
+                                    [ (RegVar z', gOfB)
+                                    , (RegVar Mock.x, fOfA)
+                                    , (RegVar Mock.y, gOfA)
                                     ]
                             }
                         ]
@@ -216,7 +218,7 @@ test_applicationSimplification =
                                 { term = fOfA
                                 , predicate = makeEqualsPredicate fOfA gOfA
                                 , substitution =
-                                    Substitution.wrap [ (zvar, gOfB) ]
+                                    Substitution.wrap [ (RegVar zvar, gOfB) ]
                                 }
                             ]
                         , remainders = OrPattern.fromPatterns []
@@ -238,14 +240,14 @@ test_applicationSimplification =
                                 { term = Mock.a
                                 , predicate = makeEqualsPredicate fOfA fOfB
                                 , substitution =
-                                    Substitution.wrap [ (Mock.x, fOfA) ]
+                                    Substitution.wrap [ (RegVar Mock.x, fOfA) ]
                                 }
                             ]
                         ,   [ Conditional
                                 { term = Mock.b
                                 , predicate = makeEqualsPredicate gOfA gOfB
                                 , substitution =
-                                    Substitution.wrap [ (Mock.y, gOfA) ]
+                                    Substitution.wrap [ (RegVar Mock.y, gOfA) ]
                                 }
                             ]
                         ]

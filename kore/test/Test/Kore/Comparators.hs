@@ -27,7 +27,6 @@ import qualified Kore.Attribute.Location as Attribute
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Pattern.Defined as Attribute.Pattern
-import qualified Kore.Attribute.Pattern.FreeSetVariables as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import qualified Kore.Attribute.Pattern.Function as Attribute.Pattern
 import qualified Kore.Attribute.Pattern.Functional as Attribute.Pattern
@@ -71,6 +70,9 @@ import qualified Kore.Step.SMT.AST as SMT.SymbolReference
                  ( SymbolReference (..) )
 import qualified Kore.Step.SMT.AST as SMT.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
+import           Kore.SubstVar
+                 ( SubstVar (..) )
+import qualified Kore.SubstVar as SubstVar
 import           Kore.Syntax as Syntax
 import           Kore.Syntax.Sentence as Syntax
 import qualified Kore.Syntax.SetVariable as SetVariable
@@ -817,6 +819,31 @@ instance
     compareWithExplanation = wrapperCompareWithExplanation
     printWithExplanation = show
 
+instance
+    ( EqualWithExplanation variable
+    , Show variable
+    ) => SumEqualWithExplanation (SubstVar variable) where
+    sumConstructorPair (SetVar v1) (SetVar v2) =
+        SumConstructorSameWithArguments
+        $ EqWrap "RegVar" v1 v2
+    sumConstructorPair v1@(SetVar _) v2 =
+        SumConstructorDifferent
+            (printWithExplanation v1) (printWithExplanation v2)
+
+    sumConstructorPair (RegVar v1) (RegVar v2) =
+        SumConstructorSameWithArguments
+        $ EqWrap "SetVar" v1 v2
+    sumConstructorPair v1@(RegVar _) v2 =
+        SumConstructorDifferent
+            (printWithExplanation v1) (printWithExplanation v2)
+
+instance
+    ( EqualWithExplanation variable
+    , Show variable
+    ) => EqualWithExplanation (SubstVar variable) where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
 instance StructEqualWithExplanation Variable where
     structFieldsWithNames
         expected@(Variable _ _ _)
@@ -927,8 +954,8 @@ instance SumEqualWithExplanation SubstitutionError where
       =
         SumConstructorSameWithArguments
         $ EqWrap "NonCtorCircularVariableDependency"
-            (toVariable <$> a1)
-            (toVariable <$> a2)
+            (toVariable . SubstVar.asVariable <$> a1)
+            (toVariable . SubstVar.asVariable <$> a2)
 
 
 instance EqualWithExplanation SubstitutionError where
@@ -1403,8 +1430,8 @@ instance
     ) => StructEqualWithExplanation (Attribute.Pattern variable)
   where
     structFieldsWithNames
-        expected@(Attribute.Pattern _ _ _ _ _ _)
-        actual@(Attribute.Pattern _ _ _ _ _ _)
+        expected@(Attribute.Pattern _ _ _ _ _)
+        actual@(Attribute.Pattern _ _ _ _ _)
       =
         [ EqWrap
             "patternSort = "
@@ -1414,10 +1441,6 @@ instance
             "freeVariables = "
             (Attribute.freeVariables expected)
             (Attribute.freeVariables actual)
-        , EqWrap
-            "freeSetVariables = "
-            (Attribute.freeSetVariables expected)
-            (Attribute.freeSetVariables actual)
         , EqWrap
             "functional = "
             (Attribute.functional expected)
@@ -1442,26 +1465,11 @@ instance
 
 instance
     (EqualWithExplanation variable, Show variable) =>
-    EqualWithExplanation (Attribute.FreeSetVariables variable)
-  where
-    compareWithExplanation = wrapperCompareWithExplanation
-    printWithExplanation = show
-
-instance
-    (EqualWithExplanation variable, Show variable) =>
     WrapperEqualWithExplanation (Attribute.FreeVariables variable)
   where
     wrapperConstructorName _ = "FreeVariables"
     wrapperField =
         Function.on (EqWrap "getFreeVariables = ") Attribute.getFreeVariables
-
-instance
-    (EqualWithExplanation variable, Show variable) =>
-    WrapperEqualWithExplanation (Attribute.FreeSetVariables variable)
-  where
-    wrapperConstructorName _ = "FreeSetVariables"
-    wrapperField =
-        Function.on (EqWrap "getFreeSetVariables = ") Attribute.getFreeSetVariables
 
 instance EqualWithExplanation Attribute.Pattern.Functional where
     compareWithExplanation = wrapperCompareWithExplanation

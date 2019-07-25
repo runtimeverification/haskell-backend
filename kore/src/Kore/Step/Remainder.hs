@@ -27,6 +27,7 @@ import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.SubstVar as SubstVar
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -138,7 +139,9 @@ unificationConditions
 unificationConditions Conditional { predicate, substitution } =
     pure predicate <|> substitutionConditions substitution'
   where
-    substitution' = Substitution.filter Target.isNonTarget substitution
+    substitution' =
+        Substitution.filter (Target.isNonTarget . SubstVar.asVariable)
+            substitution
 
 substitutionConditions
     ::  ( Ord     variable
@@ -152,4 +155,4 @@ substitutionConditions subst =
     MultiAnd.make (substitutionCoverageWorker <$> Substitution.unwrap subst)
   where
     substitutionCoverageWorker (x, t) =
-        Syntax.Predicate.makeEqualsPredicate (mkVar x) t
+        Syntax.Predicate.makeEqualsPredicate (mkSubstVar x) t

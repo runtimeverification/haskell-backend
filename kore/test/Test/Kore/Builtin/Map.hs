@@ -38,6 +38,8 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           SMT
                  ( SMT )
@@ -587,9 +589,9 @@ test_unifySelectFromSingleton =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (mapVar, asInternal Map.empty)
-                                , (keyVar, keyStepPattern)
-                                , (valueVar, value)
+                                [ (RegVar mapVar, asInternal Map.empty)
+                                , (RegVar keyVar, keyStepPattern)
+                                , (RegVar valueVar, value)
                                 ]
                         }
             -- { 5 -> 7 } /\ Item(K:Int, V:Int) Rest:Map
@@ -621,8 +623,8 @@ test_unifySelectSingletonFromSingleton =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (keyVar, keyStepPattern)
-                                , (valueVar, value)
+                                [ (RegVar keyVar, keyStepPattern)
+                                , (RegVar valueVar, value)
                                 ]
                         }
             -- { 5 -> 7 } /\ Item(K:Int, V:Int) Map.unit
@@ -650,8 +652,8 @@ test_unifySelectFromSingletonWithoutLeftovers =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (keyVar, keyStepPattern)
-                                , (valueVar, value)
+                                [ (RegVar keyVar, keyStepPattern)
+                                , (RegVar valueVar, value)
                                 ]
                         }
             -- { 5 -> 7 } /\ Item(K:Int, V:Int)
@@ -691,12 +693,12 @@ test_unifySelectFromTwoElementMap =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [   ( mapVar
+                                [   ( RegVar mapVar
                                     , asInternal
                                         (Map.singleton concreteKey2 value2)
                                     )
-                                , (keyVar, keyStepPattern1)
-                                , (valueVar, value1)
+                                , (RegVar keyVar, keyStepPattern1)
+                                , (RegVar valueVar, value1)
                                 ]
                         }
                 expect2 =
@@ -705,12 +707,12 @@ test_unifySelectFromTwoElementMap =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [   ( mapVar
+                                [   ( RegVar mapVar
                                     , asInternal
                                         (Map.singleton concreteKey1 value1)
                                     )
-                                , (keyVar, keyStepPattern2)
-                                , (valueVar, value2)
+                                , (RegVar keyVar, keyStepPattern2)
+                                , (RegVar valueVar, value2)
                                 ]
                         }
             -- { 5 -> 6, 7 -> 8 } /\ Item(K:Int, V:Int) Rest:Map
@@ -757,13 +759,13 @@ test_unifySelectTwoFromTwoElementMap =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [   ( mapVar
+                                [   ( RegVar mapVar
                                     , asInternal Map.empty
                                     )
-                                , (keyVar1, keyStepPattern1)
-                                , (keyVar2, keyStepPattern2)
-                                , (valueVar1, value1)
-                                , (valueVar2, value2)
+                                , (RegVar keyVar1, keyStepPattern1)
+                                , (RegVar keyVar2, keyStepPattern2)
+                                , (RegVar valueVar1, value1)
+                                , (RegVar valueVar2, value2)
                                 ]
                         }
                 expect2 =
@@ -772,13 +774,13 @@ test_unifySelectTwoFromTwoElementMap =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [   ( mapVar
+                                [   ( RegVar mapVar
                                     , asInternal Map.empty
                                     )
-                                , (keyVar1, keyStepPattern2)
-                                , (keyVar2, keyStepPattern1)
-                                , (valueVar1, value2)
-                                , (valueVar2, value1)
+                                , (RegVar keyVar1, keyStepPattern2)
+                                , (RegVar keyVar2, keyStepPattern1)
+                                , (RegVar valueVar1, value2)
+                                , (RegVar valueVar2, value1)
                                 ]
                         }
 
@@ -880,8 +882,8 @@ test_concretizeKeys =
             , predicate = Predicate.makeTruePredicate
             , substitution =
                 Substitution.unsafeWrap
-                [ (v, val)
-                , (x, symbolicKey)
+                [ (RegVar v, val)
+                , (RegVar x, symbolicKey)
                 ]
             }
 

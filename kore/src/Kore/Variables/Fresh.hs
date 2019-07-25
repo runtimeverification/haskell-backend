@@ -18,9 +18,12 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
-import Data.Sup
-import Kore.Syntax.Id
-import Kore.Syntax.Variable
+import           Data.Sup
+import qualified Kore.SubstVar as SubstVar
+import           Kore.SubstVar
+                 ( SubstVar (..) )
+import           Kore.Syntax.Id
+import           Kore.Syntax.Variable
 
 {- | A @FreshVariable@ can be renamed to avoid colliding with a set of names.
 -}
@@ -37,6 +40,11 @@ class Ord variable => FreshVariable variable where
         :: Set variable  -- ^ variables to avoid
         -> variable        -- ^ variable to rename
         -> Maybe variable
+
+instance FreshVariable variable => FreshVariable (SubstVar variable) where
+    refreshVariable avoid = traverse (refreshVariable avoid')
+      where
+        avoid' = Set.map SubstVar.asVariable avoid
 
 instance FreshVariable Variable where
     refreshVariable avoiding variable = do

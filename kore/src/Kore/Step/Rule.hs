@@ -31,7 +31,6 @@ module Kore.Step.Rule
     , refreshRulePattern
     , onePathRuleToPattern
     , Kore.Step.Rule.freeVariables
-    , Kore.Step.Rule.freeSetVariables
     , Kore.Step.Rule.mapVariables
     , Kore.Step.Rule.substitute
     ) where
@@ -49,8 +48,6 @@ import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
-import           Kore.Attribute.Pattern.FreeSetVariables
-                 ( FreeSetVariables )
 import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
@@ -61,6 +58,8 @@ import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.SubstVar
+                 ( SubstVar )
 import qualified Kore.Syntax.Definition as Syntax
 import           Kore.Unparser
                  ( Unparse, unparse, unparse2 )
@@ -536,10 +535,10 @@ refreshRulePattern
         )
     => FreeVariables variable  -- ^ Variables to avoid
     -> RulePattern variable
-    -> (Map variable variable, RulePattern variable)
+    -> (Map (SubstVar variable) (SubstVar variable), RulePattern variable)
 refreshRulePattern (FreeVariables.getFreeVariables -> avoid) rule1 =
     let rename = refreshVariables avoid originalFreeVariables
-        subst = mkVar <$> rename
+        subst = mkSubstVar <$> rename
         left' = TermLike.substitute subst left
         right' = TermLike.substitute subst right
         requires' = Predicate.substitute subst requires
@@ -566,17 +565,6 @@ freeVariables RulePattern { left, right, requires } =
     TermLike.freeVariables left
     <> TermLike.freeVariables right
     <> Predicate.freeVariables requires
-
-{- | Extract the free set variables of a 'RulePattern'.
- -}
-freeSetVariables
-    :: Ord variable
-    => RulePattern variable
-    -> FreeSetVariables variable
-freeSetVariables RulePattern { left, right, requires } =
-    TermLike.freeSetVariables left
-    <> TermLike.freeSetVariables right
-    <> Predicate.freeSetVariables requires
 
 {- | Apply the given function to all variables in a 'RulePattern'.
  -}
@@ -606,7 +594,7 @@ substitute
     ::  ( FreshVariable variable
         , SortedVariable variable
         )
-    => Map variable (TermLike variable)
+    => Map (SubstVar variable) (TermLike variable)
     -> RulePattern variable
     -> RulePattern variable
 substitute subst rulePattern' =

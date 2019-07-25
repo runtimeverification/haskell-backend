@@ -23,6 +23,8 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import           Kore.Step.Simplification.Floor
                  ( makeEvaluateFloor, simplify )
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import qualified Kore.Unification.Substitution as Substitution
 
 import Test.Kore
@@ -104,7 +106,7 @@ test_floorSimplification =
                         makeAndPredicate
                             (makeFloorPredicate a)
                             (makeEqualsPredicate fOfA gOfA)
-                    , substitution = Substitution.wrap [(x, fOfB)]
+                    , substitution = Substitution.wrap [(RegVar x, fOfB)]
                     }
                 ]
             )
@@ -112,7 +114,7 @@ test_floorSimplification =
                 Conditional
                     { term = a
                     , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = Substitution.wrap [(x, fOfB)]
+                    , substitution = Substitution.wrap [(RegVar x, fOfB)]
                     }
             )
         )

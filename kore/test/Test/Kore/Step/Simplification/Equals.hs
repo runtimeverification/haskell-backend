@@ -31,6 +31,8 @@ import           Kore.Step.Simplification.Data
                  ( Env (..), evalSimplifier )
 import           Kore.Step.Simplification.Equals
                  ( makeEvaluate, makeEvaluateTermsToPredicate, simplify )
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import qualified SMT
@@ -216,7 +218,7 @@ test_equalsSimplification_Or_Pattern =
                                     (makeEqualsPredicate Mock.cf Mock.ch)
                                 ]
                         , substitution = Substitution.unsafeWrap
-                            [(Mock.x, Mock.a)]
+                            [(RegVar Mock.x, Mock.a)]
                         }
                     , Conditional
                         { term = mkTop_
@@ -269,7 +271,7 @@ test_equalsSimplification_Or_Pattern =
                     [ Conditional
                         { term = Mock.cg
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.wrap [(Mock.x, Mock.a)]
+                        , substitution = Substitution.wrap [(RegVar Mock.x, Mock.a)]
                         }
                     , Conditional
                         { term = Mock.ch
@@ -545,7 +547,7 @@ test_equalsSimplification_TermLike =
                 { term = ()
                 , predicate = makeTruePredicate
                 , substitution =
-                    Substitution.unsafeWrap [(Mock.x, functionalOfA)]
+                    Substitution.unsafeWrap [(RegVar Mock.x, functionalOfA)]
                 }
                 (mkVar Mock.x)
                 functionalOfA
@@ -556,7 +558,7 @@ test_equalsSimplification_TermLike =
                 { term = ()
                 , predicate = makeTruePredicate
                 , substitution =
-                    Substitution.unsafeWrap [(Mock.x, functionalOfA)]
+                    Substitution.unsafeWrap [(RegVar Mock.x, functionalOfA)]
                 }
                 functionalOfA
                 (mkVar Mock.x)
@@ -566,7 +568,7 @@ test_equalsSimplification_TermLike =
             Conditional
                 { term = ()
                 , predicate = makeCeilPredicate fOfA
-                , substitution = Substitution.unsafeWrap [(Mock.x, fOfA)]
+                , substitution = Substitution.unsafeWrap [(RegVar Mock.x, fOfA)]
                 }
             (mkVar Mock.x)
             fOfA
@@ -576,7 +578,7 @@ test_equalsSimplification_TermLike =
             Conditional
                 { term = ()
                 , predicate = makeCeilPredicate fOfA
-                , substitution = Substitution.unsafeWrap [(Mock.x, fOfA)]
+                , substitution = Substitution.unsafeWrap [(RegVar Mock.x, fOfA)]
                 }
             fOfA
             (mkVar Mock.x)
@@ -637,7 +639,7 @@ test_equalsSimplification_TermLike =
                 Conditional
                     { term = ()
                     , predicate = makeTruePredicate
-                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                    , substitution = Substitution.unsafeWrap [(RegVar Mock.x, Mock.b)]
                     }
                 (Mock.builtinMap [(Mock.aConcrete, Mock.b)])
                 (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
@@ -657,8 +659,8 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
                     , substitution = Substitution.wrap
-                        [ (Mock.x, fOfA)
-                        , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                        [ (RegVar Mock.x, fOfA)
+                        , (RegVar Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                         ]
                     }
                 (Mock.builtinMap
@@ -680,8 +682,8 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
                     , substitution = Substitution.wrap
-                        [ (Mock.x, fOfA)
-                        , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                        [ (RegVar Mock.x, fOfA)
+                        , (RegVar Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                         ]
                     }
                 (Mock.builtinMap
@@ -703,8 +705,8 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
                     , substitution = Substitution.wrap
-                        [ (Mock.x, fOfA)
-                        , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                        [ (RegVar Mock.x, fOfA)
+                        , (RegVar Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                         ]
                     }
                 (Mock.concatMap
@@ -726,8 +728,8 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
                     , substitution = Substitution.wrap
-                        [ (Mock.x, fOfA)
-                        , (Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                        [ (RegVar Mock.x, fOfA)
+                        , (RegVar Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
                         ]
                     }
                 (Mock.concatMap
@@ -779,7 +781,7 @@ test_equalsSimplification_TermLike =
                 testCase "[a] `concat` x /\\ [a, b] "
                     (assertTermEquals
                         (Predicate.fromSingleSubstitution
-                            (x, Mock.builtinList [Mock.b])
+                            (RegVar x, Mock.builtinList [Mock.b])
                         )
                         term5
                         term6

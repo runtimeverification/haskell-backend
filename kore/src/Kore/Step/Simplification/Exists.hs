@@ -37,6 +37,8 @@ import qualified Kore.Step.Simplification.Data as BranchT
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Substitution as Substitution
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -175,7 +177,7 @@ matchesToVariableSubstitution
   | Equals_ _sort1 _sort2 first second <-
         Syntax.Predicate.fromPredicate predicateSort predicate
   , Substitution.null boundSubstitution
-    && not (hasFreeVariable variable term)
+    && not (hasFreeVariable (RegVar variable) term)
   = do
     matchResult <- runUnifierT $ matchAsUnification first second
     case matchResult of
@@ -205,8 +207,8 @@ singleVariableSubstitution
         , "substitutions, then the equality should have already been resolved."
         ]
     [(substVariable, substTerm)]
-        | substVariable == variable ->
-            Pattern.withoutFreeVariable variable substTerm
+        | substVariable == RegVar variable ->
+            Pattern.withoutFreeVariable substVariable substTerm
                 True
     _ -> False
 singleVariableSubstitution _ _ = False
@@ -238,9 +240,9 @@ makeEvaluateBoundLeft
     variable
     boundTerm
     normalized
-  = withoutFreeVariable variable boundTerm $ do
+  = withoutFreeVariable (RegVar variable) boundTerm $ do
         let
-            boundSubstitution = Map.singleton variable boundTerm
+            boundSubstitution = Map.singleton (RegVar variable) boundTerm
             substituted =
                 normalized
                     { term =
@@ -316,14 +318,15 @@ splitSubstitution
 splitSubstitution variable substitution =
     (bound, independent)
   where
-    reversedSubstitution = Substitution.reverseIfRhsIsVar variable substitution
+    reversedSubstitution =
+        Substitution.reverseIfRhsIsVar (RegVar variable) substitution
     (dependent, independent) =
         Substitution.partition hasVariable reversedSubstitution
     hasVariable variable' term =
-        variable == variable' || Pattern.hasFreeVariable variable term
+        RegVar variable == variable' || Pattern.hasFreeVariable variable' term
     bound =
         maybe (Right dependent) Left
-        $ Map.lookup variable (Substitution.toMap dependent)
+        $ Map.lookup (RegVar variable) (Substitution.toMap dependent)
 
 {- | Existentially quantify the variable an 'Pattern'.
 
@@ -355,8 +358,9 @@ quantifyPattern variable original@Conditional { term, predicate, substitution }
     $ Syntax.Predicate.makeExistsPredicate variable predicate'
   | otherwise = original
   where
-    quantifyTerm = Pattern.hasFreeVariable variable term
+    quantifyTerm = Pattern.hasFreeVariable (RegVar variable) term
     predicate' =
         Syntax.Predicate.makeAndPredicate predicate
         $ Syntax.Predicate.fromSubstitution substitution
-    quantifyPredicate = Syntax.Predicate.hasFreeVariable variable predicate'
+    quantifyPredicate =
+        Syntax.Predicate.hasFreeVariable (RegVar variable) predicate'

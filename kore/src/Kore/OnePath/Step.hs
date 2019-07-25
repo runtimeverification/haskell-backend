@@ -46,6 +46,8 @@ import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import           Kore.Syntax.Variable
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -266,15 +268,22 @@ removalPredicate destination config =
             FreeVariables.getFreeVariables $ Pattern.freeVariables config
         destinationVariables =
             FreeVariables.getFreeVariables $ Pattern.freeVariables destination
-        extraVariables = Set.difference destinationVariables configVariables
-        quantifyPredicate = Predicate.makeMultipleExists extraVariables
+        extraVariables = Set.toList
+            $ Set.difference destinationVariables configVariables
+        extraRegularVariables = [v | RegVar v <- extraVariables]
+        extraSetVariables = [v | SetVar v <- extraVariables]
+        quantifyPredicate = Predicate.makeMultipleExists extraRegularVariables
     in
-        Predicate.makeNotPredicate
-        $ quantifyPredicate
-        $ Predicate.makeCeilPredicate
-        $ TermLike.mkAnd
-            (Pattern.toTermLike destination)
-            (Pattern.toTermLike config)
+        if not (null extraSetVariables)
+        then error
+            ("Cannot quantify set variables: "
+                ++ show (unparse <$> extraSetVariables))
+        else Predicate.makeNotPredicate
+            $ quantifyPredicate
+            $ Predicate.makeCeilPredicate
+            $ TermLike.mkAnd
+                (Pattern.toTermLike destination)
+                (Pattern.toTermLike config)
 
 
 {-| A strategy for doing the first step of a one-path verification.

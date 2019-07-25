@@ -18,6 +18,8 @@ import           Kore.Internal.TermLike hiding
 import           Kore.Predicate.Predicate
                  ( Predicate, makeEqualsPredicate, makeFalsePredicate,
                  makeTruePredicate )
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 
@@ -39,13 +41,13 @@ test_expandedPattern =
             Conditional
                 { term = war "1"
                 , predicate = makeEquals (war "2") (war "3")
-                , substitution = Substitution.wrap [(W "4", war "5")]
+                , substitution = Substitution.wrap [(RegVar $ W "4", war "5")]
                 }
             (Pattern.mapVariables showVar
                 Conditional
                     { term = var 1
                     , predicate = makeEquals (var 2) (var 3)
-                    , substitution = Substitution.wrap [(V 4, var 5)]
+                    , substitution = Substitution.wrap [(RegVar $ V 4, var 5)]
                     }
             )
         )
@@ -62,7 +64,7 @@ test_expandedPattern =
                 Conditional
                     { term = var 1
                     , predicate = makeEquals (var 2) (var 3)
-                    , substitution = Substitution.wrap [(V 4, var 5)]
+                    , substitution = Substitution.wrap [(RegVar $ V 4, var 5)]
                     }
             )
         )
@@ -76,7 +78,7 @@ test_expandedPattern =
                 Conditional
                     { term = mkTop sortVariable
                     , predicate = makeEquals (var 2) (var 3)
-                    , substitution = Substitution.wrap [(V 4, var 5)]
+                    , substitution = Substitution.wrap [(RegVar $ V 4, var 5)]
                     }
             )
         )
@@ -98,7 +100,7 @@ test_expandedPattern =
                 Conditional
                     { term = mkBottom sortVariable
                     , predicate = makeEquals (var 2) (var 3)
-                    , substitution = Substitution.wrap [(V 4, var 5)]
+                    , substitution = Substitution.wrap [(RegVar $ V 4, var 5)]
                     }
             )
         )

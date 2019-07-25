@@ -7,6 +7,6 @@ module TEST-ALIAS-2
   symbol g{} (S{}) : S{} []
 
   alias f{}(S{}) : S{}
-  where f{}(X : S{}) := g{}(X : S{}) []
+  where f{}(@X : S{}) := g{}(@X : S{}) []
 
 endmodule []

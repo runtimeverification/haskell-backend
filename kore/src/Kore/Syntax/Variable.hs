@@ -31,11 +31,12 @@ import qualified GHC.Generics as GHC
 import           Numeric.Natural
 
 import Data.Sup
-import Kore.Attribute.Pattern.FreeSetVariables
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
+import Kore.SubstVar
+       ( SubstVar (..) )
 import Kore.Unparser
 
 {-|'Variable' corresponds to the @variable@ syntactic category from the
@@ -190,11 +191,7 @@ instance SortedVariable Concrete where
     fromVariable = error "Cannot construct a variable in a concrete term!"
 
 instance Synthetic (Const Variable) (FreeVariables Variable) where
-    synthetic (Const variable) = freeVariable variable
-    {-# INLINE synthetic #-}
-
-instance Synthetic (Const Variable) (FreeSetVariables Variable) where
-    synthetic = const mempty
+    synthetic (Const variable) = freeVariable (RegVar variable)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Const Variable) Sort where

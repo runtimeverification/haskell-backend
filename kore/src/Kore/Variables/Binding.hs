@@ -11,6 +11,8 @@ module Kore.Variables.Binding
     , Binder (..)
     , existsBinder
     , forallBinder
+    , muBinder
+    , nuBinder
     ) where
 
 import           Control.Comonad.Trans.Env
@@ -18,8 +20,13 @@ import qualified Control.Lens as Lens
 import           Data.Monoid
                  ( Any (..) )
 
+import Kore.SubstVar
+       ( SubstVar (..) )
 import Kore.Syntax.Exists
 import Kore.Syntax.Forall
+import Kore.Syntax.Mu
+import Kore.Syntax.Nu
+import Kore.Syntax.SetVariable
 
 {- | @Binding@ defines traversals for patterns with binders.
 
@@ -37,7 +44,7 @@ class Binding patternType where
                 (Binder (VariableType patternType) patternType)
 
     -- | Traverse the variable at the top of a pattern.
-    traverseVariable :: Lens.Traversal' patternType (VariableType patternType)
+    traverseVariable :: Lens.Traversal' patternType (SubstVar (VariableType patternType))
 
 {- | Apply a traversing function while distinguishing an empty 'Lens.Traversal'.
 
@@ -56,7 +63,7 @@ matchWith (Lens.cloneTraversal -> traverse') = \afb s ->
 
 -- | @Binder@ abstracts over binders such as 'Exists' and 'Forall'.
 data Binder variable child =
-    Binder { binderVariable :: !variable, binderChild :: !child }
+    Binder { binderVariable :: !(SubstVar variable), binderChild :: !child }
 
 {- | A 'Lens.Lens' to view an 'Exists' as a 'Binder'.
 
@@ -70,14 +77,14 @@ existsBinder mapping exists =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable, binderChild }
+        Binder { binderVariable = RegVar existsVariable, binderChild }
       where
-        Exists { existsVariable = binderVariable } = exists
+        Exists { existsVariable } = exists
         Exists { existsChild    = binderChild    } = exists
     finish binder' =
         exists { existsVariable, existsChild }
       where
-        Binder { binderVariable = existsVariable } = binder'
+        Binder { binderVariable = RegVar existsVariable } = binder'
         Binder { binderChild    = existsChild    } = binder'
 
 {- | A 'Lens.Lens' to view a 'Forall' as a 'Binder'.
@@ -92,12 +99,56 @@ forallBinder mapping forall =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable, binderChild }
+        Binder { binderVariable = RegVar forallVariable, binderChild }
       where
-        Forall { forallVariable = binderVariable } = forall
+        Forall { forallVariable } = forall
         Forall { forallChild    = binderChild    } = forall
     finish binder' =
         forall { forallVariable, forallChild }
       where
-        Binder { binderVariable = forallVariable } = binder'
+        Binder { binderVariable = RegVar forallVariable } = binder'
         Binder { binderChild    = forallChild    } = binder'
+
+{- | A 'Lens.Lens' to view an 'Mu' as a 'Binder'.
+
+@muBinder@ may be used to implement 'traverseBinder'.
+
+See also: 'nuBinder'.
+
+ -}
+muBinder :: Lens.Lens' (Mu variable child) (Binder variable child)
+muBinder mapping mu =
+    finish <$> mapping binder
+  where
+    binder =
+        Binder { binderVariable = SetVar muVar, binderChild }
+      where
+        Mu { muVariable = SetVariable muVar } = mu
+        Mu { muChild    = binderChild    } = mu
+    finish binder' =
+        mu { muVariable = SetVariable muVar, muChild }
+      where
+        Binder { binderVariable = SetVar muVar } = binder'
+        Binder { binderChild    = muChild    } = binder'
+
+{- | A 'Lens.Lens' to view an 'Nu' as a 'Binder'.
+
+@nuBinder@ may be used to implement 'traverseBinder'.
+
+See also: 'muBinder'.
+
+ -}
+nuBinder :: Lens.Lens' (Nu variable child) (Binder variable child)
+nuBinder mapping nu =
+    finish <$> mapping binder
+  where
+    binder =
+        Binder { binderVariable = SetVar nuVar, binderChild }
+      where
+        Nu { nuVariable = SetVariable nuVar } = nu
+        Nu { nuChild    = binderChild    } = nu
+    finish binder' =
+        nu { nuVariable = SetVariable nuVar, nuChild }
+      where
+        Binder { binderVariable = SetVar nuVar } = binder'
+        Binder { binderChild    = nuChild    } = binder'

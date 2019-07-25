@@ -19,6 +19,8 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyAndRemoveTopExists )
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser
@@ -33,7 +35,7 @@ checkImplicationIsTop lhs rhs =
     case stripForallQuantifiers rhs of
         ( forallQuantifiers, Implies_ _ implicationLHS implicationRHS ) -> do
             let rename = refreshVariables lhsFreeVariables forallQuantifiers
-                subst = mkVar <$> rename
+                subst = mkSubstVar <$> rename
                 implicationLHS' = TermLike.substitute subst implicationLHS
                 implicationRHS' = TermLike.substitute subst implicationRHS
                 resultTerm =
@@ -61,12 +63,12 @@ checkImplicationIsTop lhs rhs =
 
 stripForallQuantifiers
     :: TermLike Variable
-    -> (Set.Set Variable, TermLike Variable)
+    -> (Set.Set (SubstVar Variable), TermLike Variable)
 stripForallQuantifiers patt
   = case patt of
         Forall_ _ forallVar child ->
             let
                 ( childVars, strippedChild ) = stripForallQuantifiers child
             in
-                ( Set.insert forallVar childVars, strippedChild)
+                ( Set.insert (RegVar forallVar) childVars, strippedChild)
         _ -> ( Set.empty , patt )

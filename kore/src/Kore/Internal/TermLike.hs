@@ -14,7 +14,6 @@ module Kore.Internal.TermLike
     , isFunctionalPattern
     , isDefinedPattern
     , freeVariables
-    , freeSetVariables
     , termLikeSort
     , hasFreeVariable
     , withoutFreeVariable
@@ -51,6 +50,7 @@ module Kore.Internal.TermLike
     , mkTop
     , mkVar
     , mkSetVar
+    , mkSubstVar
     , mkStringLiteral
     , mkCharLiteral
     , mkSort
@@ -92,12 +92,15 @@ module Kore.Internal.TermLike
     , pattern Iff_
     , pattern Implies_
     , pattern In_
+    , pattern Mu_
     , pattern Next_
     , pattern Not_
+    , pattern Nu_
     , pattern Or_
     , pattern Rewrites_
     , pattern Top_
     , pattern Var_
+    , pattern SetVar_
     , pattern V
     , pattern StringLiteral_
     , pattern CharLiteral_
@@ -173,7 +176,6 @@ import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Pattern.Defined as Pattern
-import           Kore.Attribute.Pattern.FreeSetVariables
 import           Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
@@ -184,6 +186,9 @@ import           Kore.Internal.Alias
 import           Kore.Internal.Symbol
 import           Kore.Sort
 import qualified Kore.Substitute as Substitute
+import           Kore.SubstVar
+                 ( SubstVar (..) )
+import qualified Kore.SubstVar as SubstVar
 import           Kore.Syntax.And
 import           Kore.Syntax.Application
 import           Kore.Syntax.Bottom
@@ -208,6 +213,7 @@ import           Kore.Syntax.Nu
 import           Kore.Syntax.Or
 import           Kore.Syntax.Rewrites
 import           Kore.Syntax.SetVariable
+import qualified Kore.Syntax.SetVariable as SetVariable
 import           Kore.Syntax.StringLiteral
 import           Kore.Syntax.Top
 import           Kore.Syntax.Variable as Variable
@@ -308,7 +314,7 @@ instance
     -- Functors.
     synthetic (ForallF forallF) = synthetic forallF
     synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF variable) = freeVariable variable
+    synthetic (VariableF variable) = freeVariable (RegVar variable)
 
     synthetic (AndF andF) = synthetic andF
     synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
@@ -335,45 +341,7 @@ instance
 
     synthetic (MuF muF) = synthetic muF
     synthetic (NuF nuF) = synthetic nuF
-    synthetic (SetVariableF _) = mempty
-    {-# INLINE synthetic #-}
-
-instance
-    Ord variable =>
-    Synthetic (TermLikeF variable) (FreeSetVariables variable)
-  where
-    -- TODO (thomas.tuegel): Use SOP.Generic here, after making the children
-    -- Functors.
-    synthetic (ForallF forallF) = synthetic forallF
-    synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF _) = mempty
-
-    synthetic (AndF andF) = synthetic andF
-    synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
-    synthetic (ApplyAliasF applyAliasF) = synthetic applyAliasF
-    synthetic (BottomF bottomF) = synthetic bottomF
-    synthetic (CeilF ceilF) = synthetic ceilF
-    synthetic (DomainValueF domainValueF) = synthetic domainValueF
-    synthetic (EqualsF equalsF) = synthetic equalsF
-    synthetic (FloorF floorF) = synthetic floorF
-    synthetic (IffF iffF) = synthetic iffF
-    synthetic (ImpliesF impliesF) = synthetic impliesF
-    synthetic (InF inF) = synthetic inF
-    synthetic (NextF nextF) = synthetic nextF
-    synthetic (NotF notF) = synthetic notF
-    synthetic (OrF orF) = synthetic orF
-    synthetic (RewritesF rewritesF) = synthetic rewritesF
-    synthetic (TopF topF) = synthetic topF
-    synthetic (BuiltinF builtinF) = Foldable.fold builtinF
-    synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
-
-    synthetic (StringLiteralF stringLiteral) = synthetic (Const stringLiteral)
-    synthetic (CharLiteralF charLiteral) = synthetic (Const charLiteral)
-    synthetic (InhabitantF _) = mempty
-
-    synthetic (MuF muF) = synthetic muF
-    synthetic (NuF nuF) = synthetic nuF
-    synthetic (SetVariableF (SetVariable variable)) = freeSetVariable variable
+    synthetic (SetVariableF (SetVariable setVariable)) = freeVariable (SetVar setVariable)
     {-# INLINE synthetic #-}
 
 instance SortedVariable variable => Synthetic (TermLikeF variable) Sort where
@@ -738,7 +706,8 @@ instance
 
     traverseVariable match termLike =
         case termLikeF of
-            VariableF variable -> synthesize . VariableF <$> match variable
+            VariableF variable -> mkSubstVar <$> match (RegVar variable)
+            SetVariableF (SetVariable variable) -> mkSubstVar <$> match (SetVar variable)
             _ -> pure termLike
       where
         _ :< termLikeF = Recursive.project termLike
@@ -747,6 +716,8 @@ instance
         case termLikeF of
             ExistsF exists -> synthesize . ExistsF <$> existsBinder match exists
             ForallF forall -> synthesize . ForallF <$> forallBinder match forall
+            MuF mu -> synthesize . MuF <$> muBinder match mu
+            NuF nu -> synthesize . NuF <$> nuBinder match nu
             _ -> pure termLike
       where
         _ :< termLikeF = Recursive.project termLike
@@ -754,12 +725,9 @@ instance
 freeVariables :: TermLike variable -> FreeVariables variable
 freeVariables = Attribute.freeVariables . extractAttributes
 
-freeSetVariables :: TermLike variable -> FreeSetVariables variable
-freeSetVariables = Attribute.freeSetVariables . extractAttributes
-
 hasFreeVariable
     :: Ord variable
-    => variable
+    => SubstVar variable
     -> TermLike variable
     -> Bool
 hasFreeVariable variable = isFreeVariable variable . freeVariables
@@ -789,7 +757,7 @@ Otherwise, the argument is returned.
  -}
 withoutFreeVariable
     :: (Ord variable, SortedVariable variable, Unparse variable)
-    => variable  -- ^ variable
+    => (SubstVar variable)  -- ^ variable
     -> TermLike variable
     -> a  -- ^ result, if the variable does not occur free in the pattern
     -> a
@@ -798,7 +766,7 @@ withoutFreeVariable variable termLike result
     (error . show . Pretty.vsep)
         [ Pretty.hsep
             [ "Unexpected free variable"
-            , unparse variable
+            , unparse (SubstVar.asVariable variable)
             , "in pattern:"
             ]
         , Pretty.indent 4 (unparse termLike)
@@ -906,7 +874,7 @@ substitute
         , Ord variable
         , SortedVariable variable
         )
-    =>  Map variable (TermLike variable)
+    =>  Map (SubstVar variable) (TermLike variable)
     ->  TermLike variable
     ->  TermLike variable
 substitute = Substitute.substitute freeVariables
@@ -926,12 +894,14 @@ externalizeFreshVariables termLike =
     -- | 'originalFreeVariables' are present in the original pattern; they do
     -- not have a generated counter. 'generatedFreeVariables' have a generated
     -- counter, usually because they were introduced by applying some axiom.
+    originalFreeVariables, generatedFreeVariables :: Set.Set (SubstVar Variable)
     (originalFreeVariables, generatedFreeVariables) =
-        Set.partition Variable.isOriginalVariable
+        Set.partition (Variable.isOriginalVariable . SubstVar.asVariable)
         $ getFreeVariables $ freeVariables termLike
 
     -- | The map of generated free variables, renamed to be unique from the
     -- original free variables.
+    renamedFreeVariables :: Map Variable Variable
     (renamedFreeVariables, _) =
         Foldable.foldl' rename initial generatedFreeVariables
       where
@@ -939,7 +909,11 @@ externalizeFreshVariables termLike =
         rename (renaming, avoiding) variable =
             let
                 variable' = safeVariable avoiding variable
-                renaming' = Map.insert variable variable' renaming
+                renaming' =
+                    Map.insert
+                        (SubstVar.asVariable variable)
+                        (SubstVar.asVariable variable')
+                        renaming
                 avoiding' = freeVariable variable' <> avoiding
             in
                 (renaming', avoiding')
@@ -950,6 +924,7 @@ externalizeFreshVariables termLike =
     these variables are not present in the Map of renamed variables.
 
      -}
+    lookupVariable :: Variable ->  Reader (Map Variable Variable) Variable
     lookupVariable variable =
         Reader.asks (Map.lookup variable) >>= \case
             Nothing -> return variable
@@ -961,17 +936,20 @@ externalizeFreshVariables termLike =
     among the set of avoided variables. The externalized form is returned.
 
      -}
+    safeVariable :: FreeVariables Variable -> SubstVar Variable -> SubstVar Variable
     safeVariable avoiding variable =
         head  -- 'head' is safe because 'iterate' creates an infinite list
         $ dropWhile wouldCapture
-        $ Variable.externalizeFreshVariable
-        <$> iterate nextVariable variable
+        $ fmap Variable.externalizeFreshVariable
+        <$> iterate (fmap nextVariable) variable
       where
         wouldCapture var = isFreeVariable var avoiding
 
     underBinder freeVariables' variable child = do
         let variable' = safeVariable freeVariables' variable
-        child' <- Reader.local (Map.insert variable variable') child
+        child' <- Reader.local
+            (Map.insert (SubstVar.asVariable variable) (SubstVar.asVariable variable'))
+            child
         return (variable', child')
 
     externalizeFreshVariablesWorker
@@ -994,11 +972,12 @@ externalizeFreshVariables termLike =
                     (existsVariable', existsChild') <-
                         underBinder
                             freeVariables'
-                            existsVariable
+                            (RegVar existsVariable)
                             existsChild
                     let exists' =
                             exists
-                                { existsVariable = existsVariable'
+                                { existsVariable =
+                                    SubstVar.asVariable existsVariable'
                                 , existsChild = existsChild'
                                 }
                     return (ExistsF exists')
@@ -1007,14 +986,43 @@ externalizeFreshVariables termLike =
                     (forallVariable', forallChild') <-
                         underBinder
                             freeVariables'
-                            forallVariable
+                            (RegVar forallVariable)
                             forallChild
                     let forall' =
                             forall
-                                { forallVariable = forallVariable'
+                                { forallVariable =
+                                    SubstVar.asVariable forallVariable'
                                 , forallChild = forallChild'
                                 }
                     return (ForallF forall')
+                MuF mu -> do
+                    let Mu { muVariable = SetVariable muVar, muChild } = mu
+                    (muVariable', muChild') <-
+                        underBinder
+                            freeVariables'
+                            (SetVar muVar)
+                            muChild
+                    let mu' =
+                            mu
+                                { muVariable = SetVariable
+                                    (SubstVar.asVariable muVariable')
+                                , muChild = muChild'
+                                }
+                    return (MuF mu')
+                NuF nu -> do
+                    let Nu { nuVariable = SetVariable nuVar, nuChild } = nu
+                    (nuVariable', nuChild') <-
+                        underBinder
+                            freeVariables'
+                            (SetVar nuVar)
+                            nuChild
+                    let nu' =
+                            nu
+                                { nuVariable = SetVariable
+                                    (SubstVar.asVariable nuVariable')
+                                , nuChild = nuChild'
+                                }
+                    return (NuF nu')
                 _ ->
                     traverseVariablesF lookupVariable patt >>= sequence
         (return . Recursive.embed) (attrs' :< patt')
@@ -1603,8 +1611,8 @@ mkMu
     -> TermLike variable
 mkMu muVar = makeSortsAgree mkMuWorker (mkSetVar muVar)
   where
-    mkMuWorker (SetVar_ muVariable) muChild _ =
-        synthesize (MuF Mu { muVariable, muChild })
+    mkMuWorker (SetVar_ muVar') muChild _ =
+        synthesize (MuF Mu { muVariable = SetVariable muVar', muChild })
     mkMuWorker _ _ _ = error "Unreachable code"
 
 {- | Construct a 'Next' pattern.
@@ -1640,8 +1648,8 @@ mkNu
     -> TermLike variable
 mkNu nuVar = makeSortsAgree mkNuWorker (mkSetVar nuVar)
   where
-    mkNuWorker (SetVar_ nuVariable) nuChild _ =
-        synthesize (NuF Nu { nuVariable, nuChild })
+    mkNuWorker (SetVar_ nuVar') nuChild _ =
+        synthesize (NuF Nu { nuVariable = SetVariable nuVar', nuChild })
     mkNuWorker _ _ _ = error "Unreachable code"
 
 {- | Construct an 'Or' pattern.
@@ -1706,6 +1714,13 @@ mkSetVar
     => SetVariable variable
     -> TermLike variable
 mkSetVar = synthesize . SetVariableF
+
+mkSubstVar
+    :: Ord variable
+    => SortedVariable variable
+    => SubstVar variable -> TermLike variable
+mkSubstVar (RegVar variable) = mkVar variable
+mkSubstVar (SetVar variable) = mkSetVar (SetVariable variable)
 
 {- | Construct a 'StringLiteral' pattern.
  -}
@@ -1810,7 +1825,7 @@ mkAlias
     :: Id
     -> [SortVariable]
     -> Sort
-    -> [Variable]
+    -> [SetVariable Variable]
     -> TermLike Variable
     -> SentenceAlias (TermLike Variable)
 mkAlias aliasConstructor aliasParams resultSort' arguments right =
@@ -1836,7 +1851,7 @@ mkAlias aliasConstructor aliasParams resultSort' arguments right =
         , sentenceAliasAttributes = Attributes []
         }
   where
-    argumentSorts = variableSort <$> arguments
+    argumentSorts = variableSort . SetVariable.getVariable <$> arguments
 
 {- | Construct an alias declaration with no parameters.
 
@@ -1846,7 +1861,7 @@ See also: 'mkAlias'
 mkAlias_
     :: Id
     -> Sort
-    -> [Variable]
+    -> [SetVariable Variable]
     -> (TermLike Variable)
     -> SentenceAlias (TermLike Variable)
 mkAlias_ aliasConstructor = mkAlias aliasConstructor []
@@ -1930,6 +1945,11 @@ pattern In_
     -> TermLike variable
     -> TermLike variable
 
+pattern Mu_
+    :: variable
+    -> TermLike variable
+    -> TermLike variable
+
 pattern Next_
     :: Sort
     -> TermLike variable
@@ -1937,6 +1957,11 @@ pattern Next_
 
 pattern Not_
     :: Sort
+    -> TermLike variable
+    -> TermLike variable
+
+pattern Nu_
+    :: variable
     -> TermLike variable
     -> TermLike variable
 
@@ -1956,7 +1981,7 @@ pattern Top_ :: Sort -> TermLike variable
 
 pattern Var_ :: variable -> TermLike variable
 
-pattern SetVar_ :: SetVariable variable -> TermLike variable
+pattern SetVar_ :: variable -> TermLike variable
 
 pattern StringLiteral_ :: Text -> TermLike variable
 
@@ -2047,6 +2072,11 @@ pattern In_ inOperandSort inResultSort inFirst inSecond <-
             }
     )
 
+pattern Mu_ muVar muChild <-
+    (Recursive.project ->
+        _ :< MuF Mu { muVariable = SetVariable muVar, muChild }
+    )
+
 pattern Next_ nextSort nextChild <-
     (Recursive.project ->
         _ :< NextF Next { nextSort, nextChild })
@@ -2054,6 +2084,11 @@ pattern Next_ nextSort nextChild <-
 pattern Not_ notSort notChild <-
     (Recursive.project ->
         _ :< NotF Not { notSort, notChild })
+
+pattern Nu_ nuVar nuChild <-
+    (Recursive.project ->
+        _ :< NuF Nu { nuVariable = SetVariable nuVar, nuChild }
+    )
 
 pattern Or_ orSort orFirst orSecond <-
     (Recursive.project -> _ :< OrF Or { orSort, orFirst, orSecond })
@@ -2074,7 +2109,7 @@ pattern Var_ variable <-
     (Recursive.project -> _ :< VariableF variable)
 
 pattern SetVar_ setVariable <-
-    (Recursive.project -> _ :< SetVariableF setVariable)
+    (Recursive.project -> _ :< SetVariableF (SetVariable setVariable))
 
 pattern V :: variable -> TermLike variable
 pattern V x <- Var_ x

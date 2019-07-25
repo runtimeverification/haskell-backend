@@ -29,6 +29,8 @@ import qualified Kore.Predicate.Predicate as Syntax
 import           Kore.Step.Simplification.Data
                  ( BuiltinAndAxiomSimplifierMap, Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import           Kore.Unification.Error
 import           Kore.Unification.Procedure
 import qualified Kore.Unification.Substitution as Substitution
@@ -131,11 +133,11 @@ type Substitution = [(Text, TermLike Variable)]
 
 unificationSubstitution
     :: Substitution
-    -> [ (Variable, TermLike Variable) ]
+    -> [ (SubstVar Variable, TermLike Variable) ]
 unificationSubstitution = map trans
   where
     trans (v, p) =
-        ( Variable
+        ( RegVar Variable
             { variableSort = termLikeSort p
             , variableName = testId v
             , variableCounter = mempty
@@ -231,7 +233,7 @@ unificationProcedureSuccessWithSimplifiers
     -> BuiltinAndAxiomSimplifierMap
     -> UnificationTerm
     -> UnificationTerm
-    -> [([(Variable, TermLike Variable)], Syntax.Predicate Variable)]
+    -> [([(SubstVar Variable, TermLike Variable)], Syntax.Predicate Variable)]
     -> TestTree
 unificationProcedureSuccessWithSimplifiers
     message
@@ -250,7 +252,7 @@ unificationProcedureSuccessWithSimplifiers
         let
             normalize
                 :: Predicate Variable
-                -> ([(Variable, TermLike Variable)], Syntax.Predicate Variable)
+                -> ([(SubstVar Variable, TermLike Variable)], Syntax.Predicate Variable)
             normalize Conditional { substitution, predicate } =
                 (Substitution.unwrap substitution, predicate)
         assertEqualWithExplanation ""
@@ -475,11 +477,11 @@ test_unification =
         -}
     , testCase "Maps substitution variables"
         (assertEqualWithExplanation ""
-            [(W "1", war' "2")]
+            [(RegVar $ W "1", war' "2")]
             (Substitution.unwrap
                 . Substitution.mapVariables showVar
                 . Substitution.wrap
-                $ [(V 1, var' 2)]
+                $ [(RegVar $ V 1, var' 2)]
             )
         )
 

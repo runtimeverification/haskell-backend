@@ -14,7 +14,6 @@ module Kore.Internal.Conditional
     , fromSingleSubstitution
     , andPredicate
     , Kore.Internal.Conditional.freeVariables
-    , Kore.Internal.Conditional.freeSetVariables
     , splitTerm
     , toPredicate
     , Kore.Internal.Conditional.mapVariables
@@ -29,8 +28,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.Attribute.Pattern.FreeSetVariables
-                 ( FreeSetVariables )
 import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
 import           Kore.Internal.TermLike
@@ -38,6 +35,8 @@ import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.SubstVar
+                 ( SubstVar )
 import           Kore.Syntax
 import           Kore.TopBottom
                  ( TopBottom (..) )
@@ -266,7 +265,7 @@ The result has a true 'Predicate'.
  -}
 fromSingleSubstitution
     :: (Ord variable, SortedVariable variable)
-    => (variable, TermLike variable)
+    => (SubstVar variable, TermLike variable)
     -> Conditional variable ()
 fromSingleSubstitution pair =
     Conditional
@@ -302,21 +301,6 @@ freeVariables getFreeVariables Conditional { term, predicate, substitution } =
     getFreeVariables term
     <> Predicate.freeVariables predicate
     <> Substitution.freeVariables substitution
-
-{- | Extract the set of free set variables from a 'Conditional' term.
-
-See also: 'Predicate.freeSetVariables'.
--}
-freeSetVariables
-    :: Ord variable
-    => (term -> FreeSetVariables variable)
-    -- ^ Extract the free variables of @term@.
-    -> Conditional variable term
-    -> FreeSetVariables variable
-freeSetVariables getFreeSetVariables Conditional { term, predicate, substitution } =
-    getFreeSetVariables term
-    <> Predicate.freeSetVariables predicate
-    <> Substitution.freeSetVariables substitution
 
 {- | Transform a predicate and substitution into a predicate only.
 
