@@ -97,7 +97,7 @@ traverseVariables
     -> Pattern variable1
     -> m (Pattern variable2)
 traverseVariables traversing =
-    (field @"freeVariables") (traverseFreeVariables traversing)
+    field @"freeVariables" (traverseFreeVariables traversing)
 
 {- | Delete the given variable from the set of free variables.
  -}

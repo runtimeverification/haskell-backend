@@ -323,7 +323,8 @@ splitSubstitution variable substitution =
     (dependent, independent) =
         Substitution.partition hasVariable reversedSubstitution
     hasVariable variable' term =
-        RegVar variable == variable' || Pattern.hasFreeVariable variable' term
+        RegVar variable == variable'
+        || Pattern.hasFreeVariable (RegVar variable) term
     bound =
         maybe (Right dependent) Left
         $ Map.lookup (RegVar variable) (Substitution.toMap dependent)

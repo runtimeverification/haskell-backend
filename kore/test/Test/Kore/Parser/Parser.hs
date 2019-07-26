@@ -733,7 +733,7 @@ sentenceAliasParserTests :: [TestTree]
 sentenceAliasParserTests =
     parseTree koreSentenceParser
         [
-          success "alias a{s1}(s2) : s3 where a{s1}(X:s2) := g{}() [\"a\"]"
+          success "alias a{s1}(s2) : s3 where a{s1}(@X:s2) := g{}() [\"a\"]"
             (SentenceAliasSentence
                 (SentenceAlias
                     { sentenceAliasAlias = Alias
@@ -772,7 +772,7 @@ sentenceAliasParserTests =
                     }
                 :: ParsedSentenceAlias)
             )
-        , success "alias a { s1 , s2 } ( s3, s4 ) : s5 where a { s1 , s2 } ( X:s3, Y:s4 ) := b { s1 , s2 } ( X:s3, Y:s4 ) [ \"a\" , \"b\" ]"
+        , success "alias a { s1 , s2 } ( s3, s4 ) : s5 where a { s1 , s2 } ( @X:s3, @Y:s4 ) := b { s1 , s2 } ( @X:s3, @Y:s4 ) [ \"a\" , \"b\" ]"
             (SentenceAliasSentence
                 (SentenceAlias
                     { sentenceAliasAlias = Alias

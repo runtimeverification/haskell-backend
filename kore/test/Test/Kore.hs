@@ -120,6 +120,9 @@ objectIdGen =
         (Gen.element idFirstChars)
         (Gen.element $ idFirstChars ++ idOtherChars)
 
+setVarIdGen :: MonadGen m => m Id
+setVarIdGen = testId <$> fmap ("@" <>) objectIdGen
+
 stringLiteralGen :: MonadGen m => m StringLiteral
 stringLiteralGen =
     StringLiteral <$> Gen.text (Range.linear 0 256) charGen
@@ -189,10 +192,10 @@ moduleNameGen = ModuleName <$> objectIdGen
 variableGen :: Sort -> Gen Variable
 variableGen patternSort = do
     Context { objectVariables } <- Reader.ask
-    variableGen' patternSort [v | RegVar v <- objectVariables]
+    variableGen' patternSort [v | RegVar v <- objectVariables] idGen
 
-variableGen' :: Sort -> [Variable] -> Gen Variable
-variableGen' patternSort variables =
+variableGen' :: Sort -> [Variable] -> Gen Id -> Gen Variable
+variableGen' patternSort variables genId =
     case filter bySort variables of
         [] -> freshVariable
         variables' ->
@@ -203,12 +206,12 @@ variableGen' patternSort variables =
   where
     bySort Variable { variableSort } = variableSort == patternSort
     freshVariable =
-        Variable <$> idGen <*> pure mempty <*> pure patternSort
+        Variable <$> genId <*> pure mempty <*> pure patternSort
 
 setVariableGen :: Sort -> Gen (SetVariable Variable)
 setVariableGen sort = do
     Context { objectVariables } <- Reader.ask
-    SetVariable <$> variableGen' sort [v | SetVar v <- objectVariables]
+    SetVariable <$> variableGen' sort [v | SetVar v <- objectVariables] setVarIdGen
 
 unaryOperatorGen
     :: MonadGen m
@@ -451,8 +454,6 @@ predicateChildGen childGen patternSort' =
         [ predicateChildGenAnd
         , predicateChildGenExists
         , predicateChildGenForall
-        , predicateChildGenMu
-        , predicateChildGenNu
         , predicateChildGenIff
         , predicateChildGenImplies
         , predicateChildGenNot
@@ -492,22 +493,6 @@ predicateChildGen childGen patternSort' =
                 (addVariable (RegVar var))
                 (predicateChildGen childGen patternSort')
         return (Syntax.Predicate.makeExistsPredicate var child)
-    predicateChildGenMu = do
-        varSort <- sortGen
-        setVar@(SetVariable var) <- setVariableGen varSort
-        child <-
-            Reader.local
-                (addVariable (SetVar var))
-                (predicateChildGen childGen patternSort')
-        return (Syntax.Predicate.makeMuPredicate setVar child)
-    predicateChildGenNu = do
-        varSort <- sortGen
-        setVar@(SetVariable var) <- setVariableGen varSort
-        child <-
-            Reader.local
-                (addVariable (SetVar var))
-                (predicateChildGen childGen patternSort')
-        return (Syntax.Predicate.makeNuPredicate setVar child)
     predicateChildGenForall = do
         varSort <- sortGen
         var <- variableGen varSort
