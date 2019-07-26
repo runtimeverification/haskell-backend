@@ -57,5 +57,4 @@ instance ParseAttributes Comm where
         withApplication' = Parser.withApplication commId
         failDuplicate' = Parser.failDuplicate commId
 
-    toAttributes Comm { isComm } =
-        Attributes $ if isComm then [commAttribute] else []
+    toAttributes Comm { isComm } = Attributes [commAttribute | isComm]

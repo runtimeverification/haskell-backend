@@ -99,7 +99,7 @@ instance Hashable variable => Hashable (Substitution variable) where
     hashWithSalt salt (Substitution denorm) =
         salt `hashWithSalt` (0::Int) `hashWithSalt` denorm
     hashWithSalt salt (NormalizedSubstitution norm) =
-        salt `hashWithSalt` (1::Int) `hashWithSalt` (Map.toList norm)
+        salt `hashWithSalt` (1::Int) `hashWithSalt` Map.toList norm
 
 instance TopBottom (Substitution variable) where
     isTop = null

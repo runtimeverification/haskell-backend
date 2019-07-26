@@ -1,16 +1,8 @@
-{-# OPTIONS_GHC
-    -F -pgmF tasty-discover
-    -optF --tree-display
-    -optF --hide-successes
-    -optF --ingredient=Test.Tasty.Runners.consoleTestReporter
-    -optF --ingredient=Test.Tasty.Runners.listingTests
-    -optF --ingredient=Test.Tasty.Runners.AntXML.antXMLRunner
-    -optF --generated-module=Driver
-#-}
+{-# OPTIONS_GHC -F -pgmF tasty-discover -optF --tree-display -optF --hide-successes -optF --ingredient=Test.Tasty.Runners.consoleTestReporter -optF --ingredient=Test.Tasty.Runners.listingTests -optF --ingredient=Test.Tasty.Runners.AntXML.antXMLRunner -optF --generated-module=Driver #-}
 
-{-
+{- |
 
-# Debugging
+* Debugging
 
 If building the test suite fails with some undecipherable error, add
 

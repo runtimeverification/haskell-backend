@@ -48,9 +48,6 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
 import           Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
-import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier (..), TermLikeSimplifier,
-                 evalSimplifier )
 import qualified Kore.Step.Simplification.TermLike as TermLike
                  ( simplify )
 import qualified Kore.Unification.Substitution as Substitution

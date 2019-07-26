@@ -61,7 +61,7 @@ data CheckResult patt
 bmcStrategy
     :: [Axiom]
     -> CommonModalPattern
-    -> [Strategy (Prim (CommonModalPattern) (RewriteRule Variable))]
+    -> [Strategy (Prim CommonModalPattern (RewriteRule Variable))]
 bmcStrategy
     axioms
     goal
@@ -76,12 +76,7 @@ checkClaim
     :: forall m
     .  MonadSimplify m
     =>  (  CommonModalPattern
-        -> [Strategy
-            (Prim
-                (CommonModalPattern)
-                (RewriteRule Variable)
-            )
-           ]
+        -> [Strategy (Prim CommonModalPattern (RewriteRule Variable))]
         )
     -- ^ Creates a one-step strategy from a target pattern. See
     -- 'defaultStrategy'.
@@ -128,8 +123,8 @@ checkClaim
         return finalResult
   where
     transitionRule'
-        :: Prim (CommonModalPattern) (RewriteRule Variable)
-        -> (CommonProofState)
+        :: Prim CommonModalPattern (RewriteRule Variable)
+        -> CommonProofState
         -> ModelChecker.Transition m CommonProofState
     transitionRule' = ModelChecker.transitionRule
 

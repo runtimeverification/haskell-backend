@@ -52,11 +52,6 @@ import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
 import           Kore.Step.Strategy
-                 ( executionHistoryStep )
-import           Kore.Step.Strategy
-                 ( Strategy, TransitionT, pickFinal, runStrategy )
-import           Kore.Step.Strategy
-                 ( ExecutionGraph (..) )
 import           Kore.Step.Transition
                  ( runTransitionT )
 import qualified Kore.Step.Transition as Transition
@@ -245,8 +240,8 @@ verifyClaim
             Monad.Trans.lift . Monad.Trans.lift . runTransitionT
             $ OnePath.transitionRule prim proofState
         let (configs, _) = unzip transitions
-            stuck = mapMaybe StrategyPattern.extractStuck configs
-        Foldable.traverse_ Monad.Except.throwError stuck
+            stuckConfigs = mapMaybe StrategyPattern.extractStuck configs
+        Foldable.traverse_ Monad.Except.throwError stuckConfigs
         Transition.scatter transitions
 
 -- | Find all final nodes of the execution graph that did not reach the goal
@@ -271,15 +266,11 @@ verifyClaimStep
     -- ^ list of claims in the spec module
     -> [Axiom]
     -- ^ list of axioms in the main module
-    -> ExecutionGraph (CommonStrategyPattern) (RewriteRule Variable)
+    -> ExecutionGraph CommonStrategyPattern (RewriteRule Variable)
     -- ^ current execution graph
     -> Graph.Node
     -- ^ selected node in the graph
-    -> m
-        (ExecutionGraph
-            (CommonStrategyPattern)
-            (RewriteRule Variable)
-        )
+    -> m (ExecutionGraph CommonStrategyPattern (RewriteRule Variable))
 verifyClaimStep
     target
     claims
@@ -295,12 +286,10 @@ verifyClaimStep
     transitionRule'
         :: Prim (Pattern Variable) (RewriteRule Variable)
         -> CommonStrategyPattern
-        -> TransitionT (RewriteRule Variable) m (CommonStrategyPattern)
+        -> TransitionT (RewriteRule Variable) m CommonStrategyPattern
     transitionRule' = OnePath.transitionRule
 
-    strategy'
-        :: Strategy
-            (Prim (Pattern Variable) (RewriteRule Variable))
+    strategy' :: Strategy (Prim (Pattern Variable) (RewriteRule Variable))
     strategy'
         | isRoot =
             onePathFirstStep targetPattern rewrites

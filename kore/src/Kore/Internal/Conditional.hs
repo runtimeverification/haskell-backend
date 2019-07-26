@@ -192,17 +192,17 @@ instance ( SortedVariable variable
                     (unparse2 termLikeSubstitution)
                 )
             )
-        where
-          unparseAnd2 first second =
-              "\\and2" <> parameters' [unparse sort] <> arguments' [first, second]
-          below first second =
-              (Pretty.align . Pretty.vsep) [first, second]
-          sort = termLikeSort term
-          termLikePredicate = Predicate.fromPredicate sort predicate
-          termLikeSubstitution =
-              Predicate.fromPredicate
-                  sort
-                  $ Predicate.fromSubstitution substitution
+      where
+        unparseAnd2 first second =
+            "\\and2" <> parameters' [unparse sort] <> arguments' [first, second]
+        below first second =
+            (Pretty.align . Pretty.vsep) [first, second]
+        sort = termLikeSort term
+        termLikePredicate = Predicate.fromPredicate sort predicate
+        termLikeSubstitution =
+            Predicate.fromPredicate
+                sort
+                $ Predicate.fromSubstitution substitution
 
 {- | Forget the 'term', keeping only the attached conditions.
  -}

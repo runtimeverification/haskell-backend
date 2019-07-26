@@ -7,8 +7,6 @@ import Test.Tasty.HUnit
 
 import qualified Data.List as List
 import qualified Data.Map as Map
-import           Data.Ord
-                 ( comparing )
 
 import           Data.Sup
 import           Kore.Internal.OrPattern
@@ -24,8 +22,6 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Simplification.Application
 import           Kore.Step.Simplification.Data
-import           Kore.Step.Simplification.Data
-                 ( TermLikeSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -177,14 +173,13 @@ test_applicationSimplification =
                             { term = fOfA
                             , predicate =
                                 makeAndPredicate
-                                    (makeEqualsPredicate fOfA gOfA)
                                     (makeAndPredicate
+                                        (makeEqualsPredicate fOfA gOfA)
                                         (makeEqualsPredicate fOfA fOfB)
-                                        (makeEqualsPredicate gOfA gOfB)
                                     )
+                                    (makeEqualsPredicate gOfA gOfB)
                             , substitution =
-                                Substitution.unsafeWrap
-                                $ List.sortBy (comparing fst)
+                                Substitution.unsafeWrap $ List.sortOn fst
                                     [ (z', gOfB)
                                     , (Mock.x, fOfA)
                                     , (Mock.y, gOfA)
@@ -223,7 +218,7 @@ test_applicationSimplification =
                         }
                 in
                     evaluate
-                        (mockSimplifier noSimplification)
+                        (simplifierTermLike Mock.env)
                         (Map.singleton
                             (AxiomIdentifier.Application Mock.sigmaId)
                             (simplificationEvaluator

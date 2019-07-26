@@ -271,7 +271,7 @@ clockSomething description something =
 clockSomethingIO :: String -> IO a -> Main a
 clockSomethingIO description something = Main $ do
     start  <- lift $ getTime Monotonic
-    x      <- lift $ something
+    x      <- lift   something
     end    <- lift $ getTime Monotonic
     logger <- ask
     lift $ logger <& logMessage end start

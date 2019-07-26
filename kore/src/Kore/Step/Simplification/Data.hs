@@ -68,6 +68,7 @@ import           Control.Monad.Trans.Maybe
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
+import           Data.Maybe
 import           Data.Typeable
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
@@ -666,7 +667,7 @@ maybeNotApplicable
     => MaybeT m (AttemptedAxiom variable)
     ->        m (AttemptedAxiom variable)
 maybeNotApplicable =
-    fmap (maybe NotApplicable id) . runMaybeT
+    fmap (fromMaybe NotApplicable) . runMaybeT
 
 {- | Return a 'NotApplicable' result for a failing 'ExceptT' action.
  -}

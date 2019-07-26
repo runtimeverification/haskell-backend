@@ -227,7 +227,7 @@ layoutPrettyUnbounded =
 
  -}
 escapeString :: String -> String
-escapeString s = foldr (.) id (map escapeCharS s) ""
+escapeString s = foldr escapeCharS "" s
 
 escapeStringT :: Text -> Text
 escapeStringT = Text.concatMap escapeCharT

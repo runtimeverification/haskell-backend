@@ -166,12 +166,11 @@ withApplication
 withApplication ident go kore =
     case Recursive.project kore of
         _ :< ApplicationF app
-          | symbolOrAliasConstructor == ident -> \attrs ->
-            Kore.Error.withLocationAndContext
-                symbol
-                ("attribute '" <> Text.pack (show symbol) <> "'")
-                (go symbolOrAliasParams applicationChildren attrs)
+          | symbolOrAliasConstructor == ident ->
+            Kore.Error.withLocationAndContext symbol context
+            . go symbolOrAliasParams applicationChildren
           where
+            context = "attribute '" <> Text.pack (show symbol) <> "'"
             Application { applicationSymbolOrAlias = symbol } = app
             Application { applicationChildren } = app
             SymbolOrAlias { symbolOrAliasConstructor } = symbol

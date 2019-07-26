@@ -57,11 +57,8 @@ extractEqualityAxioms
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -> Map AxiomIdentifier [EqualityRule Variable]
 extractEqualityAxioms =
-    \imod ->
-        Foldable.foldl'
-            extractModuleAxioms
-            Map.empty
-            (indexedModulesInScope imod)
+    Foldable.foldl' extractModuleAxioms Map.empty
+    . indexedModulesInScope
   where
     -- | Update the map of function axioms with all the axioms in one module.
     extractModuleAxioms

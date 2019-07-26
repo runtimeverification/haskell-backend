@@ -32,7 +32,6 @@ import           Data.Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import           GHC.Generics
 
-import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
@@ -47,6 +46,8 @@ import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyAndRemoveTopExists )
+import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
+                 ( filterMultiOr )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
@@ -111,7 +112,7 @@ type Transition m =
 transitionRule
     :: forall m
     .  MonadSimplify m
-    => Prim (CommonModalPattern) (RewriteRule Variable)
+    => Prim CommonModalPattern (RewriteRule Variable)
     -> CommonProofState
     -> Transition m CommonProofState
 transitionRule
@@ -151,12 +152,10 @@ transitionRule
             configs <-
                 Monad.Trans.lift . Monad.Trans.lift
                 $ Pattern.simplifyAndRemoveTopExists config
-            let
-                -- Filter out ⊥ patterns
-                nonEmptyConfigs = MultiOr.filterOr configs
-            if null nonEmptyConfigs
+            filteredConfigs <- SMT.Evaluator.filterMultiOr configs
+            if null filteredConfigs
                 then return Proven
-                else Foldable.asum (pure . wrapper <$> nonEmptyConfigs)
+                else Foldable.asum (pure . wrapper <$> filteredConfigs)
 
     transitionUnroll
         :: CommonModalPattern

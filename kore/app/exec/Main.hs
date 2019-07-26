@@ -7,6 +7,7 @@ import           Control.Monad.Trans
 import           Control.Monad.Trans.Reader
                  ( runReaderT )
 import qualified Data.Bifunctor as Bifunctor
+import qualified Data.Foldable as Foldable
 import           Data.List
                  ( intercalate )
 import           Data.Maybe
@@ -259,7 +260,7 @@ parseKoreExecOptions =
             <> help "Execute up to DEPTH steps."
             )
     parseMainModuleName =
-        fmap ModuleName $ strOption info
+        ModuleName <$> strOption info
       where
         info =
             mconcat
@@ -281,11 +282,7 @@ parserInfoModifiers =
 main :: IO ()
 main = do
     options <- mainGlobal parseKoreExecOptions parserInfoModifiers
-    case localOptions options of
-        Nothing ->
-            -- global options parsed, but local failed; exit gracefully
-            return ()
-        Just koreExecOpts -> mainWithOptions koreExecOpts
+    Foldable.forM_ (localOptions options) mainWithOptions
 
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions
@@ -424,7 +421,7 @@ mainWithOptions
                         $ putDoc unparsed
                     Just outputFile ->
                         Main . lift
-                        $ withFile outputFile WriteMode (\h -> hPutDoc h unparsed)
+                        $ withFile outputFile WriteMode (`hPutDoc` unparsed)
                 Main . lift $ () <$ exitWith exitCode
                                     )
 
