@@ -198,6 +198,26 @@ rewriteIdentity =
         , attributes = def
         }
 
+setRewriteIdentity :: RewriteRule Variable
+setRewriteIdentity =
+    RewriteRule RulePattern
+        { left = Mock.mkTestSubstVar "@x"
+        , right = Mock.mkTestSubstVar "@x"
+        , requires = makeTruePredicate
+        , ensures = makeTruePredicate
+        , attributes = def
+        }
+
+setRewriteFnIdentity :: RewriteRule Variable
+setRewriteFnIdentity =
+    RewriteRule RulePattern
+        { left = Mock.functionalConstr10 (Mock.mkTestSubstVar "@x")
+        , right = Mock.mkTestSubstVar "@x"
+        , requires = makeTruePredicate
+        , ensures = makeTruePredicate
+        , attributes = def
+        }
+
 rewriteImplies :: RewriteRule Variable
 rewriteImplies =
     RewriteRule $ RulePattern
@@ -302,6 +322,14 @@ initialIdentity =
         , substitution = mempty
         }
 
+initialFnIdentity :: Pattern Variable
+initialFnIdentity =
+    Conditional
+        { term = Mock.functionalConstr10 (mkVar (v1 Mock.testSort))
+        , predicate = makeTruePredicate
+        , substitution = mempty
+        }
+
 expectIdentity :: [Pattern Variable]
 expectIdentity = [initialIdentity]
 
@@ -311,6 +339,18 @@ actualIdentity =
         initialIdentity
         [ rewriteIdentity ]
 
+setActualIdentity :: IO [Pattern Variable]
+setActualIdentity =
+    runStep
+        initialIdentity
+        [ setRewriteIdentity ]
+
+setActualFnIdentity :: IO [Pattern Variable]
+setActualFnIdentity =
+    runStep
+        initialFnIdentity
+        [ setRewriteFnIdentity ]
+
 test_stepStrategy :: [TestTree]
 test_stepStrategy =
     [ testCase "Applies a simple axiom"
@@ -318,6 +358,16 @@ test_stepStrategy =
         -- Start pattern: V1
         -- Expected: V1
         (assertEqualWithExplanation "" expectIdentity =<< actualIdentity)
+    , testCase "Applies a simple axiom (SetVariable)"
+        -- Axiom: @X => @X
+        -- Start pattern: V1
+        -- Expected: V1
+        (assertEqualWithExplanation "" expectIdentity =<< setActualIdentity)
+    , testCase "Applies an identity axiom (SetVariable)"
+        -- Axiom: f(@X) => @X
+        -- Start pattern: f(V1)
+        -- Expected: V1
+        (assertEqualWithExplanation "" expectIdentity =<< setActualFnIdentity)
     , testCase "Applies two simple axioms"
         -- Axiom: X1 => X1
         -- Axiom: X1 => implies(X1, X1)

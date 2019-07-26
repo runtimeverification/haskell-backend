@@ -136,14 +136,7 @@ unificationSubstitution
     -> [ (SubstVar Variable, TermLike Variable) ]
 unificationSubstitution = map trans
   where
-    trans (v, p) =
-        ( RegVar Variable
-            { variableSort = termLikeSort p
-            , variableName = testId v
-            , variableCounter = mempty
-            }
-        , p
-        )
+    trans (v, p) = (Mock.makeSubstVar v (termLikeSort p), p)
 
 unificationResult :: UnificationResult -> Pattern Variable
 unificationResult
@@ -296,6 +289,16 @@ test_unification =
             [ UnificationResult
                 { term = a
                 , substitution = [("x", a)]
+                , predicate = Syntax.Predicate.makeTruePredicate
+                }
+            ]
+    , testCase "SetVariable" $
+        andSimplifySuccess
+            (UnificationTerm (Mock.mkTestSubstVar "@x"))
+            (UnificationTerm a)
+            [ UnificationResult
+                { term = a
+                , substitution = [("@x", a)]
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]

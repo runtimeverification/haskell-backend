@@ -30,6 +30,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import           Data.Text
                  ( Text )
+import qualified Data.Text as Text
 import qualified GHC.Stack as GHC
 
 import           Data.Sup
@@ -59,6 +60,8 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT
                  ( resolve )
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import           Kore.Syntax.Application
 import           Kore.Syntax.SetVariable
 import           Kore.Syntax.Variable
@@ -533,6 +536,23 @@ xSubSubSort :: Variable
 xSubSubSort = Variable (testId "xSubSubSort") mempty subSubsort
 xTopSort :: Variable
 xTopSort = Variable (testId "xTopSort") mempty topSort
+
+makeSubstVar :: Text -> Sort -> SubstVar Variable
+makeSubstVar v sort
+  | Text.head v == '@' = SetVar v'
+  | otherwise = RegVar v'
+  where
+    v' = Variable
+        { variableSort = sort
+        , variableName = testId v
+        , variableCounter = mempty
+        }
+
+makeTestSubstVar :: Text -> SubstVar Variable
+makeTestSubstVar = (`makeSubstVar` testSort)
+
+mkTestSubstVar :: Text -> TermLike Variable
+mkTestSubstVar = Internal.mkSubstVar . makeTestSubstVar
 
 a :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
 a = Internal.mkApplySymbol aSymbol []

@@ -133,6 +133,26 @@ test_substitute =
             )
         )
 
+    , testCase "Replaces target variable (SetVariable)"
+        (assertEqualWithExplanation
+            "Expected substituted variable"
+            (mkVar Mock.z)
+            (substitute
+                (Map.singleton (Mock.makeTestSubstVar "@x") (mkVar Mock.z))
+                (Mock.mkTestSubstVar "@x")
+            )
+        )
+
+    , testCase "Replaces target variable in subterm (SetVariable)"
+        (assertEqualWithExplanation
+            "Expected substituted variable"
+            (Mock.functionalConstr10 (mkVar Mock.z))
+            (substitute
+                (Map.singleton (Mock.makeTestSubstVar "@x") (mkVar Mock.z))
+                (Mock.functionalConstr10 (Mock.mkTestSubstVar "@x"))
+            )
+        )
+
     , testCase "Ignores non-target variable"
         (assertEqualWithExplanation
             "Expected original non-target variable"
