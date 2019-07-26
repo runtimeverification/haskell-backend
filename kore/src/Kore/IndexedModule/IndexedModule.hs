@@ -743,7 +743,7 @@ indexImportedModule
     nameToModule
     indexedModules
     importedModuleName
-  = do
+  =
     case Map.lookup importedModuleName indexedModules of
         Just indexedModule -> return (indexedModules, indexedModule)
         Nothing -> do

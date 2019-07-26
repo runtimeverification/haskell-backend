@@ -87,10 +87,7 @@ The SmtSymbol type below instantiates Symbol with the types used by the SMT.
 data Symbol sort name =
     Symbol
         { smtFromSortArgs
-            :: !(  Map (Kore.Id) SmtSort
-                -> [Kore.Sort]
-                -> Maybe AST.SExpr
-                )
+            :: !(Map Kore.Id SmtSort -> [Kore.Sort] -> Maybe AST.SExpr)
         -- ^ Produces the SMT representation of a symbol. Given a map with
         -- Smt representations for sorts and a list of sort arguments, returns
         -- an s-expression that can be used, say, when building assertions
@@ -152,8 +149,8 @@ the various declarations can be resolved.
 -}
 data Declarations sort symbol name =
     Declarations
-        { sorts :: Map (Kore.Id) (Sort sort symbol name)
-        , symbols :: Map (Kore.Id) (Symbol sort name)
+        { sorts :: Map Kore.Id (Sort sort symbol name)
+        , symbols :: Map Kore.Id (Symbol sort name)
         }
     deriving Show
 

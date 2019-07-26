@@ -12,7 +12,7 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.Internal.Pattern
 import           Kore.Internal.TermLike
-import qualified SMT as SMT
+import qualified SMT
 
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
@@ -106,8 +106,8 @@ test_simplification =
         , testGroup "and"
             [ mkAnd _True  _False `becomes` bottom
             , mkAnd _False _True  `becomes` bottom
-            , mkAnd _True  _True  `becomes` (pure _True)
-            , mkAnd _False _False `becomes` (pure _False)
+            , mkAnd _True  _True  `becomes` pure _True
+            , mkAnd _False _False `becomes` pure _False
             ]
         ]
       where

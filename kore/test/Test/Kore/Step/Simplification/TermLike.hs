@@ -35,8 +35,8 @@ simplifyInternalEvaluated original =
     env = Mock.env
         { simplifierTermLike =
             -- Throw an error if any term would be simplified.
-            termLikeSimplifier $ \_ -> undefined
+            termLikeSimplifier $ const undefined
         , simplifierPredicate =
             -- Throw an error if any predicate would be simplified.
-            PredicateSimplifier $ \_ -> undefined
+            PredicateSimplifier $ const undefined
         }

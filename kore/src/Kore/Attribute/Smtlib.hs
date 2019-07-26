@@ -61,6 +61,6 @@ applySExpr =
 
     -- Look up the n-th argument.
     fillN :: Int -> [SExpr] -> SExpr
-    fillN n = fromMaybe wrongArity . (\args -> Error.atZ args n)
+    fillN n = fromMaybe wrongArity . (`Error.atZ` n)
 
     wrongArity = Builtin.Error.wrongArity "smtlib"

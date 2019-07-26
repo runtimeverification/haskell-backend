@@ -52,5 +52,4 @@ instance ParseAttributes Unit where
         withApplication' = Parser.withApplication unitId
         failDuplicate' = Parser.failDuplicate unitId
 
-    toAttributes Unit { isUnit } =
-        Attributes $ if isUnit then [unitAttribute] else []
+    toAttributes Unit { isUnit } = Attributes [unitAttribute | isUnit]

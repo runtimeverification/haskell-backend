@@ -16,6 +16,7 @@ module Kore.Step.Axiom.EvaluationStrategy
     ) where
 
 import qualified Control.Monad as Monad
+import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
 import           Data.Function
 import           Data.Maybe
@@ -42,13 +43,14 @@ import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( AttemptedAxiom,
                  AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify, PredicateSimplifier, TermLikeSimplifier )
+                 BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap,
+                 MonadSimplify, PredicateSimplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..), hasRemainders, maybeNotApplicable )
+import qualified Kore.Step.Simplification.OrPattern as OrPattern
+                 ( simplifyPredicatesWithSmt )
 import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
@@ -324,9 +326,16 @@ evaluateWithDefinitionAxioms
         keepResultUnchanged = id
         markRemainderEvaluated = fmap mkEvaluated
 
+    simplifiedResults <-
+        Monad.Trans.lift
+        $ OrPattern.simplifyPredicatesWithSmt (Step.gatherResults result)
+    simplifiedRemainders <-
+        Monad.Trans.lift
+        $ OrPattern.simplifyPredicatesWithSmt (Step.remainders result)
+
     return $ AttemptedAxiom.Applied AttemptedAxiomResults
-        { results = Step.gatherResults result
-        , remainders = Step.remainders result
+        { results = simplifiedResults
+        , remainders = simplifiedRemainders
         }
 
   where

@@ -117,7 +117,7 @@ koreVerifiers =
 koreEvaluators
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ Module under which evaluation takes place
-    -> Map (AxiomIdentifier) Builtin.Function
+    -> Map AxiomIdentifier Builtin.Function
 koreEvaluators = evaluators builtins
   where
     builtins :: Map Text Builtin.Function
@@ -146,7 +146,7 @@ evaluators
     -- ^ Builtin functions indexed by name
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ Module under which evaluation takes place
-    -> Map (AxiomIdentifier) Builtin.Function
+    -> Map AxiomIdentifier Builtin.Function
 evaluators builtins indexedModule =
     Map.mapMaybe
         lookupBuiltins
@@ -176,8 +176,7 @@ evaluators builtins indexedModule =
     lookupBuiltins Attribute.Symbol { Attribute.hook = Hook { getHook } } =
         do
             name <- getHook
-            impl <- Map.lookup name builtins
-            pure impl
+            Map.lookup name builtins
 
 {- | Externalize the 'TermLike' into a 'Syntax.Pattern'.
 

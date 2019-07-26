@@ -354,8 +354,7 @@ traceMaybeS name startValues debugResult action =
     startThing name startValues
     $ case action of
         Nothing ->
-            endThing name "Nothing" debugResult
-            $ Nothing
+            endThing name "Nothing" debugResult Nothing
         Just r ->
             endThing name ("result: " ++ show r) debugResult
             $ Just r
@@ -431,8 +430,7 @@ traceFunctionS
     -> a
 traceFunctionS name startValues debugResult result =
     startThing name startValues
-    $ endThing name ("result: " ++ show result) debugResult
-    $ result
+    $ endThing name ("result: " ++ show result) debugResult result
 
 startThing :: String -> [DebugArg] -> a -> a
 startThing name startValues =
@@ -555,7 +553,7 @@ debugPrecSOP precOut datatypeInfo (SOP sop) =
         -> K (Doc ann) xs
 
     debugConstr (SOP.Constructor name) args =
-        K $ parens (precOut >= precConstr && length args' > 0)
+        K $ parens (precOut >= precConstr && (not . null) args')
         $ Pretty.nest 4
         $ Pretty.sep (name' : args')
       where
@@ -578,7 +576,7 @@ debugPrecSOP precOut datatypeInfo (SOP sop) =
 
     debugConstr (SOP.Record name fields) args =
         K $ parens (precOut >= precRecord)
-        $ Pretty.align $ Pretty.nest 4 $ Pretty.group $ mconcat $
+        $ Pretty.align $ Pretty.nest 4 $ Pretty.group $ mconcat
             [ Pretty.pretty name
             , Pretty.line
             , encloseSep Pretty.lbrace Pretty.rbrace Pretty.comma args'

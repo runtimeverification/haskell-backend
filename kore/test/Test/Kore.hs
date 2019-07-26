@@ -99,7 +99,6 @@ couple = Gen.list (Range.linear 0 3)
 couple1 :: MonadGen m => m a -> m [a]
 couple1 = Gen.list (Range.linear 1 3)
 
-{-# ANN genericIdGen ("HLint: ignore Use String" :: String) #-}
 genericIdGen :: MonadGen m => m Char -> m Char -> m Text
 genericIdGen firstChar nextChar = do
     chars <-
@@ -183,13 +182,13 @@ sortGen = do
 moduleNameGen :: MonadGen m => m ModuleName
 moduleNameGen = ModuleName <$> objectIdGen
 
-variableGen :: Sort -> Gen (Variable)
+variableGen :: Sort -> Gen Variable
 variableGen patternSort = do
     Context { objectVariables } <- Reader.ask
     variableGenWorker objectVariables
   where
     bySort Variable { variableSort } = variableSort == patternSort
-    variableGenWorker :: [Variable] -> Gen (Variable)
+    variableGenWorker :: [Variable] -> Gen Variable
     variableGenWorker variables =
         case filter bySort variables of
             [] -> freshVariable
@@ -471,7 +470,7 @@ predicateChildGen childGen patternSort' =
         Syntax.Predicate.makeEqualsPredicate <$> childGen <*> childGen
     predicateChildGenIn =
         Syntax.Predicate.makeInPredicate <$> childGen <*> childGen
-    predicateChildGenNot = do
+    predicateChildGenNot =
         Syntax.Predicate.makeNotPredicate
             <$> predicateChildGen childGen patternSort'
     predicateChildGenExists = do
@@ -590,8 +589,8 @@ koreSentenceGen =
         , SentenceClaimSentence . SentenceClaim
             <$> sentenceAxiomGen korePatternUnifiedGen
         , SentenceSortSentence <$> sentenceSortGen
-        , (SentenceHookSentence . SentenceHookedSort) <$> sentenceSortGen
-        , (SentenceHookSentence . SentenceHookedSymbol) <$> sentenceSymbolGen
+        , SentenceHookSentence . SentenceHookedSort <$> sentenceSortGen
+        , SentenceHookSentence . SentenceHookedSymbol <$> sentenceSymbolGen
         ]
 
 moduleGen

@@ -8,6 +8,7 @@ import qualified Data.List as List
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
+import qualified Data.Ord
 
 import           Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Null as Attribute
@@ -34,8 +35,8 @@ objectS1 = simpleSort (SortName "s1")
 
 objectA :: SentenceSymbol ParsedPattern
 objectA =
-    fmap Builtin.externalizePattern
-    $ TermLike.mkSymbol_ (testId "a") [] objectS1
+    Builtin.externalizePattern
+    <$> TermLike.mkSymbol_ (testId "a") [] objectS1
 
 -- Two variations on a constructor axiom for 'objectA'.
 axiomA, axiomA' :: SentenceAxiom ParsedPattern
@@ -60,8 +61,8 @@ objectB =
 
 metaA :: SentenceSymbol ParsedPattern
 metaA =
-    fmap Builtin.externalizePattern
-    $ TermLike.mkSymbol_ (testId "#a") [] stringMetaSort
+    Builtin.externalizePattern
+    <$> TermLike.mkSymbol_ (testId "#a") [] stringMetaSort
 
 metaB :: SentenceAlias ParsedPattern
 metaB =
@@ -288,7 +289,7 @@ test_resolvers =
         )
     , testCase "sort indexed axioms"
         (assertEqual ""
-            (reverse $ List.sort [axiomA, axiomA'])
+            (List.sortOn Data.Ord.Down [axiomA, axiomA'])
             (fmap Builtin.externalizePattern . getIndexedSentence
                 <$> indexedModuleAxioms testIndexedObjectModule)
         )

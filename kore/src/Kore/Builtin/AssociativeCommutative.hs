@@ -101,8 +101,8 @@ import           Kore.Variables.Fresh
 @InternalAc@ struct inside a @Domain.Builtin.Builtin@ value.
 -}
 class
-    Domain.AcWrapper (normalized :: * -> * -> *) =>
-    TermWrapper normalized
+    Domain.AcWrapper (normalized :: * -> * -> *)
+    => TermWrapper normalized
   where
     {- | Render a normalized value (e.g. 'NormalizedSet') as a Domain.Builtin.
 

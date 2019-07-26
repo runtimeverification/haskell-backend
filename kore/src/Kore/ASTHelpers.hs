@@ -57,8 +57,7 @@ wrapAndQuantify s p var =
             }
         )
 
-checkUnique
-    :: Set.Set (Variable) -> Set.Set (Variable)
+checkUnique :: Set.Set Variable -> Set.Set Variable
 checkUnique variables =
     case checkUniqueEither (Set.toList variables) Map.empty of
         Right _  -> variables
@@ -66,7 +65,7 @@ checkUnique variables =
 
 checkUniqueEither
     :: [Variable]
-    -> Map.Map Text (Variable)
+    -> Map.Map Text Variable
     -> Either String ()
 checkUniqueEither [] _ = Right ()
 checkUniqueEither (var:vars) indexed =

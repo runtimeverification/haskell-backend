@@ -11,6 +11,7 @@ import           Control.Monad.Trans
 import           Control.Monad.Trans.Reader
                  ( runReaderT )
 import qualified Data.Bifunctor as Bifunctor
+import           Data.Maybe
 import           Data.Semigroup
                  ( (<>) )
 import           Options.Applicative
@@ -31,9 +32,9 @@ import           Kore.Logger.Output
 import           Kore.Repl.Data
 import           Kore.Syntax.Module
                  ( ModuleName (..) )
+import qualified SMT
 
-import           GlobalMain
-import qualified SMT as SMT
+import GlobalMain
 
 -- | Represents a file name along with its module name passed.
 data KoreModule = KoreModule
@@ -71,7 +72,7 @@ parseKoreReplOptions =
     parseMainModule  =
         KoreModule
         <$> argument str
-            (  metavar ("MAIN_DEFINITION_FILE")
+            (  metavar "MAIN_DEFINITION_FILE"
             <> help "Kore definition file to verify and use for execution"
             )
         <*> parseModuleName "MAIN" "Kore main module name." "module"
@@ -200,7 +201,7 @@ mainWithOptions
                     { SMT.timeOut = smtTimeOut
                     , SMT.preludeFile = smtPrelude
                     }
-        if replMode == RunScript && (unReplScript replScript) == Nothing
+        if replMode == RunScript && isNothing (unReplScript replScript)
             then do
                 Main . lift . putStrLn
                     $ "You must supply the path to the repl script\
