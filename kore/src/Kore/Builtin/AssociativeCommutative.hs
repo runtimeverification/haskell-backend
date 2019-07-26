@@ -432,25 +432,18 @@ normalizeAbstractElements (Domain.unwrapAc -> normalized) = do
     (newConcrete, newAbstract) =
         partitionEithers (extractConcreteElement <$> abstract)
 
-flattenOpaqueMap
-    :: Ord variable
-    => Domain.NormalizedMap (TermLike Concrete) (TermLike variable)
-    -> Maybe (Domain.NormalizedMap (TermLike Concrete) (TermLike variable))
-flattenOpaqueMap = flattenOpaque matchBuiltinMap
-
-flattenOpaqueSet
-    :: Ord variable
-    => Domain.NormalizedSet (TermLike Concrete) (TermLike variable)
-    -> Maybe (Domain.NormalizedSet (TermLike Concrete) (TermLike variable))
-flattenOpaqueSet = flattenOpaque matchBuiltinSet
-
-matchBuiltinSet
-    :: TermLike variable
-    -> Maybe (Domain.NormalizedSet (TermLike Concrete) (TermLike variable))
-matchBuiltinSet =
-    \case
-        (BuiltinSet_ internalSet) -> Just (Domain.builtinAcChild internalSet)
-        _                         -> Nothing
+-- | 'Left' if the element's key can be concretized, or 'Right' if it
+-- remains abstract.
+extractConcreteElement
+    ::  Domain.AcWrapper collection
+    =>  Domain.Element collection (TermLike variable)
+    ->  Either
+            (TermLike Concrete, Domain.Value collection (TermLike variable))
+            (Domain.Element collection (TermLike variable))
+extractConcreteElement element =
+    maybe (Right element) (Left . flip (,) value) (Builtin.toKey key)
+  where
+    (key, value) = Domain.unwrapElement element
 
 flattenOpaque
     :: (TermWrapper normalized, Ord variable)
@@ -468,6 +461,18 @@ flattenOpaque matchBuiltin (Domain.unwrapAc -> normalized) = do
     extractBuiltin termLike =
         maybe (Right termLike) Left (matchBuiltin termLike)
 
+flattenOpaqueMap
+    :: Ord variable
+    => Domain.NormalizedMap (TermLike Concrete) (TermLike variable)
+    -> Maybe (Domain.NormalizedMap (TermLike Concrete) (TermLike variable))
+flattenOpaqueMap = flattenOpaque matchBuiltinMap
+
+flattenOpaqueSet
+    :: Ord variable
+    => Domain.NormalizedSet (TermLike Concrete) (TermLike variable)
+    -> Maybe (Domain.NormalizedSet (TermLike Concrete) (TermLike variable))
+flattenOpaqueSet = flattenOpaque matchBuiltinSet
+
 matchBuiltinMap
     :: TermLike variable
     -> Maybe (Domain.NormalizedMap (TermLike Concrete) (TermLike variable))
@@ -476,18 +481,13 @@ matchBuiltinMap =
         (BuiltinMap_ internalMap) -> Just (Domain.builtinAcChild internalMap)
         _                         -> Nothing
 
--- | 'Left' if the element's key can be concretized, or 'Right' if it
--- remains abstract.
-extractConcreteElement
-    ::  Domain.AcWrapper collection
-    =>  Domain.Element collection (TermLike variable)
-    ->  Either
-            (TermLike Concrete, Domain.Value collection (TermLike variable))
-            (Domain.Element collection (TermLike variable))
-extractConcreteElement element =
-    maybe (Right element) (Left . flip (,) value) (Builtin.toKey key)
-  where
-    (key, value) = Domain.unwrapElement element
+matchBuiltinSet
+    :: TermLike variable
+    -> Maybe (Domain.NormalizedSet (TermLike Concrete) (TermLike variable))
+matchBuiltinSet =
+    \case
+        (BuiltinSet_ internalSet) -> Just (Domain.builtinAcChild internalSet)
+        _                         -> Nothing
 
 {- | The monoid defined by the `concat` and `unit` operations.
 -}
