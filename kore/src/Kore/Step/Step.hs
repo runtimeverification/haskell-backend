@@ -74,10 +74,10 @@ import           Kore.Step.Rule
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
 import qualified Kore.Step.Substitution as Substitution
-import qualified Kore.TopBottom as TopBottom
 import           Kore.SubstVar
                  ( SubstVar )
 import qualified Kore.SubstVar as SubstVar
+import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
                  ( MonadUnify )

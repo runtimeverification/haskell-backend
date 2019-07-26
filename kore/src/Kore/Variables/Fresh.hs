@@ -19,9 +19,9 @@ import           Data.Set
 import qualified Data.Set as Set
 
 import           Data.Sup
-import qualified Kore.SubstVar as SubstVar
 import           Kore.SubstVar
                  ( SubstVar (..) )
+import qualified Kore.SubstVar as SubstVar
 import           Kore.Syntax.Id
 import           Kore.Syntax.Variable
 

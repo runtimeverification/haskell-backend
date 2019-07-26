@@ -8,9 +8,9 @@ module Kore.SubstVar where
 import           Control.DeepSeq
                  ( NFData )
 import           Data.Hashable
+import qualified Generics.SOP as SOP
 import           GHC.Generics
                  ( Generic )
-import qualified Generics.SOP as SOP
 
 import Kore.Debug
 import Kore.Unparser

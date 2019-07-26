@@ -24,7 +24,8 @@ import qualified GHC.Generics as GHC
 
 import Kore.Debug
 
-import Kore.SubstVar ( SubstVar )
+import Kore.SubstVar
+       ( SubstVar )
 
 newtype FreeVariables variable =
     FreeVariables { getFreeVariables :: Set (SubstVar variable) }

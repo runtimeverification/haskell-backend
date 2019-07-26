@@ -31,7 +31,8 @@ import           Kore.Logger
                  ( LogMessage, WithLog )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse, makeAndPredicate )
-import           Kore.SubstVar ( SubstVar (..) )
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution

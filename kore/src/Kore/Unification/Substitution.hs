@@ -48,15 +48,15 @@ import           Prelude hiding
 
 import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Internal.TermLike
-                 ( TermLike, pattern Var_, pattern SetVar_, mkSubstVar )
+                 ( pattern SetVar_, TermLike, pattern Var_, mkSubstVar )
 import qualified Kore.Internal.TermLike as TermLike
+import           Kore.SubstVar
+                 ( SubstVar (..) )
+import qualified Kore.SubstVar as SubstVar
 import           Kore.Syntax.Variable
                  ( SortedVariable )
 import           Kore.TopBottom
                  ( TopBottom (..) )
-import           Kore.SubstVar
-                 ( SubstVar (..) )
-import qualified Kore.SubstVar as SubstVar
 import           Kore.Unparser
                  ( Unparse, unparseToString )
 import           Kore.Variables.Fresh
