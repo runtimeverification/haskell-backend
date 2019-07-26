@@ -6,7 +6,7 @@ UPSTREAM_BRANCH = origin/master
 
 BUILD_DIR = $(TOP)/.build
 K_NIGHTLY = $(BUILD_DIR)/nightly.tar.gz
-K_NIGHTLY_URL = $(shell cat deps/k_release)/nightly.tar.gz
+K_NIGHTLY_URL = $(file <deps/k_release)/nightly.tar.gz
 K_DIST_DEFAULT = $(BUILD_DIR)/k
 K_DIST ?= $(K_DIST_DEFAULT)
 K_DIST_BIN = $(K_DIST)/bin
