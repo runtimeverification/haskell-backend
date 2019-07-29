@@ -330,7 +330,7 @@ instance
     synthetic (OrF orF) = synthetic orF
     synthetic (RewritesF rewritesF) = synthetic rewritesF
     synthetic (TopF topF) = synthetic topF
-    synthetic (BuiltinF builtinF) = Foldable.fold builtinF
+    synthetic (BuiltinF builtinF) = synthetic builtinF
     synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
 
     synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
@@ -368,7 +368,7 @@ instance
     synthetic (OrF orF) = synthetic orF
     synthetic (RewritesF rewritesF) = synthetic rewritesF
     synthetic (TopF topF) = synthetic topF
-    synthetic (BuiltinF builtinF) = Foldable.fold builtinF
+    synthetic (BuiltinF builtinF) = synthetic builtinF
     synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
 
     synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
