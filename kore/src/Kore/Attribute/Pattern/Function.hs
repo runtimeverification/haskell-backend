@@ -143,6 +143,11 @@ instance Synthetic CharLiteral Function where
     synthetic = const (Function True)
     {-# INLINE synthetic #-}
 
+-- | An 'Inhabitant' pattern is never 'Function'.
+instance Synthetic Inhabitant Function where
+    synthetic = const (Function False)
+    {-# INLINE synthetic #-}
+
 -- | A 'Variable' pattern is always 'Function'.
 instance Synthetic (Const Variable) Function where
     synthetic = const (Function True)

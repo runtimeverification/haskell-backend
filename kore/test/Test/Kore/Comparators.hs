@@ -816,6 +816,15 @@ instance
     compareWithExplanation = wrapperCompareWithExplanation
     printWithExplanation = show
 
+instance StructEqualWithExplanation (Inhabitant child) where
+    structFieldsWithNames expected@(Inhabitant _) actual =
+        [ Function.on (EqWrap "inhSort = ") inhSort expected actual ]
+    structConstructorName _ = "Inhabitant"
+
+instance EqualWithExplanation (Inhabitant child) where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
 instance StructEqualWithExplanation Variable where
     structFieldsWithNames
         expected@(Variable _ _ _)

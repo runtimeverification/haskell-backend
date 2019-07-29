@@ -157,6 +157,7 @@ simplifyInternal = simplifyInternalWorker
                 DomainValue.simplify <$> simplifyChildren domainValueF
             FloorF floorF -> Floor.simplify <$> simplifyChildren floorF
             ForallF forallF -> Forall.simplify <$> simplifyChildren forallF
+            InhabitantF inhF -> Inhabitant.simplify <$> simplifyChildren inhF
             MuF muF -> Mu.simplify <$> simplifyChildren muF
             NuF nuF -> Nu.simplify <$> simplifyChildren nuF
             -- TODO(virgil): Move next up through patterns.
@@ -170,7 +171,6 @@ simplifyInternal = simplifyInternalWorker
                 CharLiteral.simplify <$> simplifyChildren charLiteralF
             TopF topF -> Top.simplify <$> simplifyChildren topF
             --
-            InhabitantF inhF -> return $ Inhabitant.simplify inhF
             VariableF variableF -> return $ Variable.simplify variableF
             SetVariableF setVariableF ->
                 return $ SetVariable.simplify setVariableF

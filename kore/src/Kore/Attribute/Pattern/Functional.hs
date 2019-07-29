@@ -181,6 +181,11 @@ instance Synthetic CharLiteral Functional where
     synthetic = const (Functional True)
     {-# INLINE synthetic #-}
 
+-- | An 'Inhabitant' pattern is never 'Functional'.
+instance Synthetic Inhabitant Functional where
+    synthetic = const (Functional False)
+    {-# INLINE synthetic #-}
+
 instance Synthetic (Const Sort) Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}

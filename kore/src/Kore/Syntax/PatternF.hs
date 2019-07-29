@@ -38,6 +38,7 @@ import Kore.Syntax.Forall
 import Kore.Syntax.Iff
 import Kore.Syntax.Implies
 import Kore.Syntax.In
+import Kore.Syntax.Inhabitant
 import Kore.Syntax.Mu
 import Kore.Syntax.Next
 import Kore.Syntax.Not
@@ -76,7 +77,7 @@ data PatternF variable child
     | CharLiteralF   !(CharLiteral child)
     | TopF           !(Top Sort child)
     | VariableF      !variable
-    | InhabitantF    !Sort
+    | InhabitantF    !(Inhabitant child)
     | SetVariableF   !(SetVariable variable)
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 

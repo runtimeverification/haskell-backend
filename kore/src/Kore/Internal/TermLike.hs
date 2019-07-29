@@ -125,6 +125,7 @@ module Kore.Internal.TermLike
     , module Kore.Syntax.Iff
     , module Kore.Syntax.Implies
     , module Kore.Syntax.In
+    , module Kore.Syntax.Inhabitant
     , module Kore.Syntax.Mu
     , module Kore.Syntax.Next
     , module Kore.Syntax.Not
@@ -203,6 +204,7 @@ import           Kore.Syntax.Id
 import           Kore.Syntax.Iff
 import           Kore.Syntax.Implies
 import           Kore.Syntax.In
+import           Kore.Syntax.Inhabitant
 import           Kore.Syntax.Mu
 import           Kore.Syntax.Next
 import           Kore.Syntax.Not
@@ -277,7 +279,7 @@ data TermLikeF variable child
     | CharLiteralF   !(CharLiteral child)
     | TopF           !(Top Sort child)
     | VariableF      !variable
-    | InhabitantF    !Sort
+    | InhabitantF    !(Inhabitant child)
     | SetVariableF   !(SetVariable variable)
     | BuiltinF       !(Builtin child)
     | EvaluatedF     !(Evaluated child)
@@ -333,7 +335,7 @@ instance
 
     synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
     synthetic (CharLiteralF charLiteralF) = synthetic charLiteralF
-    synthetic (InhabitantF _) = mempty
+    synthetic (InhabitantF inhabitantF) = synthetic inhabitantF
 
     synthetic (MuF muF) = synthetic muF
     synthetic (NuF nuF) = synthetic nuF
@@ -371,7 +373,7 @@ instance
 
     synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
     synthetic (CharLiteralF charLiteralF) = synthetic charLiteralF
-    synthetic (InhabitantF _) = mempty
+    synthetic (InhabitantF inhabitantF) = synthetic inhabitantF
 
     synthetic (MuF muF) = synthetic muF
     synthetic (NuF nuF) = synthetic nuF
@@ -406,7 +408,7 @@ instance SortedVariable variable => Synthetic (TermLikeF variable) Sort where
 
     synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
     synthetic (CharLiteralF charLiteralF) = synthetic charLiteralF
-    synthetic (InhabitantF inhSort) = synthetic (Const inhSort)
+    synthetic (InhabitantF inhabitantF) = synthetic inhabitantF
 
     synthetic (MuF muF) = synthetic muF
     synthetic (NuF nuF) = synthetic nuF
@@ -442,7 +444,7 @@ instance Synthetic (TermLikeF variable) Pattern.Functional where
 
     synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
     synthetic (CharLiteralF charLiteralF) = synthetic charLiteralF
-    synthetic (InhabitantF inhSort) = synthetic (Const inhSort)
+    synthetic (InhabitantF inhabitantF) = synthetic inhabitantF
 
     synthetic (MuF muF) = synthetic muF
     synthetic (NuF nuF) = synthetic nuF
@@ -477,7 +479,7 @@ instance Synthetic (TermLikeF variable) Pattern.Function where
 
     synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
     synthetic (CharLiteralF charLiteralF) = synthetic charLiteralF
-    synthetic (InhabitantF _) = Pattern.Function False
+    synthetic (InhabitantF inhabitantF) = synthetic inhabitantF
 
     synthetic (MuF muF) = synthetic muF
     synthetic (NuF nuF) = synthetic nuF
@@ -512,7 +514,7 @@ instance Synthetic (TermLikeF variable) Pattern.Defined where
 
     synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
     synthetic (CharLiteralF charLiteralF) = synthetic charLiteralF
-    synthetic (InhabitantF _) = Pattern.Defined True
+    synthetic (InhabitantF inhabitantF) = synthetic inhabitantF
 
     synthetic (MuF muF) = synthetic muF
     synthetic (NuF nuF) = synthetic nuF
@@ -1731,7 +1733,7 @@ mkInhabitant
     :: (Ord variable, SortedVariable variable)
     => Sort
     -> TermLike variable
-mkInhabitant = synthesize . InhabitantF
+mkInhabitant = synthesize . InhabitantF . Inhabitant
 
 mkEvaluated
     :: (Ord variable, SortedVariable variable)
