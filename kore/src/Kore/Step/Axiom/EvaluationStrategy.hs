@@ -13,8 +13,6 @@ module Kore.Step.Axiom.EvaluationStrategy
     , totalDefinitionEvaluation
     , firstFullEvaluation
     , simplifierWithFallback
-    , withCeilChildOfApplication
-    , introduceDefinedness
     ) where
 
 import qualified Control.Monad as Monad
@@ -45,6 +43,8 @@ import           Kore.Internal.TermLike
 import qualified Kore.Proof.Value as Value
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
+import           Kore.Step.Remainder
+                 ( ceilChildOfApplication, introduceDefinedness )
 import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
@@ -312,32 +312,32 @@ evaluateWithDefinitionAxioms
     _axiomSimplifiers
     patt
   =
-    ceilChildOfApplication patt >>= \ceilChild ->
-        AttemptedAxiom.maybeNotApplicable $ do
-        let
-            -- TODO (thomas.tuegel): Figure out how to get the initial conditions
-            -- and apply them here, to remove remainder branches sooner.
-            expanded :: Pattern variable
-            expanded = Pattern.fromTermLike patt
+    AttemptedAxiom.maybeNotApplicable $ do
+    let
+        -- TODO (thomas.tuegel): Figure out how to get the initial conditions
+        -- and apply them here, to remove remainder branches sooner.
+        expanded :: Pattern variable
+        expanded = Pattern.fromTermLike patt
 
-        results <- applyRules expanded (map unwrapEqualityRule definitionRules)
-        mapM_ rejectNarrowing results
+    results <- applyRules expanded (map unwrapEqualityRule definitionRules)
+    mapM_ rejectNarrowing results
 
-        let
-            result =
-                Result.mergeResults results
-                & Result.mapConfigs
-                    keepResultUnchanged
-                    ( markRemainderEvaluated
-                    . introduceDefinedness ceilChild
-                    )
-            keepResultUnchanged = id
-            markRemainderEvaluated = fmap mkEvaluated
+    ceilChild <- ceilChildOfApplication patt
+    let
+        result =
+            Result.mergeResults results
+            & Result.mapConfigs
+                keepResultUnchanged
+                ( markRemainderEvaluated
+                . introduceDefinedness ceilChild
+                )
+        keepResultUnchanged = id
+        markRemainderEvaluated = fmap mkEvaluated
 
-        return $ AttemptedAxiom.Applied AttemptedAxiomResults
-            { results = Step.gatherResults result
-            , remainders = Step.remainders result
-            }
+    return $ AttemptedAxiom.Applied AttemptedAxiomResults
+        { results = Step.gatherResults result
+        , remainders = Step.remainders result
+        }
 
   where
     unwrapEqualityRule (EqualityRule rule) =
@@ -351,50 +351,3 @@ evaluateWithDefinitionAxioms
         $ Step.applyRulesSequence unificationProcedure initial rules
 
     unificationProcedure = UnificationProcedure unificationWithAppMatchOnTop
-
-introduceDefinedness
-    :: forall variable
-    .  ( SortedVariable variable
-       , FreshVariable variable
-       , Unparse variable
-       , Show variable
-       )
-    => OrPredicate variable
-    -> Pattern variable
-    -> Pattern variable
-introduceDefinedness cond result =
-    foldr andCondition result cond
-
-ceilChildOfApplication
-    :: forall variable simplifier
-    .  ( FreshVariable variable
-       , SortedVariable variable
-       , Show variable
-       , Unparse variable
-       , MonadSimplify simplifier
-       )
-    => TermLike variable
-    -> simplifier (OrPredicate variable)
-ceilChildOfApplication =
-    withCeilChildOfApplication
-        Ceil.makeEvaluateTerm
-        AndPredicates.simplifyEvaluatedMultiPredicate
-
-withCeilChildOfApplication
-    :: forall variable m
-    .  ( FreshVariable variable
-       , SortedVariable variable
-       , Show variable
-       , Unparse variable
-       , Monad m
-       )
-    => (TermLike variable -> m (OrPredicate variable))
-    -> (MultiAnd (OrPredicate variable) -> m (OrPredicate variable))
-    -> TermLike variable
-    -> m (OrPredicate variable)
-withCeilChildOfApplication f g patt =
-    case patt of
-        App_ _ children -> do
-            ceil <- traverse f children
-            g . MultiAnd.make $ ceil
-        _ -> pure OrPredicate.top

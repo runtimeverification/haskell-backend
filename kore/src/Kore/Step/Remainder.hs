@@ -7,6 +7,9 @@ License     : NCSA
 module Kore.Step.Remainder
     ( remainder, remainder'
     , existentiallyQuantifyTarget
+    , ceilChildOfApplication
+    , withCeilChildOfApplication
+    , introduceDefinedness
     ) where
 
 import           Control.Applicative
@@ -14,12 +17,17 @@ import           Control.Applicative
 import qualified Data.Foldable as Foldable
 
 import           Kore.Internal.Conditional
-                 ( Conditional (Conditional) )
+                 ( Conditional (Conditional), andCondition )
 import           Kore.Internal.MultiAnd
                  ( MultiAnd )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import           Kore.Internal.MultiOr
                  ( MultiOr )
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
+import qualified Kore.Internal.OrPredicate as OrPredicate
+import           Kore.Internal.Pattern
+                 ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Predicate
                  ( Predicate )
@@ -27,10 +35,16 @@ import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Step.Simplification.AndPredicates as AndPredicates
+import qualified Kore.Step.Simplification.Ceil as Ceil
+import           Kore.Step.Simplification.Data
+                 ( MonadSimplify (..) )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
+import           Kore.Variables.Fresh
+                 ( FreshVariable )
 import           Kore.Variables.Target
                  ( Target )
 import qualified Kore.Variables.Target as Target
@@ -153,3 +167,50 @@ substitutionConditions subst =
   where
     substitutionCoverageWorker (x, t) =
         Syntax.Predicate.makeEqualsPredicate (mkVar x) t
+
+introduceDefinedness
+    :: forall variable
+    .  ( SortedVariable variable
+       , FreshVariable variable
+       , Unparse variable
+       , Show variable
+       )
+    => OrPredicate variable
+    -> Pattern variable
+    -> Pattern variable
+introduceDefinedness cond result =
+    foldr (flip andCondition) result cond
+
+ceilChildOfApplication
+    :: forall variable simplifier
+    .  ( FreshVariable variable
+       , SortedVariable variable
+       , Show variable
+       , Unparse variable
+       , MonadSimplify simplifier
+       )
+    => TermLike variable
+    -> simplifier (OrPredicate variable)
+ceilChildOfApplication =
+    withCeilChildOfApplication
+        Ceil.makeEvaluateTerm
+        AndPredicates.simplifyEvaluatedMultiPredicate
+
+withCeilChildOfApplication
+    :: forall variable m
+    .  ( FreshVariable variable
+       , SortedVariable variable
+       , Show variable
+       , Unparse variable
+       , Monad m
+       )
+    => (TermLike variable -> m (OrPredicate variable))
+    -> (MultiAnd (OrPredicate variable) -> m (OrPredicate variable))
+    -> TermLike variable
+    -> m (OrPredicate variable)
+withCeilChildOfApplication f g patt =
+    case patt of
+        App_ _ children -> do
+            ceil <- traverse f children
+            g . MultiAnd.make $ ceil
+        _ -> pure OrPredicate.top

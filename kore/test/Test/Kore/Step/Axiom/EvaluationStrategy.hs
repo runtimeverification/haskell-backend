@@ -7,18 +7,13 @@ import Test.Tasty.HUnit
 
 import           Data.Default
                  ( def )
-import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 
-import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Internal.OrPredicate as OrPredicate
 import           Kore.Internal.Pattern as Pattern
                  ( Conditional (Conditional) )
 import qualified Kore.Internal.Pattern as Pattern
-                 ( Conditional (..), fromTermLike )
-import qualified Kore.Internal.Predicate as Predicate
+                 ( Conditional (..) )
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate, makeAndPredicate, makeEqualsPredicate,
@@ -40,12 +35,10 @@ import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import qualified SMT
-import qualified Test.Kore.Step.Substitution as Test.Substitution
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import qualified Test.Kore.Step.Simplification.Ceil as Test.Ceil
 import           Test.Tasty.HUnit.Extensions
 
 test_definitionEvaluation :: [TestTree]
@@ -76,15 +69,7 @@ test_definitionEvaluation =
         assertEqualWithExplanation "" expect actual
     , testCase "Evaluation with remainder" $ do
         let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
-            term = Mock.functionalConstr10 Mock.a
-            remainder =
-                Conditional
-                    { term = term
-                    , predicate = makeNotPredicate requirement
-                    , substitution = mempty
-                    }
-        ceil <- ceilChildOfApplication term
-        let expect =
+            expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results =
                         OrPattern.fromPattern Conditional
@@ -94,8 +79,13 @@ test_definitionEvaluation =
                             }
                     , remainders =
                         OrPattern.fromPatterns
-                        $ map (fmap mkEvaluated . introduceDefinedness ceil)
-                            [ remainder ]
+                        $ map (fmap mkEvaluated)
+                            [ Conditional
+                                { term = Mock.functionalConstr10 Mock.a
+                                , predicate = makeNotPredicate requirement
+                                , substitution = mempty
+                                }
+                            ]
                     }
         actual <-
             evaluate
@@ -109,20 +99,13 @@ test_definitionEvaluation =
                 (Mock.functionalConstr10 Mock.a)
         assertEqualWithExplanation "" expect actual
     , testCase "Failed evaluation" $ do
-        let results = OrPattern.fromPatterns []
-            term = OrPattern.toTermLike results
-            remainder =
-                Pattern.fromTermLike
-                $ Mock.functionalConstr10 Mock.b
-        ceil <- ceilChildOfApplication term
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = results
+                        { results = OrPattern.fromPatterns []
                         , remainders =
-                            OrPattern.fromPatterns
-                            $ map (fmap mkEvaluated . introduceDefinedness ceil)
-                            [ remainder ]
+                            OrPattern.fromTermLike
+                            $ mkEvaluated $ Mock.functionalConstr10 Mock.b
                         }
         actual <-
             evaluate
@@ -139,14 +122,12 @@ test_definitionEvaluation =
         let initial = Mock.functionalConstr10 Mock.a
             final1 = Mock.g Mock.a
             final2 = Mock.g Mock.b
-            term = mkOr final1 final2
             requirement1 = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
             requirement2 = makeNotPredicate requirement1
             axiom1 = axiom initial final1 requirement1
             axiom2 = axiom initial final2 requirement2
             evaluator = definitionEvaluation [axiom1, axiom2]
-        ceil <- ceilChildOfApplication term
-        let expect =
+            expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results = OrPattern.fromPatterns
                         [ Conditional
@@ -161,8 +142,7 @@ test_definitionEvaluation =
                             }
                         ]
                     , remainders =
-                        OrPattern.fromPatterns
-                        $ map (fmap mkEvaluated . introduceDefinedness ceil)
+                        OrPattern.fromPatterns $ (map . fmap) mkEvaluated
                             [ Conditional
                                 { term = initial
                                 , predicate =
@@ -351,20 +331,17 @@ test_simplifierWithFallback =
         assertEqualWithExplanation "" expect actual
     , testCase "Uses first with remainder" $ do
         let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
-            term = Mock.g Mock.a
-        ceil <- ceilChildOfApplication term
-        let expect =
+            expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results = OrPattern.fromPatterns
                         [ Conditional
-                            { term = term
+                            { term = Mock.g Mock.a
                             , predicate = requirement
                             , substitution = mempty
                             }
                         ]
                     , remainders =
-                        OrPattern.fromPatterns
-                        $ map (fmap mkEvaluated . introduceDefinedness ceil)
+                        OrPattern.fromPatterns $ (map . fmap) mkEvaluated
                             [ Conditional
                                 { term = Mock.functionalConstr10 Mock.a
                                 , predicate = makeNotPredicate requirement
@@ -521,29 +498,3 @@ evaluate (BuiltinAndAxiomSimplifier simplifier) patt =
   where
     substitutionSimplifier = Predicate.create
     patternSimplifier = Simplifier.create
-
-ceilChildOfApplication
-    :: TermLike Variable
-    -> IO (OrPredicate.OrPredicate Variable)
-ceilChildOfApplication =
-    withCeilChildOfApplication
-        Test.Ceil.makeEvaluateTerm
-        mockSimplifyEvaluatedMultiPredicate
-
-mockSimplifyEvaluatedMultiPredicate
-    :: MultiAnd.MultiAnd (OrPredicate.OrPredicate Variable)
-    -> IO (OrPredicate.OrPredicate Variable)
-mockSimplifyEvaluatedMultiPredicate predicates = do
-    let
-        crossProduct :: MultiOr.MultiOr [Predicate.Predicate Variable]
-        crossProduct =
-            MultiOr.fullCrossProduct
-                (MultiAnd.extractPatterns predicates)
-    orResults <- traverse andPredicates crossProduct
-    return (MultiOr.mergeAll . sequence $ orResults)
-  where
-    andPredicates
-        :: [Predicate.Predicate Variable]
-        -> IO [Predicate.Predicate Variable]
-    andPredicates predicates' =
-        Test.Substitution.normalize (Foldable.fold predicates')
