@@ -292,6 +292,16 @@ test_unification =
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]
+    , testCase "SetVariable w. constructor" $
+        andSimplifySuccess
+            (UnificationTerm (f (Mock.mkTestSubstVar "@x")))
+            (UnificationTerm (f a))
+            [ UnificationResult
+                { term = f a
+                , substitution = [("@x", a)]
+                , predicate = Syntax.Predicate.makeTruePredicate
+                }
+            ]
     , testCase "SetVariable" $
         andSimplifySuccess
             (UnificationTerm (Mock.mkTestSubstVar "@x"))

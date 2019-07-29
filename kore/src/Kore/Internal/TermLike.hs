@@ -703,7 +703,7 @@ extractAttributes :: TermLike variable -> Attribute.Pattern variable
 extractAttributes = extract . getTermLike
 
 instance
-    (Ord variable, SortedVariable variable) =>
+    (Ord variable, SortedVariable variable, Show variable) =>
     Binding (TermLike variable)
   where
     type VariableType (TermLike variable) = variable
@@ -877,6 +877,7 @@ substitute
     ::  ( FreshVariable variable
         , Ord variable
         , SortedVariable variable
+        , Show variable
         )
     =>  Map (SubstVar variable) (TermLike variable)
     ->  TermLike variable

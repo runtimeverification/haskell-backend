@@ -37,6 +37,7 @@ import Kore.Debug
 import Kore.Sort
 import Kore.SubstVar
        ( SubstVar (..) )
+import qualified Kore.SubstVar as SubstVar
 import Kore.Unparser
 
 {-|'Variable' corresponds to the @variable@ syntactic category from the
@@ -190,10 +191,10 @@ instance SortedVariable Concrete where
     toVariable = \case {}
     fromVariable = error "Cannot construct a variable in a concrete term!"
 
-instance Synthetic (Const Variable) (FreeVariables Variable) where
-    synthetic (Const variable) = freeVariable (RegVar variable)
+instance Synthetic (Const (SubstVar Variable)) (FreeVariables Variable) where
+    synthetic (Const var) = freeVariable var
     {-# INLINE synthetic #-}
 
-instance Synthetic (Const Variable) Sort where
-    synthetic (Const variable) = sortedVariableSort variable
+instance Synthetic (Const (SubstVar Variable)) Sort where
+    synthetic (Const variable) = sortedVariableSort (SubstVar.asVariable variable)
     {-# INLINE synthetic #-}

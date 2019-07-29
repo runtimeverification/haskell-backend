@@ -529,6 +529,7 @@ refreshRulePattern
     :: forall variable
     .   ( FreshVariable variable
         , SortedVariable variable
+        , Show variable
         )
     => FreeVariables variable  -- ^ Variables to avoid
     -> RulePattern variable
@@ -590,6 +591,7 @@ contain none of the targeted variables.
 substitute
     ::  ( FreshVariable variable
         , SortedVariable variable
+        , Show variable
         )
     => Map (SubstVar variable) (TermLike variable)
     -> RulePattern variable

@@ -257,7 +257,7 @@ verifyAliasLeftPattern leftPattern = do
         -> PatternVerifier (SubstVar Variable, Attribute.Pattern Variable)
     expectVariable var = do
         verifyVariableDeclaration var
-        let attrs = synthetic (Const (SubstVar.asVariable var))
+        let attrs = synthetic (Const var)
         return (var, attrs)
 
 {- | Verify that a Kore pattern is well-formed.
@@ -366,15 +366,18 @@ verifyPatternHead (_ :< patternF) =
         Syntax.TopF top ->
             transCofreeF Internal.TopF <$> verifyTop top
         Syntax.VariableF var ->
-            transCofreeF (Internal.VariableF . getConst)
+            transCofreeF (wrapVariable . getConst)
                 <$> verifyVariable (RegVar var)
         Syntax.InhabitantF _ ->
             koreFail "Unexpected pattern."
         Syntax.SetVariableF (SetVariable var) ->
-            transCofreeF (Internal.SetVariableF . SetVariable . getConst)
+            transCofreeF (wrapVariable . getConst)
                 <$> verifyVariable (SetVar var)
   where
     transCofreeF fg (a :< fb) = a :< fg fb
+    wrapVariable :: SubstVar Variable -> Internal.TermLikeF Variable Verified.Pattern
+    wrapVariable (RegVar variable) = Internal.VariableF variable
+    wrapVariable (SetVar variable) = Internal.SetVariableF (SetVariable variable)
 
 verifyPatternSort :: Sort -> PatternVerifier ()
 verifyPatternSort patternSort = do
@@ -684,7 +687,7 @@ verifyNu = verifyBinder nuSort (SetVar . nuVar)
     nuSort = variableSort . nuVar
 
 verifyVariable
-    ::  ( base ~ Const Variable
+    ::  ( base ~ Const (SubstVar Variable)
         , valid ~ Attribute.Pattern Variable
         )
     => SubstVar Variable
@@ -697,11 +700,11 @@ verifyVariable var = do
         (variableSort /= declaredSort)
         [ var, declaredVariable ]
         "The declared sort is different."
-    let verified = Const variable
+    let verified = Const var
         attrs = synthetic (Internal.extractAttributes <$> verified)
     return (attrs :< verified)
   where
-    variable@Variable { variableName, variableSort } = SubstVar.asVariable var
+    Variable { variableName, variableSort } = SubstVar.asVariable var
 
 verifyDomainValue
     :: DomainValue Sort (PatternVerifier Verified.Pattern)

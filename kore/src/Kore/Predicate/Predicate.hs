@@ -561,6 +561,7 @@ contain none of the targeted variables.
 substitute
     ::  ( FreshVariable variable
         , SortedVariable variable
+        , Show variable
         )
     => Map (SubstVar variable) (TermLike variable)
     -> Predicate variable

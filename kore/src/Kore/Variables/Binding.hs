@@ -34,7 +34,7 @@ import Kore.Syntax.SetVariable
 respectively a binder or a variable at the top level.
 
  -}
-class Binding patternType where
+class Show patternType => Binding patternType where
     -- | The type of variables bound in @patternType@.
     type VariableType patternType
 

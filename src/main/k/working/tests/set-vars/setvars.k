@@ -12,4 +12,7 @@ module SETVARS
   syntax Int ::= h(Int) [function]
   rule h(@X:Int) => @X +Int 1
 
+  syntax KItem ::= i(Int)
+  rule i(@X:Int) => @X +Int 1 [anywhere]
+
 endmodule

@@ -47,6 +47,7 @@ substitute
     ::  forall patternType patternBase attribute variable.
         ( FreshVariable variable
         , Ord variable
+        , Show variable
         , SortedVariable variable
         , Corecursive patternType, Recursive patternType
         , Functor patternBase

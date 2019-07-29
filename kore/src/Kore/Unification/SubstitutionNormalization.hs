@@ -137,6 +137,7 @@ normalizeSortedSubstitution
         , Monad m
         , FreshVariable variable
         , SortedVariable variable
+        , Show variable
         )
     => [(SubstVar variable, TermLike variable)]
     -> [(SubstVar variable, TermLike variable)]
