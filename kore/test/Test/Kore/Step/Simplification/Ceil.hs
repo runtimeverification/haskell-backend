@@ -1,7 +1,5 @@
 module Test.Kore.Step.Simplification.Ceil
     ( test_ceilSimplification
-    , makeEvaluate
-    , makeEvaluateTerm
     ) where
 
 import Test.Tasty
@@ -16,7 +14,6 @@ import qualified Kore.Builtin.AssociativeCommutative as Ac
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Internal.OrPredicate as OrPredicate
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Logger.Output as Logger
@@ -27,7 +24,7 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import qualified Kore.Step.Simplification.Ceil as Ceil
-                 ( makeEvaluate, makeEvaluateTerm, simplify )
+                 ( makeEvaluate, simplify )
 import           Kore.Step.Simplification.Data
                  ( AttemptedAxiom,
                  AttemptedAxiomResults (AttemptedAxiomResults),
@@ -548,27 +545,6 @@ makeEvaluateWithAxioms axiomIdToSimplifier child =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier mockEnv
     $ Ceil.makeEvaluate child
-  where
-    mockEnv =
-        Mock.env
-            { simplifierAxioms = axiomIdToSimplifier
-            , simplifierPredicate = Mock.substitutionSimplifier
-            }
-
-makeEvaluateTerm
-    :: TermLike Variable
-    -> IO (OrPredicate.OrPredicate Variable)
-makeEvaluateTerm = makeEvaluateTermWithAxioms Map.empty
-
-makeEvaluateTermWithAxioms
-    :: BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> TermLike Variable
-    -> IO (OrPredicate.OrPredicate Variable)
-makeEvaluateTermWithAxioms axiomIdToSimplifier child =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
-    $ Ceil.makeEvaluateTerm child
   where
     mockEnv =
         Mock.env
