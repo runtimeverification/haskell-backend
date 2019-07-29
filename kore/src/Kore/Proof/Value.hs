@@ -51,7 +51,7 @@ data ValueF child
     | SortInjection !(Syntax.Application Symbol child)
     | DomainValue !(Syntax.DomainValue Sort child)
     | Builtin !(Domain.Builtin (TermLike Concrete) child)
-    | StringLiteral !StringLiteral
+    | StringLiteral !(StringLiteral child)
     | CharLiteral !CharLiteral
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
@@ -124,7 +124,7 @@ fromPattern (attrs :< termLikeF) =
             -- BuiltinPattern and always run the stepper with internal
             -- representations only.
             Builtin <$> sequence builtinP
-        StringLiteralF stringL -> Just (StringLiteral stringL)
+        StringLiteralF stringL -> StringLiteral <$> sequence stringL
         CharLiteralF charL -> Just (CharLiteral charL)
         _ -> Nothing
 

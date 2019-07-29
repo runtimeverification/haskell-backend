@@ -273,7 +273,7 @@ data TermLikeF variable child
     | NuF            !(Nu variable child)
     | OrF            !(Or Sort child)
     | RewritesF      !(Rewrites Sort child)
-    | StringLiteralF !StringLiteral
+    | StringLiteralF !(StringLiteral child)
     | CharLiteralF   !CharLiteral
     | TopF           !(Top Sort child)
     | VariableF      !variable
@@ -331,7 +331,7 @@ instance
     synthetic (BuiltinF builtinF) = Foldable.fold builtinF
     synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
 
-    synthetic (StringLiteralF stringLiteral) = synthetic (Const stringLiteral)
+    synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
     synthetic (CharLiteralF charLiteral) = synthetic (Const charLiteral)
     synthetic (InhabitantF _) = mempty
 
@@ -369,7 +369,7 @@ instance
     synthetic (BuiltinF builtinF) = Foldable.fold builtinF
     synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
 
-    synthetic (StringLiteralF stringLiteral) = synthetic (Const stringLiteral)
+    synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
     synthetic (CharLiteralF charLiteral) = synthetic (Const charLiteral)
     synthetic (InhabitantF _) = mempty
 
@@ -404,7 +404,7 @@ instance SortedVariable variable => Synthetic (TermLikeF variable) Sort where
     synthetic (BuiltinF builtinF) = synthetic builtinF
     synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
 
-    synthetic (StringLiteralF stringLiteral) = synthetic (Const stringLiteral)
+    synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
     synthetic (CharLiteralF charLiteral) = synthetic (Const charLiteral)
     synthetic (InhabitantF inhSort) = synthetic (Const inhSort)
 
@@ -440,7 +440,7 @@ instance Synthetic (TermLikeF variable) Pattern.Functional where
     synthetic (BuiltinF builtinF) = synthetic builtinF
     synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
 
-    synthetic (StringLiteralF stringLiteral) = synthetic (Const stringLiteral)
+    synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
     synthetic (CharLiteralF charLiteral) = synthetic (Const charLiteral)
     synthetic (InhabitantF inhSort) = synthetic (Const inhSort)
 
@@ -475,7 +475,7 @@ instance Synthetic (TermLikeF variable) Pattern.Function where
     synthetic (BuiltinF builtinF) = synthetic builtinF
     synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
 
-    synthetic (StringLiteralF _) = Pattern.Function True
+    synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
     synthetic (CharLiteralF _) = Pattern.Function True
     synthetic (InhabitantF _) = Pattern.Function False
 
@@ -510,7 +510,7 @@ instance Synthetic (TermLikeF variable) Pattern.Defined where
     synthetic (BuiltinF builtinF) = synthetic builtinF
     synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
 
-    synthetic (StringLiteralF _) = Pattern.Defined True
+    synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
     synthetic (CharLiteralF _) = Pattern.Defined True
     synthetic (InhabitantF _) = Pattern.Defined True
 

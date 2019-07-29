@@ -172,7 +172,7 @@ instance Synthetic (Const Variable) Functional where
     {-# INLINE synthetic #-}
 
 -- | A 'StringLiteral' pattern is always 'Functional'.
-instance Synthetic (Const StringLiteral) Functional where
+instance Synthetic StringLiteral Functional where
     synthetic = const (Functional True)
     {-# INLINE synthetic #-}
 

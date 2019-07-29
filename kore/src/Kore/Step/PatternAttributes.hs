@@ -87,7 +87,7 @@ isPreconstructedPattern err (_ :< pattern') =
         BuiltinF domain ->
             (Right . Descend) (FunctionalBuiltin $ () <$ domain)
         StringLiteralF str ->
-            Right (DoNotDescend (FunctionalStringLiteral str))
+            Right (DoNotDescend (FunctionalStringLiteral $ () <$ str))
         CharLiteralF char ->
             Right (DoNotDescend (FunctionalCharLiteral char))
         _ -> Left err

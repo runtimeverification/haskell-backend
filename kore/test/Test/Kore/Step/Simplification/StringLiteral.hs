@@ -39,5 +39,5 @@ test_stringLiteralSimplification =
         )
     ]
 
-evaluate :: StringLiteral -> OrPattern Variable
+evaluate :: StringLiteral (OrPattern Variable) -> OrPattern Variable
 evaluate = simplify

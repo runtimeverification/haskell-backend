@@ -350,8 +350,7 @@ verifyPatternHead (_ :< patternF) =
         Syntax.RewritesF rewrites ->
             transCofreeF Internal.RewritesF <$> verifyRewrites rewrites
         Syntax.StringLiteralF str ->
-            transCofreeF (Internal.StringLiteralF . getConst)
-                <$> verifyStringLiteral str
+            transCofreeF Internal.StringLiteralF <$> verifyStringLiteral str
         Syntax.CharLiteralF char ->
             transCofreeF (Internal.CharLiteralF . getConst)
                 <$> verifyCharLiteral char
@@ -717,12 +716,12 @@ verifyDomainValue domain = do
     return (attrs :< verified)
 
 verifyStringLiteral
-    :: (base ~ Const StringLiteral, valid ~ Attribute.Pattern Variable)
-    => StringLiteral
-    -> PatternVerifier (CofreeF base valid Verified.Pattern)
+    :: valid ~ Attribute.Pattern Variable
+    => StringLiteral (PatternVerifier Verified.Pattern)
+    -> PatternVerifier (CofreeF StringLiteral valid Verified.Pattern)
 verifyStringLiteral str = do
-    let verified = Const str
-        attrs = synthetic (Internal.extractAttributes <$> verified)
+    verified <- sequence str
+    let attrs = synthetic (Internal.extractAttributes <$> verified)
     return (attrs :< verified)
 
 verifyCharLiteral

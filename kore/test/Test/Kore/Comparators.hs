@@ -783,10 +783,11 @@ instance
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
-instance EqualWithExplanation StringLiteral
-  where
+
+instance EqualWithExplanation (StringLiteral child) where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
+
 instance EqualWithExplanation CharLiteral
   where
     compareWithExplanation = rawCompareWithExplanation
