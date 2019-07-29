@@ -8,8 +8,6 @@ module Kore.Step.Remainder
     ( remainder, remainder'
     , existentiallyQuantifyTarget
     , ceilChildOfApplication
-    , withCeilChildOfApplication
-    , introduceDefinedness
     ) where
 
 import           Control.Applicative
@@ -17,7 +15,7 @@ import           Control.Applicative
 import qualified Data.Foldable as Foldable
 
 import           Kore.Internal.Conditional
-                 ( Conditional (Conditional), andCondition )
+                 ( Conditional (Conditional) )
 import           Kore.Internal.MultiAnd
                  ( MultiAnd )
 import qualified Kore.Internal.MultiAnd as MultiAnd
@@ -31,6 +29,7 @@ import           Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Predicate
                  ( Predicate )
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
@@ -168,49 +167,30 @@ substitutionConditions subst =
     substitutionCoverageWorker (x, t) =
         Syntax.Predicate.makeEqualsPredicate (mkVar x) t
 
-introduceDefinedness
-    :: forall variable
-    .  ( SortedVariable variable
-       , FreshVariable variable
-       , Unparse variable
-       , Show variable
-       )
-    => OrPredicate variable
-    -> Pattern variable
-    -> Pattern variable
-introduceDefinedness cond result =
-    foldr (flip andCondition) result cond
-
 ceilChildOfApplication
-    :: forall variable simplifier
-    .  ( FreshVariable variable
-       , SortedVariable variable
-       , Show variable
-       , Unparse variable
-       , MonadSimplify simplifier
-       )
-    => TermLike variable
-    -> simplifier (OrPredicate variable)
-ceilChildOfApplication =
-    withCeilChildOfApplication
-        Ceil.makeEvaluateTerm
-        AndPredicates.simplifyEvaluatedMultiPredicate
-
-withCeilChildOfApplication
     :: forall variable m
     .  ( FreshVariable variable
        , SortedVariable variable
        , Show variable
        , Unparse variable
-       , Monad m
+       , MonadSimplify m
        )
-    => (TermLike variable -> m (OrPredicate variable))
-    -> (MultiAnd (OrPredicate variable) -> m (OrPredicate variable))
-    -> TermLike variable
-    -> m (OrPredicate variable)
-withCeilChildOfApplication f g patt =
+    => TermLike variable
+    -> m (Predicate variable)
+ceilChildOfApplication patt =
     case patt of
         App_ _ children -> do
-            ceil <- traverse f children
-            g . MultiAnd.make $ ceil
-        _ -> pure OrPredicate.top
+            ceil <-
+                traverse Ceil.makeEvaluateTerm children
+                >>= ( AndPredicates.simplifyEvaluatedMultiPredicate
+                    . MultiAnd.make
+                    )
+            pure $ Conditional
+                { term = ()
+                , predicate =
+                    OrPredicate.toPredicate
+                    . fmap Predicate.toPredicate
+                    $ ceil
+                , substitution = mempty
+                }
+        _ -> pure Predicate.top

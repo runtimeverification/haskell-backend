@@ -24,6 +24,8 @@ import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Symbol as Attribute
+import           Kore.Internal.Conditional
+                 ( andCondition )
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -36,7 +38,7 @@ import qualified Kore.Proof.Value as Value
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
 import           Kore.Step.Remainder
-                 ( ceilChildOfApplication, introduceDefinedness )
+                 ( ceilChildOfApplication )
 import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
@@ -322,6 +324,7 @@ evaluateWithDefinitionAxioms
                 . introduceDefinedness ceilChild
                 )
         keepResultUnchanged = id
+        introduceDefinedness = flip andCondition
         markRemainderEvaluated = fmap mkEvaluated
 
     return $ AttemptedAxiom.Applied AttemptedAxiomResults

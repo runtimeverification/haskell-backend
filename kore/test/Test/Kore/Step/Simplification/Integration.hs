@@ -242,7 +242,7 @@ test_simplificationIntegration =
                     }
         assertEqualWithExplanation "" expect actual
     , testCase "function application introduces definedness condition" $ do
-        let sortVariable = SortVariableSort $ SortVariable (testId "s")
+        let testSortVariable = SortVariableSort $ SortVariable (testId "s")
             expect =
                 OrPattern.fromPatterns
                 [ Conditional
@@ -275,14 +275,14 @@ test_simplificationIntegration =
                         , (AxiomIdentifier.Ceil (AxiomIdentifier.Application Mock.tdivIntId)
                           , [ EqualityRule RulePattern
                                 { left =
-                                    mkCeil sortVariable
+                                    mkCeil testSortVariable
                                     $ Mock.tdivInt
                                         (mkVar Mock.xInt)
                                         (mkVar Mock.yInt)
                                 , right =
-                                    mkCeil sortVariable
+                                    mkCeil testSortVariable
                                     . mkNot
-                                    $ mkEquals sortVariable
+                                    $ mkEquals testSortVariable
                                         (mkVar Mock.yInt)
                                         (Mock.builtinInt 0)
                                 , requires = makeTruePredicate
