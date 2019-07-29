@@ -24,17 +24,9 @@ import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.Internal.Conditional
-                 ( andCondition )
-import           Kore.Internal.MultiAnd
-                 ( MultiAnd )
-import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
-import qualified Kore.Internal.OrPredicate as OrPredicate
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
@@ -49,8 +41,6 @@ import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
 import qualified Kore.Step.Rule as RulePattern
-import qualified Kore.Step.Simplification.AndPredicates as AndPredicates
-import qualified Kore.Step.Simplification.Ceil as Ceil
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
