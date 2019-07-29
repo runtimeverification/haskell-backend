@@ -542,5 +542,6 @@ evaluateWithAxioms axioms =
                 , builtinEvaluation Map.evalElement
                 )
             ,   ( AxiomIdentifier.Application Mock.tdivIntId
-                , builtinEvaluation (Int.builtinFunctions Map.! Int.tdivKey))
+                , builtinEvaluation (Int.builtinFunctions Map.! Int.tdivKey)
+                )
             ]
