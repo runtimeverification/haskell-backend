@@ -352,8 +352,7 @@ verifyPatternHead (_ :< patternF) =
         Syntax.StringLiteralF str ->
             transCofreeF Internal.StringLiteralF <$> verifyStringLiteral str
         Syntax.CharLiteralF char ->
-            transCofreeF (Internal.CharLiteralF . getConst)
-                <$> verifyCharLiteral char
+            transCofreeF Internal.CharLiteralF <$> verifyCharLiteral char
         Syntax.TopF top ->
             transCofreeF Internal.TopF <$> verifyTop top
         Syntax.VariableF var ->
@@ -725,12 +724,12 @@ verifyStringLiteral str = do
     return (attrs :< verified)
 
 verifyCharLiteral
-    :: (base ~ Const CharLiteral, valid ~ Attribute.Pattern Variable)
-    => CharLiteral
-    -> PatternVerifier (CofreeF base valid Verified.Pattern)
+    :: valid ~ Attribute.Pattern Variable
+    => CharLiteral (PatternVerifier Verified.Pattern)
+    -> PatternVerifier (CofreeF CharLiteral valid Verified.Pattern)
 verifyCharLiteral char = do
-    let verified = Const char
-        attrs = synthetic (Internal.extractAttributes <$> verified)
+    verified <- sequence char
+    let attrs = synthetic (Internal.extractAttributes <$> verified)
     return (attrs :< verified)
 
 verifyVariableDeclaration :: Variable -> PatternVerifier VerifySuccess

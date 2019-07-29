@@ -176,7 +176,7 @@ instance Synthetic StringLiteral Defined where
     {-# INLINE synthetic #-}
 
 -- | A 'CharLiteral' pattern is always 'Defined'.
-instance Synthetic (Const CharLiteral) Defined where
+instance Synthetic CharLiteral Defined where
     synthetic = const (Defined True)
     {-# INLINE synthetic #-}
 

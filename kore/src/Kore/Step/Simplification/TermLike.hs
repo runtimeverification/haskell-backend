@@ -166,11 +166,11 @@ simplifyInternal = simplifyInternalWorker
                 Rewrites.simplify <$> simplifyChildren rewritesF
             StringLiteralF stringLiteralF ->
                 StringLiteral.simplify <$> simplifyChildren stringLiteralF
+            CharLiteralF charLiteralF ->
+                CharLiteral.simplify <$> simplifyChildren charLiteralF
             TopF topF -> Top.simplify <$> simplifyChildren topF
             --
             InhabitantF inhF -> return $ Inhabitant.simplify inhF
-            CharLiteralF charLiteralF ->
-                return $ CharLiteral.simplify charLiteralF
             VariableF variableF -> return $ Variable.simplify variableF
             SetVariableF setVariableF ->
                 return $ SetVariable.simplify setVariableF

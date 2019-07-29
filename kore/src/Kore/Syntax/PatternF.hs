@@ -73,7 +73,7 @@ data PatternF variable child
     | OrF            !(Or Sort child)
     | RewritesF      !(Rewrites Sort child)
     | StringLiteralF !(StringLiteral child)
-    | CharLiteralF   !CharLiteral
+    | CharLiteralF   !(CharLiteral child)
     | TopF           !(Top Sort child)
     | VariableF      !variable
     | InhabitantF    !Sort

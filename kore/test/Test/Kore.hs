@@ -120,7 +120,7 @@ stringLiteralGen :: MonadGen m => m (StringLiteral child)
 stringLiteralGen =
     StringLiteral <$> Gen.text (Range.linear 0 256) charGen
 
-charLiteralGen :: MonadGen m => m CharLiteral
+charLiteralGen :: MonadGen m => m (CharLiteral child)
 charLiteralGen = CharLiteral <$> charGen
 
 charGen :: MonadGen m => m Char
