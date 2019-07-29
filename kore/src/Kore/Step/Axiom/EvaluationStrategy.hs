@@ -363,7 +363,7 @@ introduceDefinedness
     -> Pattern variable
     -> Pattern variable
 introduceDefinedness cond result =
-    foldl andCondition result cond
+    foldr andCondition result cond
 
 ceilChildOfApplication
     :: forall variable simplifier
