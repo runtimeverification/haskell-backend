@@ -118,6 +118,8 @@ fSetId :: Id
 fSetId = testId "fSet"
 fIntId :: Id
 fIntId = testId "fInt"
+ceilDivId :: Id
+ceilDivId = testId "ceilDiv"
 plain00Id :: Id
 plain00Id = testId "plain00"
 plain00Sort0Id :: Id
