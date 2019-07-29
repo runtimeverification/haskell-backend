@@ -21,12 +21,7 @@ import           Kore.Internal.MultiAnd
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import           Kore.Internal.MultiOr
                  ( MultiOr )
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
 import qualified Kore.Internal.OrPredicate as OrPredicate
-import           Kore.Internal.Pattern
-                 ( Pattern )
-import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Predicate
                  ( Predicate )
 import qualified Kore.Internal.Predicate as Predicate
