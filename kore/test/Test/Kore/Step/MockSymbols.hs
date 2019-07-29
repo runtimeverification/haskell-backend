@@ -118,6 +118,8 @@ fSetId :: Id
 fSetId = testId "fSet"
 fIntId :: Id
 fIntId = testId "fInt"
+fTestIntId :: Id
+fTestIntId = testId "fTestInt"
 plain00Id :: Id
 plain00Id = testId "plain00"
 plain00Sort0Id :: Id
@@ -289,6 +291,9 @@ fSetSymbol = symbol fSetId [setSort] setSort & function
 
 fIntSymbol :: Symbol
 fIntSymbol = symbol fIntId [intSort] intSort & function
+
+fTestIntSymbol :: Symbol
+fTestIntSymbol = symbol fTestIntId [testSort] intSort & function
 
 plain00Symbol :: Symbol
 plain00Symbol = symbol plain00Id [] testSort
@@ -623,6 +628,13 @@ fSet
     => TermLike variable
     -> TermLike variable
 fSet arg = Internal.mkApplySymbol fSetSymbol [arg]
+
+fTestInt
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+fTestInt arg = Internal.mkApplySymbol fTestIntSymbol [arg]
 
 fInt
     :: (Ord variable, SortedVariable variable, Unparse variable)
@@ -1012,6 +1024,7 @@ symbols =
     , chSymbol
     , fSetSymbol
     , fIntSymbol
+    , fTestIntSymbol
     , plain00Symbol
     , plain00Sort0Symbol
     , plain00SubsortSymbol
