@@ -54,10 +54,7 @@ simplifyBuiltin
 simplifyBuiltin =
     \case
         Domain.BuiltinMap map' -> simplifyInternalMap map'
-        Domain.BuiltinList _list -> do
-            _list <- sequence _list
-            -- MultiOr propagates \bottom children upward.
-            return (Domain.BuiltinList <$> sequenceA _list)
+        Domain.BuiltinList list' -> simplifyInternalList list'
         Domain.BuiltinSet set' -> simplifyInternalSet set'
         Domain.BuiltinInt int -> (return . pure) (Domain.BuiltinInt int)
         Domain.BuiltinBool bool -> (return . pure) (Domain.BuiltinBool bool)
@@ -86,11 +83,8 @@ simplifyInternalMap
         , Unparse variable
         , SortedVariable variable
         )
-    =>  Domain.InternalMap (TermLike Concrete) (OrPattern variable)
-    ->  MultiOr
-            (Conditional variable
-                (Domain.Builtin (TermLike Concrete) (TermLike variable))
-            )
+    => Domain.InternalMap (TermLike Concrete) (OrPattern variable)
+    -> MultiOr (Conditional variable (Builtin (TermLike variable)))
 simplifyInternalMap =
     (fmap . fmap) Domain.BuiltinMap
     . simplifyInternal normalizeInternalMap
@@ -108,11 +102,8 @@ simplifyInternalSet
         , Unparse variable
         , SortedVariable variable
         )
-    =>  Domain.InternalSet (TermLike Concrete) (OrPattern variable)
-    ->  MultiOr
-            (Conditional variable
-                (Domain.Builtin (TermLike Concrete) (TermLike variable))
-            )
+    => Domain.InternalSet (TermLike Concrete) (OrPattern variable)
+    -> MultiOr (Conditional variable (Builtin (TermLike variable)))
 simplifyInternalSet =
     (fmap . fmap) Domain.BuiltinSet
     . simplifyInternal normalizeInternalSet
@@ -123,3 +114,13 @@ normalizeInternalSet
     -> Maybe (InternalSet (TermLike Concrete) (TermLike variable))
 normalizeInternalSet =
     Lens.traverseOf (field @"builtinAcChild") Builtin.renormalize
+
+simplifyInternalList
+    ::  ( Ord variable
+        , Show variable
+        , Unparse variable
+        , SortedVariable variable
+        )
+    => Domain.InternalList (OrPattern variable)
+    -> MultiOr (Conditional variable (Builtin (TermLike variable)))
+simplifyInternalList = (fmap . fmap) Domain.BuiltinList . simplifyInternal pure
