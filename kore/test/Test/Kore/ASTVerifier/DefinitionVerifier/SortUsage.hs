@@ -12,6 +12,10 @@ import           Data.Maybe
                  ( mapMaybe )
 import qualified Data.Text as Text
 
+import           Kore.ASTVerifier.Error
+                 ( noConstructorWithDomainValuesMessage )
+import qualified Kore.Attribute.Constructor as Attribute.Constructor
+import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.Error
@@ -20,7 +24,7 @@ import           Kore.Internal.TermLike
 import           Kore.Syntax.Definition
                  ( AsSentence (..), Attributes (..), ModuleName (..),
                  ParsedSentence, ParsedSentenceAlias, ParsedSentenceSymbol,
-                 SentenceSort (..) )
+                 Sentence (SentenceSymbolSentence), SentenceSort (..) )
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -68,6 +72,38 @@ test_sortUsage =
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ metaAliasSentenceWithSortParameters
                 (AliasName "#a") stringMetaSort []
+            ]
+        )
+    , expectFailureWithError "No constructors for dv sort"
+        Error
+            { errorContext =
+                [ "module 'MODULE'"
+                , "symbol 'a' declaration (<test data>)"
+                ]
+            , errorError   = noConstructorWithDomainValuesMessage
+                (testId "a")
+                (simpleSort (SortName "mySort"))
+            }
+        ( simpleDefinitionFromSentences (ModuleName "MODULE")
+            [ sortSentenceWithAttributes
+                (SortName "mySort")
+                []
+                [Attribute.HasDomainValues.hasDomainValuesAttribute]
+            , SentenceSymbolSentence $ sentenceSymbolWithAttributes
+                (SymbolName "a")
+                []
+                (simpleSort (SortName "mySort"))
+                [Attribute.Constructor.constructorAttribute]
+            ]
+        )
+    , expectSuccess "Constructors for sort wit5hout domain values"
+        ( simpleDefinitionFromSentences (ModuleName "MODULE")
+            [ simpleSortSentence (SortName "mySort")
+            , SentenceSymbolSentence $ sentenceSymbolWithAttributes
+                (SymbolName "a")
+                []
+                (simpleSort (SortName "mySort"))
+                [Attribute.Constructor.constructorAttribute]
             ]
         )
     , testsForObjectSort
