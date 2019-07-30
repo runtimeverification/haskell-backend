@@ -12,7 +12,7 @@ endmodule
 module INT
     import K []
     import BOOL []
-    hooked-sort Int{} [hook{}("INT.Int")]
+    hooked-sort Int{} [hook{}("INT.Int"), hasDomainValues{}()]
     hooked-symbol bitRangeInt{}(Int{}, Int{}, Int{}) : Int{} [hook{}("INT.bitRange")]
     hooked-symbol geInt{}(Int{}, Int{}) : Bool{} [hook{}("INT.ge")]
     hooked-symbol xorInt{}(Int{}, Int{}) : Int{} [hook{}("INT.xor")]

@@ -14,6 +14,7 @@ import           Data.Default
                  ( Default (..) )
 import qualified Data.Map.Strict as Map
 
+import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.Map as Map
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -21,7 +22,8 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
-                 ( makeCeilPredicate, makeTruePredicate )
+                 ( makeCeilPredicate, makeEqualsPredicate, makeNotPredicate,
+                 makeTruePredicate )
 import           Kore.Step.Axiom.EvaluationStrategy
                  ( builtinEvaluation, simplifierWithFallback )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -235,6 +237,71 @@ test_simplificationIntegration =
                     { term =
                         Mock.function20MapTest
                             (Mock.builtinMap [(Mock.a, Mock.c)]) Mock.a
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+        assertEqualWithExplanation "" expect actual
+    -- Checks that `f(x/x)` evaluates to `x/x and x != 0` when `f` is the identity function and `#ceil(x/y) => y != 0`
+    , testCase "function application introduces definedness condition" $ do
+        let testSortVariable = SortVariableSort $ SortVariable (testId "s")
+            expect =
+                OrPattern.fromPatterns
+                [ Conditional
+                    { term =
+                        Mock.tdivInt
+                            (mkVar Mock.xInt)
+                            (mkVar Mock.xInt)
+                    , predicate =
+                        makeNotPredicate
+                        $ makeEqualsPredicate
+                           (mkVar Mock.xInt)
+                           (Mock.builtinInt 0)
+                    , substitution = mempty
+                    }
+                ]
+        actual <-
+            evaluateWithAxioms
+                ( axiomPatternsToEvaluators
+                    ( Map.fromList
+                        [ (AxiomIdentifier.Application Mock.fIntId
+                          , [ EqualityRule RulePattern
+                                { left = Mock.fInt (mkVar Mock.xInt)
+                                , right = mkVar Mock.xInt
+                                , requires = makeTruePredicate
+                                , ensures = makeTruePredicate
+                                , attributes = def
+                                }
+                            ]
+                          )
+                        , (AxiomIdentifier.Ceil (AxiomIdentifier.Application Mock.tdivIntId)
+                          , [ EqualityRule RulePattern
+                                { left =
+                                    mkCeil testSortVariable
+                                    $ Mock.tdivInt
+                                        (mkVar Mock.xInt)
+                                        (mkVar Mock.yInt)
+                                , right =
+                                    mkCeil testSortVariable
+                                    . mkNot
+                                    $ mkEquals testSortVariable
+                                        (mkVar Mock.yInt)
+                                        (Mock.builtinInt 0)
+                                , requires = makeTruePredicate
+                                , ensures = makeTruePredicate
+                                , attributes = def
+                                }
+                            ]
+
+                          )
+                        ]
+                    )
+                )
+                Conditional
+                    { term =
+                        Mock.fInt
+                        $ Mock.tdivInt
+                            (mkVar Mock.xInt)
+                            (mkVar Mock.xInt)
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
@@ -469,5 +536,8 @@ evaluateWithAxioms axioms =
                 )
             ,   ( AxiomIdentifier.Application Mock.elementMapId
                 , builtinEvaluation Map.evalElement
+                )
+            ,   ( AxiomIdentifier.Application Mock.tdivIntId
+                , builtinEvaluation (Int.builtinFunctions Map.! Int.tdivKey)
                 )
             ]

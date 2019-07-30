@@ -10,6 +10,7 @@ Portability : POSIX
 module Kore.ASTVerifier.SentenceVerifier
     ( verifyUniqueNames
     , verifySentences
+    , noConstructorWithDomainValuesMessage
     ) where
 
 import           Control.Monad
@@ -31,6 +32,9 @@ import qualified Kore.Attribute.Constructor as Attribute
 import qualified Kore.Attribute.Hook as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Sort as Attribute.Sort
+import qualified Kore.Attribute.Sort as Attribute
+                 ( Sort )
+import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
@@ -254,7 +258,7 @@ verifySymbolSentence indexedModule sentence =
         mapM_
             (verifySort findSort variables)
             (sentenceSymbolSorts sentence)
-        verifyConstructorNotInHookedSort
+        verifyConstructorNotInHookedOrDvSort
         verifySort
             findSort
             variables
@@ -264,8 +268,8 @@ verifySymbolSentence indexedModule sentence =
     findSort = findIndexedSort indexedModule
     sortParams = (symbolParams . sentenceSymbolSymbol) sentence
 
-    verifyConstructorNotInHookedSort :: Either (Error VerifyError) ()
-    verifyConstructorNotInHookedSort =
+    verifyConstructorNotInHookedOrDvSort :: Either (Error VerifyError) ()
+    verifyConstructorNotInHookedOrDvSort =
         let
             symbol = symbolConstructor $ sentenceSymbolSymbol sentence
             attributes = sentenceSymbolAttributes sentence
@@ -276,20 +280,34 @@ verifySymbolSentence indexedModule sentence =
             -- attribute record when it becomes available.
             isCtor =
                 Attribute.constructorAttribute  `elem` getAttributes attributes
-            resultSortHook = do
+            sortData = do
                 (sortDescription, _) <-
                     Map.lookup resultSortId
                         $ indexedModuleSortDescriptions indexedModule
-                Attribute.getHook . Attribute.Sort.hook $ sortDescription
-        in
-            koreFailWhen
-                (isCtor && isJust resultSortHook)
-                ( "Cannot define constructor '"
-                ++ getIdForError symbol
-                ++ "' for hooked sort '"
-                ++ getIdForError resultSortId
-                ++ "'."
-                )
+                return
+                    (maybeHook sortDescription, hasDomainValues sortDescription)
+        in case sortData of
+            Nothing -> return ()
+            Just (resultSortHook, resultHasDomainValues) -> do
+                koreFailWhen
+                    (isCtor && isJust resultSortHook)
+                    ( "Cannot define constructor '"
+                    ++ getIdForError symbol
+                    ++ "' for hooked sort '"
+                    ++ getIdForError resultSortId
+                    ++ "'."
+                    )
+                koreFailWhen
+                    (isCtor && resultHasDomainValues)
+                    (noConstructorWithDomainValuesMessage symbol resultSort)
+
+maybeHook :: Attribute.Sort -> Maybe Text
+maybeHook = Attribute.getHook . Attribute.Sort.hook
+
+hasDomainValues :: Attribute.Sort -> Bool
+hasDomainValues =
+    Attribute.HasDomainValues.getHasDomainValues
+    . Attribute.Sort.hasDomainValues
 
 verifyAliasSentence
     :: Builtin.Verifiers
