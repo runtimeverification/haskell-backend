@@ -70,12 +70,11 @@ test_orSmtSimplification =
 filterOr
     :: [Pattern Variable]
     -> IO [Pattern Variable]
-filterOr patterns =
-    MultiOr.extractPatterns
-    <$> SMT.runSMT SMT.defaultConfig emptyLogger
-        ( evalSimplifier mockEnv
-        $ filterMultiOrWithTermCeil
-        $ MultiOr.make patterns
-        )
+filterOr =
+    fmap MultiOr.extractPatterns
+    . SMT.runSMT SMT.defaultConfig emptyLogger
+    . evalSimplifier mockEnv
+    . filterMultiOrWithTermCeil
+    . MultiOr.make
   where
     mockEnv = Mock.env
