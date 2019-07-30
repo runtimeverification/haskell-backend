@@ -327,13 +327,11 @@ concatNormalized normalized1 normalized2 = do
     let concrete' = onBoth Map.union Domain.concreteElements
         abstract' = onBoth (++) Domain.elementsWithVariables
         opaque'   = Data.List.sort $ onBoth (++) Domain.opaque
-        normalized' =
-            Domain.wrapAc Domain.NormalizedAc
-                { elementsWithVariables = abstract'
-                , concreteElements = concrete'
-                , opaque = opaque'
-                }
-    (normalizeAbstractElements >=> flattenOpaque) normalized'
+    renormalize $ Domain.wrapAc Domain.NormalizedAc
+        { elementsWithVariables = abstract'
+        , concreteElements = concrete'
+        , opaque = opaque'
+        }
     where
     onBoth
         ::  (a -> a -> r)
@@ -348,11 +346,22 @@ concatNormalized normalized1 normalized2 = do
     disjointConcreteElements =
         null $ onBoth Map.intersection Domain.concreteElements
 
+{- | Take a (possibly de-normalized) internal representation to its normal form.
+
+@renormalize@ returns 'Nothing' if the normal form is @\\bottom@.
+
+First, abstract elements are converted to concrete elements wherever
+possible. Second, any opaque terms which are actually builtins are combined with
+the top-level term, so that the normal form never has children which are
+internal representations themselves; this "flattening" step also recurses to
+@renormalize@ the previously-opaque children.
+
+ -}
 renormalize
     :: (TermWrapper normalized, Ord variable)
     => normalized (TermLike Concrete) (TermLike variable)
     -> Maybe (normalized (TermLike Concrete) (TermLike variable))
-renormalize = concatNormalized (Domain.wrapAc Domain.emptyNormalizedAc)
+renormalize = normalizeAbstractElements >=> flattenOpaque
 
 -- | Insert the @key@-@value@ pair if it is missing from the 'Map'.
 insertMissing
