@@ -46,6 +46,8 @@ import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.SortVerifier
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
+import qualified Kore.Attribute.Sort as Attribute.Sort
+import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Attribute.Synthetic
 import qualified Kore.Builtin as Builtin
@@ -697,9 +699,11 @@ verifyDomainValue domain = do
     let DomainValue { domainValueSort = patternSort } = domain
     Context { builtinDomainValueVerifiers, indexedModule } <- Reader.ask
     verifyPatternSort patternSort
-    let lookupSortDeclaration' sortId = do
+    let
+        lookupSortDeclaration' sortId = do
             (_, sortDecl) <- resolveSort indexedModule sortId
             return sortDecl
+    verifySortHasDomainValues patternSort
     domain' <- sequence domain
     verified <-
         PatternVerifier
@@ -713,6 +717,24 @@ verifyDomainValue domain = do
     Monad.unless (null freeVariables)
         (koreFail "Domain value must not contain free variables.")
     return (attrs :< verified)
+
+verifySortHasDomainValues :: Sort -> PatternVerifier ()
+verifySortHasDomainValues patternSort = do
+    Context { indexedModule } <- Reader.ask
+    (sortAttrs, _) <- resolveSort indexedModule dvSortId
+    koreFailWithLocationsWhen
+        (not
+            (Attribute.HasDomainValues.getHasDomainValues
+                (Attribute.Sort.hasDomainValues sortAttrs)
+            )
+        )
+        [patternSort]
+        sortNeedsDomainValueAttributeMessage
+  where
+    dvSortId = case patternSort of
+        SortVariableSort _ ->
+            error "Unimplemented: domain values with variable sorts"
+        SortActualSort SortActual {sortActualName} -> sortActualName
 
 verifyStringLiteral
     :: valid ~ Attribute.Pattern Variable
