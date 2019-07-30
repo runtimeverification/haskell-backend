@@ -75,7 +75,7 @@ simplifyInternal
     -> t (OrPattern variable)
     -> MultiOr (Conditional variable (t (TermLike variable)))
 simplifyInternal normalizer tOrPattern = do
-    conditional <- Lens.ala Compose traverse tOrPattern
+    conditional <- getCompose $ traverse Compose tOrPattern
     let bottom = conditional `Conditional.andPredicate` makeFalsePredicate
         normalized = fromMaybe bottom $ traverse normalizer conditional
     return normalized
