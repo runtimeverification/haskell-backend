@@ -17,10 +17,10 @@ import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike as TermLike
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Simplification.Data
+import qualified Kore.Step.Simplification.OrPattern as OrPattern
+                 ( filterMultiOrWithTermCeil )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyAndRemoveTopExists )
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-                 ( filterMultiOr )
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser
@@ -50,7 +50,7 @@ checkImplicationIsTop lhs rhs =
                     , substitution = mempty
                     }
             orResult <- Pattern.simplifyAndRemoveTopExists result
-            orFinalResult <- SMT.Evaluator.filterMultiOr orResult
+            orFinalResult <- OrPattern.filterMultiOrWithTermCeil orResult
             return (isBottom orFinalResult)
         _ -> (error . show . Pretty.vsep)
              [ "Not implemented error:"
