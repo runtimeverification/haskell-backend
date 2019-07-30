@@ -783,14 +783,15 @@ instance
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
-instance EqualWithExplanation StringLiteral
-  where
+
+instance EqualWithExplanation (StringLiteral child) where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
-instance EqualWithExplanation CharLiteral
-  where
+
+instance EqualWithExplanation (CharLiteral child) where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
+
 instance
     (EqualWithExplanation child, Eq child, Show child)
     => EqualWithExplanation (Top Sort child)
@@ -813,6 +814,15 @@ instance
     ) => EqualWithExplanation (SetVariable variable)
   where
     compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance StructEqualWithExplanation (Inhabitant child) where
+    structFieldsWithNames expected@(Inhabitant _) actual =
+        [ Function.on (EqWrap "inhSort = ") inhSort expected actual ]
+    structConstructorName _ = "Inhabitant"
+
+instance EqualWithExplanation (Inhabitant child) where
+    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance StructEqualWithExplanation Variable where

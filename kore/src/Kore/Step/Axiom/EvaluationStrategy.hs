@@ -25,6 +25,8 @@ import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Symbol as Attribute
+import           Kore.Internal.Conditional
+                 ( andCondition )
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -36,6 +38,8 @@ import           Kore.Internal.TermLike
 import qualified Kore.Proof.Value as Value
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification )
+import           Kore.Step.Remainder
+                 ( ceilChildOfApplicationOrTop )
 import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
@@ -318,13 +322,17 @@ evaluateWithDefinitionAxioms
     Monad.guard (any Result.hasResults results)
     mapM_ rejectNarrowing results
 
+    ceilChild <- ceilChildOfApplicationOrTop patt
     let
         result =
             Result.mergeResults results
             & Result.mapConfigs
                 keepResultUnchanged
-                markRemainderEvaluated
+                ( markRemainderEvaluated
+                . introduceDefinedness ceilChild
+                )
         keepResultUnchanged = id
+        introduceDefinedness = flip andCondition
         markRemainderEvaluated = fmap mkEvaluated
 
     simplifiedResults <-

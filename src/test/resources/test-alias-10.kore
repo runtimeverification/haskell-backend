@@ -1,8 +1,9 @@
 []
 module TEST-ALIAS-10
+  sort Nat{} [hasDomainValues{}()]
 
-  alias f{s}() : s
-  where f{s}() := \dv{s}("f") []
+  alias f{s}() : Nat{}
+  where f{s}() := \dv{Nat{}}("f") []
 
 endmodule
 []

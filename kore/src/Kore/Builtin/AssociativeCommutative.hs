@@ -28,6 +28,7 @@ module Kore.Builtin.AssociativeCommutative
     , returnAc
     , returnConcreteAc
     , TermWrapper (..)
+    , renormalize
     , TermNormalizedAc
     , unifyEqualsNormalized
     , UnitSymbol(..)
@@ -113,6 +114,7 @@ class
         -> Sort
         -> normalized key child
         -> Domain.Builtin key child
+
     {- |Transforms a @TermLike@ representation into a @NormalizedOrBottom@.
 
     The term may become bottom if we had conflicts between elements that were
@@ -129,17 +131,15 @@ class
         => TermLike variable
         -> NormalizedOrBottom normalized variable
 
-    concatNormalized
-        :: Ord variable
-        => normalized (TermLike Concrete) (TermLike variable)
-        -> normalized (TermLike Concrete) (TermLike variable)
-        -> Maybe (normalized (TermLike Concrete) (TermLike variable))
+    {- | Pattern match on a 'TermLike' to return a 'normalized'.
 
-    normalize
-        :: Ord variable
-        => normalized (TermLike Concrete) (TermLike variable)
+    @matchBuiltin@ returns 'Nothing' if the 'TermLike' does not wrap a
+    'normalized' value.
+
+     -}
+    matchBuiltin
+        :: TermLike variable
         -> Maybe (normalized (TermLike Concrete) (TermLike variable))
-    normalize = concatNormalized (Domain.wrapAc Domain.emptyNormalizedAc)
 
 instance TermWrapper Domain.NormalizedMap where
     {- | Render a 'NormalizedMap' as a Domain.Builtin.
@@ -155,37 +155,9 @@ instance TermWrapper Domain.NormalizedMap where
             , builtinAcChild
             }
 
-    concatNormalized
-        :: forall variable
-        .  Ord variable
-        => Domain.NormalizedMap (TermLike Concrete) (TermLike variable)
-        -> Domain.NormalizedMap (TermLike Concrete) (TermLike variable)
-        -> Maybe (Domain.NormalizedMap (TermLike Concrete) (TermLike variable))
-    concatNormalized normalized1 normalized2 = do
-        Monad.guard disjointConcreteElements
-        let concrete' = onBoth Map.union Domain.concreteElements
-            abstract' = onBoth (++) Domain.elementsWithVariables
-            opaque'   = Data.List.sort $ onBoth (++) Domain.opaque
-            normalized' =
-                Domain.wrapAc Domain.NormalizedAc
-                    { elementsWithVariables = abstract'
-                    , concreteElements = concrete'
-                    , opaque = opaque'
-                    }
-        (normalizeAbstractElements >=> flattenOpaqueMap) normalized'
-      where
-        onBoth
-            ::  (a -> a -> r)
-            ->  (   Domain.NormalizedAc
-                        Domain.NormalizedMap
-                        (TermLike Concrete)
-                        (TermLike variable)
-                ->  a
-                )
-            -> r
-        onBoth f g = Function.on f (g . Domain.unwrapAc) normalized1 normalized2
-        disjointConcreteElements =
-            null $ onBoth Map.intersection Domain.concreteElements
+    matchBuiltin (BuiltinMap_ internalMap) =
+        Just (Domain.builtinAcChild internalMap)
+    matchBuiltin _ = Nothing
 
     {- |Transforms a @TermLike@ representation into a @NormalizedOrBottom@.
 
@@ -199,7 +171,7 @@ instance TermWrapper Domain.NormalizedMap where
     @
     -}
     toNormalized (BuiltinMap_ Domain.InternalAc { builtinAcChild }) =
-        maybe Bottom Normalized (normalize builtinAcChild)
+        maybe Bottom Normalized (renormalize builtinAcChild)
     toNormalized (App_ symbol args)
       | Map.isSymbolUnit symbol =
         case args of
@@ -247,37 +219,9 @@ instance TermWrapper Domain.NormalizedSet where
             , builtinAcChild
             }
 
-    concatNormalized
-        :: forall variable
-        .  Ord variable
-        => Domain.NormalizedSet (TermLike Concrete) (TermLike variable)
-        -> Domain.NormalizedSet (TermLike Concrete) (TermLike variable)
-        -> Maybe (Domain.NormalizedSet (TermLike Concrete) (TermLike variable))
-    concatNormalized normalized1 normalized2 = do
-        Monad.guard disjointConcreteElements
-        let concrete' = onBoth Map.union Domain.concreteElements
-            abstract' = onBoth (++) Domain.elementsWithVariables
-            opaque'   = Data.List.sort $ onBoth (++) Domain.opaque
-            normalized' =
-                Domain.wrapAc Domain.NormalizedAc
-                    { elementsWithVariables = abstract'
-                    , concreteElements = concrete'
-                    , opaque = opaque'
-                    }
-        (normalizeAbstractElements >=> flattenOpaqueSet) normalized'
-      where
-        onBoth
-            ::  (a -> a -> r)
-            ->  (   Domain.NormalizedAc
-                        Domain.NormalizedSet
-                        (TermLike Concrete)
-                        (TermLike variable)
-                ->  a
-                )
-            -> r
-        onBoth f g = Function.on f (g . Domain.unwrapAc) normalized1 normalized2
-        disjointConcreteElements =
-            null $ onBoth Map.intersection Domain.concreteElements
+    matchBuiltin (BuiltinSet_ internalSet) =
+        Just (Domain.builtinAcChild internalSet)
+    matchBuiltin _ = Nothing
 
     {- |Transforms a @TermLike@ representation into a @NormalizedSetOrBottom@.
 
@@ -291,7 +235,7 @@ instance TermWrapper Domain.NormalizedSet where
     @
     -}
     toNormalized (BuiltinSet_ Domain.InternalAc { builtinAcChild }) =
-        maybe Bottom Normalized (normalize builtinAcChild)
+        maybe Bottom Normalized (renormalize builtinAcChild)
     toNormalized (App_ symbol args)
       | Set.isSymbolUnit symbol =
         case args of
@@ -372,6 +316,53 @@ instance
     Normalized normalized1 <> Normalized normalized2 =
         maybe Bottom Normalized $ concatNormalized normalized1 normalized2
 
+concatNormalized
+    :: forall normalized variable
+    .  (TermWrapper normalized, Ord variable)
+    => normalized (TermLike Concrete) (TermLike variable)
+    -> normalized (TermLike Concrete) (TermLike variable)
+    -> Maybe (normalized (TermLike Concrete) (TermLike variable))
+concatNormalized normalized1 normalized2 = do
+    Monad.guard disjointConcreteElements
+    let concrete' = onBoth Map.union Domain.concreteElements
+        abstract' = onBoth (++) Domain.elementsWithVariables
+        opaque'   = Data.List.sort $ onBoth (++) Domain.opaque
+    renormalize $ Domain.wrapAc Domain.NormalizedAc
+        { elementsWithVariables = abstract'
+        , concreteElements = concrete'
+        , opaque = opaque'
+        }
+    where
+    onBoth
+        ::  (a -> a -> r)
+        ->  (   Domain.NormalizedAc
+                    normalized
+                    (TermLike Concrete)
+                    (TermLike variable)
+            ->  a
+            )
+        -> r
+    onBoth f g = Function.on f (g . Domain.unwrapAc) normalized1 normalized2
+    disjointConcreteElements =
+        null $ onBoth Map.intersection Domain.concreteElements
+
+{- | Take a (possibly de-normalized) internal representation to its normal form.
+
+@renormalize@ returns 'Nothing' if the normal form is @\\bottom@.
+
+First, abstract elements are converted to concrete elements wherever
+possible. Second, any opaque terms which are actually builtins are combined with
+the top-level term, so that the normal form never has children which are
+internal representations themselves; this "flattening" step also recurses to
+@renormalize@ the previously-opaque children.
+
+ -}
+renormalize
+    :: (TermWrapper normalized, Ord variable)
+    => normalized (TermLike Concrete) (TermLike variable)
+    -> Maybe (normalized (TermLike Concrete) (TermLike variable))
+renormalize = normalizeAbstractElements >=> flattenOpaque
+
 -- | Insert the @key@-@value@ pair if it is missing from the 'Map'.
 insertMissing
     :: Ord key
@@ -411,7 +402,7 @@ updateAbstractElements elements =
 
 {- | Make any abstract elements into concrete elements if possible.
 
-Return 'Nothing' if there are any duplicate keys.
+Return 'Nothing' if there are any duplicate (concrete or abstract) keys.
 
  -}
 normalizeAbstractElements
@@ -445,14 +436,16 @@ extractConcreteElement element =
   where
     (key, value) = Domain.unwrapElement element
 
+{- | Move any @normalized@ children to the top-level by concatenation.
+
+@flattenOpaque@ recursively flattens the children of children, and so on.
+
+ -}
 flattenOpaque
     :: (TermWrapper normalized, Ord variable)
-    =>  (   TermLike variable
-        ->  Maybe (normalized (TermLike Concrete) (TermLike variable))
-        )
-    -> normalized (TermLike Concrete) (TermLike variable)
+    => normalized (TermLike Concrete) (TermLike variable)
     -> Maybe (normalized (TermLike Concrete) (TermLike variable))
-flattenOpaque matchBuiltin (Domain.unwrapAc -> normalized) = do
+flattenOpaque (Domain.unwrapAc -> normalized) = do
     let opaque = Domain.opaque normalized
         (builtin, opaque') = partitionEithers (extractBuiltin <$> opaque)
         transparent = Domain.wrapAc normalized { Domain.opaque = opaque' }
@@ -460,34 +453,6 @@ flattenOpaque matchBuiltin (Domain.unwrapAc -> normalized) = do
   where
     extractBuiltin termLike =
         maybe (Right termLike) Left (matchBuiltin termLike)
-
-flattenOpaqueMap
-    :: Ord variable
-    => Domain.NormalizedMap (TermLike Concrete) (TermLike variable)
-    -> Maybe (Domain.NormalizedMap (TermLike Concrete) (TermLike variable))
-flattenOpaqueMap = flattenOpaque matchBuiltinMap
-
-flattenOpaqueSet
-    :: Ord variable
-    => Domain.NormalizedSet (TermLike Concrete) (TermLike variable)
-    -> Maybe (Domain.NormalizedSet (TermLike Concrete) (TermLike variable))
-flattenOpaqueSet = flattenOpaque matchBuiltinSet
-
-matchBuiltinMap
-    :: TermLike variable
-    -> Maybe (Domain.NormalizedMap (TermLike Concrete) (TermLike variable))
-matchBuiltinMap =
-    \case
-        (BuiltinMap_ internalMap) -> Just (Domain.builtinAcChild internalMap)
-        _                         -> Nothing
-
-matchBuiltinSet
-    :: TermLike variable
-    -> Maybe (Domain.NormalizedSet (TermLike Concrete) (TermLike variable))
-matchBuiltinSet =
-    \case
-        (BuiltinSet_ internalSet) -> Just (Domain.builtinAcChild internalSet)
-        _                         -> Nothing
 
 {- | The monoid defined by the `concat` and `unit` operations.
 -}

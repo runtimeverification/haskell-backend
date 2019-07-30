@@ -1,7 +1,7 @@
 []
 module TEST
 
-sort Int{} []
+sort Int{} [hasDomainValues{}()]
 sort String{} []
 sort Exp{} []
 

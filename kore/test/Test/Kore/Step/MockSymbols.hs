@@ -117,6 +117,8 @@ chId :: Id
 chId = testId "ch"
 fSetId :: Id
 fSetId = testId "fSet"
+fIntId :: Id
+fIntId = testId "fInt"
 fTestIntId :: Id
 fTestIntId = testId "fTestInt"
 plain00Id :: Id
@@ -189,6 +191,8 @@ lessIntId :: Id
 lessIntId = testId "lessIntId"
 greaterEqIntId :: Id
 greaterEqIntId = testId "greaterEqIntId"
+tdivIntId :: Id
+tdivIntId = testId "tdivIntId"
 concatListId :: Id
 concatListId = testId "concatList"
 elementListId :: Id
@@ -285,6 +289,9 @@ chSymbol = symbol chId [] testSort & function
 
 fSetSymbol :: Symbol
 fSetSymbol = symbol fSetId [setSort] setSort & function
+
+fIntSymbol :: Symbol
+fIntSymbol = symbol fIntId [intSort] intSort & function
 
 fTestIntSymbol :: Symbol
 fTestIntSymbol = symbol fTestIntId [testSort] intSort & function
@@ -452,6 +459,11 @@ greaterEqIntSymbol :: Symbol
 greaterEqIntSymbol =
     symbol greaterEqIntId [intSort, intSort] boolSort
     & functional & hook "INT.ge" & smthook ">="
+
+tdivIntSymbol :: Symbol
+tdivIntSymbol =
+    symbol tdivIntId [intSort, intSort] intSort
+    & function & hook "INT.tdiv"
 
 concatListSymbol :: Symbol
 concatListSymbol =
@@ -624,6 +636,13 @@ fTestInt
     => TermLike variable
     -> TermLike variable
 fTestInt arg = Internal.mkApplySymbol fTestIntSymbol [arg]
+
+fInt
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+fInt arg = Internal.mkApplySymbol fIntSymbol [arg]
 
 plain00 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
 plain00 = Internal.mkApplySymbol plain00Symbol []
@@ -942,6 +961,14 @@ greaterEqInt
     -> TermLike variable
 greaterEqInt i1 i2 = Internal.mkApplySymbol greaterEqIntSymbol [i1, i2]
 
+tdivInt
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+tdivInt i1 i2 = Internal.mkApplySymbol tdivIntSymbol [i1, i2]
+
 concatList
     :: (Ord variable, SortedVariable variable, Unparse variable)
     => GHC.HasCallStack
@@ -997,6 +1024,7 @@ symbols =
     , cgSort0Symbol
     , chSymbol
     , fSetSymbol
+    , fIntSymbol
     , fTestIntSymbol
     , plain00Symbol
     , plain00Sort0Symbol
@@ -1047,6 +1075,7 @@ symbols =
     , unitSetSymbol
     , lessIntSymbol
     , greaterEqIntSymbol
+    , tdivIntSymbol
     , sigmaSymbol
     , anywhereSymbol
     ]
