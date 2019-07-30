@@ -28,6 +28,7 @@ module Kore.Builtin.AssociativeCommutative
     , returnAc
     , returnConcreteAc
     , TermWrapper (..)
+    , renormalize
     , TermNormalizedAc
     , unifyEqualsNormalized
     , UnitSymbol(..)
@@ -130,47 +131,15 @@ class
         => TermLike variable
         -> NormalizedOrBottom normalized variable
 
+    {- | Pattern match on a 'TermLike' to return a 'normalized'.
+
+    @matchBuiltin@ returns 'Nothing' if the 'TermLike' does not wrap a
+    'normalized' value.
+
+     -}
     matchBuiltin
         :: TermLike variable
         -> Maybe (normalized (TermLike Concrete) (TermLike variable))
-
-    concatNormalized
-        :: forall variable
-        .  Ord variable
-        => normalized (TermLike Concrete) (TermLike variable)
-        -> normalized (TermLike Concrete) (TermLike variable)
-        -> Maybe (normalized (TermLike Concrete) (TermLike variable))
-    concatNormalized normalized1 normalized2 = do
-        Monad.guard disjointConcreteElements
-        let concrete' = onBoth Map.union Domain.concreteElements
-            abstract' = onBoth (++) Domain.elementsWithVariables
-            opaque'   = Data.List.sort $ onBoth (++) Domain.opaque
-            normalized' =
-                Domain.wrapAc Domain.NormalizedAc
-                    { elementsWithVariables = abstract'
-                    , concreteElements = concrete'
-                    , opaque = opaque'
-                    }
-        (normalizeAbstractElements >=> flattenOpaque) normalized'
-      where
-        onBoth
-            ::  (a -> a -> r)
-            ->  (   Domain.NormalizedAc
-                        normalized
-                        (TermLike Concrete)
-                        (TermLike variable)
-                ->  a
-                )
-            -> r
-        onBoth f g = Function.on f (g . Domain.unwrapAc) normalized1 normalized2
-        disjointConcreteElements =
-            null $ onBoth Map.intersection Domain.concreteElements
-
-    renormalize
-        :: Ord variable
-        => normalized (TermLike Concrete) (TermLike variable)
-        -> Maybe (normalized (TermLike Concrete) (TermLike variable))
-    renormalize = concatNormalized (Domain.wrapAc Domain.emptyNormalizedAc)
 
 instance TermWrapper Domain.NormalizedMap where
     {- | Render a 'NormalizedMap' as a Domain.Builtin.
@@ -346,6 +315,44 @@ instance
     _ <> Bottom = Bottom
     Normalized normalized1 <> Normalized normalized2 =
         maybe Bottom Normalized $ concatNormalized normalized1 normalized2
+
+concatNormalized
+    :: forall normalized variable
+    .  (TermWrapper normalized, Ord variable)
+    => normalized (TermLike Concrete) (TermLike variable)
+    -> normalized (TermLike Concrete) (TermLike variable)
+    -> Maybe (normalized (TermLike Concrete) (TermLike variable))
+concatNormalized normalized1 normalized2 = do
+    Monad.guard disjointConcreteElements
+    let concrete' = onBoth Map.union Domain.concreteElements
+        abstract' = onBoth (++) Domain.elementsWithVariables
+        opaque'   = Data.List.sort $ onBoth (++) Domain.opaque
+        normalized' =
+            Domain.wrapAc Domain.NormalizedAc
+                { elementsWithVariables = abstract'
+                , concreteElements = concrete'
+                , opaque = opaque'
+                }
+    (normalizeAbstractElements >=> flattenOpaque) normalized'
+    where
+    onBoth
+        ::  (a -> a -> r)
+        ->  (   Domain.NormalizedAc
+                    normalized
+                    (TermLike Concrete)
+                    (TermLike variable)
+            ->  a
+            )
+        -> r
+    onBoth f g = Function.on f (g . Domain.unwrapAc) normalized1 normalized2
+    disjointConcreteElements =
+        null $ onBoth Map.intersection Domain.concreteElements
+
+renormalize
+    :: (TermWrapper normalized, Ord variable)
+    => normalized (TermLike Concrete) (TermLike variable)
+    -> Maybe (normalized (TermLike Concrete) (TermLike variable))
+renormalize = concatNormalized (Domain.wrapAc Domain.emptyNormalizedAc)
 
 -- | Insert the @key@-@value@ pair if it is missing from the 'Map'.
 insertMissing
