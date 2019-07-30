@@ -119,7 +119,7 @@ instance
             CharLiteralF _ -> AstLocationUnknown
             TopF Top { topSort } -> locationFromAst topSort
             VariableF variable -> locationFromAst variable
-            InhabitantF s -> locationFromAst s
+            InhabitantF Inhabitant { inhSort } -> locationFromAst inhSort
             SetVariableF (SetVariable variable) ->
                 locationFromAst variable
 
