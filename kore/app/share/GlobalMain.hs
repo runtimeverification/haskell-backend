@@ -4,6 +4,7 @@ module GlobalMain
     ( MainOptions(..)
     , GlobalOptions(..)
     , KoreProveOptions(..)
+    , Main (..)
     , parseKoreProveOptions
     , mainGlobal
     , defaultMainGlobal
@@ -17,10 +18,16 @@ module GlobalMain
     , mainParse
     ) where
 
+import           Colog
+                 ( (<&) )
 import           Control.Exception
                  ( evaluate )
 import           Control.Monad
                  ( when )
+import           Control.Monad.Trans.Class
+                 ( lift )
+import           Control.Monad.Trans.Reader
+                 ( ReaderT, ask )
 import           Data.Function
                  ( (&) )
 import           Data.List
@@ -32,7 +39,7 @@ import           Data.Semigroup
                  ( (<>) )
 import qualified Data.Set as Set
 import           Data.Text
-                 ( Text )
+                 ( Text, pack )
 import           Data.Time.Format
                  ( defaultTimeLocale, formatTime )
 import           Data.Time.LocalTime
@@ -41,6 +48,8 @@ import           Data.Version
                  ( showVersion )
 import           Development.GitRev
                  ( gitBranch, gitCommitDate, gitHash )
+import           GHC.Stack
+                 ( emptyCallStack )
 import           Options.Applicative
                  ( InfoMod, Parser, argument, disabled, execParser, flag,
                  flag', help, helper, hidden, info, internal, long, metavar,
@@ -48,8 +57,6 @@ import           Options.Applicative
                  (<|>) )
 import           System.Clock
                  ( Clock (Monotonic), diffTimeSpec, getTime )
-import           System.IO
-                 ( hPutStrLn, stderr )
 
 import           Kore.ASTVerifier.DefinitionVerifier
                  ( AttributesVerification (DoNotVerifyAttributes),
@@ -64,6 +71,7 @@ import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
                  ( KoreIndexedModule, VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import           Kore.Logger.Output as Logger
 import           Kore.Parser
                  ( ParsedPattern, parseKoreDefinition )
 import           Kore.Step.Strategy
@@ -74,6 +82,11 @@ import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 import qualified Paths_kore as MetaData
                  ( version )
+
+newtype Main a =
+    Main
+    { unMain :: ReaderT (LogAction IO Logger.LogMessage) IO a
+    } deriving (Functor, Applicative, Monad)
 
 data KoreProveOptions =
     KoreProveOptions
@@ -249,26 +262,36 @@ enableDisableFlag name enabledVal disabledVal defaultVal helpSuffix =
 
 
 -- | Time a pure computation and print results.
-clockSomething :: String -> a -> IO a
+clockSomething :: String -> a -> Main a
 clockSomething description something =
     clockSomethingIO description (evaluate something)
 
 
 -- | Time an IO computation and print results.
-clockSomethingIO :: String -> IO a -> IO a
-clockSomethingIO description something = do
-    start <- getTime Monotonic
-    x     <- something
-    end   <- getTime Monotonic
-    hPutStrLn stderr $ description ++" "++ show (diffTimeSpec end start)
+clockSomethingIO :: String -> IO a -> Main a
+clockSomethingIO description something = Main $ do
+    start  <- lift $ getTime Monotonic
+    x      <- lift   something
+    end    <- lift $ getTime Monotonic
+    logger <- ask
+    lift $ logger <& logMessage end start
     return x
+  where
+    logMessage end start =
+        Logger.LogMessage
+            { message =
+                pack $ description ++" "++ show (diffTimeSpec end start)
+            , severity = Logger.Info
+            , scope = [Scope "TimingInfo"]
+            , callstack = emptyCallStack
+            }
 
 -- | Verify that a Kore pattern is well-formed and print timing information.
 mainPatternVerify
     :: VerifiedModule Attribute.Symbol axiomAttrs
     -- ^ Module containing definitions visible in the pattern
     -> ParsedPattern -- ^ Parsed pattern to check well-formedness
-    -> IO Verified.Pattern
+    -> Main Verified.Pattern
 mainPatternVerify verifiedModule patt = do
     verifyResult <-
         clockSomething "Verifying the pattern"
@@ -319,7 +342,7 @@ verifyDefinitionWithBase
     -- ^ whether to check (True) or ignore attributes during verification
     -> ParsedDefinition
     -- ^ Parsed definition to check well-formedness
-    -> IO
+    -> Main
         ( Map.Map ModuleName
             (VerifiedModule Attribute.Symbol Attribute.Axiom)
         , Map.Map Text AstLocation
@@ -347,13 +370,13 @@ verifyDefinitionWithBase maybeBaseModule willChkAttr definition =
 Also prints timing information; see 'mainParse'.
 
  -}
-parseDefinition :: FilePath -> IO ParsedDefinition
+parseDefinition :: FilePath -> Main ParsedDefinition
 parseDefinition = mainParse parseKoreDefinition
 
 mainParse
     :: (FilePath -> String -> Either String a)
     -> String
-    -> IO a
+    -> Main a
 mainParse parser fileName = do
     contents <-
         clockSomethingIO "Reading the input file" (readFile fileName)

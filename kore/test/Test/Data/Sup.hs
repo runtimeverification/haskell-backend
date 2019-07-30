@@ -18,7 +18,7 @@ genSupInteger :: Gen (Sup Integer)
 genSupInteger = genSup genSmallInteger
 
 sups :: [Sup Integer]
-sups = Sup : map Element [(-3)..(3)]
+sups = Sup : map Element [(-3)..3]
 
 implies :: Monad m => Bool -> Bool -> PropertyT m ()
 implies lhs rhs = when lhs (Hedgehog.assert rhs)
@@ -84,7 +84,7 @@ hprop_negativeEq =
   where
     negative x y = do
         annotateShow (x, y)
-        (x /= y) === (not $ x == y)
+        (x /= y) === not (x == y)
 
 hprop_associativeSemigroup :: Property
 hprop_associativeSemigroup = property $ do
@@ -112,9 +112,9 @@ hprop_identityFunctor = property $ do
 hprop_compositionFunctor :: Property
 hprop_compositionFunctor = property $ do
     x <- forAll genSupInteger
-    f <- (\y i -> i + y) <$> forAll genSmallInteger
-    g <- (\y i -> i * y) <$> forAll genSmallInteger
-    (fmap (f . g) x) === ((fmap f . fmap g) x)
+    f <- (+) <$> forAll genSmallInteger
+    g <- (*) <$> forAll genSmallInteger
+    fmap (f . g) x === (fmap f . fmap g) x
 
 hprop_identityApplicative :: Property
 hprop_identityApplicative = property $ do
@@ -123,19 +123,19 @@ hprop_identityApplicative = property $ do
 
 hprop_compositionApplicative :: Property
 hprop_compositionApplicative = property $ do
-    u <- fmap (\i j -> i + j) <$> forAll genSupInteger
-    v <- fmap (\i j -> i * j) <$> forAll genSupInteger
+    u <- fmap (+) <$> forAll genSupInteger
+    v <- fmap (*) <$> forAll genSupInteger
     w <- forAll genSupInteger
     (pure (.) <*> u <*> v <*> w) === (u <*> (v <*> w))
 
 hprop_homomorphismApplicative :: Property
 hprop_homomorphismApplicative = property $ do
     x <- forAll genSmallInteger
-    f <- (\y i -> i + y) <$> forAll genSmallInteger
+    f <- (+) <$> forAll genSmallInteger
     (pure f <*> pure x :: Sup Integer) === pure (f x)
 
 hprop_interchangeApplicative :: Property
 hprop_interchangeApplicative = property $ do
-    u <- fmap (\i j -> i + j) <$> forAll genSupInteger
+    u <- fmap (+) <$> forAll genSupInteger
     y <- forAll genSmallInteger
     (u <*> pure y) === (pure ($ y) <*> u)

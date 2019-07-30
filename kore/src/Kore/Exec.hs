@@ -44,10 +44,8 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import           Kore.IndexedModule.Resolvers
                  ( resolveSymbol )
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
 import           Kore.Internal.Pattern
-                 ( Conditional (..), Pattern )
+                 ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
@@ -57,39 +55,34 @@ import           Kore.OnePath.Verification
                  ( Axiom (Axiom), Claim, defaultStrategy, verify )
 import qualified Kore.OnePath.Verification as Claim
 import           Kore.Predicate.Predicate
-                 ( pattern PredicateTrue, makeMultipleOrPredicate,
-                 unwrapPredicate )
+                 ( makeMultipleOrPredicate, unwrapPredicate )
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
 import           Kore.Step
 import           Kore.Step.Axiom.EvaluationStrategy
                  ( builtinEvaluation, simplifierWithFallback )
-import           Kore.Step.Axiom.Identifier
-                 ( AxiomIdentifier )
 import           Kore.Step.Axiom.Registry
                  ( axiomPatternsToEvaluators, extractEqualityAxioms )
 import           Kore.Step.Rule
-                 ( EqualityRule (EqualityRule), ImplicationRule (..),
-                 OnePathRule (..), RewriteRule (RewriteRule),
-                 RulePattern (RulePattern), extractImplicationClaims,
-                 extractOnePathClaims, extractRewriteAxioms, getRewriteRule )
+                 ( EqualityRule, ImplicationRule (..), OnePathRule (..),
+                 RewriteRule (RewriteRule), RulePattern (RulePattern),
+                 extractImplicationClaims, extractOnePathClaims,
+                 extractRewriteAxioms, getRewriteRule )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Search
                  ( searchGraph )
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
-                 ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Simplification.Data
-                 ( PredicateSimplifier (..), Simplifier, TermLikeSimplifier,
-                 evalSimplifier )
+                 ( BuiltinAndAxiomSimplifierMap, PredicateSimplifier (..),
+                 Simplifier, TermLikeSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Predicate as Predicate
+import qualified Kore.Step.Simplification.Rule as Rule
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import qualified Kore.Step.Strategy as Strategy
-import qualified Kore.Unification.Substitution as Substitution
 import           SMT
                  ( SMT )
 
@@ -325,7 +318,7 @@ boundedModelCheck limit definitionModule specModule searchOrder =
 
 assertSingleClaim :: Monad m => [claim] -> m ()
 assertSingleClaim claims =
-    Monad.when ((length claims) > 1) . error
+    Monad.when (length claims > 1) . error
         $ "More than one claim is found in the module."
 
 assertSomeClaims :: Monad m => [claim] -> m ()
@@ -339,10 +332,10 @@ makeClaim :: Claim claim => (Attribute.Axiom, claim) -> claim
 makeClaim (attributes, rule) =
     coerce RulePattern
         { attributes = attributes
-        , left = (left . coerce $ rule)
-        , right = (right . coerce $ rule)
-        , requires = (requires . coerce $ rule)
-        , ensures = (ensures . coerce $ rule)
+        , left = left . coerce $ rule
+        , right = right . coerce $ rule
+        , requires = requires . coerce $ rule
+        , ensures = ensures . coerce $ rule
         }
 
 simplifyRuleOnSecond
@@ -350,7 +343,7 @@ simplifyRuleOnSecond
     => (Attribute.Axiom, claim)
     -> Simplifier (Attribute.Axiom, claim)
 simplifyRuleOnSecond (atts, rule) = do
-    rule' <- simplifyRewriteRule (RewriteRule . coerce $ rule)
+    rule' <- Rule.simplifyRewriteRule (RewriteRule . coerce $ rule)
     return (atts, coerce . getRewriteRule $ rule')
 
 extractUntrustedClaims :: Claim claim => [claim] -> [Rewrite]
@@ -399,9 +392,9 @@ initialize
     -> Simplifier a
 initialize verifiedModule within = do
     functionAxioms <-
-        simplifyFunctionAxioms (extractEqualityAxioms verifiedModule)
+        Rule.simplifyFunctionAxioms (extractEqualityAxioms verifiedModule)
     rewriteRules <-
-        mapM simplifyRewriteRule (extractRewriteAxioms verifiedModule)
+        mapM Rule.simplifyRewriteRule (extractRewriteAxioms verifiedModule)
     let
         functionEvaluators :: BuiltinAndAxiomSimplifierMap
         functionEvaluators =
@@ -430,73 +423,3 @@ initialize verifiedModule within = do
             . Simplifier.localSimplifierPredicate (const substitutionSimplifier)
             . Simplifier.localSimplifierAxioms (const axiomIdToSimplifier)
     locally (within initialized)
-
-{- | Simplify a 'Map' of 'EqualityRule's using only matching logic rules.
-
-See also: 'simplifyRulePattern'
-
- -}
-simplifyFunctionAxioms
-    :: Map.Map (AxiomIdentifier) [Equality]
-    -> Simplifier (Map.Map (AxiomIdentifier) [Equality])
-simplifyFunctionAxioms =
-    (traverse . traverse) simplifyEqualityRule
-  where
-    simplifyEqualityRule (EqualityRule rule) =
-        EqualityRule <$> simplifyRulePattern rule
-
-{- | Simplify a 'Rule' using only matching logic rules.
-
-See also: 'simplifyRulePattern'
-
- -}
-simplifyRewriteRule :: Rewrite -> Simplifier Rewrite
-simplifyRewriteRule (RewriteRule rule) =
-    RewriteRule <$> simplifyRulePattern rule
-
-{- | Simplify a 'RulePattern' using only matching logic rules.
-
-The original rule is returned unless the simplification result matches certain
-narrowly-defined criteria.
-
- -}
-simplifyRulePattern
-    :: RulePattern Variable
-    -> Simplifier (RulePattern Variable)
-simplifyRulePattern rulePattern = do
-    let RulePattern { left } = rulePattern
-    simplifiedLeft <- simplifyPattern left
-    case MultiOr.extractPatterns simplifiedLeft of
-        [ Conditional { term, predicate, substitution } ]
-          | PredicateTrue <- predicate -> do
-            let subst = Substitution.toMap substitution
-                left' = substitute subst term
-                right' = substitute subst right
-                  where
-                    RulePattern { right } = rulePattern
-                requires' = substitute subst <$> requires
-                  where
-                    RulePattern { requires } = rulePattern
-                ensures' = substitute subst <$> ensures
-                  where
-                    RulePattern { ensures } = rulePattern
-                RulePattern { attributes } = rulePattern
-            return RulePattern
-                { left = left'
-                , right = right'
-                , requires = requires'
-                , ensures = ensures'
-                , attributes = attributes
-                }
-        _ ->
-            -- Unable to simplify the given rule pattern, so we return the
-            -- original pattern in the hope that we can do something with it
-            -- later.
-            return rulePattern
-
--- | Simplify a 'TermLike' using only matching logic rules.
-simplifyPattern :: TermLike Variable -> Simplifier (OrPattern Variable)
-simplifyPattern termLike =
-    Simplifier.localSimplifierTermLike (const emptyTermLikeSimplifier)
-    $ Simplifier.localSimplifierPredicate (const emptyPredicateSimplifier)
-    $ Pattern.simplify (Pattern.fromTermLike termLike)

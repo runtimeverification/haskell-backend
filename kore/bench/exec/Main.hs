@@ -71,7 +71,7 @@ group
     bgroup (takeFileName root) tests
   where
     tests =
-        (execBenchmark root kFile definitionFile mainModuleName) <$> testFiles
+        execBenchmark root kFile definitionFile mainModuleName <$> testFiles
 
 {- | List of Definitions to benchmark
 

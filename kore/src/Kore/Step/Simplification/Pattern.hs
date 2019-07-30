@@ -22,9 +22,11 @@ import           Kore.Internal.TermLike
 import           Kore.Logger
                  ( LogMessage, WithLog )
 import qualified Kore.Step.Condition.Evaluator as Predicate
-                 ( evaluate )
+                 ( simplify )
 import qualified Kore.Step.Merging.Pattern as Pattern
-import           Kore.Step.Simplification.Data as Simplifier
+import           Kore.Step.Simplification.Data
+                 ( BranchT, MonadSimplify )
+import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import           Kore.Step.Substitution
@@ -66,7 +68,7 @@ simplify
     => Pattern variable
     -> simplifier (OrPattern variable)
 simplify pattern'@Conditional { term } = do
-    simplifiedTerm <- simplifyTerm term
+    simplifiedTerm <- Simplifier.simplifyTerm term
     orPatterns <-
         BranchT.gather
         $ traverse
@@ -88,7 +90,7 @@ simplifyPredicate
     -- ^ The condition to be evaluated.
     -> BranchT simplifier (Pattern variable)
 simplifyPredicate Conditional {term, predicate, substitution} = do
-    evaluated <- Monad.Trans.lift $ Predicate.evaluate predicate
+    evaluated <- Monad.Trans.lift $ Predicate.simplify predicate
     let Conditional { predicate = evaluatedPredicate } = evaluated
         Conditional { substitution = evaluatedSubstitution } = evaluated
     merged <-

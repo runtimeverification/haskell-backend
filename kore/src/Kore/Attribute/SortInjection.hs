@@ -67,4 +67,4 @@ instance ParseAttributes SortInjection where
         failDuplicate' = Parser.failDuplicate sortInjectionId
 
     toAttributes SortInjection { isSortInjection } =
-        Attributes $ if isSortInjection then [sortInjectionAttribute] else []
+        Attributes [sortInjectionAttribute | isSortInjection]

@@ -155,26 +155,17 @@ test_simplify =
 test_isBuiltin :: [TestTree]
 test_isBuiltin =
     [ testCase "isSymbolConcat" $ do
-        assertBool ""
-            (List.isSymbolConcat mockHookTools Mock.concatListSymbol)
-        assertBool ""
-            (not (List.isSymbolConcat mockHookTools Mock.aSymbol))
-        assertBool ""
-            (not (List.isSymbolConcat mockHookTools Mock.elementListSymbol))
+        assertBool "" (List.isSymbolConcat Mock.concatListSymbol)
+        assertBool "" (not (List.isSymbolConcat Mock.aSymbol))
+        assertBool "" (not (List.isSymbolConcat Mock.elementListSymbol))
     , testCase "isSymbolElement" $ do
-        assertBool ""
-            (List.isSymbolElement mockHookTools Mock.elementListSymbol)
-        assertBool ""
-            (not (List.isSymbolElement mockHookTools Mock.aSymbol))
-        assertBool ""
-            (not (List.isSymbolElement mockHookTools Mock.concatListSymbol))
+        assertBool "" (List.isSymbolElement Mock.elementListSymbol)
+        assertBool "" (not (List.isSymbolElement Mock.aSymbol))
+        assertBool "" (not (List.isSymbolElement Mock.concatListSymbol))
     , testCase "isSymbolUnit" $ do
-        assertBool ""
-            (List.isSymbolUnit mockHookTools Mock.unitListSymbol)
-        assertBool ""
-            (not (List.isSymbolUnit mockHookTools Mock.aSymbol))
-        assertBool ""
-            (not (List.isSymbolUnit mockHookTools Mock.concatListSymbol))
+        assertBool "" (List.isSymbolUnit Mock.unitListSymbol)
+        assertBool "" (not (List.isSymbolUnit Mock.aSymbol))
+        assertBool "" (not (List.isSymbolUnit Mock.concatListSymbol))
     ]
 
 mockHookTools :: SmtMetadataTools Hook

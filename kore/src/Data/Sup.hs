@@ -57,7 +57,7 @@ instance Ord a => Semigroup (Sup a) where
 -- | 'Sup' is the annihilator of 'Element'.
 instance Applicative Sup where
     pure = Element
-    (<*>) Sup         = \_ -> Sup
+    (<*>) Sup         = const Sup
     (<*>) (Element f) = \case { Sup -> Sup; Element a -> Element (f a) }
 
 instance Pretty a => Pretty (Sup a) where

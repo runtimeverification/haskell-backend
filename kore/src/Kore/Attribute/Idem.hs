@@ -52,5 +52,4 @@ instance ParseAttributes Idem where
         withApplication' = Parser.withApplication idemId
         failDuplicate' = Parser.failDuplicate idemId
 
-    toAttributes Idem { isIdem } =
-        Attributes $ if isIdem then [idemAttribute] else []
+    toAttributes Idem { isIdem } = Attributes [idemAttribute | isIdem]

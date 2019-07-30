@@ -16,6 +16,7 @@ module Kore.Step.Axiom.EvaluationStrategy
     ) where
 
 import qualified Control.Monad as Monad
+import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
 import           Data.Function
 import           Data.Maybe
@@ -24,6 +25,8 @@ import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Symbol as Attribute
+import           Kore.Internal.Conditional
+                 ( andCondition )
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -32,8 +35,11 @@ import           Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
+import qualified Kore.Proof.Value as Value
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
+import           Kore.Step.Remainder
+                 ( ceilChildOfApplicationOrTop )
 import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
@@ -41,14 +47,14 @@ import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( AttemptedAxiom,
                  AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap )
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify, PredicateSimplifier, TermLikeSimplifier )
+                 BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap,
+                 MonadSimplify, PredicateSimplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..), hasRemainders, maybeNotApplicable )
-import qualified Kore.Step.Simplification.Data as Simplifier
+import qualified Kore.Step.Simplification.OrPattern as OrPattern
+                 ( simplifyPredicatesWithSmt )
 import           Kore.Step.Step
                  ( UnificationProcedure (UnificationProcedure) )
 import qualified Kore.Step.Step as Step
@@ -57,8 +63,6 @@ import           Kore.Unparser
                  ( Unparse, unparse )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
-
-import qualified Kore.Proof.Value as Value
 
 {-|Describes whether simplifiers are allowed to return multiple results or not.
 -}
@@ -183,10 +187,6 @@ evaluateBuiltin
     axiomIdToSimplifier
     patt
   = do
-    tools <- Simplifier.askMetadataTools
-    let
-        isValue pat = isJust $
-            Value.fromConcreteStepPattern tools =<< asConcrete pat
     result <-
         builtinEvaluator
             substitutionSimplifier
@@ -195,20 +195,18 @@ evaluateBuiltin
             patt
     case result of
         AttemptedAxiom.NotApplicable
-          | isPattConcrete
-          , App_ appHead children <- patt
+          | App_ appHead children <- patt
           , Just hook_ <- Text.unpack <$> Attribute.getHook (symbolHook appHead)
           , all isValue children ->
-            error
-                (   "Expecting hook " ++ hook_
-               ++  " to reduce concrete pattern\n\t"
-                ++ show patt
-                )
-          | otherwise ->
-            return AttemptedAxiom.NotApplicable
-        AttemptedAxiom.Applied _ -> return result
+            (error . show . Pretty.vsep)
+                [ "Expecting hook "
+                    <> Pretty.squotes (Pretty.pretty hook_)
+                    <> " to reduce concrete pattern:"
+                , Pretty.indent 4 (unparse patt)
+                ]
+        _ -> return result
   where
-    isPattConcrete = isConcrete patt
+    isValue pat = isJust $ Value.fromTermLike =<< asConcrete pat
 
 applyFirstSimplifierThatWorks
     :: forall variable simplifier
@@ -323,18 +321,29 @@ evaluateWithDefinitionAxioms
     results <- applyRules expanded (map unwrapEqualityRule definitionRules)
     mapM_ rejectNarrowing results
 
+    ceilChild <- ceilChildOfApplicationOrTop patt
     let
         result =
             Result.mergeResults results
             & Result.mapConfigs
                 keepResultUnchanged
-                markRemainderEvaluated
+                ( markRemainderEvaluated
+                . introduceDefinedness ceilChild
+                )
         keepResultUnchanged = id
+        introduceDefinedness = flip andCondition
         markRemainderEvaluated = fmap mkEvaluated
 
+    simplifiedResults <-
+        Monad.Trans.lift
+        $ OrPattern.simplifyPredicatesWithSmt (Step.gatherResults result)
+    simplifiedRemainders <-
+        Monad.Trans.lift
+        $ OrPattern.simplifyPredicatesWithSmt (Step.remainders result)
+
     return $ AttemptedAxiom.Applied AttemptedAxiomResults
-        { results = Step.gatherResults result
-        , remainders = Step.remainders result
+        { results = simplifiedResults
+        , remainders = simplifiedRemainders
         }
 
   where

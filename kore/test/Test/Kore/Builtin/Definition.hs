@@ -302,6 +302,21 @@ getListSymbol :: Internal.Symbol
 getListSymbol =
     builtinSymbol "getList" intSort [listSort, intSort] & hook "LIST.get"
 
+sizeListSymbol :: Internal.Symbol
+sizeListSymbol = builtinSymbol "sizeList" intSort [listSort] & hook "LIST.size"
+
+unitList :: TermLike Variable
+unitList = mkApplySymbol unitListSymbol []
+
+elementList :: TermLike Variable -> TermLike Variable
+elementList x = mkApplySymbol elementListSymbol [x]
+
+concatList :: TermLike Variable -> TermLike Variable -> TermLike Variable
+concatList x y = mkApplySymbol concatListSymbol [x, y]
+
+sizeList :: TermLike Variable -> TermLike Variable
+sizeList l = mkApplySymbol sizeListSymbol [l]
+
 -- ** Map
 
 unitMapSymbol :: Internal.Symbol
@@ -419,6 +434,9 @@ elementSetSymbol :: Internal.Symbol
 elementSetSymbol =
     builtinSymbol "elementSet" setSort [intSort]
     & hook "SET.element" & functional
+
+elementSet :: TermLike Variable -> TermLike Variable
+elementSet x = mkApplySymbol elementSetSymbol [x]
 
 concatSetSymbol :: Internal.Symbol
 concatSetSymbol =
@@ -702,7 +720,7 @@ builtinMap children =
         , builtinAcChild = Domain.NormalizedMap Domain.NormalizedAc
             { elementsWithVariables = []
             , concreteElements =
-                Map.fromList (map (Bifunctor.second Value) children)
+                Map.fromList (Bifunctor.second Domain.MapValue <$> children)
             , opaque = []
             }
         }
@@ -769,7 +787,7 @@ builtinSet children =
         , builtinAcChild = Domain.NormalizedSet Domain.NormalizedAc
             { elementsWithVariables = []
             , concreteElements =
-                Map.fromList (map (\x -> (x, NoValue)) children)
+                Map.fromList (map (\x -> (x, SetValue)) children)
             , opaque = []
             }
         }

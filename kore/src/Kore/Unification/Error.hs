@@ -39,7 +39,7 @@ instance Pretty UnificationOrSubstitutionError where
 
 -- |'UnificationError' specifies various error cases encountered during
 -- unification
-data UnificationError = UnsupportedPatterns String
+newtype UnificationError = UnsupportedPatterns String
     deriving (Eq, Show)
 
 unsupportedPatterns

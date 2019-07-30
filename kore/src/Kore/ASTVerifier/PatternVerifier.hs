@@ -811,9 +811,9 @@ verifyFreeVariables unifiedPattern =
         addFreeVariable
         emptyDeclaredVariables
         $
-        (Set.toList (Variables.freePureVariables unifiedPattern))
+        Set.toList (Variables.freePureVariables unifiedPattern)
         ++
-        (Set.toList (Variables.freeSetVariables unifiedPattern))
+        Set.toList (Variables.freeSetVariables unifiedPattern)
 
 addFreeVariable
     :: DeclaredVariables

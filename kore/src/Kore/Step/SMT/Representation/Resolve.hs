@@ -144,7 +144,7 @@ referenceCheckResolvers Declarations {sorts, symbols} =
             return reference
     referenceCheckSort reference =
         traceMaybe D_SMT_referenceCheckSort [debugArg "reference" reference]
-        $ Nothing
+        Nothing
 
     referenceCheckSymbol reference@SymbolReference {getSymbolReference} =
         traceMaybe D_SMT_referenceCheckSymbol [debugArg "reference" reference]
