@@ -402,7 +402,7 @@ updateAbstractElements elements =
 
 {- | Make any abstract elements into concrete elements if possible.
 
-Return 'Nothing' if there are any duplicate keys.
+Return 'Nothing' if there are any duplicate (concrete or abstract) keys.
 
  -}
 normalizeAbstractElements
