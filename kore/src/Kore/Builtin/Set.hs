@@ -474,39 +474,6 @@ internalize tools termLike
   where
     sort' = termLikeSort termLike
 
-{- | Convert a Set-sorted 'TermLike' to its internal representation.
-
-The 'TermLike' is unmodified if it is not Set-sorted. @internalize@ only
-operates at the top-most level, it does not descend into the 'TermLike' to
-internalize subterms.
-
- -}
--- internalize
---     :: (Ord variable, SortedVariable variable)
---     => SmtMetadataTools Attribute.Symbol
---     -> TermLike variable
---     -> TermLike variable
--- internalize tools termLike
---   | fromMaybe False (isSetSort tools sort')
---   -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
---   -- apply it if we know the term head is a constructor-like symbol.
---   , App_ symbol _ <- termLike
---   , isConstructorModulo_ symbol =
---     case Ac.toNormalized @Domain.NormalizedSet tools termLike of
---         Ac.Bottom                    -> TermLike.mkBottom sort'
---         Ac.Normalized termNormalized
---           | null (Domain.elementsWithVariables termNormalized)
---           , null (Domain.concreteElements termNormalized)
---           , [singleOpaqueTerm] <- Domain.opaque termNormalized
---           ->
---             -- When the 'normalized' term consists of a single opaque Map-sorted
---             -- term, we should prefer to return only that term.
---             singleOpaqueTerm
---           | otherwise -> Ac.asInternal tools sort' termNormalized
---   | otherwise = termLike
---   where
---     sort' = termLikeSort termLike
-
 {- | Simplify the conjunction or equality of two concrete Set domain values.
 
     When it is used for simplifying equality, one should separately solve the
