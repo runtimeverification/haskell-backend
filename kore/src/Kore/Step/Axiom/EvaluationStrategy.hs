@@ -39,7 +39,7 @@ import qualified Kore.Proof.Value as Value
 import           Kore.Step.Axiom.Matcher
                  ( unificationWithAppMatchOnTop )
 import           Kore.Step.Remainder
-                 ( ceilChildOfApplication )
+                 ( ceilChildOfApplicationOrTop )
 import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule) )
@@ -321,7 +321,7 @@ evaluateWithDefinitionAxioms
     results <- applyRules expanded (map unwrapEqualityRule definitionRules)
     mapM_ rejectNarrowing results
 
-    ceilChild <- ceilChildOfApplication patt
+    ceilChild <- ceilChildOfApplicationOrTop patt
     let
         result =
             Result.mergeResults results

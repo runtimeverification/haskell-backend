@@ -241,6 +241,7 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
         assertEqualWithExplanation "" expect actual
+    -- Checks that `f(x/x)` evaluates to `x/x and x != 0` when `f` is the identity function and `#ceil(x/y) => y != 0`
     , testCase "function application introduces definedness condition" $ do
         let testSortVariable = SortVariableSort $ SortVariable (testId "s")
             expect =

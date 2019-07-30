@@ -7,7 +7,7 @@ License     : NCSA
 module Kore.Step.Remainder
     ( remainder, remainder'
     , existentiallyQuantifyTarget
-    , ceilChildOfApplication
+    , ceilChildOfApplicationOrTop
     ) where
 
 import           Control.Applicative
@@ -162,7 +162,7 @@ substitutionConditions subst =
     substitutionCoverageWorker (x, t) =
         Syntax.Predicate.makeEqualsPredicate (mkVar x) t
 
-ceilChildOfApplication
+ceilChildOfApplicationOrTop
     :: forall variable m
     .  ( FreshVariable variable
        , SortedVariable variable
@@ -172,7 +172,7 @@ ceilChildOfApplication
        )
     => TermLike variable
     -> m (Predicate variable)
-ceilChildOfApplication patt =
+ceilChildOfApplicationOrTop patt =
     case patt of
         App_ _ children -> do
             ceil <-
