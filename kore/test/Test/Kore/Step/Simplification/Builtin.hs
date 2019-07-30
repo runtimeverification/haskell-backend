@@ -13,7 +13,8 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern ( Pattern)
+import           Kore.Internal.Pattern
+                 ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.Step.Simplification.Builtin
@@ -25,16 +26,25 @@ import           Test.Tasty.HUnit.Extensions
 
 test_simplify :: [TestTree]
 test_simplify =
-    [ becomes "\\bottom value becomes \\bottom Map" (mkMap [(a, bottom)] []) []
-    , becomes "\\bottom key becomes \\bottom Map" (mkMap [(bottom, a)] []) []
-    , becomes "\\bottom term becomes \\bottom Map" (mkMap [(a, b)] [bottom]) []
-    , becomes "\\bottom element becomes \\bottom List" (mkList [bottom]) []
-    , becomes "\\bottom element becomes \\bottom Set" (mkSet [bottom] []) []
-    , becomes "\\bottom term becomes \\bottom Set" (mkSet [] [bottom]) []
+    [ testGroup "List"
+        [ becomes "\\bottom element" (mkList [bottom]) []
+        ]
+    , testGroup "Map"
+        [ becomes "\\bottom value" (mkMap [(a, bottom)] []) []
+        , becomes "\\bottom key" (mkMap [(bottom, a)] []) []
+        , becomes "\\bottom term" (mkMap [(a, b)] [bottom]) []
+        , becomes "duplicate key" (mkMap [(a, b), (a, c)] []) []
+        ]
+    , testGroup "Set"
+        [ becomes "\\bottom element" (mkSet [bottom] []) []
+        , becomes "\\bottom term" (mkSet [] [bottom]) []
+        , becomes "duplicate key" (mkSet [a, a] []) []
+        ]
     ]
   where
     a = OrPattern.fromTermLike Mock.a
     b = OrPattern.fromTermLike Mock.b
+    c = OrPattern.fromTermLike Mock.c
     bottom = OrPattern.fromPatterns [Pattern.bottom]
     becomes
         :: GHC.HasCallStack
