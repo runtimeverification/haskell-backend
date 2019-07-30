@@ -135,11 +135,11 @@ class
         -> normalized (TermLike Concrete) (TermLike variable)
         -> Maybe (normalized (TermLike Concrete) (TermLike variable))
 
-    normalize
+    renormalize
         :: Ord variable
         => normalized (TermLike Concrete) (TermLike variable)
         -> Maybe (normalized (TermLike Concrete) (TermLike variable))
-    normalize = concatNormalized (Domain.wrapAc Domain.emptyNormalizedAc)
+    renormalize = concatNormalized (Domain.wrapAc Domain.emptyNormalizedAc)
 
 instance TermWrapper Domain.NormalizedMap where
     {- | Render a 'NormalizedMap' as a Domain.Builtin.
@@ -199,7 +199,7 @@ instance TermWrapper Domain.NormalizedMap where
     @
     -}
     toNormalized (BuiltinMap_ Domain.InternalAc { builtinAcChild }) =
-        maybe Bottom Normalized (normalize builtinAcChild)
+        maybe Bottom Normalized (renormalize builtinAcChild)
     toNormalized (App_ symbol args)
       | Map.isSymbolUnit symbol =
         case args of
@@ -291,7 +291,7 @@ instance TermWrapper Domain.NormalizedSet where
     @
     -}
     toNormalized (BuiltinSet_ Domain.InternalAc { builtinAcChild }) =
-        maybe Bottom Normalized (normalize builtinAcChild)
+        maybe Bottom Normalized (renormalize builtinAcChild)
     toNormalized (App_ symbol args)
       | Set.isSymbolUnit symbol =
         case args of

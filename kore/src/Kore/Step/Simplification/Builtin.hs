@@ -100,7 +100,7 @@ normalizeInternalMap
     => InternalMap (TermLike Concrete) (TermLike variable)
     -> Maybe (InternalMap (TermLike Concrete) (TermLike variable))
 normalizeInternalMap =
-    Lens.traverseOf (field @"builtinAcChild") Builtin.normalize
+    Lens.traverseOf (field @"builtinAcChild") Builtin.renormalize
 
 simplifyInternalSet
     ::  ( Ord variable
@@ -122,4 +122,4 @@ normalizeInternalSet
     => InternalSet (TermLike Concrete) (TermLike variable)
     -> Maybe (InternalSet (TermLike Concrete) (TermLike variable))
 normalizeInternalSet =
-    Lens.traverseOf (field @"builtinAcChild") Builtin.normalize
+    Lens.traverseOf (field @"builtinAcChild") Builtin.renormalize
