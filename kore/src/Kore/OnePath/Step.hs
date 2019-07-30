@@ -15,6 +15,7 @@ module Kore.OnePath.Step
     , onePathFirstStep
     , onePathFollowupStep
     , strategyPattern
+    , removalPredicate
     ) where
 
 import           Control.Applicative

@@ -6,16 +6,35 @@ module Kore.AllPath where
 
 import           Control.Applicative
                  ( Alternative (..) )
+import qualified Control.Monad.Trans as Monad.Trans
+import           Data.Coerce
+                 ( coerce )
 import qualified Data.Foldable as Foldable
 import           Data.Maybe
                  ( mapMaybe )
 
+import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Attribute.Trusted as Trusted
+import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.TermLike
+import           Kore.OnePath.Step
+                 ( removalPredicate )
+import           Kore.Step.Rule
+                 ( OnePathRule (..), RewriteRule (..), RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
+import           Kore.Step.Simplification.Pattern
+                 ( simplifyAndRemoveTopExists )
 import           Kore.Step.Strategy
                  ( Strategy )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Unparser
+                 ( Unparse )
+import           Kore.Variables.Fresh
+                 ( FreshVariable )
 
 {- | The state of the all-path reachability proof strategy for @goal@.
  -}
@@ -93,6 +112,52 @@ class Goal goal where
         => [Rule goal]
         -> goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+
+instance
+    ( SortedVariable variable
+    , Ord variable
+    , Unparse variable
+    , Show variable
+    , FreshVariable variable
+    ) => Goal (OnePathRule variable) where
+
+    type Rule (OnePathRule variable) = RewriteRule variable
+
+    isTrusted =
+        Trusted.isTrusted
+        . Attribute.trusted
+        . attributes
+        . coerce
+
+    removeDestination goal = do
+        let destination =
+                Pattern.fromTermLike
+                . right
+                . coerce
+                $ goal
+            configuration =
+                Pattern.fromTermLike
+                . left
+                . coerce
+                $ goal
+            removal =
+                removalPredicate destination configuration
+            result =
+                Conditional.andPredicate
+                    configuration
+                    removal
+        orResult <-
+            Monad.Trans.lift
+            $ simplifyAndRemoveTopExists result
+        let simplifiedResult = MultiOr.filterOr orResult
+        pure . OnePathRule
+            $ RulePattern
+                { left = OrPattern.toTermLike simplifiedResult
+                , right = right . coerce $ goal
+                , requires = requires . coerce $ goal
+                , ensures = ensures . coerce $ goal
+                , attributes = attributes . coerce $ goal
+                }
 
 transitionRule
     :: (MonadSimplify m, Goal goal)
