@@ -436,6 +436,11 @@ extractConcreteElement element =
   where
     (key, value) = Domain.unwrapElement element
 
+{- | Move any @normalized@ children to the top-level by concatenation.
+
+@flattenOpaque@ recursively flattens the children of children, and so on.
+
+ -}
 flattenOpaque
     :: (TermWrapper normalized, Ord variable)
     => normalized (TermLike Concrete) (TermLike variable)
