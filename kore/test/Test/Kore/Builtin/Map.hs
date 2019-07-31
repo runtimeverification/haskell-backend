@@ -1044,6 +1044,25 @@ normalizedMap elements opaque =
         , opaque
         }
 
+{- | Construct a 'NormalizedMap' from a list of elements and opaque terms.
+
+It is an error if the collection cannot be normalized.
+
+ -}
+normalizedMap
+    :: GHC.HasCallStack
+    => [(TermLike Variable, TermLike Variable)]
+    -- ^ (abstract or concrete) elements
+    -> [TermLike Variable]
+    -- ^ opaque terms
+    -> NormalizedMap (TermLike Concrete) (TermLike Variable)
+normalizedMap elements opaque =
+    Maybe.fromJust . Ac.renormalize . Domain.wrapAc $ Domain.NormalizedAc
+        { elementsWithVariables = Domain.MapElement <$> elements
+        , concreteElements = Map.empty
+        , opaque
+        }
+
 -- * Constructors
 
 mkIntVar :: Id -> TermLike Variable
