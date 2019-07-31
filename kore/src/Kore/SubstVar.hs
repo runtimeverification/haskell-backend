@@ -41,6 +41,10 @@ instance Hashable variable => Hashable (SubstVar variable) where
     hashWithSalt salt (SetVar v) =
         salt `hashWithSalt` (1::Int) `hashWithSalt` v
 
+isSetVar :: SubstVar variable -> Bool
+isSetVar (SetVar _) = True
+isSetVar _ = False
+
 asVariable :: SubstVar variable -> variable
 asVariable (RegVar v) = v
 asVariable (SetVar v) = v

@@ -14,7 +14,7 @@ module Kore.Unification.SubstitutionNormalization
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Control.Monad.Except
-                 ( ExceptT (..) )
+                 ( ExceptT (..), throwError )
 import           Data.Functor.Foldable
                  ( Base )
 import qualified Data.Functor.Foldable as Recursive
@@ -46,6 +46,14 @@ import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
+import Debug.Trace
+
+data TopologicalSortResult variable
+  = RegularCtorCycle ![variable]
+  | SetCtorCycle ![variable]
+  | Sorted ![variable]
+  deriving (Show)
+
 {-| 'normalizeSubstitution' transforms a substitution into an equivalent one
 in which no variable that occurs on the left hand side also occurs on the
 right side.
@@ -72,21 +80,34 @@ normalizeSubstitution substitution = do
         -- | Do a `topologicalSort` of variables using the `dependencies` Map.
         -- Topological cycles with non-ctors are returned as Left errors.
         -- Non-simplifiable cycles are returned as Right Nothing.
-        topologicalSortConverted :: Either SubstitutionError (Maybe [SubstVar variable])
+        topologicalSortConverted :: Either SubstitutionError (TopologicalSortResult (SubstVar variable))
         topologicalSortConverted =
             case topologicalSort (Set.toList <$> allDependencies) of
                 Left (ToplogicalSortCycles vars) ->
                     case nonSimplifiableSortResult of
                         Left (ToplogicalSortCycles _vars) ->
-                            Right Nothing
+                            if all SubstVar.isSetVar vars then
+                                Right (SetCtorCycle vars)
+                            else Right (RegularCtorCycle vars)
                         Right _ ->
                             Left (NonCtorCircularVariableDependency vars)
-                Right result -> Right $ Just result
+                Right result -> Right (Sorted result)
           where
             nonSimplifiableSortResult =
                 topologicalSort (Set.toList <$> nonSimplifiableDependencies)
-
-    ExceptT . traverse maybeToBottom $ topologicalSortConverted
+    traceM ("\n\n\nSubstitution: " ++ show substitution)
+    traceM ("All dependencies: " ++ show allDependencies)
+    traceM ("Result: " ++ show topologicalSortConverted)
+    result <- case topologicalSortConverted of
+        Left err -> throwError err
+        Right (RegularCtorCycle _) -> return Predicate.bottom
+        Right (Sorted vars) -> ExceptT
+            (Right <$> normalizeSortedSubstitution' vars)
+        Right (SetCtorCycle vars) -> normalizeSubstitution
+            $ Map.mapWithKey (makeRhsBottom (`elem` vars)) substitution
+    traceM ("Final Result: " ++ show result)
+    return result
+--    ExceptT . traverse maybeToBottom $ topologicalSortConverted
 
   where
     interestingVariables :: Set (SubstVar variable)
@@ -115,12 +136,14 @@ normalizeSubstitution substitution = do
     normalizeSortedSubstitution' s =
         normalizeSortedSubstitution (sortedSubstitution s) mempty mempty
 
-    maybeToBottom
-        :: Maybe [SubstVar variable]
-        -> m (Predicate variable)
-    maybeToBottom = maybe
-        (return Predicate.bottom)
-        normalizeSortedSubstitution'
+    makeRhsBottom
+        :: (SubstVar variable -> Bool)
+        -> SubstVar variable
+        -> TermLike variable
+        -> TermLike variable
+    makeRhsBottom test var rhs
+      | test var  = TermLike.mkBottom (termLikeSort rhs)
+      | otherwise = rhs
 
 variableToSubstitution
     :: (Ord variable, Show variable)
@@ -153,22 +176,21 @@ normalizeSortedSubstitution
     ((var, varPattern) : unprocessed)
     result
     substitution
-  =
-    case Cofree.tailF (Recursive.project varPattern) of
-        BottomF _ -> return Predicate.bottom
-        VariableF var'
-          | SubstVar.asVariable var == var' ->
+  = case (var, Cofree.tailF (Recursive.project varPattern)) of
+        (SubstVar.RegVar _, BottomF _) -> return Predicate.bottom
+        (SubstVar.RegVar rvar, VariableF var')
+          | rvar == var' ->
             normalizeSortedSubstitution unprocessed result substitution
-        SetVariableF (SetVariable var')
-          | SubstVar.asVariable var == var' ->
+        (SubstVar.SetVar svar, SetVariableF (SetVariable var'))
+          | svar == var' ->
             normalizeSortedSubstitution unprocessed result substitution
-        _ -> do
-            let substitutedVarPattern =
-                    TermLike.substitute (Map.fromList substitution) varPattern
-            normalizeSortedSubstitution
-                unprocessed
-                ((var, substitutedVarPattern) : result)
-                ((var, substitutedVarPattern) : substitution)
+        _ -> let
+              substitutedVarPattern =
+                  TermLike.substitute (Map.fromList substitution) varPattern
+              in normalizeSortedSubstitution
+                  unprocessed
+                  ((var, substitutedVarPattern) : result)
+                  ((var, substitutedVarPattern) : substitution)
 
 {- | Calculate the dependencies of a substitution.
 
@@ -177,17 +199,17 @@ normalizeSortedSubstitution
     pattern.
  -}
 getDependencies
-    :: Ord variable
+    :: (Ord variable, Show variable)
     => Set (SubstVar variable)  -- ^ interesting variables
     -> SubstVar variable  -- ^ substitution variable
     -> TermLike variable  -- ^ substitution pattern
     -> Set (SubstVar variable)
 getDependencies interesting var (Recursive.project -> valid :< patternHead) =
     case patternHead of
-        VariableF v | v == SubstVar.asVariable var -> Set.empty
-        SetVariableF (SetVariable v) | v == SubstVar.asVariable var
-            -> Set.empty
-        _ -> Set.intersection interesting freeVars
+        VariableF v | RegVar v == var -> Set.empty
+        SetVariableF (SetVariable v) | SetVar v == var -> Set.empty
+        _ -> -- trace ("dependencies:\nvar: " ++ show var ++ "\nhead: " ++ show patternHead ++ "\nfreeVars: " ++ show freeVars) $
+            Set.intersection interesting freeVars
   where
     freeVars = FreeVariables.getFreeVariables $ Attribute.freeVariables valid
 

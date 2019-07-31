@@ -15,6 +15,7 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.SubstVar
                  ( SubstVar (..) )
+import           Kore.TopBottom ( isBottom )
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -26,17 +27,45 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.SMT
 import           Test.Tasty.HUnit.Extensions
 
+data NormalizationResult
+  = Substitution ![(SubstVar Variable, TermLike Variable)]
+  | SubstitutionBottom
+  | Error !SubstitutionError
+  deriving (Show)
+
+instance SumEqualWithExplanation NormalizationResult
+  where
+    sumConstructorPair (Substitution s1) (Substitution s2) =
+        SumConstructorSameWithArguments (EqWrap "Substitution" s1 s2)
+    sumConstructorPair pattern1@(Substitution _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+    sumConstructorPair SubstitutionBottom SubstitutionBottom =
+        SumConstructorSameNoArguments
+    sumConstructorPair pattern1@SubstitutionBottom pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+    sumConstructorPair (Error s1) (Error s2) =
+        SumConstructorSameWithArguments (EqWrap "Error" s1 s2)
+    sumConstructorPair pattern1@(Error _) pattern2 =
+        SumConstructorDifferent
+            (printWithExplanation pattern1) (printWithExplanation pattern2)
+
+instance EqualWithExplanation NormalizationResult where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
 test_substitutionNormalization :: [TestTree]
 test_substitutionNormalization =
     [ testCase "Empty substitution" $
-        assertEqualWithExplanation "" (Right [])
+        assertEqualWithExplanation "" (Substitution [])
             =<< runNormalizeSubstitution []
     , testCase "Simple substitution" $
-        assertEqualWithExplanation "" (Right [(RegVar $ v1 Mock.testSort, mkTop_)])
+        assertEqualWithExplanation "" (Substitution [(RegVar $ v1 Mock.testSort, mkTop_)])
             =<< runNormalizeSubstitution [(RegVar $ v1 Mock.testSort, mkTop_)]
     , testCase "Simple unnormalized substitution" $
         assertEqualWithExplanation ""
-            (Right
+            (Substitution
                 [ (RegVar $ v1 Mock.testSort, mkTop Mock.testSort)
                 , (RegVar $ x1 Mock.testSort, mkTop Mock.testSort)
                 ]
@@ -47,7 +76,7 @@ test_substitutionNormalization =
                 ]
     , testCase "Unnormalized substitution with 'and'" $
         assertEqualWithExplanation ""
-            (Right
+            (Substitution
                 [   ( RegVar $ v1 Mock.testSort
                     , mkAnd mkTop_ (mkTop Mock.testSort)
                     )
@@ -62,37 +91,59 @@ test_substitutionNormalization =
                 ]
     , testCase "Simplest cycle" $ do
         let var1 = v1 Mock.testSort
-        assertEqualWithExplanation "" (Right [])
+        assertEqualWithExplanation "" (Substitution [])
             =<< runNormalizeSubstitution [(RegVar var1, mkVar $ v1 Mock.testSort)]
     , testCase "Cycle with extra substitution" $ do
         let
             var1 = v1 Mock.testSort
             varx1 = x1 Mock.testSort
-        assertEqualWithExplanation "" (Right [(RegVar varx1, mkVar var1)])
+        assertEqualWithExplanation "" (Substitution [(RegVar varx1, mkVar var1)])
             =<< runNormalizeSubstitution
                     [ (RegVar var1, mkVar var1)
                     , (RegVar varx1, mkVar var1)
                     ]
+    , testCase "SetVariable Simplest cycle" $ do
+        let var1 = Mock.makeTestSubstVar "@x"
+        assertEqualWithExplanation "" (Substitution [])
+            =<< runNormalizeSubstitution [(var1, mkSubstVar var1)]
+    , testCase "SetVariable Cycle with extra substitution" $ do
+        let
+            var1 = Mock.makeTestSubstVar "@v"
+            varx1 = Mock.makeTestSubstVar "@x"
+        assertEqualWithExplanation "" (Substitution [(varx1, mkSubstVar var1)])
+            =<< runNormalizeSubstitution
+                    [ (var1, mkSubstVar var1)
+                    , (varx1, mkSubstVar var1)
+                    ]
     , testCase "Function cycle" $ do
         let var1 = v1 Mock.testSort
         assertEqualWithExplanation ""
-            (Left (NonCtorCircularVariableDependency [RegVar var1]))
+            (Error (NonCtorCircularVariableDependency [RegVar var1]))
             =<< runNormalizeSubstitution
                 [ (RegVar  var1 , mkApplySymbol f [mkVar var1] ) ]
-    , testCase "Length 2 cycle" $ do
+    , testCase "onlyThisLength 2 cycle" $ do
         let
             var1 = v1 Mock.testSort
             varx1 = x1 Mock.testSort
-        assertEqualWithExplanation "" (Right [])
+        assertEqualWithExplanation "" (Substitution [])
             =<< runNormalizeSubstitution
                 [ (RegVar var1, mkVar varx1)
                 , (RegVar varx1, mkVar var1)
                 ]
-    , testCase "Cycle with 'and'" $ do
+     , testCase "SetVariable Length 2 cycle" $ do
+        let
+            var1 = Mock.makeTestSubstVar "@v"
+            varx1 = Mock.makeTestSubstVar "@x"
+        assertEqualWithExplanation "" (Substitution [])
+            =<< runNormalizeSubstitution
+                [ (var1, mkSubstVar varx1)
+                , (varx1, mkSubstVar var1)
+                ]
+     , testCase "Cycle with 'and'" $ do
         let
             var1 = v1 Mock.testSort
             varx1 = x1 Mock.testSort
-        assertEqualWithExplanation "" (Right [])
+        assertEqualWithExplanation "" (Substitution [])
             =<< runNormalizeSubstitution
                 [ (RegVar var1, mkAnd (mkVar varx1) mkTop_)
                 , (RegVar varx1, mkAnd (mkVar var1) mkTop_)
@@ -102,22 +153,27 @@ test_substitutionNormalization =
             var1 = v1 Mock.testSort
             varx1 = x1 Mock.testSort
         assertEqualWithExplanation ""
-            (Left (NonCtorCircularVariableDependency [RegVar var1, RegVar varx1]))
+            (Error (NonCtorCircularVariableDependency [RegVar var1, RegVar varx1]))
             =<< runNormalizeSubstitution
                 [ (RegVar var1, mkApplySymbol f [mkVar varx1])
                 , (RegVar varx1, mkVar var1)
                 ]
     , testCase "Constructor cycle" $
-        assertEqualWithExplanation "" (Right [])
+        assertEqualWithExplanation "" SubstitutionBottom
             =<< runNormalizeSubstitution
                 [ (RegVar Mock.x, Mock.constr10 (mkVar Mock.x)) ]
+    , testCase "SetVariable Constructor cycle" $ do
+        let var1 = Mock.makeTestSubstVar "@x"
+        assertEqualWithExplanation "" (Substitution [(var1, mkBottom Mock.testSort)])
+            =<< runNormalizeSubstitution
+                [ (var1, Mock.constr10 (mkSubstVar var1)) ]
     , testCase "Constructor with side function cycle" $
-        assertEqualWithExplanation "" (Right [])
+        assertEqualWithExplanation "" SubstitutionBottom
             =<< runNormalizeSubstitution
                 [(RegVar Mock.x, Mock.constr20 (Mock.f (mkVar Mock.x)) (mkVar Mock.x))]
     , testCase "Constructor with function cycle" $
         assertEqualWithExplanation ""
-            (Left (NonCtorCircularVariableDependency [RegVar Mock.x]))
+            (Error (NonCtorCircularVariableDependency [RegVar Mock.x]))
             =<< runNormalizeSubstitution
                 [ (RegVar Mock.x, Mock.constr10 (Mock.f (mkVar Mock.x))) ]
     ]
@@ -135,10 +191,16 @@ test_substitutionNormalization =
 
 runNormalizeSubstitution
     :: [(SubstVar Variable, TermLike Variable)]
-    -> IO (Either SubstitutionError [(SubstVar Variable, TermLike Variable)])
-runNormalizeSubstitution substitution =
-    (fmap . fmap) (Substitution.unwrap . Conditional.substitution)
-    $ Test.SMT.runSMT
-    $ evalSimplifier Mock.env
-    $ Except.runExceptT
-    $ normalizeSubstitution (Map.fromList substitution)
+    -> IO NormalizationResult
+runNormalizeSubstitution substitution = do
+    normalizedSubstitution <- Test.SMT.runSMT
+        $ evalSimplifier Mock.env
+        $ Except.runExceptT
+        $ normalizeSubstitution (Map.fromList substitution)
+    case normalizedSubstitution of
+        Left err -> return (Error err)
+        Right predicate
+          | isBottom predicate -> return SubstitutionBottom
+          | otherwise -> return . Substitution
+              . Substitution.unwrap . Conditional.substitution
+              $ predicate
