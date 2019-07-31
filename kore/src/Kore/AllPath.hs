@@ -166,6 +166,97 @@ instance
                 , attributes = attributes . coerce $ goal
                 }
 
+    isTriviallyValid goal =
+        isBottom . left . coerce $ goal
+
+    derivePar rules goal = do
+        let destination =
+                Pattern.fromTermLike
+                . right
+                . coerce
+                $ goal
+            configuration =
+                Pattern.fromTermLike
+                . left
+                . coerce
+                $ goal
+        if isBottom configuration
+            then empty
+            else do
+                eitherResults <-
+                    Monad.Trans.lift
+                    . Monad.Unify.runUnifierT
+                    $ Step.applyRewriteRulesParallel
+                        (Step.UnificationProcedure Unification.unificationProcedure)
+                        rules
+                        configuration
+                case eitherResults of
+                    Left err ->
+                        (error . show . Pretty.vsep)
+                        [ "Not implemented error:"
+                        , Pretty.indent 4 (Pretty.pretty err)
+                        , "while applying a \\rewrite axiom to the pattern:"
+                        , Pretty.indent 4 (unparse configuration)
+                        ,   "We decided to end the execution because we don't \
+                            \understand this case well enough at the moment."
+                        ]
+                    Right results -> do
+                        let
+                            mapRules
+                                :: Result.Results (Step.UnifiedRule (Target.Target variable)) (OnePathRule variable)
+                                -> Result.Results (RewriteRule variable) (OnePathRule variable)
+                            mapRules =
+                                Result.mapRules
+                                $ RewriteRule
+                                . Step.unwrapRule
+                                . Step.withoutUnification
+                            -- Try one last time to remove the destination from the
+                            -- remainder.
+                           -- checkRemainder
+                           --     :: OnePathRule variable
+                           --     -> Strategy.TransitionT
+                           --         (RewriteRule variable)
+                           --         m
+                           --         (ProofState (OnePathRule variable))
+                            checkRemainder remainder = do
+                                newClaim <- removeDestination remainder
+                                pure . GoalRem $ newClaim
+                           -- traverseConfigs
+                           --     :: Result.Results rule (OnePathRule variable)
+                           --     -> Strategy.TransitionT
+                           --         (RewriteRule variable)
+                           --         m
+                           --         (Result.Results
+                           --             rule
+                           --             (ProofState (OnePathRule variable))
+                           --         )
+                            traverseConfigs =
+                                Result.traverseConfigs
+                                    (pure . Goal)
+                                    checkRemainder
+                            -- makeOnePathRule
+                            --     :: Pattern.Pattern variable
+                            --     -> OnePathRule variable
+                            makeOnePathRule patt =
+                                OnePathRule RulePattern
+                                    { left = Pattern.toTermLike patt
+                                    , right = Pattern.toTermLike destination
+                                    , requires = requires . coerce $ goal
+                                    , ensures = ensures . coerce $ goal
+                                    , attributes = attributes . coerce $ goal
+                                    }
+                        results' <-
+                            traverseConfigs
+                                (mapRules
+                                    (Result.mapConfigs
+                                        makeOnePathRule
+                                        makeOnePathRule
+                                        (Result.mergeResults results)
+                                    )
+                                )
+                            >>= Result.transitionResults
+                        pure results'
+
     deriveSeq rules goal = do
         let destination =
                 Pattern.fromTermLike
