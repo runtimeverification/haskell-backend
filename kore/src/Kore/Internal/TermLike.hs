@@ -85,6 +85,7 @@ module Kore.Internal.TermLike
     , pattern Builtin_
     , pattern BuiltinList_
     , pattern BuiltinMap_
+    , pattern BuiltinSet_
     , pattern Ceil_
     , pattern DV_
     , pattern Equals_
@@ -1762,12 +1763,16 @@ mkSort name = SortActualSort $ SortActual name []
 mkSortVariable :: Id -> Sort
 mkSortVariable name = SortVariableSort $ SortVariable name
 
--- | Construct a variable with a given name and sort
--- "x" `varS` s
-varS :: Text -> Sort -> Variable
-varS x variableSort =
+{- | Construct a variable with a given name and sort.
+
+@
+"name" `varS` sort
+@
+ -}
+varS :: Id -> Sort -> Variable
+varS variableName variableSort =
     Variable
-        { variableName = noLocationId x
+        { variableName
         , variableSort
         , variableCounter = mempty
         }
@@ -1915,6 +1920,10 @@ pattern BuiltinMap_
     :: Domain.InternalMap (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 
+pattern BuiltinSet_
+    :: Domain.InternalSet (TermLike Concrete) (TermLike variable)
+    -> TermLike variable
+
 pattern Equals_
     :: Sort
     -> Sort
@@ -2042,6 +2051,9 @@ pattern BuiltinList_ internalList
 
 pattern BuiltinMap_ internalMap
     <- (Recursive.project -> _ :< BuiltinF (Domain.BuiltinMap internalMap))
+
+pattern BuiltinSet_ internalSet
+    <- (Recursive.project -> _ :< BuiltinF (Domain.BuiltinSet internalSet))
 
 pattern Equals_ equalsOperandSort equalsResultSort equalsFirst equalsSecond <-
     (Recursive.project ->

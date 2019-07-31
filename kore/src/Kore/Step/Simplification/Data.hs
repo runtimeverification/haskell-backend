@@ -33,6 +33,7 @@ module Kore.Step.Simplification.Data
     , BuiltinAndAxiomSimplifier (..)
     , BuiltinAndAxiomSimplifierMap
     , AttemptedAxiom (..)
+    , isApplicable, isNotApplicable
     , AttemptedAxiomResults (..)
     , CommonAttemptedAxiom
     , emptyAttemptedAxiom
@@ -635,6 +636,12 @@ deriving instance Ord variable => Eq (AttemptedAxiom variable)
 deriving instance Show variable => Show (AttemptedAxiom variable)
 
 instance (NFData variable) => NFData (AttemptedAxiom variable)
+
+isApplicable, isNotApplicable :: AttemptedAxiom variable -> Bool
+isApplicable (Applied _) = True
+isApplicable _           = False
+isNotApplicable NotApplicable = True
+isNotApplicable _             = False
 
 {-| 'CommonAttemptedAxiom' particularizes 'AttemptedAxiom' to 'Variable',
 following the same pattern as the other `Common*` types.

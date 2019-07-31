@@ -641,14 +641,14 @@ test_equalsSimplification_TermLike =
                     , predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap [(RegVar Mock.x, Mock.b)]
                     }
-                (Mock.builtinMap [(Mock.aConcrete, Mock.b)])
-                (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
+                (Mock.builtinMap [(Mock.a, Mock.b)])
+                (Mock.builtinMap [(Mock.a, mkVar Mock.x)])
             )
         , testCase "concrete Map, different keys"
             (assertTermEquals
                 Predicate.bottomPredicate
-                (Mock.builtinMap [(Mock.aConcrete, Mock.b)])
-                (Mock.builtinMap [(Mock.bConcrete, mkVar Mock.x)])
+                (Mock.builtinMap [(Mock.a, Mock.b)])
+                (Mock.builtinMap [(Mock.b, mkVar Mock.x)])
             )
         , testCase "concrete Map with framed Map"
             (assertTermEquals
@@ -660,16 +660,12 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfA)
                     , substitution = Substitution.wrap
                         [ (RegVar Mock.x, fOfA)
-                        , (RegVar Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                        , (RegVar Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                         ]
                     }
-                (Mock.builtinMap
-                    [ (Mock.aConcrete, fOfA)
-                    , (Mock.bConcrete, fOfB)
-                    ]
-                )
+                (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
                 (Mock.concatMap
-                    (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
+                    (Mock.builtinMap [(Mock.a, mkVar Mock.x)])
                     (mkVar Mock.m)
                 )
             )
@@ -683,17 +679,13 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfA)
                     , substitution = Substitution.wrap
                         [ (RegVar Mock.x, fOfA)
-                        , (RegVar Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                        , (RegVar Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                         ]
                     }
-                (Mock.builtinMap
-                    [ (Mock.aConcrete, fOfA)
-                    , (Mock.bConcrete, fOfB)
-                    ]
-                )
+                (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
                 (Mock.concatMap
                     (mkVar Mock.m)
-                    (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
+                    (Mock.builtinMap [(Mock.a, mkVar Mock.x)])
                 )
             )
         , testCase "framed Map with concrete Map"
@@ -706,18 +698,14 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfA)
                     , substitution = Substitution.wrap
                         [ (RegVar Mock.x, fOfA)
-                        , (RegVar Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                        , (RegVar Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                         ]
                     }
                 (Mock.concatMap
-                    (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
+                    (Mock.builtinMap [(Mock.a, mkVar Mock.x)])
                     (mkVar Mock.m)
                 )
-                (Mock.builtinMap
-                    [ (Mock.aConcrete, fOfA)
-                    , (Mock.bConcrete, fOfB)
-                    ]
-                )
+                (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
             )
         , testCase "framed Map with concrete Map"
             (assertTermEquals
@@ -729,18 +717,14 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfA)
                     , substitution = Substitution.wrap
                         [ (RegVar Mock.x, fOfA)
-                        , (RegVar Mock.m, Mock.builtinMap [(Mock.bConcrete, fOfB)])
+                        , (RegVar Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                         ]
                     }
                 (Mock.concatMap
                     (mkVar Mock.m)
-                    (Mock.builtinMap [(Mock.aConcrete, mkVar Mock.x)])
+                    (Mock.builtinMap [(Mock.a, mkVar Mock.x)])
                 )
-                (Mock.builtinMap
-                    [ (Mock.aConcrete, fOfA)
-                    , (Mock.bConcrete, fOfB)
-                    ]
-                )
+                (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
             )
         -- TODO: Add tests with non-trivial predicates.
         ]

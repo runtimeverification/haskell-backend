@@ -6,8 +6,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Control.Monad.Trans as Trans
-import           Data.Text
-                 ( Text )
 
 import           Kore.Internal.Pattern
 import           Kore.Internal.TermLike
@@ -62,20 +60,20 @@ noSimplification = []
 -- ----------------------------------------------------------------
 -- Refute Int predicates
 
-vInt :: Text -> TermLike Variable
+vInt :: Id -> TermLike Variable
 vInt s = mkVar (varS s Builtin.intSort)
 
 a, b, c :: TermLike Variable
-a = vInt "a"
-b = vInt "b"
-c = vInt "c"
+a = vInt (testId "a")
+b = vInt (testId "b")
+c = vInt (testId "c")
 
-vBool :: Text -> TermLike Variable
+vBool :: Id -> TermLike Variable
 vBool s = mkVar (varS s Builtin.boolSort)
 
 p, q :: TermLike Variable
-p = vBool "p"
-q = vBool "q"
+p = vBool (testId "p")
+q = vBool (testId "q")
 
 assertRefuted :: Syntax.Predicate Variable -> Assertion
 assertRefuted prop = do

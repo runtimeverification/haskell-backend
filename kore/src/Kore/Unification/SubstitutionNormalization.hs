@@ -46,8 +46,6 @@ import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
-import Debug.Trace
-
 data TopologicalSortResult variable
   = RegularCtorCycle ![variable]
   | SetCtorCycle ![variable]
@@ -95,20 +93,13 @@ normalizeSubstitution substitution = do
           where
             nonSimplifiableSortResult =
                 topologicalSort (Set.toList <$> nonSimplifiableDependencies)
-    traceM ("\n\n\nSubstitution: " ++ show substitution)
-    traceM ("All dependencies: " ++ show allDependencies)
-    traceM ("Result: " ++ show topologicalSortConverted)
-    result <- case topologicalSortConverted of
+    case topologicalSortConverted of
         Left err -> throwError err
         Right (RegularCtorCycle _) -> return Predicate.bottom
         Right (Sorted vars) -> ExceptT
             (Right <$> normalizeSortedSubstitution' vars)
         Right (SetCtorCycle vars) -> normalizeSubstitution
             $ Map.mapWithKey (makeRhsBottom (`elem` vars)) substitution
-    traceM ("Final Result: " ++ show result)
-    return result
---    ExceptT . traverse maybeToBottom $ topologicalSortConverted
-
   where
     interestingVariables :: Set (SubstVar variable)
     interestingVariables = Map.keysSet substitution
