@@ -136,26 +136,14 @@ evaluatePattern
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate variable
+    => Predicate variable
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
     -> OrPattern variable
     -- ^ The default value
     -> simplifier (OrPattern variable)
-evaluatePattern
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToEvaluator
-    childrenPredicate
-    patt
-    defaultValue
-  =
+evaluatePattern childrenPredicate patt defaultValue =
     Error.maybeT (return defaultValue) return
     $ maybeEvaluatePattern childrenPredicate patt defaultValue
 
