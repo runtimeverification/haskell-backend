@@ -68,7 +68,6 @@ import           Kore.SubstVar
 import qualified Kore.SubstVar as SubstVar
 import           Kore.Syntax as Syntax
 import           Kore.Syntax.Definition
-import qualified Kore.Syntax.SetVariable as SetVariable
 import           Kore.Unparser
 import qualified Kore.Variables.Free as Variables
 import qualified Kore.Verified as Verified
@@ -240,18 +239,18 @@ See also: 'uniqueDeclaredVariables', 'withDeclaredVariables'
 
  -}
 verifyAliasLeftPattern
-    :: Application SymbolOrAlias (SetVariable Variable)
-    -> PatternVerifier (DeclaredVariables, Application SymbolOrAlias (SetVariable Variable))
+    :: Application SymbolOrAlias Variable
+    -> PatternVerifier (DeclaredVariables, Application SymbolOrAlias Variable)
 verifyAliasLeftPattern leftPattern = do
     _ :< verified <-
-        verifyApplyAlias snd (expectVariable . SetVar . SetVariable.getVariable <$> leftPattern)
+        verifyApplyAlias snd (expectVariable . RegVar  <$> leftPattern)
         & runMaybeT
         & (>>= maybe (error . noHead $ symbolOrAlias) return)
     declaredVariables <- uniqueDeclaredVariables (fst <$> verified)
     let verifiedLeftPattern =
             leftPattern
                 { applicationChildren = fst <$> applicationChildren verified }
-    return (declaredVariables, SetVariable . SubstVar.asVariable <$> verifiedLeftPattern)
+    return (declaredVariables, SubstVar.asVariable <$> verifiedLeftPattern)
   where
     symbolOrAlias = applicationSymbolOrAlias leftPattern
     expectVariable

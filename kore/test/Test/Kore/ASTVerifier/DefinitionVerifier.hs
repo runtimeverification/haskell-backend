@@ -25,7 +25,6 @@ import           Kore.Syntax hiding
                  ( PatternF (..) )
 import           Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
-import qualified Kore.Syntax.SetVariable as SetVariable
 import           Kore.Unparser
                  ( unparseToString )
 import qualified Kore.Verified as Verified
@@ -385,8 +384,8 @@ sentenceAliasWithSortArgument
                             SortVariableSort <$> parameters
                         }
                 , applicationChildren =
-                    [ SetVariable $ Variable
-                        { variableName = testId "@x"
+                    [ Variable
+                        { variableName = testId "x"
                         , variableCounter = mempty
                         , variableSort = sortArgument
                         }
@@ -401,7 +400,7 @@ sentenceAliasWithAttributes
     -> [SortVariable]
     -> Sort
     -> [ParsedPattern]
-    -> Application SymbolOrAlias (SetVariable Variable)
+    -> Application SymbolOrAlias (Variable)
     -> ParsedPattern
     -> ParsedSentenceAlias
 sentenceAliasWithAttributes (AliasName name) params sort attributes l r =
@@ -561,7 +560,7 @@ symbolSentenceWithParametersAndArguments
             }
 
 objectAliasSentenceWithArguments
-    :: AliasName -> Sort -> [SetVariable Variable] -> ParsedSentence
+    :: AliasName -> Sort -> [Variable] -> ParsedSentence
 objectAliasSentenceWithArguments a b c =
     aliasSentenceWithArguments
         a
@@ -572,7 +571,7 @@ objectAliasSentenceWithArguments a b c =
 aliasSentenceWithArguments
     :: AliasName
     -> Sort
-    -> [SetVariable Variable]
+    -> [Variable]
     -> patternType
     -> Sentence patternType
 aliasSentenceWithArguments (AliasName name) sort operands r =
@@ -583,7 +582,7 @@ aliasSentenceWithArguments (AliasName name) sort operands r =
                 , aliasParams = []
                 }
             , sentenceAliasSorts =
-                variableSort . SetVariable.getVariable <$> operands
+                variableSort <$> operands
             , sentenceAliasResultSort = sort
             , sentenceAliasLeftPattern =
                 Application

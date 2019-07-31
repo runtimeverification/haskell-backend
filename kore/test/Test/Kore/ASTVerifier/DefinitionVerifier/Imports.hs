@@ -474,10 +474,10 @@ sortVisibilityTests =
                             , symbolOrAliasParams = []
                             }
                     , applicationChildren =
-                        [ SetVariable Variable
+                        [ Variable
                             { variableSort = sort
                             , variableCounter = mempty
-                            , variableName = testId "@x"
+                            , variableName = testId "x"
                             }
                         ]
                     }
@@ -922,8 +922,8 @@ aliasVisibilityTests =
                                 ]
                             }
                     , applicationChildren =
-                        [ SetVariable Variable
-                            { variableName = testId "@x"
+                        [ Variable
+                            { variableName = testId "x"
                             , variableCounter = mempty
                             , variableSort =
                                 SortVariableSort

@@ -60,7 +60,6 @@ import           Kore.SubstVar
 import           Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
                  ( PatternF (..) )
-import qualified Kore.Syntax.SetVariable as SetVariable
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}
@@ -514,7 +513,7 @@ sentenceAliasGen patGen =
         Reader.local (addSortVariables aliasParams) $ do
             sentenceAliasSorts <- couple sortGen
             sentenceAliasResultSort <- sortGen
-            variables <- traverse setVariableGen sentenceAliasSorts
+            variables <- traverse variableGen sentenceAliasSorts
             let Alias { aliasConstructor } = sentenceAliasAlias
                 sentenceAliasLeftPattern =
                     Application
@@ -527,9 +526,7 @@ sentenceAliasGen patGen =
                         , applicationChildren = variables
                         }
             sentenceAliasRightPattern <-
-                Reader.local
-                    (addVariables (fmap (SetVar . SetVariable.getVariable)
-                        variables))
+                Reader.local (addVariables (RegVar <$> variables))
                     (patGen sentenceAliasResultSort)
             sentenceAliasAttributes <- attributesGen
             return SentenceAlias

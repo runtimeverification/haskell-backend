@@ -217,7 +217,6 @@ import           Kore.Syntax.Nu
 import           Kore.Syntax.Or
 import           Kore.Syntax.Rewrites
 import           Kore.Syntax.SetVariable
-import qualified Kore.Syntax.SetVariable as SetVariable
 import           Kore.Syntax.StringLiteral
 import           Kore.Syntax.Top
 import           Kore.Syntax.Variable as Variable
@@ -1832,7 +1831,7 @@ mkAlias
     :: Id
     -> [SortVariable]
     -> Sort
-    -> [SetVariable Variable]
+    -> [Variable]
     -> TermLike Variable
     -> SentenceAlias (TermLike Variable)
 mkAlias aliasConstructor aliasParams resultSort' arguments right =
@@ -1858,7 +1857,7 @@ mkAlias aliasConstructor aliasParams resultSort' arguments right =
         , sentenceAliasAttributes = Attributes []
         }
   where
-    argumentSorts = variableSort . SetVariable.getVariable <$> arguments
+    argumentSorts = variableSort <$> arguments
 
 {- | Construct an alias declaration with no parameters.
 
@@ -1868,7 +1867,7 @@ See also: 'mkAlias'
 mkAlias_
     :: Id
     -> Sort
-    -> [SetVariable Variable]
+    -> [Variable]
     -> TermLike Variable
     -> SentenceAlias (TermLike Variable)
 mkAlias_ aliasConstructor = mkAlias aliasConstructor []

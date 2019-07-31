@@ -733,7 +733,7 @@ sentenceAliasParserTests :: [TestTree]
 sentenceAliasParserTests =
     parseTree koreSentenceParser
         [
-          success "alias a{s1}(s2) : s3 where a{s1}(@X:s2) := g{}() [\"a\"]"
+          success "alias a{s1}(s2) : s3 where a{s1}(X:s2) := g{}() [\"a\"]"
             (SentenceAliasSentence
                 (SentenceAlias
                     { sentenceAliasAlias = Alias
@@ -749,8 +749,8 @@ sentenceAliasParserTests =
                                 , symbolOrAliasParams = [ sortVariableSort "s1" ]
                                 }
                         , applicationChildren =
-                            [ SetVariable Variable
-                                { variableName = testId "@X" :: Id
+                            [ Variable
+                                { variableName = testId "X" :: Id
                                 , variableSort = sortVariableSort "s2"
                                 , variableCounter = mempty
                                 }
@@ -772,7 +772,7 @@ sentenceAliasParserTests =
                     }
                 :: ParsedSentenceAlias)
             )
-        , success "alias a { s1 , s2 } ( s3, s4 ) : s5 where a { s1 , s2 } ( @X:s3, @Y:s4 ) := b { s1 , s2 } ( @X:s3, @Y:s4 ) [ \"a\" , \"b\" ]"
+        , success "alias a { s1 , s2 } ( s3, s4 ) : s5 where a { s1 , s2 } ( X:s3, Y:s4 ) := b { s1 , s2 } ( X:s3, Y:s4 ) [ \"a\" , \"b\" ]"
             (SentenceAliasSentence
                 (SentenceAlias
                     { sentenceAliasAlias = Alias
@@ -799,13 +799,13 @@ sentenceAliasParserTests =
                                         ]
                                     }
                             , applicationChildren =
-                                [ SetVariable Variable
-                                    { variableName = testId "@X" :: Id
+                                [ Variable
+                                    { variableName = testId "X" :: Id
                                     , variableSort = sortVariableSort "s3"
                                     , variableCounter = mempty
                                     }
-                                , SetVariable Variable
-                                    { variableName = testId "@Y" :: Id
+                                , Variable
+                                    { variableName = testId "Y" :: Id
                                     , variableSort = sortVariableSort "s4"
                                     , variableCounter = mempty
                                     }
@@ -819,13 +819,13 @@ sentenceAliasParserTests =
                                     , symbolOrAliasParams = [ sortVariableSort "s1", sortVariableSort "s2" ]
                                     }
                             , applicationChildren =
-                                [ asParsedPattern $ SetVariableF $ SetVariable Variable
-                                    { variableName = testId "@X" :: Id
+                                [ asParsedPattern $ VariableF Variable
+                                    { variableName = testId "X" :: Id
                                     , variableSort = sortVariableSort "s3"
                                     , variableCounter = mempty
                                     }
-                                , asParsedPattern $ SetVariableF $ SetVariable Variable
-                                    { variableName = testId "@Y" :: Id
+                                , asParsedPattern $ VariableF Variable
+                                    { variableName = testId "Y" :: Id
                                     , variableSort = sortVariableSort "s4"
                                     , variableCounter = mempty
                                     }
@@ -909,7 +909,7 @@ sentenceAliasParserTests =
             )
         , success
             "alias rewrites{s}(s, s) : s \
-            \where rewrites{s}(@a : s, @b : s) := \\rewrites{s}(@a : s, @b : s) []"
+            \where rewrites{s}(a : s, b : s) := \\rewrites{s}(a : s, b : s) []"
             (   let
                     aliasId :: Id
                     aliasId = testId "rewrites"
@@ -921,16 +921,16 @@ sentenceAliasParserTests =
                             , symbolOrAliasParams = [resultSort]
                             }
                     var name =
-                        SetVariable Variable
+                        Variable
                             { variableName = testId name
                             , variableSort = resultSort
                             , variableCounter = mempty
                             }
-                    argument name = Internal.mkSetVar (var name)
-                    varA = var "@a"
-                    varB = var "@b"
-                    argA = argument "@a"
-                    argB = argument "@b"
+                    argument name = Internal.mkVar (var name)
+                    varA = var "a"
+                    varB = var "b"
+                    argA = argument "a"
+                    argB = argument "b"
                 in SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = aliasId
@@ -951,7 +951,7 @@ sentenceAliasParserTests =
             )
         , success
             "alias next{s}(s) : s \
-            \where next{s}(@a : s) := \\next{s}(@a : s) []"
+            \where next{s}(a : s) := \\next{s}(a : s) []"
             (   let
                     aliasId :: Id
                     aliasId = testId "next"
@@ -963,12 +963,12 @@ sentenceAliasParserTests =
                             , symbolOrAliasParams = [resultSort]
                             }
                     var =
-                        SetVariable Variable
-                            { variableName = testId "@a"
+                        Variable
+                            { variableName = testId "a"
                             , variableSort = resultSort
                             , variableCounter = mempty
                             }
-                    arg = Internal.mkSetVar var
+                    arg = Internal.mkVar var
                 in SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = aliasId
@@ -997,7 +997,6 @@ sentenceAliasParserTests =
             , "alias a{s1}(s2):[\"a\"]"
             , "alias a{s1}(s2)[\"a\"]"
             , "alias a{s1}(s2):s3"
-            , "alias a{s1}(s2) : s3 where a{s1}(X:s2) := g{}() [\"a\"]"
             ]
         ]
 

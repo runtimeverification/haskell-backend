@@ -703,8 +703,8 @@ test_patternVerifier =
         objectAliasSentenceWithArguments
             objectAliasName
             objectSort
-            [ SetVariable Variable
-                { variableName = testId "@x"
+            [ Variable
+                { variableName = testId "x"
                 , variableCounter = mempty
                 , variableSort = anotherObjectSort2
                 }
@@ -1172,8 +1172,8 @@ patternsInAllContexts
                                 SortVariableSort <$> aliasParams
                             }
                     , applicationChildren =
-                        [ SetVariable Variable
-                            { variableName = testId "@x"
+                        [ Variable
+                            { variableName = testId "x"
                             , variableCounter = mempty
                             , variableSort = symbolAliasSort
                             }
