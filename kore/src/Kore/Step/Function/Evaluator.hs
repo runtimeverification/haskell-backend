@@ -12,9 +12,9 @@ module Kore.Step.Function.Evaluator
     , evaluatePattern
     ) where
 
-import qualified Control.Error as Error
 import           Control.Error
                  ( MaybeT )
+import qualified Control.Error as Error
 import           Control.Exception
                  ( assert )
 import qualified Data.Map as Map
@@ -77,19 +77,9 @@ evaluateApplication childrenPredicate application = do
     let
         afterInj = evaluateSortInjection application
         termLike = synthesize (ApplySymbolF afterInj)
-
-        maybeEvaluatedPattSimplifier =
-            maybeEvaluatePattern childrenPredicate termLike unchanged
-        unchangedPatt =
-            Conditional
-                { term         = termLike
-                , predicate    = predicate
-                , substitution = substitution
-                }
-          where
-            Conditional { term = (), predicate, substitution } =
-                childrenPredicate
-        unchanged = OrPattern.fromPattern unchangedPatt
+        unchanged =
+            OrPattern.fromPattern
+            $ Pattern.withCondition termLike childrenPredicate
 
         symbol = applicationSymbolOrAlias afterInj
         symbolHook = (getHook . Attribute.hook) (symbolAttributes symbol)
@@ -106,7 +96,8 @@ evaluateApplication childrenPredicate application = do
           | otherwise =
             return unchanged
 
-    Error.maybeT unevaluatedSimplifier return maybeEvaluatedPattSimplifier
+    Error.maybeT unevaluatedSimplifier return
+        $ maybeEvaluatePattern childrenPredicate termLike unchanged
 
 {- | If the 'Symbol' has a 'Hook', issue a warning that the hook is missing.
 
