@@ -18,6 +18,9 @@ import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
 import qualified Data.Text as Text
+import           Data.Text.Prettyprint.Doc
+                 ( (<+>) )
+import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as Attribute
@@ -34,7 +37,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
 import           Kore.Logger
-                 ( LogMessage, WithLog )
+                 ( LogMessage, WithLog, logWarning )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -72,8 +75,6 @@ evaluateApplication childrenPredicate application = do
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
     let
         afterInj = evaluateSortInjection application
-        Application { applicationSymbolOrAlias = appHead } = afterInj
-        Symbol { symbolConstructor = symbolId } = appHead
         termLike = synthesize (ApplySymbolF afterInj)
 
         maybeEvaluatedPattSimplifier =
@@ -95,20 +96,37 @@ evaluateApplication childrenPredicate application = do
                 childrenPredicate
         unchanged = OrPattern.fromPattern unchangedPatt
 
-        getSymbolHook = getHook . Attribute.hook . symbolAttributes
-        getAppHookString = Text.unpack <$> getSymbolHook appHead
-
-    case maybeEvaluatedPattSimplifier of
-        Nothing
-          | Just hook <- getAppHookString
-          , not(null axiomIdToEvaluator) ->
-            error
-                (   "Attempting to evaluate unimplemented hooked operation "
-                ++  hook ++ ".\nSymbol: " ++ getIdForError symbolId
-                )
-          | otherwise ->
+        unevaluatedSimplifier
+          | null axiomIdToEvaluator =
+            -- We do not expect to evaluate anything because no evaluators were
+            -- provided.
             return unchanged
-        Just evaluatedPattSimplifier -> evaluatedPattSimplifier
+          | otherwise = do
+            warnMissingHook afterInj
+            return unchanged
+
+    fromMaybe unevaluatedSimplifier maybeEvaluatedPattSimplifier
+
+{- | If the 'Symbol' has a 'Hook', issue a warning that the hook is missing.
+
+ -}
+warnMissingHook
+    :: (MonadSimplify simplifier, SortedVariable variable)
+    => Application Symbol (TermLike variable) -> simplifier ()
+warnMissingHook application
+  | Just hook <- symbolHook = do
+    let message =
+            Pretty.vsep
+                [ "Missing hook" <+> Pretty.squotes (Pretty.pretty hook)
+                , "while evaluating:"
+                , Pretty.indent 4 (unparse application)
+                ]
+    logWarning (Text.pack $ show message)
+  | otherwise =
+    return ()
+  where
+    symbol = applicationSymbolOrAlias application
+    symbolHook = (getHook . Attribute.hook) (symbolAttributes symbol)
 
 {-| Evaluates axioms on patterns.
 -}
