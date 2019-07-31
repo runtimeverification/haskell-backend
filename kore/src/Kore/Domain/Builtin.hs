@@ -282,7 +282,7 @@ wrapElement = Lens.review elementIso
 
 unparsedChildren
     :: forall ann child key normalized
-    .  (AcWrapper normalized)
+    .  AcWrapper normalized
     => Symbol
     -> (key -> Pretty.Doc ann)
     -> (child -> Pretty.Doc ann)

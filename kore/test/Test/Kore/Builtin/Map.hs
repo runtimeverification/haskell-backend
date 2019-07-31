@@ -1,7 +1,7 @@
 module Test.Kore.Builtin.Map where
 
-import           Hedgehog hiding
-                 ( Concrete )
+import           Hedgehog
+                 ( Gen, Property, PropertyT, discard, forAll, (===) )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
@@ -9,13 +9,16 @@ import           Test.Tasty.HUnit
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Trans
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import qualified Data.List as List
 import           Data.Map
                  ( Map )
 import qualified Data.Map as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Reflection as Reflection
 import qualified Data.Set as Set
+import qualified GHC.Stack as GHC
 import           Prelude hiding
                  ( concatMap )
 
@@ -25,6 +28,8 @@ import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.MapSymbols as Map
+import           Kore.Domain.Builtin
+                 ( NormalizedMap (..) )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
@@ -922,6 +927,78 @@ test_concretizeKeysAxiom =
             }
     expected = Right (MultiOr [ pure val ])
 
+test_renormalize :: [TestTree]
+test_renormalize =
+    [ unchanged "abstract key is unchanged" (mkMap [(x, v)] [] [])
+    , becomes "concrete key is normalized"
+        (mkMap [(k1, v)] [] [])
+        (mkMap [] [(k1, v)] [])
+    , becomes "opaque child is flattened"
+        (mkMap [] [(k1, v)] [mkMap [] [(k2, v)] []])
+        (mkMap [] [(k1, v), (k2, v)] [])
+    , becomes "child is flattened and normalized"
+        (mkMap [] [(k1, v)] [mkMap [(k2, v)] [] []])
+        (mkMap [] [(k1, v), (k2, v)] [])
+    , becomes "grandchild is flattened and normalized"
+        (mkMap [] [(k1, v)] [mkMap [(x, v)] [] [mkMap [(k2, v)] [] []]])
+        (mkMap [(x, v)] [(k1, v), (k2, v)] [])
+    , denorm "duplicate key in map"
+        (mkMap [(k1, v), (k1, v)] [] [])
+    , denorm "duplicate key in child"
+        (mkMap [(k1, v)] [] [mkMap [(k1, v)] [] []])
+    ]
+  where
+    x = mkIntVar (testId "x")
+    v = mkIntVar (testId "v")
+    k1, k2 :: Ord variable => TermLike variable
+    k1 = Test.Int.asInternal 1
+    k2 = Test.Int.asInternal 2
+
+    becomes
+        :: GHC.HasCallStack
+        => TestName
+        -> NormalizedMap (TermLike Concrete) (TermLike Variable)
+        -- ^ original, (possibly) de-normalized map
+        -> NormalizedMap (TermLike Concrete) (TermLike Variable)
+        -- ^ expected normalized map
+        -> TestTree
+    becomes name origin expect =
+        testCase name
+        $ assertEqualWithExplanation "" (Just expect) (Ac.renormalize origin)
+
+    unchanged
+        :: GHC.HasCallStack
+        => TestName
+        -> NormalizedMap (TermLike Concrete) (TermLike Variable)
+        -> TestTree
+    unchanged name origin = becomes name origin origin
+
+    denorm
+        :: GHC.HasCallStack
+        => TestName
+        -> NormalizedMap (TermLike Concrete) (TermLike Variable)
+        -> TestTree
+    denorm name origin =
+        testCase name
+        $ assertEqualWithExplanation "" Nothing (Ac.renormalize origin)
+
+    mkMap
+        :: [(TermLike Variable, TermLike Variable)]
+        -- ^ abstract elements
+        -> [(TermLike Concrete, TermLike Variable)]
+        -- ^ concrete elements
+        -> [NormalizedMap (TermLike Concrete) (TermLike Variable)]
+        -- ^ opaque terms
+        -> NormalizedMap (TermLike Concrete) (TermLike Variable)
+    mkMap abstract concrete opaque =
+        Domain.wrapAc $ Domain.NormalizedAc
+            { elementsWithVariables = Domain.MapElement <$> abstract
+            , concreteElements =
+                Map.fromList (Bifunctor.second Domain.MapValue <$> concrete)
+            , opaque =
+                Ac.asInternal testMetadataTools mapSort <$> opaque
+            }
+
 hprop_unparse :: Property
 hprop_unparse =
     hpropUnparse (asInternal <$> genConcreteMap genValue)
@@ -938,23 +1015,24 @@ asTermLike =
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asPattern :: Map (TermLike Concrete) (TermLike Variable) -> Pattern Variable
 asPattern concreteMap =
-    Reflection.give testMetadataTools Ac.asPattern mapSort
-        Domain.NormalizedAc
-            { elementsWithVariables = []
-            , concreteElements = fmap Domain.MapValue concreteMap
-            , opaque = []
-            }
+    Reflection.give testMetadataTools
+    $ Ac.asPattern mapSort
+    $ Domain.wrapAc Domain.NormalizedAc
+        { elementsWithVariables = []
+        , concreteElements = Domain.MapValue <$> concreteMap
+        , opaque = []
+        }
 
 asVariablePattern
     :: Map (TermLike Variable) (TermLike Variable) -> Pattern Variable
 asVariablePattern variableMap =
-    Reflection.give testMetadataTools Ac.asPattern mapSort
-        Domain.NormalizedAc
-            { elementsWithVariables =
-                Domain.MapElement <$> Map.toList variableMap
-            , concreteElements = Map.empty
-            , opaque = []
-            }
+    Reflection.give testMetadataTools
+    $ Ac.asPattern mapSort
+    $ Domain.wrapAc Domain.NormalizedAc
+        { elementsWithVariables = Domain.MapElement <$> Map.toList variableMap
+        , concreteElements = Map.empty
+        , opaque = []
+        }
 
 -- | Specialize 'Ac.asInternal' to the builtin sort 'mapSort'.
 asInternal
@@ -963,6 +1041,25 @@ asInternal
 asInternal =
     Ac.asInternalConcrete testMetadataTools mapSort
     . fmap Domain.MapValue
+
+{- | Construct a 'NormalizedMap' from a list of elements and opaque terms.
+
+It is an error if the collection cannot be normalized.
+
+ -}
+normalizedMap
+    :: GHC.HasCallStack
+    => [(TermLike Variable, TermLike Variable)]
+    -- ^ (abstract or concrete) elements
+    -> [TermLike Variable]
+    -- ^ opaque terms
+    -> NormalizedMap (TermLike Concrete) (TermLike Variable)
+normalizedMap elements opaque =
+    Maybe.fromJust . Ac.renormalize . Domain.wrapAc $ Domain.NormalizedAc
+        { elementsWithVariables = Domain.MapElement <$> elements
+        , concreteElements = Map.empty
+        , opaque
+        }
 
 -- * Constructors
 

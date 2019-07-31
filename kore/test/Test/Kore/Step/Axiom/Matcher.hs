@@ -1623,12 +1623,12 @@ matchingSet =
         . Set.fromList
     mkSet concrete' evars svars =
         Ac.asInternal Mock.metadataTools Mock.setSort
-            Domain.NormalizedAc
-                { elementsWithVariables = Domain.SetElement <$> evars
-                , concreteElements =
-                    Map.fromSet (const Domain.SetValue) (Set.fromList concrete')
-                , opaque = svars
-                }
+        $ Domain.wrapAc Domain.NormalizedAc
+            { elementsWithVariables = Domain.SetElement <$> evars
+            , concreteElements =
+                Map.fromSet (const Domain.SetValue) (Set.fromList concrete')
+            , opaque = svars
+            }
     matchConcreteSet = matchDefinition `on` mkConcreteSet
     matchConcrete = matchConcreteSet `on` fmap mkKey
     matchVariable var val =
@@ -1784,15 +1784,14 @@ matchingMap =
         -> TermLike Variable
     mkMap concrete' evars svars =
         Ac.asInternal Mock.metadataTools Mock.setSort
-            Domain.NormalizedAc
-                { elementsWithVariables = Domain.MapElement <$> evars
-                , concreteElements = Domain.MapValue <$> Map.fromList concrete'
-                , opaque = svars
-                }
+        $ Domain.wrapAc Domain.NormalizedAc
+            { elementsWithVariables = Domain.MapElement <$> evars
+            , concreteElements = Domain.MapValue <$> Map.fromList concrete'
+            , opaque = svars
+            }
     mapWithKey = Bifunctor.bimap mkKey
     matchMap = matchDefinition `on` mkConcreteMap
-    matchConcrete =
-        matchMap `on` fmap (mapWithKey mkVal)
+    matchConcrete = matchMap `on` fmap (mapWithKey mkVal)
     matchVariable var val =
         matchMap
             (mapWithKey (either mkVar mkVal) <$> var)

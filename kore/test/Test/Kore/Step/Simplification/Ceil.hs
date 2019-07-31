@@ -11,6 +11,7 @@ import qualified Data.Map as Map
 
 import qualified Data.Sup as Sup
 import qualified Kore.Builtin.AssociativeCommutative as Ac
+import qualified Kore.Domain.Builtin as Domain
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -475,7 +476,8 @@ test_ceilSimplification =
         , substitution = mempty
         }
     asConcrete' p = let Just r = TermLike.asConcrete p in r
-    asInternalSet = Ac.asInternal Mock.metadataTools Mock.setSort
+    asInternalSet =
+        Ac.asInternal Mock.metadataTools Mock.setSort . Domain.wrapAc
 
 appliedMockEvaluator
     :: Pattern Variable -> BuiltinAndAxiomSimplifier

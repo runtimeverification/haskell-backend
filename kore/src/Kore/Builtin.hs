@@ -269,6 +269,12 @@ externalizePattern =
                 $ getEvaluated evaluatedF
             BuiltinF _ -> error "Unexpected internal builtin"
 
+{- | Convert a 'TermLike' to its internal representation.
+
+@internalize@ modifies the term recursively from the bottom up, so any internal
+representations are fully normalized.
+
+ -}
 internalize
     :: (Ord variable, SortedVariable variable)
     => SmtMetadataTools Attribute.Symbol

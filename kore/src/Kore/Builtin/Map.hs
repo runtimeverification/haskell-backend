@@ -174,7 +174,7 @@ expectBuiltinMap
 expectBuiltinMap ctx (Builtin_ builtin) =
     case builtin of
         Domain.BuiltinMap Domain.InternalAc { builtinAcChild } ->
-            return (Domain.unwrapAc builtinAcChild)
+            return builtinAcChild
         _ ->
             Builtin.verifierBug
             $ Text.unpack ctx ++ ": Domain value is not a map"
@@ -192,7 +192,7 @@ expectConcreteBuiltinMap
     -> MaybeT m (Map (TermLike Concrete) (Domain.MapValue (TermLike variable)))
 expectConcreteBuiltinMap ctx _map = do
     _map <- expectBuiltinMap ctx _map
-    case _map of
+    case Domain.unwrapAc _map of
         Domain.NormalizedAc
             { elementsWithVariables = []
             , concreteElements
@@ -253,14 +253,13 @@ evalElement =
                         resultSort
                         (Map.singleton concrete (Domain.MapValue _value))
                 Nothing ->
-                    Ac.returnAc
-                        resultSort
-                        Domain.NormalizedAc
-                            { elementsWithVariables =
-                                [Domain.MapElement (_key, _value)]
-                            , concreteElements = Map.empty
-                            , opaque = []
-                            }
+                    Ac.returnAc resultSort
+                    $ Domain.wrapAc Domain.NormalizedAc
+                        { elementsWithVariables =
+                            [Domain.MapElement (_key, _value)]
+                        , concreteElements = Map.empty
+                        , opaque = []
+                        }
 
 -- | evaluates the map concat builtin.
 evalConcat :: Builtin.Function
@@ -275,17 +274,15 @@ evalConcat =
         -> [TermLike variable]
         -> m (AttemptedAxiom variable)
     evalConcat0 _ resultSort arguments = Builtin.getAttemptedAxiom $ do
-        tools <- askMetadataTools
-
         let (_map1, _map2) =
                 case arguments of
                     [_map1, _map2] -> (_map1, _map2)
                     _ -> Builtin.wrongArity Map.concatKey
 
             normalized1 :: Ac.NormalizedOrBottom Domain.NormalizedMap variable
-            normalized1 = Ac.toNormalized tools _map1
+            normalized1 = Ac.toNormalized _map1
             normalized2 :: Ac.NormalizedOrBottom Domain.NormalizedMap variable
-            normalized2 = Ac.toNormalized tools _map2
+            normalized2 = Ac.toNormalized _map2
 
         Ac.evalConcatNormalizedOrBottom resultSort normalized1 normalized2
 
@@ -483,12 +480,13 @@ internalize tools termLike
   -- apply it if we know the term head is a constructor-like symbol.
   , App_ symbol _ <- termLike
   , isConstructorModulo_ symbol =
-    case Ac.toNormalized @Domain.NormalizedMap tools termLike of
+    case Ac.toNormalized @Domain.NormalizedMap termLike of
         Ac.Bottom                    -> TermLike.mkBottom sort'
         Ac.Normalized termNormalized
-          | null (Domain.elementsWithVariables termNormalized)
-          , null (Domain.concreteElements termNormalized)
-          , [singleOpaqueTerm] <- Domain.opaque termNormalized
+          | let unwrapped = Domain.unwrapAc termNormalized
+          , null (Domain.elementsWithVariables unwrapped)
+          , null (Domain.concreteElements unwrapped)
+          , [singleOpaqueTerm] <- Domain.opaque unwrapped
           ->
             -- When the 'normalized' term consists of a single opaque Map-sorted
             -- term, we should prefer to return only that term.
@@ -582,4 +580,4 @@ unifyEquals
           where
             normalizedOrBottom
                 :: Ac.NormalizedOrBottom Domain.NormalizedMap variable
-            normalizedOrBottom = Ac.toNormalized tools patt
+            normalizedOrBottom = Ac.toNormalized patt
