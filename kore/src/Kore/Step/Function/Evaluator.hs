@@ -17,6 +17,8 @@ import           Control.Exception
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( fromMaybe )
+import           Data.Text
+                 ( Text )
 import qualified Data.Text as Text
 import           Data.Text.Prettyprint.Doc
                  ( (<+>) )
@@ -70,6 +72,7 @@ evaluateApplication
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
 evaluateApplication childrenPredicate application = do
+    -- (TODO) thomas.tuegel: Refactor these downward.
     substitutionSimplifier <- Simplifier.askSimplifierPredicate
     simplifier <- Simplifier.askSimplifierTermLike
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
@@ -96,13 +99,20 @@ evaluateApplication childrenPredicate application = do
                 childrenPredicate
         unchanged = OrPattern.fromPattern unchangedPatt
 
+        hasAnyEvaluators = (not . null) axiomIdToEvaluator
+        symbol = applicationSymbolOrAlias afterInj
+        symbolHook = (getHook . Attribute.hook) (symbolAttributes symbol)
+        -- Return the input when there are no evaluators for the symbol.
         unevaluatedSimplifier
-          | null axiomIdToEvaluator =
-            -- We do not expect to evaluate anything because no evaluators were
-            -- provided.
-            return unchanged
-          | otherwise = do
-            warnMissingHook afterInj
+          | hasAnyEvaluators
+          , Just hook <- symbolHook
+          = do
+            warnMissingHook hook afterInj
+            -- Mark the result so we do not attempt to evaluate it again. This
+            -- prevents spamming the warning above, but re-evaluation will never
+            -- succeed anyway if there are no evaluators for this symbol!
+            return $ (fmap . fmap) mkEvaluated unchanged
+          | otherwise =
             return unchanged
 
     fromMaybe unevaluatedSimplifier maybeEvaluatedPattSimplifier
@@ -112,9 +122,8 @@ evaluateApplication childrenPredicate application = do
  -}
 warnMissingHook
     :: (MonadSimplify simplifier, SortedVariable variable)
-    => Application Symbol (TermLike variable) -> simplifier ()
-warnMissingHook application
-  | Just hook <- symbolHook = do
+    => Text -> Application Symbol (TermLike variable) -> simplifier ()
+warnMissingHook hook application = do
     let message =
             Pretty.vsep
                 [ "Missing hook" <+> Pretty.squotes (Pretty.pretty hook)
@@ -122,11 +131,6 @@ warnMissingHook application
                 , Pretty.indent 4 (unparse application)
                 ]
     logWarning (Text.pack $ show message)
-  | otherwise =
-    return ()
-  where
-    symbol = applicationSymbolOrAlias application
-    symbolHook = (getHook . Attribute.hook) (symbolAttributes symbol)
 
 {-| Evaluates axioms on patterns.
 -}
