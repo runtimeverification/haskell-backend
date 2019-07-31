@@ -74,21 +74,13 @@ evaluateApplication
     -> simplifier (OrPattern variable)
 evaluateApplication childrenPredicate application = do
     -- (TODO) thomas.tuegel: Refactor these downward.
-    substitutionSimplifier <- Simplifier.askSimplifierPredicate
-    simplifier <- Simplifier.askSimplifierTermLike
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
     let
         afterInj = evaluateSortInjection application
         termLike = synthesize (ApplySymbolF afterInj)
 
         maybeEvaluatedPattSimplifier =
-            maybeEvaluatePattern
-                substitutionSimplifier
-                simplifier
-                axiomIdToEvaluator
-                childrenPredicate
-                termLike
-                unchanged
+            maybeEvaluatePattern childrenPredicate termLike unchanged
         unchangedPatt =
             Conditional
                 { term         = termLike
@@ -157,24 +149,15 @@ evaluatePattern
     -- ^ The default value
     -> simplifier (OrPattern variable)
 evaluatePattern
-    substitutionSimplifier
-    simplifier
-    axiomIdToEvaluator
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToEvaluator
     childrenPredicate
     patt
     defaultValue
   =
-    Error.maybeT
-        (return defaultValue)
-        return
-        (maybeEvaluatePattern
-            substitutionSimplifier
-            simplifier
-            axiomIdToEvaluator
-            childrenPredicate
-            patt
-            defaultValue
-        )
+    Error.maybeT (return defaultValue) return
+    $ maybeEvaluatePattern childrenPredicate patt defaultValue
 
 {-| Evaluates axioms on patterns.
 
@@ -189,26 +172,14 @@ maybeEvaluatePattern
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Predicate variable
+    => Predicate variable
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
     -> OrPattern variable
     -- ^ The default value
     -> MaybeT simplifier (OrPattern variable)
-maybeEvaluatePattern
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToEvaluator
-    childrenPredicate
-    patt
-    defaultValue
-  = tracing $ do
+maybeEvaluatePattern childrenPredicate patt defaultValue = tracing $ do
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
     let maybeEvaluator = do
             identifier' <- identifier
