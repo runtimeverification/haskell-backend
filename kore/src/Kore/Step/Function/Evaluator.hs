@@ -73,8 +73,7 @@ evaluateApplication
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
 evaluateApplication childrenPredicate application = do
-    -- (TODO) thomas.tuegel: Refactor these downward.
-    axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
+    hasSimplifierAxioms <- not . null <$> Simplifier.askSimplifierAxioms
     let
         afterInj = evaluateSortInjection application
         termLike = synthesize (ApplySymbolF afterInj)
@@ -92,12 +91,11 @@ evaluateApplication childrenPredicate application = do
                 childrenPredicate
         unchanged = OrPattern.fromPattern unchangedPatt
 
-        hasAnyEvaluators = (not . null) axiomIdToEvaluator
         symbol = applicationSymbolOrAlias afterInj
         symbolHook = (getHook . Attribute.hook) (symbolAttributes symbol)
         -- Return the input when there are no evaluators for the symbol.
         unevaluatedSimplifier
-          | hasAnyEvaluators
+          | hasSimplifierAxioms
           , Just hook <- symbolHook
           = do
             warnMissingHook hook afterInj
