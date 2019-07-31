@@ -12,6 +12,7 @@ import           Data.Coerce
 import qualified Data.Foldable as Foldable
 import           Data.Maybe
                  ( mapMaybe )
+import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Trusted as Trusted
@@ -22,19 +23,25 @@ import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import           Kore.OnePath.Step
                  ( removalPredicate )
+import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( OnePathRule (..), RewriteRule (..), RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
 import           Kore.Step.Simplification.Pattern
                  ( simplifyAndRemoveTopExists )
+import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.TopBottom
+import qualified Kore.Unification.Procedure as Unification
+import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
-                 ( Unparse )
+                 ( Unparse, unparse )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
+import qualified Kore.Variables.Target as Target
 
 {- | The state of the all-path reachability proof strategy for @goal@.
  -}
@@ -158,6 +165,94 @@ instance
                 , ensures = ensures . coerce $ goal
                 , attributes = attributes . coerce $ goal
                 }
+
+    deriveSeq rules goal = do
+        let destination =
+                Pattern.fromTermLike
+                . right
+                . coerce
+                $ goal
+            configuration =
+                Pattern.fromTermLike
+                . left
+                . coerce
+                $ goal
+        if isBottom configuration
+            then empty
+            else do
+                eitherResults <-
+                    Monad.Trans.lift
+                    . Monad.Unify.runUnifierT
+                    $ Step.applyRewriteRulesSequence
+                        (Step.UnificationProcedure Unification.unificationProcedure)
+                        configuration
+                        rules
+                case eitherResults of
+                    Left err ->
+                        (error . show . Pretty.vsep)
+                        [ "Not implemented error:"
+                        , Pretty.indent 4 (Pretty.pretty err)
+                        , "while applying a \\rewrite axiom to the pattern:"
+                        , Pretty.indent 4 (unparse configuration)
+                        ,   "We decided to end the execution because we don't \
+                            \understand this case well enough at the moment."
+                        ]
+                    Right results -> do
+                        let
+                            mapRules
+                                :: Result.Results (Step.UnifiedRule (Target.Target variable)) (OnePathRule variable)
+                                -> Result.Results (RewriteRule variable) (OnePathRule variable)
+                            mapRules =
+                                Result.mapRules
+                                $ RewriteRule
+                                . Step.unwrapRule
+                                . Step.withoutUnification
+                            -- Try one last time to remove the destination from the
+                            -- remainder.
+                           -- checkRemainder
+                           --     :: OnePathRule variable
+                           --     -> Strategy.TransitionT
+                           --         (RewriteRule variable)
+                           --         m
+                           --         (ProofState (OnePathRule variable))
+                            checkRemainder remainder = do
+                                newClaim <- removeDestination remainder
+                                pure . GoalRem $ newClaim
+                           -- traverseConfigs
+                           --     :: Result.Results rule (OnePathRule variable)
+                           --     -> Strategy.TransitionT
+                           --         (RewriteRule variable)
+                           --         m
+                           --         (Result.Results
+                           --             rule
+                           --             (ProofState (OnePathRule variable))
+                           --         )
+                            traverseConfigs =
+                                Result.traverseConfigs
+                                    (pure . Goal)
+                                    checkRemainder
+                            -- makeOnePathRule
+                            --     :: Pattern.Pattern variable
+                            --     -> OnePathRule variable
+                            makeOnePathRule patt =
+                                OnePathRule RulePattern
+                                    { left = Pattern.toTermLike patt
+                                    , right = Pattern.toTermLike destination
+                                    , requires = requires . coerce $ goal
+                                    , ensures = ensures . coerce $ goal
+                                    , attributes = attributes . coerce $ goal
+                                    }
+                        results' <-
+                            traverseConfigs
+                                (mapRules
+                                    (Result.mapConfigs
+                                        makeOnePathRule
+                                        makeOnePathRule
+                                        (Result.mergeResults results)
+                                    )
+                                )
+                            >>= Result.transitionResults
+                        pure results'
 
 transitionRule
     :: (MonadSimplify m, Goal goal)
