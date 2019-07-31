@@ -12,11 +12,12 @@ module Kore.Step.Function.Evaluator
     , evaluatePattern
     ) where
 
+import qualified Control.Error as Error
+import           Control.Error
+                 ( MaybeT )
 import           Control.Exception
                  ( assert )
 import qualified Data.Map as Map
-import           Data.Maybe
-                 ( fromMaybe )
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
@@ -115,7 +116,7 @@ evaluateApplication childrenPredicate application = do
           | otherwise =
             return unchanged
 
-    fromMaybe unevaluatedSimplifier maybeEvaluatedPattSimplifier
+    Error.maybeT unevaluatedSimplifier return maybeEvaluatedPattSimplifier
 
 {- | If the 'Symbol' has a 'Hook', issue a warning that the hook is missing.
 
@@ -163,8 +164,9 @@ evaluatePattern
     patt
     defaultValue
   =
-    fromMaybe
+    Error.maybeT
         (return defaultValue)
+        return
         (maybeEvaluatePattern
             substitutionSimplifier
             simplifier
@@ -198,63 +200,62 @@ maybeEvaluatePattern
     -- ^ The pattern to be evaluated
     -> OrPattern variable
     -- ^ The default value
-    -> Maybe (simplifier (OrPattern variable))
+    -> MaybeT simplifier (OrPattern variable)
 maybeEvaluatePattern
-    substitutionSimplifier
-    simplifier
-    axiomIdToEvaluator
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToEvaluator
     childrenPredicate
     patt
     defaultValue
-  =
-    case maybeEvaluator of
-        Nothing -> Nothing
-        Just (BuiltinAndAxiomSimplifier evaluator) ->
-            Just
-            $ traceNonErrorMonad
-                D_Function_evaluatePattern
-                [ debugArg "axiomIdentifier" identifier ]
-            $ do
-                result <-
-                    evaluator
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToEvaluator
-                        patt
-                flattened <- case result of
-                    AttemptedAxiom.NotApplicable ->
-                        return AttemptedAxiom.NotApplicable
-                    AttemptedAxiom.Applied AttemptedAxiomResults
-                        { results = orResults
+  = tracing $ do
+    axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
+    let maybeEvaluator = do
+            identifier' <- identifier
+            Map.lookup identifier' axiomIdToEvaluator
+    BuiltinAndAxiomSimplifier evaluator <- Error.hoistMaybe maybeEvaluator
+    substitutionSimplifier <- Simplifier.askSimplifierPredicate
+    simplifier <- Simplifier.askSimplifierTermLike
+    result <-
+        evaluator
+            substitutionSimplifier
+            simplifier
+            axiomIdToEvaluator
+            patt
+    flattened <- case result of
+        AttemptedAxiom.NotApplicable ->
+            return AttemptedAxiom.NotApplicable
+        AttemptedAxiom.Applied AttemptedAxiomResults
+            { results = orResults
+            , remainders = orRemainders
+            } -> do
+                simplified <- mapM simplifyIfNeeded orResults
+                return
+                    (AttemptedAxiom.Applied AttemptedAxiomResults
+                        { results =
+                            MultiOr.flatten simplified
                         , remainders = orRemainders
-                        } -> do
-                            simplified <- mapM simplifyIfNeeded orResults
-                            return
-                                (AttemptedAxiom.Applied AttemptedAxiomResults
-                                    { results =
-                                        MultiOr.flatten simplified
-                                    , remainders = orRemainders
-                                    }
-                                )
-                merged <-
-                    mergeWithConditionAndSubstitution
-                        childrenPredicate
-                        flattened
-                case merged of
-                    AttemptedAxiom.NotApplicable -> return defaultValue
-                    AttemptedAxiom.Applied attemptResults ->
-                        return $ MultiOr.merge results remainders
-                      where
-                        AttemptedAxiomResults { results, remainders } =
-                            attemptResults
+                        }
+                    )
+    merged <-
+        mergeWithConditionAndSubstitution
+            childrenPredicate
+            flattened
+    case merged of
+        AttemptedAxiom.NotApplicable -> return defaultValue
+        AttemptedAxiom.Applied attemptResults ->
+            return $ MultiOr.merge results remainders
+            where
+            AttemptedAxiomResults { results, remainders } =
+                attemptResults
   where
     identifier :: Maybe AxiomIdentifier
     identifier = AxiomIdentifier.extract patt
 
-    maybeEvaluator :: Maybe BuiltinAndAxiomSimplifier
-    maybeEvaluator = do
-        identifier' <- identifier
-        Map.lookup identifier' axiomIdToEvaluator
+    tracing =
+        traceNonErrorMonad
+            D_Function_evaluatePattern
+            [ debugArg "axiomIdentifier" identifier ]
 
     unchangedPatt =
         Conditional
@@ -265,7 +266,8 @@ maybeEvaluatePattern
       where
         Conditional { term = (), predicate, substitution } = childrenPredicate
 
-    simplifyIfNeeded :: Pattern variable -> simplifier (OrPattern variable)
+    simplifyIfNeeded
+        :: Pattern variable -> MaybeT simplifier (OrPattern variable)
     simplifyIfNeeded toSimplify
       | toSimplify == unchangedPatt =
         return (OrPattern.fromPattern unchangedPatt)
