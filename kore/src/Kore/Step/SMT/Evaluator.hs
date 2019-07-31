@@ -59,7 +59,7 @@ import qualified SMT
 or which contain things that can be evaluated with an SMT solver.
 -}
 class Evaluable thing where
-    {- | Attempt to evaluate the argument wiith an external SMT solver.
+    {- | Attempt to evaluate the argument with an external SMT solver.
     -}
     evaluate :: MonadSimplify m => thing -> m (Maybe Bool)
 

@@ -22,8 +22,8 @@ import           Kore.Debug
 import           Kore.Domain.Builtin
 import qualified Kore.Internal.Alias as Internal
 import qualified Kore.Internal.Symbol as Internal
-import Kore.SubstVar
-       ( SubstVar (..) )
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import           Kore.Syntax
 
 {- | A pattern is 'Defined' if it matches at least one element.
@@ -173,12 +173,17 @@ instance Synthetic (Top sort) Defined where
     {-# INLINE synthetic #-}
 
 -- | A 'StringLiteral' pattern is always 'Defined'.
-instance Synthetic (Const StringLiteral) Defined where
+instance Synthetic StringLiteral Defined where
     synthetic = const (Defined True)
     {-# INLINE synthetic #-}
 
 -- | A 'CharLiteral' pattern is always 'Defined'.
-instance Synthetic (Const CharLiteral) Defined where
+instance Synthetic CharLiteral Defined where
+    synthetic = const (Defined True)
+    {-# INLINE synthetic #-}
+
+-- | An 'Inhabitant' pattern is always 'Defined'.
+instance Synthetic Inhabitant Defined where
     synthetic = const (Defined True)
     {-# INLINE synthetic #-}
 

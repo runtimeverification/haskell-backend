@@ -19,6 +19,7 @@ module Kore.Syntax
     , module Kore.Syntax.Iff
     , module Kore.Syntax.Implies
     , module Kore.Syntax.In
+    , module Kore.Syntax.Inhabitant
     , module Kore.Syntax.Mu
     , module Kore.Syntax.Next
     , module Kore.Syntax.Not
@@ -48,6 +49,7 @@ import Kore.Syntax.Forall
 import Kore.Syntax.Iff
 import Kore.Syntax.Implies
 import Kore.Syntax.In
+import Kore.Syntax.Inhabitant
 import Kore.Syntax.Mu
 import Kore.Syntax.Next
 import Kore.Syntax.Not

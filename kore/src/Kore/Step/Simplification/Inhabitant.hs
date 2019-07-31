@@ -17,6 +17,6 @@ an or containing a term made of that literal.
 -}
 simplify
     :: (Ord variable, SortedVariable variable)
-    => Sort
+    => Inhabitant (OrPattern variable)
     -> OrPattern variable
-simplify s = OrPattern.fromTermLike $ mkInhabitant s
+simplify Inhabitant { inhSort } = OrPattern.fromTermLike $ mkInhabitant inhSort

@@ -39,10 +39,10 @@ import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule) )
 import           Kore.Step.Simplification.Data
+import qualified Kore.Step.Simplification.OrPattern as OrPattern
+                 ( filterMultiOrWithTermCeil )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyAndRemoveTopExists )
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-                 ( filterMultiOr )
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
@@ -162,7 +162,7 @@ transitionRule strategy expandedPattern =
     applySimplify wrapper config = do
         configs <-
             Monad.Trans.lift $ Pattern.simplifyAndRemoveTopExists config
-        filteredConfigs <- SMT.Evaluator.filterMultiOr configs
+        filteredConfigs <- OrPattern.filterMultiOrWithTermCeil configs
         if null filteredConfigs
             then return Bottom
             else Foldable.asum (pure . wrapper <$> filteredConfigs)
@@ -242,7 +242,7 @@ transitionRule strategy expandedPattern =
             result = patt `Conditional.andPredicate` removal
         orResult <-
             Monad.Trans.lift $ Pattern.simplifyAndRemoveTopExists result
-        filteredConfigs <- SMT.Evaluator.filterMultiOr orResult
+        filteredConfigs <- OrPattern.filterMultiOrWithTermCeil orResult
         if null filteredConfigs
             then return Bottom
             else Foldable.asum (pure . proofState <$> filteredConfigs)

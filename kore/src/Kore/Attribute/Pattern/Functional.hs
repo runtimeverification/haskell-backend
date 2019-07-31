@@ -22,8 +22,8 @@ import           Kore.Debug
 import           Kore.Domain.Builtin
 import qualified Kore.Internal.Alias as Internal
 import qualified Kore.Internal.Symbol as Internal
-import Kore.SubstVar
-       ( SubstVar (..) )
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import           Kore.Syntax
 
 {- | A pattern is 'Functional' if it matches exactly one element.
@@ -175,13 +175,18 @@ instance Synthetic (Const (SubstVar Variable)) Functional where
     {-# INLINE synthetic #-}
 
 -- | A 'StringLiteral' pattern is always 'Functional'.
-instance Synthetic (Const StringLiteral) Functional where
+instance Synthetic StringLiteral Functional where
     synthetic = const (Functional True)
     {-# INLINE synthetic #-}
 
 -- | A 'CharLiteral' pattern is always 'Functional'.
-instance Synthetic (Const CharLiteral) Functional where
+instance Synthetic CharLiteral Functional where
     synthetic = const (Functional True)
+    {-# INLINE synthetic #-}
+
+-- | An 'Inhabitant' pattern is never 'Functional'.
+instance Synthetic Inhabitant Functional where
+    synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
 instance Synthetic (Const Sort) Functional where

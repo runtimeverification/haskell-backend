@@ -30,15 +30,15 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import           Numeric.Natural
 
-import Data.Sup
-import Kore.Attribute.Pattern.FreeVariables
-import Kore.Attribute.Synthetic
-import Kore.Debug
-import Kore.Sort
-import Kore.SubstVar
-       ( SubstVar (..) )
+import           Data.Sup
+import           Kore.Attribute.Pattern.FreeVariables
+import           Kore.Attribute.Synthetic
+import           Kore.Debug
+import           Kore.Sort
+import           Kore.SubstVar
+                 ( SubstVar (..) )
 import qualified Kore.SubstVar as SubstVar
-import Kore.Unparser
+import           Kore.Unparser
 
 {-|'Variable' corresponds to the @variable@ syntactic category from the
 Semantics of K, Section 9.1.4 (Patterns).

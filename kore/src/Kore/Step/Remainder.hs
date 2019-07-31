@@ -7,6 +7,7 @@ License     : NCSA
 module Kore.Step.Remainder
     ( remainder, remainder'
     , existentiallyQuantifyTarget
+    , ceilChildOfApplicationOrTop
     ) where
 
 import           Control.Applicative
@@ -20,18 +21,25 @@ import           Kore.Internal.MultiAnd
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import           Kore.Internal.MultiOr
                  ( MultiOr )
-import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.OrPredicate as OrPredicate
 import           Kore.Internal.Predicate
                  ( Predicate )
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Step.Simplification.AndPredicates as AndPredicates
+import qualified Kore.Step.Simplification.Ceil as Ceil
+import           Kore.Step.Simplification.Data
+                 ( MonadSimplify (..) )
 import qualified Kore.SubstVar as SubstVar
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
+import           Kore.Variables.Fresh
+                 ( FreshVariable )
 import           Kore.Variables.Target
                  ( Target )
 import qualified Kore.Variables.Target as Target
@@ -156,3 +164,31 @@ substitutionConditions subst =
   where
     substitutionCoverageWorker (x, t) =
         Syntax.Predicate.makeEqualsPredicate (mkSubstVar x) t
+
+ceilChildOfApplicationOrTop
+    :: forall variable m
+    .  ( FreshVariable variable
+       , SortedVariable variable
+       , Show variable
+       , Unparse variable
+       , MonadSimplify m
+       )
+    => TermLike variable
+    -> m (Predicate variable)
+ceilChildOfApplicationOrTop patt =
+    case patt of
+        App_ _ children -> do
+            ceil <-
+                traverse Ceil.makeEvaluateTerm children
+                >>= ( AndPredicates.simplifyEvaluatedMultiPredicate
+                    . MultiAnd.make
+                    )
+            pure $ Conditional
+                { term = ()
+                , predicate =
+                    OrPredicate.toPredicate
+                    . fmap Predicate.toPredicate
+                    $ ceil
+                , substitution = mempty
+                }
+        _ -> pure Predicate.top
