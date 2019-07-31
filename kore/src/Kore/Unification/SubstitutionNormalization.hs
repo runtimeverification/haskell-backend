@@ -21,6 +21,8 @@ import qualified Data.Functor.Foldable as Recursive
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
+import           Data.Maybe
+                 ( mapMaybe )
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
@@ -83,10 +85,13 @@ normalizeSubstitution substitution = do
             case topologicalSort (Set.toList <$> allDependencies) of
                 Left (ToplogicalSortCycles vars) ->
                     case nonSimplifiableSortResult of
-                        Left (ToplogicalSortCycles _vars) ->
-                            if all SubstVar.isSetVar vars then
-                                Right (SetCtorCycle vars)
-                            else Right (RegularCtorCycle vars)
+                        Left (ToplogicalSortCycles nonSimplifiableCycle)
+                          | all isVariable (mapMaybe (`Map.lookup` substitution) nonSimplifiableCycle) ->
+                              error "order on variables should prevent only-variable-cycles"
+                          | all SubstVar.isSetVar nonSimplifiableCycle ->
+                              Right (SetCtorCycle nonSimplifiableCycle)
+                          | otherwise ->
+                              Right (RegularCtorCycle nonSimplifiableCycle)
                         Right _ ->
                             Left (NonCtorCircularVariableDependency vars)
                 Right result -> Right (Sorted result)
@@ -101,6 +106,13 @@ normalizeSubstitution substitution = do
         Right (SetCtorCycle vars) -> normalizeSubstitution
             $ Map.mapWithKey (makeRhsBottom (`elem` vars)) substitution
   where
+    isVariable :: TermLike variable -> Bool
+    isVariable term =
+        case Cofree.tailF (Recursive.project term) of
+            VariableF _ -> True
+            SetVariableF _ -> True
+            _ -> False
+
     interestingVariables :: Set (SubstVar variable)
     interestingVariables = Map.keysSet substitution
 
@@ -235,17 +247,16 @@ nonSimplifiableAbove interesting p =
     case Cofree.tailF p of
         VariableF v ->
             if RegVar v `Set.member` interesting then Set.singleton (RegVar v) else Set.empty
-        ExistsF Exists {existsVariable = v} -> Set.delete (RegVar v) dependencies
-        ForallF Forall {forallVariable = v} -> Set.delete (RegVar v) dependencies
+--        ExistsF Exists {existsVariable = v} -> Set.delete (RegVar v) dependencies
+--        ForallF Forall {forallVariable = v} -> Set.delete (RegVar v) dependencies
         SetVariableF (SetVariable v) ->
             if SetVar v `Set.member` interesting then Set.singleton (SetVar v) else Set.empty
-        MuF Mu {muVariable = SetVariable v} -> Set.delete (SetVar v) dependencies
-        NuF Nu {nuVariable = SetVariable v} -> Set.delete (SetVar v) dependencies
-        ApplySymbolF Application { applicationSymbolOrAlias } ->
-            if Symbol.isNonSimplifiable applicationSymbolOrAlias
-                then dependencies
-                else Set.empty
-        _ -> dependencies
+--        MuF Mu {muVariable = SetVariable v} -> Set.delete (SetVar v) dependencies
+--        NuF Nu {nuVariable = SetVariable v} -> Set.delete (SetVar v) dependencies
+        ApplySymbolF Application { applicationSymbolOrAlias }
+            | Symbol.isNonSimplifiable applicationSymbolOrAlias ->
+                dependencies
+        _ -> Set.empty
   where
     dependencies :: Set (SubstVar variable)
     dependencies = foldl Set.union Set.empty p

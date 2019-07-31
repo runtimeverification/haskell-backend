@@ -15,7 +15,8 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.SubstVar
                  ( SubstVar (..) )
-import           Kore.TopBottom ( isBottom )
+import           Kore.TopBottom
+                 ( isBottom )
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -121,6 +122,7 @@ test_substitutionNormalization =
             (Error (NonCtorCircularVariableDependency [RegVar var1]))
             =<< runNormalizeSubstitution
                 [ (RegVar  var1 , mkApplySymbol f [mkVar var1] ) ]
+    {- TODO(traiansf): maybe check that exception is thrown here
     , testCase "onlyThisLength 2 cycle" $ do
         let
             var1 = v1 Mock.testSort
@@ -139,14 +141,30 @@ test_substitutionNormalization =
                 [ (var1, mkSubstVar varx1)
                 , (varx1, mkSubstVar var1)
                 ]
+     -}
      , testCase "Cycle with 'and'" $ do
         let
             var1 = v1 Mock.testSort
             varx1 = x1 Mock.testSort
-        assertEqualWithExplanation "" (Substitution [])
+        assertEqualWithExplanation ""
+            (Error
+              (NonCtorCircularVariableDependency [RegVar var1, RegVar varx1])
+            )
             =<< runNormalizeSubstitution
                 [ (RegVar var1, mkAnd (mkVar varx1) mkTop_)
                 , (RegVar varx1, mkAnd (mkVar var1) mkTop_)
+                ]
+     , testCase "SetVariable Cycle with 'and'" $ do
+        let
+            var1 = Mock.makeTestSubstVar "@v"
+            varx1 = Mock.makeTestSubstVar "@x"
+        assertEqualWithExplanation ""
+            (Error
+              (NonCtorCircularVariableDependency [var1, varx1])
+            )
+            =<< runNormalizeSubstitution
+                [ (var1, mkAnd (mkSubstVar varx1) mkTop_)
+                , (varx1, mkAnd (mkSubstVar var1) mkTop_)
                 ]
     , testCase "Length 2 non-ctor cycle" $ do
         let
