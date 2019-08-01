@@ -18,7 +18,9 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike as TermLike
+import           Kore.Internal.TermLike
+                 ( TermLike )
+import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification )
 import           Kore.Step.Rule
