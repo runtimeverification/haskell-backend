@@ -1553,6 +1553,8 @@ instance SumEqualWithExplanation AxiomIdentifier where
         (AxiomIdentifier.Ceil p1) (AxiomIdentifier.Ceil p2)
       =
         SumConstructorSameWithArguments (EqWrap "Ceil" p1 p2)
+    sumConstructorPair AxiomIdentifier.Variable AxiomIdentifier.Variable =
+        SumConstructorSameNoArguments
     sumConstructorPair p1 p2 =
         SumConstructorDifferent
             (printWithExplanation p1)

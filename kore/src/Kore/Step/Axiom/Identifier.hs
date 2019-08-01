@@ -28,10 +28,10 @@ import           Control.Applicative
                  ( Alternative (..) )
 import qualified Data.Functor.Foldable as Recursive
 
-import Kore.Internal.TermLike hiding
-       ( Application, Ceil, extract )
-import Kore.Syntax.Id
-       ( Id (..) )
+import           Kore.Internal.TermLike
+                 ( CofreeF (..), TermLike, TermLikeF )
+import qualified Kore.Internal.TermLike as TermLike
+import           Kore.Syntax.Id
 
 {-| Identifer for the left-hand-side of axioms and for the terms with which
 these can be identified.
@@ -45,21 +45,31 @@ data AxiomIdentifier
     -- as name and which has no parameters.
     | Ceil !AxiomIdentifier
     -- ^ Identifier for a ceil pattern whose child has the given identifier.
+    | Variable
     deriving (Eq, Ord, Show)
 
 matchApplySymbol
     :: TermLikeF variable (Maybe AxiomIdentifier)
     -> Maybe AxiomIdentifier
-matchApplySymbol (ApplySymbolF application) = Just (Application symbolId)
+matchApplySymbol (TermLike.ApplySymbolF application) =
+    Just (Application symbolId)
   where
-    symbolId = (symbolConstructor . applicationSymbolOrAlias) application
+    symbolId =
+        TermLike.symbolConstructor
+        $ TermLike.applicationSymbolOrAlias application
 matchApplySymbol _ = Nothing
 
 matchCeil
     :: TermLikeF variable (Maybe AxiomIdentifier)
     -> Maybe AxiomIdentifier
-matchCeil (CeilF ceil) = Ceil <$> ceilChild ceil
+matchCeil (TermLike.CeilF ceil) = Ceil <$> TermLike.ceilChild ceil
 matchCeil _ = Nothing
+
+matchVariable
+    :: TermLikeF variable (Maybe AxiomIdentifier)
+    -> Maybe AxiomIdentifier
+matchVariable (TermLike.VariableF _) = Just Variable
+matchVariable _ = Nothing
 
 {- | Match 'TermLike' pattern to determine its 'AxiomIdentifier'.
 
@@ -73,3 +83,4 @@ matchAxiomIdentifier = Recursive.fold matchers
     matchers (_ :< termLikeF) =
             matchApplySymbol termLikeF
         <|> matchCeil        termLikeF
+        <|> matchVariable    termLikeF

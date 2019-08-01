@@ -7,11 +7,9 @@ import Test.Tasty.HUnit
 import qualified GHC.Stack as GHC
 
 import           Kore.Internal.TermLike
+                 ( TermLike, Variable )
+import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Step.Axiom.Identifier
-                 ( AxiomIdentifier )
-import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import           Kore.Syntax.Variable
-                 ( Variable )
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -22,16 +20,19 @@ test_matchAxiomIdentifier :: [TestTree]
 test_matchAxiomIdentifier =
     [ matches "f(a)"
         (Mock.f Mock.a)
-        (AxiomIdentifier.Application Mock.fId)
+        (Application Mock.fId)
     , matches "inj(a)"
         (Mock.sortInjection10 Mock.a)
-        (AxiomIdentifier.Application Mock.sortInjectionId)
+        (Application Mock.sortInjectionId)
     , matches "\\ceil(f(a))"
-        (mkCeil_ (Mock.f Mock.a))
-        (AxiomIdentifier.Ceil (AxiomIdentifier.Application Mock.fId))
-    , notMatches "\\ceil(\\ceil(f(a)))" $ mkCeil_ (mkCeil_ (Mock.f Mock.a))
-    , notMatches "\\and(f(a), g(a))" $ mkAnd (Mock.f Mock.a) (Mock.g Mock.a)
-    , matches "x" (mkVar Mock.x) AxiomIdentifier.Variable
+        (TermLike.mkCeil_ (Mock.f Mock.a))
+        (Ceil (Application Mock.fId))
+    , matches "\\ceil(\\ceil(f(a)))"
+        (TermLike.mkCeil_ (TermLike.mkCeil_ (Mock.f Mock.a)))
+        (Ceil (Ceil (Application Mock.fId)))
+    , notMatches "\\and(f(a), g(a))"
+        (TermLike.mkAnd (Mock.f Mock.a) (Mock.g Mock.a))
+    , matches "x" (TermLike.mkVar Mock.x) Variable
     ]
 
 match
@@ -43,7 +44,7 @@ match
 match name input expect =
     testCase name
     $ assertEqualWithExplanation "" expect
-    $ AxiomIdentifier.matchAxiomIdentifier input
+    $ matchAxiomIdentifier input
 
 matches
     :: GHC.HasCallStack
