@@ -29,7 +29,7 @@ import           Control.Applicative
 import qualified Data.Functor.Foldable as Recursive
 
 import           Kore.Internal.TermLike
-                 ( CofreeF (..), TermLike, TermLikeF )
+                 ( CofreeF (..), TermLike )
 import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Syntax.Id
 
@@ -41,43 +41,14 @@ identifier of its left-hand-side is the same as the term's identifier.
 -}
 data AxiomIdentifier
     = Application !Id
-    -- ^ Identifier for an application pattern whose symbol has the given id
-    -- as name and which has no parameters.
+    -- ^ An application pattern with the given symbol identifier.
     | Ceil !AxiomIdentifier
-    -- ^ Identifier for a ceil pattern whose child has the given identifier.
+    -- ^ A @\\ceil@ pattern with the given child.
     | Equals !AxiomIdentifier !AxiomIdentifier
+    -- ^ An @\\equals@ pattern with the given children.
     | Variable
+    -- ^ Any variable pattern.
     deriving (Eq, Ord, Show)
-
-matchApplySymbol
-    :: TermLikeF variable (Maybe AxiomIdentifier)
-    -> Maybe AxiomIdentifier
-matchApplySymbol (TermLike.ApplySymbolF application) =
-    Just (Application symbolId)
-  where
-    symbolId =
-        TermLike.symbolConstructor
-        $ TermLike.applicationSymbolOrAlias application
-matchApplySymbol _ = Nothing
-
-matchCeil
-    :: TermLikeF variable (Maybe AxiomIdentifier)
-    -> Maybe AxiomIdentifier
-matchCeil (TermLike.CeilF ceil) = Ceil <$> TermLike.ceilChild ceil
-matchCeil _ = Nothing
-
-matchEquals
-    :: TermLikeF variable (Maybe AxiomIdentifier)
-    -> Maybe AxiomIdentifier
-matchEquals (TermLike.EqualsF equals) =
-    Equals <$> TermLike.equalsFirst equals <*> TermLike.equalsSecond equals
-matchEquals _ = Nothing
-
-matchVariable
-    :: TermLikeF variable (Maybe AxiomIdentifier)
-    -> Maybe AxiomIdentifier
-matchVariable (TermLike.VariableF _) = Just Variable
-matchVariable _ = Nothing
 
 {- | Match 'TermLike' pattern to determine its 'AxiomIdentifier'.
 
@@ -86,10 +57,21 @@ recognize.
 
  -}
 matchAxiomIdentifier :: TermLike variable -> Maybe AxiomIdentifier
-matchAxiomIdentifier = Recursive.fold matchers
+matchAxiomIdentifier = Recursive.fold matchWorker
   where
-    matchers (_ :< termLikeF) =
-            matchApplySymbol termLikeF
-        <|> matchCeil        termLikeF
-        <|> matchEquals      termLikeF
-        <|> matchVariable    termLikeF
+    matchWorker (_ :< termLikeF) =
+        case termLikeF of
+            TermLike.ApplySymbolF application ->
+                pure (Application symbolId)
+              where
+                symbol = TermLike.applicationSymbolOrAlias application
+                symbolId = TermLike.symbolConstructor symbol
+            TermLike.CeilF ceil ->
+                Ceil <$> TermLike.ceilChild ceil
+            TermLike.EqualsF equals ->
+                Equals
+                    <$> TermLike.equalsFirst equals
+                    <*> TermLike.equalsSecond equals
+            TermLike.VariableF _ ->
+                pure Variable
+            _ -> empty
