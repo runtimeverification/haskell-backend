@@ -193,7 +193,7 @@ maybeEvaluatePattern childrenPredicate patt defaultValue = tracing $ do
         AttemptedAxiom.NotApplicable -> return defaultValue
         AttemptedAxiom.Applied attemptResults ->
             return $ MultiOr.merge results remainders
-            where
+          where
             AttemptedAxiomResults { results, remainders } =
                 attemptResults
   where
