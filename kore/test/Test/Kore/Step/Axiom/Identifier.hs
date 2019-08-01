@@ -34,7 +34,7 @@ hasId input expected =
     testCase "AxiomId.extract evaluation"
         (assertEqualWithExplanation "has id"
             (Just expected)
-            (AxiomIdentifier.extract input)
+            (AxiomIdentifier.matchAxiomIdentifier input)
         )
 
 hasNoId :: TermLike Variable -> TestTree
@@ -42,5 +42,5 @@ hasNoId input =
     testCase "AxiomId.extract evaluation"
         (assertEqualWithExplanation "has no id"
             Nothing
-            (AxiomIdentifier.extract input)
+            (AxiomIdentifier.matchAxiomIdentifier input)
         )
