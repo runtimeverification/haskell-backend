@@ -43,7 +43,6 @@ import           Kore.Logger
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-                 ( extract )
 import qualified Kore.Step.Merging.OrPattern as OrPattern
 import           Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
@@ -195,7 +194,7 @@ maybeEvaluatePattern childrenPredicate termLike defaultValue =
                     attemptResults
   where
     identifier :: Maybe AxiomIdentifier
-    identifier = AxiomIdentifier.extract termLike
+    identifier = AxiomIdentifier.matchAxiomIdentifier termLike
 
     tracing =
         traceMaybeT

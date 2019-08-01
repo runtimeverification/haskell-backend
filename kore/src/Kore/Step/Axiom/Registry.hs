@@ -36,7 +36,6 @@ import           Kore.Step.Axiom.EvaluationStrategy
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-                 ( extract )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
 import           Kore.Step.Rule
@@ -100,7 +99,7 @@ axiomToIdAxiomPatternPair axiom =
         Right
             (FunctionAxiomPattern axiomPat@(EqualityRule RulePattern { left }))
           -> do
-            identifier <- AxiomIdentifier.extract left
+            identifier <- AxiomIdentifier.matchAxiomIdentifier left
             return (identifier, axiomPat)
         Right (RewriteAxiomPattern _) -> Nothing
         Right (OnePathClaimPattern _) -> Nothing
