@@ -158,7 +158,9 @@ test_substitutionNormalization =
             varx1 = x1 Mock.testSort
         assertEqualWithExplanation ""
             (Error
-              (NonCtorCircularVariableDependency [ElemVar var1, ElemVar varx1])
+                (NonCtorCircularVariableDependency
+                    [ElemVar var1, ElemVar varx1]
+                )
             )
             =<< runNormalizeSubstitution
                 [ (ElemVar var1, mkAnd (mkVar varx1) mkTop_)

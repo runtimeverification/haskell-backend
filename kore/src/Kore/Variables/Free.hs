@@ -124,9 +124,9 @@ synthetic (ForallF Forall { forallVariable, forallChild }) =
 synthetic (VariableF variable) =
     Set.singleton (ElemVar variable)
 synthetic (MuF Mu { muVariable = SetVariable muVar, muChild }) =
-    Set.delete (ElemVar muVar) muChild
+    Set.delete (SetVar muVar) muChild
 synthetic (NuF Nu { nuVariable = SetVariable nuVar, nuChild }) =
-    Set.delete (ElemVar nuVar) nuChild
+    Set.delete (SetVar nuVar) nuChild
 synthetic (SetVariableF (SetVariable variable)) =
     Set.singleton (SetVar variable)
 synthetic patternHead =

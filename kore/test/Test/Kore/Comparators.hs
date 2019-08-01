@@ -830,7 +830,8 @@ instance EqualWithExplanation (Inhabitant child) where
 instance
     ( EqualWithExplanation variable
     , Show variable
-    ) => SumEqualWithExplanation (UnifiedVariable variable) where
+    ) => SumEqualWithExplanation (UnifiedVariable variable)
+  where
     sumConstructorPair (SetVar v1) (SetVar v2) =
         SumConstructorSameWithArguments
         $ EqWrap "ElemVar" v1 v2
@@ -848,7 +849,8 @@ instance
 instance
     ( EqualWithExplanation variable
     , Show variable
-    ) => EqualWithExplanation (UnifiedVariable variable) where
+    ) => EqualWithExplanation (UnifiedVariable variable)
+  where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
