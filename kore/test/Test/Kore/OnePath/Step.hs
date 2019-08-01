@@ -65,7 +65,7 @@ makeOnePathRule term dest =
 
 test_onePathStrategy :: [TestTree]
 test_onePathStrategy =
-    [ testCase "Runs zero steps" $ do
+    [ testCase "testRefactorOnePath1" $ do
         -- Target: a
         -- Coinductive axiom: a => b
         -- Normal axiom: a => c
@@ -82,35 +82,39 @@ test_onePathStrategy =
         assertEqualWithExplanation ""
             (AllPath.Goal $ makeOnePathRule Mock.a Mock.a)
             actual
-   -- , testCase "Axiom priority, first step" $ do
-   --     -- Target: a
-   --     -- Coinductive axiom: a => b
-   --     -- Normal axiom: a => c
-   --     -- Start pattern: a
-   --     -- Expected: bottom, since a->bottom
-   --     [ _actual ] <- runOnePathSteps
-   --         (Limit 1)
-   --         (Pattern.fromTermLike Mock.a)
-   --         Mock.a
-   --         [simpleRewrite Mock.a Mock.b]
-   --         [simpleRewrite Mock.a Mock.c]
-   --     assertEqualWithExplanation "" Bottom _actual
+    , testCase "testRefactorOnePath2" $ do
+        -- Target: a
+        -- Coinductive axiom: a => b
+        -- Normal axiom: a => c
+        -- Start pattern: a
+        -- Expected: bottom, since a->bottom
+        [ _actual ] <- runOnePathSteps
+            (Limit 1)
+            (makeOnePathRule
+                Mock.a
+                Mock.a
+            )
+            [simpleRewrite Mock.a Mock.b]
+            [simpleRewrite Mock.a Mock.c]
+        assertEqualWithExplanation "" AllPath.Proven _actual
 
-   --     -- Target: d
-   --     -- Coinductive axiom: a => b
-   --     -- Normal axiom: a => c
-   --     -- Start pattern: a
-   --     -- Expected: c, since coinductive axioms are applied only at the second
-   --     -- step
-   --     [ _actual ] <- runOnePathSteps
-   --         (Limit 1)
-   --         (Pattern.fromTermLike Mock.a)
-   --         Mock.d
-   --         [simpleRewrite Mock.a Mock.b]
-   --         [simpleRewrite Mock.a Mock.c]
-   --     assertEqualWithExplanation ""
-   --         (RewritePattern $ Pattern.fromTermLike Mock.c)
-   --         _actual
+        -- Target: d
+        -- Coinductive axiom: a => b
+        -- Normal axiom: a => c
+        -- Start pattern: a
+        -- Expected: c, since coinductive axioms are applied only at the second
+        -- step
+        [ _actual ] <- runOnePathSteps
+            (Limit 1)
+            (makeOnePathRule
+                Mock.a
+                Mock.d
+            )
+            [simpleRewrite Mock.a Mock.b]
+            [simpleRewrite Mock.a Mock.c]
+        assertEqualWithExplanation ""
+            (AllPath.Goal $ makeOnePathRule Mock.c Mock.c)
+            _actual
    -- , testCase "Axiom priority, second step" $ do
    --     -- Target: b
    --     -- Coinductive axiom: b => c
