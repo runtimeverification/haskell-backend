@@ -37,6 +37,7 @@ import Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Attribute.Synthetic
 import Kore.Debug
+import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
     ( flatten
     , merge
@@ -70,7 +71,9 @@ import Kore.Step.Axiom.Identifier
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Merging.OrPattern as OrPattern
-import qualified Kore.Step.Simplification.Pattern as Pattern
+import qualified Kore.Step.Simplification.Conditional as Conditional
+    ( simplifyPredicate
+    )
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
@@ -269,7 +272,9 @@ maybeEvaluatePattern
                         simplifier
                         axiomIdToEvaluator
                         patt
-                        configurationPredicate
+                        ( configurationPredicate
+                        `Conditional.andCondition` childrenPredicate
+                        )
                 flattened <- case result of
                     AttemptedAxiom.NotApplicable ->
                         return AttemptedAxiom.NotApplicable
@@ -388,7 +393,8 @@ reevaluateFunctions rewriting = do
     pattOr <- simplifyTerm (Pattern.term rewriting)
     mergedPatt <-
         OrPattern.mergeWithPredicate (Pattern.withoutTerm rewriting) pattOr
-    orResults <- BranchT.gather $ traverse Pattern.simplifyPredicate mergedPatt
+    orResults <-
+        BranchT.gather $ traverse Conditional.simplifyPredicate mergedPatt
     return (MultiOr.mergeAll orResults)
 
 {-| Ands the given condition-substitution to the given function evaluation.

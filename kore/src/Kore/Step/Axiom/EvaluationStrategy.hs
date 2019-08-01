@@ -32,6 +32,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Predicate
     ( Predicate
     )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import qualified Kore.Proof.Value as Value
@@ -71,14 +72,14 @@ definitionEvaluation
     :: [EqualityRule Variable]
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation rules =
-    BuiltinAndAxiomSimplifier (\_ _ _ term _ -> evaluateAxioms rules term)
+    BuiltinAndAxiomSimplifier (\_ _ _ term predicate -> evaluateAxioms rules term (Predicate.toPredicate predicate))
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation
     :: EqualityRule Variable
     -> BuiltinAndAxiomSimplifier
 simplificationEvaluation rule =
-    BuiltinAndAxiomSimplifier (\_ _ _ term _ -> evaluateAxioms [rule] term)
+    BuiltinAndAxiomSimplifier (\_ _ _ term predicate -> evaluateAxioms [rule] term (Predicate.toPredicate predicate))
 
 {- | Creates an evaluator for a function from all the rules that define it.
 
@@ -104,8 +105,8 @@ totalDefinitionEvaluation rules =
         -> TermLike variable
         -> Predicate variable
         -> simplifier (AttemptedAxiom variable)
-    totalDefinitionEvaluationWorker _ _ _ term _ = do
-        result <- evaluateAxioms rules term
+    totalDefinitionEvaluationWorker _ _ _ term predicate = do
+        result <- evaluateAxioms rules term (Predicate.toPredicate predicate)
         if AttemptedAxiom.hasRemainders result
             then return AttemptedAxiom.NotApplicable
             else return result

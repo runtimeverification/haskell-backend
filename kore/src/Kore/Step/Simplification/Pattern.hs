@@ -6,10 +6,7 @@ License     : NCSA
 module Kore.Step.Simplification.Pattern
     ( simplifyAndRemoveTopExists
     , simplify
-    , simplifyPredicate
     ) where
-
-import qualified Control.Monad.Trans.Class as Monad.Trans
 
 import Branch
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -28,17 +25,11 @@ import Kore.Logger
     ( LogMessage
     , WithLog
     )
-import qualified Kore.Step.Condition.Evaluator as Predicate
-    ( simplify
-    )
 import qualified Kore.Step.Merging.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , SimplifierVariable
     , simplifyTerm
-    )
-import Kore.Step.Substitution
-    ( mergePredicatesAndSubstitutions
     )
 
 simplifyAndRemoveTopExists
@@ -74,24 +65,3 @@ simplify pattern'@Conditional { term } = do
             (Pattern.mergeWithPredicate $ Pattern.withoutTerm pattern')
             simplifiedTerm
     return (MultiOr.mergeAll orPatterns)
-
-{-| Simplifies the predicate inside an 'Pattern'.
--}
-simplifyPredicate
-    ::  ( SimplifierVariable variable
-        , MonadSimplify simplifier
-        , WithLog LogMessage simplifier
-        )
-    => Pattern variable
-    -- ^ The condition to be evaluated.
-    -> BranchT simplifier (Pattern variable)
-simplifyPredicate Conditional {term, predicate, substitution} = do
-    evaluated <- Monad.Trans.lift $ Predicate.simplify predicate
-    let Conditional { predicate = evaluatedPredicate } = evaluated
-        Conditional { substitution = evaluatedSubstitution } = evaluated
-    merged <-
-        mergePredicatesAndSubstitutions
-            [evaluatedPredicate]
-            [substitution, evaluatedSubstitution]
-    -- TODO(virgil): Do I need to re-evaluate the predicate?
-    return $ Pattern.withCondition term merged
