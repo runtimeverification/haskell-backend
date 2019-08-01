@@ -17,7 +17,6 @@ import           Control.Error
 import qualified Control.Error as Error
 import           Control.Exception
                  ( assert )
-import qualified Data.Map as Map
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
@@ -156,12 +155,10 @@ maybeEvaluatePattern
     -> OrPattern variable
     -- ^ The default value
     -> MaybeT simplifier (OrPattern variable)
-maybeEvaluatePattern childrenPredicate patt defaultValue = tracing $ do
+maybeEvaluatePattern childrenPredicate termLike defaultValue = tracing $ do
+    BuiltinAndAxiomSimplifier evaluator <-
+        Simplifier.lookupSimplifierAxiom termLike
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
-    let maybeEvaluator = do
-            identifier' <- identifier
-            Map.lookup identifier' axiomIdToEvaluator
-    BuiltinAndAxiomSimplifier evaluator <- Error.hoistMaybe maybeEvaluator
     substitutionSimplifier <- Simplifier.askSimplifierPredicate
     simplifier <- Simplifier.askSimplifierTermLike
     result <-
@@ -169,7 +166,7 @@ maybeEvaluatePattern childrenPredicate patt defaultValue = tracing $ do
             substitutionSimplifier
             simplifier
             axiomIdToEvaluator
-            patt
+            termLike
     flattened <- case result of
         AttemptedAxiom.NotApplicable ->
             return AttemptedAxiom.NotApplicable
@@ -198,7 +195,7 @@ maybeEvaluatePattern childrenPredicate patt defaultValue = tracing $ do
                 attemptResults
   where
     identifier :: Maybe AxiomIdentifier
-    identifier = AxiomIdentifier.extract patt
+    identifier = AxiomIdentifier.extract termLike
 
     tracing =
         traceNonErrorMonad
@@ -207,7 +204,7 @@ maybeEvaluatePattern childrenPredicate patt defaultValue = tracing $ do
 
     unchangedPatt =
         Conditional
-            { term         = patt
+            { term         = termLike
             , predicate    = predicate
             , substitution = substitution
             }

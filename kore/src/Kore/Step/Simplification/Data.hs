@@ -14,6 +14,7 @@ module Kore.Step.Simplification.Data
     , Env (..)
     , runSimplifier
     , evalSimplifier
+    , lookupSimplifierAxiom
     , BranchT
     , evalSimplifierBranch
     , gather
@@ -48,6 +49,7 @@ module Kore.Step.Simplification.Data
 import           Control.Applicative
 import           Control.Comonad.Trans.Cofree
 import           Control.DeepSeq
+import qualified Control.Error as Error
 import qualified Control.Monad as Monad
 import           Control.Monad.Catch
                  ( MonadCatch, MonadThrow )
@@ -91,6 +93,7 @@ import           Kore.Internal.TermLike
 import           Kore.Logger
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
+import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import           Kore.Syntax.Application
 import           Kore.Syntax.Variable
                  ( SortedVariable )
@@ -194,6 +197,21 @@ instance MonadSimplify m => MonadSimplify (ListT m) where
 instance MonadSimplify m => MonadSimplify (MaybeT m)
 
 instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
+
+{- | Look up the 'BuiltinAndAxiomSimplifier' for the given 'TermLike'.
+
+@lookupSimplifierAxiom@ is empty if no simplifier is defined for the pattern.
+
+ -}
+lookupSimplifierAxiom
+    :: MonadSimplify simplifier
+    => TermLike variable
+    -> MaybeT simplifier BuiltinAndAxiomSimplifier
+lookupSimplifierAxiom termLike = do
+    simplifierAxioms <- askSimplifierAxioms
+    Error.hoistMaybe $ do
+        identifier <- Axiom.Identifier.extract termLike
+        Map.lookup identifier simplifierAxioms
 
 -- * Branching
 
