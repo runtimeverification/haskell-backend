@@ -31,13 +31,12 @@ import qualified GHC.Generics as GHC
 import           Numeric.Natural
 
 import           Data.Sup
-import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Attribute.Synthetic
 import           Kore.Debug
 import           Kore.Sort
-import           Kore.SubstVar
-                 ( SubstVar (..) )
-import qualified Kore.SubstVar as SubstVar
+import           Kore.Variables.AsVariable
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           Kore.Unparser
 
 {-|'Variable' corresponds to the @variable@ syntactic category from the
@@ -191,10 +190,7 @@ instance SortedVariable Concrete where
     toVariable = \case {}
     fromVariable = error "Cannot construct a variable in a concrete term!"
 
-instance Synthetic (Const (SubstVar Variable)) (FreeVariables Variable) where
-    synthetic (Const var) = freeVariable var
+instance Synthetic (Const (UnifiedVariable Variable)) Sort where
+    synthetic (Const variable) = sortedVariableSort (asVariable variable)
     {-# INLINE synthetic #-}
 
-instance Synthetic (Const (SubstVar Variable)) Sort where
-    synthetic (Const variable) = sortedVariableSort (SubstVar.asVariable variable)
-    {-# INLINE synthetic #-}

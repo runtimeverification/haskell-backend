@@ -22,8 +22,8 @@ import           Kore.Debug
 import           Kore.Domain.Builtin
 import qualified Kore.Internal.Alias as Internal
 import qualified Kore.Internal.Symbol as Internal
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           Kore.Syntax
 
 {- | A pattern is 'Functional' if it matches exactly one element.
@@ -169,8 +169,8 @@ instance Synthetic (Top sort) Functional where
     {-# INLINE synthetic #-}
 
 -- | A 'Variable' pattern is always 'Functional'.
-instance Synthetic (Const (SubstVar Variable)) Functional where
-    synthetic (Const (RegVar _)) = Functional True
+instance Synthetic (Const (UnifiedVariable Variable)) Functional where
+    synthetic (Const (ElemVar _)) = Functional True
     synthetic (Const (SetVar _)) = Functional False
     {-# INLINE synthetic #-}
 

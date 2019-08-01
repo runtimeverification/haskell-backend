@@ -20,8 +20,8 @@ import qualified Control.Lens as Lens
 import           Data.Monoid
                  ( Any (..) )
 
-import Kore.SubstVar
-       ( SubstVar (..) )
+import Kore.Variables.UnifiedVariable
+       ( UnifiedVariable (..) )
 import Kore.Syntax.Exists
 import Kore.Syntax.Forall
 import Kore.Syntax.Mu
@@ -44,7 +44,7 @@ class Show patternType => Binding patternType where
                 (Binder (VariableType patternType) patternType)
 
     -- | Traverse the variable at the top of a pattern.
-    traverseVariable :: Lens.Traversal' patternType (SubstVar (VariableType patternType))
+    traverseVariable :: Lens.Traversal' patternType (UnifiedVariable (VariableType patternType))
 
 {- | Apply a traversing function while distinguishing an empty 'Lens.Traversal'.
 
@@ -63,7 +63,7 @@ matchWith (Lens.cloneTraversal -> traverse') = \afb s ->
 
 -- | @Binder@ abstracts over binders such as 'Exists' and 'Forall'.
 data Binder variable child =
-    Binder { binderVariable :: !(SubstVar variable), binderChild :: !child }
+    Binder { binderVariable :: !(UnifiedVariable variable), binderChild :: !child }
 
 {- | A 'Lens.Lens' to view an 'Exists' as a 'Binder'.
 
@@ -77,14 +77,14 @@ existsBinder mapping exists =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable = RegVar existsVariable, binderChild }
+        Binder { binderVariable = ElemVar existsVariable, binderChild }
       where
         Exists { existsVariable } = exists
         Exists { existsChild    = binderChild    } = exists
     finish binder' =
         exists { existsVariable, existsChild }
       where
-        Binder { binderVariable = RegVar existsVariable } = binder'
+        Binder { binderVariable = ElemVar existsVariable } = binder'
         Binder { binderChild    = existsChild    } = binder'
 
 {- | A 'Lens.Lens' to view a 'Forall' as a 'Binder'.
@@ -99,14 +99,14 @@ forallBinder mapping forall =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable = RegVar forallVariable, binderChild }
+        Binder { binderVariable = ElemVar forallVariable, binderChild }
       where
         Forall { forallVariable } = forall
         Forall { forallChild    = binderChild    } = forall
     finish binder' =
         forall { forallVariable, forallChild }
       where
-        Binder { binderVariable = RegVar forallVariable } = binder'
+        Binder { binderVariable = ElemVar forallVariable } = binder'
         Binder { binderChild    = forallChild    } = binder'
 
 {- | A 'Lens.Lens' to view an 'Mu' as a 'Binder'.

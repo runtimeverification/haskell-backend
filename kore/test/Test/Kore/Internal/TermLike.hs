@@ -11,9 +11,9 @@ import qualified Data.Set as Set
 
 import           Data.Sup
 import           Kore.Internal.TermLike
-import           Kore.SubstVar
-                 ( SubstVar (..) )
-import qualified Kore.SubstVar as SubstVar
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
+import           Kore.Variables.AsVariable
 import           Kore.Variables.Fresh
 
 import           Kore.Internal.ApplicationSorts
@@ -86,7 +86,7 @@ termLikeChildGen patternSort =
         var <- variableGen varSort
         child <-
             Reader.local
-                (addVariable (RegVar var))
+                (addVariable (ElemVar var))
                 (termLikeChildGen patternSort)
         pure (mkExists var child)
     termLikeForallGen = do
@@ -94,7 +94,7 @@ termLikeChildGen patternSort =
         var <- variableGen varSort
         child <-
             Reader.local
-                (addVariable (RegVar var))
+                (addVariable (ElemVar var))
                 (termLikeChildGen patternSort)
         pure (mkForall var child)
     termLikeFloorGen = do
@@ -128,7 +128,7 @@ test_substitute =
             "Expected substituted variable"
             (mkVar Mock.z)
             (substitute
-                (Map.singleton (RegVar Mock.x) (mkVar Mock.z))
+                (Map.singleton (ElemVar Mock.x) (mkVar Mock.z))
                 (mkVar Mock.x)
             )
         )
@@ -138,8 +138,8 @@ test_substitute =
             "Expected substituted variable"
             (mkVar Mock.z)
             (substitute
-                (Map.singleton (Mock.makeTestSubstVar "@x") (mkVar Mock.z))
-                (Mock.mkTestSubstVar "@x")
+                (Map.singleton (Mock.makeTestUnifiedVariable "@x") (mkVar Mock.z))
+                (Mock.mkTestUnifiedVariable "@x")
             )
         )
 
@@ -148,8 +148,8 @@ test_substitute =
             "Expected substituted variable"
             (Mock.functionalConstr10 (mkVar Mock.z))
             (substitute
-                (Map.singleton (Mock.makeTestSubstVar "@x") (mkVar Mock.z))
-                (Mock.functionalConstr10 (Mock.mkTestSubstVar "@x"))
+                (Map.singleton (Mock.makeTestUnifiedVariable "@x") (mkVar Mock.z))
+                (Mock.functionalConstr10 (Mock.mkTestUnifiedVariable "@x"))
             )
         )
 
@@ -158,7 +158,7 @@ test_substitute =
             "Expected original non-target variable"
             (mkVar Mock.y)
             (substitute
-                (Map.singleton (RegVar Mock.x) (mkVar Mock.z))
+                (Map.singleton (ElemVar Mock.x) (mkVar Mock.z))
                 (mkVar Mock.y)
             )
         )
@@ -172,7 +172,7 @@ test_substitute =
                 expect = mkPredicate Mock.testSort
                 actual =
                     substitute
-                        (Map.singleton (RegVar Mock.x) (mkVar Mock.z))
+                        (Map.singleton (ElemVar Mock.x) (mkVar Mock.z))
                         (mkPredicate Mock.testSort)
         in
             [ testCase "Bottom" (ignoring mkBottom)
@@ -188,7 +188,7 @@ test_substitute =
                 expect = mkQuantifier Mock.x (mkVar Mock.x)
                 actual =
                     substitute
-                        (Map.singleton (RegVar Mock.x) (mkVar Mock.z))
+                        (Map.singleton (ElemVar Mock.x) (mkVar Mock.z))
                         (mkQuantifier Mock.x (mkVar Mock.x))
         in
             [ testCase "Exists" (ignoring mkExists)
@@ -202,11 +202,11 @@ test_substitute =
                     expect actual
               where
                 expect =
-                    mkQuantifier (SubstVar.asVariable z') $ mkAnd (mkSubstVar z') (mkVar Mock.z)
+                    mkQuantifier (asVariable z') $ mkAnd (mkUnifiedVariable z') (mkVar Mock.z)
                   where
-                    Just z' = refreshVariable (Set.singleton (RegVar Mock.z)) (RegVar Mock.z)
+                    Just z' = refreshVariable (Set.singleton (ElemVar Mock.z)) (ElemVar Mock.z)
                 actual =
-                    substitute (Map.singleton (RegVar Mock.x) (mkVar Mock.z))
+                    substitute (Map.singleton (ElemVar Mock.x) (mkVar Mock.z))
                     $ mkQuantifier Mock.z
                     $ mkAnd (mkVar Mock.z) (mkVar Mock.x)
         in

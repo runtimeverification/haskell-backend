@@ -28,8 +28,8 @@ import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
        ( Sort )
-import Kore.SubstVar
-       ( SubstVar (..) )
+import Kore.Variables.UnifiedVariable
+       ( UnifiedVariable (..) )
 
 {- | @Pattern@ are the attributes of a pattern collected during verification.
  -}
@@ -103,7 +103,7 @@ traverseVariables traversing =
  -}
 deleteFreeVariable
     :: Ord variable
-    => SubstVar variable
+    => UnifiedVariable variable
     -> Pattern variable
     -> Pattern variable
 deleteFreeVariable variable =

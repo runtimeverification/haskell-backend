@@ -20,8 +20,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutionsExcept )
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           Kore.Unification.Error
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -75,15 +75,15 @@ test_mergeAndNormalizeSubstitutions =
         $ do
             let expect = Right
                     [ Predicate.fromSubstitution $ Substitution.unsafeWrap
-                        [ ( RegVar Mock.x , Mock.constr10 Mock.a ) ]
+                        [ ( ElemVar Mock.x , Mock.constr10 Mock.a ) ]
                     ]
             actual <-
                 merge
-                    [   ( RegVar Mock.x
+                    [   ( ElemVar Mock.x
                         , Mock.constr10 Mock.a
                         )
                     ]
-                    [   ( RegVar Mock.x
+                    [   ( ElemVar Mock.x
                         , Mock.constr10 Mock.a
                         )
                     ]
@@ -95,15 +95,15 @@ test_mergeAndNormalizeSubstitutions =
         $ do
             let expect = Right
                     [ Predicate.fromSubstitution $ Substitution.unsafeWrap
-                        [(RegVar Mock.x, Mock.constr10 (mkVar Mock.y))]
+                        [(ElemVar Mock.x, Mock.constr10 (mkVar Mock.y))]
                     ]
             actual <-
                 merge
-                    [   ( RegVar Mock.x
+                    [   ( ElemVar Mock.x
                         , Mock.constr10 (mkVar Mock.y)
                         )
                     ]
-                    [   ( RegVar Mock.x
+                    [   ( ElemVar Mock.x
                         , Mock.constr10 (mkVar Mock.y)
                         )
                     ]
@@ -116,11 +116,11 @@ test_mergeAndNormalizeSubstitutions =
             let expect = Right []
             actual <-
                 merge
-                    [   ( RegVar Mock.x
+                    [   ( ElemVar Mock.x
                         , Mock.constr10 Mock.a
                         )
                     ]
-                    [   ( RegVar Mock.x
+                    [   ( ElemVar Mock.x
                         , Mock.constr10 (Mock.constr10 Mock.a)
                         )
                     ]
@@ -136,11 +136,11 @@ test_mergeAndNormalizeSubstitutions =
                     (Mock.constr10 (mkVar Mock.y))
             actual <-
                 merge
-                    [   ( RegVar Mock.x
+                    [   ( ElemVar Mock.x
                         , Mock.constr10 (mkVar Mock.y)
                         )
                     ]
-                    [   ( RegVar Mock.x
+                    [   ( ElemVar Mock.x
                         , Mock.constr10 (Mock.constr10 (mkVar Mock.y))
                         )
                     ]
@@ -159,7 +159,7 @@ test_mergeAndNormalizeSubstitutions =
                                     Mock.a
                                     (Mock.f Mock.a)
                             , substitution = Substitution.unsafeWrap
-                                [   ( RegVar Mock.x
+                                [   ( ElemVar Mock.x
                                     , Mock.constr10 Mock.a
                                     )
                                 ]
@@ -167,11 +167,11 @@ test_mergeAndNormalizeSubstitutions =
                         ]
             actual <-
                 merge
-                    [   ( RegVar Mock.x
+                    [   ( ElemVar Mock.x
                         , Mock.constr10 Mock.a
                         )
                     ]
-                    [   ( RegVar Mock.x
+                    [   ( ElemVar Mock.x
                         , Mock.constr10 (Mock.f Mock.a)
                         )
                     ]
@@ -184,14 +184,14 @@ test_mergeAndNormalizeSubstitutions =
             let
                 expect =
                     Left $ SubstitutionError
-                        (NonCtorCircularVariableDependency [RegVar Mock.y])
+                        (NonCtorCircularVariableDependency [ElemVar Mock.y])
             actual <-
                 merge
-                    [   ( RegVar Mock.x
+                    [   ( ElemVar Mock.x
                         , Mock.constr10 (mkVar Mock.y)
                         )
                     ]
-                    [   ( RegVar Mock.x
+                    [   ( ElemVar Mock.x
                         , Mock.constr10 (Mock.f (mkVar Mock.y))
                         )
                     ]
@@ -204,14 +204,14 @@ test_mergeAndNormalizeSubstitutions =
             let
                 expect =
                     Left $ SubstitutionError
-                        (NonCtorCircularVariableDependency [RegVar Mock.y])
+                        (NonCtorCircularVariableDependency [ElemVar Mock.y])
             actual <-
                 merge
-                    [   ( RegVar Mock.x
+                    [   ( ElemVar Mock.x
                         , Mock.constr10 (mkVar Mock.y)
                         )
                     ]
-                    [   ( RegVar Mock.x
+                    [   ( ElemVar Mock.x
                         , Mock.constr10 (Mock.functional10 (mkVar Mock.y))
                         )
                     ]
@@ -227,11 +227,11 @@ test_mergeAndNormalizeSubstitutions =
                     (Mock.constr10 (mkVar Mock.x))
             actual <-
                 merge
-                    [   ( RegVar Mock.x
+                    [   ( ElemVar Mock.x
                         , mkVar Mock.y
                         )
                     ]
-                    [   ( RegVar Mock.x
+                    [   ( ElemVar Mock.x
                         , Mock.constr10 (mkVar Mock.x)
                         )
                     ]
@@ -244,14 +244,14 @@ test_mergeAndNormalizeSubstitutions =
             let expect =
                     Left
                     $ SubstitutionError
-                    $ NonCtorCircularVariableDependency [ RegVar Mock.x, RegVar Mock.y ]
+                    $ NonCtorCircularVariableDependency [ ElemVar Mock.x, ElemVar Mock.y ]
             actual <-
                 merge
-                    [   ( RegVar Mock.x
+                    [   ( ElemVar Mock.x
                         , mkVar Mock.y
                         )
                     ]
-                    [   ( RegVar Mock.y
+                    [   ( ElemVar Mock.y
                         , Mock.f (mkVar Mock.x)
                         )
                     ]
@@ -262,15 +262,15 @@ test_mergeAndNormalizeSubstitutions =
         $ do
             let expect =
                     [ Predicate.fromSubstitution $ Substitution.unsafeWrap
-                        [ (RegVar Mock.x, Mock.constr10 Mock.a)
-                        , (RegVar Mock.y, Mock.a)
+                        [ (ElemVar Mock.x, Mock.constr10 Mock.a)
+                        , (ElemVar Mock.y, Mock.a)
                         ]
                     ]
             actual <-
                 normalize
                 $ Predicate.fromSubstitution $ Substitution.wrap
-                    [ (RegVar Mock.x, Mock.constr10 Mock.a)
-                    , (RegVar Mock.x, Mock.constr10 (mkVar Mock.y))
+                    [ (ElemVar Mock.x, Mock.constr10 Mock.a)
+                    , (ElemVar Mock.x, Mock.constr10 (mkVar Mock.y))
                     ]
             assertEqualWithExplanation "" expect actual
             assertNormalizedPredicatesMulti actual
@@ -283,7 +283,7 @@ test_mergeAndNormalizeSubstitutions =
                         , predicate =
                             Syntax.Predicate.makeEqualsPredicate Mock.cf Mock.cg
                         , substitution = Substitution.unsafeWrap
-                            [ (RegVar Mock.x, Mock.constr10 Mock.cf) ]
+                            [ (ElemVar Mock.x, Mock.constr10 Mock.cf) ]
                         }
                     ]
             actual <-
@@ -292,8 +292,8 @@ test_mergeAndNormalizeSubstitutions =
                         { term = ()
                         , predicate = Syntax.Predicate.makeTruePredicate
                         , substitution = Substitution.wrap
-                            [ (RegVar Mock.x, Mock.constr10 Mock.cf)
-                            , (RegVar Mock.x, Mock.constr10 Mock.cg)
+                            [ (ElemVar Mock.x, Mock.constr10 Mock.cf)
+                            , (ElemVar Mock.x, Mock.constr10 Mock.cg)
                             ]
                         }
             assertEqualWithExplanation "" expect actual
@@ -308,8 +308,8 @@ test_mergeAndNormalizeSubstitutions =
                             Syntax.Predicate.makeCeilPredicate
                             $ Mock.f Mock.a
                         , substitution = Substitution.unsafeWrap
-                            [ (RegVar Mock.x, Mock.constr10 Mock.a)
-                            , (RegVar Mock.y, Mock.a)
+                            [ (ElemVar Mock.x, Mock.constr10 Mock.a)
+                            , (ElemVar Mock.y, Mock.a)
                             ]
                         }
                     ]
@@ -321,8 +321,8 @@ test_mergeAndNormalizeSubstitutions =
                             Syntax.Predicate.makeCeilPredicate
                             $ Mock.f (mkVar Mock.y)
                         , substitution = Substitution.wrap
-                            [ (RegVar Mock.x, Mock.constr10 Mock.a)
-                            , (RegVar Mock.x, Mock.constr10 (mkVar Mock.y))
+                            [ (ElemVar Mock.x, Mock.constr10 Mock.a)
+                            , (ElemVar Mock.x, Mock.constr10 (mkVar Mock.y))
                             ]
                         }
             assertEqualWithExplanation "" expect actual
@@ -330,8 +330,8 @@ test_mergeAndNormalizeSubstitutions =
     ]
 
 merge
-    :: [(SubstVar Variable, TermLike Variable)]
-    -> [(SubstVar Variable, TermLike Variable)]
+    :: [(UnifiedVariable Variable, TermLike Variable)]
+    -> [(UnifiedVariable Variable, TermLike Variable)]
     -> IO (Either UnificationOrSubstitutionError [Predicate Variable])
 merge s1 s2 =
     runSMT

@@ -48,8 +48,8 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           SMT
                  ( SMT )
@@ -589,9 +589,9 @@ test_unifySelectFromSingleton =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar mapVar, asInternal [])
-                                , (RegVar keyVar, key)
-                                , (RegVar valueVar, value)
+                                [ (ElemVar mapVar, asInternal [])
+                                , (ElemVar keyVar, key)
+                                , (ElemVar valueVar, value)
                                 ]
                         }
             -- { 5 -> 7 } /\ Item(K:Int, V:Int) Rest:Map
@@ -622,8 +622,8 @@ test_unifySelectSingletonFromSingleton =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar keyVar, key)
-                                , (RegVar valueVar, value)
+                                [ (ElemVar keyVar, key)
+                                , (ElemVar valueVar, value)
                                 ]
                         }
             -- { 5 -> 7 } /\ Item(K:Int, V:Int) Map.unit
@@ -649,8 +649,8 @@ test_unifySelectFromSingletonWithoutLeftovers =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar keyVar, key)
-                                , (RegVar valueVar, value)
+                                [ (ElemVar keyVar, key)
+                                , (ElemVar valueVar, value)
                                 ]
                         }
             -- { 5 -> 7 } /\ Item(K:Int, V:Int)
@@ -684,9 +684,9 @@ test_unifySelectFromTwoElementMap =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar mapVar, asInternal [(key2, value2)])
-                                , (RegVar keyVar, key1)
-                                , (RegVar valueVar, value1)
+                                [ (ElemVar mapVar, asInternal [(key2, value2)])
+                                , (ElemVar keyVar, key1)
+                                , (ElemVar valueVar, value1)
                                 ]
                         }
                 expect2 =
@@ -695,9 +695,9 @@ test_unifySelectFromTwoElementMap =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar mapVar, asInternal [(key1, value1)])
-                                , (RegVar keyVar, key2)
-                                , (RegVar valueVar, value2)
+                                [ (ElemVar mapVar, asInternal [(key1, value1)])
+                                , (ElemVar keyVar, key2)
+                                , (ElemVar valueVar, value2)
                                 ]
                         }
             -- { 5 -> 6, 7 -> 8 } /\ Item(K:Int, V:Int) Rest:Map
@@ -738,11 +738,11 @@ test_unifySelectTwoFromTwoElementMap =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar mapVar, asInternal [])
-                                , (RegVar keyVar1, key1)
-                                , (RegVar keyVar2, key2)
-                                , (RegVar valueVar1, value1)
-                                , (RegVar valueVar2, value2)
+                                [ (ElemVar mapVar, asInternal [])
+                                , (ElemVar keyVar1, key1)
+                                , (ElemVar keyVar2, key2)
+                                , (ElemVar valueVar1, value1)
+                                , (ElemVar valueVar2, value2)
                                 ]
                         }
                 expect2 =
@@ -751,11 +751,11 @@ test_unifySelectTwoFromTwoElementMap =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar mapVar, asInternal [])
-                                , (RegVar keyVar1, key2)
-                                , (RegVar keyVar2, key1)
-                                , (RegVar valueVar1, value2)
-                                , (RegVar valueVar2, value1)
+                                [ (ElemVar mapVar, asInternal [])
+                                , (ElemVar keyVar1, key2)
+                                , (ElemVar keyVar2, key1)
+                                , (ElemVar valueVar1, value2)
+                                , (ElemVar valueVar2, value1)
                                 ]
                         }
 
@@ -852,7 +852,7 @@ test_concretizeKeys =
         Conditional
             { term = mkPair intSort mapSort key (asInternal [(key, val)])
             , predicate = Predicate.makeTruePredicate
-            , substitution = Substitution.unsafeWrap [(RegVar v, val), (RegVar x, key)]
+            , substitution = Substitution.unsafeWrap [(ElemVar v, val), (ElemVar x, key)]
             }
 
 {- | Unify a concrete map with symbolic-keyed map in an axiom

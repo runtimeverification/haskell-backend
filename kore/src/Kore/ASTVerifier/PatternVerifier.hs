@@ -63,9 +63,9 @@ import           Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as Internal
 import           Kore.Parser
                  ( ParsedPattern )
-import           Kore.SubstVar
-                 ( SubstVar (..) )
-import qualified Kore.SubstVar as SubstVar
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
+import           Kore.Variables.AsVariable
 import           Kore.Syntax as Syntax
 import           Kore.Syntax.Definition
 import           Kore.Unparser
@@ -74,7 +74,7 @@ import qualified Kore.Verified as Verified
 
 newtype DeclaredVariables =
     DeclaredVariables
-        { getDeclaredVariables :: Map.Map Id (SubstVar Variable) }
+        { getDeclaredVariables :: Map.Map Id (UnifiedVariable Variable) }
     deriving (Monoid, Semigroup)
 
 emptyDeclaredVariables :: DeclaredVariables
@@ -156,23 +156,23 @@ lookupSymbol symbolOrAlias = do
     symbolConstructor = symbolOrAliasConstructor symbolOrAlias
     symbolParams = symbolOrAliasParams symbolOrAlias
 
-lookupDeclaredVariable :: Id -> PatternVerifier (SubstVar Variable)
+lookupDeclaredVariable :: Id -> PatternVerifier (UnifiedVariable Variable)
 lookupDeclaredVariable varId = do
     variables <- Reader.asks (getDeclaredVariables . declaredVariables)
     maybe errorUnquantified return $ Map.lookup varId variables
   where
-    errorUnquantified :: PatternVerifier (SubstVar Variable)
+    errorUnquantified :: PatternVerifier (UnifiedVariable Variable)
     errorUnquantified =
         koreFailWithLocations [varId]
             ("Unquantified variable: '" <> getId varId <> "'.")
 
 addDeclaredVariable
-    :: SubstVar Variable
+    :: UnifiedVariable Variable
     -> DeclaredVariables
     -> DeclaredVariables
 addDeclaredVariable variable (getDeclaredVariables -> variables) =
     DeclaredVariables $ Map.insert
-        (variableName . SubstVar.asVariable $ variable)
+        (variableName . asVariable $ variable)
         variable
         variables
 
@@ -183,7 +183,7 @@ The new variable must not already be declared.
  -}
 newDeclaredVariable
     :: DeclaredVariables
-    -> SubstVar Variable
+    -> UnifiedVariable Variable
     -> PatternVerifier DeclaredVariables
 newDeclaredVariable declared variable = do
     let declaredVariables = getDeclaredVariables declared
@@ -191,8 +191,8 @@ newDeclaredVariable declared variable = do
         Just variable' -> alreadyDeclared variable'
         Nothing -> return (addDeclaredVariable variable declared)
   where
-    name = variableName . SubstVar.asVariable $ variable
-    alreadyDeclared :: SubstVar Variable -> PatternVerifier DeclaredVariables
+    name = variableName . asVariable $ variable
+    alreadyDeclared :: UnifiedVariable Variable -> PatternVerifier DeclaredVariables
     alreadyDeclared variable' =
         koreFailWithLocations [variable', variable]
             (  "Variable '"
@@ -209,7 +209,7 @@ See also: 'newDeclaredVariable'
  -}
 uniqueDeclaredVariables
     :: Foldable f
-    => f (SubstVar Variable)
+    => f (UnifiedVariable Variable)
     -> PatternVerifier DeclaredVariables
 uniqueDeclaredVariables =
     Foldable.foldlM newDeclaredVariable emptyDeclaredVariables
@@ -243,19 +243,19 @@ verifyAliasLeftPattern
     -> PatternVerifier (DeclaredVariables, Application SymbolOrAlias Variable)
 verifyAliasLeftPattern leftPattern = do
     _ :< verified <-
-        verifyApplyAlias snd (expectVariable . RegVar  <$> leftPattern)
+        verifyApplyAlias snd (expectVariable . ElemVar  <$> leftPattern)
         & runMaybeT
         & (>>= maybe (error . noHead $ symbolOrAlias) return)
     declaredVariables <- uniqueDeclaredVariables (fst <$> verified)
     let verifiedLeftPattern =
             leftPattern
                 { applicationChildren = fst <$> applicationChildren verified }
-    return (declaredVariables, SubstVar.asVariable <$> verifiedLeftPattern)
+    return (declaredVariables, asVariable <$> verifiedLeftPattern)
   where
     symbolOrAlias = applicationSymbolOrAlias leftPattern
     expectVariable
-        :: SubstVar Variable
-        -> PatternVerifier (SubstVar Variable, Attribute.Pattern Variable)
+        :: UnifiedVariable Variable
+        -> PatternVerifier (UnifiedVariable Variable, Attribute.Pattern Variable)
     expectVariable var = do
         verifyVariableDeclaration var
         let attrs = synthetic (Const var)
@@ -366,7 +366,7 @@ verifyPatternHead (_ :< patternF) =
             transCofreeF Internal.TopF <$> verifyTop top
         Syntax.VariableF var ->
             transCofreeF (wrapVariable . getConst)
-                <$> verifyVariable (RegVar var)
+                <$> verifyVariable (ElemVar var)
         Syntax.InhabitantF _ ->
             koreFail "Unexpected pattern."
         Syntax.SetVariableF (SetVariable var) ->
@@ -374,8 +374,8 @@ verifyPatternHead (_ :< patternF) =
                 <$> verifyVariable (SetVar var)
   where
     transCofreeF fg (a :< fb) = a :< fg fb
-    wrapVariable :: SubstVar Variable -> Internal.TermLikeF Variable Verified.Pattern
-    wrapVariable (RegVar variable) = Internal.VariableF variable
+    wrapVariable :: UnifiedVariable Variable -> Internal.TermLikeF Variable Verified.Pattern
+    wrapVariable (ElemVar variable) = Internal.VariableF variable
     wrapVariable (SetVar variable) = Internal.SetVariableF (SetVariable variable)
 
 verifyPatternSort :: Sort -> PatternVerifier ()
@@ -624,7 +624,7 @@ verifyBinder
         , valid ~ Attribute.Pattern Variable
         )
     => (forall a. binder a -> Sort)
-    -> (forall a. binder a -> (SubstVar Variable))
+    -> (forall a. binder a -> (UnifiedVariable Variable))
     -> binder (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF binder valid Verified.Pattern)
 verifyBinder binderSort binderVariable = \binder -> do
@@ -653,7 +653,7 @@ verifyExists
         )
     => binder (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF binder valid Verified.Pattern)
-verifyExists = verifyBinder existsSort (RegVar . existsVariable)
+verifyExists = verifyBinder existsSort (ElemVar . existsVariable)
 
 verifyForall
     ::  ( binder ~ Forall Sort Variable
@@ -661,7 +661,7 @@ verifyForall
         )
     => binder (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF binder valid Verified.Pattern)
-verifyForall = verifyBinder forallSort (RegVar . forallVariable)
+verifyForall = verifyBinder forallSort (ElemVar . forallVariable)
 
 verifyMu
     ::  ( binder ~ Mu Variable
@@ -686,15 +686,15 @@ verifyNu = verifyBinder nuSort (SetVar . nuVar)
     nuSort = variableSort . nuVar
 
 verifyVariable
-    ::  ( base ~ Const (SubstVar Variable)
+    ::  ( base ~ Const (UnifiedVariable Variable)
         , valid ~ Attribute.Pattern Variable
         )
-    => SubstVar Variable
+    => UnifiedVariable Variable
     -> PatternVerifier (CofreeF base valid Verified.Pattern)
 verifyVariable var = do
     declaredVariable <- lookupDeclaredVariable variableName
     let Variable { variableSort = declaredSort } =
-            SubstVar.asVariable declaredVariable
+            asVariable declaredVariable
     koreFailWithLocationsWhen
         (variableSort /= declaredSort)
         [ var, declaredVariable ]
@@ -703,7 +703,7 @@ verifyVariable var = do
         attrs = synthetic (Internal.extractAttributes <$> verified)
     return (attrs :< verified)
   where
-    Variable { variableName, variableSort } = SubstVar.asVariable var
+    Variable { variableName, variableSort } = asVariable var
 
 verifyDomainValue
     :: DomainValue Sort (PatternVerifier Verified.Pattern)
@@ -767,7 +767,7 @@ verifyCharLiteral char = do
     let attrs = synthetic (Internal.extractAttributes <$> verified)
     return (attrs :< verified)
 
-verifyVariableDeclaration :: SubstVar Variable -> PatternVerifier VerifySuccess
+verifyVariableDeclaration :: UnifiedVariable Variable -> PatternVerifier VerifySuccess
 verifyVariableDeclaration variable = do
     Context { declaredSortVariables } <- Reader.ask
     verifySort
@@ -775,7 +775,7 @@ verifyVariableDeclaration variable = do
         declaredSortVariables
         variableSort
   where
-    Variable { variableSort } = SubstVar.asVariable variable
+    Variable { variableSort } = asVariable variable
 
 applicationSortsFromSymbolOrAliasSentence
     :: SentenceSymbolOrAlias sentence
@@ -828,20 +828,20 @@ verifyFreeVariables unifiedPattern =
 
 addFreeVariable
     :: DeclaredVariables
-    -> SubstVar Variable
+    -> UnifiedVariable Variable
     -> PatternVerifier DeclaredVariables
 addFreeVariable (getDeclaredVariables -> vars) var = do
     checkVariable var vars
     return . DeclaredVariables $
-        Map.insert (variableName . SubstVar.asVariable $ var) var vars
+        Map.insert (variableName . asVariable $ var) var vars
 
 checkVariable
-    :: SubstVar Variable
-    -> Map.Map Id (SubstVar Variable)
+    :: UnifiedVariable Variable
+    -> Map.Map Id (UnifiedVariable Variable)
     -> PatternVerifier VerifySuccess
 checkVariable var vars =
     maybe verifySuccess inconsistent
-    $ Map.lookup (variableName . SubstVar.asVariable $ var) vars
+    $ Map.lookup (variableName . asVariable $ var) vars
   where
     inconsistent v =
         koreFailWithLocations [v, var]

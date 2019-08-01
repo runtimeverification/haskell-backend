@@ -34,8 +34,8 @@ import qualified Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -164,7 +164,7 @@ test_userDefinedFunction =
                             { term = Mock.g (mkVar Mock.z)
                             , predicate = makeTruePredicate
                             , substitution = Substitution.wrap
-                                [(RegVar Mock.y, mkVar Mock.z)]
+                                [(ElemVar Mock.y, mkVar Mock.z)]
                             }
                         ]
                     , remainders = OrPattern.fromPatterns

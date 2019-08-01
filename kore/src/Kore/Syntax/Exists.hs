@@ -19,8 +19,8 @@ import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
-import Kore.SubstVar
-       ( SubstVar (..) )
+import Kore.Variables.UnifiedVariable
+       ( UnifiedVariable (..) )
 import Kore.Syntax.Variable
 import Kore.Unparser
 
@@ -75,7 +75,7 @@ instance
     Synthetic (Exists sort variable) (FreeVariables variable)
   where
     synthetic Exists { existsVariable, existsChild } =
-        bindVariable (RegVar existsVariable) existsChild
+        bindVariable (ElemVar existsVariable) existsChild
     {-# INLINE synthetic #-}
 
 instance Synthetic (Exists Sort variable) Sort where

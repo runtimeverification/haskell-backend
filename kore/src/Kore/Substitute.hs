@@ -28,8 +28,8 @@ import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Attribute.Synthetic
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           Kore.Syntax
 import           Kore.Variables.Binding
 import           Kore.Variables.Fresh
@@ -58,7 +58,7 @@ substitute
         )
     => (patternType -> FreeVariables variable)
     -- ^ View into free variables of the pattern
-    -> Map (SubstVar variable) patternType
+    -> Map (UnifiedVariable variable) patternType
     -- ^ Substitution
     -> patternType
     -- ^ Original pattern
@@ -66,21 +66,21 @@ substitute
 substitute viewFreeVariables =
     substituteWorker . Map.map Left
   where
-    extractFreeVariables :: patternType -> Set (SubstVar variable)
+    extractFreeVariables :: patternType -> Set (UnifiedVariable variable)
     extractFreeVariables =
         FreeVariables.getFreeVariables . viewFreeVariables
 
     -- | Insert an optional variable renaming into the substitution.
     renaming
-        :: SubstVar variable  -- ^ Original variable
-        -> Maybe (SubstVar variable)  -- ^ Renamed variable
-        -> Map (SubstVar variable) (Either patternType (SubstVar variable))
+        :: UnifiedVariable variable  -- ^ Original variable
+        -> Maybe (UnifiedVariable variable)  -- ^ Renamed variable
+        -> Map (UnifiedVariable variable) (Either patternType (UnifiedVariable variable))
         -- ^ Substitution
-        -> Map (SubstVar variable) (Either patternType (SubstVar variable))
+        -> Map (UnifiedVariable variable) (Either patternType (UnifiedVariable variable))
     renaming variable = maybe id (Map.insert variable . Right)
 
     substituteWorker
-        :: Map (SubstVar variable) (Either patternType (SubstVar variable))
+        :: Map (UnifiedVariable variable) (Either patternType (UnifiedVariable variable))
         -> patternType
         -> patternType
     substituteWorker subst termLike =
@@ -121,7 +121,7 @@ substitute viewFreeVariables =
         substituteVariable =
             either id id <$> matchWith traverseVariable worker termLike
           where
-            worker :: SubstVar variable -> Either patternType (SubstVar variable)
+            worker :: UnifiedVariable variable -> Either patternType (UnifiedVariable variable)
             worker variable =
                 -- If the variable is not substituted or renamed, return the
                 -- original pattern.

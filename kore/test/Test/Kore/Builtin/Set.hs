@@ -49,8 +49,8 @@ import           Kore.Step.Simplification.AndTerms
                  ( termUnification )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           Kore.Syntax.Id
                  ( Id )
 import           Kore.Syntax.Variable
@@ -438,7 +438,7 @@ test_unifyFramingVariable =
                     , predicate = makeTruePredicate
                     , substitution =
                         Substitution.unsafeWrap
-                            [(RegVar frameVar, asInternal remainder)]
+                            [(ElemVar frameVar, asInternal remainder)]
                     }
             actual <- Trans.lift $
                 evaluateToList (mkAnd patConcreteSet patFramedSet)
@@ -536,8 +536,8 @@ test_unifySelectFromSingleton =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar setVar, asInternal Set.empty)
-                                , (RegVar elementVar, elemStepPattern)
+                                [ (ElemVar setVar, asInternal Set.empty)
+                                , (ElemVar elementVar, elemStepPattern)
                                 ]
                         }
             -- { 5 } /\ SetItem(X:Int) Rest:Set
@@ -564,7 +564,7 @@ test_unifySelectFromSingletonWithoutLeftovers =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar elementVar, elemStepPattern) ]
+                                [ (ElemVar elementVar, elemStepPattern) ]
                         }
             -- { 5 } /\ SetItem(X:Int)
             (singleton `unifiesWith` selectPat) expect
@@ -595,10 +595,10 @@ test_unifySelectFromTwoElementSet =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [   ( RegVar setVar
+                                [   ( ElemVar setVar
                                     , asInternal (Set.fromList [concreteElem2])
                                     )
-                                , (RegVar elementVar, elemStepPattern1)
+                                , (ElemVar elementVar, elemStepPattern1)
                                 ]
                         }
                 expect2 =
@@ -607,10 +607,10 @@ test_unifySelectFromTwoElementSet =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [   ( RegVar setVar
+                                [   ( ElemVar setVar
                                     , asInternal (Set.fromList [concreteElem1])
                                     )
-                                , (RegVar elementVar, elemStepPattern2)
+                                , (ElemVar elementVar, elemStepPattern2)
                                 ]
                         }
             -- { 5 } /\ SetItem(X:Int) Rest:Set
@@ -658,9 +658,9 @@ test_unifySelectTwoFromTwoElementSet =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar setVar, asInternal Set.empty)
-                                , (RegVar elementVar1, elementUnifier1)
-                                , (RegVar elementVar2, elementUnifier2)
+                                [ (ElemVar setVar, asInternal Set.empty)
+                                , (ElemVar elementVar1, elementUnifier1)
+                                , (ElemVar elementVar2, elementUnifier2)
                                 ]
                         }
             -- { 5, 6 } /\ SetItem(X:Int) SetItem(Y:Int) Rest:Set
@@ -705,8 +705,8 @@ test_unifyConcatElemVarVsElemSet =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar setVar, setUnifier)
-                                , (RegVar elementVar1, elemUnifier)
+                                [ (ElemVar setVar, setUnifier)
+                                , (ElemVar elementVar1, elemUnifier)
                                 ]
                         }
             -- { Y:Int, 6 } /\ SetItem(X:Int) Rest:Set
@@ -752,8 +752,8 @@ test_unifyConcatElemVarVsElemElem =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar setVar, setUnifier)
-                                , (RegVar elementVar1, elemUnifier)
+                                [ (ElemVar setVar, setUnifier)
+                                , (ElemVar elementVar1, elemUnifier)
                                 ]
                         }
             -- { Y:Int, 6 } /\ SetItem(X:Int) Rest:Set
@@ -795,8 +795,8 @@ test_unifyConcatElemElemVsElemConcrete =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar elementVar1, elemUnifier1)
-                                , (RegVar elementVar2, elemUnifier2)
+                                [ (ElemVar elementVar1, elemUnifier1)
+                                , (ElemVar elementVar2, elemUnifier2)
                                 ]
                         }
             -- { X:Int, Y:Int } /\ { Z:Int, 6 }
@@ -837,8 +837,8 @@ test_unifyConcatElemElemVsElemElem =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar elementVar1, elemUnifier1)
-                                , (RegVar elementVar2, elemUnifier2)
+                                [ (ElemVar elementVar1, elemUnifier1)
+                                , (ElemVar elementVar2, elemUnifier2)
                                 ]
                         }
             -- { X:Int, Y:Int } /\ { Z:Int, T:Int }
@@ -892,9 +892,9 @@ test_unifyConcatElemConcatVsElemConcrete =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar elementVar1, elemUnifier1)
-                                , (RegVar elementVar2, elemUnifier2)
-                                , (RegVar elementVar3, elemStepPattern1)
+                                [ (ElemVar elementVar1, elemUnifier1)
+                                , (ElemVar elementVar2, elemUnifier2)
+                                , (ElemVar elementVar3, elemStepPattern1)
                                 ]
                         }
             -- SetItem(X:Int) SetItem(Y:Int) {5} /\ { Z:Int, 6, 7 }
@@ -929,7 +929,7 @@ test_unifyConcatElemConcreteVsElemConcrete1 =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar elementVar1, mkVar elementVar2) ]
+                                [ (ElemVar elementVar1, mkVar elementVar2) ]
                         }
                     ]
             -- { X:Int, 6 } /\ { Y:Int, 6 }
@@ -967,8 +967,8 @@ test_unifyConcatElemConcreteVsElemConcrete2 =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar elementVar1, elemStepPattern2)
-                                , (RegVar elementVar2, elemStepPattern1)
+                                [ (ElemVar elementVar1, elemStepPattern2)
+                                , (ElemVar elementVar2, elemStepPattern1)
                                 ]
                         }
                     ]
@@ -1013,8 +1013,8 @@ test_unifyConcatElemConcreteVsElemConcrete3 =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar elementVar1, elemStepPattern3)
-                                , (RegVar elementVar2, elemStepPattern2)
+                                [ (ElemVar elementVar1, elemStepPattern3)
+                                , (ElemVar elementVar2, elemStepPattern2)
                                 ]
                         }
                     ]
@@ -1088,7 +1088,7 @@ test_unifyConcatElemConcreteVsElemConcrete5 =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar elementVar1, mkVar elementVar2) ]
+                                [ (ElemVar elementVar1, mkVar elementVar2) ]
                         }
                     ]
             -- { X:Int, 5, 6 } /\ { Y:Int, 5, 6 }
@@ -1118,7 +1118,7 @@ test_unifyConcatElemVsElem =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar elementVar1, mkVar elementVar2) ]
+                                [ (ElemVar elementVar1, mkVar elementVar2) ]
                         }
                     ]
             -- { X:Int } /\ { Y:Int }
@@ -1149,7 +1149,7 @@ test_unifyConcatElemVsElemConcrete1 =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar elementVar1, mkVar elementVar2) ]
+                                [ (ElemVar elementVar1, mkVar elementVar2) ]
                         }
                     ]
             -- { X:Int } /\ { Y:Int, {} }
@@ -1256,8 +1256,8 @@ test_unifyConcatElemVsElemVar =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar setVar, asInternal Set.empty)
-                                , (RegVar elementVar1, mkVar elementVar2)
+                                [ (ElemVar setVar, asInternal Set.empty)
+                                , (ElemVar elementVar1, mkVar elementVar2)
                                 ]
                         }
                     ]
@@ -1336,9 +1336,9 @@ test_unifyConcatElemElemVsElemConcatSet =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar elementVar1, firstUnifier)
-                                , (RegVar elementVar2, secondUnifier)
-                                , (RegVar setVar, asInternal Set.empty)
+                                [ (ElemVar elementVar1, firstUnifier)
+                                , (ElemVar elementVar2, secondUnifier)
+                                , (ElemVar setVar, asInternal Set.empty)
                                 ]
                         }
             -- { X:Int, Y:Int } /\ { Z:Int, T:Int, U:Set }
@@ -1367,7 +1367,7 @@ test_unifyFnSelectFromSingleton =
                             makeEqualsPredicate elemStepPatt elementVarPatt
                         , substitution =
                             Substitution.unsafeWrap
-                                [   ( RegVar setVar
+                                [   ( ElemVar setVar
                                     , asInternal Set.empty
                                     )
                                 ]
@@ -1385,7 +1385,7 @@ test_unify_concat_xSet_unit_unit_vs_unit :: [TestTree]
 test_unify_concat_xSet_unit_unit_vs_unit =
     [ (concatSet (mkVar xSet) unitSet, internalUnit)
         `unifiedBy`
-        [(RegVar xSet, internalUnit)]
+        [(ElemVar xSet, internalUnit)]
         $ "concat(xSet:Set, unit()) ~ unit()"
     ]
   where
@@ -1450,8 +1450,8 @@ test_unifyMultipleIdenticalOpaqueSets =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (RegVar elementVar1, mkVar elementVar2)
-                                , (RegVar setVar3, asInternal Set.empty)
+                                [ (ElemVar elementVar1, mkVar elementVar2)
+                                , (ElemVar setVar3, asInternal Set.empty)
                                 ]
                         }
                     ]
@@ -1501,7 +1501,7 @@ test_concretizeKeys =
                     (asInternal $ Set.fromList [concreteKey])
             , predicate = Predicate.makeTruePredicate
             , substitution = Substitution.unsafeWrap
-                [ (RegVar x, symbolicKey) ]
+                [ (ElemVar x, symbolicKey) ]
             }
 
 {- | Unify a concrete Set with symbolic-keyed Set in an axiom
@@ -1613,7 +1613,7 @@ unifiesWithMulti pat1 pat2 expectedResults = do
 unifiedBy
     :: HasCallStack
     => (TermLike Variable, TermLike Variable)
-    -> [(SubstVar Variable, TermLike Variable)]
+    -> [(UnifiedVariable Variable, TermLike Variable)]
     -> TestName
     -> TestTree
 unifiedBy (termLike1, termLike2) substitution testName =

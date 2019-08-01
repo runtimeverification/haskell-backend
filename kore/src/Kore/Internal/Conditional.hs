@@ -35,8 +35,8 @@ import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.SubstVar
-                 ( SubstVar )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable )
 import           Kore.Syntax
 import           Kore.TopBottom
                  ( TopBottom (..) )
@@ -265,7 +265,7 @@ The result has a true 'Predicate'.
  -}
 fromSingleSubstitution
     :: (Ord variable, SortedVariable variable)
-    => (SubstVar variable, TermLike variable)
+    => (UnifiedVariable variable, TermLike variable)
     -> Conditional variable ()
 fromSingleSubstitution pair =
     Conditional

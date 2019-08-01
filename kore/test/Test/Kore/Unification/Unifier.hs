@@ -29,8 +29,8 @@ import qualified Kore.Predicate.Predicate as Syntax
 import           Kore.Step.Simplification.Data
                  ( BuiltinAndAxiomSimplifierMap, Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           Kore.Unification.Error
 import           Kore.Unification.Procedure
 import qualified Kore.Unification.Substitution as Substitution
@@ -133,10 +133,10 @@ type Substitution = [(Text, TermLike Variable)]
 
 unificationSubstitution
     :: Substitution
-    -> [ (SubstVar Variable, TermLike Variable) ]
+    -> [ (UnifiedVariable Variable, TermLike Variable) ]
 unificationSubstitution = map trans
   where
-    trans (v, p) = (Mock.makeSubstVar v (termLikeSort p), p)
+    trans (v, p) = (Mock.makeUnifiedVariable v (termLikeSort p), p)
 
 unificationResult :: UnificationResult -> Pattern Variable
 unificationResult
@@ -226,7 +226,7 @@ unificationProcedureSuccessWithSimplifiers
     -> BuiltinAndAxiomSimplifierMap
     -> UnificationTerm
     -> UnificationTerm
-    -> [([(SubstVar Variable, TermLike Variable)], Syntax.Predicate Variable)]
+    -> [([(UnifiedVariable Variable, TermLike Variable)], Syntax.Predicate Variable)]
     -> TestTree
 unificationProcedureSuccessWithSimplifiers
     message
@@ -245,7 +245,7 @@ unificationProcedureSuccessWithSimplifiers
         let
             normalize
                 :: Predicate Variable
-                -> ([(SubstVar Variable, TermLike Variable)], Syntax.Predicate Variable)
+                -> ([(UnifiedVariable Variable, TermLike Variable)], Syntax.Predicate Variable)
             normalize Conditional { substitution, predicate } =
                 (Substitution.unwrap substitution, predicate)
         assertEqualWithExplanation ""
@@ -294,7 +294,7 @@ test_unification =
             ]
     , testCase "SetVariable w. constructor" $
         andSimplifySuccess
-            (UnificationTerm (f (Mock.mkTestSubstVar "@x")))
+            (UnificationTerm (f (Mock.mkTestUnifiedVariable "@x")))
             (UnificationTerm (f a))
             [ UnificationResult
                 { term = f a
@@ -304,7 +304,7 @@ test_unification =
             ]
     , testCase "SetVariable" $
         andSimplifySuccess
-            (UnificationTerm (Mock.mkTestSubstVar "@x"))
+            (UnificationTerm (Mock.mkTestUnifiedVariable "@x"))
             (UnificationTerm a)
             [ UnificationResult
                 { term = a
@@ -490,11 +490,11 @@ test_unification =
         -}
     , testCase "Maps substitution variables"
         (assertEqualWithExplanation ""
-            [(RegVar $ W "1", war' "2")]
+            [(ElemVar $ W "1", war' "2")]
             (Substitution.unwrap
                 . Substitution.mapVariables showVar
                 . Substitution.wrap
-                $ [(RegVar $ V 1, var' 2)]
+                $ [(ElemVar $ V 1, var' 2)]
             )
         )
 

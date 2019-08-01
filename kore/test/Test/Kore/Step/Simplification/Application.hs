@@ -24,8 +24,8 @@ import           Kore.Step.Simplification.Application
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
                  ( Unparse )
@@ -132,8 +132,8 @@ test_applicationSimplification =
                                     (makeEqualsPredicate fOfA fOfB)
                                     (makeEqualsPredicate gOfA gOfB)
                             , substitution = Substitution.unsafeWrap
-                                [ (RegVar Mock.x, fOfA)
-                                , (RegVar Mock.y, gOfA)
+                                [ (ElemVar Mock.x, fOfA)
+                                , (ElemVar Mock.y, gOfA)
                                 ]
                             }
                         ]
@@ -147,14 +147,14 @@ test_applicationSimplification =
                                 { term = Mock.a
                                 , predicate = makeEqualsPredicate fOfA fOfB
                                 , substitution =
-                                    Substitution.wrap [ (RegVar Mock.x, fOfA) ]
+                                    Substitution.wrap [ (ElemVar Mock.x, fOfA) ]
                                 }
                             ]
                         ,   [ Conditional
                                 { term = Mock.b
                                 , predicate = makeEqualsPredicate gOfA gOfB
                                 , substitution =
-                                    Substitution.wrap [ (RegVar Mock.y, gOfA) ]
+                                    Substitution.wrap [ (ElemVar Mock.y, gOfA) ]
                                 }
                             ]
                         ]
@@ -182,9 +182,9 @@ test_applicationSimplification =
                                     (makeEqualsPredicate gOfA gOfB)
                             , substitution =
                                 Substitution.unsafeWrap $ List.sortOn fst
-                                    [ (RegVar z', gOfB)
-                                    , (RegVar Mock.x, fOfA)
-                                    , (RegVar Mock.y, gOfA)
+                                    [ (ElemVar z', gOfB)
+                                    , (ElemVar Mock.x, fOfA)
+                                    , (ElemVar Mock.y, gOfA)
                                     ]
                             }
                         ]
@@ -213,7 +213,7 @@ test_applicationSimplification =
                                 { term = fOfA
                                 , predicate = makeEqualsPredicate fOfA gOfA
                                 , substitution =
-                                    Substitution.wrap [ (RegVar zvar, gOfB) ]
+                                    Substitution.wrap [ (ElemVar zvar, gOfB) ]
                                 }
                             ]
                         , remainders = OrPattern.fromPatterns []
@@ -235,14 +235,14 @@ test_applicationSimplification =
                                 { term = Mock.a
                                 , predicate = makeEqualsPredicate fOfA fOfB
                                 , substitution =
-                                    Substitution.wrap [ (RegVar Mock.x, fOfA) ]
+                                    Substitution.wrap [ (ElemVar Mock.x, fOfA) ]
                                 }
                             ]
                         ,   [ Conditional
                                 { term = Mock.b
                                 , predicate = makeEqualsPredicate gOfA gOfB
                                 , substitution =
-                                    Substitution.wrap [ (RegVar Mock.y, gOfA) ]
+                                    Substitution.wrap [ (ElemVar Mock.y, gOfA) ]
                                 }
                             ]
                         ]

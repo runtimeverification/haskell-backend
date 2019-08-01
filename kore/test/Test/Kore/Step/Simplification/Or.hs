@@ -23,8 +23,8 @@ import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Simplification.Or
                  ( simplify, simplifyEvaluated )
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -199,10 +199,10 @@ sT :: TestSubstitution
 sT = mempty
 
 sm :: TestSubstitution
-sm = Substitution.wrap [(RegVar Mock.x, Mock.a)] -- I'd rather these were meaningful
+sm = Substitution.wrap [(ElemVar Mock.x, Mock.a)] -- I'd rather these were meaningful
 
 sM :: TestSubstitution
-sM = Substitution.wrap [(RegVar Mock.y, Mock.b)] -- I'd rather these were meaningful
+sM = Substitution.wrap [(ElemVar Mock.y, Mock.b)] -- I'd rather these were meaningful
 
 test_valueProperties :: TestTree
 test_valueProperties =

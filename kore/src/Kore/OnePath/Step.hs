@@ -47,8 +47,8 @@ import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           Kore.Syntax.Variable
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -271,7 +271,7 @@ removalPredicate destination config =
             FreeVariables.getFreeVariables $ Pattern.freeVariables destination
         extraVariables = Set.toList
             $ Set.difference destinationVariables configVariables
-        extraRegularVariables = [v | RegVar v <- extraVariables]
+        extraRegularVariables = [v | ElemVar v <- extraVariables]
         extraSetVariables = [v | SetVar v <- extraVariables]
         quantifyPredicate = Predicate.makeMultipleExists extraRegularVariables
     in

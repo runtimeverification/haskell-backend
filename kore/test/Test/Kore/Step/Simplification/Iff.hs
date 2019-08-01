@@ -20,8 +20,8 @@ import           Kore.Step.Simplification.Data
                  ( Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate, simplify )
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -85,12 +85,12 @@ test_makeEvaluate =
                 Conditional
                     { term = mkTop_
                     , predicate = makeCeilPredicate Mock.cf
-                    , substitution = Substitution.wrap [(RegVar Mock.x, Mock.a)]
+                    , substitution = Substitution.wrap [(ElemVar Mock.x, Mock.a)]
                     }
                 Conditional
                     { term = mkTop_
                     , predicate = makeCeilPredicate Mock.cg
-                    , substitution = Substitution.wrap [(RegVar Mock.y, Mock.b)]
+                    , substitution = Substitution.wrap [(ElemVar Mock.y, Mock.b)]
                     }
             )
         )
@@ -123,12 +123,12 @@ test_makeEvaluate =
                 Conditional
                     { term = Mock.f Mock.a
                     , predicate = makeCeilPredicate Mock.cf
-                    , substitution = Substitution.wrap [(RegVar Mock.x, Mock.a)]
+                    , substitution = Substitution.wrap [(ElemVar Mock.x, Mock.a)]
                     }
                 Conditional
                     { term = Mock.g Mock.b
                     , predicate = makeCeilPredicate Mock.cg
-                    , substitution = Substitution.wrap [(RegVar Mock.y, Mock.b)]
+                    , substitution = Substitution.wrap [(ElemVar Mock.y, Mock.b)]
                     }
             )
         )

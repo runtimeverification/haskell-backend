@@ -18,8 +18,8 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.Simplification.And
 import           Kore.Step.Simplification.Data
                  ( Env (..), evalSimplifier, gather )
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
@@ -126,19 +126,19 @@ test_andSimplification =
                         { term = mkTop_
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [(RegVar Mock.y, fOfX), (RegVar Mock.z, gOfX)]
+                            [(ElemVar Mock.y, fOfX), (ElemVar Mock.z, gOfX)]
                         }
             actual <-
                 evaluatePatterns
                     Conditional
                         { term = mkTop_
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.wrap [(RegVar Mock.y, fOfX)]
+                        , substitution = Substitution.wrap [(ElemVar Mock.y, fOfX)]
                         }
                     Conditional
                         { term = mkTop_
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.wrap [(RegVar Mock.z, gOfX)]
+                        , substitution = Substitution.wrap [(ElemVar Mock.z, gOfX)]
                         }
             assertEqualWithExplanation "" (OrPattern.fromPatterns [expect]) actual
 
@@ -170,18 +170,18 @@ test_andSimplification =
                         { term = mkTop_
                         , predicate = makeEqualsPredicate fOfX gOfX
                         , substitution =
-                            Substitution.unsafeWrap [(RegVar Mock.y, fOfX)]
+                            Substitution.unsafeWrap [(ElemVar Mock.y, fOfX)]
                         }
             actual <- evaluatePatterns
                 Conditional
                     { term = mkTop_
                     , predicate = makeTruePredicate
-                    , substitution = Substitution.wrap [(RegVar Mock.y, fOfX)]
+                    , substitution = Substitution.wrap [(ElemVar Mock.y, fOfX)]
                     }
                 Conditional
                     { term = mkTop_
                     , predicate = makeTruePredicate
-                    , substitution = Substitution.wrap [(RegVar Mock.y, gOfX)]
+                    , substitution = Substitution.wrap [(ElemVar Mock.y, gOfX)]
                     }
             assertEqualWithExplanation "" (OrPattern.fromPatterns [expect]) actual
 
@@ -192,7 +192,7 @@ test_andSimplification =
                         { term = mkTop_
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
-                            [   ( RegVar Mock.y
+                            [   ( ElemVar Mock.y
                                 , Mock.functionalConstr10 (mkVar Mock.x)
                                 )
                             ]
@@ -201,7 +201,7 @@ test_andSimplification =
                         { term = mkTop_
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
-                            [   ( RegVar Mock.y
+                            [   ( ElemVar Mock.y
                                 , Mock.functionalConstr11 (mkVar Mock.x)
                                 )
                             ]
@@ -248,7 +248,7 @@ test_andSimplification =
                         { term = fOfX
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [(RegVar Mock.y, fOfX)]
+                            [(ElemVar Mock.y, fOfX)]
                         }
             actual <- evaluatePatterns yExpanded fOfXExpanded
             assertEqualWithExplanation "" (MultiOr [expect]) actual
@@ -259,7 +259,7 @@ test_andSimplification =
                         { term = fOfX
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [(RegVar Mock.y, fOfX)]
+                            [(ElemVar Mock.y, fOfX)]
                         }
             actual <- evaluatePatterns fOfXExpanded yExpanded
             assertEqualWithExplanation "" (MultiOr [expect]) actual

@@ -11,8 +11,8 @@ import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Attribute.Synthetic
 import           Kore.Internal.TermLike
                  ( Symbol, TermLikeF (..) )
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           Kore.Syntax hiding
                  ( PatternF (..) )
 
@@ -85,8 +85,8 @@ sigma :: Symbol
 sigma = Mock.sigmaSymbol
 
 x, y, xy, sx, sy, sxy :: FreeVariables Variable
-x = FreeVariables.freeVariable (RegVar Mock.x)
-y = FreeVariables.freeVariable (RegVar Mock.y)
+x = FreeVariables.freeVariable (ElemVar Mock.x)
+y = FreeVariables.freeVariable (ElemVar Mock.y)
 xy = x <> y
 sx = FreeVariables.freeVariable (SetVar Mock.x)
 sy = FreeVariables.freeVariable (SetVar Mock.y)

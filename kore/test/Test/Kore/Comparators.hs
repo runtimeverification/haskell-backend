@@ -70,9 +70,9 @@ import qualified Kore.Step.SMT.AST as SMT.SymbolReference
                  ( SymbolReference (..) )
 import qualified Kore.Step.SMT.AST as SMT.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
-import           Kore.SubstVar
-                 ( SubstVar (..) )
-import qualified Kore.SubstVar as SubstVar
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
+import           Kore.Variables.AsVariable
 import           Kore.Syntax as Syntax
 import           Kore.Syntax.Sentence as Syntax
 import qualified Kore.Syntax.SetVariable as SetVariable
@@ -830,25 +830,25 @@ instance EqualWithExplanation (Inhabitant child) where
 instance
     ( EqualWithExplanation variable
     , Show variable
-    ) => SumEqualWithExplanation (SubstVar variable) where
+    ) => SumEqualWithExplanation (UnifiedVariable variable) where
     sumConstructorPair (SetVar v1) (SetVar v2) =
         SumConstructorSameWithArguments
-        $ EqWrap "RegVar" v1 v2
+        $ EqWrap "ElemVar" v1 v2
     sumConstructorPair v1@(SetVar _) v2 =
         SumConstructorDifferent
             (printWithExplanation v1) (printWithExplanation v2)
 
-    sumConstructorPair (RegVar v1) (RegVar v2) =
+    sumConstructorPair (ElemVar v1) (ElemVar v2) =
         SumConstructorSameWithArguments
         $ EqWrap "SetVar" v1 v2
-    sumConstructorPair v1@(RegVar _) v2 =
+    sumConstructorPair v1@(ElemVar _) v2 =
         SumConstructorDifferent
             (printWithExplanation v1) (printWithExplanation v2)
 
 instance
     ( EqualWithExplanation variable
     , Show variable
-    ) => EqualWithExplanation (SubstVar variable) where
+    ) => EqualWithExplanation (UnifiedVariable variable) where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
@@ -962,8 +962,8 @@ instance SumEqualWithExplanation SubstitutionError where
       =
         SumConstructorSameWithArguments
         $ EqWrap "NonCtorCircularVariableDependency"
-            (toVariable . SubstVar.asVariable <$> a1)
-            (toVariable . SubstVar.asVariable <$> a2)
+            (toVariable . asVariable <$> a1)
+            (toVariable . asVariable <$> a2)
 
 
 instance EqualWithExplanation SubstitutionError where

@@ -10,8 +10,8 @@ import qualified Data.Set as Set
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate as Predicate
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore
@@ -276,13 +276,13 @@ test_predicate =
                     (makeTruePredicate :: Predicate Variable)
             assertEqual "equals predicate has two variables"
                 (Set.fromList
-                    [ RegVar $ a Mock.testSort
-                    , RegVar $ b Mock.testSort
+                    [ ElemVar $ a Mock.testSort
+                    , ElemVar $ b Mock.testSort
                     ]
                 )
                 (FreeVariables.getFreeVariables $ Predicate.freeVariables pr1)
             assertBool "quantified variables are not included"
-                $ not . FreeVariables.isFreeVariable (RegVar $ a Mock.testSort)
+                $ not . FreeVariables.isFreeVariable (ElemVar $ a Mock.testSort)
                 $ Predicate.freeVariables
                 $ makeExistsPredicate (a Mock.testSort)
                 $ makeEqualsPredicate
@@ -297,7 +297,7 @@ test_predicate =
             assertEqual "a = b"
                 (makeAndPredicate pr1 makeTruePredicate)
                 (substitutionToPredicate $ Substitution.wrap
-                    [(RegVar $ a Mock.testSort, mkVar $ b Mock.testSort)]
+                    [(ElemVar $ a Mock.testSort, mkVar $ b Mock.testSort)]
                 )
         )
     , let

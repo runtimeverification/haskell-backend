@@ -50,7 +50,7 @@ module Kore.Internal.TermLike
     , mkTop
     , mkVar
     , mkSetVar
-    , mkSubstVar
+    , mkUnifiedVariable
     , mkStringLiteral
     , mkCharLiteral
     , mkSort
@@ -190,9 +190,9 @@ import           Kore.Internal.Alias
 import           Kore.Internal.Symbol
 import           Kore.Sort
 import qualified Kore.Substitute as Substitute
-import           Kore.SubstVar
-                 ( SubstVar (..) )
-import qualified Kore.SubstVar as SubstVar
+import           Kore.Variables.AsVariable
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           Kore.Syntax.And
 import           Kore.Syntax.Application
 import           Kore.Syntax.Bottom
@@ -318,7 +318,7 @@ instance
     -- Functors.
     synthetic (ForallF forallF) = synthetic forallF
     synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF variable) = freeVariable (RegVar variable)
+    synthetic (VariableF variable) = freeVariable (ElemVar variable)
 
     synthetic (AndF andF) = synthetic andF
     synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
@@ -712,8 +712,8 @@ instance
 
     traverseVariable match termLike =
         case termLikeF of
-            VariableF variable -> mkSubstVar <$> match (RegVar variable)
-            SetVariableF (SetVariable variable) -> mkSubstVar <$> match (SetVar variable)
+            VariableF variable -> mkUnifiedVariable <$> match (ElemVar variable)
+            SetVariableF (SetVariable variable) -> mkUnifiedVariable <$> match (SetVar variable)
             _ -> pure termLike
       where
         _ :< termLikeF = Recursive.project termLike
@@ -733,7 +733,7 @@ freeVariables = Attribute.freeVariables . extractAttributes
 
 hasFreeVariable
     :: Ord variable
-    => SubstVar variable
+    => UnifiedVariable variable
     -> TermLike variable
     -> Bool
 hasFreeVariable variable = isFreeVariable variable . freeVariables
@@ -763,7 +763,7 @@ Otherwise, the argument is returned.
  -}
 withoutFreeVariable
     :: (Ord variable, SortedVariable variable, Unparse variable)
-    => (SubstVar variable)  -- ^ variable
+    => (UnifiedVariable variable)  -- ^ variable
     -> TermLike variable
     -> a  -- ^ result, if the variable does not occur free in the pattern
     -> a
@@ -772,7 +772,7 @@ withoutFreeVariable variable termLike result
     (error . show . Pretty.vsep)
         [ Pretty.hsep
             [ "Unexpected free variable"
-            , unparse (SubstVar.asVariable variable)
+            , unparse (asVariable variable)
             , "in pattern:"
             ]
         , Pretty.indent 4 (unparse termLike)
@@ -881,7 +881,7 @@ substitute
         , SortedVariable variable
         , Show variable
         )
-    =>  Map (SubstVar variable) (TermLike variable)
+    =>  Map (UnifiedVariable variable) (TermLike variable)
     ->  TermLike variable
     ->  TermLike variable
 substitute = Substitute.substitute freeVariables
@@ -901,9 +901,9 @@ externalizeFreshVariables termLike =
     -- | 'originalFreeVariables' are present in the original pattern; they do
     -- not have a generated counter. 'generatedFreeVariables' have a generated
     -- counter, usually because they were introduced by applying some axiom.
-    originalFreeVariables, generatedFreeVariables :: Set.Set (SubstVar Variable)
+    originalFreeVariables, generatedFreeVariables :: Set.Set (UnifiedVariable Variable)
     (originalFreeVariables, generatedFreeVariables) =
-        Set.partition (Variable.isOriginalVariable . SubstVar.asVariable)
+        Set.partition (Variable.isOriginalVariable . asVariable)
         $ getFreeVariables $ freeVariables termLike
 
     -- | The map of generated free variables, renamed to be unique from the
@@ -918,8 +918,8 @@ externalizeFreshVariables termLike =
                 variable' = safeVariable avoiding variable
                 renaming' =
                     Map.insert
-                        (SubstVar.asVariable variable)
-                        (SubstVar.asVariable variable')
+                        (asVariable variable)
+                        (asVariable variable')
                         renaming
                 avoiding' = freeVariable variable' <> avoiding
             in
@@ -943,7 +943,7 @@ externalizeFreshVariables termLike =
     among the set of avoided variables. The externalized form is returned.
 
      -}
-    safeVariable :: FreeVariables Variable -> SubstVar Variable -> SubstVar Variable
+    safeVariable :: FreeVariables Variable -> UnifiedVariable Variable -> UnifiedVariable Variable
     safeVariable avoiding variable =
         head  -- 'head' is safe because 'iterate' creates an infinite list
         $ dropWhile wouldCapture
@@ -955,7 +955,7 @@ externalizeFreshVariables termLike =
     underBinder freeVariables' variable child = do
         let variable' = safeVariable freeVariables' variable
         child' <- Reader.local
-            (Map.insert (SubstVar.asVariable variable) (SubstVar.asVariable variable'))
+            (Map.insert (asVariable variable) (asVariable variable'))
             child
         return (variable', child')
 
@@ -979,12 +979,12 @@ externalizeFreshVariables termLike =
                     (existsVariable', existsChild') <-
                         underBinder
                             freeVariables'
-                            (RegVar existsVariable)
+                            (ElemVar existsVariable)
                             existsChild
                     let exists' =
                             exists
                                 { existsVariable =
-                                    SubstVar.asVariable existsVariable'
+                                    asVariable existsVariable'
                                 , existsChild = existsChild'
                                 }
                     return (ExistsF exists')
@@ -993,12 +993,12 @@ externalizeFreshVariables termLike =
                     (forallVariable', forallChild') <-
                         underBinder
                             freeVariables'
-                            (RegVar forallVariable)
+                            (ElemVar forallVariable)
                             forallChild
                     let forall' =
                             forall
                                 { forallVariable =
-                                    SubstVar.asVariable forallVariable'
+                                    asVariable forallVariable'
                                 , forallChild = forallChild'
                                 }
                     return (ForallF forall')
@@ -1012,7 +1012,7 @@ externalizeFreshVariables termLike =
                     let mu' =
                             mu
                                 { muVariable = SetVariable
-                                    (SubstVar.asVariable muVariable')
+                                    (asVariable muVariable')
                                 , muChild = muChild'
                                 }
                     return (MuF mu')
@@ -1026,7 +1026,7 @@ externalizeFreshVariables termLike =
                     let nu' =
                             nu
                                 { nuVariable = SetVariable
-                                    (SubstVar.asVariable nuVariable')
+                                    (asVariable nuVariable')
                                 , nuChild = nuChild'
                                 }
                     return (NuF nu')
@@ -1722,12 +1722,12 @@ mkSetVar
     -> TermLike variable
 mkSetVar = synthesize . SetVariableF
 
-mkSubstVar
+mkUnifiedVariable
     :: Ord variable
     => SortedVariable variable
-    => SubstVar variable -> TermLike variable
-mkSubstVar (RegVar variable) = mkVar variable
-mkSubstVar (SetVar variable) = mkSetVar (SetVariable variable)
+    => UnifiedVariable variable -> TermLike variable
+mkUnifiedVariable (ElemVar variable) = mkVar variable
+mkUnifiedVariable (SetVar variable) = mkSetVar (SetVariable variable)
 
 {- | Construct a 'StringLiteral' pattern.
  -}

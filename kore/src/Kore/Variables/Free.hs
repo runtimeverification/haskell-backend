@@ -25,15 +25,15 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
-import Kore.SubstVar
-       ( SubstVar (..) )
+import Kore.Variables.UnifiedVariable
+       ( UnifiedVariable (..) )
 import Kore.Syntax
 
 -- | The free variables of a pure pattern.
 freePureVariables
     :: Ord variable
     => Pattern variable annotation
-    -> Set (SubstVar variable)
+    -> Set (UnifiedVariable variable)
 freePureVariables root =
     let (free, ()) =
             Monad.RWS.execRWS
@@ -49,17 +49,17 @@ freePureVariables root =
     freePureVariables1 recursive =
         case Cofree.tailF (Recursive.project recursive) of
             VariableF v ->
-                Monad.unlessM (isBound (RegVar v)) (recordFree (RegVar v))
+                Monad.unlessM (isBound (ElemVar v)) (recordFree (ElemVar v))
             ExistsF Exists { existsVariable, existsChild } ->
                 Monad.RWS.local
                     -- record the bound variable
-                    (Set.insert (RegVar existsVariable))
+                    (Set.insert (ElemVar existsVariable))
                     -- descend into the bound pattern
                     (freePureVariables1 existsChild)
             ForallF Forall { forallVariable, forallChild } ->
                 Monad.RWS.local
                     -- record the bound variable
-                    (Set.insert (RegVar forallVariable))
+                    (Set.insert (ElemVar forallVariable))
                     -- descend into the bound pattern
                     (freePureVariables1 forallChild)
             SetVariableF (SetVariable v) ->
@@ -82,15 +82,15 @@ pureMergeVariables
     :: Ord variable
     => Base
         (Pattern variable annotation)
-        (Set.Set (SubstVar variable))
-    -> Set.Set (SubstVar variable)
+        (Set.Set (UnifiedVariable variable))
+    -> Set.Set (UnifiedVariable variable)
 pureMergeVariables base =
     case Cofree.tailF base of
-        VariableF v -> Set.singleton (RegVar v)
+        VariableF v -> Set.singleton (ElemVar v)
         ExistsF Exists { existsVariable, existsChild } ->
-            Set.insert (RegVar existsVariable) existsChild
+            Set.insert (ElemVar existsVariable) existsChild
         ForallF Forall { forallVariable, forallChild } ->
-            Set.insert (RegVar forallVariable) forallChild
+            Set.insert (ElemVar forallVariable) forallChild
         SetVariableF (SetVariable v) -> Set.singleton (SetVar v)
         MuF Mu { muVariable = SetVariable muVar, muChild } ->
             Set.insert (SetVar muVar) muChild
@@ -104,7 +104,7 @@ set, regardless of whether they are quantified or not.
 pureAllVariables
     :: Ord variable
     => Pattern variable annotation
-    -> Set.Set (SubstVar variable)
+    -> Set.Set (UnifiedVariable variable)
 pureAllVariables = Recursive.fold pureMergeVariables
 
 {- | @synthetic@ is an algebra for the free variables of a pattern.
@@ -115,18 +115,18 @@ free variables as a synthetic attribute.
  -}
 synthetic
     :: Ord variable
-    => PatternF variable (Set.Set (SubstVar variable))
-    -> Set.Set (SubstVar variable)
+    => PatternF variable (Set.Set (UnifiedVariable variable))
+    -> Set.Set (UnifiedVariable variable)
 synthetic (ExistsF Exists { existsVariable, existsChild }) =
-    Set.delete (RegVar existsVariable) existsChild
+    Set.delete (ElemVar existsVariable) existsChild
 synthetic (ForallF Forall { forallVariable, forallChild }) =
-    Set.delete (RegVar forallVariable) forallChild
+    Set.delete (ElemVar forallVariable) forallChild
 synthetic (VariableF variable) =
-    Set.singleton (RegVar variable)
+    Set.singleton (ElemVar variable)
 synthetic (MuF Mu { muVariable = SetVariable muVar, muChild }) =
-    Set.delete (RegVar muVar) muChild
+    Set.delete (ElemVar muVar) muChild
 synthetic (NuF Nu { nuVariable = SetVariable nuVar, nuChild }) =
-    Set.delete (RegVar nuVar) nuChild
+    Set.delete (ElemVar nuVar) nuChild
 synthetic (SetVariableF (SetVariable variable)) =
     Set.singleton (SetVar variable)
 synthetic patternHead =

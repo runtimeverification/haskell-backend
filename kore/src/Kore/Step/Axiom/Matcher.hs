@@ -51,8 +51,8 @@ import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMergerExcept,
                  mergePredicatesAndSubstitutionsExcept )
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           Kore.Unification.Error
                  ( unsupportedPatterns )
 import           Kore.Unification.Procedure
@@ -162,7 +162,7 @@ match
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => Map.Map (SubstVar variable) (SubstVar variable)
+    => Map.Map (UnifiedVariable variable) (UnifiedVariable variable)
     -- ^ Quantified variables
     -> TermLike variable
     -> TermLike variable
@@ -181,7 +181,7 @@ matchEqualHeadPatterns
         , FreshVariable variable
         , MonadUnify unifier
         )
-    => Map.Map (SubstVar variable) (SubstVar variable)
+    => Map.Map (UnifiedVariable variable) (UnifiedVariable variable)
     -- ^ Quantified variables
     -> TermLike variable
     -> TermLike variable
@@ -255,10 +255,10 @@ matchEqualHeadPatterns quantifiedVariables first second = do
         (Exists_ _ firstVariable firstChild) ->
             case second of
                 (Exists_ _ secondVariable secondChild) ->
-                    checkVariableEscape [RegVar firstVariable, RegVar secondVariable]
+                    checkVariableEscape [ElemVar firstVariable, ElemVar secondVariable]
                     <$> match
                         (Map.insert
-                            (RegVar firstVariable) (RegVar secondVariable) quantifiedVariables
+                            (ElemVar firstVariable) (ElemVar secondVariable) quantifiedVariables
                         )
                         firstChild
                         secondChild
@@ -275,11 +275,11 @@ matchEqualHeadPatterns quantifiedVariables first second = do
             case second of
                 (Forall_ _ secondVariable secondChild) ->
                     (<$>)
-                        (checkVariableEscape [RegVar firstVariable, RegVar secondVariable])
+                        (checkVariableEscape [ElemVar firstVariable, ElemVar secondVariable])
                         (match
                             (Map.insert
-                                (RegVar firstVariable)
-                                (RegVar secondVariable)
+                                (ElemVar firstVariable)
+                                (ElemVar secondVariable)
                                 quantifiedVariables
                             )
                             firstChild
@@ -357,10 +357,10 @@ matchEqualHeadPatterns quantifiedVariables first second = do
         (Var_ firstVariable) ->
             case second of
                 (Var_ secondVariable) ->
-                    case Map.lookup (RegVar firstVariable) quantifiedVariables of
+                    case Map.lookup (ElemVar firstVariable) quantifiedVariables of
                         Nothing -> nothing
                         Just variable ->
-                            if variable == RegVar secondVariable
+                            if variable == ElemVar secondVariable
                             then justTop
                             else nothing
                 _ -> nothing
@@ -391,7 +391,7 @@ matchJoin
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => Map.Map (SubstVar variable) (SubstVar variable)
+    => Map.Map (UnifiedVariable variable) (UnifiedVariable variable)
     -- ^ Quantified variables
     -> [(TermLike variable, TermLike variable)]
     -> MaybeT unifier (Predicate variable)
@@ -440,20 +440,20 @@ matchVariableFunction
         , Unparse variable
         , MonadUnify unifier
         )
-    => Map.Map (SubstVar variable) (SubstVar variable)
+    => Map.Map (UnifiedVariable variable) (UnifiedVariable variable)
     -- ^ Quantified variables
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Predicate variable)
 matchVariableFunction quantifiedVariables (Var_ var) second
-  | not (RegVar var `Map.member` quantifiedVariables) = do
+  | not (ElemVar var `Map.member` quantifiedVariables) = do
     Monad.guard (isFunctionPattern second)
     Monad.Trans.lift $ do
         ceilOr <- Ceil.makeEvaluateTerm second
         result <-
             OrPattern.mergeWithPredicateAssumesEvaluated
                 createPredicatesAndSubstitutionsMergerExcept
-                (Conditional.fromSingleSubstitution (RegVar var, second))
+                (Conditional.fromSingleSubstitution (ElemVar var, second))
                 ceilOr
         Monad.Unify.scatter result
 matchVariableFunction quantifiedVariables (SetVar_ var) second
@@ -468,7 +468,7 @@ checkVariableEscape
         , Show variable
         , Unparse variable
         )
-    => [SubstVar variable]
+    => [UnifiedVariable variable]
     -> Predicate variable
     -> Predicate variable
 checkVariableEscape vars predSubst
@@ -485,7 +485,7 @@ matchAppBuiltins
     => Unparse variable
     => SortedVariable variable
     => MonadUnify unifier
-    => Map.Map (SubstVar variable) (SubstVar variable)
+    => Map.Map (UnifiedVariable variable) (UnifiedVariable variable)
     -> Symbol
     -> [TermLike variable]
     -> Builtin.Builtin (TermLike Concrete) (TermLike variable)
@@ -537,7 +537,7 @@ matchBuiltins
     => Unparse variable
     => SortedVariable variable
     => MonadUnify unifier
-    => Map.Map (SubstVar variable) (SubstVar variable)
+    => Map.Map (UnifiedVariable variable) (UnifiedVariable variable)
     -> Builtin.Builtin (TermLike Concrete) (TermLike variable)
     -> Builtin.Builtin (TermLike Concrete) (TermLike variable)
     -> MaybeT unifier (Predicate variable)
@@ -584,7 +584,7 @@ matchAc
         , Traversable (Builtin.Value normalized)
         , Unparse variable
         )
-    => Map.Map (SubstVar variable) (SubstVar variable)
+    => Map.Map (UnifiedVariable variable) (UnifiedVariable variable)
     -> Sort
     -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
     -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)

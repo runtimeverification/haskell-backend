@@ -25,9 +25,9 @@ import           Data.Text
                  ( Text )
 
 import qualified Kore.Attribute.Null as Attribute
-import           Kore.SubstVar
-                 ( SubstVar (..) )
-import qualified Kore.SubstVar as SubstVar
+import           Kore.Variables.AsVariable
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           Kore.Syntax hiding
                  ( substituteSortVariables )
 import           Kore.Unparser
@@ -50,9 +50,9 @@ quantifyFreeVariables s p =
 wrapAndQuantify
     :: Sort
     -> Pattern Variable Attribute.Null
-    -> SubstVar Variable
+    -> UnifiedVariable Variable
     -> Pattern Variable Attribute.Null
-wrapAndQuantify s p (RegVar var) =
+wrapAndQuantify s p (ElemVar var) =
     asPattern
         (mempty :< ForallF Forall
             { forallSort = s
@@ -64,15 +64,15 @@ wrapAndQuantify _ _ (SetVar var) =
     error ("Cannot quantify set variable " ++ unparseToString var)
 
 checkUnique
-    :: Set.Set (SubstVar Variable) -> Set.Set (SubstVar Variable)
+    :: Set.Set (UnifiedVariable Variable) -> Set.Set (UnifiedVariable Variable)
 checkUnique variables =
     case checkUniqueEither (Set.toList variables) Map.empty of
         Right _  -> variables
         Left err -> error err
 
 checkUniqueEither
-    :: [SubstVar Variable]
-    -> Map.Map Text (SubstVar Variable)
+    :: [UnifiedVariable Variable]
+    -> Map.Map Text (UnifiedVariable Variable)
     -> Either String ()
 checkUniqueEither [] _ = Right ()
 checkUniqueEither (var:vars) indexed =
@@ -87,4 +87,4 @@ checkUniqueEither (var:vars) indexed =
                 ++ "."
                 )
   where
-    name = getId . variableName . SubstVar.asVariable $ var
+    name = getId . variableName . asVariable $ var

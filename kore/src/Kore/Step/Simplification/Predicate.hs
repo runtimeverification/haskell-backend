@@ -29,8 +29,8 @@ import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Simplification.Data
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.SubstVar
-                 ( SubstVar )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable )
 import           Kore.Syntax.Variable
                  ( SortedVariable )
 import qualified Kore.TopBottom as TopBottom
@@ -116,12 +116,12 @@ assertDistinctVariables subst =
         [] -> return ()
         (var : _) -> error ("Duplicated variable: " ++ show var)
   where
-    moreThanOne :: [SubstVar variable] -> Bool
+    moreThanOne :: [UnifiedVariable variable] -> Bool
     moreThanOne [] = False
     moreThanOne [_] = False
     moreThanOne _ = True
 
-    variables :: [SubstVar variable]
+    variables :: [UnifiedVariable variable]
     variables = Substitution.variables subst
 
 {- | Simplify the 'Syntax.Predicate' once; do not apply the substitution.

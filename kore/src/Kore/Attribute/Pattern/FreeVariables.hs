@@ -14,6 +14,7 @@ module Kore.Attribute.Pattern.FreeVariables
     ) where
 
 import           Control.DeepSeq
+import           Data.Functor.Const
 import           Data.Hashable
 import           Data.Set
                  ( Set )
@@ -24,11 +25,12 @@ import qualified GHC.Generics as GHC
 
 import Kore.Debug
 
-import Kore.SubstVar
-       ( SubstVar )
+import Kore.Attribute.Synthetic
+import Kore.Variables.UnifiedVariable
+       ( UnifiedVariable )
 
 newtype FreeVariables variable =
-    FreeVariables { getFreeVariables :: Set (SubstVar variable) }
+    FreeVariables { getFreeVariables :: Set (UnifiedVariable variable) }
     deriving GHC.Generic
     deriving (Eq, Show)
     deriving Foldable
@@ -46,21 +48,28 @@ instance Hashable variable => Hashable (FreeVariables variable) where
     hashWithSalt salt (FreeVariables freeVariables) =
         hashWithSalt salt (Set.toList freeVariables)
 
+instance
+    Ord variable
+    => Synthetic (Const (UnifiedVariable variable)) (FreeVariables variable)
+  where
+    synthetic (Const var) = freeVariable var
+    {-# INLINE synthetic #-}
+
 bindVariable
     :: Ord variable
-    => SubstVar variable
+    => UnifiedVariable variable
     -> FreeVariables variable
     -> FreeVariables variable
 bindVariable variable (FreeVariables freeVariables) =
     FreeVariables (Set.delete variable freeVariables)
 {-# INLINE bindVariable #-}
 
-isFreeVariable :: Ord variable => SubstVar variable -> FreeVariables variable -> Bool
+isFreeVariable :: Ord variable => UnifiedVariable variable -> FreeVariables variable -> Bool
 isFreeVariable variable (FreeVariables freeVariables) =
     Set.member variable freeVariables
 {-# INLINE isFreeVariable #-}
 
-freeVariable :: Ord variable => SubstVar variable -> FreeVariables variable
+freeVariable :: Ord variable => UnifiedVariable variable -> FreeVariables variable
 freeVariable variable = FreeVariables (Set.singleton variable)
 {-# INLINE freeVariable #-}
 

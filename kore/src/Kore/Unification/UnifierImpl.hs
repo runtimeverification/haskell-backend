@@ -31,8 +31,8 @@ import           Kore.Logger
                  ( LogMessage, WithLog )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse, makeAndPredicate )
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -90,14 +90,14 @@ simplifyAnds patterns = do
 
 groupSubstitutionByVariable
     :: Ord variable
-    => [(SubstVar variable, TermLike variable)]
-    -> [[(SubstVar variable, TermLike variable)]]
+    => [(UnifiedVariable variable, TermLike variable)]
+    -> [[(UnifiedVariable variable, TermLike variable)]]
 groupSubstitutionByVariable =
     groupBy ((==) `on` fst) . sortBy (compare `on` fst) . map sortRenaming
   where
-    sortRenaming (RegVar var, Recursive.project -> ann :< VariableF var')
+    sortRenaming (ElemVar var, Recursive.project -> ann :< VariableF var')
         | var' < var =
-            (RegVar var', Recursive.embed (ann :< VariableF var))
+            (ElemVar var', Recursive.embed (ann :< VariableF var))
     sortRenaming
         ( SetVar var
         , Recursive.project -> ann :< SetVariableF (SetVariable var')
@@ -119,7 +119,7 @@ solveGroupedSubstitution
        , MonadUnify unifier
        , WithLog LogMessage unifier
        )
-    => SubstVar variable
+    => UnifiedVariable variable
     -> NonEmpty (TermLike variable)
     -> unifier (Predicate variable)
 solveGroupedSubstitution var patterns = do
@@ -178,10 +178,10 @@ normalizeSubstitutionDuplication subst
     isSingleton [_] = True
     isSingleton _   = False
     singletonSubstitutions, nonSingletonSubstitutions
-        :: [[(SubstVar variable, TermLike variable)]]
+        :: [[(UnifiedVariable variable, TermLike variable)]]
     (singletonSubstitutions, nonSingletonSubstitutions) =
         partition isSingleton groupedSubstitution
-    varAndSubstList :: [(SubstVar variable, NonEmpty (TermLike variable))]
+    varAndSubstList :: [(UnifiedVariable variable, NonEmpty (TermLike variable))]
     varAndSubstList =
         nonSingletonSubstitutions >>= \case
             [] -> []

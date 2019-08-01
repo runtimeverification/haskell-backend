@@ -71,8 +71,8 @@ import           Kore.Step.Substitution
                  ( PredicateMerger,
                  createLiftedPredicatesAndSubstitutionsMerger,
                  createPredicatesAndSubstitutionsMergerExcept )
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           Kore.TopBottom
 import           Kore.Unification.Error
                  ( unsupportedPatterns )
@@ -898,7 +898,7 @@ variableFunctionAndEquals
         , predicate = makeTruePredicate
         , substitution =
             Substitution.wrap
-                [ if v2 > v1 then (RegVar v1, second) else (RegVar v2, first) ]
+                [ if v2 > v1 then (ElemVar v1, second) else (ElemVar v2, first) ]
         }
 variableFunctionAndEquals
     SimplificationType.And
@@ -975,7 +975,7 @@ variableFunctionAndEquals
                            second
                         empty
                     resultPredicates -> Unify.scatter resultPredicates
-    let result = predicate <> Predicate.fromSingleSubstitution (RegVar v, second)
+    let result = predicate <> Predicate.fromSingleSubstitution (ElemVar v, second)
     return (Pattern.withCondition second result)
 variableFunctionAndEquals _ _ _ _ _ _ _ _ = empty
 

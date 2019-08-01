@@ -45,8 +45,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Strategy
                  ( Strategy, pickFinal, runStrategy )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           Kore.Syntax.Variable
                  ( Variable (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -209,12 +209,12 @@ test_onePathStrategy =
             [ RewritePattern Conditional
                 { term = Mock.f Mock.b
                 , predicate = makeTruePredicate
-                , substitution = Substitution.unsafeWrap [(RegVar Mock.x, Mock.b)]
+                , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
                 }
             , RewritePattern Conditional
                 { term = Mock.f Mock.c
                 , predicate = makeTruePredicate
-                , substitution = Substitution.unsafeWrap [(RegVar Mock.x, Mock.c)]
+                , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
                 }
             , RewritePattern Conditional
                 { term = Mock.h (TermLike.mkVar Mock.x)
@@ -271,12 +271,12 @@ test_onePathStrategy =
             [ RewritePattern Conditional
                 { term = Mock.f Mock.b
                 , predicate = makeTruePredicate
-                , substitution = Substitution.unsafeWrap [(RegVar Mock.x, Mock.b)]
+                , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
                 }
             , RewritePattern Conditional
                 { term = Mock.f Mock.c
                 , predicate = makeTruePredicate
-                , substitution = Substitution.unsafeWrap [(RegVar Mock.x, Mock.c)]
+                , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
                 }
             , Stuck Conditional
                 { term = Mock.functionalConstr11 (TermLike.mkVar Mock.x)

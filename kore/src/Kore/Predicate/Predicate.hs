@@ -64,8 +64,8 @@ import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Error
                  ( Error, koreFail )
 import           Kore.Internal.TermLike as TermLike
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unification.Substitution
@@ -500,7 +500,7 @@ freeVariables = TermLike.freeVariables . unwrapPredicate
 
 hasFreeVariable
     :: Ord variable
-    => SubstVar variable
+    => UnifiedVariable variable
     -> Predicate variable
     -> Bool
 hasFreeVariable variable =
@@ -531,10 +531,10 @@ singleSubstitutionToPredicate
         , Show variable
         , Unparse variable
         )
-    => (SubstVar variable, TermLike variable)
+    => (UnifiedVariable variable, TermLike variable)
     -> Predicate variable
 singleSubstitutionToPredicate (var, patt) =
-    makeEqualsPredicate (TermLike.mkSubstVar var) patt
+    makeEqualsPredicate (TermLike.mkUnifiedVariable var) patt
 
 {- | @fromSubstitution@ constructs a 'Predicate' equivalent to 'Substitution'.
 
@@ -563,7 +563,7 @@ substitute
         , SortedVariable variable
         , Show variable
         )
-    => Map (SubstVar variable) (TermLike variable)
+    => Map (UnifiedVariable variable) (TermLike variable)
     -> Predicate variable
     -> Predicate variable
 substitute subst (GenericPredicate termLike) =

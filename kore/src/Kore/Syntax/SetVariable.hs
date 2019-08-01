@@ -10,16 +10,13 @@ module Kore.Syntax.SetVariable
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import           Data.Functor.Const
 import           Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Kore.Attribute.Pattern.FreeVariables
-import Kore.Attribute.Synthetic
 import Kore.Debug
-import Kore.SubstVar
-       ( SubstVar (..) )
+import Kore.Variables.AsVariable
+import Kore.Variables.UnifiedVariable
 import Kore.Unparser
 
 -- | Applicative-Kore set variables
@@ -37,9 +34,11 @@ instance SOP.HasDatatypeInfo (SetVariable variable)
 instance Debug variable => Debug (SetVariable variable)
 
 instance Unparse variable => Unparse (SetVariable variable) where
-    unparse = unparse . getVariable
-    unparse2 = unparse2 . getVariable  -- TOFIX: print with a leading "#"
+    unparse = unparse . asVariable
+    unparse2 = unparse2 . asVariable
 
-instance Ord variable => Synthetic (Const (SetVariable variable)) (FreeVariables variable) where
-    synthetic (Const (SetVariable variable)) = freeVariable (SetVar variable)
-    {-# INLINE synthetic #-}
+instance AsVariable SetVariable where
+    asVariable = getVariable
+
+instance AsUnifiedVariable SetVariable where
+    asUnifiedVariable = SetVar . asVariable

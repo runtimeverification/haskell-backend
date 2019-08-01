@@ -33,7 +33,7 @@ import qualified Kore.Step.Simplification.AndPredicates as AndPredicates
 import qualified Kore.Step.Simplification.Ceil as Ceil
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify (..) )
-import qualified Kore.SubstVar as SubstVar
+import           Kore.Variables.AsVariable
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -148,7 +148,7 @@ unificationConditions Conditional { predicate, substitution } =
     pure predicate <|> substitutionConditions substitution'
   where
     substitution' =
-        Substitution.filter (Target.isNonTarget . SubstVar.asVariable)
+        Substitution.filter (Target.isNonTarget . asVariable)
             substitution
 
 substitutionConditions
@@ -163,7 +163,7 @@ substitutionConditions subst =
     MultiAnd.make (substitutionCoverageWorker <$> Substitution.unwrap subst)
   where
     substitutionCoverageWorker (x, t) =
-        Syntax.Predicate.makeEqualsPredicate (mkSubstVar x) t
+        Syntax.Predicate.makeEqualsPredicate (mkUnifiedVariable x) t
 
 ceilChildOfApplicationOrTop
     :: forall variable m

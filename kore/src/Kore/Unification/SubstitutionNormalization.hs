@@ -39,9 +39,9 @@ import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
-import           Kore.SubstVar
-                 ( SubstVar (..) )
-import qualified Kore.SubstVar as SubstVar
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
+import qualified Kore.Variables.UnifiedVariable as UnifiedVariable
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -73,14 +73,14 @@ normalizeSubstitution
         , Show variable
         , Unparse variable
         )
-    => Map (SubstVar variable) (TermLike variable)
+    => Map (UnifiedVariable variable) (TermLike variable)
     -> ExceptT SubstitutionError m (Predicate variable)
 normalizeSubstitution substitution = do
     let
         -- | Do a `topologicalSort` of variables using the `dependencies` Map.
         -- Topological cycles with non-ctors are returned as Left errors.
         -- Non-simplifiable cycles are returned as Right Nothing.
-        topologicalSortConverted :: Either SubstitutionError (TopologicalSortResult (SubstVar variable))
+        topologicalSortConverted :: Either SubstitutionError (TopologicalSortResult (UnifiedVariable variable))
         topologicalSortConverted =
             case topologicalSort (Set.toList <$> allDependencies) of
                 Left (ToplogicalSortCycles vars) ->
@@ -88,7 +88,7 @@ normalizeSubstitution substitution = do
                         Left (ToplogicalSortCycles nonSimplifiableCycle)
                           | all isVariable (mapMaybe (`Map.lookup` substitution) nonSimplifiableCycle) ->
                               error "order on variables should prevent only-variable-cycles"
-                          | all SubstVar.isSetVar nonSimplifiableCycle ->
+                          | all UnifiedVariable.isSetVar nonSimplifiableCycle ->
                               Right (SetCtorCycle nonSimplifiableCycle)
                           | otherwise ->
                               Right (RegularCtorCycle nonSimplifiableCycle)
@@ -113,35 +113,35 @@ normalizeSubstitution substitution = do
             SetVariableF _ -> True
             _ -> False
 
-    interestingVariables :: Set (SubstVar variable)
+    interestingVariables :: Set (UnifiedVariable variable)
     interestingVariables = Map.keysSet substitution
 
-    allDependencies :: Map (SubstVar variable) (Set (SubstVar variable))
+    allDependencies :: Map (UnifiedVariable variable) (Set (UnifiedVariable variable))
     allDependencies =
         Map.mapWithKey
             (getDependencies interestingVariables)
             substitution
 
-    nonSimplifiableDependencies :: Map (SubstVar variable) (Set (SubstVar variable))
+    nonSimplifiableDependencies :: Map (UnifiedVariable variable) (Set (UnifiedVariable variable))
     nonSimplifiableDependencies =
         Map.mapWithKey
             (getNonSimplifiableDependencies interestingVariables)
             substitution
 
     sortedSubstitution
-        :: [SubstVar variable]
-        -> [(SubstVar variable, TermLike variable)]
+        :: [UnifiedVariable variable]
+        -> [(UnifiedVariable variable, TermLike variable)]
     sortedSubstitution = fmap (variableToSubstitution substitution)
 
     normalizeSortedSubstitution'
-        :: [SubstVar variable]
+        :: [UnifiedVariable variable]
         -> m (Predicate variable)
     normalizeSortedSubstitution' s =
         normalizeSortedSubstitution (sortedSubstitution s) mempty mempty
 
     makeRhsBottom
-        :: (SubstVar variable -> Bool)
-        -> SubstVar variable
+        :: (UnifiedVariable variable -> Bool)
+        -> UnifiedVariable variable
         -> TermLike variable
         -> TermLike variable
     makeRhsBottom test var rhs
@@ -150,9 +150,9 @@ normalizeSubstitution substitution = do
 
 variableToSubstitution
     :: (Ord variable, Show variable)
-    => Map (SubstVar variable) (TermLike variable)
-    -> SubstVar variable
-    -> (SubstVar variable, TermLike variable)
+    => Map (UnifiedVariable variable) (TermLike variable)
+    -> UnifiedVariable variable
+    -> (UnifiedVariable variable, TermLike variable)
 variableToSubstitution varToPattern var =
     case Map.lookup var varToPattern of
         Just patt -> (var, patt)
@@ -165,9 +165,9 @@ normalizeSortedSubstitution
         , SortedVariable variable
         , Show variable
         )
-    => [(SubstVar variable, TermLike variable)]
-    -> [(SubstVar variable, TermLike variable)]
-    -> [(SubstVar variable, TermLike variable)]
+    => [(UnifiedVariable variable, TermLike variable)]
+    -> [(UnifiedVariable variable, TermLike variable)]
+    -> [(UnifiedVariable variable, TermLike variable)]
     -> m (Predicate variable)
 normalizeSortedSubstitution [] result _ =
     return Conditional
@@ -180,11 +180,11 @@ normalizeSortedSubstitution
     result
     substitution
   = case (var, Cofree.tailF (Recursive.project varPattern)) of
-        (SubstVar.RegVar _, BottomF _) -> return Predicate.bottom
-        (SubstVar.RegVar rvar, VariableF var')
+        (UnifiedVariable.ElemVar _, BottomF _) -> return Predicate.bottom
+        (UnifiedVariable.ElemVar rvar, VariableF var')
           | rvar == var' ->
             normalizeSortedSubstitution unprocessed result substitution
-        (SubstVar.SetVar svar, SetVariableF (SetVariable var'))
+        (UnifiedVariable.SetVar svar, SetVariableF (SetVariable var'))
           | svar == var' ->
             normalizeSortedSubstitution unprocessed result substitution
         _ -> let
@@ -203,13 +203,13 @@ normalizeSortedSubstitution
  -}
 getDependencies
     :: (Ord variable, Show variable)
-    => Set (SubstVar variable)  -- ^ interesting variables
-    -> SubstVar variable  -- ^ substitution variable
+    => Set (UnifiedVariable variable)  -- ^ interesting variables
+    -> UnifiedVariable variable  -- ^ substitution variable
     -> TermLike variable  -- ^ substitution pattern
-    -> Set (SubstVar variable)
+    -> Set (UnifiedVariable variable)
 getDependencies interesting var (Recursive.project -> valid :< patternHead) =
     case patternHead of
-        VariableF v | RegVar v == var -> Set.empty
+        VariableF v | ElemVar v == var -> Set.empty
         SetVariableF (SetVariable v) | SetVar v == var -> Set.empty
         _ -> -- trace ("dependencies:\nvar: " ++ show var ++ "\nhead: " ++ show patternHead ++ "\nfreeVars: " ++ show freeVars) $
             Set.intersection interesting freeVars
@@ -227,28 +227,28 @@ getNonSimplifiableDependencies
     ::  ( Ord variable
         , Show variable
         )
-    => Set (SubstVar variable)  -- ^ interesting variables
-    -> SubstVar variable  -- ^ substitution variable
+    => Set (UnifiedVariable variable)  -- ^ interesting variables
+    -> UnifiedVariable variable  -- ^ substitution variable
     -> TermLike variable  -- ^ substitution pattern
-    -> Set (SubstVar variable)
+    -> Set (UnifiedVariable variable)
 getNonSimplifiableDependencies interesting var p@(Recursive.project -> _ :< h) =
     case h of
-        VariableF v | RegVar v == var -> Set.empty
+        VariableF v | ElemVar v == var -> Set.empty
         SetVariableF (SetVariable v) | SetVar v == var
             -> Set.empty
         _ -> Recursive.fold (nonSimplifiableAbove interesting) p
 
 nonSimplifiableAbove
     :: forall variable. (Ord variable, Show variable)
-    => Set (SubstVar variable)
-    -> Base (TermLike variable) (Set (SubstVar variable))
-    -> Set (SubstVar variable)
+    => Set (UnifiedVariable variable)
+    -> Base (TermLike variable) (Set (UnifiedVariable variable))
+    -> Set (UnifiedVariable variable)
 nonSimplifiableAbove interesting p =
     case Cofree.tailF p of
         VariableF v ->
-            if RegVar v `Set.member` interesting then Set.singleton (RegVar v) else Set.empty
---        ExistsF Exists {existsVariable = v} -> Set.delete (RegVar v) dependencies
---        ForallF Forall {forallVariable = v} -> Set.delete (RegVar v) dependencies
+            if ElemVar v `Set.member` interesting then Set.singleton (ElemVar v) else Set.empty
+--        ExistsF Exists {existsVariable = v} -> Set.delete (ElemVar v) dependencies
+--        ForallF Forall {forallVariable = v} -> Set.delete (ElemVar v) dependencies
         SetVariableF (SetVariable v) ->
             if SetVar v `Set.member` interesting then Set.singleton (SetVar v) else Set.empty
 --        MuF Mu {muVariable = SetVariable v} -> Set.delete (SetVar v) dependencies
@@ -258,5 +258,5 @@ nonSimplifiableAbove interesting p =
                 dependencies
         _ -> Set.empty
   where
-    dependencies :: Set (SubstVar variable)
+    dependencies :: Set (UnifiedVariable variable)
     dependencies = foldl Set.union Set.empty p

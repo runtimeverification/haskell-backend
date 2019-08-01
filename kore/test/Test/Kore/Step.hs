@@ -201,8 +201,8 @@ rewriteIdentity =
 setRewriteIdentity :: RewriteRule Variable
 setRewriteIdentity =
     RewriteRule RulePattern
-        { left = Mock.mkTestSubstVar "@x"
-        , right = Mock.mkTestSubstVar "@x"
+        { left = Mock.mkTestUnifiedVariable "@x"
+        , right = Mock.mkTestUnifiedVariable "@x"
         , requires = makeTruePredicate
         , ensures = makeTruePredicate
         , attributes = def
@@ -211,8 +211,8 @@ setRewriteIdentity =
 setRewriteFnIdentity :: RewriteRule Variable
 setRewriteFnIdentity =
     RewriteRule RulePattern
-        { left = Mock.functionalConstr10 (Mock.mkTestSubstVar "@x")
-        , right = Mock.mkTestSubstVar "@x"
+        { left = Mock.functionalConstr10 (Mock.mkTestUnifiedVariable "@x")
+        , right = Mock.mkTestUnifiedVariable "@x"
         , requires = makeTruePredicate
         , ensures = makeTruePredicate
         , attributes = def

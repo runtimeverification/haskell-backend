@@ -23,8 +23,8 @@ import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Simplification.Data
                  ( Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -103,7 +103,7 @@ neitherXAB =
         (Syntax.Predicate.makeNotPredicate equalsXB_)
 
 substXA :: Pattern Variable
-substXA = fromSubstitution $ Substitution.unsafeWrap [(RegVar Mock.x, Mock.a)]
+substXA = fromSubstitution $ Substitution.unsafeWrap [(ElemVar Mock.x, Mock.a)]
 
 forceTermSort :: Pattern Variable -> Pattern Variable
 forceTermSort = fmap (forceSort Mock.testSort)

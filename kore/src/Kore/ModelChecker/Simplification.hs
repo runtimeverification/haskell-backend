@@ -21,8 +21,8 @@ import qualified Kore.Step.Simplification.OrPattern as OrPattern
                  ( filterMultiOrWithTermCeil )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyAndRemoveTopExists )
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser
@@ -37,7 +37,7 @@ checkImplicationIsTop lhs rhs =
     case stripForallQuantifiers rhs of
         ( forallQuantifiers, Implies_ _ implicationLHS implicationRHS ) -> do
             let rename = refreshVariables lhsFreeVariables forallQuantifiers
-                subst = mkSubstVar <$> rename
+                subst = mkUnifiedVariable <$> rename
                 implicationLHS' = TermLike.substitute subst implicationLHS
                 implicationRHS' = TermLike.substitute subst implicationRHS
                 resultTerm =
@@ -66,12 +66,12 @@ checkImplicationIsTop lhs rhs =
 
 stripForallQuantifiers
     :: TermLike Variable
-    -> (Set.Set (SubstVar Variable), TermLike Variable)
+    -> (Set.Set (UnifiedVariable Variable), TermLike Variable)
 stripForallQuantifiers patt
   = case patt of
         Forall_ _ forallVar child ->
             let
                 ( childVars, strippedChild ) = stripForallQuantifiers child
             in
-                ( Set.insert (RegVar forallVar) childVars, strippedChild)
+                ( Set.insert (ElemVar forallVar) childVars, strippedChild)
         _ -> ( Set.empty , patt )

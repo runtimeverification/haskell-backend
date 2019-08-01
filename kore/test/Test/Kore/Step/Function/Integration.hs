@@ -50,8 +50,8 @@ import           Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import qualified Kore.Step.Simplification.TermLike as TermLike
                  ( simplify )
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
@@ -327,10 +327,10 @@ test_functionIntegration =
                     { term = Mock.f Mock.e
                     , predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap
-                        [   ( RegVar Mock.var_x_1
+                        [   ( ElemVar Mock.var_x_1
                             , Mock.a
                             )
-                        ,   ( RegVar Mock.var_z_1
+                        ,   ( ElemVar Mock.var_z_1
                             , Mock.a
                             )
                         ]
@@ -343,7 +343,7 @@ test_functionIntegration =
                             { term = Mock.d
                             , predicate = makeTruePredicate
                             , substitution = Substitution.unsafeWrap
-                                [   ( RegVar Mock.x
+                                [   ( ElemVar Mock.x
                                     , mkVar Mock.z
                                     )
                                 ]
@@ -354,7 +354,7 @@ test_functionIntegration =
                             { term = Mock.e
                             , predicate = makeTruePredicate
                             , substitution = Substitution.unsafeWrap
-                                [   ( RegVar Mock.x
+                                [   ( ElemVar Mock.x
                                     , Mock.a
                                     )
                                 ]
@@ -377,7 +377,7 @@ test_functionIntegration =
                         makeCeilPredicate
                             (Mock.plain10 Mock.cf)
                     , substitution = Substitution.unsafeWrap
-                        [ (RegVar Mock.var_x_1, Mock.cf), (RegVar Mock.var_y_1, Mock.b) ]
+                        [ (ElemVar Mock.var_x_1, Mock.cf), (ElemVar Mock.var_y_1, Mock.b) ]
                     }
         actual <-
             evaluate
@@ -398,7 +398,7 @@ test_functionIntegration =
                                         )
                                     )
                             , substitution =
-                                Substitution.wrap [(RegVar Mock.x, Mock.cf)]
+                                Substitution.wrap [(ElemVar Mock.x, Mock.cf)]
                             }
                         )
                     ]

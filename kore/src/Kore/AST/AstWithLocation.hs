@@ -15,9 +15,9 @@ module Kore.AST.AstWithLocation
 import Data.Text
        ( Text )
 
-import           Kore.SubstVar
-                 ( SubstVar (..) )
-import qualified Kore.SubstVar as SubstVar
+import           Kore.Variables.AsVariable
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           Kore.Syntax
 import           Kore.Syntax.Definition
 import           Kore.Syntax.PatternF
@@ -69,9 +69,9 @@ instance AstWithLocation Variable where
         var {variableName = updateAstLocation (variableName var) loc}
 instance
     AstWithLocation variable =>
-    AstWithLocation (SubstVar variable)
+    AstWithLocation (UnifiedVariable variable)
   where
-    locationFromAst = locationFromAst . SubstVar.asVariable
+    locationFromAst = locationFromAst . asVariable
     updateAstLocation var loc = fmap (`updateAstLocation` loc) var
 
 instance AstWithLocation Alias where

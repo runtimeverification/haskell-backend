@@ -74,9 +74,9 @@ import           Kore.Step.Rule
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.SubstVar
-                 ( SubstVar )
-import qualified Kore.SubstVar as SubstVar
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable )
+import           Kore.Variables.AsVariable
 import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
@@ -164,7 +164,7 @@ unwrapAndQuantifyConfiguration config@Conditional { substitution } =
             )
   where
     substitution' =
-        Substitution.filter (Target.isNonTarget . SubstVar.asVariable)
+        Substitution.filter (Target.isNonTarget . asVariable)
             substitution
 
     configWithNewSubst :: Pattern (Target variable)
@@ -519,7 +519,7 @@ checkSubstitutionCoverage initial unified
         , "The substitution (above, in the unifier) \
           \did not cover the axiom variables:"
         , (Pretty.indent 4 . Pretty.sep)
-            (unparse . SubstVar.asVariable <$> Set.toAscList uncovered)
+            (unparse . asVariable <$> Set.toAscList uncovered)
         , "in the left-hand side of the axiom."
         ]
   where
@@ -531,13 +531,13 @@ checkSubstitutionCoverage initial unified
     uncovered = wouldNarrowWith unified
     isCoveringSubstitution = Set.null uncovered
     isSymbolic =
-        Foldable.any (Target.isNonTarget . SubstVar.asVariable)
+        Foldable.any (Target.isNonTarget . asVariable)
             substitutionVariables
 
 {- | The 'Set' of variables that would be introduced by narrowing.
  -}
 -- TODO (thomas.tuegel): Unit tests
-wouldNarrowWith :: Ord variable => UnifiedRule variable -> Set (SubstVar variable)
+wouldNarrowWith :: Ord variable => UnifiedRule variable -> Set (UnifiedVariable variable)
 wouldNarrowWith unified =
     Set.difference leftAxiomVariables substitutionVariables
   where

@@ -61,8 +61,8 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT
                  ( resolve )
-import           Kore.SubstVar
-                 ( SubstVar (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           Kore.Syntax.Application
 import           Kore.Syntax.SetVariable
 import           Kore.Syntax.Variable
@@ -550,10 +550,10 @@ xSubSubSort = Variable (testId "xSubSubSort") mempty subSubsort
 xTopSort :: Variable
 xTopSort = Variable (testId "xTopSort") mempty topSort
 
-makeSubstVar :: Text -> Sort -> SubstVar Variable
-makeSubstVar v sort
+makeUnifiedVariable :: Text -> Sort -> UnifiedVariable Variable
+makeUnifiedVariable v sort
   | Text.head v == '@' = SetVar v'
-  | otherwise = RegVar v'
+  | otherwise = ElemVar v'
   where
     v' = Variable
         { variableSort = sort
@@ -561,11 +561,11 @@ makeSubstVar v sort
         , variableCounter = mempty
         }
 
-makeTestSubstVar :: Text -> SubstVar Variable
-makeTestSubstVar = (`makeSubstVar` testSort)
+makeTestUnifiedVariable :: Text -> UnifiedVariable Variable
+makeTestUnifiedVariable = (`makeUnifiedVariable` testSort)
 
-mkTestSubstVar :: Text -> TermLike Variable
-mkTestSubstVar = Internal.mkSubstVar . makeTestSubstVar
+mkTestUnifiedVariable :: Text -> TermLike Variable
+mkTestUnifiedVariable = Internal.mkUnifiedVariable . makeTestUnifiedVariable
 
 a :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
 a = Internal.mkApplySymbol aSymbol []

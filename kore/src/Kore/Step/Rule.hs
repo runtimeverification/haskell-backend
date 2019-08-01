@@ -58,8 +58,8 @@ import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.SubstVar
-                 ( SubstVar )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable )
 import qualified Kore.Syntax.Definition as Syntax
 import           Kore.Unparser
                  ( Unparse, unparse, unparse2 )
@@ -533,10 +533,10 @@ refreshRulePattern
         )
     => FreeVariables variable  -- ^ Variables to avoid
     -> RulePattern variable
-    -> (Map (SubstVar variable) (SubstVar variable), RulePattern variable)
+    -> (Map (UnifiedVariable variable) (UnifiedVariable variable), RulePattern variable)
 refreshRulePattern (FreeVariables.getFreeVariables -> avoid) rule1 =
     let rename = refreshVariables avoid originalFreeVariables
-        subst = mkSubstVar <$> rename
+        subst = mkUnifiedVariable <$> rename
         left' = TermLike.substitute subst left
         right' = TermLike.substitute subst right
         requires' = Predicate.substitute subst requires
@@ -593,7 +593,7 @@ substitute
         , SortedVariable variable
         , Show variable
         )
-    => Map (SubstVar variable) (TermLike variable)
+    => Map (UnifiedVariable variable) (TermLike variable)
     -> RulePattern variable
     -> RulePattern variable
 substitute subst rulePattern' =
