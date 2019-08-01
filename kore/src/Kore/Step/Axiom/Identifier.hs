@@ -46,6 +46,8 @@ data AxiomIdentifier
     -- ^ A @\\ceil@ pattern with the given child.
     | Equals !AxiomIdentifier !AxiomIdentifier
     -- ^ An @\\equals@ pattern with the given children.
+    | Exists !AxiomIdentifier
+    -- ^ An @\\exists@ pattern with the given child.
     | Variable
     -- ^ Any variable pattern.
     deriving (Eq, Ord, Show)
