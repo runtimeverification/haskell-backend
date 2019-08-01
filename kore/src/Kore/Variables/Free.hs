@@ -25,9 +25,9 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
+import Kore.Syntax
 import Kore.Variables.UnifiedVariable
        ( UnifiedVariable (..) )
-import Kore.Syntax
 
 -- | The free variables of a pure pattern.
 freePureVariables
@@ -135,8 +135,8 @@ synthetic patternHead =
 
 {- | @syntheticSet@ is an algebra for the free set variables of a pattern.
 
-Use @syntheticSet@ with 'Kore.Annotation.synthesize' to annotate a pattern with its
-free variables as a synthetic attribute.
+Use @syntheticSet@ with 'Kore.Annotation.synthesize' to annotate a pattern with
+its free variables as a synthetic attribute.
 
  -}
 syntheticSet

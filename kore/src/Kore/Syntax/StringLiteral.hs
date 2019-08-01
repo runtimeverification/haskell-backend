@@ -45,8 +45,8 @@ instance Unparse (StringLiteral child) where
     unparse2 = unparse
 
 instance
-    Ord variable
-    => Synthetic StringLiteral (FreeVariables variable)
+    Ord variable =>
+    Synthetic StringLiteral (FreeVariables variable)
   where
     synthetic = const mempty
     {-# INLINE synthetic #-}

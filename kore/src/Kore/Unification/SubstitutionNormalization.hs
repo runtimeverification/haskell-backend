@@ -39,14 +39,14 @@ import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
-import qualified Kore.Variables.UnifiedVariable as UnifiedVariable
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
+import qualified Kore.Variables.UnifiedVariable as UnifiedVariable
 
 data TopologicalSortResult variable
   = RegularCtorCycle ![variable]
@@ -80,13 +80,20 @@ normalizeSubstitution substitution = do
         -- | Do a `topologicalSort` of variables using the `dependencies` Map.
         -- Topological cycles with non-ctors are returned as Left errors.
         -- Non-simplifiable cycles are returned as Right Nothing.
-        topologicalSortConverted :: Either SubstitutionError (TopologicalSortResult (UnifiedVariable variable))
+        topologicalSortConverted
+            :: Either
+                SubstitutionError
+                (TopologicalSortResult (UnifiedVariable variable))
         topologicalSortConverted =
             case topologicalSort (Set.toList <$> allDependencies) of
                 Left (ToplogicalSortCycles vars) ->
                     case nonSimplifiableSortResult of
                         Left (ToplogicalSortCycles nonSimplifiableCycle)
-                          | all isVariable (mapMaybe (`Map.lookup` substitution) nonSimplifiableCycle) ->
+                          | all isVariable
+                              (mapMaybe
+                                  (`Map.lookup` substitution)
+                                  nonSimplifiableCycle
+                              ) ->
                               error "order on variables should prevent only-variable-cycles"
                           | all UnifiedVariable.isSetVar nonSimplifiableCycle ->
                               Right (SetCtorCycle nonSimplifiableCycle)
@@ -116,13 +123,15 @@ normalizeSubstitution substitution = do
     interestingVariables :: Set (UnifiedVariable variable)
     interestingVariables = Map.keysSet substitution
 
-    allDependencies :: Map (UnifiedVariable variable) (Set (UnifiedVariable variable))
+    allDependencies
+        :: Map (UnifiedVariable variable) (Set (UnifiedVariable variable))
     allDependencies =
         Map.mapWithKey
             (getDependencies interestingVariables)
             substitution
 
-    nonSimplifiableDependencies :: Map (UnifiedVariable variable) (Set (UnifiedVariable variable))
+    nonSimplifiableDependencies
+        :: Map (UnifiedVariable variable) (Set (UnifiedVariable variable))
     nonSimplifiableDependencies =
         Map.mapWithKey
             (getNonSimplifiableDependencies interestingVariables)
@@ -211,8 +220,7 @@ getDependencies interesting var (Recursive.project -> valid :< patternHead) =
     case patternHead of
         VariableF v | ElemVar v == var -> Set.empty
         SetVariableF (SetVariable v) | SetVar v == var -> Set.empty
-        _ -> -- trace ("dependencies:\nvar: " ++ show var ++ "\nhead: " ++ show patternHead ++ "\nfreeVars: " ++ show freeVars) $
-            Set.intersection interesting freeVars
+        _ -> Set.intersection interesting freeVars
   where
     freeVars = FreeVariables.getFreeVariables $ Attribute.freeVariables valid
 
@@ -245,14 +253,10 @@ nonSimplifiableAbove
     -> Set (UnifiedVariable variable)
 nonSimplifiableAbove interesting p =
     case Cofree.tailF p of
-        VariableF v ->
-            if ElemVar v `Set.member` interesting then Set.singleton (ElemVar v) else Set.empty
---        ExistsF Exists {existsVariable = v} -> Set.delete (ElemVar v) dependencies
---        ForallF Forall {forallVariable = v} -> Set.delete (ElemVar v) dependencies
-        SetVariableF (SetVariable v) ->
-            if SetVar v `Set.member` interesting then Set.singleton (SetVar v) else Set.empty
---        MuF Mu {muVariable = SetVariable v} -> Set.delete (SetVar v) dependencies
---        NuF Nu {nuVariable = SetVariable v} -> Set.delete (SetVar v) dependencies
+        VariableF v
+            | ElemVar v `Set.member` interesting -> Set.singleton (ElemVar v)
+        SetVariableF (SetVariable v)
+            | SetVar v `Set.member` interesting -> Set.singleton (SetVar v)
         ApplySymbolF Application { applicationSymbolOrAlias }
             | Symbol.isNonSimplifiable applicationSymbolOrAlias ->
                 dependencies

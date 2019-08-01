@@ -64,12 +64,16 @@ bindVariable variable (FreeVariables freeVariables) =
     FreeVariables (Set.delete variable freeVariables)
 {-# INLINE bindVariable #-}
 
-isFreeVariable :: Ord variable => UnifiedVariable variable -> FreeVariables variable -> Bool
+isFreeVariable
+    :: Ord variable
+    => UnifiedVariable variable -> FreeVariables variable -> Bool
 isFreeVariable variable (FreeVariables freeVariables) =
     Set.member variable freeVariables
 {-# INLINE isFreeVariable #-}
 
-freeVariable :: Ord variable => UnifiedVariable variable -> FreeVariables variable
+freeVariable
+    :: Ord variable
+    => UnifiedVariable variable -> FreeVariables variable
 freeVariable variable = FreeVariables (Set.singleton variable)
 {-# INLINE freeVariable #-}
 

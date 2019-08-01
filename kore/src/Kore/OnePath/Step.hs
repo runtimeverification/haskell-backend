@@ -47,12 +47,12 @@ import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy, TransitionT )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import           Kore.Syntax.Variable
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}

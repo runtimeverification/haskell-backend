@@ -20,13 +20,13 @@ import qualified Control.Lens as Lens
 import           Data.Monoid
                  ( Any (..) )
 
-import Kore.Variables.UnifiedVariable
-       ( UnifiedVariable (..) )
 import Kore.Syntax.Exists
 import Kore.Syntax.Forall
 import Kore.Syntax.Mu
 import Kore.Syntax.Nu
 import Kore.Syntax.SetVariable
+import Kore.Variables.UnifiedVariable
+       ( UnifiedVariable (..) )
 
 {- | @Binding@ defines traversals for patterns with binders.
 
@@ -44,7 +44,10 @@ class Show patternType => Binding patternType where
                 (Binder (VariableType patternType) patternType)
 
     -- | Traverse the variable at the top of a pattern.
-    traverseVariable :: Lens.Traversal' patternType (UnifiedVariable (VariableType patternType))
+    traverseVariable
+        :: Lens.Traversal'
+            patternType
+            (UnifiedVariable (VariableType patternType))
 
 {- | Apply a traversing function while distinguishing an empty 'Lens.Traversal'.
 
@@ -62,8 +65,8 @@ matchWith (Lens.cloneTraversal -> traverse') = \afb s ->
     in if matched then Just ft else Nothing
 
 -- | @Binder@ abstracts over binders such as 'Exists' and 'Forall'.
-data Binder variable child =
-    Binder { binderVariable :: !(UnifiedVariable variable), binderChild :: !child }
+data Binder variable child = Binder
+    { binderVariable :: !(UnifiedVariable variable), binderChild :: !child }
 
 {- | A 'Lens.Lens' to view an 'Exists' as a 'Binder'.
 

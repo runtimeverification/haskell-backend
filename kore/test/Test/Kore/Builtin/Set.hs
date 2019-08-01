@@ -49,8 +49,6 @@ import           Kore.Step.Simplification.AndTerms
                  ( termUnification )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import           Kore.Syntax.Id
                  ( Id )
 import           Kore.Syntax.Variable
@@ -60,6 +58,8 @@ import qualified Kore.Syntax.Variable as DoNotUse
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
                  ( runUnifierT )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           SMT
                  ( SMT )
 

@@ -70,9 +70,6 @@ import qualified Kore.Step.SMT.AST as SMT.SymbolReference
                  ( SymbolReference (..) )
 import qualified Kore.Step.SMT.AST as SMT.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
-import           Kore.Variables.AsVariable
 import           Kore.Syntax as Syntax
 import           Kore.Syntax.Sentence as Syntax
 import qualified Kore.Syntax.SetVariable as SetVariable
@@ -80,7 +77,10 @@ import           Kore.Unification.Error
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Variables.AsVariable
 import           Kore.Variables.Target
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import qualified SMT.AST as SMT
                  ( Constructor (Constructor),
                  ConstructorArgument (ConstructorArgument),

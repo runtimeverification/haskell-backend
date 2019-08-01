@@ -50,11 +50,11 @@ import           Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import qualified Kore.Step.Simplification.TermLike as TermLike
                  ( simplify )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import qualified SMT
 
 import           Test.Kore
@@ -377,7 +377,9 @@ test_functionIntegration =
                         makeCeilPredicate
                             (Mock.plain10 Mock.cf)
                     , substitution = Substitution.unsafeWrap
-                        [ (ElemVar Mock.var_x_1, Mock.cf), (ElemVar Mock.var_y_1, Mock.b) ]
+                        [ (ElemVar Mock.var_x_1, Mock.cf)
+                        , (ElemVar Mock.var_y_1, Mock.b)
+                        ]
                     }
         actual <-
             evaluate

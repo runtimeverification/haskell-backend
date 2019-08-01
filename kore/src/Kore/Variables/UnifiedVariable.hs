@@ -13,8 +13,8 @@ import           GHC.Generics
                  ( Generic )
 
 import Kore.Debug
-import Kore.Variables.AsVariable
 import Kore.Unparser
+import Kore.Variables.AsVariable
 
 {- | @UnifiedVariable@ helps distinguish set variables (introduced by 'SetVar')
 from element variables (introduced by 'ElemVar').

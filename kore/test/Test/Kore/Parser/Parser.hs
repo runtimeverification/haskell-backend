@@ -746,7 +746,8 @@ sentenceAliasParserTests =
                         { applicationSymbolOrAlias =
                             SymbolOrAlias
                                 { symbolOrAliasConstructor = testId "a" :: Id
-                                , symbolOrAliasParams = [ sortVariableSort "s1" ]
+                                , symbolOrAliasParams =
+                                    [ sortVariableSort "s1" ]
                                 }
                         , applicationChildren =
                             [ Variable
@@ -760,7 +761,7 @@ sentenceAliasParserTests =
                         asParsedPattern $ ApplicationF Application
                             { applicationSymbolOrAlias =
                                 SymbolOrAlias
-                                    { symbolOrAliasConstructor = testId "g" :: Id
+                                    { symbolOrAliasConstructor = testId "g"
                                     , symbolOrAliasParams = [ ]
                                     }
                             , applicationChildren = []
@@ -791,7 +792,7 @@ sentenceAliasParserTests =
                         Application
                             { applicationSymbolOrAlias =
                                 SymbolOrAlias
-                                    { symbolOrAliasConstructor = testId "a" :: Id
+                                    { symbolOrAliasConstructor = testId "a"
                                     , symbolOrAliasParams =
                                         [
                                             sortVariableSort "s1"
@@ -815,8 +816,11 @@ sentenceAliasParserTests =
                         asParsedPattern $ ApplicationF Application
                             { applicationSymbolOrAlias =
                                 SymbolOrAlias
-                                    { symbolOrAliasConstructor = testId "b" :: Id
-                                    , symbolOrAliasParams = [ sortVariableSort "s1", sortVariableSort "s2" ]
+                                    { symbolOrAliasConstructor = testId "b"
+                                    , symbolOrAliasParams =
+                                        [ sortVariableSort "s1"
+                                        , sortVariableSort "s2"
+                                        ]
                                     }
                             , applicationChildren =
                                 [ asParsedPattern $ VariableF Variable
@@ -1160,7 +1164,9 @@ sentenceSortParserTests =
                     , sentenceSortParameters = [ sortVariable "sv1" ]
                     , sentenceSortAttributes =
                         Attributes
-                            [asParsedPattern $ StringLiteralF (StringLiteral "a")]
+                            [ asParsedPattern
+                                $ StringLiteralF (StringLiteral "a")
+                            ]
                     }
                 :: ParsedSentenceSort)
             )
@@ -1173,7 +1179,9 @@ sentenceSortParserTests =
                     , sentenceSortParameters = []
                     , sentenceSortAttributes =
                         Attributes
-                            [asParsedPattern $ StringLiteralF (StringLiteral "a")]
+                            [ asParsedPattern
+                                $ StringLiteralF (StringLiteral "a")
+                            ]
                     }
                 :: ParsedSentenceSort)
             )
@@ -1244,7 +1252,9 @@ sentenceHookedSortParserTests =
                         , sentenceSortParameters = [ sortVariable "sv1" ]
                         , sentenceSortAttributes =
                             Attributes
-                                [asParsedPattern $ StringLiteralF (StringLiteral "a")]
+                                [ asParsedPattern
+                                    $ StringLiteralF (StringLiteral "a")
+                                ]
                         }
 
                 :: ParsedSentenceHook)
@@ -1259,7 +1269,9 @@ sentenceHookedSortParserTests =
                         , sentenceSortParameters = []
                         , sentenceSortAttributes =
                             Attributes
-                                [asParsedPattern $ StringLiteralF (StringLiteral "a")]
+                                [ asParsedPattern
+                                    $ StringLiteralF (StringLiteral "a")
+                                ]
                         }
                     :: ParsedSentenceHook
                 )

@@ -18,9 +18,9 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.Simplification.And
 import           Kore.Step.Simplification.Data
                  ( Env (..), evalSimplifier, gather )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
-import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
 import           Test.Kore
@@ -133,12 +133,14 @@ test_andSimplification =
                     Conditional
                         { term = mkTop_
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.wrap [(ElemVar Mock.y, fOfX)]
+                        , substitution =
+                            Substitution.wrap [(ElemVar Mock.y, fOfX)]
                         }
                     Conditional
                         { term = mkTop_
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.wrap [(ElemVar Mock.z, gOfX)]
+                        , substitution =
+                            Substitution.wrap [(ElemVar Mock.z, gOfX)]
                         }
             assertEqualWithExplanation "" (OrPattern.fromPatterns [expect]) actual
 

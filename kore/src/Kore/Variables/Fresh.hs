@@ -18,12 +18,12 @@ import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
-import           Data.Sup
-import           Kore.Variables.AsVariable
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
-import           Kore.Syntax.Id
-import           Kore.Syntax.Variable
+import Data.Sup
+import Kore.Syntax.Id
+import Kore.Syntax.Variable
+import Kore.Variables.AsVariable
+import Kore.Variables.UnifiedVariable
+       ( UnifiedVariable (..) )
 
 {- | A @FreshVariable@ can be renamed to avoid colliding with a set of names.
 -}
@@ -41,7 +41,8 @@ class Ord variable => FreshVariable variable where
         -> variable        -- ^ variable to rename
         -> Maybe variable
 
-instance FreshVariable variable => FreshVariable (UnifiedVariable variable) where
+instance FreshVariable variable => FreshVariable (UnifiedVariable variable)
+  where
     refreshVariable avoid = traverse (refreshVariable avoid')
       where
         avoid' = Set.map asVariable avoid

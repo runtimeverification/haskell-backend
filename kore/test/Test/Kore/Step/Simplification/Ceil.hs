@@ -36,11 +36,11 @@ import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
                  ( FreshVariable )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import qualified SMT
 
 import           Test.Kore.Builtin.Builtin
@@ -127,7 +127,8 @@ test_ceilSimplification =
                         makeAndPredicate
                         (makeCeilPredicate somethingOfA)
                         (makeEqualsPredicate fOfA gOfA)
-                    , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
+                    , substitution =
+                        Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
                     }
                 ]
         actual <- makeEvaluate
@@ -196,7 +197,8 @@ test_ceilSimplification =
                                 (makeCeilPredicate somethingOfB)
                             )
                             (makeEqualsPredicate fOfA gOfA)
-                    , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
+                    , substitution =
+                        Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
                     }
                 ]
         actual <- makeEvaluate
@@ -221,7 +223,8 @@ test_ceilSimplification =
                         makeAndPredicate
                             (makeCeilPredicate fOfA)
                             (makeEqualsPredicate fOfA gOfA)
-                    , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
+                    , substitution =
+                        Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
                     }
                 ]
         actual <- makeEvaluate
@@ -243,7 +246,8 @@ test_ceilSimplification =
                 [ Conditional
                     { term = mkTop_
                     , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
+                    , substitution =
+                        Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
                     }
                 ]
         actual <- makeEvaluate
@@ -265,7 +269,8 @@ test_ceilSimplification =
                 [ Conditional
                     { term = mkTop_
                     , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
+                    , substitution =
+                        Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
                     }
                 ]
         actual <- makeEvaluate
@@ -295,7 +300,8 @@ test_ceilSimplification =
                                 (makeCeilPredicate fOfB)
                             )
                             (makeEqualsPredicate fOfA gOfA)
-                    , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
+                    , substitution =
+                        Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
                     }
                 ]
         actual <- makeEvaluate
@@ -322,7 +328,8 @@ test_ceilSimplification =
                         makeAndPredicate
                             (makeEqualsPredicate Mock.a Mock.cf)
                             (makeEqualsPredicate fOfA gOfA)
-                    , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
+                    , substitution =
+                        Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
                     }
                 ]
         actual <- makeEvaluateWithAxioms

@@ -37,8 +37,6 @@ import qualified Kore.Step.Simplification.Data as BranchT
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -47,6 +45,8 @@ import           Kore.Unification.Unify
                  ( runUnifierT )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 
 
 -- TODO: Move Exists up in the other simplifiers or something similar. Note

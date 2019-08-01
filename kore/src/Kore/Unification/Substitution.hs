@@ -50,17 +50,17 @@ import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Internal.TermLike
                  ( pattern SetVar_, TermLike, pattern Var_, mkUnifiedVariable )
 import qualified Kore.Internal.TermLike as TermLike
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
-import           Kore.Variables.AsVariable
 import           Kore.Syntax.Variable
                  ( SortedVariable )
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser
                  ( Unparse, unparseToString )
+import           Kore.Variables.AsVariable
 import           Kore.Variables.Fresh
                  ( FreshVariable )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 
 {- | @Substitution@ represents a collection @[xᵢ=φᵢ]@ of substitutions.
 
@@ -81,7 +81,8 @@ data Substitution variable
     -- would enable us to keep more substitutions normalized in the Semigroup
     -- instance below.
     = Substitution ![(UnifiedVariable variable, TermLike variable)]
-    | NormalizedSubstitution !(Map (UnifiedVariable variable) (TermLike variable))
+    | NormalizedSubstitution
+        !(Map (UnifiedVariable variable) (TermLike variable))
     deriving Generic
 
 -- | 'Eq' does not differentiate normalized and denormalized 'Substitution's.
@@ -181,7 +182,8 @@ unsafeWrap = NormalizedSubstitution . Map.fromList
 -- normalization status is reset to un-normalized.
 modify
     :: Ord variable1
-    => ([(UnifiedVariable variable1, TermLike variable1)] -> [(UnifiedVariable variable2, TermLike variable2)])
+    => ([(UnifiedVariable variable1, TermLike variable1)]
+            -> [(UnifiedVariable variable2, TermLike variable2)])
     -> Substitution variable1
     -> Substitution variable2
 modify f = wrap . f . unwrap
@@ -268,9 +270,11 @@ reverseIfRhsIsVar variable (Substitution substitution) =
         -> (UnifiedVariable variable, TermLike variable)
         -> (UnifiedVariable variable, TermLike variable)
     reversePairIfRhsVar (ElemVar var) (substVar, Var_ substitutionVar)
-      | var == substitutionVar = (ElemVar substitutionVar, mkUnifiedVariable substVar)
+      | var == substitutionVar =
+          (ElemVar substitutionVar, mkUnifiedVariable substVar)
     reversePairIfRhsVar (SetVar var) (substVar, SetVar_ substitutionVar)
-      | var == substitutionVar = (SetVar substitutionVar, mkUnifiedVariable substVar)
+      | var == substitutionVar =
+          (SetVar substitutionVar, mkUnifiedVariable substVar)
     reversePairIfRhsVar _ original = original
 reverseIfRhsIsVar variable original@(NormalizedSubstitution substitution) =
     case reversableVars of
@@ -283,7 +287,8 @@ reverseIfRhsIsVar variable original@(NormalizedSubstitution substitution) =
                 replacement :: TermLike variable
                 replacement = mkUnifiedVariable replacementVar
 
-                replacedSubstitution :: Map (UnifiedVariable variable) (TermLike variable)
+                replacedSubstitution
+                    :: Map (UnifiedVariable variable) (TermLike variable)
                 replacedSubstitution =
                     fmap
                         (TermLike.substitute

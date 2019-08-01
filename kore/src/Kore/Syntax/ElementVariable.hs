@@ -18,9 +18,9 @@ import qualified GHC.Generics as GHC
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
+import Kore.Unparser
 import Kore.Variables.AsVariable
 import Kore.Variables.UnifiedVariable
-import Kore.Unparser
 
 -- | Applicative-Kore set variables
 newtype ElementVariable variable = ElementVariable { getVariable :: variable }
@@ -36,7 +36,10 @@ instance SOP.HasDatatypeInfo (ElementVariable variable)
 
 instance Debug variable => Debug (ElementVariable variable)
 
-instance Ord variable => Synthetic (Const (ElementVariable variable)) (FreeVariables variable) where
+instance
+    Ord variable =>
+    Synthetic (Const (ElementVariable variable)) (FreeVariables variable)
+  where
     synthetic (Const elemVar) = freeVariable (asUnifiedVariable elemVar)
     {-# INLINE synthetic #-}
 

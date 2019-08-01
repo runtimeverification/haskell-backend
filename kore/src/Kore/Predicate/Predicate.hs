@@ -64,8 +64,6 @@ import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Error
                  ( Error, koreFail )
 import           Kore.Internal.TermLike as TermLike
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unification.Substitution
@@ -74,6 +72,8 @@ import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 
 {-| 'GenericPredicate' is a wrapper for predicates used for type safety.
 Should not be exported, and should be treated as an opaque entity which

@@ -20,11 +20,11 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutionsExcept )
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import           Kore.Unification.Error
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           SMT
                  ( SMT )
 import qualified SMT
@@ -244,7 +244,8 @@ test_mergeAndNormalizeSubstitutions =
             let expect =
                     Left
                     $ SubstitutionError
-                    $ NonCtorCircularVariableDependency [ ElemVar Mock.x, ElemVar Mock.y ]
+                    $ NonCtorCircularVariableDependency
+                        [ ElemVar Mock.x, ElemVar Mock.y ]
             actual <-
                 merge
                     [   ( ElemVar Mock.x

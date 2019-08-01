@@ -9,12 +9,12 @@ import           Control.Monad.Reader as Reader
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
-import           Data.Sup
-import           Kore.Internal.TermLike
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
-import           Kore.Variables.AsVariable
-import           Kore.Variables.Fresh
+import Data.Sup
+import Kore.Internal.TermLike
+import Kore.Variables.AsVariable
+import Kore.Variables.Fresh
+import Kore.Variables.UnifiedVariable
+       ( UnifiedVariable (..) )
 
 import           Kore.Internal.ApplicationSorts
 import           Test.Kore hiding
@@ -138,7 +138,10 @@ test_substitute =
             "Expected substituted variable"
             (mkVar Mock.z)
             (substitute
-                (Map.singleton (Mock.makeTestUnifiedVariable "@x") (mkVar Mock.z))
+                (Map.singleton
+                    (Mock.makeTestUnifiedVariable "@x")
+                    (mkVar Mock.z)
+                )
                 (Mock.mkTestUnifiedVariable "@x")
             )
         )
@@ -148,7 +151,10 @@ test_substitute =
             "Expected substituted variable"
             (Mock.functionalConstr10 (mkVar Mock.z))
             (substitute
-                (Map.singleton (Mock.makeTestUnifiedVariable "@x") (mkVar Mock.z))
+                (Map.singleton
+                    (Mock.makeTestUnifiedVariable "@x")
+                    (mkVar Mock.z)
+                )
                 (Mock.functionalConstr10 (Mock.mkTestUnifiedVariable "@x"))
             )
         )
@@ -202,9 +208,13 @@ test_substitute =
                     expect actual
               where
                 expect =
-                    mkQuantifier (asVariable z') $ mkAnd (mkUnifiedVariable z') (mkVar Mock.z)
+                    mkQuantifier (asVariable z')
+                        $ mkAnd (mkUnifiedVariable z') (mkVar Mock.z)
                   where
-                    Just z' = refreshVariable (Set.singleton (ElemVar Mock.z)) (ElemVar Mock.z)
+                    Just z' =
+                        refreshVariable
+                            (Set.singleton (ElemVar Mock.z))
+                            (ElemVar Mock.z)
                 actual =
                     substitute (Map.singleton (ElemVar Mock.x) (mkVar Mock.z))
                     $ mkQuantifier Mock.z

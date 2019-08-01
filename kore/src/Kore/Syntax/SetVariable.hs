@@ -15,9 +15,9 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
+import Kore.Unparser
 import Kore.Variables.AsVariable
 import Kore.Variables.UnifiedVariable
-import Kore.Unparser
 
 -- | Applicative-Kore set variables
 newtype SetVariable variable = SetVariable { getVariable :: variable }

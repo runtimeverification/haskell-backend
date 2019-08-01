@@ -28,11 +28,11 @@ import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Attribute.Synthetic
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import           Kore.Syntax
 import           Kore.Variables.Binding
 import           Kore.Variables.Fresh
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 
 {- | Traverse the pattern from the top down and apply substitutions.
 
@@ -74,13 +74,19 @@ substitute viewFreeVariables =
     renaming
         :: UnifiedVariable variable  -- ^ Original variable
         -> Maybe (UnifiedVariable variable)  -- ^ Renamed variable
-        -> Map (UnifiedVariable variable) (Either patternType (UnifiedVariable variable))
+        -> Map
+            (UnifiedVariable variable)
+            (Either patternType (UnifiedVariable variable))
         -- ^ Substitution
-        -> Map (UnifiedVariable variable) (Either patternType (UnifiedVariable variable))
+        -> Map
+            (UnifiedVariable variable)
+            (Either patternType (UnifiedVariable variable))
     renaming variable = maybe id (Map.insert variable . Right)
 
     substituteWorker
-        :: Map (UnifiedVariable variable) (Either patternType (UnifiedVariable variable))
+        :: Map
+            (UnifiedVariable variable)
+            (Either patternType (UnifiedVariable variable))
         -> patternType
         -> patternType
     substituteWorker subst termLike =
@@ -121,7 +127,9 @@ substitute viewFreeVariables =
         substituteVariable =
             either id id <$> matchWith traverseVariable worker termLike
           where
-            worker :: UnifiedVariable variable -> Either patternType (UnifiedVariable variable)
+            worker
+                :: UnifiedVariable variable
+                -> Either patternType (UnifiedVariable variable)
             worker variable =
                 -- If the variable is not substituted or renamed, return the
                 -- original pattern.

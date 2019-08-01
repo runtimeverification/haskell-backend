@@ -15,13 +15,13 @@ module Kore.AST.AstWithLocation
 import Data.Text
        ( Text )
 
-import           Kore.Variables.AsVariable
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
-import           Kore.Syntax
-import           Kore.Syntax.Definition
-import           Kore.Syntax.PatternF
-                 ( PatternF (..) )
+import Kore.Syntax
+import Kore.Syntax.Definition
+import Kore.Syntax.PatternF
+       ( PatternF (..) )
+import Kore.Variables.AsVariable
+import Kore.Variables.UnifiedVariable
+       ( UnifiedVariable (..) )
 
 {-| 'AstWithLocation' should be implemented by all AST terms that have
 an 'AstLocation'.

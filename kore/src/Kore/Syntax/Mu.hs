@@ -20,11 +20,11 @@ import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
-import Kore.Variables.UnifiedVariable
-       ( UnifiedVariable (..) )
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
 import Kore.Unparser
+import Kore.Variables.UnifiedVariable
+       ( UnifiedVariable (..) )
 
 {-|'Mu' corresponds to the @μ@ syntactic category from the
  Syntax of the MμL

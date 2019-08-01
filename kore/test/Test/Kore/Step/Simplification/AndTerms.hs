@@ -39,10 +39,10 @@ import           Kore.Step.Simplification.Data
                  ( BuiltinAndAxiomSimplifierMap, Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import qualified SMT
 
 import           Test.Kore
@@ -942,7 +942,8 @@ test_equalsTermsSimplification =
                 [ Conditional
                     { term = ()
                     , predicate = makeCeilPredicate Mock.cf
-                    , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, Mock.cf)]
+                    , substitution =
+                        Substitution.unsafeWrap [(ElemVar Mock.x, Mock.cf)]
                     }
                 ]
         actual <- simplifyEquals Map.empty (mkVar Mock.x) Mock.cf
@@ -953,12 +954,14 @@ test_equalsTermsSimplification =
                 [ Conditional
                     { term = ()
                     , predicate = makeEqualsPredicate (Mock.f Mock.a) Mock.a
-                    , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, Mock.cf)]
+                    , substitution =
+                        Substitution.unsafeWrap [(ElemVar Mock.x, Mock.cf)]
                     }
                 , Conditional
                     { term = ()
                     , predicate = makeEqualsPredicate (Mock.f Mock.b) Mock.b
-                    , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, Mock.cf)]
+                    , substitution =
+                        Substitution.unsafeWrap [(ElemVar Mock.x, Mock.cf)]
                     }
                 ]
             sortVar = SortVariableSort (SortVariable (testId "S"))
@@ -1002,7 +1005,9 @@ test_equalsTermsSimplification =
                         (makeEqualsPredicate (Mock.f Mock.a) Mock.a)
                         (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
                     , substitution = Substitution.unsafeWrap
-                        [ (ElemVar Mock.x, Mock.cf), (ElemVar Mock.var_x_1, Mock.cg) ]
+                        [ (ElemVar Mock.x, Mock.cf)
+                        , (ElemVar Mock.var_x_1, Mock.cg)
+                        ]
                     }
                 , Conditional
                     { term = ()
@@ -1010,7 +1015,9 @@ test_equalsTermsSimplification =
                         (makeEqualsPredicate (Mock.f Mock.a) Mock.a)
                         (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
                     , substitution = Substitution.unsafeWrap
-                        [ (ElemVar Mock.x, Mock.cf), (ElemVar Mock.var_x_1, Mock.cg) ]
+                        [ (ElemVar Mock.x, Mock.cf)
+                        , (ElemVar Mock.var_x_1, Mock.cg)
+                        ]
                     }
                 , Conditional
                     { term = ()
@@ -1018,7 +1025,9 @@ test_equalsTermsSimplification =
                         (makeEqualsPredicate (Mock.f Mock.b) Mock.b)
                         (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
                     , substitution = Substitution.unsafeWrap
-                        [ (ElemVar Mock.x, Mock.cf), (ElemVar Mock.var_x_1, Mock.cg) ]
+                        [ (ElemVar Mock.x, Mock.cf)
+                        , (ElemVar Mock.var_x_1, Mock.cg)
+                        ]
                     }
                 , Conditional
                     { term = ()
@@ -1026,7 +1035,9 @@ test_equalsTermsSimplification =
                         (makeEqualsPredicate (Mock.f Mock.b) Mock.b)
                         (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
                     , substitution = Substitution.unsafeWrap
-                        [ (ElemVar Mock.x, Mock.cf), (ElemVar Mock.var_x_1, Mock.cg) ]
+                        [ (ElemVar Mock.x, Mock.cf)
+                        , (ElemVar Mock.var_x_1, Mock.cg)
+                        ]
                     }
                 ]
             sortVar = SortVariableSort (SortVariable (testId "S"))
@@ -1108,7 +1119,9 @@ test_equalsTermsSimplification =
                     , predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap
                         [ (ElemVar Mock.x, xValue)
-                        , (ElemVar Mock.xSet, asInternal (Set.fromList xSetValue))
+                        , ( ElemVar Mock.xSet
+                          , asInternal (Set.fromList xSetValue)
+                          )
                         ]
                     }
         actual <- simplifyEquals

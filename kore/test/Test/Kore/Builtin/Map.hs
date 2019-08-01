@@ -48,9 +48,9 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
-import qualified Kore.Unification.Substitution as Substitution
 import           SMT
                  ( SMT )
 
@@ -852,7 +852,8 @@ test_concretizeKeys =
         Conditional
             { term = mkPair intSort mapSort key (asInternal [(key, val)])
             , predicate = Predicate.makeTruePredicate
-            , substitution = Substitution.unsafeWrap [(ElemVar v, val), (ElemVar x, key)]
+            , substitution =
+                Substitution.unsafeWrap [(ElemVar v, val), (ElemVar x, key)]
             }
 
 {- | Unify a concrete map with symbolic-keyed map in an axiom
@@ -975,7 +976,12 @@ test_renormalize =
 
 hprop_unparse :: Property
 hprop_unparse =
-    hpropUnparse (asInternal . Map.toList . Map.mapKeys fromConcrete <$> genConcreteMap genValue)
+    hpropUnparse
+        ( asInternal
+        . Map.toList
+        . Map.mapKeys fromConcrete
+        <$> genConcreteMap genValue
+        )
   where
     genValue = Test.Int.asInternal <$> genInteger
 

@@ -29,14 +29,14 @@ import qualified Kore.Predicate.Predicate as Syntax
 import           Kore.Step.Simplification.Data
                  ( BuiltinAndAxiomSimplifierMap, Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import           Kore.Unification.Error
 import           Kore.Unification.Procedure
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.UnifierImpl
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           SMT
                  ( SMT )
 import qualified SMT
@@ -226,7 +226,10 @@ unificationProcedureSuccessWithSimplifiers
     -> BuiltinAndAxiomSimplifierMap
     -> UnificationTerm
     -> UnificationTerm
-    -> [([(UnifiedVariable Variable, TermLike Variable)], Syntax.Predicate Variable)]
+    -> [  ( [(UnifiedVariable Variable, TermLike Variable)]
+          , Syntax.Predicate Variable
+          )
+       ]
     -> TestTree
 unificationProcedureSuccessWithSimplifiers
     message
@@ -245,7 +248,9 @@ unificationProcedureSuccessWithSimplifiers
         let
             normalize
                 :: Predicate Variable
-                -> ([(UnifiedVariable Variable, TermLike Variable)], Syntax.Predicate Variable)
+                ->  ( [(UnifiedVariable Variable, TermLike Variable)]
+                    , Syntax.Predicate Variable
+                    )
             normalize Conditional { substitution, predicate } =
                 (Substitution.unwrap substitution, predicate)
         assertEqualWithExplanation ""

@@ -51,8 +51,6 @@ import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMergerExcept,
                  mergePredicatesAndSubstitutionsExcept )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import           Kore.Unification.Error
                  ( unsupportedPatterns )
 import           Kore.Unification.Procedure
@@ -63,6 +61,8 @@ import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 
 {- Matches two patterns based on their form.
 
@@ -255,10 +255,13 @@ matchEqualHeadPatterns quantifiedVariables first second = do
         (Exists_ _ firstVariable firstChild) ->
             case second of
                 (Exists_ _ secondVariable secondChild) ->
-                    checkVariableEscape [ElemVar firstVariable, ElemVar secondVariable]
+                    checkVariableEscape
+                        [ElemVar firstVariable, ElemVar secondVariable]
                     <$> match
                         (Map.insert
-                            (ElemVar firstVariable) (ElemVar secondVariable) quantifiedVariables
+                            (ElemVar firstVariable)
+                            (ElemVar secondVariable)
+                            quantifiedVariables
                         )
                         firstChild
                         secondChild
@@ -275,7 +278,8 @@ matchEqualHeadPatterns quantifiedVariables first second = do
             case second of
                 (Forall_ _ secondVariable secondChild) ->
                     (<$>)
-                        (checkVariableEscape [ElemVar firstVariable, ElemVar secondVariable])
+                        (checkVariableEscape
+                            [ElemVar firstVariable, ElemVar secondVariable])
                         (match
                             (Map.insert
                                 (ElemVar firstVariable)
@@ -316,10 +320,13 @@ matchEqualHeadPatterns quantifiedVariables first second = do
         (Mu_ firstVariable firstChild) ->
             case second of
                 (Mu_ secondVariable secondChild) ->
-                    checkVariableEscape [SetVar firstVariable, SetVar secondVariable]
+                    checkVariableEscape
+                        [SetVar firstVariable, SetVar secondVariable]
                     <$> match
                         (Map.insert
-                            (SetVar firstVariable) (SetVar secondVariable) quantifiedVariables
+                            (SetVar firstVariable)
+                            (SetVar secondVariable)
+                            quantifiedVariables
                         )
                         firstChild
                         secondChild

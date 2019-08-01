@@ -32,9 +32,9 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Rule hiding
                  ( freeVariables )
 import qualified Kore.Step.Rule as Rule
+import           Kore.Syntax.Definition
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
-import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 import           Test.Kore

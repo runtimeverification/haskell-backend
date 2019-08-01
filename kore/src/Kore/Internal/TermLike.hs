@@ -190,9 +190,6 @@ import           Kore.Internal.Alias
 import           Kore.Internal.Symbol
 import           Kore.Sort
 import qualified Kore.Substitute as Substitute
-import           Kore.Variables.AsVariable
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import           Kore.Syntax.And
 import           Kore.Syntax.Application
 import           Kore.Syntax.Bottom
@@ -225,8 +222,11 @@ import           Kore.TopBottom
 import           Kore.Unparser
                  ( Unparse (..) )
 import qualified Kore.Unparser as Unparser
+import           Kore.Variables.AsVariable
 import           Kore.Variables.Binding
 import           Kore.Variables.Fresh
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 
 {- | @Evaluated@ wraps patterns which are fully evaluated.
 
@@ -345,7 +345,8 @@ instance
 
     synthetic (MuF muF) = synthetic muF
     synthetic (NuF nuF) = synthetic nuF
-    synthetic (SetVariableF (SetVariable setVariable)) = freeVariable (SetVar setVariable)
+    synthetic (SetVariableF (SetVariable setVariable)) =
+        freeVariable (SetVar setVariable)
     {-# INLINE synthetic #-}
 
 instance SortedVariable variable => Synthetic (TermLikeF variable) Sort where
@@ -713,7 +714,8 @@ instance
     traverseVariable match termLike =
         case termLikeF of
             VariableF variable -> mkUnifiedVariable <$> match (ElemVar variable)
-            SetVariableF (SetVariable variable) -> mkUnifiedVariable <$> match (SetVar variable)
+            SetVariableF (SetVariable variable) ->
+                mkUnifiedVariable <$> match (SetVar variable)
             _ -> pure termLike
       where
         _ :< termLikeF = Recursive.project termLike
@@ -901,7 +903,8 @@ externalizeFreshVariables termLike =
     -- | 'originalFreeVariables' are present in the original pattern; they do
     -- not have a generated counter. 'generatedFreeVariables' have a generated
     -- counter, usually because they were introduced by applying some axiom.
-    originalFreeVariables, generatedFreeVariables :: Set.Set (UnifiedVariable Variable)
+    originalFreeVariables, generatedFreeVariables
+        :: Set.Set (UnifiedVariable Variable)
     (originalFreeVariables, generatedFreeVariables) =
         Set.partition (Variable.isOriginalVariable . asVariable)
         $ getFreeVariables $ freeVariables termLike
@@ -943,7 +946,10 @@ externalizeFreshVariables termLike =
     among the set of avoided variables. The externalized form is returned.
 
      -}
-    safeVariable :: FreeVariables Variable -> UnifiedVariable Variable -> UnifiedVariable Variable
+    safeVariable
+        :: FreeVariables Variable
+        -> UnifiedVariable Variable
+        -> UnifiedVariable Variable
     safeVariable avoiding variable =
         head  -- 'head' is safe because 'iterate' creates an infinite list
         $ dropWhile wouldCapture

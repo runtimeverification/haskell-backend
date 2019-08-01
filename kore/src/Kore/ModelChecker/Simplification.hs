@@ -21,12 +21,12 @@ import qualified Kore.Step.Simplification.OrPattern as OrPattern
                  ( filterMultiOrWithTermCeil )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyAndRemoveTopExists )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 
 checkImplicationIsTop
     :: MonadSimplify m

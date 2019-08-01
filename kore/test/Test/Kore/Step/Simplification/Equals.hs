@@ -31,10 +31,10 @@ import           Kore.Step.Simplification.Data
                  ( Env (..), evalSimplifier )
 import           Kore.Step.Simplification.Equals
                  ( makeEvaluate, makeEvaluateTermsToPredicate, simplify )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import qualified SMT
 
 import           Test.Kore
@@ -271,7 +271,8 @@ test_equalsSimplification_Or_Pattern =
                     [ Conditional
                         { term = Mock.cg
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.wrap [(ElemVar Mock.x, Mock.a)]
+                        , substitution =
+                            Substitution.wrap [(ElemVar Mock.x, Mock.a)]
                         }
                     , Conditional
                         { term = Mock.ch
@@ -568,7 +569,8 @@ test_equalsSimplification_TermLike =
             Conditional
                 { term = ()
                 , predicate = makeCeilPredicate fOfA
-                , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, fOfA)]
+                , substitution =
+                    Substitution.unsafeWrap [(ElemVar Mock.x, fOfA)]
                 }
             (mkVar Mock.x)
             fOfA
@@ -578,7 +580,8 @@ test_equalsSimplification_TermLike =
             Conditional
                 { term = ()
                 , predicate = makeCeilPredicate fOfA
-                , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, fOfA)]
+                , substitution =
+                    Substitution.unsafeWrap [(ElemVar Mock.x, fOfA)]
                 }
             fOfA
             (mkVar Mock.x)
@@ -639,7 +642,8 @@ test_equalsSimplification_TermLike =
                 Conditional
                     { term = ()
                     , predicate = makeTruePredicate
-                    , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
+                    , substitution =
+                        Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
                     }
                 (Mock.builtinMap [(Mock.a, Mock.b)])
                 (Mock.builtinMap [(Mock.a, mkVar Mock.x)])

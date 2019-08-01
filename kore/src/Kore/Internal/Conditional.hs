@@ -35,8 +35,6 @@ import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable )
 import           Kore.Syntax
 import           Kore.TopBottom
                  ( TopBottom (..) )
@@ -44,6 +42,8 @@ import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable )
 
 {- | @Conditional@ represents a value conditioned on a predicate.
 

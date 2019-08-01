@@ -58,12 +58,12 @@ import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable )
 import qualified Kore.Syntax.Definition as Syntax
 import           Kore.Unparser
                  ( Unparse, unparse, unparse2 )
 import           Kore.Variables.Fresh
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable )
 import qualified Kore.Verified as Verified
 
 newtype AxiomPatternError = AxiomPatternError ()
@@ -533,7 +533,9 @@ refreshRulePattern
         )
     => FreeVariables variable  -- ^ Variables to avoid
     -> RulePattern variable
-    -> (Map (UnifiedVariable variable) (UnifiedVariable variable), RulePattern variable)
+    ->  ( Map (UnifiedVariable variable) (UnifiedVariable variable)
+        , RulePattern variable
+        )
 refreshRulePattern (FreeVariables.getFreeVariables -> avoid) rule1 =
     let rename = refreshVariables avoid originalFreeVariables
         subst = mkUnifiedVariable <$> rename

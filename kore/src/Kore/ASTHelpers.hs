@@ -25,13 +25,13 @@ import           Data.Text
                  ( Text )
 
 import qualified Kore.Attribute.Null as Attribute
-import           Kore.Variables.AsVariable
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import           Kore.Syntax hiding
                  ( substituteSortVariables )
 import           Kore.Unparser
+import           Kore.Variables.AsVariable
 import           Kore.Variables.Free
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 
 
 {-|'quantifyFreeVariables' quantifies all free variables in the given pattern.

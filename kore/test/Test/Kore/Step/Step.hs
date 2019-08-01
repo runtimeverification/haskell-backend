@@ -42,8 +42,6 @@ import           Kore.Step.Step hiding
                  ( applyInitialConditions, applyRewriteRulesParallel,
                  applyRewriteRulesSequence, unifyRule )
 import qualified Kore.Step.Step as Step
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import           Kore.Unification.Error
                  ( SubstitutionError (..), UnificationOrSubstitutionError (..),
                  unsupportedPatterns )
@@ -53,6 +51,8 @@ import           Kore.Unification.Unify
                  ( UnifierT, runUnifierT )
 import           Kore.Variables.Fresh
                  ( nextVariable )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import qualified SMT
 
 import           Test.Kore
@@ -171,7 +171,8 @@ test_unifyRule =
                     }
             expect = Right [(pure axiom) { substitution }]
               where
-                substitution = Substitution.unsafeWrap [(ElemVar Mock.x, Mock.a)]
+                substitution =
+                    Substitution.unsafeWrap [(ElemVar Mock.x, Mock.a)]
         actual <- unifyRule initial axiom
         assertEqualWithExplanation "" expect actual
 
@@ -236,7 +237,8 @@ test_applyRewriteRule_ =
         let expect =
                 Right [ OrPattern.fromPatterns [initial { term = fz, substitution }] ]
               where
-                substitution = Substitution.wrap [ (ElemVar Mock.y, mkVar Mock.z) ]
+                substitution =
+                    Substitution.wrap [ (ElemVar Mock.y, mkVar Mock.z) ]
             fy = Mock.functionalConstr10 (mkVar Mock.y)
             fz = Mock.functionalConstr10 (mkVar Mock.z)
             initial = pure (Mock.sigma fy fz)
@@ -247,7 +249,8 @@ test_applyRewriteRule_ =
         let expect =
                 Right [ OrPattern.fromPatterns [initial { term = yy, substitution }] ]
               where
-                substitution = Substitution.wrap [ (ElemVar Mock.x, mkVar Mock.y) ]
+                substitution =
+                    Substitution.wrap [ (ElemVar Mock.x, mkVar Mock.y) ]
             xy = Mock.sigma (mkVar Mock.x) (mkVar Mock.y)
             yx = Mock.sigma (mkVar Mock.y) (mkVar Mock.x)
             yy = Mock.sigma (mkVar Mock.y) (mkVar Mock.y)
@@ -301,7 +304,8 @@ test_applyRewriteRule_ =
                             (mkVar Mock.x)
                             (Mock.functionalConstr10 (mkVar Mock.y))
                     , predicate = Predicate.makeTruePredicate
-                    , substitution = Substitution.wrap [(ElemVar Mock.y, mkVar Mock.x)]
+                    , substitution =
+                        Substitution.wrap [(ElemVar Mock.y, mkVar Mock.x)]
                     }
         actual <- applyRewriteRule_ initial axiomSigmaId
         assertEqualWithExplanation "" expect actual
@@ -323,7 +327,8 @@ test_applyRewriteRule_ =
                             (mkVar Mock.x)
                             (Mock.functional10 (mkVar Mock.y))
                     , predicate = makeTruePredicate
-                    , substitution = Substitution.wrap [(ElemVar Mock.y, mkVar Mock.x)]
+                    , substitution =
+                        Substitution.wrap [(ElemVar Mock.y, mkVar Mock.x)]
                     }
         actual <- applyRewriteRule_ initial axiomSigmaId
         assertEqualWithExplanation "" expect actual
@@ -379,7 +384,8 @@ test_applyRewriteRule_ =
                         [ Conditional
                             { term = Mock.sigma fb fb
                             , predicate = makeTruePredicate
-                            , substitution = Substitution.wrap [(ElemVar Mock.x, fb)]
+                            , substitution =
+                                Substitution.wrap [(ElemVar Mock.x, fb)]
                             }
                         ]
                     ]
@@ -473,7 +479,8 @@ test_applyRewriteRule_ =
                                 makeEqualsPredicate
                                     (Mock.functional11 fb)
                                     (Mock.functional10 fb)
-                            , substitution = Substitution.wrap [(ElemVar Mock.x, fb)]
+                            , substitution =
+                                Substitution.wrap [(ElemVar Mock.x, fb)]
                             }
                         ]
                     ]

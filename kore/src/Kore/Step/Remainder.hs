@@ -33,11 +33,11 @@ import qualified Kore.Step.Simplification.AndPredicates as AndPredicates
 import qualified Kore.Step.Simplification.Ceil as Ceil
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify (..) )
-import           Kore.Variables.AsVariable
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
+import           Kore.Variables.AsVariable
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 import           Kore.Variables.Target

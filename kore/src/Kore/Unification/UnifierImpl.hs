@@ -31,8 +31,6 @@ import           Kore.Logger
                  ( LogMessage, WithLog )
 import qualified Kore.Predicate.Predicate as Predicate
                  ( isFalse, makeAndPredicate )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -41,6 +39,8 @@ import           Kore.Unification.Unify
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 
 import {-# SOURCE #-} Kore.Step.Simplification.AndTerms
        ( termUnification )
@@ -181,7 +181,8 @@ normalizeSubstitutionDuplication subst
         :: [[(UnifiedVariable variable, TermLike variable)]]
     (singletonSubstitutions, nonSingletonSubstitutions) =
         partition isSingleton groupedSubstitution
-    varAndSubstList :: [(UnifiedVariable variable, NonEmpty (TermLike variable))]
+    varAndSubstList
+        :: [(UnifiedVariable variable, NonEmpty (TermLike variable))]
     varAndSubstList =
         nonSingletonSubstitutions >>= \case
             [] -> []

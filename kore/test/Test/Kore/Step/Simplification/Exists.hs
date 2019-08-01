@@ -18,9 +18,9 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Simplification.Data
                  ( Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Exists as Exists
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
-import qualified Kore.Unification.Substitution as Substitution
 import qualified SMT
 
 import           Test.Kore
@@ -77,7 +77,8 @@ test_simplify =
             }
     substToX =
         (Pattern.topOf Mock.testSort)
-            { substitution = Substitution.unsafeWrap [(ElemVar Mock.y, mkVar Mock.x)] }
+            { substitution =
+                Substitution.unsafeWrap [(ElemVar Mock.y, mkVar Mock.x)] }
     substOfX =
         (Pattern.topOf Mock.testSort)
             { substitution =
@@ -130,7 +131,8 @@ test_makeEvaluate =
                     { term = Mock.f (mkVar Mock.x)
                     , predicate = makeCeilPredicate (Mock.h (mkVar Mock.x))
                     , substitution =
-                        Substitution.wrap [(ElemVar Mock.x, gOfA), (ElemVar Mock.y, fOfA)]
+                        Substitution.wrap
+                            [(ElemVar Mock.x, gOfA), (ElemVar Mock.y, fOfA)]
                     }
         assertEqualWithExplanation "exists with substitution" expect actual
 
@@ -267,7 +269,8 @@ test_makeEvaluate =
                     { term = fOfA
                     , predicate = makeEqualsPredicate fOfX (Mock.f Mock.a)
                     , substitution =
-                        Substitution.wrap [(ElemVar Mock.y, fOfX), (ElemVar Mock.z, fOfA)]
+                        Substitution.wrap
+                            [(ElemVar Mock.y, fOfX), (ElemVar Mock.z, fOfA)]
                     }
         assertEqualWithExplanation "exists matching" expect actual
     , testCase "exists does not match equality if free var in term" $

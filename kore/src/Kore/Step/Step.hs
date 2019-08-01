@@ -74,9 +74,6 @@ import           Kore.Step.Rule
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable )
-import           Kore.Variables.AsVariable
 import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
@@ -84,10 +81,13 @@ import           Kore.Unification.Unify
 import qualified Kore.Unification.Unify as Monad.Unify
                  ( gather, scatter )
 import           Kore.Unparser
+import           Kore.Variables.AsVariable
 import           Kore.Variables.Fresh
 import           Kore.Variables.Target
                  ( Target )
 import qualified Kore.Variables.Target as Target
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable )
 
 -- | Wraps functions such as 'unificationProcedure' and
 -- 'Kore.Step.Axiom.Matcher.matchAsUnification' to be used in
@@ -537,7 +537,9 @@ checkSubstitutionCoverage initial unified
 {- | The 'Set' of variables that would be introduced by narrowing.
  -}
 -- TODO (thomas.tuegel): Unit tests
-wouldNarrowWith :: Ord variable => UnifiedRule variable -> Set (UnifiedVariable variable)
+wouldNarrowWith
+    :: Ord variable
+    => UnifiedRule variable -> Set (UnifiedVariable variable)
 wouldNarrowWith unified =
     Set.difference leftAxiomVariables substitutionVariables
   where

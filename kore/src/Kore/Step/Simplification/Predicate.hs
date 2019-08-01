@@ -29,8 +29,6 @@ import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Simplification.Data
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable )
 import           Kore.Syntax.Variable
                  ( SortedVariable )
 import qualified Kore.TopBottom as TopBottom
@@ -40,6 +38,8 @@ import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable )
 
 {- | Create a 'PredicateSimplifier' using 'simplify'.
 -}

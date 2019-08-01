@@ -10,10 +10,10 @@ import           Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Synthetic as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Internal.TermLike
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import qualified Kore.Syntax.Pattern as Syntax
 import qualified Kore.Variables.Free as Variables.Free
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 
 import Test.Kore.Internal.TermLike
 

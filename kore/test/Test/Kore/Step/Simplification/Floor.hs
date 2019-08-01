@@ -23,9 +23,9 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import           Kore.Step.Simplification.Floor
                  ( makeEvaluateFloor, simplify )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
-import qualified Kore.Unification.Substitution as Substitution
 
 import Test.Kore
        ( testId )

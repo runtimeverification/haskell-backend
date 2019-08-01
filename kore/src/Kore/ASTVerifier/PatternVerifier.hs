@@ -63,13 +63,13 @@ import           Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as Internal
 import           Kore.Parser
                  ( ParsedPattern )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
-import           Kore.Variables.AsVariable
 import           Kore.Syntax as Syntax
 import           Kore.Syntax.Definition
 import           Kore.Unparser
+import           Kore.Variables.AsVariable
 import qualified Kore.Variables.Free as Variables
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import qualified Kore.Verified as Verified
 
 newtype DeclaredVariables =
@@ -192,7 +192,8 @@ newDeclaredVariable declared variable = do
         Nothing -> return (addDeclaredVariable variable declared)
   where
     name = variableName . asVariable $ variable
-    alreadyDeclared :: UnifiedVariable Variable -> PatternVerifier DeclaredVariables
+    alreadyDeclared
+        :: UnifiedVariable Variable -> PatternVerifier DeclaredVariables
     alreadyDeclared variable' =
         koreFailWithLocations [variable', variable]
             (  "Variable '"
@@ -255,7 +256,8 @@ verifyAliasLeftPattern leftPattern = do
     symbolOrAlias = applicationSymbolOrAlias leftPattern
     expectVariable
         :: UnifiedVariable Variable
-        -> PatternVerifier (UnifiedVariable Variable, Attribute.Pattern Variable)
+        -> PatternVerifier
+            (UnifiedVariable Variable, Attribute.Pattern Variable)
     expectVariable var = do
         verifyVariableDeclaration var
         let attrs = synthetic (Const var)
@@ -374,9 +376,12 @@ verifyPatternHead (_ :< patternF) =
                 <$> verifyVariable (SetVar var)
   where
     transCofreeF fg (a :< fb) = a :< fg fb
-    wrapVariable :: UnifiedVariable Variable -> Internal.TermLikeF Variable Verified.Pattern
+    wrapVariable
+        :: UnifiedVariable Variable
+        -> Internal.TermLikeF Variable Verified.Pattern
     wrapVariable (ElemVar variable) = Internal.VariableF variable
-    wrapVariable (SetVar variable) = Internal.SetVariableF (SetVariable variable)
+    wrapVariable (SetVar variable) =
+        Internal.SetVariableF (SetVariable variable)
 
 verifyPatternSort :: Sort -> PatternVerifier ()
 verifyPatternSort patternSort = do
@@ -767,7 +772,8 @@ verifyCharLiteral char = do
     let attrs = synthetic (Internal.extractAttributes <$> verified)
     return (attrs :< verified)
 
-verifyVariableDeclaration :: UnifiedVariable Variable -> PatternVerifier VerifySuccess
+verifyVariableDeclaration
+    :: UnifiedVariable Variable -> PatternVerifier VerifySuccess
 verifyVariableDeclaration variable = do
     Context { declaredSortVariables } <- Reader.ask
     verifySort

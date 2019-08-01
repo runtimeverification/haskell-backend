@@ -14,11 +14,11 @@ import Prelude hiding
 
 import Kore.Internal.TermLike hiding
        ( mapVariables )
-import Kore.Variables.UnifiedVariable
-       ( UnifiedVariable (..) )
 import Kore.TopBottom
        ( isBottom, isTop )
 import Kore.Unification.Substitution
+import Kore.Variables.UnifiedVariable
+       ( UnifiedVariable (..) )
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -230,28 +230,32 @@ reverseRhsTests =
             (reverseIfRhsIsVar (ElemVar Mock.x) originalSubst)
     , testCase "unnormalized reverses multiple RHS" $ do
         let
-            expectedSubst =
-                wrap [(ElemVar Mock.x, mkVar Mock.y), (ElemVar Mock.x, mkVar Mock.z)]
-            originalSubst =
-                wrap [(ElemVar Mock.y, mkVar Mock.x), (ElemVar Mock.z, mkVar Mock.x)]
+            expectedSubst = wrap
+                [(ElemVar Mock.x, mkVar Mock.y), (ElemVar Mock.x, mkVar Mock.z)]
+            originalSubst = wrap
+                [(ElemVar Mock.y, mkVar Mock.x), (ElemVar Mock.z, mkVar Mock.x)]
         assertEqualWithExplanation ""
             expectedSubst
             (reverseIfRhsIsVar (ElemVar Mock.x) originalSubst)
     , testCase "normalized reverses multiple RHS" $ do
         let
-            expectedSubst =
-                unsafeWrap [(ElemVar Mock.x, mkVar Mock.z), (ElemVar Mock.y, mkVar Mock.z)]
-            originalSubst =
-                unsafeWrap [(ElemVar Mock.y, mkVar Mock.x), (ElemVar Mock.z, mkVar Mock.x)]
+            expectedSubst = unsafeWrap
+                [(ElemVar Mock.x, mkVar Mock.z), (ElemVar Mock.y, mkVar Mock.z)]
+            originalSubst = unsafeWrap
+                [(ElemVar Mock.y, mkVar Mock.x), (ElemVar Mock.z, mkVar Mock.x)]
         assertEqualWithExplanation ""
             expectedSubst
             (reverseIfRhsIsVar (ElemVar Mock.x) originalSubst)
     , testCase "unnormalized does not substitute reverse RHS" $ do
         let
-            expectedSubst =
-                wrap [(ElemVar Mock.x, mkVar Mock.y), (ElemVar Mock.z, Mock.f (mkVar Mock.x))]
-            originalSubst =
-                wrap [(ElemVar Mock.y, mkVar Mock.x), (ElemVar Mock.z, Mock.f (mkVar Mock.x))]
+            expectedSubst = wrap
+                [ (ElemVar Mock.x, mkVar Mock.y)
+                , (ElemVar Mock.z, Mock.f (mkVar Mock.x))
+                ]
+            originalSubst = wrap
+                [ (ElemVar Mock.y, mkVar Mock.x)
+                , (ElemVar Mock.z, Mock.f (mkVar Mock.x))
+                ]
         assertEqualWithExplanation ""
             expectedSubst
             (reverseIfRhsIsVar (ElemVar Mock.x) originalSubst)

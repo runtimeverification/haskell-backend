@@ -55,11 +55,11 @@ import           Kore.Parser.Lexeme
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import           Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
                  ( PatternF (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}
@@ -210,7 +210,8 @@ variableGen' patternSort variables genId =
 setVariableGen :: Sort -> Gen (SetVariable Variable)
 setVariableGen sort = do
     Context { objectVariables } <- Reader.ask
-    SetVariable <$> variableGen' sort [v | SetVar v <- objectVariables] setVarIdGen
+    SetVariable
+        <$> variableGen' sort [v | SetVar v <- objectVariables] setVarIdGen
 
 unaryOperatorGen
     :: MonadGen m
@@ -259,8 +260,10 @@ existsForallGen
 existsForallGen constructor childGen patternSort = do
     varSort <- Gen.small sortGen
     var <- Gen.small (variableGen varSort)
-    constructor patternSort var
-        <$> Gen.small (Reader.local (addVariable (ElemVar var)) $ childGen patternSort)
+    child <-
+        Gen.small
+            (Reader.local (addVariable (ElemVar var)) $ childGen patternSort)
+    return (constructor patternSort var child)
 
 topBottomGen :: (Sort -> t child) -> Sort -> Gen (t child)
 topBottomGen constructor = pure . constructor

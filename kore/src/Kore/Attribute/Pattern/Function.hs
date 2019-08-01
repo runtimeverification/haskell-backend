@@ -21,9 +21,9 @@ import           Kore.Debug
 import           Kore.Domain.Builtin
 import qualified Kore.Internal.Alias as Internal
 import qualified Kore.Internal.Symbol as Internal
+import           Kore.Syntax
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
-import           Kore.Syntax
 
 {- | A pattern is 'Function' if it matches zero or one elements.
  -}

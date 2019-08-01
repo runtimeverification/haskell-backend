@@ -10,9 +10,9 @@ import qualified Data.Set as Set
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate as Predicate
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
-import qualified Kore.Unification.Substitution as Substitution
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
