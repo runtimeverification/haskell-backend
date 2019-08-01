@@ -271,9 +271,9 @@ removalPredicate destination config =
             FreeVariables.getFreeVariables $ Pattern.freeVariables destination
         extraVariables = Set.toList
             $ Set.difference destinationVariables configVariables
-        extraRegularVariables = [v | ElemVar v <- extraVariables]
+        extraElementVariables = [v | ElemVar v <- extraVariables]
         extraSetVariables = [v | SetVar v <- extraVariables]
-        quantifyPredicate = Predicate.makeMultipleExists extraRegularVariables
+        quantifyPredicate = Predicate.makeMultipleExists extraElementVariables
     in
         if not (null extraSetVariables)
         then error

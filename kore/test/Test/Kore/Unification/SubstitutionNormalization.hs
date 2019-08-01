@@ -126,26 +126,32 @@ test_substitutionNormalization =
             (Error (NonCtorCircularVariableDependency [ElemVar var1]))
             =<< runNormalizeSubstitution
                 [ (ElemVar  var1 , mkApplySymbol f [mkVar var1] ) ]
-    {- TODO(traiansf): maybe check that exception is thrown here
     , testCase "onlyThisLength 2 cycle" $ do
         let
             var1 = v1 Mock.testSort
             varx1 = x1 Mock.testSort
-        assertEqualWithExplanation "" (Substitution [])
-            =<< runNormalizeSubstitution
+        assertErrorIO
+            (assertSubstring ""
+                "order on variables should prevent only-variable-cycles"
+            )
+            (runNormalizeSubstitution
                 [ (ElemVar var1, mkVar varx1)
                 , (ElemVar varx1, mkVar var1)
                 ]
+            )
      , testCase "SetVariable Length 2 cycle" $ do
         let
             var1 = Mock.makeTestUnifiedVariable "@v"
             varx1 = Mock.makeTestUnifiedVariable "@x"
-        assertEqualWithExplanation "" (Substitution [])
-            =<< runNormalizeSubstitution
+        assertErrorIO
+            (assertSubstring ""
+                "order on variables should prevent only-variable-cycles"
+            )
+            (runNormalizeSubstitution
                 [ (var1, mkUnifiedVariable varx1)
                 , (varx1, mkUnifiedVariable var1)
                 ]
-     -}
+            )
      , testCase "Cycle with 'and'" $ do
         let
             var1 = v1 Mock.testSort

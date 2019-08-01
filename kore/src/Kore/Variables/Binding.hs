@@ -112,7 +112,7 @@ forallBinder mapping forall =
         Binder { binderVariable = ElemVar forallVariable } = binder'
         Binder { binderChild    = forallChild    } = binder'
 
-{- | A 'Lens.Lens' to view an 'Mu' as a 'Binder'.
+{- | A 'Lens.Lens' to view a 'Mu' as a 'Binder'.
 
 @muBinder@ may be used to implement 'traverseBinder'.
 
@@ -134,7 +134,7 @@ muBinder mapping mu =
         Binder { binderVariable = SetVar muVar } = binder'
         Binder { binderChild    = muChild    } = binder'
 
-{- | A 'Lens.Lens' to view an 'Nu' as a 'Binder'.
+{- | A 'Lens.Lens' to view a 'Nu' as a 'Binder'.
 
 @nuBinder@ may be used to implement 'traverseBinder'.
 

@@ -49,7 +49,7 @@ import           Kore.Variables.UnifiedVariable
 import qualified Kore.Variables.UnifiedVariable as UnifiedVariable
 
 data TopologicalSortResult variable
-  = RegularCtorCycle ![variable]
+  = MixedCtorCycle ![variable]
   | SetCtorCycle ![variable]
   | Sorted ![variable]
   deriving (Show)
@@ -98,7 +98,7 @@ normalizeSubstitution substitution = do
                           | all UnifiedVariable.isSetVar nonSimplifiableCycle ->
                               Right (SetCtorCycle nonSimplifiableCycle)
                           | otherwise ->
-                              Right (RegularCtorCycle nonSimplifiableCycle)
+                              Right (MixedCtorCycle nonSimplifiableCycle)
                         Right _ ->
                             Left (NonCtorCircularVariableDependency vars)
                 Right result -> Right (Sorted result)
@@ -107,7 +107,7 @@ normalizeSubstitution substitution = do
                 topologicalSort (Set.toList <$> nonSimplifiableDependencies)
     case topologicalSortConverted of
         Left err -> throwError err
-        Right (RegularCtorCycle _) -> return Predicate.bottom
+        Right (MixedCtorCycle _) -> return Predicate.bottom
         Right (Sorted vars) -> ExceptT
             (Right <$> normalizeSortedSubstitution' vars)
         Right (SetCtorCycle vars) -> normalizeSubstitution
