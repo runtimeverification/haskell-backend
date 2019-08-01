@@ -12,17 +12,20 @@ import           Data.Coerce
 import qualified Data.Foldable as Foldable
 import           Data.Maybe
                  ( mapMaybe )
+import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Trusted as Trusted
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-import           Kore.OnePath.Step
-                 ( removalPredicate )
+import           Kore.Predicate.Predicate
+                 ( Predicate )
+import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( OnePathRule (..), RewriteRule (..), RulePattern (..) )
@@ -52,7 +55,7 @@ data ProofState goal
     -- ^ The indicated goal remains after rewriting.
     | Proven
     -- ^ The parent goal was proven.
-    deriving (Eq, Show)
+    deriving (Eq, Show, Ord)
 
 {- | Extract the unproven goals of a 'ProofState'.
 
@@ -89,9 +92,11 @@ data Prim rule
     -- ^ End execution on this branch if the state is 'Proven'.
     | CheckGoalRem
     -- ^ End execution on this branch if the state is 'GoalRem'.
+    | Simplify
     | RemoveDestination
     | TriviallyValid
     | DerivePar [rule]
+    | DeriveSeq [rule]
 
 class Goal goal where
     type Rule goal
@@ -101,6 +106,12 @@ class Goal goal where
         :: MonadSimplify m
         => goal
         -> Strategy.TransitionT (Rule goal) m goal
+
+    applySimplify
+        :: MonadSimplify m
+        => (goal -> ProofState goal)
+        -> goal
+        -> Strategy.TransitionT (Rule goal) m (ProofState goal)
 
     isTriviallyValid :: goal -> Bool
 
@@ -158,6 +169,20 @@ instance
             $ simplifyAndRemoveTopExists result
         let simplifiedResult = MultiOr.filterOr orResult
         pure . OnePathRule
+            $ RulePattern
+                { left = OrPattern.toTermLike simplifiedResult
+                , right = right . coerce $ goal
+                , requires = requires . coerce $ goal
+                , ensures = ensures . coerce $ goal
+                , attributes = attributes . coerce $ goal
+                }
+
+    applySimplify wrapper goal = do
+        orResult <-
+            Monad.Trans.lift
+            $ simplifyAndRemoveTopExists (Pattern.fromTermLike . left . coerce $ goal)
+        let simplifiedResult = MultiOr.filterOr orResult
+        pure . wrapper . OnePathRule
             $ RulePattern
                 { left = OrPattern.toTermLike simplifiedResult
                 , right = right . coerce $ goal
@@ -355,6 +380,11 @@ transitionRule = transitionRuleWorker
     transitionRuleWorker CheckProven Proven = empty
     transitionRuleWorker CheckGoalRem (GoalRem _) = empty
 
+    transitionRuleWorker Simplify (Goal g) =
+        applySimplify Goal g
+    transitionRuleWorker Simplify (GoalRem g) =
+        applySimplify GoalRem g
+
     transitionRuleWorker RemoveDestination (Goal g) =
         GoalRem <$> removeDestination g
 
@@ -364,7 +394,11 @@ transitionRule = transitionRuleWorker
     transitionRuleWorker (DerivePar rules) (GoalRem g) =
         derivePar rules g
 
+    transitionRuleWorker (DeriveSeq rules) (GoalRem g) =
+        derivePar rules g
+
     transitionRuleWorker _ state = return state
+
 
 strategy
     :: [rule]
@@ -394,3 +428,60 @@ strategy claims axioms =
             , DerivePar axioms
             , TriviallyValid
             ]
+
+{- | The predicate to remove the destination from the present configuration.
+ -}
+removalPredicate
+    ::  ( Ord variable
+        , Show variable
+        , Unparse variable
+        , SortedVariable variable
+        )
+    => Pattern.Pattern variable
+    -- ^ Destination
+    -> Pattern.Pattern variable
+    -- ^ Current configuration
+    -> Predicate variable
+removalPredicate destination config =
+    let
+        -- The variables of the destination that are missing from the
+        -- configuration. These are the variables which should be existentially
+        -- quantified in the removal predicate.
+        configVariables =
+            FreeVariables.getFreeVariables $ Pattern.freeVariables config
+        destinationVariables =
+            FreeVariables.getFreeVariables $ Pattern.freeVariables destination
+        extraVariables = Set.difference destinationVariables configVariables
+        quantifyPredicate = Predicate.makeMultipleExists extraVariables
+    in
+        Predicate.makeNotPredicate
+        $ quantifyPredicate
+        $ Predicate.makeCeilPredicate
+        $ mkAnd
+            (Pattern.toTermLike destination)
+            (Pattern.toTermLike config)
+
+onePathFirstStep
+    :: goal
+    -- ^ The destination we're trying to reach.
+    -> [Rule goal]
+    -- ^ normal rewrites
+    -> Strategy (Prim (Rule goal))
+onePathFirstStep goal rules =
+    Strategy.sequence
+        [ Strategy.apply Simplify
+        , Strategy.apply RemoveDestination
+        , Strategy.apply $ DeriveSeq rules
+        , Strategy.apply Simplify
+        ]
+
+onePathFollowupStep
+    :: goal
+    -- ^ The destination we're trying to reach.
+    -> [Rule goal]
+    -- ^ coinductive rewrites
+    -> [Rule goal]
+    -- ^ normal rewrites
+    -> Strategy (Prim (Rule goal))
+onePathFollowupStep destinationRemovalRewrite coinductiveRewrites rewrites =
+    onePathFirstStep destinationRemovalRewrite (coinductiveRewrites ++ rewrites)

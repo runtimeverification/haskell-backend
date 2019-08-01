@@ -11,11 +11,10 @@ module Kore.OnePath.Step
     ( -- * Primitive strategies
       Prim (..)
     , simplify
-    , transitionRule
     , onePathFirstStep
     , onePathFollowupStep
     , strategyPattern
-    , removalPredicate
+    , transitionRule
     ) where
 
 import           Control.Applicative
@@ -25,6 +24,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import qualified Kore.AllPath as AllPath
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Debug
 import qualified Kore.Internal.Conditional as Conditional
@@ -135,6 +135,7 @@ which is actually, exactly the form we want, since we are working with a
 "current pattern" and a destination, not with n different current patterns
 and n destinations.
  -}
+
 transitionRule
     :: forall simplifier
     .  MonadSimplify simplifier
@@ -245,39 +246,35 @@ transitionRule strategy expandedPattern =
             then return Bottom
             else Foldable.asum (pure . proofState <$> nonEmpty)
 
-{- | The predicate to remove the destination from the present configuration.
- -}
-removalPredicate
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        )
-    => Pattern variable
-    -- ^ Destination
-    -> Pattern variable
-    -- ^ Current configuration
-    -> Predicate variable
-removalPredicate destination config =
-    let
-        -- The variables of the destination that are missing from the
-        -- configuration. These are the variables which should be existentially
-        -- quantified in the removal predicate.
-        configVariables =
-            FreeVariables.getFreeVariables $ Pattern.freeVariables config
-        destinationVariables =
-            FreeVariables.getFreeVariables $ Pattern.freeVariables destination
-        extraVariables = Set.difference destinationVariables configVariables
-        quantifyPredicate = Predicate.makeMultipleExists extraVariables
-    in
-        Predicate.makeNotPredicate
-        $ quantifyPredicate
-        $ Predicate.makeCeilPredicate
-        $ TermLike.mkAnd
-            (Pattern.toTermLike destination)
-            (Pattern.toTermLike config)
-
-
+    removalPredicate
+        ::  ( Ord variable
+            , Show variable
+            , Unparse variable
+            , SortedVariable variable
+            )
+        => Pattern.Pattern variable
+        -- ^ Destination
+        -> Pattern.Pattern variable
+        -- ^ Current configuration
+        -> Predicate variable
+    removalPredicate destination config =
+        let
+            -- The variables of the destination that are missing from the
+            -- configuration. These are the variables which should be existentially
+            -- quantified in the removal predicate.
+            configVariables =
+                FreeVariables.getFreeVariables $ Pattern.freeVariables config
+            destinationVariables =
+                FreeVariables.getFreeVariables $ Pattern.freeVariables destination
+            extraVariables = Set.difference destinationVariables configVariables
+            quantifyPredicate = Predicate.makeMultipleExists extraVariables
+        in
+            Predicate.makeNotPredicate
+            $ quantifyPredicate
+            $ Predicate.makeCeilPredicate
+            $ TermLike.mkAnd
+                (Pattern.toTermLike destination)
+                (Pattern.toTermLike config)
 {-| A strategy for doing the first step of a one-path verification.
 For subsequent steps, use 'onePathFollowupStep'.
 
@@ -299,9 +296,7 @@ onePathFirstStep destination rewrites =
         , Strategy.apply (removeDestination destination)
         , Strategy.apply (applyWithRemainder rewrites destination)
         , Strategy.apply simplify
-        ]
-
-{-| A strategy for doing a one-path verification subsequent step.
+        ]{-| A strategy for doing a one-path verification subsequent step.
 For the first step, use 'onePathFirstStep'.
 
 It first removes the destination from the input, then it tries to apply
