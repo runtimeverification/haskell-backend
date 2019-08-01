@@ -66,6 +66,13 @@ matchCeil
 matchCeil (TermLike.CeilF ceil) = Ceil <$> TermLike.ceilChild ceil
 matchCeil _ = Nothing
 
+matchEquals
+    :: TermLikeF variable (Maybe AxiomIdentifier)
+    -> Maybe AxiomIdentifier
+matchEquals (TermLike.EqualsF equals) =
+    Equals <$> TermLike.equalsFirst equals <*> TermLike.equalsSecond equals
+matchEquals _ = Nothing
+
 matchVariable
     :: TermLikeF variable (Maybe AxiomIdentifier)
     -> Maybe AxiomIdentifier
@@ -84,4 +91,5 @@ matchAxiomIdentifier = Recursive.fold matchers
     matchers (_ :< termLikeF) =
             matchApplySymbol termLikeF
         <|> matchCeil        termLikeF
+        <|> matchEquals      termLikeF
         <|> matchVariable    termLikeF
