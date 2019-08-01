@@ -155,44 +155,44 @@ maybeEvaluatePattern
     -> OrPattern variable
     -- ^ The default value
     -> MaybeT simplifier (OrPattern variable)
-maybeEvaluatePattern childrenPredicate termLike defaultValue = tracing $ do
-    BuiltinAndAxiomSimplifier evaluator <-
-        Simplifier.lookupSimplifierAxiom termLike
-    axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
-    substitutionSimplifier <- Simplifier.askSimplifierPredicate
-    simplifier <- Simplifier.askSimplifierTermLike
-    result <-
-        evaluator
-            substitutionSimplifier
-            simplifier
-            axiomIdToEvaluator
-            termLike
-    flattened <- case result of
-        AttemptedAxiom.NotApplicable ->
-            return AttemptedAxiom.NotApplicable
-        AttemptedAxiom.Applied AttemptedAxiomResults
-            { results = orResults
-            , remainders = orRemainders
-            } -> do
-                simplified <- mapM simplifyIfNeeded orResults
-                return
-                    (AttemptedAxiom.Applied AttemptedAxiomResults
-                        { results =
-                            MultiOr.flatten simplified
-                        , remainders = orRemainders
-                        }
-                    )
-    merged <-
-        mergeWithConditionAndSubstitution
-            childrenPredicate
-            flattened
-    case merged of
-        AttemptedAxiom.NotApplicable -> return defaultValue
-        AttemptedAxiom.Applied attemptResults ->
-            return $ MultiOr.merge results remainders
-          where
-            AttemptedAxiomResults { results, remainders } =
-                attemptResults
+maybeEvaluatePattern childrenPredicate termLike defaultValue =
+    Simplifier.lookupSimplifierAxiom termLike
+    >>= \(BuiltinAndAxiomSimplifier evaluator) -> tracing $ do
+        axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
+        substitutionSimplifier <- Simplifier.askSimplifierPredicate
+        simplifier <- Simplifier.askSimplifierTermLike
+        result <-
+            evaluator
+                substitutionSimplifier
+                simplifier
+                axiomIdToEvaluator
+                termLike
+        flattened <- case result of
+            AttemptedAxiom.NotApplicable ->
+                return AttemptedAxiom.NotApplicable
+            AttemptedAxiom.Applied AttemptedAxiomResults
+                { results = orResults
+                , remainders = orRemainders
+                } -> do
+                    simplified <- mapM simplifyIfNeeded orResults
+                    return
+                        (AttemptedAxiom.Applied AttemptedAxiomResults
+                            { results =
+                                MultiOr.flatten simplified
+                            , remainders = orRemainders
+                            }
+                        )
+        merged <-
+            mergeWithConditionAndSubstitution
+                childrenPredicate
+                flattened
+        case merged of
+            AttemptedAxiom.NotApplicable -> return defaultValue
+            AttemptedAxiom.Applied attemptResults ->
+                return $ MultiOr.merge results remainders
+              where
+                AttemptedAxiomResults { results, remainders } =
+                    attemptResults
   where
     identifier :: Maybe AxiomIdentifier
     identifier = AxiomIdentifier.extract termLike
