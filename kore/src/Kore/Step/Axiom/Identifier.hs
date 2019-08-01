@@ -74,6 +74,8 @@ matchAxiomIdentifier = Recursive.fold matchWorker
                 Equals
                     <$> TermLike.equalsFirst equals
                     <*> TermLike.equalsSecond equals
+            TermLike.ExistsF exists ->
+                Exists <$> TermLike.existsChild exists
             TermLike.VariableF _ ->
                 pure Variable
             _ -> empty
