@@ -36,6 +36,13 @@ test_matchAxiomIdentifier =
     , matches "\\equals(x, f(a))"
         (TermLike.mkEquals_ (TermLike.mkVar Mock.x) (Mock.f Mock.a))
         (Equals Variable (Application Mock.fId))
+    , matches "\\exists(x, f(a))"
+        (TermLike.mkExists Mock.x (Mock.f Mock.a))
+        (Exists (Application Mock.fId))
+    , matches "\\exists(x, \\equals(x, f(a)))"
+        (TermLike.mkExists Mock.x
+            $ TermLike.mkEquals_ (TermLike.mkVar Mock.x) (Mock.f Mock.a))
+        (Exists (Equals Variable (Application Mock.fId)))
     ]
 
 match
