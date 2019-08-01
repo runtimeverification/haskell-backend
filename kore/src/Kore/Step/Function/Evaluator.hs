@@ -198,7 +198,7 @@ maybeEvaluatePattern childrenPredicate termLike defaultValue =
     identifier = AxiomIdentifier.extract termLike
 
     tracing =
-        traceNonErrorMonad
+        traceMaybeT
             D_Function_evaluatePattern
             [ debugArg "axiomIdentifier" identifier ]
 
