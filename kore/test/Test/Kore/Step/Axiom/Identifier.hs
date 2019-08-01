@@ -33,6 +33,9 @@ test_matchAxiomIdentifier =
     , notMatches "\\and(f(a), g(a))"
         (TermLike.mkAnd (Mock.f Mock.a) (Mock.g Mock.a))
     , matches "x" (TermLike.mkVar Mock.x) Variable
+    , matches "\\equals(x, f(a))"
+        (TermLike.mkEquals_ (TermLike.mkVar Mock.x) (Mock.f Mock.a))
+        (Equals Variable (Application Mock.fId))
     ]
 
 match

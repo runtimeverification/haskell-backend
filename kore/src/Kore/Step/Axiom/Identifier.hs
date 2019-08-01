@@ -45,6 +45,7 @@ data AxiomIdentifier
     -- as name and which has no parameters.
     | Ceil !AxiomIdentifier
     -- ^ Identifier for a ceil pattern whose child has the given identifier.
+    | Equals !AxiomIdentifier !AxiomIdentifier
     | Variable
     deriving (Eq, Ord, Show)
 
