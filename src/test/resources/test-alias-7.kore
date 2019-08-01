@@ -7,6 +7,6 @@ module TEST-ALIAS-7
   symbol g{S}(Nat{}) : S []
 
   alias f{S}(Nat{}) : S
-  where f{S}(@N:Nat{}) := g{S}(@N:Nat{}) []
+  where f{S}(N:Nat{}) := g{S}(N:Nat{}) []
 
 endmodule []

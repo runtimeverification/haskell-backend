@@ -878,7 +878,7 @@ aliasSentenceRemainderParser = do
     resultSort <- objectSortParser
     mlLexemeParser "where"
     -- Note: constraints for left pattern checked in verifySentence
-    leftPattern <- applicationParser variableParser
+    leftPattern <- applicationParser singletonVariableParser
     mlLexemeParser ":="
     rightPattern <- korePatternParser
     attributes <- attributesParser
