@@ -1,12 +1,12 @@
-module Test.Kore.Step.Axiom.Identifier where
+module Test.Kore.Step.Axiom.Identifier
+    ( test_matchAxiomIdentifier ) where
 
 import Test.Tasty
-       ( TestTree )
 import Test.Tasty.HUnit
-       ( testCase )
+
+import qualified GHC.Stack as GHC
 
 import           Kore.Internal.TermLike
-                 ( TermLike, mkAnd, mkCeil_ )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -18,29 +18,44 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
 
-test_axiomIdentifier :: [TestTree]
-test_axiomIdentifier =
-    [ Mock.f Mock.a `hasId` AxiomIdentifier.Application Mock.fId
-    , Mock.sortInjection10 Mock.a
-        `hasId` AxiomIdentifier.Application Mock.sortInjectionId
-    , mkCeil_ (Mock.f Mock.a)
-        `hasId` AxiomIdentifier.Ceil (AxiomIdentifier.Application Mock.fId)
-    , hasNoId $ mkCeil_ (mkCeil_ (Mock.f Mock.a))
-    , hasNoId $ mkAnd (Mock.f Mock.a) (Mock.g Mock.a)
+test_matchAxiomIdentifier :: [TestTree]
+test_matchAxiomIdentifier =
+    [ matches "f(a)"
+        (Mock.f Mock.a)
+        (AxiomIdentifier.Application Mock.fId)
+    , matches "inj(a)"
+        (Mock.sortInjection10 Mock.a)
+        (AxiomIdentifier.Application Mock.sortInjectionId)
+    , matches "\\ceil(f(a))"
+        (mkCeil_ (Mock.f Mock.a))
+        (AxiomIdentifier.Ceil (AxiomIdentifier.Application Mock.fId))
+    , notMatches "\\ceil(\\ceil(f(a)))" $ mkCeil_ (mkCeil_ (Mock.f Mock.a))
+    , notMatches "\\and(f(a), g(a))" $ mkAnd (Mock.f Mock.a) (Mock.g Mock.a)
+    , matches "x" (mkVar Mock.x) AxiomIdentifier.Variable
     ]
 
-hasId :: TermLike Variable -> AxiomIdentifier -> TestTree
-hasId input expected =
-    testCase "AxiomId.extract evaluation"
-        (assertEqualWithExplanation "has id"
-            (Just expected)
-            (AxiomIdentifier.matchAxiomIdentifier input)
-        )
+match
+    :: GHC.HasCallStack
+    => TestName
+    -> TermLike Variable
+    -> Maybe AxiomIdentifier
+    -> TestTree
+match name input expect =
+    testCase name
+    $ assertEqualWithExplanation "" expect
+    $ AxiomIdentifier.matchAxiomIdentifier input
 
-hasNoId :: TermLike Variable -> TestTree
-hasNoId input =
-    testCase "AxiomId.extract evaluation"
-        (assertEqualWithExplanation "has no id"
-            Nothing
-            (AxiomIdentifier.matchAxiomIdentifier input)
-        )
+matches
+    :: GHC.HasCallStack
+    => TestName
+    -> TermLike Variable
+    -> AxiomIdentifier
+    -> TestTree
+matches name input expect = match ("matches " ++ name) input (Just expect)
+
+notMatches
+    :: GHC.HasCallStack
+    => TestName
+    -> TermLike Variable
+    -> TestTree
+notMatches name input = match ("does not match " ++ name) input Nothing
