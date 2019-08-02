@@ -414,8 +414,10 @@ strategy claims axioms =
             [ CheckProven
             , CheckGoalRem
             , RemoveDestination
+            , Simplify
             , TriviallyValid
             , DerivePar axioms
+            , Simplify
             , TriviallyValid
             ]
     nextStep =
@@ -423,9 +425,11 @@ strategy claims axioms =
             [ CheckProven
             , CheckGoalRem
             , RemoveDestination
+            , Simplify
             , TriviallyValid
             , DerivePar claims
             , DerivePar axioms
+            , Simplify
             , TriviallyValid
             ]
 
