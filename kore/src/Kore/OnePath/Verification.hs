@@ -33,19 +33,13 @@ import           Data.Maybe
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Trusted as Trusted
 import           Kore.Debug
+import           Kore.Goal
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
                  ( Conditional (Conditional), Pattern )
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Pattern as Conditional
                  ( Conditional (..) )
-import           Kore.OnePath.Step
-                 ( Prim, onePathFirstStep, onePathFollowupStep )
-import qualified Kore.OnePath.Step as OnePath
-                 ( transitionRule )
-import           Kore.OnePath.StrategyPattern
-                 ( CommonStrategyPattern )
-import qualified Kore.OnePath.StrategyPattern as StrategyPattern
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
@@ -95,6 +89,8 @@ decision is subject to change without notice.
 
  -}
 
+type CommonProofState = ProofState (Pattern Variable)
+
 {- | Class type for claim-like rules
 -}
 type Claim claim =
@@ -138,10 +134,7 @@ verify
     :: MonadSimplify m
     =>  (  Pattern Variable
         -> [Strategy
-            (Prim
-                (Pattern Variable)
-                (RewriteRule Variable)
-            )
+            (Prim (RewriteRule Variable))
            ]
         )
     -- ^ Creates a one-step strategy from a target pattern. See
@@ -169,12 +162,7 @@ defaultStrategy
     -- The claims that we want to prove
     -> [Axiom]
     -> Pattern Variable
-    -> [Strategy
-        (Prim
-            (Pattern Variable)
-            (RewriteRule Variable)
-        )
-       ]
+    -> [Strategy (Prim (RewriteRule Variable))]
 defaultStrategy
     claims
     axioms
@@ -199,7 +187,7 @@ verifyClaim
     :: forall m
     .  MonadSimplify m
     =>  (  Pattern Variable
-        -> [Strategy (Prim (Pattern Variable) (RewriteRule Variable))]
+        -> [Strategy (Prim (RewriteRule Variable))]
         )
     -> (RewriteRule Variable, Limit Natural)
     -> ExceptT (Pattern Variable) m ()
@@ -218,9 +206,9 @@ verifyClaim
                     , substitution = mempty
                     }
                 )
-        startPattern :: CommonStrategyPattern
+        startPattern :: CommonProofState
         startPattern =
-            StrategyPattern.RewritePattern
+            Goal
                 Conditional
                     {term = left, predicate = requires, substitution = mempty}
     executionGraph <- runStrategy transitionRule' strategy startPattern
@@ -233,25 +221,16 @@ verifyClaim
   where
     transitionRule'
         :: Prim (Pattern Variable) (RewriteRule Variable)
-        -> CommonStrategyPattern
-        -> TransitionT (RewriteRule Variable) (Verifier m) CommonStrategyPattern
+        -> CommonProofState
+        -> TransitionT (RewriteRule Variable) (Verifier m) CommonProofState
     transitionRule' prim proofState = do
         transitions <-
             Monad.Trans.lift . Monad.Trans.lift . runTransitionT
-            $ OnePath.transitionRule prim proofState
+            $ transitionRule prim proofState
         let (configs, _) = unzip transitions
-            stuckConfigs = mapMaybe StrategyPattern.extractStuck configs
+            stuckConfigs = mapMaybe extractGoalRem configs
         Foldable.traverse_ Monad.Except.throwError stuckConfigs
         Transition.scatter transitions
-
--- | Find all final nodes of the execution graph that did not reach the goal
-unprovenNodes
-    :: ExecutionGraph (StrategyPattern.StrategyPattern term) rule
-    -> MultiOr.MultiOr term
-unprovenNodes executionGraph =
-    MultiOr.MultiOr
-    $ mapMaybe StrategyPattern.extractUnproven
-    $ pickFinal executionGraph
 
 -- | Attempts to perform a single proof step, starting at the configuration
 -- in the execution graph designated by the provided node. Re-constructs the
@@ -266,11 +245,11 @@ verifyClaimStep
     -- ^ list of claims in the spec module
     -> [Axiom]
     -- ^ list of axioms in the main module
-    -> ExecutionGraph CommonStrategyPattern (RewriteRule Variable)
+    -> ExecutionGraph CommonProofState (RewriteRule Variable)
     -- ^ current execution graph
     -> Graph.Node
     -- ^ selected node in the graph
-    -> m (ExecutionGraph CommonStrategyPattern (RewriteRule Variable))
+    -> m (ExecutionGraph CommonProofState (RewriteRule Variable))
 verifyClaimStep
     target
     claims
@@ -285,9 +264,9 @@ verifyClaimStep
   where
     transitionRule'
         :: Prim (Pattern Variable) (RewriteRule Variable)
-        -> CommonStrategyPattern
-        -> TransitionT (RewriteRule Variable) m CommonStrategyPattern
-    transitionRule' = OnePath.transitionRule
+        -> CommonProofState
+        -> TransitionT (RewriteRule Variable) m CommonProofState
+    transitionRule' = transitionRule
 
     strategy' :: Strategy (Prim (Pattern Variable) (RewriteRule Variable))
     strategy'
