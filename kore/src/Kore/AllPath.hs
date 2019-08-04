@@ -245,7 +245,10 @@ instance
                            --         (ProofState (OnePathRule variable))
                             checkRemainder remainder = do
                                 newClaim <- removeDestination remainder
-                                pure . GoalRem $ newClaim
+                                let term = left . coerce $ newClaim
+                                if isBottom term
+                                   then pure Proven
+                                   else pure . GoalRem $ newClaim
                            -- traverseConfigs
                            --     :: Result.Results rule (OnePathRule variable)
                            --     -> Strategy.TransitionT
@@ -395,7 +398,7 @@ transitionRule = transitionRuleWorker
         derivePar rules g
 
     transitionRuleWorker (DeriveSeq rules) (GoalRem g) =
-        derivePar rules g
+        deriveSeq rules g
 
     transitionRuleWorker _ state = return state
 
@@ -464,28 +467,3 @@ removalPredicate destination config =
         $ mkAnd
             (Pattern.toTermLike destination)
             (Pattern.toTermLike config)
-
-onePathFirstStep
-    :: goal
-    -- ^ The destination we're trying to reach.
-    -> [Rule goal]
-    -- ^ normal rewrites
-    -> Strategy (Prim (Rule goal))
-onePathFirstStep goal rules =
-    Strategy.sequence
-        [ Strategy.apply Simplify
-        , Strategy.apply RemoveDestination
-        , Strategy.apply $ DeriveSeq rules
-        , Strategy.apply Simplify
-        ]
-
-onePathFollowupStep
-    :: goal
-    -- ^ The destination we're trying to reach.
-    -> [Rule goal]
-    -- ^ coinductive rewrites
-    -> [Rule goal]
-    -- ^ normal rewrites
-    -> Strategy (Prim (Rule goal))
-onePathFollowupStep destinationRemovalRewrite coinductiveRewrites rewrites =
-    onePathFirstStep destinationRemovalRewrite (coinductiveRewrites ++ rewrites)
