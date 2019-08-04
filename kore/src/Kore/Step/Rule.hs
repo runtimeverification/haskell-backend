@@ -37,7 +37,6 @@ module Kore.Step.Rule
     ) where
 
 import qualified Data.Default as Default
-import           Data.Hashable
 import           Data.Map.Strict
                  ( Map )
 import           Data.Maybe
@@ -46,8 +45,6 @@ import           Data.Text
 import           Data.Text.Prettyprint.Doc
                  ( Pretty )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Generics
-                 ( Generic )
 import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Axiom as Attribute

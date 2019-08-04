@@ -33,16 +33,21 @@ import           Data.Maybe
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Trusted as Trusted
 import           Kore.Debug
-import           Kore.Goal
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
                  ( Conditional (Conditional), Pattern )
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Pattern as Conditional
                  ( Conditional (..) )
+import           Kore.OnePath.Step
+                 ( Prim, onePathFirstStep, onePathFollowupStep )
+import qualified Kore.OnePath.Step as OnePath
+                 ( transitionRule )
+import           Kore.OnePath.StrategyPattern
+                 ( CommonStrategyPattern )
+import qualified Kore.OnePath.StrategyPattern as StrategyPattern
 import           Kore.Step.Rule
-                 ( OnePathRule (..), RewriteRule (RewriteRule),
-                 RulePattern (RulePattern) )
+                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
@@ -118,7 +123,7 @@ The action may throw an exception if the proof fails; the exception is a single
 @'Pattern' 'Variable'@, the first unprovable configuration.
 
  -}
-type Verifier m = ExceptT (OnePathRule Variable) m
+type Verifier m = ExceptT (Pattern Variable) m
 
 {- | Verifies a set of claims. When it verifies a certain claim, after the
 first step, it also uses the claims as axioms (i.e. it does coinductive proofs).
@@ -130,44 +135,94 @@ didn't manage to verify a claim within the its maximum number of steps.
 If the verification succeeds, it returns ().
 -}
 verify
-    :: forall m
-    .  MonadSimplify m
-    =>  (  OnePathRule Variable
+    :: MonadSimplify m
+    =>  (  Pattern Variable
         -> [Strategy
-            (Prim (RewriteRule Variable)
+            (Prim
+                (Pattern Variable)
+                (RewriteRule Variable)
             )
            ]
         )
     -- ^ Creates a one-step strategy from a target pattern. See
     -- 'defaultStrategy'.
-    -> [(OnePathRule Variable, Limit Natural)]
+    -> [(RewriteRule Variable, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
-    -> ExceptT (OnePathRule Variable) m ()
+    -> ExceptT (Pattern Variable) m ()
 verify strategyBuilder =
     mapM_ (verifyClaim strategyBuilder)
+
+{- | Default implementation for a one-path strategy. You can apply it to the
+first two arguments and pass the resulting function to 'verify'.
+
+Things to note when implementing your own:
+
+1. The first step does not use the reachability claims
+
+2. You can return an infinite list.
+-}
+defaultStrategy
+    :: forall claim
+    .  Claim claim
+    => [claim]
+    -- The claims that we want to prove
+    -> [Axiom]
+    -> Pattern Variable
+    -> [Strategy
+        (Prim
+            (Pattern Variable)
+            (RewriteRule Variable)
+        )
+       ]
+defaultStrategy
+    claims
+    axioms
+    target
+  =
+    onePathFirstStep target rewrites
+    : repeat
+        (onePathFollowupStep
+            target
+            coinductiveRewrites
+            rewrites
+        )
+  where
+    rewrites :: [RewriteRule Variable]
+    rewrites = map unwrap axioms
+      where
+        unwrap (Axiom a) = a
+    coinductiveRewrites :: [RewriteRule Variable]
+    coinductiveRewrites = map (RewriteRule . coerce) claims
 
 verifyClaim
     :: forall m
     .  MonadSimplify m
-    =>  (  OnePathRule Variable
-        -> [Strategy (Prim (RewriteRule Variable))]
+    =>  (  Pattern Variable
+        -> [Strategy (Prim (Pattern Variable) (RewriteRule Variable))]
         )
-    -> (OnePathRule Variable, Limit Natural)
-    -> ExceptT (OnePathRule Variable) m ()
+    -> (RewriteRule Variable, Limit Natural)
+    -> ExceptT (Pattern Variable) m ()
 verifyClaim
     strategyBuilder
-    (rule@(OnePathRule RulePattern {left, right, requires, ensures}), stepLimit)
+    (rule@(RewriteRule RulePattern {left, right, requires, ensures}), stepLimit)
   = traceExceptT D_OnePath_verifyClaim [debugArg "rule" rule] $ do
     let
         strategy =
             Limit.takeWithin
                 stepLimit
-                (strategyBuilder rule)
-        startPattern :: ProofState (OnePathRule Variable)
+                (strategyBuilder
+                    Conditional
+                    { term = right
+                    , predicate = ensures
+                    , substitution = mempty
+                    }
+                )
+        startPattern :: CommonStrategyPattern
         startPattern =
-                Goal rule
-
+            StrategyPattern.RewritePattern
+                Conditional
+                    {term = left, predicate = requires, substitution = mempty}
     executionGraph <- runStrategy transitionRule' strategy startPattern
     -- Throw the first unproven configuration as an error.
     -- This might appear to be unnecessary because transitionRule' (below)
@@ -177,34 +232,45 @@ verifyClaim
     Foldable.traverse_ Monad.Except.throwError (unprovenNodes executionGraph)
   where
     transitionRule'
-        :: Prim (RewriteRule Variable)
-        -> ProofState (OnePathRule Variable)
-        -> TransitionT (RewriteRule Variable) (Verifier m) (ProofState (OnePathRule Variable))
+        :: Prim (Pattern Variable) (RewriteRule Variable)
+        -> CommonStrategyPattern
+        -> TransitionT (RewriteRule Variable) (Verifier m) CommonStrategyPattern
     transitionRule' prim proofState = do
         transitions <-
             Monad.Trans.lift . Monad.Trans.lift . runTransitionT
-            $ transitionRule prim proofState
+            $ OnePath.transitionRule prim proofState
         let (configs, _) = unzip transitions
-            stuckConfigs = mapMaybe extractUnproven configs
+            stuckConfigs = mapMaybe StrategyPattern.extractStuck configs
         Foldable.traverse_ Monad.Except.throwError stuckConfigs
         Transition.scatter transitions
+
+-- | Find all final nodes of the execution graph that did not reach the goal
+unprovenNodes
+    :: ExecutionGraph (StrategyPattern.StrategyPattern term) rule
+    -> MultiOr.MultiOr term
+unprovenNodes executionGraph =
+    MultiOr.MultiOr
+    $ mapMaybe StrategyPattern.extractUnproven
+    $ pickFinal executionGraph
 
 -- | Attempts to perform a single proof step, starting at the configuration
 -- in the execution graph designated by the provided node. Re-constructs the
 -- execution graph by inserting this step.
 verifyClaimStep
-    :: MonadSimplify m
-    => OnePathRule Variable
+    :: forall claim m
+    .  Claim claim
+    => MonadSimplify m
+    => claim
     -- ^ claim that is being proven
-    -> [OnePathRule Variable]
+    -> [claim]
     -- ^ list of claims in the spec module
-    -> [RewriteRule Variable]
+    -> [Axiom]
     -- ^ list of axioms in the main module
-    -> ExecutionGraph (ProofState (OnePathRule Variable)) (RewriteRule Variable)
+    -> ExecutionGraph CommonStrategyPattern (RewriteRule Variable)
     -- ^ current execution graph
     -> Graph.Node
     -- ^ selected node in the graph
-    -> m (ExecutionGraph (ProofState (OnePathRule Variable)) (RewriteRule Variable))
+    -> m (ExecutionGraph CommonStrategyPattern (RewriteRule Variable))
 verifyClaimStep
     target
     claims
@@ -218,21 +284,30 @@ verifyClaimStep
         node
   where
     transitionRule'
-        :: Prim (Rule goal)
-        -> ProofState goal
-        -> TransitionT (Rule goal) m (ProofState goal)
-    transitionRule' = transitionRule
+        :: Prim (Pattern Variable) (RewriteRule Variable)
+        -> CommonStrategyPattern
+        -> TransitionT (RewriteRule Variable) m CommonStrategyPattern
+    transitionRule' = OnePath.transitionRule
 
-    strategy' :: Strategy (Prim (RewriteRule Variable))
+    strategy' :: Strategy (Prim (Pattern Variable) (RewriteRule Variable))
     strategy'
         | isRoot =
-            firstStep
-                (RewriteRule . coerce <$> claims)
-                axioms
+            onePathFirstStep targetPattern rewrites
         | otherwise =
-            nextStep
+            onePathFollowupStep
+                targetPattern
                 (RewriteRule . coerce <$> claims)
-                axioms
+                rewrites
+
+    rewrites :: [RewriteRule Variable]
+    rewrites = coerce <$> axioms
+
+    targetPattern :: Pattern Variable
+    targetPattern =
+        Pattern.fromTermLike
+            . right
+            . coerce
+            $ target
 
     isRoot :: Bool
     isRoot = node == root
