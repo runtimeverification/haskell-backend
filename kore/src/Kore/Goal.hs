@@ -2,7 +2,7 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
-module Kore.AllPath where
+module Kore.Goal where
 
 import           Control.Applicative
                  ( Alternative (..) )
@@ -10,10 +10,12 @@ import qualified Control.Monad.Trans as Monad.Trans
 import           Data.Coerce
                  ( coerce )
 import qualified Data.Foldable as Foldable
+import           Data.Hashable
 import           Data.Maybe
                  ( mapMaybe )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import           GHC.Generics
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
@@ -55,7 +57,9 @@ data ProofState goal
     -- ^ The indicated goal remains after rewriting.
     | Proven
     -- ^ The parent goal was proven.
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Generic)
+
+instance Hashable goal => Hashable (ProofState goal)
 
 {- | Extract the unproven goals of a 'ProofState'.
 
@@ -130,6 +134,107 @@ class Goal goal where
         => [Rule goal]
         -> goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+
+transitionRule
+    :: (MonadSimplify m, Goal goal)
+    => Prim (Rule goal)
+    -> ProofState goal
+    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+transitionRule = transitionRuleWorker
+  where
+    transitionRuleWorker CheckProven Proven = empty
+    transitionRuleWorker CheckGoalRem (GoalRem _) = empty
+
+    transitionRuleWorker Simplify (Goal g) =
+        applySimplify Goal g
+    transitionRuleWorker Simplify (GoalRem g) =
+        applySimplify GoalRem g
+
+    transitionRuleWorker RemoveDestination (Goal g) =
+        GoalRem <$> removeDestination g
+
+    transitionRuleWorker TriviallyValid (GoalRem g)
+      | isTriviallyValid g = return Proven
+
+    transitionRuleWorker (DerivePar rules) (GoalRem g) =
+        derivePar rules g
+
+    transitionRuleWorker (DeriveSeq rules) (GoalRem g) =
+        deriveSeq rules g
+
+    transitionRuleWorker _ state = return state
+
+
+strategy
+    :: [rule]
+    -- ^ Claims
+    -> [rule]
+    -- ^ Axioms
+    -> [Strategy (Prim rule)]
+strategy claims axioms =
+    (firstStep claims axioms)
+    : (repeat $ nextStep claims axioms)
+
+firstStep
+    :: [rule] -> [rule] -> Strategy (Prim rule)
+firstStep claims axioms =
+    (Strategy.sequence . map Strategy.apply)
+        [ CheckProven
+        , CheckGoalRem
+        , RemoveDestination
+        , Simplify
+        , TriviallyValid
+        , DerivePar axioms
+        , Simplify
+        , TriviallyValid
+        ]
+
+nextStep
+    :: [rule] -> [rule] -> Strategy (Prim rule)
+nextStep claims axioms =
+    (Strategy.sequence . map Strategy.apply)
+        [ CheckProven
+        , CheckGoalRem
+        , RemoveDestination
+        , Simplify
+        , TriviallyValid
+        , DerivePar claims
+        , DerivePar axioms
+        , Simplify
+        , TriviallyValid
+        ]
+
+{- | The predicate to remove the destination from the present configuration.
+ -}
+removalPredicate
+    ::  ( Ord variable
+        , Show variable
+        , Unparse variable
+        , SortedVariable variable
+        )
+    => Pattern.Pattern variable
+    -- ^ Destination
+    -> Pattern.Pattern variable
+    -- ^ Current configuration
+    -> Predicate variable
+removalPredicate destination config =
+    let
+        -- The variables of the destination that are missing from the
+        -- configuration. These are the variables which should be existentially
+        -- quantified in the removal predicate.
+        configVariables =
+            FreeVariables.getFreeVariables $ Pattern.freeVariables config
+        destinationVariables =
+            FreeVariables.getFreeVariables $ Pattern.freeVariables destination
+        extraVariables = Set.difference destinationVariables configVariables
+        quantifyPredicate = Predicate.makeMultipleExists extraVariables
+    in
+        Predicate.makeNotPredicate
+        $ quantifyPredicate
+        $ Predicate.makeCeilPredicate
+        $ mkAnd
+            (Pattern.toTermLike destination)
+            (Pattern.toTermLike config)
 
 instance
     ( SortedVariable variable
@@ -372,98 +477,3 @@ instance
                                 )
                             >>= Result.transitionResults
                         pure results'
-
-transitionRule
-    :: (MonadSimplify m, Goal goal)
-    => Prim (Rule goal)
-    -> ProofState goal
-    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
-transitionRule = transitionRuleWorker
-  where
-    transitionRuleWorker CheckProven Proven = empty
-    transitionRuleWorker CheckGoalRem (GoalRem _) = empty
-
-    transitionRuleWorker Simplify (Goal g) =
-        applySimplify Goal g
-    transitionRuleWorker Simplify (GoalRem g) =
-        applySimplify GoalRem g
-
-    transitionRuleWorker RemoveDestination (Goal g) =
-        GoalRem <$> removeDestination g
-
-    transitionRuleWorker TriviallyValid (GoalRem g)
-      | isTriviallyValid g = return Proven
-
-    transitionRuleWorker (DerivePar rules) (GoalRem g) =
-        derivePar rules g
-
-    transitionRuleWorker (DeriveSeq rules) (GoalRem g) =
-        deriveSeq rules g
-
-    transitionRuleWorker _ state = return state
-
-
-strategy
-    :: [rule]
-    -- ^ Claims
-    -> [rule]
-    -- ^ Axioms
-    -> [Strategy (Prim rule)]
-strategy claims axioms =
-    firstStep : repeat nextStep
-  where
-    firstStep =
-        (Strategy.sequence . map Strategy.apply)
-            [ CheckProven
-            , CheckGoalRem
-            , RemoveDestination
-            , Simplify
-            , TriviallyValid
-            , DerivePar axioms
-            , Simplify
-            , TriviallyValid
-            ]
-    nextStep =
-        (Strategy.sequence . map Strategy.apply)
-            [ CheckProven
-            , CheckGoalRem
-            , RemoveDestination
-            , Simplify
-            , TriviallyValid
-            , DerivePar claims
-            , DerivePar axioms
-            , Simplify
-            , TriviallyValid
-            ]
-
-{- | The predicate to remove the destination from the present configuration.
- -}
-removalPredicate
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        )
-    => Pattern.Pattern variable
-    -- ^ Destination
-    -> Pattern.Pattern variable
-    -- ^ Current configuration
-    -> Predicate variable
-removalPredicate destination config =
-    let
-        -- The variables of the destination that are missing from the
-        -- configuration. These are the variables which should be existentially
-        -- quantified in the removal predicate.
-        configVariables =
-            FreeVariables.getFreeVariables $ Pattern.freeVariables config
-        destinationVariables =
-            FreeVariables.getFreeVariables $ Pattern.freeVariables destination
-        extraVariables = Set.difference destinationVariables configVariables
-        quantifyPredicate = Predicate.makeMultipleExists extraVariables
-    in
-        Predicate.makeNotPredicate
-        $ quantifyPredicate
-        $ Predicate.makeCeilPredicate
-        $ mkAnd
-            (Pattern.toTermLike destination)
-            (Pattern.toTermLike config)
