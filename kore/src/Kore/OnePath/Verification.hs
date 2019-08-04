@@ -155,32 +155,30 @@ Things to note when implementing your own:
 
 2. You can return an infinite list.
 -}
+
 defaultStrategy
-    :: forall claim
-    .  Claim claim
-    => [claim]
+    :: forall goal
+    .  Goal goal
+    => Coercible goal (RulePattern Variable)
+    => Rule goal ~ RewriteRule Variable
+    => [goal]
     -- The claims that we want to prove
-    -> [Axiom]
-    -> Pattern Variable
-    -> [Strategy (Prim (RewriteRule Variable))]
+    -> [Rule goal]
+    -> [Strategy (Prim (Rule goal))]
 defaultStrategy
     claims
     axioms
-    target
   =
-    onePathFirstStep target rewrites
+    onePathFirstStep rewrites
     : repeat
         (onePathFollowupStep
-            target
             coinductiveRewrites
             rewrites
         )
   where
-    rewrites :: [RewriteRule Variable]
-    rewrites = map unwrap axioms
-      where
-        unwrap (Axiom a) = a
-    coinductiveRewrites :: [RewriteRule Variable]
+    rewrites :: [Rule goal]
+    rewrites = axioms
+    coinductiveRewrites :: [Rule goal]
     coinductiveRewrites = map (RewriteRule . coerce) claims
 
 verifyClaim
@@ -220,7 +218,7 @@ verifyClaim
     Foldable.traverse_ Monad.Except.throwError (unprovenNodes executionGraph)
   where
     transitionRule'
-        :: Prim (Pattern Variable) (RewriteRule Variable)
+        :: Prim (RewriteRule Variable)
         -> CommonProofState
         -> TransitionT (RewriteRule Variable) (Verifier m) CommonProofState
     transitionRule' prim proofState = do
@@ -263,12 +261,12 @@ verifyClaimStep
         node
   where
     transitionRule'
-        :: Prim (Pattern Variable) (RewriteRule Variable)
+        :: Prim (RewriteRule Variable)
         -> CommonProofState
         -> TransitionT (RewriteRule Variable) m CommonProofState
     transitionRule' = transitionRule
 
-    strategy' :: Strategy (Prim (Pattern Variable) (RewriteRule Variable))
+    strategy' :: Strategy (Prim (RewriteRule Variable))
     strategy'
         | isRoot =
             onePathFirstStep targetPattern rewrites
