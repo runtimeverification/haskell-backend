@@ -19,6 +19,7 @@ import Numeric.Natural
        ( Natural )
 
 import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Goal as Goal
 import           Kore.Internal.Pattern
                  ( Conditional (Conditional) )
 import           Kore.Internal.Pattern as Conditional
@@ -26,7 +27,6 @@ import           Kore.Internal.Pattern as Conditional
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import qualified Kore.OnePath.Verification as OnePath
-import qualified Kore.OnePath.Verification as Claim
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeNotPredicate, makeTruePredicate )
 import           Kore.Step.Rule
@@ -380,4 +380,4 @@ runVerification stepLimit axioms claims =
   where
     mockEnv = Mock.env
     applyStepLimit claim = (RewriteRule $ coerce claim, stepLimit)
-    selectUntrusted = filter (not . Claim.isTrusted)
+    selectUntrusted = filter (not . Goal.isTrusted)

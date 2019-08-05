@@ -66,9 +66,8 @@ import qualified Kore.Internal.Predicate as IPredicate
 import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Logger.Output as Logger
-import           Kore.OnePath.StrategyPattern
 import           Kore.OnePath.Verification
-                 ( Axiom (..) )
+                 ( CommonProofState )
 import           Kore.Step.Rule
                  ( RewriteRule (..) )
 import           Kore.Step.Simplification.Data
@@ -365,15 +364,15 @@ shouldStore =
 -- Type synonym for the actual type of the execution graph.
 type ExecutionGraph =
     Strategy.ExecutionGraph
-        CommonStrategyPattern
+        CommonProofState
         (RewriteRule Variable)
 
 type InnerGraph =
-    Gr CommonStrategyPattern (Seq (RewriteRule Variable))
+    Gr CommonProofState (Seq (RewriteRule Variable))
 
 -- | State for the repl.
-data ReplState claim = ReplState
-    { axioms     :: [Axiom]
+data ReplState claim axiom = ReplState
+    { axioms     :: [axiom]
     -- ^ List of available axioms
     , claims     :: [claim]
     -- ^ List of claims to be proven
@@ -399,11 +398,11 @@ data ReplState claim = ReplState
     deriving (GHC.Generic)
 
 -- | Configuration environment for the repl.
-data Config claim m = Config
+data Config claim axiom m = Config
     { stepper
         :: claim
         -> [claim]
-        -> [Axiom]
+        -> [axiom]
         -> ExecutionGraph
         -> ReplNode
         -> m ExecutionGraph
