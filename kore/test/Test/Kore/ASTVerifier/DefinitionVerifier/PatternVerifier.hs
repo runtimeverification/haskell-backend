@@ -108,7 +108,7 @@ test_patternVerifier =
         (ExpectedErrorMessage "The declared sort is different.")
         (ErrorStack
             [ "\\exists 'ObjectVariable' (<test data>)"
-            , "variable 'ObjectVariable' (<test data>)"
+            , "element variable 'ObjectVariable' (<test data>)"
             , "(<test data>, <test data>)"
             ]
         )
@@ -140,14 +140,14 @@ test_patternVerifier =
         (ExpectedErrorMessage "The declared sort is different.")
         (ErrorStack
             [ "\\mu (<test data>)"
-            , "variable 'ObjectVariable' (<test data>)"
+            , "set variable '@ObjectVariable' (<test data>)"
             , "(<test data>, <test data>)"
             ]
         )
         (MuF Mu
             { muVariable = objectSetVariable'
-            , muChild =
-                Builtin.externalizePattern $ Internal.mkElemVar anotherVariable
+            , muChild = Builtin.externalizePattern $
+                Internal.mkSetVar anotherSetVariable
             }
         )
         (NamePrefix "dummy")
@@ -170,14 +170,14 @@ test_patternVerifier =
         (ExpectedErrorMessage "The declared sort is different.")
         (ErrorStack
             [ "\\nu (<test data>)"
-            , "variable 'ObjectVariable' (<test data>)"
+            , "set variable '@ObjectVariable' (<test data>)"
             , "(<test data>, <test data>)"
             ]
         )
         (NuF Nu
             { nuVariable = objectSetVariable'
-            , nuChild =
-                Builtin.externalizePattern $ Internal.mkElemVar anotherVariable
+            , nuChild = Builtin.externalizePattern $
+                Internal.mkSetVar anotherSetVariable
             }
         )
         (NamePrefix "dummy")
@@ -443,7 +443,7 @@ test_patternVerifier =
         ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Object pattern - unquantified variable"
-        (VariableF (ElemVar $ objectVariable'))
+        (VariableF (ElemVar objectVariable'))
         (NamePrefix "dummy")
         (TestedPatternSort objectSort)
         (SortVariablesThatMustBeDeclared [])
@@ -684,6 +684,7 @@ test_patternVerifier =
     anotherSort :: Sort
     anotherSort = simpleSort anotherSortName
     anotherVariable = variable objectVariableName anotherSort
+    anotherSetVariable = setVariable objectVariableName anotherSort
     anotherSortSentence = simpleSortSentence anotherSortName
     anotherMetaSort = updateAstLocation stringMetaSort AstLocationTest
     anotherObjectSortName2 = SortName "anotherSort2"

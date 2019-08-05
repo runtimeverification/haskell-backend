@@ -241,7 +241,7 @@ setVariableParserTests =
                 }
         , success "@v:s1{s2}"
             $ SetVariable Variable
-                { variableName = testId "v"
+                { variableName = testId "@v"
                 , variableSort =
                     SortActualSort SortActual
                         { sortActualName = testId "s1"
