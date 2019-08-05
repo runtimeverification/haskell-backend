@@ -17,11 +17,10 @@ import qualified GHC.Generics as GHC
 import Kore.Debug
 import Kore.Unparser
 import Kore.Variables.AsVariable
-import Kore.Variables.UnifiedVariable
 
 -- | Applicative-Kore set variables
-newtype SetVariable variable = SetVariable { getVariable :: variable }
-    deriving (Eq, GHC.Generic, Ord, Show)
+newtype SetVariable variable = SetVariable variable
+    deriving (Eq, GHC.Generic, Ord, Show, Functor, Foldable, Traversable)
 
 instance Hashable variable => Hashable (SetVariable variable)
 
@@ -38,7 +37,5 @@ instance Unparse variable => Unparse (SetVariable variable) where
     unparse2 = unparse2 . asVariable
 
 instance AsVariable SetVariable where
-    asVariable = getVariable
+    asVariable (SetVariable v) = v
 
-instance AsUnifiedVariable SetVariable where
-    asUnifiedVariable = SetVar . asVariable

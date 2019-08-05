@@ -890,8 +890,8 @@ variableFunctionAndEquals
     _simplifier
     _axiomIdToSimplifier
     _substitutionMerger
-    first@(Var_ v1)
-    second@(Var_ v2)
+    first@(ElemVar_ v1)
+    second@(ElemVar_ v2)
   =
     return Conditional
         { term = if v2 > v1 then second else first
@@ -901,6 +901,7 @@ variableFunctionAndEquals
                 [ if v2 > v1 then (ElemVar v1, second) else (ElemVar v2, first)
                 ]
         }
+{-
 variableFunctionAndEquals
     SimplificationType.And
     _tools
@@ -948,6 +949,7 @@ variableFunctionAndEquals
         , predicate = makeTruePredicate
         , substitution = Substitution.wrap [(SetVar v2, first)]
         }
+-}
 variableFunctionAndEquals
     simplificationType
     _tools
@@ -955,7 +957,7 @@ variableFunctionAndEquals
     _simplifier
     _axiomIdToSimplifier
     _
-    first@(Var_ v)
+    first@(ElemVar_ v)
     second
   | isFunctionPattern second = Monad.Trans.lift $ do -- MonadUnify
     predicate <-

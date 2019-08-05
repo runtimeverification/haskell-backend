@@ -54,7 +54,7 @@ test_userDefinedFunction =
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results = OrPattern.fromPatterns
                         [ Conditional
-                            { term = Mock.functionalConstr11 (mkVar Mock.x)
+                            { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                             , predicate = makeTruePredicate
                             , substitution = mempty
                             }
@@ -64,15 +64,15 @@ test_userDefinedFunction =
         actual <-
             evaluateWithAxiom
                 (EqualityRule RulePattern
-                    { left = Mock.functionalConstr10 (mkVar Mock.x)
-                    , right = Mock.functionalConstr11 (mkVar Mock.x)
+                    { left = Mock.functionalConstr10 (mkElemVar Mock.x)
+                    , right = Mock.functionalConstr11 (mkElemVar Mock.x)
                     , requires = makeTruePredicate
                     , ensures = makeTruePredicate
                     , attributes = def
                     }
                 )
                 (mockSimplifier noSimplification)
-                (Mock.functionalConstr10 (mkVar Mock.x))
+                (Mock.functionalConstr10 (mkElemVar Mock.x))
         assertEqualWithExplanation "f(x) => g(x)" expect actual
     , testCase "Cannot apply concrete rule to symbolic pattern" $ do
         let expect =
@@ -80,15 +80,15 @@ test_userDefinedFunction =
         actual <-
             evaluateWithAxiom
                 (EqualityRule RulePattern
-                    { left = Mock.functionalConstr10 (mkVar Mock.x)
-                    , right = Mock.functionalConstr11 (mkVar Mock.x)
+                    { left = Mock.functionalConstr10 (mkElemVar Mock.x)
+                    , right = Mock.functionalConstr11 (mkElemVar Mock.x)
                     , requires = makeTruePredicate
                     , ensures = makeTruePredicate
                     , attributes = def { Attribute.concrete = Concrete True }
                     }
                 )
                 (mockSimplifier noSimplification)
-                (Mock.functionalConstr10 (mkVar Mock.x))
+                (Mock.functionalConstr10 (mkElemVar Mock.x))
         assertEqualWithExplanation "f(x) => g(x)" expect actual
     , testCase "Can apply concrete rule to concrete pattern" $ do
         let expect =
@@ -104,7 +104,7 @@ test_userDefinedFunction =
                     }
                 )
                 (mockSimplifier noSimplification)
-                (Mock.functionalConstr10 (mkVar Mock.x))
+                (Mock.functionalConstr10 (mkElemVar Mock.x))
         assertEqualWithExplanation "f(x) => g(x)" expect actual
     , testCase "Cannot apply step with unsat axiom pre-condition" $ do
         let expect =
@@ -112,7 +112,7 @@ test_userDefinedFunction =
                     { results = OrPattern.fromPatterns []
                     , remainders = OrPattern.fromPatterns
                         [ Conditional
-                            { term = Mock.functionalConstr10 (mkVar Mock.x)
+                            { term = Mock.functionalConstr10 (mkElemVar Mock.x)
                             , predicate = makeTruePredicate
                             , substitution = mempty
                              }
@@ -121,15 +121,15 @@ test_userDefinedFunction =
         actual <-
             evaluateWithAxiom
                 (EqualityRule RulePattern
-                    { left = Mock.functionalConstr10 (mkVar Mock.x)
-                    , right = Mock.functionalConstr11 (mkVar Mock.x)
+                    { left = Mock.functionalConstr10 (mkElemVar Mock.x)
+                    , right = Mock.functionalConstr11 (mkElemVar Mock.x)
                     , requires = makeFalsePredicate
                     , ensures = makeTruePredicate
                     , attributes = def
                     }
                 )
                 (mockSimplifier noSimplification)
-                (Mock.functionalConstr10 (mkVar Mock.x))
+                (Mock.functionalConstr10 (mkElemVar Mock.x))
         assertEqualWithExplanation "f(x) => g(x) requires false" expect actual
 
     , testCase "Cannot apply step with unsat condition" $ do
@@ -142,8 +142,8 @@ test_userDefinedFunction =
         actual <-
             evaluateWithAxiom
                 (EqualityRule RulePattern
-                    { left = Mock.functionalConstr10 (mkVar Mock.x)
-                    , right = Mock.functionalConstr11 (mkVar Mock.x)
+                    { left = Mock.functionalConstr10 (mkElemVar Mock.x)
+                    , right = Mock.functionalConstr11 (mkElemVar Mock.x)
                     , requires = makeTruePredicate
                     , ensures = makeTruePredicate
                     , attributes = def
@@ -153,7 +153,7 @@ test_userDefinedFunction =
                     -- Evaluate Top to Bottom.
                     (asSimplification [ (mkTop_, []) ])
                 )
-                (Mock.functionalConstr10 (mkVar Mock.x))
+                (Mock.functionalConstr10 (mkElemVar Mock.x))
         assertEqualWithExplanation "" expect actual
 
     , testCase "Preserves step substitution" $ do
@@ -161,21 +161,21 @@ test_userDefinedFunction =
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results = OrPattern.fromPatterns
                         [ Conditional
-                            { term = Mock.g (mkVar Mock.z)
+                            { term = Mock.g (mkElemVar Mock.z)
                             , predicate = makeTruePredicate
                             , substitution = Substitution.wrap
-                                [(ElemVar Mock.y, mkVar Mock.z)]
+                                [(ElemVar Mock.y, mkElemVar Mock.z)]
                             }
                         ]
                     , remainders = OrPattern.fromPatterns
                         [ Conditional
                             { term = Mock.functionalConstr20
-                                (mkVar Mock.y)
-                                (mkVar Mock.z)
+                                (mkElemVar Mock.y)
+                                (mkElemVar Mock.z)
                             , predicate =
                                 makeNotPredicate
                                     (makeEqualsPredicate
-                                        (mkVar Mock.y) (mkVar Mock.z)
+                                        (mkElemVar Mock.y) (mkElemVar Mock.z)
                                     )
                             , substitution = mempty
                             }
@@ -186,9 +186,9 @@ test_userDefinedFunction =
                 (EqualityRule RulePattern
                     { left  =
                         Mock.functionalConstr20
-                            (mkVar Mock.x)
-                            (mkVar Mock.x)
-                    , right = Mock.g (mkVar Mock.x)
+                            (mkElemVar Mock.x)
+                            (mkElemVar Mock.x)
+                    , right = Mock.g (mkElemVar Mock.x)
                     , requires = makeTruePredicate
                     , ensures = makeTruePredicate
                     , attributes = def
@@ -196,8 +196,8 @@ test_userDefinedFunction =
                 )
                 (simplifierTermLike Mock.env)
                 (Mock.functionalConstr20
-                    (mkVar Mock.y)
-                    (mkVar Mock.z)
+                    (mkElemVar Mock.y)
+                    (mkElemVar Mock.z)
                 )
         assertEqualWithExplanation "sigma(x,x) => g(x) vs sigma(a, b)"
             expect
@@ -281,9 +281,9 @@ test_userDefinedFunctionSmt =
     fOfNotLessThan0 term = comparesTo0 term False
     basePredicate var1 var2 =
         makeAndPredicate
-            (fOfLessThan0 (mkVar var1))
-            (fOfNotLessThan0 (mkVar var2))
-    baseTerm var1 var2 = Mock.functionalConstr20 (mkVar var1) (mkVar var2)
+            (fOfLessThan0 (mkElemVar var1))
+            (fOfNotLessThan0 (mkElemVar var2))
+    baseTerm var1 var2 = Mock.functionalConstr20 (mkElemVar var1) (mkElemVar var2)
 
 noSimplification :: [(TermLike Variable, [Pattern Variable])]
 noSimplification = []

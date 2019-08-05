@@ -538,7 +538,7 @@ refreshRulePattern
         )
 refreshRulePattern (FreeVariables.getFreeVariables -> avoid) rule1 =
     let rename = refreshVariables avoid originalFreeVariables
-        subst = mkUnifiedVariable <$> rename
+        subst = mkVar <$> rename
         left' = TermLike.substitute subst left
         right' = TermLike.substitute subst right
         requires' = Predicate.substitute subst requires

@@ -74,6 +74,7 @@ import           Kore.Step.Rule
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
 import qualified Kore.Step.Substitution as Substitution
+import           Kore.Syntax.ElementVariable
 import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
@@ -174,14 +175,14 @@ unwrapAndQuantifyConfiguration config@Conditional { substitution } =
     unwrappedConfig =
         Pattern.mapVariables Target.unwrapVariable configWithNewSubst
 
-    targetVariables :: [variable]
+    targetVariables :: [ElementVariable variable]
     targetVariables =
-        map Target.unwrapVariable
-        $ filter Target.isTarget
-        $ Foldable.toList
-        $ Pattern.freeVariables configWithNewSubst
+        map (fmap Target.unwrapVariable)
+        . filter (Target.isTarget . asVariable)
+        . Pattern.freeElementVariables
+        $ configWithNewSubst
 
-    quantify :: TermLike variable -> variable -> TermLike variable
+    quantify :: TermLike variable -> ElementVariable variable -> TermLike variable
     quantify = flip mkExists
 
 {- | Attempt to unify a rule with the initial configuration.

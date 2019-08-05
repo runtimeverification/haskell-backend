@@ -65,8 +65,8 @@ test_normalize =
     existsPredicate =
         Syntax.Predicate.makeMultipleExists [Mock.y, Mock.z]
         $ Syntax.Predicate.makeEqualsPredicate
-            (mkVar Mock.x)
-            (Mock.sigma (mkVar Mock.y) (mkVar Mock.z))
+            (mkElemVar Mock.x)
+            (Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.z))
 
 test_mergeAndNormalizeSubstitutions :: [TestTree]
 test_mergeAndNormalizeSubstitutions =
@@ -95,16 +95,16 @@ test_mergeAndNormalizeSubstitutions =
         $ do
             let expect = Right
                     [ Predicate.fromSubstitution $ Substitution.unsafeWrap
-                        [(ElemVar Mock.x, Mock.constr10 (mkVar Mock.y))]
+                        [(ElemVar Mock.x, Mock.constr10 (mkElemVar Mock.y))]
                     ]
             actual <-
                 merge
                     [   ( ElemVar Mock.x
-                        , Mock.constr10 (mkVar Mock.y)
+                        , Mock.constr10 (mkElemVar Mock.y)
                         )
                     ]
                     [   ( ElemVar Mock.x
-                        , Mock.constr10 (mkVar Mock.y)
+                        , Mock.constr10 (mkElemVar Mock.y)
                         )
                     ]
             assertEqualWithExplanation "" expect actual
@@ -132,16 +132,16 @@ test_mergeAndNormalizeSubstitutions =
         $ do
             let expect = Left $ UnificationError $ unsupportedPatterns
                     "Unknown unification case."
-                    (mkVar Mock.y)
-                    (Mock.constr10 (mkVar Mock.y))
+                    (mkElemVar Mock.y)
+                    (Mock.constr10 (mkElemVar Mock.y))
             actual <-
                 merge
                     [   ( ElemVar Mock.x
-                        , Mock.constr10 (mkVar Mock.y)
+                        , Mock.constr10 (mkElemVar Mock.y)
                         )
                     ]
                     [   ( ElemVar Mock.x
-                        , Mock.constr10 (Mock.constr10 (mkVar Mock.y))
+                        , Mock.constr10 (Mock.constr10 (mkElemVar Mock.y))
                         )
                     ]
             assertEqualWithExplanation "" expect actual
@@ -188,11 +188,11 @@ test_mergeAndNormalizeSubstitutions =
             actual <-
                 merge
                     [   ( ElemVar Mock.x
-                        , Mock.constr10 (mkVar Mock.y)
+                        , Mock.constr10 (mkElemVar Mock.y)
                         )
                     ]
                     [   ( ElemVar Mock.x
-                        , Mock.constr10 (Mock.f (mkVar Mock.y))
+                        , Mock.constr10 (Mock.f (mkElemVar Mock.y))
                         )
                     ]
             assertEqualWithExplanation "" expect actual
@@ -208,11 +208,11 @@ test_mergeAndNormalizeSubstitutions =
             actual <-
                 merge
                     [   ( ElemVar Mock.x
-                        , Mock.constr10 (mkVar Mock.y)
+                        , Mock.constr10 (mkElemVar Mock.y)
                         )
                     ]
                     [   ( ElemVar Mock.x
-                        , Mock.constr10 (Mock.functional10 (mkVar Mock.y))
+                        , Mock.constr10 (Mock.functional10 (mkElemVar Mock.y))
                         )
                     ]
             assertEqualWithExplanation "" expect actual
@@ -223,16 +223,16 @@ test_mergeAndNormalizeSubstitutions =
         $ do
             let expect = Left $ UnificationError $ unsupportedPatterns
                     "Unknown unification case."
-                    (mkVar Mock.y)
-                    (Mock.constr10 (mkVar Mock.x))
+                    (mkElemVar Mock.y)
+                    (Mock.constr10 (mkElemVar Mock.x))
             actual <-
                 merge
                     [   ( ElemVar Mock.x
-                        , mkVar Mock.y
+                        , mkElemVar Mock.y
                         )
                     ]
                     [   ( ElemVar Mock.x
-                        , Mock.constr10 (mkVar Mock.x)
+                        , Mock.constr10 (mkElemVar Mock.x)
                         )
                     ]
             assertEqualWithExplanation "" expect actual
@@ -249,11 +249,11 @@ test_mergeAndNormalizeSubstitutions =
             actual <-
                 merge
                     [   ( ElemVar Mock.x
-                        , mkVar Mock.y
+                        , mkElemVar Mock.y
                         )
                     ]
                     [   ( ElemVar Mock.y
-                        , Mock.f (mkVar Mock.x)
+                        , Mock.f (mkElemVar Mock.x)
                         )
                     ]
             assertEqualWithExplanation "" expect actual
@@ -271,7 +271,7 @@ test_mergeAndNormalizeSubstitutions =
                 normalize
                 $ Predicate.fromSubstitution $ Substitution.wrap
                     [ (ElemVar Mock.x, Mock.constr10 Mock.a)
-                    , (ElemVar Mock.x, Mock.constr10 (mkVar Mock.y))
+                    , (ElemVar Mock.x, Mock.constr10 (mkElemVar Mock.y))
                     ]
             assertEqualWithExplanation "" expect actual
             assertNormalizedPredicatesMulti actual
@@ -320,10 +320,10 @@ test_mergeAndNormalizeSubstitutions =
                         { term = ()
                         , predicate =
                             Syntax.Predicate.makeCeilPredicate
-                            $ Mock.f (mkVar Mock.y)
+                            $ Mock.f (mkElemVar Mock.y)
                         , substitution = Substitution.wrap
                             [ (ElemVar Mock.x, Mock.constr10 Mock.a)
-                            , (ElemVar Mock.x, Mock.constr10 (mkVar Mock.y))
+                            , (ElemVar Mock.x, Mock.constr10 (mkElemVar Mock.y))
                             ]
                         }
             assertEqualWithExplanation "" expect actual

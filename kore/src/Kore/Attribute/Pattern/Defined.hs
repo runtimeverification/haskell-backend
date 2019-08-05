@@ -187,8 +187,9 @@ instance Synthetic Inhabitant Defined where
     synthetic = const (Defined True)
     {-# INLINE synthetic #-}
 
--- | A 'Variable' pattern is always 'Defined'.
-instance Synthetic (Const (UnifiedVariable Variable)) Defined where
+-- | An element variable pattern is always 'Defined'.
+--   A set variable is not.
+instance Synthetic (Const (UnifiedVariable variable)) Defined where
     synthetic (Const (ElemVar _))= Defined True
     synthetic (Const (SetVar _))= Defined False
     {-# INLINE synthetic #-}

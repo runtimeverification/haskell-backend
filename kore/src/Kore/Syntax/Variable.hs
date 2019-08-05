@@ -20,7 +20,6 @@ module Kore.Syntax.Variable
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import           Data.Functor.Const
 import           Data.Hashable
 import           Data.Maybe
                  ( isNothing )
@@ -31,13 +30,9 @@ import qualified GHC.Generics as GHC
 import           Numeric.Natural
 
 import Data.Sup
-import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
-import Kore.Variables.AsVariable
-import Kore.Variables.UnifiedVariable
-       ( UnifiedVariable (..) )
 
 {-|'Variable' corresponds to the @variable@ syntactic category from the
 Semantics of K, Section 9.1.4 (Patterns).
@@ -189,8 +184,3 @@ instance SortedVariable Concrete where
     sortedVariableSort = \case {}
     toVariable = \case {}
     fromVariable = error "Cannot construct a variable in a concrete term!"
-
-instance Synthetic (Const (UnifiedVariable Variable)) Sort where
-    synthetic (Const variable) = sortedVariableSort (asVariable variable)
-    {-# INLINE synthetic #-}
-

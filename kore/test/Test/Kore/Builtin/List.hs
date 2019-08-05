@@ -20,6 +20,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
+import           Kore.Syntax.ElementVariable
 
 import           Test.Kore
                  ( testId )
@@ -143,7 +144,7 @@ test_simplify =
     testPropertyWithSolver "simplify elements" $ do
         let
             x =
-                mkVar Variable
+                mkElemVar $ ElementVariable Variable
                     { variableName = testId "x"
                     , variableCounter = mempty
                     , variableSort = intSort

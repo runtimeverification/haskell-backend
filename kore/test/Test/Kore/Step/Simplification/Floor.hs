@@ -23,6 +23,7 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import           Kore.Step.Simplification.Floor
                  ( makeEvaluateFloor, simplify )
+import           Kore.Syntax.ElementVariable
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
@@ -132,7 +133,7 @@ test_floorSimplification =
     bSymbol = symbol "b" [] testSort
     fSymbol = symbol "f" [testSort] testSort
     gSymbol = symbol "g" [testSort] testSort
-    x = Variable (testId "x") mempty testSort
+    x = ElementVariable $ Variable (testId "x") mempty testSort
     a :: TermLike Variable
     a = mkApplySymbol aSymbol []
     b :: TermLike Variable

@@ -24,9 +24,7 @@ import Kore.Syntax.Exists
 import Kore.Syntax.Forall
 import Kore.Syntax.Mu
 import Kore.Syntax.Nu
-import Kore.Syntax.SetVariable
 import Kore.Variables.UnifiedVariable
-       ( UnifiedVariable (..) )
 
 {- | @Binding@ defines traversals for patterns with binders.
 
@@ -80,7 +78,7 @@ existsBinder mapping exists =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable = ElemVar existsVariable, binderChild }
+        Binder { binderVariable =  asUnifiedVariable existsVariable, binderChild }
       where
         Exists { existsVariable } = exists
         Exists { existsChild    = binderChild    } = exists
@@ -102,7 +100,7 @@ forallBinder mapping forall =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable = ElemVar forallVariable, binderChild }
+        Binder { binderVariable = asUnifiedVariable forallVariable, binderChild }
       where
         Forall { forallVariable } = forall
         Forall { forallChild    = binderChild    } = forall
@@ -124,14 +122,14 @@ muBinder mapping mu =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable = SetVar muVar, binderChild }
+        Binder { binderVariable = asUnifiedVariable muVariable, binderChild }
       where
-        Mu { muVariable = SetVariable muVar } = mu
+        Mu { muVariable } = mu
         Mu { muChild    = binderChild    } = mu
     finish binder' =
-        mu { muVariable = SetVariable muVar, muChild }
+        mu { muVariable, muChild }
       where
-        Binder { binderVariable = SetVar muVar } = binder'
+        Binder { binderVariable = SetVar muVariable } = binder'
         Binder { binderChild    = muChild    } = binder'
 
 {- | A 'Lens.Lens' to view a 'Nu' as a 'Binder'.
@@ -146,12 +144,12 @@ nuBinder mapping nu =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable = SetVar nuVar, binderChild }
+        Binder { binderVariable = asUnifiedVariable nuVariable, binderChild }
       where
-        Nu { nuVariable = SetVariable nuVar } = nu
+        Nu { nuVariable } = nu
         Nu { nuChild    = binderChild    } = nu
     finish binder' =
-        nu { nuVariable = SetVariable nuVar, nuChild }
+        nu { nuVariable, nuChild }
       where
-        Binder { binderVariable = SetVar nuVar } = binder'
+        Binder { binderVariable = SetVar nuVariable } = binder'
         Binder { binderChild    = nuChild    } = binder'

@@ -68,12 +68,12 @@ test_instance_Synthetic_TermLike =
     , ExistsF      (Exists sort Mock.x y)     `gives'` y      $ "ExistsF - Free"
     , ForallF      (Forall sort Mock.x xy)    `gives'` y      $ "ForallF - Bound"
     , ForallF      (Forall sort Mock.x y)     `gives'` y      $ "ForallF - Free"
-    , VariableF    Mock.x                     `gives'` x      $ "VariableF"
+    , VariableF    (ElemVar Mock.x)           `gives'` x      $ "Elem VariableF"
     , MuF          (Mu Mock.setX sxy)         `gives'` sy     $ "MuF - Bound"
     , MuF          (Mu Mock.setX sy)          `gives'` sy     $ "MuF - Free"
     , NuF          (Nu Mock.setX sxy)         `gives'` sy     $ "NuF - Bound"
     , NuF          (Nu Mock.setX sy)          `gives'` sy     $ "NuF - Free"
-    , SetVariableF Mock.setX                  `gives'` sx     $ "SetVariableF"
+    , VariableF    (SetVar Mock.setX)         `gives'` sx     $ "Set VariableF"
     ]
   where
     gives' = gives @(TermLikeF Variable)
@@ -88,8 +88,8 @@ x, y, xy, sx, sy, sxy :: FreeVariables Variable
 x = FreeVariables.freeVariable (ElemVar Mock.x)
 y = FreeVariables.freeVariable (ElemVar Mock.y)
 xy = x <> y
-sx = FreeVariables.freeVariable (SetVar Mock.x)
-sy = FreeVariables.freeVariable (SetVar Mock.y)
+sx = FreeVariables.freeVariable (SetVar Mock.setX)
+sy = FreeVariables.freeVariable (SetVar Mock.setY)
 sxy = sx <> sy
 
 gives

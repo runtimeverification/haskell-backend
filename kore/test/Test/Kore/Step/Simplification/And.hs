@@ -195,7 +195,7 @@ test_andSimplification =
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
                             [   ( ElemVar Mock.y
-                                , Mock.functionalConstr10 (mkVar Mock.x)
+                                , Mock.functionalConstr10 (mkElemVar Mock.x)
                                 )
                             ]
                         }
@@ -204,7 +204,7 @@ test_andSimplification =
                         , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
                             [   ( ElemVar Mock.y
-                                , Mock.functionalConstr11 (mkVar Mock.x)
+                                , Mock.functionalConstr11 (mkElemVar Mock.x)
                                 )
                             ]
                         }
@@ -355,29 +355,29 @@ test_andSimplification =
     ]
   where
     yExpanded = Conditional
-        { term = mkVar Mock.y
+        { term = mkElemVar Mock.y
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    fOfX = Mock.f (mkVar Mock.x)
+    fOfX = Mock.f (mkElemVar Mock.x)
     fOfXExpanded = Conditional
         { term = fOfX
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    gOfX = Mock.g (mkVar Mock.x)
+    gOfX = Mock.g (mkElemVar Mock.x)
     gOfXExpanded = Conditional
         { term = gOfX
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    plain0OfX = Mock.plain10 (mkVar Mock.x)
+    plain0OfX = Mock.plain10 (mkElemVar Mock.x)
     plain0OfXExpanded = Conditional
         { term = plain0OfX
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    plain1OfX = Mock.plain11 (mkVar Mock.x)
+    plain1OfX = Mock.plain11 (mkElemVar Mock.x)
     plain1OfXExpanded = Conditional
         { term = plain1OfX
         , predicate = makeTruePredicate

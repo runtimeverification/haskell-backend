@@ -144,12 +144,12 @@ test_onePathVerification =
         actual <- runVerification
             (Limit 4)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
-            , simpleAxiom (Mock.functionalConstr11 (mkVar Mock.x)) Mock.b
+            , simpleAxiom (Mock.functionalConstr11 (mkElemVar Mock.x)) Mock.b
             , simpleAxiom
-                (Mock.functionalConstr10 (mkVar Mock.x))
-                (Mock.functionalConstr11 (mkVar Mock.x))
+                (Mock.functionalConstr10 (mkElemVar Mock.x))
+                (Mock.functionalConstr11 (mkElemVar Mock.x))
             ]
-            [simpleClaim (Mock.functionalConstr10 (mkVar Mock.x)) Mock.b]
+            [simpleClaim (Mock.functionalConstr10 (mkElemVar Mock.x)) Mock.b]
         assertEqualWithExplanation "" (Right ()) actual
     , testCase "Partial verification failure" $ do
         -- Axiom: constr11(a) => b
@@ -160,15 +160,15 @@ test_onePathVerification =
             (Limit 3)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
             , simpleAxiom
-                (Mock.functionalConstr10 (mkVar Mock.x))
-                (Mock.functionalConstr11 (mkVar Mock.x))
+                (Mock.functionalConstr10 (mkElemVar Mock.x))
+                (Mock.functionalConstr11 (mkElemVar Mock.x))
             ]
-            [simpleClaim (Mock.functionalConstr10 (mkVar Mock.x)) Mock.b]
+            [simpleClaim (Mock.functionalConstr10 (mkElemVar Mock.x)) Mock.b]
         assertEqualWithExplanation ""
             (Left Conditional
-                { term = Mock.functionalConstr11 (mkVar Mock.x)
+                { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
-                    makeNotPredicate $ makeEqualsPredicate (mkVar Mock.x) Mock.a
+                    makeNotPredicate $ makeEqualsPredicate (mkElemVar Mock.x) Mock.a
                 , substitution = mempty
                 }
             )

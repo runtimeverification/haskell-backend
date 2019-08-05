@@ -71,11 +71,11 @@ test_makeEvaluate =
                         makeIffPredicate
                             (makeAndPredicate
                                 (makeCeilPredicate Mock.cf)
-                                (makeEqualsPredicate (mkVar Mock.x) Mock.a)
+                                (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
                             )
                             (makeAndPredicate
                                 (makeCeilPredicate Mock.cg)
-                                (makeEqualsPredicate (mkVar Mock.y) Mock.b)
+                                (makeEqualsPredicate (mkElemVar Mock.y) Mock.b)
                             )
                     , substitution = mempty
                     }
@@ -107,14 +107,14 @@ test_makeEvaluate =
                                     (Mock.f Mock.a)
                                     (mkCeil_ Mock.cf)
                                 )
-                                (mkEquals_ (mkVar Mock.x) Mock.a)
+                                (mkEquals_ (mkElemVar Mock.x) Mock.a)
                             )
                             (mkAnd
                                 (mkAnd
                                     (Mock.g Mock.b)
                                     (mkCeil_ Mock.cg)
                                 )
-                                (mkEquals_ (mkVar Mock.y) Mock.b)
+                                (mkEquals_ (mkElemVar Mock.y) Mock.b)
                             )
                     , predicate = makeTruePredicate
                     , substitution = mempty

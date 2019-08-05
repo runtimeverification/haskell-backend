@@ -34,6 +34,7 @@ module Kore.Predicate.Predicate
     , makeMultipleOrPredicate
     , makeTruePredicate
     , Kore.Predicate.Predicate.freeVariables
+    , Kore.Predicate.Predicate.freeElementVariables
     , Kore.Predicate.Predicate.hasFreeVariable
     , Kore.Predicate.Predicate.mapVariables
     , stringFromPredicate
@@ -64,6 +65,7 @@ import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Error
                  ( Error, koreFail )
 import           Kore.Internal.TermLike as TermLike
+import           Kore.Syntax.ElementVariable
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unification.Substitution
@@ -351,7 +353,7 @@ makeExistsPredicate
         , Show variable
         , Unparse variable
         )
-    => variable
+    => ElementVariable variable
     -> Predicate variable
     -> Predicate variable
 makeExistsPredicate _ p@PredicateFalse = p
@@ -368,7 +370,7 @@ makeMultipleExists
         , Show variable
         , Unparse variable
         )
-    => f variable
+    => f (ElementVariable variable)
     -> Predicate variable
     -> Predicate variable
 makeMultipleExists vars phi =
@@ -382,7 +384,7 @@ makeForallPredicate
         , Show variable
         , Unparse variable
         )
-    => variable
+    => ElementVariable variable
     -> Predicate variable
     -> Predicate variable
 makeForallPredicate _ p@PredicateFalse = p
@@ -498,6 +500,13 @@ freeVariables
     -> FreeVariables variable
 freeVariables = TermLike.freeVariables . unwrapPredicate
 
+freeElementVariables
+    :: Ord variable
+    => Predicate variable
+    -> [ElementVariable variable]
+freeElementVariables =
+    getFreeElementVariables . Kore.Predicate.Predicate.freeVariables
+
 hasFreeVariable
     :: Ord variable
     => UnifiedVariable variable
@@ -534,7 +543,7 @@ singleSubstitutionToPredicate
     => (UnifiedVariable variable, TermLike variable)
     -> Predicate variable
 singleSubstitutionToPredicate (var, patt) =
-    makeEqualsPredicate (TermLike.mkUnifiedVariable var) patt
+    makeEqualsPredicate (TermLike.mkVar var) patt
 
 {- | @fromSubstitution@ constructs a 'Predicate' equivalent to 'Substitution'.
 

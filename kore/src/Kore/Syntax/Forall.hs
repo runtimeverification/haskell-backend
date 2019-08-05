@@ -19,10 +19,11 @@ import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
+import Kore.Syntax.ElementVariable
 import Kore.Syntax.Variable
 import Kore.Unparser
+import Kore.Variables.AsVariable
 import Kore.Variables.UnifiedVariable
-       ( UnifiedVariable (..) )
 
 {-|'Forall' corresponds to the @\forall@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -33,7 +34,7 @@ Section 9.1.4 (Patterns).
 -}
 data Forall sort variable child = Forall
     { forallSort     :: !sort
-    , forallVariable :: !variable
+    , forallVariable :: !(ElementVariable variable)
     , forallChild    :: child
     }
     deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
@@ -66,7 +67,7 @@ instance
     unparse2 Forall { forallVariable, forallChild } =
         Pretty.parens (Pretty.fillSep
             [ "\\forall"
-            , unparse2SortedVariable forallVariable
+            , unparse2SortedVariable (asVariable forallVariable)
             , unparse2 forallChild
             ])
 
@@ -75,7 +76,7 @@ instance
     Synthetic (Forall sort variable) (FreeVariables variable)
   where
     synthetic Forall { forallVariable, forallChild } =
-        bindVariable (ElemVar forallVariable) forallChild
+        bindVariable (asUnifiedVariable forallVariable) forallChild
     {-# INLINE synthetic #-}
 
 instance Synthetic (Forall Sort variable) Sort where

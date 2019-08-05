@@ -69,7 +69,6 @@ import           Kore.Unparser
 import           Kore.Variables.AsVariable
 import qualified Kore.Variables.Free as Variables
 import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import qualified Kore.Verified as Verified
 
 newtype DeclaredVariables =
@@ -240,18 +239,23 @@ See also: 'uniqueDeclaredVariables', 'withDeclaredVariables'
 
  -}
 verifyAliasLeftPattern
-    :: Application SymbolOrAlias Variable
-    -> PatternVerifier (DeclaredVariables, Application SymbolOrAlias Variable)
+    :: Application SymbolOrAlias (ElementVariable Variable)
+    -> PatternVerifier
+        ( DeclaredVariables
+        , Application SymbolOrAlias (ElementVariable Variable)
+        )
 verifyAliasLeftPattern leftPattern = do
     _ :< verified <-
         verifyApplyAlias snd (expectVariable . ElemVar  <$> leftPattern)
         & runMaybeT
         & (>>= maybe (error . noHead $ symbolOrAlias) return)
     declaredVariables <- uniqueDeclaredVariables (fst <$> verified)
-    let verifiedLeftPattern =
+    let verifiedLeftPattern = traverse extractElementVariable
             leftPattern
                 { applicationChildren = fst <$> applicationChildren verified }
-    return (declaredVariables, asVariable <$> verifiedLeftPattern)
+    case verifiedLeftPattern of
+        Just result -> return (declaredVariables, result)
+        Nothing -> error "Unexpected change from element var to set var"
   where
     symbolOrAlias = applicationSymbolOrAlias leftPattern
     expectVariable
@@ -367,21 +371,12 @@ verifyPatternHead (_ :< patternF) =
         Syntax.TopF top ->
             transCofreeF Internal.TopF <$> verifyTop top
         Syntax.VariableF var ->
-            transCofreeF (wrapVariable . getConst)
-                <$> verifyVariable (ElemVar var)
+            transCofreeF (Internal.VariableF . getConst)
+                <$> verifyVariable var
         Syntax.InhabitantF _ ->
             koreFail "Unexpected pattern."
-        Syntax.SetVariableF (SetVariable var) ->
-            transCofreeF (wrapVariable . getConst)
-                <$> verifyVariable (SetVar var)
   where
     transCofreeF fg (a :< fb) = a :< fg fb
-    wrapVariable
-        :: UnifiedVariable Variable
-        -> Internal.TermLikeF Variable Verified.Pattern
-    wrapVariable (ElemVar variable) = Internal.VariableF variable
-    wrapVariable (SetVar variable) =
-        Internal.SetVariableF (SetVariable variable)
 
 verifyPatternSort :: Sort -> PatternVerifier ()
 verifyPatternSort patternSort = do
@@ -674,10 +669,9 @@ verifyMu
         )
     => binder (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF binder valid Verified.Pattern)
-verifyMu = verifyBinder muSort (SetVar . muVar)
+verifyMu = verifyBinder muSort (SetVar . muVariable)
   where
-    muVar = getVariable . muVariable
-    muSort = variableSort . muVar
+    muSort = variableSort . asVariable . muVariable
 
 verifyNu
     ::  ( binder ~ Nu Variable
@@ -685,10 +679,9 @@ verifyNu
         )
     => binder (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF binder valid Verified.Pattern)
-verifyNu = verifyBinder nuSort (SetVar . nuVar)
+verifyNu = verifyBinder nuSort (SetVar . nuVariable)
   where
-    nuVar = getVariable . nuVariable
-    nuSort = variableSort . nuVar
+    nuSort = variableSort . asVariable . nuVariable
 
 verifyVariable
     ::  ( base ~ Const (UnifiedVariable Variable)
@@ -871,12 +864,12 @@ patternNameForContext (DomainValueF _) = "\\dv"
 patternNameForContext (EqualsF _) = "\\equals"
 patternNameForContext (ExistsF exists) =
     "\\exists '"
-    <> variableNameForContext (existsVariable exists)
+    <> variableNameForContext (asVariable $ existsVariable exists)
     <> "'"
 patternNameForContext (FloorF _) = "\\floor"
 patternNameForContext (ForallF forall) =
     "\\forall '"
-    <> variableNameForContext (forallVariable forall)
+    <> variableNameForContext (asVariable $ forallVariable forall)
     <> "'"
 patternNameForContext (IffF _) = "\\iff"
 patternNameForContext (ImpliesF _) = "\\implies"
@@ -890,11 +883,11 @@ patternNameForContext (RewritesF _) = "\\rewrites"
 patternNameForContext (StringLiteralF _) = "<string>"
 patternNameForContext (CharLiteralF _) = "<char>"
 patternNameForContext (TopF _) = "\\top"
-patternNameForContext (VariableF variable) =
-    "variable '" <> variableNameForContext variable <> "'"
+patternNameForContext (VariableF (ElemVar variable)) =
+    "element variable '" <> variableNameForContext (asVariable variable) <> "'"
 patternNameForContext (InhabitantF _) = "\\inh"
-patternNameForContext (SetVariableF (SetVariable variable)) =
-    "set variable '" <> variableNameForContext variable <> "'"
+patternNameForContext (VariableF (SetVar variable)) =
+    "set variable '" <> variableNameForContext (asVariable variable) <> "'"
 
 variableNameForContext :: Variable -> Text
 variableNameForContext variable = getId (variableName variable)

@@ -10,6 +10,7 @@ import qualified Data.Set as Set
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate as Predicate
+import           Kore.Syntax.ElementVariable
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
@@ -286,8 +287,8 @@ test_predicate =
                 $ Predicate.freeVariables
                 $ makeExistsPredicate (a Mock.testSort)
                 $ makeEqualsPredicate
-                    (mkVar $ a Mock.testSort)
-                    (mkVar $ b Mock.testSort)
+                    (mkElemVar $ a Mock.testSort)
+                    (mkElemVar $ b Mock.testSort)
         )
     , testCase "substitutionToPredicate"
         ( do
@@ -297,7 +298,7 @@ test_predicate =
             assertEqual "a = b"
                 (makeAndPredicate pr1 makeTruePredicate)
                 (substitutionToPredicate $ Substitution.wrap
-                    [(ElemVar $ a Mock.testSort, mkVar $ b Mock.testSort)]
+                    [(ElemVar $ a Mock.testSort, mkElemVar $ b Mock.testSort)]
                 )
         )
     , let
@@ -357,40 +358,40 @@ makePredicateYieldsWrapPredicate msg p =
 pr1 :: Predicate Variable
 pr1 =
     makeEqualsPredicate
-        (mkVar $ a Mock.testSort)
-        (mkVar $ b Mock.testSort)
+        (mkElemVar $ a Mock.testSort)
+        (mkElemVar $ b Mock.testSort)
 
 pr2 :: Predicate Variable
 pr2 =
     makeEqualsPredicate
-        (mkVar $ c Mock.testSort)
-        (mkVar $ d Mock.testSort)
+        (mkElemVar $ c Mock.testSort)
+        (mkElemVar $ d Mock.testSort)
 
 pa1 :: TermLike Variable
 pa1 =
     mkEquals_
-        (mkVar $ a Mock.testSort)
-        (mkVar $ b Mock.testSort)
+        (mkElemVar $ a Mock.testSort)
+        (mkElemVar $ b Mock.testSort)
 
 pa2 :: TermLike Variable
 pa2 =
     mkEquals_
-        (mkVar $ c Mock.testSort)
-        (mkVar $ d Mock.testSort)
+        (mkElemVar $ c Mock.testSort)
+        (mkElemVar $ d Mock.testSort)
 
 ceilA :: TermLike Variable
 ceilA =
     mkCeil_
-        (mkVar $ a Mock.testSort)
+        (mkElemVar $ a Mock.testSort)
 
 inA :: TermLike Variable
 inA =
     mkIn_
-        (mkVar $ a Mock.testSort)
-        (mkVar $ b Mock.testSort)
+        (mkElemVar $ a Mock.testSort)
+        (mkElemVar $ b Mock.testSort)
 
 floorA :: TermLike Variable
-floorA = mkFloor_ (mkVar $ a Mock.testSort)
+floorA = mkFloor_ (mkElemVar $ a Mock.testSort)
 
 makeAnd
     :: Predicate Variable
@@ -398,8 +399,8 @@ makeAnd
     -> Predicate Variable
 makeAnd p1 p2 = makeAndPredicate p1 p2
 
-a, b, c, d :: Sort -> Variable
-a = Variable (testId "#a") mempty
-b = Variable (testId "#b") mempty
-c = Variable (testId "#c") mempty
-d = Variable (testId "#d") mempty
+a, b, c, d :: Sort -> ElementVariable Variable
+a = ElementVariable . Variable (testId "a") mempty
+b = ElementVariable . Variable (testId "b") mempty
+c = ElementVariable . Variable (testId "c") mempty
+d = ElementVariable . Variable (testId "d") mempty

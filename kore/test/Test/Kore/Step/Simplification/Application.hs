@@ -24,6 +24,7 @@ import           Kore.Step.Simplification.Application
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
+import           Kore.Syntax.ElementVariable
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
                  ( Unparse )
@@ -168,7 +169,8 @@ test_applicationSimplification =
             --        (f(a)=f(b) and g(a)=g(b) and f(a)=g(a)) and
             --        [x=f(a), y=g(a), z=f(b)]
             -- if sigma(a, b) => f(a) and f(a)=g(a) and [z=f(b)]
-            let z' = Mock.z { variableCounter = Just (Element 1) }
+            let ElementVariable z = Mock.z
+                z' = ElementVariable z { variableCounter = Just (Element 1) }
                 expect =
                     OrPattern.fromPatterns
                         [ Conditional
@@ -196,8 +198,8 @@ test_applicationSimplification =
                             , Ord variable
                             , SortedVariable variable
                             )
-                        => variable
-                    zvar = fromVariable z'
+                        => ElementVariable variable
+                    zvar = fromVariable <$> z'
                     result
                         :: forall variable
                         .   ( FreshVariable variable

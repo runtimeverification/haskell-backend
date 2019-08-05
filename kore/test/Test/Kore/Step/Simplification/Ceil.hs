@@ -467,9 +467,9 @@ test_ceilSimplification =
     gOfA = Mock.g Mock.a
     gOfB = Mock.g Mock.b
     fOfX :: TermLike Variable
-    fOfX = Mock.f (mkVar Mock.x)
+    fOfX = Mock.f (mkElemVar Mock.x)
     fOfXset :: TermLike Variable
-    fOfXset = Mock.fSet (mkVar Mock.xSet)
+    fOfXset = Mock.fSet (mkElemVar Mock.xSet)
     somethingOfA = Mock.plain10 Mock.a
     somethingOfB = Mock.plain10 Mock.b
     somethingOfAExpanded = Conditional

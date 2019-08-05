@@ -23,6 +23,7 @@ import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Simplification.Or
                  ( simplify, simplifyEvaluated )
+import           Kore.Syntax.ElementVariable
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
@@ -162,16 +163,16 @@ tT :: TestTerm
 tT = mkTop Mock.testSort
 
 tm :: TestTerm
-tm = mkVar Mock.x
+tm = mkElemVar Mock.x
 
 tM :: TestTerm
-tM = mkVar Mock.y
+tM = mkElemVar Mock.y
 
 t_ :: TestTerm
 t_ = mkBottom Mock.testSort
 
-testVar :: Text -> Variable
-testVar ident = Variable (testId ident) mempty Mock.testSort
+testVar :: Text -> ElementVariable Variable
+testVar ident = ElementVariable $ Variable (testId ident) mempty Mock.testSort
 
 type TestPredicate = Syntax.Predicate Variable
 
@@ -181,14 +182,14 @@ pT = makeTruePredicate
 pm :: TestPredicate
 pm =
     makeEqualsPredicate
-        (mkVar $ testVar "left")
-        (mkVar $ testVar "right")
+        (mkElemVar $ testVar "left")
+        (mkElemVar $ testVar "right")
 
 pM :: TestPredicate
 pM =
     makeEqualsPredicate
-        (mkVar $ testVar "LEFT")
-        (mkVar $ testVar "RIGHT")
+        (mkElemVar $ testVar "LEFT")
+        (mkElemVar $ testVar "RIGHT")
 
 p_ :: TestPredicate
 p_ = makeFalsePredicate

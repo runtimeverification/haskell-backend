@@ -98,9 +98,9 @@ existentiallyQuantifyTarget predicate =
     Syntax.Predicate.makeMultipleExists freeTargetVariables predicate
   where
     freeTargetVariables =
-        filter Target.isTarget
-        $ Foldable.toList
-        $ Syntax.Predicate.freeVariables predicate
+        filter (Target.isTarget . asVariable)
+        . Syntax.Predicate.freeElementVariables
+        $ predicate
 
 {- | Negate a disjunction of many terms.
 
@@ -163,7 +163,7 @@ substitutionConditions subst =
     MultiAnd.make (substitutionCoverageWorker <$> Substitution.unwrap subst)
   where
     substitutionCoverageWorker (x, t) =
-        Syntax.Predicate.makeEqualsPredicate (mkUnifiedVariable x) t
+        Syntax.Predicate.makeEqualsPredicate (mkVar x) t
 
 ceilChildOfApplicationOrTop
     :: forall variable m

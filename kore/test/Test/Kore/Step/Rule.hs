@@ -33,6 +33,7 @@ import           Kore.Step.Rule hiding
                  ( freeVariables )
 import qualified Kore.Step.Rule as Rule
 import           Kore.Syntax.Definition
+import           Kore.Syntax.ElementVariable
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
 import qualified Kore.Verified as Verified
@@ -299,28 +300,28 @@ applyLeqAInt child1 child2 = applySymbol_ symbolLeqAInt [child1, child2]
 varI1, varI2, varKRemainder, varStateCell :: TermLike Variable
 
 varI1 =
-    mkVar Variable
+    mkElemVar $ ElementVariable Variable
         { variableName = testId "VarI1"
         , variableCounter = mempty
         , variableSort = sortAInt
         }
 
 varI2 =
-    mkVar Variable
+    mkElemVar $ ElementVariable Variable
         { variableName = testId "VarI2"
         , variableCounter = mempty
         , variableSort = sortAInt
         }
 
 varKRemainder =
-    mkVar Variable
+    mkElemVar $ ElementVariable Variable
         { variableName = testId "VarDotVar1"
         , variableCounter = mempty
         , variableSort = sortK
         }
 
 varStateCell =
-    mkVar Variable
+    mkElemVar $ ElementVariable Variable
         { variableName = testId "VarDotVar0"
         , variableCounter = mempty
         , variableSort = sortStateCell
@@ -371,11 +372,11 @@ testRulePattern =
     RulePattern
         { left =
             -- Include an implicitly-quantified variable.
-            mkVar Mock.x
+            mkElemVar Mock.x
         , right =
             -- Include a binder to ensure that we respect them.
-            mkExists Mock.y (mkVar Mock.y)
-        , requires = Predicate.makeCeilPredicate (mkVar Mock.z)
+            mkExists Mock.y (mkElemVar Mock.y)
+        , requires = Predicate.makeCeilPredicate (mkElemVar Mock.z)
         , ensures = Predicate.makeTruePredicate
         , attributes = def
         }

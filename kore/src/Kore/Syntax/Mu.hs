@@ -23,8 +23,8 @@ import Kore.Sort
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
 import Kore.Unparser
+import Kore.Variables.AsVariable
 import Kore.Variables.UnifiedVariable
-       ( UnifiedVariable (..) )
 
 {-|'Mu' corresponds to the @μ@ syntactic category from the
  Syntax of the MμL
@@ -60,7 +60,7 @@ instance
     unparse2 Mu { muVariable, muChild } =
         Pretty.parens (Pretty.fillSep
             [ "\\mu"
-            , unparse2SortedVariable (getVariable muVariable)
+            , unparse2SortedVariable (asVariable muVariable)
             , unparse2 muChild
             ])
 
@@ -68,8 +68,8 @@ instance
     Ord variable =>
     Synthetic (Mu variable) (FreeVariables variable)
   where
-    synthetic Mu { muVariable = SetVariable variable, muChild } =
-        bindVariable (SetVar variable) muChild
+    synthetic Mu { muVariable, muChild } =
+        bindVariable (asUnifiedVariable muVariable) muChild
     {-# INLINE synthetic #-}
 
 instance SortedVariable variable => Synthetic (Mu variable) Sort where
@@ -77,5 +77,5 @@ instance SortedVariable variable => Synthetic (Mu variable) Sort where
         muSort
         & seq (matchSort muSort muChild)
       where
-        muSort = sortedVariableSort (getVariable muVariable)
+        muSort = sortedVariableSort (asVariable muVariable)
     {-# INLINE synthetic #-}

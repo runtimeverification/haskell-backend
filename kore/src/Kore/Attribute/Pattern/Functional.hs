@@ -169,7 +169,7 @@ instance Synthetic (Top sort) Functional where
     {-# INLINE synthetic #-}
 
 -- | A 'Variable' pattern is always 'Functional'.
-instance Synthetic (Const (UnifiedVariable Variable)) Functional where
+instance Synthetic (Const (UnifiedVariable variable)) Functional where
     synthetic (Const (ElemVar _)) = Functional True
     synthetic (Const (SetVar _)) = Functional False
     {-# INLINE synthetic #-}

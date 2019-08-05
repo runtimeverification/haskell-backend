@@ -45,6 +45,7 @@ import           Kore.Sort
 import qualified Kore.Sort as SortActual
                  ( SortActual (..) )
 import qualified Kore.Step.SMT.AST as AST
+import           Kore.Syntax.ElementVariable
 import           Kore.Syntax.Id
                  ( Id )
 import           Kore.Syntax.Sentence
@@ -323,7 +324,7 @@ parseSMTConstructor patt =
 
     parseExists
         :: TermLike Variable
-        -> (Set.Set Variable, TermLike Variable)
+        -> (Set.Set (ElementVariable Variable), TermLike Variable)
     parseExists (Exists_ _ variable child) =
         (Set.insert variable childVars, unquantifiedPatt)
       where
@@ -331,9 +332,9 @@ parseSMTConstructor patt =
     parseExists unquantifiedPatt = (Set.empty, unquantifiedPatt)
 
     checkOnlyQuantifiedVariablesOnce
-        :: Set.Set Variable
+        :: Set.Set (ElementVariable Variable)
         -> [TermLike Variable]
-        -> Maybe [Variable]
+        -> Maybe [ElementVariable Variable]
     checkOnlyQuantifiedVariablesOnce
         allowedVars
         []
@@ -343,7 +344,7 @@ parseSMTConstructor patt =
         allowedVars
         (patt0 : patts)
       = case patt0 of
-        Var_ var ->
+        ElemVar_ var ->
             if var `Set.member` allowedVars
                 then do
                     vars <-
@@ -356,7 +357,7 @@ parseSMTConstructor patt =
 
     buildConstructor
         :: Symbol
-        -> [Variable]
+        -> [ElementVariable Variable]
         -> Maybe AST.UnresolvedConstructor
     buildConstructor
         Symbol { symbolConstructor, symbolParams = [] }
@@ -376,15 +377,16 @@ parseSMTConstructor patt =
     parseVariableSort
         :: AST.Encodable
         -> Integer
-        -> Variable
+        -> ElementVariable Variable
         -> Maybe AST.UnresolvedConstructorArgument
     parseVariableSort
         constructorName
         index
-        Variable
+        (ElementVariable Variable
             { variableSort =
                 sort@(SortActualSort SortActual {sortActualSorts = []})
             }
+        )
       = Just SMT.ConstructorArgument
             { name =
                 AST.appendToEncoding

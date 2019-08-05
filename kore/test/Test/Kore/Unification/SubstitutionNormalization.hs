@@ -13,6 +13,7 @@ import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
+import           Kore.Syntax.ElementVariable
 import           Kore.TopBottom
                  ( isBottom )
 import           Kore.Unification.Error
@@ -73,7 +74,7 @@ test_substitutionNormalization =
                 ]
             )
             =<< runNormalizeSubstitution
-                [ (ElemVar $ v1 Mock.testSort, mkVar $ x1 Mock.testSort)
+                [ (ElemVar $ v1 Mock.testSort, mkElemVar $ x1 Mock.testSort)
                 , (ElemVar $ x1 Mock.testSort, mkTop Mock.testSort)
                 ]
     , testCase "Unnormalized substitution with 'and'" $
@@ -87,7 +88,7 @@ test_substitutionNormalization =
             )
             =<< runNormalizeSubstitution
                 [   (ElemVar $ v1 Mock.testSort
-                    , mkAnd (mkVar $ x1 Mock.testSort) mkTop_
+                    , mkAnd (mkElemVar $ x1 Mock.testSort) mkTop_
                     )
                 ,   (ElemVar $ x1 Mock.testSort, mkTop Mock.testSort)
                 ]
@@ -95,37 +96,37 @@ test_substitutionNormalization =
         let var1 = v1 Mock.testSort
         assertEqualWithExplanation "" (Substitution [])
             =<< runNormalizeSubstitution
-                [(ElemVar var1, mkVar $ v1 Mock.testSort)]
+                [(ElemVar var1, mkElemVar $ v1 Mock.testSort)]
     , testCase "Cycle with extra substitution" $ do
         let
             var1 = v1 Mock.testSort
             varx1 = x1 Mock.testSort
         assertEqualWithExplanation ""
-            (Substitution [(ElemVar varx1, mkVar var1)])
+            (Substitution [(ElemVar varx1, mkElemVar var1)])
             =<< runNormalizeSubstitution
-                    [ (ElemVar var1, mkVar var1)
-                    , (ElemVar varx1, mkVar var1)
+                    [ (ElemVar var1, mkElemVar var1)
+                    , (ElemVar varx1, mkElemVar var1)
                     ]
     , testCase "SetVariable Simplest cycle" $ do
         let var1 = Mock.makeTestUnifiedVariable "@x"
         assertEqualWithExplanation "" (Substitution [])
-            =<< runNormalizeSubstitution [(var1, mkUnifiedVariable var1)]
+            =<< runNormalizeSubstitution [(var1, mkVar var1)]
     , testCase "SetVariable Cycle with extra substitution" $ do
         let
             var1 = Mock.makeTestUnifiedVariable "@v"
             varx1 = Mock.makeTestUnifiedVariable "@x"
         assertEqualWithExplanation ""
-            (Substitution [(varx1, mkUnifiedVariable var1)])
+            (Substitution [(varx1, mkVar var1)])
             =<< runNormalizeSubstitution
-                    [ (var1, mkUnifiedVariable var1)
-                    , (varx1, mkUnifiedVariable var1)
+                    [ (var1, mkVar var1)
+                    , (varx1, mkVar var1)
                     ]
     , testCase "Function cycle" $ do
         let var1 = v1 Mock.testSort
         assertEqualWithExplanation ""
             (Error (NonCtorCircularVariableDependency [ElemVar var1]))
             =<< runNormalizeSubstitution
-                [ (ElemVar  var1 , mkApplySymbol f [mkVar var1] ) ]
+                [ (ElemVar  var1 , mkApplySymbol f [mkElemVar var1] ) ]
     , testCase "onlyThisLength 2 cycle" $ do
         let
             var1 = v1 Mock.testSort
@@ -135,8 +136,8 @@ test_substitutionNormalization =
                 "order on variables should prevent only-variable-cycles"
             )
             (runNormalizeSubstitution
-                [ (ElemVar var1, mkVar varx1)
-                , (ElemVar varx1, mkVar var1)
+                [ (ElemVar var1, mkElemVar varx1)
+                , (ElemVar varx1, mkElemVar var1)
                 ]
             )
      , testCase "SetVariable Length 2 cycle" $ do
@@ -148,8 +149,8 @@ test_substitutionNormalization =
                 "order on variables should prevent only-variable-cycles"
             )
             (runNormalizeSubstitution
-                [ (var1, mkUnifiedVariable varx1)
-                , (varx1, mkUnifiedVariable var1)
+                [ (var1, mkVar varx1)
+                , (varx1, mkVar var1)
                 ]
             )
      , testCase "Cycle with 'and'" $ do
@@ -163,8 +164,8 @@ test_substitutionNormalization =
                 )
             )
             =<< runNormalizeSubstitution
-                [ (ElemVar var1, mkAnd (mkVar varx1) mkTop_)
-                , (ElemVar varx1, mkAnd (mkVar var1) mkTop_)
+                [ (ElemVar var1, mkAnd (mkElemVar varx1) mkTop_)
+                , (ElemVar varx1, mkAnd (mkElemVar var1) mkTop_)
                 ]
      , testCase "SetVariable Cycle with 'and'" $ do
         let
@@ -175,8 +176,8 @@ test_substitutionNormalization =
               (NonCtorCircularVariableDependency [var1, varx1])
             )
             =<< runNormalizeSubstitution
-                [ (var1, mkAnd (mkUnifiedVariable varx1) mkTop_)
-                , (varx1, mkAnd (mkUnifiedVariable var1) mkTop_)
+                [ (var1, mkAnd (mkVar varx1) mkTop_)
+                , (varx1, mkAnd (mkVar var1) mkTop_)
                 ]
     , testCase "Length 2 non-ctor cycle" $ do
         let
@@ -188,37 +189,37 @@ test_substitutionNormalization =
                 )
             )
             =<< runNormalizeSubstitution
-                [ (ElemVar var1, mkApplySymbol f [mkVar varx1])
-                , (ElemVar varx1, mkVar var1)
+                [ (ElemVar var1, mkApplySymbol f [mkElemVar varx1])
+                , (ElemVar varx1, mkElemVar var1)
                 ]
     , testCase "Constructor cycle" $
         assertEqualWithExplanation "" SubstitutionBottom
             =<< runNormalizeSubstitution
-                [ (ElemVar Mock.x, Mock.constr10 (mkVar Mock.x)) ]
+                [ (ElemVar Mock.x, Mock.constr10 (mkElemVar Mock.x)) ]
     , testCase "SetVariable Constructor cycle" $ do
         let var1 = Mock.makeTestUnifiedVariable "@x"
         assertEqualWithExplanation ""
             (Substitution [(var1, mkBottom Mock.testSort)])
             =<< runNormalizeSubstitution
-                [ (var1, Mock.constr10 (mkUnifiedVariable var1)) ]
+                [ (var1, Mock.constr10 (mkVar var1)) ]
     , testCase "Constructor with side function cycle" $
         assertEqualWithExplanation "" SubstitutionBottom
             =<< runNormalizeSubstitution
                 [ ( ElemVar Mock.x
-                  , Mock.constr20 (Mock.f (mkVar Mock.x)) (mkVar Mock.x)
+                  , Mock.constr20 (Mock.f (mkElemVar Mock.x)) (mkElemVar Mock.x)
                   )
                 ]
     , testCase "Constructor with function cycle" $
         assertEqualWithExplanation ""
             (Error (NonCtorCircularVariableDependency [ElemVar Mock.x]))
             =<< runNormalizeSubstitution
-                [ (ElemVar Mock.x, Mock.constr10 (Mock.f (mkVar Mock.x))) ]
+                [ (ElemVar Mock.x, Mock.constr10 (Mock.f (mkElemVar Mock.x))) ]
     ]
   where
-    v1 :: Sort -> Variable
-    v1 = Variable (testId "v1") mempty
-    x1 :: Sort -> Variable
-    x1 = Variable (testId "x1") mempty
+    v1 :: Sort -> ElementVariable Variable
+    v1 = ElementVariable . Variable (testId "v1") mempty
+    x1 :: Sort -> ElementVariable Variable
+    x1 = ElementVariable . Variable (testId "x1") mempty
     f = Symbol
         { symbolConstructor = testId "f"
         , symbolParams = []

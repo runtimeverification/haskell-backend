@@ -58,6 +58,7 @@ import qualified Kore.Step.Search as Search
 import           Kore.Step.SMT.Lemma
 import           Kore.Syntax.Definition
                  ( ModuleName (..) )
+import           Kore.Syntax.ElementVariable
 import           Kore.Unparser
                  ( unparse )
 import qualified SMT
@@ -409,7 +410,7 @@ mainWithOptions
                                 success = (ExitSuccess, mkTop $ mkSortVariable "R")
                                 unknown =
                                     ( ExitSuccess
-                                    , mkVar
+                                    , mkElemVar . ElementVariable
                                         $ varS
                                             "Unknown"
                                             (mkSort $ noLocationId "SortUnknown")

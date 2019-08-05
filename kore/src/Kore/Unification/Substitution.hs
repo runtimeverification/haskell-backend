@@ -48,7 +48,7 @@ import           Prelude hiding
 
 import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Internal.TermLike
-                 ( pattern SetVar_, TermLike, pattern Var_, mkUnifiedVariable )
+                 ( TermLike, pattern Var_, mkVar )
 import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Syntax.Variable
                  ( SortedVariable )
@@ -269,12 +269,9 @@ reverseIfRhsIsVar variable (Substitution substitution) =
         :: UnifiedVariable variable
         -> (UnifiedVariable variable, TermLike variable)
         -> (UnifiedVariable variable, TermLike variable)
-    reversePairIfRhsVar (ElemVar var) (substVar, Var_ substitutionVar)
+    reversePairIfRhsVar var (substVar, Var_ substitutionVar)
       | var == substitutionVar =
-          (ElemVar substitutionVar, mkUnifiedVariable substVar)
-    reversePairIfRhsVar (SetVar var) (substVar, SetVar_ substitutionVar)
-      | var == substitutionVar =
-          (SetVar substitutionVar, mkUnifiedVariable substVar)
+          (substitutionVar, mkVar substVar)
     reversePairIfRhsVar _ original = original
 reverseIfRhsIsVar variable original@(NormalizedSubstitution substitution) =
     case reversableVars of
@@ -285,7 +282,7 @@ reverseIfRhsIsVar variable original@(NormalizedSubstitution substitution) =
                 replacementVar = foldr max v vs
 
                 replacement :: TermLike variable
-                replacement = mkUnifiedVariable replacementVar
+                replacement = mkVar replacementVar
 
                 replacedSubstitution
                     :: Map (UnifiedVariable variable) (TermLike variable)
@@ -309,8 +306,7 @@ reverseIfRhsIsVar variable original@(NormalizedSubstitution substitution) =
     reversableVars = map fst reversable
 
     rhsIsVar :: UnifiedVariable variable -> (thing, TermLike variable) -> Bool
-    rhsIsVar (ElemVar var) (_, Var_ otherVar) = var == otherVar
-    rhsIsVar (SetVar var) (_, SetVar_ otherVar) = var == otherVar
+    rhsIsVar var (_, Var_ otherVar) = var == otherVar
     rhsIsVar _ _ = False
 
 assertNoneAreFreeVarsInRhs

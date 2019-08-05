@@ -50,7 +50,7 @@ module Kore.Internal.TermLike
     , mkTop
     , mkVar
     , mkSetVar
-    , mkUnifiedVariable
+    , mkElemVar
     , mkStringLiteral
     , mkCharLiteral
     , mkSort
@@ -103,8 +103,8 @@ module Kore.Internal.TermLike
     , pattern Rewrites_
     , pattern Top_
     , pattern Var_
+    , pattern ElemVar_
     , pattern SetVar_
-    , pattern V
     , pattern StringLiteral_
     , pattern CharLiteral_
     , pattern Evaluated_
@@ -199,6 +199,7 @@ import           Kore.Syntax.Definition hiding
                  ( Alias, Symbol )
 import qualified Kore.Syntax.Definition as Syntax
 import           Kore.Syntax.DomainValue
+import           Kore.Syntax.ElementVariable
 import           Kore.Syntax.Equals
 import           Kore.Syntax.Exists
 import           Kore.Syntax.Floor
@@ -226,7 +227,6 @@ import           Kore.Variables.AsVariable
 import           Kore.Variables.Binding
 import           Kore.Variables.Fresh
 import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 
 {- | @Evaluated@ wraps patterns which are fully evaluated.
 
@@ -284,9 +284,8 @@ data TermLikeF variable child
     | StringLiteralF !(StringLiteral child)
     | CharLiteralF   !(CharLiteral child)
     | TopF           !(Top Sort child)
-    | VariableF      !variable
+    | VariableF      !(UnifiedVariable variable)
     | InhabitantF    !(Inhabitant child)
-    | SetVariableF   !(SetVariable variable)
     | BuiltinF       !(Builtin child)
     | EvaluatedF     !(Evaluated child)
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
@@ -318,7 +317,7 @@ instance
     -- Functors.
     synthetic (ForallF forallF) = synthetic forallF
     synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF variable) = freeVariable (ElemVar variable)
+    synthetic (VariableF variable) = synthetic (Const variable)
 
     synthetic (AndF andF) = synthetic andF
     synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
@@ -345,8 +344,6 @@ instance
 
     synthetic (MuF muF) = synthetic muF
     synthetic (NuF nuF) = synthetic nuF
-    synthetic (SetVariableF (SetVariable setVariable)) =
-        freeVariable (SetVar setVariable)
     {-# INLINE synthetic #-}
 
 instance SortedVariable variable => Synthetic (TermLikeF variable) Sort where
@@ -354,7 +351,7 @@ instance SortedVariable variable => Synthetic (TermLikeF variable) Sort where
     -- Functors.
     synthetic (ForallF forallF) = synthetic forallF
     synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF variable) = sortedVariableSort variable
+    synthetic (VariableF variable) = synthetic (Const variable)
 
     synthetic (AndF andF) = synthetic andF
     synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
@@ -381,8 +378,6 @@ instance SortedVariable variable => Synthetic (TermLikeF variable) Sort where
 
     synthetic (MuF muF) = synthetic muF
     synthetic (NuF nuF) = synthetic nuF
-    synthetic (SetVariableF setVariable) =
-        sortedVariableSort (getVariable setVariable)
     {-# INLINE synthetic #-}
 
 instance Synthetic (TermLikeF variable) Pattern.Functional where
@@ -390,7 +385,7 @@ instance Synthetic (TermLikeF variable) Pattern.Functional where
     -- Functors.
     synthetic (ForallF forallF) = synthetic forallF
     synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF _) = Pattern.Functional True
+    synthetic (VariableF variable) = synthetic (Const variable)
 
     synthetic (AndF andF) = synthetic andF
     synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
@@ -417,7 +412,6 @@ instance Synthetic (TermLikeF variable) Pattern.Functional where
 
     synthetic (MuF muF) = synthetic muF
     synthetic (NuF nuF) = synthetic nuF
-    synthetic (SetVariableF _) = Pattern.Functional False
     {-# INLINE synthetic #-}
 
 instance Synthetic (TermLikeF variable) Pattern.Function where
@@ -425,7 +419,7 @@ instance Synthetic (TermLikeF variable) Pattern.Function where
     -- Functors.
     synthetic (ForallF forallF) = synthetic forallF
     synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF _) = Pattern.Function True
+    synthetic (VariableF variable) = synthetic (Const variable)
 
     synthetic (AndF andF) = synthetic andF
     synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
@@ -452,7 +446,6 @@ instance Synthetic (TermLikeF variable) Pattern.Function where
 
     synthetic (MuF muF) = synthetic muF
     synthetic (NuF nuF) = synthetic nuF
-    synthetic (SetVariableF _) = Pattern.Function False
     {-# INLINE synthetic #-}
 
 instance Synthetic (TermLikeF variable) Pattern.Defined where
@@ -460,7 +453,7 @@ instance Synthetic (TermLikeF variable) Pattern.Defined where
     -- Functors.
     synthetic (ForallF forallF) = synthetic forallF
     synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF _) = Pattern.Defined True
+    synthetic (VariableF variable) = synthetic (Const variable)
 
     synthetic (AndF andF) = synthetic andF
     synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
@@ -487,7 +480,6 @@ instance Synthetic (TermLikeF variable) Pattern.Defined where
 
     synthetic (MuF muF) = synthetic muF
     synthetic (NuF nuF) = synthetic nuF
-    synthetic (SetVariableF _) = Pattern.Defined False
     {-# INLINE synthetic #-}
 
 {- | Use the provided mapping to replace all variables in a 'TermLikeF' head.
@@ -520,9 +512,7 @@ traverseVariablesF traversing =
         ForallF all0 -> ForallF <$> traverseVariablesForall all0
         MuF any0 -> MuF <$> traverseVariablesMu any0
         NuF any0 -> NuF <$> traverseVariablesNu any0
-        VariableF variable -> VariableF <$> traversing variable
-        SetVariableF (SetVariable variable) ->
-            SetVariableF . SetVariable <$> traversing variable
+        VariableF variable -> VariableF <$> traverse traversing variable
         -- Trivial cases
         AndF andP -> pure (AndF andP)
         ApplySymbolF applySymbolF -> pure (ApplySymbolF applySymbolF)
@@ -547,13 +537,13 @@ traverseVariablesF traversing =
         EvaluatedF childP -> pure (EvaluatedF childP)
   where
     traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
-        Exists existsSort <$> traversing existsVariable <*> pure existsChild
+        Exists existsSort <$> traverse traversing existsVariable <*> pure existsChild
     traverseVariablesForall Forall { forallSort, forallVariable, forallChild } =
-        Forall forallSort <$> traversing forallVariable <*> pure forallChild
-    traverseVariablesMu Mu { muVariable = SetVariable v, muChild } =
-        Mu <$> (SetVariable <$> traversing v) <*> pure muChild
-    traverseVariablesNu Nu { nuVariable = SetVariable v, nuChild } =
-        Nu <$> (SetVariable <$> traversing v) <*> pure nuChild
+        Forall forallSort <$> traverse traversing forallVariable <*> pure forallChild
+    traverseVariablesMu Mu { muVariable, muChild } =
+        Mu <$> traverse traversing muVariable <*> pure muChild
+    traverseVariablesNu Nu { nuVariable, nuChild } =
+        Nu <$> traverse traversing nuVariable <*> pure nuChild
 
 newtype TermLike variable =
     TermLike
@@ -713,9 +703,7 @@ instance
 
     traverseVariable match termLike =
         case termLikeF of
-            VariableF variable -> mkUnifiedVariable <$> match (ElemVar variable)
-            SetVariableF (SetVariable variable) ->
-                mkUnifiedVariable <$> match (SetVar variable)
+            VariableF variable -> mkVar <$> match variable
             _ -> pure termLike
       where
         _ :< termLikeF = Recursive.project termLike
@@ -765,7 +753,7 @@ Otherwise, the argument is returned.
  -}
 withoutFreeVariable
     :: (Ord variable, SortedVariable variable, Unparse variable)
-    => (UnifiedVariable variable)  -- ^ variable
+    => UnifiedVariable variable  -- ^ variable
     -> TermLike variable
     -> a  -- ^ result, if the variable does not occur free in the pattern
     -> a
@@ -985,12 +973,12 @@ externalizeFreshVariables termLike =
                     (existsVariable', existsChild') <-
                         underBinder
                             freeVariables'
-                            (ElemVar existsVariable)
+                            (asUnifiedVariable existsVariable)
                             existsChild
                     let exists' =
                             exists
-                                { existsVariable =
-                                    asVariable existsVariable'
+                                { existsVariable = ElementVariable
+                                    (asVariable existsVariable')
                                 , existsChild = existsChild'
                                 }
                     return (ExistsF exists')
@@ -999,21 +987,21 @@ externalizeFreshVariables termLike =
                     (forallVariable', forallChild') <-
                         underBinder
                             freeVariables'
-                            (ElemVar forallVariable)
+                            (asUnifiedVariable forallVariable)
                             forallChild
                     let forall' =
                             forall
-                                { forallVariable =
-                                    asVariable forallVariable'
+                                { forallVariable = ElementVariable
+                                    (asVariable forallVariable')
                                 , forallChild = forallChild'
                                 }
                     return (ForallF forall')
                 MuF mu -> do
-                    let Mu { muVariable = SetVariable muVar, muChild } = mu
+                    let Mu { muVariable, muChild } = mu
                     (muVariable', muChild') <-
                         underBinder
                             freeVariables'
-                            (SetVar muVar)
+                            (asUnifiedVariable muVariable)
                             muChild
                     let mu' =
                             mu
@@ -1023,11 +1011,11 @@ externalizeFreshVariables termLike =
                                 }
                     return (MuF mu')
                 NuF nu -> do
-                    let Nu { nuVariable = SetVariable nuVar, nuChild } = nu
+                    let Nu { nuVariable, nuChild } = nu
                     (nuVariable', nuChild') <-
                         underBinder
                             freeVariables'
-                            (SetVar nuVar)
+                            (asUnifiedVariable nuVariable)
                             nuChild
                     let nu' =
                             nu
@@ -1131,7 +1119,6 @@ forceSort forcedSort = Recursive.apo forceSortWorker
                 StringLiteralF _ -> illSorted
                 VariableF _ -> illSorted
                 InhabitantF _ -> illSorted
-                SetVariableF _ -> illSorted
 
 {- | Call the argument function with two patterns whose sorts agree.
 
@@ -1496,7 +1483,7 @@ mkEquals_ = mkEquals predicateSort
  -}
 mkExists
     :: (Ord variable, SortedVariable variable)
-    => variable
+    => ElementVariable variable
     -> TermLike variable
     -> TermLike variable
 mkExists existsVariable existsChild =
@@ -1536,7 +1523,7 @@ mkFloor_ = mkFloor predicateSort
  -}
 mkForall
     :: (Ord variable, SortedVariable variable)
-    => variable
+    => ElementVariable variable
     -> TermLike variable
     -> TermLike variable
 mkForall forallVariable forallChild =
@@ -1625,7 +1612,7 @@ mkMu
 mkMu muVar = makeSortsAgree mkMuWorker (mkSetVar muVar)
   where
     mkMuWorker (SetVar_ muVar') muChild _ =
-        synthesize (MuF Mu { muVariable = SetVariable muVar', muChild })
+        synthesize (MuF Mu { muVariable = muVar', muChild })
     mkMuWorker _ _ _ = error "Unreachable code"
 
 {- | Construct a 'Next' pattern.
@@ -1662,7 +1649,7 @@ mkNu
 mkNu nuVar = makeSortsAgree mkNuWorker (mkSetVar nuVar)
   where
     mkNuWorker (SetVar_ nuVar') nuChild _ =
-        synthesize (NuF Nu { nuVariable = SetVariable nuVar', nuChild })
+        synthesize (NuF Nu { nuVariable = nuVar', nuChild })
     mkNuWorker _ _ _ = error "Unreachable code"
 
 {- | Construct an 'Or' pattern.
@@ -1715,25 +1702,26 @@ mkTop_ = mkTop predicateSort
 {- | Construct a variable pattern.
  -}
 mkVar
-    :: (Ord variable, SortedVariable variable)
-    => variable
-    -> TermLike variable
+    :: Ord variable
+    => SortedVariable variable
+    => UnifiedVariable variable -> TermLike variable
 mkVar = synthesize . VariableF
+
+{- | Construct an element variable pattern.
+ -}
+mkElemVar
+    :: Ord variable
+    => SortedVariable variable
+    => ElementVariable variable -> TermLike variable
+mkElemVar = mkVar . asUnifiedVariable
 
 {- | Construct a set variable pattern.
  -}
 mkSetVar
-    :: (Ord variable, SortedVariable variable)
-    => SetVariable variable
-    -> TermLike variable
-mkSetVar = synthesize . SetVariableF
-
-mkUnifiedVariable
     :: Ord variable
     => SortedVariable variable
-    => UnifiedVariable variable -> TermLike variable
-mkUnifiedVariable (ElemVar variable) = mkVar variable
-mkUnifiedVariable (SetVar variable) = mkSetVar (SetVariable variable)
+    => SetVariable variable -> TermLike variable
+mkSetVar = mkVar . asUnifiedVariable
 
 {- | Construct a 'StringLiteral' pattern.
  -}
@@ -1842,7 +1830,7 @@ mkAlias
     :: Id
     -> [SortVariable]
     -> Sort
-    -> [Variable]
+    -> [ElementVariable Variable]
     -> TermLike Variable
     -> SentenceAlias (TermLike Variable)
 mkAlias aliasConstructor aliasParams resultSort' arguments right =
@@ -1868,7 +1856,7 @@ mkAlias aliasConstructor aliasParams resultSort' arguments right =
         , sentenceAliasAttributes = Attributes []
         }
   where
-    argumentSorts = variableSort <$> arguments
+    argumentSorts = variableSort . asVariable <$> arguments
 
 {- | Construct an alias declaration with no parameters.
 
@@ -1878,7 +1866,7 @@ See also: 'mkAlias'
 mkAlias_
     :: Id
     -> Sort
-    -> [Variable]
+    -> [ElementVariable Variable]
     -> TermLike Variable
     -> SentenceAlias (TermLike Variable)
 mkAlias_ aliasConstructor = mkAlias aliasConstructor []
@@ -1939,7 +1927,7 @@ pattern Equals_
 
 pattern Exists_
     :: Sort
-    -> variable
+    -> ElementVariable variable
     -> TermLike variable
     -> TermLike variable
 
@@ -1951,7 +1939,7 @@ pattern Floor_
 
 pattern Forall_
     :: Sort
-    -> variable
+    -> ElementVariable variable
     -> TermLike variable
     -> TermLike variable
 
@@ -1975,7 +1963,7 @@ pattern In_
     -> TermLike variable
 
 pattern Mu_
-    :: variable
+    :: SetVariable variable
     -> TermLike variable
     -> TermLike variable
 
@@ -1990,7 +1978,7 @@ pattern Not_
     -> TermLike variable
 
 pattern Nu_
-    :: variable
+    :: SetVariable variable
     -> TermLike variable
     -> TermLike variable
 
@@ -2008,9 +1996,11 @@ pattern Rewrites_
 
 pattern Top_ :: Sort -> TermLike variable
 
-pattern Var_ :: variable -> TermLike variable
+pattern Var_ :: UnifiedVariable variable -> TermLike variable
 
-pattern SetVar_ :: variable -> TermLike variable
+pattern ElemVar_ :: ElementVariable variable -> TermLike variable
+
+pattern SetVar_ :: SetVariable variable -> TermLike variable
 
 pattern StringLiteral_ :: Text -> TermLike variable
 
@@ -2110,9 +2100,9 @@ pattern In_ inOperandSort inResultSort inFirst inSecond <-
             }
     )
 
-pattern Mu_ muVar muChild <-
+pattern Mu_ muVariable muChild <-
     (Recursive.project ->
-        _ :< MuF Mu { muVariable = SetVariable muVar, muChild }
+        _ :< MuF Mu { muVariable, muChild }
     )
 
 pattern Next_ nextSort nextChild <-
@@ -2123,9 +2113,9 @@ pattern Not_ notSort notChild <-
     (Recursive.project ->
         _ :< NotF Not { notSort, notChild })
 
-pattern Nu_ nuVar nuChild <-
+pattern Nu_ nuVariable nuChild <-
     (Recursive.project ->
-        _ :< NuF Nu { nuVariable = SetVariable nuVar, nuChild }
+        _ :< NuF Nu { nuVariable, nuChild }
     )
 
 pattern Or_ orSort orFirst orSecond <-
@@ -2147,10 +2137,10 @@ pattern Var_ variable <-
     (Recursive.project -> _ :< VariableF variable)
 
 pattern SetVar_ setVariable <-
-    (Recursive.project -> _ :< SetVariableF (SetVariable setVariable))
+    (Recursive.project -> _ :< VariableF (SetVar setVariable))
 
-pattern V :: variable -> TermLike variable
-pattern V x <- Var_ x
+pattern ElemVar_ elemVariable <-
+    (Recursive.project -> _ :< VariableF (ElemVar elemVariable))
 
 pattern StringLiteral_ str <-
     (Recursive.project -> _ :< StringLiteralF (StringLiteral str))

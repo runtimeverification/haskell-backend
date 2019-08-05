@@ -72,7 +72,6 @@ import qualified Kore.Step.SMT.AST as SMT.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
 import           Kore.Syntax as Syntax
 import           Kore.Syntax.Sentence as Syntax
-import qualified Kore.Syntax.SetVariable as SetVariable
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -256,12 +255,6 @@ instance
         SumConstructorDifferent
             (printWithExplanation pattern1)
             (printWithExplanation pattern2)
-
-    sumConstructorPair (Syntax.SetVariableF a1) (Syntax.SetVariableF a2) =
-        SumConstructorSameWithArguments (EqWrap "SetVariableF" a1 a2)
-    sumConstructorPair pattern1@(Syntax.SetVariableF _) pattern2 =
-        SumConstructorDifferent
-            (printWithExplanation pattern1) (printWithExplanation pattern2)
 
 instance
     ( EqualWithExplanation child
@@ -804,18 +797,35 @@ instance
 instance
     ( EqualWithExplanation variable
     , Show variable
-    ) => WrapperEqualWithExplanation (SetVariable variable)
+    ) => SumEqualWithExplanation (ElementVariable variable)
   where
-    wrapperConstructorName _ = "SetVariable"
-    wrapperField =
-        Function.on (EqWrap "getVariable = ") SetVariable.getVariable
+    sumConstructorPair (ElementVariable a1) (ElementVariable a2) =
+        SumConstructorSameWithArguments
+        $ EqWrap "ElementVariable" a1 a2
+
+instance
+    ( EqualWithExplanation variable
+    , Show variable
+    ) => EqualWithExplanation (ElementVariable variable)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation variable
+    , Show variable
+    ) => SumEqualWithExplanation (SetVariable variable)
+  where
+    sumConstructorPair (SetVariable a1) (SetVariable a2) =
+        SumConstructorSameWithArguments
+        $ EqWrap "SetVariable" a1 a2
 
 instance
     ( EqualWithExplanation variable
     , Show variable
     ) => EqualWithExplanation (SetVariable variable)
   where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
 instance StructEqualWithExplanation (Inhabitant child) where
@@ -2423,12 +2433,6 @@ instance
         SumConstructorDifferent
             (printWithExplanation pattern1)
             (printWithExplanation pattern2)
-
-    sumConstructorPair (TermLike.SetVariableF a1) (TermLike.SetVariableF a2) =
-        SumConstructorSameWithArguments (EqWrap "SetVariableF" a1 a2)
-    sumConstructorPair pattern1@(TermLike.SetVariableF _) pattern2 =
-        SumConstructorDifferent
-            (printWithExplanation pattern1) (printWithExplanation pattern2)
 
     sumConstructorPair (TermLike.EvaluatedF a1) (TermLike.EvaluatedF a2) =
         SumConstructorSameWithArguments (EqWrap "EvaluatedF" a1 a2)

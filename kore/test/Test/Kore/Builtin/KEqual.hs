@@ -13,6 +13,7 @@ import           Test.Tasty
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
+import           Kore.Syntax.ElementVariable
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
@@ -58,8 +59,14 @@ test_KEqual =
         let expect = Pattern.fromTermLike $ Test.Bool.asInternal True
             original =
                 keqBool
-                    (kseq (mkVar (varS "x" kItemSort)) dotk)
-                    (kseq (mkVar (varS "x" kItemSort)) dotk)
+                    (kseq
+                        (mkElemVar (ElementVariable $ varS "x" kItemSort))
+                        dotk
+                    )
+                    (kseq
+                        (mkElemVar (ElementVariable $ varS "x" kItemSort))
+                        dotk
+                    )
         actual <- evaluate original
         assertEqual' "" expect actual
 
@@ -67,8 +74,8 @@ test_KEqual =
         let expect = Pattern.fromTermLike $ Test.Bool.asInternal True
             original =
                 keqBool
-                    (kseq (inj kItemSort (mkVar (varS "x" idSort))) dotk)
-                    (kseq (inj kItemSort (mkVar (varS "x" idSort))) dotk)
+                    (kseq (inj kItemSort (mkElemVar (ElementVariable $ varS "x" idSort))) dotk)
+                    (kseq (inj kItemSort (mkElemVar (ElementVariable $ varS "x" idSort))) dotk)
         actual <- evaluate original
         assertEqual' "" expect actual
 

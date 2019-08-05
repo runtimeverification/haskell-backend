@@ -62,11 +62,11 @@ import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT
                  ( resolve )
 import           Kore.Syntax.Application
+import           Kore.Syntax.ElementVariable
 import           Kore.Syntax.SetVariable
 import           Kore.Syntax.Variable
 import           Kore.Unparser
 import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import qualified SMT.AST as SMT
 import qualified SMT.SimpleSMT as SMT
 
@@ -507,53 +507,54 @@ anywhereSymbol =
         (typed @Attribute.Symbol . typed @Attribute.Anywhere)
         (Attribute.Anywhere True)
 
-var_x_1 :: Variable
-var_x_1 = Variable (testId "x") (Just (Element 1)) testSort
-var_y_1 :: Variable
-var_y_1 = Variable (testId "y") (Just (Element 1)) testSort
-var_z_1 :: Variable
-var_z_1 = Variable (testId "z") (Just (Element 1)) testSort
-x :: Variable
-x = Variable (testId "x") mempty testSort
+var_x_1 :: ElementVariable Variable
+var_x_1 = ElementVariable $ Variable (testId "x") (Just (Element 1)) testSort
+var_y_1 :: ElementVariable Variable
+var_y_1 = ElementVariable $ Variable (testId "y") (Just (Element 1)) testSort
+var_z_1 :: ElementVariable Variable
+var_z_1 = ElementVariable $ Variable (testId "z") (Just (Element 1)) testSort
+x :: ElementVariable Variable
+x = ElementVariable $ Variable (testId "x") mempty testSort
 setX :: SetVariable Variable
-setX = SetVariable x
-x0 :: Variable
-x0 = Variable (testId "x") mempty testSort0
-y :: Variable
-y = Variable (testId "y") mempty testSort
+setX = SetVariable $ Variable (testId "@x") mempty testSort
+x0 :: ElementVariable Variable
+x0 = ElementVariable $ Variable (testId "x") mempty testSort0
+y :: ElementVariable Variable
+y = ElementVariable $ Variable (testId "y") mempty testSort
 setY :: SetVariable Variable
-setY = SetVariable y
-z :: Variable
-z = Variable (testId "z") mempty testSort
-m :: Variable
-m = Variable (testId "m") mempty mapSort
-xSet :: Variable
-xSet = Variable (testId "xSet") mempty setSort
-ySet :: Variable
-ySet = Variable (testId "ySet") mempty setSort
-xInt :: Variable
-xInt = Variable (testId "xInt") mempty intSort
-yInt :: Variable
-yInt = Variable (testId "yInt") mempty intSort
-xBool :: Variable
-xBool = Variable (testId "xBool") mempty boolSort
-xString :: Variable
-xString = Variable (testId "xString") mempty stringSort
-xList :: Variable
-xList = Variable (testId "xList") mempty listSort
-xMap :: Variable
-xMap = Variable (testId "xMap") mempty mapSort
-xSubSort :: Variable
-xSubSort = Variable (testId "xSubSort") mempty subSort
-xSubSubSort :: Variable
-xSubSubSort = Variable (testId "xSubSubSort") mempty subSubsort
-xTopSort :: Variable
-xTopSort = Variable (testId "xTopSort") mempty topSort
+setY = SetVariable $ Variable (testId "@y") mempty testSort
+z :: ElementVariable Variable
+z = ElementVariable $ Variable (testId "z") mempty testSort
+m :: ElementVariable Variable
+m = ElementVariable $ Variable (testId "m") mempty mapSort
+xSet :: ElementVariable Variable
+xSet = ElementVariable $ Variable (testId "xSet") mempty setSort
+ySet :: ElementVariable Variable
+ySet = ElementVariable $ Variable (testId "ySet") mempty setSort
+xInt :: ElementVariable Variable
+xInt = ElementVariable $ Variable (testId "xInt") mempty intSort
+yInt :: ElementVariable Variable
+yInt = ElementVariable $ Variable (testId "yInt") mempty intSort
+xBool :: ElementVariable Variable
+xBool = ElementVariable $ Variable (testId "xBool") mempty boolSort
+xString :: ElementVariable Variable
+xString = ElementVariable $ Variable (testId "xString") mempty stringSort
+xList :: ElementVariable Variable
+xList = ElementVariable $ Variable (testId "xList") mempty listSort
+xMap :: ElementVariable Variable
+xMap = ElementVariable $ Variable (testId "xMap") mempty mapSort
+xSubSort :: ElementVariable Variable
+xSubSort = ElementVariable $ Variable (testId "xSubSort") mempty subSort
+xSubSubSort :: ElementVariable Variable
+xSubSubSort =
+    ElementVariable $ Variable (testId "xSubSubSort") mempty subSubsort
+xTopSort :: ElementVariable Variable
+xTopSort = ElementVariable $ Variable (testId "xTopSort") mempty topSort
 
 makeUnifiedVariable :: Text -> Sort -> UnifiedVariable Variable
 makeUnifiedVariable v sort
-  | Text.head v == '@' = SetVar v'
-  | otherwise = ElemVar v'
+  | Text.head v == '@' = SetVar (SetVariable v')
+  | otherwise = ElemVar (ElementVariable v')
   where
     v' = Variable
         { variableSort = sort
@@ -565,7 +566,7 @@ makeTestUnifiedVariable :: Text -> UnifiedVariable Variable
 makeTestUnifiedVariable = (`makeUnifiedVariable` testSort)
 
 mkTestUnifiedVariable :: Text -> TermLike Variable
-mkTestUnifiedVariable = Internal.mkUnifiedVariable . makeTestUnifiedVariable
+mkTestUnifiedVariable = Internal.mkVar . makeTestUnifiedVariable
 
 a
     :: (Ord variable, SortedVariable variable, Unparse variable)
@@ -1490,9 +1491,9 @@ builtinMap elements = framedMap elements []
 framedMap
     :: (Ord variable, SortedVariable variable, Unparse variable)
     => [(TermLike variable, TermLike variable)]
-    -> [variable]
+    -> [ElementVariable variable]
     -> TermLike variable
-framedMap elements (map Internal.mkVar -> opaque) =
+framedMap elements (map Internal.mkElemVar -> opaque) =
     Internal.mkBuiltin $ Domain.BuiltinMap Domain.InternalAc
         { builtinAcSort = mapSort
         , builtinAcUnit = unitMapSymbol

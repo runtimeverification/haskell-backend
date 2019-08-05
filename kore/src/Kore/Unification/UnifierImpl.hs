@@ -95,17 +95,9 @@ groupSubstitutionByVariable
 groupSubstitutionByVariable =
     groupBy ((==) `on` fst) . sortBy (compare `on` fst) . map sortRenaming
   where
-    sortRenaming (ElemVar var, Recursive.project -> ann :< VariableF var')
+    sortRenaming (var, Recursive.project -> ann :< VariableF var')
         | var' < var =
-            (ElemVar var', Recursive.embed (ann :< VariableF var))
-    sortRenaming
-        ( SetVar var
-        , Recursive.project -> ann :< SetVariableF (SetVariable var')
-        )
-        | var' < var =
-            ( SetVar var'
-            , Recursive.embed (ann :< SetVariableF (SetVariable var))
-            )
+            (var', Recursive.embed (ann :< VariableF var))
     sortRenaming eq = eq
 
 -- simplifies x = t1 /\ x = t2 /\ ... /\ x = tn by transforming it into

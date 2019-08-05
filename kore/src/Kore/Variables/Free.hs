@@ -13,7 +13,6 @@ module Kore.Variables.Free
     ( freePureVariables
     , pureAllVariables
     , synthetic
-    , syntheticSet
     ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
@@ -27,7 +26,6 @@ import qualified Data.Set as Set
 
 import Kore.Syntax
 import Kore.Variables.UnifiedVariable
-       ( UnifiedVariable (..) )
 
 -- | The free variables of a pure pattern.
 freePureVariables
@@ -49,31 +47,29 @@ freePureVariables root =
     freePureVariables1 recursive =
         case Cofree.tailF (Recursive.project recursive) of
             VariableF v ->
-                Monad.unlessM (isBound (ElemVar v)) (recordFree (ElemVar v))
+                Monad.unlessM (isBound v) (recordFree v)
             ExistsF Exists { existsVariable, existsChild } ->
                 Monad.RWS.local
                     -- record the bound variable
-                    (Set.insert (ElemVar existsVariable))
+                    (Set.insert (asUnifiedVariable existsVariable))
                     -- descend into the bound pattern
                     (freePureVariables1 existsChild)
             ForallF Forall { forallVariable, forallChild } ->
                 Monad.RWS.local
                     -- record the bound variable
-                    (Set.insert (ElemVar forallVariable))
+                    (Set.insert (asUnifiedVariable forallVariable))
                     -- descend into the bound pattern
                     (freePureVariables1 forallChild)
-            SetVariableF (SetVariable v) ->
-                Monad.unlessM (isBound (SetVar v)) (recordFree (SetVar v))
-            MuF Mu { muVariable = SetVariable v, muChild } ->
+            MuF Mu { muVariable, muChild } ->
                 Monad.RWS.local
                     -- record the bound variable
-                    (Set.insert (SetVar v))
+                    (Set.insert (asUnifiedVariable muVariable))
                     -- descend into the bound pattern
                     (freePureVariables1 muChild)
-            NuF Nu { nuVariable = SetVariable v, nuChild } ->
+            NuF Nu { nuVariable, nuChild } ->
                 Monad.RWS.local
                     -- record the bound variable
-                    (Set.insert (SetVar v))
+                    (Set.insert (asUnifiedVariable nuVariable))
                     -- descend into the bound pattern
                     (freePureVariables1 nuChild)
             p -> mapM_ freePureVariables1 p
@@ -86,16 +82,15 @@ pureMergeVariables
     -> Set.Set (UnifiedVariable variable)
 pureMergeVariables base =
     case Cofree.tailF base of
-        VariableF v -> Set.singleton (ElemVar v)
+        VariableF v -> Set.singleton v
         ExistsF Exists { existsVariable, existsChild } ->
-            Set.insert (ElemVar existsVariable) existsChild
+            Set.insert (asUnifiedVariable existsVariable) existsChild
         ForallF Forall { forallVariable, forallChild } ->
-            Set.insert (ElemVar forallVariable) forallChild
-        SetVariableF (SetVariable v) -> Set.singleton (SetVar v)
-        MuF Mu { muVariable = SetVariable muVar, muChild } ->
-            Set.insert (SetVar muVar) muChild
-        NuF Nu { nuVariable = SetVariable nuVar, nuChild } ->
-            Set.insert (SetVar nuVar) nuChild
+            Set.insert (asUnifiedVariable forallVariable) forallChild
+        MuF Mu { muVariable, muChild } ->
+            Set.insert (asUnifiedVariable muVariable) muChild
+        NuF Nu { nuVariable, nuChild } ->
+            Set.insert (asUnifiedVariable nuVariable) nuChild
         p -> Foldable.foldl' Set.union Set.empty p
 
 {-| 'pureAllVariables' extracts all variables of a given level in a pattern as a
@@ -118,37 +113,14 @@ synthetic
     => PatternF variable (Set.Set (UnifiedVariable variable))
     -> Set.Set (UnifiedVariable variable)
 synthetic (ExistsF Exists { existsVariable, existsChild }) =
-    Set.delete (ElemVar existsVariable) existsChild
+    Set.delete (asUnifiedVariable existsVariable) existsChild
 synthetic (ForallF Forall { forallVariable, forallChild }) =
-    Set.delete (ElemVar forallVariable) forallChild
-synthetic (VariableF variable) =
-    Set.singleton (ElemVar variable)
-synthetic (MuF Mu { muVariable = SetVariable muVar, muChild }) =
-    Set.delete (SetVar muVar) muChild
-synthetic (NuF Nu { nuVariable = SetVariable nuVar, nuChild }) =
-    Set.delete (SetVar nuVar) nuChild
-synthetic (SetVariableF (SetVariable variable)) =
-    Set.singleton (SetVar variable)
+    Set.delete (asUnifiedVariable forallVariable) forallChild
+synthetic (VariableF variable) = Set.singleton variable
+synthetic (MuF Mu { muVariable, muChild }) =
+    Set.delete (asUnifiedVariable muVariable) muChild
+synthetic (NuF Nu { nuVariable, nuChild }) =
+    Set.delete (asUnifiedVariable nuVariable) nuChild
 synthetic patternHead =
     Foldable.foldl' Set.union Set.empty patternHead
 {-# INLINE synthetic #-}
-
-{- | @syntheticSet@ is an algebra for the free set variables of a pattern.
-
-Use @syntheticSet@ with 'Kore.Annotation.synthesize' to annotate a pattern with
-its free variables as a synthetic attribute.
-
- -}
-syntheticSet
-    :: Ord variable
-    => PatternF variable (Set.Set variable)
-    -> Set.Set variable
-syntheticSet (MuF Mu { muVariable = SetVariable v, muChild }) =
-    Set.delete v muChild
-syntheticSet (NuF Nu { nuVariable = SetVariable v, nuChild }) =
-    Set.delete v nuChild
-syntheticSet (SetVariableF (SetVariable variable)) =
-    Set.singleton variable
-syntheticSet patternHead =
-    Foldable.foldl' Set.union Set.empty patternHead
-{-# INLINE syntheticSet #-}

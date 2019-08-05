@@ -11,11 +11,14 @@ module Kore.Attribute.Pattern.FreeVariables
     , bindVariable
     , mapFreeVariables
     , traverseFreeVariables
+    , getFreeElementVariables
     ) where
 
 import           Control.DeepSeq
 import           Data.Functor.Const
 import           Data.Hashable
+import           Data.Maybe
+                 ( mapMaybe )
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
@@ -26,8 +29,8 @@ import qualified GHC.Generics as GHC
 import Kore.Debug
 
 import Kore.Attribute.Synthetic
+import Kore.Syntax.ElementVariable
 import Kore.Variables.UnifiedVariable
-       ( UnifiedVariable )
 
 newtype FreeVariables variable =
     FreeVariables { getFreeVariables :: Set (UnifiedVariable variable) }
@@ -49,8 +52,8 @@ instance Hashable variable => Hashable (FreeVariables variable) where
         hashWithSalt salt (Set.toList freeVariables)
 
 instance
-    Ord variable
-    => Synthetic (Const (UnifiedVariable variable)) (FreeVariables variable)
+    Ord variable =>
+    Synthetic (Const (UnifiedVariable variable)) (FreeVariables variable)
   where
     synthetic (Const var) = freeVariable var
     {-# INLINE synthetic #-}
@@ -93,3 +96,9 @@ traverseFreeVariables traversing (FreeVariables freeVariables) =
     FreeVariables . Set.fromList
     <$> Traversable.traverse (traverse traversing) (Set.toList freeVariables)
 {-# INLINE traverseFreeVariables #-}
+
+{- | Extracts the list of free element variables
+-}
+getFreeElementVariables :: FreeVariables variable -> [ElementVariable variable]
+getFreeElementVariables =
+    mapMaybe extractElementVariable . Set.toList . getFreeVariables

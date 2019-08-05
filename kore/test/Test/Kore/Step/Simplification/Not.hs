@@ -72,7 +72,7 @@ test_simplifyEvaluated =
             actuals = Foldable.toList actual
 
 termX :: Pattern Variable
-termX = Pattern.fromTermLike (mkVar Mock.x)
+termX = Pattern.fromTermLike (mkElemVar Mock.x)
 
 termNotX :: Pattern Variable
 termNotX = mkNot <$> termX
@@ -87,10 +87,10 @@ equalsXB :: Pattern Variable
 equalsXB = fromPredicate equalsXB_
 
 equalsXA_ :: Syntax.Predicate Variable
-equalsXA_ = Syntax.Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
+equalsXA_ = Syntax.Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.a
 
 equalsXB_ :: Syntax.Predicate Variable
-equalsXB_ = Syntax.Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.b
+equalsXB_ = Syntax.Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.b
 
 notEqualsXA :: Pattern Variable
 notEqualsXA = fromPredicate $ Syntax.Predicate.makeNotPredicate equalsXA_

@@ -17,6 +17,7 @@ import           Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
+import           Kore.Syntax.ElementVariable
 import           Kore.Unparser
 
 -- TODO: Move Forall up in the other simplifiers or something similar. Note
@@ -45,9 +46,9 @@ simplify
     => Forall Sort variable (OrPattern variable)
     -> OrPattern variable
 simplify
-    Forall { forallVariable = variable, forallChild = child }
+    Forall { forallVariable, forallChild }
   =
-    simplifyEvaluated variable child
+    simplifyEvaluated forallVariable forallChild
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -68,7 +69,7 @@ simplifyEvaluated
         , Show variable
         , Unparse variable
         )
-    => variable
+    => ElementVariable variable
     -> OrPattern variable
     -> OrPattern variable
 simplifyEvaluated variable simplified
@@ -86,7 +87,7 @@ makeEvaluate
         , Show variable
         , Unparse variable
         )
-    => variable
+    => ElementVariable variable
     -> Pattern variable
     -> Pattern variable
 makeEvaluate variable patt

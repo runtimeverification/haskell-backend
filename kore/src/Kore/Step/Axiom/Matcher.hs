@@ -364,20 +364,10 @@ matchEqualHeadPatterns quantifiedVariables first second = do
         (Var_ firstVariable) ->
             case second of
                 (Var_ secondVariable) ->
-                    case Map.lookup (ElemVar firstVariable) quantifiedVariables of
+                    case Map.lookup firstVariable quantifiedVariables of
                         Nothing -> nothing
                         Just variable ->
-                            if variable == ElemVar secondVariable
-                            then justTop
-                            else nothing
-                _ -> nothing
-        (SetVar_ firstVariable) ->
-            case second of
-                (SetVar_ secondVariable) ->
-                    case Map.lookup (SetVar firstVariable) quantifiedVariables of
-                        Nothing -> nothing
-                        Just variable ->
-                            if variable == SetVar secondVariable
+                            if variable == secondVariable
                             then justTop
                             else nothing
                 _ -> nothing
@@ -452,7 +442,7 @@ matchVariableFunction
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Predicate variable)
-matchVariableFunction quantifiedVariables (Var_ var) second
+matchVariableFunction quantifiedVariables (ElemVar_ var) second
   | not (ElemVar var `Map.member` quantifiedVariables) = do
     Monad.guard (isFunctionPattern second)
     Monad.Trans.lift $ do

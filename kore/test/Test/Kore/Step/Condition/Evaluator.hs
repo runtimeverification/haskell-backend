@@ -16,6 +16,7 @@ import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
+import           Kore.Syntax.ElementVariable
 import           SMT
                  ( SMT )
 
@@ -36,7 +37,7 @@ test_andNegation =
         property
   where
     property = do
-        let boolVariableGen = mkVar <$> variableGen Builtin.boolSort
+        let boolVariableGen = mkElemVar <$> elementVariableGen Builtin.boolSort
             boolPredicateGen =
                 predicateChildGen boolVariableGen Builtin.boolSort
         predicate <- forAll (standaloneGen boolPredicateGen)
@@ -61,7 +62,7 @@ noSimplification = []
 -- Refute Int predicates
 
 vInt :: Id -> TermLike Variable
-vInt s = mkVar (varS s Builtin.intSort)
+vInt s = mkElemVar (ElementVariable $ varS s Builtin.intSort)
 
 a, b, c :: TermLike Variable
 a = vInt (testId "a")
@@ -69,7 +70,7 @@ b = vInt (testId "b")
 c = vInt (testId "c")
 
 vBool :: Id -> TermLike Variable
-vBool s = mkVar (varS s Builtin.boolSort)
+vBool s = mkElemVar (ElementVariable $ varS s Builtin.boolSort)
 
 p, q :: TermLike Variable
 p = vBool (testId "p")

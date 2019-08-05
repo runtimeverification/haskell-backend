@@ -129,7 +129,5 @@ instance
             TopF Top { topSort } -> locationFromAst topSort
             VariableF variable -> locationFromAst variable
             InhabitantF Inhabitant { inhSort } -> locationFromAst inhSort
-            SetVariableF (SetVariable variable) ->
-                locationFromAst variable
 
     updateAstLocation = undefined

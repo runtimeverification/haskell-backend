@@ -13,11 +13,11 @@ import           Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Pattern as Internal
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Internal.Pattern
-import           Kore.Internal.TermLike hiding
-                 ( V )
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate, makeEqualsPredicate, makeFalsePredicate,
                  makeTruePredicate )
+import           Kore.Syntax.ElementVariable
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.UnifiedVariable
@@ -41,13 +41,15 @@ test_expandedPattern =
             Conditional
                 { term = war "1"
                 , predicate = makeEquals (war "2") (war "3")
-                , substitution = Substitution.wrap [(ElemVar $ W "4", war "5")]
+                , substitution = Substitution.wrap
+                    [(ElemVar . ElementVariable $ W "4", war "5")]
                 }
             (Pattern.mapVariables showVar
                 Conditional
                     { term = var 1
                     , predicate = makeEquals (var 2) (var 3)
-                    , substitution = Substitution.wrap [(ElemVar $ V 4, var 5)]
+                    , substitution = Substitution.wrap
+                        [(ElemVar . ElementVariable $ V 4, var 5)]
                     }
             )
         )
@@ -64,7 +66,8 @@ test_expandedPattern =
                 Conditional
                     { term = var 1
                     , predicate = makeEquals (var 2) (var 3)
-                    , substitution = Substitution.wrap [(ElemVar $ V 4, var 5)]
+                    , substitution = Substitution.wrap
+                        [(ElemVar . ElementVariable $ V 4, var 5)]
                     }
             )
         )
@@ -78,7 +81,8 @@ test_expandedPattern =
                 Conditional
                     { term = mkTop sortVariable
                     , predicate = makeEquals (var 2) (var 3)
-                    , substitution = Substitution.wrap [(ElemVar $ V 4, var 5)]
+                    , substitution = Substitution.wrap
+                        [(ElemVar . ElementVariable $ V 4, var 5)]
                     }
             )
         )
@@ -100,7 +104,8 @@ test_expandedPattern =
                 Conditional
                     { term = mkBottom sortVariable
                     , predicate = makeEquals (var 2) (var 3)
-                    , substitution = Substitution.wrap [(ElemVar $ V 4, var 5)]
+                    , substitution = Substitution.wrap
+                        [(ElemVar . ElementVariable $ V 4, var 5)]
                     }
             )
         )
@@ -162,10 +167,10 @@ showVar :: V -> W
 showVar (V i) = W (show i)
 
 var :: Integer -> TermLike V
-var i = mkVar (V i)
+var = mkElemVar . ElementVariable . V
 
 war :: String -> TermLike W
-war s = mkVar (W s)
+war = mkElemVar . ElementVariable . W
 
 makeEq
     :: (SortedVariable var, Ord var, Show var, Unparse var)

@@ -37,6 +37,7 @@ import qualified Kore.Step.Simplification.Data as BranchT
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Step.Substitution as Substitution
+import           Kore.Syntax.ElementVariable
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -90,8 +91,8 @@ simplify
         )
     => Exists Sort variable (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify Exists { existsVariable = variable, existsChild = child } =
-    simplifyEvaluated variable child
+simplify Exists { existsVariable, existsChild } =
+    simplifyEvaluated existsVariable existsChild
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -113,7 +114,7 @@ simplifyEvaluated
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => variable
+    => ElementVariable variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
 simplifyEvaluated variable simplified
@@ -134,7 +135,7 @@ makeEvaluate
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => variable
+    => ElementVariable variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
 makeEvaluate variable original
@@ -168,7 +169,7 @@ matchesToVariableSubstitution
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => variable
+    => ElementVariable variable
     -> Pattern variable
     -> simplifier Bool
 matchesToVariableSubstitution
@@ -192,7 +193,7 @@ singleVariableSubstitution
         , SortedVariable variable
         , Unparse variable
         )
-    => variable -> Predicate variable -> Bool
+    => ElementVariable variable -> Predicate variable -> Bool
 singleVariableSubstitution
     variable
     Conditional
@@ -232,7 +233,7 @@ makeEvaluateBoundLeft
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => variable  -- ^ quantified variable
+    => ElementVariable variable  -- ^ quantified variable
     -> TermLike variable  -- ^ substituted term
     -> Pattern variable
     -> BranchT simplifier (Pattern variable)
@@ -272,7 +273,7 @@ makeEvaluateBoundRight
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => variable  -- ^ variable to be quantified
+    => ElementVariable variable  -- ^ variable to be quantified
     -> Substitution variable  -- ^ free substitution
     -> Pattern variable  -- ^ pattern to quantify
     -> BranchT simplifier (Pattern variable)
@@ -310,7 +311,7 @@ splitSubstitution
         , SortedVariable variable
         , Unparse variable
         )
-    => variable
+    => ElementVariable variable
     -> Substitution variable
     ->  ( Either (TermLike variable) (Substitution variable)
         , Substitution variable
@@ -341,7 +342,7 @@ quantifyPattern
         , Unparse variable
         , SortedVariable variable
         )
-    => variable
+    => ElementVariable variable
     -> Pattern variable
     -> Pattern variable
 quantifyPattern variable original@Conditional { term, predicate, substitution }

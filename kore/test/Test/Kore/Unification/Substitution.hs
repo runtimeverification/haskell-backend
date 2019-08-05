@@ -216,45 +216,45 @@ reverseRhsTests =
             (reverseIfRhsIsVar (ElemVar Mock.x) subst)
     , testCase "unnormalized reverses RHS" $ do
         let
-            expectedSubst = wrap [(ElemVar Mock.x, mkVar Mock.y)]
-            originalSubst = wrap [(ElemVar Mock.y, mkVar Mock.x)]
+            expectedSubst = wrap [(ElemVar Mock.x, mkElemVar Mock.y)]
+            originalSubst = wrap [(ElemVar Mock.y, mkElemVar Mock.x)]
         assertEqualWithExplanation ""
             expectedSubst
             (reverseIfRhsIsVar (ElemVar Mock.x) originalSubst)
     , testCase "normalized reverses RHS" $ do
         let
-            expectedSubst = unsafeWrap [(ElemVar Mock.x, mkVar Mock.y)]
-            originalSubst = unsafeWrap [(ElemVar Mock.y, mkVar Mock.x)]
+            expectedSubst = unsafeWrap [(ElemVar Mock.x, mkElemVar Mock.y)]
+            originalSubst = unsafeWrap [(ElemVar Mock.y, mkElemVar Mock.x)]
         assertEqualWithExplanation ""
             expectedSubst
             (reverseIfRhsIsVar (ElemVar Mock.x) originalSubst)
     , testCase "unnormalized reverses multiple RHS" $ do
         let
             expectedSubst = wrap
-                [(ElemVar Mock.x, mkVar Mock.y), (ElemVar Mock.x, mkVar Mock.z)]
+                [(ElemVar Mock.x, mkElemVar Mock.y), (ElemVar Mock.x, mkElemVar Mock.z)]
             originalSubst = wrap
-                [(ElemVar Mock.y, mkVar Mock.x), (ElemVar Mock.z, mkVar Mock.x)]
+                [(ElemVar Mock.y, mkElemVar Mock.x), (ElemVar Mock.z, mkElemVar Mock.x)]
         assertEqualWithExplanation ""
             expectedSubst
             (reverseIfRhsIsVar (ElemVar Mock.x) originalSubst)
     , testCase "normalized reverses multiple RHS" $ do
         let
             expectedSubst = unsafeWrap
-                [(ElemVar Mock.x, mkVar Mock.z), (ElemVar Mock.y, mkVar Mock.z)]
+                [(ElemVar Mock.x, mkElemVar Mock.z), (ElemVar Mock.y, mkElemVar Mock.z)]
             originalSubst = unsafeWrap
-                [(ElemVar Mock.y, mkVar Mock.x), (ElemVar Mock.z, mkVar Mock.x)]
+                [(ElemVar Mock.y, mkElemVar Mock.x), (ElemVar Mock.z, mkElemVar Mock.x)]
         assertEqualWithExplanation ""
             expectedSubst
             (reverseIfRhsIsVar (ElemVar Mock.x) originalSubst)
     , testCase "unnormalized does not substitute reverse RHS" $ do
         let
             expectedSubst = wrap
-                [ (ElemVar Mock.x, mkVar Mock.y)
-                , (ElemVar Mock.z, Mock.f (mkVar Mock.x))
+                [ (ElemVar Mock.x, mkElemVar Mock.y)
+                , (ElemVar Mock.z, Mock.f (mkElemVar Mock.x))
                 ]
             originalSubst = wrap
-                [ (ElemVar Mock.y, mkVar Mock.x)
-                , (ElemVar Mock.z, Mock.f (mkVar Mock.x))
+                [ (ElemVar Mock.y, mkElemVar Mock.x)
+                , (ElemVar Mock.z, Mock.f (mkElemVar Mock.x))
                 ]
         assertEqualWithExplanation ""
             expectedSubst
@@ -262,14 +262,14 @@ reverseRhsTests =
     , testCase "normalized substitutes reverse RHS" $ do
         let
             expectedSubst = unsafeWrap
-                [ (ElemVar Mock.x, mkVar Mock.z)
-                , (ElemVar Mock.y, mkVar Mock.z)
-                , (ElemVar Mock.var_x_1, Mock.f (mkVar Mock.z))
+                [ (ElemVar Mock.x, mkElemVar Mock.z)
+                , (ElemVar Mock.y, mkElemVar Mock.z)
+                , (ElemVar Mock.var_x_1, Mock.f (mkElemVar Mock.z))
                 ]
             originalSubst = unsafeWrap
-                [ (ElemVar Mock.y, mkVar Mock.x)
-                , (ElemVar Mock.z, mkVar Mock.x)
-                , (ElemVar Mock.var_x_1, Mock.f (mkVar Mock.x))
+                [ (ElemVar Mock.y, mkElemVar Mock.x)
+                , (ElemVar Mock.z, mkElemVar Mock.x)
+                , (ElemVar Mock.var_x_1, Mock.f (mkElemVar Mock.x))
                 ]
         assertEqualWithExplanation ""
             expectedSubst

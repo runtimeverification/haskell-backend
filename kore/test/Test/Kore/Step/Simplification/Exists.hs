@@ -18,6 +18,7 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Simplification.Data
                  ( Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Exists as Exists
+import           Kore.Syntax.ElementVariable
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
@@ -47,16 +48,16 @@ test_simplify =
         $ "substitution"
     ]
   where
-    plain10 = pure $ Mock.plain10 (mkVar Mock.x)
-    plain11 = pure $ Mock.plain11 (mkVar Mock.x)
+    plain10 = pure $ Mock.plain10 (mkElemVar Mock.x)
+    plain11 = pure $ Mock.plain11 (mkElemVar Mock.x)
     plain10' = mkExists Mock.x <$> plain10
     plain11' = mkExists Mock.x <$> plain11
     equals =
         (Pattern.topOf Mock.testSort)
             { predicate =
                 Predicate.makeEqualsPredicate
-                    (Mock.sigma (mkVar Mock.x) (mkVar Mock.z))
-                    (Mock.functional20 (mkVar Mock.y) (mkVar Mock.z))
+                    (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.z))
+                    (Mock.functional20 (mkElemVar Mock.y) (mkElemVar Mock.z))
             }
     quantifyPredicate predicated@Conditional { predicate } =
         predicated
@@ -71,19 +72,21 @@ test_simplify =
             }
     substForX =
         (Pattern.topOf Mock.testSort)
-            { substitution =
-                Substitution.unsafeWrap
-                    [(ElemVar Mock.x, Mock.sigma (mkVar Mock.y) (mkVar Mock.z))]
+            { substitution = Substitution.unsafeWrap
+                [ ( ElemVar Mock.x
+                  , Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.z))]
             }
     substToX =
         (Pattern.topOf Mock.testSort)
             { substitution =
-                Substitution.unsafeWrap [(ElemVar Mock.y, mkVar Mock.x)] }
+                Substitution.unsafeWrap [(ElemVar Mock.y, mkElemVar Mock.x)] }
     substOfX =
         (Pattern.topOf Mock.testSort)
-            { substitution =
-                Substitution.unsafeWrap
-                    [(ElemVar Mock.y, Mock.sigma (mkVar Mock.x) (mkVar Mock.z))]
+            { substitution = Substitution.unsafeWrap
+                [ ( ElemVar Mock.y
+                  , Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.z)
+                  )
+                ]
             }
     simplifiesTo
         :: HasCallStack
@@ -128,8 +131,8 @@ test_makeEvaluate =
             makeEvaluate
                 Mock.x
                 Conditional
-                    { term = Mock.f (mkVar Mock.x)
-                    , predicate = makeCeilPredicate (Mock.h (mkVar Mock.x))
+                    { term = Mock.f (mkElemVar Mock.x)
+                    , predicate = makeCeilPredicate (Mock.h (mkElemVar Mock.x))
                     , substitution =
                         Substitution.wrap
                             [(ElemVar Mock.x, gOfA), (ElemVar Mock.y, fOfA)]
@@ -257,7 +260,7 @@ test_makeEvaluate =
                             Mock.x
                             (makeAndPredicate
                                 (makeEqualsPredicate fOfX (Mock.f Mock.a))
-                                (makeEqualsPredicate (mkVar Mock.y) fOfX)
+                                (makeEqualsPredicate (mkElemVar Mock.y) fOfX)
                             )
                     , substitution = Substitution.wrap [(ElemVar Mock.z, fOfA)]
                     }
@@ -286,13 +289,13 @@ test_makeEvaluate =
     ]
   where
     fOfA = Mock.f Mock.a
-    fOfX = Mock.f (mkVar Mock.x)
+    fOfX = Mock.f (mkElemVar Mock.x)
     gOfA = Mock.g Mock.a
     hOfA = Mock.h Mock.a
 
 makeExists
     :: Ord variable
-    => variable
+    => ElementVariable variable
     -> [Pattern variable]
     -> Exists Sort variable (OrPattern variable)
 makeExists variable patterns =
@@ -314,7 +317,7 @@ simplify exists =
     $ Exists.simplify exists
 
 makeEvaluate
-    :: Variable
+    :: ElementVariable Variable
     -> Pattern Variable
     -> IO (OrPattern Variable)
 makeEvaluate variable child =

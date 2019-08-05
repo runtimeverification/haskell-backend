@@ -117,7 +117,6 @@ normalizeSubstitution substitution = do
     isVariable term =
         case Cofree.tailF (Recursive.project term) of
             VariableF _ -> True
-            SetVariableF _ -> True
             _ -> False
 
     interestingVariables :: Set (UnifiedVariable variable)
@@ -190,11 +189,8 @@ normalizeSortedSubstitution
     substitution
   = case (var, Cofree.tailF (Recursive.project varPattern)) of
         (UnifiedVariable.ElemVar _, BottomF _) -> return Predicate.bottom
-        (UnifiedVariable.ElemVar rvar, VariableF var')
+        (rvar, VariableF var')
           | rvar == var' ->
-            normalizeSortedSubstitution unprocessed result substitution
-        (UnifiedVariable.SetVar svar, SetVariableF (SetVariable var'))
-          | svar == var' ->
             normalizeSortedSubstitution unprocessed result substitution
         _ -> let
               substitutedVarPattern =
@@ -218,8 +214,7 @@ getDependencies
     -> Set (UnifiedVariable variable)
 getDependencies interesting var (Recursive.project -> valid :< patternHead) =
     case patternHead of
-        VariableF v | ElemVar v == var -> Set.empty
-        SetVariableF (SetVariable v) | SetVar v == var -> Set.empty
+        VariableF v | v == var -> Set.empty
         _ -> Set.intersection interesting freeVars
   where
     freeVars = FreeVariables.getFreeVariables $ Attribute.freeVariables valid
@@ -241,9 +236,7 @@ getNonSimplifiableDependencies
     -> Set (UnifiedVariable variable)
 getNonSimplifiableDependencies interesting var p@(Recursive.project -> _ :< h) =
     case h of
-        VariableF v | ElemVar v == var -> Set.empty
-        SetVariableF (SetVariable v) | SetVar v == var
-            -> Set.empty
+        VariableF v | v == var -> Set.empty
         _ -> Recursive.fold (nonSimplifiableAbove interesting) p
 
 nonSimplifiableAbove
@@ -254,9 +247,7 @@ nonSimplifiableAbove
 nonSimplifiableAbove interesting p =
     case Cofree.tailF p of
         VariableF v
-            | ElemVar v `Set.member` interesting -> Set.singleton (ElemVar v)
-        SetVariableF (SetVariable v)
-            | SetVar v `Set.member` interesting -> Set.singleton (SetVar v)
+            | v `Set.member` interesting -> Set.singleton v
         ApplySymbolF Application { applicationSymbolOrAlias }
             | Symbol.isNonSimplifiable applicationSymbolOrAlias ->
                 dependencies
