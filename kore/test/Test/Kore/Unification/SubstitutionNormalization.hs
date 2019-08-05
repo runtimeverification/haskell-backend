@@ -26,13 +26,13 @@ import           Test.Tasty.HUnit.Extensions
 
 test_substitutionNormalization :: [TestTree]
 test_substitutionNormalization =
-    [ testCase "Empty substitution" $ do
+    [ testCase "Empty substitution" $
         assertEqualWithExplanation "" (Right [])
             =<< runNormalizeSubstitution []
-    , testCase "Simple substitution" $ do
+    , testCase "Simple substitution" $
         assertEqualWithExplanation "" (Right [(v1 Mock.testSort, mkTop_)])
             =<< runNormalizeSubstitution [(v1 Mock.testSort, mkTop_)]
-    , testCase "Simple unnormalized substitution" $ do
+    , testCase "Simple unnormalized substitution" $
         assertEqualWithExplanation ""
             (Right
                 [ (v1 Mock.testSort, mkTop Mock.testSort)
@@ -43,7 +43,7 @@ test_substitutionNormalization =
                 [ (v1 Mock.testSort, mkVar $ x1 Mock.testSort)
                 , (x1 Mock.testSort, mkTop Mock.testSort)
                 ]
-    , testCase "Unnormalized substitution with 'and'" $ do
+    , testCase "Unnormalized substitution with 'and'" $
         assertEqualWithExplanation ""
             (Right
                 [   ( v1 Mock.testSort
@@ -59,28 +59,28 @@ test_substitutionNormalization =
                 ,   (x1 Mock.testSort, mkTop Mock.testSort)
                 ]
     , testCase "Simplest cycle" $ do
-        let var1 = (v1 Mock.testSort)
+        let var1 = v1 Mock.testSort
         assertEqualWithExplanation "" (Right [])
             =<< runNormalizeSubstitution [(var1, mkVar $ v1 Mock.testSort)]
     , testCase "Cycle with extra substitution" $ do
         let
-            var1 =  (v1 Mock.testSort)
-            varx1 =  (x1 Mock.testSort)
+            var1 = v1 Mock.testSort
+            varx1 = x1 Mock.testSort
         assertEqualWithExplanation "" (Right [(varx1, mkVar var1)])
             =<< runNormalizeSubstitution
                     [ (var1, mkVar var1)
                     , (varx1, mkVar var1)
                     ]
     , testCase "Function cycle" $ do
-        let var1 = (v1 Mock.testSort)
+        let var1 = v1 Mock.testSort
         assertEqualWithExplanation ""
             (Left (NonCtorCircularVariableDependency [var1]))
             =<< runNormalizeSubstitution
                 [ ( var1 , mkApplySymbol f [mkVar var1] ) ]
     , testCase "Length 2 cycle" $ do
         let
-            var1 =  (v1 Mock.testSort)
-            varx1 =  (x1 Mock.testSort)
+            var1 = v1 Mock.testSort
+            varx1 = x1 Mock.testSort
         assertEqualWithExplanation "" (Right [])
             =<< runNormalizeSubstitution
                 [ (var1, mkVar varx1)
@@ -88,8 +88,8 @@ test_substitutionNormalization =
                 ]
     , testCase "Cycle with 'and'" $ do
         let
-            var1 =  (v1 Mock.testSort)
-            varx1 =  (x1 Mock.testSort)
+            var1 = v1 Mock.testSort
+            varx1 = x1 Mock.testSort
         assertEqualWithExplanation "" (Right [])
             =<< runNormalizeSubstitution
                 [ (var1, mkAnd (mkVar varx1) mkTop_)
@@ -97,23 +97,23 @@ test_substitutionNormalization =
                 ]
     , testCase "Length 2 non-ctor cycle" $ do
         let
-            var1 =  (v1 Mock.testSort)
-            varx1 =  (x1 Mock.testSort)
+            var1 = v1 Mock.testSort
+            varx1 = x1 Mock.testSort
         assertEqualWithExplanation ""
             (Left (NonCtorCircularVariableDependency [var1, varx1]))
             =<< runNormalizeSubstitution
                 [ (var1, mkApplySymbol f [mkVar varx1])
                 , (varx1, mkVar var1)
                 ]
-    , testCase "Constructor cycle" $ do
+    , testCase "Constructor cycle" $
         assertEqualWithExplanation "" (Right [])
             =<< runNormalizeSubstitution
                 [ (Mock.x, Mock.constr10 (mkVar Mock.x)) ]
-    , testCase "Constructor with side function cycle" $ do
+    , testCase "Constructor with side function cycle" $
         assertEqualWithExplanation "" (Right [])
             =<< runNormalizeSubstitution
                 [(Mock.x, Mock.constr20 (Mock.f (mkVar Mock.x)) (mkVar Mock.x))]
-    , testCase "Constructor with function cycle" $ do
+    , testCase "Constructor with function cycle" $
         assertEqualWithExplanation ""
             (Left (NonCtorCircularVariableDependency [Mock.x]))
             =<< runNormalizeSubstitution

@@ -61,7 +61,7 @@ substitute
     -- ^ Original pattern
     -> patternType
 substitute viewFreeVariables =
-    \subst -> substituteWorker (Map.map Left subst)
+    substituteWorker . Map.map Left
   where
     extractFreeVariables :: patternType -> Set variable
     extractFreeVariables =

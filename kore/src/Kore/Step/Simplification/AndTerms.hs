@@ -279,7 +279,7 @@ termUnification =
                         pat1
                         pat2
                     )
-        Error.maybeT unsupportedPatternsError pure $ maybeTermUnification
+        Error.maybeT unsupportedPatternsError pure maybeTermUnification
 
 {- | Simplify the conjunction (@\\and@) of two terms.
 
@@ -665,9 +665,7 @@ maybeTransformTerm
     first
     second
   =
-    foldr
-        (<|>)
-        empty
+    Foldable.asum
         (map
             (\f -> f
                 mergeException

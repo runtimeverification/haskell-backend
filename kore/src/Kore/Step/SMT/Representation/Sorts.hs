@@ -310,8 +310,7 @@ parseNoJunkPatternHelper (Or_ _ first second) = do  -- Maybe
     return (name, sortBuilder, constructor : constructors)
 parseNoJunkPatternHelper _ = Nothing
 
-parseSMTConstructor
-    :: TermLike Variable -> Maybe AST.UnresolvedConstructor
+parseSMTConstructor :: TermLike Variable -> Maybe AST.UnresolvedConstructor
 parseSMTConstructor patt =
     case parsedPatt of
         App_ symbol children -> do
@@ -324,7 +323,7 @@ parseSMTConstructor patt =
 
     parseExists
         :: TermLike Variable
-        -> (Set.Set (Variable), TermLike Variable)
+        -> (Set.Set Variable, TermLike Variable)
     parseExists (Exists_ _ variable child) =
         (Set.insert variable childVars, unquantifiedPatt)
       where
@@ -332,7 +331,7 @@ parseSMTConstructor patt =
     parseExists unquantifiedPatt = (Set.empty, unquantifiedPatt)
 
     checkOnlyQuantifiedVariablesOnce
-        :: Set.Set (Variable)
+        :: Set.Set Variable
         -> [TermLike Variable]
         -> Maybe [Variable]
     checkOnlyQuantifiedVariablesOnce

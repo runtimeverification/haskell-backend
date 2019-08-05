@@ -22,8 +22,9 @@ module Kore.AST.Error
     , withSentenceContext
     ) where
 
-import Data.List
-       ( intercalate )
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
 
 import Kore.AST.AstWithLocation
 import Kore.Error
@@ -35,10 +36,10 @@ the provided locations. -}
 koreFailWithLocations
     :: (AstWithLocation astWithLocation, MonadError (Error e) m)
     => [astWithLocation]
-    -> String
+    -> Text
     -> m a
 koreFailWithLocations locations errorMessage =
-    withLocationsContext locations (koreFail errorMessage)
+    withLocationsContext locations (koreFailText errorMessage)
 
 {-|'koreFailWithLocationsWhen' produces an error result with a context
 containing the provided locations whenever the provided flag is true.
@@ -47,10 +48,10 @@ koreFailWithLocationsWhen
     :: (AstWithLocation astWithLocation, MonadError (Error e) m)
     => Bool
     -> [astWithLocation]
-    -> String
+    -> Text
     -> m ()
 koreFailWithLocationsWhen condition locations errorMessage =
-    withLocationsContext locations (koreFailWhen condition errorMessage)
+    withLocationsContext locations (koreFailWhenText condition errorMessage)
 
 {-|'withLocationsContext' prepends the given location to the error context
 whenever the given action fails.
@@ -61,10 +62,10 @@ withLocationsContext
     -> m result
     -> m result
 withLocationsContext locations =
-    withContext
+    withTextContext
         (  "("
-        ++ intercalate ", " (map prettyPrintLocationFromAst locations)
-        ++ ")"
+        <> Text.intercalate ", " (map prettyPrintLocationFromAst locations)
+        <> ")"
         )
 
 {-|'withLocationsContext' prepends the given message, associated with the
@@ -73,11 +74,12 @@ location, to the error context whenever the given action fails.
 withLocationAndContext
     :: (AstWithLocation astWithLocation, MonadError (Error e) m)
     => astWithLocation
-    -> String
+    -> Text
     -> m result
     -> m result
 withLocationAndContext location message =
-    withContext (message ++ " (" ++ prettyPrintLocationFromAst location ++ ")")
+    withTextContext
+        (message <> " (" <> prettyPrintLocationFromAst location <> ")")
 
 {- | Identify and locate the given symbol declaration in the error context.
  -}
@@ -90,7 +92,7 @@ withSentenceSymbolContext
     SentenceSymbol { sentenceSymbolSymbol = Symbol { symbolConstructor } }
   =
     withLocationAndContext symbolConstructor
-        ("symbol '" ++ getIdForError symbolConstructor ++ "' declaration")
+        ("symbol '" <> getId symbolConstructor <> "' declaration")
 
 {- | Identify and locate the given alias declaration in the error context.
  -}
@@ -102,7 +104,7 @@ withSentenceAliasContext
     SentenceAlias { sentenceAliasAlias = Alias { aliasConstructor } }
   =
     withLocationAndContext aliasConstructor
-        ("alias '" ++ getIdForError aliasConstructor ++ "' declaration")
+        ("alias '" <> getId aliasConstructor <> "' declaration")
 
 {- | Identify and locate the given axiom declaration in the error context.
  -}
@@ -130,7 +132,7 @@ withSentenceSortContext
     SentenceSort { sentenceSortName }
   =
     withLocationAndContext sentenceSortName
-        ("sort '" ++ getIdForError sentenceSortName ++ "' declaration")
+        ("sort '" <> getId sentenceSortName <> "' declaration")
 
 {- | Identify and locate the given hooked declaration in the error context.
  -}
@@ -143,16 +145,16 @@ withSentenceHookContext =
         SentenceHookedSort SentenceSort { sentenceSortName } ->
             withLocationAndContext sentenceSortName
                 (  "hooked-sort '"
-                ++ getIdForError sentenceSortName
-                ++ "' declaration"
+                <> getId sentenceSortName
+                <> "' declaration"
                 )
 
         SentenceHookedSymbol SentenceSymbol
             { sentenceSymbolSymbol = Symbol { symbolConstructor } } ->
             withLocationAndContext symbolConstructor
                 (  "hooked-symbol '"
-                ++ getIdForError symbolConstructor
-                ++ "' declaration"
+                <> getId symbolConstructor
+                <> "' declaration"
                 )
 
 {- | Locate the given import declaration in the error context.
@@ -161,7 +163,7 @@ withSentenceImportContext
     :: SentenceImport patternType
     -> Either (Error e) a
     -> Either (Error e) a
-withSentenceImportContext _ = \go -> go
+withSentenceImportContext _ = id
 
 {- | Identify and  locate the given sentence in the error context.
  -}

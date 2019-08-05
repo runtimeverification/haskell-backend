@@ -41,7 +41,7 @@ test_unprovenNodes =
     , AllPath.unprovenNodes
         (goal 0)
         `equals`
-        (MultiOr.MultiOr [0])
+        MultiOr.MultiOr [0]
         $  "returns single unproven node"
     , AllPath.unprovenNodes
         (goal 0
@@ -49,14 +49,14 @@ test_unprovenNodes =
             & insNode (2, AllPath.Proven)
         )
         `equals_`
-        (MultiOr.MultiOr [0, 1])
+        MultiOr.MultiOr [0, 1]
     , AllPath.unprovenNodes
         (goal 0
             & subgoal 0 (1, AllPath.Goal 1)
             & subgoal 0 (2, AllPath.Proven)
         )
         `equals_`
-        (MultiOr.MultiOr [1])
+        MultiOr.MultiOr [1]
     , AllPath.unprovenNodes
         (goal 0
             & subgoal 0 (1, AllPath.Goal 1)
@@ -64,14 +64,14 @@ test_unprovenNodes =
             & subgoal 2 (3, AllPath.Proven)
         )
         `equals_`
-        (MultiOr.MultiOr [])
+        MultiOr.MultiOr []
     , AllPath.unprovenNodes
         (goal 0
             & subgoal 0 (1, AllPath.GoalRem 1)
             & subgoal 0 (2, AllPath.Proven)
         )
         `equals_`
-        (MultiOr.MultiOr [1])
+        MultiOr.MultiOr [1]
     ]
   where
     goal :: Integer -> ExecutionGraph

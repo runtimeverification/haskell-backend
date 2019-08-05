@@ -8,6 +8,7 @@ import qualified Control.Lens as Lens
 import           Data.Default
                  ( def )
 import           Data.Function
+import           Data.Generics.Product
 import qualified Data.Set as Set
 
 import           Data.Text
@@ -15,11 +16,27 @@ import           Data.Text
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Symbol as Symbol
+import           Kore.Internal.Conditional as Conditional
+                 ( Conditional (Conditional) )
+import           Kore.Internal.Pattern
+                 ( Pattern )
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Predicate
+                 ( Predicate )
+import qualified Kore.Internal.Predicate as Predicate
+import           Kore.Internal.Symbol
+                 ( Symbol (Symbol, symbolConstructor), constructor,
+                 functional )
+import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
+                 ( TermLike, mkApplySymbol, mkImplies, mkVar )
+import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
+                 ( makeEqualsPredicate, makeTruePredicate )
+import qualified Kore.Predicate.Predicate as Syntax
+                 ( Predicate )
+import           Kore.Sort
+                 ( Sort (..), SortActual (SortActual) )
 import           Kore.Step
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
@@ -27,6 +44,10 @@ import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data as Simplification
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Syntax.Application
+                 ( SymbolOrAlias (symbolOrAliasConstructor) )
+import           Kore.Syntax.Variable
+                 ( Variable (..) )
 import qualified SMT
 
 import           Test.Kore
@@ -132,7 +153,7 @@ applyConstructorToVariables constr arguments =
 -- | Do the busywork of converting a name into a variable pattern.
 var :: Text -> TestPattern
 var name =
-    mkVar $ (Variable (testId name) mempty) Mock.testSort
+    mkVar $ Variable (testId name) mempty Mock.testSort
 -- can the above be more abstract?
 
 sort :: Text -> Sort
@@ -309,13 +330,121 @@ test_stepStrategy =
         -- Start pattern: sigma(f(A1), g(B1))
         -- Expected: empty result list
         (assertEqualWithExplanation "" expectFailSimple =<< actualFailSimple)
-    , testCase "Fails to apply a simple axiom due to cycle."  -- unification error constructor based vs
+    , testCase "Fails to apply a simple axiom due to cycle."
+        -- unification error constructor based
         -- Axiom: sigma(f(X1), X1) => X1
         -- Start pattern: sigma(A1, A1)
         -- Expected: empty result list
         (assertEqualWithExplanation "" expectFailCycle =<< actualFailCycle)
     ]
 
+data PredicateState = PredicatePositive | PredicateNegated
+
+predicateStateToBool :: PredicateState -> Bool
+predicateStateToBool PredicatePositive = True
+predicateStateToBool PredicateNegated = False
+
+smtTerm :: TermLike Variable -> TermLike Variable
+smtTerm term = Mock.functionalConstr10 term
+
+smtSyntaxPredicate
+    :: TermLike Variable -> PredicateState -> Syntax.Predicate Variable
+smtSyntaxPredicate term predicateState =
+    makeEqualsPredicate
+        (Mock.lessInt
+            (Mock.fTestInt term)
+            (Mock.builtinInt 0)
+        )
+        (Mock.builtinBool (predicateStateToBool predicateState))
+
+smtPredicate :: TermLike Variable -> PredicateState -> Predicate Variable
+smtPredicate term predicateState =
+    Predicate.fromPredicate (smtSyntaxPredicate term predicateState)
+
+smtPattern :: TermLike Variable -> PredicateState -> Pattern Variable
+smtPattern term predicateState =
+    smtTerm term `Pattern.withCondition` smtPredicate term predicateState
+
+
+test_SMT :: [TestTree]
+test_SMT =
+    [ testCase "Branching with SMT pruning" $ do
+        -- Target: a
+        -- Coinductive axiom: n/a
+        -- Normal axiom: constr10(b) => c | f(b) >= 0
+        -- Normal axiom: constr10(b) => a | f(b) < 0
+        -- Start pattern: constr10(b) | f(b) < 0
+        -- Expected: a | f(b) < 0
+        [ _actual1 ] <- runStepMockEnv
+            (smtPattern Mock.b PredicatePositive)
+            [ RewriteRule $ RulePattern
+                { left = smtTerm (TermLike.mkVar Mock.x)
+                , right = Mock.a
+                , ensures = makeTruePredicate
+                , requires =
+                    smtSyntaxPredicate (TermLike.mkVar Mock.x) PredicatePositive
+                , attributes = def
+                }
+            , RewriteRule $ RulePattern
+                { left = smtTerm (TermLike.mkVar Mock.x)
+                , right = Mock.c
+                , ensures = makeTruePredicate
+                , requires =
+                    smtSyntaxPredicate (TermLike.mkVar Mock.x) PredicateNegated
+                , attributes = def
+                }
+            ]
+        assertEqualWithExplanation ""
+            [ Mock.a
+                `Pattern.withCondition` smtPredicate Mock.b PredicatePositive
+            ]
+            [ _actual1 ]
+    , testCase "Remainder with SMT pruning" $ do
+        -- Target: a
+        -- Coinductive axiom: n/a
+        -- Normal axiom: constr10(b) => a | f(b) < 0
+        -- Start pattern: constr10(b) | f(b) < 0
+        -- Expected: a | f(b) < 0
+        [ _actual1 ] <- runStepMockEnv
+            Conditional
+                { term = Mock.functionalConstr10 Mock.b
+                , predicate = makeEqualsPredicate
+                    (Mock.lessInt
+                        (Mock.fTestInt Mock.b)
+                        (Mock.builtinInt 0)
+                    )
+                    (Mock.builtinBool True)
+                , substitution = mempty
+                }
+            [ RewriteRule $ RulePattern
+                { left = (Mock.functionalConstr10 (TermLike.mkVar Mock.x))
+                , right = Mock.a
+                , ensures = makeTruePredicate
+                , requires =
+                    makeEqualsPredicate
+                        (Mock.lessInt
+                            (Mock.fTestInt (TermLike.mkVar Mock.x))
+                            (Mock.builtinInt 0)
+                        )
+                        (Mock.builtinBool True)
+                , attributes = def
+                }
+            ]
+        assertEqualWithExplanation ""
+            [ Conditional
+                { term = Mock.a
+                , predicate =
+                    makeEqualsPredicate
+                        (Mock.lessInt
+                            (Mock.fTestInt Mock.b)
+                            (Mock.builtinInt 0)
+                        )
+                        (Mock.builtinBool True)
+                , substitution = mempty
+                }
+            ]
+            [ _actual1 ]
+    ]
 
 test_unificationError :: TestTree
 test_unificationError =
@@ -373,7 +502,7 @@ sigmaSymbol :: Symbol
 sigmaSymbol =
     symbol "#sigma"
     & functional & constructor
-    & Lens.set lensSymbolSorts sorts
+    & Lens.set (field @"symbolSorts") sorts
   where
     sorts = Symbol.applicationSorts [Mock.testSort, Mock.testSort] Mock.testSort
 
@@ -440,6 +569,17 @@ runStep configuration axioms =
     (<$>) pickFinal
     $ SMT.runSMT SMT.defaultConfig emptyLogger
     $ Simplification.evalSimplifier mockEnv
+    $ runStrategy transitionRule [allRewrites axioms] configuration
+
+runStepMockEnv
+    :: Pattern Variable
+    -- ^left-hand-side of unification
+    -> [RewriteRule Variable]
+    -> IO [Pattern Variable]
+runStepMockEnv configuration axioms =
+    (<$>) pickFinal
+    $ SMT.runSMT SMT.defaultConfig emptyLogger
+    $ Simplification.evalSimplifier Mock.env
     $ runStrategy transitionRule [allRewrites axioms] configuration
 
 runSteps

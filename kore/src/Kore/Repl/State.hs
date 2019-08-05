@@ -32,8 +32,6 @@ module Kore.Repl.State
 import           Control.Concurrent.MVar
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
-import           Control.Monad
-                 ( join )
 import           Control.Monad.Error.Class
                  ( MonadError )
 import qualified Control.Monad.Error.Class as Monad.Error
@@ -50,6 +48,7 @@ import           Data.Coerce
 import qualified Data.Default as Default
 import           Data.Foldable
                  ( find )
+import           Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.List.Extra
                  ( findIndex, groupSort )
@@ -59,7 +58,6 @@ import qualified Data.Map as Map
 import           Data.Map.Strict
                  ( Map )
 import           Data.Maybe
-                 ( catMaybes, listToMaybe )
 import           Data.Sequence
                  ( Seq )
 import           Data.Set
@@ -87,9 +85,6 @@ import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger.Output as Logger
 import           Kore.OnePath.StrategyPattern
 import           Kore.OnePath.Verification
-                 ( isTrusted )
-import           Kore.OnePath.Verification
-                 ( Axiom (..), Claim )
 import           Kore.Predicate.Predicate as Predicate
 import           Kore.Repl.Data
 import           Kore.Step.Rule
@@ -130,7 +125,7 @@ getClaimByIndex
     => Int
     -- ^ index in the claims list
     -> m (Maybe claim)
-getClaimByIndex index = Lens.preuse $ lensClaims . Lens.element index
+getClaimByIndex index = Lens.preuse $ field @"claims" . Lens.element index
 
 -- | Get nth axiom from the axioms list.
 getAxiomByIndex
@@ -138,7 +133,7 @@ getAxiomByIndex
     => Int
     -- ^ index in the axioms list
     -> m (Maybe Axiom)
-getAxiomByIndex index = Lens.preuse $ lensAxioms . Lens.element index
+getAxiomByIndex index = Lens.preuse $ field @"axioms" . Lens.element index
 
 -- | Get the leftmost axiom with a specific name from the axioms list.
 getAxiomByName
@@ -147,7 +142,7 @@ getAxiomByName
     -- ^ label attribute
     -> m (Maybe Axiom)
 getAxiomByName name = do
-    axioms <- Lens.use lensAxioms
+    axioms <- Lens.use (field @"axioms")
     return $ Axiom
         <$> find (isNameEqual name) (fmap unAxiom axioms)
 
@@ -159,7 +154,7 @@ getClaimByName
     -- ^ label attribute
     -> m (Maybe claim)
 getClaimByName name = do
-    claims <- Lens.use lensClaims
+    claims <- Lens.use (field @"claims")
     return $ coerce
         <$> find (isNameEqual name) (fmap coerce claims)
 
@@ -170,7 +165,7 @@ getClaimIndexByName
     -- ^ label attribute
     -> m (Maybe ClaimIndex)
 getClaimIndexByName name= do
-    claims <- Lens.use lensClaims
+    claims <- Lens.use (field @"claims")
     return $ coerce
         <$> findIndex (isNameEqual name) (fmap coerce claims)
 
@@ -256,16 +251,17 @@ getExecutionGraph
 getExecutionGraph = do
     ReplState { claimIndex, graphs, claim } <- get
     let mgraph = Map.lookup claimIndex graphs
-    return $ maybe (emptyExecutionGraph claim) id mgraph
+    return $ fromMaybe (emptyExecutionGraph claim) mgraph
 
 -- | Update the internal representation of the current execution graph.
 updateInnerGraph
-    :: MonadState (ReplState claim) m
+    :: forall claim m
+    .  MonadState (ReplState claim) m
     => InnerGraph
     -> m ()
 updateInnerGraph ig = do
     ReplState { claimIndex, graphs } <- get
-    lensGraphs Lens..=
+    field @"graphs" Lens..=
         Map.adjust (updateInnerGraph0 ig) claimIndex graphs
   where
     updateInnerGraph0 :: InnerGraph -> ExecutionGraph -> ExecutionGraph
@@ -279,7 +275,7 @@ updateExecutionGraph
     -> m ()
 updateExecutionGraph gph = do
     ReplState { claimIndex, graphs } <- get
-    lensGraphs Lens..= Map.insert claimIndex gph graphs
+    field @"graphs" Lens..= Map.insert claimIndex gph graphs
 
 -- | Get the node labels for the current claim.
 getLabels
@@ -288,7 +284,7 @@ getLabels
 getLabels = do
     ReplState { claimIndex, labels } <- get
     let mlabels = Map.lookup claimIndex labels
-    return $ maybe Map.empty id mlabels
+    return $ fromMaybe Map.empty mlabels
 
 -- | Update the node labels for the current claim.
 setLabels
@@ -297,7 +293,7 @@ setLabels
     -> m ()
 setLabels lbls = do
     ReplState { claimIndex, labels } <- get
-    lensLabels Lens..= Map.insert claimIndex lbls labels
+    field @"labels" Lens..= Map.insert claimIndex lbls labels
 
 
 -- | Get selected node (or current node for 'Nothing') and validate that it's
@@ -309,12 +305,12 @@ getTargetNode
     -- ^ node index
     -> m (Maybe ReplNode)
 getTargetNode maybeNode = do
-    currentNode <- Lens.use lensNode
-    let node' = unReplNode $ maybe currentNode id maybeNode
+    currentNode <- Lens.use (field @"node")
+    let node' = unReplNode $ fromMaybe currentNode maybeNode
     graph <- getInnerGraph
     if node' `elem` Graph.nodes graph
        then pure . Just . ReplNode $ node'
-       else pure $ Nothing
+       else pure Nothing
 
 -- | Get the configuration at selected node (or current node for 'Nothing').
 getConfigAt
@@ -325,7 +321,7 @@ getConfigAt
 getConfigAt maybeNode = do
     node' <- getTargetNode maybeNode
     case node' of
-        Nothing -> pure $ Nothing
+        Nothing -> pure Nothing
         Just n -> do
             graph' <- getInnerGraph
             pure $ Just (n, getLabel graph' (unReplNode n))
@@ -348,10 +344,7 @@ getRuleFor maybeNode = do
         :: forall a b
         .  [(a, b, Seq (RewriteRule Variable))]
         -> Maybe (RewriteRule Variable)
-    getRewriteRule =
-        listToMaybe
-        . join
-        . fmap (toList . third)
+    getRewriteRule = listToMaybe . concatMap (toList . third)
 
     third :: forall a b c. (a, b, c) -> c
     third (_, _, c) = c
@@ -402,7 +395,7 @@ runStepper = do
     updateExecutionGraph graph'
     case res of
         SingleResult nextNode -> do
-            lensNode Lens..= nextNode
+            field @"node" Lens..= nextNode
             pure res
         _                     -> pure res
 
@@ -486,7 +479,7 @@ addOrUpdateAlias
 addOrUpdateAlias alias@AliasDefinition { name, command } = do
     checkNameIsNotUsed
     checkCommandExists
-    lensAliases Lens.%= Map.insert name alias
+    field @"aliases" Lens.%= Map.insert name alias
   where
     checkNameIsNotUsed :: m ()
     checkNameIsNotUsed =
@@ -509,7 +502,7 @@ addOrUpdateAlias alias@AliasDefinition { name, command } = do
         Set.union commandSet
         . Set.fromList
         . Map.keys
-        <$> Lens.use lensAliases
+        <$> Lens.use (field @"aliases")
 
     falseToError :: AliasError -> Bool -> m ()
     falseToError e b =
@@ -520,7 +513,7 @@ findAlias
     :: MonadState (ReplState claim) m
     => String
     -> m (Maybe AliasDefinition)
-findAlias name = Map.lookup name <$> Lens.use lensAliases
+findAlias name = Map.lookup name <$> Lens.use (field @"aliases")
 
 substituteAlias
     :: AliasDefinition
@@ -577,8 +570,8 @@ generateInProgressOPClaims
     => MonadState (ReplState claim) m
     => m [Rule.OnePathRule Variable]
 generateInProgressOPClaims = do
-    graphs <- Lens.use lensGraphs
-    claims <- Lens.use lensClaims
+    graphs <- Lens.use (field @"graphs")
+    claims <- Lens.use (field @"claims")
     let started = startedOPClaims graphs claims
         notStarted = notStartedOPClaims graphs claims
     return $ started <> notStarted
@@ -603,7 +596,8 @@ generateInProgressOPClaims = do
         <$> filter (not . isTrusted)
                 ( (claims !!)
                 . unClaimIndex
-                <$> (Set.toList $ Set.difference
+                <$> Set.toList
+                    (Set.difference
                         ( Set.fromList
                         $ fmap ClaimIndex [0..length claims - 1]
                         )
@@ -621,14 +615,13 @@ claimsWithPatterns graphs claims =
     Bifunctor.bimap
         ((claims !!) . unClaimIndex)
         (findTerminalPatterns . Strategy.graph)
-    <$> (Map.toList graphs)
+    <$> Map.toList graphs
 
 findTerminalPatterns
     :: InnerGraph
     -> [TermLike Variable]
 findTerminalPatterns graph =
-    catMaybes
-    . fmap (nodeToPattern graph)
+    mapMaybe (nodeToPattern graph)
     . findLeafNodes
     $ graph
 
@@ -637,7 +630,7 @@ currentClaimSort
     => MonadState (ReplState claim) m
     => m Sort
 currentClaimSort = do
-    claims <- Lens.use lensClaim
+    claims <- Lens.use (field @"claim")
     return . TermLike.termLikeSort
         . Rule.onePathRuleToPattern
         . Rule.OnePathRule
@@ -648,8 +641,7 @@ sortLeafsByType :: InnerGraph -> Map.Map NodeState [Graph.Node]
 sortLeafsByType graph =
     Map.fromList
         . groupSort
-        . catMaybes
-        . fmap (getNodeState graph)
+        . mapMaybe (getNodeState graph)
         . findLeafNodes
         $ graph
 

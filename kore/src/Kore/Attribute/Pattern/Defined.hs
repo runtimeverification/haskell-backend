@@ -140,8 +140,8 @@ instance Synthetic (Builtin key) Defined where
     {-# INLINE synthetic #-}
 
 normalizedAcDefined
-    :: Foldable valueWrapper
-    => NormalizedAc key valueWrapper Defined -> Defined
+    :: (Foldable (Element collection), Foldable (Value collection))
+    => NormalizedAc collection key Defined -> Defined
 normalizedAcDefined ac@(NormalizedAc _ _ _) =
     case ac of
         NormalizedAc
@@ -171,12 +171,17 @@ instance Synthetic (Top sort) Defined where
     {-# INLINE synthetic #-}
 
 -- | A 'StringLiteral' pattern is always 'Defined'.
-instance Synthetic (Const StringLiteral) Defined where
+instance Synthetic StringLiteral Defined where
     synthetic = const (Defined True)
     {-# INLINE synthetic #-}
 
 -- | A 'CharLiteral' pattern is always 'Defined'.
-instance Synthetic (Const CharLiteral) Defined where
+instance Synthetic CharLiteral Defined where
+    synthetic = const (Defined True)
+    {-# INLINE synthetic #-}
+
+-- | An 'Inhabitant' pattern is always 'Defined'.
+instance Synthetic Inhabitant Defined where
     synthetic = const (Defined True)
     {-# INLINE synthetic #-}
 

@@ -5,8 +5,6 @@ License     : NCSA
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Step.Rule
     ( EqualityRule (..)
     , RewriteRule (..)
@@ -14,9 +12,6 @@ module Kore.Step.Rule
     , AllPathRule (..)
     , ImplicationRule (..)
     , RulePattern (..)
-    , lensLeft, lensRight
-    , lensRequires, lensEnsures
-    , lensAttributes
     , allPathGlobally
     , rulePattern
     , isHeatingRule
@@ -36,6 +31,7 @@ module Kore.Step.Rule
     , refreshRulePattern
     , onePathRuleToPattern
     , Kore.Step.Rule.freeVariables
+    , Kore.Step.Rule.freeSetVariables
     , Kore.Step.Rule.mapVariables
     , Kore.Step.Rule.substitute
     ) where
@@ -49,11 +45,12 @@ import           Data.Text
 import           Data.Text.Prettyprint.Doc
                  ( Pretty )
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified GHC.Generics as GHC
 
-import           Control.Lens.TH.Rules
-                 ( makeLenses )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
+import           Kore.Attribute.Pattern.FreeSetVariables
+                 ( FreeSetVariables )
 import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
@@ -82,8 +79,7 @@ data RulePattern variable = RulePattern
     , ensures :: !(Predicate variable)
     , attributes :: !Attribute.Axiom
     }
-
-makeLenses ''RulePattern
+    deriving (GHC.Generic)
 
 deriving instance Eq variable => Eq (RulePattern variable)
 deriving instance Ord variable => Ord (RulePattern variable)
@@ -280,10 +276,9 @@ extractOnePathClaims
     -> [(axiomAtts, OnePathRule Variable)]
 extractOnePathClaims idxMod =
     mapMaybe
-        ( sequence                             -- (a, Maybe b) -> Maybe (a,b)
-        . fmap extractOnePathClaimFrom         -- applying on second component
-        )
-    $ (indexedModuleClaims idxMod)
+        -- applying on second component
+        (traverse extractOnePathClaimFrom)
+        (indexedModuleClaims idxMod)
 
 extractOnePathClaimFrom
     :: Verified.SentenceClaim
@@ -301,10 +296,9 @@ extractAllPathClaims
     -> [(axiomAtts, AllPathRule Variable)]
 extractAllPathClaims idxMod =
     mapMaybe
-        ( sequence                             -- (a, Maybe b) -> Maybe (a,b)
-        . fmap extractAllPathClaimFrom         -- applying on second component
-        )
-    (indexedModuleClaims idxMod)
+        -- applying on second component
+        (traverse extractAllPathClaimFrom)
+        (indexedModuleClaims idxMod)
 
 extractAllPathClaimFrom
     :: Verified.SentenceClaim
@@ -323,10 +317,9 @@ extractImplicationClaims
     -> [(axiomAtts, ImplicationRule Variable)]
 extractImplicationClaims idxMod =
     mapMaybe
-        ( sequence                               -- (a, Maybe b) -> Maybe (a,b)
-        . fmap extractImplicationClaimFrom       -- applying on second component
-        )
-    $ (indexedModuleClaims idxMod)
+        -- applying on second component
+        (traverse extractImplicationClaimFrom)
+        (indexedModuleClaims idxMod)
 
 extractImplicationClaimFrom
     :: Verified.SentenceClaim
@@ -369,27 +362,28 @@ onePathRuleToPattern (OnePathRule rulePatt) =
             (left rulePatt)
         )
        ( mkApplyAlias
-            wEF
-            [( mkAnd
+            (wEF sort)
+            [mkAnd
                 (Predicate.unwrapPredicate . ensures $ rulePatt)
                 (right rulePatt)
-            )]
+            ]
        )
   where
-    wEF :: Alias
-    wEF = Alias
-        { aliasConstructor = Id
-            { getId = weakExistsFinally
-            , idLocation = AstLocationNone
-            }
-        , aliasParams = []
-        , aliasSorts = ApplicationSorts
-            { applicationSortsOperands = [sort]
-            , applicationSortsResult = sort
-            }
-        }
     sort :: Sort
     sort = termLikeSort . right $ rulePatt
+
+wEF :: Sort -> Alias
+wEF sort = Alias
+    { aliasConstructor = Id
+        { getId = weakExistsFinally
+        , idLocation = AstLocationNone
+        }
+    , aliasParams = []
+    , aliasSorts = ApplicationSorts
+        { applicationSortsOperands = [sort]
+        , applicationSortsResult = sort
+        }
+    }
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 
@@ -484,7 +478,7 @@ mkRewriteAxiom
 mkRewriteAxiom lhs rhs requires =
     (Syntax.SentenceAxiomSentence . mkAxiom_)
         (mkRewrites
-            (mkAnd (fromMaybe mkTop requires $ patternSort) lhs)
+            (mkAnd (fromMaybe mkTop requires patternSort) lhs)
             (mkAnd (mkTop patternSort) rhs)
         )
   where
@@ -569,6 +563,17 @@ freeVariables RulePattern { left, right, requires } =
     TermLike.freeVariables left
     <> TermLike.freeVariables right
     <> Predicate.freeVariables requires
+
+{- | Extract the free set variables of a 'RulePattern'.
+ -}
+freeSetVariables
+    :: Ord variable
+    => RulePattern variable
+    -> FreeSetVariables variable
+freeSetVariables RulePattern { left, right, requires } =
+    TermLike.freeSetVariables left
+    <> TermLike.freeSetVariables right
+    <> Predicate.freeSetVariables requires
 
 {- | Apply the given function to all variables in a 'RulePattern'.
  -}

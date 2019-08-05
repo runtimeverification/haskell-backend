@@ -6,6 +6,7 @@ License     : NCSA
 module Kore.Internal.OrPattern
     ( OrPattern
     , fromPatterns
+    , toPatterns
     , fromPattern
     , fromTermLike
     , bottom
@@ -52,6 +53,11 @@ fromPatterns
     => f (Pattern variable)
     -> OrPattern variable
 fromPatterns = MultiOr.make . Foldable.toList
+
+{- | Examine a disjunction of 'Pattern.Pattern's.
+ -}
+toPatterns :: OrPattern variable -> [Pattern variable]
+toPatterns = MultiOr.extractPatterns
 
 {- | A "disjunction" of one 'TermLike'.
 

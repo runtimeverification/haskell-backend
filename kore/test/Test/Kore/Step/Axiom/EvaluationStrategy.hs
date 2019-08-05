@@ -9,6 +9,9 @@ import           Data.Default
                  ( def )
 import qualified Data.Map as Map
 
+import qualified Kore.Attribute.Axiom as Attribute.Axiom
+import qualified Kore.Attribute.Axiom.Concrete as Attribute
+                 ( Concrete (Concrete) )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
                  ( Conditional (Conditional) )
@@ -16,8 +19,8 @@ import qualified Kore.Internal.Pattern as Pattern
                  ( Conditional (..) )
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
-                 ( Predicate, makeAndPredicate, makeEqualsPredicate,
-                 makeNotPredicate, makeTruePredicate )
+                 ( Predicate, makeEqualsPredicate, makeNotPredicate,
+                 makeTruePredicate )
 import           Kore.Step.Axiom.EvaluationStrategy
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
@@ -27,11 +30,10 @@ import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
 import           Kore.Step.Simplification.Data
                  ( AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (..), CommonAttemptedAxiom )
-import           Kore.Step.Simplification.Data as AttemptedAxiom
+                 BuiltinAndAxiomSimplifier (..), CommonAttemptedAxiom,
+                 evalSimplifier )
+import qualified Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Simplification.Predicate as Predicate
@@ -103,14 +105,7 @@ test_definitionEvaluation =
                 (Mock.functionalConstr10 Mock.a)
         assertEqualWithExplanation "" expect actual
     , testCase "Failed evaluation" $ do
-        let expect =
-                AttemptedAxiom.Applied
-                    AttemptedAxiomResults
-                        { results = OrPattern.fromPatterns []
-                        , remainders =
-                            OrPattern.fromTermLike
-                            $ mkEvaluated $ Mock.functionalConstr10 Mock.b
-                        }
+        let expect = AttemptedAxiom.NotApplicable
         actual <-
             evaluate
                 (definitionEvaluation
@@ -122,7 +117,7 @@ test_definitionEvaluation =
                 )
                 (Mock.functionalConstr10 Mock.b)
         assertEqualWithExplanation "" expect actual
-    , testCase "Evaluation with multiple branches" $ do
+    , testCase "Evaluation with multiple branches SMT prunes remainders" $ do
         let initial = Mock.functionalConstr10 Mock.a
             final1 = Mock.g Mock.a
             final2 = Mock.g Mock.b
@@ -145,20 +140,37 @@ test_definitionEvaluation =
                             , substitution = mempty
                             }
                         ]
-                    , remainders =
-                        OrPattern.fromPatterns $ (map . fmap) mkEvaluated
-                            [ Conditional
-                                { term = initial
-                                , predicate =
-                                    makeAndPredicate
-                                        (makeNotPredicate requirement1)
-                                        (makeNotPredicate requirement2)
-                                , substitution = mempty
-                                }
-                            ]
+                    , remainders = OrPattern.bottom
                     }
         actual <- evaluate evaluator initial
         assertEqualWithExplanation "" expect actual
+    , testCase "Does not evaluate concrete axiom with symbolic input" $ do
+        let expectConcrete =
+                AttemptedAxiom.Applied
+                    AttemptedAxiomResults
+                        { results = OrPattern.fromTermLike (Mock.g Mock.c)
+                        , remainders = OrPattern.fromPatterns []
+                        }
+
+            symbolicTerm = Mock.functionalConstr10 (mkVar Mock.y)
+            expectSymbolic = AttemptedAxiom.NotApplicable
+
+            evaluator = definitionEvaluation
+                [ EqualityRule RulePattern
+                    { left = Mock.functionalConstr10 (mkVar Mock.x)
+                    , right = Mock.g (mkVar Mock.x)
+                    , requires = makeTruePredicate
+                    , ensures = makeTruePredicate
+                    , attributes = def
+                        { Attribute.Axiom.concrete = Attribute.Concrete True }
+                    }
+                ]
+
+        actualConcrete <- evaluate evaluator (Mock.functionalConstr10 Mock.c)
+        assertEqualWithExplanation "" expectConcrete actualConcrete
+
+        actualSymbolic <- evaluate evaluator symbolicTerm
+        assertEqualWithExplanation "" expectSymbolic actualSymbolic
     ]
 
 test_firstFullEvaluation :: [TestTree]
@@ -448,7 +460,7 @@ test_builtinEvaluation =
     , testCase "Failed evaluation"
         (assertErrorIO
             (assertSubstring ""
-                "Expecting hook MAP.unit to reduce concrete pattern"
+                "Expecting hook 'MAP.unit' to reduce concrete pattern"
             )
             (evaluate
                 (builtinEvaluation failingEvaluator)
@@ -494,7 +506,7 @@ axiom left right predicate =
 evaluate
     :: BuiltinAndAxiomSimplifier
     -> TermLike Variable
-    -> IO (CommonAttemptedAxiom)
+    -> IO CommonAttemptedAxiom
 evaluate (BuiltinAndAxiomSimplifier simplifier) patt =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env

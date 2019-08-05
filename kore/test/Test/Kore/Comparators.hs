@@ -27,6 +27,7 @@ import qualified Kore.Attribute.Location as Attribute
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Pattern.Defined as Attribute.Pattern
+import qualified Kore.Attribute.Pattern.FreeSetVariables as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import qualified Kore.Attribute.Pattern.Function as Attribute.Pattern
 import qualified Kore.Attribute.Pattern.Functional as Attribute.Pattern
@@ -104,8 +105,6 @@ instance EqualWithExplanation () where
 instance EqualWithExplanation Natural where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
-
-{-# ANN module ("HLint: ignore Use record patterns" :: String) #-}
 
 instance
     ( EqualWithExplanation child
@@ -784,14 +783,15 @@ instance
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
-instance EqualWithExplanation StringLiteral
-  where
+
+instance EqualWithExplanation (StringLiteral child) where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
-instance EqualWithExplanation CharLiteral
-  where
+
+instance EqualWithExplanation (CharLiteral child) where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
+
 instance
     (EqualWithExplanation child, Eq child, Show child)
     => EqualWithExplanation (Top Sort child)
@@ -814,6 +814,15 @@ instance
     ) => EqualWithExplanation (SetVariable variable)
   where
     compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance StructEqualWithExplanation (Inhabitant child) where
+    structFieldsWithNames expected@(Inhabitant _) actual =
+        [ Function.on (EqWrap "inhSort = ") inhSort expected actual ]
+    structConstructorName _ = "Inhabitant"
+
+instance EqualWithExplanation (Inhabitant child) where
+    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance StructEqualWithExplanation Variable where
@@ -1078,13 +1087,24 @@ instance
         ]
     structConstructorName _ = "InternalAc"
 
-instance SumEqualWithExplanation (NoValue child)
+instance
+    (EqualWithExplanation child, Show child) =>
+    WrapperEqualWithExplanation (SetElement child)
   where
-    sumConstructorPair NoValue NoValue =
+    wrapperConstructorName _ = "SetElement"
+    wrapperField = Function.on (EqWrap "getSetElement = ") getSetElement
+
+instance (EqualWithExplanation child, Show child)
+    => EqualWithExplanation (SetElement child)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance SumEqualWithExplanation (SetValue child) where
+    sumConstructorPair SetValue SetValue =
         SumConstructorSameNoArguments
 
-instance EqualWithExplanation (NoValue child)
-  where
+instance EqualWithExplanation (SetValue child) where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
@@ -1107,15 +1127,28 @@ instance
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance (EqualWithExplanation child, Show child)
-    => SumEqualWithExplanation (Value child)
+instance
+    (EqualWithExplanation child, Show child) =>
+    WrapperEqualWithExplanation (MapElement child)
   where
-    sumConstructorPair (Value a1) (Value a2) =
-        SumConstructorSameWithArguments
-            (EqWrap "Value" a1 a2)
+    wrapperConstructorName _ = "MapElement"
+    wrapperField = Function.on (EqWrap "getMapElement = ") getMapElement
 
 instance (EqualWithExplanation child, Show child)
-    => EqualWithExplanation (Value child)
+    => EqualWithExplanation (MapElement child)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance (EqualWithExplanation child, Show child)
+    => SumEqualWithExplanation (MapValue child)
+  where
+    sumConstructorPair (MapValue a1) (MapValue a2) =
+        SumConstructorSameWithArguments
+            (EqWrap "MapValue" a1 a2)
+
+instance (EqualWithExplanation child, Show child)
+    => EqualWithExplanation (MapValue child)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
@@ -1141,20 +1174,26 @@ instance
 
 instance
     ( EqualWithExplanation key, Show key
-    , EqualWithExplanation (valueWrapper child), Show (valueWrapper child)
     , EqualWithExplanation child, Show child
+    , EqualWithExplanation (Element collection child)
+    , Show (Element collection child)
+    , EqualWithExplanation (Value collection child)
+    , Show (Value collection child)
     ) =>
-    EqualWithExplanation (NormalizedAc key valueWrapper child)
+    EqualWithExplanation (NormalizedAc collection key child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance
     ( EqualWithExplanation key, Show key
-    , EqualWithExplanation (valueWrapper child), Show (valueWrapper child)
     , EqualWithExplanation child, Show child
+    , EqualWithExplanation (Element collection child)
+    , Show (Element collection child)
+    , EqualWithExplanation (Value collection child)
+    , Show (Value collection child)
     ) =>
-    StructEqualWithExplanation (NormalizedAc key valueWrapper child)
+    StructEqualWithExplanation (NormalizedAc collection key child)
   where
     structFieldsWithNames expect actual@(NormalizedAc _ _ _) =
         [ Function.on
@@ -1337,13 +1376,11 @@ instance
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (PatternAttributesError.FunctionError)
-  where
+instance EqualWithExplanation PatternAttributesError.FunctionError where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (PatternAttributesError.FunctionalError)
-  where
+instance EqualWithExplanation PatternAttributesError.FunctionalError where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
@@ -1402,8 +1439,8 @@ instance
     ) => StructEqualWithExplanation (Attribute.Pattern variable)
   where
     structFieldsWithNames
-        expected@(Attribute.Pattern _ _ _ _ _)
-        actual@(Attribute.Pattern _ _ _ _ _)
+        expected@(Attribute.Pattern _ _ _ _ _ _)
+        actual@(Attribute.Pattern _ _ _ _ _ _)
       =
         [ EqWrap
             "patternSort = "
@@ -1413,6 +1450,10 @@ instance
             "freeVariables = "
             (Attribute.freeVariables expected)
             (Attribute.freeVariables actual)
+        , EqWrap
+            "freeSetVariables = "
+            (Attribute.freeSetVariables expected)
+            (Attribute.freeSetVariables actual)
         , EqWrap
             "functional = "
             (Attribute.functional expected)
@@ -1437,11 +1478,26 @@ instance
 
 instance
     (EqualWithExplanation variable, Show variable) =>
+    EqualWithExplanation (Attribute.FreeSetVariables variable)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    (EqualWithExplanation variable, Show variable) =>
     WrapperEqualWithExplanation (Attribute.FreeVariables variable)
   where
     wrapperConstructorName _ = "FreeVariables"
     wrapperField =
         Function.on (EqWrap "getFreeVariables = ") Attribute.getFreeVariables
+
+instance
+    (EqualWithExplanation variable, Show variable) =>
+    WrapperEqualWithExplanation (Attribute.FreeSetVariables variable)
+  where
+    wrapperConstructorName _ = "FreeSetVariables"
+    wrapperField =
+        Function.on (EqWrap "getFreeSetVariables = ") Attribute.getFreeSetVariables
 
 instance EqualWithExplanation Attribute.Pattern.Functional where
     compareWithExplanation = wrapperCompareWithExplanation
@@ -1488,8 +1544,7 @@ instance EqualWithExplanation ConstructorLikeProof
     printWithExplanation = show
 
 
-instance SumEqualWithExplanation (AxiomIdentifier)
-  where
+instance SumEqualWithExplanation AxiomIdentifier where
     sumConstructorPair
         (AxiomIdentifier.Application p1) (AxiomIdentifier.Application p2)
       =
@@ -1503,8 +1558,7 @@ instance SumEqualWithExplanation (AxiomIdentifier)
             (printWithExplanation p1)
             (printWithExplanation p2)
 
-instance EqualWithExplanation (AxiomIdentifier)
-  where
+instance EqualWithExplanation AxiomIdentifier where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 

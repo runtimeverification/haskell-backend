@@ -7,57 +7,53 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Attribute.Sort
     ( Sort (..)
-    , lensHook
-    , lensSmtlib
-    , lensUnit
-    , lensElement
-    , lensConcat
     ) where
 
 import qualified Control.Monad as Monad
+import           Data.Generics.Product
 import           Prelude hiding
                  ( concat )
 
-import qualified Control.Lens.TH.Rules as Lens
-import           Kore.Attribute.Hook
-import           Kore.Attribute.Parser hiding
-                 ( Sort )
-import           Kore.Attribute.Smtlib.Smtlib
-import           Kore.Attribute.Sort.Concat
-import           Kore.Attribute.Sort.Element
-import           Kore.Attribute.Sort.Unit
+import Kore.Attribute.Hook
+import Kore.Attribute.Parser hiding
+       ( Sort )
+import Kore.Attribute.Smtlib.Smtlib
+import Kore.Attribute.Sort.Concat
+import Kore.Attribute.Sort.Element
+import Kore.Attribute.Sort.HasDomainValues
+       ( HasDomainValues )
+import Kore.Attribute.Sort.Unit
 
 data Sort =
     Sort
-        { hook    :: !Hook
+        { hook            :: !Hook
         -- ^ The builtin sort hooked to the sort.
-        , smtlib  :: !Smtlib
+        , smtlib          :: !Smtlib
         -- ^ The user-defined translation of the sort for SMT.
-        , unit    :: !Unit
+        , unit            :: !Unit
         -- ^ The unit symbol associated with the sort.
-        , element :: !Element
+        , element         :: !Element
         -- ^ The element symbol associated with the sort.
-        , concat  :: !Concat
+        , concat          :: !Concat
         -- ^ The concat symbol associated with the sort.
+        , hasDomainValues :: !HasDomainValues
+        -- ^ whether the sort has domain values
         }
     deriving (Eq, Generic, Ord, Show)
-
-Lens.makeLenses ''Sort
 
 instance NFData Sort
 
 defaultSortAttributes :: Sort
 defaultSortAttributes =
     Sort
-        { hook    = def
-        , smtlib  = def
-        , unit    = def
-        , element = def
-        , concat  = def
+        { hook            = def
+        , smtlib          = def
+        , unit            = def
+        , element         = def
+        , concat          = def
+        , hasDomainValues = def
         }
 
 -- | See also: 'defaultSortAttributes'
@@ -66,11 +62,12 @@ instance Default Sort where
 
 instance ParseAttributes Sort where
     parseAttribute attr =
-        lensHook (parseAttribute attr)
-        Monad.>=> lensSmtlib (parseAttribute attr)
-        Monad.>=> lensUnit (parseAttribute attr)
-        Monad.>=> lensElement (parseAttribute attr)
-        Monad.>=> lensConcat (parseAttribute attr)
+        typed @Hook (parseAttribute attr)
+        Monad.>=> typed @Smtlib (parseAttribute attr)
+        Monad.>=> typed @Unit (parseAttribute attr)
+        Monad.>=> typed @Element (parseAttribute attr)
+        Monad.>=> typed @Concat (parseAttribute attr)
+        Monad.>=> typed @HasDomainValues (parseAttribute attr)
 
     toAttributes =
         mconcat . sequence
@@ -79,4 +76,5 @@ instance ParseAttributes Sort where
             , toAttributes . unit
             , toAttributes . element
             , toAttributes . concat
+            , toAttributes . hasDomainValues
             ]

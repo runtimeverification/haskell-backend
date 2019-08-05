@@ -4,22 +4,19 @@ License     : NCSA
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Syntax.Mu
     ( Mu (..)
     ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import qualified Data.Deriving as Deriving
-import qualified Data.Foldable as Foldable
 import           Data.Function
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Pattern.FreeSetVariables
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -39,10 +36,6 @@ data Mu variable child = Mu
     , muChild    :: child
     }
     deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-Deriving.deriveEq1 ''Mu
-Deriving.deriveOrd1 ''Mu
-Deriving.deriveShow1 ''Mu
 
 instance (Hashable variable, Hashable child) => Hashable (Mu variable child)
 
@@ -71,7 +64,15 @@ instance
             ])
 
 instance Ord variable => Synthetic (Mu variable) (FreeVariables variable) where
-    synthetic = Foldable.fold
+    synthetic = muChild
+    {-# INLINE synthetic #-}
+
+instance
+    Ord variable =>
+    Synthetic (Mu variable) (FreeSetVariables variable)
+  where
+    synthetic Mu { muVariable = SetVariable variable, muChild } =
+        bindSetVariable variable muChild
     {-# INLINE synthetic #-}
 
 instance SortedVariable variable => Synthetic (Mu variable) Sort where

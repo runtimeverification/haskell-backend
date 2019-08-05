@@ -22,7 +22,7 @@ module Kore.Logger.Output
 
 import           Colog
                  ( LogAction (..) )
-import qualified Colog as Colog
+import qualified Colog
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Concurrent.MVar
@@ -185,9 +185,8 @@ makeKoreLogger severity scopeSet logToText =
         $ contramap messageToText logToText
   where
     addTimeStamp :: LogMessage -> m LogMessageWithTimestamp
-    addTimeStamp msg = do
-        currentTimeDate <- getLocalTime
-        pure $ LogMessageWithTimestamp msg currentTimeDate
+    addTimeStamp msg =
+        LogMessageWithTimestamp msg <$> getLocalTime
 
     messageToText :: LogMessageWithTimestamp -> Text
     messageToText

@@ -4,20 +4,18 @@ License     : NCSA
 
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.Syntax.Not
     ( Not (..)
     ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import qualified Data.Deriving as Deriving
 import           Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Pattern.FreeSetVariables
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -37,10 +35,6 @@ data Not sort child = Not
     , notChild :: child
     }
     deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-Deriving.deriveEq1 ''Not
-Deriving.deriveOrd1 ''Not
-Deriving.deriveShow1 ''Not
 
 instance (Hashable sort, Hashable child) => Hashable (Not sort child)
 
@@ -66,6 +60,10 @@ instance TopBottom child => TopBottom (Not sort child) where
     isBottom = isTop . notChild
 
 instance Ord variable => Synthetic (Not child) (FreeVariables variable) where
+    synthetic = notChild
+    {-# INLINE synthetic #-}
+
+instance Ord variable => Synthetic (Not child) (FreeSetVariables variable) where
     synthetic = notChild
     {-# INLINE synthetic #-}
 

@@ -8,6 +8,8 @@ import Test.Tasty.HUnit
 
 import Data.Either
        ( isLeft )
+import GHC.Stack
+       ( HasCallStack )
 
 import Kore.Attribute.Attributes
        ( Attributes (..) )
@@ -21,5 +23,5 @@ expectSuccess
 expectSuccess assoc =
     assertEqual "expected parsed attribute" (Right assoc)
 
-expectFailure :: Either e attr -> Assertion
+expectFailure :: HasCallStack => Either e attr -> Assertion
 expectFailure = assertBool "expected parse failure" . isLeft

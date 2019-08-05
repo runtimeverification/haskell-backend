@@ -51,7 +51,6 @@ instance Ord Id where
     compare first@(Id _ _) second@(Id _ _) =
         compare (getId first) (getId second)
 
-{-# ANN module ("HLint: ignore Redundant compare" :: String) #-}
 -- | 'Eq' ignores the 'AstLocation'
 instance Eq Id where
     first == second = compare first second == EQ
@@ -122,7 +121,7 @@ instance Debug AstLocation
 {-| 'prettyPrintAstLocation' displays an `AstLocation` in a way that's
 (sort of) user friendly.
 -}
-prettyPrintAstLocation :: AstLocation -> String
+prettyPrintAstLocation :: AstLocation -> Text
 prettyPrintAstLocation AstLocationNone = "<unknown location>"
 prettyPrintAstLocation AstLocationImplicit = "<implicitly defined entity>"
 prettyPrintAstLocation AstLocationGeneratedVariable =
@@ -135,7 +134,9 @@ prettyPrintAstLocation
         , column = column'
         }
     )
-    = name ++ " " ++ show line' ++ ":" ++ show column'
+  = Text.pack name <> " "
+    <> Text.pack (show line') <> ":"
+    <> Text.pack (show column')
 prettyPrintAstLocation AstLocationUnknown = "<unknown location>"
 
 {-| 'FileLocation' represents a position in a source file.

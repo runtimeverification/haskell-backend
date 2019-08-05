@@ -187,13 +187,7 @@ makeEvaluateTerm term@(Recursive.project -> _ :< projected) =
       | BuiltinF child <- projected = makeEvaluateBuiltin child
 
       | otherwise = do
-            substitutionSimplifier <- Simplifier.askSimplifierPredicate
-            simplifier <- Simplifier.askSimplifierTermLike
-            axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
             evaluation <- Axiom.evaluatePattern
-                substitutionSimplifier
-                simplifier
-                axiomIdToEvaluator
                 Conditional
                     { term = ()
                     , predicate = makeTruePredicate
@@ -271,16 +265,20 @@ makeEvaluateBuiltin (Domain.BuiltinInt _) = return OrPredicate.top
 makeEvaluateBuiltin (Domain.BuiltinString _) = return OrPredicate.top
 
 makeEvaluateNormalizedAc
-    :: forall variable simplifier valueWrapper
+    :: forall normalized variable simplifier
     .   ( FreshVariable variable
         , MonadSimplify simplifier
         , Ord variable
         , Show variable
         , SortedVariable variable
-        , Traversable valueWrapper
+        , Traversable (Domain.Value normalized)
         , Unparse variable
+        , Domain.AcWrapper normalized
         )
-    => Domain.NormalizedAc (TermLike Concrete) valueWrapper (TermLike variable)
+    =>  Domain.NormalizedAc
+            normalized
+            (TermLike Concrete)
+            (TermLike variable)
     -> Maybe (simplifier (OrPredicate variable))
 makeEvaluateNormalizedAc
     Domain.NormalizedAc
@@ -304,12 +302,16 @@ makeEvaluateNormalizedAc
     And.simplifyEvaluatedMultiPredicate (MultiAnd.make allConditions)
   where
     concreteElementsList
-        :: [(TermLike variable, valueWrapper (TermLike variable))]
+        ::  [   ( TermLike variable
+                , Domain.Value normalized (TermLike variable)
+                )
+            ]
     concreteElementsList =
         map
             (\(a, b) -> (TermLike.fromConcrete a, b))
             (Map.toList concreteElements)
-    (variableKeys, variableValues) = unzip elementsWithVariables
+    (variableKeys, variableValues) =
+        unzip (Domain.unwrapElement <$> elementsWithVariables)
     (concreteKeys, concreteValues) = unzip concreteElementsList
 
     evaluateDistinct
@@ -340,7 +342,7 @@ makeEvaluateNormalizedAc
         return (negations ++ remainingConditions)
 
     evaluateValues
-        :: [valueWrapper (TermLike variable)]
+        :: [Domain.Value normalized (TermLike variable)]
         -> simplifier [OrPredicate variable]
     evaluateValues elements = do
         wrapped <- evaluateWrappers elements
@@ -348,13 +350,13 @@ makeEvaluateNormalizedAc
         return (concat unwrapped)
       where
         evaluateWrapper
-            :: valueWrapper (TermLike variable)
-            -> simplifier (valueWrapper (OrPredicate variable))
+            :: Domain.Value normalized (TermLike variable)
+            -> simplifier (Domain.Value normalized (OrPredicate variable))
         evaluateWrapper = traverse makeEvaluateTerm
 
         evaluateWrappers
-            :: [valueWrapper (TermLike variable)]
-            -> simplifier [valueWrapper (OrPredicate variable)]
+            :: [Domain.Value normalized (TermLike variable)]
+            -> simplifier [Domain.Value normalized (OrPredicate variable)]
         evaluateWrappers = traverse evaluateWrapper
 
     mergeAnd :: [Predicate.Predicate variable] -> Predicate.Predicate variable

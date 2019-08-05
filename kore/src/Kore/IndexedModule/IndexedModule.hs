@@ -8,8 +8,6 @@ Stability   : experimental
 Portability : POSIX
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.IndexedModule.IndexedModule
     ( ImplicitIndexedModule (ImplicitIndexedModule)
     , IndexedModule
@@ -22,16 +20,6 @@ module Kore.IndexedModule.IndexedModule
         , indexedModuleAttributes, indexedModuleImports
         , indexedModuleHooks
         )
-    , lensIndexedModuleName
-    , lensIndexedModuleAliasSentences
-    , lensIndexedModuleSymbolSentences
-    , lensIndexedModuleSortDescriptions
-    , lensIndexedModuleAxioms
-    , lensIndexedModuleClaims
-    , lensIndexedModuleAttributes
-    , lensIndexedModuleImports
-    , lensIndexedModuleHooks
-    , lensIndexedModuleHookedIdentifiers
     , IndexModuleError
     , KoreImplicitIndexedModule
     , KoreIndexedModule
@@ -66,6 +54,8 @@ import qualified Control.Lens as Lens hiding
                  ( makeLenses )
 import           Control.Monad
                  ( foldM )
+import           Control.Monad.Extra
+                 ( unlessM )
 import           Control.Monad.State.Strict
                  ( execState )
 import qualified Control.Monad.State.Strict as Monad.State
@@ -84,7 +74,6 @@ import           Data.Text
 import           GHC.Generics
                  ( Generic )
 
-import qualified Control.Lens.TH.Rules as Lens
 import           Kore.AST.Error
 import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Null as Attribute
@@ -154,8 +143,6 @@ data IndexedModule pat declAtts axiomAtts =
         -- identifiers
     }
     deriving (Generic, Show)
-
-Lens.makeLenses ''IndexedModule
 
 recursiveIndexedModuleSortDescriptions
     :: forall pat declAtts axiomAtts
@@ -756,7 +743,7 @@ indexImportedModule
     nameToModule
     indexedModules
     importedModuleName
-  = do
+  =
     case Map.lookup importedModuleName indexedModules of
         Just indexedModule -> return (indexedModules, indexedModule)
         Nothing -> do
@@ -840,10 +827,6 @@ indexedModulesInScope
 indexedModulesInScope =
     \imod -> execState (resolveModule imod) Map.empty
   where
-    unlessM condM action = do
-        cond <- condM
-        if cond then return () else action
-
     alreadyResolved name =
         Monad.State.gets (Map.member name)
 

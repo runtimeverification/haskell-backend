@@ -14,6 +14,7 @@ module Kore.Step.Simplification.Data
     , Env (..)
     , runSimplifier
     , evalSimplifier
+    , lookupSimplifierAxiom
     , BranchT
     , evalSimplifierBranch
     , gather
@@ -33,6 +34,7 @@ module Kore.Step.Simplification.Data
     , BuiltinAndAxiomSimplifier (..)
     , BuiltinAndAxiomSimplifierMap
     , AttemptedAxiom (..)
+    , isApplicable, isNotApplicable
     , AttemptedAxiomResults (..)
     , CommonAttemptedAxiom
     , emptyAttemptedAxiom
@@ -47,6 +49,7 @@ module Kore.Step.Simplification.Data
 import           Control.Applicative
 import           Control.Comonad.Trans.Cofree
 import           Control.DeepSeq
+import qualified Control.Error as Error
 import qualified Control.Monad as Monad
 import           Control.Monad.Catch
                  ( MonadCatch, MonadThrow )
@@ -67,6 +70,7 @@ import           Control.Monad.Trans.Maybe
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
+import           Data.Maybe
 import           Data.Typeable
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
@@ -89,6 +93,7 @@ import           Kore.Internal.TermLike
 import           Kore.Logger
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
+import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import           Kore.Syntax.Application
 import           Kore.Syntax.Variable
                  ( SortedVariable )
@@ -192,6 +197,21 @@ instance MonadSimplify m => MonadSimplify (ListT m) where
 instance MonadSimplify m => MonadSimplify (MaybeT m)
 
 instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
+
+{- | Look up the 'BuiltinAndAxiomSimplifier' for the given 'TermLike'.
+
+@lookupSimplifierAxiom@ is empty if no simplifier is defined for the pattern.
+
+ -}
+lookupSimplifierAxiom
+    :: MonadSimplify simplifier
+    => TermLike variable
+    -> MaybeT simplifier BuiltinAndAxiomSimplifier
+lookupSimplifierAxiom termLike = do
+    simplifierAxioms <- askSimplifierAxioms
+    Error.hoistMaybe $ do
+        identifier <- Axiom.Identifier.extract termLike
+        Map.lookup identifier simplifierAxioms
 
 -- * Branching
 
@@ -635,6 +655,12 @@ deriving instance Show variable => Show (AttemptedAxiom variable)
 
 instance (NFData variable) => NFData (AttemptedAxiom variable)
 
+isApplicable, isNotApplicable :: AttemptedAxiom variable -> Bool
+isApplicable (Applied _) = True
+isApplicable _           = False
+isNotApplicable NotApplicable = True
+isNotApplicable _             = False
+
 {-| 'CommonAttemptedAxiom' particularizes 'AttemptedAxiom' to 'Variable',
 following the same pattern as the other `Common*` types.
 -}
@@ -659,7 +685,7 @@ maybeNotApplicable
     => MaybeT m (AttemptedAxiom variable)
     ->        m (AttemptedAxiom variable)
 maybeNotApplicable =
-    fmap (maybe NotApplicable id) . runMaybeT
+    fmap (fromMaybe NotApplicable) . runMaybeT
 
 {- | Return a 'NotApplicable' result for a failing 'ExceptT' action.
  -}

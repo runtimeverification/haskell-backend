@@ -16,7 +16,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Logger
                  ( LogMessage, WithLog )
 import qualified Kore.Step.Condition.Evaluator as Predicate
-                 ( evaluate )
+                 ( simplify )
 import           Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Substitution
                  ( PredicateMerger (PredicateMerger),
@@ -58,7 +58,7 @@ mergeWithPredicate
             [pattPredicate, conditionToMerge]
             [pattSubstitution, substitutionToMerge]
     let Conditional { predicate = mergedCondition } = merged
-    evaluatedCondition <- Monad.Trans.lift $ Predicate.evaluate mergedCondition
+    evaluatedCondition <- Monad.Trans.lift $ Predicate.simplify mergedCondition
     let Conditional { substitution = mergedSubstitution } = merged
     mergeWithEvaluatedCondition
         patt {substitution = mergedSubstitution}

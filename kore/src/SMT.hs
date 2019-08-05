@@ -69,6 +69,7 @@ import           Control.Monad.Trans.Accum
 import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Identity
 import qualified Control.Monad.Trans.Maybe as Maybe
+import           Data.Generics.Product
 import           Data.Limit
 import           Data.Text
                  ( Text )
@@ -78,12 +79,10 @@ import           ListT
                  ( ListT, mapListT )
 import           SMT.SimpleSMT
                  ( Constructor (..), ConstructorArgument (..),
-                 DataTypeDeclaration (..), FunctionDeclaration (..),
+                 DataTypeDeclaration (..), FunctionDeclaration (..), Logger,
                  Result (..), SExpr (..), SmtDataTypeDeclaration,
                  SmtFunctionDeclaration, SmtSortDeclaration, Solver,
                  SortDeclaration (..) )
-import           SMT.SimpleSMT
-                 ( Logger )
 import qualified SMT.SimpleSMT as SimpleSMT
 
 -- | Time-limit for SMT queries.
@@ -265,7 +264,7 @@ instance (MonadIO m, MonadUnliftIO m)
 
     localLogAction mapping (SmtT action) =
         withSolverT' $ \solver -> do
-            let solver' = Lens.over SimpleSMT.lensLogger mapping solver
+            let solver' = Lens.over (field @"logger") mapping solver
             runReaderT action =<< liftIO (newMVar solver')
 
 instance (MonadIO m, MonadUnliftIO m) => MonadSMT (SmtT m) where
@@ -276,7 +275,7 @@ instance (MonadIO m, MonadUnliftIO m) => MonadSMT (SmtT m) where
             mvar <- liftIO $ newMVar solver
             -- Run the inner action with the unshared mutex.
             -- The action will never block waiting to acquire the solver.
-            withRunInIO $ \runInIO -> do
+            withRunInIO $ \runInIO ->
                 SimpleSMT.inNewScope solver (runInIO $ runReaderT action mvar)
 
     declare name typ =

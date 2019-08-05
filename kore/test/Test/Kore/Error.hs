@@ -27,7 +27,7 @@ test_assertRight :: TestTree
 test_assertRight =
     testGroup "assertRight"
         [ run (mkRight "expected") `equals_` "expected"
-        , run (mkLeft   someError) `throws_` (printError someError)
+        , run (mkLeft   someError) `throws_` printError someError
         ]
       where
         run = assertRight

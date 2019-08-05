@@ -166,12 +166,11 @@ withApplication
 withApplication ident go kore =
     case Recursive.project kore of
         _ :< ApplicationF app
-          | symbolOrAliasConstructor == ident -> \attrs ->
-            Kore.Error.withLocationAndContext
-                symbol
-                ("attribute '" ++ show symbol ++ "'")
-                (go symbolOrAliasParams applicationChildren attrs)
+          | symbolOrAliasConstructor == ident ->
+            Kore.Error.withLocationAndContext symbol context
+            . go symbolOrAliasParams applicationChildren
           where
+            context = "attribute '" <> Text.pack (show symbol) <> "'"
             Application { applicationSymbolOrAlias = symbol } = app
             Application { applicationChildren } = app
             SymbolOrAlias { symbolOrAliasConstructor } = symbol
@@ -184,7 +183,7 @@ getZeroParams =
         [] -> return ()
         params ->
             Kore.Error.koreFailWithLocations params
-                ("expected zero parameters, found " ++ show arity)
+                ("expected zero parameters, found " <> Text.pack (show arity))
           where
             arity = length params
 
@@ -194,7 +193,7 @@ getTwoParams =
         [param1, param2] -> return (param1, param2)
         params ->
             Kore.Error.koreFailWithLocations params
-                ("expected two parameters, found " ++ show arity)
+                ("expected two parameters, found " <> Text.pack (show arity))
           where
             arity = length params
 
@@ -250,7 +249,7 @@ getSymbolOrAlias kore =
           | otherwise ->
             Kore.Error.withLocationAndContext
                 symbol
-                ("symbol '" ++ show symbol ++ "'")
+                ("symbol '" <> Text.pack (show symbol) <> "'")
                 (Kore.Error.koreFail "expected zero arguments")
           where
             Application { applicationSymbolOrAlias = symbol } = app
@@ -259,7 +258,7 @@ getSymbolOrAlias kore =
 
 {- | Accept a string literal.
  -}
-getStringLiteral :: AttributePattern -> Parser StringLiteral
+getStringLiteral :: AttributePattern -> Parser (StringLiteral AttributePattern)
 getStringLiteral kore =
     case Recursive.project kore of
         _ :< StringLiteralF lit -> return lit
@@ -292,7 +291,7 @@ parseReadS aReadS (Text.unpack -> syntax) =
 
 {- | Parse an 'Integer' from a 'StringLiteral'.
  -}
-parseInteger :: StringLiteral -> Parser Integer
+parseInteger :: StringLiteral child -> Parser Integer
 parseInteger (StringLiteral literal) = parseReadS reads literal
 
 {- | Parse an 'SExpr' for the @smtlib@ attribute.

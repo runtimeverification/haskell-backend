@@ -28,7 +28,7 @@ import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.SetSymbols as Set
 import           Kore.Domain.Builtin
-                 ( NormalizedAc (NormalizedAc) )
+                 ( NormalizedAc (NormalizedAc), NormalizedSet )
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
@@ -682,7 +682,7 @@ test_unifyConcatElemVarVsElemSet =
 
             concreteElem <- forAll genConcreteIntegerPattern
             let set = asInternal (Set.fromList [concreteElem])
-                elementSet = asInternalNormalized
+                elementSet' = asInternalNormalized
                     $ emptyNormalizedSet
                     `with` VariableElement (mkVar elementVar2)
                 patSet = addSelectElement elementVar2 set
@@ -696,7 +696,7 @@ test_unifyConcatElemVarVsElemSet =
                 expect = do  -- list monad
                     (elemUnifier, setUnifier) <-
                         [ (mkVar elementVar2, set)
-                        , (elemStepPattern, elementSet)
+                        , (elemStepPattern, elementSet')
                         ]
                     return Conditional
                         { term = expectedPatSet
@@ -729,11 +729,11 @@ test_unifyConcatElemVarVsElemElem =
 
             let elementSet2Normalized =
                     emptyNormalizedSet
-                    `with` (VariableElement (mkVar elementVar2))
+                    `with` VariableElement (mkVar elementVar2)
                 elementSet2 = asInternalNormalized elementSet2Normalized
                 elementSet3 = asInternalNormalized $
                     emptyNormalizedSet
-                    `with` (VariableElement (mkVar elementVar3))
+                    `with` VariableElement (mkVar elementVar3)
                 patSet = addSelectElement elementVar2 elementSet3
                 expectedPatSet = asInternalNormalized $
                     elementSet2Normalized
@@ -1448,7 +1448,7 @@ test_unifyMultipleIdenticalOpaqueSets =
                         , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (elementVar1, (mkVar elementVar2))
+                                [ (elementVar1, mkVar elementVar2)
                                 , (setVar3, asInternal Set.empty)
                                 ]
                         }
@@ -1546,26 +1546,17 @@ test_concretizeKeysAxiom =
 test_isBuiltin :: [TestTree]
 test_isBuiltin =
     [ testCase "isSymbolConcat" $ do
-        assertBool ""
-            (Set.isSymbolConcat mockHookTools Mock.concatSetSymbol)
-        assertBool ""
-            (not (Set.isSymbolConcat mockHookTools Mock.aSymbol))
-        assertBool ""
-            (not (Set.isSymbolConcat mockHookTools Mock.elementSetSymbol))
+        assertBool "" (Set.isSymbolConcat Mock.concatSetSymbol)
+        assertBool "" (not (Set.isSymbolConcat Mock.aSymbol))
+        assertBool "" (not (Set.isSymbolConcat Mock.elementSetSymbol))
     , testCase "isSymbolElement" $ do
-        assertBool ""
-            (Set.isSymbolElement mockHookTools Mock.elementSetSymbol)
-        assertBool ""
-            (not (Set.isSymbolElement mockHookTools Mock.aSymbol))
-        assertBool ""
-            (not (Set.isSymbolElement mockHookTools Mock.concatSetSymbol))
+        assertBool "" (Set.isSymbolElement Mock.elementSetSymbol)
+        assertBool "" (not (Set.isSymbolElement Mock.aSymbol))
+        assertBool "" (not (Set.isSymbolElement Mock.concatSetSymbol))
     , testCase "isSymbolUnit" $ do
-        assertBool ""
-            (Set.isSymbolUnit mockHookTools Mock.unitSetSymbol)
-        assertBool ""
-            (not (Set.isSymbolUnit mockHookTools Mock.aSymbol))
-        assertBool ""
-            (not (Set.isSymbolUnit mockHookTools Mock.concatSetSymbol))
+        assertBool "" (Set.isSymbolUnit Mock.unitSetSymbol)
+        assertBool "" (not (Set.isSymbolUnit Mock.aSymbol))
+        assertBool "" (not (Set.isSymbolUnit Mock.concatSetSymbol))
     ]
 
 hprop_unparse :: Property
@@ -1647,26 +1638,26 @@ asTermLike =
 -- | Specialize 'Set.asPattern' to the builtin sort 'setSort' and concrete
 -- elements.
 asPattern :: Set (TermLike Concrete) -> Pattern Variable
-asPattern concreteSet = Reflection.give testMetadataTools
-    $ Ac.asPattern
-        setSort
-        NormalizedAc
-            { elementsWithVariables = []
-            , concreteElements = Map.fromSet (const Domain.NoValue) concreteSet
-            , opaque = []
-            }
+asPattern concreteSet =
+    Reflection.give testMetadataTools
+    $ Ac.asPattern setSort
+    $ Domain.wrapAc NormalizedAc
+        { elementsWithVariables = []
+        , concreteElements = Map.fromSet (const Domain.SetValue) concreteSet
+        , opaque = []
+        }
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 asInternal :: Set (TermLike Concrete) -> TermLike Variable
 asInternal =
     Ac.asInternalConcrete testMetadataTools setSort
-    . Map.fromSet (const Domain.NoValue)
+    . Map.fromSet (const Domain.SetValue)
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 asInternalNormalized
-    :: NormalizedAc (TermLike Concrete) Domain.NoValue (TermLike Variable)
+    :: NormalizedAc NormalizedSet (TermLike Concrete) (TermLike Variable)
     -> TermLike Variable
-asInternalNormalized = Ac.asInternal testMetadataTools setSort
+asInternalNormalized = Ac.asInternal testMetadataTools setSort . Domain.wrapAc
 
 -- * Constructors
 

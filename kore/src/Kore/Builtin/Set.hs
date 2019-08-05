@@ -22,6 +22,7 @@ module Kore.Builtin.Set
     , Domain.Builtin
     , returnConcreteSet
     , asTermLike
+    , internalize
     , expectBuiltinSet
     , expectConcreteBuiltinSet
       -- * Unification
@@ -31,7 +32,7 @@ module Kore.Builtin.Set
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
-                 ( MaybeT (MaybeT), fromMaybe, runMaybeT )
+                 ( MaybeT (MaybeT), fromMaybe, hoistMaybe, runMaybeT )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -45,6 +46,8 @@ import qualified Data.Text as Text
 import qualified Kore.Attribute.Symbol as Attribute
                  ( Symbol )
 import qualified Kore.Builtin.AssociativeCommutative as Ac
+import           Kore.Builtin.Attributes
+                 ( isConstructorModulo_ )
 import qualified Kore.Builtin.Bool as Bool
 import           Kore.Builtin.Builtin
                  ( acceptAnySort )
@@ -169,13 +172,13 @@ expectBuiltinSet
     :: MonadSimplify m
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
-    -> MaybeT m (Ac.TermNormalizedAc Domain.NoValue variable)
+    -> MaybeT m (Ac.TermNormalizedAc Domain.NormalizedSet variable)
 expectBuiltinSet ctx set =
     case set of
         Builtin_ domain ->
             case domain of
                 Domain.BuiltinSet Domain.InternalAc { builtinAcChild } ->
-                    return (Domain.unwrapAc builtinAcChild)
+                    return builtinAcChild
                 _ ->
                     Builtin.verifierBug
                     $ Text.unpack ctx ++ ": Domain value is not a set"
@@ -190,10 +193,10 @@ expectConcreteBuiltinSet
     :: MonadSimplify m
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
-    -> MaybeT m (Map (TermLike Concrete) (Domain.NoValue (TermLike variable)))
+    -> MaybeT m (Map (TermLike Concrete) (Domain.SetValue (TermLike variable)))
 expectConcreteBuiltinSet ctx _set = do
     _set <- expectBuiltinSet ctx _set
-    case _set of
+    case Domain.unwrapAc _set of
         Domain.NormalizedAc
             { elementsWithVariables = []
             , concreteElements
@@ -210,7 +213,7 @@ returnConcreteSet
         , SortedVariable variable
         )
     => Sort
-    -> Map (TermLike Concrete) (Domain.NoValue (TermLike variable))
+    -> Map (TermLike Concrete) (Domain.SetValue (TermLike variable))
     -> m (AttemptedAxiom variable)
 returnConcreteSet = Ac.returnConcreteAc
 
@@ -226,16 +229,15 @@ evalElement =
                         Just concrete ->
                             returnConcreteSet
                                 resultSort
-                                (Map.singleton concrete Domain.NoValue)
+                                (Map.singleton concrete Domain.SetValue)
                         Nothing ->
-                            Ac.returnAc
-                                resultSort
-                                Domain.NormalizedAc
-                                    { elementsWithVariables =
-                                        [(_elem, Domain.NoValue)]
-                                    , concreteElements = Map.empty
-                                    , opaque = []
-                                    }
+                            Ac.returnAc resultSort
+                            $ Domain.wrapAc Domain.NormalizedAc
+                                { elementsWithVariables =
+                                    [Domain.SetElement _elem]
+                                , concreteElements = Map.empty
+                                , opaque = []
+                                }
                 _ -> Builtin.wrongArity Set.elementKey
             )
 
@@ -250,7 +252,7 @@ evalIn =
                     case arguments of
                         [_elem, _set] -> (_elem, _set)
                         _ -> Builtin.wrongArity Set.inKey
-            _elem <- Builtin.expectNormalConcreteTerm _elem
+            _elem <- hoistMaybe $ Builtin.toKey _elem
             _set <- expectConcreteBuiltinSet Set.inKey _set
             (Builtin.appliedFunction . asExpandedBoolPattern)
                 (Map.member _elem _set)
@@ -279,17 +281,15 @@ evalConcat =
         -> [TermLike variable]
         -> m (AttemptedAxiom variable)
     evalConcat0 _ resultSort arguments = Builtin.getAttemptedAxiom $ do
-        tools <- askMetadataTools
-
         let (_set1, _set2) =
                 case arguments of
                     [_set1, _set2] -> (_set1, _set2)
                     _ -> Builtin.wrongArity Set.concatKey
 
-            normalized1 :: Ac.NormalizedOrBottom Domain.NoValue variable
-            normalized1 = Ac.toNormalized tools _set1
-            normalized2 :: Ac.NormalizedOrBottom Domain.NoValue variable
-            normalized2 = Ac.toNormalized tools _set2
+            normalized1 :: Ac.NormalizedOrBottom Domain.NormalizedSet variable
+            normalized1 = Ac.toNormalized _set1
+            normalized2 :: Ac.NormalizedOrBottom Domain.NormalizedSet variable
+            normalized2 = Ac.toNormalized _set2
 
         Ac.evalConcatNormalizedOrBottom resultSort normalized1 normalized2
 
@@ -336,7 +336,7 @@ evalToList = Builtin.functionEvaluator evalToList0
                 . Map.toList
                 $ _set
 
-    dropNoValue (a, Domain.NoValue) = a
+    dropNoValue (a, Domain.SetValue) = a
 
 evalSize :: Builtin.Function
 evalSize = Builtin.functionEvaluator evalSize0
@@ -401,7 +401,7 @@ asTermLike builtin =
             (map concreteElement (Map.toAscList concreteElements))
         )
         (Ac.VariableElements
-            (map element elementsWithVariables)
+            (element . Domain.unwrapElement <$> elementsWithVariables)
         )
         (Ac.Opaque filteredSets)
   where
@@ -432,13 +432,47 @@ asTermLike builtin =
     Domain.NormalizedAc { opaque } = normalizedAc
 
     concreteElement
-        :: (TermLike Concrete, Domain.NoValue (TermLike variable))
+        :: (TermLike Concrete, Domain.SetValue (TermLike variable))
         -> TermLike variable
     concreteElement (key, value) = element (TermLike.fromConcrete key, value)
     element
-        :: (TermLike variable, Domain.NoValue (TermLike variable))
+        :: (TermLike variable, Domain.SetValue (TermLike variable))
         -> TermLike variable
-    element (key, Domain.NoValue) = mkApplySymbol elementSymbol [key]
+    element (key, Domain.SetValue) = mkApplySymbol elementSymbol [key]
+
+{- | Convert a Set-sorted 'TermLike' to its internal representation.
+
+The 'TermLike' is unmodified if it is not Set-sorted. @internalize@ only
+operates at the top-most level, it does not descend into the 'TermLike' to
+internalize subterms.
+
+ -}
+internalize
+    :: (Ord variable, SortedVariable variable)
+    => SmtMetadataTools Attribute.Symbol
+    -> TermLike variable
+    -> TermLike variable
+internalize tools termLike
+  | fromMaybe False (isSetSort tools sort')
+  -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
+  -- apply it if we know the term head is a constructor-like symbol.
+  , App_ symbol _ <- termLike
+  , isConstructorModulo_ symbol =
+    case Ac.toNormalized @Domain.NormalizedSet termLike of
+        Ac.Bottom                    -> TermLike.mkBottom sort'
+        Ac.Normalized termNormalized
+          | let unwrapped = Domain.unwrapAc termNormalized
+          , null (Domain.elementsWithVariables unwrapped)
+          , null (Domain.concreteElements unwrapped)
+          , [singleOpaqueTerm] <- Domain.opaque unwrapped
+          ->
+            -- When the 'normalized' term consists of a single opaque Map-sorted
+            -- term, we should prefer to return only that term.
+            singleOpaqueTerm
+          | otherwise -> Ac.asInternal tools sort' termNormalized
+  | otherwise = termLike
+  where
+    sort' = termLikeSort termLike
 
 {- | Simplify the conjunction or equality of two concrete Set domain values.
 
@@ -479,7 +513,7 @@ unifyEquals
     second
   | fromMaybe False (isSetSort tools sort1)
   = MaybeT $ do
-    unifiers <- Monad.Unify.gather (runMaybeT (unifyEquals0 True first second))
+    unifiers <- Monad.Unify.gather (runMaybeT (unifyEquals0 first second))
     case sequence unifiers of
         Nothing -> return Nothing
         Just us -> Monad.Unify.scatter (map Just us)
@@ -489,12 +523,10 @@ unifyEquals
 
     -- | Unify the two argument patterns.
     unifyEquals0
-        :: Bool
-        -> TermLike variable
+        :: TermLike variable
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
     unifyEquals0
-        alreadyNormalized
         (Builtin_ (Domain.BuiltinSet normalized1))
         (Builtin_ (Domain.BuiltinSet normalized2))
       =
@@ -503,14 +535,13 @@ unifyEquals
             first
             second
             unifyEqualsChildren
-            alreadyNormalized
             normalized1
             normalized2
 
-    unifyEquals0 _ pat1 pat2 = do
+    unifyEquals0 pat1 pat2 = do
         firstDomain <- asDomain pat1
         secondDomain <- asDomain pat2
-        unifyEquals0 False firstDomain secondDomain
+        unifyEquals0 firstDomain secondDomain
       where
         asDomain
             :: TermLike variable
@@ -526,5 +557,5 @@ unifyEquals
                         second
           where
             normalizedOrBottom
-                :: Ac.NormalizedOrBottom Domain.NoValue variable
-            normalizedOrBottom = Ac.toNormalized tools patt
+                :: Ac.NormalizedOrBottom Domain.NormalizedSet variable
+            normalizedOrBottom = Ac.toNormalized patt

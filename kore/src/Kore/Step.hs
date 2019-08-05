@@ -32,7 +32,6 @@ import qualified GHC.Stack as GHC
 import           Numeric.Natural
                  ( Natural )
 
-import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Step.Result as Result
@@ -41,6 +40,8 @@ import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern, isCoolingRule,
                  isHeatingRule, isNormalRule )
 import           Kore.Step.Simplification.Data as Simplifier
+import qualified Kore.Step.Simplification.OrPattern as OrPattern
+                 ( filterMultiOrWithTermCeil )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyAndRemoveTopExists )
 import qualified Kore.Step.Step as Step
@@ -96,10 +97,8 @@ transitionRule =
         do
             configs <- Monad.Trans.lift $
                 Pattern.simplifyAndRemoveTopExists config
-            let
-                -- Filter out ⊥ patterns
-                nonEmptyConfigs = MultiOr.filterOr configs
-            Foldable.asum (pure <$> nonEmptyConfigs)
+            filteredConfigs <- OrPattern.filterMultiOrWithTermCeil configs
+            Foldable.asum (pure <$> filteredConfigs)
     transitionRewrite rule config = do
         Transition.addRule rule
         let unificationProcedure =

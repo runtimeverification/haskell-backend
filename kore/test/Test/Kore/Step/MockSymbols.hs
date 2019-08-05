@@ -22,8 +22,11 @@ module Test.Kore.Step.MockSymbols where
 
 import           Control.Applicative
 import qualified Control.Lens as Lens
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
+import qualified Data.Either as Either
 import           Data.Function
+import           Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import           Data.Text
@@ -58,6 +61,7 @@ import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT
                  ( resolve )
 import           Kore.Syntax.Application
+import           Kore.Syntax.SetVariable
 import           Kore.Syntax.Variable
 import           Kore.Unparser
 import qualified SMT.AST as SMT
@@ -113,6 +117,10 @@ chId :: Id
 chId = testId "ch"
 fSetId :: Id
 fSetId = testId "fSet"
+fIntId :: Id
+fIntId = testId "fInt"
+fTestIntId :: Id
+fTestIntId = testId "fTestInt"
 plain00Id :: Id
 plain00Id = testId "plain00"
 plain00Sort0Id :: Id
@@ -183,6 +191,8 @@ lessIntId :: Id
 lessIntId = testId "lessIntId"
 greaterEqIntId :: Id
 greaterEqIntId = testId "greaterEqIntId"
+tdivIntId :: Id
+tdivIntId = testId "tdivIntId"
 concatListId :: Id
 concatListId = testId "concatList"
 elementListId :: Id
@@ -279,6 +289,12 @@ chSymbol = symbol chId [] testSort & function
 
 fSetSymbol :: Symbol
 fSetSymbol = symbol fSetId [setSort] setSort & function
+
+fIntSymbol :: Symbol
+fIntSymbol = symbol fIntId [intSort] intSort & function
+
+fTestIntSymbol :: Symbol
+fTestIntSymbol = symbol fTestIntId [testSort] intSort & function
 
 plain00Symbol :: Symbol
 plain00Symbol = symbol plain00Id [] testSort
@@ -444,6 +460,11 @@ greaterEqIntSymbol =
     symbol greaterEqIntId [intSort, intSort] boolSort
     & functional & hook "INT.ge" & smthook ">="
 
+tdivIntSymbol :: Symbol
+tdivIntSymbol =
+    symbol tdivIntId [intSort, intSort] intSort
+    & function & hook "INT.tdiv"
+
 concatListSymbol :: Symbol
 concatListSymbol =
     symbol concatListId [listSort, listSort] listSort
@@ -480,7 +501,7 @@ anywhereSymbol =
     symbol anywhereId [] testSort
     & functional
     & Lens.set
-        (lensSymbolAttributes . Attribute.lensAnywhere)
+        (typed @Attribute.Symbol . typed @Attribute.Anywhere)
         (Attribute.Anywhere True)
 
 var_x_1 :: Variable
@@ -491,10 +512,14 @@ var_z_1 :: Variable
 var_z_1 = Variable (testId "z") (Just (Element 1)) testSort
 x :: Variable
 x = Variable (testId "x") mempty testSort
+setX :: SetVariable Variable
+setX = SetVariable x
 x0 :: Variable
 x0 = Variable (testId "x") mempty testSort0
 y :: Variable
 y = Variable (testId "y") mempty testSort
+setY :: SetVariable Variable
+setY = SetVariable y
 z :: Variable
 z = Variable (testId "z") mempty testSort
 m :: Variable
@@ -604,6 +629,20 @@ fSet
     => TermLike variable
     -> TermLike variable
 fSet arg = Internal.mkApplySymbol fSetSymbol [arg]
+
+fTestInt
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+fTestInt arg = Internal.mkApplySymbol fTestIntSymbol [arg]
+
+fInt
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+fInt arg = Internal.mkApplySymbol fIntSymbol [arg]
 
 plain00 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
 plain00 = Internal.mkApplySymbol plain00Symbol []
@@ -922,6 +961,14 @@ greaterEqInt
     -> TermLike variable
 greaterEqInt i1 i2 = Internal.mkApplySymbol greaterEqIntSymbol [i1, i2]
 
+tdivInt
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+tdivInt i1 i2 = Internal.mkApplySymbol tdivIntSymbol [i1, i2]
+
 concatList
     :: (Ord variable, SortedVariable variable, Unparse variable)
     => GHC.HasCallStack
@@ -929,6 +976,13 @@ concatList
     -> TermLike variable
     -> TermLike variable
 concatList l1 l2 = Internal.mkApplySymbol concatListSymbol [l1, l2]
+
+elementList
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+elementList element = Internal.mkApplySymbol elementListSymbol [element]
 
 sigma
     :: (Ord variable, SortedVariable variable, Unparse variable)
@@ -970,6 +1024,8 @@ symbols =
     , cgSort0Symbol
     , chSymbol
     , fSetSymbol
+    , fIntSymbol
+    , fTestIntSymbol
     , plain00Symbol
     , plain00Sort0Symbol
     , plain00SubsortSymbol
@@ -1019,6 +1075,7 @@ symbols =
     , unitSetSymbol
     , lessIntSymbol
     , greaterEqIntSymbol
+    , tdivIntSymbol
     , sigmaSymbol
     , anywhereSymbol
     ]
@@ -1360,22 +1417,34 @@ subsorts =
 
 builtinMap
     :: (Ord variable, SortedVariable variable, Unparse variable)
-    => [(TermLike Concrete, TermLike variable)]
+    => [(TermLike variable, TermLike variable)]
     -> TermLike variable
-builtinMap child =
+builtinMap elements = framedMap elements []
+
+framedMap
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => [(TermLike variable, TermLike variable)]
+    -> [variable]
+    -> TermLike variable
+framedMap elements (map Internal.mkVar -> opaque) =
     Internal.mkBuiltin $ Domain.BuiltinMap Domain.InternalAc
         { builtinAcSort = mapSort
         , builtinAcUnit = unitMapSymbol
         , builtinAcElement = elementMapSymbol
         , builtinAcConcat = concatMapSymbol
         , builtinAcChild = Domain.NormalizedMap Domain.NormalizedAc
-            { elementsWithVariables = []
-            , concreteElements =
-                Map.fromList
-                    (map (\(key, value) -> (key, Domain.Value value)) child)
-            , opaque = []
+            { elementsWithVariables = Domain.wrapElement <$> abstractElements
+            , concreteElements
+            , opaque
             }
         }
+  where
+    asConcrete element@(key, value) =
+        (,) <$> Internal.asConcrete key <*> pure value
+        & maybe (Left element) Right
+    (abstractElements, Map.fromList -> concreteElements) =
+        asConcrete . Bifunctor.second Domain.MapValue <$> elements
+        & Either.partitionEithers
 
 builtinList
     :: (Ord variable, SortedVariable variable, Unparse variable)
@@ -1403,7 +1472,7 @@ builtinSet child =
         , builtinAcChild = Domain.NormalizedSet Domain.NormalizedAc
             { elementsWithVariables = []
             , concreteElements =
-                Map.fromList (map (\key -> (key, Domain.NoValue)) child)
+                Map.fromList (map (\key -> (key, Domain.SetValue)) child)
             , opaque = []
             }
         }
@@ -1429,7 +1498,7 @@ emptyMetadataTools =
         [] -- subsorts
         emptySmtDeclarations
 
-metadataTools :: SmtMetadataTools Attribute.Symbol
+metadataTools :: GHC.HasCallStack => SmtMetadataTools Attribute.Symbol
 metadataTools =
     Mock.makeMetadataTools
         attributesMapping

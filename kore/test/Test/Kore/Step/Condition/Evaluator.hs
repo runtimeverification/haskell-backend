@@ -6,17 +6,14 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Control.Monad.Trans as Trans
-import           Data.Text
-                 ( Text )
 
 import           Kore.Internal.Pattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
-                 makeNotPredicate, makeTruePredicate )
+                 ( makeAndPredicate, makeEqualsPredicate, makeNotPredicate,
+                 makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
-import qualified Kore.Step.Condition.Evaluator as Evaluator
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import           SMT
@@ -50,17 +47,12 @@ test_andNegation =
                     (makeNotPredicate predicate)
                 )
         expected === actual
-    expected =
-        Conditional
-            { term = ()
-            , predicate = makeFalsePredicate
-            , substitution = mempty
-            }
+    expected = Just False
 
 evaluate
     :: Syntax.Predicate Variable
-    -> PropertyT SMT (Predicate Variable)
-evaluate = Trans.lift . evalSimplifier testEnv . Evaluator.evaluate
+    -> PropertyT SMT (Maybe Bool)
+evaluate = Trans.lift . evalSimplifier testEnv . SMT.Evaluator.evaluate
 
 noSimplification :: [(TermLike Variable, [Pattern Variable])]
 noSimplification = []
@@ -68,20 +60,20 @@ noSimplification = []
 -- ----------------------------------------------------------------
 -- Refute Int predicates
 
-vInt :: Text -> TermLike Variable
+vInt :: Id -> TermLike Variable
 vInt s = mkVar (varS s Builtin.intSort)
 
 a, b, c :: TermLike Variable
-a = vInt "a"
-b = vInt "b"
-c = vInt "c"
+a = vInt (testId "a")
+b = vInt (testId "b")
+c = vInt (testId "c")
 
-vBool :: Text -> TermLike Variable
+vBool :: Id -> TermLike Variable
 vBool s = mkVar (varS s Builtin.boolSort)
 
 p, q :: TermLike Variable
-p = vBool "p"
-q = vBool "q"
+p = vBool (testId "p")
+q = vBool (testId "q")
 
 assertRefuted :: Syntax.Predicate Variable -> Assertion
 assertRefuted prop = do

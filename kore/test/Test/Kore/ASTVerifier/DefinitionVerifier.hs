@@ -169,7 +169,6 @@ simpleDefinitionFromSentences name sentences =
             ]
         }
 
--- TODO: simple meta sort sentence?
 simpleSortSentence :: SortName -> ParsedSentence
 simpleSortSentence (SortName name) =
     asSentence SentenceSort
@@ -262,6 +261,15 @@ sortSentenceWithSortParameters (SortName name) parameters =
         { sentenceSortName = testId name
         , sentenceSortParameters = parameters
         , sentenceSortAttributes = Attributes []
+        }
+
+sortSentenceWithAttributes
+    :: SortName -> [SortVariable] -> [ParsedPattern] -> ParsedSentence
+sortSentenceWithAttributes (SortName name) parameters attributes =
+    asSentence SentenceSort
+        { sentenceSortName = testId name
+        , sentenceSortParameters = parameters
+        , sentenceSortAttributes = Attributes attributes
         }
 
 aliasSentenceWithSort
@@ -392,7 +400,7 @@ sentenceAliasWithAttributes
     -> [SortVariable]
     -> Sort
     -> [ParsedPattern]
-    -> Application SymbolOrAlias (Variable)
+    -> Application SymbolOrAlias Variable
     -> ParsedPattern
     -> ParsedSentenceAlias
 sentenceAliasWithAttributes (AliasName name) params sort attributes l r =

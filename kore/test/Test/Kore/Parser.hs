@@ -83,9 +83,16 @@ parseTest _ (Skip tests) =
         ("Parsing skip tests '" ++ show tests ++ "'")
         (assertBool "Not Expecting Skip Tests here" False)
 
-parseSkipTree :: Parser () -> [ParserTest ()] -> [TestTree]
+parseSkipTree
+    :: HasCallStack
+    => Parser () -> [ParserTest ()] -> [TestTree]
 parseSkipTree parser = map (parseSkipTest parser)
-parseSkipTest :: Parser () -> ParserTest () -> TestTree
+
+parseSkipTest
+    :: HasCallStack
+    => Parser ()
+    -> ParserTest ()
+    -> TestTree
 parseSkipTest parser (Skip tests) =
     testGroup "Tests for Parsers not creating ASTs"
     (map

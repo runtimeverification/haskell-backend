@@ -3,8 +3,6 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kore.ASTVerifier.PatternVerifier
     ( verifyPattern
     , verifyStandalonePattern
@@ -15,10 +13,6 @@ module Kore.ASTVerifier.PatternVerifier
     , PatternVerifier (..)
     , runPatternVerifier
     , Context (..)
-    , lensDeclaredVariables
-    , lensDeclaredSortVariables
-    , lensIndexedModule
-    , lensBuiltinDomainValueVerifiers
     , DeclaredVariables (..), emptyDeclaredVariables
     , assertExpectedSort
     , assertSameSort
@@ -39,18 +33,21 @@ import qualified Data.Map as Map
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
 import           Data.Text.Prettyprint.Doc
                  ( (<+>) )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           Data.Text.Prettyprint.Doc.Render.String
-                 ( renderString )
+import           Data.Text.Prettyprint.Doc.Render.Text
+                 ( renderStrict )
 
-import qualified Control.Lens.TH.Rules as Lens
 import           Kore.AST.Error
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.SortVerifier
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
+import qualified Kore.Attribute.Sort as Attribute.Sort
+import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Attribute.Synthetic
 import qualified Kore.Builtin as Builtin
@@ -74,7 +71,7 @@ import qualified Kore.Verified as Verified
 
 newtype DeclaredVariables =
     DeclaredVariables
-        { getDeclaredVariables :: Map.Map Id (Variable) }
+        { getDeclaredVariables :: Map.Map Id Variable }
     deriving (Monoid, Semigroup)
 
 emptyDeclaredVariables :: DeclaredVariables
@@ -90,8 +87,6 @@ data Context =
         , builtinDomainValueVerifiers
             :: !(Builtin.DomainValueVerifiers Verified.Pattern)
         }
-
-Lens.makeLenses ''Context
 
 newtype PatternVerifier a =
     PatternVerifier
@@ -166,7 +161,7 @@ lookupDeclaredVariable varId = do
     errorUnquantified :: PatternVerifier Variable
     errorUnquantified =
         koreFailWithLocations [varId]
-            ("Unquantified variable: '" ++ getIdForError varId ++ "'.")
+            ("Unquantified variable: '" <> getId varId <> "'.")
 
 addDeclaredVariable
     :: Variable
@@ -193,9 +188,9 @@ newDeclaredVariable declared variable@Variable { variableName } = do
     alreadyDeclared :: Variable -> PatternVerifier DeclaredVariables
     alreadyDeclared variable' =
         koreFailWithLocations [variable', variable]
-            ("Variable '"
-                ++ getIdForError variableName
-                ++ "' was already declared."
+            (  "Variable '"
+            <> getId variableName
+            <> "' was already declared."
             )
 
 {- | Collect 'DeclaredVariables'.
@@ -207,7 +202,7 @@ See also: 'newDeclaredVariable'
  -}
 uniqueDeclaredVariables
     :: Foldable f
-    => f (Variable)
+    => f Variable
     -> PatternVerifier DeclaredVariables
 uniqueDeclaredVariables =
     Foldable.foldlM newDeclaredVariable emptyDeclaredVariables
@@ -357,11 +352,9 @@ verifyPatternHead (_ :< patternF) =
         Syntax.RewritesF rewrites ->
             transCofreeF Internal.RewritesF <$> verifyRewrites rewrites
         Syntax.StringLiteralF str ->
-            transCofreeF (Internal.StringLiteralF . getConst)
-                <$> verifyStringLiteral str
+            transCofreeF Internal.StringLiteralF <$> verifyStringLiteral str
         Syntax.CharLiteralF char ->
-            transCofreeF (Internal.CharLiteralF . getConst)
-                <$> verifyCharLiteral char
+            transCofreeF Internal.CharLiteralF <$> verifyCharLiteral char
         Syntax.TopF top ->
             transCofreeF Internal.TopF <$> verifyTop top
         Syntax.VariableF var ->
@@ -706,9 +699,11 @@ verifyDomainValue domain = do
     let DomainValue { domainValueSort = patternSort } = domain
     Context { builtinDomainValueVerifiers, indexedModule } <- Reader.ask
     verifyPatternSort patternSort
-    let lookupSortDeclaration' sortId = do
+    let
+        lookupSortDeclaration' sortId = do
             (_, sortDecl) <- resolveSort indexedModule sortId
             return sortDecl
+    verifySortHasDomainValues patternSort
     domain' <- sequence domain
     verified <-
         PatternVerifier
@@ -723,22 +718,40 @@ verifyDomainValue domain = do
         (koreFail "Domain value must not contain free variables.")
     return (attrs :< verified)
 
+verifySortHasDomainValues :: Sort -> PatternVerifier ()
+verifySortHasDomainValues patternSort = do
+    Context { indexedModule } <- Reader.ask
+    (sortAttrs, _) <- resolveSort indexedModule dvSortId
+    koreFailWithLocationsWhen
+        (not
+            (Attribute.HasDomainValues.getHasDomainValues
+                (Attribute.Sort.hasDomainValues sortAttrs)
+            )
+        )
+        [patternSort]
+        sortNeedsDomainValueAttributeMessage
+  where
+    dvSortId = case patternSort of
+        SortVariableSort _ ->
+            error "Unimplemented: domain values with variable sorts"
+        SortActualSort SortActual {sortActualName} -> sortActualName
+
 verifyStringLiteral
-    :: (base ~ Const StringLiteral, valid ~ Attribute.Pattern Variable)
-    => StringLiteral
-    -> PatternVerifier (CofreeF base valid Verified.Pattern)
+    :: valid ~ Attribute.Pattern Variable
+    => StringLiteral (PatternVerifier Verified.Pattern)
+    -> PatternVerifier (CofreeF StringLiteral valid Verified.Pattern)
 verifyStringLiteral str = do
-    let verified = Const str
-        attrs = synthetic (Internal.extractAttributes <$> verified)
+    verified <- sequence str
+    let attrs = synthetic (Internal.extractAttributes <$> verified)
     return (attrs :< verified)
 
 verifyCharLiteral
-    :: (base ~ Const CharLiteral, valid ~ Attribute.Pattern Variable)
-    => CharLiteral
-    -> PatternVerifier (CofreeF base valid Verified.Pattern)
+    :: valid ~ Attribute.Pattern Variable
+    => CharLiteral (PatternVerifier Verified.Pattern)
+    -> PatternVerifier (CofreeF CharLiteral valid Verified.Pattern)
 verifyCharLiteral char = do
-    let verified = Const char
-        attrs = synthetic (Internal.extractAttributes <$> verified)
+    verified <- sequence char
+    let attrs = synthetic (Internal.extractAttributes <$> verified)
     return (attrs :< verified)
 
 verifyVariableDeclaration :: Variable -> PatternVerifier VerifySuccess
@@ -768,11 +781,11 @@ assertSameSort
     :: Sort
     -> Sort
     -> PatternVerifier ()
-assertSameSort expectedSort actualSort = do
+assertSameSort expectedSort actualSort =
     koreFailWithLocationsWhen
         (expectedSort /= actualSort)
         [expectedSort, actualSort]
-        ((renderString . Pretty.layoutCompact)
+        ((renderStrict . Pretty.layoutCompact)
          ("Expecting sort"
           <+> Pretty.squotes (unparse expectedSort)
           <+> "but got"
@@ -796,9 +809,9 @@ verifyFreeVariables unifiedPattern =
         addFreeVariable
         emptyDeclaredVariables
         $
-        (Set.toList (Variables.freePureVariables unifiedPattern))
+        Set.toList (Variables.freePureVariables unifiedPattern)
         ++
-        (Set.toList (Variables.freeSetVariables unifiedPattern))
+        Set.toList (Variables.freeSetVariables unifiedPattern)
 
 addFreeVariable
     :: DeclaredVariables
@@ -817,33 +830,33 @@ checkVariable var vars =
   where
     inconsistent v =
         koreFailWithLocations [v, var]
-        $ renderString $ Pretty.layoutCompact
+        $ renderStrict $ Pretty.layoutCompact
         $ "Inconsistent free variable usage:"
             <+> unparse v
             <+> "and"
             <+> unparse var
             <> Pretty.dot
 
-patternNameForContext :: PatternF Variable p -> String
+patternNameForContext :: PatternF Variable p -> Text
 patternNameForContext (AndF _) = "\\and"
 patternNameForContext (ApplicationF application) =
     "symbol or alias '"
-    ++ getIdForError
+    <> getId
         (symbolOrAliasConstructor (applicationSymbolOrAlias application))
-    ++ "'"
+    <> "'"
 patternNameForContext (BottomF _) = "\\bottom"
 patternNameForContext (CeilF _) = "\\ceil"
 patternNameForContext (DomainValueF _) = "\\dv"
 patternNameForContext (EqualsF _) = "\\equals"
 patternNameForContext (ExistsF exists) =
     "\\exists '"
-    ++ variableNameForContext (existsVariable exists)
-    ++ "'"
+    <> variableNameForContext (existsVariable exists)
+    <> "'"
 patternNameForContext (FloorF _) = "\\floor"
 patternNameForContext (ForallF forall) =
     "\\forall '"
-    ++ variableNameForContext (forallVariable forall)
-    ++ "'"
+    <> variableNameForContext (forallVariable forall)
+    <> "'"
 patternNameForContext (IffF _) = "\\iff"
 patternNameForContext (ImpliesF _) = "\\implies"
 patternNameForContext (InF _) = "\\in"
@@ -857,10 +870,10 @@ patternNameForContext (StringLiteralF _) = "<string>"
 patternNameForContext (CharLiteralF _) = "<char>"
 patternNameForContext (TopF _) = "\\top"
 patternNameForContext (VariableF variable) =
-    "variable '" ++ variableNameForContext variable ++ "'"
+    "variable '" <> variableNameForContext variable <> "'"
 patternNameForContext (InhabitantF _) = "\\inh"
 patternNameForContext (SetVariableF (SetVariable variable)) =
-    "set variable '" ++ variableNameForContext variable ++ "'"
+    "set variable '" <> variableNameForContext variable <> "'"
 
-variableNameForContext :: Variable -> String
-variableNameForContext variable = getIdForError (variableName variable)
+variableNameForContext :: Variable -> Text
+variableNameForContext variable = getId (variableName variable)
