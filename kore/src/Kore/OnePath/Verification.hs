@@ -11,7 +11,6 @@ This should be imported qualified.
 module Kore.OnePath.Verification
     ( Axiom (..)
     , Claim
-    , isTrusted
     , defaultStrategy
     , verify
     , verifyClaimStep
@@ -41,7 +40,8 @@ import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Pattern as Conditional
                  ( Conditional (..) )
 import           Kore.Step.Rule
-                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
+                 ( OnePathRule (..), RewriteRule (RewriteRule),
+                 RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
@@ -99,14 +99,6 @@ type Claim claim =
     , Unparse claim
     )
 
--- | Is the 'Claim' trusted?
-isTrusted :: Claim claim => claim -> Bool
-isTrusted =
-    Trusted.isTrusted
-    . Attribute.trusted
-    . RulePattern.attributes
-    . coerce
-
 {- | Wrapper for a rewrite rule that should be used as an axiom.
 -}
 newtype Axiom = Axiom
@@ -130,32 +122,29 @@ didn't manage to verify a claim within the its maximum number of steps.
 
 If the verification succeeds, it returns ().
 -}
+
 verify
     :: MonadSimplify m
-    =>  (  Pattern Variable
-        -> [Strategy
-            (Prim (RewriteRule Variable))
-           ]
-        )
+    => [Strategy (Prim (RewriteRule Variable))]
     -- ^ Creates a one-step strategy from a target pattern. See
     -- 'defaultStrategy'.
-    -> [(RewriteRule Variable, Limit Natural)]
+    -> [(OnePathRule Variable, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT (Pattern Variable) m ()
-verify strategyBuilder =
-    mapM_ (verifyClaim strategyBuilder)
+verify strategy =
+    mapM_ (verifyClaim strategy)
 
-{- | Default implementation for a one-path strategy. You can apply it to the
-first two arguments and pass the resulting function to 'verify'.
-
-Things to note when implementing your own:
-
-1. The first step does not use the reachability claims
-
-2. You can return an infinite list.
--}
-
+-- {- | Default implementation for a one-path strategy. You can apply it to the
+-- first two arguments and pass the resulting function to 'verify'.
+--
+-- Things to note when implementing your own:
+--
+-- 1. The first step does not use the reachability claims
+--
+-- 2. You can return an infinite list.
+-- -}
+--
 defaultStrategy
     :: forall goal
     .  Goal goal
@@ -184,32 +173,19 @@ defaultStrategy
 verifyClaim
     :: forall m
     .  MonadSimplify m
-    =>  (  Pattern Variable
-        -> [Strategy (Prim (RewriteRule Variable))]
-        )
-    -> (RewriteRule Variable, Limit Natural)
+    => [Strategy (Prim (RewriteRule Variable))]
+    -> (OnePathRule Variable, Limit Natural)
     -> ExceptT (Pattern Variable) m ()
 verifyClaim
-    strategyBuilder
-    (rule@(RewriteRule RulePattern {left, right, requires, ensures}), stepLimit)
-  = traceExceptT D_OnePath_verifyClaim [debugArg "rule" rule] $ do
+    strategy
+    (goal, stepLimit)
+  = traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
-        strategy =
-            Limit.takeWithin
-                stepLimit
-                (strategyBuilder
-                    Conditional
-                    { term = right
-                    , predicate = ensures
-                    , substitution = mempty
-                    }
-                )
-        startPattern :: CommonProofState
-        startPattern =
-            Goal
-                Conditional
-                    {term = left, predicate = requires, substitution = mempty}
-    executionGraph <- runStrategy transitionRule' strategy startPattern
+        strategy = Limit.takeWithin stepLimit strategy
+        startPattern = Goal $ getConfiguration goal
+        destination = getDestination goal
+    executionGraph <-
+        runStrategy (modifTransitionRule destination) strategy startPattern
     -- Throw the first unproven configuration as an error.
     -- This might appear to be unnecessary because transitionRule' (below)
     -- throws an error if it encounters a Stuck proof state. However, the proof
@@ -217,14 +193,15 @@ verifyClaim
     -- encountered a Stuck state.
     Foldable.traverse_ Monad.Except.throwError (unprovenNodes executionGraph)
   where
-    transitionRule'
-        :: Prim (RewriteRule Variable)
+    modifTransitionRule
+        :: Pattern Variable
+        -> Prim (RewriteRule Variable)
         -> CommonProofState
         -> TransitionT (RewriteRule Variable) (Verifier m) CommonProofState
-    transitionRule' prim proofState = do
+    modifTransitionRule destination prim proofState = do
         transitions <-
             Monad.Trans.lift . Monad.Trans.lift . runTransitionT
-            $ transitionRule prim proofState
+            $ transitionRule' destination prim proofState
         let (configs, _) = unzip transitions
             stuckConfigs = mapMaybe extractGoalRem configs
         Foldable.traverse_ Monad.Except.throwError stuckConfigs
@@ -234,14 +211,13 @@ verifyClaim
 -- in the execution graph designated by the provided node. Re-constructs the
 -- execution graph by inserting this step.
 verifyClaimStep
-    :: forall claim m
-    .  Claim claim
-    => MonadSimplify m
-    => claim
+    :: forall m
+    .  MonadSimplify m
+    => OnePathRule Variable
     -- ^ claim that is being proven
-    -> [claim]
+    -> [OnePathRule Variable]
     -- ^ list of claims in the spec module
-    -> [Axiom]
+    -> [RewriteRule Variable]
     -- ^ list of axioms in the main module
     -> ExecutionGraph CommonProofState (RewriteRule Variable)
     -- ^ current execution graph
@@ -254,37 +230,37 @@ verifyClaimStep
     axioms
     eg@ExecutionGraph { root }
     node
-  = executionHistoryStep
-        transitionRule'
+  = do
+      let destination = getDestination target
+      executionHistoryStep
+        (transitionRule' destination)
         strategy'
         eg
         node
   where
-    transitionRule'
-        :: Prim (RewriteRule Variable)
-        -> CommonProofState
-        -> TransitionT (RewriteRule Variable) m CommonProofState
-    transitionRule' = transitionRule
-
     strategy' :: Strategy (Prim (RewriteRule Variable))
     strategy'
         | isRoot =
-            onePathFirstStep targetPattern rewrites
+            onePathFirstStep rewrites
         | otherwise =
             onePathFollowupStep
-                targetPattern
                 (RewriteRule . coerce <$> claims)
                 rewrites
 
     rewrites :: [RewriteRule Variable]
     rewrites = coerce <$> axioms
 
-    targetPattern :: Pattern Variable
-    targetPattern =
-        Pattern.fromTermLike
-            . right
-            . coerce
-            $ target
-
     isRoot :: Bool
     isRoot = node == root
+
+transitionRule'
+    :: forall m
+    .  MonadSimplify m
+    => Pattern Variable
+    -> Prim (RewriteRule Variable)
+    -> CommonProofState
+    -> TransitionT (RewriteRule Variable) m CommonProofState
+transitionRule' destination prim state = do
+    let goal = (flip makeOnePathRule) destination <$> state
+    next <- transitionRule prim goal
+    pure $ fmap getConfiguration next

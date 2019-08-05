@@ -11,10 +11,12 @@ import           Data.Coerce
                  ( coerce )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
+import           Data.Hashable
 import           Data.Maybe
                  ( mapMaybe )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import           GHC.Generics
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
@@ -60,7 +62,9 @@ data ProofState goal
     -- ^ The indicated goal remains after rewriting.
     | Proven
     -- ^ The parent goal was proven.
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Generic)
+
+instance Hashable goal => Hashable (ProofState goal)
 
 {- | Extract the unproven goals of a 'ProofState'.
 
