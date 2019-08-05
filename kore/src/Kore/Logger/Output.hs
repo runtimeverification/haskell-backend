@@ -72,7 +72,7 @@ import Kore.Logger
 data KoreLogType
     = LogNone
     -- ^ do not log when no '--log' is passed
-    | LogStdOut
+    | LogStdErr
     -- ^ log to StdOut when '--log StdOut' is passed
     | LogFileText
     -- ^ log to "./kore-(date).log" when '--log FileText' is passed
@@ -103,7 +103,7 @@ withLogger KoreLogOptions { logType, logLevel, logScopes } cont =
     case logType of
         LogNone     ->
             cont mempty
-        LogStdOut   ->
+        LogStdErr   ->
             cont (stderrLogger logLevel logScopes)
         LogFileText -> do
             fileName <- getKoreLogFileName
@@ -134,7 +134,7 @@ parseKoreLogOptions =
     parseTypeString =
         \case
             "none"     -> pure LogNone
-            "stdout"   -> pure LogStdOut
+            "stdout"   -> pure LogStdErr
             "filetext" -> pure LogFileText
             _          -> Nothing
 
