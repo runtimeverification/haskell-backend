@@ -376,7 +376,7 @@ andEqualsFunctions
     => [(SimplificationTarget, TermTransformation variable unifier)]
 andEqualsFunctions = fmap mapEqualsFunctions
     [ (AndT,    \_ _ _ _ _ _ _ -> boolAnd, "boolAnd")
-    , (BothT,   liftET equalAndEquals, "equalAndEquals")
+    , (BothT,   \_ _ _ _ _ _ _ -> equalAndEquals, "equalAndEquals")
     , (EqualsT, \_ _ _ _ _ _ _ -> bottomTermEquals, "bottomTermEquals")
     , (EqualsT, \_ _ _ _ _ _ _ -> termBottomEquals, "termBottomEquals")
     , (BothT,   \t _ _ _ _ _ _ -> variableFunctionAndEquals t, "variableFunctionAndEquals")
@@ -465,10 +465,6 @@ andEqualsFunctions = fmap mapEqualsFunctions
             simplifier
             axiomIdToSimplifier
 
-    lift = pure . transformerLiftOld
-    liftE = lift . toExpanded
-    liftET = liftE . addToolsArg
-
 {- | Construct the conjunction or unification of two terms.
 
 Each @TermTransformationOld@ should represent one unification case and each
@@ -548,66 +544,6 @@ maybeTransformTerm
             topTransformers
         )
 
-addToolsArg
-    ::  (  TermLike variable
-        -> TermLike variable
-        -> Maybe (TermLike variable)
-        )
-    ->  (  SmtMetadataTools Attribute.Symbol
-        -> TermLike variable
-        -> TermLike variable
-        -> Maybe (TermLike variable)
-        )
-addToolsArg = pure
-
-toExpanded
-    ::  ( SortedVariable variable
-        , Show variable
-        , Ord variable
-        )
-    =>  (  SmtMetadataTools Attribute.Symbol
-        -> TermLike variable
-        -> TermLike variable
-        -> Maybe (TermLike variable)
-        )
-    ->  (  SmtMetadataTools Attribute.Symbol
-        -> TermLike variable
-        -> TermLike variable
-        -> Maybe (Pattern variable)
-        )
-toExpanded transformer tools first second =
-    toExpanded0 <$> transformer tools first second
-  where
-    toExpanded0 term
-      | isBottom term = Pattern.bottom
-      | otherwise     = Pattern.fromTermLike term
-
-transformerLiftOld
-    :: Monad unifier
-    =>  (  SmtMetadataTools Attribute.Symbol
-        -> TermLike variable
-        -> TermLike variable
-        -> Maybe (Pattern variable)
-        )
-    -> TermTransformationOld variable unifier
-transformerLiftOld
-    transformation
-    tools
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSimplifier
-    _substitutionMerger
-    _childSimplifier
-    first
-    second
-  = liftPattern (transformation tools first second)
-
-liftPattern
-    :: Monad m
-    => Maybe (Pattern variable)
-    -> MaybeT m (Pattern variable)
-liftPattern = MaybeT . return
-
 -- | Simplify the conjunction of terms where one is a predicate.
 boolAnd
     :: MonadUnify unifier
@@ -638,13 +574,14 @@ explainBoolAndBottom term1 term2 =
 
 -- | Unify two identical ('==') patterns.
 equalAndEquals
-    :: Eq variable
+    :: (Ord variable, SortedVariable variable)
+    => Monad unifier
     => TermLike variable
     -> TermLike variable
-    -> Maybe (TermLike variable)
+    -> MaybeT unifier (Pattern variable)
 equalAndEquals first second
   | first == second =
-    return first
+    return (Pattern.fromTermLike first)
 equalAndEquals _ _ = empty
 
 -- | Unify two patterns where the first is @\\bottom@.
