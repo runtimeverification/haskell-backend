@@ -7,8 +7,6 @@ module Kore.Goal where
 import           Control.Applicative
                  ( Alternative (..) )
 import qualified Control.Monad.Trans as Monad.Trans
-import           Data.Coerce
-                 ( coerce )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import           Data.Hashable
@@ -246,7 +244,7 @@ onePathFirstStep axioms =
         , RemoveDestination
         , Simplify
         , TriviallyValid
-        , DerivePar axioms
+        , DeriveSeq axioms
         , Simplify
         , TriviallyValid
         ]
@@ -261,8 +259,8 @@ onePathFollowupStep claims axioms =
         , RemoveDestination
         , Simplify
         , TriviallyValid
-        , DerivePar claims
-        , DerivePar axioms
+        , DeriveSeq claims
+        , DeriveSeq axioms
         , Simplify
         , TriviallyValid
         ]
@@ -313,7 +311,7 @@ instance ( SortedVariable variable
         Trusted.isTrusted
         . Attribute.trusted
         . attributes
-        . coerce
+        . to
 
     removeDestination goal = do
         let destination = getDestination goal
@@ -339,7 +337,7 @@ instance ( SortedVariable variable
         pure $ makeGoal simplifiedResult destination
 
     isTriviallyValid goal =
-        isBottom . left . coerce $ goal
+        isBottom . left . to $ goal
 
     derivePar rules goal = do
         let destination = getDestination goal
