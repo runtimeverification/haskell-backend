@@ -299,15 +299,10 @@ removalPredicate destination config =
             (Pattern.toTermLike destination)
             (Pattern.toTermLike config)
 
-instance ( SortedVariable variable
-         , Ord variable
-         , Unparse variable
-         , Show variable
-         , FreshVariable variable
-         ) => Goal OnePathRule variable where
+instance Goal OnePathRule Variable where
 
-    newtype (Rule OnePathRule) variable =
-        Rule { unRule :: RewriteRule variable }
+    newtype (Rule OnePathRule) Variable =
+        Rule { unRule :: RewriteRule Variable }
 
     isTrusted =
         Trusted.isTrusted
