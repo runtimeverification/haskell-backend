@@ -392,7 +392,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
     , (BothT,   liftE0 domainValueAndEqualsAssumesDifferent, "domainValueAndEqualsAssumesDifferent")
     , (BothT,   liftE0 stringLiteralAndEqualsAssumesDifferent, "stringLiteralAndEqualsAssumesDifferent")
     , (BothT,   liftE0 charLiteralAndEqualsAssumesDifferent, "charLiteralAndEqualsAssumesDifferent")
-    , (AndT,    lift   functionAnd, "functionAnd")
+    , (AndT,    \_ _ _ _ _ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2, "functionAnd")
     ]
   where
     mapEqualsFunctions (target, termTransform, name) =
@@ -1266,12 +1266,10 @@ functionAnd
         , Unparse variable
         )
     => GHC.HasCallStack
-    => SmtMetadataTools Attribute.Symbol
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> Maybe (Pattern variable)
 functionAnd
-    _tools
     first
     second
   | isFunctionPattern first, isFunctionPattern second =
