@@ -45,6 +45,10 @@ instance Unparse variable => Unparse (UnifiedVariable variable) where
     unparse = unparse . asVariable
     unparse2 = unparse2 . asVariable
 
+isElemVar :: UnifiedVariable variable -> Bool
+isElemVar (ElemVar _) = True
+isElemVar _ = False
+
 isSetVar :: UnifiedVariable variable -> Bool
 isSetVar (SetVar _) = True
 isSetVar _ = False

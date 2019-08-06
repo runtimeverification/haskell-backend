@@ -52,7 +52,6 @@ import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
 import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}
@@ -272,13 +271,13 @@ removalPredicate destination config =
         extraVariables = Set.toList
             $ Set.difference destinationVariables configVariables
         extraElementVariables = [v | ElemVar v <- extraVariables]
-        extraSetVariables = [v | SetVar v <- extraVariables]
+        extraNonElemVariables = filter (not . isElemVar) extraVariables
         quantifyPredicate = Predicate.makeMultipleExists extraElementVariables
     in
-        if not (null extraSetVariables)
+        if not (null extraNonElemVariables)
         then error
-            ("Cannot quantify set variables: "
-                ++ show (unparse <$> extraSetVariables))
+            ("Cannot quantify non-element variables: "
+                ++ show (unparse <$> extraNonElemVariables))
         else Predicate.makeNotPredicate
             $ quantifyPredicate
             $ Predicate.makeCeilPredicate

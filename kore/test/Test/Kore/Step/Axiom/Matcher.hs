@@ -104,6 +104,20 @@ test_matcherEqualHeads =
                     (Mock.plain10 (mkElemVar Mock.x))
                     (Mock.plain10 Mock.a)
             assertEqualWithExplanation "" expect actual
+        , testCase "same symbol, set variables" $ do
+            let expect = Just $ MultiOr.make
+                    [ Conditional
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [(UnifiedVariable.SetVar Mock.setX, mkTop Mock.testSort)]
+                        }
+                    ]
+            actual <-
+                matchDefinition
+                    (Mock.plain10 (mkSetVar Mock.setX))
+                    (Mock.plain10 (mkTop Mock.testSort))
+            assertEqualWithExplanation "" expect actual
 
         , Mock.constr10 (mkElemVar Mock.x) `notMatches` Mock.constr11 Mock.a $ "different constructors"
         , Mock.f Mock.b `notMatches` Mock.g Mock.a                       $ "different functions"
@@ -401,6 +415,30 @@ test_matcherVariableFunction =
                     }
                 ]
         actual <- matchDefinition (mkElemVar Mock.x) Mock.functional00
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "SetVariable vs Function" $ do
+        let expect = Just $ MultiOr.make
+                [ Conditional
+                    { predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [(UnifiedVariable.SetVar Mock.setX, Mock.cf)]
+                    , term = ()
+                    }
+                ]
+        actual <- matchDefinition (mkSetVar Mock.setX) Mock.cf
+        assertEqualWithExplanation "" expect actual
+
+    , testCase "SetVariable vs Bottom" $ do
+        let expect = Just $ MultiOr.make
+                [ Conditional
+                    { predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [(UnifiedVariable.SetVar Mock.setX, mkBottom Mock.testSort)]
+                    , term = ()
+                    }
+                ]
+        actual <- matchDefinition (mkSetVar Mock.setX) (mkBottom Mock.testSort)
         assertEqualWithExplanation "" expect actual
 
     , testCase "Function" $ do

@@ -901,55 +901,6 @@ variableFunctionAndEquals
                 [ if v2 > v1 then (ElemVar v1, second) else (ElemVar v2, first)
                 ]
         }
-{-
-variableFunctionAndEquals
-    SimplificationType.And
-    _tools
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSimplifier
-    _substitutionMerger
-    first@(SetVar_ v1)
-    second@(SetVar_ v2)
-  =
-    return Conditional
-        { term = if v2 > v1 then second else first
-        , predicate = makeTruePredicate
-        , substitution =
-            Substitution.wrap
-                [ if v2 > v1 then (SetVar v1, second) else (SetVar v2, first) ]
-        }
-variableFunctionAndEquals
-    SimplificationType.And
-    _tools
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSimplifier
-    _substitutionMerger
-    (SetVar_ v1)
-    second
-  =
-    return Conditional
-        { term = second
-        , predicate = makeTruePredicate
-        , substitution = Substitution.wrap [(SetVar v1, second)]
-        }
-variableFunctionAndEquals
-    SimplificationType.And
-    _tools
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSimplifier
-    _substitutionMerger
-    first
-    (SetVar_ v2)
-  =
-    return Conditional
-        { term = first
-        , predicate = makeTruePredicate
-        , substitution = Substitution.wrap [(SetVar v2, first)]
-        }
--}
 variableFunctionAndEquals
     simplificationType
     _tools

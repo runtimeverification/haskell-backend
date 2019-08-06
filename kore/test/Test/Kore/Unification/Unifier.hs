@@ -297,27 +297,6 @@ test_unification =
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]
--- TODO(traiansf): figure whether we want to test failure for SetVars or not
---    , testCase "SetVariable w. constructor" $
---        andSimplifySuccess
---            (UnificationTerm (f (Mock.mkTestUnifiedVariable "@x")))
---            (UnificationTerm (f a))
---            [ UnificationResult
---                { term = f a
---                , substitution = [("@x", a)]
---                , predicate = Syntax.Predicate.makeTruePredicate
---                }
---            ]
---    , testCase "SetVariable" $
---        andSimplifySuccess
---            (UnificationTerm (Mock.mkTestUnifiedVariable "@x"))
---            (UnificationTerm a)
---            [ UnificationResult
---                { term = a
---                , substitution = [("@x", a)]
---                , predicate = Syntax.Predicate.makeTruePredicate
---                }
---            ]
     , testCase "one level" $
         andSimplifySuccess
             (UnificationTerm (f (mkElemVar Mock.x)))
@@ -466,6 +445,24 @@ test_unification =
                 "Unknown unification case."
                 (mkElemVar Mock.x)
                 a3
+            )
+    , testCase "SetVariable w. constructor" $
+        andSimplifyFailure
+            (UnificationTerm (f (Mock.mkTestUnifiedVariable "@x")))
+            (UnificationTerm (f a))
+            (unsupportedPatterns
+                "Unknown unification case."
+                (Mock.mkTestUnifiedVariable "@x")
+                a
+            )
+    , testCase "SetVariable" $
+        andSimplifyFailure
+            (UnificationTerm (Mock.mkTestUnifiedVariable "@x"))
+            (UnificationTerm a)
+            (unsupportedPatterns
+                "Unknown unification case."
+                (Mock.mkTestUnifiedVariable "@x")
+                a
             )
     , testCase "non-constructor symbolHead right" $
         andSimplifySuccess

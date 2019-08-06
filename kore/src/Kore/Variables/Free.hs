@@ -12,7 +12,6 @@ Portability : portable
 module Kore.Variables.Free
     ( freePureVariables
     , pureAllVariables
-    , synthetic
     ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
@@ -102,25 +101,3 @@ pureAllVariables
     -> Set.Set (UnifiedVariable variable)
 pureAllVariables = Recursive.fold pureMergeVariables
 
-{- | @synthetic@ is an algebra for the free variables of a pattern.
-
-Use @synthetic@ with 'Kore.Annotation.synthesize' to annotate a pattern with its
-free variables as a synthetic attribute.
-
- -}
-synthetic
-    :: Ord variable
-    => PatternF variable (Set.Set (UnifiedVariable variable))
-    -> Set.Set (UnifiedVariable variable)
-synthetic (ExistsF Exists { existsVariable, existsChild }) =
-    Set.delete (asUnifiedVariable existsVariable) existsChild
-synthetic (ForallF Forall { forallVariable, forallChild }) =
-    Set.delete (asUnifiedVariable forallVariable) forallChild
-synthetic (VariableF variable) = Set.singleton variable
-synthetic (MuF Mu { muVariable, muChild }) =
-    Set.delete (asUnifiedVariable muVariable) muChild
-synthetic (NuF Nu { nuVariable, nuChild }) =
-    Set.delete (asUnifiedVariable nuVariable) nuChild
-synthetic patternHead =
-    Foldable.foldl' Set.union Set.empty patternHead
-{-# INLINE synthetic #-}
