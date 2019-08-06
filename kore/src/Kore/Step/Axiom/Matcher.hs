@@ -47,7 +47,6 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
 import           Kore.Internal.Predicate
                  ( Predicate )
 import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike hiding
                  ( substitute )
 import qualified Kore.Internal.TermLike as TermLike
@@ -173,9 +172,6 @@ matchApplication
   -- Match identical symbols.
   | symbol1 == symbol2 =
     Foldable.traverse_ push (zipWith Pair children1 children2)
-
-  -- Reject non-matching constructors.
-  | Symbol.isConstructor symbol1 || Symbol.isConstructor symbol2 = empty
 
   -- Match conformable sort injections.
   | otherwise = do
