@@ -388,7 +388,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
     , (BothT,   liftB1 Builtin.Map.unifyEquals, "Builtin.Map.unifyEquals")
     , (BothT,   liftB1 Builtin.Set.unifyEquals, "Builtin.Set.unifyEquals")
     , (BothT,   liftB  Builtin.List.unifyEquals, "Builtin.List.unifyEquals")
-    , (BothT,   liftE  domainValueAndConstructorErrors, "domainValueAndConstructorErrors")
+    , (BothT,   \_ _ _ _ _ _ _ -> domainValueAndConstructorErrors, "domainValueAndConstructorErrors")
     , (BothT,   liftE0 domainValueAndEqualsAssumesDifferent, "domainValueAndEqualsAssumesDifferent")
     , (BothT,   liftE0 stringLiteralAndEqualsAssumesDifferent, "stringLiteralAndEqualsAssumesDifferent")
     , (BothT,   liftE0 charLiteralAndEqualsAssumesDifferent, "charLiteralAndEqualsAssumesDifferent")
@@ -1101,16 +1101,13 @@ sort with constructors.
 
 -}
 domainValueAndConstructorErrors
-    :: Eq variable
-    => Unparse variable
-    => SortedVariable variable
+    :: (Eq variable, Unparse variable, SortedVariable variable)
+    => Monad unifier
     => GHC.HasCallStack
-    => SmtMetadataTools Attribute.Symbol
+    => TermLike variable
     -> TermLike variable
-    -> TermLike variable
-    -> Maybe (TermLike variable)
+    -> MaybeT unifier a
 domainValueAndConstructorErrors
-    _tools
     term1@(DV_ _ _)
     term2@(App_ secondHead _)
     | Symbol.isConstructor secondHead =
@@ -1120,7 +1117,6 @@ domainValueAndConstructorErrors
                      ]
             )
 domainValueAndConstructorErrors
-    _tools
     term1@(Builtin_ _)
     term2@(App_ secondHead _)
     | Symbol.isConstructor secondHead =
@@ -1130,7 +1126,6 @@ domainValueAndConstructorErrors
                      ]
             )
 domainValueAndConstructorErrors
-    _tools
     term1@(App_ firstHead _)
     term2@(DV_ _ _)
     | Symbol.isConstructor firstHead =
@@ -1140,7 +1135,6 @@ domainValueAndConstructorErrors
                      ]
             )
 domainValueAndConstructorErrors
-    _tools
     term1@(App_ firstHead _)
     term2@(Builtin_ _)
     | Symbol.isConstructor firstHead =
@@ -1149,7 +1143,7 @@ domainValueAndConstructorErrors
                      , unparseToString term2
                      ]
             )
-domainValueAndConstructorErrors _ _ _ = empty
+domainValueAndConstructorErrors _ _ = empty
 
 {- | Unify two domain values.
 
