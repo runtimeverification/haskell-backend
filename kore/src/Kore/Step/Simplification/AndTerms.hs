@@ -110,18 +110,7 @@ termEquals
     -> TermLike variable
     -> MaybeT simplifier (OrPredicate variable)
 termEquals first second = MaybeT $ do
-    tools <- Simplifier.askMetadataTools
-    substitutionSimplifier <- Simplifier.askSimplifierPredicate
-    simplifier <- Simplifier.askSimplifierTermLike
-    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
-    maybeResults <-
-        BranchT.gather $ runMaybeT $ termEqualsAnd
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            first
-            second
+    maybeResults <- BranchT.gather $ runMaybeT $ termEqualsAnd first second
     case sequence maybeResults of
         Nothing -> return Nothing
         Just results -> return $ Just $
@@ -136,18 +125,10 @@ termEqualsAnd
         , MonadSimplify simplifier
         )
     => GHC.HasCallStack
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> MaybeT (BranchT simplifier) (Pattern variable)
 termEqualsAnd
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
     p1
     p2
   = MaybeT
@@ -164,7 +145,11 @@ termEqualsAnd
         => TermLike variable
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
-    maybeTermEqualsWorker =
+    maybeTermEqualsWorker term1 term2 = do
+        tools <- Simplifier.askMetadataTools
+        substitutionSimplifier <- Simplifier.askSimplifierPredicate
+        simplifier <- Simplifier.askSimplifierTermLike
+        axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
         maybeTermEquals
             tools
             substitutionSimplifier
@@ -172,6 +157,8 @@ termEqualsAnd
             axiomIdToSimplifier
             createPredicatesAndSubstitutionsMergerExcept
             termEqualsAndWorker
+            term1
+            term2
 
     termEqualsAndWorker
         :: forall unifier
