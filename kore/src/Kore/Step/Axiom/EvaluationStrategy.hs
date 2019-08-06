@@ -35,6 +35,9 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Predicate
+                 ( Predicate )
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
@@ -86,7 +89,7 @@ definitionEvaluation
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation rules =
     BuiltinAndAxiomSimplifier
-        (\_ _ _ -> evaluateWithDefinitionAxioms rules)
+        (\_ _ _ -> evaluateWithDefinitionAxioms rules Predicate.topTODO)
 
 {- | Creates an evaluator for a function from all the rules that define it.
 
@@ -102,7 +105,7 @@ totalDefinitionEvaluation
     -> BuiltinAndAxiomSimplifier
 totalDefinitionEvaluation rules =
     BuiltinAndAxiomSimplifier $ \_ _ _ term -> do
-        result <- evaluateWithDefinitionAxioms rules term
+        result <- evaluateWithDefinitionAxioms rules Predicate.topTODO term
         if AttemptedAxiom.hasRemainders result
             then return AttemptedAxiom.NotApplicable
             else return result
@@ -274,9 +277,10 @@ evaluateWithDefinitionAxioms
         , MonadSimplify simplifier
         )
     => [EqualityRule Variable]
+    -> Predicate variable
     -> TermLike variable
     -> simplifier (AttemptedAxiom variable)
-evaluateWithDefinitionAxioms definitionRules termLike
+evaluateWithDefinitionAxioms definitionRules _ termLike
   | any ruleIsConcrete definitionRules
   , not (TermLike.isConcrete termLike)
   = return AttemptedAxiom.NotApplicable
