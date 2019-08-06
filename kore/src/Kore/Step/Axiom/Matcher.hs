@@ -11,7 +11,6 @@ Portability : portable
 module Kore.Step.Axiom.Matcher
     ( MatchingVariable
     , matchIncremental
-    , unificationWithAppMatchOnTop
     ) where
 
 import           Control.Applicative
@@ -67,8 +66,6 @@ import qualified Kore.Step.Simplification.AndTerms as SortInjectionSimplificatio
 import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Unification.Error
                  ( unsupportedPatterns )
-import           Kore.Unification.Procedure
-                 ( unificationProcedure )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
                  ( MonadUnify )
@@ -471,75 +468,3 @@ matchNormalizedAc pushValue wrapTermLike normalized1 normalized2
     excess2 = Map.difference concrete2 concrete1
     concrete12 = Map.intersectionWith Pair concrete1 concrete2
 matchNormalizedAc _ _ _ _ = empty
-
--- TODO (thomas.tuegel): Remove this
-unificationWithAppMatchOnTop
-    ::  ( FreshVariable variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadUnify unifier
-        )
-    => TermLike variable
-    -> TermLike variable
-    -> unifier (Predicate variable)
-unificationWithAppMatchOnTop first second =
-    case first of
-        (App_ firstHead firstChildren) ->
-            case second of
-                (App_ secondHead secondChildren)
-                  | firstHead == secondHead
-                    -> unifyJoin (zip firstChildren secondChildren)
-                  | symbolConstructor firstHead == symbolConstructor secondHead
-                    -- The application heads have the same symbol or alias
-                    -- constructor with different parameters,
-                    -- but we do not handle unification of symbol parameters.
-                        -> Monad.Unify.throwUnificationError
-                            (unsupportedPatterns
-                                "Unknown application head match case for "
-                                first
-                                second
-                            )
-                  | otherwise
-                    -> error
-                        (  "Unexpected unequal heads: "
-                        ++ show firstHead ++ " and "
-                        ++ show secondHead ++ "."
-                        )
-                _ -> error
-                    (  "Expecting application patterns, but second = "
-                    ++ show second ++ "."
-                    )
-        (Ceil_ firstOperandSort (SortVariableSort _) firstChild) ->
-            case second of
-                (Ceil_ secondOperandSort _resultSort secondChild)
-                  | firstOperandSort == secondOperandSort ->
-                    unificationWithAppMatchOnTop firstChild secondChild
-                  | otherwise
-                        -> error
-                            (  "Unexpected unequal child sorts: "
-                            ++ show firstOperandSort ++ " and "
-                            ++ show secondOperandSort ++ "."
-                            )
-                _ -> error
-                    (  "Expecting ceil patterns, but second = "
-                    ++ show second ++ "."
-                    )
-        _ -> error
-            (  "Expecting application or ceil with sort variable patterns, "
-            ++ "but first = " ++ show first ++ "."
-            )
-
-unifyJoin
-    ::  forall variable unifier
-    .   ( FreshVariable variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadUnify unifier
-        )
-    => [(TermLike variable, TermLike variable)]
-    -> unifier (Predicate variable)
-unifyJoin patterns = do
-    predicates <- traverse (uncurry unificationProcedure) patterns
-    return (Foldable.fold predicates)
