@@ -22,7 +22,7 @@ import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Step.Axiom.Matcher
-                 ( matchAsUnification )
+                 ( matchIncremental )
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
@@ -89,7 +89,7 @@ equalityRuleEvaluator
     notApplicable = return AttemptedAxiom.NotApplicable
 
     unificationProcedure :: UnificationProcedure
-    unificationProcedure = UnificationProcedure matchAsUnification
+    unificationProcedure = UnificationProcedure matchIncremental
 
     applyRule
         :: TermLike variable

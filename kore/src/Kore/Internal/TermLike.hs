@@ -33,6 +33,9 @@ module Kore.Internal.TermLike
     , mkApplySymbol
     , mkBottom
     , mkBuiltin
+    , mkBuiltinList
+    , mkBuiltinMap
+    , mkBuiltinSet
     , mkCeil
     , mkDomainValue
     , mkEquals
@@ -83,9 +86,12 @@ module Kore.Internal.TermLike
     , pattern App_
     , pattern Bottom_
     , pattern Builtin_
+    , pattern BuiltinBool_
+    , pattern BuiltinInt_
     , pattern BuiltinList_
     , pattern BuiltinMap_
     , pattern BuiltinSet_
+    , pattern BuiltinString_
     , pattern Ceil_
     , pattern DV_
     , pattern Equals_
@@ -908,6 +914,7 @@ The substitution must be normalized, i.e. no target (left-hand side) variable
 may appear in the right-hand side of any substitution, but this is not checked.
 
  -}
+-- TODO (thomas.tuegel): This should normalize internal representations.
 substitute
     ::  ( FreshVariable variable
         , Ord variable
@@ -1425,6 +1432,30 @@ mkBuiltin
     -> TermLike variable
 mkBuiltin = synthesize . BuiltinF
 
+{- | Construct a builtin list pattern.
+ -}
+mkBuiltinList
+    :: (Ord variable, SortedVariable variable)
+    => Domain.InternalList (TermLike variable)
+    -> TermLike variable
+mkBuiltinList = synthesize . BuiltinF . Domain.BuiltinList
+
+{- | Construct a builtin map pattern.
+ -}
+mkBuiltinMap
+    :: (Ord variable, SortedVariable variable)
+    => Domain.InternalMap (TermLike Concrete) (TermLike variable)
+    -> TermLike variable
+mkBuiltinMap = synthesize . BuiltinF . Domain.BuiltinMap
+
+{- | Construct a builtin set pattern.
+ -}
+mkBuiltinSet
+    :: (Ord variable, SortedVariable variable)
+    => Domain.InternalSet (TermLike Concrete) (TermLike variable)
+    -> TermLike variable
+mkBuiltinSet = synthesize . BuiltinF . Domain.BuiltinSet
+
 {- | Construct a 'DomainValue' pattern.
  -}
 mkDomainValue
@@ -1897,6 +1928,14 @@ pattern Builtin_
     :: Domain.Builtin (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 
+pattern BuiltinBool_
+    :: Domain.InternalBool
+    -> TermLike variable
+
+pattern BuiltinInt_
+    :: Domain.InternalInt
+    -> TermLike variable
+
 pattern BuiltinList_
     :: Domain.InternalList (TermLike variable)
     -> TermLike variable
@@ -1907,6 +1946,10 @@ pattern BuiltinMap_
 
 pattern BuiltinSet_
     :: Domain.InternalSet (TermLike Concrete) (TermLike variable)
+    -> TermLike variable
+
+pattern BuiltinString_
+    :: Domain.InternalString
     -> TermLike variable
 
 pattern Equals_
@@ -2021,14 +2064,18 @@ pattern DV_ domainValueSort domainValueChild <-
 
 pattern Builtin_ builtin <- (Recursive.project -> _ :< BuiltinF builtin)
 
-pattern BuiltinList_ internalList
-    <- (Recursive.project -> _ :< BuiltinF (Domain.BuiltinList internalList))
+pattern BuiltinBool_ internalBool <- Builtin_ (Domain.BuiltinBool internalBool)
 
-pattern BuiltinMap_ internalMap
-    <- (Recursive.project -> _ :< BuiltinF (Domain.BuiltinMap internalMap))
+pattern BuiltinInt_ internalInt <- Builtin_ (Domain.BuiltinInt internalInt)
 
-pattern BuiltinSet_ internalSet
-    <- (Recursive.project -> _ :< BuiltinF (Domain.BuiltinSet internalSet))
+pattern BuiltinList_ internalList <- Builtin_ (Domain.BuiltinList internalList)
+
+pattern BuiltinMap_ internalMap <- Builtin_ (Domain.BuiltinMap internalMap)
+
+pattern BuiltinSet_ internalSet <- Builtin_ (Domain.BuiltinSet internalSet)
+
+pattern BuiltinString_ internalString
+    <- Builtin_ (Domain.BuiltinString internalString)
 
 pattern Equals_ equalsOperandSort equalsResultSort equalsFirst equalsSecond <-
     (Recursive.project ->

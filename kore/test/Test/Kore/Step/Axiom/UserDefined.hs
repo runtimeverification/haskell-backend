@@ -155,30 +155,7 @@ test_userDefinedFunction =
         assertEqualWithExplanation "" expect actual
 
     , testCase "Preserves step substitution" $ do
-        let expect =
-                AttemptedAxiom.Applied AttemptedAxiomResults
-                    { results = OrPattern.fromPatterns
-                        [ Conditional
-                            { term = Mock.g (mkVar Mock.z)
-                            , predicate = makeTruePredicate
-                            , substitution = Substitution.wrap
-                                [(Mock.y, mkVar Mock.z)]
-                            }
-                        ]
-                    , remainders = OrPattern.fromPatterns
-                        [ Conditional
-                            { term = Mock.functionalConstr20
-                                (mkVar Mock.y)
-                                (mkVar Mock.z)
-                            , predicate =
-                                makeNotPredicate
-                                    (makeEqualsPredicate
-                                        (mkVar Mock.y) (mkVar Mock.z)
-                                    )
-                            , substitution = mempty
-                            }
-                        ]
-                    }
+        let expect = AttemptedAxiom.NotApplicable
         actual <-
             evaluateWithAxiom
                 (EqualityRule RulePattern
@@ -193,11 +170,8 @@ test_userDefinedFunction =
                     }
                 )
                 (simplifierTermLike Mock.env)
-                (Mock.functionalConstr20
-                    (mkVar Mock.y)
-                    (mkVar Mock.z)
-                )
-        assertEqualWithExplanation "sigma(x,x) => g(x) vs sigma(a, b)"
+                (Mock.functionalConstr20 (mkVar Mock.y) (mkVar Mock.z))
+        assertEqualWithExplanation "sigma(x, x) => g(x) vs sigma(a, b)"
             expect
             actual
 
