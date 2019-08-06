@@ -381,7 +381,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
     , (EqualsT, \_ _ _ _ _ _ _ -> termBottomEquals, "termBottomEquals")
     , (BothT,   \t _ _ _ _ _ _ -> variableFunctionAndEquals t, "variableFunctionAndEquals")
     , (BothT,   \t _ _ _ _ _ _ -> functionVariableAndEquals t, "functionVariableAndEquals")
-    , (BothT,   addT   equalInjectiveHeadsAndEquals, "equalInjectiveHeadsAndEquals")
+    , (BothT,   \_ _ _ _ _ _ s -> equalInjectiveHeadsAndEquals s, "equalInjectiveHeadsAndEquals")
     , (BothT,   addS   sortInjectionAndEqualsAssumesDifferentHeads, "sortInjectionAndEqualsAssumesDifferentHeads")
     , (BothT,   liftE1 constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
     , (BothT,   liftE1 constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
@@ -501,24 +501,6 @@ andEqualsFunctions = fmap mapEqualsFunctions
         _axiomIdToSimplifier
         _substitutionMerger
       = f tools
-    addT
-        ::  (  SmtMetadataTools Attribute.Symbol
-            -> PredicateMerger variable unifier
-            -> TermSimplifier variable unifier
-            -> TermLike variable
-            -> TermLike variable
-            -> MaybeT unifier (Pattern variable)
-            )
-        -> TermTransformation variable unifier
-    addT
-        f
-        _simplificationType
-        tools
-        _substitutionSimplifier
-        _simplifier
-        _axiomIdToSimplifier
-      =
-        f tools
 
 {- | Construct the conjunction or unification of two terms.
 
@@ -848,16 +830,12 @@ equalInjectiveHeadsAndEquals
         , MonadUnify unifier
         )
     => GHC.HasCallStack
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateMerger variable unifier
-    -> TermSimplifier variable unifier
+    => TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 equalInjectiveHeadsAndEquals
-    _tools
-    _
     termMerger
     (App_ firstHead firstChildren)
     (App_ secondHead secondChildren)
@@ -871,7 +849,7 @@ equalInjectiveHeadsAndEquals
     isFirstInjective = Symbol.isInjective firstHead
     isSecondInjective = Symbol.isInjective secondHead
 
-equalInjectiveHeadsAndEquals _ _ _ _ _ = Error.nothing
+equalInjectiveHeadsAndEquals _ _ _ = Error.nothing
 
 {- | Simplify the conjunction of two sort injections.
 
