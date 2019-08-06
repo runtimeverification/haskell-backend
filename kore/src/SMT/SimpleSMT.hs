@@ -242,7 +242,7 @@ info :: GHC.HasCallStack => Solver -> [Logger.Scope] -> Text -> IO ()
 info Solver { logger } scope a =
     logger Colog.<& message
   where
-    message = Logger.LogMessage a Logger.Info ("SimpleSMT" : scope) callStack
+    message = Logger.LogMessage a Logger.Debug ("SimpleSMT" : scope) callStack
 
 send :: Solver -> SExpr -> IO ()
 send solver@Solver { hIn } command' = do
