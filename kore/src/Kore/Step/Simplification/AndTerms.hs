@@ -229,18 +229,10 @@ termUnification =
         -> TermLike variable
         -> unifier (Pattern variable)
     termUnificationWorker pat1 pat2 = do
-        tools <- Simplifier.askMetadataTools
-        substitutionSimplifier <- Simplifier.askSimplifierPredicate
-        simplifier <- Simplifier.askSimplifierTermLike
-        axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
         let
             maybeTermUnification :: MaybeT unifier (Pattern variable)
             maybeTermUnification =
                 maybeTermAnd
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
                     createPredicatesAndSubstitutionsMergerExcept
                     termUnificationWorker
                     pat1
@@ -290,16 +282,8 @@ termAnd p1 p2 =
         -> TermLike variable
         -> unifier (Pattern variable)
     termAndWorker first second = do
-        tools <- Simplifier.askMetadataTools
-        substitutionSimplifier <- Simplifier.askSimplifierPredicate
-        simplifier <- Simplifier.askSimplifierTermLike
-        axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
         let maybeTermAnd' =
                 maybeTermAnd
-                    tools
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
                     createLiftedPredicatesAndSubstitutionsMerger
                     termAndWorker
                     first
@@ -319,17 +303,13 @@ maybeTermAnd
         , Logger.WithLog Logger.LogMessage unifier
         )
     => GHC.HasCallStack
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> PredicateMerger variable unifier
+    => PredicateMerger variable unifier
     -> TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-maybeTermAnd _ _ _ _ = maybeTransformTerm andFunctions
+maybeTermAnd = maybeTransformTerm andFunctions
 
 andFunctions
     ::  forall variable unifier
