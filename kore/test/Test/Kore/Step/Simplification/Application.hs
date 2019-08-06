@@ -171,13 +171,7 @@ test_applicationSimplification =
                     OrPattern.fromPatterns
                         [ Conditional
                             { term = fOfA
-                            , predicate =
-                                makeAndPredicate
-                                    (makeAndPredicate
-                                        (makeEqualsPredicate fOfA gOfA)
-                                        (makeEqualsPredicate fOfA fOfB)
-                                    )
-                                    (makeEqualsPredicate gOfA gOfB)
+                            , predicate = makeEqualsPredicate fOfA gOfA
                             , substitution =
                                 Substitution.unsafeWrap $ List.sortOn fst
                                     [ (z', gOfB)

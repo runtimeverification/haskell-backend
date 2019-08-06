@@ -28,8 +28,10 @@ import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Attribute.Synthetic
 import           Kore.Debug
+import qualified Kore.Internal.Conditional as Conditional
+                 ( fromSubstitution )
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( flatten, merge, mergeAll )
+                 ( extractPatterns, flatten, merge, mergeAll )
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -155,7 +157,7 @@ maybeEvaluatePattern
     -> OrPattern variable
     -- ^ The default value
     -> MaybeT simplifier (OrPattern variable)
-maybeEvaluatePattern childrenPredicate termLike defaultValue =
+maybeEvaluatePattern childrenPredicate@(Conditional { substitution }) termLike defaultValue =
     Simplifier.lookupSimplifierAxiom termLike
     >>= \(BuiltinAndAxiomSimplifier evaluator) -> tracing $ do
         axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
@@ -167,25 +169,32 @@ maybeEvaluatePattern childrenPredicate termLike defaultValue =
                 simplifier
                 axiomIdToEvaluator
                 termLike
-        flattened <- case result of
+        merged <- case result of
             AttemptedAxiom.NotApplicable ->
                 return AttemptedAxiom.NotApplicable
             AttemptedAxiom.Applied AttemptedAxiomResults
                 { results = orResults
                 , remainders = orRemainders
                 } -> do
-                    simplified <- mapM simplifyIfNeeded orResults
-                    return
-                        (AttemptedAxiom.Applied AttemptedAxiomResults
-                            { results =
-                                MultiOr.flatten simplified
-                            , remainders = orRemainders
-                            }
-                        )
-        merged <-
-            mergeWithConditionAndSubstitution
-                childrenPredicate
-                flattened
+                    case MultiOr.extractPatterns orRemainders of
+                        [] -> do
+                            simplified <- mapM simplifyIfNeeded orResults
+                            mergeWithConditionAndSubstitution
+                                (Conditional.fromSubstitution substitution)
+                                (AttemptedAxiom.Applied AttemptedAxiomResults
+                                    { results = MultiOr.flatten simplified
+                                    , remainders = orRemainders
+                                    }
+                                )
+                        _ -> do
+                            simplified <- mapM simplifyIfNeeded orResults
+                            mergeWithConditionAndSubstitution
+                                childrenPredicate
+                                (AttemptedAxiom.Applied AttemptedAxiomResults
+                                    { results = MultiOr.flatten simplified
+                                    , remainders = orRemainders
+                                    }
+                                )
         case merged of
             AttemptedAxiom.NotApplicable -> return defaultValue
             AttemptedAxiom.Applied attemptResults ->
