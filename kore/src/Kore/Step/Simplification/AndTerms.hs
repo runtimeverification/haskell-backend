@@ -145,20 +145,10 @@ termEqualsAnd
         => TermLike variable
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
-    maybeTermEqualsWorker term1 term2 = do
-        tools <- Simplifier.askMetadataTools
-        substitutionSimplifier <- Simplifier.askSimplifierPredicate
-        simplifier <- Simplifier.askSimplifierTermLike
-        axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
+    maybeTermEqualsWorker =
         maybeTermEquals
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
             createPredicatesAndSubstitutionsMergerExcept
             termEqualsAndWorker
-            term1
-            term2
 
     termEqualsAndWorker
         :: forall unifier
@@ -195,17 +185,27 @@ maybeTermEquals
         , Logger.WithLog Logger.LogMessage unifier
         )
     => GHC.HasCallStack
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -> PredicateMerger variable unifier
+    => PredicateMerger variable unifier
     -> TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-maybeTermEquals = maybeTransformTerm equalsFunctions
+maybeTermEquals predicateMerger termSimplifier term1 term2 = do
+    tools <- Simplifier.askMetadataTools
+    predicateSimplifier <- Simplifier.askSimplifierPredicate
+    simplifier <- Simplifier.askSimplifierTermLike
+    axiomSimplifiers <- Simplifier.askSimplifierAxioms
+    maybeTransformTerm
+        equalsFunctions
+        tools
+        predicateSimplifier
+        simplifier
+        axiomSimplifiers
+        predicateMerger
+        termSimplifier
+        term1
+        term2
 
 {- | Unify two terms without discarding the terms.
 
