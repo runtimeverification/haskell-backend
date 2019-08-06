@@ -466,7 +466,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
                     return mresult
                 Just result -> do
                     Logger.withLogScope (Logger.Scope "AndTerms")
-                        . Logger.logInfo . Text.pack . show
+                        . Logger.logDebug . Text.pack . show
                         $ Pretty.vsep
                             [ Pretty.hsep
                                 [ "Evaluator"
