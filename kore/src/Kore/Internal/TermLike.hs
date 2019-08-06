@@ -86,10 +86,12 @@ module Kore.Internal.TermLike
     , pattern App_
     , pattern Bottom_
     , pattern Builtin_
+    , pattern BuiltinBool_
     , pattern BuiltinInt_
     , pattern BuiltinList_
     , pattern BuiltinMap_
     , pattern BuiltinSet_
+    , pattern BuiltinString_
     , pattern Ceil_
     , pattern DV_
     , pattern Equals_
@@ -1926,6 +1928,10 @@ pattern Builtin_
     :: Domain.Builtin (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 
+pattern BuiltinBool_
+    :: Domain.InternalBool
+    -> TermLike variable
+
 pattern BuiltinInt_
     :: Domain.InternalInt
     -> TermLike variable
@@ -1940,6 +1946,10 @@ pattern BuiltinMap_
 
 pattern BuiltinSet_
     :: Domain.InternalSet (TermLike Concrete) (TermLike variable)
+    -> TermLike variable
+
+pattern BuiltinString_
+    :: Domain.InternalString
     -> TermLike variable
 
 pattern Equals_
@@ -2054,17 +2064,18 @@ pattern DV_ domainValueSort domainValueChild <-
 
 pattern Builtin_ builtin <- (Recursive.project -> _ :< BuiltinF builtin)
 
-pattern BuiltinInt_ internalInt
-    <- (Recursive.project -> _ :< BuiltinF (Domain.BuiltinInt internalInt))
+pattern BuiltinBool_ internalBool <- Builtin_ (Domain.BuiltinBool internalBool)
 
-pattern BuiltinList_ internalList
-    <- (Recursive.project -> _ :< BuiltinF (Domain.BuiltinList internalList))
+pattern BuiltinInt_ internalInt <- Builtin_ (Domain.BuiltinInt internalInt)
 
-pattern BuiltinMap_ internalMap
-    <- (Recursive.project -> _ :< BuiltinF (Domain.BuiltinMap internalMap))
+pattern BuiltinList_ internalList <- Builtin_ (Domain.BuiltinList internalList)
 
-pattern BuiltinSet_ internalSet
-    <- (Recursive.project -> _ :< BuiltinF (Domain.BuiltinSet internalSet))
+pattern BuiltinMap_ internalMap <- Builtin_ (Domain.BuiltinMap internalMap)
+
+pattern BuiltinSet_ internalSet <- Builtin_ (Domain.BuiltinSet internalSet)
+
+pattern BuiltinString_ internalString
+    <- Builtin_ (Domain.BuiltinString internalString)
 
 pattern Equals_ equalsOperandSort equalsResultSort equalsFirst equalsSecond <-
     (Recursive.project ->
