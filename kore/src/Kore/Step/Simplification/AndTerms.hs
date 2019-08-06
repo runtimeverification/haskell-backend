@@ -384,7 +384,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
     , (BothT,   \_ _ _ _ _ _ s -> equalInjectiveHeadsAndEquals s, "equalInjectiveHeadsAndEquals")
     , (BothT,   \_ _ _ _ _ _ s -> sortInjectionAndEqualsAssumesDifferentHeads s, "sortInjectionAndEqualsAssumesDifferentHeads")
     , (BothT,   \_ _ _ _ _ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
-    , (BothT,   liftE1 constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
+    , (BothT,   \_ _ _ _ _ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
     , (BothT,   liftB1 Builtin.Map.unifyEquals, "Builtin.Map.unifyEquals")
     , (BothT,   liftB1 Builtin.Set.unifyEquals, "Builtin.Set.unifyEquals")
     , (BothT,   liftB  Builtin.List.unifyEquals, "Builtin.List.unifyEquals")
@@ -479,18 +479,6 @@ andEqualsFunctions = fmap mapEqualsFunctions
         first
         second
       = Pattern.fromTermLike <$> f first second
-    liftE1
-        f
-        _simplificationType
-        tools
-        _substitutionSimplifier
-        _simplifier
-        _axiomIdToSimplifier
-        _substitutionMerger
-        _termSimplifier
-        first
-        second
-      = Pattern.fromTermLike <$> f tools first second
     liftET = liftE . addToolsArg
 
 {- | Construct the conjunction or unification of two terms.
@@ -1072,12 +1060,10 @@ constructorAndEqualsAssumesDifferentHeads
         , MonadUnify unifier
         )
     => GHC.HasCallStack
-    => SmtMetadataTools Attribute.Symbol
+    => TermLike variable
     -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (TermLike variable)
+    -> MaybeT unifier a
 constructorAndEqualsAssumesDifferentHeads
-    _tools
     first@(App_ firstHead _)
     second@(App_ secondHead _)
   | Symbol.isConstructor firstHead
@@ -1089,7 +1075,7 @@ constructorAndEqualsAssumesDifferentHeads
             first
             second
         empty
-constructorAndEqualsAssumesDifferentHeads _ _ _ = empty
+constructorAndEqualsAssumesDifferentHeads _ _ = empty
 
 {- | Unifcation or equality for a domain value pattern vs a constructor
 application.
