@@ -39,7 +39,8 @@ import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Pattern as Conditional
                  ( Conditional (..) )
 import           Kore.Step.Rule
-                 ( OnePathRule (..), RulePattern (RulePattern) )
+                 ( OnePathRule (..), RewriteRule (RewriteRule),
+                 RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
@@ -109,8 +110,7 @@ If the verification succeeds, it returns ().
 
 verify
     :: MonadSimplify m
-    => Show (Rule OnePathRule Variable)
-    => [Strategy (Prim ((Rule OnePathRule) Variable))]
+    => [Strategy (Prim (RewriteRule Variable))]
     -- ^ Creates a one-step strategy from a target pattern. See
     -- 'defaultStrategy'.
     -> [(OnePathRule Variable, Limit Natural)]
@@ -131,12 +131,14 @@ verify strategy =
 -- -}
 --
 defaultStrategy
-    :: forall goal variable
-    .  Goal goal variable
-    => [goal variable]
+    :: forall goal
+    .  Goal goal
+    => Coercible goal (RulePattern Variable)
+    => Rule goal ~ RewriteRule Variable
+    => [goal]
     -- The claims that we want to prove
-    -> [(Rule goal) variable]
-    -> [Strategy (Prim ((Rule goal) variable))]
+    -> [Rule goal]
+    -> [Strategy (Prim (Rule goal))]
 defaultStrategy
     claims
     axioms
@@ -148,16 +150,15 @@ defaultStrategy
             rewrites
         )
   where
-    rewrites :: [(Rule goal) variable]
+    rewrites :: [Rule goal]
     rewrites = axioms
-    coinductiveRewrites :: [(Rule goal) variable]
-    coinductiveRewrites = map (ruleFrom . to) claims
+    coinductiveRewrites :: [Rule goal]
+    coinductiveRewrites = map (RewriteRule . coerce) claims
 
 verifyClaim
     :: forall m
     .  MonadSimplify m
-    => Show (Rule OnePathRule Variable)
-    => [Strategy (Prim ((Rule OnePathRule) Variable))]
+    => [Strategy (Prim (RewriteRule Variable))]
     -> (OnePathRule Variable, Limit Natural)
     -> ExceptT (Pattern Variable) m ()
 verifyClaim
@@ -179,9 +180,9 @@ verifyClaim
   where
     modifTransitionRule
         :: Pattern Variable
-        -> Prim ((Rule OnePathRule) Variable)
+        -> Prim (RewriteRule Variable)
         -> CommonProofState
-        -> TransitionT ((Rule OnePathRule) Variable) (Verifier m) CommonProofState
+        -> TransitionT (RewriteRule Variable) (Verifier m) CommonProofState
     modifTransitionRule destination prim proofState = do
         transitions <-
             Monad.Trans.lift . Monad.Trans.lift . runTransitionT
@@ -201,13 +202,13 @@ verifyClaimStep
     -- ^ claim that is being proven
     -> [OnePathRule Variable]
     -- ^ list of claims in the spec module
-    -> [(Rule OnePathRule) Variable]
+    -> [RewriteRule Variable]
     -- ^ list of axioms in the main module
-    -> ExecutionGraph CommonProofState ((Rule OnePathRule) Variable)
+    -> ExecutionGraph CommonProofState (RewriteRule Variable)
     -- ^ current execution graph
     -> Graph.Node
     -- ^ selected node in the graph
-    -> m (ExecutionGraph CommonProofState ((Rule OnePathRule) Variable))
+    -> m (ExecutionGraph CommonProofState (RewriteRule Variable))
 verifyClaimStep
     target
     claims
@@ -222,17 +223,17 @@ verifyClaimStep
         eg
         node
   where
-    strategy' :: Strategy (Prim ((Rule OnePathRule) Variable))
+    strategy' :: Strategy (Prim (RewriteRule Variable))
     strategy'
         | isRoot =
             onePathFirstStep rewrites
         | otherwise =
             onePathFollowupStep
-                (ruleFrom . to <$> claims)
+                (RewriteRule . coerce <$> claims)
                 rewrites
 
-    rewrites :: [(Rule OnePathRule) Variable]
-    rewrites = axioms
+    rewrites :: [RewriteRule Variable]
+    rewrites = coerce <$> axioms
 
     isRoot :: Bool
     isRoot = node == root
@@ -241,10 +242,10 @@ transitionRule'
     :: forall m
     .  MonadSimplify m
     => Pattern Variable
-    -> Prim ((Rule OnePathRule) Variable)
+    -> Prim (RewriteRule Variable)
     -> CommonProofState
-    -> TransitionT ((Rule OnePathRule) Variable) m CommonProofState
+    -> TransitionT (RewriteRule Variable) m CommonProofState
 transitionRule' destination prim state = do
-    let goal = (flip makeGoal) destination <$> state
+    let goal = (flip makeOnePathRule) destination <$> state
     next <- transitionRule prim goal
     pure $ fmap getConfiguration next
