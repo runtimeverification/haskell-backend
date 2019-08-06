@@ -123,6 +123,25 @@ test_removeUnit =
             (===) Pattern.top =<< evaluateT predicate
         )
 
+test_sizeUnit :: TestTree
+test_sizeUnit =
+    testPropertyWithSolver
+        "MAP.size is size"
+        (do
+            map <- forAll $ genConcreteMap genIntegerPattern
+            let
+                size = Map.size map
+                patExpected = Test.Int.asInternal $ toInteger size
+                patActual = 
+                    mkApplySymbol
+                        sizeMapSymbol
+                        [ asTermLike map ]
+                predicate = mkEquals_ patExpected patActual
+            expect <- evaluateT patExpected
+            (===) expect      =<< evaluateT patActual
+            (===) Pattern.top =<< evaluateT predicate
+        )
+
 test_removeKeyNotIn :: TestTree
 test_removeKeyNotIn =
     testPropertyWithSolver
