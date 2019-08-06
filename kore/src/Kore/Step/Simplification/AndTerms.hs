@@ -375,7 +375,7 @@ andEqualsFunctions
         )
     => [(SimplificationTarget, TermTransformation variable unifier)]
 andEqualsFunctions = fmap mapEqualsFunctions
-    [ (AndT,    liftE0 boolAnd, "boolAnd")
+    [ (AndT,    \_ _ _ _ _ _ _ -> boolAnd, "boolAnd")
     , (BothT,   liftET equalAndEquals, "equalAndEquals")
     , (EqualsT, \_ _ _ _ _ _ _ -> bottomTermEquals, "bottomTermEquals")
     , (EqualsT, \_ _ _ _ _ _ _ -> termBottomEquals, "termBottomEquals")
@@ -467,18 +467,6 @@ andEqualsFunctions = fmap mapEqualsFunctions
 
     lift = pure . transformerLiftOld
     liftE = lift . toExpanded
-    liftE0
-        f
-        _simplificationType
-        _tools
-        _substitutionSimplifier
-        _simplifier
-        _axiomIdToSimplifier
-        _substitutionMerger
-        _termSimplifier
-        first
-        second
-      = Pattern.fromTermLike <$> f first second
     liftET = liftE . addToolsArg
 
 {- | Construct the conjunction or unification of two terms.
@@ -623,20 +611,19 @@ liftPattern = MaybeT . return
 -- | Simplify the conjunction of terms where one is a predicate.
 boolAnd
     :: MonadUnify unifier
-    => SortedVariable variable
-    => Unparse variable
+    => (Ord variable, SortedVariable variable, Unparse variable)
     => TermLike variable
     -> TermLike variable
-    -> MaybeT unifier (TermLike variable)
+    -> MaybeT unifier (Pattern variable)
 boolAnd first second
   | isBottom first  = do
       explainBoolAndBottom first second
-      return first
-  | isTop first     = return second
+      return (Pattern.fromTermLike first)
+  | isTop first     = return (Pattern.fromTermLike second)
   | isBottom second = do
       explainBoolAndBottom first second
-      return second
-  | isTop second    = return first
+      return (Pattern.fromTermLike second)
+  | isTop second    = return (Pattern.fromTermLike first)
   | otherwise       = empty
 
 explainBoolAndBottom
