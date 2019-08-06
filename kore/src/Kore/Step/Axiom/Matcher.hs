@@ -90,10 +90,9 @@ matchOne
     => Pair (TermLike variable)
     -> MatcherT variable unifier ()
 matchOne pair =
-    (   matchEqual       pair
-    <|> matchVariable    pair
+    (   matchVariable    pair
+    <|> matchEqualHeads  pair
     <|> matchApplication pair
-    <|> matchCeil        pair
     <|> matchBuiltinList pair
     <|> matchBuiltinMap  pair
     <|> matchBuiltinSet  pair
@@ -146,20 +145,42 @@ matchIncremental termLike1 termLike2 =
         $ Monad.Unify.throwUnificationError
         $ unsupportedPatterns "Unknown match case" termLike1 termLike2
 
-matchEqual
+matchEqualHeads
     :: (MatchingVariable variable, MonadUnify unifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
-matchEqual (Pair term1 term2) = Monad.guard (term1 == term2)
+-- Terminal patterns
+matchEqualHeads (Pair (StringLiteral_ string1) (StringLiteral_ string2)) =
+    Monad.guard (string1 == string2)
+matchEqualHeads (Pair (CharLiteral_ char1) (CharLiteral_ char2)) =
+    Monad.guard (char1 == char2)
+matchEqualHeads (Pair (BuiltinInt_ int1) (BuiltinInt_ int2)) =
+    Monad.guard (int1 == int2)
+matchEqualHeads (Pair (BuiltinBool_ bool1) (BuiltinBool_ bool2)) =
+    Monad.guard (bool1 == bool2)
+matchEqualHeads (Pair (BuiltinString_ string1) (BuiltinString_ string2)) =
+    Monad.guard (string1 == string2)
+matchEqualHeads (Pair (Bottom_ _) (Bottom_ _)) =
+    return ()
+matchEqualHeads (Pair (Top_ _) (Top_ _)) =
+    return ()
+-- Non-terminal patterns
+matchEqualHeads (Pair (Ceil_ _ _ term1) (Ceil_ _ _ term2)) =
+    push (Pair term1 term2)
+matchEqualHeads (Pair (DV_ _ dv1) (DV_ _ dv2)) =
+    push (Pair dv1 dv2)
+matchEqualHeads _ = empty
 
 matchVariable
     :: (MatchingVariable variable, MonadUnify unifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
-matchVariable (Pair (Var_ variable) term2) = do
-    guardTargetVariable variable
+matchVariable (Pair (Var_ variable1) term2)
+  | Var_ variable2 <- term2, variable1 == variable2 = return ()
+  | otherwise = do
+    guardTargetVariable variable1
     Monad.guard (isFunctionPattern term2)
-    substitute variable term2
+    substitute variable1 term2
 matchVariable _ = empty
 
 matchApplication
@@ -182,13 +203,6 @@ matchApplication
             push (Pair firstChild secondChild)
         _ -> empty
 matchApplication _ = empty
-
-matchCeil
-    :: (MatchingVariable variable, MonadUnify unifier)
-    => Pair (TermLike variable)
-    -> MaybeT (MatcherT variable unifier) ()
-matchCeil (Pair (Ceil_ _ _ term1) (Ceil_ _ _ term2)) = push (Pair term1 term2)
-matchCeil _ = empty
 
 matchBuiltinList
     :: (MatchingVariable variable, MonadUnify unifier)
