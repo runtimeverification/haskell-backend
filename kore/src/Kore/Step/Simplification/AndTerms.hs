@@ -383,7 +383,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
     , (BothT,   \t _ _ _ _ _ _ -> functionVariableAndEquals t, "functionVariableAndEquals")
     , (BothT,   \_ _ _ _ _ _ s -> equalInjectiveHeadsAndEquals s, "equalInjectiveHeadsAndEquals")
     , (BothT,   \_ _ _ _ _ _ s -> sortInjectionAndEqualsAssumesDifferentHeads s, "sortInjectionAndEqualsAssumesDifferentHeads")
-    , (BothT,   liftE1 constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
+    , (BothT,   \_ _ _ _ _ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
     , (BothT,   liftE1 constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
     , (BothT,   liftB1 Builtin.Map.unifyEquals, "Builtin.Map.unifyEquals")
     , (BothT,   liftB1 Builtin.Set.unifyEquals, "Builtin.Set.unifyEquals")
@@ -1038,12 +1038,10 @@ constructorSortInjectionAndEquals
         , MonadUnify unifier
         )
     => GHC.HasCallStack
-    => SmtMetadataTools Attribute.Symbol
+    => TermLike variable
     -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (TermLike variable)
+    -> MaybeT unifier a
 constructorSortInjectionAndEquals
-    _tools
     first@(App_ firstHead _)
     second@(App_ secondHead _)
   | isConstructorSortInjection =
@@ -1059,7 +1057,7 @@ constructorSortInjectionAndEquals
         (||)
             (Symbol.isConstructor   firstHead && Symbol.isSortInjection secondHead)
             (Symbol.isSortInjection firstHead && Symbol.isConstructor   secondHead)
-constructorSortInjectionAndEquals _ _ _ = empty
+constructorSortInjectionAndEquals _ _ = empty
 
 {-| Unify two constructor application patterns.
 
