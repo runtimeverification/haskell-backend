@@ -539,7 +539,7 @@ test_functionIntegration =
 test_Nat :: [TestTree]
 test_Nat =
     [ plus zero varN `matches` plus zero one  $ "plus(0, N) ~ plus(0, 1)"
-    , plus (succ varM) varN `unsolved` plus zero one  $ "plus(Succ(M), N) !~ plus(0, 1) "
+    , plus (succ varM) varN `doesn'tMatch` plus zero one  $ "plus(Succ(M), N) !~ plus(0, 1) "
     , plus (succ varM) varN `matches` plus one one  $ "plus(Succ(M), N) ~ plus(1, 1) "
     , applies            "plus(0, N) => ... ~ plus (0, 1)"
         [plusZeroRule]
@@ -599,14 +599,14 @@ withMatch check term1 term2 comment =
                     ]
         assertBool (show message) (check actual)
 
-matches, unsolved
+matches, doesn'tMatch
     :: HasCallStack
     => TermLike Variable
     -> TermLike Variable
     -> TestName
     -> TestTree
 matches = withMatch (maybe False (not . isBottom))
-unsolved = withMatch isNothing
+doesn'tMatch = withMatch isNothing
 
 -- Applied tests: check that one or more rules applies or not
 withApplied

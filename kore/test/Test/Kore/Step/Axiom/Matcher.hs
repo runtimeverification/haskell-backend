@@ -74,19 +74,19 @@ test_matcherEqualHeads =
                     (Mock.plain10 Mock.a)
             assertEqualWithExplanation "" expect actual
 
-        , unsolved "different constructors"
+        , doesn'tMatch "different constructors"
             (Mock.constr10 (mkVar Mock.x))
             (Mock.constr11 Mock.a)
-        , unsolved "different functions"
+        , doesn'tMatch "different functions"
             (Mock.f Mock.b)
             (Mock.g Mock.a)
-        , unsolved "different functions with variable"
+        , doesn'tMatch "different functions with variable"
             (Mock.f (mkVar Mock.x))
             (Mock.g Mock.a)
-        , unsolved "different symbols"
+        , doesn'tMatch "different symbols"
             (Mock.plain10 Mock.b)
             (Mock.plain11 Mock.a)
-        , unsolved "different symbols with variable"
+        , doesn'tMatch "different symbols with variable"
             (Mock.plain10 (mkVar Mock.x))
             (Mock.plain11 Mock.a)
         ]
@@ -359,7 +359,7 @@ test_matcherNonVarToPattern =
     ]
   where
     failure term1 term2 name =
-        unsolved name (Mock.plain10 term1) (Mock.plain11 term2)
+        doesn'tMatch name (Mock.plain10 term1) (Mock.plain11 term2)
 
 test_matcherMergeSubresults :: [TestTree]
 test_matcherMergeSubresults =
@@ -407,10 +407,10 @@ test_matching_Bool =
         let expect = substitution [(Mock.xBool, True)]
         actual <- matchVariable Mock.xBool True
         assertEqualWithExplanation "" expect actual
-    , unsolved "true does not match x:Bool"
+    , doesn'tMatch "true does not match x:Bool"
         (mkBool True)
         (mkVar Mock.xBool)
-    , unsolved "false does not match x:Bool"
+    , doesn'tMatch "false does not match x:Bool"
         (mkBool False)
         (mkVar Mock.xBool)
     ]
@@ -436,12 +436,12 @@ test_matching_Int =
         let expect = top
         actual <- matchConcrete 1 1
         assertEqualWithExplanation "" expect actual
-    , unsolved "1 does not match 2" (mkInt 1) (mkInt 2)
+    , doesn'tMatch "1 does not match 2" (mkInt 1) (mkInt 2)
     , testCase "variable vs concrete" $ do
         let expect = substitution [(Mock.xInt, 1)]
         actual <- matchVariable Mock.xInt 1
         assertEqualWithExplanation "" expect actual
-    , unsolved "1 does not match x:Int"
+    , doesn'tMatch "1 does not match x:Int"
         (mkInt 1)
         (mkVar xInt)
     ]
@@ -474,7 +474,7 @@ test_matching_String =
         let expect = substitution [(Mock.xString, "str")]
         actual <- matchVariable Mock.xString "str"
         assertEqualWithExplanation "" expect actual
-    , unsolved "\"str\" does not match x:String"
+    , doesn'tMatch "\"str\" does not match x:String"
         (mkStr "str")
         (mkVar Mock.xString)
     ]
@@ -499,10 +499,10 @@ test_matching_List =
         (mkList [mkInt 1, mkInt 2])
         (mkList [mkInt 1, mkInt 2])
         []
-    , unsolved "[1, 2] does not match [1, 3]"
+    , doesn'tMatch "[1, 2] does not match [1, 3]"
         (mkList [mkInt 1, mkInt 2])
         (mkList [mkInt 1, mkInt 3])
-    , unsolved "[1, 2] does not match [1, 2, 3]"
+    , doesn'tMatch "[1, 2] does not match [1, 2, 3]"
         (mkList [mkInt 1, mkInt 2])
         (mkList [mkInt 1, mkInt 2, mkInt 3])
     , testCase "variable on right does not match" $ do
@@ -527,7 +527,7 @@ test_matching_List =
             [ Right 1 , Left xInt , Right 3 , Left yInt ]
             [ 1, 2, 3, 4 ]
         assertEqualWithExplanation "" expect actual
-    , unsolved "[1, x:Int] does not match [2, 1]"
+    , doesn'tMatch "[1, x:Int] does not match [2, 1]"
         (mkList [mkInt 1, mkVar xInt])
         (mkList [mkInt 2, mkInt 1])
     , testCase "concat(empty, var) vs concrete" $ do
@@ -653,11 +653,11 @@ test_matching_List =
             [1, 2, 3]
         assertEqualWithExplanation "" expect actual
 
-    , unsolved "[] does not match y:List" unitList (mkVar yList)
-    , unsolved "[1] x:List does not match y:List"
+    , doesn'tMatch "[] does not match y:List" unitList (mkVar yList)
+    , doesn'tMatch "[1] x:List does not match y:List"
         (prefixList [one] xList)
         (mkVar yList)
-    , unsolved "x:List [1] does not match y:List"
+    , doesn'tMatch "x:List [1] does not match y:List"
         (suffixList xList [one])
         (mkVar yList)
 
@@ -665,14 +665,14 @@ test_matching_List =
         unitList
         unitList
         []
-    , unsolved "[] does not match [1]"
+    , doesn'tMatch "[] does not match [1]"
         unitList
         (mkList [one])
 
-    , unsolved "[] does not match [1] x:List" unitList (prefixList [one] xList)
-    , unsolved "[] does not match x:List [1]" unitList (suffixList xList [one])
+    , doesn'tMatch "[] does not match [1] x:List" unitList (prefixList [one] xList)
+    , doesn'tMatch "[] does not match x:List [1]" unitList (suffixList xList [one])
 
-    , unsolved "[1] does not match []" (mkList [one]) unitList
+    , doesn'tMatch "[1] does not match []" (mkList [one]) unitList
     , matches "[1] ~ [1]"
         (mkList [one])
         (mkList [one])
@@ -681,14 +681,14 @@ test_matching_List =
         (mkList [mkVar xInt])
         (mkList [one       ])
         [(xInt, one)]
-    , unsolved "[1] does not match [1] x:List"
+    , doesn'tMatch "[1] does not match [1] x:List"
         (mkList [one])
         (prefixList [one] xList)
-    , unsolved "[1] does not match x:List [1]"
+    , doesn'tMatch "[1] does not match x:List [1]"
         (mkList [one])
         (suffixList xList [one])
 
-    , unsolved "[1] x:List does not match []"
+    , doesn'tMatch "[1] x:List does not match []"
         (prefixList [one] xList)
         unitList
     , matches "[1] x:List ~ [1]"
@@ -708,7 +708,7 @@ test_matching_List =
         (mkList     [one,        two ])
         [(xInt, one), (yList, mkList [two])]
 
-    , unsolved "x:List [1] does not match []"
+    , doesn'tMatch "x:List [1] does not match []"
         (suffixList xList [one])
         unitList
     , matches "x:List [1] ~ [1]"
@@ -757,7 +757,7 @@ test_matching_List =
 
 test_matching_Pair :: [TestTree]
 test_matching_Pair =
-    [ unsolved
+    [ doesn'tMatch
         "(x, x) does not match (y, z)"
         (mkPair (mkVar xInt) (mkVar xInt))
         (mkPair (mkVar yInt) (mkVar zInt))
@@ -766,7 +766,7 @@ test_matching_Pair =
         (mkPair (mkVar yInt) (mkVar yInt))
         [(xInt, mkVar yInt)]
 
-    , unsolved        "(x, x) does not match (1, 2)"
+    , doesn'tMatch        "(x, x) does not match (1, 2)"
         (mkPair (mkVar xInt) (mkVar xInt))
         (mkPair (mkInt 1) (mkInt 2))
     , matches "(x, y) matches (y, z)"
@@ -795,17 +795,17 @@ test_matching_Set =
         (mkSet [mkInt 0, mkInt 1, mkInt 2] [])
         (mkSet [mkInt 0, mkInt 1, mkInt 2] [])
         []
-    , unsolved "[] does not match [0]"
+    , doesn'tMatch "[] does not match [0]"
         (mkSet []        [])
         (mkSet [mkInt 0] [])
-    , unsolved "[0] does not match []"
+    , doesn'tMatch "[0] does not match []"
         (mkSet [mkInt 0] [])
         (mkSet []        [])
-    , unsolved
+    , doesn'tMatch
         "[x:Int] does not match [0]"
         (mkSet [mkVar xInt] [])
         (mkSet [mkInt 0   ] [])
-    , unsolved
+    , doesn'tMatch
         "[x:Int] s:Set does not match [0]"
         (mkSet [mkVar xInt]             [mkVar sSet])
         (mkSet [mkInt 0   , mkInt 1   ] [          ])
@@ -828,13 +828,13 @@ test_matching_Map =
         (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] [])
         (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] [])
         []
-    , unsolved "0 |-> 1  1 |-> 2  does not match 0 |-> 1"
+    , doesn'tMatch "0 |-> 1  1 |-> 2  does not match 0 |-> 1"
         (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] [])
         (mkMap [(mkInt 0, mkInt 1)                    ] [])
-    , unsolved "0 |-> 1  1 |-> 2  does not match 0 |-> 1  1 |-> 3"
+    , doesn'tMatch "0 |-> 1  1 |-> 2  does not match 0 |-> 1  1 |-> 3"
         (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] [])
         (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 3)] [])
-    , unsolved
+    , doesn'tMatch
         "0 |-> 1 does not match m:Map"
         (mkMap [(mkInt 0, mkInt 1)] [])
         (mkVar mMap)
@@ -850,11 +850,11 @@ test_matching_Map =
         (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] [mkVar mMap])
         (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] [          ])
         [(mMap, mkMap [] [])]
-    , unsolved
+    , doesn'tMatch
         "x:Int |-> y:Int  m does not match 0 |-> 1"
         (mkMap [(mkVar xInt, mkVar yInt)] [mkVar mMap])
         (mkMap [(mkInt 0   , mkInt 1   )] [    ])
-    , unsolved
+    , doesn'tMatch
         "x:Int |-> y:Int  m:Map does not match 0 |-> 1  2 |-> 4"
         (mkMap [(mkVar xInt, mkVar yInt)] [mkVar mMap])
         (mkMap [(mkInt 0   , mkInt 1   )] [          ])
@@ -928,13 +928,13 @@ withMatch check comment term1 term2 =
         actual <- match term1 term2
         check actual
 
-unsolved
+doesn'tMatch
     :: GHC.HasCallStack
     => TestName
     -> TermLike Variable
     -> TermLike Variable
     -> TestTree
-unsolved = withMatch (assertBool "" . Maybe.isNothing)
+doesn'tMatch = withMatch (assertBool "" . Maybe.isNothing)
 
 matches
     :: GHC.HasCallStack
