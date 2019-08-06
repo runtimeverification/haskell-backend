@@ -66,7 +66,7 @@ import qualified Kore.Step.Simplification.AndTerms as SortInjectionSimplificatio
                  ( SortInjectionSimplification (..) )
 import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Unification.Error
-                 ( SubstitutionError (..), unsupportedPatterns )
+                 ( unsupportedPatterns )
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import qualified Kore.Unification.Substitution as Substitution
@@ -371,13 +371,8 @@ occursCheck
     => variable
     -> TermLike variable
     -> MaybeT (MatcherT variable unifier) ()
-occursCheck variable termLike
-  | hasFreeVariable variable termLike =
-    -- TODO (thomas.tuegel): Distinguish constructor and non-constructor cycles.
-    Monad.Trans.lift . Monad.Trans.lift
-    $ Monad.Unify.throwSubstitutionError
-    $ NonCtorCircularVariableDependency [variable]
-  | otherwise = return ()
+occursCheck variable termLike =
+    (Monad.guard . not) (hasFreeVariable variable termLike)
 
 definedTerm
     :: (MatchingVariable variable, MonadState (MatcherState variable) matcher)
