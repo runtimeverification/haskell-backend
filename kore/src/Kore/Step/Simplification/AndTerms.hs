@@ -389,7 +389,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
     , (BothT,   liftB1 Builtin.Set.unifyEquals, "Builtin.Set.unifyEquals")
     , (BothT,   liftB  Builtin.List.unifyEquals, "Builtin.List.unifyEquals")
     , (BothT,   \_ _ _ _ _ _ _ -> domainValueAndConstructorErrors, "domainValueAndConstructorErrors")
-    , (BothT,   liftE0 domainValueAndEqualsAssumesDifferent, "domainValueAndEqualsAssumesDifferent")
+    , (BothT,   \_ _ _ _ _ _ _ -> domainValueAndEqualsAssumesDifferent, "domainValueAndEqualsAssumesDifferent")
     , (BothT,   liftE0 stringLiteralAndEqualsAssumesDifferent, "stringLiteralAndEqualsAssumesDifferent")
     , (BothT,   liftE0 charLiteralAndEqualsAssumesDifferent, "charLiteralAndEqualsAssumesDifferent")
     , (AndT,    \_ _ _ _ _ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2, "functionAnd")
@@ -1163,7 +1163,7 @@ domainValueAndEqualsAssumesDifferent
     => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-    -> MaybeT unifier (TermLike variable)
+    -> MaybeT unifier a
 domainValueAndEqualsAssumesDifferent
     first@(DV_ _ _)
     second@(DV_ _ _)
@@ -1193,7 +1193,7 @@ cannotUnifyDomainValues
     => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-    -> unifier (TermLike variable)
+    -> unifier a
 cannotUnifyDomainValues first second =
     assert (first /= second) $ do
         explainBottom
