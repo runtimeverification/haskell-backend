@@ -16,7 +16,7 @@ import           Data.Maybe
                  ( mapMaybe )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Generics
+import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
@@ -62,7 +62,7 @@ data ProofState goal
     -- ^ The indicated goal remains after rewriting.
     | Proven
     -- ^ The parent goal was proven.
-    deriving (Eq, Show, Ord, Functor, Generic)
+    deriving (Eq, Show, Ord, Functor, GHC.Generic)
 
 instance Hashable goal => Hashable (ProofState goal)
 
@@ -133,43 +133,56 @@ data Prim rule
     | DerivePar [rule]
     | DeriveSeq [rule]
 
-class Goal goal where
-    type Rule goal
+class ( SortedVariable variable
+      , Ord variable
+      , Unparse variable
+      , Show variable
+      , FreshVariable variable
+      ) => Goal goal variable where
+    data Rule goal :: * -> *
 
-    -- | Remove the destination of the goal.
+    -- | Remove the destination of the (goal variable).
     removeDestination
         :: MonadSimplify m
-        => goal
-        -> Strategy.TransitionT (Rule goal) m goal
+        => (goal variable)
+        -> Strategy.TransitionT ((Rule goal) variable) m (goal variable)
 
     simplify
         :: MonadSimplify m
-        => goal
-        -> Strategy.TransitionT (Rule goal) m goal
+        => (goal variable)
+        -> Strategy.TransitionT ((Rule goal) variable) m (goal variable)
 
-    isTriviallyValid :: goal -> Bool
+    isTriviallyValid :: (goal variable) -> Bool
 
-    isTrusted :: goal -> Bool
+    isTrusted :: (goal variable) -> Bool
 
-    -- | Apply 'Rule's in to the goal in parallel.
+    -- | Apply 'Rule's in to the (goal variable) in parallel.
     derivePar
         :: MonadSimplify m
-        => [Rule goal]
-        -> goal
-        -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+        => [(Rule goal) variable]
+        -> (goal variable)
+        -> Strategy.TransitionT ((Rule goal) variable) m (ProofState (goal variable))
 
-    -- | Apply 'Rule's in to the goal in sequence.
+    -- | Apply 'Rule's in to the (goal variable) in sequence.
     deriveSeq
         :: MonadSimplify m
-        => [Rule goal]
-        -> goal
-        -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+        => [(Rule goal) variable]
+        -> (goal variable)
+        -> Strategy.TransitionT ((Rule goal) variable) m (ProofState (goal variable))
+
+    to :: (goal variable) -> RulePattern variable
+
+    from :: RulePattern variable -> (goal variable)
+
+    ruleTo :: (Rule goal) variable -> RulePattern variable
+
+    ruleFrom :: RulePattern variable -> (Rule goal) variable
 
 transitionRule
-    :: (MonadSimplify m, Goal goal)
-    => Prim (Rule goal)
-    -> ProofState goal
-    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+    :: (MonadSimplify m, Goal goal variable)
+    => Prim ((Rule goal) variable)
+    -> ProofState (goal variable)
+    -> Strategy.TransitionT ((Rule goal) variable) m (ProofState (goal variable))
 transitionRule = transitionRuleWorker
   where
     transitionRuleWorker CheckProven Proven = empty
@@ -286,15 +299,10 @@ removalPredicate destination config =
             (Pattern.toTermLike destination)
             (Pattern.toTermLike config)
 
-instance
-    ( SortedVariable variable
-    , Ord variable
-    , Unparse variable
-    , Show variable
-    , FreshVariable variable
-    ) => Goal (OnePathRule variable) where
+instance Goal OnePathRule Variable where
 
-    type Rule (OnePathRule variable) = RewriteRule variable
+    newtype (Rule OnePathRule) Variable =
+        Rule { unRule :: RewriteRule Variable }
 
     isTrusted =
         Trusted.isTrusted
@@ -311,7 +319,7 @@ instance
                 Conditional.andPredicate
                     configuration
                     removal
-        pure $ makeOnePathRule result destination
+        pure $ makeGoal result destination
 
     simplify goal = do
         let destination = getDestination goal
@@ -323,7 +331,7 @@ instance
                 OrPattern.toPattern
                 . MultiOr.filterOr
                 $ orResult
-        pure $ makeOnePathRule simplifiedResult destination
+        pure $ makeGoal simplifiedResult destination
 
     isTriviallyValid goal =
         isBottom . left . coerce $ goal
@@ -331,12 +339,13 @@ instance
     derivePar rules goal = do
         let destination = getDestination goal
             configuration = getConfiguration goal
+            rewrites = fmap unRule rules
         eitherResults <-
             Monad.Trans.lift
             . Monad.Unify.runUnifierT
             $ Step.applyRewriteRulesParallel
                 (Step.UnificationProcedure Unification.unificationProcedure)
-                rules
+                rewrites
                 configuration
         case eitherResults of
             Left err ->
@@ -351,7 +360,8 @@ instance
             Right results -> do
                 let mapRules =
                         Result.mapRules
-                        $ RewriteRule
+                        $ Rule
+                        . RewriteRule
                         . Step.unwrapRule
                         . Step.withoutUnification
                     traverseConfigs =
@@ -360,8 +370,8 @@ instance
                             (\x -> GoalRem <$> removeDestination x)
                 let onePathResults =
                         Result.mapConfigs
-                            (flip makeOnePathRule $ destination)
-                            (flip makeOnePathRule $ destination)
+                            (flip makeGoal $ destination)
+                            (flip makeGoal $ destination)
                             (Result.mergeResults results)
                 results' <-
                     traverseConfigs (mapRules onePathResults)
@@ -370,13 +380,14 @@ instance
     deriveSeq rules goal = do
         let destination = getDestination goal
             configuration = getConfiguration goal
+            rewrites = fmap unRule rules
         eitherResults <-
             Monad.Trans.lift
             . Monad.Unify.runUnifierT
             $ Step.applyRewriteRulesSequence
                 (Step.UnificationProcedure Unification.unificationProcedure)
                 configuration
-                rules
+                rewrites
         case eitherResults of
             Left err ->
                 (error . show . Pretty.vsep)
@@ -390,7 +401,8 @@ instance
             Right results -> do
                 let mapRules =
                         Result.mapRules
-                        $ RewriteRule
+                        $ Rule
+                        . RewriteRule
                         . Step.unwrapRule
                         . Step.withoutUnification
                     traverseConfigs =
@@ -399,45 +411,47 @@ instance
                             (\x -> GoalRem <$> removeDestination x)
                 let onePathResults =
                         Result.mapConfigs
-                            (flip makeOnePathRule $ destination)
-                            (flip makeOnePathRule $ destination)
+                            (flip makeGoal $ destination)
+                            (flip makeGoal $ destination)
                             (Result.mergeResults results)
                 results' <-
                     traverseConfigs (mapRules onePathResults)
                 Result.transitionResults results'
 
 getConfiguration
-    :: forall variable
-    .  Ord variable
-    => OnePathRule variable
+    :: forall goal variable
+    .  Goal goal variable
+    => goal variable
     -> Pattern variable
-getConfiguration (OnePathRule RulePattern { left, requires }) =
-    Conditional
-        { term = left
-        , predicate = requires
-        , substitution = mempty
-        }
+getConfiguration goal =
+    let RulePattern {left, requires} = to goal in
+        Conditional
+            { term = left
+            , predicate = requires
+            , substitution = mempty
+            }
 
 getDestination
-    :: forall variable
-    .  Ord variable
-    => OnePathRule variable
+    :: forall goal variable
+    .  Goal goal variable
+    => goal variable
     -> Pattern variable
-getDestination (OnePathRule RulePattern { right, ensures }) =
-    Conditional
-        { term = right
-        , predicate = ensures
-        , substitution = mempty
-        }
+getDestination goal =
+    let RulePattern {right, ensures} = to goal in
+        Conditional
+            { term = right
+            , predicate = ensures
+            , substitution = mempty
+            }
 
-makeOnePathRule
-    :: forall variable
-    .  Ord variable
+makeGoal
+    :: forall goal variable
+    .  Goal goal variable
     => Pattern variable
     -> Pattern variable
-    -> OnePathRule variable
-makeOnePathRule configuration destination =
-    OnePathRule RulePattern
+    -> goal variable
+makeGoal configuration destination =
+    from RulePattern
         { left = term configuration
         , right = term destination
         , requires = predicate configuration
