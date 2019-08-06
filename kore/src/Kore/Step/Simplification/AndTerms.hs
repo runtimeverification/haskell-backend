@@ -387,7 +387,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
     , (BothT,   \_ _ _ _ _ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
     , (BothT,   liftB1 Builtin.Map.unifyEquals, "Builtin.Map.unifyEquals")
     , (BothT,   liftB1 Builtin.Set.unifyEquals, "Builtin.Set.unifyEquals")
-    , (BothT,   liftB  Builtin.List.unifyEquals, "Builtin.List.unifyEquals")
+    , (BothT,   \t _ _ _ _ _ s -> Builtin.List.unifyEquals t s, "Builtin.List.unifyEquals")
     , (BothT,   \_ _ _ _ _ _ _ -> domainValueAndConstructorErrors, "domainValueAndConstructorErrors")
     , (BothT,   \_ _ _ _ _ _ _ -> domainValueAndEqualsAssumesDifferent, "domainValueAndEqualsAssumesDifferent")
     , (BothT,   \_ _ _ _ _ _ _ -> stringLiteralAndEqualsAssumesDifferent, "stringLiteralAndEqualsAssumesDifferent")
@@ -436,19 +436,6 @@ andEqualsFunctions = fmap mapEqualsFunctions
             )
             $ termTransformation sType tools ps tls bs pm ts t1 t2
 
-    liftB
-        f
-        simplificationType
-        tools
-        substitutionSimplifier
-        _simplifier
-        _axiomIdToSimplifier
-        _substitutionMerger
-      =
-        f
-            simplificationType
-            tools
-            substitutionSimplifier
     liftB1
         f
         simplificationType
