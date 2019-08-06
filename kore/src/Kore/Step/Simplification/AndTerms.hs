@@ -385,8 +385,8 @@ andEqualsFunctions = fmap mapEqualsFunctions
     , (BothT,   \_ _ _ _ _ _ s -> sortInjectionAndEqualsAssumesDifferentHeads s, "sortInjectionAndEqualsAssumesDifferentHeads")
     , (BothT,   \_ _ _ _ _ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
     , (BothT,   \_ _ _ _ _ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
-    , (BothT,   liftB1 Builtin.Map.unifyEquals, "Builtin.Map.unifyEquals")
-    , (BothT,   liftB1 Builtin.Set.unifyEquals, "Builtin.Set.unifyEquals")
+    , (BothT,   \_ _ _ _ _ _ s -> Builtin.Map.unifyEquals s, "Builtin.Map.unifyEquals")
+    , (BothT,   \_ _ _ _ _ _ s -> Builtin.Set.unifyEquals s, "Builtin.Set.unifyEquals")
     , (BothT,   \t _ _ _ _ _ s -> Builtin.List.unifyEquals t s, "Builtin.List.unifyEquals")
     , (BothT,   \_ _ _ _ _ _ _ -> domainValueAndConstructorErrors, "domainValueAndConstructorErrors")
     , (BothT,   \_ _ _ _ _ _ _ -> domainValueAndEqualsAssumesDifferent, "domainValueAndEqualsAssumesDifferent")
@@ -435,22 +435,6 @@ andEqualsFunctions = fmap mapEqualsFunctions
                     return mresult
             )
             $ termTransformation sType tools ps tls bs pm ts t1 t2
-
-    liftB1
-        f
-        simplificationType
-        tools
-        substitutionSimplifier
-        simplifier
-        axiomIdToSimplifier
-        _substitutionMerger
-      =
-        f
-            simplificationType
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
 
 {- | Construct the conjunction or unification of two terms.
 
