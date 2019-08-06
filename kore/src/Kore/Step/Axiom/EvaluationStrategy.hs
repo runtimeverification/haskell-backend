@@ -86,7 +86,7 @@ definitionEvaluation
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation rules =
     BuiltinAndAxiomSimplifier
-        (evaluateWithDefinitionAxioms rules)
+        (\_ _ _ -> evaluateWithDefinitionAxioms rules)
 
 {- | Creates an evaluator for a function from all the rules that define it.
 
@@ -101,38 +101,11 @@ totalDefinitionEvaluation
     :: [EqualityRule Variable]
     -> BuiltinAndAxiomSimplifier
 totalDefinitionEvaluation rules =
-    BuiltinAndAxiomSimplifier totalDefinitionEvaluationWorker
-  where
-    totalDefinitionEvaluationWorker
-        ::  forall variable simplifier
-        .   ( FreshVariable variable
-            , SortedVariable variable
-            , Show variable
-            , Unparse variable
-            , MonadSimplify simplifier
-            )
-        => PredicateSimplifier
-        -> TermLikeSimplifier
-        -> BuiltinAndAxiomSimplifierMap
-        -> TermLike variable
-        -> simplifier (AttemptedAxiom variable)
-    totalDefinitionEvaluationWorker
-        predicateSimplifier
-        termSimplifier
-        axiomSimplifiers
-        term
-      = do
-        result <- evaluate term
+    BuiltinAndAxiomSimplifier $ \_ _ _ term -> do
+        result <- evaluateWithDefinitionAxioms rules term
         if AttemptedAxiom.hasRemainders result
             then return AttemptedAxiom.NotApplicable
             else return result
-      where
-        evaluate =
-            evaluateWithDefinitionAxioms
-                rules
-                predicateSimplifier
-                termSimplifier
-                axiomSimplifiers
 
 {-| Creates an evaluator that choses the result of the first evaluator that
 returns Applicable.
@@ -301,20 +274,11 @@ evaluateWithDefinitionAxioms
         , MonadSimplify simplifier
         )
     => [EqualityRule Variable]
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> simplifier (AttemptedAxiom variable)
-evaluateWithDefinitionAxioms
-    definitionRules
-    _predicateSimplifier
-    _termSimplifier
-    _axiomSimplifiers
-    patt
+evaluateWithDefinitionAxioms definitionRules termLike
   | any ruleIsConcrete definitionRules
-  , not (TermLike.isConcrete patt)
+  , not (TermLike.isConcrete termLike)
   = return AttemptedAxiom.NotApplicable
   | otherwise
   = AttemptedAxiom.maybeNotApplicable $ do
@@ -322,13 +286,13 @@ evaluateWithDefinitionAxioms
         -- TODO (thomas.tuegel): Figure out how to get the initial conditions
         -- and apply them here, to remove remainder branches sooner.
         expanded :: Pattern variable
-        expanded = Pattern.fromTermLike patt
+        expanded = Pattern.fromTermLike termLike
 
     results <- applyRules expanded (map unwrapEqualityRule definitionRules)
     Monad.guard (any Result.hasResults results)
     mapM_ rejectNarrowing results
 
-    ceilChild <- ceilChildOfApplicationOrTop patt
+    ceilChild <- ceilChildOfApplicationOrTop termLike
     let
         result =
             Result.mergeResults results
