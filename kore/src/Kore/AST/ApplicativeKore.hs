@@ -5,16 +5,11 @@ License     : NCSA
 module Kore.AST.ApplicativeKore
     ( completeDefinition ) where
 
-import           Data.Maybe
-                 ( mapMaybe )
-import qualified Data.Set as Set
-
 import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Syntax.Definition
                  ( Definition (..), Module (..), Sentence (..),
                  SentenceAxiom (..) )
-import           Kore.Variables.UnifiedVariable
 import qualified Kore.Verified as Verified
 
 completeDefinition
@@ -47,8 +42,6 @@ completeSentence s = [s]
 quantifyFreeVariables :: TermLike Variable -> TermLike Variable
 quantifyFreeVariables termLike =
     foldr mkForall termLike
-    . mapMaybe extractElementVariable
-    . Set.toList
-    . getFreeVariables
+    . getFreeElementVariables
     . TermLike.freeVariables
     $ termLike
