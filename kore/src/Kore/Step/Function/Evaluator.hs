@@ -157,7 +157,11 @@ maybeEvaluatePattern
     -> OrPattern variable
     -- ^ The default value
     -> MaybeT simplifier (OrPattern variable)
-maybeEvaluatePattern childrenPredicate@(Conditional { substitution }) termLike defaultValue =
+maybeEvaluatePattern
+    childrenPredicate@(Conditional { substitution = subst })
+    termLike
+    defaultValue
+  =
     Simplifier.lookupSimplifierAxiom termLike
     >>= \(BuiltinAndAxiomSimplifier evaluator) -> tracing $ do
         axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
@@ -180,7 +184,7 @@ maybeEvaluatePattern childrenPredicate@(Conditional { substitution }) termLike d
                         [] -> do
                             simplified <- mapM simplifyIfNeeded orResults
                             mergeWithConditionAndSubstitution
-                                (Conditional.fromSubstitution substitution)
+                                (Conditional.fromSubstitution subst)
                                 (AttemptedAxiom.Applied AttemptedAxiomResults
                                     { results = MultiOr.flatten simplified
                                     , remainders = orRemainders
