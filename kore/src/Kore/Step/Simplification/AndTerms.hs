@@ -896,8 +896,6 @@ Sort injections clash with constructors, so @constructorSortInjectionAndEquals@
 returns @\\bottom@.
 
  -}
--- TODO (virgil): This implementation is provisional, we're not sure yet if sort
--- injection should always clash with constructors. We should clarify this.
 constructorSortInjectionAndEquals
     ::  ( Eq variable
         , SortedVariable variable
