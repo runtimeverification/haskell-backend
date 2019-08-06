@@ -128,14 +128,14 @@ test_sizeUnit =
     testPropertyWithSolver
         "MAP.size is size"
         (do
-            map <- forAll $ genConcreteMap genIntegerPattern
+            someMap <- forAll $ genConcreteMap genIntegerPattern
             let
-                size = Map.size map
+                size = Map.size someMap
                 patExpected = Test.Int.asInternal $ toInteger size
                 patActual =
                     mkApplySymbol
                         sizeMapSymbol
-                        [ asTermLike map ]
+                        [ asTermLike someMap ]
                 predicate = mkEquals_ patExpected patActual
             expect <- evaluateT patExpected
             (===) expect      =<< evaluateT patActual
