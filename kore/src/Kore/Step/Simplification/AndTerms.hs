@@ -191,21 +191,7 @@ maybeTermEquals
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-maybeTermEquals predicateMerger termSimplifier term1 term2 = do
-    tools <- Simplifier.askMetadataTools
-    predicateSimplifier <- Simplifier.askSimplifierPredicate
-    simplifier <- Simplifier.askSimplifierTermLike
-    axiomSimplifiers <- Simplifier.askSimplifierAxioms
-    maybeTransformTerm
-        equalsFunctions
-        tools
-        predicateSimplifier
-        simplifier
-        axiomSimplifiers
-        predicateMerger
-        termSimplifier
-        term1
-        term2
+maybeTermEquals = maybeTransformTerm equalsFunctions
 
 {- | Unify two terms without discarding the terms.
 
@@ -343,7 +329,7 @@ maybeTermAnd
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-maybeTermAnd = maybeTransformTerm andFunctions
+maybeTermAnd _ _ _ _ = maybeTransformTerm andFunctions
 
 andFunctions
     ::  forall variable unifier
@@ -631,10 +617,6 @@ maybeTransformTerm
         )
     => GHC.HasCallStack
     => [TermTransformationOld variable unifier]
-    -> SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger variable unifier
     -> TermSimplifier variable unifier
     -- ^ Used to simplify subterm pairs.
@@ -643,23 +625,23 @@ maybeTransformTerm
     -> MaybeT unifier (Pattern variable)
 maybeTransformTerm
     topTransformers
-    mergeException
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
+    predicateMerger
     childTransformers
     first
     second
-  =
+  = do
+    tools <- Simplifier.askMetadataTools
+    substitutionSimplifier <- Simplifier.askSimplifierPredicate
+    simplifier <- Simplifier.askSimplifierTermLike
+    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
     Foldable.asum
         (map
             (\f -> f
-                mergeException
                 tools
                 substitutionSimplifier
                 simplifier
                 axiomIdToSimplifier
+                predicateMerger
                 childTransformers
                 first
                 second
