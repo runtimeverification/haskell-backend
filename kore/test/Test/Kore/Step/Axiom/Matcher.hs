@@ -3,7 +3,6 @@ module Test.Kore.Step.Axiom.Matcher
     , test_matcherVariableFunction
     , test_matcherNonVarToPattern
     , test_matcherMergeSubresults
-    , test_unificationWithAppMatchOnTop
     , test_matching_Bool
     , test_matching_Int
     , test_matching_String
@@ -17,17 +16,11 @@ module Test.Kore.Step.Axiom.Matcher
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Data.Default
-                 ( Default (..) )
 import           Data.Function
                  ( on )
-import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified GHC.Stack as GHC
 
-import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Simplification
-                 ( Simplification (Simplification) )
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.String as String
@@ -41,19 +34,9 @@ import           Kore.Internal.Predicate
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
-                 makeTruePredicate )
-import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+                 ( makeCeilPredicate, makeTruePredicate )
 import           Kore.Step.Axiom.Matcher
-                 ( matchIncremental, unificationWithAppMatchOnTop )
-import           Kore.Step.Axiom.Registry
-                 ( axiomPatternsToEvaluators )
-import           Kore.Step.Rule
-                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
-import qualified Kore.Step.Rule as RulePattern
-                 ( RulePattern (..) )
-import           Kore.Step.Simplification.Data
-                 ( BuiltinAndAxiomSimplifierMap )
+                 ( matchIncremental )
 import           Kore.Step.Simplification.Data
 import           Kore.Unification.Error
                  ( UnificationOrSubstitutionError )
@@ -408,264 +391,6 @@ test_matcherMergeSubresults =
                 (mkAnd (mkVar Mock.x) (mkVar Mock.x))
                 (mkAnd (mkVar Mock.y) (Mock.f (mkVar Mock.y)))
         assertEqualWithExplanation "" expect actual
-    ]
-
-test_unificationWithAppMatchOnTop :: [TestTree]
-test_unificationWithAppMatchOnTop =
-    [ testCase "Simple match same top" $ do
-        let
-            expect = Just $ OrPredicate.fromPredicate Predicate.topPredicate
-        actual <- unificationWithMatch Mock.cg Mock.cg
-        assertEqualWithExplanation "" expect actual
-    , testCase "variable vs function" $ do
-        let
-            expect = Just
-                (MultiOr.make
-                    [ Conditional
-                        { term = ()
-                        , predicate = makeCeilPredicate Mock.cf
-                        , substitution = Substitution.unsafeWrap
-                            [(Mock.x, Mock.cf)]
-                        }
-                    ]
-                )
-        actual <-
-            unificationWithMatch
-            (Mock.f (mkVar Mock.x))
-            (Mock.f Mock.cf)
-        assertEqualWithExplanation "" expect actual
-    , testCase "function vs variable" $ do
-        let
-            expect = Just
-                (MultiOr.make
-                    [ Conditional
-                        { term = ()
-                        , predicate = makeCeilPredicate Mock.cf
-                        , substitution = Substitution.unsafeWrap
-                            [(Mock.x, Mock.cf)]
-                        }
-                    ]
-                )
-        actual <-
-            unificationWithMatch
-            (Mock.f Mock.cf)
-            (Mock.f (mkVar Mock.x))
-        assertEqualWithExplanation "" expect actual
-    , testCase "removes constructor" $ do
-        let
-            expect = Just
-                (MultiOr.make
-                    [ Conditional
-                        { term = ()
-                        , predicate = makeCeilPredicate Mock.cf
-                        , substitution = Substitution.unsafeWrap
-                            [(Mock.x, Mock.cf)]
-                        }
-                    ]
-                )
-        actual <-
-            unificationWithMatch
-            (Mock.f (Mock.functionalConstr10 (mkVar Mock.x)))
-            (Mock.f (Mock.functionalConstr10 Mock.cf))
-        assertEqualWithExplanation "" expect actual
-    , testCase "produces predicate" $ do
-        let
-            expect = Just
-                (MultiOr.make
-                    [ Conditional
-                        { term = ()
-                        , predicate = makeEqualsPredicate
-                            Mock.a
-                            (Mock.g (mkVar Mock.x))
-                        , substitution = mempty
-                        }
-                    ]
-                )
-        actual <-
-            unificationWithMatch
-            (Mock.f Mock.a)
-            (Mock.f (Mock.g (mkVar Mock.x)))
-        assertEqualWithExplanation "" expect actual
-    , testCase "merges results" $ do
-        let
-            expect = Just
-                (MultiOr.make
-                    [ Conditional
-                        { term = ()
-                        , predicate = makeAndPredicate
-                            (makeEqualsPredicate
-                                Mock.a
-                                (Mock.g (mkVar Mock.x))
-                            )
-                            (makeCeilPredicate Mock.cf)
-                        , substitution = Substitution.unsafeWrap
-                            [(Mock.y, Mock.cf)]
-                        }
-                    ]
-                )
-        actual <-
-            unificationWithMatch
-            (Mock.functional20 Mock.a Mock.cf)
-            (Mock.functional20 (Mock.g (mkVar Mock.x)) (mkVar Mock.y))
-        assertEqualWithExplanation "" expect actual
-    , testCase "not matching" $ do
-        let
-            expect = Just
-                (MultiOr.make [])
-        actual <-
-            unificationWithMatch
-            (Mock.f Mock.a)
-            (Mock.f Mock.b)
-        assertEqualWithExplanation "" expect actual
-    , testCase "handles ambiguity" $ do
-        let
-            expected = Just $ OrPredicate.fromPredicates
-                [ Conditional
-                    { term = ()
-                    , predicate = makeEqualsPredicate (Mock.f Mock.a) Mock.a
-                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.cf)]
-                    }
-                , Conditional
-                    { term = ()
-                    , predicate = makeEqualsPredicate (Mock.f Mock.b) Mock.b
-                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.cf)]
-                    }
-                ]
-            sortVar = SortVariableSort (SortVariable (testId "S"))
-            -- Ceil branches, which makes matching ambiguous.
-            simplifiers = axiomPatternsToEvaluators $ Map.fromList
-                [   (   AxiomIdentifier.Ceil
-                            (AxiomIdentifier.Application Mock.cfId)
-                    ,   [ EqualityRule RulePattern
-                            { left = mkCeil sortVar Mock.cf
-                            , right =
-                                mkOr
-                                    (mkAnd
-                                        (mkEquals_
-                                            (Mock.f (mkVar Mock.y))
-                                            Mock.a
-                                        )
-                                        (mkEquals_ (mkVar Mock.y) Mock.a)
-                                    )
-                                    (mkAnd
-                                        (mkEquals_
-                                            (Mock.f (mkVar Mock.y))
-                                            Mock.b
-                                        )
-                                        (mkEquals_ (mkVar Mock.y) Mock.b)
-                                    )
-                            , requires = makeTruePredicate
-                            , ensures = makeTruePredicate
-                            , attributes = def
-                                {Attribute.simplification = Simplification True}
-                            }
-                        ]
-                    )
-                ]
-        actual <- unificationWithMatchSimplifiers
-            simplifiers
-            (Mock.f (mkVar Mock.x))
-            (Mock.f Mock.cf)
-        assertEqualWithExplanation "" expected actual
-    , testCase "handles multiple ambiguity" $ do
-        let
-            expected = Just $ OrPredicate.fromPredicates
-                [ Conditional
-                    { term = ()
-                    , predicate = makeAndPredicate
-                        (makeEqualsPredicate (Mock.f Mock.a) Mock.a)
-                        (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
-                    , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
-                    }
-                , Conditional
-                    { term = ()
-                    , predicate = makeAndPredicate
-                        (makeEqualsPredicate (Mock.f Mock.a) Mock.a)
-                        (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
-                    , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
-                    }
-                , Conditional
-                    { term = ()
-                    , predicate = makeAndPredicate
-                        (makeEqualsPredicate (Mock.f Mock.b) Mock.b)
-                        (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
-                    , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
-                    }
-                , Conditional
-                    { term = ()
-                    , predicate = makeAndPredicate
-                        (makeEqualsPredicate (Mock.f Mock.b) Mock.b)
-                        (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
-                    , substitution = Substitution.unsafeWrap
-                        [ (Mock.x, Mock.cf), (Mock.var_x_1, Mock.cg) ]
-                    }
-                ]
-            sortVar = SortVariableSort (SortVariable (testId "S"))
-            -- Ceil branches, which makes matching ambiguous.
-            simplifiers = axiomPatternsToEvaluators $ Map.fromList
-                [   (   AxiomIdentifier.Ceil
-                            (AxiomIdentifier.Application Mock.cfId)
-                    ,   [ EqualityRule RulePattern
-                            { left = mkCeil sortVar Mock.cf
-                            , right =
-                                mkOr
-                                    (mkAnd
-                                        (mkEquals_
-                                            (Mock.f (mkVar Mock.y))
-                                            Mock.a
-                                        )
-                                        (mkEquals_ (mkVar Mock.y) Mock.a)
-                                    )
-                                    (mkAnd
-                                        (mkEquals_
-                                            (Mock.f (mkVar Mock.y))
-                                            Mock.b
-                                        )
-                                        (mkEquals_ (mkVar Mock.y) Mock.b)
-                                    )
-                            , requires = makeTruePredicate
-                            , ensures = makeTruePredicate
-                            , attributes = def
-                                {Attribute.simplification = Simplification True}
-                            }
-                        ]
-                    )
-                ,   (   AxiomIdentifier.Ceil
-                            (AxiomIdentifier.Application Mock.cgId)
-                    ,   [ EqualityRule RulePattern
-                            { left = mkCeil sortVar Mock.cg
-                            , right =
-                                mkOr
-                                    (mkAnd
-                                        (mkEquals_
-                                            (Mock.g (mkVar Mock.z))
-                                            Mock.a
-                                        )
-                                        (mkEquals_ (mkVar Mock.z) Mock.a)
-                                    )
-                                    (mkAnd
-                                        (mkEquals_
-                                            (Mock.g (mkVar Mock.z))
-                                            Mock.b
-                                        )
-                                        (mkEquals_ (mkVar Mock.z) Mock.b)
-                                    )
-                            , requires = makeTruePredicate
-                            , ensures = makeTruePredicate
-                            , attributes = def
-                                {Attribute.simplification = Simplification True}
-                            }
-                        ]
-                    )
-                ]
-        actual <- unificationWithMatchSimplifiers
-            simplifiers
-            (Mock.functionalConstr20 (mkVar Mock.x) (mkVar Mock.var_x_1))
-            (Mock.functionalConstr20 Mock.cf Mock.cg)
-        assertEqualWithExplanation "" expected actual
     ]
 
 test_matching_Bool :: [TestTree]
@@ -1170,25 +895,6 @@ matchSimplification
     -> TermLike Variable
     -> IO (Maybe (OrPredicate Variable))
 matchSimplification = match
-
-unificationWithMatchSimplifiers
-    :: BuiltinAndAxiomSimplifierMap
-    -> TermLike Variable
-    -> TermLike Variable
-    -> IO (Maybe (OrPredicate Variable))
-unificationWithMatchSimplifiers axiomIdToSimplifier first second = do
-    result <-
-        SMT.runSMT SMT.defaultConfig emptyLogger
-        $ evalSimplifier Mock.env { simplifierAxioms = axiomIdToSimplifier }
-        $ Monad.Unify.runUnifierT
-        $ unificationWithAppMatchOnTop first second
-    return $ either (const Nothing) Just (MultiOr.make <$> result)
-
-unificationWithMatch
-    :: TermLike Variable
-    -> TermLike Variable
-    -> IO (Maybe (OrPredicate Variable))
-unificationWithMatch = unificationWithMatchSimplifiers Map.empty
 
 match
     :: TermLike Variable
