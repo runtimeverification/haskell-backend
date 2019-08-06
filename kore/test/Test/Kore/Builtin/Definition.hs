@@ -360,7 +360,7 @@ removeAllMapSymbol =
     & hook "MAP.removeAll"
 
 sizeMapSymbol :: Internal.Symbol
-sizeMapSymbol = 
+sizeMapSymbol =
     builtinSymbol "sizeMap" intSort [mapSort] & hook "MAP.size"
 
 unitMap :: TermLike Variable

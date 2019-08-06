@@ -44,10 +44,10 @@ import qualified Kore.Builtin.AssociativeCommutative as Ac
 import           Kore.Builtin.Attributes
                  ( isConstructorModulo_ )
 import qualified Kore.Builtin.Bool as Bool
-import qualified Kore.Builtin.Int as Int
 import           Kore.Builtin.Builtin
                  ( acceptAnySort )
 import qualified Kore.Builtin.Builtin as Builtin
+import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.MapSymbols as Map
 import qualified Kore.Builtin.Set as Builtin.Set
 import qualified Kore.Domain.Builtin as Domain
@@ -399,9 +399,9 @@ evalSize =
     Builtin.functionEvaluator evalSize0
   where
     evalSize0 :: Builtin.FunctionImplementation
-    evalSize0 _ resultSort arguments = 
+    evalSize0 _ resultSort arguments =
         Builtin.getAttemptedAxiom $ do
-            let _map = 
+            let _map =
                     case arguments of
                         [_map] -> _map
                         _      -> Builtin.wrongArity Map.sizeKey

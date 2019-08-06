@@ -132,7 +132,7 @@ test_sizeUnit =
             let
                 size = Map.size map
                 patExpected = Test.Int.asInternal $ toInteger size
-                patActual = 
+                patActual =
                     mkApplySymbol
                         sizeMapSymbol
                         [ asTermLike map ]
