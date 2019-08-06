@@ -39,7 +39,7 @@ import qualified Data.Sequence as Seq
 import qualified GHC.Generics as GHC
 
 import           Kore.Attribute.Pattern.FreeVariables
-import qualified Kore.Builtin.AssociativeCommutative as Ac
+import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.List as List
 import qualified Kore.Domain.Builtin as Builtin
 import           Kore.Internal.MultiAnd
@@ -364,24 +364,7 @@ substitute variable termLike = do
     isIndependent = not . any (hasFreeVariable variable)
     subst = Map.singleton variable termLike
     substitute2 = fmap substitute1
-    substitute1 = renormalize . TermLike.substitute subst
-
-{- | Renormalize builtin types after substitution.
- -}
-renormalize
-    :: MatchingVariable variable
-    => TermLike variable -> TermLike variable
-renormalize termLike =
-    case termLike of
-        BuiltinMap_ internalMap ->
-            Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalMap
-            & maybe bottom' mkBuiltinMap
-        BuiltinSet_ internalSet ->
-            Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalSet
-            & maybe bottom' mkBuiltinSet
-        _ -> termLike
-  where
-    bottom' = mkBottom (termLikeSort termLike)
+    substitute1 = Builtin.renormalize . TermLike.substitute subst
 
 occursCheck
     :: (MatchingVariable variable, MonadUnify unifier)
@@ -462,7 +445,6 @@ rightAlignLists internal1 internal2
     list12 = Seq.zipWith Pair list1 tail2
     (head2, tail2) = Seq.splitAt (length list2 - length list1) list2
 
--- TODO (thomas.tuegel): Refactor
 matchNormalizedAc
     :: (MatchingVariable variable, MonadUnify unifier)
     => (Pair (Builtin.Value normalized (TermLike variable)) -> MatcherT variable unifier ())
