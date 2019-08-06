@@ -382,7 +382,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
     , (BothT,   \t _ _ _ _ _ _ -> variableFunctionAndEquals t, "variableFunctionAndEquals")
     , (BothT,   \t _ _ _ _ _ _ -> functionVariableAndEquals t, "functionVariableAndEquals")
     , (BothT,   \_ _ _ _ _ _ s -> equalInjectiveHeadsAndEquals s, "equalInjectiveHeadsAndEquals")
-    , (BothT,   addS   sortInjectionAndEqualsAssumesDifferentHeads, "sortInjectionAndEqualsAssumesDifferentHeads")
+    , (BothT,   \_ _ _ _ _ _ s -> sortInjectionAndEqualsAssumesDifferentHeads s, "sortInjectionAndEqualsAssumesDifferentHeads")
     , (BothT,   liftE1 constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
     , (BothT,   liftE1 constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
     , (BothT,   liftB1 Builtin.Map.unifyEquals, "Builtin.Map.unifyEquals")
@@ -492,15 +492,6 @@ andEqualsFunctions = fmap mapEqualsFunctions
         second
       = Pattern.fromTermLike <$> f tools first second
     liftET = liftE . addToolsArg
-    addS
-        f
-        _simplificationType
-        tools
-        _substitutionSimplifier
-        _simplifier
-        _axiomIdToSimplifier
-        _substitutionMerger
-      = f tools
 
 {- | Construct the conjunction or unification of two terms.
 
@@ -876,48 +867,45 @@ sortInjectionAndEqualsAssumesDifferentHeads
         , MonadUnify unifier
         )
     => GHC.HasCallStack
-    => SmtMetadataTools Attribute.Symbol
-    -> TermSimplifier variable unifier
+    => TermSimplifier variable unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-sortInjectionAndEqualsAssumesDifferentHeads
-    tools
-    termMerger
-    first
-    second
-  = case simplifySortInjections tools first second of
-    Nothing ->
-        Monad.Trans.lift
-            $ throwUnificationError
-            $ unsupportedPatterns
-                "Unimplemented sort injection unification"
+sortInjectionAndEqualsAssumesDifferentHeads termMerger first second = do
+    tools <- Simplifier.askMetadataTools
+    case simplifySortInjections tools first second of
+        Nothing ->
+            Monad.Trans.lift
+                $ throwUnificationError
+                $ unsupportedPatterns
+                    "Unimplemented sort injection unification"
+                    first
+                    second
+        Just NotInjection -> empty
+        Just NotMatching -> Monad.Trans.lift $ do
+            explainBottom
+                "Unification of sort injections failed due to mismatch. \
+                \This can happen either because one of them is a constructor \
+                \or because their sort intersection is empty."
                 first
                 second
-    Just NotInjection -> empty
-    Just NotMatching -> Monad.Trans.lift $ do
-        explainBottom
-           "Unification of sort injections failed due to mismatch. \
-            \This can happen either because one of them is a constructor \
-            \or because their sort intersection is empty."
-           first
-           second
-        empty
-    Just
-        (Matching SortInjectionMatch
-            { injectionHead, firstChild, secondChild }
-        ) -> Monad.Trans.lift $ do
+            empty
+        Just (Matching sortInjectionMatch) -> Monad.Trans.lift $ do
             merged <- termMerger firstChild secondChild
             if Pattern.isBottom merged
                 then do
                     explainBottom
                         "Unification of sort injections failed when \
-                        \merging application children: the result is bottom."
+                        \merging application children: \
+                        \the result is bottom."
                         first
                         second
                     empty
-                else
+                else do
                     return $ applyInjection injectionHead <$> merged
+          where
+            SortInjectionMatch { firstChild, secondChild } = sortInjectionMatch
+            SortInjectionMatch { injectionHead } = sortInjectionMatch
   where
     applyInjection injectionHead term = mkApplySymbol injectionHead [term]
 
