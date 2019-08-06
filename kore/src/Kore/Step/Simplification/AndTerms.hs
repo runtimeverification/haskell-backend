@@ -379,8 +379,8 @@ andEqualsFunctions = fmap mapEqualsFunctions
     , (BothT,   liftET equalAndEquals, "equalAndEquals")
     , (EqualsT, \_ _ _ _ _ _ _ -> bottomTermEquals, "bottomTermEquals")
     , (EqualsT, \_ _ _ _ _ _ _ -> termBottomEquals, "termBottomEquals")
-    , (BothT,   liftTS variableFunctionAndEquals, "variableFunctionAndEquals")
-    , (BothT,   liftTS functionVariableAndEquals, "functionVariableAndEquals")
+    , (BothT,   \t _ _ _ _ _ _ -> variableFunctionAndEquals t, "variableFunctionAndEquals")
+    , (BothT,   \t _ _ _ _ _ _ -> functionVariableAndEquals t, "functionVariableAndEquals")
     , (BothT,   addT   equalInjectiveHeadsAndEquals, "equalInjectiveHeadsAndEquals")
     , (BothT,   addS   sortInjectionAndEqualsAssumesDifferentHeads, "sortInjectionAndEqualsAssumesDifferentHeads")
     , (BothT,   liftE1 constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
@@ -519,24 +519,6 @@ andEqualsFunctions = fmap mapEqualsFunctions
         _axiomIdToSimplifier
       =
         f tools
-    liftTS
-        f
-        simplificationType
-        tools
-        substitutionSimplifier
-        simplifier
-        axiomIdToSimplifier
-        substitutionMerger
-        _termSimplifier
-      =
-        f
-            simplificationType
-            tools
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            substitutionMerger
-
 
 {- | Construct the conjunction or unification of two terms.
 
@@ -788,23 +770,11 @@ variableFunctionAndEquals
         )
     => GHC.HasCallStack
     => SimplificationType
-    -> SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> PredicateMerger variable unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 variableFunctionAndEquals
     SimplificationType.And
-    _tools
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSimplifier
-    _substitutionMerger
     first@(Var_ v1)
     second@(Var_ v2)
   =
@@ -817,11 +787,6 @@ variableFunctionAndEquals
         }
 variableFunctionAndEquals
     simplificationType
-    _tools
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSimplifier
-    _
     first@(Var_ v)
     second
   | isFunctionPattern second = Monad.Trans.lift $ do -- MonadUnify
@@ -845,7 +810,7 @@ variableFunctionAndEquals
                     resultPredicates -> Unify.scatter resultPredicates
     let result = predicate <> Predicate.fromSingleSubstitution (v, second)
     return (Pattern.withCondition second result)
-variableFunctionAndEquals _ _ _ _ _ _ _ _ = empty
+variableFunctionAndEquals _ _ _ = empty
 
 {- | Unify a function pattern with a variable.
 
@@ -861,35 +826,11 @@ functionVariableAndEquals
         )
     => GHC.HasCallStack
     => SimplificationType
-    -> SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> PredicateMerger variable unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-functionVariableAndEquals
-    simplificationType
-    tools
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    substitutionMerger
-    first
-    second
-  =
-    variableFunctionAndEquals
-        simplificationType
-        tools
-        substitutionSimplifier
-        simplifier
-        axiomIdToSimplifier
-        substitutionMerger
-        second
-        first
+functionVariableAndEquals simplificationType first second =
+    variableFunctionAndEquals simplificationType second first
 
 {- | Unify two application patterns with equal, injective heads.
 
