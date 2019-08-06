@@ -377,8 +377,8 @@ andEqualsFunctions
 andEqualsFunctions = fmap mapEqualsFunctions
     [ (AndT,    liftE0 boolAnd, "boolAnd")
     , (BothT,   liftET equalAndEquals, "equalAndEquals")
-    , (EqualsT, lift0  bottomTermEquals, "bottomTermEquals")
-    , (EqualsT, lift0  termBottomEquals, "termBottomEquals")
+    , (EqualsT, \_ _ _ _ _ _ _ -> bottomTermEquals, "bottomTermEquals")
+    , (EqualsT, \_ _ _ _ _ _ _ -> termBottomEquals, "termBottomEquals")
     , (BothT,   liftTS variableFunctionAndEquals, "variableFunctionAndEquals")
     , (BothT,   liftTS functionVariableAndEquals, "functionVariableAndEquals")
     , (BothT,   addT   equalInjectiveHeadsAndEquals, "equalInjectiveHeadsAndEquals")
@@ -519,18 +519,6 @@ andEqualsFunctions = fmap mapEqualsFunctions
         _axiomIdToSimplifier
       =
         f tools
-    lift0
-        f
-        _simplificationType
-        tools
-        substitutionSimplifier
-        simplifier
-        axiomIdToSimplifier
-        _substitutionMerger
-        _termSimplifier
-        p1
-        p2
-      = f tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2
     liftTS
         f
         simplificationType
@@ -738,20 +726,10 @@ bottomTermEquals
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 bottomTermEquals
-    _tools
-    _substitutionSimplifier
-    _simplifier
-    _axiomIdToSimplifier
     first@(Bottom_ _)
     second
   = Monad.Trans.lift $ do -- MonadUnify
@@ -775,7 +753,7 @@ bottomTermEquals
                     $ Predicate.toPredicate <$> secondCeil
                 , substitution = mempty
                 }
-bottomTermEquals _ _ _ _ _ _ = empty
+bottomTermEquals _ _ = empty
 
 {- | Unify two patterns where the second is @\\bottom@.
 
@@ -790,20 +768,10 @@ termBottomEquals
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
-    => SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from symbol IDs to defined functions
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-termBottomEquals
-    tools substitutionSimplifier simplifier axiomIdToSimplifier first second
-  =
-    bottomTermEquals
-        tools substitutionSimplifier simplifier axiomIdToSimplifier second first
+termBottomEquals first second = bottomTermEquals second first
 
 {- | Unify a variable with a function pattern.
 
