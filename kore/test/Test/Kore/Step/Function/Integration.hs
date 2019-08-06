@@ -28,8 +28,7 @@ import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
-                 makeTruePredicate )
+                 ( makeCeilPredicate, makeEqualsPredicate, makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Axiom.EvaluationStrategy
