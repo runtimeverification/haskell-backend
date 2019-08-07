@@ -492,6 +492,15 @@ the set operand.
         [hook{}("MAP.removeAll")]
 ~~~
 
+### MAP.size
+
+Get the size of the map
+
+~~~
+    hooked-symbol size{}(Map{}) : Int{}
+        [hook{}("MAP.size")]
+~~~
+
 ### MAP.lookup
 
 If the given key is in the map, the result is the associated value; otherwise,

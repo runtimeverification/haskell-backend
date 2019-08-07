@@ -47,6 +47,7 @@ import qualified Kore.Builtin.Bool as Bool
 import           Kore.Builtin.Builtin
                  ( acceptAnySort )
 import qualified Kore.Builtin.Builtin as Builtin
+import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.MapSymbols as Map
 import qualified Kore.Builtin.Set as Builtin.Set
 import qualified Kore.Domain.Builtin as Domain
@@ -156,6 +157,9 @@ symbolVerifiers =
       )
     , ( Map.removeAllKey
       , Builtin.verifySymbol assertSort [assertSort, Builtin.Set.assertSort]
+      )
+    , ( Map.sizeKey
+      , Builtin.verifySymbol Int.assertSort [assertSort]
       )
     ]
 
@@ -390,6 +394,23 @@ evalRemoveAll =
                         $ Map.difference _map _set
             emptyMap <|> bothConcrete
 
+evalSize :: Builtin.Function
+evalSize =
+    Builtin.functionEvaluator evalSize0
+  where
+    evalSize0 :: Builtin.FunctionImplementation
+    evalSize0 _ resultSort arguments =
+        Builtin.getAttemptedAxiom $ do
+            let _map =
+                    case arguments of
+                        [_map] -> _map
+                        _      -> Builtin.wrongArity Map.sizeKey
+            _map <- expectConcreteBuiltinMap Map.sizeKey _map
+            Builtin.appliedFunction
+                . Int.asPattern resultSort
+                . toInteger
+                . Map.size
+                $ _map
 
 {- | Implement builtin function evaluation.
  -}
@@ -405,6 +426,7 @@ builtinFunctions =
         , (Map.keysKey, evalKeys)
         , (Map.removeKey, evalRemove)
         , (Map.removeAllKey, evalRemoveAll)
+        , (Map.sizeKey, evalSize)
         ]
 
 {- | Externalizes a 'Domain.InternalMap' as a 'TermLike'.
