@@ -179,26 +179,6 @@ matchEqualHeads (Pair (DV_ _ dv1) (DV_ _ dv2)) =
     push (Pair dv1 dv2)
 matchEqualHeads _ = empty
 
-{- | Generate a fresh name for the variable, if it shadows another name.
- -}
-refreshVariable
-    :: FreshVariable variable
-    => MonadState (MatcherState variable) matcher
-    => variable
-    -> matcher (Maybe variable)
-refreshVariable variable = do
-    state <- Monad.State.get
-    let MatcherState { queued, deferred, predicate, substitution } = state
-        freeVariablesPair = Foldable.foldMap TermLike.freeVariables
-        variables =
-                Foldable.foldMap freeVariablesPair queued
-            <>  Foldable.foldMap freeVariablesPair deferred
-            <>  Foldable.foldMap Syntax.Predicate.freeVariables predicate
-            <>  Foldable.foldMap TermLike.freeVariables substitution
-            <>  Foldable.foldMap freeVariable (Map.keys substitution)
-        avoiding = getFreeVariables variables
-    return $ Variables.refreshVariable avoiding variable
-
 matchExists
     :: (MatchingVariable variable, MonadUnify unifier)
     => Pair (TermLike variable)
@@ -483,6 +463,26 @@ escapeCheck termLike = do
     let free = getFreeVariables (TermLike.freeVariables termLike)
     MatcherState { bound } <- Monad.State.get
     Monad.guard (Set.disjoint bound free)
+
+{- | Generate a fresh name for the variable, if it shadows another name.
+ -}
+refreshVariable
+    :: FreshVariable variable
+    => MonadState (MatcherState variable) matcher
+    => variable
+    -> matcher (Maybe variable)
+refreshVariable variable = do
+    state <- Monad.State.get
+    let MatcherState { queued, deferred, predicate, substitution } = state
+        freeVariablesPair = Foldable.foldMap TermLike.freeVariables
+        variables =
+                Foldable.foldMap freeVariablesPair queued
+            <>  Foldable.foldMap freeVariablesPair deferred
+            <>  Foldable.foldMap Syntax.Predicate.freeVariables predicate
+            <>  Foldable.foldMap TermLike.freeVariables substitution
+            <>  Foldable.foldMap freeVariable (Map.keys substitution)
+        avoiding = getFreeVariables variables
+    return $ Variables.refreshVariable avoiding variable
 
 leftAlignLists
     ::  Builtin.InternalList (TermLike variable)
