@@ -783,6 +783,15 @@ test_matching_Exists =
     , doesn'tMatch   "∃ x:Int. (x, z:Int) doesn't match ∃ m:Map. (m, 1)"
         (mkExists xInt $ mkPair (mkVar xInt) (mkVar zInt))
         (mkExists mMap $ mkPair (mkVar mMap) (mkInt 1))
+
+    -- Renaming bound variables
+    , doesn'tMatch   "∃ x:Int x:Int. (x, x) doesn't match ∃ x:Int y:Int. (x, x)"
+        (mkExists xInt . mkExists xInt $ mkPair (mkVar xInt) (mkVar xInt))
+        (mkExists xInt . mkExists yInt $ mkPair (mkVar xInt) (mkVar xInt))
+    , matches        "∃ x:Int x:Int. (x, x) matches ∃ x:Int y:Int. (y, y)"
+        (mkExists xInt . mkExists xInt $ mkPair (mkVar xInt) (mkVar xInt))
+        (mkExists xInt . mkExists yInt $ mkPair (mkVar yInt) (mkVar yInt))
+        []
     ]
 
 test_matching_Forall :: [TestTree]
@@ -811,6 +820,15 @@ test_matching_Forall =
     , doesn'tMatch   "∀ x:Int. (x, z:Int) doesn't match ∀ m:Map. (m, 1)"
         (mkForall xInt $ mkPair (mkVar xInt) (mkVar zInt))
         (mkForall mMap $ mkPair (mkVar mMap) (mkInt 1))
+
+    -- Renaming bound variables
+    , doesn'tMatch   "∀ x:Int x:Int. (x, x) doesn't match ∀ x:Int y:Int. (x, x)"
+        (mkForall xInt . mkForall xInt $ mkPair (mkVar xInt) (mkVar xInt))
+        (mkForall xInt . mkForall yInt $ mkPair (mkVar xInt) (mkVar xInt))
+    , matches        "∀ x:Int x:Int. (x, x) matches ∀ x:Int y:Int. (y, y)"
+        (mkForall xInt . mkForall xInt $ mkPair (mkVar xInt) (mkVar xInt))
+        (mkForall xInt . mkForall yInt $ mkPair (mkVar yInt) (mkVar yInt))
+        []
     ]
 
 test_matching_Pair :: [TestTree]
