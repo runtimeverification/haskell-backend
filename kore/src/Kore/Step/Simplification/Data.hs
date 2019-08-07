@@ -32,6 +32,7 @@ module Kore.Step.Simplification.Data
     , SimplificationType (..)
     -- * Builtin and axiom simplifiers
     , BuiltinAndAxiomSimplifier (..)
+    , runBuiltinAndAxiomSimplifier
     , BuiltinAndAxiomSimplifierMap
     , AttemptedAxiom (..)
     , isApplicable, isNotApplicable
@@ -596,6 +597,26 @@ newtype BuiltinAndAxiomSimplifier =
         -> TermLike variable
         -> simplifier (AttemptedAxiom variable)
         )
+
+runBuiltinAndAxiomSimplifier
+    ::  forall variable simplifier
+    .   ( FreshVariable variable
+        , SortedVariable variable
+        , Show variable
+        , Unparse variable
+        , MonadSimplify simplifier
+        )
+    => BuiltinAndAxiomSimplifier
+    -> TermLike variable
+    -> simplifier (AttemptedAxiom variable)
+runBuiltinAndAxiomSimplifier
+    (BuiltinAndAxiomSimplifier simplifier)
+    termLike
+  = do
+    simplifierAxioms <- askSimplifierAxioms
+    simplifierPredicate <- askSimplifierPredicate
+    simplifierTermLike <- askSimplifierTermLike
+    simplifier simplifierPredicate simplifierTermLike simplifierAxioms termLike
 
 {-|A type to abstract away the mapping from symbol identifiers to
 their corresponding evaluators.
