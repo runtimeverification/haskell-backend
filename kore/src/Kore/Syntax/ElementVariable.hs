@@ -16,10 +16,10 @@ import qualified GHC.Generics as GHC
 
 import Kore.Debug
 import Kore.Unparser
-import Kore.Variables.AsVariable
 
--- | Applicative-Kore set variables
-newtype ElementVariable variable = ElementVariable variable
+-- | Element (singleton) Kore variables
+newtype ElementVariable variable
+    = ElementVariable { getElementVariable :: variable }
     deriving (Eq, GHC.Generic, Ord, Show, Functor, Foldable, Traversable)
 
 instance Hashable variable => Hashable (ElementVariable variable)
@@ -33,8 +33,6 @@ instance SOP.HasDatatypeInfo (ElementVariable variable)
 instance Debug variable => Debug (ElementVariable variable)
 
 instance Unparse variable => Unparse (ElementVariable variable) where
-    unparse = unparse . asVariable
-    unparse2 = unparse2 . asVariable
+    unparse = unparse . getElementVariable
+    unparse2 = unparse2 . getElementVariable
 
-instance AsVariable ElementVariable where
-    asVariable (ElementVariable v) = v

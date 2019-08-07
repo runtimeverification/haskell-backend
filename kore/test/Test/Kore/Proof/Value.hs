@@ -84,7 +84,7 @@ test_Builtin_InternalSet =
     ]
 
 varX :: ElementVariable Variable
-varX = ElementVariable $ varS "X" intSort
+varX = elemVarS "X" intSort
 
 test_fun :: [TestTree]
 test_fun =

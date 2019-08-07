@@ -26,9 +26,8 @@ import qualified Data.Traversable as Traversable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Kore.Debug
-
 import Kore.Attribute.Synthetic
+import Kore.Debug
 import Kore.Syntax.ElementVariable
 import Kore.Variables.UnifiedVariable
 

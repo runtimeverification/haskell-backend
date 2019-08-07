@@ -26,7 +26,6 @@ import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.Variable
 import Kore.Unparser
-import Kore.Variables.AsVariable
 import Kore.Variables.UnifiedVariable
        ( UnifiedVariable (..) )
 
@@ -87,7 +86,7 @@ instance Pretty SubstitutionError where
     pretty (NonCtorCircularVariableDependency vars) =
         Pretty.vsep
         ( "Non-constructor circular variable dependency:"
-        : (unparse . asVariable <$> vars)
+        : (unparse <$> vars)
         )
 
 -- Trivially promote substitution errors to sum-type errors

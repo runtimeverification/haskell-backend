@@ -14,7 +14,7 @@ module Kore.Unification.SubstitutionNormalization
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Control.Monad.Except
-                 ( ExceptT (..), throwError )
+                 ( ExceptT (..), lift, throwError )
 import           Data.Functor.Foldable
                  ( Base )
 import qualified Data.Functor.Foldable as Recursive
@@ -94,7 +94,7 @@ normalizeSubstitution substitution = do
                                   (`Map.lookup` substitution)
                                   nonSimplifiableCycle
                               ) ->
-                              error "order on variables should prevent only-variable-cycles"
+                              error "Impossible: order on variables should prevent only-variable-cycles"
                           | all UnifiedVariable.isSetVar nonSimplifiableCycle ->
                               Right (SetCtorCycle nonSimplifiableCycle)
                           | otherwise ->
@@ -108,8 +108,7 @@ normalizeSubstitution substitution = do
     case topologicalSortConverted of
         Left err -> throwError err
         Right (MixedCtorCycle _) -> return Predicate.bottom
-        Right (Sorted vars) -> ExceptT
-            (Right <$> normalizeSortedSubstitution' vars)
+        Right (Sorted vars) -> lift $ normalizeSortedSubstitution' vars
         Right (SetCtorCycle vars) -> normalizeSubstitution
             $ Map.mapWithKey (makeRhsBottom (`elem` vars)) substitution
   where

@@ -53,7 +53,7 @@ substitute
         , Functor patternBase
         , CofreeF patternBase attribute ~ Base patternType
         , Binding patternType
-        , VariableType patternType ~ variable
+        , VariableType patternType ~ UnifiedVariable variable
         , Synthetic patternBase attribute
         )
     => (patternType -> FreeVariables variable)
@@ -109,8 +109,8 @@ substitute viewFreeVariables =
             runIdentity <$> matchWith traverseBinder worker termLike
           where
             worker
-                :: Binder variable patternType
-                -> Identity (Binder variable patternType)
+                :: Binder (UnifiedVariable variable) patternType
+                -> Identity (Binder (UnifiedVariable variable) patternType)
             worker Binder { binderVariable, binderChild } = do
                 let
                     binderVariable' = avoidCapture binderVariable

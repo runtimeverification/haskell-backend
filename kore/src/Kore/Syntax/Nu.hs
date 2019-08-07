@@ -23,7 +23,6 @@ import Kore.Sort
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
 import Kore.Unparser
-import Kore.Variables.AsVariable
 import Kore.Variables.UnifiedVariable
 
 {-|'Nu' corresponds to the @ν@ syntactic category from the
@@ -60,7 +59,7 @@ instance
     unparse2 Nu {nuVariable, nuChild } =
         Pretty.parens (Pretty.fillSep
             [ "\\nu"
-            , unparse2SortedVariable (asVariable nuVariable)
+            , unparse2SortedVariable (getSetVariable nuVariable)
             , unparse2 nuChild
             ])
 
@@ -69,7 +68,7 @@ instance
     Synthetic (Nu variable) (FreeVariables variable)
   where
     synthetic Nu { nuVariable, nuChild } =
-        bindVariable (asUnifiedVariable nuVariable) nuChild
+        bindVariable (SetVar nuVariable) nuChild
     {-# INLINE synthetic #-}
 
 instance SortedVariable variable => Synthetic (Nu variable) Sort where
@@ -77,5 +76,5 @@ instance SortedVariable variable => Synthetic (Nu variable) Sort where
         nuSort
         & seq (matchSort nuSort nuChild)
       where
-        nuSort = sortedVariableSort (asVariable nuVariable)
+        nuSort = sortedVariableSort (getSetVariable nuVariable)
     {-# INLINE synthetic #-}

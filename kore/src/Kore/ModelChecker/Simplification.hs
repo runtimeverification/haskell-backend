@@ -7,6 +7,7 @@ module Kore.ModelChecker.Simplification
     ( checkImplicationIsTop
     ) where
 
+import qualified Data.Map as Map
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
@@ -21,6 +22,7 @@ import qualified Kore.Step.Simplification.OrPattern as OrPattern
                  ( filterMultiOrWithTermCeil )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyAndRemoveTopExists )
+import           Kore.Syntax.ElementVariable
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser
@@ -37,7 +39,7 @@ checkImplicationIsTop lhs rhs =
     case stripForallQuantifiers rhs of
         ( forallQuantifiers, Implies_ _ implicationLHS implicationRHS ) -> do
             let rename = refreshVariables lhsFreeVariables forallQuantifiers
-                subst = mkVar <$> rename
+                subst = mkElemVar <$> Map.mapKeys ElemVar rename
                 implicationLHS' = TermLike.substitute subst implicationLHS
                 implicationRHS' = TermLike.substitute subst implicationRHS
                 resultTerm =
@@ -60,18 +62,18 @@ checkImplicationIsTop lhs rhs =
              , Pretty.indent 4 (unparse rhs)
              ]
       where
-        lhsFreeVariables =
-            FreeVariables.getFreeVariables (Pattern.freeVariables lhs)
+        lhsFreeVariables = Set.fromList $
+            FreeVariables.getFreeElementVariables (Pattern.freeVariables lhs)
         lhsMLPatt = Pattern.toTermLike lhs
 
 stripForallQuantifiers
     :: TermLike Variable
-    -> (Set.Set (UnifiedVariable Variable), TermLike Variable)
+    -> (Set.Set (ElementVariable Variable), TermLike Variable)
 stripForallQuantifiers patt
   = case patt of
         Forall_ _ forallVar child ->
             let
                 ( childVars, strippedChild ) = stripForallQuantifiers child
             in
-                ( Set.insert (ElemVar forallVar) childVars, strippedChild)
+                ( Set.insert forallVar childVars, strippedChild)
         _ -> ( Set.empty , patt )

@@ -22,7 +22,6 @@ import Kore.Sort
 import Kore.Syntax.ElementVariable
 import Kore.Syntax.Variable
 import Kore.Unparser
-import Kore.Variables.AsVariable
 import Kore.Variables.UnifiedVariable
 
 {-|'Exists' corresponds to the @\exists@ branches of the @object-pattern@ and
@@ -67,7 +66,7 @@ instance
     unparse2 Exists { existsVariable, existsChild } =
         Pretty.parens (Pretty.fillSep
             [ "\\exists"
-            , unparse2SortedVariable (asVariable existsVariable)
+            , unparse2SortedVariable (getElementVariable existsVariable)
             , unparse2 existsChild
             ])
 
@@ -76,7 +75,7 @@ instance
     Synthetic (Exists sort variable) (FreeVariables variable)
   where
     synthetic Exists { existsVariable, existsChild } =
-        bindVariable (asUnifiedVariable existsVariable) existsChild
+        bindVariable (ElemVar existsVariable) existsChild
     {-# INLINE synthetic #-}
 
 instance Synthetic (Exists Sort variable) Sort where

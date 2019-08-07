@@ -19,7 +19,6 @@ import Kore.Syntax
 import Kore.Syntax.Definition
 import Kore.Syntax.PatternF
        ( PatternF (..) )
-import Kore.Variables.AsVariable
 import Kore.Variables.UnifiedVariable
        ( UnifiedVariable (..) )
 
@@ -71,7 +70,8 @@ instance
     AstWithLocation variable =>
     AstWithLocation (UnifiedVariable variable)
   where
-    locationFromAst = locationFromAst . asVariable
+    locationFromAst (ElemVar v) = locationFromAst . getElementVariable $ v
+    locationFromAst (SetVar v) = locationFromAst . getSetVariable $ v
     updateAstLocation var loc = fmap (`updateAstLocation` loc) var
 
 instance AstWithLocation Alias where

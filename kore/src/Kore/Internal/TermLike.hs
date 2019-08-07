@@ -57,7 +57,8 @@ module Kore.Internal.TermLike
     , mkSortVariable
     , mkInhabitant
     , mkEvaluated
-    , varS
+    , elemVarS
+    , setVarS
     -- * Predicate constructors
     , mkBottom_
     , mkCeil_
@@ -223,7 +224,6 @@ import           Kore.TopBottom
 import           Kore.Unparser
                  ( Unparse (..) )
 import qualified Kore.Unparser as Unparser
-import           Kore.Variables.AsVariable
 import           Kore.Variables.Binding
 import           Kore.Variables.Fresh
 import           Kore.Variables.UnifiedVariable
@@ -699,7 +699,7 @@ instance
     (Ord variable, SortedVariable variable, Show variable) =>
     Binding (TermLike variable)
   where
-    type VariableType (TermLike variable) = variable
+    type VariableType (TermLike variable) = UnifiedVariable variable
 
     traverseVariable match termLike =
         case termLikeF of
@@ -762,7 +762,7 @@ withoutFreeVariable variable termLike result
     (error . show . Pretty.vsep)
         [ Pretty.hsep
             [ "Unexpected free variable"
-            , unparse (asVariable variable)
+            , unparse variable
             , "in pattern:"
             ]
         , Pretty.indent 4 (unparse termLike)
@@ -894,7 +894,7 @@ externalizeFreshVariables termLike =
     originalFreeVariables, generatedFreeVariables
         :: Set.Set (UnifiedVariable Variable)
     (originalFreeVariables, generatedFreeVariables) =
-        Set.partition (Variable.isOriginalVariable . asVariable)
+        Set.partition (foldMapVariable Variable.isOriginalVariable)
         $ getFreeVariables $ freeVariables termLike
 
     -- | The map of generated free variables, renamed to be unique from the
@@ -973,7 +973,7 @@ externalizeFreshVariables termLike =
                     (existsVariable', existsChild') <-
                         underBinder
                             freeVariables'
-                            (asUnifiedVariable existsVariable)
+                            (ElemVar existsVariable)
                             existsChild
                     let exists' =
                             exists
@@ -987,7 +987,7 @@ externalizeFreshVariables termLike =
                     (forallVariable', forallChild') <-
                         underBinder
                             freeVariables'
-                            (asUnifiedVariable forallVariable)
+                            (ElemVar forallVariable)
                             forallChild
                     let forall' =
                             forall
@@ -1001,7 +1001,7 @@ externalizeFreshVariables termLike =
                     (muVariable', muChild') <-
                         underBinder
                             freeVariables'
-                            (asUnifiedVariable muVariable)
+                            (SetVar muVariable)
                             muChild
                     let mu' =
                             mu
@@ -1015,7 +1015,7 @@ externalizeFreshVariables termLike =
                     (nuVariable', nuChild') <-
                         underBinder
                             freeVariables'
-                            (asUnifiedVariable nuVariable)
+                            (SetVar nuVariable)
                             nuChild
                     let nu' =
                             nu
@@ -1027,6 +1027,9 @@ externalizeFreshVariables termLike =
                 _ ->
                     traverseVariablesF lookupVariable patt >>= sequence
         (return . Recursive.embed) (attrs' :< patt')
+    --TODO(traiansf): consider removing this usage of asVariable
+    asVariable :: UnifiedVariable variable -> variable
+    asVariable = foldMapVariable id
 
 -- | Get the 'Sort' of a 'TermLike' from the 'Attribute.Pattern' annotation.
 termLikeSort :: TermLike variable -> Sort
@@ -1713,7 +1716,7 @@ mkElemVar
     :: Ord variable
     => SortedVariable variable
     => ElementVariable variable -> TermLike variable
-mkElemVar = mkVar . asUnifiedVariable
+mkElemVar = mkVar . ElemVar
 
 {- | Construct a set variable pattern.
  -}
@@ -1721,7 +1724,7 @@ mkSetVar
     :: Ord variable
     => SortedVariable variable
     => SetVariable variable -> TermLike variable
-mkSetVar = mkVar . asUnifiedVariable
+mkSetVar = mkVar . SetVar
 
 {- | Construct a 'StringLiteral' pattern.
  -}
@@ -1770,6 +1773,30 @@ varS variableName variableSort =
         , variableSort
         , variableCounter = mempty
         }
+
+{- | Construct an element variable with a given name and sort.
+
+@variableName@ should *not* start with the @at@ symbol
+
+@
+"name" `elemVarS` sort
+@
+ -}
+elemVarS :: Id -> Sort -> ElementVariable Variable
+elemVarS variableName variableSort =
+    ElementVariable (varS variableName variableSort)
+
+{- | Construct a set variable with a given name and sort.
+
+@variableName@ should start with the @at@ symbol
+
+@
+"name" `setVarS` sort
+@
+ -}
+setVarS :: Id -> Sort -> SetVariable Variable
+setVarS variableName variableSort =
+    SetVariable (varS variableName variableSort)
 
 {- | Construct an axiom declaration with the given parameters and pattern.
  -}
@@ -1856,7 +1883,7 @@ mkAlias aliasConstructor aliasParams resultSort' arguments right =
         , sentenceAliasAttributes = Attributes []
         }
   where
-    argumentSorts = variableSort . asVariable <$> arguments
+    argumentSorts = variableSort . getElementVariable <$> arguments
 
 {- | Construct an alias declaration with no parameters.
 

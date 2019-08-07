@@ -45,7 +45,7 @@ class Show patternType => Binding patternType where
     traverseVariable
         :: Lens.Traversal'
             patternType
-            (UnifiedVariable (VariableType patternType))
+            (VariableType patternType)
 
 {- | Apply a traversing function while distinguishing an empty 'Lens.Traversal'.
 
@@ -64,7 +64,7 @@ matchWith (Lens.cloneTraversal -> traverse') = \afb s ->
 
 -- | @Binder@ abstracts over binders such as 'Exists' and 'Forall'.
 data Binder variable child = Binder
-    { binderVariable :: !(UnifiedVariable variable), binderChild :: !child }
+    { binderVariable :: variable, binderChild :: !child }
 
 {- | A 'Lens.Lens' to view an 'Exists' as a 'Binder'.
 
@@ -73,12 +73,15 @@ data Binder variable child = Binder
 See also: 'forallBinder'.
 
  -}
-existsBinder :: Lens.Lens' (Exists sort variable child) (Binder variable child)
+existsBinder
+    :: Lens.Lens'
+        (Exists sort variable child)
+        (Binder (UnifiedVariable variable) child)
 existsBinder mapping exists =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable =  asUnifiedVariable existsVariable, binderChild }
+        Binder { binderVariable =  ElemVar existsVariable, binderChild }
       where
         Exists { existsVariable } = exists
         Exists { existsChild    = binderChild    } = exists
@@ -95,12 +98,15 @@ existsBinder mapping exists =
 See also: 'existsBinder'.
 
  -}
-forallBinder :: Lens.Lens' (Forall sort variable child) (Binder variable child)
+forallBinder
+    :: Lens.Lens'
+        (Forall sort variable child)
+        (Binder (UnifiedVariable variable) child)
 forallBinder mapping forall =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable = asUnifiedVariable forallVariable, binderChild }
+        Binder { binderVariable = ElemVar forallVariable, binderChild }
       where
         Forall { forallVariable } = forall
         Forall { forallChild    = binderChild    } = forall
@@ -117,12 +123,15 @@ forallBinder mapping forall =
 See also: 'nuBinder'.
 
  -}
-muBinder :: Lens.Lens' (Mu variable child) (Binder variable child)
+muBinder
+    :: Lens.Lens'
+        (Mu variable child)
+        (Binder (UnifiedVariable variable) child)
 muBinder mapping mu =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable = asUnifiedVariable muVariable, binderChild }
+        Binder { binderVariable = SetVar muVariable, binderChild }
       where
         Mu { muVariable } = mu
         Mu { muChild    = binderChild    } = mu
@@ -139,12 +148,15 @@ muBinder mapping mu =
 See also: 'muBinder'.
 
  -}
-nuBinder :: Lens.Lens' (Nu variable child) (Binder variable child)
+nuBinder
+    :: Lens.Lens'
+        (Nu variable child)
+        (Binder (UnifiedVariable variable) child)
 nuBinder mapping nu =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable = asUnifiedVariable nuVariable, binderChild }
+        Binder { binderVariable = SetVar nuVariable, binderChild }
       where
         Nu { nuVariable } = nu
         Nu { nuChild    = binderChild    } = nu

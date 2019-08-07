@@ -82,13 +82,12 @@ import           Kore.Unification.Unify
 import qualified Kore.Unification.Unify as Monad.Unify
                  ( gather, scatter )
 import           Kore.Unparser
-import           Kore.Variables.AsVariable
 import           Kore.Variables.Fresh
 import           Kore.Variables.Target
                  ( Target )
 import qualified Kore.Variables.Target as Target
 import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable )
+                 ( UnifiedVariable, foldMapVariable )
 
 -- | Wraps functions such as 'unificationProcedure' and
 -- 'Kore.Step.Axiom.Matcher.matchAsUnification' to be used in
@@ -165,7 +164,7 @@ unwrapAndQuantifyConfiguration config@Conditional { substitution } =
             )
   where
     substitution' =
-        Substitution.filter (Target.isNonTarget . asVariable)
+        Substitution.filter (foldMapVariable Target.isNonTarget)
             substitution
 
     configWithNewSubst :: Pattern (Target variable)
@@ -178,7 +177,7 @@ unwrapAndQuantifyConfiguration config@Conditional { substitution } =
     targetVariables :: [ElementVariable variable]
     targetVariables =
         map (fmap Target.unwrapVariable)
-        . filter (Target.isTarget . asVariable)
+        . filter (Target.isTarget . getElementVariable)
         . Pattern.freeElementVariables
         $ configWithNewSubst
 
@@ -520,7 +519,7 @@ checkSubstitutionCoverage initial unified
         , "The substitution (above, in the unifier) \
           \did not cover the axiom variables:"
         , (Pretty.indent 4 . Pretty.sep)
-            (unparse . asVariable <$> Set.toAscList uncovered)
+            (unparse <$> Set.toAscList uncovered)
         , "in the left-hand side of the axiom."
         ]
   where
@@ -532,7 +531,7 @@ checkSubstitutionCoverage initial unified
     uncovered = wouldNarrowWith unified
     isCoveringSubstitution = Set.null uncovered
     isSymbolic =
-        Foldable.any (Target.isNonTarget . asVariable)
+        Foldable.any (foldMapVariable Target.isNonTarget)
             substitutionVariables
 
 {- | The 'Set' of variables that would be introduced by narrowing.

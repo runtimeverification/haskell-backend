@@ -9,7 +9,6 @@ import           Kore.Step.Rule
                  ( RulePattern, rulePattern )
 import qualified Kore.Step.Simplification.Data as Kore
 import qualified Kore.Step.Simplification.Rule as Kore
-import           Kore.Syntax.ElementVariable
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import qualified Test.Kore.Builtin.Builtin as Builtin
@@ -31,8 +30,8 @@ test_simplifyRulePattern =
     andBool = Builtin.andBool
     unitList = Builtin.unitList
     sizeList = Builtin.sizeList
-    x = mkElemVar (ElementVariable $ varS "x" Builtin.boolSort)
-    y = mkElemVar (ElementVariable $ varS "y" Builtin.boolSort)
+    x = mkElemVar (elemVarS "x" Builtin.boolSort)
+    y = mkElemVar (elemVarS "y" Builtin.boolSort)
     mkBool = Test.Bool.asInternal
     true = mkBool True
     false = mkBool False

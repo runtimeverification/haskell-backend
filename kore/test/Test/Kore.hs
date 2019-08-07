@@ -60,7 +60,6 @@ import           Kore.Syntax.Definition
 import           Kore.Syntax.ElementVariable
 import qualified Kore.Syntax.PatternF as Syntax
                  ( PatternF (..) )
-import           Kore.Variables.AsVariable
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
 
@@ -197,7 +196,7 @@ elementVariableGen patternSort = do
     ElementVariable <$>
         variableGen'
             patternSort
-            [asVariable v | ElemVar v <- objectVariables]
+            [getElementVariable v | ElemVar v <- objectVariables]
             idGen
 
 variableGen' :: Sort -> [Variable] -> Gen Id -> Gen Variable
@@ -220,7 +219,7 @@ setVariableGen sort = do
     SetVariable <$>
         variableGen'
             sort
-            [asVariable v | SetVar v <- objectVariables]
+            [getSetVariable v | SetVar v <- objectVariables]
             setVarIdGen
 
 unifiedVariableGen :: Sort -> Gen (UnifiedVariable Variable)

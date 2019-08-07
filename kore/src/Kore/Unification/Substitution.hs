@@ -56,7 +56,6 @@ import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser
                  ( Unparse, unparseToString )
-import           Kore.Variables.AsVariable
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 import           Kore.Variables.UnifiedVariable
@@ -331,7 +330,7 @@ assertNoneAreFreeVarsInRhs lhsVariables =
             , "patt=" ++ unparseToString patt
             , "commonVars="
                 ++ show
-                    ( unparseToString . asVariable
+                    ( unparseToString
                     <$> Set.toList commonVars
                     )
             ]

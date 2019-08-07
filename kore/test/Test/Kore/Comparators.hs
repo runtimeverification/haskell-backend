@@ -76,10 +76,9 @@ import           Kore.Unification.Error
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.AsVariable
 import           Kore.Variables.Target
 import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+                 ( UnifiedVariable (..), foldMapVariable )
 import qualified SMT.AST as SMT
                  ( Constructor (Constructor),
                  ConstructorArgument (ConstructorArgument),
@@ -974,8 +973,8 @@ instance SumEqualWithExplanation SubstitutionError where
       =
         SumConstructorSameWithArguments
         $ EqWrap "NonCtorCircularVariableDependency"
-            (toVariable . asVariable <$> a1)
-            (toVariable . asVariable <$> a2)
+            (foldMapVariable toVariable <$> a1)
+            (foldMapVariable toVariable <$> a2)
 
 
 instance EqualWithExplanation SubstitutionError where

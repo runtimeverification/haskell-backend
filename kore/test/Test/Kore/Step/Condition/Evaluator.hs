@@ -16,7 +16,6 @@ import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-import           Kore.Syntax.ElementVariable
 import           SMT
                  ( SMT )
 
@@ -62,7 +61,7 @@ noSimplification = []
 -- Refute Int predicates
 
 vInt :: Id -> TermLike Variable
-vInt s = mkElemVar (ElementVariable $ varS s Builtin.intSort)
+vInt s = mkElemVar (elemVarS s Builtin.intSort)
 
 a, b, c :: TermLike Variable
 a = vInt (testId "a")
@@ -70,7 +69,7 @@ b = vInt (testId "b")
 c = vInt (testId "c")
 
 vBool :: Id -> TermLike Variable
-vBool s = mkElemVar (ElementVariable $ varS s Builtin.boolSort)
+vBool s = mkElemVar (elemVarS s Builtin.boolSort)
 
 p, q :: TermLike Variable
 p = vBool (testId "p")

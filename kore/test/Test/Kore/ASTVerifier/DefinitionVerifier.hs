@@ -27,7 +27,6 @@ import           Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
 import           Kore.Unparser
                  ( unparseToString )
-import           Kore.Variables.AsVariable
 import           Kore.Variables.UnifiedVariable
 import qualified Kore.Verified as Verified
 
@@ -584,7 +583,7 @@ aliasSentenceWithArguments (AliasName name) sort operands r =
                 , aliasParams = []
                 }
             , sentenceAliasSorts =
-                variableSort . asVariable <$> operands
+                variableSort . getElementVariable <$> operands
             , sentenceAliasResultSort = sort
             , sentenceAliasLeftPattern =
                 Application

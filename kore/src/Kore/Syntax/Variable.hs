@@ -134,6 +134,7 @@ class SortedVariable variable where
     fromVariable :: Variable -> variable
     -- | Extract the parsed syntax of a Kore variable.
     toVariable :: variable -> Variable
+-- TODO(traiansf): the 'SortedVariable' class mixes different concerns.
 
 instance SortedVariable Variable where
     sortedVariableSort = variableSort

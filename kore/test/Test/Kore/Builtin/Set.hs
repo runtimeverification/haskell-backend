@@ -59,7 +59,6 @@ import qualified Kore.Syntax.Variable as DoNotUse
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
                  ( runUnifierT )
-import           Kore.Variables.AsVariable
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
 import           SMT
@@ -106,7 +105,7 @@ test_unit =
         $ "concat(x:Set, unit()) === x:Set"
     ]
   where
-    xSet = ElementVariable $  varS "xSet" setSort
+    xSet = elemVarS "xSet" setSort
     becomes
         :: GHC.HasCallStack
         => TermLike Variable
@@ -488,7 +487,7 @@ addSelectElement elementVar setPattern  =
 
 distinctVars :: [ElementVariable Variable] -> Bool
 distinctVars vars = varNames == List.nub varNames
-  where varNames = map (variableName . asVariable) vars
+  where varNames = map (variableName . getElementVariable) vars
 
 test_unifySelectFromEmpty :: TestTree
 test_unifySelectFromEmpty =
@@ -496,8 +495,8 @@ test_unifySelectFromEmpty =
         elementVar <- forAll (standaloneGen $ elementVariableGen intSort)
         setVar <- forAll (standaloneGen $ elementVariableGen setSort)
         Monad.when
-            ( variableName (asVariable elementVar)
-            == variableName (asVariable setVar)
+            ( variableName (getElementVariable elementVar)
+            == variableName (getElementVariable setVar)
             )
             discard
         let selectPat       = selectPattern elementVar setVar id
@@ -532,8 +531,8 @@ test_unifySelectFromSingleton =
             elementVar <- forAll (standaloneGen $ elementVariableGen intSort)
             setVar <- forAll (standaloneGen $ elementVariableGen setSort)
             Monad.when
-                ( variableName (asVariable elementVar)
-                == variableName (asVariable setVar)
+                ( variableName (getElementVariable elementVar)
+                == variableName (getElementVariable setVar)
                 )
                 discard
             let selectPat       = selectPattern elementVar setVar id
@@ -593,8 +592,8 @@ test_unifySelectFromTwoElementSet =
             elementVar <- forAll (standaloneGen $ elementVariableGen intSort)
             setVar <- forAll (standaloneGen $ elementVariableGen setSort)
             Monad.when
-                ( variableName (asVariable elementVar)
-                == variableName (asVariable setVar)
+                ( variableName (getElementVariable elementVar)
+                == variableName (getElementVariable setVar)
                 )
                 discard
 
@@ -1369,8 +1368,8 @@ test_unifyFnSelectFromSingleton =
             elementVar <- forAll (standaloneGen $ elementVariableGen intSort)
             setVar <- forAll (standaloneGen $ elementVariableGen setSort)
             Monad.when
-                ( variableName (asVariable elementVar)
-                == variableName (asVariable setVar)
+                ( variableName (getElementVariable elementVar)
+                == variableName (getElementVariable setVar)
                 )
                 discard
             let fnSelectPat    = selectFunctionPattern elementVar setVar id
@@ -1407,7 +1406,7 @@ test_unify_concat_xSet_unit_unit_vs_unit =
         $ "concat(xSet:Set, unit()) ~ unit()"
     ]
   where
-    xSet = ElementVariable $  varS "xSet" setSort
+    xSet = elemVarS "xSet" setSort
     internalUnit = asInternal Set.empty
 
 

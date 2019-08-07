@@ -31,7 +31,6 @@ import           Kore.Step.Simplification.Data
                  ( Env (..), evalSimplifier )
 import           Kore.Step.Simplification.Equals
                  ( makeEvaluate, makeEvaluateTermsToPredicate, simplify )
-import           Kore.Syntax.ElementVariable
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.UnifiedVariable
@@ -765,7 +764,7 @@ test_equalsSimplification_TermLike =
                         term4
                     )
         ,
-            let x = ElementVariable $ varS "x" Mock.listSort
+            let x = elemVarS "x" Mock.listSort
                 term5 =
                     Mock.concatList (Mock.builtinList [Mock.a]) (mkElemVar x)
                 term6 = Mock.builtinList [Mock.a, Mock.b]

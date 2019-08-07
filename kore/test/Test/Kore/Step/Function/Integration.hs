@@ -648,8 +648,8 @@ natSort =
         }
 
 natM, natN :: ElementVariable Variable
-natM = ElementVariable $ varS "M" natSort
-natN = ElementVariable $ varS "N" natSort
+natM = elemVarS "M" natSort
+natN = elemVarS "N" natSort
 
 varM, varN :: TermLike Variable
 varM = mkElemVar natM
@@ -837,9 +837,9 @@ unitList :: TermLike Variable
 unitList = mkList []
 
 varX, varL, mMap :: TermLike Variable
-varX = mkElemVar (ElementVariable $ varS (testId "xInt") intSort)
-varL = mkElemVar (ElementVariable $ varS (testId "lList") listSort)
-mMap = mkElemVar (ElementVariable $ varS (testId "mMap") mapSort)
+varX = mkElemVar (elemVarS (testId "xInt") intSort)
+varL = mkElemVar (elemVarS (testId "lList") listSort)
+mMap = mkElemVar (elemVarS (testId "mMap") mapSort)
 
 lengthListSymbol :: Symbol
 lengthListSymbol = Mock.symbol "lengthList" [listSort] intSort & function

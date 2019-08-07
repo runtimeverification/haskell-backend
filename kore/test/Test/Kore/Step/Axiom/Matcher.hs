@@ -1428,9 +1428,9 @@ test_matching_List =
         ]
     ]
   where
-    xInt = ElementVariable $ varS (testId "xInt") Mock.intSort
-    xList = ElementVariable $ varS (testId "xList") Mock.listSort
-    yList = ElementVariable $ varS (testId "yList") Mock.listSort
+    xInt = elemVarS (testId "xInt") Mock.intSort
+    xList = elemVarS (testId "xList") Mock.listSort
+    yList = elemVarS (testId "yList") Mock.listSort
     one = mkInt 1
     two = mkInt 2
     unitList = mkList []
@@ -1914,9 +1914,9 @@ test_matching_Map =
     framedMap = Mock.framedMap
     builtinMap = Mock.builtinMap
     mkInt = Int.asInternal Mock.intSort
-    kInt = ElementVariable $ varS (testId "kInt") Mock.intSort
-    vInt = ElementVariable $ varS (testId "vInt") Mock.intSort
-    mMap = ElementVariable $ varS (testId "mMap") Mock.mapSort
+    kInt = elemVarS (testId "kInt") Mock.intSort
+    vInt = elemVarS (testId "vInt") Mock.intSort
+    mMap = elemVarS (testId "mMap") Mock.mapSort
     zero = mkInt 0
     one = mkInt 1
     two = mkInt 2

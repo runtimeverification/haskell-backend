@@ -12,7 +12,6 @@ import qualified Data.Set as Set
 import Data.Sup
 import Kore.Internal.TermLike
 import Kore.Syntax.ElementVariable
-import Kore.Variables.AsVariable
 import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
        ( UnifiedVariable (..) )
@@ -263,7 +262,7 @@ x :: ElementVariable Variable
 x = Mock.x
 
 ex :: Variable
-ex = asVariable x
+ex = getElementVariable x
 
 x_0 :: ElementVariable Variable
 x_0 = ElementVariable ex { variableCounter = Just (Element 0) }

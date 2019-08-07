@@ -28,10 +28,9 @@ import qualified Kore.Attribute.Null as Attribute
 import           Kore.Syntax hiding
                  ( substituteSortVariables )
 import           Kore.Unparser
-import           Kore.Variables.AsVariable
 import           Kore.Variables.Free
 import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+                 ( UnifiedVariable (..), foldMapVariable )
 
 
 {-|'quantifyFreeVariables' quantifies all free variables in the given pattern.
@@ -60,6 +59,7 @@ wrapAndQuantify s p (ElemVar var) =
             , forallChild = p
             }
         )
+--TODO(traiansf): think about changing this to ElementVariable
 wrapAndQuantify _ _ (SetVar var) =
     error ("Cannot quantify set variable " ++ unparseToString var)
 
@@ -87,4 +87,4 @@ checkUniqueEither (var:vars) indexed =
                 ++ "."
                 )
   where
-    name = getId . variableName . asVariable $ var
+    name = getId . foldMapVariable variableName $ var

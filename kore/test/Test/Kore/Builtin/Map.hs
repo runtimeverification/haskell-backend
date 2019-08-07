@@ -50,7 +50,6 @@ import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
 import           Kore.Syntax.ElementVariable
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.AsVariable
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
 import           SMT
@@ -1068,5 +1067,5 @@ mkIntVar variableName =
 mockSubstitutionSimplifier :: PredicateSimplifier
 mockSubstitutionSimplifier = PredicateSimplifier return
 
-asVariableName :: AsVariable f => f Variable -> Id
-asVariableName = variableName . asVariable
+asVariableName :: ElementVariable Variable -> Id
+asVariableName = variableName . getElementVariable

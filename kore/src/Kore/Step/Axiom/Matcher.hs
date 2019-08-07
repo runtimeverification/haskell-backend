@@ -60,7 +60,7 @@ import           Kore.Unification.Unify
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
 import           Kore.Variables.Fresh
-                 ( FreshVariable )
+                 ( FreshVariable, Renaming )
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
 
@@ -162,7 +162,7 @@ match
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => Map.Map (UnifiedVariable variable) (UnifiedVariable variable)
+    => Renaming variable
     -- ^ Quantified variables
     -> TermLike variable
     -> TermLike variable
@@ -181,7 +181,7 @@ matchEqualHeadPatterns
         , FreshVariable variable
         , MonadUnify unifier
         )
-    => Map.Map (UnifiedVariable variable) (UnifiedVariable variable)
+    => Renaming variable
     -- ^ Quantified variables
     -> TermLike variable
     -> TermLike variable
@@ -388,7 +388,7 @@ matchJoin
         , SortedVariable variable
         , MonadUnify unifier
         )
-    => Map.Map (UnifiedVariable variable) (UnifiedVariable variable)
+    => Renaming variable
     -- ^ Quantified variables
     -> [(TermLike variable, TermLike variable)]
     -> MaybeT unifier (Predicate variable)
@@ -437,7 +437,7 @@ matchVariableFunction
         , Unparse variable
         , MonadUnify unifier
         )
-    => Map.Map (UnifiedVariable variable) (UnifiedVariable variable)
+    => Renaming variable
     -- ^ Quantified variables
     -> TermLike variable
     -> TermLike variable
@@ -482,7 +482,7 @@ matchAppBuiltins
     => Unparse variable
     => SortedVariable variable
     => MonadUnify unifier
-    => Map.Map (UnifiedVariable variable) (UnifiedVariable variable)
+    => Renaming variable
     -> Symbol
     -> [TermLike variable]
     -> Builtin.Builtin (TermLike Concrete) (TermLike variable)
@@ -534,7 +534,7 @@ matchBuiltins
     => Unparse variable
     => SortedVariable variable
     => MonadUnify unifier
-    => Map.Map (UnifiedVariable variable) (UnifiedVariable variable)
+    => Renaming variable
     -> Builtin.Builtin (TermLike Concrete) (TermLike variable)
     -> Builtin.Builtin (TermLike Concrete) (TermLike variable)
     -> MaybeT unifier (Predicate variable)
@@ -581,7 +581,7 @@ matchAc
         , Traversable (Builtin.Value normalized)
         , Unparse variable
         )
-    => Map.Map (UnifiedVariable variable) (UnifiedVariable variable)
+    => Renaming variable
     -> Sort
     -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
     -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)

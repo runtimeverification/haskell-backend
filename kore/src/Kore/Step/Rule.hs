@@ -533,9 +533,7 @@ refreshRulePattern
         )
     => FreeVariables variable  -- ^ Variables to avoid
     -> RulePattern variable
-    ->  ( Map (UnifiedVariable variable) (UnifiedVariable variable)
-        , RulePattern variable
-        )
+    -> (Renaming variable, RulePattern variable)
 refreshRulePattern (FreeVariables.getFreeVariables -> avoid) rule1 =
     let rename = refreshVariables avoid originalFreeVariables
         subst = mkVar <$> rename

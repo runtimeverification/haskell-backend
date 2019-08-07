@@ -33,16 +33,18 @@ import qualified Kore.Step.Simplification.AndPredicates as AndPredicates
 import qualified Kore.Step.Simplification.Ceil as Ceil
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify (..) )
+import           Kore.Syntax.ElementVariable
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
-import           Kore.Variables.AsVariable
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 import           Kore.Variables.Target
                  ( Target )
 import qualified Kore.Variables.Target as Target
+import           Kore.Variables.UnifiedVariable
+                 ( foldMapVariable )
 
 {- | Negate the disjunction of unification solutions to form the /remainder/.
 
@@ -98,7 +100,7 @@ existentiallyQuantifyTarget predicate =
     Syntax.Predicate.makeMultipleExists freeTargetVariables predicate
   where
     freeTargetVariables =
-        filter (Target.isTarget . asVariable)
+        filter (Target.isTarget . getElementVariable)
         . Syntax.Predicate.freeElementVariables
         $ predicate
 
@@ -148,7 +150,7 @@ unificationConditions Conditional { predicate, substitution } =
     pure predicate <|> substitutionConditions substitution'
   where
     substitution' =
-        Substitution.filter (Target.isNonTarget . asVariable)
+        Substitution.filter (foldMapVariable Target.isNonTarget)
             substitution
 
 substitutionConditions

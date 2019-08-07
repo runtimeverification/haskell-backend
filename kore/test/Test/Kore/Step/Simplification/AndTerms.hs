@@ -39,7 +39,6 @@ import           Kore.Step.Simplification.Data
                  ( BuiltinAndAxiomSimplifierMap, Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
-import           Kore.Syntax.ElementVariable
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Variables.UnifiedVariable
@@ -763,7 +762,7 @@ test_andTermsSimplification =
             assertEqualWithExplanation "" expect actual
 
         , testCase "[a] `concat` x /\\ [a, b] " $ do
-            let x = ElementVariable $ varS "x" Mock.listSort
+            let x = elemVarS "x" Mock.listSort
                 term5 =
                     Mock.concatList (Mock.builtinList [Mock.a]) (mkElemVar x)
                 term6 = Mock.builtinList [Mock.a, Mock.b]
@@ -790,8 +789,8 @@ test_andTermsSimplification =
                 expect =
                     Pattern.fromTermLike expectTerm
                     `Conditional.andPredicate` makeCeilPredicate expectTerm
-                x = mkElemVar $ ElementVariable $ varS "x" Mock.testSort
-                l = mkElemVar $ ElementVariable $ varS "y" Mock.listSort
+                x = mkElemVar $ elemVarS "x" Mock.testSort
+                l = mkElemVar $ elemVarS "y" Mock.listSort
                 -- List unification does not fully succeed because the
                 -- elementList symbol is not simplified to a builtin structure.
                 lhs = Mock.concatList (Mock.elementList x) l

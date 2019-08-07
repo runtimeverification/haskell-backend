@@ -26,7 +26,6 @@ import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import qualified Kore.Internal.TermLike as Internal
 import           Kore.Syntax
 import           Kore.Syntax.Definition
-import           Kore.Variables.AsVariable
 import           Kore.Variables.UnifiedVariable
 
 import           Test.Kore
@@ -801,12 +800,12 @@ test_verifyBinder =
     testVerifyExists =
         testVerifyBinder "verifyExists" expect
       where
-        x = ElementVariable $ Internal.varS "x" Builtin.intSort
+        x = Internal.elemVarS "x" Builtin.intSort
         expect = Internal.mkExists x (Internal.mkElemVar x)
     testVerifyForall =
         testVerifyBinder "verifyForall" expect
       where
-        x = ElementVariable $ Internal.varS "x" Builtin.intSort
+        x = Internal.elemVarS "x" Builtin.intSort
         expect = Internal.mkForall x (Internal.mkElemVar x)
 
 dummyVariableAndSentences
@@ -1277,7 +1276,7 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
             ErrorStack
                 [ "\\exists '"
                     ++ getIdForError
-                        (variableName (asVariable quantifiedVariable))
+                        (variableName (getElementVariable quantifiedVariable))
                     ++ "' (<test data>)"
                 ]
         }
@@ -1292,7 +1291,7 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
             ErrorStack
                 [ "\\forall '"
                     ++ getIdForError
-                        (variableName (asVariable quantifiedVariable))
+                        (variableName (getElementVariable quantifiedVariable))
                     ++ "' (<test data>)"
                 ]
         }
