@@ -335,11 +335,18 @@ data Pair a = Pair !a !a
 data MatcherState variable =
     MatcherState
         { queued :: !(Seq (Pair (TermLike variable)))
+        -- ^ Solvable matching constraints.
         , deferred :: !(Seq (Pair (TermLike variable)))
-        , predicate :: !(MultiAnd (Syntax.Predicate variable))
+        -- ^ Unsolvable matching constraints; may become solvable with more
+        -- information.
         , substitution :: !(Map variable (TermLike variable))
+        -- ^ Matching solution: Substitutions for target variables.
+        , predicate :: !(MultiAnd (Syntax.Predicate variable))
+        -- ^ Matching solution: Additional constraints.
         , targets :: !(FreeVariables variable)
+        -- ^ Target variables that may be substituted.
         , bound :: !(Set variable)
+        -- ^ Bound variable that must not escape in the solution.
         }
     deriving (GHC.Generic)
 
