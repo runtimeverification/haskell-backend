@@ -499,13 +499,14 @@ refreshVariable variable = do
     state <- Monad.State.get
     let MatcherState { queued, deferred, predicate, substitution } = state
         freeVariablesPair = Foldable.foldMap TermLike.freeVariables
-        variables =
+        free =
                 Foldable.foldMap freeVariablesPair queued
             <>  Foldable.foldMap freeVariablesPair deferred
             <>  Foldable.foldMap Syntax.Predicate.freeVariables predicate
             <>  Foldable.foldMap TermLike.freeVariables substitution
             <>  Foldable.foldMap freeVariable (Map.keys substitution)
-        avoiding = getFreeVariables variables
+        MatcherState { bound } = state
+        avoiding = getFreeVariables free <> bound
     return $ Variables.refreshVariable avoiding variable
 
 leftAlignLists
