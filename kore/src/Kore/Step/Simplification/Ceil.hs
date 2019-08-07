@@ -194,7 +194,7 @@ makeEvaluateTerm term@(Recursive.project -> _ :< projected) =
                 , substitution = mempty
                 }
             (mkCeil_ term)
-            (OrPattern.fromPattern Conditional
+            (return $ OrPattern.fromPattern Conditional
                 { term = mkTop_
                 , predicate = makeCeilPredicate term
                 , substitution = mempty

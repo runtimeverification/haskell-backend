@@ -17,6 +17,7 @@ import           Control.Error
 import qualified Control.Error as Error
 import           Control.Exception
                  ( assert )
+import qualified Control.Monad.Trans as Monad.Trans
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
@@ -95,7 +96,7 @@ evaluateApplication childrenPredicate application = do
             return unchanged
 
     Error.maybeT unevaluatedSimplifier return
-        $ maybeEvaluatePattern childrenPredicate termLike unchanged
+        $ maybeEvaluatePattern childrenPredicate termLike (return unchanged)
 
 {- | If the 'Symbol' has a 'Hook', issue a warning that the hook is missing.
 
@@ -127,11 +128,11 @@ evaluatePattern
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
-    -> OrPattern variable
+    -> simplifier (OrPattern variable)
     -- ^ The default value
     -> simplifier (OrPattern variable)
 evaluatePattern childrenPredicate patt defaultValue =
-    Error.maybeT (return defaultValue) return
+    Error.maybeT defaultValue return
     $ maybeEvaluatePattern childrenPredicate patt defaultValue
 
 {-| Evaluates axioms on patterns.
@@ -151,7 +152,7 @@ maybeEvaluatePattern
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
-    -> OrPattern variable
+    -> simplifier (OrPattern variable)
     -- ^ The default value
     -> MaybeT simplifier (OrPattern variable)
 maybeEvaluatePattern childrenPredicate termLike defaultValue =
@@ -186,7 +187,7 @@ maybeEvaluatePattern childrenPredicate termLike defaultValue =
                 childrenPredicate
                 flattened
         case merged of
-            AttemptedAxiom.NotApplicable -> return defaultValue
+            AttemptedAxiom.NotApplicable -> Monad.Trans.lift defaultValue
             AttemptedAxiom.Applied attemptResults ->
                 return $ MultiOr.merge results remainders
               where
