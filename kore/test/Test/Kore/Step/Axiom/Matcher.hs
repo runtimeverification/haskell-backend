@@ -11,6 +11,7 @@ module Test.Kore.Step.Axiom.Matcher
     , test_matching_Map
     , test_matching_Pair
     , test_matching_Exists
+    , test_matching_Forall
     , match
     ) where
 
@@ -782,6 +783,34 @@ test_matching_Exists =
     , doesn'tMatch   "∃ x:Int. (x, z:Int) doesn't match ∃ m:Map. (m, 1)"
         (mkExists xInt $ mkPair (mkVar xInt) (mkVar zInt))
         (mkExists mMap $ mkPair (mkVar mMap) (mkInt 1))
+    ]
+
+test_matching_Forall :: [TestTree]
+test_matching_Forall =
+    [ matches        "∀ x:Int. x matches ∀ y:Int. y"
+        (mkForall xInt $ mkVar xInt)
+        (mkForall yInt $ mkVar yInt)
+        []
+    , matches        "∀ x:Int. (x, z:Int) matches ∀ y:Int. (y, 1)"
+        (mkForall xInt $ mkPair (mkVar xInt) (mkVar zInt))
+        (mkForall yInt $ mkPair (mkVar yInt) (mkInt 1))
+        [(zInt, mkInt 1)]
+    , matches        "∀ x:Int y:Int. (x, y) matches ∀ y:Int x:Int. (y, x)"
+        (mkForall xInt . mkForall yInt $ mkPair (mkVar xInt) (mkVar yInt))
+        (mkForall yInt . mkForall xInt $ mkPair (mkVar yInt) (mkVar xInt))
+        []
+    , doesn'tMatch   "∀ x:Int. x doesn't match ∀ m:Map. m"
+        (mkForall xInt $ mkVar xInt)
+        (mkForall mMap $ mkVar mMap)
+    , doesn'tMatch   "∀ x:Int. (x, z:Int) doesn't match ∀ y:Int. (y, y)"
+        (mkForall xInt $ mkPair (mkVar xInt) (mkVar zInt))
+        (mkForall yInt $ mkPair (mkVar yInt) (mkVar yInt))
+    , doesn'tMatch   "∀ x:Int y:Int. (x, y) doesn't match ∀ y:Int x:Int. (x, y)"
+        (mkForall xInt . mkForall yInt $ mkPair (mkVar xInt) (mkVar yInt))
+        (mkForall yInt . mkForall xInt $ mkPair (mkVar xInt) (mkVar yInt))
+    , doesn'tMatch   "∀ x:Int. (x, z:Int) doesn't match ∀ m:Map. (m, 1)"
+        (mkForall xInt $ mkPair (mkVar xInt) (mkVar zInt))
+        (mkForall mMap $ mkPair (mkVar mMap) (mkInt 1))
     ]
 
 test_matching_Pair :: [TestTree]
