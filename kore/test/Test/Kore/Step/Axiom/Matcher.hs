@@ -758,13 +758,30 @@ test_matching_List =
 
 test_matching_Exists :: [TestTree]
 test_matching_Exists =
-    [ matches        "∃ x:Int. (x, z) matches ∃ y:Int. (y, 1)"
-        (mkExists xInt (mkPair (mkVar xInt) (mkVar zInt)))
-        (mkExists yInt (mkPair (mkVar yInt) (mkInt 1)))
+    [ matches        "∃ x:Int. x matches ∃ y:Int. y"
+        (mkExists xInt $ mkVar xInt)
+        (mkExists yInt $ mkVar yInt)
+        []
+    , matches        "∃ x:Int. (x, z:Int) matches ∃ y:Int. (y, 1)"
+        (mkExists xInt $ mkPair (mkVar xInt) (mkVar zInt))
+        (mkExists yInt $ mkPair (mkVar yInt) (mkInt 1))
         [(zInt, mkInt 1)]
-    , doesn'tMatch   "∃ x:Int. (x, z) does not match ∃ y:Int. (y, y)"
-        (mkExists xInt (mkPair (mkVar xInt) (mkVar zInt)))
-        (mkExists yInt (mkPair (mkVar yInt) (mkVar yInt)))
+    , matches        "∃ x:Int y:Int. (x, y) matches ∃ y:Int x:Int. (y, x)"
+        (mkExists xInt . mkExists yInt $ mkPair (mkVar xInt) (mkVar yInt))
+        (mkExists yInt . mkExists xInt $ mkPair (mkVar yInt) (mkVar xInt))
+        []
+    , doesn'tMatch   "∃ x:Int. x doesn't match ∃ m:Map. m"
+        (mkExists xInt $ mkVar xInt)
+        (mkExists mMap $ mkVar mMap)
+    , doesn'tMatch   "∃ x:Int. (x, z:Int) doesn't match ∃ y:Int. (y, y)"
+        (mkExists xInt $ mkPair (mkVar xInt) (mkVar zInt))
+        (mkExists yInt $ mkPair (mkVar yInt) (mkVar yInt))
+    , doesn'tMatch   "∃ x:Int y:Int. (x, y) doesn't match ∃ y:Int x:Int. (x, y)"
+        (mkExists xInt . mkExists yInt $ mkPair (mkVar xInt) (mkVar yInt))
+        (mkExists yInt . mkExists xInt $ mkPair (mkVar xInt) (mkVar yInt))
+    , doesn'tMatch   "∃ x:Int. (x, z:Int) doesn't match ∃ m:Map. (m, 1)"
+        (mkExists xInt $ mkPair (mkVar xInt) (mkVar zInt))
+        (mkExists mMap $ mkPair (mkVar mMap) (mkInt 1))
     ]
 
 test_matching_Pair :: [TestTree]
