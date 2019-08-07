@@ -98,6 +98,7 @@ matchOne pair =
     (   matchVariable    pair
     <|> matchEqualHeads  pair
     <|> matchExists      pair
+    <|> matchForall      pair
     <|> matchApplication pair
     <|> matchBuiltinList pair
     <|> matchBuiltinMap  pair
@@ -200,6 +201,28 @@ matchExists (Pair (Exists_ _ variable1 term1) (Exists_ _ variable2 term2))
     sort1 = sortedVariableSort variable1
     sort2 = sortedVariableSort variable2
 matchExists _ = empty
+
+matchForall
+    :: (MatchingVariable variable, MonadUnify unifier)
+    => Pair (TermLike variable)
+    -> MaybeT (MatcherT variable unifier) ()
+matchForall (Pair (Forall_ _ variable1 term1) (Forall_ _ variable2 term2))
+  | sort1 == sort2 = do
+    refreshed1 <- refreshVariable variable1
+    let term1' = fromMaybe term1 $ do
+            var1 <- mkVar <$> refreshed1
+            let subst1 = Map.singleton variable1 var1
+            return $ substituteTermLike subst1 term1
+    let variable1' = fromMaybe variable1 refreshed1
+        subst2 = Map.singleton variable2 (mkVar variable1')
+        term2' = substituteTermLike subst2 term2
+    -- Quantify the remaining bound variable.
+    field @"bound" %= Set.insert variable1'
+    push (Pair term1' term2')
+  where
+    sort1 = sortedVariableSort variable1
+    sort2 = sortedVariableSort variable2
+matchForall _ = empty
 
 matchVariable
     :: (MatchingVariable variable, MonadUnify unifier)
