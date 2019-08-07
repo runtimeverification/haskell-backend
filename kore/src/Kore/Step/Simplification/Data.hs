@@ -19,6 +19,7 @@ module Kore.Step.Simplification.Data
     , evalSimplifierBranch
     , gather
     , gatherAll
+    , gatherPatterns
     , scatter
     , foldBranchT
     , alternate
@@ -291,6 +292,13 @@ See also: 'scatter', 'gather'
  -}
 gatherAll :: Monad m => BranchT m [a] -> m [a]
 gatherAll simpl = Monad.join <$> gather simpl
+
+
+gatherPatterns
+    :: (Ord variable, Monad m)
+    => BranchT m (Pattern variable)
+    -> m (OrPattern variable)
+gatherPatterns = Monad.liftM OrPattern.fromPatterns . gather
 
 {- | Disperse results into many simplification branches.
 
