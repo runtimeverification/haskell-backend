@@ -101,11 +101,8 @@ simplifyToOr
     => TermLike variable
     -> simplifier (OrPattern variable)
 simplifyToOr termLike =
-    localSimplifierTermLike (const simplifier)
-    $ Evaluator.evaluatePattern Predicate.top termLike
+    Evaluator.evaluatePattern Predicate.top termLike
     $ simplifyInternal termLike
-  where
-    simplifier = termLikeSimplifier simplifyToOr
 
 simplifyInternal
     ::  forall variable simplifier
