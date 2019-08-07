@@ -9,35 +9,52 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Axiom.Matcher
-    ( matchAsUnification
-    , unificationWithAppMatchOnTop
+    ( MatchingVariable
+    , matchIncremental
     ) where
 
 import           Control.Applicative
-                 ( (<|>) )
-import           Control.Error.Util
-                 ( just, nothing )
+                 ( Alternative (..) )
+import qualified Control.Error as Error
+import           Control.Lens
+                 ( (%=), (.=), (<>=) )
+import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
-import           Control.Monad.Except
+import           Control.Monad.State.Strict
+                 ( MonadState, StateT )
+import qualified Control.Monad.State.Strict as Monad.State
 import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Maybe
                  ( MaybeT (..) )
-import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import           Data.Function
-                 ( on )
-import qualified Data.Map as Map
+import           Data.Generics.Product
+import           Data.Map
+                 ( Map )
+import qualified Data.Map.Strict as Map
+import           Data.Sequence
+                 ( pattern (:<|), pattern (:|>), Seq )
 import qualified Data.Sequence as Seq
+import qualified GHC.Generics as GHC
 
 import           Kore.Attribute.Pattern.FreeVariables
-import qualified Kore.Builtin.AssociativeCommutative as Ac
+import qualified Kore.Builtin as Builtin
+import qualified Kore.Builtin.List as List
 import qualified Kore.Domain.Builtin as Builtin
-import qualified Kore.Internal.Conditional as Conditional
+import           Kore.Internal.MultiAnd
+                 ( MultiAnd )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import           Kore.Internal.Predicate
                  ( Predicate )
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
-import qualified Kore.Step.Merging.OrPattern as OrPattern
+import           Kore.Internal.TermLike hiding
+                 ( substitute )
+import qualified Kore.Internal.TermLike as TermLike
+import           Kore.Predicate.Predicate
+                 ( makeCeilPredicate )
+import qualified Kore.Predicate.Predicate as Syntax
+                 ( Predicate )
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Simplification.AndTerms
                  ( SortInjectionMatch (SortInjectionMatch),
                  simplifySortInjections )
@@ -45,16 +62,10 @@ import qualified Kore.Step.Simplification.AndTerms as SortInjectionMatch
                  ( SortInjectionMatch (..) )
 import qualified Kore.Step.Simplification.AndTerms as SortInjectionSimplification
                  ( SortInjectionSimplification (..) )
-import qualified Kore.Step.Simplification.Ceil as Ceil
-                 ( makeEvaluateTerm )
 import qualified Kore.Step.Simplification.Data as Simplifier
-import           Kore.Step.Substitution
-                 ( createPredicatesAndSubstitutionsMergerExcept,
-                 mergePredicatesAndSubstitutionsExcept )
 import           Kore.Unification.Error
                  ( unsupportedPatterns )
-import           Kore.Unification.Procedure
-                 ( unificationProcedure )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -62,576 +73,408 @@ import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 
-{- Matches two patterns based on their form.
+-- * Matching
 
-Assumes that the two patterns have no common variables (quantified or not).
+{- | Dispatch a single matching constraint.
 
-Returns Right bottom or Left when it can't handle the patterns. The
-returned substitution substitutes only variables from the first pattern.
+@matchOne@ is the heart of the matching algorithm. Each matcher is applied to
+the constraint in sequence, until one accepts the pair. The matchers may
+introduce substitutions and new constraints. If none of the matchers accepts the
+pair, it is deferred until we have more information.
 
-The meaning of a Right value is that the substitution holds IF the predicate
-holds.
+See also: 'push', 'substitute', 'defer'.
 
-TODO: This is different from unification's meaning, so we should either
-convert all bottoms to Left, or we should do it selectively. Doing
-it selectively is not trivial, e.g. a bottom inside a function should become
-Left, but inside a constructor we may be able to keep it as bottom.
--}
-matchAsUnification
-    ::  ( FreshVariable variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadUnify unifier
-        )
-    => TermLike variable
-    -> TermLike variable
-    -> unifier (Predicate variable)
-matchAsUnification first second = do
-    result <- runMaybeT $ match Map.empty first second
-    maybe
-        (Monad.Unify.throwUnificationError
-            (unsupportedPatterns "Unknown match case." first second)
-        )
-        return
-        result
+ -}
+matchOne
+    :: (MatchingVariable variable, MonadUnify unifier)
+    => Pair (TermLike variable)
+    -> MatcherT variable unifier ()
+matchOne pair =
+    (   matchVariable    pair
+    <|> matchEqualHeads  pair
+    <|> matchApplication pair
+    <|> matchBuiltinList pair
+    <|> matchBuiltinMap  pair
+    <|> matchBuiltinSet  pair
+    )
+    & Error.maybeT (defer pair) return
 
-unificationWithAppMatchOnTop
-    ::  ( FreshVariable variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadUnify unifier
-        )
-    => TermLike variable
-    -> TermLike variable
-    -> unifier (Predicate variable)
-unificationWithAppMatchOnTop first second =
-    case first of
-        (App_ firstHead firstChildren) ->
-            case second of
-                (App_ secondHead secondChildren)
-                  | firstHead == secondHead
-                    -> unifyJoin (zip firstChildren secondChildren)
-                  | symbolConstructor firstHead == symbolConstructor secondHead
-                    -- The application heads have the same symbol or alias
-                    -- constructor with different parameters,
-                    -- but we do not handle unification of symbol parameters.
-                        -> Monad.Unify.throwUnificationError
-                            (unsupportedPatterns
-                                "Unknown application head match case for "
-                                first
-                                second
-                            )
-                  | otherwise
-                    -> error
-                        (  "Unexpected unequal heads: "
-                        ++ show firstHead ++ " and "
-                        ++ show secondHead ++ "."
-                        )
-                _ -> error
-                    (  "Expecting application patterns, but second = "
-                    ++ show second ++ "."
-                    )
-        (Ceil_ firstOperandSort (SortVariableSort _) firstChild) ->
-            case second of
-                (Ceil_ secondOperandSort _resultSort secondChild)
-                  | firstOperandSort == secondOperandSort ->
-                    unificationWithAppMatchOnTop firstChild secondChild
-                  | otherwise
-                        -> error
-                            (  "Unexpected unequal child sorts: "
-                            ++ show firstOperandSort ++ " and "
-                            ++ show secondOperandSort ++ "."
-                            )
-                _ -> error
-                    (  "Expecting ceil patterns, but second = "
-                    ++ show second ++ "."
-                    )
-        _ -> error
-            (  "Expecting application or ceil with sort variable patterns, "
-            ++ "but first = " ++ show first ++ "."
-            )
+{- | Drive @matchOne@ until it cannot continue.
 
-match
-    ::  ( FreshVariable variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadUnify unifier
-        )
-    => Map.Map variable variable
-    -- ^ Quantified variables
-    -> TermLike variable
-    -> TermLike variable
-    -- TODO: Use Result here.
-    -> MaybeT unifier (Predicate variable)
-match quantifiedVariables first second =
-    (<|>)
-        (matchEqualHeadPatterns quantifiedVariables first second)
-        (matchVariableFunction quantifiedVariables first second)
+Matching ends when all constraints have been dispatched. If there are remaining
+deferred constraints, then matching fails.
 
-matchEqualHeadPatterns
-    ::  forall variable unifier
-    .   ( SortedVariable variable
-        , Unparse variable
-        , Show variable
-        , FreshVariable variable
-        , MonadUnify unifier
-        )
-    => Map.Map variable variable
-    -- ^ Quantified variables
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Predicate variable)
-matchEqualHeadPatterns quantifiedVariables first second = do
-    tools <- Simplifier.askMetadataTools
-    case first of
-        (And_ _ firstFirst firstSecond) ->
-            case second of
-                (And_ _ secondFirst secondSecond) ->
-                    matchJoin
-                        quantifiedVariables
-                        [ (firstFirst, secondFirst)
-                        , (firstSecond, secondSecond)
-                        ]
-                _ -> nothing
-        (App_ firstHead firstChildren) ->
-            case second of
-                (App_ secondHead secondChildren) ->
-                    if firstHead == secondHead
-                    then
-                        matchJoin
-                            quantifiedVariables
-                            (zip firstChildren secondChildren)
-                    else case simplifySortInjections tools first second of
-                        Nothing -> nothing
-                        Just SortInjectionSimplification.NotInjection ->
-                            nothing
-                        Just SortInjectionSimplification.NotMatching ->
-                            nothing
-                        Just
-                            (SortInjectionSimplification.Matching
-                                SortInjectionMatch
-                                    { firstChild, secondChild }
-                            ) ->
-                                matchJoin
-                                    quantifiedVariables
-                                    [(firstChild, secondChild)]
-                (Builtin_ b2) ->
-                    matchAppBuiltins
-                        quantifiedVariables
-                        firstHead
-                        firstChildren
-                        b2
-                _ -> nothing
-        (Bottom_ _) -> topWhenEqualOrNothing first second
-        (Ceil_ _ _ firstChild) ->
-            case second of
-                (Ceil_ _ _ secondChild) ->
-                    match quantifiedVariables firstChild secondChild
-                _ -> nothing
-        (CharLiteral_ _) ->
-            topWhenEqualOrNothing first second
-        (Builtin_ b1) ->
-            (<|>)
-                (topWhenEqualOrNothing first second)
-                $ case second of
-                    (Builtin_ b2) -> matchBuiltins quantifiedVariables b1 b2
-                    _             -> nothing
-        (DV_ _ _) ->
-            topWhenEqualOrNothing first second
-        (Equals_ _ _ firstFirst firstSecond) ->
-            case second of
-                (Equals_ _ _ secondFirst secondSecond) ->
-                    matchJoin
-                        quantifiedVariables
-                        [ (firstFirst, secondFirst)
-                        , (firstSecond, secondSecond)
-                        ]
-                _ -> nothing
-        (Exists_ _ firstVariable firstChild) ->
-            case second of
-                (Exists_ _ secondVariable secondChild) ->
-                    checkVariableEscape [firstVariable, secondVariable]
-                    <$> match
-                        (Map.insert
-                            firstVariable secondVariable quantifiedVariables
-                        )
-                        firstChild
-                        secondChild
-                _ -> nothing
-        (Floor_ _ _ firstChild) ->
-            case second of
-                (Floor_ _ _ secondChild) ->
-                    match
-                        quantifiedVariables
-                        firstChild
-                        secondChild
-                _ -> nothing
-        (Forall_ _ firstVariable firstChild) ->
-            case second of
-                (Forall_ _ secondVariable secondChild) ->
-                    (<$>)
-                        (checkVariableEscape [firstVariable, secondVariable])
-                        (match
-                            (Map.insert
-                                firstVariable
-                                secondVariable
-                                quantifiedVariables
-                            )
-                            firstChild
-                            secondChild
-                        )
-                _ -> nothing
-        (Iff_ _ firstFirst firstSecond) ->
-            case second of
-                (Iff_ _ secondFirst secondSecond) ->
-                    matchJoin
-                        quantifiedVariables
-                        [ (firstFirst, secondFirst)
-                        , (firstSecond, secondSecond)
-                        ]
-                _ -> nothing
-        (Implies_ _ firstFirst firstSecond) ->
-            case second of
-                (Implies_ _ secondFirst secondSecond) ->
-                    matchJoin
-                        quantifiedVariables
-                        [ (firstFirst, secondFirst)
-                        , (firstSecond, secondSecond)
-                        ]
-                _ -> nothing
-        (In_ _ _ firstFirst firstSecond) ->
-            case second of
-                (In_ _ _ secondFirst secondSecond) ->
-                    matchJoin
-                        quantifiedVariables
-                        [ (firstFirst, secondFirst)
-                        , (firstSecond, secondSecond)
-                        ]
-                _ -> nothing
-        (Next_ _ firstChild) ->
-            case second of
-                (Next_ _ secondChild) ->
-                    match quantifiedVariables firstChild secondChild
-                _ -> nothing
-        (Not_ _ firstChild) ->
-            case second of
-                (Not_ _ secondChild) ->
-                    match quantifiedVariables firstChild secondChild
-                _ -> nothing
-        (Or_ _ firstFirst firstSecond) ->
-            case second of
-                (Or_ _ secondFirst secondSecond) ->
-                    matchJoin
-                        quantifiedVariables
-                        [ (firstFirst, secondFirst)
-                        , (firstSecond, secondSecond)
-                        ]
-                _ -> nothing
-        (Rewrites_ _ firstFirst firstSecond) ->
-            case second of
-                (Rewrites_ _ secondFirst secondSecond) ->
-                    matchJoin
-                        quantifiedVariables
-                        [ (firstFirst, secondFirst)
-                        , (firstSecond, secondSecond)
-                        ]
-                _ -> nothing
-        (StringLiteral_ _) -> topWhenEqualOrNothing first second
-        (Top_ _) -> topWhenEqualOrNothing first second
-        (Var_ firstVariable) ->
-            case second of
-                (Var_ secondVariable) ->
-                    case Map.lookup firstVariable quantifiedVariables of
-                        Nothing -> nothing
-                        Just variable ->
-                            if variable == secondVariable
-                            then justTop
-                            else nothing
-                _ -> nothing
-        _ -> nothing
-  where
-    topWhenEqualOrNothing first' second' =
-        if first' == second'
-            then justTop
-            else nothing
-    justTop :: MaybeT unifier (Predicate variable)
-    justTop = just Predicate.top
-
-matchJoin
-    ::  forall variable unifier
-    .   ( FreshVariable variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadUnify unifier
-        )
-    => Map.Map variable variable
-    -- ^ Quantified variables
-    -> [(TermLike variable, TermLike variable)]
-    -> MaybeT unifier (Predicate variable)
-matchJoin quantifiedVariables patterns = do
-    matched <-
-        traverse  -- also does a cross-product of the unifier branches
-            (uncurry $ match quantifiedVariables)
-            patterns
-    lift $ mergePredicatesAndSubstitutionsExcept
-        (map Conditional.predicate matched)
-        (map Conditional.substitution matched)
-
-unifyJoin
-    ::  forall variable unifier
-    .   ( FreshVariable variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadUnify unifier
-        )
-    => [(TermLike variable, TermLike variable)]
-    -> unifier (Predicate variable)
-unifyJoin patterns = do
-    predicates <- traverse (uncurry unificationProcedure) patterns
-    return (Foldable.fold predicates)
-
--- Note that we can't match variables to stuff which can have more than one
--- value, because if we take the axiom
--- x = x and exists y . y=x
--- and we try to apply it to, say, 'a or b', where a and b are constructors
--- without arguments, then we would get
--- a or b
---   = (a or b) and (exists y . y = (a or b))
---   = (a or b) and bottom
---   = bottom
---
--- However, we can match variables to non-total stuff by using ceil to
--- force the match to bottom whenever we lose totality. This
--- assumes that, when applying the match to a pattern p, it will be split
--- into (p-replacing-lhs-by-rhs[subst] and predicate) or (p and not predicate)
-matchVariableFunction
-    ::  ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , SortedVariable variable
-        , Unparse variable
-        , MonadUnify unifier
-        )
-    => Map.Map variable variable
-    -- ^ Quantified variables
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Predicate variable)
-matchVariableFunction quantifiedVariables (Var_ var) second
-  | not (var `Map.member` quantifiedVariables) = do
-    Monad.guard (isFunctionPattern second)
-    Monad.Trans.lift $ do
-        ceilOr <- Ceil.makeEvaluateTerm second
-        result <-
-            OrPattern.mergeWithPredicateAssumesEvaluated
-                createPredicatesAndSubstitutionsMergerExcept
-                (Conditional.fromSingleSubstitution (var, second))
-                ceilOr
-        Monad.Unify.scatter result
-matchVariableFunction _ _ _ = nothing
-
-checkVariableEscape
-    ::  ( Show variable
-        , SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
-    => [variable]
-    -> Predicate variable
-    -> Predicate variable
-checkVariableEscape vars predSubst
-  | any (`isFreeVariable` freeVars) vars = error
-        "quantified variables in substitution or predicate escaping context"
-  | otherwise = predSubst
-  where
-    freeVars = Predicate.freeVariables predSubst
-
-matchAppBuiltins
+ -}
+matchIncremental
     :: forall variable unifier
-    .  FreshVariable variable
-    => Show variable
-    => Unparse variable
-    => SortedVariable variable
-    => MonadUnify unifier
-    => Map.Map variable variable
-    -> Symbol
-    -> [TermLike variable]
-    -> Builtin.Builtin (TermLike Concrete) (TermLike variable)
-    -> MaybeT unifier (Predicate variable)
-matchAppBuiltins qv symbol args (Builtin.BuiltinList l2)
-  | symbol == Builtin.builtinListConcat l2 =
-    case args of
-        [ Builtin_ (Builtin.BuiltinList l1), x@(Var_ _) ] -> do
-            let (prefix2, suffix2) = splitByL2 (listLength l1) l2
-            prefix  <-
-                matchBuiltins
-                    qv
-                    (Builtin.BuiltinList l1)
-                    (Builtin.BuiltinList prefix2)
-            suffix <- match qv x (mkBuiltin $ Builtin.BuiltinList suffix2)
-            pure $ prefix <> suffix
-        [ x@(Var_ _), Builtin_ (Builtin.BuiltinList l1) ] -> do
-            let (prefix2, suffix2) = splitByL2 (listLength l2 - listLength l1) l2
-            prefix <- match qv x (mkBuiltin $ Builtin.BuiltinList prefix2)
-            suffix  <-
-                matchBuiltins
-                    qv
-                    (Builtin.BuiltinList l1)
-                    (Builtin.BuiltinList suffix2)
-            pure $ prefix <> suffix
-        _ -> nothing
+    .  (MatchingVariable variable, MonadUnify unifier)
+    => TermLike variable
+    -> TermLike variable
+    -> unifier (Predicate variable)
+matchIncremental termLike1 termLike2 =
+    Monad.State.evalStateT matcher initial
   where
-    listLength :: Builtin.InternalList (TermLike variable) -> Int
-    listLength = Seq.length . Builtin.builtinListChild
+    matcher = pop >>= maybe done (\pair -> matchOne pair >> matcher)
 
-    splitByL2
-        :: Int
-        -> Builtin.InternalList (TermLike variable)
-        ->  ( Builtin.InternalList (TermLike variable)
+    initial =
+        MatcherState
+            { queued = Seq.singleton (Pair termLike1 termLike2)
+            , deferred = empty
+            , predicate = empty
+            , substitution = mempty
+            , targetVariables = TermLike.freeVariables termLike1
+            }
+
+    -- | Check that matching is finished and construct the result.
+    done :: MatcherT variable unifier (Predicate variable)
+    done = do
+        final@MatcherState { queued, deferred } <- Monad.State.get
+        let isDone = null queued && null deferred
+        Monad.unless isDone throwUnknown
+        let MatcherState { predicate, substitution } = final
+            predicate' =
+                Predicate.fromPredicate
+                $ MultiAnd.toPredicate predicate
+            substitution' =
+                Predicate.fromSubstitution
+                $ Substitution.fromMap substitution
+        return (predicate' <> substitution')
+
+    throwUnknown =
+        Monad.Trans.lift
+        $ Monad.Unify.throwUnificationError
+        $ unsupportedPatterns "Unknown match case" termLike1 termLike2
+
+matchEqualHeads
+    :: (MatchingVariable variable, MonadUnify unifier)
+    => Pair (TermLike variable)
+    -> MaybeT (MatcherT variable unifier) ()
+-- Terminal patterns
+matchEqualHeads (Pair (StringLiteral_ string1) (StringLiteral_ string2)) =
+    Monad.guard (string1 == string2)
+matchEqualHeads (Pair (CharLiteral_ char1) (CharLiteral_ char2)) =
+    Monad.guard (char1 == char2)
+matchEqualHeads (Pair (BuiltinInt_ int1) (BuiltinInt_ int2)) =
+    Monad.guard (int1 == int2)
+matchEqualHeads (Pair (BuiltinBool_ bool1) (BuiltinBool_ bool2)) =
+    Monad.guard (bool1 == bool2)
+matchEqualHeads (Pair (BuiltinString_ string1) (BuiltinString_ string2)) =
+    Monad.guard (string1 == string2)
+matchEqualHeads (Pair (Bottom_ _) (Bottom_ _)) =
+    return ()
+matchEqualHeads (Pair (Top_ _) (Top_ _)) =
+    return ()
+-- Non-terminal patterns
+matchEqualHeads (Pair (Ceil_ _ _ term1) (Ceil_ _ _ term2)) =
+    push (Pair term1 term2)
+matchEqualHeads (Pair (DV_ _ dv1) (DV_ _ dv2)) =
+    push (Pair dv1 dv2)
+matchEqualHeads _ = empty
+
+matchVariable
+    :: (MatchingVariable variable, MonadUnify unifier)
+    => Pair (TermLike variable)
+    -> MaybeT (MatcherT variable unifier) ()
+matchVariable (Pair (Var_ variable1) term2)
+  | Var_ variable2 <- term2, variable1 == variable2 = return ()
+  | otherwise = do
+    guardTargetVariable variable1
+    Monad.guard (isFunctionPattern term2)
+    substitute variable1 term2
+matchVariable _ = empty
+
+matchApplication
+    :: (MatchingVariable variable, MonadUnify unifier)
+    => Pair (TermLike variable)
+    -> MaybeT (MatcherT variable unifier) ()
+matchApplication
+    (Pair term1@(App_ symbol1 children1) term2@(App_ symbol2 children2))
+
+  -- Match identical symbols.
+  | symbol1 == symbol2 =
+    Foldable.traverse_ push (zipWith Pair children1 children2)
+
+  -- Match conformable sort injections.
+  | otherwise = do
+    tools <- Simplifier.askMetadataTools
+    case simplifySortInjections tools term1 term2 of
+        Just (SortInjectionSimplification.Matching injMatch) -> do
+            let SortInjectionMatch { firstChild, secondChild } = injMatch
+            push (Pair firstChild secondChild)
+        _ -> empty
+matchApplication _ = empty
+
+matchBuiltinList
+    :: (MatchingVariable variable, MonadUnify unifier)
+    => Pair (TermLike variable)
+    -> MaybeT (MatcherT variable unifier) ()
+matchBuiltinList (Pair (BuiltinList_ list1) (BuiltinList_ list2)) = do
+    (aligned, tail2) <- leftAlignLists list1 list2 & Error.hoistMaybe
+    Monad.guard (null tail2)
+    Foldable.traverse_ push aligned
+matchBuiltinList (Pair (App_ symbol1 children1) (BuiltinList_ list2))
+  | List.isSymbolConcat symbol1 = matchBuiltinListConcat children1 list2
+matchBuiltinList _ = empty
+
+matchBuiltinListConcat
+    :: (MatchingVariable variable, MonadUnify unifier)
+    => [TermLike variable]
+    -> Builtin.InternalList (TermLike variable)
+    -> MaybeT (MatcherT variable unifier) ()
+
+matchBuiltinListConcat [BuiltinList_ list1, frame1] list2 = do
+    (aligned, tail2) <- leftAlignLists list1 list2 & Error.hoistMaybe
+    Foldable.traverse_ push aligned
+    push (Pair frame1 (mkBuiltinList tail2))
+
+matchBuiltinListConcat [frame1, BuiltinList_ list1] list2 = do
+    (head2, aligned) <- rightAlignLists list1 list2 & Error.hoistMaybe
+    push (Pair frame1 (mkBuiltinList head2))
+    Foldable.traverse_ push aligned
+
+matchBuiltinListConcat _ _ = empty
+
+matchBuiltinSet
+    :: (MatchingVariable variable, MonadUnify unifier)
+    => Pair (TermLike variable)
+    -> MaybeT (MatcherT variable unifier) ()
+matchBuiltinSet (Pair (BuiltinSet_ set1) (BuiltinSet_ set2)) = do
+    matchNormalizedAc pushSetValue wrapTermLike normalized1 normalized2
+  where
+    normalized1 = Builtin.unwrapAc $ Builtin.builtinAcChild set1
+    normalized2 = Builtin.unwrapAc $ Builtin.builtinAcChild set2
+    pushSetValue _ = return ()
+    wrapTermLike unwrapped =
+        set2
+        & Lens.set (field @"builtinAcChild") (Builtin.wrapAc unwrapped)
+        & mkBuiltinSet
+matchBuiltinSet _ = empty
+
+matchBuiltinMap
+    :: (MatchingVariable variable, MonadUnify unifier)
+    => Pair (TermLike variable)
+    -> MaybeT (MatcherT variable unifier) ()
+matchBuiltinMap (Pair (BuiltinMap_ map1) (BuiltinMap_ map2)) =
+    matchNormalizedAc pushMapValue wrapTermLike normalized1 normalized2
+  where
+    normalized1 = Builtin.unwrapAc $ Builtin.builtinAcChild map1
+    normalized2 = Builtin.unwrapAc $ Builtin.builtinAcChild map2
+    pushMapValue = push . fmap Builtin.getMapValue
+    wrapTermLike unwrapped =
+        map2
+        & Lens.set (field @"builtinAcChild") (Builtin.wrapAc unwrapped)
+        & mkBuiltinMap
+matchBuiltinMap _ = empty
+
+-- * Implementation
+
+type MatchingVariable variable =
+    ( FreshVariable variable
+    , SortedVariable variable
+    , Show variable
+    , Unparse variable
+    )
+
+{- | A matching constraint is a @Pair@ of patterns.
+
+The first pattern will be made to match the second.
+
+ -}
+data Pair a = Pair !a !a
+    deriving (Foldable, Functor)
+
+{- | The internal state of the matching algorithm.
+ -}
+data MatcherState variable =
+    MatcherState
+        { queued :: !(Seq (Pair (TermLike variable)))
+        , deferred :: !(Seq (Pair (TermLike variable)))
+        , predicate :: !(MultiAnd (Syntax.Predicate variable))
+        , substitution :: !(Map variable (TermLike variable))
+        , targetVariables :: !(FreeVariables variable)
+        }
+    deriving (GHC.Generic)
+
+type MatcherT variable unifier = StateT (MatcherState variable) unifier
+
+{- | Pop the next constraint from the matching queue.
+ -}
+pop
+    :: MonadState (MatcherState variable) matcher
+    => matcher (Maybe (Pair (TermLike variable)))
+pop =
+    Lens.use (field @"queued") >>= \case
+        next :<| queued' -> do
+            field @"queued" .= queued'
+            return (Just next)
+        _ ->
+            return Nothing
+
+{- | Push a new constraint onto the matching queue.
+ -}
+push
+    :: MonadState (MatcherState variable) matcher
+    => Pair (TermLike variable)
+    -> matcher ()
+push pair = field @"queued" %= (pair :<|)
+
+{- | Defer a constraint until more information is available.
+
+The constraint will be retried after the next substitution which affects it.
+
+ -}
+defer
+    :: MonadState (MatcherState variable) matcher
+    => Pair (TermLike variable)
+    -> matcher ()
+defer pair = field @"deferred" %= (:|> pair)
+
+{- | Record a substitution in the matching solution.
+
+The substitution is applied to the remaining constraints and to the partial
+matching solution (so that it is always normalized). @substitute@ ensures that
+the variable does not occur on the right-hand side of the substitution and adds
+a constraint that the right-hand side is defined (if necessary).
+
+ -}
+substitute
+    :: (MatchingVariable variable, MonadUnify unifier)
+    => variable
+    -> TermLike variable
+    -> MaybeT (MatcherT variable unifier) ()
+substitute variable termLike = do
+    -- Ensure that the variable does not occur free in the TermLike.
+    occursCheck variable termLike
+    -- Ensure that the TermLike is defined.
+    definedTerm termLike
+    -- Record the substitution.
+    field @"substitution" <>= Map.singleton variable termLike
+
+    -- Isolate the deferred pairs which depend on the variable.
+    -- After substitution, the dependent pairs go to the front of the queue.
+    MatcherState { deferred } <- Monad.State.get
+    let (indep, dep) = Seq.partition isIndependent deferred
+    field @"deferred" .= indep
+
+    -- Push the dependent deferred pairs to the front of the queue.
+    Foldable.traverse_ push dep
+    -- Apply the substitution to the queued pairs.
+    field @"queued" . Lens.mapped %= substitute2
+
+    -- Apply the substitution to the accumulated matching solution.
+    field @"substitution" . Lens.mapped %= substitute1
+    field @"predicate" . Lens.mapped %= Syntax.Predicate.substitute subst
+
+    return ()
+  where
+    isIndependent = not . any (hasFreeVariable variable)
+    subst = Map.singleton variable termLike
+    substitute2 = fmap substitute1
+    substitute1 = Builtin.renormalize . TermLike.substitute subst
+
+occursCheck
+    :: (MatchingVariable variable, MonadUnify unifier)
+    => variable
+    -> TermLike variable
+    -> MaybeT (MatcherT variable unifier) ()
+occursCheck variable termLike =
+    (Monad.guard . not) (hasFreeVariable variable termLike)
+
+definedTerm
+    :: (MatchingVariable variable, MonadState (MatcherState variable) matcher)
+    => TermLike variable
+    -> matcher ()
+definedTerm termLike
+  | isDefinedPattern termLike = return ()
+  | otherwise = field @"predicate" <>= definedTermLike
+  where
+    definedTermLike = MultiAnd.make [makeCeilPredicate termLike]
+
+{- | Ensure that the given variable is a target variable.
+
+Matching should only produce substitutions for variables in one argument; these
+are the "target" variables. After one or more substitutions, the first argument
+can also contain non-target variables and this guard is used to ensure that we
+do not attempt to match on them.
+
+ -}
+guardTargetVariable
+    :: (MatchingVariable variable, Monad unifier)
+    => variable
+    -> MaybeT (MatcherT variable unifier) ()
+guardTargetVariable variable = do
+    MatcherState { targetVariables } <- Monad.State.get
+    Monad.guard (isFreeVariable variable targetVariables)
+
+leftAlignLists
+    ::  Builtin.InternalList (TermLike variable)
+    ->  Builtin.InternalList (TermLike variable)
+    ->  Maybe
+            ( Builtin.InternalList (Pair (TermLike variable))
             , Builtin.InternalList (TermLike variable)
             )
-    splitByL2 idx l =
-        Bifunctor.bimap
-            (updateInnerList l)
-            (updateInnerList l)
-            $ Seq.splitAt idx (Builtin.builtinListChild l)
-
-    updateInnerList l newValue = l { Builtin.builtinListChild = newValue }
-matchAppBuiltins _ _ _ _ = nothing
-
-matchBuiltins
-    :: FreshVariable variable
-    => Show variable
-    => Unparse variable
-    => SortedVariable variable
-    => MonadUnify unifier
-    => Map.Map variable variable
-    -> Builtin.Builtin (TermLike Concrete) (TermLike variable)
-    -> Builtin.Builtin (TermLike Concrete) (TermLike variable)
-    -> MaybeT unifier (Predicate variable)
-matchBuiltins qv (Builtin.BuiltinList l1) (Builtin.BuiltinList l2)
-  | ((==) `on` Seq.length) seq1 seq2 =
-    fmap Foldable.fold
-        . traverse match'
-        $ Seq.zip seq1 seq2
-  where
-    seq1 = Builtin.builtinListChild l1
-    seq2 = Builtin.builtinListChild l2
-    match' = uncurry (match qv)
-matchBuiltins qv (Builtin.BuiltinSet s1) (Builtin.BuiltinSet s2) =
-    matchAc
-        qv
-        builtinAcSort
-        (Builtin.unwrapAc wrapped1)
-        (Builtin.unwrapAc wrapped2)
-  where
-    Builtin.InternalAc { builtinAcChild = wrapped1 } = s1
-    Builtin.InternalAc { builtinAcChild = wrapped2, builtinAcSort } = s2
-matchBuiltins qv (Builtin.BuiltinMap m1) (Builtin.BuiltinMap m2) =
-    matchAc
-        qv
-        builtinAcSort
-        (Builtin.unwrapAc wrapped1)
-        (Builtin.unwrapAc wrapped2)
-  where
-    Builtin.InternalAc { builtinAcChild = wrapped1 } = m1
-    Builtin.InternalAc { builtinAcChild = wrapped2, builtinAcSort } = m2
-matchBuiltins _ _ _ = nothing
-
-matchAc
-    :: forall normalized unifier variable
-    .   ( Builtin.AcWrapper normalized
-        , Foldable (Builtin.Value normalized)
-        , FreshVariable variable
-        , Simplifier.MonadSimplify unifier
-        , MonadUnify unifier
-        , Ord variable
-        , Show variable
-        , SortedVariable variable
-        , Ac.TermWrapper normalized
-        , Traversable (Builtin.Value normalized)
-        , Unparse variable
+leftAlignLists internal1 internal2
+  | length list2 < length list1 = empty
+  | otherwise =
+    return
+        ( internal1 { Builtin.builtinListChild = list12 }
+        , internal1 { Builtin.builtinListChild = tail2 }
         )
-    => Map.Map variable variable
-    -> Sort
-    -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
-    -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
-    -> MaybeT unifier (Predicate variable)
-matchAc
-    quantifiedVariables
-    acSort
-    Builtin.NormalizedAc
-        { elementsWithVariables = preVarElems1
-        , concreteElements      = concrete1
-        , opaque                = varOpaque1
-        }
-    Builtin.NormalizedAc
-        { elementsWithVariables = []
-        , concreteElements      = concrete2
-        , opaque                = []
-        }
-  | length varOpaque1 <= 1 = do
-    let varElems1 = Builtin.unwrapElement <$> preVarElems1
-    let intersection
-            :: Map.Map
-                (TermLike Concrete)
-                ( Builtin.Value normalized (TermLike variable)
-                , Builtin.Value normalized (TermLike variable)
-                )
-        intersection = Map.intersectionWith (,) concrete1 concrete2
-        remainder = Map.toList $ Map.difference concrete2 concrete1
-    Monad.guard $ length remainder + length concrete1 == length concrete2
-    Monad.guard $ length remainder >= length varElems1
-
-    variableMatches <-
-        fmap Foldable.fold
-            . traverse matchElements
-            $ zip varElems1 remainder
-
-    intersectionMatches <-
-        fmap Foldable.fold
-            . traverse matchWrapped
-            $ Map.elems intersection
-
-    let elementMatches = variableMatches <> intersectionMatches
-
-    let setRemainder = drop (length varElems1) remainder
-    case (varOpaque1, setRemainder) of
-        ([]   , []) -> pure elementMatches
-        ([set], _ ) -> do
-            tools <- Simplifier.askMetadataTools
-            let subset =
-                    Ac.asInternalConcrete tools acSort
-                        $ Map.fromList setRemainder
-            setsMatches <- match quantifiedVariables set subset
-            pure $ elementMatches <> setsMatches
-        _ -> nothing
   where
-    matchElements
-        ::  ( (TermLike variable, Builtin.Value normalized (TermLike variable))
-            , (TermLike Concrete, Builtin.Value normalized (TermLike variable))
-            )
-        -> MaybeT unifier (Predicate variable)
-    matchElements
-        ((variableKey, variableValue), (concreteKey, concreteValue) )
-      = do
-        keyUnifier <-
-            match quantifiedVariables variableKey (fromConcrete concreteKey)
-        wrappedValueUnifier <- matchWrapped (variableValue, concreteValue)
-        return (keyUnifier <> wrappedValueUnifier)
+    list1 = Builtin.builtinListChild internal1
+    list2 = Builtin.builtinListChild internal2
+    list12 = Seq.zipWith Pair list1 head2
+    (head2, tail2) = Seq.splitAt (length list1) list2
 
-    matchWrapped
-        ::  ( Builtin.Value normalized (TermLike variable)
-            , Builtin.Value normalized (TermLike variable)
+rightAlignLists
+    ::  Builtin.InternalList (TermLike variable)
+    ->  Builtin.InternalList (TermLike variable)
+    ->  Maybe
+            ( Builtin.InternalList (TermLike variable)
+            , Builtin.InternalList (Pair (TermLike variable))
             )
-        -> MaybeT unifier (Predicate variable)
-    matchWrapped (variableValue, concreteValue) = do
-        let aligned = Builtin.alignValues variableValue concreteValue
-        Foldable.fold <$> traverse (uncurry (match quantifiedVariables)) aligned
-matchAc _ _ _ _ = nothing
+rightAlignLists internal1 internal2
+  | length list2 < length list1 = empty
+  | otherwise =
+    return
+        ( internal1 { Builtin.builtinListChild = head2 }
+        , internal1 { Builtin.builtinListChild = list12 }
+        )
+  where
+    list1 = Builtin.builtinListChild internal1
+    list2 = Builtin.builtinListChild internal2
+    list12 = Seq.zipWith Pair list1 tail2
+    (head2, tail2) = Seq.splitAt (length list2 - length list1) list2
+
+matchNormalizedAc
+    :: (MatchingVariable variable, MonadUnify unifier)
+    => (Pair (Builtin.Value normalized (TermLike variable)) -> MatcherT variable unifier ())
+    ->  (Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
+        -> TermLike variable
+        )
+    -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
+    -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
+    -> MaybeT (MatcherT variable unifier) ()
+matchNormalizedAc pushValue wrapTermLike normalized1 normalized2
+  | [] <- abstract2, [] <- opaque2
+  , [] <- abstract1
+  = do
+    Monad.guard (null excess1)
+    case opaque1 of
+        []       -> Monad.guard (null excess2)
+        [frame1] -> push (Pair frame1 normalized2')
+        _        -> empty
+    Monad.Trans.lift $ Foldable.traverse_ pushValue concrete12
+  where
+    normalized2' =
+        wrapTermLike normalized2 { Builtin.concreteElements = excess2 }
+    abstract1 = Builtin.elementsWithVariables normalized1
+    concrete1 = Builtin.concreteElements normalized1
+    opaque1 = Builtin.opaque normalized1
+    abstract2 = Builtin.elementsWithVariables normalized2
+    concrete2 = Builtin.concreteElements normalized2
+    opaque2 = Builtin.opaque normalized2
+    excess1 = Map.difference concrete1 concrete2
+    excess2 = Map.difference concrete2 concrete1
+    concrete12 = Map.intersectionWith Pair concrete1 concrete2
+matchNormalizedAc _ _ _ _ = empty
