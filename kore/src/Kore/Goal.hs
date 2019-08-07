@@ -8,7 +8,7 @@ import           Control.Applicative
                  ( Alternative (..) )
 import qualified Control.Monad.Trans as Monad.Trans
 import           Data.Coerce
-                 ( coerce )
+                 ( Coercible, coerce )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import           Data.Hashable
@@ -112,7 +112,7 @@ data Prim rule
     | DeriveSeq [rule]
 
 class Goal goal where
-    type Rule goal
+    data Rule goal
 
     -- | Remove the destination of the goal.
     removeDestination
@@ -240,9 +240,9 @@ removalPredicate
         , Unparse variable
         , SortedVariable variable
         )
-    => Pattern.Pattern variable
+    => Pattern variable
     -- ^ Destination
-    -> Pattern.Pattern variable
+    -> Pattern variable
     -- ^ Current configuration
     -> Predicate variable
 removalPredicate destination config =
@@ -272,7 +272,8 @@ instance
     , FreshVariable variable
     ) => Goal (OnePathRule variable) where
 
-    type Rule (OnePathRule variable) = RewriteRule variable
+    newtype Rule (OnePathRule variable) =
+        Rule { unRule :: RewriteRule variable }
 
     isTrusted =
         Trusted.isTrusted
@@ -289,7 +290,7 @@ instance
                 Conditional.andPredicate
                     configuration
                     removal
-        pure $ makeOnePathRule result destination
+        pure $ makeRuleFromPatterns result destination
 
     simplify goal = do
         let destination = getDestination goal
@@ -301,7 +302,7 @@ instance
                 OrPattern.toPattern
                 . MultiOr.filterOr
                 $ orResult
-        pure $ makeOnePathRule simplifiedResult destination
+        pure $ makeRuleFromPatterns simplifiedResult destination
 
     isTriviallyValid goal =
         isBottom . left . coerce $ goal
@@ -309,12 +310,13 @@ instance
     derivePar rules goal = do
         let destination = getDestination goal
             configuration = getConfiguration goal
+            rewrites = unRule <$> rules
         eitherResults <-
             Monad.Trans.lift
             . Monad.Unify.runUnifierT
             $ Step.applyRewriteRulesParallel
                 (Step.UnificationProcedure Unification.unificationProcedure)
-                rules
+                rewrites
                 configuration
         case eitherResults of
             Left err ->
@@ -329,7 +331,8 @@ instance
             Right results -> do
                 let mapRules =
                         Result.mapRules
-                        $ RewriteRule
+                        $ Rule
+                        . RewriteRule
                         . Step.unwrapRule
                         . Step.withoutUnification
                     traverseConfigs =
@@ -338,8 +341,8 @@ instance
                             (\x -> GoalRem <$> removeDestination x)
                 let onePathResults =
                         Result.mapConfigs
-                            (flip makeOnePathRule $ destination)
-                            (flip makeOnePathRule $ destination)
+                            (flip makeRuleFromPatterns $ destination)
+                            (flip makeRuleFromPatterns $ destination)
                             (Result.mergeResults results)
                 results' <-
                     traverseConfigs (mapRules onePathResults)
@@ -348,13 +351,14 @@ instance
     deriveSeq rules goal = do
         let destination = getDestination goal
             configuration = getConfiguration goal
+            rewrites = unRule <$> rules
         eitherResults <-
             Monad.Trans.lift
             . Monad.Unify.runUnifierT
             $ Step.applyRewriteRulesSequence
                 (Step.UnificationProcedure Unification.unificationProcedure)
                 configuration
-                rules
+                rewrites
         case eitherResults of
             Left err ->
                 (error . show . Pretty.vsep)
@@ -368,7 +372,8 @@ instance
             Right results -> do
                 let mapRules =
                         Result.mapRules
-                        $ RewriteRule
+                        $ Rule
+                        . RewriteRule
                         . Step.unwrapRule
                         . Step.withoutUnification
                     traverseConfigs =
@@ -377,45 +382,52 @@ instance
                             (\x -> GoalRem <$> removeDestination x)
                 let onePathResults =
                         Result.mapConfigs
-                            (flip makeOnePathRule $ destination)
-                            (flip makeOnePathRule $ destination)
+                            (flip makeRuleFromPatterns $ destination)
+                            (flip makeRuleFromPatterns $ destination)
                             (Result.mergeResults results)
                 results' <-
                     traverseConfigs (mapRules onePathResults)
                 Result.transitionResults results'
 
 getConfiguration
-    :: forall variable
+    :: forall rule variable
     .  Ord variable
-    => OnePathRule variable
+    => Coercible rule (RulePattern variable)
+    => rule
     -> Pattern variable
-getConfiguration (OnePathRule RulePattern { left, requires }) =
+getConfiguration rule =
     Conditional
-        { term = left
-        , predicate = requires
+        { term = left rulePatt
+        , predicate = requires rulePatt
         , substitution = mempty
         }
+  where
+    rulePatt = coerce rule
 
 getDestination
-    :: forall variable
+    :: forall rule variable
     .  Ord variable
-    => OnePathRule variable
+    => Coercible rule (RulePattern variable)
+    => rule
     -> Pattern variable
-getDestination (OnePathRule RulePattern { right, ensures }) =
+getDestination rule =
     Conditional
-        { term = right
-        , predicate = ensures
+        { term = right rulePatt
+        , predicate = ensures rulePatt
         , substitution = mempty
         }
+  where
+    rulePatt = coerce rule
 
-makeOnePathRule
-    :: forall variable
+makeRuleFromPatterns
+    :: forall rule variable
     .  Ord variable
+    => Coercible (RulePattern variable) rule
     => Pattern variable
     -> Pattern variable
-    -> OnePathRule variable
-makeOnePathRule configuration destination =
-    OnePathRule RulePattern
+    -> rule
+makeRuleFromPatterns configuration destination =
+    coerce RulePattern
         { left = term configuration
         , right = term destination
         , requires = predicate configuration
