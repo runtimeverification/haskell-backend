@@ -98,28 +98,6 @@ unprovenNodes executionGraph =
 proven :: Strategy.ExecutionGraph (ProofState goal) rule -> Bool
 proven = Foldable.null . unprovenNodes
 
-data ProofStateTransformer goal a =
-    ProofStateTransformer
-        { goalTransformer :: goal -> a
-        , goalRemTransformer :: goal -> a
-        , provenValue :: a
-        }
-
-{- | Catamorphism for 'ProofState'
--}
-proofState
-    :: ProofStateTransformer goal a
-    -> ProofState goal
-    -> a
-proofState
-    ProofStateTransformer
-        {goalTransformer, goalRemTransformer, provenValue}
-  =
-    \case
-        Goal goal -> goalTransformer goal
-        GoalRem goal -> goalRemTransformer goal
-        Proven -> provenValue
-
 {- | The primitive transitions of the all-path reachability proof strategy.
  -}
 data Prim rule

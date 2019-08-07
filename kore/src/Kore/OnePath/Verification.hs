@@ -9,7 +9,8 @@ This should be imported qualified.
 -}
 
 module Kore.OnePath.Verification
-    ( CommonProofState
+    ( Axiom (..)
+    , Claim
     , defaultStrategy
     , verify
     , verifyClaimStep
@@ -89,6 +90,20 @@ decision is subject to change without notice.
  -}
 
 type CommonProofState = ProofState (Pattern Variable)
+
+{- | Class type for claim-like rules
+-}
+type Claim claim =
+    ( Coercible (RulePattern Variable) claim
+    , Coercible claim (RulePattern Variable)
+    , Unparse claim
+    )
+
+{- | Wrapper for a rewrite rule that should be used as an axiom.
+-}
+newtype Axiom = Axiom
+    { unAxiom :: RewriteRule Variable
+    }
 
 {- | @Verifer a@ is a 'Simplifier'-based action which returns an @a@.
 
