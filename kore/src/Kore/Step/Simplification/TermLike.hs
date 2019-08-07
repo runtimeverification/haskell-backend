@@ -23,10 +23,14 @@ import qualified Data.Functor.Foldable as Recursive
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Pattern
+                 ( Pattern )
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Predicate
+                 ( Predicate )
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
--- import qualified Kore.Step.Function.Evaluator as Evaluator
+import qualified Kore.Step.Function.Evaluator as Evaluator
 import qualified Kore.Step.Simplification.And as And
                  ( simplify )
 import qualified Kore.Step.Simplification.Application as Application
@@ -112,15 +116,14 @@ simplifyToOr =
   where
     begin = flip evalStateT True
 
-    -- true :: forall a m. Monad m => a -> MaybeT (StateT Bool m) a
-    -- true a = do
-    --     Monad.State.put True
-    --     return a
+    true :: forall a m. Monad m => a -> MaybeT (StateT Bool m) a
+    true a = do
+        Monad.State.put True
+        return a
 
     false :: forall a m. Monad m => a -> MaybeT (StateT Bool m) a
     false a = do
-        s <- Monad.State.get
-        Monad.guard s
+        Monad.guard =<< Monad.State.get
         Monad.State.put False
         return a
 
@@ -135,13 +138,12 @@ simplifyToOr =
         :: Pattern variable
         -> MaybeT (StateT Bool (BranchT simplifier)) (Pattern variable)
     worker original = do
-        -- let (termLike, predicate) = Pattern.splitTerm original
-        --     orOriginal = OrPattern.fromPattern original
-        -- orPattern <-
-        --     Evaluator.evaluateOnce predicate termLike
-        --     & Error.maybeT (false orOriginal) true
-        -- evaluated <- scatter' orPattern
-        evaluated <- false original
+        let (termLike, predicate) = Pattern.splitTerm original
+            orOriginal = OrPattern.fromPattern original
+        orPattern <-
+            Evaluator.evaluateOnce predicate termLike
+            & Error.maybeT (false orOriginal) true
+        evaluated <- scatter' orPattern
         simplifyPatternInternal evaluated >>= scatter'
 
     scatter'
@@ -185,8 +187,11 @@ simplifyInternalExt
     => Predicate variable
     -> TermLike variable
     -> simplifier (OrPattern variable)
-simplifyInternalExt _ = simplifyInternalWorker
+simplifyInternalExt predicate =
+    Monad.liftM (fmap andPredicate) . simplifyInternalWorker
   where
+    andPredicate = flip Pattern.andCondition predicate
+
     simplifyChildren
         :: Traversable t
         => t (TermLike variable)
