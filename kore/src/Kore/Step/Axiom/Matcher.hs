@@ -203,7 +203,8 @@ matchExists
     :: (MatchingVariable variable, MonadUnify unifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
-matchExists (Pair (Exists_ _ variable1 term1) (Exists_ _ variable2 term2)) = do
+matchExists (Pair (Exists_ _ variable1 term1) (Exists_ _ variable2 term2))
+  | sort1 == sort2 = do
     refreshed1 <- refreshVariable variable1
     let term1' = fromMaybe term1 $ do
             var1 <- mkVar <$> refreshed1
@@ -215,6 +216,9 @@ matchExists (Pair (Exists_ _ variable1 term1) (Exists_ _ variable2 term2)) = do
     -- Quantify the remaining bound variable.
     field @"bound" %= Set.insert variable1'
     push (Pair term1' term2')
+  where
+    sort1 = sortedVariableSort variable1
+    sort2 = sortedVariableSort variable2
 matchExists _ = empty
 
 matchVariable
