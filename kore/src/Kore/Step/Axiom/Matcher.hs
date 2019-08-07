@@ -42,6 +42,7 @@ import qualified Data.Set as Set
 import qualified GHC.Generics as GHC
 
 import           Kore.Attribute.Pattern.FreeVariables
+                 ( FreeVariables (..) )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.List as List
 import qualified Kore.Domain.Builtin as Builtin
@@ -130,9 +131,12 @@ matchIncremental termLike1 termLike2 =
             , deferred = empty
             , predicate = empty
             , substitution = mempty
-            , targets = TermLike.freeVariables termLike1
             , bound = mempty
+            , targets = free1
+            , avoiding = free1 <> free2
             }
+    free1 = (getFreeVariables . TermLike.freeVariables) termLike1
+    free2 = (getFreeVariables . TermLike.freeVariables) termLike2
 
     -- | Check that matching is finished and construct the result.
     done :: MatcherT variable unifier (Predicate variable)
@@ -211,8 +215,7 @@ matchBinder (Binder variable1 term1) (Binder variable2 term2) = do
     let variable1' = fromMaybe variable1 refreshed1
         subst2 = Map.singleton variable2 (mkVar variable1')
         term2' = substituteTermLike subst2 term2
-    -- Quantify the remaining bound variable.
-    field @"bound" %= Set.insert variable1'
+    bindVariable variable1'
     push (Pair term1' term2')
   where
     sort1 = sortedVariableSort variable1
@@ -343,10 +346,12 @@ data MatcherState variable =
         -- ^ Matching solution: Substitutions for target variables.
         , predicate :: !(MultiAnd (Syntax.Predicate variable))
         -- ^ Matching solution: Additional constraints.
-        , targets :: !(FreeVariables variable)
-        -- ^ Target variables that may be substituted.
         , bound :: !(Set variable)
         -- ^ Bound variable that must not escape in the solution.
+        , targets :: !(Set variable)
+        -- ^ Target variables that may be substituted.
+        , avoiding :: !(Set variable)
+        -- ^ Variables that must not be shadowed.
         }
     deriving (GHC.Generic)
 
@@ -471,7 +476,7 @@ targetCheck
     -> MaybeT (MatcherT variable unifier) ()
 targetCheck variable = do
     MatcherState { targets } <- Monad.State.get
-    Monad.guard (isFreeVariable variable targets)
+    Monad.guard (Set.member variable targets)
 
 {- | Ensure that no bound variables occur free in the pattern.
 
@@ -488,6 +493,20 @@ escapeCheck termLike = do
     MatcherState { bound } <- Monad.State.get
     Monad.guard (Set.disjoint bound free)
 
+{- | Record the bound variable.
+
+The bound variable will not escape, nor will it be shadowed.
+
+ -}
+bindVariable
+    :: Ord variable
+    => MonadState (MatcherState variable) matcher
+    => variable
+    -> matcher ()
+bindVariable variable = do
+    field @"bound" %= Set.insert variable
+    field @"avoiding" %= Set.insert variable
+
 {- | Generate a fresh name for the variable, if it shadows another name.
  -}
 refreshVariable
@@ -495,19 +514,8 @@ refreshVariable
     => MonadState (MatcherState variable) matcher
     => variable
     -> matcher (Maybe variable)
-refreshVariable variable = do
-    state <- Monad.State.get
-    let MatcherState { queued, deferred, predicate, substitution } = state
-        freeVariablesPair = Foldable.foldMap TermLike.freeVariables
-        free =
-                Foldable.foldMap freeVariablesPair queued
-            <>  Foldable.foldMap freeVariablesPair deferred
-            <>  Foldable.foldMap Syntax.Predicate.freeVariables predicate
-            <>  Foldable.foldMap TermLike.freeVariables substitution
-            <>  Foldable.foldMap freeVariable (Map.keys substitution)
-        MatcherState { bound } = state
-        avoiding = getFreeVariables free <> bound
-    return $ Variables.refreshVariable avoiding variable
+refreshVariable variable =
+    flip Variables.refreshVariable variable <$> Lens.use (field @"avoiding")
 
 leftAlignLists
     ::  Builtin.InternalList (TermLike variable)
