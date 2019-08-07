@@ -32,6 +32,7 @@ import           Data.Generics.Product
 import           Data.Map
                  ( Map )
 import qualified Data.Map.Strict as Map
+import           Data.Maybe
 import           Data.Sequence
                  ( pattern (:<|), pattern (:|>), Seq )
 import qualified Data.Sequence as Seq
@@ -93,6 +94,7 @@ matchOne
 matchOne pair =
     (   matchVariable    pair
     <|> matchEqualHeads  pair
+    <|> matchExists      pair
     <|> matchApplication pair
     <|> matchBuiltinList pair
     <|> matchBuiltinMap  pair
@@ -191,6 +193,22 @@ refreshVariable variable = do
             <>  Foldable.foldMap freeVariable (Map.keys substitution)
         avoiding = getFreeVariables variables
     return $ Variables.refreshVariable avoiding variable
+
+matchExists
+    :: (MatchingVariable variable, MonadUnify unifier)
+    => Pair (TermLike variable)
+    -> MaybeT (MatcherT variable unifier) ()
+matchExists (Pair (Exists_ _ variable1 term1) (Exists_ _ variable2 term2)) = do
+    variable1' <- refreshVariable variable1
+    let term1' = fromMaybe term1 $ do
+            var1 <- mkVar <$> variable1'
+            let subst1 = Map.singleton variable1 var1
+            return $ substituteTermLike subst1 term1
+    let var1 = mkVar $ fromMaybe variable1 variable1'
+        subst2 = Map.singleton variable2 var1
+        term2' = substituteTermLike subst2 term2
+    push (Pair term1' term2')
+matchExists _ = empty
 
 matchVariable
     :: (MatchingVariable variable, MonadUnify unifier)
