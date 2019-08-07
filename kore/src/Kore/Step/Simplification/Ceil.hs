@@ -187,20 +187,20 @@ makeEvaluateTerm term@(Recursive.project -> _ :< projected) =
       | BuiltinF child <- projected = makeEvaluateBuiltin child
 
       | otherwise = do
-            evaluation <- Axiom.evaluatePattern
-                Conditional
-                    { term = ()
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-                (mkCeil_ term)
-                (OrPattern.fromPattern Conditional
-                    { term = mkTop_
-                    , predicate = makeCeilPredicate term
-                    , substitution = mempty
-                    }
-                )
-            return (fmap toPredicate evaluation)
+        evaluation <- Axiom.evaluatePattern
+            Conditional
+                { term = ()
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+            (mkCeil_ term)
+            (OrPattern.fromPattern Conditional
+                { term = mkTop_
+                , predicate = makeCeilPredicate term
+                , substitution = mempty
+                }
+            )
+        return (fmap toPredicate evaluation)
 
     toPredicate Conditional {term = Top_ _, predicate, substitution} =
         Conditional {term = (), predicate, substitution}
