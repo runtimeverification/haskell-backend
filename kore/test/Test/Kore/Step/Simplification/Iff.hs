@@ -21,6 +21,8 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate, simplify )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import qualified SMT
 
 import           Test.Kore
@@ -69,11 +71,11 @@ test_makeEvaluate =
                         makeIffPredicate
                             (makeAndPredicate
                                 (makeCeilPredicate Mock.cf)
-                                (makeEqualsPredicate (mkVar Mock.x) Mock.a)
+                                (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
                             )
                             (makeAndPredicate
                                 (makeCeilPredicate Mock.cg)
-                                (makeEqualsPredicate (mkVar Mock.y) Mock.b)
+                                (makeEqualsPredicate (mkElemVar Mock.y) Mock.b)
                             )
                     , substitution = mempty
                     }
@@ -83,12 +85,14 @@ test_makeEvaluate =
                 Conditional
                     { term = mkTop_
                     , predicate = makeCeilPredicate Mock.cf
-                    , substitution = Substitution.wrap [(Mock.x, Mock.a)]
+                    , substitution =
+                        Substitution.wrap [(ElemVar Mock.x, Mock.a)]
                     }
                 Conditional
                     { term = mkTop_
                     , predicate = makeCeilPredicate Mock.cg
-                    , substitution = Substitution.wrap [(Mock.y, Mock.b)]
+                    , substitution =
+                        Substitution.wrap [(ElemVar Mock.y, Mock.b)]
                     }
             )
         )
@@ -103,14 +107,14 @@ test_makeEvaluate =
                                     (Mock.f Mock.a)
                                     (mkCeil_ Mock.cf)
                                 )
-                                (mkEquals_ (mkVar Mock.x) Mock.a)
+                                (mkEquals_ (mkElemVar Mock.x) Mock.a)
                             )
                             (mkAnd
                                 (mkAnd
                                     (Mock.g Mock.b)
                                     (mkCeil_ Mock.cg)
                                 )
-                                (mkEquals_ (mkVar Mock.y) Mock.b)
+                                (mkEquals_ (mkElemVar Mock.y) Mock.b)
                             )
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -121,12 +125,14 @@ test_makeEvaluate =
                 Conditional
                     { term = Mock.f Mock.a
                     , predicate = makeCeilPredicate Mock.cf
-                    , substitution = Substitution.wrap [(Mock.x, Mock.a)]
+                    , substitution =
+                        Substitution.wrap [(ElemVar Mock.x, Mock.a)]
                     }
                 Conditional
                     { term = Mock.g Mock.b
                     , predicate = makeCeilPredicate Mock.cg
-                    , substitution = Substitution.wrap [(Mock.y, Mock.b)]
+                    , substitution =
+                        Substitution.wrap [(ElemVar Mock.y, Mock.b)]
                     }
             )
         )

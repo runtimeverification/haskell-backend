@@ -85,6 +85,8 @@ import           Kore.Variables.Fresh
 import           Kore.Variables.Target
                  ( Target )
 import qualified Kore.Variables.Target as Target
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable, foldMapVariable )
 
 newtype UnificationProcedure =
     UnificationProcedure
@@ -157,7 +159,9 @@ unwrapAndQuantifyConfiguration config@Conditional { substitution } =
                 targetVariables
             )
   where
-    substitution' = Substitution.filter Target.isNonTarget substitution
+    substitution' =
+        Substitution.filter (foldMapVariable Target.isNonTarget)
+            substitution
 
     configWithNewSubst :: Pattern (Target variable)
     configWithNewSubst = config { Pattern.substitution = substitution' }
@@ -166,14 +170,14 @@ unwrapAndQuantifyConfiguration config@Conditional { substitution } =
     unwrappedConfig =
         Pattern.mapVariables Target.unwrapVariable configWithNewSubst
 
-    targetVariables :: [variable]
+    targetVariables :: [ElementVariable variable]
     targetVariables =
-        map Target.unwrapVariable
-        $ filter Target.isTarget
-        $ Foldable.toList
-        $ Pattern.freeVariables configWithNewSubst
+        map (fmap Target.unwrapVariable)
+        . filter (Target.isTarget . getElementVariable)
+        . Pattern.freeElementVariables
+        $ configWithNewSubst
 
-    quantify :: TermLike variable -> variable -> TermLike variable
+    quantify :: TermLike variable -> ElementVariable variable -> TermLike variable
     quantify = flip mkExists
 
 {- | Attempt to unify a rule with the initial configuration.
@@ -510,7 +514,8 @@ checkSubstitutionCoverage initial unified
         , "Failed substitution coverage check!"
         , "The substitution (above, in the unifier) \
           \did not cover the axiom variables:"
-        , (Pretty.indent 4 . Pretty.sep) (unparse <$> Set.toAscList uncovered)
+        , (Pretty.indent 4 . Pretty.sep)
+            (unparse <$> Set.toAscList uncovered)
         , "in the left-hand side of the axiom."
         ]
   where
@@ -521,12 +526,16 @@ checkSubstitutionCoverage initial unified
     substitutionVariables = Map.keysSet (Substitution.toMap substitution)
     uncovered = wouldNarrowWith unified
     isCoveringSubstitution = Set.null uncovered
-    isSymbolic = Foldable.any Target.isNonTarget substitutionVariables
+    isSymbolic =
+        Foldable.any (foldMapVariable Target.isNonTarget)
+            substitutionVariables
 
 {- | The 'Set' of variables that would be introduced by narrowing.
  -}
 -- TODO (thomas.tuegel): Unit tests
-wouldNarrowWith :: Ord variable => UnifiedRule variable -> Set variable
+wouldNarrowWith
+    :: Ord variable
+    => UnifiedRule variable -> Set (UnifiedVariable variable)
 wouldNarrowWith unified =
     Set.difference leftAxiomVariables substitutionVariables
   where

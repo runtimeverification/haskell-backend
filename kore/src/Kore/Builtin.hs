@@ -268,7 +268,6 @@ externalizePattern =
             TopF topF -> Syntax.TopF topF
             VariableF variableF -> Syntax.VariableF variableF
             InhabitantF inhabitantF -> Syntax.InhabitantF inhabitantF
-            SetVariableF setVariableF -> Syntax.SetVariableF setVariableF
             EvaluatedF evaluatedF ->
                 Cofree.tailF
                 $ externalizePatternWorker

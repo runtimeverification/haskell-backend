@@ -38,6 +38,8 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import qualified SMT
 
 import           Test.Kore
@@ -66,7 +68,7 @@ test_simplificationIntegration =
                                                 (mkCeil_
                                                     (mkAnd
                                                         (Mock.constr10
-                                                            (mkVar Mock.x)
+                                                            (mkElemVar Mock.x)
                                                         )
                                                         (Mock.constr10 Mock.a)
                                                     )
@@ -103,7 +105,7 @@ test_simplificationIntegration =
                                                 (mkCeil_
                                                     (mkAnd
                                                         (Mock.constr10
-                                                            (mkVar Mock.x)
+                                                            (mkElemVar Mock.x)
                                                         )
                                                         (Mock.constr11 Mock.a)
                                                     )
@@ -129,10 +131,10 @@ test_simplificationIntegration =
                         , predicate = makeCeilPredicate
                             (mkAnd
                                 (Mock.plain10 Mock.cf)
-                                (Mock.plain10 (mkVar Mock.x))
+                                (Mock.plain10 (mkElemVar Mock.x))
                             )
                         , substitution = Substitution.unsafeWrap
-                            [(Mock.y, Mock.b)]
+                            [(ElemVar Mock.y, Mock.b)]
                         }
                     ]
         actual <-
@@ -145,8 +147,8 @@ test_simplificationIntegration =
                                 Mock.b
                             )
                             (Mock.constr20
-                                (Mock.plain10 (mkVar Mock.x))
-                                (mkVar Mock.y)
+                                (Mock.plain10 (mkElemVar Mock.x))
+                                (mkElemVar Mock.y)
                             )
                         )
                     , predicate = makeTruePredicate
@@ -170,13 +172,13 @@ test_simplificationIntegration =
                                         Mock.function20MapTest
                                             (Mock.concatMap
                                                 (Mock.elementMap
-                                                    (mkVar Mock.x)
-                                                    (mkVar Mock.y)
+                                                    (mkElemVar Mock.x)
+                                                    (mkElemVar Mock.y)
                                                 )
-                                                (mkVar Mock.m)
+                                                (mkElemVar Mock.m)
                                             )
-                                            (mkVar Mock.x)
-                                    , right = mkVar Mock.y
+                                            (mkElemVar Mock.x)
+                                    , right = mkElemVar Mock.y
                                     , requires = makeTruePredicate
                                     , ensures = makeTruePredicate
                                     , attributes = def
@@ -196,12 +198,12 @@ test_simplificationIntegration =
                 [ Conditional
                     { term =
                         Mock.tdivInt
-                            (mkVar Mock.xInt)
-                            (mkVar Mock.xInt)
+                            (mkElemVar Mock.xInt)
+                            (mkElemVar Mock.xInt)
                     , predicate =
                         makeNotPredicate
                         $ makeEqualsPredicate
-                           (mkVar Mock.xInt)
+                           (mkElemVar Mock.xInt)
                            (Mock.builtinInt 0)
                     , substitution = mempty
                     }
@@ -212,8 +214,8 @@ test_simplificationIntegration =
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.fIntId
                           , [ EqualityRule RulePattern
-                                { left = Mock.fInt (mkVar Mock.xInt)
-                                , right = mkVar Mock.xInt
+                                { left = Mock.fInt (mkElemVar Mock.xInt)
+                                , right = mkElemVar Mock.xInt
                                 , requires = makeTruePredicate
                                 , ensures = makeTruePredicate
                                 , attributes = def
@@ -225,13 +227,13 @@ test_simplificationIntegration =
                                 { left =
                                     mkCeil testSortVariable
                                     $ Mock.tdivInt
-                                        (mkVar Mock.xInt)
-                                        (mkVar Mock.yInt)
+                                        (mkElemVar Mock.xInt)
+                                        (mkElemVar Mock.yInt)
                                 , right =
                                     mkCeil testSortVariable
                                     . mkNot
                                     $ mkEquals testSortVariable
-                                        (mkVar Mock.yInt)
+                                        (mkElemVar Mock.yInt)
                                         (Mock.builtinInt 0)
                                 , requires = makeTruePredicate
                                 , ensures = makeTruePredicate
@@ -247,8 +249,8 @@ test_simplificationIntegration =
                     { term =
                         Mock.fInt
                         $ Mock.tdivInt
-                            (mkVar Mock.xInt)
-                            (mkVar Mock.xInt)
+                            (mkElemVar Mock.xInt)
+                            (mkElemVar Mock.xInt)
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
@@ -263,7 +265,7 @@ test_simplificationIntegration =
                     { term =
                         mkExists
                             Mock.x
-                            (mkEquals_ (mkVar Mock.x) (mkVar Mock.y))
+                            (mkEquals_ (mkElemVar Mock.x) (mkElemVar Mock.y))
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
@@ -278,7 +280,7 @@ test_simplificationIntegration =
                     { term =
                         mkExists
                             Mock.x
-                            (mkEquals_ (mkVar Mock.y) (mkVar Mock.x))
+                            (mkEquals_ (mkElemVar Mock.y) (mkElemVar Mock.x))
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
@@ -288,20 +290,20 @@ test_simplificationIntegration =
             evaluateWithAxioms Map.empty
             $ Pattern.fromTermLike
             $ mkExists Mock.x
-            $ mkEquals_ (mkVar Mock.x) (mkVar Mock.y)
+            $ mkEquals_ (mkElemVar Mock.x) (mkElemVar Mock.y)
         assertEqualWithExplanation "" OrPattern.top actual
     , testCase "exists variable equality reverse" $ do
         actual <-
             evaluateWithAxioms Map.empty
             $ Pattern.fromTermLike
             $ mkExists Mock.x
-            $ mkEquals_ (mkVar Mock.y) (mkVar Mock.x)
+            $ mkEquals_ (mkElemVar Mock.y) (mkElemVar Mock.x)
         assertEqualWithExplanation "" OrPattern.top actual
     , testCase "new variable quantification" $ do
         let
             expect = OrPattern.fromPatterns
                 [ Conditional
-                    { term = mkExists Mock.x (Mock.f (mkVar Mock.x))
+                    { term = mkExists Mock.x (Mock.f (mkElemVar Mock.x))
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
@@ -312,7 +314,7 @@ test_simplificationIntegration =
                     [   ( AxiomIdentifier.Application Mock.cfId
                         ,   [ EqualityRule RulePattern
                                 { left = Mock.cf
-                                , right = Mock.f (mkVar Mock.x)
+                                , right = Mock.f (mkElemVar Mock.x)
                                 , requires = makeTruePredicate
                                 , ensures = makeTruePredicate
                                 , attributes = def
@@ -338,11 +340,11 @@ test_substitute =
                         { term =
                             Mock.functionalConstr20
                                 Mock.a
-                                (Mock.functionalConstr10 (mkVar Mock.x))
+                                (Mock.functionalConstr10 (mkElemVar Mock.x))
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.x, Mock.a)
-                            , (Mock.y, Mock.functionalConstr10 Mock.a)
+                            [ (ElemVar Mock.x, Mock.a)
+                            , (ElemVar Mock.y, Mock.functionalConstr10 Mock.a)
                             ]
                         }
                     ]
@@ -351,10 +353,10 @@ test_substitute =
                 (Pattern.fromTermLike
                     (mkAnd
                         (Mock.functionalConstr20
-                            (mkVar Mock.x)
-                            (Mock.functionalConstr10 (mkVar Mock.x))
+                            (mkElemVar Mock.x)
+                            (Mock.functionalConstr10 (mkElemVar Mock.x))
                         )
-                        (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
+                        (Mock.functionalConstr20 Mock.a (mkElemVar Mock.y))
                     )
                 )
         assertEqualWithExplanation
@@ -366,11 +368,12 @@ test_substitute =
         let expect =
                 OrPattern.fromPatterns
                     [ Pattern.Conditional
-                        { term = Mock.functionalConstr20 Mock.a (mkVar Mock.y)
+                        { term =
+                            Mock.functionalConstr20 Mock.a (mkElemVar Mock.y)
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.x, Mock.a)
-                            , (Mock.y, Mock.a)
+                            [ (ElemVar Mock.x, Mock.a)
+                            , (ElemVar Mock.y, Mock.a)
                             ]
                         }
                     ]
@@ -379,10 +382,10 @@ test_substitute =
                 (Pattern.fromTermLike
                     (mkAnd
                         (Mock.functionalConstr20
-                            (mkVar Mock.x)
-                            (mkVar Mock.x)
+                            (mkElemVar Mock.x)
+                            (mkElemVar Mock.x)
                         )
-                        (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
+                        (Mock.functionalConstr20 Mock.a (mkElemVar Mock.y))
                     )
                 )
         assertEqualWithExplanation "Expected substitution" expect actual
@@ -393,7 +396,7 @@ test_substituteMap =
     [ testCase "Substitution applied to Map elements" $ do
         let testMapX =
                 Mock.sortInjection Mock.testSort
-                $ mkDomainBuiltinMap [(Mock.a, mkVar Mock.x)]
+                $ mkDomainBuiltinMap [(Mock.a, mkElemVar Mock.x)]
             testMapA =
                 Mock.sortInjection Mock.testSort
                 $ mkDomainBuiltinMap [(Mock.a, Mock.a)]
@@ -403,16 +406,16 @@ test_substituteMap =
                         { term = Mock.functionalConstr20 Mock.a testMapX
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.x, Mock.a)
-                            , (Mock.y, testMapA)
+                            [ (ElemVar Mock.x, Mock.a)
+                            , (ElemVar Mock.y, testMapA)
                             ]
                         }
                     ]
         actual <-
             (evaluate . Pattern.fromTermLike)
                 (mkAnd
-                    (Mock.functionalConstr20 (mkVar Mock.x) testMapX)
-                    (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
+                    (Mock.functionalConstr20 (mkElemVar Mock.x) testMapX)
+                    (Mock.functionalConstr20 Mock.a (mkElemVar Mock.y))
                 )
         assertEqualWithExplanation
             "Expected substitution applied to Map elements"
@@ -427,7 +430,7 @@ test_substituteList =
     [ testCase "Substitution applied to List elements" $ do
         let testListX =
                 Mock.sortInjection Mock.testSort
-                $ mkDomainBuiltinList [Mock.a, mkVar Mock.x]
+                $ mkDomainBuiltinList [Mock.a, mkElemVar Mock.x]
             testListA =
                 Mock.sortInjection Mock.testSort
                 $ mkDomainBuiltinList [Mock.a, Mock.a]
@@ -437,16 +440,16 @@ test_substituteList =
                         { term = Mock.functionalConstr20 Mock.a testListX
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [ (Mock.x, Mock.a)
-                            , (Mock.y, testListA)
+                            [ (ElemVar Mock.x, Mock.a)
+                            , (ElemVar Mock.y, testListA)
                             ]
                         }
                     ]
         actual <-
             (evaluate . Pattern.fromTermLike)
                 (mkAnd
-                    (Mock.functionalConstr20 (mkVar Mock.x) testListX)
-                    (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
+                    (Mock.functionalConstr20 (mkElemVar Mock.x) testListX)
+                    (Mock.functionalConstr20 Mock.a (mkElemVar Mock.y))
                 )
         assertEqualWithExplanation
             "Expected substitution applied to List elements"

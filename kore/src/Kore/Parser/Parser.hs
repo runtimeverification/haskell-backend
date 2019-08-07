@@ -49,6 +49,7 @@ import           Kore.Syntax
 import           Kore.Syntax.Definition
 import           Kore.Unparser
                  ( unparseToString )
+import           Kore.Variables.UnifiedVariable
 
 asParsedPattern :: (PatternF Variable) ParsedPattern -> ParsedPattern
 asParsedPattern patternBase = asPattern (mempty :< patternBase)
@@ -227,7 +228,7 @@ BNF fragments:
 -}
 existsForallRemainderParser
     :: Parser child
-    -> (Sort -> Variable -> child -> m child)
+    -> (Sort -> ElementVariable Variable -> child -> m child)
     -- ^ Element constructor.
     -> Parser (m child)
 existsForallRemainderParser childParser constructor = do
@@ -392,11 +393,11 @@ The @set-@ version always starts with @\@@, while the regular one does not.
 variableParser :: Parser Variable
 variableParser = idParser >>= variableRemainderParser
 
-singletonVariableParser :: Parser Variable
+singletonVariableParser :: Parser (ElementVariable Variable)
 singletonVariableParser = do
     c <- ParserUtils.peekChar'
     if c == '@' then fail "Expecting singleton variable token"
-    else variableParser
+    else ElementVariable <$> variableParser
 
 setVariableParser :: Parser (SetVariable Variable)
 setVariableParser = do
@@ -424,15 +425,15 @@ variableOrTermPatternParser
     :: Parser child
     -> Bool  -- ^ Whether it can be a Set Variable
     -> Parser (PatternF Variable child)
-variableOrTermPatternParser childParser isSetVar = do
+variableOrTermPatternParser childParser isSetVariable = do
     identifier <- idParser
     c <- ParserUtils.peekChar'
     if c == ':'
         then do
             var <- variableRemainderParser identifier
-            if isSetVar
-                then return . SetVariableF . SetVariable $ var
-                else return $ VariableF var
+            if isSetVariable
+                then return $ VariableF (SetVar (SetVariable var))
+                else return $ VariableF (ElemVar (ElementVariable var))
         else symbolOrAliasPatternRemainderParser childParser identifier
 
 
@@ -878,7 +879,7 @@ aliasSentenceRemainderParser = do
     resultSort <- objectSortParser
     mlLexemeParser "where"
     -- Note: constraints for left pattern checked in verifySentence
-    leftPattern <- applicationParser variableParser
+    leftPattern <- applicationParser singletonVariableParser
     mlLexemeParser ":="
     rightPattern <- korePatternParser
     attributes <- attributesParser

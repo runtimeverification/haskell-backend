@@ -22,6 +22,7 @@ import Kore.Parser.ParserUtils
 import Kore.Syntax
 import Kore.Syntax.Definition
 import Kore.Unparser
+import Kore.Variables.UnifiedVariable
 
 import           Test.Kore hiding
                  ( Gen )
@@ -59,7 +60,8 @@ test_unparse =
                             , sortActualSorts = []
                             }
                         , inContainedChild =
-                            asParsedPattern $ VariableF Variable
+                            asParsedPattern $ VariableF
+                                $ ElemVar $ ElementVariable Variable
                                 { variableName = testId "T"
                                 , variableSort = SortVariableSort SortVariable
                                     { getSortVariable = testId "C" }

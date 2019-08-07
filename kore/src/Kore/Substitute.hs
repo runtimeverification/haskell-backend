@@ -31,6 +31,8 @@ import           Kore.Attribute.Synthetic
 import           Kore.Syntax
 import           Kore.Variables.Binding
 import           Kore.Variables.Fresh
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 
 {- | Traverse the pattern from the top down and apply substitutions.
 
@@ -45,17 +47,18 @@ substitute
     ::  forall patternType patternBase attribute variable.
         ( FreshVariable variable
         , Ord variable
+        , Show variable
         , SortedVariable variable
         , Corecursive patternType, Recursive patternType
         , Functor patternBase
         , CofreeF patternBase attribute ~ Base patternType
         , Binding patternType
-        , VariableType patternType ~ variable
+        , VariableType patternType ~ UnifiedVariable variable
         , Synthetic patternBase attribute
         )
     => (patternType -> FreeVariables variable)
     -- ^ View into free variables of the pattern
-    -> Map variable patternType
+    -> Map (UnifiedVariable variable) patternType
     -- ^ Substitution
     -> patternType
     -- ^ Original pattern
@@ -63,20 +66,27 @@ substitute
 substitute viewFreeVariables =
     substituteWorker . Map.map Left
   where
-    extractFreeVariables :: patternType -> Set variable
+    extractFreeVariables :: patternType -> Set (UnifiedVariable variable)
     extractFreeVariables =
         FreeVariables.getFreeVariables . viewFreeVariables
 
     -- | Insert an optional variable renaming into the substitution.
     renaming
-        :: variable  -- ^ Original variable
-        -> Maybe variable  -- ^ Renamed variable
-        -> Map variable (Either patternType variable)  -- ^ Substitution
-        -> Map variable (Either patternType variable)
+        :: UnifiedVariable variable  -- ^ Original variable
+        -> Maybe (UnifiedVariable variable)  -- ^ Renamed variable
+        -> Map
+            (UnifiedVariable variable)
+            (Either patternType (UnifiedVariable variable))
+        -- ^ Substitution
+        -> Map
+            (UnifiedVariable variable)
+            (Either patternType (UnifiedVariable variable))
     renaming variable = maybe id (Map.insert variable . Right)
 
     substituteWorker
-        :: Map variable (Either patternType variable)
+        :: Map
+            (UnifiedVariable variable)
+            (Either patternType (UnifiedVariable variable))
         -> patternType
         -> patternType
     substituteWorker subst termLike =
@@ -99,8 +109,8 @@ substitute viewFreeVariables =
             runIdentity <$> matchWith traverseBinder worker termLike
           where
             worker
-                :: Binder variable patternType
-                -> Identity (Binder variable patternType)
+                :: Binder (UnifiedVariable variable) patternType
+                -> Identity (Binder (UnifiedVariable variable) patternType)
             worker Binder { binderVariable, binderChild } = do
                 let
                     binderVariable' = avoidCapture binderVariable
@@ -117,7 +127,9 @@ substitute viewFreeVariables =
         substituteVariable =
             either id id <$> matchWith traverseVariable worker termLike
           where
-            worker :: variable -> Either patternType variable
+            worker
+                :: UnifiedVariable variable
+                -> Either patternType (UnifiedVariable variable)
             worker variable =
                 -- If the variable is not substituted or renamed, return the
                 -- original pattern.

@@ -86,7 +86,7 @@ fEvaluator =
   where
     left = mkApplySymbol (f x)
     right = x
-    x = TermLike.mkVar Mock.x
+    x = TermLike.mkElemVar Mock.x
 
 evaluateApplication
     :: Predicate Variable

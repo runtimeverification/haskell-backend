@@ -51,6 +51,7 @@ import           Kore.Syntax.Variable
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
+import           Kore.Variables.UnifiedVariable
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}
@@ -267,15 +268,22 @@ removalPredicate destination config =
             FreeVariables.getFreeVariables $ Pattern.freeVariables config
         destinationVariables =
             FreeVariables.getFreeVariables $ Pattern.freeVariables destination
-        extraVariables = Set.difference destinationVariables configVariables
-        quantifyPredicate = Predicate.makeMultipleExists extraVariables
+        extraVariables = Set.toList
+            $ Set.difference destinationVariables configVariables
+        extraElementVariables = [v | ElemVar v <- extraVariables]
+        extraNonElemVariables = filter (not . isElemVar) extraVariables
+        quantifyPredicate = Predicate.makeMultipleExists extraElementVariables
     in
-        Predicate.makeNotPredicate
-        $ quantifyPredicate
-        $ Predicate.makeCeilPredicate
-        $ TermLike.mkAnd
-            (Pattern.toTermLike destination)
-            (Pattern.toTermLike config)
+        if not (null extraNonElemVariables)
+        then error
+            ("Cannot quantify non-element variables: "
+                ++ show (unparse <$> extraNonElemVariables))
+        else Predicate.makeNotPredicate
+            $ quantifyPredicate
+            $ Predicate.makeCeilPredicate
+            $ TermLike.mkAnd
+                (Pattern.toTermLike destination)
+                (Pattern.toTermLike config)
 
 
 {-| A strategy for doing the first step of a one-path verification.

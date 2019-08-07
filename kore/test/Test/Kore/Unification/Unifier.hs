@@ -21,8 +21,7 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike hiding
-                 ( V )
+import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
@@ -35,6 +34,8 @@ import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.UnifierImpl
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import           SMT
                  ( SMT )
 import qualified SMT
@@ -44,9 +45,9 @@ import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 
-var :: Text -> Sort -> Variable
+var :: Text -> Sort -> ElementVariable Variable
 var name variableSort =
-    Variable
+    ElementVariable Variable
         { variableName = testId name
         , variableSort
         , variableCounter = mempty
@@ -84,22 +85,22 @@ nonLinG = Mock.functionalConstr12
 
 nonLinA, nonLinX, nonLinY :: TermLike Variable
 nonLinA = Mock.d
-nonLinX = mkVar Mock.x
-nonLinY = mkVar Mock.y
+nonLinX = mkElemVar Mock.x
+nonLinY = mkElemVar Mock.y
 
 expBin :: TermLike Variable -> TermLike Variable -> TermLike Variable
 expBin = Mock.functionalConstr21
 
 expA, expX, expY :: TermLike Variable
-expA = mkVar $ var "a" Mock.testSort
-expX = mkVar $ var "x" Mock.testSort
-expY = mkVar $ var "y" Mock.testSort
+expA = mkElemVar $ var "a" Mock.testSort
+expX = mkElemVar $ var "x" Mock.testSort
+expY = mkElemVar $ var "y" Mock.testSort
 
 ex1, ex2, ex3, ex4 :: TermLike Variable
-ex1 = mkVar $ var "ex1" Mock.testSort
-ex2 = mkVar $ var "ex2" Mock.testSort
-ex3 = mkVar $ var "ex3" Mock.testSort
-ex4 = mkVar $ var "ex4" Mock.testSort
+ex1 = mkElemVar $ var "ex1" Mock.testSort
+ex2 = mkElemVar $ var "ex2" Mock.testSort
+ex3 = mkElemVar $ var "ex3" Mock.testSort
+ex4 = mkElemVar $ var "ex4" Mock.testSort
 
 
 dv1, dv2 :: TermLike Variable
@@ -131,17 +132,10 @@ type Substitution = [(Text, TermLike Variable)]
 
 unificationSubstitution
     :: Substitution
-    -> [ (Variable, TermLike Variable) ]
+    -> [ (UnifiedVariable Variable, TermLike Variable) ]
 unificationSubstitution = map trans
   where
-    trans (v, p) =
-        ( Variable
-            { variableSort = termLikeSort p
-            , variableName = testId v
-            , variableCounter = mempty
-            }
-        , p
-        )
+    trans (v, p) = (Mock.makeUnifiedVariable v (termLikeSort p), p)
 
 unificationResult :: UnificationResult -> Pattern Variable
 unificationResult
@@ -231,7 +225,10 @@ unificationProcedureSuccessWithSimplifiers
     -> BuiltinAndAxiomSimplifierMap
     -> UnificationTerm
     -> UnificationTerm
-    -> [([(Variable, TermLike Variable)], Syntax.Predicate Variable)]
+    -> [  ( [(UnifiedVariable Variable, TermLike Variable)]
+          , Syntax.Predicate Variable
+          )
+       ]
     -> TestTree
 unificationProcedureSuccessWithSimplifiers
     message
@@ -250,7 +247,9 @@ unificationProcedureSuccessWithSimplifiers
         let
             normalize
                 :: Predicate Variable
-                -> ([(Variable, TermLike Variable)], Syntax.Predicate Variable)
+                ->  ( [(UnifiedVariable Variable, TermLike Variable)]
+                    , Syntax.Predicate Variable
+                    )
             normalize Conditional { substitution, predicate } =
                 (Substitution.unwrap substitution, predicate)
         assertEqualWithExplanation ""
@@ -289,7 +288,7 @@ test_unification =
             ]
     , testCase "Variable" $
         andSimplifySuccess
-            (UnificationTerm (mkVar Mock.x))
+            (UnificationTerm (mkElemVar Mock.x))
             (UnificationTerm a)
             [ UnificationResult
                 { term = a
@@ -299,7 +298,7 @@ test_unification =
             ]
     , testCase "one level" $
         andSimplifySuccess
-            (UnificationTerm (f (mkVar Mock.x)))
+            (UnificationTerm (f (mkElemVar Mock.x)))
             (UnificationTerm (f a))
             [ UnificationResult
                 { term = f a
@@ -320,15 +319,15 @@ test_unification =
     , testCase "variable + non-constructor pattern" $
         andSimplifySuccess
             (UnificationTerm a2)
-            (UnificationTerm (mkVar Mock.x))
+            (UnificationTerm (mkElemVar Mock.x))
             [ UnificationResult
                 { term = a2
                 , substitution = [("x", a2)]
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]
-    , testCase "https://basics.sjtu.edu.cn/seminars/c_chu/Algorithm.pdf slide 3" $
-        andSimplifySuccess
+    , testCase "https://basics.sjtu.edu.cn/seminars/c_chu/Algorithm.pdf slide 3"
+        $ andSimplifySuccess
             (UnificationTerm (ef ex1 (eh ex1) ex2))
             (UnificationTerm (ef (eg ex3) ex4 ex3))
             [ UnificationResult
@@ -355,8 +354,8 @@ test_unification =
                 , predicate = Syntax.Predicate.makeTruePredicate
                 }
             ]
-    , testCase "times(times(a, y), (mkVar Mock.x)) = times(x, times(y, a))" $
-        andSimplifySuccess
+    , testCase "times(times(a, y), (mkElemVar Mock.x)) = times(x, times(y, a))"
+        $ andSimplifySuccess
             (UnificationTerm (expBin (expBin expA expY) expX))
             (UnificationTerm (expBin expX (expBin expY expA)))
             [ UnificationResult
@@ -374,7 +373,7 @@ test_unification =
         (UnificationTerm (expBin expA expA))
         []
     , unificationProcedureSuccess
-        "times(times(a, y), (mkVar Mock.x)) = times(x, times(y, a))"
+        "times(times(a, y), (mkElemVar Mock.x)) = times(x, times(y, a))"
         (UnificationTerm (expBin (expBin expA expY) expX))
         (UnificationTerm (expBin expX (expBin expY expA)))
         [   (   [ ("a", expY)
@@ -390,7 +389,7 @@ test_unification =
         [ ([], makeEqualsPredicate a2 a4) ]
     , unificationProcedureSuccess
         "Unifying function and variable results in ceil predicate"
-        (UnificationTerm (mkVar Mock.x))
+        (UnificationTerm (mkElemVar Mock.x))
         (UnificationTerm a5)
         [   ( [("x", a5)]
             , Syntax.Predicate.makeCeilPredicate a5
@@ -439,9 +438,31 @@ test_unification =
             ]
     , testCase "non-functional pattern" $
         andSimplifyFailure
-            (UnificationTerm (mkVar Mock.x))
+            (UnificationTerm (mkElemVar Mock.x))
             (UnificationTerm a3)
-            (unsupportedPatterns "Unknown unification case."  (mkVar Mock.x) a3)
+            (unsupportedPatterns
+                "Unknown unification case."
+                (mkElemVar Mock.x)
+                a3
+            )
+    , testCase "SetVariable w. constructor" $
+        andSimplifyFailure
+            (UnificationTerm (f (Mock.mkTestUnifiedVariable "@x")))
+            (UnificationTerm (f a))
+            (unsupportedPatterns
+                "Unknown unification case."
+                (Mock.mkTestUnifiedVariable "@x")
+                a
+            )
+    , testCase "SetVariable" $
+        andSimplifyFailure
+            (UnificationTerm (Mock.mkTestUnifiedVariable "@x"))
+            (UnificationTerm a)
+            (unsupportedPatterns
+                "Unknown unification case."
+                (Mock.mkTestUnifiedVariable "@x")
+                a
+            )
     , testCase "non-constructor symbolHead right" $
         andSimplifySuccess
             (UnificationTerm a)
@@ -475,11 +496,11 @@ test_unification =
         -}
     , testCase "Maps substitution variables"
         (assertEqualWithExplanation ""
-            [(W "1", war' "2")]
+            [(ElemVar $ ElementVariable $ W "1", war' "2")]
             (Substitution.unwrap
                 . Substitution.mapVariables showVar
                 . Substitution.wrap
-                $ [(V 1, var' 2)]
+                $ [(ElemVar $ ElementVariable $ V 1, var' 2)]
             )
         )
 
@@ -490,7 +511,7 @@ test_evaluated =
     [ testCase "variable and functional term" $ do
         let evaluated = mkEvaluated a2
         andSimplifySuccess
-            (UnificationTerm (mkVar Mock.x))
+            (UnificationTerm (mkElemVar Mock.x))
             (UnificationTerm evaluated)
             [ UnificationResult
                 { term = evaluated
@@ -500,7 +521,7 @@ test_evaluated =
             ]
     , unificationProcedureSuccess
         "variable and non-functional term"
-        (UnificationTerm (mkVar Mock.x))
+        (UnificationTerm (mkElemVar Mock.x))
         (UnificationTerm (mkEvaluated a5))
         [   ( [("x", mkEvaluated a5)]
             , Syntax.Predicate.makeCeilPredicate (mkEvaluated a5)
@@ -548,10 +569,10 @@ showVar :: V -> W
 showVar (V i) = W (show i)
 
 var' :: Integer -> TermLike V
-var' i = mkVar (V i)
+var' = mkElemVar . ElementVariable . V
 
 war' :: String -> TermLike W
-war' s = mkVar (W s)
+war' = mkElemVar . ElementVariable . W
 
 sortVar :: Sort
 sortVar = SortVariableSort (SortVariable (Id "#a" AstLocationTest))
@@ -560,7 +581,9 @@ injUnificationTests :: [TestTree]
 injUnificationTests =
     [ testCase "Injected Variable" $
         andSimplifySuccess
-            (UnificationTerm (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort)))
+            (UnificationTerm
+                (Mock.sortInjectionSubToTop (mkElemVar Mock.xSubSort))
+            )
             (UnificationTerm (Mock.sortInjectionSubToTop Mock.aSubsort))
             [ UnificationResult
                 { term = Mock.sortInjectionSubToTop Mock.aSubsort
@@ -570,7 +593,7 @@ injUnificationTests =
             ]
     , testCase "Variable" $
         andSimplifySuccess
-            (UnificationTerm (mkVar Mock.xTopSort))
+            (UnificationTerm (mkElemVar Mock.xTopSort))
             (UnificationTerm (Mock.sortInjectionSubToTop Mock.aSubsort))
             [ UnificationResult
                 { term = Mock.sortInjectionSubToTop Mock.aSubsort
@@ -588,7 +611,7 @@ injUnificationTests =
                 )
         andSimplifySuccess
             (UnificationTerm
-                (Mock.sortInjectionSubSubToTop (mkVar Mock.xSubSubSort))
+                (Mock.sortInjectionSubSubToTop (mkElemVar Mock.xSubSubSort))
             )
             term2
             [ UnificationResult
@@ -600,7 +623,7 @@ injUnificationTests =
     , testCase "doubly injected variable vs injected term" $ do
         term1 <- simplifyPattern $ UnificationTerm
             (Mock.sortInjectionSubToTop
-                (Mock.sortInjectionSubSubToSub (mkVar Mock.xSubSubSort))
+                (Mock.sortInjectionSubSubToSub (mkElemVar Mock.xSubSubSort))
             )
         andSimplifySuccess
             term1
@@ -618,7 +641,7 @@ injUnificationTests =
             )
         term2 <- simplifyPattern $ UnificationTerm
             (Mock.sortInjectionOtherToTop
-                (Mock.sortInjectionSubSubToOther (mkVar Mock.xSubSubSort))
+                (Mock.sortInjectionSubSubToOther (mkElemVar Mock.xSubSubSort))
             )
         andSimplifySuccess
             term1
@@ -654,7 +677,9 @@ injUnificationTests =
     , testCase "matching injections" $
         andSimplifySuccess
             (UnificationTerm (Mock.sortInjectionSubSubToTop Mock.aSubSubsort))
-            (UnificationTerm (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort)))
+            (UnificationTerm
+                (Mock.sortInjectionSubToTop (mkElemVar Mock.xSubSort))
+            )
             [ UnificationResult
                 { term =
                     -- TODO (virgil): Fix this in unification, injection
@@ -672,7 +697,9 @@ injUnificationTests =
     , testCase "unmatching injections" $
         andSimplifySuccess
             (UnificationTerm (Mock.sortInjectionOtherToTop Mock.aOtherSort))
-            (UnificationTerm (Mock.sortInjectionSubToTop (mkVar Mock.xSubSort)))
+            (UnificationTerm
+                (Mock.sortInjectionSubToTop (mkElemVar Mock.xSubSort))
+            )
             []
     ]
 

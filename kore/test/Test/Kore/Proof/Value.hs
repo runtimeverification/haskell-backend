@@ -68,13 +68,13 @@ test_Pair_DomainValue =
 test_Builtin_InternalMap :: [TestTree]
 test_Builtin_InternalMap =
     [ testValue "0 |-> 1" (mkMap [(zeroInternal, oneInternal)])
-    , testNotValue "0 |-> X" (mkMap [(zeroInternal, mkVar varX)])
+    , testNotValue "0 |-> X" (mkMap [(zeroInternal, mkElemVar varX)])
     ]
 
 test_Builtin_InternalList :: [TestTree]
 test_Builtin_InternalList =
     [ testValue "[1]" (mkList [oneInternal])
-    , testNotValue "[X]" (mkList [mkVar varX])
+    , testNotValue "[X]" (mkList [mkElemVar varX])
     ]
 
 test_Builtin_InternalSet :: [TestTree]
@@ -82,8 +82,8 @@ test_Builtin_InternalSet =
     [ testValue "[1]" (mkSet [oneInternal])
     ]
 
-varX :: Variable
-varX = varS "X" intSort
+varX :: ElementVariable Variable
+varX = elemVarS "X" intSort
 
 test_fun :: [TestTree]
 test_fun =
