@@ -89,8 +89,6 @@ the constraint in sequence, until one accepts the pair. The matchers may
 introduce substitutions and new constraints. If none of the matchers accepts the
 pair, it is deferred until we have more information.
 
-See also: 'push', 'substitute', 'defer'.
-
  -}
 matchOne
     :: (MatchingVariable variable, MonadUnify unifier)
