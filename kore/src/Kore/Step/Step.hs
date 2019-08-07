@@ -74,7 +74,6 @@ import           Kore.Step.Rule
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.Syntax.ElementVariable
 import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
@@ -89,9 +88,6 @@ import qualified Kore.Variables.Target as Target
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable, foldMapVariable )
 
--- | Wraps functions such as 'unificationProcedure' and
--- 'Kore.Step.Axiom.Matcher.matchAsUnification' to be used in
--- 'stepWithRule'.
 newtype UnificationProcedure =
     UnificationProcedure
         ( forall variable unifier

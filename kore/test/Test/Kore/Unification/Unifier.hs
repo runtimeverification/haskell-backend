@@ -28,7 +28,6 @@ import qualified Kore.Predicate.Predicate as Syntax
 import           Kore.Step.Simplification.Data
                  ( BuiltinAndAxiomSimplifierMap, Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import           Kore.Syntax.ElementVariable
 import           Kore.Unification.Error
 import           Kore.Unification.Procedure
 import qualified Kore.Unification.Substitution as Substitution

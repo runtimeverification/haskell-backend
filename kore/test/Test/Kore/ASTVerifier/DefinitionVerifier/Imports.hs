@@ -19,7 +19,6 @@ import qualified Kore.Internal.Symbol as Internal
 import           Kore.Internal.TermLike hiding
                  ( Alias, Symbol )
 import           Kore.Syntax.Definition
-import           Kore.Syntax.ElementVariable
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier

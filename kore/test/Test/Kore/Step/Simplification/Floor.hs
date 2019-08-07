@@ -23,7 +23,6 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import           Kore.Step.Simplification.Floor
                  ( makeEvaluateFloor, simplify )
-import           Kore.Syntax.ElementVariable
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )

@@ -48,7 +48,6 @@ import           Kore.Step.Search
 import qualified Kore.Step.Search as Search
 import           Kore.Syntax.Definition hiding
                  ( Symbol )
-import           Kore.Syntax.ElementVariable
 import qualified Kore.Verified as Verified
 import qualified SMT
 

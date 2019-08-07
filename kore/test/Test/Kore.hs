@@ -57,7 +57,6 @@ import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Syntax.Definition
-import           Kore.Syntax.ElementVariable
 import qualified Kore.Syntax.PatternF as Syntax
                  ( PatternF (..) )
 import           Kore.Variables.UnifiedVariable

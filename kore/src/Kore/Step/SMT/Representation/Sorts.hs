@@ -45,7 +45,6 @@ import           Kore.Sort
 import qualified Kore.Sort as SortActual
                  ( SortActual (..) )
 import qualified Kore.Step.SMT.AST as AST
-import           Kore.Syntax.ElementVariable
 import           Kore.Syntax.Id
                  ( Id )
 import           Kore.Syntax.Sentence

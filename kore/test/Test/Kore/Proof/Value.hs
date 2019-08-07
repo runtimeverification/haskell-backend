@@ -15,7 +15,6 @@ import           Kore.Internal.Symbol
                  ( applicationSorts, toSymbolOrAlias )
 import           Kore.Internal.TermLike
 import qualified Kore.Proof.Value as Value
-import           Kore.Syntax.ElementVariable
 
 import           Test.Kore
 import           Test.Kore.Builtin.Definition

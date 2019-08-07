@@ -22,7 +22,6 @@ import qualified Kore.Step.Simplification.OrPattern as OrPattern
                  ( filterMultiOrWithTermCeil )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyAndRemoveTopExists )
-import           Kore.Syntax.ElementVariable
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser

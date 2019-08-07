@@ -33,7 +33,6 @@ import           Kore.Step.Rule hiding
                  ( freeVariables )
 import qualified Kore.Step.Rule as Rule
 import           Kore.Syntax.Definition
-import           Kore.Syntax.ElementVariable
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
 import qualified Kore.Verified as Verified

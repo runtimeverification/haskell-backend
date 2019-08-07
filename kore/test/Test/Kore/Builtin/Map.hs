@@ -48,7 +48,6 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
-import           Kore.Syntax.ElementVariable
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
@@ -123,6 +122,25 @@ test_removeUnit =
                 predicate = mkEquals_ unitMap patRemove
             expect <- evaluateT unitMap
             (===) expect =<< evaluateT patRemove
+            (===) Pattern.top =<< evaluateT predicate
+        )
+
+test_sizeUnit :: TestTree
+test_sizeUnit =
+    testPropertyWithSolver
+        "MAP.size is size"
+        (do
+            someMap <- forAll $ genConcreteMap genIntegerPattern
+            let
+                size = Map.size someMap
+                patExpected = Test.Int.asInternal $ toInteger size
+                patActual =
+                    mkApplySymbol
+                        sizeMapSymbol
+                        [ asTermLike someMap ]
+                predicate = mkEquals_ patExpected patActual
+            expect <- evaluateT patExpected
+            (===) expect      =<< evaluateT patActual
             (===) Pattern.top =<< evaluateT predicate
         )
 
@@ -882,11 +900,8 @@ test_concretizeKeysAxiom =
     testCaseWithSMT
         "unify a concrete Map with a symbolic Map in an axiom"
         $ do
-            let pair =
-                    mkPair intSort mapSort
-                        symbolicKey
-                        (asTermLike $ Map.fromList [(key, val)])
-            config <- evaluate pair
+            let concreteMap = asTermLike $ Map.fromList [(key, val)]
+            config <- evaluate $ pair symbolicKey concreteMap
             actual <- runStep config axiom
             assertEqualWithExplanation "expected MAP.lookup" expected actual
   where

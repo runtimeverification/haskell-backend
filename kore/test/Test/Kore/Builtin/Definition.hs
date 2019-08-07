@@ -359,6 +359,10 @@ removeAllMapSymbol =
     builtinSymbol "removeAllMap" mapSort [mapSort, setSort]
     & hook "MAP.removeAll"
 
+sizeMapSymbol :: Internal.Symbol
+sizeMapSymbol =
+    builtinSymbol "sizeMap" intSort [mapSort] & hook "MAP.size"
+
 unitMap :: TermLike Variable
 unitMap = mkApplySymbol unitMapSymbol []
 
@@ -410,6 +414,11 @@ removeAllMap
     -> TermLike Variable
 removeAllMap map' set = mkApplySymbol removeAllMapSymbol [map', set]
 
+sizeMap
+    :: TermLike Variable
+    -> TermLike Variable
+sizeMap map' = mkApplySymbol sizeMapSymbol [map']
+
 -- ** Pair
 
 pairSymbol :: Sort -> Sort -> Internal.Symbol
@@ -421,6 +430,13 @@ pairSymbol lSort rSort =
         , symbolSorts = applicationSorts [lSort, rSort] (pairSort lSort rSort)
         }
     & constructor
+
+pair :: TermLike Variable -> TermLike Variable -> TermLike Variable
+pair l r =
+    mkApplySymbol (pairSymbol lSort rSort) [l, r]
+  where
+    lSort = termLikeSort l
+    rSort = termLikeSort r
 
 -- ** Set
 
@@ -1047,6 +1063,7 @@ mapModule =
             , hookedSymbolDecl keysMapSymbol
             , hookedSymbolDecl removeMapSymbol
             , hookedSymbolDecl removeAllMapSymbol
+            , hookedSymbolDecl sizeMapSymbol
             ]
         }
 

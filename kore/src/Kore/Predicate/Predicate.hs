@@ -65,7 +65,6 @@ import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Error
                  ( Error, koreFail )
 import           Kore.Internal.TermLike as TermLike
-import           Kore.Syntax.ElementVariable
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unification.Substitution

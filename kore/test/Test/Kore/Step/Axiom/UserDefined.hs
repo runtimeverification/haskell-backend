@@ -35,8 +35,6 @@ import qualified Kore.Step.Simplification.Data as AttemptedAxiom
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import qualified SMT
 
 import           Test.Kore
@@ -157,30 +155,7 @@ test_userDefinedFunction =
         assertEqualWithExplanation "" expect actual
 
     , testCase "Preserves step substitution" $ do
-        let expect =
-                AttemptedAxiom.Applied AttemptedAxiomResults
-                    { results = OrPattern.fromPatterns
-                        [ Conditional
-                            { term = Mock.g (mkElemVar Mock.z)
-                            , predicate = makeTruePredicate
-                            , substitution = Substitution.wrap
-                                [(ElemVar Mock.y, mkElemVar Mock.z)]
-                            }
-                        ]
-                    , remainders = OrPattern.fromPatterns
-                        [ Conditional
-                            { term = Mock.functionalConstr20
-                                (mkElemVar Mock.y)
-                                (mkElemVar Mock.z)
-                            , predicate =
-                                makeNotPredicate
-                                    (makeEqualsPredicate
-                                        (mkElemVar Mock.y) (mkElemVar Mock.z)
-                                    )
-                            , substitution = mempty
-                            }
-                        ]
-                    }
+        let expect = AttemptedAxiom.NotApplicable
         actual <-
             evaluateWithAxiom
                 (EqualityRule RulePattern
@@ -195,11 +170,8 @@ test_userDefinedFunction =
                     }
                 )
                 (simplifierTermLike Mock.env)
-                (Mock.functionalConstr20
-                    (mkElemVar Mock.y)
-                    (mkElemVar Mock.z)
-                )
-        assertEqualWithExplanation "sigma(x,x) => g(x) vs sigma(a, b)"
+                (Mock.functionalConstr20 (mkElemVar Mock.y) (mkElemVar Mock.z))
+        assertEqualWithExplanation "sigma(x, x) => g(x) vs sigma(a, b)"
             expect
             actual
 

@@ -4,7 +4,6 @@ module Test.Kore.Step.Step
     , test_applyRewriteRule_
     , test_applyRewriteRulesParallel
     , test_applyRewriteRulesSequence
-    , test_sequenceMatchingRules
     ) where
 
 import Test.Tasty
@@ -29,13 +28,11 @@ import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate as Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
-                 makeExistsPredicate, makeFalsePredicate, makeNotPredicate,
-                 makeTruePredicate )
-import qualified Kore.Step.Axiom.Matcher as Matcher
+                 makeFalsePredicate, makeNotPredicate, makeTruePredicate )
 import qualified Kore.Step.Result as Result
                  ( mergeResults )
 import           Kore.Step.Rule
-                 ( EqualityRule (..), RewriteRule (..), RulePattern (..) )
+                 ( RewriteRule (..), RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
 import           Kore.Step.Step hiding
@@ -1126,102 +1123,6 @@ test_applyRewriteRulesSequence =
             [ RewriteRule RulePattern
                 { left = Mock.a
                 , right = mkElemVar Mock.x
-                , requires = makeTruePredicate
-                , ensures = makeTruePredicate
-                , attributes = def
-                }
-            ]
-        checkResults results actual
-        checkRemainders remainders actual
-    ]
-
-axiomFunctionalSigma :: EqualityRule Variable
-axiomFunctionalSigma =
-    EqualityRule RulePattern
-        { left = Mock.functional10 (Mock.sigma x y)
-        , right = Mock.a
-        , requires = Predicate.makeTruePredicate
-        , ensures = Predicate.makeTruePredicate
-        , attributes = Default.def
-        }
-  where
-    x = mkElemVar Mock.x
-    y = mkElemVar Mock.y
-
--- | Apply the 'RewriteRule's to the configuration in sequence.
-sequenceMatchingRules
-    :: Pattern Variable
-    -- ^ Configuration
-    -> [EqualityRule Variable]
-    -- ^ Rewrite rule
-    -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
-sequenceMatchingRules initial rules =
-    (fmap . fmap) Foldable.fold
-    $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
-    $ runUnifierT
-    $ Step.applyRulesSequence unificationProcedure initial equalityRules
-  where
-    equalityRules = getEqualityRule <$> rules
-    unificationProcedure =
-        UnificationProcedure Matcher.unificationWithAppMatchOnTop
-
-test_sequenceMatchingRules :: [TestTree]
-test_sequenceMatchingRules =
-    [ testCase "functional10(x) and functional10(sigma(x, y)) => a" $ do
-        let
-            initialTerm = Mock.functional10 (mkElemVar Mock.x)
-            initial = pure initialTerm
-            x' = nextVariable <$> Mock.x
-            sigma = Mock.sigma (mkElemVar x') (mkElemVar Mock.y)
-            results =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term =
-                            mkExists
-                                Mock.y
-                                (mkExists
-                                    x'
-                                    (mkAnd
-                                        Mock.a
-                                        (mkEquals_ (mkElemVar Mock.x) sigma)
-                                    )
-                                )
-                        , predicate = Predicate.makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ]
-            remainders =
-                OrPattern.fromPatterns
-                    [ initial
-                        { predicate =
-                            Predicate.makeNotPredicate
-                            $ Predicate.makeExistsPredicate x'
-                            $ Predicate.makeExistsPredicate Mock.y
-                            $ Predicate.makeEqualsPredicate
-                                (mkElemVar Mock.x)
-                                sigma
-                        }
-                    ]
-        Right actual <- sequenceMatchingRules initial [axiomFunctionalSigma]
-        checkResults results actual
-        checkRemainders remainders actual
-
-    , testCase "adding variables" $ do
-        -- Term: a
-        -- Rule: a => f(x)
-        -- Expected: exists x . f(x)
-        let
-            results =
-                OrPattern.fromTermLike
-                    (mkExists Mock.x (Mock.f (mkElemVar Mock.x)))
-            remainders = OrPattern.bottom
-            initialTerm = Mock.a
-            initial = Pattern.fromTermLike initialTerm
-        Right actual <- applyRewriteRulesSequence initial
-            [ RewriteRule RulePattern
-                { left = Mock.a
-                , right = Mock.f (mkElemVar Mock.x)
                 , requires = makeTruePredicate
                 , ensures = makeTruePredicate
                 , attributes = def

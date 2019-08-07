@@ -11,7 +11,6 @@ import qualified Data.Set as Set
 
 import Data.Sup
 import Kore.Internal.TermLike
-import Kore.Syntax.ElementVariable
 import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
        ( UnifiedVariable (..) )

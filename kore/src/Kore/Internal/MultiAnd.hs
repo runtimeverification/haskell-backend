@@ -12,6 +12,7 @@ module Kore.Internal.MultiAnd
     ( MultiAnd
     , extractPatterns
     , make
+    , toPredicate
     ) where
 
 import           Control.Applicative
@@ -24,8 +25,13 @@ import           GHC.Exts
 import           GHC.Generics
                  ( Generic )
 
+import Kore.Predicate.Predicate
+       ( Predicate, makeAndPredicate, makeTruePredicate )
+import Kore.Syntax.Variable
 import Kore.TopBottom
        ( TopBottom (..) )
+import Kore.Unparser
+       ( Unparse )
 
 {-| 'MultiAnd' is a Matching logic and of its children
 
@@ -152,3 +158,12 @@ filterGeneric andFilter (MultiAnd patts) =
             AndFalse -> MultiAnd [element]
             AndTrue -> go filterAnd' filtered unfiltered
             AndUnknown -> go filterAnd' (element:filtered) unfiltered
+
+toPredicate
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => MultiAnd (Predicate variable)
+    -> Predicate variable
+toPredicate (MultiAnd predicates) =
+    case predicates of
+        [] -> makeTruePredicate
+        _  -> foldr1 makeAndPredicate predicates

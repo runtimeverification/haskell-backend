@@ -42,7 +42,6 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
-import           Kore.Syntax.ElementVariable
 import           Kore.Syntax.Sentence
                  ( ParsedSentence, Sentence (..),
                  SentenceAxiom (SentenceAxiom) )

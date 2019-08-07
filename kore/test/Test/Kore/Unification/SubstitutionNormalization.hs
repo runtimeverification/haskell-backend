@@ -13,7 +13,6 @@ import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
-import           Kore.Syntax.ElementVariable
 import           Kore.TopBottom
                  ( isBottom )
 import           Kore.Unification.Error
