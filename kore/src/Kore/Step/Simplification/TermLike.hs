@@ -162,6 +162,7 @@ simplifyPatternInternal
     => Pattern variable
     -> simplifier (OrPattern variable)
 simplifyPatternInternal (Pattern.splitTerm -> (termLike, predicate)) =
+    -- TODO: Figure out how to simplify the predicate.
     simplifyInternalExt predicate termLike
 
 simplifyInternal
