@@ -3,6 +3,7 @@ module Test.Kore.Step.Function.Integration
     , test_Nat
     , test_List
     , test_Map
+    , test_Pair
     ) where
 
 import Test.Tasty
@@ -37,11 +38,10 @@ import           Kore.Step.Axiom.EvaluationStrategy
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-                 ( AxiomIdentifier (..) )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
 import           Kore.Step.Rule
-                 ( EqualityRule (EqualityRule) )
+                 ( EqualityRule (..) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..), rulePattern )
 import           Kore.Step.Simplification.Data
@@ -943,6 +943,26 @@ mapSimplifiers =
     Map.fromList
         [ lookupMapEvaluator
         ]
+
+test_Pair :: [TestTree]
+test_Pair =
+    [ applies "pair constructor axiom applies"
+        [pairCtorAxiom]
+        (mkExists xInt . mkExists yInt $ mkPair (mkVar xInt) (mkVar yInt))
+    ]
+
+mkPair :: TermLike Variable -> TermLike Variable -> TermLike Variable
+mkPair = Builtin.pair
+
+xInt, yInt :: Variable
+xInt = varS (testId "xInt") intSort
+yInt = varS (testId "yInt") intSort
+
+pairCtorAxiom :: EqualityRule Variable
+pairCtorAxiom =
+    EqualityRule $ rulePattern
+        (mkExists xInt . mkExists yInt $ mkPair (mkVar xInt) (mkVar yInt))
+        (mkTop $ Builtin.pairSort intSort intSort)
 
 axiomEvaluator
     :: TermLike Variable
