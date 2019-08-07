@@ -117,7 +117,20 @@ simplifyInternal
         )
     => TermLike variable
     -> simplifier (OrPattern variable)
-simplifyInternal = simplifyInternalWorker
+simplifyInternal = simplifyInternalExt Predicate.top
+
+simplifyInternalExt
+    ::  forall variable simplifier
+    .   ( SortedVariable variable
+        , Show variable
+        , Unparse variable
+        , FreshVariable variable
+        , MonadSimplify simplifier
+        )
+    => Predicate variable
+    -> TermLike variable
+    -> simplifier (OrPattern variable)
+simplifyInternalExt _ = simplifyInternalWorker
   where
     simplifyChildren
         :: Traversable t
