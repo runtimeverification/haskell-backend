@@ -757,23 +757,21 @@ test_matching_List =
 
 test_matching_Pair :: [TestTree]
 test_matching_Pair =
-    [ doesn'tMatch
-        "(x, x) does not match (y, z)"
+    [ doesn'tMatch   "(x, x) does not match (y, z)"
         (mkPair (mkVar xInt) (mkVar xInt))
         (mkPair (mkVar yInt) (mkVar zInt))
     , matches        "(x, y) matches (y, y)"
         (mkPair (mkVar xInt) (mkVar xInt))
         (mkPair (mkVar yInt) (mkVar yInt))
         [(xInt, mkVar yInt)]
-
-    , doesn'tMatch        "(x, x) does not match (1, 2)"
+    , doesn'tMatch   "(x, x) does not match (1, 2)"
         (mkPair (mkVar xInt) (mkVar xInt))
         (mkPair (mkInt 1) (mkInt 2))
-    , matches "(x, y) matches (y, z)"
+    , matches        "(x, y) matches (y, z)"
         (mkPair (mkVar xInt) (mkVar yInt))
         (mkPair (mkVar yInt) (mkVar zInt))
         [(xInt, mkVar zInt), (yInt, mkVar zInt)]
-    , matches "(y, x) matches (z, y)"
+    , matches        "(y, x) matches (z, y)"
         (mkPair (mkVar yInt) (mkVar xInt))
         (mkPair (mkVar zInt) (mkVar yInt))
         [(xInt, mkVar zInt), (yInt, mkVar zInt)]
