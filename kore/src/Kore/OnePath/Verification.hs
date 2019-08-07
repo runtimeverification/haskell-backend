@@ -10,6 +10,7 @@ This should be imported qualified.
 
 module Kore.OnePath.Verification
     ( Claim
+    , CommonProofState
     , defaultStrategy
     , verify
     , verifyClaimStep
