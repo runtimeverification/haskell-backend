@@ -2,6 +2,7 @@ module Test.Kore.Step.Function.Integration
     ( test_functionIntegration
     , test_Nat
     , test_List
+    , test_Map
     ) where
 
 import Test.Tasty
@@ -17,6 +18,7 @@ import           Prelude hiding
                  ( succ )
 
 import           Data.Sup
+import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Int as Int
                  ( builtinFunctions )
 import qualified Kore.Builtin.Map as Map
@@ -537,7 +539,7 @@ test_functionIntegration =
 test_Nat :: [TestTree]
 test_Nat =
     [ plus zero varN `matches` plus zero one  $ "plus(0, N) ~ plus(0, 1)"
-    , plus (succ varM) varN `notMatches` plus zero one  $ "plus(Succ(M), N) !~ plus(0, 1) "
+    , plus (succ varM) varN `doesn'tMatch` plus zero one  $ "plus(Succ(M), N) !~ plus(0, 1) "
     , plus (succ varM) varN `matches` plus one one  $ "plus(Succ(M), N) ~ plus(1, 1) "
     , applies            "plus(0, N) => ... ~ plus (0, 1)"
         [plusZeroRule]
@@ -597,13 +599,14 @@ withMatch check term1 term2 comment =
                     ]
         assertBool (show message) (check actual)
 
-matches, notMatches
-    :: TermLike Variable
+matches, doesn'tMatch
+    :: HasCallStack
+    => TermLike Variable
     -> TermLike Variable
     -> TestName
     -> TestTree
 matches = withMatch (maybe False (not . isBottom))
-notMatches = withMatch isNothing
+doesn'tMatch = withMatch isNothing
 
 -- Applied tests: check that one or more rules applies or not
 withApplied
@@ -781,10 +784,10 @@ test_List =
 
     , applies                  "removeList([], M) => ... ~ removeList([], [(0, 1)])"
         [removeListUnitRule]
-        (removeList unitList (mkMap [(mkInt 0, mkInt 1)]))
+        (removeList unitList (mkMap [(mkInt 0, mkInt 1)] []))
     , equals "removeList([1], [(0, 1)]) = [(0, 1)]"
-        (removeList (mkList [mkInt 1]) (mkMap [(mkInt 0, mkInt 1)]))
-        (mkMap [(mkInt 0, mkInt 1)])
+        (removeList (mkList [mkInt 1]) (mkMap [(mkInt 0, mkInt 1)] []))
+        (mkMap [(mkInt 0, mkInt 1)] [])
     ]
   where
     -- Evaluation tests: check the result of evaluating the term
@@ -819,8 +822,13 @@ mkList = List.asInternal
 mkInt :: Integer -> TermLike Variable
 mkInt = Int.asInternal
 
-mkMap :: [(TermLike Variable, TermLike Variable)] -> TermLike Variable
-mkMap = Map.asInternal
+mkMap
+    :: [(TermLike Variable, TermLike Variable)]
+    -> [TermLike Variable]
+    -> TermLike Variable
+mkMap elements opaques =
+    Ac.asInternal Builtin.testMetadataTools Builtin.mapSort
+    $ Map.normalizedMap elements opaques
 
 removeMap :: TermLike Variable -> TermLike Variable -> TermLike Variable
 removeMap = Builtin.removeMap
@@ -831,8 +839,9 @@ addInt = Builtin.addInt
 unitList :: TermLike Variable
 unitList = mkList []
 
-varX, varL, mMap :: TermLike Variable
+varX, varY, varL, mMap :: TermLike Variable
 varX = mkVar (varS (testId "xInt") intSort)
+varY = mkVar (varS (testId "yInt") intSort)
 varL = mkVar (varS (testId "lList") listSort)
 mMap = mkVar (varS (testId "mMap") mapSort)
 
@@ -898,6 +907,67 @@ listSimplifiers =
     removeMapId =
         AxiomIdentifier.Application
         $ symbolConstructor Builtin.removeMapSymbol
+
+test_Map :: [TestTree]
+test_Map =
+    [ equals "lookupMap(.Map, 1) = lookupMap(.Map, 1)"
+        (lookupMap (mkMap [] []) (mkInt 1))
+        (lookupMap (mkMap [] []) (mkInt 1))
+    , equals "lookupMap(1 |-> 2, 1) = 2"
+        (lookupMap (mkMap [(mkInt 1, mkInt 2)] []) (mkInt 1))
+        (mkInt 2)
+    , equals "lookupMap(0 |-> 1  1 |-> 2, 1) = 2"
+        (lookupMap (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] []) (mkInt 1))
+        (mkInt 2)
+    ]
+  where
+    -- Evaluation tests: check the result of evaluating the term
+    equals
+        :: HasCallStack
+        => TestName
+        -> TermLike Variable
+        -> TermLike Variable
+        -> TestTree
+    equals comment term expect =
+        testCase comment $ do
+            actual <- evaluate' mapSimplifiers term
+            assertEqualWithExplanation "" (Pattern.fromTermLike expect) actual
+
+    evaluate'
+        :: BuiltinAndAxiomSimplifierMap
+        -> TermLike Variable
+        -> IO (Pattern Variable)
+    evaluate' functionIdToEvaluator patt =
+        SMT.runSMT SMT.defaultConfig emptyLogger
+        $ evalSimplifier env
+        $ TermLike.simplify patt
+      where
+        env =
+            Mock.env
+                { metadataTools = Builtin.testMetadataTools
+                , simplifierAxioms = functionIdToEvaluator
+                }
+
+lookupMapSymbol :: Symbol
+lookupMapSymbol = Mock.symbol "lookupMap" [mapSort, intSort] intSort & function
+
+lookupMap :: TermLike Variable -> TermLike Variable -> TermLike Variable
+lookupMap m k = mkApplySymbol lookupMapSymbol [m, k]
+
+lookupMapRule :: EqualityRule Variable
+lookupMapRule = axiom_ (lookupMap (mkMap [(varX, varY)] [mMap]) varX) varY
+
+lookupMapRules :: [EqualityRule Variable]
+lookupMapRules = [lookupMapRule]
+
+lookupMapEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
+lookupMapEvaluator = functionEvaluator lookupMapSymbol lookupMapRules
+
+mapSimplifiers :: BuiltinAndAxiomSimplifierMap
+mapSimplifiers =
+    Map.fromList
+        [ lookupMapEvaluator
+        ]
 
 axiomEvaluator
     :: TermLike Variable
