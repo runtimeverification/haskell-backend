@@ -10,6 +10,7 @@ module Test.Kore.Step.Axiom.Matcher
     , test_matching_Set
     , test_matching_Map
     , test_matching_Pair
+    , test_matching_Exists
     , match
     ) where
 
@@ -754,6 +755,17 @@ test_matching_List =
             (mkInt <$> val)
     matchConcat t1 =
         matchDefinition t1 . mkList . fmap mkInt
+
+test_matching_Exists :: [TestTree]
+test_matching_Exists =
+    [ matches        "∃ x:Int. (x, z) matches ∃ y:Int. (y, 1)"
+        (mkExists xInt (mkPair (mkVar xInt) (mkVar zInt)))
+        (mkExists yInt (mkPair (mkVar yInt) (mkInt 1)))
+        [(zInt, mkInt 1)]
+    , doesn'tMatch   "∃ x:Int. (x, z) does not match ∃ y:Int. (y, y)"
+        (mkExists xInt (mkPair (mkVar xInt) (mkVar zInt)))
+        (mkExists yInt (mkPair (mkVar yInt) (mkVar yInt)))
+    ]
 
 test_matching_Pair :: [TestTree]
 test_matching_Pair =
