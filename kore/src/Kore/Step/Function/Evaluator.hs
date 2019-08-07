@@ -10,8 +10,11 @@ Portability : portable
 module Kore.Step.Function.Evaluator
     ( evaluateApplication
     , evaluatePattern
+    , evaluateOnce
     ) where
 
+import           Control.Applicative
+                 ( Alternative (empty) )
 import           Control.Error
                  ( MaybeT )
 import qualified Control.Error as Error
@@ -297,3 +300,33 @@ mergeWithConditionAndSubstitution
         { results = evaluatedResults
         , remainders = evaluatedRemainders
         }
+
+{- |
+
+ -}
+evaluateOnce
+    ::  forall variable simplifier
+    .   ( Show variable
+        , Unparse variable
+        , FreshVariable variable
+        , SortedVariable variable
+        , MonadSimplify simplifier
+        , WithLog LogMessage simplifier
+        )
+    => Predicate variable
+    -- ^ Aggregated children predicate and substitution.
+    -> TermLike variable
+    -- ^ The pattern to be evaluated
+    -> MaybeT simplifier (OrPattern variable)
+evaluateOnce predicate termLike = do
+    simplifierAxiom <- Simplifier.lookupSimplifierAxiom termLike
+    result <- Simplifier.runBuiltinAndAxiomSimplifier simplifierAxiom termLike
+    case result of
+        AttemptedAxiom.NotApplicable -> empty
+        AttemptedAxiom.Applied attemptedAxiomResults ->
+            return $ andPredicate <$> results <> remainders
+          where
+            AttemptedAxiomResults { results, remainders } =
+                attemptedAxiomResults
+  where
+    andPredicate pattern' = Pattern.andCondition pattern' predicate
