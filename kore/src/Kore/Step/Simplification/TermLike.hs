@@ -15,7 +15,9 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
+import qualified Kore.Step.Function.Evaluator as Evaluator
 import qualified Kore.Step.Simplification.And as And
                  ( simplify )
 import qualified Kore.Step.Simplification.Application as Application
@@ -98,8 +100,10 @@ simplifyToOr
         )
     => TermLike variable
     -> simplifier (OrPattern variable)
-simplifyToOr =
-    localSimplifierTermLike (const simplifier) . simplifyInternal
+simplifyToOr termLike =
+    localSimplifierTermLike (const simplifier)
+    $ Evaluator.evaluatePattern Predicate.top termLike
+    $ simplifyInternal termLike
   where
     simplifier = termLikeSimplifier simplifyToOr
 
