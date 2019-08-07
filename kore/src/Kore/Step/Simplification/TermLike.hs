@@ -9,6 +9,15 @@ module Kore.Step.Simplification.TermLike
     , simplifyInternal
     ) where
 
+import           Control.Error
+                 ( MaybeT )
+import qualified Control.Error as Error
+import qualified Control.Monad as Monad
+import           Control.Monad.State.Strict
+                 ( StateT, evalStateT )
+import qualified Control.Monad.State.Strict as Monad.State
+import qualified Control.Monad.Trans as Monad.Trans
+import           Data.Function
 import qualified Data.Functor.Foldable as Recursive
 
 import           Kore.Internal.OrPattern
@@ -17,7 +26,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
-import qualified Kore.Step.Function.Evaluator as Evaluator
+-- import qualified Kore.Step.Function.Evaluator as Evaluator
 import qualified Kore.Step.Simplification.And as And
                  ( simplify )
 import qualified Kore.Step.Simplification.Application as Application
@@ -92,17 +101,66 @@ simplify patt = do
 'OrPattern'.
 -}
 simplifyToOr
-    ::  ( SortedVariable variable
+    ::  forall variable simplifier
+    .   (FreshVariable variable, SortedVariable variable)
+    =>  (Show variable, Unparse variable)
+    =>  MonadSimplify simplifier
+    =>  TermLike variable
+    ->  simplifier (OrPattern variable)
+simplifyToOr =
+    gatherPatterns . begin . wrapper . Pattern.fromTermLike
+  where
+    begin = flip evalStateT True
+
+    -- true :: forall a m. Monad m => a -> MaybeT (StateT Bool m) a
+    -- true a = do
+    --     Monad.State.put True
+    --     return a
+
+    false :: forall a m. Monad m => a -> MaybeT (StateT Bool m) a
+    false a = do
+        s <- Monad.State.get
+        Monad.guard s
+        Monad.State.put False
+        return a
+
+    wrapper
+        :: Pattern variable
+        -> StateT Bool (BranchT simplifier) (Pattern variable)
+    wrapper original =
+        worker original
+        & Error.maybeT (return original) wrapper
+
+    worker
+        :: Pattern variable
+        -> MaybeT (StateT Bool (BranchT simplifier)) (Pattern variable)
+    worker original = do
+        -- let (termLike, predicate) = Pattern.splitTerm original
+        --     orOriginal = OrPattern.fromPattern original
+        -- orPattern <-
+        --     Evaluator.evaluateOnce predicate termLike
+        --     & Error.maybeT (false orOriginal) true
+        -- evaluated <- scatter' orPattern
+        evaluated <- false original
+        simplifyPatternInternal evaluated >>= scatter'
+
+    scatter'
+        :: OrPattern variable
+        -> MaybeT (StateT Bool (BranchT simplifier)) (Pattern variable)
+    scatter' = Monad.Trans.lift . Monad.Trans.lift . scatter
+
+simplifyPatternInternal
+    ::  forall variable simplifier
+    .   ( SortedVariable variable
         , Show variable
         , Unparse variable
         , FreshVariable variable
         , MonadSimplify simplifier
         )
-    => TermLike variable
+    => Pattern variable
     -> simplifier (OrPattern variable)
-simplifyToOr termLike =
-    Evaluator.evaluatePattern Predicate.top termLike
-    $ simplifyInternal termLike
+simplifyPatternInternal (Pattern.splitTerm -> (termLike, predicate)) =
+    simplifyInternalExt predicate termLike
 
 simplifyInternal
     ::  forall variable simplifier
