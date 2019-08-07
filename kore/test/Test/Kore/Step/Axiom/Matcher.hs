@@ -13,6 +13,8 @@ module Test.Kore.Step.Axiom.Matcher
     , test_matching_Exists
     , test_matching_Forall
     , match
+    , MatchResult
+    , matches, doesn'tMatch
     ) where
 
 import Test.Tasty
@@ -20,7 +22,6 @@ import Test.Tasty.HUnit
 
 import           Data.Function
                  ( on )
-import qualified Data.Maybe as Maybe
 import qualified GHC.Stack as GHC
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
@@ -41,7 +42,7 @@ import           Kore.Step.Axiom.Matcher
                  ( matchIncremental )
 import           Kore.Step.Simplification.Data
 import           Kore.Unification.Error
-                 ( UnificationOrSubstitutionError )
+                 ( UnificationError (..), UnificationOrSubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
 import qualified SMT
@@ -962,29 +963,26 @@ matchDefinition
     :: TermLike Variable
     -> TermLike Variable
     -> IO (Maybe (OrPredicate Variable))
-matchDefinition = match
+matchDefinition term1 term2 =
+    either (const Nothing) Just <$> match term1 term2
 
 matchSimplification
     :: TermLike Variable
     -> TermLike Variable
     -> IO (Maybe (OrPredicate Variable))
-matchSimplification = match
+matchSimplification = matchDefinition
+
+type MatchResult = Either UnificationOrSubstitutionError (OrPredicate Variable)
 
 match
     :: TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (OrPredicate Variable))
+    -> IO MatchResult
 match first second =
-    either (const Nothing) Just <$> matchAsEither
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier Mock.env matchResult
   where
-    matchAsEither
-        :: IO (Either UnificationOrSubstitutionError (OrPredicate Variable))
-    matchAsEither =
-        SMT.runSMT SMT.defaultConfig emptyLogger
-        $ evalSimplifier Mock.env matchResult
-    matchResult
-        :: Simplifier
-            (Either UnificationOrSubstitutionError (OrPredicate Variable))
+    matchResult :: Simplifier MatchResult
     matchResult =
         (fmap . fmap) MultiOr.make
         $ Monad.Unify.runUnifierT
@@ -992,7 +990,7 @@ match first second =
 
 withMatch
     :: GHC.HasCallStack
-    => (Maybe (OrPredicate Variable) -> Assertion)
+    => (MatchResult -> Assertion)
     -> TestName
     -> TermLike Variable
     -> TermLike Variable
@@ -1008,7 +1006,12 @@ doesn'tMatch
     -> TermLike Variable
     -> TermLike Variable
     -> TestTree
-doesn'tMatch = withMatch (assertBool "" . Maybe.isNothing)
+doesn'tMatch = withMatch (assertBool "" . isUnsupportedPatterns)
+  where
+    isUnsupportedPatterns =
+        \case
+            Left (UnificationError (UnsupportedPatterns !_)) -> True
+            _ -> False
 
 matches
     :: GHC.HasCallStack
@@ -1037,5 +1040,5 @@ matchesAux comment term1 term2 expect =
                 OrPredicate.fromPredicate
                 $ Predicate.fromSubstitution
                 $ Substitution.unsafeWrap substs
-    check Nothing = assertFailure "Expected matching solution."
-    check (Just actual) = assertEqual "" solution actual
+    check (Left _) = assertFailure "Expected matching solution."
+    check (Right actual) = assertEqual "" solution actual
