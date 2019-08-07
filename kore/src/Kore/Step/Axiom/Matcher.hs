@@ -36,6 +36,9 @@ import           Data.Maybe
 import           Data.Sequence
                  ( pattern (:<|), pattern (:|>), Seq )
 import qualified Data.Sequence as Seq
+import           Data.Set
+                 ( Set )
+import qualified Data.Set as Set
 import qualified GHC.Generics as GHC
 
 import           Kore.Attribute.Pattern.FreeVariables
@@ -126,6 +129,7 @@ matchIncremental termLike1 termLike2 =
             , predicate = empty
             , substitution = mempty
             , targetVariables = TermLike.freeVariables termLike1
+            , bound = mempty
             }
 
     -- | Check that matching is finished and construct the result.
@@ -141,7 +145,8 @@ matchIncremental termLike1 termLike2 =
             substitution' =
                 Predicate.fromSubstitution
                 $ Substitution.fromMap substitution
-        return (predicate' <> substitution')
+            solution = predicate' <> substitution'
+        return solution
 
     throwUnknown =
         Monad.Trans.lift
@@ -199,14 +204,16 @@ matchExists
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchExists (Pair (Exists_ _ variable1 term1) (Exists_ _ variable2 term2)) = do
-    maybeVariable1' <- refreshVariable variable1
+    refreshed1 <- refreshVariable variable1
     let term1' = fromMaybe term1 $ do
-            var1 <- mkVar <$> maybeVariable1'
+            var1 <- mkVar <$> refreshed1
             let subst1 = Map.singleton variable1 var1
             return $ substituteTermLike subst1 term1
-    let variable1' = fromMaybe variable1 maybeVariable1'
+    let variable1' = fromMaybe variable1 refreshed1
         subst2 = Map.singleton variable2 (mkVar variable1')
         term2' = substituteTermLike subst2 term2
+    -- Quantify the remaining bound variable.
+    field @"bound" %= Set.insert variable1'
     push (Pair term1' term2')
 matchExists _ = empty
 
@@ -331,6 +338,7 @@ data MatcherState variable =
         , predicate :: !(MultiAnd (Syntax.Predicate variable))
         , substitution :: !(Map variable (TermLike variable))
         , targetVariables :: !(FreeVariables variable)
+        , bound :: !(Set variable)
         }
     deriving (GHC.Generic)
 
@@ -371,9 +379,11 @@ defer pair = field @"deferred" %= (:|> pair)
 {- | Record a substitution in the matching solution.
 
 The substitution is applied to the remaining constraints and to the partial
-matching solution (so that it is always normalized). @substitute@ ensures that
-the variable does not occur on the right-hand side of the substitution and adds
-a constraint that the right-hand side is defined (if necessary).
+matching solution (so that it is always normalized). @substitute@ ensures that:
+
+1. The variable does not occur on the right-hand side.
+2. No bound variable would escape through the right-hand side.
+3. The right-hand side is defined (through a constraint, if necessary).
 
  -}
 substitute
@@ -384,6 +394,8 @@ substitute
 substitute variable termLike = do
     -- Ensure that the variable does not occur free in the TermLike.
     occursCheck variable termLike
+    -- Ensure that no bound variable would escape.
+    escapeCheck termLike
     -- Ensure that the TermLike is defined.
     definedTerm termLike
     -- Record the substitution.
@@ -452,6 +464,21 @@ guardTargetVariable
 guardTargetVariable variable = do
     MatcherState { targetVariables } <- Monad.State.get
     Monad.guard (isFreeVariable variable targetVariables)
+
+{- | Ensure that no bound variables occur free in the pattern.
+
+We must not produce a matching solution which would allow a bound variable to
+escape.
+
+ -}
+escapeCheck
+    :: (MatchingVariable variable, Monad unifier)
+    => TermLike variable
+    -> MaybeT (MatcherT variable unifier) ()
+escapeCheck termLike = do
+    let free = getFreeVariables (TermLike.freeVariables termLike)
+    MatcherState { bound } <- Monad.State.get
+    Monad.guard (Set.disjoint bound free)
 
 leftAlignLists
     ::  Builtin.InternalList (TermLike variable)
