@@ -370,7 +370,15 @@ substitute variable termLike = do
     isIndependent = not . any (hasFreeVariable variable)
     subst = Map.singleton variable termLike
     substitute2 = fmap substitute1
-    substitute1 = Builtin.renormalize . TermLike.substitute subst
+    substitute1 = substituteTermLike subst
+
+substituteTermLike
+    :: (FreshVariable variable, SortedVariable variable)
+    => (Show variable, Unparse variable)
+    => Map variable (TermLike variable)
+    -> TermLike variable
+    -> TermLike variable
+substituteTermLike subst = Builtin.renormalize . TermLike.substitute subst
 
 occursCheck
     :: (MatchingVariable variable, MonadUnify unifier)
