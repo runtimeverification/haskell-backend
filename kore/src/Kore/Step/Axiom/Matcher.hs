@@ -130,7 +130,7 @@ matchIncremental termLike1 termLike2 =
             , deferred = empty
             , predicate = empty
             , substitution = mempty
-            , targetVariables = TermLike.freeVariables termLike1
+            , targets = TermLike.freeVariables termLike1
             , bound = mempty
             }
 
@@ -225,7 +225,7 @@ matchVariable
 matchVariable (Pair (Var_ variable1) term2)
   | Var_ variable2 <- term2, variable1 == variable2 = return ()
   | otherwise = do
-    guardTargetVariable variable1
+    targetCheck variable1
     Monad.guard (isFunctionPattern term2)
     substitute variable1 term2
 matchVariable _ = empty
@@ -338,7 +338,7 @@ data MatcherState variable =
         , deferred :: !(Seq (Pair (TermLike variable)))
         , predicate :: !(MultiAnd (Syntax.Predicate variable))
         , substitution :: !(Map variable (TermLike variable))
-        , targetVariables :: !(FreeVariables variable)
+        , targets :: !(FreeVariables variable)
         , bound :: !(Set variable)
         }
     deriving (GHC.Generic)
@@ -458,13 +458,13 @@ can also contain non-target variables and this guard is used to ensure that we
 do not attempt to match on them.
 
  -}
-guardTargetVariable
+targetCheck
     :: (MatchingVariable variable, Monad unifier)
     => variable
     -> MaybeT (MatcherT variable unifier) ()
-guardTargetVariable variable = do
-    MatcherState { targetVariables } <- Monad.State.get
-    Monad.guard (isFreeVariable variable targetVariables)
+targetCheck variable = do
+    MatcherState { targets } <- Monad.State.get
+    Monad.guard (isFreeVariable variable targets)
 
 {- | Ensure that no bound variables occur free in the pattern.
 
