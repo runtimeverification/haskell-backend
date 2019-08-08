@@ -636,7 +636,8 @@ setVariable (VariableName name) sort =
         }
 
 variablePattern :: VariableName -> Sort -> Syntax.PatternF Variable p
-variablePattern name sort = Syntax.VariableF (ElemVar $ variable name sort)
+variablePattern name sort =
+    Syntax.VariableF $ Const $ ElemVar $ variable name sort
 
 variableTermLike :: VariableName -> Sort -> TermLike Variable
 variableTermLike name sort = Internal.mkElemVar (variable name sort)

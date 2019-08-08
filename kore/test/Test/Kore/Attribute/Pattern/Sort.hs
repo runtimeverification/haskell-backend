@@ -92,7 +92,7 @@ test_instance_Synthetic =
         , failure $ ForallF (Forall sort Mock.x sort0)
         ]
     , testGroup "VariableF"
-        [ success $ VariableF (ElemVar Mock.x)
+        [ success $ VariableF (Const (ElemVar Mock.x))
         ]
     , testGroup "MuF"
         [ success $ MuF (Mu Mock.setX sort)

@@ -369,9 +369,8 @@ verifyPatternHead (_ :< patternF) =
             transCofreeF Internal.CharLiteralF <$> verifyCharLiteral char
         Syntax.TopF top ->
             transCofreeF Internal.TopF <$> verifyTop top
-        Syntax.VariableF var ->
-            transCofreeF (Internal.VariableF . getConst)
-                <$> verifyVariable var
+        Syntax.VariableF (Const variable) ->
+            transCofreeF Internal.VariableF <$> verifyVariable variable
         Syntax.InhabitantF _ ->
             koreFail "Unexpected pattern."
   where
@@ -882,10 +881,10 @@ patternNameForContext (RewritesF _) = "\\rewrites"
 patternNameForContext (StringLiteralF _) = "<string>"
 patternNameForContext (CharLiteralF _) = "<char>"
 patternNameForContext (TopF _) = "\\top"
-patternNameForContext (VariableF (ElemVar variable)) =
+patternNameForContext (VariableF (Const (ElemVar variable))) =
     "element variable '" <> variableNameForContext (getElementVariable variable) <> "'"
 patternNameForContext (InhabitantF _) = "\\inh"
-patternNameForContext (VariableF (SetVar variable)) =
+patternNameForContext (VariableF (Const (SetVar variable))) =
     "set variable '" <> variableNameForContext (getSetVariable variable) <> "'"
 
 variableNameForContext :: Variable -> Text

@@ -277,22 +277,24 @@ applicationPatternParserTests :: [TestTree]
 applicationPatternParserTests =
     parseTree korePatternParser
         [ success "@v:Char"
-            ( asParsedPattern . VariableF . SetVar . SetVariable $ Variable
-                { variableName = testId "@v"
-                , variableSort = sortVariableSort "Char"
-                , variableCounter = mempty
-                }
+            ( asParsedPattern . VariableF . Const . SetVar $ SetVariable
+                Variable
+                    { variableName = testId "@v"
+                    , variableSort = sortVariableSort "Char"
+                    , variableCounter = mempty
+                    }
             )
         , success "v:s1{s2}"
-            ( asParsedPattern $ VariableF . ElemVar . ElementVariable $ Variable
-                { variableName = testId "v" :: Id
-                , variableSort =
-                    SortActualSort SortActual
-                        { sortActualName = testId "s1"
-                        , sortActualSorts = [ sortVariableSort "s2" ]
-                        }
-                , variableCounter = mempty
-                }
+            ( asParsedPattern $ VariableF . Const . ElemVar $ ElementVariable
+                Variable
+                    { variableName = testId "v" :: Id
+                    , variableSort =
+                        SortActualSort SortActual
+                            { sortActualName = testId "s1"
+                            , sortActualSorts = [ sortVariableSort "s2" ]
+                            }
+                    , variableCounter = mempty
+                    }
             )
         , success "c{s1,s2}(v1:s1, v2:s2)"
             ( asParsedPattern $ ApplicationF Application
@@ -304,18 +306,18 @@ applicationPatternParserTests =
                             , sortVariableSort "s2" ]
                         }
                 , applicationChildren =
-                    [ asParsedPattern $ VariableF $ ElemVar $ ElementVariable
-                        Variable
-                        { variableName = testId "v1" :: Id
-                        , variableSort = sortVariableSort "s1"
-                        , variableCounter = mempty
-                        }
-                    , asParsedPattern $ VariableF $ ElemVar $ ElementVariable
-                        Variable
-                        { variableName = testId "v2" :: Id
-                        , variableSort = sortVariableSort "s2"
-                        , variableCounter = mempty
-                        }
+                    [ asParsedPattern $ VariableF $ Const $ ElemVar $
+                        ElementVariable Variable
+                            { variableName = testId "v1" :: Id
+                            , variableSort = sortVariableSort "s1"
+                            , variableCounter = mempty
+                            }
+                    , asParsedPattern $ VariableF $ Const $ ElemVar $
+                        ElementVariable Variable
+                            { variableName = testId "v2" :: Id
+                            , variableSort = sortVariableSort "s2"
+                            , variableCounter = mempty
+                            }
                     ]
                 }
             )
@@ -533,7 +535,7 @@ memPatternParserTests =
                     { inOperandSort = sortVariableSort "s1" :: Sort
                     , inResultSort = sortVariableSort "s2"
                     , inContainedChild = asParsedPattern $
-                        VariableF $ ElemVar $ ElementVariable Variable
+                        VariableF $ Const $ ElemVar $ ElementVariable Variable
                             { variableName = testId "v" :: Id
                             , variableSort = sortVariableSort "s3"
                             , variableCounter = mempty
@@ -736,21 +738,23 @@ variablePatternParserTests :: [TestTree]
 variablePatternParserTests =
     parseTree korePatternParser
         [ success "v:s"
-            ( asParsedPattern $ VariableF $ ElemVar $ ElementVariable Variable
-                { variableName = testId "v" :: Id
-                , variableSort = sortVariableSort "s"
-                , variableCounter = mempty
-                }
+            ( asParsedPattern $ VariableF $ Const $ ElemVar $
+                ElementVariable Variable
+                    { variableName = testId "v" :: Id
+                    , variableSort = sortVariableSort "s"
+                    , variableCounter = mempty
+                    }
             )
         , success "v:s1{s2}"
-            ( asParsedPattern $ VariableF $ ElemVar $ ElementVariable Variable
-                { variableName = testId "v" :: Id
-                , variableSort = SortActualSort SortActual
-                    { sortActualName=testId "s1"
-                    , sortActualSorts = [ sortVariableSort "s2" ]
+            ( asParsedPattern $ VariableF $ Const $ ElemVar $
+                ElementVariable Variable
+                    { variableName = testId "v" :: Id
+                    , variableSort = SortActualSort SortActual
+                        { sortActualName=testId "s1"
+                        , sortActualSorts = [ sortVariableSort "s2" ]
+                        }
+                    , variableCounter = mempty
                     }
-                , variableCounter = mempty
-                }
             )
             , FailureWithoutMessage ["", "var", "v:", ":s", "c(s)", "c{s}"]
         ]
@@ -849,13 +853,13 @@ sentenceAliasParserTests =
                                         ]
                                     }
                             , applicationChildren =
-                                [ asParsedPattern $ VariableF
-                                    $ElemVar $ ElementVariable Variable
+                                [ asParsedPattern $ VariableF $ Const
+                                    $ ElemVar $ ElementVariable Variable
                                     { variableName = testId "X" :: Id
                                     , variableSort = sortVariableSort "s3"
                                     , variableCounter = mempty
                                     }
-                                , asParsedPattern $ VariableF
+                                , asParsedPattern $ VariableF $ Const
                                     $ ElemVar $ ElementVariable Variable
                                     { variableName = testId "Y" :: Id
                                     , variableSort = sortVariableSort "s4"

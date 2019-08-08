@@ -442,7 +442,7 @@ test_patternVerifier =
         ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Object pattern - unquantified variable"
-        (VariableF (ElemVar objectVariable'))
+        (VariableF $ Const $ ElemVar objectVariable')
         (NamePrefix "dummy")
         (TestedPatternSort objectSort)
         (SortVariablesThatMustBeDeclared [])
@@ -450,7 +450,7 @@ test_patternVerifier =
         [ objectSortSentence, anotherSortSentence ]
         NeedsInternalDefinitions
     , successTestsForMetaPattern "Meta pattern - unquantified variable"
-        (VariableF (ElemVar metaVariable'))
+        (VariableF $ Const $ ElemVar metaVariable')
         (NamePrefix "#dummy")
         (TestedPatternSort metaSort1)
         (SortVariablesThatMustBeDeclared [])

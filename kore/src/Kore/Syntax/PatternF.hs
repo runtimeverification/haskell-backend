@@ -80,7 +80,7 @@ data PatternF variable child
     | InhabitantF    !(Inhabitant child)
     | StringLiteralF !(Const StringLiteral child)
     | CharLiteralF   !(Const CharLiteral child)
-    | VariableF      !(UnifiedVariable variable)
+    | VariableF      !(Const (UnifiedVariable variable) child)
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance SOP.Generic (PatternF variable child)
@@ -134,7 +134,7 @@ traverseVariables traversing =
         ForallF all0 -> ForallF <$> traverseVariablesForall all0
         MuF any0 -> MuF <$> traverseVariablesMu any0
         NuF any0 -> NuF <$> traverseVariablesNu any0
-        VariableF variable -> VariableF <$> traverse traversing variable
+        VariableF variableF -> traverseVariable variableF
         -- Trivial cases
         AndF andP -> pure (AndF andP)
         ApplicationF appP -> pure (ApplicationF appP)
@@ -155,10 +155,16 @@ traverseVariables traversing =
         TopF topP -> pure (TopF topP)
         InhabitantF s -> pure (InhabitantF s)
   where
+    traverseVariable (Const variable) =
+        VariableF . Const <$> traverse traversing variable
     traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
-        Exists existsSort <$> traverse traversing existsVariable <*> pure existsChild
+        Exists existsSort
+        <$> traverse traversing existsVariable
+        <*> pure existsChild
     traverseVariablesForall Forall { forallSort, forallVariable, forallChild } =
-        Forall forallSort <$> traverse traversing forallVariable <*> pure forallChild
+        Forall forallSort
+        <$> traverse traversing forallVariable
+        <*> pure forallChild
     traverseVariablesMu Mu { muVariable, muChild } =
         Mu <$> traverse traversing muVariable <*> pure muChild
     traverseVariablesNu Nu { nuVariable, nuChild } =

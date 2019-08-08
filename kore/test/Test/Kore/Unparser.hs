@@ -60,8 +60,8 @@ test_unparse =
                             , sortActualSorts = []
                             }
                         , inContainedChild =
-                            asParsedPattern $ VariableF
-                                $ ElemVar $ ElementVariable Variable
+                            asParsedPattern $ VariableF $ Const $ ElemVar
+                            $ ElementVariable Variable
                                 { variableName = testId "T"
                                 , variableSort = SortVariableSort SortVariable
                                     { getSortVariable = testId "C" }

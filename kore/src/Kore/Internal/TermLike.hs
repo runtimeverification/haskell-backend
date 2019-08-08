@@ -298,7 +298,7 @@ data TermLikeF variable child
     | EvaluatedF     !(Evaluated child)
     | StringLiteralF !(Const StringLiteral child)
     | CharLiteralF   !(Const CharLiteral child)
-    | VariableF      !(UnifiedVariable variable)
+    | VariableF      !(Const (UnifiedVariable variable) child)
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance SOP.Generic (TermLikeF variable child)
@@ -328,7 +328,7 @@ instance
     -- Functors.
     synthetic (ForallF forallF) = synthetic forallF
     synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF variable) = synthetic (Const variable)
+    synthetic (VariableF variable) = synthetic variable
 
     synthetic (AndF andF) = synthetic andF
     synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
@@ -362,7 +362,7 @@ instance SortedVariable variable => Synthetic (TermLikeF variable) Sort where
     -- Functors.
     synthetic (ForallF forallF) = synthetic forallF
     synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF variable) = synthetic (Const variable)
+    synthetic (VariableF variable) = synthetic variable
 
     synthetic (AndF andF) = synthetic andF
     synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
@@ -396,7 +396,7 @@ instance Synthetic (TermLikeF variable) Pattern.Functional where
     -- Functors.
     synthetic (ForallF forallF) = synthetic forallF
     synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF variable) = synthetic (Const variable)
+    synthetic (VariableF variable) = synthetic variable
 
     synthetic (AndF andF) = synthetic andF
     synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
@@ -430,7 +430,7 @@ instance Synthetic (TermLikeF variable) Pattern.Function where
     -- Functors.
     synthetic (ForallF forallF) = synthetic forallF
     synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF variable) = synthetic (Const variable)
+    synthetic (VariableF variable) = synthetic variable
 
     synthetic (AndF andF) = synthetic andF
     synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
@@ -464,7 +464,7 @@ instance Synthetic (TermLikeF variable) Pattern.Defined where
     -- Functors.
     synthetic (ForallF forallF) = synthetic forallF
     synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF variable) = synthetic (Const variable)
+    synthetic (VariableF variable) = synthetic variable
 
     synthetic (AndF andF) = synthetic andF
     synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
@@ -523,7 +523,7 @@ traverseVariablesF traversing =
         ForallF all0 -> ForallF <$> traverseVariablesForall all0
         MuF any0 -> MuF <$> traverseVariablesMu any0
         NuF any0 -> NuF <$> traverseVariablesNu any0
-        VariableF variable -> VariableF <$> traverse traversing variable
+        VariableF variable -> VariableF <$> traverseConstVariable variable
         -- Trivial cases
         AndF andP -> pure (AndF andP)
         ApplySymbolF applySymbolF -> pure (ApplySymbolF applySymbolF)
@@ -547,10 +547,16 @@ traverseVariablesF traversing =
         InhabitantF s -> pure (InhabitantF s)
         EvaluatedF childP -> pure (EvaluatedF childP)
   where
+    traverseConstVariable (Const variable) =
+        Const <$> traverse traversing variable
     traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
-        Exists existsSort <$> traverse traversing existsVariable <*> pure existsChild
+        Exists existsSort
+        <$> traverse traversing existsVariable
+        <*> pure existsChild
     traverseVariablesForall Forall { forallSort, forallVariable, forallChild } =
-        Forall forallSort <$> traverse traversing forallVariable <*> pure forallChild
+        Forall forallSort
+        <$> traverse traversing forallVariable
+        <*> pure forallChild
     traverseVariablesMu Mu { muVariable, muChild } =
         Mu <$> traverse traversing muVariable <*> pure muChild
     traverseVariablesNu Nu { nuVariable, nuChild } =
@@ -714,7 +720,7 @@ instance
 
     traverseVariable match termLike =
         case termLikeF of
-            VariableF variable -> mkVar <$> match variable
+            VariableF (Const variable) -> mkVar <$> match variable
             _ -> pure termLike
       where
         _ :< termLikeF = Recursive.project termLike
@@ -1764,7 +1770,7 @@ mkVar
     :: Ord variable
     => SortedVariable variable
     => UnifiedVariable variable -> TermLike variable
-mkVar = synthesize . VariableF
+mkVar = synthesize . VariableF . Const
 
 {- | Construct an element variable pattern.
  -}
@@ -2233,13 +2239,11 @@ pattern Top_ topSort <-
     (Recursive.project -> _ :< TopF Top { topSort })
 
 pattern Var_ variable <-
-    (Recursive.project -> _ :< VariableF variable)
+    (Recursive.project -> _ :< VariableF (Const variable))
 
-pattern SetVar_ setVariable <-
-    (Recursive.project -> _ :< VariableF (SetVar setVariable))
+pattern SetVar_ setVariable <- Var_ (SetVar setVariable)
 
-pattern ElemVar_ elemVariable <-
-    (Recursive.project -> _ :< VariableF (ElemVar elemVariable))
+pattern ElemVar_ elemVariable <- Var_ (ElemVar elemVariable)
 
 pattern StringLiteral_ str <-
     (Recursive.project -> _ :< StringLiteralF (Const (StringLiteral str)))

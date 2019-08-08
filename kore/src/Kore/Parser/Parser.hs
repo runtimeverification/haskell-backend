@@ -432,8 +432,8 @@ variableOrTermPatternParser childParser isSetVariable = do
         then do
             var <- variableRemainderParser identifier
             if isSetVariable
-                then return $ VariableF (SetVar (SetVariable var))
-                else return $ VariableF (ElemVar (ElementVariable var))
+                then return $ VariableF $ Const $ SetVar  $ SetVariable     var
+                else return $ VariableF $ Const $ ElemVar $ ElementVariable var
         else symbolOrAliasPatternRemainderParser childParser identifier
 
 
