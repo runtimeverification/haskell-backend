@@ -48,6 +48,8 @@ import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Variable
                  ( Variable (..) )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import qualified SMT
 
 import           Test.Kore
@@ -187,7 +189,7 @@ test_onePathStrategy =
             runOnePathSteps
                 (Limit 2)
                 (Pattern.fromTermLike
-                    (Mock.functionalConstr10 (TermLike.mkVar Mock.x))
+                    (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                 )
                 (Mock.functionalConstr11 Mock.a)
                 [ simpleRewrite (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
@@ -197,41 +199,43 @@ test_onePathStrategy =
                 , simpleRewrite (Mock.functionalConstr11 Mock.b) (Mock.g Mock.b)
                 , simpleRewrite (Mock.functionalConstr11 Mock.c) (Mock.f Mock.c)
                 , simpleRewrite
-                    (Mock.functionalConstr11 (TermLike.mkVar Mock.y))
-                    (Mock.h (TermLike.mkVar Mock.y))
+                    (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
+                    (Mock.h (TermLike.mkElemVar Mock.y))
                 , simpleRewrite
-                    (Mock.functionalConstr10 (TermLike.mkVar Mock.y))
-                    (Mock.functionalConstr11 (TermLike.mkVar Mock.y))
+                    (Mock.functionalConstr10 (TermLike.mkElemVar Mock.y))
+                    (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
                 ]
         assertEqualWithExplanation ""
             [ RewritePattern Conditional
                 { term = Mock.f Mock.b
                 , predicate = makeTruePredicate
-                , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                , substitution =
+                    Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
                 }
             , RewritePattern Conditional
                 { term = Mock.f Mock.c
                 , predicate = makeTruePredicate
-                , substitution = Substitution.unsafeWrap [(Mock.x, Mock.c)]
+                , substitution =
+                    Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
                 }
             , RewritePattern Conditional
-                { term = Mock.h (TermLike.mkVar Mock.x)
+                { term = Mock.h (TermLike.mkElemVar Mock.x)
                 , predicate =  -- TODO(virgil): Better and simplification.
                     makeAndPredicate
                         (makeAndPredicate
                             (makeNotPredicate
                                 (makeEqualsPredicate
-                                    (TermLike.mkVar Mock.x) Mock.a
+                                    (TermLike.mkElemVar Mock.x) Mock.a
                                 )
                             )
                             (makeNotPredicate
                                 (makeEqualsPredicate
-                                    (TermLike.mkVar Mock.x) Mock.b
+                                    (TermLike.mkElemVar Mock.x) Mock.b
                                 )
                             )
                         )
                         (makeNotPredicate
-                            (makeEqualsPredicate (TermLike.mkVar Mock.x) Mock.c)
+                            (makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.c)
                         )
                 , substitution = mempty
                 }
@@ -252,32 +256,34 @@ test_onePathStrategy =
             runOnePathSteps
                 (Limit 2)
                 (Pattern.fromTermLike
-                    (Mock.functionalConstr10 (TermLike.mkVar Mock.x))
+                    (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                 )
                 (Mock.functionalConstr11 Mock.a)
                 [ simpleRewrite (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
                 ]
                 [ simpleRewrite (Mock.functionalConstr11 Mock.c) (Mock.f Mock.c)
                 , simpleRewrite
-                    (Mock.functionalConstr10 (TermLike.mkVar Mock.y))
-                    (Mock.functionalConstr11 (TermLike.mkVar Mock.y))
+                    (Mock.functionalConstr10 (TermLike.mkElemVar Mock.y))
+                    (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
                 ]
-        let equalsXA = makeEqualsPredicate (TermLike.mkVar Mock.x) Mock.a
-            equalsXB = makeEqualsPredicate (TermLike.mkVar Mock.x) Mock.b
-            equalsXC = makeEqualsPredicate (TermLike.mkVar Mock.x) Mock.c
+        let equalsXA = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.a
+            equalsXB = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.b
+            equalsXC = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.c
         assertEqualWithExplanation ""
             [ RewritePattern Conditional
                 { term = Mock.f Mock.b
                 , predicate = makeTruePredicate
-                , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
+                , substitution =
+                    Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
                 }
             , RewritePattern Conditional
                 { term = Mock.f Mock.c
                 , predicate = makeTruePredicate
-                , substitution = Substitution.unsafeWrap [(Mock.x, Mock.c)]
+                , substitution =
+                    Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
                 }
             , Stuck Conditional
-                { term = Mock.functionalConstr11 (TermLike.mkVar Mock.x)
+                { term = Mock.functionalConstr11 (TermLike.mkElemVar Mock.x)
                 , predicate =
                     makeMultipleAndPredicate
                         [ makeNotPredicate equalsXA
@@ -338,11 +344,11 @@ test_onePathStrategy =
                 (Mock.builtinInt 1)
                 []
                 [ rewriteWithPredicate
-                    (TermLike.mkVar Mock.xInt)
+                    (TermLike.mkElemVar Mock.xInt)
                     (Mock.builtinInt 1)
                     (makeEqualsPredicate
                         (Mock.lessInt
-                            (TermLike.mkVar Mock.xInt) (Mock.builtinInt 2)
+                            (TermLike.mkElemVar Mock.xInt) (Mock.builtinInt 2)
                         )
                         (Mock.builtinBool True)
                     )
@@ -372,21 +378,21 @@ test_onePathStrategy =
             Mock.a
             []
             [ rewriteWithPredicate
-                (Mock.functionalConstr10 (TermLike.mkVar Mock.x))
+                (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                 Mock.a
                 (makeEqualsPredicate
                     (Mock.lessInt
-                        (Mock.fTestInt (TermLike.mkVar Mock.x))
+                        (Mock.fTestInt (TermLike.mkElemVar Mock.x))
                         (Mock.builtinInt 0)
                     )
                     (Mock.builtinBool True)
                 )
             , rewriteWithPredicate
-                (Mock.functionalConstr10 (TermLike.mkVar Mock.x))
+                (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                 Mock.c
                 (makeEqualsPredicate
                     (Mock.lessInt
-                        (Mock.fTestInt (TermLike.mkVar Mock.x))
+                        (Mock.fTestInt (TermLike.mkElemVar Mock.x))
                         (Mock.builtinInt 0)
                     )
                     (Mock.builtinBool False)
@@ -430,11 +436,11 @@ test_onePathStrategy =
             Mock.a
             []
             [ rewriteWithPredicate
-                (Mock.functionalConstr10 (TermLike.mkVar Mock.x))
+                (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                 Mock.a
                 (makeEqualsPredicate
                     (Mock.lessInt
-                        (Mock.fTestInt (TermLike.mkVar Mock.x))
+                        (Mock.fTestInt (TermLike.mkElemVar Mock.x))
                         (Mock.builtinInt 0)
                     )
                     (Mock.builtinBool True)

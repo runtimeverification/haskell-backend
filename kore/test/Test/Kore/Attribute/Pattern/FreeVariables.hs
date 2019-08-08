@@ -13,6 +13,8 @@ import           Kore.Internal.TermLike
                  ( Symbol, TermLikeF (..) )
 import           Kore.Syntax hiding
                  ( PatternF (..) )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 
@@ -28,10 +30,8 @@ test_Synthetic =
     , Iff sort x y             `gives` xy     $ "Iff"
     , Implies sort x y         `gives` xy     $ "Implies"
     , In sort sort x y         `gives` xy     $ "In"
-    , Mu Mock.setX x           `gives` x      $ "Mu"
     , Next sort x              `gives` x      $ "Next"
     , Not sort x               `gives` x      $ "Not"
-    , Nu Mock.setX x           `gives` x      $ "Nu"
     , Or sort x y              `gives` xy     $ "Or"
     , Rewrites sort x y        `gives` xy     $ "Rewrites"
     , Top sort                 `gives` mempty $ "Top"
@@ -40,6 +40,10 @@ test_Synthetic =
     , Exists sort Mock.x y     `gives` y      $ "Exists - Free"
     , Forall sort Mock.x xy    `gives` y      $ "Forall - Bound"
     , Forall sort Mock.x y     `gives` y      $ "Forall - Free"
+    , Mu Mock.setX sxy         `gives` sy     $ "Mu - Bound"
+    , Mu Mock.setX sy          `gives` sy     $ "Mu - Free"
+    , Nu Mock.setX sxy         `gives` sy     $ "Nu - Bound"
+    , Nu Mock.setX sy          `gives` sy     $ "Nu - Free"
     ]
 
 test_instance_Synthetic_TermLike :: [TestTree]
@@ -54,20 +58,22 @@ test_instance_Synthetic_TermLike =
     , IffF         (Iff sort x y)             `gives'` xy     $ "IffF"
     , ImpliesF     (Implies sort x y)         `gives'` xy     $ "ImpliesF"
     , InF          (In sort sort x y)         `gives'` xy     $ "InF"
-    , MuF          (Mu Mock.setX x)           `gives'` x      $ "MuF"
     , NextF        (Next sort x)              `gives'` x      $ "NextF"
     , NotF         (Not sort x)               `gives'` x      $ "NotF"
-    , NuF          (Nu Mock.setX x)           `gives'` x      $ "NuF"
     , OrF          (Or sort x y)              `gives'` xy     $ "OrF"
     , RewritesF    (Rewrites sort x y)        `gives'` xy     $ "RewritesF"
     , TopF         (Top sort)                 `gives'` mempty $ "TopF"
-    , SetVariableF Mock.setX                  `gives'` mempty $ "SetVariableF"
     -- Binders and variables are the only interesting cases:
     , ExistsF      (Exists sort Mock.x xy)    `gives'` y      $ "ExistsF - Bound"
     , ExistsF      (Exists sort Mock.x y)     `gives'` y      $ "ExistsF - Free"
     , ForallF      (Forall sort Mock.x xy)    `gives'` y      $ "ForallF - Bound"
     , ForallF      (Forall sort Mock.x y)     `gives'` y      $ "ForallF - Free"
-    , VariableF    Mock.x                     `gives'` x      $ "VariableF"
+    , VariableF    (ElemVar Mock.x)           `gives'` x      $ "Elem VariableF"
+    , MuF          (Mu Mock.setX sxy)         `gives'` sy     $ "MuF - Bound"
+    , MuF          (Mu Mock.setX sy)          `gives'` sy     $ "MuF - Free"
+    , NuF          (Nu Mock.setX sxy)         `gives'` sy     $ "NuF - Bound"
+    , NuF          (Nu Mock.setX sy)          `gives'` sy     $ "NuF - Free"
+    , VariableF    (SetVar Mock.setX)         `gives'` sx     $ "Set VariableF"
     ]
   where
     gives' = gives @(TermLikeF Variable)
@@ -78,10 +84,13 @@ sort = Mock.testSort
 sigma :: Symbol
 sigma = Mock.sigmaSymbol
 
-x, y, xy :: FreeVariables Variable
-x = FreeVariables.freeVariable Mock.x
-y = FreeVariables.freeVariable Mock.y
+x, y, xy, sx, sy, sxy :: FreeVariables Variable
+x = FreeVariables.freeVariable (ElemVar Mock.x)
+y = FreeVariables.freeVariable (ElemVar Mock.y)
 xy = x <> y
+sx = FreeVariables.freeVariable (SetVar Mock.setX)
+sy = FreeVariables.freeVariable (SetVar Mock.setY)
+sxy = sx <> sy
 
 gives
     :: (Synthetic base (FreeVariables Variable), GHC.HasCallStack)

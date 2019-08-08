@@ -27,14 +27,15 @@ module Kore.Predicate.Predicate
     , makeIffPredicate
     , makeImpliesPredicate
     , makeInPredicate
+    , makeMuPredicate
     , makeNotPredicate
+    , makeNuPredicate
     , makeOrPredicate
     , makeMultipleOrPredicate
     , makeTruePredicate
     , Kore.Predicate.Predicate.freeVariables
-    , Kore.Predicate.Predicate.freeSetVariables
+    , Kore.Predicate.Predicate.freeElementVariables
     , Kore.Predicate.Predicate.hasFreeVariable
-    , Kore.Predicate.Predicate.hasFreeSetVariable
     , Kore.Predicate.Predicate.mapVariables
     , stringFromPredicate
     , substitutionToPredicate
@@ -60,7 +61,6 @@ import           GHC.Generics
 import           GHC.Stack
                  ( HasCallStack )
 
-import           Kore.Attribute.Pattern.FreeSetVariables
 import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Error
                  ( Error, koreFail )
@@ -73,6 +73,8 @@ import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 
 {-| 'GenericPredicate' is a wrapper for predicates used for type safety.
 Should not be exported, and should be treated as an opaque entity which
@@ -350,7 +352,7 @@ makeExistsPredicate
         , Show variable
         , Unparse variable
         )
-    => variable
+    => ElementVariable variable
     -> Predicate variable
     -> Predicate variable
 makeExistsPredicate _ p@PredicateFalse = p
@@ -367,7 +369,7 @@ makeMultipleExists
         , Show variable
         , Unparse variable
         )
-    => f variable
+    => f (ElementVariable variable)
     -> Predicate variable
     -> Predicate variable
 makeMultipleExists vars phi =
@@ -381,13 +383,45 @@ makeForallPredicate
         , Show variable
         , Unparse variable
         )
-    => variable
+    => ElementVariable variable
     -> Predicate variable
     -> Predicate variable
 makeForallPredicate _ p@PredicateFalse = p
 makeForallPredicate _ t@PredicateTrue = t
 makeForallPredicate v (GenericPredicate p) =
     GenericPredicate $ TermLike.mkForall v p
+
+{-| Mu quantification for the given variable in the given predicate.
+-}
+makeMuPredicate
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
+        )
+    => SetVariable variable
+    -> Predicate variable
+    -> Predicate variable
+makeMuPredicate _ p@PredicateFalse = p
+makeMuPredicate _ t@PredicateTrue = t
+makeMuPredicate v (GenericPredicate p) =
+    GenericPredicate $ TermLike.mkMu v p
+
+{-| Nu quantification for the given variable in the given predicate.
+-}
+makeNuPredicate
+    ::  ( SortedVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
+        )
+    => SetVariable variable
+    -> Predicate variable
+    -> Predicate variable
+makeNuPredicate _ p@PredicateFalse = p
+makeNuPredicate _ t@PredicateTrue = t
+makeNuPredicate v (GenericPredicate p) =
+    GenericPredicate $ TermLike.mkNu v p
 
 {-| 'makeTruePredicate' produces a predicate wrapping a 'top'.
 -}
@@ -465,29 +499,20 @@ freeVariables
     -> FreeVariables variable
 freeVariables = TermLike.freeVariables . unwrapPredicate
 
-{- | Extract the set of free set variables from a @Predicate@.
--}
-freeSetVariables
+freeElementVariables
     :: Ord variable
     => Predicate variable
-    -> FreeSetVariables variable
-freeSetVariables = TermLike.freeSetVariables . unwrapPredicate
+    -> [ElementVariable variable]
+freeElementVariables =
+    getFreeElementVariables . Kore.Predicate.Predicate.freeVariables
 
 hasFreeVariable
     :: Ord variable
-    => variable
+    => UnifiedVariable variable
     -> Predicate variable
     -> Bool
 hasFreeVariable variable =
     isFreeVariable variable . Kore.Predicate.Predicate.freeVariables
-
-hasFreeSetVariable
-    :: Ord variable
-    => variable
-    -> Predicate variable
-    -> Bool
-hasFreeSetVariable variable =
-    isFreeSetVariable variable . Kore.Predicate.Predicate.freeSetVariables
 
 {- | 'substitutionToPredicate' transforms a substitution in a predicate.
 
@@ -514,7 +539,7 @@ singleSubstitutionToPredicate
         , Show variable
         , Unparse variable
         )
-    => (variable, TermLike variable)
+    => (UnifiedVariable variable, TermLike variable)
     -> Predicate variable
 singleSubstitutionToPredicate (var, patt) =
     makeEqualsPredicate (TermLike.mkVar var) patt
@@ -544,8 +569,9 @@ contain none of the targeted variables.
 substitute
     ::  ( FreshVariable variable
         , SortedVariable variable
+        , Show variable
         )
-    => Map variable (TermLike variable)
+    => Map (UnifiedVariable variable) (TermLike variable)
     -> Predicate variable
     -> Predicate variable
 substitute subst (GenericPredicate termLike) =

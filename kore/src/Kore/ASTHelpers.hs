@@ -27,7 +27,10 @@ import           Data.Text
 import qualified Kore.Attribute.Null as Attribute
 import           Kore.Syntax hiding
                  ( substituteSortVariables )
+import           Kore.Unparser
 import           Kore.Variables.Free
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..), foldMapVariable )
 
 
 {-|'quantifyFreeVariables' quantifies all free variables in the given pattern.
@@ -46,9 +49,9 @@ quantifyFreeVariables s p =
 wrapAndQuantify
     :: Sort
     -> Pattern Variable Attribute.Null
-    -> Variable
+    -> UnifiedVariable Variable
     -> Pattern Variable Attribute.Null
-wrapAndQuantify s p var =
+wrapAndQuantify s p (ElemVar var) =
     asPattern
         (mempty :< ForallF Forall
             { forallSort = s
@@ -56,16 +59,20 @@ wrapAndQuantify s p var =
             , forallChild = p
             }
         )
+--TODO(traiansf): think about changing this to ElementVariable
+wrapAndQuantify _ _ (SetVar var) =
+    error ("Cannot quantify set variable " ++ unparseToString var)
 
-checkUnique :: Set.Set Variable -> Set.Set Variable
+checkUnique
+    :: Set.Set (UnifiedVariable Variable) -> Set.Set (UnifiedVariable Variable)
 checkUnique variables =
     case checkUniqueEither (Set.toList variables) Map.empty of
         Right _  -> variables
         Left err -> error err
 
 checkUniqueEither
-    :: [Variable]
-    -> Map.Map Text Variable
+    :: [UnifiedVariable Variable]
+    -> Map.Map Text (UnifiedVariable Variable)
     -> Either String ()
 checkUniqueEither [] _ = Right ()
 checkUniqueEither (var:vars) indexed =
@@ -80,4 +87,4 @@ checkUniqueEither (var:vars) indexed =
                 ++ "."
                 )
   where
-    name = getId (variableName var)
+    name = getId . foldMapVariable variableName $ var

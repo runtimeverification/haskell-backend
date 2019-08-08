@@ -23,7 +23,6 @@ module Kore.Unification.Substitution
     , unsafeWrap
     , Kore.Unification.Substitution.filter
     , Kore.Unification.Substitution.freeVariables
-    , Kore.Unification.Substitution.freeSetVariables
     , partition
     , reverseIfRhsIsVar
     ) where
@@ -47,7 +46,6 @@ import           GHC.Stack
 import           Prelude hiding
                  ( null )
 
-import           Kore.Attribute.Pattern.FreeSetVariables
 import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Internal.TermLike
                  ( TermLike, pattern Var_, mkVar )
@@ -60,13 +58,15 @@ import           Kore.Unparser
                  ( Unparse, unparseToString )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 
 {- | @Substitution@ represents a collection @[xᵢ=φᵢ]@ of substitutions.
 
 Individual substitutions are a pair of type
 
 @
-(variable, TermLike variable)
+(UnifiedVariable variable, TermLike variable)
 @
 
 A collection of substitutions @[xᵢ=φᵢ]@ is /normalized/ if, for all @xⱼ=φⱼ@ in
@@ -79,8 +79,9 @@ data Substitution variable
     -- normalized and denormalized parts of the substitution together. That
     -- would enable us to keep more substitutions normalized in the Semigroup
     -- instance below.
-    = Substitution ![(variable, TermLike variable)]
-    | NormalizedSubstitution !(Map variable (TermLike variable))
+    = Substitution ![(UnifiedVariable variable, TermLike variable)]
+    | NormalizedSubstitution
+        !(Map (UnifiedVariable variable) (TermLike variable))
     deriving Generic
 
 -- | 'Eq' does not differentiate normalized and denormalized 'Substitution's.
@@ -119,7 +120,7 @@ instance Ord variable => Monoid (Substitution variable) where
 unwrap
     :: Ord variable
     => Substitution variable
-    -> [(variable, TermLike variable)]
+    -> [(UnifiedVariable variable, TermLike variable)]
 unwrap (Substitution xs) = List.sortBy (Function.on compare fst) xs
 unwrap (NormalizedSubstitution xs)  = Map.toList xs
 
@@ -134,14 +135,14 @@ See also: 'fromMap'
 toMap
     :: (HasCallStack, Ord variable)
     => Substitution variable
-    -> Map variable (TermLike variable)
+    -> Map (UnifiedVariable variable) (TermLike variable)
 toMap (Substitution _) =
     error "Cannot convert a denormalized substitution to a map!"
 toMap (NormalizedSubstitution norm) = norm
 
 fromMap
     :: Ord variable
-    => Map variable (TermLike variable)
+    => Map (UnifiedVariable variable) (TermLike variable)
     -> Substitution variable
 fromMap = wrap . Map.toList
 
@@ -152,7 +153,7 @@ The substitution is normalized if the variable does not occur free in the term.
  -}
 singleton
     :: Ord variable
-    => variable
+    => UnifiedVariable variable
     -> TermLike variable
     -> Substitution variable
 singleton var termLike
@@ -163,7 +164,7 @@ singleton var termLike
 -- | Wrap the list of substitutions to an un-normalized substitution. Note that
 -- @wrap . unwrap@ is not @id@ because the normalization state is lost.
 wrap
-    :: [(variable, TermLike variable)]
+    :: [(UnifiedVariable variable, TermLike variable)]
     -> Substitution variable
 wrap [] = NormalizedSubstitution Map.empty
 wrap xs = Substitution xs
@@ -172,7 +173,7 @@ wrap xs = Substitution xs
 -- this unless you are sure you need it.
 unsafeWrap
     :: Ord variable
-    => [(variable, TermLike variable)]
+    => [(UnifiedVariable variable, TermLike variable)]
     -> Substitution variable
 unsafeWrap = NormalizedSubstitution . Map.fromList
 
@@ -180,7 +181,8 @@ unsafeWrap = NormalizedSubstitution . Map.fromList
 -- normalization status is reset to un-normalized.
 modify
     :: Ord variable1
-    => ([(variable1, TermLike variable1)] -> [(variable2, TermLike variable2)])
+    => ([(UnifiedVariable variable1, TermLike variable1)]
+            -> [(UnifiedVariable variable2, TermLike variable2)])
     -> Substitution variable1
     -> Substitution variable2
 modify f = wrap . f . unwrap
@@ -198,13 +200,13 @@ mapVariables variableMapper =
   where
     mapVariable
         :: (variableFrom -> variableTo)
-        -> (variableFrom, TermLike variableFrom)
-        -> (variableTo, TermLike variableTo)
+        -> (UnifiedVariable variableFrom, TermLike variableFrom)
+        -> (UnifiedVariable variableTo, TermLike variableTo)
     mapVariable
         mapper
-        (variable, patt)
+        (substVariable, patt)
       =
-        (mapper variable, TermLike.mapVariables mapper patt)
+        (mapper <$> substVariable, TermLike.mapVariables mapper patt)
 
 -- | Returns true iff the substitution is normalized.
 isNormalized :: Substitution variable -> Bool
@@ -217,13 +219,13 @@ null (Substitution denorm)         = List.null denorm
 null (NormalizedSubstitution norm) = Map.null norm
 
 -- | Returns the list of variables in the 'Substitution'.
-variables :: Ord variable => Substitution variable -> [variable]
+variables :: Ord variable => Substitution variable -> [UnifiedVariable variable]
 variables = fmap fst . unwrap
 
 -- | Filter the variables of the 'Substitution'.
 filter
     :: Ord variable
-    => (variable -> Bool)
+    => (UnifiedVariable variable -> Bool)
     -> Substitution variable
     -> Substitution variable
 filter filtering =
@@ -235,7 +237,7 @@ The normalization state is preserved.
 
  -}
 partition
-    :: (variable -> TermLike variable -> Bool)
+    :: (UnifiedVariable variable -> TermLike variable -> Bool)
     -> Substitution variable
     -> (Substitution variable, Substitution variable)
 partition criterion (Substitution substitution) =
@@ -256,32 +258,33 @@ reverseIfRhsIsVar
         , SortedVariable variable
         , Unparse variable
         )
-    => variable
+    => UnifiedVariable variable
     -> Substitution variable
     -> Substitution variable
 reverseIfRhsIsVar variable (Substitution substitution) =
     Substitution (map (reversePairIfRhsVar variable) substitution)
   where
     reversePairIfRhsVar
-        :: variable
-        -> (variable, TermLike variable)
-        -> (variable, TermLike variable)
-    reversePairIfRhsVar var original@(substitutedVar, Var_ substitutionVar)
-      | var == substitutionVar = (substitutionVar, mkVar substitutedVar)
-      | otherwise = original
+        :: UnifiedVariable variable
+        -> (UnifiedVariable variable, TermLike variable)
+        -> (UnifiedVariable variable, TermLike variable)
+    reversePairIfRhsVar var (substVar, Var_ substitutionVar)
+      | var == substitutionVar =
+          (substitutionVar, mkVar substVar)
     reversePairIfRhsVar _ original = original
 reverseIfRhsIsVar variable original@(NormalizedSubstitution substitution) =
     case reversableVars of
         [] -> original
         (v:vs) ->
             let
-                replacementVar :: variable
+                replacementVar :: UnifiedVariable variable
                 replacementVar = foldr max v vs
 
                 replacement :: TermLike variable
                 replacement = mkVar replacementVar
 
-                replacedSubstitution :: Map variable (TermLike variable)
+                replacedSubstitution
+                    :: Map (UnifiedVariable variable) (TermLike variable)
                 replacedSubstitution =
                     fmap
                         (TermLike.substitute
@@ -295,13 +298,13 @@ reverseIfRhsIsVar variable original@(NormalizedSubstitution substitution) =
                 NormalizedSubstitution
                     (Map.insert variable replacement replacedSubstitution)
   where
-    reversable :: [(variable, TermLike variable)]
+    reversable :: [(UnifiedVariable variable, TermLike variable)]
     reversable = List.filter (rhsIsVar variable) (Map.toList substitution)
 
-    reversableVars :: [variable]
+    reversableVars :: [UnifiedVariable variable]
     reversableVars = map fst reversable
 
-    rhsIsVar :: variable -> (thing, TermLike variable) -> Bool
+    rhsIsVar :: UnifiedVariable variable -> (thing, TermLike variable) -> Bool
     rhsIsVar var (_, Var_ otherVar) = var == otherVar
     rhsIsVar _ _ = False
 
@@ -310,9 +313,9 @@ assertNoneAreFreeVarsInRhs
         , SortedVariable variable
         , Unparse variable
         )
-    => Set variable
-    -> Map variable (TermLike variable)
-    -> Map variable (TermLike variable)
+    => Set (UnifiedVariable variable)
+    -> Map (UnifiedVariable variable) (TermLike variable)
+    -> Map (UnifiedVariable variable) (TermLike variable)
 assertNoneAreFreeVarsInRhs lhsVariables =
     fmap assertNoneAreFree
   where
@@ -351,18 +354,3 @@ freeVariables = Foldable.foldMap freeVariablesWorker . unwrap
   where
     freeVariablesWorker (x, t) =
         freeVariable x <> TermLike.freeVariables t
-
-{- | Return the free set variables of the 'Substitution'.
-
-In a substitution of the form @variable = term@
-the free variables are all the free variables of @term@.
-
- -}
-freeSetVariables
-    :: Ord variable
-    => Substitution variable
-    -> FreeSetVariables variable
-freeSetVariables = Foldable.foldMap freeSetVariablesWorker . unwrap
-  where
-    freeSetVariablesWorker (_, t) =
-        TermLike.freeSetVariables t

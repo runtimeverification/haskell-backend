@@ -12,6 +12,7 @@ import Kore.Internal.TermLike
 import Kore.Sort
 import Kore.Syntax hiding
        ( PatternF (..) )
+import Kore.Variables.UnifiedVariable
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 
@@ -91,18 +92,15 @@ test_instance_Synthetic =
         , failure $ ForallF (Forall sort Mock.x sort0)
         ]
     , testGroup "VariableF"
-        [ success $ VariableF Mock.x
+        [ success $ VariableF (ElemVar Mock.x)
         ]
     , testGroup "MuF"
-        [ success $ MuF (Mu (SetVariable Mock.x) sort)
-        , failure $ MuF (Mu (SetVariable Mock.x) sort0)
+        [ success $ MuF (Mu Mock.setX sort)
+        , failure $ MuF (Mu Mock.setX sort0)
         ]
     , testGroup "NuF"
-        [ success $ NuF (Nu (SetVariable Mock.x) sort)
-        , failure $ NuF (Nu (SetVariable Mock.x) sort0)
-        ]
-    , testGroup "SetVariableF"
-        [ success $ SetVariableF (SetVariable Mock.x)
+        [ success $ NuF (Nu Mock.setX sort)
+        , failure $ NuF (Nu Mock.setX sort0)
         ]
     ]
   where

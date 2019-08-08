@@ -15,12 +15,13 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.TermLike
+import           Kore.Variables.UnifiedVariable
 
 {-| 'simplify' simplifies a 'Variable' pattern, which means returning
 an or containing a term made of that variable.
 -}
 simplify
     :: (Ord variable, SortedVariable variable)
-    => variable
+    => UnifiedVariable variable
     -> OrPattern variable
 simplify var = OrPattern.fromTermLike $ mkVar var

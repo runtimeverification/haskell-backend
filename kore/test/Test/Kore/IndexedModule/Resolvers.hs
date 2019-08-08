@@ -47,10 +47,10 @@ axiomA' =
     fmap Builtin.externalizePattern
     $ TermLike.mkAxiom [sortVariableR]
     $ TermLike.mkForall x
-    $ TermLike.mkEquals sortR (TermLike.mkVar x)
+    $ TermLike.mkEquals sortR (TermLike.mkElemVar x)
     $ TermLike.applySymbol_ objectA []
   where
-    x = TermLike.varS "x" objectS1
+    x = TermLike.elemVarS "x" objectS1
     sortVariableR = SortVariable (testId "R")
     sortR = SortVariableSort sortVariableR
 

@@ -79,6 +79,8 @@ import           Kore.Variables.Binding
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 import qualified Kore.Variables.Fresh as Variables
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 
 -- * Matching
 
@@ -201,34 +203,39 @@ matchForall _ = empty
 
 matchBinder
     :: (MatchingVariable variable, MonadUnify unifier)
-    => Binder variable (TermLike variable)
-    -> Binder variable (TermLike variable)
+    => Binder (ElementVariable variable) (TermLike variable)
+    -> Binder (ElementVariable variable) (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchBinder (Binder variable1 term1) (Binder variable2 term2) = do
     Monad.guard (sort1 == sort2)
-    refreshed1 <- refreshVariable variable1
+    refreshed1 <- refreshVariable unified1
     let term1' = fromMaybe term1 $ do
-            subst1 <- Map.singleton variable1 . mkVar <$> refreshed1
+            subst1 <- Map.singleton unified1 . mkVar <$> refreshed1
             return $ substituteTermLike subst1 term1
-    let variable1' = fromMaybe variable1 refreshed1
-        subst2 = Map.singleton variable2 (mkVar variable1')
+    let variable1' = fromMaybe unified1 refreshed1
+        subst2 = Map.singleton unified2 (mkVar variable1')
         term2' = substituteTermLike subst2 term2
     bindVariable variable1'
     push (Pair term1' term2')
   where
-    sort1 = sortedVariableSort variable1
-    sort2 = sortedVariableSort variable2
+    unified1 = ElemVar variable1
+    unified2 = ElemVar variable2
+    sort1 = sortedVariableSort $ getElementVariable variable1
+    sort2 = sortedVariableSort $ getElementVariable variable2
 
 matchVariable
     :: (MatchingVariable variable, MonadUnify unifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
-matchVariable (Pair (Var_ variable1) term2)
-  | Var_ variable2 <- term2, variable1 == variable2 = return ()
-  | otherwise = do
-    targetCheck variable1
+matchVariable (Pair (Var_ variable1) (Var_ variable2))
+  | variable1 == variable2 = return ()
+matchVariable (Pair (ElemVar_ variable1) term2) = do
+    targetCheck (ElemVar variable1)
     Monad.guard (isFunctionPattern term2)
     substitute variable1 term2
+matchVariable (Pair (SetVar_ variable1) term2) = do
+    targetCheck (SetVar variable1)
+    setSubstitute variable1 term2
 matchVariable _ = empty
 
 matchApplication
@@ -340,15 +347,15 @@ data MatcherState variable =
         , deferred :: !(Seq (Pair (TermLike variable)))
         -- ^ Unsolvable matching constraints; may become solvable with more
         -- information.
-        , substitution :: !(Map variable (TermLike variable))
+        , substitution :: !(Map (UnifiedVariable variable) (TermLike variable))
         -- ^ Matching solution: Substitutions for target variables.
         , predicate :: !(MultiAnd (Syntax.Predicate variable))
         -- ^ Matching solution: Additional constraints.
-        , bound :: !(Set variable)
+        , bound :: !(Set (UnifiedVariable variable))
         -- ^ Bound variable that must not escape in the solution.
-        , targets :: !(Set variable)
+        , targets :: !(Set (UnifiedVariable variable))
         -- ^ Target variables that may be substituted.
-        , avoiding :: !(Set variable)
+        , avoiding :: !(Set (UnifiedVariable variable))
         -- ^ Variables that must not be shadowed.
         }
     deriving (GHC.Generic)
@@ -387,7 +394,7 @@ defer
     -> matcher ()
 defer pair = field @"deferred" %= (:|> pair)
 
-{- | Record a substitution in the matching solution.
+{- | Record an element substitution in the matching solution.
 
 The substitution is applied to the remaining constraints and to the partial
 matching solution (so that it is always normalized). @substitute@ ensures that:
@@ -399,10 +406,10 @@ matching solution (so that it is always normalized). @substitute@ ensures that:
  -}
 substitute
     :: (MatchingVariable variable, MonadUnify unifier)
-    => variable
+    => ElementVariable variable
     -> TermLike variable
     -> MaybeT (MatcherT variable unifier) ()
-substitute variable termLike = do
+substitute eVariable termLike = do
     -- Ensure that the variable does not occur free in the TermLike.
     occursCheck variable termLike
     -- Ensure that no bound variable would escape.
@@ -429,6 +436,48 @@ substitute variable termLike = do
 
     return ()
   where
+    variable = ElemVar eVariable
+    isIndependent = not . any (hasFreeVariable variable)
+    subst = Map.singleton variable termLike
+    substitute2 = fmap substitute1
+    substitute1 = Builtin.renormalize . TermLike.substitute subst
+
+{- | Record a set substitution in the matching solution.
+
+The substitution is applied to the remaining constraints and to the partial
+matching solution (so that it is always normalized). @substitute@ ensures that
+the variable does not occur on the right-hand side of the substitution.
+
+ -}
+setSubstitute
+    :: (MatchingVariable variable, MonadUnify unifier)
+    => SetVariable variable
+    -> TermLike variable
+    -> MaybeT (MatcherT variable unifier) ()
+setSubstitute sVariable termLike = do
+    -- Ensure that the variable does not occur free in the TermLike.
+    occursCheck variable termLike
+    -- Record the substitution.
+    field @"substitution" <>= Map.singleton variable termLike
+
+    -- Isolate the deferred pairs which depend on the variable.
+    -- After substitution, the dependent pairs go to the front of the queue.
+    MatcherState { deferred } <- Monad.State.get
+    let (indep, dep) = Seq.partition isIndependent deferred
+    field @"deferred" .= indep
+
+    -- Push the dependent deferred pairs to the front of the queue.
+    Foldable.traverse_ push dep
+    -- Apply the substitution to the queued pairs.
+    field @"queued" . Lens.mapped %= substitute2
+
+    -- Apply the substitution to the accumulated matching solution.
+    field @"substitution" . Lens.mapped %= substitute1
+    field @"predicate" . Lens.mapped %= Syntax.Predicate.substitute subst
+
+    return ()
+  where
+    variable = SetVar sVariable
     isIndependent = not . any (hasFreeVariable variable)
     subst = Map.singleton variable termLike
     substitute2 = fmap substitute1
@@ -437,14 +486,14 @@ substitute variable termLike = do
 substituteTermLike
     :: (FreshVariable variable, SortedVariable variable)
     => (Show variable, Unparse variable)
-    => Map variable (TermLike variable)
+    => Map (UnifiedVariable variable) (TermLike variable)
     -> TermLike variable
     -> TermLike variable
 substituteTermLike subst = Builtin.renormalize . TermLike.substitute subst
 
 occursCheck
     :: (MatchingVariable variable, MonadUnify unifier)
-    => variable
+    => UnifiedVariable variable
     -> TermLike variable
     -> MaybeT (MatcherT variable unifier) ()
 occursCheck variable termLike =
@@ -470,7 +519,7 @@ do not attempt to match on them.
  -}
 targetCheck
     :: (MatchingVariable variable, Monad unifier)
-    => variable
+    => UnifiedVariable variable
     -> MaybeT (MatcherT variable unifier) ()
 targetCheck variable = do
     MatcherState { targets } <- Monad.State.get
@@ -499,7 +548,7 @@ The bound variable will not escape, nor will it be shadowed.
 bindVariable
     :: Ord variable
     => MonadState (MatcherState variable) matcher
-    => variable
+    => UnifiedVariable variable
     -> matcher ()
 bindVariable variable = do
     field @"bound" %= Set.insert variable
@@ -510,8 +559,8 @@ bindVariable variable = do
 refreshVariable
     :: FreshVariable variable
     => MonadState (MatcherState variable) matcher
-    => variable
-    -> matcher (Maybe variable)
+    => UnifiedVariable variable
+    -> matcher (Maybe (UnifiedVariable variable))
 refreshVariable variable =
     flip Variables.refreshVariable variable <$> Lens.use (field @"avoiding")
 

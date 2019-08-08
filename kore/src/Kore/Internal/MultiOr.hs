@@ -85,7 +85,7 @@ instance TopBottom child => TopBottom (MultiOr child) where
     isBottom _ = False
 
 {-| 'OrBool' is an some sort of Bool data type used when evaluating things
-inside an 'MultiOr'.
+inside a 'MultiOr'.
 -}
 data OrBool = OrTrue | OrFalse | OrUnknown
 

@@ -409,8 +409,7 @@ mainWithOptions
                                 success = (ExitSuccess, mkTop $ mkSortVariable "R")
                                 unknown =
                                     ( ExitSuccess
-                                    , mkVar
-                                        $ varS
+                                    , mkElemVar $ elemVarS
                                             "Unknown"
                                             (mkSort $ noLocationId "SortUnknown")
                                     )
