@@ -555,8 +555,4 @@ makeEvaluateWithAxioms axiomIdToSimplifier child =
     $ evalSimplifier mockEnv
     $ Ceil.makeEvaluate child
   where
-    mockEnv =
-        Mock.env
-            { simplifierAxioms = axiomIdToSimplifier
-            , simplifierPredicate = Mock.substitutionSimplifier
-            }
+    mockEnv = Mock.env { simplifierAxioms = axiomIdToSimplifier }

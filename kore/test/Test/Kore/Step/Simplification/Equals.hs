@@ -2,13 +2,23 @@ module Test.Kore.Step.Simplification.Equals
     ( test_equalsSimplification_TermLike
     , test_equalsSimplification_Or_Pattern
     , test_equalsSimplification_Pattern
+    , test_equalsTermsSimplification
     ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import           Data.Default
+                 ( def )
 import qualified Data.Foldable as Foldable
+import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 
+import qualified Kore.Attribute.Axiom as Attribute
+import           Kore.Attribute.Simplification
+                 ( Simplification (..) )
+import qualified Kore.Builtin.AssociativeCommutative as Ac
+import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -27,8 +37,13 @@ import           Kore.Predicate.Predicate
                  makeEqualsPredicate, makeIffPredicate, makeImpliesPredicate,
                  makeMultipleAndPredicate, makeNotPredicate, makeOrPredicate,
                  makeTruePredicate )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+import           Kore.Step.Axiom.Registry
+                 ( axiomPatternsToEvaluators )
+import           Kore.Step.Rule
+                 ( EqualityRule (..), RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( Env (..), evalSimplifier )
+                 ( BuiltinAndAxiomSimplifierMap, Env (..), evalSimplifier )
 import           Kore.Step.Simplification.Equals
                  ( makeEvaluate, makeEvaluateTermsToPredicate, simplify )
 import qualified Kore.Unification.Substitution as Substitution
@@ -792,6 +807,202 @@ test_equalsSimplification_TermLike =
     -- TODO: Add tests for set equality.
     ]
 
+test_equalsTermsSimplification :: [TestTree]
+test_equalsTermsSimplification =
+    [ testCase "adds ceil when producing substitutions" $ do
+        let expected =
+                [ Conditional
+                    { term = ()
+                    , predicate = makeCeilPredicate Mock.cf
+                    , substitution =
+                        Substitution.unsafeWrap [(ElemVar Mock.x, Mock.cf)]
+                    }
+                ]
+        actual <- simplifyEquals Map.empty (mkElemVar Mock.x) Mock.cf
+        assertEqualWithExplanation "" expected actual
+    , testCase "handles ambiguity" $ do
+        let
+            expected =
+                [ Conditional
+                    { term = ()
+                    , predicate = makeEqualsPredicate (Mock.f Mock.a) Mock.a
+                    , substitution =
+                        Substitution.unsafeWrap [(ElemVar Mock.x, Mock.cf)]
+                    }
+                , Conditional
+                    { term = ()
+                    , predicate = makeEqualsPredicate (Mock.f Mock.b) Mock.b
+                    , substitution =
+                        Substitution.unsafeWrap [(ElemVar Mock.x, Mock.cf)]
+                    }
+                ]
+            sortVar = SortVariableSort (SortVariable (testId "S"))
+            simplifiers = axiomPatternsToEvaluators $ Map.fromList
+                [   (   AxiomIdentifier.Ceil
+                            (AxiomIdentifier.Application Mock.cfId)
+                    ,   [ EqualityRule RulePattern
+                            { left = mkCeil sortVar Mock.cf
+                            , right =
+                                mkOr
+                                    (mkAnd
+                                        (mkEquals_
+                                            (Mock.f (mkElemVar Mock.y))
+                                            Mock.a
+                                        )
+                                        (mkEquals_ (mkElemVar Mock.y) Mock.a)
+                                    )
+                                    (mkAnd
+                                        (mkEquals_
+                                            (Mock.f (mkElemVar Mock.y))
+                                            Mock.b
+                                        )
+                                        (mkEquals_ (mkElemVar Mock.y) Mock.b)
+                                    )
+                            , requires = makeTruePredicate
+                            , ensures = makeTruePredicate
+                            , attributes = def
+                                {Attribute.simplification = Simplification True}
+                            }
+                        ]
+                    )
+                ]
+        actual <- simplifyEquals simplifiers (mkElemVar Mock.x) Mock.cf
+        assertEqualWithExplanation "" expected actual
+    , testCase "handles multiple ambiguity" $ do
+        let
+            expected =
+                [ Conditional
+                    { term = ()
+                    , predicate = makeAndPredicate
+                        (makeEqualsPredicate (Mock.f Mock.a) Mock.a)
+                        (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
+                    , substitution = Substitution.unsafeWrap
+                        [ (ElemVar Mock.x, Mock.cf)
+                        , (ElemVar Mock.var_x_1, Mock.cg)
+                        ]
+                    }
+                , Conditional
+                    { term = ()
+                    , predicate = makeAndPredicate
+                        (makeEqualsPredicate (Mock.f Mock.a) Mock.a)
+                        (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
+                    , substitution = Substitution.unsafeWrap
+                        [ (ElemVar Mock.x, Mock.cf)
+                        , (ElemVar Mock.var_x_1, Mock.cg)
+                        ]
+                    }
+                , Conditional
+                    { term = ()
+                    , predicate = makeAndPredicate
+                        (makeEqualsPredicate (Mock.f Mock.b) Mock.b)
+                        (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
+                    , substitution = Substitution.unsafeWrap
+                        [ (ElemVar Mock.x, Mock.cf)
+                        , (ElemVar Mock.var_x_1, Mock.cg)
+                        ]
+                    }
+                , Conditional
+                    { term = ()
+                    , predicate = makeAndPredicate
+                        (makeEqualsPredicate (Mock.f Mock.b) Mock.b)
+                        (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
+                    , substitution = Substitution.unsafeWrap
+                        [ (ElemVar Mock.x, Mock.cf)
+                        , (ElemVar Mock.var_x_1, Mock.cg)
+                        ]
+                    }
+                ]
+            sortVar = SortVariableSort (SortVariable (testId "S"))
+            simplifiers = axiomPatternsToEvaluators $ Map.fromList
+                [   (   AxiomIdentifier.Ceil
+                            (AxiomIdentifier.Application Mock.cfId)
+                    ,   [ EqualityRule RulePattern
+                            { left = mkCeil sortVar Mock.cf
+                            , right =
+                                mkOr
+                                    (mkAnd
+                                        (mkEquals_
+                                            (Mock.f (mkElemVar Mock.y))
+                                            Mock.a
+                                        )
+                                        (mkEquals_ (mkElemVar Mock.y) Mock.a)
+                                    )
+                                    (mkAnd
+                                        (mkEquals_
+                                            (Mock.f (mkElemVar Mock.y))
+                                            Mock.b
+                                        )
+                                        (mkEquals_ (mkElemVar Mock.y) Mock.b)
+                                    )
+                            , requires = makeTruePredicate
+                            , ensures = makeTruePredicate
+                            , attributes = def
+                                {Attribute.simplification = Simplification True}
+                            }
+                        ]
+                    )
+                ,   (   AxiomIdentifier.Ceil
+                            (AxiomIdentifier.Application Mock.cgId)
+                    ,   [ EqualityRule RulePattern
+                            { left = mkCeil sortVar Mock.cg
+                            , right =
+                                mkOr
+                                    (mkAnd
+                                        (mkEquals_
+                                            (Mock.g (mkElemVar Mock.z))
+                                            Mock.a
+                                        )
+                                        (mkEquals_ (mkElemVar Mock.z) Mock.a)
+                                    )
+                                    (mkAnd
+                                        (mkEquals_
+                                            (Mock.g (mkElemVar Mock.z))
+                                            Mock.b
+                                        )
+                                        (mkEquals_ (mkElemVar Mock.z) Mock.b)
+                                    )
+                            , requires = makeTruePredicate
+                            , ensures = makeTruePredicate
+                            , attributes = def
+                                {Attribute.simplification = Simplification True}
+                            }
+                        ]
+                    )
+                ]
+        actual <- simplifyEquals
+            simplifiers
+            (Mock.functionalConstr20 (mkElemVar Mock.x) (mkElemVar Mock.var_x_1))
+            (Mock.functionalConstr20 Mock.cf Mock.cg)
+        assertEqualWithExplanation "" expected actual
+    , testCase "handles set ambiguity" $ do
+        let
+            asInternal set =
+                Ac.asInternalConcrete
+                    Mock.metadataTools
+                    Mock.setSort
+                    (Map.fromSet (const Domain.SetValue) set)
+            expected = do -- list monad
+                (xValue, xSetValue) <-
+                    [ (Mock.a, [Mock.b])
+                    , (Mock.b, [Mock.a])
+                    ]
+                return Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (ElemVar Mock.x, xValue)
+                        , ( ElemVar Mock.xSet
+                          , asInternal (Set.fromList xSetValue)
+                          )
+                        ]
+                    }
+        actual <- simplifyEquals
+            Map.empty
+            (Mock.concatSet (Mock.elementSet (mkElemVar Mock.x)) (mkElemVar Mock.xSet))
+            (asInternal (Set.fromList [Mock.a, Mock.b]))
+        assertEqualWithExplanation "" expected actual
+    ]
+
 assertTermEquals
     :: HasCallStack
     => Predicate Variable
@@ -939,3 +1150,16 @@ evaluateTermsGeneric first second =
     $ makeEvaluateTermsToPredicate first second
   where
     mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
+
+simplifyEquals
+    :: BuiltinAndAxiomSimplifierMap
+    -> TermLike Variable
+    -> TermLike Variable
+    -> IO [Predicate Variable]
+simplifyEquals axiomIdToSimplifier first second =
+    fmap Foldable.toList
+    $ SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier mockEnv
+    $ makeEvaluateTermsToPredicate first second
+  where
+    mockEnv = Mock.env { simplifierAxioms = axiomIdToSimplifier }
