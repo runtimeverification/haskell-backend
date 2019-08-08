@@ -207,7 +207,7 @@ matchBinder
     -> Binder (ElementVariable variable) (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchBinder (Binder variable1 term1) (Binder variable2 term2) = do
-    Monad.guard (sort1 == sort2)
+    Monad.guard (variableSort1 == variableSort2)
     refreshed1 <- refreshVariable unified1
     let term1' = fromMaybe term1 $ do
             subst1 <- Map.singleton unified1 . mkVar <$> refreshed1
@@ -220,8 +220,9 @@ matchBinder (Binder variable1 term1) (Binder variable2 term2) = do
   where
     unified1 = ElemVar variable1
     unified2 = ElemVar variable2
-    sort1 = sortedVariableSort $ getElementVariable variable1
-    sort2 = sortedVariableSort $ getElementVariable variable2
+    elementVariableSort = sortedVariableSort . getElementVariable
+    variableSort1 = elementVariableSort variable1
+    variableSort2 = elementVariableSort variable2
 
 matchVariable
     :: (MatchingVariable variable, MonadUnify unifier)
